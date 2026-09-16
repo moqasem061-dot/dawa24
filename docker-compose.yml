@@ -71,6 +71,10 @@ services:
   postgres:
     image: postgres:18-alpine
     restart: unless-stopped
+    ports:
+      # Bound strictly to VPS localhost (127.0.0.1) — never exposed to the public internet
+      # Allows pgAdmin / DBeaver to connect securely via SSH Tunnel
+      - "127.0.0.1:5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-dawa24_store}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
