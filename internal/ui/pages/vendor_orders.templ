@@ -1,0 +1,209 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorOrdersData struct {
+	Shipments      []*commerce.OrderShipment
+	FilterStatus   string
+	Page           int
+	PerPage        int
+	TotalCount     int
+	PendingCount   int
+	ConfirmedCount int
+	ShippedCount   int
+	DeliveredCount int
+	FailedCount    int
+	// CanAssign and Couriers drive the delivery-assignment control on each
+	// shipment. أوامر التوريد is where a parcel is created, so it is also the
+	// natural place to decide whose round it goes on; the dispatch board at
+	// /vendor/delivery offers the same control over the same parcels.
+	CanAssign bool
+	Couriers  []DeliveryCourierOption
+}
+
+func filterCardBorder(current, target string) string {
+	if current == target {
+		return "var(--accent)"
+	}
+	return "var(--border)"
+}
+
+templ VendorOrders(data VendorOrdersData, lang, dir string, isPartial bool) {
+	if isPartial {
+		@VendorOrdersContent(data, lang, dir)
+	} else {
+		@layouts.VendorShell(i18n.T(lang, "vendor_orders.page_title"), "supply_orders", lang, dir) {
+			<div class="page-container">
+				<!-- Header Section -->
+				<div class="glass-panel p-6 mb-6">
+					<div class="flex-between flex-wrap gap-4">
+						<div class="stack-sm">
+							<div class="d-flex items-center gap-3 mb-1">
+								<div class="user-avatar-badge text-xl">
+									@components.IconPackage("icon-sm")
+								</div>
+								<h1 class="text-2xl font-black text-primary m-0">
+									{ i18n.T(lang, "vendor_orders.header_title") }
+								</h1>
+							</div>
+							<p class="text-sm text-secondary m-0">
+								{ i18n.T(lang, "vendor_orders.header_desc") }
+							</p>
+						</div>
+					</div>
+
+					<!-- Navigation Filter Tabs -->
+					<div class="tabs-nav mt-4 tabs-nav-mobile-scroll">
+						<a
+							href="/vendor/orders"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_all"), data.TotalCount) }
+						</a>
+						<a
+							href="/vendor/orders?status=pending"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "pending") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_pending"), data.PendingCount) }
+						</a>
+						<a
+							href="/vendor/orders?status=confirmed"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "confirmed") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_confirmed"), data.ConfirmedCount) }
+						</a>
+						<a
+							href="/vendor/orders?status=shipped"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "shipped") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_shipped"), data.ShippedCount) }
+						</a>
+						<a
+							href="/vendor/orders?status=delivered"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "delivered") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_delivered"), data.DeliveredCount) }
+						</a>
+						<a
+							href="/vendor/orders?status=failed"
+							class={ "tab-btn", templ.KV("active", data.FilterStatus == "failed") }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.tab_failed"), data.FailedCount) }
+						</a>
+					</div>
+				</div>
+
+				<!-- Quick Status Metrics Cards -->
+				<div class="dashboard-stat-grid mb-6">
+					<a href="/vendor/orders" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label">{ i18n.T(lang, "vendor_orders.stat_total") }</div>
+							<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", data.TotalCount) }</div>
+						</div>
+					</a>
+
+					<a href="/vendor/orders?status=pending" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label text-warning d-flex items-center gap-2">
+								<span class="status-dot warning"></span>
+								<span>{ i18n.T(lang, "vendor_orders.stat_pending") }</span>
+							</div>
+							<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", data.PendingCount) }</div>
+						</div>
+					</a>
+
+					<a href="/vendor/orders?status=confirmed" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label text-brand d-flex items-center gap-2">
+								<span class="status-dot"></span>
+								<span>{ i18n.T(lang, "vendor_orders.stat_confirmed") }</span>
+							</div>
+							<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", data.ConfirmedCount) }</div>
+						</div>
+					</a>
+
+					<a href="/vendor/orders?status=shipped" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label text-accent d-flex items-center gap-2">
+								<span class="status-dot"></span>
+								<span>{ i18n.T(lang, "vendor_orders.stat_shipped") }</span>
+							</div>
+							<div class="stat-card-value text-accent tabular-nums">{ fmt.Sprintf("%d", data.ShippedCount) }</div>
+						</div>
+					</a>
+
+					<a href="/vendor/orders?status=delivered" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label text-success d-flex items-center gap-2">
+								<span class="status-dot success"></span>
+								<span>{ i18n.T(lang, "vendor_orders.stat_delivered") }</span>
+							</div>
+							<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", data.DeliveredCount) }</div>
+						</div>
+					</a>
+
+					<a href="/vendor/orders?status=failed" class="text-none">
+						<div class="stat-card-3d">
+							<div class="stat-card-label text-danger d-flex items-center gap-2">
+								<span class="status-dot danger"></span>
+								<span>{ i18n.T(lang, "vendor_orders.stat_failed") }</span>
+							</div>
+							<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", data.FailedCount) }</div>
+						</div>
+					</a>
+				</div>
+
+				<div class="stack-sm" id="vendor-orders-content">
+					@VendorOrdersContent(data, lang, dir)
+				</div>
+
+				<!-- Offer Details Modal Target Container (WO-16) -->
+				<div id="order-offer-modal-container">
+					@components.Modal(components.ModalProps{
+						ID:    "order-offer-modal",
+						Title: i18n.T(lang, "vendor_orders.offer_modal_title"),
+						Icon:  "package",
+						Size:  "lg",
+						State: "loading",
+					})
+				</div>
+			</div>
+		}
+	}
+}
+
+templ VendorOrdersContent(data VendorOrdersData, lang, dir string) {
+	if len(data.Shipments) == 0 {
+		<div class="glass-panel p-12 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+			<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_orders.empty_title") }</h3>
+			<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor_orders.empty_desc") }</p>
+		</div>
+	} else {
+		<div class="d-flex flex-col gap-4">
+			for _, sh := range data.Shipments {
+				@VendorOrderShipmentCard(sh, data, lang)
+			}
+
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/orders",
+					QueryValues: url.Values{
+						"status": {data.FilterStatus},
+					},
+				})
+			}
+		</div>
+	}
+}

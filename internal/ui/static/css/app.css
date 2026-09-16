@@ -1,0 +1,73 @@
+/* ==========================================================================
+   DAWA 24 — BEHAVIOURAL PRIMITIVES (app.css)
+
+   This file is deliberately OUTSIDE the @layer cascade, and that is the only
+   reason it is a separate file. Unlayered rules beat every layered rule, which
+   is exactly what "this element must be hidden" needs: a cloaked element must
+   not become visible because some component rule later in the sheet says
+   display:flex.
+
+   Everything that is not a hide/show primitive belongs in a layer. Three things
+   were removed from here in Phase 4:
+
+     - Six @import rules pulling in tokens, base, layout, glass, components and
+       utilities. Every one of those is already <link>ed from base.templ, so the
+       browser was parsing all six twice and the imported copies -- arriving
+       last and unlayered -- silently outranked the layered originals.
+
+     - An @import of IBM Plex Sans Arabic. Phase 3 moved the platform to Readex
+       Pro, but this line kept fetching the old family, so both downloaded on
+       every page load.
+
+     - The landing-page advertising gallery, which is page styling and had no
+       business winning against the component layer. It now lives in public.css
+       inside @layer components.
+   ========================================================================== */
+
+/* ---- Visibility and Cloaking primitives ---- */
+[x-cloak],
+[x-cloak] *,
+.modal[x-cloak],
+[style*="display: none"],
+[style*="display:none"],
+[hidden] {
+  display: none !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
+dialog:not([open]) { display: none !important; }
+
+.modal.hidden,
+
+.tab-pane {
+  display: none;
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 180ms ease-out, transform 180ms ease-out;
+}
+
+.tab-pane.active {
+  display: block;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.form-step { display: none; width: 100%; }
+.form-step.active { display: flex; flex-direction: column; gap: 1.25rem; }
+
+/* ---- Rendering & Layout Shift (CLS) Optimizations ---- */
+img, video {
+  max-width: 100%;
+  height: auto;
+  vertical-align: middle;
+}
+
+svg {
+  vertical-align: middle;
+}
+
+.data-table img, .product-thumb-img {
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+}

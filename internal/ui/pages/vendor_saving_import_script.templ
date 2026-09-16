@@ -1,0 +1,282 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorSavingImportScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openImportModal() {
+			document.getElementById('import-filename-preview').innerHTML = '';
+			document.getElementById('import-file-input').value = '';
+			const el = document.getElementById('saving-import-modal');
+			if (el && typeof el.showModal === 'function') el.showModal();
+		}
+
+		function closeImportModal() {
+			const el = document.getElementById('saving-import-modal');
+			if (el && typeof el.close === 'function') el.close();
+		}
+
+		function handleImportFileSelect(input) {
+			if (!input.files || !input.files[0]) return;
+			const f = input.files[0];
+			const size = (f.size / 1024 / 1024).toFixed(2);
+			document.getElementById('import-filename-preview').textContent = 'تم اختيار: ' + f.name + ' (' + size + ' MB)';
+
+			const panel = document.getElementById('vendor-import-columns-panel');
+			const loadingEl = document.getElementById('vendor-import-columns-loading');
+			const formGrid = document.getElementById('vendor-import-columns-grid');
+			const previewTableEl = document.getElementById('vendor-import-preview-table-container');
+
+			if (panel) panel.style.display = 'block';
+			if (loadingEl) loadingEl.style.display = 'block';
+			if (formGrid) formGrid.style.display = 'none';
+			if (previewTableEl) previewTableEl.innerHTML = '';
+
+			const formData = new FormData();
+			formData.append('file', f);
+
+			fetch('/vendor/saving-products/preview-columns', {
+				method: 'POST',
+				body: formData,
+			})
+			.then(r => r.json())
+			.then(data => {
+				if (loadingEl) loadingEl.style.display = 'none';
+				if (!data || !data.success || !data.headers || data.headers.length === 0) {
+					if (formGrid) formGrid.style.display = 'none';
+					alert(data.error || 'تعذر قراءة أعمدة الملف المرفوع. تأكد من سلامة ملف Excel.');
+					return;
+				}
+
+				if (formGrid) formGrid.style.display = 'grid';
+				renderImportColumnDropdowns('vendor', data.headers, data.detected);
+				renderImportSamplePreview('vendor', data.headers, data.sample_rows, data.detected);
+			})
+			.catch(err => {
+				if (loadingEl) loadingEl.style.display = 'none';
+				console.error('preview error', err);
+			});
+		}
+
+		function renderImportColumnDropdowns(prefix, headers, detected) {
+			const selects = [
+				{ id: prefix + '-col-name', selected: detected.name_col },
+				{ id: prefix + '-col-sku', selected: detected.sku_col },
+				{ id: prefix + '-col-qty', selected: detected.qty_col },
+				{ id: prefix + '-col-price', selected: detected.price_col }
+			];
+
+			selects.forEach(s => {
+				const el = document.getElementById(s.id);
+				if (!el) return;
+				const none = document.createElement('option');
+				none.value = '-1';
+				none.textContent = '-- غير محدد (تجاهل) --';
+				el.replaceChildren(none);
+				headers.forEach((h, idx) => {
+					const colLetter = String.fromCharCode(65 + idx);
+					const opt = document.createElement('option');
+					opt.value = idx;
+					opt.textContent = `العمود ${colLetter}: [${h}]`;
+					if (idx === s.selected) opt.selected = true;
+					el.appendChild(opt);
+				});
+
+				el.onchange = function() {
+					const curDetected = {
+						name_col: parseInt(document.getElementById(prefix + '-col-name')?.value || -1),
+						sku_col: parseInt(document.getElementById(prefix + '-col-sku')?.value || -1),
+						qty_col: parseInt(document.getElementById(prefix + '-col-qty')?.value || -1),
+						price_col: parseInt(document.getElementById(prefix + '-col-price')?.value || -1)
+					};
+					if (window[prefix + '_last_sample_rows']) {
+						renderImportSamplePreview(prefix, headers, window[prefix + '_last_sample_rows'], curDetected);
+					}
+				};
+			});
+		}
+
+		function renderImportSamplePreview(prefix, headers, sampleRows, detected) {
+			window[prefix + '_last_sample_rows'] = sampleRows;
+			const container = document.getElementById(prefix + '-import-preview-table-container');
+			if (!container || !sampleRows || sampleRows.length === 0) return;
+
+			// Headers and cells come straight from the uploaded spreadsheet.
+			const esc = dawaHTML.escape;
+			let html = '<div class="stack-sm">';
+			html += '<div class="stack-sm"><span>معاينة أعمدة الملف والبيانات الحقيقية:</span><span class="meta-muted">أول ' + sampleRows.length + ' صفوف</span></div>';
+			html += '<div class="table-container m-0"><table class="data-table m-0"><thead><tr>';
+
+			headers.forEach((h, idx) => {
+				let tag = '';
+				if (idx === detected.name_col) tag = ' <span class="badge badge-emerald">اسم الصنف</span>';
+				else if (idx === detected.sku_col) tag = ' <span class="badge badge-sky">كود SKU</span>';
+				else if (idx === detected.qty_col) tag = ' <span class="badge badge-amber">الكمية</span>';
+				else if (idx === detected.price_col) tag = ' <span class="badge badge-purple">السعر</span>';
+				const colLetter = String.fromCharCode(65 + idx);
+				html += `<th>${colLetter}: ${esc(h)}${tag}</th>`;
+			});
+			html += '</tr></thead><tbody>';
+
+			sampleRows.forEach(row => {
+				html += '<tr>';
+				headers.forEach((_, idx) => {
+					const cellVal = (idx < row.length) ? row[idx] : '';
+					html += `<td>${esc(cellVal)}</td>`;
+				});
+				html += '</tr>';
+			});
+
+			html += '</tbody></table></div></div>';
+			container.innerHTML = dawaHTML.sanitize(html);
+		}
+
+		var vendorActiveSessionId = null;
+		var vendorStagedData = null;
+		var vendorCurrentTab = 'all';
+		var vendorPollInterval = null;
+		var vendorProgressBar = null;
+
+		function startVendorAsyncImport() {
+			const input = document.getElementById('import-file-input');
+			if (!input.files || input.files.length === 0) {
+				alert("يرجى اختيار ملف Excel أو CSV أولاً.");
+				return;
+			}
+
+			const file = input.files[0];
+			const formData = new FormData();
+			formData.append('file', file);
+
+			const colName = document.getElementById('vendor-col-name')?.value || '';
+			const colSKU = document.getElementById('vendor-col-sku')?.value || '';
+			const colQty = document.getElementById('vendor-col-qty')?.value || '';
+			const colPrice = document.getElementById('vendor-col-price')?.value || '';
+
+			formData.append('col_name', colName);
+			formData.append('col_sku', colSKU);
+			formData.append('col_qty', colQty);
+			formData.append('col_price', colPrice);
+			const flag = (n) => { const el = document.querySelector('input[name="' + n + '"]'); return el && el.checked ? '1' : '0'; };
+			formData.append('use_ai', flag('use_ai'));
+			formData.append('min_match_score', document.querySelector('input[name="min_match_score"]')?.value || '60');
+			formData.append('match_by_barcode', flag('match_by_barcode'));
+			formData.append('match_by_code', flag('match_by_code'));
+			formData.append('code_is_catalog_code', flag('code_is_catalog_code'));
+
+			showVendorImportStep('progress');
+			document.getElementById('vendor-progress-bar').style.width = '10%';
+			document.getElementById('vendor-progress-percent').textContent = '10%';
+			document.getElementById('vendor-progress-counter').textContent = '0 / ...';
+			document.getElementById('vendor-progress-phase').textContent = 'جاري رفع الملف وبدء المعالجة الذكية على السيرفر...';
+
+			fetch('/vendor/saving-products/import/start', {
+				method: 'POST',
+				body: formData,
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (!res.success) {
+					alert(res.error || 'حدث خطأ أثناء بدء المعالجة.');
+					showVendorImportStep('config');
+					return;
+				}
+				vendorActiveSessionId = res.session_id;
+				pollVendorImportProgress(res.session_id);
+			})
+			.catch(err => {
+				console.error('start import error', err);
+				alert('حدث خطأ في الاتصال بالسيرفر أثناء بدء الاستيراد.');
+				showVendorImportStep('config');
+			});
+		}
+
+		function pollVendorImportProgress(sessionId) {
+			if (vendorPollInterval) { clearInterval(vendorPollInterval); vendorPollInterval = null; }
+			if (vendorProgressBar) vendorProgressBar.stop();
+
+			vendorProgressBar = new window.ImportProgress({
+				fill:    document.getElementById('vendor-progress-bar'),
+				label:   document.getElementById('vendor-progress-phase'),
+				percent: document.getElementById('vendor-progress-percent'),
+				count:   document.getElementById('vendor-progress-counter'),
+			});
+			vendorProgressBar.start();
+
+			vendorProgressBar.watch(sessionId, 1500, (snap) => {
+				if (!snap) return;
+
+				if (snap.state === 'failed' || snap.error) {
+					const message = snap.error || 'خطأ غير معروف';
+					vendorProgressBar.fail(message);
+					alert('فشلت المعالجة: ' + message);
+					showVendorImportStep('config');
+					return;
+				}
+
+				if (snap.state !== 'ready' && !snap.done) return;
+
+				fetch('/vendor/saving-products/import/session/' + sessionId + '/progress')
+				.then(r => r.json())
+				.then(sess => {
+					if (!sess || !sess.success) {
+						const message = (sess && sess.error) || 'فشلت معالجة الجلسة.';
+						vendorProgressBar.fail(message);
+						alert(message);
+						showVendorImportStep('config');
+						return;
+					}
+					vendorStagedData = sess;
+					renderVendorStagedReview(sess);
+				})
+				.catch(err => {
+					console.error('staged rows fetch failed', err);
+					vendorProgressBar.fail('تعذّر تحميل الأصناف بعد المعالجة. أعد تحميل الصفحة.');
+				});
+			});
+		}
+
+		function showVendorImportStep(step) {
+			const configStep = document.getElementById('vendor-import-step-config');
+			const progressStep = document.getElementById('vendor-import-step-progress');
+			const reviewStep = document.getElementById('vendor-import-step-review');
+
+			const subtitle = document.getElementById('vendor-import-modal-subtitle');
+			const startBtn = document.getElementById('vendor-start-btn');
+			const commitBtn = document.getElementById('vendor-commit-btn');
+			const backBtn = document.getElementById('vendor-back-btn');
+			const cancelBtn = document.getElementById('vendor-cancel-btn');
+
+			if (configStep) configStep.style.display = (step === 'config') ? 'block' : 'none';
+			if (progressStep) progressStep.style.display = (step === 'progress') ? 'block' : 'none';
+			if (reviewStep) reviewStep.style.display = (step === 'review') ? 'block' : 'none';
+
+			if (step === 'config') {
+				if (subtitle) subtitle.textContent = 'الخطوة 1 من 3: اختيار الملف وتعيين الأعمدة';
+				if (startBtn) startBtn.style.display = 'inline-flex';
+				if (commitBtn) commitBtn.style.display = 'none';
+				if (backBtn) backBtn.style.display = 'none';
+				if (cancelBtn) cancelBtn.textContent = 'إلغاء';
+			} else if (step === 'progress') {
+				if (subtitle) subtitle.textContent = 'الخطوة 2 من 3: المعالجة والمطابقة في الخلفية';
+				if (startBtn) startBtn.style.display = 'none';
+				if (commitBtn) commitBtn.style.display = 'none';
+				if (backBtn) backBtn.style.display = 'none';
+				if (cancelBtn) cancelBtn.textContent = 'إلغاء المعالجة';
+			} else if (step === 'review') {
+				if (subtitle) subtitle.textContent = 'الخطوة 3 من 3: مراجعة المسودة وتأكيد الحفظ النهائي';
+				if (startBtn) startBtn.style.display = 'none';
+				if (commitBtn) commitBtn.style.display = 'inline-flex';
+				if (backBtn) backBtn.style.display = 'inline-flex';
+				if (cancelBtn) cancelBtn.textContent = 'تفريغ وإلغاء المسودة';
+			}
+		}
+
+		window.openImportModal = openImportModal;
+		window.closeImportModal = closeImportModal;
+		window.handleImportFileSelect = handleImportFileSelect;
+		window.startVendorAsyncImport = startVendorAsyncImport;
+	</script>
+}

@@ -1,0 +1,227 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// AdminOfferReviewModal renders a simple, clear, and focused moderation review dialog.
+templ AdminOfferReviewModal(o *promo.SpecialOffer, lang, dir string) {
+	@components.Modal(components.ModalProps{
+		ID:    fmt.Sprintf("admin-offer-review-modal-%d", o.ID),
+		Title: "مراجعة وتدقيق العرض الخاص",
+		Size:  "lg",
+	}) {
+		<div class="d-flex flex-col gap-4 text-start" dir={ dir }>
+			<!-- Header & Org info -->
+			<div class="glass-panel p-4 mb-0 bg-surface-sunken border rounded-xl">
+				<div class="flex-between items-start flex-wrap gap-2 mb-2">
+					<div class="stack-2xs">
+						<div class="d-flex items-center gap-2">
+							<span class="badge badge-brand text-2xs font-mono">#{ fmt.Sprintf("%d", o.ID) }</span>
+							if o.AdminStatus == "approved" {
+								<span class="badge badge-emerald text-xs font-bold">معتمد</span>
+							} else if o.AdminStatus == "changes_requested" {
+								<span class="badge badge-amber text-xs font-bold">مطلوب تعديلات</span>
+							} else if o.AdminStatus == "rejected" {
+								<span class="badge badge-rose text-xs font-bold">مرفوض</span>
+							} else {
+								<span class="badge badge-amber text-xs font-bold animate-pulse">بانتظار الاعتماد</span>
+							}
+							if o.Status == "active" {
+								<span class="badge badge-sky text-xs font-bold">نشط</span>
+							} else {
+								<span class="badge badge-slate text-xs font-bold">{ o.Status }</span>
+							}
+						</div>
+						<h3 class="text-base font-black text-primary m-0 mt-1">
+							{ o.Title.Get(i18n.Lang(lang)) }
+						</h3>
+					</div>
+
+					<div class="stack-2xs text-end">
+						<span class="text-xs font-bold text-primary">
+							if o.OrganizationName != "" {
+								{ o.OrganizationName }
+							} else {
+								<span>المورد #{ fmt.Sprintf("%d", o.OrganizationID) }</span>
+							}
+						</span>
+						if o.BranchName != "" {
+							<span class="text-2xs text-accent font-bold">فرع: { o.BranchName }</span>
+						}
+					</div>
+				</div>
+
+				if !o.Description.IsEmpty() {
+					<p class="text-xs text-secondary leading-relaxed m-0 pt-2 border-t">
+						{ o.Description.Get(i18n.Lang(lang)) }
+					</p>
+				}
+			</div>
+
+			<!-- Simple Pricing & Validity Grid -->
+			<div class="d-grid grid-cols-4 gap-2">
+				<div class="p-2.5 rounded-lg bg-surface-raised border text-center">
+					<span class="text-2xs text-muted font-bold d-block">الخصم</span>
+					<strong class="text-emerald text-sm font-black tabular-nums">
+						if o.DiscountPercentage > 0 {
+							{ fmt.Sprintf("%.0f%%", o.DiscountPercentage) }
+						} else if !o.DiscountAmount.IsZero() {
+							{ o.DiscountAmount.String() } ج.م
+						} else {
+							<span>-</span>
+						}
+					</strong>
+				</div>
+
+				<div class="p-2.5 rounded-lg bg-surface-raised border text-center">
+					<span class="text-2xs text-muted font-bold d-block">السعر الإجمالي</span>
+					<strong class="text-primary text-sm font-black tabular-nums">
+						if o.TotalPrice.Minor() > 0 {
+							{ o.TotalPrice.String() } <span class="text-2xs font-normal">ج.م</span>
+						} else {
+							<span>حسب الصنف</span>
+						}
+					</strong>
+				</div>
+
+				<div class="p-2.5 rounded-lg bg-surface-raised border text-center">
+					<span class="text-2xs text-muted font-bold d-block">الحد الأدنى</span>
+					<strong class="text-primary text-sm font-black tabular-nums">
+						if o.MinOrderAmount.Minor() > 0 {
+							{ o.MinOrderAmount.String() } <span class="text-2xs font-normal">ج.م</span>
+						} else {
+							<span>بدون حد</span>
+						}
+					</strong>
+				</div>
+
+				<div class="p-2.5 rounded-lg bg-surface-raised border text-center">
+					<span class="text-2xs text-muted font-bold d-block">الصلاحية</span>
+					<span class="text-2xs font-bold text-primary tabular-nums d-block">
+						if o.StartDate != nil && o.EndDate != nil {
+							{ o.StartDate.Format("02/01") } - { o.EndDate.Format("02/01/2006") }
+						} else {
+							<span>دائم</span>
+						}
+					</span>
+				</div>
+			</div>
+
+			<!-- Products Table -->
+			if len(o.Products) > 0 {
+				<div class="stack-2xs">
+					<span class="text-xs font-black text-primary">الأصناف المشمولة ({ fmt.Sprintf("%d", len(o.Products)) }):</span>
+					<div class="table-container m-0 border rounded-xl overflow-hidden max-h-40 overflow-y-auto">
+						<table class="data-table data-table-compact m-0 text-xs w-full">
+							<thead>
+								<tr class="bg-surface-sunken">
+									<th>الصنف الدوائي</th>
+									<th class="text-center">الكمية</th>
+									<th class="text-end">سعر الجمهور</th>
+									<th class="text-end">السعر بعد الخصم</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, p := range o.Products {
+									<tr>
+										<td>
+											<strong class="text-primary">{ p.VariantName }</strong>
+										</td>
+										<td class="text-center tabular-nums font-bold">
+											<span class="badge badge-slate text-2xs">{ fmt.Sprintf("× %d", p.Quantity) }</span>
+										</td>
+										<td class="text-end tabular-nums text-muted">
+											if p.OriginalPrice.IsPositive() {
+												{ p.OriginalPrice.String() } ج.م
+											} else {
+												-
+											}
+										</td>
+										<td class="text-end tabular-nums font-black text-emerald">
+											if p.CustomPrice.IsPositive() {
+												{ p.CustomPrice.String() } ج.م
+											} else {
+												-
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+
+			<!-- Geographic Coverage -->
+			if len(o.Locations) > 0 {
+				<div class="d-flex items-center gap-1.5 flex-wrap">
+					<span class="text-2xs text-muted font-bold">التغطية:</span>
+					for _, loc := range o.Locations {
+						<span class="badge badge-sky text-2xs font-bold">
+							if loc.CityName != "" {
+								{ loc.CityName }
+							} else {
+								<span>#{ fmt.Sprintf("%d", loc.ID) }</span>
+							}
+						</span>
+					}
+				</div>
+			}
+
+			<!-- Moderation Decision Actions -->
+			<div class="pt-3 border-t" x-data="{ decision: 'approve' }">
+				<div class="flex-between items-center mb-3">
+					<span class="text-xs font-bold text-secondary">الإجراء الإداري:</span>
+					<div class="d-flex gap-1">
+						<button type="button" class="btn btn-xs font-bold" :class="decision === 'approve' ? 'btn-primary' : 'btn-secondary'" @click="decision = 'approve'">
+							اعتماد
+						</button>
+						<button type="button" class="btn btn-xs font-bold" :class="decision === 'changes' ? 'btn-primary' : 'btn-secondary'" @click="decision = 'changes'">
+							طلب تعديل
+						</button>
+						<button type="button" class="btn btn-xs font-bold" :class="decision === 'reject' ? 'btn-primary' : 'btn-secondary'" @click="decision = 'reject'">
+							رفض
+						</button>
+					</div>
+				</div>
+
+				<div x-show="decision === 'approve'">
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/approve", o.ID)) } class="m-0 flex-between items-center">
+						<span class="text-xs text-secondary">نشر العرض فوراً على المنصة</span>
+						<button type="submit" class="btn btn-primary btn-sm font-bold gap-1 shadow-2xs">
+							@components.IconCheck("icon-xs")
+							<span>اعتماد ونشر</span>
+						</button>
+					</form>
+				</div>
+
+				<div x-show="decision === 'changes'" x-cloak>
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/request-changes", o.ID)) } class="m-0 stack-xs">
+						<textarea name="notes" rows="2" required placeholder="اكتب الملاحظات المطلوبة لتعديل العرض..." class="form-input text-xs w-full"></textarea>
+						<div class="text-end mt-1">
+							<button type="submit" class="btn btn-primary btn-sm font-bold bg-amber-600 hover:bg-amber-700 text-white">
+								إرسال طلب التعديل
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<div x-show="decision === 'reject'" x-cloak>
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/reject", o.ID)) } class="m-0 stack-xs">
+						<textarea name="notes" rows="2" required placeholder="اكتب سبب الرفض..." class="form-input text-xs w-full"></textarea>
+						<div class="text-end mt-1">
+							<button type="submit" class="btn btn-primary btn-sm font-bold bg-rose-600 hover:bg-rose-700 text-white">
+								تأكيد الرفض
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+}

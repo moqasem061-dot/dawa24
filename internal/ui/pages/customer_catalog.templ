@@ -1,0 +1,369 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func buildCatalogURL(data CatalogPageData, page int, pageSize int, sort, view string) string {
+	u, _ := url.Parse("/catalog")
+	q := u.Query()
+
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.CategoryID != nil {
+		q.Set("category_id", strconv.FormatInt(*data.CategoryID, 10))
+	}
+	if data.BrandID != nil {
+		q.Set("brand_id", strconv.FormatInt(*data.BrandID, 10))
+	}
+	if data.MinPrice != "" {
+		q.Set("min_price", data.MinPrice)
+	}
+	if data.MaxPrice != "" {
+		q.Set("max_price", data.MaxPrice)
+	}
+	if data.DosageForm != "" {
+		q.Set("dosage_form", data.DosageForm)
+	}
+	if data.InStock {
+		q.Set("in_stock", "true")
+	} else {
+		q.Set("in_stock", "false")
+	}
+	if data.HasDiscount {
+		q.Set("has_discount", "true")
+	}
+
+	if sort != "" {
+		q.Set("sort", sort)
+	} else if data.Sort != "" {
+		q.Set("sort", data.Sort)
+	}
+
+	if view != "" {
+		q.Set("view", view)
+	} else if data.ViewMode != "" {
+		q.Set("view", data.ViewMode)
+	}
+
+	if pageSize > 0 {
+		q.Set("page_size", strconv.Itoa(pageSize))
+	} else if data.PageSize > 0 {
+		q.Set("page_size", strconv.Itoa(data.PageSize))
+	}
+
+	if page > 1 {
+		q.Set("page", strconv.Itoa(page))
+	}
+
+	u.RawQuery = q.Encode()
+	return u.String()
+}
+
+// catalogQueryValues carries every catalogue filter through a page change.
+// components.B2BPagination appends page and the size param itself.
+func catalogQueryValues(data CatalogPageData) url.Values {
+	q := url.Values{}
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.CategoryID != nil {
+		q.Set("category_id", strconv.FormatInt(*data.CategoryID, 10))
+	}
+	if data.BrandID != nil {
+		q.Set("brand_id", strconv.FormatInt(*data.BrandID, 10))
+	}
+	if data.MinPrice != "" {
+		q.Set("min_price", data.MinPrice)
+	}
+	if data.MaxPrice != "" {
+		q.Set("max_price", data.MaxPrice)
+	}
+	if data.DosageForm != "" {
+		q.Set("dosage_form", data.DosageForm)
+	}
+	if data.InStock {
+		q.Set("in_stock", "true")
+	} else {
+		q.Set("in_stock", "false")
+	}
+	if data.HasDiscount {
+		q.Set("has_discount", "true")
+	}
+	if data.Sort != "" {
+		q.Set("sort", data.Sort)
+	}
+	if data.ViewMode != "" {
+		q.Set("view", data.ViewMode)
+	}
+	return q
+}
+
+templ CustomerCatalog(data CatalogPageData, lang, dir string, isPartial bool) {
+	if isPartial {
+		@CustomerCatalogResults(data, lang)
+	} else {
+		@layouts.ShellFor(i18n.T(lang, "catalog.page_title")+" | Dawa24", "catalog", lang, dir, authctx.FromContext(ctx)) {
+			<div class="py-2">
+				
+				<!-- Page Header Strip -->
+				<div class="glass-panel p-5 mb-5 flex-between flex-wrap gap-4 border rounded-2xl shadow-xs">
+					<div class="stack-2xs">
+						<nav class="text-xs text-muted mb-1 d-flex items-center gap-1.5 font-bold">
+							{{ actor := authctx.FromContext(ctx) }}
+							{{ dashboardURL := "/customer/dashboard" }}
+							{{ if actor.IsVendor() {
+								dashboardURL = "/vendor/dashboard"
+							} else if actor.IsStaff {
+								dashboardURL = "/admin/dashboard"
+							} }}
+							<a href={ templ.SafeURL(dashboardURL) } class="text-secondary transition-colors">{ i18n.T(lang, "admin.shell.subtitle") }</a>
+							<span class="text-muted">/</span>
+							<span class="text-primary font-black">{ i18n.T(lang, "catalog.breadcrumb") }</span>
+						</nav>
+						<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+							{ i18n.T(lang, "catalog.heading") }
+						</h1>
+						<p class="text-xs text-secondary mt-1 mb-0 font-medium">
+							{ i18n.T(lang, "catalog.subheading") }
+						</p>
+					</div>
+
+					<div class="d-flex items-center gap-2.5 flex-wrap">
+						<a href="/customer/purchase-request" class="btn btn-secondary btn-sm font-bold gap-2 shadow-xs">
+							@components.IconZap("icon-xs text-amber-500")
+							<span>{ i18n.T(lang, "catalog.smart_rfq") }</span>
+						</a>
+						<a href="/cart" class="btn btn-primary btn-sm font-extrabold gap-2 px-4 shadow-sm">
+							@components.IconCart("icon-xs")
+							<span>{ i18n.T(lang, "cart.title") }</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Promoted Catalog Top Header Banner (Position: catalog_top) -->
+				if len(data.CatalogAds) > 0 {
+					<div class="mb-5 d-flex flex-col gap-3">
+						for _, ad := range data.CatalogAds {
+							if ad != nil {
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/ads/click/%d", ad.ID)) }
+									hx-get={ fmt.Sprintf("/ads/impression/%d", ad.ID) }
+									hx-trigger="intersect once"
+									class="glass-panel p-4 rounded-3xl border border-brand-200/80 bg-gradient-to-r from-brand-50/70 via-sky-50/50 to-white shadow-xs d-flex items-center justify-between gap-4 flex-wrap transition-all text-decoration-none hover:shadow-md hover:border-brand-400"
+								>
+									<div class="d-flex items-center gap-4">
+										<div class="w-28 h-20 md:w-36 md:h-24 rounded-2xl bg-black/40 p-1 d-flex items-center justify-center flex-shrink-0 shadow-xs border border-slate-700/60 overflow-hidden relative">
+											if (ad.MediaType == "video" || ad.IsVideo()) && ad.MediaURL != "" {
+												<video src={ ad.MediaURL } autoplay muted loop playsinline class="w-full h-full object-cover rounded-xl"></video>
+											} else if ad.MediaURL != "" {
+												<img src={ ad.MediaURL } alt={ ad.DisplayTitle(lang) } class="w-full h-full object-contain" />
+											} else {
+												@components.IconPill("icon-sm text-brand")
+											}
+										</div>
+										<div class="stack-xs text-start">
+											if ad.SupplierName != "" {
+												<span class="text-2xs text-muted font-extrabold d-block">{ ad.SupplierName }</span>
+											}
+											<h3 class="text-sm font-black text-primary m-0">{ ad.DisplayTitle(lang) }</h3>
+											if ad.DisplayText(lang) != "" {
+												<p class="text-xs text-secondary m-0 line-clamp-1">{ ad.DisplayText(lang) }</p>
+											}
+											if ad.PublicPrice != "" && ad.PublicPrice != "سعر رسمي معتمد" {
+												<div class="d-flex items-center gap-2.5 mt-1">
+													<span class="text-2xs text-rose-500 line-through font-bold">{ ad.PublicPrice }</span>
+													<span class="badge badge-emerald text-2xs font-black">{ ad.DiscountPercent }</span>
+													<span class="text-xs font-black text-brand tabular-nums">{ ad.SupplyPrice }</span>
+												</div>
+											}
+										</div>
+									</div>
+									<div class="d-flex items-center gap-2 text-xs font-black text-brand">
+										<span>{ i18n.T(lang, "catalog.order_item_details") }</span>
+										@components.IconArrowLeft("icon-xs")
+									</div>
+								</a>
+							}
+						}
+					</div>
+				}
+
+				<!-- Main 2-Column Grid Layout -->
+				<div class="catalog-main-layout">
+					
+					<!-- Filter Sidebar (Positioned on Left in RTL) -->
+					@CustomerCatalogFilter(data, lang)
+
+					<!-- Main Results Area -->
+					<main class="catalog-main-content">
+						
+						<!-- Search Toolbar, Sorting, Rows per Page, View Switcher -->
+						<div class="glass-panel p-4 mb-5 border rounded-2xl shadow-xs">
+							<div class="flex-between flex-wrap gap-3">
+								
+								<!-- Live Search Input -->
+								<div class="flex-1 relative min-w-64">
+									<input
+										type="search"
+										name="q"
+										value={ data.Query }
+										placeholder={ i18n.T(lang, "catalog.search_placeholder") }
+										class="form-input text-xs w-full"
+										hx-get="/catalog"
+										hx-trigger="keyup changed delay:350ms, search"
+										hx-target="#catalog-results"
+										hx-push-url="true"
+										autocomplete="off"
+									/>
+								</div>
+
+								<!-- Controls: Sort, View Toggle. Rows-per-page lives in the pagination bar. -->
+								<div class="d-flex items-center gap-3 flex-wrap">
+
+									<!-- Sort Selector -->
+									<div class="d-flex items-center gap-1.5 text-xs font-bold text-secondary">
+										<label class="form-label">{ i18n.T(lang, "catalog.sort_label") }</label>
+										<select
+											name="sort"
+											class="form-select text-xs w-auto"
+											data-on-change="changeSort(this.value)"
+										>
+											<option value="" selected?={ data.Sort == "" }>{ i18n.T(lang, "catalog.sort_default") }</option>
+											<option value="price_asc" selected?={ data.Sort == "price_asc" }>{ i18n.T(lang, "catalog.sort_price_asc") }</option>
+											<option value="price_desc" selected?={ data.Sort == "price_desc" }>{ i18n.T(lang, "catalog.sort_price_desc") }</option>
+											<option value="discount_desc" selected?={ data.Sort == "discount_desc" || data.Sort == "discount" }>{ i18n.T(lang, "catalog.sort_discount_desc") }</option>
+											<option value="newest" selected?={ data.Sort == "newest" }>{ i18n.T(lang, "catalog.sort_newest") }</option>
+											<option value="name" selected?={ data.Sort == "name" }>{ i18n.T(lang, "catalog.sort_name") }</option>
+										</select>
+									</div>
+
+									<!-- View Mode Toggle: Grid vs Table -->
+									<div class="d-flex gap-1 p-1 bg-surface-sunken rounded-lg border">
+										<button
+											type="button"
+											data-on-click="changeViewMode('grid')"
+											class={ "btn btn-icon btn-xs", templ.KV("btn-primary shadow-xs", data.ViewMode == "grid" || data.ViewMode == ""), templ.KV("btn-ghost text-muted", data.ViewMode == "table") }
+											title={ i18n.T(lang, "catalog.view_grid") }
+										>
+											@components.IconGrid("icon-xs")
+										</button>
+										<button
+											type="button"
+											data-on-click="changeViewMode('table')"
+											class={ "btn btn-icon btn-xs", templ.KV("btn-primary shadow-xs", data.ViewMode == "table"), templ.KV("btn-ghost text-muted", data.ViewMode != "table") }
+											title={ i18n.T(lang, "catalog.view_table") }
+										>
+											@components.IconList("icon-xs")
+										</button>
+									</div>
+
+								</div>
+							</div>
+
+							<!-- Active Filter Chips Strip -->
+							if data.Query != "" || data.ActiveCategory != "" || data.ActiveBrand != "" || data.DosageForm != "" || data.InStock || data.HasDiscount || data.MinPrice != "" || data.MaxPrice != "" {
+								<div class="d-flex items-center gap-2 flex-wrap mt-3 pt-3 border-t text-xs font-semibold">
+									<span class="text-secondary font-bold">{ i18n.T(lang, "catalog.active_filters") }</span>
+									if data.Query != "" {
+										<span class="badge badge-primary gap-1">
+											<span>{ data.Query }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{CategoryID: data.CategoryID, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="text-white ms-1 font-bold">✕</a>
+										</span>
+									}
+									if data.ActiveCategory != "" {
+										<span class="badge badge-sky gap-1">
+											<span>{ data.ActiveCategory }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="ms-1 font-bold">✕</a>
+										</span>
+									}
+									if data.ActiveBrand != "" {
+										<span class="badge badge-sky gap-1">
+											<span>{ data.ActiveBrand }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, CategoryID: data.CategoryID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="ms-1 font-bold">✕</a>
+										</span>
+									}
+									if data.DosageForm != "" {
+										<span class="badge badge-slate gap-1">
+											<span>{ data.DosageForm }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, CategoryID: data.CategoryID, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="ms-1 font-bold">✕</a>
+										</span>
+									}
+									if data.InStock {
+										<span class="badge badge-emerald gap-1">
+											<span>{ i18n.T(lang, "catalog.filter_in_stock_only") }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, CategoryID: data.CategoryID, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="ms-1 font-bold">✕</a>
+										</span>
+									}
+									if data.HasDiscount {
+										<span class="badge badge-amber gap-1">
+											<span>{ i18n.T(lang, "catalog.filter_discount_only") }</span>
+											<a href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, CategoryID: data.CategoryID, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) } class="ms-1 font-bold">✕</a>
+										</span>
+									}
+									<a href="/catalog" class="text-xs text-rose ms-auto font-bold">
+										{ i18n.T(lang, "catalog.filter_reset") }
+									</a>
+								</div>
+							}
+						</div>
+
+						<!-- Results Dynamic Container -->
+						<div id="catalog-results">
+							@CustomerCatalogResults(data, lang)
+						</div>
+
+					</main>
+				</div>
+			</div>
+
+			<!-- Price Negotiation Modal -->
+			@CustomerNegotiationModal()
+
+			<script nonce={ layouts.Nonce(ctx) }>
+				function changeSort(sortVal) {
+					const url = new URL(window.location.href);
+					url.searchParams.set('sort', sortVal);
+					url.searchParams.set('page', '1');
+					if (window.dawaNavigate) { window.dawaNavigate(url.toString()); } else { window.location.href = url.toString(); }
+				}
+
+				function changeViewMode(mode) {
+					const url = new URL(window.location.href);
+					url.searchParams.set('view', mode);
+					if (window.dawaNavigate) { window.dawaNavigate(url.toString()); } else { window.location.href = url.toString(); }
+				}
+
+				function stepCatalogQty(btn, delta) {
+					const form = btn.closest('form');
+					if (!form) return;
+					const input = form.querySelector('input[name="qty"]');
+					if (input) {
+						let val = parseInt(input.value, 10) || 1;
+						val += delta;
+						const min = parseInt(input.getAttribute('min') || '1', 10);
+						const max = parseInt(input.getAttribute('max') || '9999', 10);
+						if (val < min) val = min;
+						if (val > max && max > 0) val = max;
+						input.value = val;
+					}
+				}
+
+				function navigateToVariant(variantId, productId) {
+					const id = (variantId && variantId > 0) ? variantId : productId;
+					if (id > 0) {
+						if (window.dawaNavigate) { window.dawaNavigate(`/catalog/${id}`); } else { window.location.href = `/catalog/${id}`; }
+					}
+				}
+			</script>
+		}
+	}
+}

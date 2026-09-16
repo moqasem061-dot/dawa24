@@ -1,0 +1,870 @@
+/* ==========================================================================
+   DAWA 24 — WIZARD SYSTEM (wizard.css)
+
+   The single source for every import / setup wizard on the platform:
+   the administrator catalogue import, the vendor catalogue ingest, the
+   vendor & pharmacy savings-list import, the product-images recovery, the
+   smart order, and the team import. One vocabulary, `.wiz-*`, rendered by
+   the shared components in internal/ui/pages/wizard.templ.
+
+   Loaded after components.css (see layouts/base.templ) and wrapped in the
+   `components` layer so utilities still win. Nothing here is duplicated in
+   components.css — the rail, toolbar and dropzone that used to live there
+   were removed when this file became authoritative.
+   ========================================================================== */
+
+@layer components {
+
+/* --------------------------------------------------------------------------
+   1. Shell
+   -------------------------------------------------------------------------- */
+.vendor-ingest-container {
+	width: 100%;
+	max-width: 1320px;
+	margin-inline: auto;
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+}
+
+.wizard {
+	display: flex;
+	flex-direction: column;
+	gap: var(--space-lg);
+	max-width: 1320px;
+	width: 100%;
+	margin-inline: auto;
+	margin-block-end: var(--space-2xl);
+}
+
+/* --------------------------------------------------------------------------
+   2. Progress rail  —  <nav class="wiz-rail"> from WizardRail()
+   -------------------------------------------------------------------------- */
+.wiz-rail {
+	display: flex;
+	align-items: center;
+	gap: var(--space-xs) var(--space-sm);
+	flex-wrap: wrap;
+	padding: var(--space-md) var(--space-lg);
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-xl);
+	background: var(--bg-surface-raised);
+	box-shadow: var(--shadow-xs);
+}
+
+.wiz-node {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.55rem;
+	font-size: var(--text-xs);
+	font-weight: 700;
+	color: var(--text-muted);
+	white-space: nowrap;
+}
+.wiz-node.is-active { color: var(--text-primary); }
+.wiz-node.is-done   { color: var(--success); }
+.wiz-node.is-skipped { color: var(--text-faint); opacity: 0.6; }
+
+.wiz-bubble {
+	width: 1.9rem;
+	height: 1.9rem;
+	flex: 0 0 auto;
+	border-radius: var(--radius-full);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1.5px solid var(--border-card);
+	background: var(--bg-surface-sunken);
+	font-size: var(--text-xs);
+	font-weight: 800;
+	line-height: 1;
+	transition: background-color var(--duration-normal) var(--ease-smooth),
+	            border-color var(--duration-normal) var(--ease-smooth),
+	            color var(--duration-normal) var(--ease-smooth),
+	            box-shadow var(--duration-normal) var(--ease-smooth);
+}
+.wiz-bubble svg { width: 0.95rem; height: 0.95rem; }
+
+.wiz-node.is-active .wiz-bubble {
+	border-color: var(--primary);
+	background: var(--primary-subtle);
+	color: var(--primary);
+	box-shadow: 0 0 0 3px var(--primary-subtle); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.wiz-node.is-done .wiz-bubble {
+	border-color: var(--success);
+	background: var(--success-subtle);
+	color: var(--success);
+}
+.wiz-node.is-skipped .wiz-bubble {
+	border-style: dashed;
+	background: transparent;
+}
+
+.wiz-sep {
+	flex: 1 1 1.5rem;
+	min-width: 0.75rem;
+	height: 2px;
+	border-radius: var(--radius-full);
+	background: var(--border-subtle);
+}
+
+/* --------------------------------------------------------------------------
+   3. Section heads
+   -------------------------------------------------------------------------- */
+.wiz-head {
+	margin: 0 0 0.35rem;
+	font-size: var(--text-lg);
+	font-weight: 800;
+	color: var(--text-primary);
+	line-height: var(--leading-tight);
+}
+.wiz-sub {
+	margin: 0 0 var(--space-md);
+	font-size: var(--text-sm);
+	color: var(--text-secondary);
+	line-height: var(--leading-normal);
+}
+.wiz-sub:last-child { margin-bottom: 0; }
+
+/* --------------------------------------------------------------------------
+   4. Dropzone
+   -------------------------------------------------------------------------- */
+.wiz-drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: var(--space-2xl) var(--space-xl);
+	border: 2px dashed var(--border-card);
+	border-radius: var(--radius-2xl);
+	background: var(--bg-surface-sunken);
+	text-align: center;
+	cursor: pointer;
+	position: relative;
+	transition: background-color var(--duration-normal) var(--ease-spring),
+	            border-color var(--duration-normal) var(--ease-spring),
+	            transform var(--duration-normal) var(--ease-spring),
+	            box-shadow var(--duration-normal) var(--ease-spring);
+}
+.wiz-drop:hover,
+.wiz-drop.is-over,
+.wiz-drop.is-dragover {
+	border-color: var(--primary);
+	background: var(--primary)); background: color-mix(in srgb, var(--primary) 5%, var(--bg-surface-raised));
+	box-shadow: 0 0 0 4px var(--primary-subtle); box-shadow: 0 0 0 4px color-mix(in srgb, var(--primary) 14%, transparent);
+	transform: translateY(-2px);
+}
+.wiz-drop input[type="file"] {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+.wiz-drop-icon {
+	width: 3.5rem;
+	height: 3.5rem;
+	border-radius: var(--radius-full);
+	background: var(--primary-subtle);
+	color: var(--primary);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: var(--space-md);
+	transition: transform var(--duration-normal) var(--ease-spring);
+}
+.wiz-drop:hover .wiz-drop-icon { transform: scale(1.08) translateY(-2px); }
+.wiz-drop-title {
+	font-size: var(--text-base);
+	font-weight: 800;
+	color: var(--text-primary);
+	margin-bottom: 0.35rem;
+}
+.wiz-drop-text { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* --------------------------------------------------------------------------
+   5. Sample / helper chips
+   -------------------------------------------------------------------------- */
+.wiz-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.5rem 0.9rem;
+	border-radius: var(--radius-lg);
+	background: var(--bg-surface-raised);
+	border: 1px solid var(--border-card);
+	color: var(--text-secondary);
+	font-size: var(--text-xs);
+	font-weight: 700;
+	text-decoration: none;
+	box-shadow: var(--shadow-xs);
+	transition: background-color var(--duration-fast) var(--ease-smooth),
+	            border-color var(--duration-fast) var(--ease-smooth),
+	            color var(--duration-fast) var(--ease-smooth),
+	            transform var(--duration-fast) var(--ease-smooth);
+}
+.wiz-chip:hover {
+	background: var(--primary-subtle);
+	border-color: var(--primary);
+	color: var(--primary);
+	transform: translateY(-1px);
+}
+.wiz-chip.is-on {
+	border-color: var(--primary);
+	color: var(--primary);
+	background: var(--primary-subtle);
+}
+.wiz-chip svg { width: 0.85rem; height: 0.85rem; }
+
+/* --------------------------------------------------------------------------
+   6. Strategy choices  (radio cards)
+   -------------------------------------------------------------------------- */
+.wiz-choices {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+	gap: var(--space-md);
+}
+.wiz-choice { position: relative; display: block; cursor: pointer; }
+.wiz-choice input { position: absolute; opacity: 0; width: 0; height: 0; }
+.wiz-choice-body {
+	height: 100%;
+	display: flex;
+	gap: 0.85rem;
+	padding: var(--space-md) var(--space-md);
+	border: 1.5px solid var(--border-card);
+	border-radius: var(--radius-xl);
+	background: var(--bg-surface-raised);
+	box-shadow: var(--shadow-xs);
+	transition: background-color var(--duration-normal) var(--ease-spring),
+	            border-color var(--duration-normal) var(--ease-spring),
+	            transform var(--duration-normal) var(--ease-spring),
+	            box-shadow var(--duration-normal) var(--ease-spring);
+}
+.wiz-choice:hover .wiz-choice-body { border-color: var(--primary); transform: translateY(-2px); }
+.wiz-choice input:checked + .wiz-choice-body {
+	border-color: var(--primary);
+	background: var(--primary)); background: color-mix(in srgb, var(--primary) 7%, var(--bg-surface-raised));
+	box-shadow: 0 0 0 3px var(--primary-subtle); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 18%, transparent);
+}
+.wiz-choice input:focus-visible + .wiz-choice-body { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+.wiz-choice-icon { font-size: 1.4rem; line-height: 1.2; flex: 0 0 auto; }
+.wiz-choice-title { font-size: var(--text-sm); font-weight: 800; margin: 0 0 0.2rem; color: var(--text-primary); }
+.wiz-choice-text { font-size: var(--text-xs); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.wiz-choice-warn {
+	display: inline-block;
+	margin-top: 0.45rem;
+	font-size: var(--text-xs);
+	font-weight: 700;
+	color: var(--danger);
+	background: var(--danger-subtle);
+	padding: 0.15rem 0.5rem;
+	border-radius: var(--radius-sm);
+}
+
+/* --------------------------------------------------------------------------
+   7. Switch rows  —  <label class="wiz-switch"> from WizardSwitch()
+   -------------------------------------------------------------------------- */
+.wiz-switches { display: flex; flex-direction: column; gap: var(--space-sm); }
+.wiz-switch {
+	display: flex;
+	align-items: center;
+	gap: var(--space-md);
+	padding: 0.85rem var(--space-md);
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-xl);
+	background: var(--bg-surface-raised);
+	cursor: pointer;
+	position: relative;
+	transition: background-color var(--duration-fast) var(--ease-smooth),
+	            border-color var(--duration-fast) var(--ease-smooth);
+}
+.wiz-switch:hover { border-color: var(--primary-border); background: var(--bg-surface-sunken); }
+.wiz-switch.is-disabled { opacity: 0.55; cursor: not-allowed; }
+.wiz-switch.is-disabled .wiz-track { pointer-events: none; }
+.wiz-switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.wiz-switch-icon { font-size: 1.25rem; flex: 0 0 auto; }
+.wiz-switch-main { flex: 1; min-width: 0; }
+.wiz-switch-title { display: block; font-size: var(--text-sm); font-weight: 800; color: var(--text-primary); }
+.wiz-switch-text { display: block; font-size: var(--text-xs); color: var(--text-secondary); line-height: var(--leading-normal); margin-top: 0.15rem; }
+
+/* The knob. Markup renders <span class="wiz-track"> after the checkbox. */
+.wiz-track {
+	flex: 0 0 2.6rem;
+	height: 1.5rem;
+	border-radius: var(--radius-full);
+	background: var(--border-card);
+	position: relative;
+	transition: background-color var(--duration-normal) var(--ease-smooth);
+}
+.wiz-track::after {
+	content: "";
+	position: absolute;
+	inset-block-start: 0.18rem;
+	inset-inline-start: 0.18rem;
+	width: 1.14rem;
+	height: 1.14rem;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+	transition: transform var(--duration-normal) var(--ease-spring);
+}
+.wiz-switch input:checked ~ .wiz-track { background: var(--primary); }
+.wiz-switch input:checked ~ .wiz-track::after { transform: translateX(-1.1rem); }
+[dir="ltr"] .wiz-switch input:checked ~ .wiz-track::after { transform: translateX(1.1rem); }
+.wiz-switch input:focus-visible ~ .wiz-track { outline: 2px solid var(--border-focus); outline-offset: 2px; }
+
+/* --------------------------------------------------------------------------
+   8. Column mapping grid
+   -------------------------------------------------------------------------- */
+.wiz-map {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: var(--space-sm);
+}
+.wiz-map-item {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	padding: 0.75rem var(--space-md);
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-lg);
+	background: var(--bg-surface-raised);
+}
+.wiz-map-label { font-size: var(--text-xs); font-weight: 700; color: var(--text-primary); }
+.wiz-map-hint { font-size: var(--text-xs); color: var(--text-muted); }
+
+/* The third element of a mapping row. The base form rule already reaches it
+   through input[type="number"], so it was not unstyled — but it carried a
+   class no rule defined, which is indistinguishable from a broken one when
+   you are reading the markup. These are the refinements it wanted: compact,
+   and figures that line up down the column. */
+.wiz-map-input {
+	inline-size: 100%;
+	padding: 0.45rem 0.65rem;
+	font-variant-numeric: tabular-nums;
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-md);
+	background: var(--bg-surface);
+	color: var(--text-primary);
+}
+
+.wiz-map-input:focus-visible {
+	outline: 2px solid var(--border-focus);
+	outline-offset: 1px;
+}
+
+/* A preview table inside a wizard step is a sample, not the data. It is
+   capped so the step's own actions stay reachable without scrolling past
+   several hundred rows. */
+.wiz-scroll {
+	max-block-size: 26rem;
+	overflow: auto;
+	overscroll-behavior: contain;
+}
+
+/* --------------------------------------------------------------------------
+   9. Actions footer
+   -------------------------------------------------------------------------- */
+.wiz-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: var(--space-md);
+	flex-wrap: wrap;
+	padding-block: 0.25rem;
+}
+.wiz-actions-note { font-size: var(--text-xs); color: var(--text-muted); font-weight: 600; }
+.wiz-actions .wiz-actions-btns { display: flex; align-items: center; gap: var(--space-xs); flex-wrap: wrap; }
+
+/* --------------------------------------------------------------------------
+   10. Result stat strip
+   -------------------------------------------------------------------------- */
+.wiz-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+	gap: var(--space-sm);
+}
+.wiz-stat {
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-xl);
+	background: var(--bg-surface-raised);
+	padding: var(--space-md) var(--space-sm);
+	text-align: center;
+	box-shadow: var(--shadow-xs);
+}
+.wiz-stat-value {
+	display: block;
+	font-size: var(--text-xl);
+	font-weight: 800;
+	line-height: var(--leading-tight);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-primary);
+}
+.wiz-stat-label { font-size: var(--text-xs); color: var(--text-secondary); margin-top: 0.2rem; }
+.wiz-stat--add .wiz-stat-value { color: var(--success); }
+.wiz-stat--update .wiz-stat-value { color: var(--primary); }
+.wiz-stat--warn .wiz-stat-value { color: var(--warning); }
+.wiz-stat--error .wiz-stat-value { color: var(--danger); }
+.wiz-stat--ai .wiz-stat-value { color: var(--accent); }
+
+/* --------------------------------------------------------------------------
+   11. Review rows
+   -------------------------------------------------------------------------- */
+.wiz-row-name { font-weight: 700; }
+.wiz-row-meta { font-size: var(--text-xs); color: var(--text-muted); }
+.wiz-row-match {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 0.35rem;
+	font-size: var(--text-xs);
+	margin-block-start: 0.15rem;
+}
+.wiz-row-match-label { color: var(--text-muted); }
+.wiz-row-match-name { color: var(--primary); font-weight: 600; }
+.wiz-row-ai {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: var(--text-xs);
+	color: var(--accent);
+	font-weight: 700;
+}
+.wiz-row--excluded { opacity: 0.45; }
+
+/* --------------------------------------------------------------------------
+   12. Import progress
+   -------------------------------------------------------------------------- */
+.wiz-progress { margin-block: var(--space-md) var(--space-lg); }
+.wiz-progress-track {
+	height: 0.6rem;
+	border-radius: var(--radius-full);
+	background: var(--bg-surface-sunken);
+	border: 1px solid var(--border-card);
+	overflow: hidden;
+}
+.wiz-progress-fill {
+	height: 100%;
+	width: 0;
+	border-radius: var(--radius-full);
+	background: var(--primary);
+	transition: width 0.4s var(--ease-smooth);
+}
+.wiz-progress-fill.is-indeterminate {
+	width: 35%;
+	animation: wiz-progress-slide 1.4s ease-in-out infinite;
+}
+/* A run that stopped. The bar keeps whatever width it had reached: zeroing it
+   implies the work never started, filling it implies it finished, and the
+   reader needs to know how far it got before it failed. */
+.wiz-progress-fill.is-failed {
+	background: var(--danger);
+	animation: none;
+}
+/* The numeric percentage. Every import bar carries one; a bar without a number
+   answers "is it working?" and never "how much longer?". */
+.wiz-progress-percent {
+	font-variant-numeric: tabular-nums;
+	font-weight: 800;
+	color: var(--text-primary);
+}
+@keyframes wiz-progress-slide {
+	0% { margin-inline-start: -35%; }
+	100% { margin-inline-start: 100%; }
+}
+.wiz-progress-meta {
+	display: flex;
+	justify-content: space-between;
+	gap: var(--space-md);
+	margin-top: 0.4rem;
+	font-size: var(--text-xs);
+	color: var(--text-secondary);
+}
+
+.wiz-phases { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem 1.1rem; }
+.wiz-phase { display: flex; align-items: center; gap: 0.4rem; font-size: var(--text-xs); color: var(--text-muted); }
+.wiz-phase-dot { width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--border-card); flex: 0 0 auto; }
+.wiz-phase.is-done { color: var(--success); }
+.wiz-phase.is-done .wiz-phase-dot { background: var(--success); }
+.wiz-phase.is-active { color: var(--text-primary); font-weight: 700; }
+.wiz-phase.is-active .wiz-phase-dot { background: var(--primary); box-shadow: 0 0 0 3px var(--primary-subtle); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 25%, transparent); }
+
+@media (prefers-reduced-motion: reduce) {
+	.wiz-progress-fill { transition: none; }
+	.wiz-progress-fill.is-indeterminate { animation: none; width: 100%; opacity: 0.5; }
+	.wiz-drop, .wiz-choice-body, .wiz-chip { transition: none; }
+}
+
+/* --------------------------------------------------------------------------
+   13. Findings list
+   -------------------------------------------------------------------------- */
+.wiz-issues { list-style: none; margin: 0.5rem 0 0; padding: 0; display: flex; flex-direction: column; gap: 0.4rem; }
+.wiz-issue {
+	display: flex;
+	gap: 0.4rem;
+	align-items: baseline;
+	font-size: var(--text-xs);
+	color: var(--text-secondary);
+	padding: 0.4rem 0.6rem;
+	border-inline-start: 3px solid var(--border-card);
+	background: var(--bg-surface-sunken);
+	border-radius: var(--radius-md);
+}
+.wiz-issue.is-error { color: var(--danger); border-inline-start-color: var(--danger); }
+
+/* --------------------------------------------------------------------------
+   14. Review toolbar (bulk actions above a review table)
+   -------------------------------------------------------------------------- */
+.wiz-toolbar { display: flex; align-items: center; gap: var(--space-sm); flex-wrap: wrap; }
+.wiz-toolbar-spacer { flex: 1; }
+.wiz-notes { font-size: var(--text-xs); color: var(--text-muted); line-height: var(--leading-normal); }
+.import-banner {
+	border-radius: var(--radius-2xl);
+	border: 1px solid var(--border-card);
+	padding: var(--space-lg) var(--space-xl);
+	background: var(--bg-surface-raised);
+	box-shadow: var(--shadow-sm);
+	position: relative;
+	overflow: hidden;
+}
+.import-banner--ok {
+	border-inline-start: 5px solid var(--success);
+	background: var(--success)); background: color-mix(in srgb, var(--success) 5%, var(--bg-surface-raised));
+}
+.import-banner--error {
+	border-inline-start: 5px solid var(--danger);
+	background: var(--danger)); background: color-mix(in srgb, var(--danger) 5%, var(--bg-surface-raised));
+}
+.import-banner-title { font-size: var(--text-lg); font-weight: 800; margin: 0 0 0.35rem; color: var(--text-primary); }
+.import-banner-text { font-size: var(--text-sm); color: var(--text-secondary); margin: 0; line-height: var(--leading-normal); }
+.import-banner-detail {
+	font-size: var(--text-xs);
+	color: var(--text-muted);
+	margin: 0.75rem 0 0;
+	padding-top: 0.75rem;
+	border-top: 1px solid var(--border-subtle);
+	line-height: var(--leading-normal);
+}
+
+.import-stats {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+	gap: var(--space-md);
+}
+.import-stat {
+	border: 1px solid var(--border-card);
+	border-radius: var(--radius-xl);
+	padding: var(--space-md);
+	background: var(--bg-surface-raised);
+	text-align: center;
+	box-shadow: var(--shadow-xs);
+}
+.import-stat-value {
+	display: block;
+	font-size: var(--text-xl);
+	font-weight: 800;
+	line-height: var(--leading-tight);
+	font-variant-numeric: tabular-nums;
+	color: var(--text-primary);
+}
+.import-stat-label { font-size: var(--text-xs); color: var(--text-secondary); }
+.import-stat--ok .import-stat-value { color: var(--success); }
+.import-stat--warn .import-stat-value { color: var(--warning); }
+.import-chip-list { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+
+}
+
+/* ==========================================================================
+   Import file preview (components.ImportFilePreview)
+   The raw first rows of the uploaded spreadsheet, shown in every import wizard
+   between the upload and the column mapping. Wide files scroll inside the
+   block; the row-number column stays pinned so a cell read at the far right is
+   still attributable to a row.
+   ========================================================================== */
+
+.import-preview {
+  border: 1px solid var(--border-card, var(--border-subtle));
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface-raised);
+  overflow: hidden;
+  margin-block-end: 1.25rem;
+}
+
+.import-preview-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.625rem 0.875rem;
+  background: var(--bg-surface-sunken);
+  border-block-end: 1px solid var(--border-subtle);
+}
+
+.import-preview-title {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  color: var(--text-primary);
+}
+
+.import-preview-meta {
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.import-preview-scroll {
+  overflow: auto;
+  max-block-size: 22rem;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  overscroll-behavior-x: contain;
+}
+
+.import-preview-scroll .data-table thead th {
+  position: sticky;
+  inset-block-start: 0;
+  z-index: 2;
+  background: var(--bg-surface-raised);
+  box-shadow: inset 0 -1px 0 var(--border-subtle);
+}
+
+/* Row numbers are the anchor, so they stay put while the columns scroll. */
+.import-preview-scroll th.import-preview-rownum,
+.import-preview-scroll td.import-preview-rownum {
+  position: sticky;
+  inset-inline-start: 0;
+  z-index: 1;
+  inline-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-muted);
+  background: var(--bg-surface-sunken);
+  box-shadow: inset -1px 0 0 var(--border-subtle);
+}
+.import-preview-scroll th.import-preview-rownum { z-index: 3; }
+
+/* The column's position in the file, which is what the mapping step below
+   refers to ("العمود 3"). */
+.import-preview-colnum {
+  display: inline-block;
+  min-inline-size: 1.25rem;
+  margin-inline-end: 0.25rem;
+  padding-inline: 0.25rem;
+  border-radius: var(--radius-sm);
+  background: var(--primary-subtle);
+  color: var(--primary);
+  font-size: 0.625rem;
+  font-weight: 800;
+}
+
+.import-preview-note {
+  margin: 0;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  border-block-start: 1px solid var(--border-subtle);
+}
+
+@media (max-width: 640px) {
+  .import-preview-scroll { max-block-size: 16rem; }
+}
+
+/* ==========================================================================
+   ADVERTISEMENT WIZARD
+
+   The four-step dialog for creating a promotional banner. Its previous
+   incarnation used a fixed four-column grid of labelled cells for the step
+   indicator, which does not fit four Arabic labels under about 420px, and laid
+   the placement choices out in two fixed columns.
+   ========================================================================== */
+
+.wiz-steps {
+  padding: 0.875rem 1.25rem 0.75rem;
+  border-block-end: 1px solid var(--border-subtle);
+  background: var(--bg-surface-sunken);
+  flex-shrink: 0;
+}
+
+/* Below the small breakpoint the indicator is one line and a rail; above it,
+   the four named steps. Only one of the two is ever displayed. */
+.wiz-steps-compact {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-block-end: 0.5rem;
+}
+.wiz-steps-count { font-size: 0.6875rem; font-weight: 800; color: var(--text-muted); }
+.wiz-steps-name  { font-size: 0.8125rem; font-weight: 900; color: var(--text-primary); }
+
+.wiz-steps-rail {
+  display: block;
+  block-size: 0.25rem;
+  border-radius: 999px;
+  background: var(--border-subtle);
+  overflow: hidden;
+}
+.wiz-steps-fill {
+  display: block;
+  block-size: 100%;
+  background: var(--primary);
+  transition: inline-size 200ms ease;
+}
+
+.wiz-steps-list { display: none; }
+
+@media (min-width: 640px) {
+  .wiz-steps-compact,
+  .wiz-steps-rail { display: none; }
+  .wiz-steps-list {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .wiz-step {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    min-inline-size: 0;
+    padding: 0.375rem 0.5rem;
+    border-radius: var(--radius-lg);
+    color: var(--text-muted);
+  }
+  .wiz-step.is-current { background: var(--primary-subtle); color: var(--primary); }
+  .wiz-step.is-done    { color: var(--success); }
+  .wiz-step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: var(--bg-surface-raised);
+    font-size: 0.625rem;
+    font-weight: 900;
+  }
+  .wiz-step.is-current .wiz-step-num { background: var(--primary); color: var(--bg-surface-raised); }
+  .wiz-step.is-done .wiz-step-num    { background: var(--success); color: var(--bg-surface-raised); }
+  .wiz-step-name {
+    font-size: 0.6875rem;
+    font-weight: 800;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.wiz-picked {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.875rem;
+  border: 1px solid var(--success-border);
+  border-radius: var(--radius-xl);
+  background: var(--success-subtle);
+}
+
+.wiz-placement {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  padding: 0.875rem;
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface-raised);
+  cursor: pointer;
+}
+.wiz-placement.is-selected { border-color: var(--primary); background: var(--primary-subtle); }
+.wiz-placement-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.5rem; }
+
+.wiz-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px dashed var(--border-card);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface-sunken);
+  text-align: center;
+}
+.wiz-dropzone-preview {
+  inline-size: 100%;
+  max-inline-size: 18rem;
+  block-size: 8rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-subtle);
+}
+
+.wiz-credits {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.875rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  background: var(--bg-surface-sunken);
+}
+.wiz-credit-cell {
+  padding: 0.625rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-raised);
+}
+
+.wiz-summary { display: flex; flex-direction: column; gap: 0.375rem; margin: 0; }
+.wiz-summary > div { display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem; }
+.wiz-summary dt { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); margin: 0; }
+.wiz-summary dd {
+  margin: 0;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   Vendor Ads Wizard Modal - Sizing & Spacious Layout
+   -------------------------------------------------------------------------- */
+.vendor-ads-wizard-dialog {
+  min-height: 600px;
+  height: min(720px, 90dvh);
+  display: flex;
+  flex-direction: column;
+}
+
+.vendor-ads-wizard-dialog form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.vendor-ads-wizard-dialog .modal-body {
+  flex: 1 1 auto;
+  min-height: 440px;
+  overflow-y: auto;
+}
+
+.vendor-ads-wizard-dialog .combobox-list {
+  max-block-size: 20rem;
+}

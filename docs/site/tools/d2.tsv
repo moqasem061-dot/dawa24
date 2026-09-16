@@ -1,0 +1,599 @@
+aicapabilities/domain.go	قدرات الذكاء الاصطناعي المساعدة: اكتشاف الأعمدة، مطابقة المنتجات، توسيع كلمات البحث.
+aicapabilities/enhance.go	رقم إصدار سؤال التحسين، وبيدخل في مفتاح الكاش عشان تغيير السؤال يلغي الإجابات القديمة.
+aicapabilities/enhance_decode.go	قراءة رد الموديل حتى لو جه ملفوف في markdown أو فيه كلام زيادة.
+aicapabilities/enhance_prompt.go	نص التعليمات الموجه للموديل في مطابقة الصفوف الغامضة، ومرقم بإصدار.
+aicapabilities/service.go	خدمة القدرات: بتجيب مفتاح المنشأة وتبعت السؤال للبوابة.
+assistant/access.go	حدود ما تقدر أدوات المساعد ترجعه في المرة الواحدة (25 صف) وقواعد الوصول.
+assistant/access_stage3.go	أنواع القراءات الثابتة الآمنة اللي المساعد يقدر يطلبها. الكود هو اللي بيختار الاستعلام مش الموديل.
+assistant/actions/actions.go	طريقة المساعد في تغيير البيانات: بيقترح بس، والمستخدم هو اللي بيأكد. الموديل عمره ما بينفذ لوحده.
+assistant/actions/args.go	التحقق من معطيات الإجراء: الأرقام في نطاقها والمعرفات حقيقية.
+assistant/actions/flow.go	دورة حياة الاقتراح (معلق، قيد التنفيذ، اتنفذ، ملغي، منتهي) والقناة اللي اتعمل منها (الويب، تيليجرام، واتساب).
+assistant/agent.go	شخصيات المساعد لكل لوحة (صيدلية، مورد، إدارة) ومين مسموح له يستخدمه.
+assistant/attachments.go	التحقق من المرفقات: النوع الحقيقي، البصمة، تنظيف اسم الملف.
+assistant/context.go	حساب ميزانية السياق المرسل للموديل بدون عداد tokens، مع مراعاة تكلفة العربي.
+assistant/coverage.go	سؤال التغطية: مين من الموردين بيوصل لفرع الشراء.
+assistant/datasets/datasets.go	محرك الاستعلامات المحكوم للمساعد: الموديل بيطلب بيانات بأسماء معروفة والمحرك بيبني الاستعلام بأمان.
+assistant/datasets/catalog.go	تعريف مجموعات البيانات المتاحة للمساعد.
+assistant/datasets/catalog_admin.go	مجموعات بيانات لوحة الإدارة.
+assistant/datasets/catalog_buying.go	مجموعات بيانات الشراء المشتركة بين الصيدلية والمورد.
+assistant/datasets/catalog_vendor.go	مجموعات بيانات لوحة المورد.
+assistant/datasets/compile.go	تحويل طلب الموديل لاستعلام SQL آمن بتوقيت القاهرة.
+assistant/datasets/query.go	شكل سؤال الموديل عن مجموعة بيانات.
+assistant/datasets/result.go	شكل نتيجة الاستعلام للموديل ولملف التصدير.
+assistant/domain.go	نماذج المحادثات والرسائل والمرفقات.
+assistant/entities.go	السجلات اللي ليها صفحة في لوحة التحكم وتظهر كروابط في رد المساعد.
+assistant/entities_rows.go	تحويل الصفوف لروابط قابلة للفتح.
+assistant/errors.go	أكواد أخطاء ثابتة للمساعد بتتفرع عليها الواجهة.
+assistant/evals/evals.go	مقياس جودة المساعد: أسئلة مرجعية بإجابات متوقعة لقياس أي تغيير بالأرقام.
+assistant/evals/corpus_admin.jsonl	أسئلة التقييم الخاصة بالإدارة.
+assistant/evals/corpus_pharmacy.jsonl	أسئلة التقييم الخاصة بالصيدلية.
+assistant/evals/corpus_vendor.jsonl	أسئلة التقييم الخاصة بالمورد.
+assistant/exports.go	ملفات Excel اللي المساعد بيصدرها ومدة صلاحية تحميلها.
+assistant/handles/handles.go	معرفات مشفرة بتتدي للموديل بدل أرقام قاعدة البيانات عشان ما يقدرش يخمن سجلات غيره.
+assistant/http/actions.go	تأكيد أو إلغاء اقتراح من الويب.
+assistant/http/attachment_reader.go	قراءة المرفق مرة واحدة بموديل منفصل بدون أدوات.
+assistant/http/attachments.go	التأكد إن المرفقات المشار لها ملك المستخدم فعلًا.
+assistant/http/conversations.go	قائمة محادثات المستخدم وفتحها وحذفها.
+assistant/http/emitter.go	كتابة أحداث الرد في مخزن دائم عشان الرد يكمل حتى لو المتصفح اتقفل.
+assistant/http/exports.go	تحميل ملف تصدير بالرمز.
+assistant/http/handler.go	معالج واجهة المساعد وإعداداته.
+assistant/http/limiter.go	حد عدد الأسئلة لكل مستخدم في الدقيقة، ومشترك مع تيليجرام وواتساب.
+assistant/http/memories.go	ذاكرة المساعد الدائمة للمنشأة.
+assistant/http/turns.go	إرسال سؤال وبث الرد.
+assistant/http/upload.go	رفع وتحميل مرفقات المساعد بحد حجم.
+assistant/imageprep.go	تصغير الصور قبل إرسالها للموديل.
+assistant/offers.go	أسئلة العروض القابلة للشراء لفرع معين.
+assistant/postgres/actions.go	تخزين الاقتراحات المعلقة وحجزها وإنهاؤها.
+assistant/postgres/audit.go	عرض كل المحادثات للإدارة للتدقيق.
+assistant/postgres/blobs.go	تخزين محتوى المرفقات.
+assistant/postgres/conversations.go	قراءة المحادثة لصاحبها بس.
+assistant/postgres/datasets.go	تنفيذ استعلامات المساعد بدور قاعدة بيانات بيقرا بس (migration 214).
+assistant/postgres/entities.go	تخزين روابط السجلات مع الرسالة.
+assistant/postgres/exports.go	تخزين ملفات التصدير. الرمز بيتخزن مشفر بس.
+assistant/postgres/memories.go	تخزين ذاكرة المساعد.
+assistant/postgres/read.go	قراءات أساسية للأدوات مع رفض لو مفيش منشأة.
+assistant/postgres/read_admin.go	أرقام نظرة عامة للإدارة.
+assistant/postgres/read_stage3.go	توزيع القراءات على استعلامات ثابتة يحددها الكود.
+assistant/postgres/read_stage3_admin.go	استعلامات قراءة للإدارة ومنها صحة الطوابير.
+assistant/postgres/read_stage3_pharmacy.go	استعلامات قراءة للصيدلية.
+assistant/postgres/read_stage3_pharmacy_ext.go	استعلامات قراءة إضافية للصيدلية.
+assistant/postgres/read_stage3_vendor.go	استعلامات قراءة للمورد.
+assistant/postgres/read_stage3_vendor_ext.go	استعلامات قراءة إضافية للمورد.
+assistant/postgres/repository.go	تخزين المحادثات والرسائل.
+assistant/postgres/support.go	عمليات التنظيف العابرة للمنشآت.
+assistant/postgres/turns.go	تخزين كل دور سؤال وجواب واستدعاءات الأدوات.
+assistant/prompt.go	تعليمات النظام للمساعد برقم إصدار.
+assistant/repository.go	تعريف تخزين المساعد.
+assistant/service_actions.go	تأكيد وإلغاء الاقتراحات مع إعادة التحقق الكامل وقت التأكيد.
+assistant/service_entities.go	ربط السجلات المذكورة في الرد بصفحاتها.
+assistant/service_init.go	إعداد الخدمة وحد جولات استدعاء الأدوات (10).
+assistant/service_memory.go	اكتشاف متى يستحق الكلام يتحفظ في الذاكرة.
+assistant/service_methods.go	الحلقة الأساسية: بتجاوب السؤال وتبث الرد وتنفذ الأدوات.
+assistant/service_turns.go	Ask: السؤال من أي واجهة (ويب، تيليجرام، واتساب) مع حد طول السؤال.
+assistant/stream/buffer.go	مخزن الرد الجاري مستقل عن المتصفح.
+assistant/stream/lazy.go	اختيار Redis أو الذاكرة لما الاتصال يجهز.
+assistant/tools/registry.go	الطريق الوحيد من كلام الموديل لقراءة قاعدة البيانات. كل أداة لها صلاحية مطلوبة.
+assistant/tools/args.go	قراءة معطيات الأداة ورفض أي حقل غير متوقع.
+assistant/tools/result.go	تقليص النتائج الكبيرة بشكل أمين.
+assistant/tools/tools_actions.go	أدوات البحث عن العروض والعروض الترويجية وتجهيز الاقتراحات.
+assistant/tools/tools_admin.go	أدوات الإدارة.
+assistant/tools/tools_coverage.go	أداة "مين بيوصل لي".
+assistant/tools/tools_data.go	أداة الاستعلام من مجموعات البيانات والتصدير.
+assistant/tools/tools_guide.go	دليل حالات الطلب للمساعد مطابق لقواعد التجارة.
+assistant/tools/tools_memory.go	أدوات الذاكرة.
+assistant/tools/tools_shared.go	شكل موحد لنتائج القوائم مع الترقيم.
+assistant/tools/tools_stage3_admin.go	أدوات قراءة الإدارة.
+assistant/tools/tools_stage3_pharmacy.go	أدوات قراءة الصيدلية.
+assistant/tools/tools_stage3_shared.go	أدوات قراءة مشتركة.
+assistant/tools/tools_stage3_vendor.go	أدوات قراءة المورد.
+attachments/domain.go	إدارة كل ملفات المستخدمين والمنشآت: الشهادات، مستندات التحقق، الصور.
+attachments/document_requests_service.go	طلب مستندات من المنشأة ومراجعتها واعتمادها من الإدارة.
+attachments/http/handler.go	مسارات رفع الملفات وتأكيدها ومراجعة الإدارة.
+attachments/postgres/repository.go	تخزين المستندات.
+attachments/postgres/requests_repo.go	تخزين طلبات المستندات وحالاتها.
+attachments/repository.go	تعريف تخزين المستندات.
+attachments/service.go	عمليات الملفات وروابط الرفع الموقعة.
+billing/domain.go	نماذج المحفظة والمعاملات والاشتراكات.
+billing/service.go	إدارة المحافظ والدفتر والاستحقاقات حسب الخطة.
+billing/repository.go	تعريف تخزين الفوترة.
+billing/admin_domain.go	عروض الفواتير والمدفوعات للإدارة.
+billing/admin_service.go	عمليات الإدارة العابرة للمنشآت على الاشتراكات والمدفوعات.
+billing/admin_subscriptions_domain.go	فلاتر سجل المشتركين.
+billing/ai_plan_sync.go	مزامنة خطة المنشأة مع بوابة الذكاء الاصطناعي.
+billing/cooldown_service.go	فترة الانتظار قبل تغيير الخطة.
+billing/deposit_payment_service.go	طلبات الإيداع ووسائل الدفع الخاصة بالمنصة.
+billing/invoice_service.go	إنشاء وقراءة فواتير B2B.
+billing/payment_methods.go	نموذج وسيلة دفع المستخدم.
+billing/payment_methods_service.go	إضافة وتعديل وسائل الدفع.
+billing/stats_domain.go	مؤشرات مالية على مستوى المنصة.
+billing/subscription_service.go	ضمان إن كل منشأة ليها اشتراك أساسي، وتغيير الخطط.
+billing/http/admin.go	مسارات الإدارة المالية.
+billing/http/handlers.go	مسارات المحفظة والإيداع للمستخدم.
+billing/postgres/wallet_repository.go	تخزين المحافظ والمعاملات.
+billing/postgres/wallet_queries.go	استعلامات المحفظة.
+billing/postgres/admin_repo.go	ضمان وجود محفظة لكل منشأة وعمليات الإدارة.
+billing/postgres/admin_repo_payments.go	مؤشرات مدفوعات المورد وتسجيل دفع الفواتير.
+billing/postgres/admin_deposits_repo.go	قائمة الإيداعات المفصلة للإدارة.
+billing/postgres/admin_payments_repo.go	قائمة المدفوعات المفصلة للإدارة.
+billing/postgres/admin_refunds_repo.go	الاسترداد كمعاملة عكسية في الدفتر.
+billing/postgres/admin_stats.go	الاستعلامات وراء كل رقم مالي في لوحة الإدارة.
+billing/postgres/admin_subscriptions_repo.go	سجل المشتركين للإدارة.
+billing/postgres/admin_withdrawals_repo.go	طلبات السحب للمراجعة.
+billing/postgres/deposits_repo.go	تخزين طلبات الإيداع.
+billing/postgres/invoice.go	تخزين الفواتير وبنودها.
+billing/postgres/payments_plans_repository.go	تخزين المدفوعات.
+billing/postgres/plans.go	إدارة خطط الاشتراك ومميزاتها.
+billing/postgres/plans_repo.go	قراءة الخطة والاشتراك الحالي.
+billing/postgres/platform_methods.go	قنوات الدفع اللي المنصة بتقبلها.
+billing/postgres/repository_withdrawals.go	إنشاء طلبات السحب بعد التحقق من الرصيد.
+catalog/domain.go	نماذج الكتالوج: المنتج، المتغير (عرض المورد)، التصنيف، الماركة، وحالاتها.
+catalog/service.go	خدمة الكتالوج مع كاش للقراءات المتكررة.
+catalog/service_batch.go	قراءة متغيرات منتجات كتير في استعلام واحد.
+catalog/repository.go	تعريف تخزين الكتالوج وفلاتر البحث.
+catalog/lifecycle.go	قائمة منتجات المنشأة وتفعيل وتعطيل المتغيرات.
+catalog/search_rank.go	ترتيب نتائج البحث بأولوية الكلمة الأولى.
+catalog/buyer_catalog.go	عروض المنتجات القابلة للشراء للمشتري.
+catalog/buyer_offer.go	شكل صفحة كتالوج الشراء من وجهة نظر المشتري.
+catalog/variants_and_saving_service.go	إنشاء المتغيرات والمنتجات المحفوظة.
+catalog/variant_quota.go	الحد الأقصى لحصة الفرع على منتج.
+catalog/vendor_variants.go	قائمة منتجات المورد مع فلتر المخزون.
+catalog/vendor_import.go	كتابة متغيرات المورد بالجملة من الاستيراد.
+catalog/vendor_import_master.go	منتج الكتالوج الرئيسي بالحقول اللازمة للمطابقة.
+catalog/saving_products_domain.go	عرض المنتجات المحفوظة للإدارة.
+catalog/decision_memory_service.go	ذاكرة قرارات المطابقة وفلترتها.
+catalog/admin_variant_rows.go	قائمة مخزون كل الموردين للإدارة.
+catalog/gateway/mapper.go	وصل بوابة الذكاء الاصطناعي بمحول أعمدة الكتالوج.
+catalog/import_service.go	استيراد الكتالوج الرئيسي من الإدارة مع جلسة مراجعة.
+catalog/import_session.go	جلسة الاستيراد وطريقة الدمج عند الحفظ.
+catalog/import_prepare.go	قراءة الملف وفتح جلسة ربط الأعمدة.
+catalog/import_pipeline.go	حالة الاستيراد الحالية من التشغيل الحي أو المحفوظ.
+catalog/import_progress.go	مراحل الاستيراد ونسبة التقدم.
+catalog/import_progress_notify.go	نشر كل تحديث تقدم للمتابعين.
+catalog/import_reader.go	قراءة الملف لشبكة خلايا.
+catalog/import_reader_csv.go	قراءة CSV مع الحفاظ على أرقام السطور الحقيقية.
+catalog/import_layout.go	اكتشاف كتل البيانات وعناوينها في الورقة.
+catalog/import_structure.go	وصف أعمدة الملف للمستخدم.
+catalog/import_columns.go	أسماء حقول الاستيراد كثوابت.
+catalog/import_row_parser.go	تجميع المنتجات ودمج المكرر داخل الملف.
+catalog/import_row_coercion.go	تحويل قيم الصف للأنواع الصحيحة.
+catalog/import_rows.go	ملاحظات الصفوف وإحصائيات الاستيراد.
+catalog/import_values.go	تنظيف القيم الرقمية من رموز العملة.
+catalog/import_normalize.go	توحيد الحروف العربية المتبادلة في إدخال البيانات المصري.
+catalog/import_categorize.go	تصنيف المنتجات من النص.
+catalog/import_enrich.go	استخدام الذكاء الاصطناعي لترجمة تصنيفات الملف لتصنيفات المنصة.
+catalog/import_ai.go	تصنيفات المنصة المتاحة ومحول الأعمدة بالذكاء الاصطناعي.
+catalog/import_ai_mapping.go	جمع القيم المختلفة لحقل عبر الملف.
+catalog/import_options.go	خيارات الإثراء اللي الأدمن بيحددها قبل المعالجة.
+catalog/import_match.go	الصفوف اللي بتروح للذكاء الاصطناعي مع مرشحيها.
+catalog/import_match_adjudicate.go	حسم المطابقة على دفعات وقبول الإجابات اللي تعدي كل الفحوص.
+catalog/import_match_floors.go	حدود المطابقة بالتشابه.
+catalog/import_match_memory.go	ربط كاش القرارات المشترك.
+catalog/import_cache.go	كاش الورقة المقروءة أثناء شاشة الربط.
+catalog/import_cancellation.go	إرجاع الجلسة للمراجعة لو الحفظ اتوقف.
+catalog/import_write.go	نتيجة كتابة كل منتج في الكتالوج.
+catalog/jobs/reindex.go	مهمة خلفية لتحديث فهرس المنتجات المقروء.
+catalog/jobs/reindex_sql.go	استعلامات إعادة الفهرسة وتجميع المخزون.
+catalog/http/handlers.go	مسارات البحث والمنتجات والمتغيرات.
+catalog/http/lifecycle_handlers.go	مسارات إدارة منتجات المورد.
+catalog/http/extensions.go	التصنيفات والماركات وتسعير العملاء والتنبيهات.
+catalog/http/admin.go	مسارات الكتالوج للإدارة.
+catalog/postgres/repository.go	تخزين المنتجات.
+catalog/postgres/variants.go	تخزين المتغيرات.
+catalog/postgres/variants_batch.go	قراءة متغيرات منتجات كتير مرة واحدة.
+catalog/postgres/vendor_variants.go	قائمة منتجات المورد مع إجمالي المخزون.
+catalog/postgres/search.go	البحث عن المنتجات مع شرط التوفر.
+catalog/postgres/search_order.go	ترتيب النتائج بين التوفر ودرجة التطابق.
+catalog/postgres/taxonomy.go	التصنيفات والماركات.
+catalog/postgres/brand_categories.go	ربط الماركات بالتصنيفات.
+catalog/postgres/lifecycle.go	تغيير حالة المنتجات وحذف التصنيفات.
+catalog/postgres/index.go	فهرس المنتجات المقروء catalog.product_index.
+catalog/postgres/buyer_offers.go	عروض الموردين القابلة للشراء بالترقيم.
+catalog/postgres/pricing_alerts.go	أسعار خاصة لعملاء وتنبيهات المنتجات.
+catalog/postgres/saving_products.go	تخزين المنتجات المحفوظة.
+catalog/postgres/admin_saving_products_repo.go	المنتجات المحفوظة لكل المستخدمين للإدارة.
+catalog/postgres/admin_variant_rows.go	قائمة المتغيرات للإدارة.
+catalog/postgres/admin_variants_repo.go	كل متغيرات كل المنشآت للإدارة.
+catalog/postgres/variant_quota.go	حد الحصة لكل فرع على متغير.
+catalog/postgres/bulk_import.go	كتابة الاستيراد بالجملة على دفعات.
+catalog/postgres/bulk_import_batches.go	حالة الصف الجديد عند الإدخال.
+catalog/postgres/bulk_import_taxonomy.go	ربط المنتجات بالتصنيفات أثناء الاستيراد.
+catalog/postgres/import_sessions.go	تخزين جلسات الاستيراد وتنظيف المهجور.
+catalog/postgres/import_staging_rows_repo.go	صفوف المعاينة قبل الحفظ.
+catalog/postgres/import_vocabulary_repo.go	تصنيفات المنصة المسموح للموديل يختار منها.
+catalog/postgres/match_decisions.go	قراءة ذاكرة القرارات.
+catalog/postgres/match_decisions_mutations.go	تعديل ذاكرة القرارات وتفضيل المنشأة.
+catalog/postgres/match_decisions_scope.go	فلترة ذاكرة القرارات.
+catalog/postgres/vendor_import.go	مفاتيح متغيرات المورد للمطابقة.
+catalog/postgres/vendor_import_format.go	تنسيق الأسماء المترجمة للتخزين.
+catalog/postgres/vendor_import_master.go	تحميل الكتالوج الرئيسي كإسقاط للمطابقة.
+chat/domain.go	محادثات المشتري مع المورد.
+chat/service.go	بدء المحادثات وإرسال الرسائل.
+chat/repository.go	تعريف تخزين الرسائل.
+chat/postgres/repository.go	تخزين المحادثات والرسائل.
+commerce/domain_types.go	حالات الطلب مطابقة للنظام القديم بالظبط.
+commerce/domain_methods.go	دوال على الطلب، زي هل البند عرض كامل.
+commerce/service.go	السلة والطلب وانتقالات الحالة.
+commerce/repository.go	تعريف تخزين السلال والطلبات والشحنات.
+commerce/order_status.go	قواعد الانتقال بين حالات الطلب.
+commerce/availability.go	قاعدة الشراء الموحدة: أسباب الرفض بأكواد ثابتة.
+commerce/availability_batch.go	فحص التوفر لكذا بند مرة واحدة.
+commerce/availability_presentation.go	طريقة عرض الرفض: متاح، ممنوع، أو مخفي.
+commerce/cart_operations_service.go	السلة وقائمة الأمنيات.
+commerce/checkout_price_verify.go	التحقق من الأسعار من الكتالوج عند الدفع عشان المتصفح ما يغيرهاش.
+commerce/fulfilment.go	تعديل كمية بند في السلة.
+commerce/order_operations_service.go	تعديل طلب الصيدلية قبل قبوله.
+commerce/order_offer_details.go	محتويات عرض داخل بند طلب.
+commerce/quota.go	شاشة حصص الفروع وأسباب الرفض.
+commerce/courier_domain.go	نموذج الشحنة عند المندوب.
+commerce/courier_route.go	مسار المندوب والمسافات.
+commerce/courier_service.go	تعيين شحنة لمندوب أو إرجاعها.
+commerce/admin_service.go	بحث الطلبات للإدارة.
+commerce/http/handlers.go	مسارات الدفع والطلبات.
+commerce/http/carts.go	مسارات السلة.
+commerce/http/fulfilment_handlers.go	مسارات الشحنات وتغيير حالتها.
+commerce/http/order_auth.go	التحقق إن المورد مسؤول فعلًا عن الطلب.
+commerce/http/quotes.go	طلبات عروض الأسعار.
+commerce/http/admin.go	مسارات الطلبات للإدارة.
+commerce/postgres/repository.go	مستودع التجارة.
+commerce/postgres/orders.go	تخزين الطلبات.
+commerce/postgres/orders_query_repo.go	قراءة الطلبات وتفاصيلها.
+commerce/postgres/order_edit.go	تعديل طلب معلق وإعادة حساب الإجمالي.
+commerce/postgres/order_offer_repo.go	تفاصيل العرض داخل بند طلب.
+commerce/postgres/carts.go	تخزين السلة.
+commerce/postgres/fulfilment.go	تعديل الكمية مع تثبيت السعر.
+commerce/postgres/wishlist.go	قائمة الأمنيات.
+commerce/postgres/quotes.go	عروض الأسعار.
+commerce/postgres/purchase_requests.go	طلبات الشراء متعددة البنود.
+commerce/postgres/purchase_requests_vendor.go	طلبات الشراء الواردة للمورد.
+commerce/postgres/dashboard.go	أرقام لوحة المورد زي مبيعات الشهر.
+commerce/postgres/delivery_verification_repo.go	تأكيد الاستلام برمز من 6 أرقام.
+commerce/postgres/shipment_detail.go	تفاصيل الشحنة.
+commerce/postgres/vendor_shipments_repo.go	شحنات المورد.
+commerce/postgres/courier_assign_repo.go	تعيين الشحنات للمندوبين.
+commerce/postgres/courier_queue_repo.go	تبويبات قائمة المندوب.
+commerce/postgres/quota.go	متى يحسب الطلب من الحصة.
+commerce/postgres/quota_batch.go	استهلاك الحصة لكذا متغير.
+commerce/postgres/quota_enforce.go	فرض الحصة وقت كتابة الطلب.
+commerce/postgres/quota_options.go	خيارات فلاتر شاشة الحصص.
+commerce/postgres/quota_release.go	تصفير استهلاك فرع.
+commerce/postgres/quota_report.go	تقرير استهلاك الحصص.
+commerce/postgres/admin_repo.go	بحث الطلبات عبر كل المنشآت.
+compare/domain.go	نماذج خطط المقارنة والاشتراكات.
+compare/service.go	خدمة مقارنة الأسعار وحد الأجهزة.
+compare/repository.go	تعريف تخزين المقارنة.
+compare/columns.go	الحقول اللي محرك المقارنة محتاجها من الملف.
+compare/columns_data.go	أسماء أعمدة معروفة بالعربي والإنجليزي.
+compare/row_extraction.go	استخراج صف مقارنة من سجل.
+compare/matching.go	مطابقة صفوف الموردين بالكتالوج.
+compare/comparison.go	عرض مورد لمنتج وجدول المقارنة.
+compare/multi_supplier_comparison.go	مقارنة من 1 لـ 10 ملفات موردين.
+compare/head_to_head_comparison.go	مقارنة مورد ضد مورد بالتفصيل.
+compare/intelligence_domain.go	نتائج التحليل والسوق.
+compare/market_board.go	صف في صفحة خصومات السوق.
+compare/market_board_service.go	خدمة لوحة خصومات السوق مع كاش.
+compare/market_dataset.go	سعر كل مورد لكل منتج كما يراه السوق.
+compare/market_benchmark.go	مقارنة السعر بالسوق بسماحية نص في المية.
+compare/market_benchmark_filter.go	فلترة صفوف المقارنة بالسوق.
+compare/benchmark_offers.go	أعمدة أفضل عرض وأسوأ عرض.
+compare/strategic_report.go	تقرير التوفير: كام بتخسر لو اشتريت من المورد الغلط.
+compare/strategic_service.go	بناء التقرير الاستراتيجي.
+compare/strategic_insights.go	شرح التقرير الفاضي بما هو ناقص.
+compare/search.go	البحث عبر ملفات الموردين والكتالوج.
+compare/file_service.go	تسمية الملفات وأرشفتها.
+compare/archive_replace.go	استبدال قوائم أسعار المورد القديمة بالجديدة.
+compare/upload_background.go	معالجة الرفع في الخلفية بحد زمني.
+compare/postgres/repository.go	مستودع المقارنة.
+compare/postgres/files.go	الملفات وسياسة الاحتفاظ.
+compare/postgres/files_admin.go	الملفات للإدارة.
+compare/postgres/rows_repo.go	صفوف الملفات.
+compare/postgres/file_rows_match.go	كتابة نتائج المطابقة على دفعات.
+compare/postgres/matching_repo.go	مسح الملفات المنتهية.
+compare/postgres/market_discounts.go	مصدر بيانات خصومات السوق.
+compare/postgres/market_discounts_query.go	فلاتر خصومات السوق.
+compare/postgres/market_offers.go	مسح عروض السوق للتحليل.
+compare/postgres/plans.go	خطط المقارنة.
+compare/postgres/subscriptions.go	اشتراكات المقارنة.
+compare/postgres/sessions.go	طرد أقدم الجلسات عند تجاوز عدد الأجهزة.
+etl/domain.go	خط نقل البيانات من النظام القديم بست مراحل.
+etl/pipeline.go	تنسيق مراحل النقل.
+etl/transformer.go	تحويل تواريخ MySQL لـ UTC.
+hr/domain.go	الموظفين والرواتب ومواعيد العمل.
+hr/service.go	عمليات الموارد البشرية.
+hr/repository.go	تعريف التخزين.
+hr/http/handlers.go	مسارات الموظفين.
+hr/http/admin.go	مسارات الإدارة.
+hr/postgres/repository.go	تخزين الموظفين.
+hr/postgres/jobs.go	الوظائف المنشورة في لوحة الوظائف.
+hr/postgres/job_applications_repo.go	الوظائف والمتقدمين.
+identity/domain.go	المستخدم وحالاته وطلبات حذف الحساب.
+identity/service.go	التسجيل والدخول وسير عمل الهوية.
+identity/service_mfa.go	التحقق بخطوتين.
+identity/totp.go	توليد والتحقق من رموز TOTP.
+identity/repository.go	تعريف التخزين.
+identity/cache.go	كاش حالة المستخدم.
+identity/session.go	الجلسات في Redis وحدودها.
+identity/session_lifecycle.go	فرض حد الجلسات.
+identity/session_list.go	قائمة جلسات المستخدم.
+identity/session_service.go	إنهاء الجلسات.
+identity/session_store_ops.go	قراءة الجلسة وتطبيق مهلة الخمول.
+identity/device_session_domain.go	خطط عدد الأجهزة وتفاصيل الجهاز.
+identity/profile_service.go	الملف الشخصي والعناوين.
+identity/register_org_service.go	تسجيل حساب ومنشأة في خطوة واحدة.
+identity/roles.go	أدوار المنصة.
+identity/moderator.go	المشرفين وفرقهم.
+identity/moderator_service.go	إدارة المشرفين.
+identity/admin_service.go	أرقام وقوائم المستخدمين للإدارة.
+identity/http/handlers.go	مسارات الدخول والتسجيل.
+identity/http/middleware.go	التحقق من الجلسة وتحديد المنشأة.
+identity/http/profile_handlers.go	مسارات الملف الشخصي.
+identity/http/admin.go	مسارات المستخدمين للإدارة.
+identity/postgres/repository.go	تخزين المستخدمين.
+identity/postgres/register_org.go	إنشاء المستخدم والمنشأة والعضوية في transaction واحدة.
+identity/postgres/addresses.go	العناوين مع سجل تغييراتها.
+identity/postgres/preferences.go	تفضيلات المستخدم.
+identity/postgres/roles_repo.go	أدوار المنصة.
+identity/postgres/staff_repo.go	موظفي المنصة للإشعارات.
+identity/postgres/user_orgs_repo.go	المنشأة الافتراضية عند الدخول.
+identity/postgres/session_plans.go	خطط عدد الأجهزة.
+identity/postgres/moderator_repo.go	المشرفين.
+identity/postgres/admin_repo.go	المستخدمين للإدارة.
+identity/postgres/admin_users_list.go	قائمة مستخدمين مع العدد.
+identity/postgres/admin_deletions.go	طلبات حذف الحسابات.
+ingest/domain.go	استيراد كتالوج المورد بالجملة: الأعمدة، المعاينة، المعالجة متعددة المراحل.
+ingest/service.go	خدمة الاستيراد والرفع.
+ingest/repository.go	تعريف التخزين.
+ingest/catalog_service.go	منافذ الكتالوج والمخزون للاستيراد.
+ingest/catalog_repository.go	مخزن الاستيراد.
+ingest/catalog_import.go	مراحل المعالج كما يراها المورد.
+ingest/catalog_run.go	إعدادات القراءة من اختيارات المورد.
+ingest/catalog_stage.go	مرحلة المطابقة وحد الأسئلة المفتوحة.
+ingest/catalog_stage_ai.go	متى تستحق المطابقة رأي تاني من الذكاء الاصطناعي.
+ingest/catalog_stage_background.go	مرحلة المطابقة في الخلفية بحد زمني.
+ingest/catalog_enhance.go	إصدار سؤال التحسين.
+ingest/catalog_enhance_plan.go	تحويل الصفوف المفتوحة لأسئلة.
+ingest/catalog_enhance_run.go	التحسين لا يفشل أبدًا: اللي ما يتحسنش بيفضل بنتيجة المحرك الحتمي.
+ingest/catalog_enhance_apply.go	قبول الإجابات اللي تعدي الفحوص.
+ingest/catalog_enhance_gateway.go	شكل عميل التحسين.
+ingest/catalog_counters.go	عدادات تصنيف الصفوف.
+ingest/catalog_review.go	إجراءات المراجعة بالجملة.
+ingest/catalog_vocab.go	تعديل صف قبل الحفظ.
+ingest/catalog_variants.go	ربط الصف بمتغير موجود.
+ingest/catalog_build.go	حساب سعر القائمة والخصم.
+ingest/catalog_ledger.go	لقطة ربط الأعمدة المعتمد.
+ingest/catalog_commit.go	الحفظ في الكتالوج على دفعات.
+ingest/catalog_commit_plan.go	معاينة ما سيحدث عند الحفظ.
+ingest/catalog_commit_builder.go	تطبيق طريقة الدمج على كل صف.
+ingest/catalog_commit_retirement.go	إيقاف بيع المتغيرات اللي مش في الملف لما الملف يكون الكتالوج كامل.
+ingest/catalog_commit_background.go	الحفظ في الخلفية بحد زمني.
+ingest/catalog_queries.go	إلغاء الاستيراد وقوائمه.
+ingest/import_row_outcome.go	نتيجة كل صف.
+ingest/import_progress_notify.go	مفتاح نشر التقدم.
+ingest/chunked.go	رفع الملفات الكبيرة على أجزاء.
+ingest/streaming.go	معالجة الصفوف متدفقة.
+ingest/reconciler.go	توفيق الصفوف مع الكتالوج والمخزون.
+ingest/reconciler_variants.go	توفيق المتغيرات.
+ingest/images.go	تحميل صور المنتجات بأمان ومنع العناوين الداخلية.
+ingest/images_watermark.go	إضافة العلامة المائية على الصور.
+ingest/http/handlers.go	مسارات الرفع.
+ingest/http/wizard_handlers.go	مسارات معالج الاستيراد.
+ingest/http/admin.go	جلسات الاستيراد للإدارة.
+ingest/postgres/repository.go	مستودع الاستيراد.
+ingest/postgres/catalog_imports.go	تخزين عمليات الاستيراد واستعادة العالق.
+ingest/postgres/catalog_import_rows.go	صفوف الاستيراد.
+ingest/postgres/catalog_import_bulk.go	إعادة حساب عدادات المطابقة.
+ingest/postgres/catalog_import_lifecycle.go	فشل وإلغاء وتنظيف.
+ingest/postgres/catalog_import_row_actions.go	ربط صف يدويًا بمنتج.
+ingest/postgres/catalog_ai.go	تطبيق إجابات الذكاء الاصطناعي.
+ingest/postgres/ingest_rows_query_repo.go	قراءة الصفوف والجلسات.
+inventory/domain.go	المستودعات والمخزون وحركاته والتحويلات.
+inventory/service.go	خدمة المخزون.
+inventory/repository.go	تعريف التخزين.
+inventory/warehouses.go	تعديل وحذف المستودعات.
+inventory/transfers.go	استلام التحويل.
+inventory/transfer_state.go	التحويل بين المستودعات على مرحلتين مش عملية واحدة.
+inventory/vendor_import.go	كتابة المخزون من الاستيراد.
+inventory/admin_warehouses.go	المستودعات للإدارة.
+inventory/http/handlers.go	مسارات المخزون.
+inventory/http/lifecycle_handlers.go	مسارات دورة حياة المستودع.
+inventory/http/admin.go	مسارات الإدارة.
+inventory/postgres/repository.go	مستودع المخزون.
+inventory/postgres/batch.go	الكميات المتاحة لكذا متغير.
+inventory/postgres/lifecycle.go	تعديل المستودعات والمخزون المنخفض.
+inventory/postgres/stock_movements_repo.go	حركات المخزون والتحويلات.
+inventory/postgres/vendor_import.go	كتابة المخزون بالجملة.
+inventory/postgres/admin_warehouses.go	كل المستودعات للإدارة.
+marketing/http/bridge.go	مسار ملخص المحتوى لورك فلو السوشيال ميديا: العروض الجديدة آخر 24 ساعة، محمي بتوكن.
+notifications/domain.go	الإشعارات متعددة القنوات والقوالب.
+notifications/service.go	إرسال الإشعارات.
+notifications/repository.go	تعريف التخزين.
+notifications/registry.go	سجل أحداث الإشعارات الثابتة.
+notifications/registry_commerce.go	أحداث إشعارات الطلبات.
+notifications/registry_org.go	أحداث إشعارات المنشآت.
+notifications/http/handlers.go	مسارات الإشعارات.
+notifications/http/admin.go	البث العام من الإدارة.
+notifications/postgres/repository.go	مستودع الإشعارات.
+notifications/postgres/feed.go	تعليم الإشعارات مقروءة.
+org/domain.go	المنشأة ونوعيها: صيدلية أو مورد.
+org/service.go	دورة حياة المنشأة والفروع والأعضاء.
+org/repository.go	تعريف التخزين.
+org/service_approval.go	تسجيل المنشأة واعتمادها.
+org/service_batch.go	قراءة منشآت كتير مرة واحدة.
+org/service_admin_reviews.go	تقييمات الموردين للإدارة.
+org/members_service.go	الأعضاء.
+org/roles.go	أدوار المنشأة.
+org/profile_change.go	أقسام بيانات المنشأة اللي تحتاج موافقة.
+org/profile_service.go	حفظ البيانات أو إرسالها للمراجعة.
+org/deletion_request.go	طلبات حذف المنشأة.
+org/delivery_quote.go	حساب رسوم التوصيل.
+org/delivery_service.go	التوصيل من مورد لفرع صيدلية بالمسافة.
+org/delivery_bands_and_profile_service.go	شرائح التوصيل وروابط السوشيال.
+org/domain_reviews.go	فلاتر التقييمات.
+org/institutional_connection.go	هل فرع مشتري مسموح له يشتري من مورد (الأعمال المؤسسية).
+org/institutional_domain.go	ربط الموظفين بمجموعات العمل المؤسسي.
+org/http/handlers.go	مسارات المنشأة.
+org/http/mutations.go	تعديل المنشأة والفروع والأعضاء.
+org/http/admin.go	اعتماد المنشآت من الإدارة.
+org/postgres/repository.go	مستودع المنشآت.
+org/postgres/mutations.go	تعديل المنشأة.
+org/postgres/batch.go	قراءة منشآت كتير.
+org/postgres/branches_repo.go	الفروع والفرع الرئيسي.
+org/postgres/members_repo.go	الأعضاء.
+org/postgres/members_edit.go	تعديل العضوية.
+org/postgres/members_holding_repo.go	الأعضاء اللي عندهم صلاحية معينة.
+org/postgres/roles.go	أدوار المنشأة.
+org/postgres/employees.go	الموظفين بالتفصيل.
+org/postgres/teams_repo.go	التقييمات والمتابعة.
+org/postgres/repository_reviews.go	تقييمات المورد.
+org/postgres/admin_reviews.go	التقييمات للإدارة.
+org/postgres/admin_org_list.go	قائمة المنشآت للإدارة.
+org/postgres/org_counts_and_search_repo.go	عدد وبحث المنشآت.
+org/postgres/org_deletion_requests.go	طلبات حذف المنشأة.
+org/postgres/profile_change.go	طلبات تغيير البيانات.
+org/postgres/profile_sections.go	قراءة قسم من بيانات المنشأة.
+org/postgres/institutional.go	مجموعات العمل المؤسسي.
+org/postgres/institutional_works_repo.go	قراءة مجموعة عمل مؤسسي.
+org/postgres/branch_institutional_repo.go	ربط الفروع بالأعمال المؤسسية.
+org/postgres/user_organizations.go	ربط عميل بمورد.
+platform_admin/domain.go	إعدادات النظام والبيانات الجغرافية.
+platform_admin/service.go	خدمة الإعدادات.
+platform_admin/settings_memo.go	قراءة الإعداد مرة واحدة لكل طلب.
+platform_admin/system_settings_service.go	إعدادات النظام زي ذاكرة القرارات.
+platform_admin/repository.go	تعريف التخزين.
+platform_admin/audit_domain.go	سجل التدقيق.
+platform_admin/error_log.go	سجل الأخطاء.
+platform_admin/gateway_credential.go	التحقق من بيانات البوابة اللي الأدمن بيدخلها.
+platform_admin/seo.go	إعدادات SEO لكل مسار.
+platform_admin/translations.go	الترجمات.
+platform_admin/translations_service.go	تعديل الترجمات.
+platform_admin/trash.go	سلة المحذوفات.
+platform_admin/http/handlers.go	مسارات الإعدادات العامة.
+platform_admin/http/admin.go	مسارات الإدارة.
+platform_admin/postgres/repository.go	الإعدادات.
+platform_admin/postgres/ai_role_models.go	ربط أدوار المساعد بالموديلات.
+platform_admin/postgres/audit_repo.go	سجل التدقيق.
+platform_admin/postgres/audit_enrich.go	عناوين وأوصاف مقروءة لسجل التدقيق.
+platform_admin/postgres/content.go	كتل المحتوى.
+platform_admin/postgres/geo_and_policies_repo.go	المدن والعملات والسياسات.
+platform_admin/postgres/seo.go	صفحات SEO.
+platform_admin/postgres/sql_console_repo.go	كونسول SQL للإدارة بدور قراءة فقط وسجل تنفيذ.
+platform_admin/postgres/translations.go	الترجمات.
+platform_admin/postgres/trash.go	اكتشاف الجداول القابلة للاسترجاع.
+platform_admin/postgres/trash_helpers.go	التحقق من اسم الجدول قبل الاستعلام.
+platform_admin/postgres/visitors.go	تحليلات الزوار.
+promo/domain_types.go	العروض وباقات الرعاية والإعلانات.
+promo/domain_methods.go	دوال على العرض.
+promo/service.go	خدمة العروض.
+promo/repository.go	تعريف التخزين.
+promo/pricing.go	المصدر الوحيد لحساب السعر الفعلي للعرض.
+promo/buyer_offers.go	لوحة العروض للمشتري.
+promo/offer_manifest.go	محتويات العرض.
+promo/published_offers.go	العروض المنشورة حديثًا لملخص التسويق.
+promo/ads_service.go	الإعلانات وخصم رصيد الباقة.
+promo/credit_ledger.go	أسباب حركة رصيد الباقة.
+promo/credit_service.go	كشف حساب الرصيد.
+promo/sponsorship.go	باقات الرعاية.
+promo/sponsorship_service.go	شراء الباقة وخصمها من المحفظة.
+promo/sponsorship_moderation.go	مراجعة طلبات الرعاية.
+promo/admin_sponsorship_rows.go	قائمة الرعايات للإدارة.
+promo/http/handlers.go	مسارات العروض.
+promo/http/vendor.go	مسارات رعاية المورد.
+promo/http/admin.go	مسارات الإدارة.
+promo/http/admin_sponsorship.go	مراجعة الرعايات والإعلانات.
+promo/postgres/repository.go	مستودع العروض.
+promo/postgres/buyer_offers.go	شروط ظهور العرض للمشتري.
+promo/postgres/published_offers.go	العروض اللي بقت مرئية خلال فترة، مع المدن والمنتجات.
+promo/postgres/offers_products.go	العروض السارية لمنتج.
+promo/postgres/special_offer_products.go	محتويات العرض الخاص.
+promo/postgres/special_offers_admin_repo.go	العروض الخاصة للإدارة.
+promo/postgres/highlight_sections_repo.go	الأقسام المميزة.
+promo/postgres/highlight_sections_items_repo.go	عناصر الأقسام المميزة.
+promo/postgres/highlights_org.go	أقسام متجر المنشأة.
+promo/postgres/moderation.go	مراجعة العروض.
+promo/postgres/ads.go	الإعلانات.
+promo/postgres/ad_edits.go	تعديلات الإعلانات المعلقة.
+promo/postgres/sponsorship.go	شراء الباقات.
+promo/postgres/sponsorship_requests_repo.go	طلبات الرعاية وانتهاؤها.
+promo/postgres/credit_accounts.go	حسابات رصيد الباقات.
+promo/postgres/credit_ledger.go	خصم الرصيد مع السبب.
+promo/postgres/ranking.go	ترتيب الرعايات.
+promo/postgres/admin_sponsorship_rows.go	الرعايات للإدارة.
+smartorder/domain.go	الطلب الذكي: الصيدلية ترفع ملف احتياجاتها والنظام يختار أفضل مورد لكل بند.
+smartorder/service.go	خدمة الطلب الذكي.
+smartorder/service_correction.go	تصحيح المطابقة من المشتري وحفظه.
+smartorder/repository.go	تعريف التخزين.
+smartorder/config.go	معايير الاختيار الافتراضية.
+smartorder/selection.go	اختيار المرشح المناسب بشكل حتمي.
+smartorder/eligibility.go	تحويل سبب رفض التجارة لسبب في الطلب الذكي.
+smartorder/gate.go	قاعدة الشراء كما يراها الطلب الذكي.
+smartorder/finalize.go	إنشاء الطلب بعد إعادة التحقق من كل بند.
+smartorder/quantity.go	قراءة الكميات.
+smartorder/state.go	خطوة المعالج حسب حالة التشغيل.
+smartorder/progress.go	نسبة التقدم لكل مرحلة.
+smartorder/progress_notify.go	نشر التقدم.
+smartorder/adapters.go	محولات التغطية والأعمال المؤسسية.
+smartorder/http/handlers.go	مسارات معالج الطلب الذكي.
+smartorder/http/routes.go	تسجيل المسارات.
+smartorder/http/review.go	مراجعة الكميات والموردين.
+smartorder/http/events.go	بث التقدم.
+smartorder/jobs/run.go	تشغيل الطلب الذكي كمهمة خلفية.
+smartorder/pipeline/run.go	تشغيل المراحل من الصفوف للموردين.
+smartorder/pipeline/resolve.go	مراحل الخط كعمليات على الملف كامل.
+smartorder/pipeline/parse.go	الحقول المتاحة من ملف الشراء.
+smartorder/pipeline/query.go	قراءة التركيز بالعربي والإنجليزي.
+smartorder/pipeline/candidates.go	مطابقة البنود بالكتالوج.
+smartorder/pipeline/offers.go	عروض الموردين المتاحة للتوصيل.
+smartorder/pipeline/enhance.go	إصدار سؤال التحسين.
+smartorder/pipeline/enhance_plan.go	البنود اللي تستحق رأي الذكاء الاصطناعي.
+smartorder/pipeline/enhance_apply.go	تطبيق إجابات التحسين.
+smartorder/pipeline/enhance_gateway.go	شكل عميل التحسين.
+smartorder/postgres/repository.go	مستودع الطلب الذكي.
+smartorder/postgres/lines.go	بنود التشغيل.
+smartorder/postgres/candidates.go	مرشحي كل بند.
+smartorder/postgres/config.go	إعدادات التشغيل والربط.
+smartorder/postgres/events.go	أحداث التقدم.
+smartorder/postgres/files.go	الملف المرفوع.
+smartorder/postgres/matching.go	المطابقة بالكود والباركود.
+smartorder/postgres/matching_repo.go	المطابقة بالتشابه.
+smartorder/postgres/matching_repo_decisions.go	كاش قرارات المطابقة.
+smartorder/postgres/offers.go	تحميل عروض الموردين في استعلام واحد.
+workflow/domain.go	محرك أولويات الشراء والتغطية الأسبوعية ومتابعة المشاكل.
+workflow/service.go	خدمة سير العمل.
+workflow/repository.go	تعريف التخزين.
+workflow/coverage_service.go	هل المورد بيغطي نقطة معينة.
+workflow/coverage_vendors.go	الفرع المورد وراء كل تغطية.
+workflow/priority_domain.go	منتجات محرك الأولوية.
+workflow/priority_service.go	محرك أولويات الشراء.
+workflow/http/handlers.go	مسارات سير العمل.
+workflow/http/admin.go	مسارات الإدارة.
+workflow/postgres/repository.go	مستودع سير العمل.
+workflow/postgres/coverage.go	جداول التغطية الأسبوعية.
+workflow/postgres/priority.go	تشغيلات محرك الأولوية.
+workflow/postgres/requests.go	طلبات المستندات والإجراءات.
+chatbridge/port.go	العقد المشترك لقنوات الدردشة: واجهة المساعد وأنواع الإجابة والمرشح للإشعار.
+chatbridge/core.go	المسار الأمني المشترك: إعادة بناء المستخدم من الصلاحيات الحالية، الاعتماد، السماح بالمساعد، حد الأسئلة، قفل سؤال واحد، والتأكيد.
+chatbridge/commands.go	أوامر /whoami و/org و/notify بصياغة تناسب أي قناة.
+chatbridge/notifications.go	قاعدة استحقاق الإشعار وقت التسليم، مشتركة بين تيليجرام وواتساب.
+chatbridge/categories.go	فئات الإشعارات اللي المستخدم يقدر يكتمها.
+chatbridge/http/bridge.go	التحقق من توكن n8n بمقارنة ثابتة الزمن.
+chatbridge/postgres/tables.go	استعلامات مشتركة لجداول القنوات: الرموز، الروابط، صندوق الصادر وإعادة المحاولة.
+telegram/domain.go	الربط بحساب تيليجرام وأشكال رسائل تيليجرام.
+telegram/service.go	بدء الربط وتأكيده وإلغاؤه.
+telegram/bot.go	استقبال تحديث تيليجرام والرد عليه.
+telegram/bot_commands.go	أوامر البوت بصيغة HTML.
+telegram/actions.go	أزرار التأكيد والملفات.
+telegram/outbox.go	سحب الإشعارات وتصنيف أخطاء الإرسال.
+telegram/render.go	تحويل Markdown لـ HTML تيليجرام وتقسيمه.
+telegram/repository.go	تعريف التخزين.
+telegram/http/bridge.go	المسارات اللي n8n بيكلمها.
+telegram/postgres/links.go	جداول ربط تيليجرام.
+telegram/postgres/outbox.go	سحب رسائل تيليجرام.
+whatsapp/domain.go	الربط برقم واتساب وأشكال Webhook واتساب.
+whatsapp/service.go	بدء الربط برابط wa.me وتأكيده وإلغاؤه.
+whatsapp/bot.go	استقبال رسائل واتساب والرد عليها.
+whatsapp/actions.go	أزرار التأكيد والملفات على واتساب.
+whatsapp/payload.go	بناء رسائل WhatsApp Cloud API: نص، أزرار، قالب.
+whatsapp/render.go	تحويل Markdown لتنسيق واتساب وتقسيمه.
+whatsapp/outbox.go	نافذة الـ 24 ساعة وتصنيف أكواد أخطاء واتساب.
+whatsapp/repository.go	تعريف التخزين.
+whatsapp/http/bridge.go	المسارات اللي n8n بيكلمها.
+whatsapp/postgres/repository.go	جداول واتساب ونافذة الـ 24 ساعة.

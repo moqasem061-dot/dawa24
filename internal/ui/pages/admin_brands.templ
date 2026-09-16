@@ -1,0 +1,427 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// BrandViewItem represents a brand item decorated with its product count.
+type BrandViewItem struct {
+	Brand        *catalog.Brand
+	ProductCount int
+}
+
+func templateEscape(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "'", "\\'")
+	s = strings.ReplaceAll(s, "\n", " ")
+	s = strings.ReplaceAll(s, "\r", "")
+	return s
+}
+
+func buildAdminBrandsPageURL(page, limit int, q, status string) string {
+	u := fmt.Sprintf("/admin/brands?page=%d&limit=%d", page, limit)
+	if q != "" {
+		u += "&q=" + url.QueryEscape(q)
+	}
+	if status != "" && status != "all" {
+		u += "&status=" + url.QueryEscape(status)
+	}
+	return u
+}
+
+// AdminBrandsPage renders the pharmaceutical brands / manufacturers management console.
+templ AdminBrandsPage(brands []BrandViewItem, totalCount, currentPage, pageSize int, searchQuery, statusFilter, lang, dir string) {
+	@layouts.AdminShell("دليل الشركات المصنعة والماركات", "brands", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				isCreateModalOpen: false,
+				isEditModalOpen: false,
+				isProductsModalOpen: false,
+				selectedBrand: { id: 0, name_ar: '', name_en: '', count: 0 },
+				editData: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					description_ar: '',
+					description_en: '',
+					image: '',
+					status: 'active'
+				},
+				openEdit(id, nameAr, nameEn, descAr, descEn, img, status) {
+					this.editData = {
+						id: id,
+						name_ar: nameAr || '',
+						name_en: nameEn || '',
+						description_ar: descAr || '',
+						description_en: descEn || '',
+						image: img || '',
+						status: status || 'active'
+					};
+					const modal = document.getElementById('brand-edit-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openProductsModal(id, nameAr, nameEn, count) {
+					this.selectedBrand = {
+						id: id,
+						name_ar: nameAr || '',
+						name_en: nameEn || '',
+						count: count || 0
+					};
+					const modal = document.getElementById('brand-products-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Page Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTag("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">دليل الشركات المصنعة والماركات</h1>
+							<p class="text-sm text-secondary m-0 mt-1">إدارة الشركات الدوائية المنتجة والمصنعة المعتمدة وربطها المباشر بالأصناف والمنتجات الأساسية ({ fmt.Sprintf("%d شركة", totalCount) })</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" @click="document.getElementById('brand-create-modal').showModal()" class="btn btn-primary font-bold text-xs px-3 py-2">
+							@components.IconPlus("icon-xs")
+							<span>إضافة شركة مصنعة جديدة +</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<div class="glass-panel p-6 mb-6">
+				<!-- Search and Filter Bar -->
+				<form
+					method="GET"
+					action="/admin/brands"
+					class="d-flex gap-3 items-center flex-wrap mb-6"
+				>
+					<div class="flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ searchQuery }
+							placeholder="ابحث باسم الشركة بالعربية أو الإنجليزية..."
+							class="form-input text-xs w-full"
+						/>
+					</div>
+
+					<div class="w-auto">
+						<select name="status" class="form-select text-xs w-full" data-autosubmit>
+							<option value="all" selected?={ statusFilter == "" || statusFilter == "all" }>جميع الحالات</option>
+							<option value="active" selected?={ statusFilter == "active" }>نشط ومفعل (Active)</option>
+							<option value="inactive" selected?={ statusFilter == "inactive" }>معطل (Inactive)</option>
+						</select>
+					</div>
+
+					<input type="hidden" name="limit" value={ fmt.Sprintf("%d", pageSize) }/>
+
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-3">
+						تصفية
+					</button>
+					if searchQuery != "" || (statusFilter != "" && statusFilter != "all") {
+						<a href="/admin/brands" class="btn btn-secondary btn-sm text-xs">
+							إعادة تعيين
+						</a>
+					}
+				</form>
+
+				<!-- Brands Data Table -->
+				if len(brands) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconTag("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد شركات مصنعة مطابقة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على أي نتائج وفق معايير البحث الحالية. يمكنك تعديل كلمات البحث أو إضافة شركة جديدة.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th class="text-center">الشعار</th>
+									<th>اسم الشركة المصنعة</th>
+									<th>الوصف ونبذة التعريف</th>
+									<th class="text-center">الأصناف المرتبطة</th>
+									<th class="text-center">الحالة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range brands {
+									<tr id={ fmt.Sprintf("brand-row-%d", item.Brand.ID) }>
+										<td class="text-center">
+											<div class="user-avatar-badge text-sm">
+												if item.Brand.Image != "" {
+													@components.ProductImage(imageurl.Thumb(item.Brand.Image, item.Brand.Name.Get("ar"), ""))
+												} else {
+													@components.IconTag("icon-xs")
+												}
+											</div>
+										</td>
+										<td>
+											<div class="fw-800 text-primary text-sm">
+												{ item.Brand.Name.Get("ar") }
+											</div>
+											if item.Brand.Name.Get("en") != "" {
+												<div class="text-xs text-muted" dir="ltr">
+													{ item.Brand.Name.Get("en") }
+												</div>
+											}
+										</td>
+										<td>
+											if item.Brand.Description.Get("ar") != "" {
+												<div class="text-sm text-secondary line-clamp-2">
+													{ item.Brand.Description.Get("ar") }
+												</div>
+											} else if item.Brand.Description.Get("en") != "" {
+												<div class="text-sm text-secondary line-clamp-2" dir="ltr">
+													{ item.Brand.Description.Get("en") }
+												</div>
+											} else {
+												<span class="text-sm text-muted">لا يوجد وصف</span>
+											}
+										</td>
+										<td class="text-center">
+											<button
+												type="button"
+												@click={ fmt.Sprintf("openProductsModal(%d, '%s', '%s', %d)", item.Brand.ID, templateEscape(item.Brand.Name.Get("ar")), templateEscape(item.Brand.Name.Get("en")), item.ProductCount) }
+												class="badge badge-sky font-bold cursor-pointer"
+											
+												title="عرض الأصناف المرتبطة"
+											>
+												@components.IconLayers("icon-xs")
+												<span class="tabular-nums">{ fmt.Sprintf("%d صنف معتمد", item.ProductCount) }</span>
+											</button>
+										</td>
+										<td class="text-center">
+											if item.Brand.Status == "active" {
+												<span class="badge badge-emerald font-bold">نشط</span>
+											} else {
+												<span class="badge badge-slate font-bold">معطل</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<!-- Edit Trigger -->
+												<button
+													type="button"
+													@click={ fmt.Sprintf("openEdit(%d, '%s', '%s', '%s', '%s', '%s', '%s')", item.Brand.ID, templateEscape(item.Brand.Name.Get("ar")), templateEscape(item.Brand.Name.Get("en")), templateEscape(item.Brand.Description.Get("ar")), templateEscape(item.Brand.Description.Get("en")), templateEscape(item.Brand.Image), item.Brand.Status) }
+													class="btn btn-secondary btn-icon"
+													title="تعديل بيانات الشركة"
+												>
+													@components.IconEdit("icon-xs")
+												</button>
+
+												<!-- Status Toggle -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/brands/%d/toggle", item.Brand.ID)) } class="m-0">
+													if item.Brand.Status == "active" {
+														<button type="submit" class="btn btn-secondary btn-icon" title="تعطيل الشركة">
+															@components.IconMinus("icon-xs")
+														</button>
+													} else {
+														<button type="submit" class="btn btn-secondary btn-icon" title="تفعيل الشركة">
+															@components.IconCheck("icon-xs")
+														</button>
+													}
+												</form>
+
+												<!-- Delete Button -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/brands/%d/delete", item.Brand.ID)) } class="m-0" data-confirm="هل أنت متأكد من حذف هذه الشركة المصنعة؟">
+													<button type="submit" class="btn btn-secondary btn-icon" title="حذف الشركة">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Pagination Controls -->
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: currentPage,
+							PageSize:    pageSize,
+							TotalCount:  totalCount,
+							BaseURL:     "/admin/brands",
+							QueryValues: url.Values{
+								"q":      {searchQuery},
+								"status": {statusFilter},
+							},
+						})
+					}
+				}
+			</div>
+
+			<!-- Brand Associated Products Modal -->
+			@components.Modal(components.ModalProps{
+				ID:    "brand-products-modal",
+				Title: "الأصناف المرتبطة بالشركة المصنعة",
+				Size:  "md",
+			}) {
+				<div class="d-flex flex-col gap-4 text-start">
+							<div class="bg-surface-sunken p-4 rounded-xl border text-center">
+								<div class="text-xs text-secondary font-bold mb-1">إجمالي الأصناف المعتمدة المسجلة لهذه الشركة</div>
+								<div class="text-2xl font-black text-primary tabular-nums" x-text="selectedBrand.count + ' صنف'"></div>
+							</div>
+
+							<div class="d-flex gap-3 justify-center flex-wrap">
+								<a
+									:href="'/admin/products?brand_id=' + selectedBrand.id"
+									class="btn btn-primary font-bold flex-1 justify-center"
+								>
+									@components.IconLayers("icon-xs")
+									<span>تصفح كافة الأصناف في الكتالوج المركزي</span>
+								</a>
+								<a
+									:href="'/admin/products?new=1&brand_id=' + selectedBrand.id"
+									class="btn btn-secondary font-bold flex-1 justify-center"
+								>
+									@components.IconPlus("icon-xs")
+									<span>إضافة صنف دوائي جديد</span>
+								</a>
+							</div>
+						</div>
+				<div class="modal-footer mt-4">
+					<form class="stack-md" method="dialog">
+						<button type="submit" class="btn btn-secondary font-bold">إلغاء</button>
+					</form>
+				</div>
+			}
+
+			<!-- Create Brand Modal -->
+			@components.Modal(components.ModalProps{
+				ID:    "brand-create-modal",
+				Title: "إضافة شركة مصنعة جديدة",
+				Size:  "md",
+			}) {
+				<form method="POST" action="/admin/brands/new" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0" data-boost-upload>
+						<div class="modal-body d-flex flex-col gap-3">
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label">اسم الشركة المصنعة (عربي) *</label>
+									<input type="text" name="name_ar" required class="form-input" placeholder="إيفا فارما" />
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label">اسم الشركة (إنجليزي) *</label>
+									<input type="text" name="name_en" required class="form-input" dir="ltr" placeholder="Eva Pharma" />
+								</div>
+							</div>
+
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label">شعار أو صورة الشركة (ملف)</label>
+									<input type="file" name="brand_image" accept=".png,.jpg,.jpeg,.webp" class="form-input p-2" />
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label">أو رابط الصورة (URL)</label>
+									<input type="text" name="image_url" class="form-input" dir="ltr" placeholder="https://..." />
+								</div>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الوصف والنبذة التعريفية (عربي)</label>
+								<textarea name="description_ar" rows="2" class="form-input" placeholder="نبذة عن الشركة، التراخيص والمقر الرئيسي..."></textarea>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الوصف (إنجليزي)</label>
+								<textarea name="description_en" rows="2" class="form-input" dir="ltr" placeholder="About the company, headquarters and certifications..."></textarea>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الحالة الأولية</label>
+								<select name="status" class="form-select">
+									<option value="active">نشط ومفعل (Active)</option>
+									<option value="inactive">معطل (Inactive)</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="modal-footer">
+							<button type="button" data-on-click="closeDialog('brand-create-modal')" class="btn btn-secondary">إلغاء</button>
+							<button type="submit" class="btn btn-primary font-bold">
+								@components.IconCheck("icon-xs")
+								<span>حفظ وإضافة الشركة المصنعة</span>
+							</button>
+						</div>
+					</form>
+			}
+
+			<!-- Edit Brand Modal -->
+			@components.Modal(components.ModalProps{
+				ID:    "brand-edit-modal",
+				Title: "تعديل بيانات الشركة المصنعة",
+				Size:  "md",
+			}) {
+				<form :action="'/admin/brands/' + editData.id + '/edit'" method="POST" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0" data-boost-upload>
+						<div class="modal-body d-flex flex-col gap-3">
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label">اسم الشركة المصنعة (عربي) *</label>
+									<input type="text" name="name_ar" x-model="editData.name_ar" required class="form-input" />
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label">اسم الشركة (إنجليزي) *</label>
+									<input type="text" name="name_en" x-model="editData.name_en" required class="form-input" dir="ltr" />
+								</div>
+							</div>
+
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label">تغيير الشعار أو الصورة</label>
+									<input type="file" name="brand_image" accept=".png,.jpg,.jpeg,.webp" class="form-input p-2" />
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label">أو رابط الصورة (URL)</label>
+									<input type="text" name="image_url" x-model="editData.image" class="form-input" dir="ltr" />
+								</div>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الوصف والنبذة التعريفية (عربي)</label>
+								<textarea name="description_ar" x-model="editData.description_ar" rows="2" class="form-input"></textarea>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الوصف (إنجليزي)</label>
+								<textarea name="description_en" x-model="editData.description_en" rows="2" class="form-input" dir="ltr"></textarea>
+							</div>
+
+							<div class="form-group m-0">
+								<label class="form-label">الحالة</label>
+								<select name="status" x-model="editData.status" class="form-select">
+									<option value="active">نشط ومفعل (Active)</option>
+									<option value="inactive">معطل (Inactive)</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="modal-footer">
+							<button type="button" data-on-click="closeDialog('brand-edit-modal')" class="btn btn-secondary">إلغاء</button>
+							<button type="submit" class="btn btn-primary font-bold">
+								@components.IconCheck("icon-xs")
+								<span>حفظ التعديلات</span>
+							</button>
+						</div>
+					</form>
+			}
+
+		</div>
+	}
+}

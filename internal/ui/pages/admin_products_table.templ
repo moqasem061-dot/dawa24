@@ -1,0 +1,301 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AdminProductsTable(
+	products []*catalog.Product,
+	brands []*catalog.Brand,
+	categories []*catalog.Category,
+	lang string,
+	currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter string,
+	catFilterVal int64,
+	pageSize int,
+) {
+	<div class="table-container is-sticky mb-4">
+		<table class="data-table table-compact">
+			<thead>
+				<tr>
+					<th class="w-20 text-center">الصورة</th>
+					<th class="min-w-64">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("name", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب اسم الصنف"
+						>
+							<span>الاسم والبيانات الرسمية</span>
+							<span class="text-xs">{ renderSortIcon("name", currentSort) }</span>
+						</a>
+					</th>
+					<th class="min-w-44">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("scientific", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب الاسم العلمي"
+						>
+							<span>الاسم العلمي والفعالية</span>
+							<span class="text-xs">{ renderSortIcon("scientific", currentSort) }</span>
+						</a>
+					</th>
+					<th class="w-28 text-center">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("dosage", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب الشكل الصيدلي"
+						>
+							<span>الشكل الصيدلي</span>
+							<span class="text-xs">{ renderSortIcon("dosage", currentSort) }</span>
+						</a>
+					</th>
+					<th class="w-28 text-center">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("category", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب فئة المنتج"
+						>
+							<span>فئة المنتج</span>
+							<span class="text-xs">{ renderSortIcon("category", currentSort) }</span>
+						</a>
+					</th>
+					<th class="min-w-32">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("mfg", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب الشركة المصنعة"
+						>
+							<span>الشركة المصنعة</span>
+							<span class="text-xs">{ renderSortIcon("mfg", currentSort) }</span>
+						</a>
+					</th>
+					<th class="w-28 text-center">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("price", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب سعر الجمهور"
+						>
+							<span>سعر الجمهور</span>
+							<span class="text-xs">{ renderSortIcon("price", currentSort) }</span>
+						</a>
+					</th>
+					<th class="w-24 text-center">
+						<a
+							href={ templ.SafeURL(buildAdminProductsSortURL("status", currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, 0, catFilterVal, pageSize)) }
+							class="text-inherit hover:text-primary d-inline-flex items-center gap-1 text-decoration-none font-bold"
+							title="ترتيب حسب الحالة"
+						>
+							<span>الحالة</span>
+							<span class="text-xs">{ renderSortIcon("status", currentSort) }</span>
+						</a>
+					</th>
+					<th class="col-actions text-center">الإجراءات</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, p := range products {
+					<tr id={ fmt.Sprintf("product-row-%d", p.ID) } class="hover-lift-subtle">
+						<!-- 1. Thumbnail -->
+						<td class="text-center align-middle">
+							<div class="product-thumb-box mx-auto">
+								if p.Image != "" {
+									@components.ProductImage(imageurl.Thumb(p.Image, p.Name.Get(i18n.Lang(lang)), "product-thumb-img"))
+								} else {
+									<span class="text-muted">@components.IconPill("icon-sm")</span>
+								}
+							</div>
+						</td>
+
+						<!-- 2. Product Name & Barcode/EDA -->
+						<td class="align-middle">
+							<div class="d-flex flex-col gap-1">
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/admin/products/%d", p.ID)) }
+									class="font-bold text-sm text-primary hover:text-accent text-decoration-none line-clamp-2 leading-snug"
+									title={ p.Name.Get(i18n.Lang(lang)) }
+								>
+									{ p.Name.Get(i18n.Lang(lang)) }
+								</a>
+								if p.Name.Get("en") != "" && lang == "ar" {
+									<span class="text-xs text-muted line-clamp-1 font-mono" dir="ltr" title={ p.Name.Get("en") }>
+										{ p.Name.Get("en") }
+									</span>
+								}
+								<div class="d-flex items-center gap-1.5 flex-wrap mt-0.5">
+									if p.Barcode != "" {
+										<span class="badge badge-sky text-2xs tabular-nums font-mono py-0.5 px-2 font-bold" title="رقم الباركود / التسجيل بهيئة الدواء (EDA)">
+											باركود: { p.Barcode }
+										</span>
+									}
+									if p.SKU != "" && p.SKU != p.Barcode {
+										<span class="badge badge-neutral text-2xs tabular-nums font-mono py-0.5 px-2" title="كود الصنف (SKU)">
+											SKU: { p.SKU }
+										</span>
+									}
+								</div>
+							</div>
+						</td>
+
+						<!-- 3. Scientific Name & Active Ingredient -->
+						<td class="align-middle">
+							<div class="d-flex flex-col gap-0.5 max-w-xs">
+								if p.ScientificName != "" {
+									<div class="font-medium text-xs text-primary line-clamp-2" title={ p.ScientificName }>
+										{ p.ScientificName }
+									</div>
+								}
+								if p.Active != "" {
+									<div class="text-2xs text-secondary line-clamp-1" title={ p.Active }>
+										{ p.Active }
+									</div>
+								}
+								if p.ScientificName == "" && p.Active == "" {
+									<span class="text-muted text-xs">—</span>
+								}
+							</div>
+						</td>
+
+						<!-- 4. Dosage Form -->
+						<td class="text-center align-middle">
+							if p.DosageForm != "" {
+								<span class="badge badge-slate text-xs font-semibold">
+									{ p.DosageForm }
+								</span>
+							} else {
+								<span class="text-muted text-xs">—</span>
+							}
+						</td>
+
+						<!-- 5. Category -->
+						<td class="text-center align-middle">
+							{{ catLabel := getCategoryLabel(p.CategoryID, categories, "غير مصنف") }}
+							if catLabel != "غير مصنف" {
+								<span class="badge badge-purple text-xs font-semibold text-truncate d-inline-block max-w-full" title={ catLabel }>
+									{ catLabel }
+								</span>
+							} else {
+								<span class="badge badge-neutral text-xs text-muted">غير مصنف</span>
+							}
+						</td>
+
+						<!-- 6. Manufacturer / Brand -->
+						<td class="align-middle">
+							<div class="max-w-44">
+								if p.BrandID != nil && *p.BrandID > 0 {
+									<a
+										href="/admin/brands"
+										class="badge badge-sky text-xs font-medium text-truncate d-inline-block max-w-full"
+										title={ getBrandLabel(p.BrandID, brands, p.ManufacturingCompanies) }
+									>
+										{ getBrandLabel(p.BrandID, brands, p.ManufacturingCompanies) }
+									</a>
+								} else if p.ManufacturingCompanies != "" {
+									<span
+										class="text-xs text-secondary font-medium text-truncate d-inline-block max-w-full"
+										title={ p.ManufacturingCompanies }
+									>
+										{ p.ManufacturingCompanies }
+									</span>
+								} else {
+									<span class="text-muted text-xs">—</span>
+								}
+							</div>
+						</td>
+
+						<!-- 7. Public Price (سعر الجمهور) -->
+						<td class="text-center align-middle">
+							<div class="d-inline-flex flex-col items-center">
+								<span class="font-black text-sm text-primary tabular-nums">
+									{ p.Price.String() }
+								</span>
+								<span class="text-3xs text-muted font-bold">ج.م</span>
+							</div>
+						</td>
+
+						<!-- 8. Status -->
+						<td class="text-center align-middle">
+							if p.Status == "active" {
+								<span class="badge badge-emerald text-xs font-bold">نشط ومعتمد</span>
+							} else {
+								<span class="badge badge-danger text-xs font-bold">موقوف</span>
+							}
+						</td>
+
+						<!-- 8. Actions -->
+						<td class="col-actions text-center align-middle">
+							<div class="table-actions d-inline-flex items-center gap-1">
+								<!-- View Details Link -->
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/admin/products/%d", p.ID)) }
+									class="btn btn-secondary btn-icon btn-sm"
+									title="عرض تفاصيل الصنف بالكامل"
+								>
+									@components.IconArrowLeft("icon-xs")
+								</a>
+
+								<!-- Edit Modal Trigger -->
+								<button
+									type="button"
+									class="btn btn-secondary btn-icon btn-sm"
+									title="تعديل بيانات الدواء"
+									@click={ fmt.Sprintf("openEdit(%d, %q, %q, %q, %q, %q, %d, %d, %q, %q, %q, %q, %q, %q, %q)",
+										p.ID,
+										p.Name.Get("ar"),
+										p.Name.Get("en"),
+										p.ScientificName,
+										p.Active,
+										p.DosageForm,
+										derefBrandID(p.BrandID),
+										derefCategoryID(p.CategoryID),
+										p.ManufacturingCompanies,
+										p.Barcode,
+										p.Price.String(),
+										p.Image,
+										p.Description.Get("ar"),
+										p.Description.Get("en"),
+										string(p.Status)) }
+								>
+									@components.IconEdit("icon-xs")
+								</button>
+
+								<!-- Status Toggle -->
+								if p.Status == "pending" || p.Status == "inactive" || p.Status == "rejected" {
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/products/%d/status", p.ID)) } class="m-0 d-inline">
+										<input type="hidden" name="status" value="active" />
+										<button type="submit" class="btn btn-secondary btn-icon btn-sm" title="تفعيل واعتماد الصنف">
+											@components.IconCheck("icon-xs")
+										</button>
+									</form>
+								}
+								if p.Status == "active" {
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/products/%d/status", p.ID)) } class="m-0 d-inline">
+										<input type="hidden" name="status" value="inactive" />
+										<button type="submit" class="btn btn-secondary btn-icon btn-sm" title="إيقاف الصنف مؤقتاً">
+											@components.IconMinus("icon-xs")
+										</button>
+									</form>
+								}
+
+								<!-- Delete Button -->
+								<form
+									method="POST"
+									action={ templ.SafeURL(fmt.Sprintf("/admin/products/%d/delete", p.ID)) }
+									class="m-0 d-inline"
+									data-confirm="هل أنت متأكد من حذف هذا الصنف الدوائي الأساسي نهائياً؟"
+								>
+									<button type="submit" class="btn btn-secondary btn-icon btn-sm text-danger" title="حذف الصنف نهائياً">
+										@components.IconTrash("icon-xs")
+									</button>
+								</form>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

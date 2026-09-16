@@ -1,0 +1,435 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// ModelMetaEntry carries model info for rendering.
+type ModelMetaEntry struct {
+	Key          string
+	NameAr       string
+	NameEn       string
+	SchemaTable  string
+	TotalCount   int
+	TrashedCount int
+}
+
+func calcTotalTrashed(models []ModelMetaEntry) int {
+	total := 0
+	for _, m := range models {
+		total += m.TrashedCount
+	}
+	return total
+}
+
+func calcTotalActive(models []ModelMetaEntry) int {
+	total := 0
+	for _, m := range models {
+		active := m.TotalCount - m.TrashedCount
+		if active > 0 {
+			total += active
+		}
+	}
+	return total
+}
+
+func countModelsWithTrashed(models []ModelMetaEntry) int {
+	c := 0
+	for _, m := range models {
+		if m.TrashedCount > 0 {
+			c++
+		}
+	}
+	return c
+}
+
+func countModelsEmpty(models []ModelMetaEntry) int {
+	c := 0
+	for _, m := range models {
+		if m.TrashedCount == 0 {
+			c++
+		}
+	}
+	return c
+}
+
+// AdminTrashListPage renders trash overview across models.
+templ AdminTrashListPage(models []ModelMetaEntry, lang, dir string) {
+	@layouts.AdminShell("سلة المحذوفات المركزية واسترجاع البيانات", "trash", lang, dir) {
+		<div class="page-container" x-data="{ search: '', filter: 'all' }">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTrash("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سلة المحذوفات واسترجاع البيانات</h1>
+							<p class="text-sm text-secondary m-0 mt-1">إدارة واسترجاع السجلات المحذوفة مؤقتاً (Soft-Deleted) عبر كافة أقسام المنظومة، مع إمكانية الاستعادة الفورية أو الحذف النهائي الموثق أمنياً</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Summary Strip -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي السجلات في السلة</span>
+						<span class="text-danger">@components.IconTrash("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-danger mt-2">
+						{ fmt.Sprintf("%d", calcTotalTrashed(models)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">السجلات النشطة بالنظام</span>
+						<span class="text-success">@components.IconCheckCircle("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-success mt-2">
+						{ fmt.Sprintf("%d", calcTotalActive(models)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أقسام محمية بحذف آمن</span>
+						<span class="text-brand">@components.IconShield("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", len(models)) }
+					</div>
+				</div>
+			</div>
+
+			<!-- Search & Filter Controls -->
+			<div class="glass-panel p-4 mb-4 flex-between items-center flex-wrap gap-3">
+				<div class="tabs-nav m-0">
+					<button type="button" class="tab-btn" :class="{ 'active': filter === 'all' }" @click="filter = 'all'">
+						<span>{ i18n.T(lang, "admin.trash.tab_all_models") }</span>
+						<span class="tab-btn-count">{ fmt.Sprintf("%d", len(models)) }</span>
+					</button>
+					<button type="button" class="tab-btn" :class="{ 'active': filter === 'trashed' }" @click="filter = 'trashed'">
+						<span>{ i18n.T(lang, "admin.trash.tab_has_trashed") }</span>
+						<span class="tab-btn-count">{ fmt.Sprintf("%d", countModelsWithTrashed(models)) }</span>
+					</button>
+					<button type="button" class="tab-btn" :class="{ 'active': filter === 'empty' }" @click="filter = 'empty'">
+						<span>{ i18n.T(lang, "admin.trash.tab_empty") }</span>
+						<span class="tab-btn-count">{ fmt.Sprintf("%d", countModelsEmpty(models)) }</span>
+					</button>
+				</div>
+				<div class="stack-sm">
+					<input
+						type="text"
+						x-model="search"
+						placeholder={ i18n.T(lang, "admin.trash.search_models") }
+						class="form-input text-xs min-w-64"
+					/>
+				</div>
+			</div>
+
+			<!-- Tables Overview Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="p-4 border-b flex-between items-center">
+					<h3 class="text-sm font-black text-primary m-0">
+						جداول ونماذج البيانات المشمولة بالسلة ({ fmt.Sprintf("%d", len(models)) })
+					</h3>
+					<span class="badge badge-sky text-xs font-bold">كشف تلقائي من قاعدة البيانات</span>
+				</div>
+
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>القسم / النموذج في المنظومة</th>
+								<th>الجدول البرمجي</th>
+								<th>السجلات النشطة</th>
+								<th>السجلات في السلة</th>
+								<th class="text-center">الحالة</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, m := range models {
+								<tr
+									x-data={ fmt.Sprintf("{ mTrashed: %d, mNameAr: '%s', mNameEn: '%s', mKey: '%s' }", m.TrashedCount, m.NameAr, m.NameEn, m.Key) }
+									x-show="(filter === 'all' || (filter === 'trashed' && mTrashed > 0) || (filter === 'empty' && mTrashed === 0)) && (!search || mNameAr.toLowerCase().includes(search.toLowerCase()) || mNameEn.toLowerCase().includes(search.toLowerCase()) || mKey.toLowerCase().includes(search.toLowerCase()))"
+								>
+									<td>
+										<div class="font-extrabold text-primary text-xs">{ m.NameAr }</div>
+										<div class="text-xs text-muted font-mono mt-0.5">{ m.NameEn }</div>
+									</td>
+									<td>
+										<code class="text-xs font-mono">{ m.SchemaTable }</code>
+									</td>
+									<td class="tabular-nums text-xs font-bold text-primary">
+										{ fmt.Sprintf("%d", m.TotalCount - m.TrashedCount) }
+									</td>
+									<td class="tabular-nums">
+										if m.TrashedCount > 0 {
+											<span class="badge badge-rose text-xs font-bold">{ fmt.Sprintf("%d محذوف", m.TrashedCount) }</span>
+										} else {
+											<span class="badge badge-emerald text-xs font-bold">فارغ (0)</span>
+										}
+									</td>
+									<td class="text-center">
+										if m.TrashedCount > 0 {
+											<span class="badge badge-amber text-xs font-bold">تتطلب مراجعة أو استرجاع</span>
+										} else {
+											<span class="badge badge-slate text-xs">سليمة بالكامل</span>
+										}
+									</td>
+									<td class="col-actions">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/trash-list/%s", m.Key)) } class="btn btn-secondary btn-sm font-bold text-xs">
+											@components.IconFolderOpen("icon-xs")
+											<span>معاينة واسترجاع ({ fmt.Sprintf("%d", m.TrashedCount) })</span>
+										</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// TrashRowView is one soft-deleted record in the trash listing.
+type TrashRowView struct {
+	ID               int64
+	Label            string
+	Code             string
+	OrgName          string
+	DeletedByName    string
+	DeletedAt        string
+	CanRestore       bool
+	CannotRestoreWhy string
+}
+
+// AdminTrashModelView holds parameters for one model's trash list.
+type AdminTrashModelView struct {
+	ModelKey   string
+	Rows       []TrashRowView
+	Search     string
+	Page       int
+	PerPage    int
+	TotalCount int
+	NoticeKind string
+	Notice     string
+}
+
+func trashDisplayLabel(row TrashRowView) string {
+	if row.Label != "" {
+		return row.Label
+	}
+	if row.Code != "" {
+		return row.Code
+	}
+	return fmt.Sprintf("#%d", row.ID)
+}
+
+func trashModelQuery(search string) url.Values {
+	vals := url.Values{}
+	if search != "" {
+		vals.Set("q", search)
+	}
+	return vals
+}
+
+func trashPurgeURL(modelKey string, id int64, search string) string {
+	u := fmt.Sprintf("/admin/trash-list/%s/%d/purge", modelKey, id)
+	if search != "" {
+		u += "?q=" + url.QueryEscape(search)
+	}
+	return u
+}
+
+// AdminTrashListModelPage lists the deleted rows of one table, with restore and purge actions.
+templ AdminTrashListModelPage(v AdminTrashModelView, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("سلة محذوفات: %s", v.ModelKey), "trash", lang, dir) {
+		<div class="page-container">
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTrash("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سلة محذوفات: { v.ModelKey } ({ fmt.Sprintf("%d", v.TotalCount) })</h1>
+							<p class="text-sm text-secondary m-0 mt-1">استعراض كافة السجلات المحذوفة مؤقتاً في هذا القسم، مع خيارات الاسترجاع الفوري أو الحذف النهائي الموثق</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/trash-list" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconArrowRight("icon-xs")
+							<span>العودة لسلة المحذوفات</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter & Search Toolbar -->
+			<div class="filter-bar mb-4">
+				<form method="GET" action={ templ.SafeURL(fmt.Sprintf("/admin/trash-list/%s", v.ModelKey)) } class="d-flex items-center gap-2 flex-wrap m-0">
+					<input
+						type="text"
+						name="q"
+						value={ v.Search }
+						placeholder={ i18n.T(lang, "admin.trash.search_rows") }
+						class="form-input text-xs min-w-64 flex-1"
+					/>
+					<button type="submit" class="btn btn-secondary btn-sm font-black shadow-2xs">
+						تصفية
+					</button>
+					if v.Search != "" {
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/trash-list/%s", v.ModelKey)) } class="btn btn-secondary btn-sm text-muted font-bold shadow-2xs">
+							إلغاء
+						</a>
+					}
+				</form>
+			</div>
+
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(v.Rows) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconTrash("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">سلة هذا القسم فارغة تماماً</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لا توجد سجلات محذوفة مؤقتاً في هذا النموذج حالياً.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>المعرف (ID)</th>
+									<th>{ i18n.T(lang, "admin.trash.col_identity") }</th>
+									<th>{ i18n.T(lang, "admin.trash.col_owning_org") }</th>
+									<th>{ i18n.T(lang, "admin.trash.col_deleted_by") }</th>
+									<th>{ i18n.T(lang, "admin.trash.col_deleted_at") }</th>
+									<th class="col-actions">الإجراءات والخيارات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range v.Rows {
+									<tr>
+										<td class="tabular-nums font-bold text-brand">
+											#{ fmt.Sprintf("%d", row.ID) }
+										</td>
+										<td>
+											<div class="stack-2xs">
+												<div class="font-bold text-primary text-xs">
+													if row.Label != "" {
+														{ row.Label }
+													} else {
+														<span class="text-muted">سجل رقم #{ fmt.Sprintf("%d", row.ID) }</span>
+													}
+												</div>
+												if row.Code != "" {
+													<div>
+														<span class="badge badge-slate text-2xs font-mono">{ row.Code }</span>
+													</div>
+												}
+											</div>
+										</td>
+										<td>
+											if row.OrgName != "" {
+												<div class="d-flex items-center gap-1 text-xs font-bold text-secondary">
+													@components.IconBuilding("icon-2xs text-muted")
+													<span>{ row.OrgName }</span>
+												</div>
+											} else {
+												<span class="text-muted">—</span>
+											}
+										</td>
+										<td>
+											if row.DeletedByName != "" {
+												<div class="d-flex items-center gap-1 text-xs text-secondary">
+													@components.IconUser("icon-2xs text-muted")
+													<span>{ row.DeletedByName }</span>
+												</div>
+											} else {
+												<span class="text-muted">—</span>
+											}
+										</td>
+										<td class="tabular-nums text-xs text-secondary">
+											{ row.DeletedAt }
+										</td>
+										<td class="col-actions">
+											<div class="table-actions items-center">
+												if row.CanRestore {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/trash-list/%s/%d/restore", v.ModelKey, row.ID)) } class="m-0">
+														<input type="hidden" name="q" value={ v.Search }/>
+														<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs" title="استرجاع السجل للنظام">
+															@components.IconRefresh("icon-xs")
+															<span>استرجاع</span>
+														</button>
+													</form>
+												} else {
+													<div class="d-flex flex-col gap-1 items-start">
+														<button type="button" disabled class="btn btn-secondary btn-sm font-bold text-xs opacity-50 cursor-not-allowed" title={ row.CannotRestoreWhy }>
+															@components.IconRefresh("icon-xs")
+															<span>استرجاع (معطل)</span>
+														</button>
+														<span class="badge badge-rose text-2xs font-bold" title={ row.CannotRestoreWhy }>
+															@components.IconAlertCircle("icon-2xs")
+															<span>{ row.CannotRestoreWhy }</span>
+														</span>
+													</div>
+												}
+												<button
+													type="button"
+													class="btn btn-danger btn-sm font-bold text-xs"
+													data-modal-open={ fmt.Sprintf("purge-modal-%d", row.ID) }
+													title="حذف نهائي وقطعي"
+												>
+													@components.IconTrash("icon-xs")
+													<span>حذف نهائي</span>
+												</button>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					for _, row := range v.Rows {
+						@components.ConfirmModal(components.ConfirmModalProps{
+							ID:          fmt.Sprintf("purge-modal-%d", row.ID),
+							Title:       i18n.T(lang, "admin.trash.purge_confirm_title"),
+							Message:     fmt.Sprintf(i18n.T(lang, "admin.trash.purge_confirm_msg"), trashDisplayLabel(row), row.ID),
+							ConfirmURL:  trashPurgeURL(v.ModelKey, row.ID, v.Search),
+							ConfirmVerb: "post",
+							ConfirmText: i18n.T(lang, "admin.trash.purge_confirm_btn"),
+							CancelText:  i18n.T(lang, "common.cancel"),
+							Danger:      true,
+						})
+					}
+
+					if v.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: v.Page,
+							PageSize:    v.PerPage,
+							TotalCount:  v.TotalCount,
+							BaseURL:     fmt.Sprintf("/admin/trash-list/%s", v.ModelKey),
+							QueryValues: trashModelQuery(v.Search),
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}
+
+

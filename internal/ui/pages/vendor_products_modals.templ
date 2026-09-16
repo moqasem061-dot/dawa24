@@ -1,0 +1,261 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorProductsModals(data VendorVariantsData, lang string) {
+	@components.Modal(components.ModalProps{ID: "edit-variant-modal", Title: i18n.T(lang, "vendor_products.edit_modal_title"), Size: "md"}) {
+		<form class="stack-md" method="POST" id="edit-variant-form" action="/vendor/variants/0/update">
+			<div class="stack-md">
+				<!-- The listing's own state, so saving returns to the page
+				     the vendor was on rather than the top of nine thousand rows. -->
+				<input type="hidden" name="page" id="edit-form-ctx-page"/>
+				<input type="hidden" name="limit" id="edit-form-ctx-limit"/>
+				<input type="hidden" name="q" id="edit-form-ctx-q"/>
+				<input type="hidden" name="status_filter" id="edit-form-ctx-status"/>
+				<input type="hidden" name="stock" id="edit-form-ctx-stock"/>
+				<input type="hidden" name="sort" id="edit-form-ctx-sort"/>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="edit-form-name-ar">
+							{ i18n.T(lang, "vendor_products.fld_name_ar") }
+						</label>
+						<input type="text" id="edit-form-name-ar" name="name_ar" required class="form-input w-full-rounded"/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="edit-form-name-en">
+							{ i18n.T(lang, "vendor_products.fld_name_en") }
+						</label>
+						<input type="text" id="edit-form-name-en" name="name_en" class="form-input w-full-rounded" dir="ltr"/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="edit-form-sku">
+							{ i18n.T(lang, "vendor_products.fld_sku") }
+						</label>
+						<input type="text" id="edit-form-sku" name="sku" class="form-input w-full-rounded tabular-nums" dir="ltr"/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="edit-form-barcode">
+							{ i18n.T(lang, "vendor_products.fld_barcode") }
+						</label>
+						<input type="text" id="edit-form-barcode" name="barcode" class="form-input w-full-rounded tabular-nums" dir="ltr"/>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm" for="edit-form-unit">
+						{ i18n.T(lang, "vendor_products.fld_unit") }
+					</label>
+					<input type="text" id="edit-form-unit" name="unit" placeholder={ i18n.T(lang, "vendor_products.fld_unit_ph") } class="form-input w-full-rounded"/>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_public_price") } <span class="text-danger">*</span>
+						</label>
+						<input
+							type="number"
+							step="0.01"
+							id="edit-form-price"
+							name="price"
+							required
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_discount_pct") }
+						</label>
+						<input
+							type="number"
+							step="0.1"
+							min="0"
+							max="100"
+							id="edit-form-discount"
+							name="discount"
+							placeholder="0.0%"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
+							<span>{ i18n.T(lang, "vendor_products.fld_cost_price") }</span>
+							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+						</label>
+						<input
+							type="number"
+							step="0.01"
+							min="0"
+							id="edit-form-cost"
+							name="cost_price"
+							placeholder="0.00"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
+							<span>{ i18n.T(lang, "vendor_products.fld_cost_discount") }</span>
+							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+						</label>
+						<input
+							type="number"
+							step="0.1"
+							min="0"
+							max="100"
+							id="edit-form-cost-discount"
+							name="cost_discount_percentage"
+							placeholder="0.0%"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_available_stock") }
+						</label>
+						<input
+							type="number"
+							id="edit-form-stock"
+							name="stock_qty"
+							placeholder="0"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_min_order_qty") }
+						</label>
+						<input
+							type="number"
+							id="edit-form-min-qty"
+							name="min_order_qty"
+							min="1"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm">
+						{ i18n.T(lang, "vendor_products.fld_quota") }
+					</label>
+					<input
+						type="number"
+						id="edit-form-quota"
+						name="quota_limit"
+						min="1"
+						placeholder={ i18n.T(lang, "vendor_products.fld_quota_ph") }
+						class="form-input w-full-rounded tabular-nums"
+					/>
+					<p class="text-muted text-xs">
+						{ i18n.T(lang, "vendor_products.fld_quota_desc") }
+					</p>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_batch_num") }
+						</label>
+						<input
+							type="text"
+							id="edit-form-batch"
+							name="batch_number"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_expiry_date") }
+						</label>
+						<input
+							type="date"
+							id="edit-form-expiry"
+							name="expiry_date"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_shipping_warehouse") }
+						</label>
+						<select name="branch_id" id="edit-form-branch" class="form-input w-full-rounded">
+							for _, b := range data.Branches {
+								<option value={ fmt.Sprintf("%d", b.ID) } selected?={ b.IsMain }>
+									{ b.Name }
+									if b.IsMain {
+										<span> { i18n.T(lang, "vendor_products.main_branch_suffix") }</span>
+									}
+								</option>
+							}
+						</select>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_status") }
+						</label>
+						<select name="status" id="edit-form-status" class="form-input w-full-rounded">
+							<option value="active">{ i18n.T(lang, "vendor_products.status_active_opt") }</option>
+							<option value="inactive">{ i18n.T(lang, "vendor_products.status_inactive_opt") }</option>
+						</select>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm">
+							{ i18n.T(lang, "vendor_products.fld_is_negotiable") }
+						</label>
+						<select name="is_negotiable" id="edit-form-negotiable" class="form-input w-full-rounded font-bold">
+							<option value="false">{ i18n.T(lang, "vendor_products.negotiable_no") }</option>
+							<option value="true">{ i18n.T(lang, "vendor_products.negotiable_yes") }</option>
+						</select>
+					</div>
+				</div>
+
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeEditVariantModal()">
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					{ i18n.T(lang, "vendor_products.btn_save_changes") }
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- MODAL 3: Add Custom Variant Modal -->
+	@components.Modal(components.ModalProps{ID: "add-custom-variant-modal", Title: i18n.T(lang, "vendor_products.add_custom_title"), Size: "md"}) {
+		@AddCustomVariantForm(VendorCustomVariantModalData{
+			Branches: data.Branches,
+			Form: VendorVariantFormInput{
+				MinOrderQty: "1",
+			},
+		}, lang)
+	}
+
+	<!-- Live JS Logic for all Modals and Autocomplete -->
+	@VendorProductsScript()
+}

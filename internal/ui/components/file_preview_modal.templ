@@ -1,0 +1,101 @@
+package components
+
+import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+
+// UniversalFilePreviewModal provides an in-window lightbox modal for viewing images and PDFs across all platform dashboards.
+templ UniversalFilePreviewModal(langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<dialog
+		id="universal-file-preview-modal"
+		class="modal"
+		aria-labelledby="universal-preview-title"
+	>
+		<div class="modal-box modal-xl">
+			<div class="modal-header flex-between items-center pb-3 border-b">
+				<div class="d-flex items-center gap-2">
+					<span class="text-primary">@IconFileText("icon-sm")</span>
+					<div class="stack-2xs">
+						<h3 class="modal-title text-sm font-bold text-primary m-0" id="universal-preview-title">{ i18n.T(lang, "preview.modal.title") }</h3>
+						<p class="text-xs text-muted font-mono m-0" id="universal-preview-filename" dir="ltr"></p>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a
+						id="universal-preview-download"
+						href="#"
+						download
+						class="btn btn-secondary btn-xs font-bold gap-1"
+						title={ i18n.T(lang, "preview.modal.download_tooltip") }
+					>
+						@IconDownload("icon-xs")
+						<span>{ i18n.T(lang, "preview.modal.download") }</span>
+					</a>
+					<a
+						id="universal-preview-newtab"
+						href="#"
+						target="_blank"
+						rel="noopener"
+						class="btn btn-secondary btn-xs font-bold gap-1"
+						title={ i18n.T(lang, "preview.modal.newtab_tooltip") }
+					>
+						@IconExternalLink("icon-xs")
+						<span>{ i18n.T(lang, "preview.modal.newtab") }</span>
+					</a>
+					<button
+						type="button"
+						class="btn btn-ghost btn-xs btn-icon"
+						data-on-click="window.closeFilePreview()"
+						aria-label={ i18n.T(lang, "preview.modal.close") }
+					>
+						@IconClose("icon-xs")
+					</button>
+				</div>
+			</div>
+
+			<div class="modal-body p-0">
+				<div class="doc-viewer-viewport" id="universal-preview-viewport">
+					<!-- PDF / Document Iframe -->
+					<iframe
+						id="universal-preview-iframe"
+						src="about:blank"
+						class="doc-viewer-iframe hidden"
+						loading="lazy"
+					></iframe>
+
+					<!-- Image Viewport -->
+					<div id="universal-preview-img-container" class="doc-viewer-img-container hidden">
+						<img
+							id="universal-preview-img"
+							src=""
+							alt="معاينة الملف"
+							class="doc-viewer-img"
+						/>
+					</div>
+
+					<!-- Error State Placeholder -->
+					<div id="universal-preview-error" class="hidden p-6 text-center stack-sm">
+						@IconAlert("icon-md text-danger mx-auto")
+						<p class="text-sm font-bold text-primary m-0">تعذر تحميل معاينة هذا الملف مباشرة</p>
+						<p class="text-xs text-muted m-0">يمكنك استخدام زر التحميل أو فتح الملف في نافذة مستقلة للمعاينة.</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<span class="text-xs text-muted" id="universal-preview-footer-note">معاينة الملفات والمستندات الرقمية المعتمدة</span>
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					data-on-click="window.closeFilePreview()"
+				>
+					إغلاق المعاينة
+				</button>
+			</div>
+		</div>
+	</dialog>
+}

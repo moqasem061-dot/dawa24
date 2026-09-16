@@ -1,0 +1,177 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorInventoryTable renders the data table and pagination for inventory items.
+templ VendorInventoryTable(data VendorInventoryData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if len(data.Stocks) == 0 {
+		<div class="p-12 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+			<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_inventory.empty_title") }</h3>
+			<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor_inventory.empty_desc") }</p>
+		</div>
+	} else {
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>{ i18n.T(lang, "vendor_inventory.th_product_batch") }</th>
+						<th>{ i18n.T(lang, "vendor_inventory.th_warehouse_branch") }</th>
+						<th>{ i18n.T(lang, "vendor_inventory.th_available_stock") }</th>
+						<th>{ i18n.T(lang, "vendor_inventory.th_reorder_level") }</th>
+						<th>{ i18n.T(lang, "vendor_inventory.th_status") }</th>
+						<th class="col-actions">{ i18n.T(lang, "vendor_inventory.th_actions") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, s := range data.Stocks {
+						<tr>
+							<td>
+								<div class="d-flex items-center gap-3">
+									<div class="user-avatar-badge">
+										@components.IconPackage("icon-xs")
+									</div>
+									<div class="stack-sm">
+										<strong class="text-primary text-sm font-extrabold d-block">
+											{ resolveVariantName(s.ProductVariantID, data.Variants, lang) }
+										</strong>
+										<div class="text-xs text-muted tabular-nums">
+											<span>Variant #{ fmt.Sprintf("%d", s.ProductVariantID) }</span>
+											{ resolveVariantMeta(s.ProductVariantID, data.Variants, lang) }
+										</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								<div class="font-bold text-primary text-xs">
+									{ resolveWarehouseName(s.WarehouseID, data.Warehouses, lang) }
+								</div>
+								<div class="text-xs text-muted tabular-nums">WH #{ fmt.Sprintf("%d", s.WarehouseID) }</div>
+							</td>
+							<td>
+								if s.Quantity > s.MinThreshold {
+									<span class="badge badge-emerald tabular-nums text-xs font-black">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), s.Quantity) }
+									</span>
+								} else if s.Quantity > 0 {
+									<span class="badge badge-amber tabular-nums text-xs font-black">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_inventory.badge_low"), s.Quantity) }
+									</span>
+								} else {
+									<span class="badge badge-rose tabular-nums text-xs font-black">
+										{ i18n.T(lang, "vendor_products.stock_out") }
+									</span>
+								}
+							</td>
+							<td class="tabular-nums">
+								<span class="text-xs text-secondary font-bold">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), s.MinThreshold) }
+								</span>
+							</td>
+							<td>
+								if s.Quantity > 0 {
+									<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_inventory.status_ready") }</span>
+								} else {
+									<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_inventory.status_unavailable") }</span>
+								}
+							</td>
+							<td class="col-actions">
+								<div class="table-actions">
+									<button
+										type="button"
+										class="btn btn-secondary btn-sm font-bold gap-1 text-xs"
+										@click={ fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, from_wh_id: %d, from_wh_name: %q, qty: %d }; transferModal = true;", s.ID, s.ProductVariantID, s.ProductID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.WarehouseID, resolveWarehouseName(s.WarehouseID, data.Warehouses, lang), s.Quantity) }
+										title={ i18n.T(lang, "vendor_inventory.btn_transfer_title") }
+									>
+										@components.IconRefresh("icon-xs")
+										<span>{ i18n.T(lang, "vendor_inventory.btn_transfer_stock") }</span>
+									</button>
+									<button
+										type="button"
+										class="btn btn-secondary btn-sm font-bold gap-1 text-xs"
+										@click={ fmt.Sprintf("selectedStock = { id: %d, variantName: %q, currentQty: %d }; adjustModal = true;", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.Quantity) }
+									>
+										<span>{ i18n.T(lang, "vendor_inventory.btn_adjust_stock") }</span>
+									</button>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+
+		@components.B2BPagination(components.PaginationProps{
+			CurrentPage: data.Page,
+			PageSize:    data.PerPage,
+			TotalCount:  data.Total,
+			BaseURL:     "/vendor/inventory",
+			QueryValues: url.Values{"q": {data.Query}, "warehouse_id": {fmt.Sprintf("%d", data.WarehouseID)}},
+		})
+	}
+}
+
+func resolveWarehouseName(whID int64, warehouses []*inventory.Warehouse, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	for _, w := range warehouses {
+		if w.ID == whID {
+			return w.Name
+		}
+	}
+	return fmt.Sprintf(i18n.T(lang, "vendor_inventory.warehouse_prefix"), whID)
+}
+
+func resolveVariantName(variantID int64, variants []*catalog.ProductVariant, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	for _, v := range variants {
+		if v.ID == variantID {
+			if name := v.Name.Get(i18n.Lang(lang)); name != "" {
+				return name
+			}
+			if v.SKU != "" {
+				return "SKU: " + v.SKU
+			}
+		}
+	}
+	return fmt.Sprintf(i18n.T(lang, "vendor_inventory.variant_prefix"), variantID)
+}
+
+func resolveVariantMeta(variantID int64, variants []*catalog.ProductVariant, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	for _, v := range variants {
+		if v.ID == variantID {
+			meta := ""
+			if v.BatchNumber != "" {
+				meta += fmt.Sprintf(i18n.T(lang, "vendor_inventory.batch_prefix"), v.BatchNumber)
+			}
+			if v.ExpiryDate != nil {
+				meta += fmt.Sprintf(i18n.T(lang, "vendor_inventory.expiry_prefix"), v.ExpiryDate.Format("2006-01"))
+			}
+			return meta
+		}
+	}
+	return ""
+}

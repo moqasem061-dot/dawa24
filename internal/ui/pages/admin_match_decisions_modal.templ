@@ -1,0 +1,213 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminMatchDecisionRelinkModal renders the modal for linking or relinking catalog products.
+templ AdminMatchDecisionRelinkModal(returnURL string) {
+	@components.Modal(components.ModalProps{
+		ID:    "admin-decision-relink-modal",
+		Title: "ربط / إعادة ربط قرار المطابقة بالكتالوج",
+		Size:  "lg",
+	}) {
+		<form id="admin-decision-relink-form" method="POST" action="">
+			<input type="hidden" name="return_url" value={ returnURL } />
+			<input type="hidden" id="admin-decision-product-id" name="product_id" value="" />
+
+			<div class="stack-md p-2">
+				<!-- Raw Norm Name Banner -->
+				<div class="bg-surface-sunken p-4 rounded-xl border">
+					<div class="text-xs text-muted font-bold mb-1">اسم الصنف الوارد بالذاكرة (الاسم القياسي):</div>
+					<div id="admin-decision-norm-name" class="font-extrabold text-base text-primary mb-1"></div>
+					<div id="admin-decision-meta" class="text-xs text-secondary font-mono"></div>
+				</div>
+
+				<!-- Current Link Status -->
+				<div id="admin-decision-current-link-box" class="p-3 rounded-lg border bg-surface-raised flex-between items-center d-none">
+					<div class="stack-2xs">
+						<span class="text-xs text-muted font-medium">الربط الحالي بالكتالوج المركزي:</span>
+						<span id="admin-decision-current-link-name" class="font-bold text-xs text-emerald d-inline-flex items-center gap-1"></span>
+					</div>
+					<button type="button" class="btn btn-ghost btn-xs text-danger font-bold" data-on-click="adminUnlinkDecision()">
+						إلغاء الربط (حذف الارتباط)
+					</button>
+				</div>
+
+				<!-- Search Input / Autocomplete -->
+				<div class="stack-xs">
+					<label class="font-bold text-xs text-primary" for="admin-decision-search-input">
+						البحث عن الدواء في الكتالوج المركزي (بالاسم العربي/الإنجليزي أو كود SKU):
+					</label>
+					<div class="d-flex gap-2">
+						<input
+							type="text"
+							id="admin-decision-search-input"
+							class="form-input flex-1 text-sm"
+							placeholder="اكتب اسم الدواء أو كود SKU للبحث..."
+							autocomplete="off"
+						/>
+						<button type="button" class="btn btn-secondary btn-sm" data-on-click="adminDecisionSearchProducts()">
+							بحث
+						</button>
+					</div>
+				</div>
+
+				<!-- Candidates / Search Results -->
+				<div class="stack-xs">
+					<div class="text-xs font-bold text-secondary">نتائج البحث في الكتالوج:</div>
+					<div id="admin-decision-results-list" class="stack-xs max-h-56 overflow-y-auto border rounded-lg p-2 bg-surface-raised">
+						<div class="text-center text-muted text-xs p-4">ابحث عن دواء أعلاه لاختيار الصنف المطابق</div>
+					</div>
+				</div>
+
+				<!-- Selected Product Card -->
+				<div id="admin-decision-selected-card" class="p-3 rounded-lg border border-primary bg-primary-subtle d-none">
+					<div class="flex-between items-center">
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">الصنف المختار للربط:</span>
+							<span id="admin-decision-selected-name" class="font-extrabold text-sm text-primary"></span>
+						</div>
+						<span class="badge badge-emerald text-xs">تم التحديد</span>
+					</div>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="d-flex justify-end gap-2 pt-2 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" data-on-click="adminCloseDecisionModal()">
+						إلغاء
+					</button>
+					<button type="submit" id="admin-decision-submit-btn" class="btn btn-primary btn-sm font-bold" disabled>
+						حفظ وتحديث القرار
+					</button>
+				</div>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		var adminActiveDecisionID = null;
+
+		function adminOpenRelinkModalFromBtn(btn) {
+			var id = parseInt(btn.getAttribute('data-id'), 10);
+			var norm = btn.getAttribute('data-norm') || '';
+			var prodId = parseInt(btn.getAttribute('data-prod-id'), 10) || 0;
+			var prodName = btn.getAttribute('data-prod-name') || '';
+			var prodSku = btn.getAttribute('data-prod-sku') || '';
+			var promptVer = btn.getAttribute('data-prompt-ver') || '';
+			adminOpenRelinkModal(id, norm, prodId, prodName, prodSku, promptVer);
+		}
+
+		function adminOpenRelinkModal(decisionID, normName, currentProdID, currentProdName, currentSKU, promptVer) {
+			adminActiveDecisionID = decisionID;
+			var form = document.getElementById('admin-decision-relink-form');
+			if (form) {
+				form.action = '/admin/match-decisions/' + decisionID + '/relink';
+			}
+			var nameEl = document.getElementById('admin-decision-norm-name');
+			if (nameEl) nameEl.textContent = normName || '';
+
+			var metaEl = document.getElementById('admin-decision-meta');
+			if (metaEl) metaEl.textContent = promptVer ? ('إصدار النموذج: ' + promptVer) : '';
+
+			var currentBox = document.getElementById('admin-decision-current-link-box');
+			var currentName = document.getElementById('admin-decision-current-link-name');
+			if (currentProdID && currentProdID > 0) {
+				if (currentBox) currentBox.classList.remove('d-none');
+				if (currentName) currentName.textContent = currentProdName || '';
+			} else {
+				if (currentBox) currentBox.classList.add('d-none');
+			}
+
+			// Reset selection
+			document.getElementById('admin-decision-product-id').value = '';
+			document.getElementById('admin-decision-selected-card').classList.add('d-none');
+			document.getElementById('admin-decision-submit-btn').disabled = true;
+
+			var searchInput = document.getElementById('admin-decision-search-input');
+			if (searchInput) {
+				searchInput.value = normName || '';
+			}
+
+			var modal = document.getElementById('admin-decision-relink-modal');
+			if (modal && typeof modal.showModal === 'function') {
+				modal.showModal();
+			}
+
+			// Pre-trigger search with normName
+			if (normName) {
+				adminDecisionSearchProducts();
+			}
+		}
+
+		function adminCloseDecisionModal() {
+			var modal = document.getElementById('admin-decision-relink-modal');
+			if (modal && typeof modal.close === 'function') {
+				modal.close();
+			}
+		}
+
+		function adminSelectDecisionProduct(id, name) {
+			document.getElementById('admin-decision-product-id').value = id;
+			var card = document.getElementById('admin-decision-selected-card');
+			var nameEl = document.getElementById('admin-decision-selected-name');
+			if (nameEl) nameEl.textContent = name;
+			if (card) card.classList.remove('d-none');
+			var btn = document.getElementById('admin-decision-submit-btn');
+			if (btn) btn.disabled = false;
+		}
+
+		function adminUnlinkDecision() {
+			if (confirm('هل أنت متأكد من رغبتك في إلغاء ربط هذا القرار وجعله غير مطابق (NULL)؟')) {
+				document.getElementById('admin-decision-product-id').value = '';
+				var form = document.getElementById('admin-decision-relink-form');
+				if (form) form.submit();
+			}
+		}
+
+		var adminDecisionSearchTimer = null;
+		function adminDecisionSearchProducts() {
+			var input = document.getElementById('admin-decision-search-input');
+			var query = input ? input.value.trim() : '';
+			var list = document.getElementById('admin-decision-results-list');
+			if (!list) return;
+
+			list.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-4">⏳ جاري البحث في الكتالوج المركزي...</div>');
+			list.onclick = function (e) {
+				var pick = e.target.closest('[data-pick-id]');
+				if (pick) adminSelectDecisionProduct(parseInt(pick.dataset.pickId, 10), pick.dataset.pickName);
+			};
+
+			fetch('/admin/match-decisions/search-products?q=' + encodeURIComponent(query))
+				.then(function(res) { return res.json(); })
+				.then(function(items) {
+					if (!items || items.length === 0) {
+						list.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-4">لم يتم العثور على أدوية مطابقة</div>');
+						return;
+					}
+					var html = '';
+					for (var i = 0; i < items.length; i++) {
+						var it = items[i];
+						var dispName = it.name || it.label || it.name_ar || it.name_en || '';
+						if (!dispName) continue;
+						html += '<div class="p-2 border rounded-lg bg-surface hover-bg-sunken flex-between items-center gap-2 cursor-pointer" data-pick-id="' + dawaHTML.escape(it.id) + '" data-pick-name="' + dawaHTML.escape(dispName) + '">';
+						html += '<div class="font-bold text-xs text-primary">' + escapeHtml(dispName) + '</div>';
+						html += '<button type="button" class="btn btn-outline-brand btn-xs font-bold">اختيار</button>';
+						html += '</div>';
+					}
+					if (!html) {
+						html = '<div class="text-center text-muted text-xs p-4">لم يتم العثور على أدوية مطابقة</div>';
+					}
+					list.innerHTML = dawaHTML.sanitize(html);
+				})
+				.catch(function(err) {
+					list.innerHTML = dawaHTML.sanitize('<div class="text-center text-danger text-xs p-4">حدث خطأ أثناء الاتصال بالخادم</div>');
+				});
+		}
+
+		function escapeHtml(str) {
+			return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+	</script>
+}

@@ -1,0 +1,226 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ SmartOrderReviewGroups(data SmartOrderReviewData, lang string) {
+	if len(data.AllGroups) == 0 {
+		<div class="glass-panel p-8 text-center border border-subtle rounded-2xl bg-surface-raised/40 mb-6" x-show="activeTab === 'all'">
+			<div class="user-avatar-badge text-2xl mx-auto mb-3 bg-secondary-subtle text-secondary" style="width: 54px; height: 54px;">
+				@components.IconPackage("icon-md")
+			</div>
+			<h3 class="text-base font-black text-primary mb-1">{ i18n.T(lang, "smart_order.empty_filtered") }</h3>
+			<p class="text-xs text-secondary max-w-md mx-auto mb-4">
+				{ i18n.T(lang, "smartorder.err_nothing_to_order") }
+			</p>
+			<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/results", data.Run.PublicID)) } class="btn btn-secondary btn-sm font-bold gap-2">
+				@components.IconArrowRight("icon-xs")
+				<span>{ i18n.T(lang, "smart_order.back_to_results") }</span>
+			</a>
+		</div>
+	}
+	for _, g := range data.Groups {
+		<div
+			class="glass-panel p-0 mb-6 border border-subtle rounded-2xl overflow-hidden shadow-sm"
+			x-show={ fmt.Sprintf("(activeTab === 'all') && (selectedVendor === 'all' || selectedVendor === %q)", g.VendorName) }
+		>
+			
+			<!-- Group Header Strip -->
+			<div class="p-4 bg-surface-raised border-b border-subtle flex-between items-center flex-wrap gap-3">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-lg">
+						@components.IconBuilding("icon-sm")
+					</div>
+					<div class="stack-2xs">
+						<div class="d-flex items-center gap-2">
+							<h3 class="text-base font-black text-primary m-0">{ g.VendorName }</h3>
+							<span class="badge badge-primary text-2xs font-bold">{ fmt.Sprintf(i18n.T(lang, "smart_order.group_items_count"), g.TotalCount) }</span>
+						</div>
+						<span class="text-xs text-secondary">{ i18n.T(lang, "smart_order.group_dedicated_desc") }</span>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "smart_order.supplier_subtotal") }</span>
+					<span class="badge badge-emerald text-sm font-black tabular-nums py-1.5 px-3 group-subtotal-badge">
+						<span class="group-subtotal-val">{ g.Subtotal.String() }</span> { i18n.T(lang, "common.egp") }
+					</span>
+				</div>
+			</div>
+
+			<!-- 11-Column Master Responsive Table with Checkbox Selection -->
+			<div class="table-container m-0 overflow-x-auto">
+				<table class="data-table m-0 so-review-table">
+					<thead>
+						<tr>
+							<th class="so-rev-col-check text-center">
+								<input
+									type="checkbox"
+									class="form-check-input"
+									title={ i18n.T(lang, "smart_order.select_all_vendor_items") }
+									@change={ fmt.Sprintf("toggleGroupSelectAll($el, %s)", GroupLineIDsJSON(g)) }
+									:checked={ fmt.Sprintf("isGroupAllSelected(%s)", GroupLineIDsJSON(g)) }
+								/>
+							</th>
+							<th class="so-rev-col-name text-start">{ i18n.T(lang, "smart_order.th_requested_item") }</th>
+							<th class="so-rev-col-sku text-center">{ i18n.T(lang, "smart_order.th_sku") }</th>
+							<th class="so-rev-col-qty text-center">{ i18n.T(lang, "smart_order.th_requested_qty") }</th>
+							<th class="so-rev-col-match text-start">{ i18n.T(lang, "smart_order.th_matched_catalog_item") }</th>
+							<th class="so-rev-col-vendor text-start">{ i18n.T(lang, "smart_order.th_supplier") }</th>
+							<th class="so-rev-col-stock text-center">{ i18n.T(lang, "smart_order.th_available_stock") }</th>
+							<th class="so-rev-col-price text-center">{ i18n.T(lang, "smart_order.th_public_price") }</th>
+							<th class="so-rev-col-discount text-center">{ i18n.T(lang, "smart_order.th_discount_pct") }</th>
+							<th class="so-rev-col-net text-center">{ i18n.T(lang, "smart_order.th_net_price") }</th>
+							<th class="so-rev-col-actions text-center">{ i18n.T(lang, "smart_order.th_status_action") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, l := range g.Lines {
+							<tr
+								data-line-id={ fmt.Sprint(l.Line.ID) }
+								data-vendor={ g.VendorName }
+								data-name={ l.Line.RawName }
+								data-sku={ l.Line.RawSKU }
+								data-match={ l.Line.MatchedProductName }
+								data-unit-price={ l.UnitPrice.String() }
+								data-discount-pct={ fmt.Sprintf("%g", l.DiscountPct) }
+								x-show="matchesRow($el)"
+								:class={ fmt.Sprintf("selectedLines.includes('%d') ? 'bg-primary-subtle' : ''", l.Line.ID) }
+							>
+								<!-- 0. Selection Checkbox -->
+								<td class="so-rev-col-check text-center align-middle">
+									<input
+										type="checkbox"
+										class="form-check-input"
+										value={ fmt.Sprint(l.Line.ID) }
+										x-model="selectedLines"
+									/>
+								</td>
+								
+								<!-- 1. Product Name -->
+								<td class="so-rev-col-name align-middle">
+									<div class="font-extrabold text-xs text-primary mb-0.5">{ l.Line.RawName }</div>
+									if l.Line.RawBarcode != "" {
+										<div class="text-2xs text-muted font-mono">{ i18n.T(lang, "smart_order.barcode_prefix") } { l.Line.RawBarcode }</div>
+									}
+								</td>
+
+								<!-- 2. SKU -->
+								<td class="so-rev-col-sku text-center align-middle">
+									if l.Line.RawSKU != "" {
+										<span class="badge badge-slate text-2xs font-mono">{ l.Line.RawSKU }</span>
+									} else {
+										<span class="text-muted text-xs">—</span>
+									}
+								</td>
+
+								<!-- 3. Requested Quantity (with in-place stepper form) -->
+								<td class="so-rev-col-qty text-center align-middle">
+									<form class="so-qty-form" method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/lines/%d/quantity", data.Run.PublicID, l.Line.ID)) } data-on-submit="event.preventDefault(); submitReviewQtyForm(this)">
+										<input type="hidden" name="page" value={ fmt.Sprint(data.Page) } />
+										<input type="hidden" name="limit" value={ fmt.Sprint(data.PerPage) } />
+										<div class="so-qty-wrapper">
+											<div class="so-qty-stepper" dir="ltr">
+												<button type="button" class="so-qty-step-btn so-qty-minus" data-on-click="stepReviewQty(this, -1)" title={ i18n.T(lang, "smart_order.qty_decrease") } aria-label={ i18n.T(lang, "smart_order.qty_decrease") }>−</button>
+												<input
+													type="number"
+													name="quantity"
+													value={ fmt.Sprintf("%g", l.Line.EffectiveQty) }
+													data-orig={ fmt.Sprintf("%g", l.Line.EffectiveQty) }
+													min="1"
+													max={ reviewQtyMax(l.AvailableStock) }
+													data-max={ reviewQtyMax(l.AvailableStock) }
+													step="1"
+													class="so-qty-input"
+													data-on-input="onReviewQtyInput(this)"
+													data-on-change="onReviewQtyChange(this)"
+													data-on-keydown="onReviewQtyKeydown(event, this)"
+													title={ i18n.T(lang, "smart_order.th_requested_qty") }
+													aria-label={ i18n.T(lang, "smart_order.th_requested_qty") }
+												/>
+												<button type="button" class="so-qty-step-btn so-qty-plus" data-on-click="stepReviewQty(this, 1)" title={ i18n.T(lang, "smart_order.qty_increase") } aria-label={ i18n.T(lang, "smart_order.qty_increase") }>+</button>
+											</div>
+										</div>
+									</form>
+								</td>
+
+								<!-- 4. Matched Product -->
+								<td class="so-rev-col-match align-middle">
+									if l.Line.MatchedProductName != "" {
+										<div class="font-bold text-xs text-primary truncate block" title={ l.Line.MatchedProductName }>
+											{ l.Line.MatchedProductName }
+										</div>
+										if l.Line.MatchedProductID != nil {
+											<span class="text-2xs text-muted font-mono">#{ fmt.Sprintf("%d", *l.Line.MatchedProductID) }</span>
+										}
+									} else {
+										<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "smart_order.unspecified") }</span>
+									}
+								</td>
+
+								<!-- 5. Supplier & Selection Decision -->
+								<td class="so-rev-col-vendor align-middle">
+									<div class="font-bold text-xs text-primary mb-1">{ l.VendorName }</div>
+									<div class="d-flex items-center gap-1 flex-wrap">
+										<span class="badge badge-slate text-2xs">{ decidedLabel(l.DecidedBy, lang) }</span>
+									</div>
+								</td>
+
+								<!-- 6. Available Quantity -->
+								<td class="so-rev-col-stock text-center align-middle whitespace-nowrap">
+									if l.AvailableStock > 0 {
+										<span class="badge badge-emerald text-xs font-bold tabular-nums">
+											{ fmt.Sprintf(i18n.T(lang, "smart_order.stock_units"), l.AvailableStock) }
+										</span>
+									} else {
+										<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "smart_order.unspecified") }</span>
+									}
+								</td>
+
+								<!-- 7. Public Price -->
+								<td class="so-rev-col-price text-center align-middle tabular-nums text-xs font-bold">
+									{ l.UnitPrice.String() } <span class="text-2xs font-normal text-muted">{ i18n.T(lang, "common.egp") }</span>
+								</td>
+
+								<!-- 8. Discount Percentage -->
+								<td class="so-rev-col-discount text-center align-middle">
+									if l.DiscountPct > 0 {
+										<span class="badge badge-emerald text-xs font-bold tabular-nums">
+											{ fmt.Sprintf("%.1f%%", l.DiscountPct) }
+										</span>
+									} else {
+										<span class="text-muted text-xs">0%</span>
+									}
+								</td>
+
+								<!-- 9. Price After Discount (Subtotal) -->
+								<td class="so-rev-col-net text-center align-middle tabular-nums text-xs font-black text-primary whitespace-nowrap">
+									{ l.LineNet.String() } <span class="text-2xs font-normal text-muted">{ i18n.T(lang, "common.egp") }</span>
+								</td>
+
+								<!-- 10. Status & Line Actions -->
+								<td class="so-rev-col-actions text-center align-middle">
+									<div class="d-inline-flex items-center justify-center gap-1.5">
+										<span class="badge badge-emerald text-xs font-bold whitespace-nowrap">{ i18n.T(lang, "smart_order.ready_badge") }</span>
+										<form class="m-0 d-inline-flex" method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/lines/%d/remove", data.Run.PublicID, l.Line.ID)) } data-on-submit="removeReviewLineForm(this, event)">
+											<input type="hidden" name="page" value={ fmt.Sprint(data.Page) } />
+											<input type="hidden" name="limit" value={ fmt.Sprint(data.PerPage) } />
+											<button type="button" class="btn btn-ghost btn-xs p-1 text-danger" title={ i18n.T(lang, "smart_order.remove_item_title") } data-on-click="removeReviewLine(this, event);">
+												@components.IconX("icon-sm")
+											</button>
+										</form>
+									</div>
+								</td>
+
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+		</div>
+	}
+}

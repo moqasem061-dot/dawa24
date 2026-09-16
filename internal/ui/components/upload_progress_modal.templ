@@ -1,0 +1,64 @@
+package components
+
+import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+
+// One progress dialog, for every tool that uploads a file and then works on it.
+type UploadProgressProps struct {
+	// ID is the dialog's element id. Scripts address everything inside it by
+	// this prefix, so it must be unique on the page.
+	ID string
+	// Title is shown in the header, e.g. "رفع كشوف الموردين".
+	Title string
+	// Subtitle explains what will happen when it finishes.
+	Subtitle string
+}
+
+templ UploadProgressModal(props UploadProgressProps, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	@Modal(ModalProps{
+		ID:       props.ID,
+		Title:    props.Title,
+		Subtitle: props.Subtitle,
+		Icon:     "upload",
+		Size:     "md",
+		Class:    "upload-progress-modal",
+	}) {
+		<div class="upload-progress" data-upload-progress={ props.ID }>
+			<div class="upload-progress-phase">
+				<span class="upload-progress-caption" id={ props.ID + "-caption" }>
+					{ i18n.T(lang, "upload.preparing") }
+				</span>
+				<span class="upload-progress-percent" id={ props.ID + "-percent" }>0%</span>
+			</div>
+
+			<div
+				class="upload-progress-track"
+				role="progressbar"
+				aria-valuemin="0"
+				aria-valuemax="100"
+				aria-valuenow="0"
+				aria-labelledby={ props.ID + "-caption" }
+			>
+				<div class="upload-progress-fill" id={ props.ID + "-fill"}></div>
+			</div>
+
+			<div class="upload-progress-meta">
+				<span id={ props.ID + "-count" } class="upload-progress-count"></span>
+				<span id={ props.ID + "-detail" } class="upload-progress-detail"></span>
+			</div>
+
+			<!-- Per-file rows, filled in by the driver for a batch upload. A
+			     single-file upload leaves this empty and shows only the bar. -->
+			<ul class="upload-progress-files" id={ props.ID + "-files" }></ul>
+
+			<p class="upload-progress-note" id={ props.ID + "-note" }>
+				{ i18n.T(lang, "upload.do_not_close") }
+			</p>
+		</div>
+	}
+}

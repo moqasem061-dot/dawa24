@@ -1,0 +1,593 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/workflow"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+
+
+// AdminSessionPlansPage renders session plan management.
+templ AdminSessionPlansPage(lang, dir string) {
+	@layouts.AdminShell("خطط الجلسات والأجهزة (Session Plans)", "session_plans", lang, dir) {
+		<div class="glass-panel mb-0">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">خطط الجلسات المتعددة وتحديد الأجهزة</h2>
+					<p class="subtitle">تحديد عدد الأجهزة المتزامنة المسموح بها لكل مستخدم حسب خطته.</p>
+				</div>
+				<a href="/admin/session-plan/requests" class="btn btn-secondary btn-sm">طلبات زيادة المقاعد</a>
+			</div>
+			@components.EmptyState(components.EmptyStateProps{Title: "خطط الجلسات", Message: "تحديد الحد الأقصى للجلسات الفعالة والأجهزة المسجلة."})
+		</div>
+	}
+}
+
+// AdminSessionPlanRequestsPage renders session seat requests.
+templ AdminSessionPlanRequestsPage(lang, dir string) {
+	@layouts.AdminShell("طلبات زيادة الجلسات والأجهزة", "session_plans", lang, dir) {
+		<div class="glass-panel mb-0">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">طلبات زيادة عدد الأجهزة والجلسات</h2>
+				</div>
+				<a href="/admin/session-plan" class="btn btn-secondary btn-sm">العودة للخطط</a>
+			</div>
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات معلقة", Message: "تظهر هنا طلبات المنشآت لزيادة عدد المقاعد والأجهزة المتصلة."})
+		</div>
+	}
+}
+
+// CustomerReportIssuePage renders issue form and user's ticket history.
+templ CustomerReportIssuePage(lang, dir string, userIssues []*workflow.ReportIssue, prefilledOrderOpt ...string) {
+	{{
+		prefilledOrder := ""
+		if len(prefilledOrderOpt) > 0 {
+			prefilledOrder = prefilledOrderOpt[0]
+		}
+	}}
+	@layouts.ShellFor("الإبلاغ عن مشكلة أو اقتراح", "support", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-5xl mx-auto py-6 px-4">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="d-flex items-center gap-4">
+					<div class="user-avatar-badge text-xl text-brand">
+						@components.IconAlertCircle("icon-md")
+					</div>
+					<div class="stack-2xs">
+						<h1 class="text-2xl font-black text-primary m-0">مركز الدعم والإبلاغ عن مشكلة</h1>
+						<p class="text-sm text-secondary m-0 mt-1">
+							فريق الدعم الفني وخدمة العملاء في دوا 24 متواجد لمساعدتك وحل أي عقبات تواجهها على الفور.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Grid: Form + Sidebar Info -->
+			<div class="grid grid-cols-12 gap-6 mb-8">
+				<!-- Main Form (8 cols) -->
+				<div class="col-span-12 lg:col-span-8">
+					<div class="glass-panel p-6">
+						<div class="d-flex items-center justify-between pb-4 mb-5 border-b">
+							<div class="stack-2xs">
+								<h2 class="text-base font-bold text-primary m-0">تقديم بلاغ أو استفسار جديد</h2>
+								<p class="text-xs text-secondary m-0">اختر نوع البلاغ واشرح المشكلة لنتمكن من توجيهها للقسم المختص</p>
+							</div>
+							<span class="badge badge-sky text-xs font-bold">دعم مباشر</span>
+						</div>
+
+						<form method="POST" action="/report-issue" class="stack-lg">
+							<!-- Issue Type -->
+							<div class="stack-sm">
+								<label class="form-label font-bold text-sm">نوع البلاغ أو المشكلة <span class="text-rose">*</span></label>
+								<select name="issue_type" class="form-input text-sm" required>
+									<option value="technical">🛠️ مشكلة تقنية أو برمجية في المنصة</option>
+									<option value="order">📦 مشكلة في طلب أو شحنة أو توريد</option>
+									<option value="billing">💳 مشكلة مالية / الفواتير / المحفظة</option>
+									<option value="quality">🛡️ مشكلة في جودة المنتجات أو مطابقتها</option>
+									<option value="suggestion">💡 اقتراح تطوير أو ميزة جديدة للمنصة</option>
+									<option value="other">⚠️ أخرى</option>
+								</select>
+							</div>
+
+							<!-- Priority & Order ID -->
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div class="stack-sm">
+									<label class="form-label font-bold text-sm">درجة الأهمية / الأولوية</label>
+									<select name="priority" class="form-input text-sm">
+										<option value="medium" selected>متوسطة (عادية)</option>
+										<option value="high">عاجلة (تتطلب تدخلاً فورياً)</option>
+										<option value="low">منخفضة (استفسار أو اقتراح)</option>
+									</select>
+								</div>
+								<div class="stack-sm">
+									<label class="form-label font-bold text-sm">رقم الطلب أو الشحنة <span class="text-xs text-muted font-normal">(اختياري)</span></label>
+									<input type="text" name="order_id" value={ prefilledOrder } class="form-input text-sm" placeholder="مثال: 12345 أو ORD-2026-001" />
+								</div>
+							</div>
+
+							<!-- Description -->
+							<div class="stack-sm">
+								<label class="form-label font-bold text-sm">تفاصيل البلاغ <span class="text-rose">*</span></label>
+								<textarea
+									name="description"
+									class="form-input text-sm leading-relaxed"
+									rows="5"
+									placeholder="يرجى كتابة تفاصيل المشكلة بدقة، والخطوات التي أدت لظهورها، وأي معلومات تساعد فريق الدعم الفني في سرعة معالجتها..."
+									required
+								></textarea>
+								<span class="text-2xs text-muted">يرجى تجنب مشاركة كلمات المرور أو البيانات السرية الحساسة.</span>
+							</div>
+
+							<!-- Submit -->
+							<div class="d-flex items-center justify-between pt-3 border-t">
+								<span class="text-xs text-secondary">سيتم إشعارك فور قيام الإدارة بالرد</span>
+								<button type="submit" class="btn btn-primary font-bold px-5">
+									@components.IconSend("icon-xs")
+									<span>إرسال البلاغ للدعم الفني</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<!-- Sidebar Info (4 cols) -->
+				<div class="col-span-12 lg:col-span-4 stack-md">
+					<!-- Direct Contact Card -->
+					<div class="glass-panel p-5">
+						<div class="d-flex items-center gap-2 mb-3">
+							@components.IconPhone("icon-xs text-emerald")
+							<h3 class="text-sm font-bold text-primary m-0">قنوات التواصل المباشر</h3>
+						</div>
+						<p class="text-xs text-secondary mb-4 leading-relaxed">
+							إذا كانت المشكلة حرجة أو تؤثر على سير العمل بشكل طارئ، يمكنك التواصل عبر القنوات الفورية:
+						</p>
+						<div class="stack-sm text-xs">
+							<div class="d-flex items-center justify-between p-2 rounded bg-surface border">
+								<span class="text-muted">البريد الإلكتروني:</span>
+								<span class="font-bold text-primary font-mono" dir="ltr">support@dawa24.com</span>
+							</div>
+							<div class="d-flex items-center justify-between p-2 rounded bg-surface border">
+								<span class="text-muted">ساعات العمل:</span>
+								<span class="font-bold text-primary">يومياً 8:00 ص - 12:00 م</span>
+							</div>
+							<div class="d-flex items-center justify-between p-2 rounded bg-surface border">
+								<span class="text-muted">المنطقة الزمنية:</span>
+								<span class="badge badge-slate text-2xs font-bold">توقيت القاهرة (EET)</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Tips Card -->
+					<div class="glass-panel p-5">
+						<div class="d-flex items-center gap-2 mb-3">
+							@components.IconZap("icon-xs text-amber")
+							<h3 class="text-sm font-bold text-primary m-0">إرشادات لتسريع الحل</h3>
+						</div>
+						<ul class="text-xs text-secondary stack-xs m-0 pr-4 leading-relaxed list-disc">
+							<li>ذكر رقم الطلب أو الصنف إن وُجد يُسرّع التحقق بنسبة 80%.</li>
+							<li>توضيح نص رسالة الخطأ الظاهرة أو الإجراء الذي كنت تقوم به.</li>
+							<li>متابعة جدول البلاغات السابقة بالأسفل لمعرفة رد وتحديثات الإدارة.</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+
+			<!-- User's Ticket History Section -->
+			<div class="glass-panel p-6">
+				<div class="d-flex items-center justify-between mb-4">
+					<div class="d-flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-sky-subtle text-sky flex-center text-sm font-bold">
+							@components.IconClock("icon-xs")
+						</div>
+						<div class="stack-2xs">
+							<h3 class="text-base font-bold text-primary m-0">سجل بلاغاتك السابقة</h3>
+							<p class="text-xs text-secondary m-0">متابعة البلاغات التي قدمتها وحالتها وردود الدعم الفني عليها</p>
+						</div>
+					</div>
+					if len(userIssues) > 0 {
+						<span class="badge badge-slate font-mono text-xs">{ fmt.Sprintf("%d بلاغ", len(userIssues)) }</span>
+					}
+				</div>
+
+				if len(userIssues) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-3xl mb-2 text-muted">@components.IconInbox("icon-md")</div>
+						<h4 class="text-sm font-bold text-primary mb-1">لا توجد بلاغات مسجلة حتى الآن</h4>
+						<p class="text-xs text-secondary max-w-sm mx-auto m-0">عند إرسال أي بلاغ سيظهر هنا مباشرة لتتمكن من متابعة سير معالجته وردود فريق العمل.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th># رقم البلاغ</th>
+									<th>النوع</th>
+									<th>التفاصيل</th>
+									<th class="text-center">الأولوية</th>
+									<th class="text-center">الحالة</th>
+									<th>تاريخ الإرسال</th>
+									<th>رد الدعم الفني / الملاحظات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, issue := range userIssues {
+									<tr>
+										<td class="tabular-nums font-bold text-brand">#{ fmt.Sprintf("%d", issue.ID) }</td>
+										<td>
+											<span class="badge badge-slate text-xs">{ IssueTypeLabel(issue.IssueType) }</span>
+										</td>
+										<td class="text-xs text-primary" style="max-width: 260px; word-break: break-word;">
+											{ issue.Description }
+											if issue.OrderID != nil && *issue.OrderID > 0 {
+												<div class="mt-1 text-2xs text-secondary">
+													رقم الطلب: <strong class="tabular-nums">#{ fmt.Sprintf("%d", *issue.OrderID) }</strong>
+												</div>
+											}
+										</td>
+										<td class="text-center">
+											if issue.Priority == "high" {
+												<span class="badge badge-rose text-2xs font-bold">عاجل</span>
+											} else if issue.Priority == "low" {
+												<span class="badge badge-slate text-2xs">منخفض</span>
+											} else {
+												<span class="badge badge-slate text-2xs">متوسط</span>
+											}
+										</td>
+										<td class="text-center">
+											if issue.Status == "resolved" {
+												<span class="badge badge-emerald text-xs font-bold">تم الحل بنجاح</span>
+											} else if issue.Status == "in_progress" {
+												<span class="badge badge-sky text-xs font-bold">جاري المعالجة</span>
+											} else {
+												<span class="badge badge-amber text-xs font-bold">قيد المراجعة</span>
+											}
+										</td>
+										<td class="text-xs text-secondary tabular-nums whitespace-nowrap">
+											{ FormatDateTime(issue.CreatedAt) }
+										</td>
+										<td class="text-xs" style="max-width: 220px; word-break: break-word;">
+											if issue.ResponseNotes != "" {
+												<div class="p-2 rounded bg-surface border text-primary">
+													<div class="text-2xs text-muted mb-0.5 font-bold">رد الإدارة:</div>
+													{ issue.ResponseNotes }
+												</div>
+											} else {
+												<span class="text-muted text-2xs">في انتظار مراجعة الفريق المختص</span>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+// AdminReportIssuesPage renders the complete admin management dashboard for user reported issues.
+templ AdminReportIssuesPage(lang, dir string, data AdminReportIssuesData) {
+	@layouts.AdminShell("إدارة بلاغات وشكاوى المستخدمين (Report Issues)", "report_issues", lang, dir) {
+		<div class="page-container">
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl text-brand">
+							@components.IconAlertCircle("icon-md")
+						</div>
+						<div class="stack-2xs">
+							<h1 class="text-2xl font-black text-primary m-0">إدارة بلاغات وشكاوى المستخدمين ({ fmt.Sprintf("%d", data.Total) })</h1>
+							<p class="text-sm text-secondary m-0 mt-1">متابعة مشاكل العملاء والموردين، الاستجابة السريعة، وتحديث حالات الشكاوى والملاحظات</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Stats KPI Cards -->
+			if data.Stats != nil {
+				<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+					<a href={ templ.SafeURL(data.FilterURL("")) } class={ "glass-panel p-4 d-flex items-center gap-3 text-decoration-none transition-all hover:border-brand", templ.KV("ring-2 ring-brand", data.Status == "") }>
+						<div class="w-10 h-10 rounded-lg bg-surface border flex-center text-primary font-bold">
+							@components.IconLayers("icon-sm")
+						</div>
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">إجمالي البلاغات</span>
+							<strong class="text-xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.Stats.Total) }</strong>
+						</div>
+					</a>
+					<a href={ templ.SafeURL(data.FilterURL("pending")) } class={ "glass-panel p-4 d-flex items-center gap-3 text-decoration-none transition-all hover:border-amber", templ.KV("ring-2 ring-amber", data.Status == "pending") }>
+						<div class="w-10 h-10 rounded-lg bg-amber-subtle text-amber flex-center font-bold">
+							@components.IconClock("icon-sm")
+						</div>
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">قيد المراجعة</span>
+							<strong class="text-xl font-black text-amber tabular-nums">{ fmt.Sprintf("%d", data.Stats.Pending) }</strong>
+						</div>
+					</a>
+					<a href={ templ.SafeURL(data.FilterURL("in_progress")) } class={ "glass-panel p-4 d-flex items-center gap-3 text-decoration-none transition-all hover:border-sky", templ.KV("ring-2 ring-sky", data.Status == "in_progress") }>
+						<div class="w-10 h-10 rounded-lg bg-sky-subtle text-sky flex-center font-bold">
+							@components.IconZap("icon-sm")
+						</div>
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">جاري المعالجة</span>
+							<strong class="text-xl font-black text-sky tabular-nums">{ fmt.Sprintf("%d", data.Stats.InProgress) }</strong>
+						</div>
+					</a>
+					<a href={ templ.SafeURL(data.FilterURL("resolved")) } class={ "glass-panel p-4 d-flex items-center gap-3 text-decoration-none transition-all hover:border-emerald", templ.KV("ring-2 ring-emerald", data.Status == "resolved") }>
+						<div class="w-10 h-10 rounded-lg bg-emerald-subtle text-emerald flex-center font-bold">
+							@components.IconCheck("icon-sm")
+						</div>
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">تم الحل</span>
+							<strong class="text-xl font-black text-emerald tabular-nums">{ fmt.Sprintf("%d", data.Stats.Resolved) }</strong>
+						</div>
+					</a>
+				</div>
+			}
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/admin/report-issues" class="d-flex items-center flex-wrap gap-3">
+					if data.Status != "" {
+						<input type="hidden" name="status" value={ data.Status } />
+					}
+					<div class="d-flex items-center gap-2 flex-1 min-w-xs">
+						@components.IconSearch("icon-xs text-muted")
+						<input
+							type="text"
+							name="q"
+							value={ data.Search }
+							class="form-input text-sm flex-1"
+							placeholder="بحث برقم البلاغ، اسم المبلّغ، رقم الهاتف، اسم المنشأة، أو نص المشكلة..."
+						/>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<select name="type" class="form-input text-xs">
+							<option value="">جميع أنواع المشاكل</option>
+							<option value="technical" selected?={ data.IssueType == "technical" }>مشكلة تقنية</option>
+							<option value="order" selected?={ data.IssueType == "order" }>مشكلة في طلب/شحنة</option>
+							<option value="billing" selected?={ data.IssueType == "billing" }>مشكلة مالية/فواتير</option>
+							<option value="quality" selected?={ data.IssueType == "quality" }>جودة أصناف</option>
+							<option value="suggestion" selected?={ data.IssueType == "suggestion" }>اقتراح تحسين</option>
+							<option value="other" selected?={ data.IssueType == "other" }>أخرى</option>
+						</select>
+
+						<select name="priority" class="form-input text-xs">
+							<option value="">جميع الأولويات</option>
+							<option value="high" selected?={ data.Priority == "high" }>عاجل</option>
+							<option value="medium" selected?={ data.Priority == "medium" }>متوسط</option>
+							<option value="low" selected?={ data.Priority == "low" }>منخفض</option>
+						</select>
+
+						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+							@components.IconFilter("icon-xs")
+							<span>تصفية</span>
+						</button>
+
+						if data.Search != "" || data.IssueType != "" || data.Priority != "" || data.Status != "" {
+							<a href="/admin/report-issues" class="btn btn-ghost btn-sm text-secondary">إلغاء الفلاتر</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Main Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Issues) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3 text-muted">@components.IconInbox("icon-md")</div>
+						<h3 class="text-lg font-black text-primary mb-1">لا توجد بلاغات تطابق البحث</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto m-0">لم يتم العثور على بلاغات في هذا التبويب أو بمعايير البحث الحالية.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th># رقم البلاغ</th>
+									<th>مقدم البلاغ</th>
+									<th>المنشأة</th>
+									<th>نوع البلاغ</th>
+									<th class="text-center">الأولوية</th>
+									<th>تفاصيل البلاغ</th>
+									<th class="text-center">الحالة</th>
+									<th>تاريخ البلاغ</th>
+									<th class="col-actions text-center">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range data.Issues {
+									<tr>
+										<td class="tabular-nums font-bold text-brand">#{ fmt.Sprintf("%d", item.ID) }</td>
+										<td>
+											<strong class="text-primary text-xs d-block">{ item.ReporterName }</strong>
+											if item.ReporterPhone != "" {
+												<span class="text-2xs text-secondary font-mono d-block" dir="ltr">{ item.ReporterPhone }</span>
+											}
+											if item.ReporterEmail != "" {
+												<span class="text-2xs text-muted font-mono d-block" dir="ltr">{ item.ReporterEmail }</span>
+											}
+										</td>
+										<td>
+											if item.OrgName != "" {
+												<span class="text-xs text-primary font-bold d-block">{ item.OrgName }</span>
+												if item.OrgType == "vendor" {
+													<span class="badge badge-indigo text-2xs">مورد</span>
+												} else if item.OrgType == "customer" || item.OrgType == "pharmacy" {
+													<span class="badge badge-sky text-2xs">صيدلية</span>
+												}
+											} else {
+												<span class="text-muted text-2xs">مستخدم فردي</span>
+											}
+										</td>
+										<td>
+											<span class="badge badge-slate text-xs">{ IssueTypeLabel(item.IssueType) }</span>
+										</td>
+										<td class="text-center">
+											if item.Priority == "high" {
+												<span class="badge badge-rose text-2xs font-bold">عاجل</span>
+											} else if item.Priority == "low" {
+												<span class="badge badge-slate text-2xs">منخفض</span>
+											} else {
+												<span class="badge badge-slate text-2xs">متوسط</span>
+											}
+										</td>
+										<td class="text-xs text-primary" style="max-width: 250px; word-break: break-word;">
+											<div class="line-clamp-2">{ item.Description }</div>
+											if item.OrderID != nil && *item.OrderID > 0 {
+												<div class="mt-1 text-2xs text-secondary">
+													رقم الطلب: <strong class="tabular-nums">#{ fmt.Sprintf("%d", *item.OrderID) }</strong>
+												</div>
+											}
+											if item.ResponseNotes != "" {
+												<div class="mt-1 text-2xs text-emerald font-bold d-flex items-center gap-1">
+													@components.IconCheck("icon-2xs")
+													<span>تم الرد: { item.ResponseNotes }</span>
+												</div>
+											}
+										</td>
+										<td class="text-center">
+											if item.Status == "resolved" {
+												<span class="badge badge-emerald text-xs font-bold">تم الحل بنجاح</span>
+											} else if item.Status == "in_progress" {
+												<span class="badge badge-sky text-xs font-bold">جاري المعالجة</span>
+											} else {
+												<span class="badge badge-amber text-xs font-bold">قيد المراجعة</span>
+											}
+										</td>
+										<td class="text-xs text-secondary tabular-nums whitespace-nowrap">
+											{ FormatDateTime(item.CreatedAt) }
+										</td>
+										<td class="col-actions text-center">
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+												data-id={ fmt.Sprintf("%d", item.ID) }
+												data-user={ item.ReporterName }
+												data-org={ item.OrgName }
+												data-type={ IssueTypeLabel(item.IssueType) }
+												data-desc={ item.Description }
+												data-status={ item.Status }
+												data-notes={ item.ResponseNotes }
+												data-on-click="window.openIssueModalFromBtn(this)"
+											>
+												@components.IconEdit("icon-xs")
+												<span>معالجة وتحديث</span>
+											</button>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+
+			<!-- Pagination -->
+			if data.TotalPages > 1 {
+				<div class="d-flex items-center justify-between flex-wrap gap-3 glass-panel p-4">
+					<span class="text-xs text-secondary">
+						عرض الصفحة { fmt.Sprintf("%d", data.CurrentPage) } من إجمالي { fmt.Sprintf("%d", data.TotalPages) }
+					</span>
+					<div class="d-flex items-center gap-2">
+						if data.CurrentPage > 1 {
+							<a href={ templ.SafeURL(data.PaginationURL(data.CurrentPage - 1)) } class="btn btn-secondary btn-sm font-bold">السابق</a>
+						}
+						if data.CurrentPage < data.TotalPages {
+							<a href={ templ.SafeURL(data.PaginationURL(data.CurrentPage + 1)) } class="btn btn-secondary btn-sm font-bold">التالي</a>
+						}
+					</div>
+				</div>
+			}
+
+			<!-- Status Update & Response Dialog -->
+			@components.Modal(components.ModalProps{
+				ID:    "issue-action-dialog",
+				Title: "معالجة بلاغ",
+				Icon:  "alert-circle",
+				Size:  "md",
+			}) {
+				<div id="modal-issue-subtitle" class="text-xs text-muted font-bold mb-3"></div>
+
+				<!-- Read-only description view -->
+				<div class="p-3.5 bg-surface-sunken rounded-xl border mb-4 stack-xs">
+					<div class="text-2xs text-muted font-bold">نص البلاغ المقدم من المستخدم:</div>
+					<p class="text-xs text-primary m-0 leading-relaxed whitespace-pre-wrap" id="modal-issue-desc"></p>
+				</div>
+
+				<!-- Update Form -->
+				<form method="POST" action="" id="issue-status-form" class="stack-md m-0">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-xs">تحديث حالة البلاغ <span class="text-rose">*</span></label>
+						<select name="status" id="modal-issue-status" class="form-input text-xs" required>
+							<option value="pending">⏳ قيد المراجعة</option>
+							<option value="in_progress">⚙️ جاري المعالجة</option>
+							<option value="resolved">✅ تم الحل بنجاح</option>
+						</select>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label font-bold text-xs">رد الدعم الفني / الملاحظات الإدارية</label>
+						<textarea
+							name="response_notes"
+							id="modal-issue-notes"
+							class="form-input text-xs leading-relaxed"
+							rows="4"
+							placeholder="اكتب رد الدعم الفني أو الإجراء المتخذ لحل هذه المشكلة، سيظهر هذا الرد للمستخدم مباشرة..."
+						></textarea>
+						<span class="text-2xs text-muted">سيتم تسجيل التحديث بتاريخ ولحظة الحفظ الحالية.</span>
+					</div>
+
+					<div class="d-flex items-center justify-end gap-2 pt-3 border-t">
+						<button
+							type="button"
+							class="btn btn-secondary btn-sm"
+							data-modal-close="issue-action-dialog"
+						>
+							إلغاء
+						</button>
+						<button type="submit" class="btn btn-primary btn-sm font-bold">
+							@components.IconCheck("icon-xs")
+							<span>حفظ وتحديث الحالة</span>
+						</button>
+					</div>
+				</form>
+			}
+
+			<script nonce={ layouts.Nonce(ctx) }>
+				window.openIssueModalFromBtn = function(btn) {
+					const id = btn.getAttribute('data-id');
+					const user = btn.getAttribute('data-user') || '';
+					const org = btn.getAttribute('data-org') || '';
+					const itype = btn.getAttribute('data-type') || '';
+					const desc = btn.getAttribute('data-desc') || '';
+					const status = btn.getAttribute('data-status') || 'pending';
+					const notes = btn.getAttribute('data-notes') || '';
+
+					const dialog = document.getElementById('issue-action-dialog');
+					const form = document.getElementById('issue-status-form');
+					if (!dialog || !form) return;
+
+					const titleEl = document.getElementById('issue-action-dialog-title') || document.getElementById('modal-issue-title');
+					if (titleEl) titleEl.textContent = 'معالجة بلاغ رقم #' + id;
+					const subEl = document.getElementById('modal-issue-subtitle');
+					if (subEl) subEl.textContent = (org ? org + ' - ' : '') + user + ' (' + itype + ')';
+					document.getElementById('modal-issue-desc').textContent = desc;
+					document.getElementById('modal-issue-status').value = status;
+					document.getElementById('modal-issue-notes').value = notes;
+
+					form.action = '/admin/report-issues/' + id + '/status';
+					dialog.showModal();
+				};
+			</script>
+		</div>
+	}
+}

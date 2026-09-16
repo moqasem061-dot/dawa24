@@ -1,0 +1,32 @@
+package components
+
+import "fmt"
+
+type StepperStep struct {
+	ID    string
+	Label string
+}
+
+type StepperProps struct {
+	Steps    []StepperStep
+	Current  int // 0-based index of the active step
+}
+
+// Stepper renders a horizontal wizard progress indicator (registration,
+// checkout, import wizard).
+templ Stepper(props StepperProps) {
+	<ol class="stepper">
+		for i, s := range props.Steps {
+			<li class={ "stepper-step", templ.KV("active", i == props.Current), templ.KV("done", i < props.Current) }>
+				<span class="stepper-bubble">
+					if i < props.Current {
+						@IconCheck("icon-xs")
+					} else {
+						{ fmt.Sprintf("%d", i+1) }
+					}
+				</span>
+				<span class="stepper-label">{ s.Label }</span>
+			</li>
+		}
+	</ol>
+}

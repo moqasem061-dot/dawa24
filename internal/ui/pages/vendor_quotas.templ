@@ -1,0 +1,105 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorQuotas(data VendorQuotasData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor.quota.title"), "quotas", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl text-brand">
+								@components.IconShield("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor.quota.title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor.quota.subtitle") }
+						</p>
+					</div>
+					<a href="/vendor/products" class="btn btn-secondary btn-sm font-bold gap-1.5">
+						@components.IconPackage("icon-xs")
+						<span>{ i18n.T(lang, "nav.vendor_variants") }</span>
+					</a>
+				</div>
+			</div>
+
+			<div class="dashboard-stat-grid mb-6">
+				@components.StatCard(components.StatCardProps{
+					Label: i18n.T(lang, "vendor.quota.stat_variants"),
+					Value: fmt.Sprintf("%d", data.Summary.VariantsWithQuota),
+					Tone:  "primary",
+				})
+				@components.StatCard(components.StatCardProps{
+					Label: i18n.T(lang, "vendor.quota.stat_branches"),
+					Value: fmt.Sprintf("%d", data.Summary.BranchesConsuming),
+					Tone:  "info",
+				})
+				@components.StatCard(components.StatCardProps{
+					Label: i18n.T(lang, "vendor.quota.stat_exhausted"),
+					Value: fmt.Sprintf("%d", data.Summary.BranchesExhausted),
+					Tone:  "danger",
+				})
+				@components.StatCard(components.StatCardProps{
+					Label: i18n.T(lang, "vendor.quota.stat_units"),
+					Value: fmt.Sprintf("%d", data.Summary.TotalUnitsUsed),
+					Tone:  "emerald",
+				})
+				@components.StatCard(components.StatCardProps{
+					Label: i18n.T(lang, "vendor.quota.stat_releases"),
+					Value: fmt.Sprintf("%d", data.Summary.ReleasesMade),
+					Tone:  "amber",
+				})
+			</div>
+
+			<div class="glass-panel p-3 mb-6">
+				<div class="tabs-nav">
+					<a
+						href={ templ.SafeURL(data.quotaTabURL("branches")) }
+						class={ "tab-btn", templ.KV("active", data.tab() == "branches") }
+					>
+						<span>{ i18n.T(lang, "vendor.quota.tab_branches") }</span>
+						<span class="badge badge-slate text-2xs tabular-nums">
+							{ fmt.Sprintf("%d", data.Summary.BranchesConsuming) }
+						</span>
+					</a>
+					<a
+						href={ templ.SafeURL(data.quotaTabURL("variants")) }
+						class={ "tab-btn", templ.KV("active", data.tab() == "variants") }
+					>
+						<span>{ i18n.T(lang, "vendor.quota.tab_variants") }</span>
+						<span class="badge badge-slate text-2xs tabular-nums">
+							{ fmt.Sprintf("%d", data.Summary.VariantsWithQuota) }
+						</span>
+					</a>
+				</div>
+			</div>
+
+			@vendorQuotaFilters(data, lang)
+
+			if data.Summary.VariantsWithQuota == 0 {
+				<div class="glass-panel p-10 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconShield("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">
+						{ i18n.T(lang, "vendor.quota.title") }
+					</h3>
+					<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor.quota.empty") }</p>
+				</div>
+			} else if data.tab() == "variants" {
+				@vendorQuotaVariantTable(data, lang)
+			} else {
+				@vendorQuotaBranchTable(data, lang)
+			}
+		</div>
+		@vendorQuotaLimitModal(lang)
+	}
+}

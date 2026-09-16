@@ -1,0 +1,148 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorUserOrgAddModal(lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "add-vendor-user-org-modal",
+		Title: i18n.T(lang, "vendor_user_org.modal_add_title"),
+		Size:  "md",
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action="/vendor/user-organization/new">
+			<div class="form-group m-0 relative">
+				<label class="form-label text-xs font-bold" for="vendor-uo-user-search">
+					{ i18n.T(lang, "vendor_user_org.lbl_target_user") }
+				</label>
+				
+				<input type="hidden" id="vendor-selected-user-id" name="user_id" required value="" />
+
+				<div class="uo-user-chip" id="vendor-selected-user-chip" style="display: none;">
+					<div class="d-flex items-center gap-2">
+						<span class="text-primary">@components.IconUser("icon-sm")</span>
+						<div>
+							<strong id="vendor-selected-user-name" class="d-block text-xs font-bold"></strong>
+							<div id="vendor-selected-user-details" class="text-2xs text-muted" dir="ltr"></div>
+						</div>
+					</div>
+					<button type="button" class="btn btn-ghost btn-xs text-danger font-bold" data-on-click="clearVendorSelectedUser()">
+						{ i18n.T(lang, "vendor_user_org.btn_change_user") }
+					</button>
+				</div>
+
+				<div id="vendor-search-input-wrapper" class="relative">
+					<input
+						type="text"
+						id="vendor-uo-user-search"
+						placeholder={ i18n.T(lang, "vendor_user_org.placeholder_user_search") }
+						autocomplete="off"
+						class="form-control font-bold"
+						data-on-input="handleVendorUserSearch(this.value)"
+						data-on-focus="handleVendorUserSearch(this.value)"
+					/>
+					<div class="position-absolute inset-inline-end-3 top-50 translate-middle-y" id="vendor-search-spinner" style="display: none;">
+						⏳
+					</div>
+				</div>
+
+				<div class="uo-search-dropdown" id="vendor-user-search-dropdown" style="display: none;"></div>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="vendor-uo-number">
+					{ i18n.T(lang, "vendor_user_org.lbl_org_number") }
+				</label>
+				<input
+					type="text"
+					id="vendor-uo-number"
+					name="organization_number"
+					required
+					placeholder={ i18n.T(lang, "vendor_user_org.placeholder_org_number") }
+					class="form-control font-bold"
+					dir="ltr"
+				/>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="vendor-uo-notes">
+					{ i18n.T(lang, "vendor_user_org.lbl_notes") }
+				</label>
+				<textarea
+					id="vendor-uo-notes"
+					name="notes"
+					rows="2"
+					placeholder={ i18n.T(lang, "vendor_user_org.placeholder_notes") }
+					class="form-control"
+				></textarea>
+			</div>
+
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm"
+					data-modal-close="add-vendor-user-org-modal"
+				>
+					{ i18n.T(lang, "vendor_user_org.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm fw-800">
+					{ i18n.T(lang, "vendor_user_org.btn_confirm_link") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorUserOrgEditModal(lang string, uo *org.UserOrganization) {
+	@components.Modal(components.ModalProps{
+		ID:    fmt.Sprintf("vendor-edit-uo-modal-%d", uo.ID),
+		Title: fmt.Sprintf(i18n.T(lang, "vendor_user_org.modal_edit_user_title"), uo.UserName),
+		Size:  "md",
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/vendor/user-organization/%d/edit", uo.ID)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("vendor-edit-num-%d", uo.ID) }>
+					{ i18n.T(lang, "vendor_user_org.lbl_org_number") }
+				</label>
+				<input
+					type="text"
+					id={ fmt.Sprintf("vendor-edit-num-%d", uo.ID) }
+					name="organization_number"
+					value={ uo.OrganizationNumber }
+					required
+					class="form-control font-bold"
+					dir="ltr"
+				/>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("vendor-edit-notes-%d", uo.ID) }>
+					{ i18n.T(lang, "vendor_user_org.lbl_notes") }
+				</label>
+				<textarea
+					id={ fmt.Sprintf("vendor-edit-notes-%d", uo.ID) }
+					name="notes"
+					rows="2"
+					class="form-control"
+				>{ uo.Notes }</textarea>
+			</div>
+
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm"
+					data-modal-close={ fmt.Sprintf("vendor-edit-uo-modal-%d", uo.ID) }
+				>
+					{ i18n.T(lang, "vendor_user_org.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm fw-800">
+					{ i18n.T(lang, "vendor_user_org.btn_save_edit") }
+				</button>
+			</div>
+		</form>
+	}
+}

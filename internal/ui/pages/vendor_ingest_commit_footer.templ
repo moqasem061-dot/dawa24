@@ -1,0 +1,130 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ importCommitFooter(view VendorImportView, held int, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+		plan := view.Plan
+		mode := view.Session.Settings.Mode
+		writes := 0
+		if plan != nil {
+			writes = plan.Writes()
+		}
+	}}
+	<div class={ "glass-panel p-5 mb-0 border rounded-2xl shadow-xs",
+		templ.KV("border-rose-300/80 bg-rose-50/20", plan != nil && plan.Retire > 0),
+		templ.KV("border-slate-200/80", plan == nil || plan.Retire == 0) }>
+		<div class="flex-between items-start flex-wrap gap-4">
+			<div class="stack-sm">
+				<div class="font-black text-base text-primary">{ i18n.T(lang, "vendor_ingest.commit.title") }</div>
+
+				if plan == nil {
+					<div class="text-xs text-secondary mt-0.5">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.no_plan_desc"), importWarehouseName(view)) }
+					</div>
+				} else {
+					<!-- What this run will actually write -->
+					<div class="d-flex items-center gap-4 flex-wrap mt-1.5 text-xs">
+						if plan.Insert > 0 || plan.Update == 0 {
+							@commitPlanFigure(i18n.T(lang, "vendor_ingest.commit.fig_insert"), plan.Insert, "text-emerald-600")
+						}
+						if plan.Update > 0 {
+							@commitPlanFigure(i18n.T(lang, "vendor_ingest.commit.fig_update"), plan.Update, "text-brand-600")
+						}
+						if plan.SkippedByMode > 0 {
+							@commitPlanFigure(i18n.T(lang, "vendor_ingest.commit.fig_skipped_mode"), plan.SkippedByMode, "text-muted")
+						}
+						if plan.Retire > 0 {
+							@commitPlanFigure(i18n.T(lang, "vendor_ingest.commit.fig_retire"), plan.Retire, "text-rose-600")
+						}
+					</div>
+
+					<div class="text-xs text-secondary mt-1.5">
+						switch mode {
+							case ingest.ModeAddOnly:
+								{ i18n.T(lang, "vendor_ingest.commit.mode_add_desc") }
+							case ingest.ModeUpdateOnly:
+								{ i18n.T(lang, "vendor_ingest.commit.mode_update_desc") }
+							case ingest.ModeReplace:
+								{ i18n.T(lang, "vendor_ingest.commit.mode_replace_desc") }
+							default:
+								{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.mode_upsert_desc"), importWarehouseName(view)) }
+						}
+					</div>
+
+					if mode == ingest.ModeReplace && plan.Retire > 0 {
+						<div class="text-xs mt-2 font-bold text-rose-600 d-flex items-start gap-1.5">
+							@components.IconAlert("icon-2xs mt-0.5 flex-shrink-0")
+							<span>
+								{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.replace_retire_warn"), plan.Retire) }
+							</span>
+						</div>
+					}
+					if mode == ingest.ModeReplace && plan.Retire == 0 && writes > 0 {
+						<div class="text-xs mt-2 font-semibold text-secondary">
+							{ i18n.T(lang, "vendor_ingest.commit.replace_no_retire") }
+						</div>
+					}
+
+					if plan.SkippedByMode > 0 {
+						if writes == 0 {
+							<div class="text-xs mt-1.5 font-semibold text-amber-600">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.skipped_zero_writes"), plan.SkippedByMode) }
+							</div>
+						} else {
+							<div class="text-xs mt-1.5 font-semibold text-muted">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.skipped_some_writes"), plan.SkippedByMode) }
+							</div>
+						}
+					}
+				}
+
+				if held > 0 {
+					<div class="text-xs mt-1.5 review-gate-note font-semibold text-amber-600">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.commit.held_warning"), held) }
+						if mode == ingest.ModeReplace {
+							<span class="d-block mt-0.5 font-medium text-secondary">
+								{ i18n.T(lang, "vendor_ingest.commit.held_replace_note") }
+							</span>
+						}
+					</div>
+				}
+			</div>
+
+			<form class="m-0" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "commit")) }
+				data-writes={ fmt.Sprint(writes) }
+				data-held={ fmt.Sprint(held) }
+				data-retire={ fmt.Sprint(planRetire(plan)) }
+				data-on-submit="return confirmReviewCommit(this)">
+				<button type="submit"
+					class={ "btn font-black px-6 py-2.5 text-sm gap-2 shadow-sm",
+						templ.KV("btn-danger", plan != nil && plan.Retire > 0),
+						templ.KV("btn-primary", plan == nil || plan.Retire == 0) }>
+					@components.IconCheckCircle("icon-xs")
+					<span>{ commitButtonLabel(view, lang) }</span>
+				</button>
+			</form>
+		</div>
+	</div>
+}
+
+// commitPlanFigure is one number of the plan, labelled.
+templ commitPlanFigure(label string, value int, tone string) {
+	<div class="d-flex items-baseline gap-1.5">
+		<span class={ "font-black tabular-nums text-base", tone }>{ fmt.Sprint(value) }</span>
+		<span class="text-2xs text-secondary font-semibold">{ label }</span>
+	</div>
+}

@@ -1,0 +1,333 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorWarehousesPage renders the list of vendor warehouses.
+templ VendorWarehousesPage(warehouses []*inventory.Warehouse, branches []*org.Branch, lang, dir string, page, perPage, totalCount, activeCount int) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_warehouses.page_title"), "warehouses", lang, dir) {
+		<div x-data="{ showAddModal: false, editModal: false, editWh: { id: 0, name: '', code: '', address: '', phone: '', branch_id: 0, is_active: true } }" class="page-container">
+			
+			<!-- Header & Action Bar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconBuilding("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_warehouses.header_title") }</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_warehouses.header_desc") }
+						</p>
+					</div>
+					<div class="d-flex items-center gap-3 flex-wrap">
+						<a href="/vendor/transfers" class="btn btn-secondary btn-sm font-bold gap-1.5">
+							@components.IconRefresh("icon-xs")
+							<span>{ i18n.T(lang, "vendor_inventory.btn_transfers") }</span>
+						</a>
+						<button type="button" class="btn btn-primary btn-sm font-bold" @click="showAddModal = true">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "vendor_warehouses.btn_add_wh") }</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Quick Metric Stat Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_warehouses.stat_total_wh") }</div>
+					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", totalCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouses.stat_total_wh_desc") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_warehouses.stat_active_wh") }</div>
+					<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", activeCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouses.stat_active_wh_desc") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_warehouses.stat_branches") }</div>
+					<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", len(branches)) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouses.stat_branches_desc") }</span>
+				</div>
+			</div>
+
+			<!-- Warehouses Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(warehouses) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconBuilding("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_warehouses.empty_title") }</h3>
+						<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor_warehouses.empty_desc") }</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>{ i18n.T(lang, "vendor_warehouses.th_warehouse") }</th>
+									<th>{ i18n.T(lang, "vendor_warehouses.th_code") }</th>
+									<th>{ i18n.T(lang, "vendor_warehouses.th_linked_branch") }</th>
+									<th>{ i18n.T(lang, "vendor_warehouses.th_address_phone") }</th>
+									<th class="text-center">{ i18n.T(lang, "vendor_warehouses.th_status") }</th>
+									<th class="col-actions">{ i18n.T(lang, "vendor_warehouses.th_actions") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, w := range warehouses {
+									<tr>
+										<td>
+											<div class="d-flex items-center gap-3">
+												<div class="user-avatar-badge">
+													@components.IconBuilding("icon-xs")
+												</div>
+												<div class="stack-sm">
+													<strong class="text-primary text-sm font-extrabold">{ w.Name }</strong>
+													<div class="text-xs text-muted">ID #{ fmt.Sprintf("%d", w.ID) }</div>
+												</div>
+											</div>
+										</td>
+										<td>
+											<code class="text-xs bg-surface-sunken p-1 px-2 rounded">{ w.Code }</code>
+										</td>
+										<td>
+											if w.BranchID != nil && *w.BranchID > 0 {
+												<span class="badge badge-sky text-xs font-bold">
+													{ vendorWarehouseBranchLabel(w, branches, lang) }
+												</span>
+											} else {
+												<span class="text-muted text-xs">{ i18n.T(lang, "vendor_warehouses.general_warehouse") }</span>
+											}
+										</td>
+										<td>
+											<div class="text-xs text-primary">
+												if w.Address != "" {
+													<div class="stack-xs text-sm">{ w.Address }</div>
+												}
+												if w.Phone != "" {
+													<div class="text-xs text-muted tabular-nums mt-1">{ w.Phone }</div>
+												}
+											</div>
+										</td>
+										<td class="text-center">
+											if w.IsActive {
+												<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_warehouses.status_active") }</span>
+											} else {
+												<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_warehouses.status_inactive") }</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", w.ID)) } class="btn btn-secondary btn-sm font-bold text-xs" title={ i18n.T(lang, "vendor_warehouses.btn_view_stock_title") }>
+													@components.IconPackage("icon-xs")
+													<span>{ i18n.T(lang, "vendor_warehouses.btn_view_stock") }</span>
+												</a>
+												<button
+													type="button"
+													class="btn btn-secondary btn-sm font-bold text-xs"
+													@click={ fmt.Sprintf("editWh = { id: %d, name: %q, code: %q, address: %q, phone: %q, branch_id: %d, is_active: %t }; editModal = true;", w.ID, w.Name, w.Code, w.Address, w.Phone, func() int64 { if w.BranchID != nil { return *w.BranchID }; return 0 }(), w.IsActive) }
+												>
+													{ i18n.T(lang, "common.edit") }
+												</button>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d/toggle", w.ID)) } class="m-0">
+													<button type="submit" class="btn btn-secondary btn-sm text-muted text-xs">
+														if w.IsActive {
+															{ i18n.T(lang, "vendor_warehouses.btn_deactivate") }
+														} else {
+															{ i18n.T(lang, "vendor_warehouses.btn_activate") }
+														}
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     "/vendor/warehouses",
+						})
+					}
+				}
+			</div>
+
+			<!-- Add Warehouse Modal -->
+			<div
+				x-show="showAddModal"
+				x-cloak
+				x-transition.opacity
+				class="modal-backdrop"
+				@keydown.escape.window="showAddModal = false"
+			>
+				<div
+					@click.outside="showAddModal = false"
+					class="glass-panel p-6 max-w-lg w-full"
+				>
+					<div class="flex-between items-center mb-4 pb-3 border-b">
+						<div class="d-flex items-center gap-2.5">
+							<div class="user-avatar-badge text-brand">
+								@components.IconBuilding("icon-sm")
+							</div>
+							<div class="stack-sm">
+								<h3 class="text-base font-black text-primary m-0">{ i18n.T(lang, "vendor_warehouses.modal_add_title") }</h3>
+								<p class="text-2xs text-secondary m-0 mt-0.5 font-medium">{ i18n.T(lang, "vendor_warehouses.modal_add_desc") }</p>
+							</div>
+						</div>
+						<button type="button" @click="showAddModal = false" class="btn btn-secondary btn-icon btn-sm">
+							@components.IconClose("icon-xs")
+						</button>
+					</div>
+
+					<form method="POST" action="/vendor/warehouses" class="d-flex flex-col gap-4 m-0">
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_name") } <span class="text-danger">*</span></label>
+							<input type="text" name="name" required class="form-input text-xs font-semibold w-full" placeholder={ i18n.T(lang, "vendor_warehouses.fld_name_ph") } />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_code") }</label>
+							<input type="text" name="code" class="form-input text-xs font-mono w-full" placeholder="WH-01" />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_branch") }</label>
+							<select name="branch_id" class="form-input text-xs font-semibold w-full">
+								<option value="">{ i18n.T(lang, "vendor_warehouses.opt_no_branch") }</option>
+								for _, b := range branches {
+									<option value={ fmt.Sprintf("%d", b.ID) }>
+										{ b.Name.Get(i18n.Lang(lang)) }
+										(#{ fmt.Sprintf("%d", b.ID) })
+									</option>
+								}
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_address") }</label>
+							<input type="text" name="address" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_warehouses.fld_address_ph") } />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_phone") }</label>
+							<input type="text" name="phone" class="form-input text-xs tabular-nums w-full" placeholder="01012345678" />
+						</div>
+
+						<div class="flex-between items-center gap-3 mt-2 pt-3 border-t">
+							<button type="button" class="btn btn-secondary text-xs font-bold" @click="showAddModal = false">{ i18n.T(lang, "common.cancel") }</button>
+							<button type="submit" class="btn btn-primary text-xs font-bold px-6 shadow-sm">{ i18n.T(lang, "vendor_warehouses.btn_save_activate") }</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<!-- Edit Warehouse Modal -->
+			<div
+				x-show="editModal"
+				x-cloak
+				x-transition.opacity
+				class="modal-backdrop"
+				@keydown.escape.window="editModal = false"
+			>
+				<div
+					@click.outside="editModal = false"
+					class="glass-panel p-6 max-w-lg w-full"
+				>
+					<div class="flex-between items-center mb-4 pb-3 border-b">
+						<div class="d-flex items-center gap-2.5">
+							<div class="user-avatar-badge text-amber">
+								@components.IconEdit("icon-sm")
+							</div>
+							<div class="stack-sm">
+								<h3 class="text-base font-black text-primary m-0">{ i18n.T(lang, "vendor_warehouses.modal_edit_title") }</h3>
+								<p class="text-2xs text-secondary m-0 mt-0.5 font-medium">{ i18n.T(lang, "vendor_warehouses.modal_edit_desc") }</p>
+							</div>
+						</div>
+						<button type="button" @click="editModal = false" class="btn btn-secondary btn-icon btn-sm">
+							@components.IconClose("icon-xs")
+						</button>
+					</div>
+
+					<form :action="'/vendor/warehouses/' + editWh.id" method="POST" class="d-flex flex-col gap-4 m-0">
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_name") } <span class="text-danger">*</span></label>
+							<input type="text" name="name" x-model="editWh.name" required class="form-input text-xs font-semibold w-full" />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_code") }</label>
+							<input type="text" name="code" x-model="editWh.code" class="form-input text-xs font-mono w-full" />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_branch") }</label>
+							<select name="branch_id" x-model="editWh.branch_id" class="form-input text-xs font-semibold w-full">
+								<option value="0">{ i18n.T(lang, "vendor_warehouses.opt_no_branch") }</option>
+								for _, b := range branches {
+									<option value={ fmt.Sprintf("%d", b.ID) }>
+										{ b.Name.Get(i18n.Lang(lang)) }
+										(#{ fmt.Sprintf("%d", b.ID) })
+									</option>
+								}
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_address") }</label>
+							<input type="text" name="address" x-model="editWh.address" class="form-input text-xs w-full" />
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1.5 d-block">{ i18n.T(lang, "vendor_warehouses.fld_phone") }</label>
+							<input type="text" name="phone" x-model="editWh.phone" class="form-input text-xs tabular-nums w-full" />
+						</div>
+
+						<div class="stack-sm">
+							<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold text-primary">
+								<input type="checkbox" name="is_active" value="true" x-model="editWh.is_active" class="form-checkbox" />
+								<span>{ i18n.T(lang, "vendor_warehouses.chk_active") }</span>
+							</label>
+						</div>
+
+						<div class="flex-between items-center gap-3 mt-2 pt-3 border-t">
+							<button type="button" class="btn btn-secondary text-xs font-bold" @click="editModal = false">{ i18n.T(lang, "common.cancel") }</button>
+							<button type="submit" class="btn btn-primary text-xs font-bold px-6 shadow-sm">{ i18n.T(lang, "vendor_warehouses.btn_save_changes") }</button>
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+func vendorWarehouseBranchLabel(w *inventory.Warehouse, branches []*org.Branch, lang string) string {
+	if w != nil && w.BranchName != "" {
+		return w.BranchName
+	}
+	if w != nil && w.BranchID != nil {
+		for _, b := range branches {
+			if b != nil && b.ID == *w.BranchID {
+				if name := b.Name.Get(i18n.Lang(lang)); name != "" {
+					return name
+				}
+			}
+		}
+		return fmt.Sprintf(i18n.T(lang, "vendor_warehouses.branch_prefix"), *w.BranchID)
+	}
+	return i18n.T(lang, "vendor_warehouses.general_warehouse")
+}

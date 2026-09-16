@@ -1,0 +1,181 @@
+/* ==========================================================================
+   DAWA 24 DESIGN SYSTEM — BASE & TYPOGRAPHY (base.css)
+   Normalize, Box-Sizing, Font Stack, Focus Visibility, Scrollbars
+   ========================================================================== */
+
+@layer reset {
+  *, *::before, *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+    -moz-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    height: 100%;
+  }
+
+  /* Writing direction comes from <html dir>, which the document shell always
+     emits, and from nothing else.
+     `direction: rtl` used to be pinned here on <body>. An author declaration
+     beats the presentational hint that `dir="ltr"` sets, so every English page
+     on the platform rendered its body in RTL while its <html> element claimed
+     LTR: text aligned to the wrong edge, every logical property — padding-
+     inline, inset-inline, border-inline — resolved to the wrong side, and the
+     mobile drawer was anchored to the right while the rule that hides it slid
+     it to the left, which left it half on screen.
+     The fallback below is scoped to a document with no dir attribute at all,
+     so it cannot override one that is present. */
+  html:not([dir]) {
+    direction: rtl;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--text-primary);
+    background-color: var(--bg-app);
+    min-height: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  button, input, optgroup, select, textarea {
+    font-family: var(--font-sans);
+  }
+}
+
+@layer base {
+  /* ---- Headings & Hierarchical Typography ---- */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary);
+    font-weight: 700;
+    line-height: var(--leading-tight);
+    text-wrap: balance;
+  }
+
+  h1 { font-size: var(--text-3xl); font-weight: 800; letter-spacing: -0.025em; }
+  h2 { font-size: var(--text-2xl); font-weight: 800; letter-spacing: -0.02em; }
+  h3 { font-size: var(--text-xl);  font-weight: 700; }
+  h4 { font-size: var(--text-lg);  font-weight: 700; }
+  h5 { font-size: var(--text-base); font-weight: 600; }
+  h6 { font-size: var(--text-sm);  font-weight: 600; text-transform: uppercase; }
+
+  p {
+    line-height: var(--leading-relaxed);
+    text-wrap: pretty;
+    max-width: 70ch;
+  }
+
+  a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--duration-fast) var(--ease-smooth);
+  }
+
+  a:hover {
+    color: var(--primary-hover);
+  }
+
+  strong, b {
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+
+  code, kbd, samp, pre {
+    font-family: var(--font-mono);
+    font-size: 0.875em;
+    direction: ltr;
+  }
+
+  /* ---- Focus Visibility & Accessibility ---- */
+  :focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  /* ---- Smooth Custom Scrollbars ---- */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--border-card);
+    border-radius: var(--radius-full);
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--text-muted);
+  }
+
+  /* ---- Base SVG & Icon Sizing Standards ---- */
+  svg {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  svg:not([width]):not([class*="icon"]):not([class*="w-"]):not([class*="h-"]) {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+
+  .icon, svg.icon         { width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem; }
+  .icon-3xs, svg.icon-3xs { width: 0.625rem; height: 0.625rem; min-width: 0.625rem; min-height: 0.625rem; flex-shrink: 0; }
+  .icon-2xs, svg.icon-2xs { width: 0.75rem; height: 0.75rem; min-width: 0.75rem; min-height: 0.75rem; }
+  .icon-xs, svg.icon-xs   { width: 1.00rem; height: 1.00rem; min-width: 1.00rem; min-height: 1.00rem; }
+  .icon-sm, svg.icon-sm   { width: 1.25rem; height: 1.25rem; min-width: 1.25rem; min-height: 1.25rem; }
+  .icon-md, svg.icon-md   { width: 1.50rem; height: 1.50rem; min-width: 1.50rem; min-height: 1.50rem; }
+  .icon-lg, svg.icon-lg   { width: 2.00rem; height: 2.00rem; min-width: 2.00rem; min-height: 2.00rem; }
+  .icon-xl, svg.icon-xl   { width: 2.50rem; height: 2.50rem; min-width: 2.50rem; min-height: 2.50rem; }
+  /* ---- Universal Interactive Controls Protection ---- */
+  button,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  [role="button"],
+  .btn,
+  a.btn,
+  .cart-stepper-btn,
+  .cart-stepper-control,
+  .fav-icon-btn,
+  [data-tab-target],
+  [data-modal-open],
+  [data-modal-close],
+  [data-sidebar-toggle],
+  .product-card-glass {
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+  }
+
+  button:not(:disabled),
+  input[type="button"]:not(:disabled),
+  input[type="submit"]:not(:disabled),
+  input[type="reset"]:not(:disabled),
+  [role="button"],
+  .btn:not(:disabled),
+  a.btn,
+  .cart-stepper-btn:not(:disabled),
+  .fav-icon-btn {
+    cursor: pointer;
+  }
+}

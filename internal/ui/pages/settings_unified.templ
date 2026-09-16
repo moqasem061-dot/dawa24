@@ -1,0 +1,532 @@
+package pages
+
+import (
+	"context"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type UnifiedSettingsData struct {
+	User                   *identity.User
+	Wallet                 *billing.Wallet
+	Transactions           []*billing.WalletTransaction
+	DepositRequests        []*billing.WalletDeposit
+	PaymentMethods         []*billing.UserPaymentMethod
+	PlatformPaymentMethods []*billing.PlatformPaymentMethod
+	Sessions               []*identity.Session
+	SessionPlans           []*identity.SessionPlan
+	ActiveTab              string
+	CanRequestDeletion     bool
+	IsOwner                bool
+	OrgID                  int64
+	OrgName                string
+	OrgLegalName           string
+	OrgSettingsURL         string
+	PendingAccountDeletion *identity.AccountDeletionRequest
+	PendingOrgDeletion     *org.OrganizationDeletionRequest
+	TelegramEnabled        bool
+	WhatsAppEnabled        bool
+}
+
+templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
+	@layouts.ShellFor(i18n.T(lang, "settings.unified_title"), "settings", lang, dir, authctx.FromContext(ctx)) {
+
+		<div
+			class="w-full mb-16"
+			x-data="{
+				activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
+			}"
+		>
+			<!-- Page Header -->
+			<div class="flex-between items-center flex-wrap gap-4 mb-8">
+    <div class="stack-sm">
+					<div class="row-center-sm mb-2">
+						<div class="b2b-icon-box-sm">
+							@components.IconSettings("icon-sm")
+						</div>
+						<h2 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "settings.unified_title") }
+						</h2>
+					</div>
+					<p class="text-sm text-muted m-0">
+						{ i18n.T(lang, "settings.unified_desc") }
+					</p>
+				</div>
+
+				if walletHref := settingsWalletHref(ctx); walletHref != "" {
+					<div class="row-center">
+						<a href={ templ.SafeURL(walletHref) } class="btn btn-outline-brand font-bold gap-2">
+							@components.IconWallet("icon-xs")
+							<span>{ i18n.T(lang, "billing.wallet_balance") }</span>
+						</a>
+					</div>
+				}
+			</div>
+
+			<!-- Unified Tabs Navigation Bar -->
+			<div class="tabs-nav">
+				<button
+					type="button"
+					class="tab-btn"
+					:class="{ 'active': activeTab === 'profile' }"
+					@click="activeTab = 'profile'; history.replaceState(null, null, '#profile')"
+					data-tab-target="profile"
+				>
+					@components.IconUser("icon-xs")
+					<span>{ i18n.T(lang, "settings.tab_profile") }</span>
+				</button>
+
+				<button
+					type="button"
+					class="tab-btn"
+					:class="{ 'active': activeTab === 'preferences' }"
+					@click="activeTab = 'preferences'; history.replaceState(null, null, '#preferences')"
+					data-tab-target="preferences"
+				>
+					@components.IconBell("icon-xs")
+					<span>{ i18n.T(lang, "settings.tab_preferences") }</span>
+				</button>
+
+				if data.TelegramEnabled {
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'telegram' }"
+						@click="activeTab = 'telegram'; history.replaceState(null, null, '#telegram')"
+						data-tab-target="telegram"
+					>
+						@components.IconSend("icon-xs")
+						<span>{ i18n.T(lang, "settings.tab_telegram") }</span>
+					</button>
+				}
+
+				if data.WhatsAppEnabled {
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'whatsapp' }"
+						@click="activeTab = 'whatsapp'; history.replaceState(null, null, '#whatsapp')"
+						data-tab-target="whatsapp"
+					>
+						@components.IconWhatsApp("icon-xs")
+						<span>{ i18n.T(lang, "settings.tab_whatsapp") }</span>
+					</button>
+				}
+			</div>
+
+			<!-- Tab 1: Profile -->
+			<div
+				id="tab-profile"
+				class="tab-pane glass-panel p-8"
+				:class="{ 'active': activeTab === 'profile' }"
+				x-show="activeTab === 'profile'"
+			>
+				<h3 class="text-lg font-extrabold text-primary mb-6">
+					{ i18n.T(lang, "settings.profile_section_title") }
+				</h3>
+
+				<form 
+					action="/settings/profile" 
+					method="POST" 
+					enctype="multipart/form-data" 
+					class="max-w-2xl d-flex flex-col gap-6 text-start" 
+					x-data="{ avatarPreview: '', removeAvatar: false }"
+				>
+					<!-- Avatar Upload Section -->
+					<div class="d-flex items-center gap-6 p-5 bg-surface-sunken border rounded-xl flex-wrap">
+						<!-- Circular Avatar Preview -->
+						<div class="avatar-box w-20 h-20 rounded-full bg-accent-subtle text-accent d-flex items-center justify-center flex-shrink-0 border-2 border-accent overflow-hidden shadow-sm">
+							<template x-if="avatarPreview">
+								<img :src="avatarPreview" alt="Avatar Preview" class="w-full h-full object-cover" />
+							</template>
+							<template x-if="!avatarPreview && !removeAvatar">
+								if data.User != nil && data.User.AvatarURL != "" {
+									<img src={ data.User.AvatarURL } alt="Avatar" class="w-full h-full object-cover" />
+								} else {
+									@components.IconUser("icon-lg")
+								}
+							</template>
+							<template x-if="!avatarPreview && removeAvatar">
+								@components.IconUser("icon-lg")
+							</template>
+						</div>
+
+						<!-- Upload Controls -->
+						<div class="flex-1">
+							<label class="form-label font-extrabold text-sm mb-1.5">{ i18n.T(lang, "settings.avatar_label") }</label>
+							<div class="d-flex items-center gap-2 flex-wrap">
+								<label class="btn btn-secondary btn-sm font-bold cursor-pointer m-0 gap-1.5">
+									@components.IconUpload("icon-xs")
+									<span>{ i18n.T(lang, "settings.avatar_change") }</span>
+									<input 
+										type="file" 
+										id="user-avatar-file" 
+										name="avatar_file" 
+										accept="image/png,image/jpeg,image/jpg,image/webp" 
+										class="hidden" 
+										@change="
+											const file = $event.target.files[0];
+											if (file) {
+												removeAvatar = false;
+												const reader = new FileReader();
+												reader.onload = (e) => { avatarPreview = e.target.result };
+												reader.readAsDataURL(file);
+											}
+										"
+									/>
+								</label>
+								
+								if data.User != nil && data.User.AvatarURL != "" {
+									<button 
+										type="button" 
+										class="btn btn-ghost btn-sm font-bold text-danger m-0 gap-1" 
+										x-show="!removeAvatar"
+										@click="removeAvatar = true; avatarPreview = ''; const el = document.getElementById('user-avatar-file'); if(el) el.value = '';"
+									>
+										@components.IconTrash("icon-xs")
+										<span>{ i18n.T(lang, "settings.avatar_delete") }</span>
+									</button>
+								}
+							</div>
+							<input type="hidden" name="remove_avatar" :value="removeAvatar ? '1' : '0'" />
+							<span class="text-xs text-muted d-block mt-1.5">
+								{ i18n.T(lang, "settings.avatar_hint") }
+							</span>
+						</div>
+					</div>
+
+					<div class="form-group mb-0">
+						<label class="form-label" for="user-name">{ i18n.T(lang, "settings.full_name") }</label>
+						<input type="text" id="user-name" name="name" class="form-input" value={ userNameVal(data.User, lang) } required />
+					</div>
+
+					<div class="form-group mb-0">
+						<label class="form-label" for="user-email">{ i18n.T(lang, "settings.email") }</label>
+						<input type="email" id="user-email" name="email" class="form-input tabular-nums" value={ userEmailVal(data.User) } required />
+					</div>
+
+					<div class="form-group mb-0">
+						<label class="form-label" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
+						<input type="tel" id="user-phone" name="phone" class="form-input tabular-nums" value={ userPhoneVal(data.User) } />
+					</div>
+
+					<div class="form-group mb-0">
+						<label class="form-label" for="user-role">{ i18n.T(lang, "settings.account_role") }</label>
+						<input type="text" id="user-role" class="form-input bg-surface-sunken text-muted" value={ userRoleVal(data.User) } disabled />
+					</div>
+
+					<div class="mt-3">
+						<button type="submit" class="btn btn-primary font-black px-8 py-3">
+							@components.IconCheck("icon-xs")
+							<span>{ i18n.T(lang, "settings.save_profile") }</span>
+						</button>
+					</div>
+				</form>
+
+				<!-- Danger Zone -->
+				if data.CanRequestDeletion {
+					<div class="border-t border-danger/30 mt-10 pt-7 stack-md">
+						if data.IsOwner && data.OrgID > 0 {
+							if data.PendingOrgDeletion != nil {
+								<div class="p-5 rounded-xl border border-amber/30 bg-amber/10 flex-between items-center flex-wrap gap-4 mb-4">
+									<div class="stack-xs max-w-xl text-start">
+										<div class="d-flex items-center gap-2 text-amber font-black text-sm">
+											@components.IconClock("icon-xs")
+											<span>طلب حذف المنشأة ({ data.OrgName }) قيد المراجعة</span>
+										</div>
+										<p class="text-xs text-secondary m-0 leading-relaxed">
+											تم تقديم طلب الحذف بتاريخ <strong class="tabular-nums">{ data.PendingOrgDeletion.CreatedAt.Format("2006-01-02 15:04") }</strong> وهو قيد مراجعة إدارة المنصة.
+										</p>
+										if data.PendingOrgDeletion.Reason != "" {
+											<div class="text-2xs text-muted bg-surface-sunken p-2 rounded border mt-1">
+												<strong>السبب المسجل:</strong> { data.PendingOrgDeletion.Reason }
+											</div>
+										}
+									</div>
+									<form method="POST" action="/settings/organization/delete-request/cancel" class="m-0">
+										<input type="hidden" name="request_id" value={ fmt.Sprintf("%d", data.PendingOrgDeletion.ID) } />
+										<button type="submit" class="btn btn-secondary font-bold text-xs gap-1">
+											@components.IconX("icon-xs")
+											<span>إلغاء وسحب طلب الحذف</span>
+										</button>
+									</form>
+								</div>
+							} else {
+								<div class="bg-danger/5 border border-danger/20 rounded-xl p-6 flex-between items-center flex-wrap gap-5 mb-4">
+									<div class="stack-sm text-start">
+										<div class="d-flex items-center gap-2 text-danger font-extrabold text-base">
+											@components.IconBuilding("icon-xs")
+											<span>حذف المنشأة نهائياً ({ data.OrgName })</span>
+										</div>
+										<p class="text-xs text-secondary mt-1.5 leading-relaxed max-w-xl">
+											أنت مسجل كمالك لهذه المنشأة. سيتم إرسال الطلب إلى إدارة المنصة للتدقيق والموافقة. عند اعتماد الحذف، سيتم تعطيل حساب المنشأة وإيقاف كافة فروعها وحسابات الموظفين المنتسبين إليها فوراً.
+										</p>
+									</div>
+									<button
+										type="button"
+										class="btn btn-danger font-bold px-6 py-2.5 gap-1"
+										data-modal-open="org-delete-modal"
+									>
+										@components.IconTrash("icon-xs")
+										<span>طلب حذف المنشأة</span>
+									</button>
+								</div>
+							}
+						}
+
+						if data.PendingAccountDeletion != nil {
+							<div class="p-5 rounded-xl border border-amber/30 bg-amber/10 flex-between items-center flex-wrap gap-4">
+								<div class="stack-xs max-w-xl text-start">
+									<div class="d-flex items-center gap-2 text-amber font-black text-sm">
+										@components.IconClock("icon-xs")
+										<span>طلب حذف الحساب الشخصي قيد المراجعة</span>
+									</div>
+									<p class="text-xs text-secondary m-0 leading-relaxed">
+										تم تقديم طلب الحذف بتاريخ <strong class="tabular-nums">{ data.PendingAccountDeletion.CreatedAt.Format("2006-01-02 15:04") }</strong> وهو قيد مراجعة إدارة المنصة.
+									</p>
+									if data.PendingAccountDeletion.Reason != "" {
+										<div class="text-2xs text-muted bg-surface-sunken p-2 rounded border mt-1">
+											<strong>السبب المسجل:</strong> { data.PendingAccountDeletion.Reason }
+										</div>
+									}
+								</div>
+								<form method="POST" action="/settings/delete-request/cancel" class="m-0">
+									<input type="hidden" name="request_id" value={ fmt.Sprintf("%d", data.PendingAccountDeletion.ID) } />
+									<button type="submit" class="btn btn-secondary font-bold text-xs gap-1">
+										@components.IconX("icon-xs")
+										<span>إلغاء وسحب طلب الحذف</span>
+									</button>
+								</form>
+							</div>
+						} else {
+							<div class="bg-danger/5 border border-danger/20 rounded-xl p-6 flex-between items-center flex-wrap gap-5">
+								<div class="stack-sm text-start">
+									<div class="d-flex items-center gap-2 text-danger font-extrabold text-base">
+										@components.IconTrash("icon-xs")
+										<span>{ i18n.T(lang, "settings.delete_account_title") }</span>
+									</div>
+									<p class="text-xs text-secondary mt-1.5 leading-relaxed max-w-xl">
+										{ i18n.T(lang, "settings.delete_account_desc") }
+									</p>
+								</div>
+								<button
+									type="button"
+									class="btn btn-secondary text-danger border-danger/30 font-bold px-6 py-2.5"
+									data-modal-open="delete-account-modal"
+								>
+									@components.IconTrash("icon-xs")
+									<span>{ i18n.T(lang, "settings.delete_account_btn") }</span>
+								</button>
+							</div>
+						}
+					</div>
+				}
+			</div>
+
+			<!-- Tab 2: Preferences -->
+			<div
+				id="tab-preferences"
+				class="tab-pane glass-panel p-8"
+				:class="{ 'active': activeTab === 'preferences' }"
+				x-show="activeTab === 'preferences'"
+			>
+				<h3 class="text-lg font-extrabold text-primary mb-6">
+					{ i18n.T(lang, "settings.pref_title") }
+				</h3>
+
+				<form action="/settings/preferences" method="POST" class="max-w-2xl d-flex flex-col gap-5 text-start">
+					<div class="flex-between items-center p-4 border rounded-lg bg-surface-sunken">
+						<div class="stack-sm">
+							<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.pref_email") }</div>
+							<div class="text-sm text-muted">{ i18n.T(lang, "settings.pref_email_desc") }</div>
+						</div>
+						<input type="checkbox" name="notif_email" checked class="form-checkbox" />
+					</div>
+
+					<div class="flex-between items-center p-4 border rounded-lg bg-surface-sunken">
+						<div class="stack-sm">
+							<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.pref_promos") }</div>
+							<div class="text-sm text-muted">{ i18n.T(lang, "settings.pref_promos_desc") }</div>
+						</div>
+						<input type="checkbox" name="notif_promos" checked class="form-checkbox" />
+					</div>
+
+					<div class="mt-3">
+						<button type="submit" class="btn btn-primary font-black px-8 py-3">
+							@components.IconCheck("icon-xs")
+							<span>{ i18n.T(lang, "settings.save_preferences") }</span>
+						</button>
+					</div>
+				</form>
+			</div>
+
+			if data.TelegramEnabled {
+				<!-- Tab 3: Telegram. Loaded on first view; the card manages itself. -->
+				<div
+					id="tab-telegram"
+					class="tab-pane glass-panel p-8"
+					:class="{ 'active': activeTab === 'telegram' }"
+					x-show="activeTab === 'telegram'"
+				>
+					<div hx-get="/settings/telegram" hx-trigger="load" hx-swap="outerHTML"></div>
+				</div>
+			}
+
+			if data.WhatsAppEnabled {
+				<!-- Tab 4: WhatsApp. Loaded on first view; the card manages itself. -->
+				<div
+					id="tab-whatsapp"
+					class="tab-pane glass-panel p-8"
+					:class="{ 'active': activeTab === 'whatsapp' }"
+					x-show="activeTab === 'whatsapp'"
+				>
+					<div hx-get="/settings/whatsapp" hx-trigger="load" hx-swap="outerHTML"></div>
+				</div>
+			}
+
+			<!-- Dynamic Modal: Request Account Deletion Modal (Typed Confirmation) -->
+			if data.CanRequestDeletion && data.PendingAccountDeletion == nil {
+				@components.ConfirmModal(components.ConfirmModalProps{
+					ID:           "delete-account-modal",
+					Title:        i18n.T(lang, "settings.delete_account_title"),
+					Message:      i18n.T(lang, "settings.delete_account_msg"),
+					ConfirmURL:   "/settings/delete-request",
+					ConfirmVerb:  "post",
+					ConfirmText:  i18n.T(lang, "settings.delete_account_confirm"),
+					CancelText:   i18n.T(lang, "common.cancel"),
+					RequireMatch: i18n.T(lang, "settings.delete_type_match"),
+					Danger:       true,
+				})
+			}
+
+			if data.IsOwner && data.OrgID > 0 && data.PendingOrgDeletion == nil {
+				<!-- Confirm Org Delete Modal -->
+				@components.Modal(components.ModalProps{
+					ID:       "org-delete-modal",
+					Title:    "طلب حذف المنشأة",
+					Subtitle: data.OrgLegalName,
+					Icon:     "trash",
+					Size:     "md",
+				}) {
+					<div x-data="{ typedConfirm: '', expectedName: '' }" x-init={ fmt.Sprintf("expectedName = '%s'", data.OrgLegalName) }>
+						<div class="alert alert-danger mb-4 text-xs leading-relaxed">
+							<strong>تنبيه وضمانة قانونية:</strong> تقديم هذا الطلب يخضع لمراجعة وتدقيق إدارة المنصة. عند اعتماد الطلب، سيتم إيقاف وتعطيل (Block) نشاط المنشأة وفروعها وحساباتها بالكامل على المنصة، مع الحفاظ التام والأرشفة الكاملة لكافة السجلات والبيانات القانونية والمالية وفقاً للمتطلبات التنظيمية دون أي مساس بها.
+						</div>
+
+						<form method="POST" action="/settings/delete-request" class="m-0 stack-sm">
+							<input type="hidden" name="delete_target" value="organization" />
+							<div class="form-group mb-3">
+								<label class="form-label text-xs font-bold" for="org-del-reason">
+									سبب طلب الحذف <span class="text-danger">*</span>
+								</label>
+								<textarea
+									id="org-del-reason"
+									name="reason"
+									rows="3"
+									class="form-input text-xs"
+									placeholder="يرجى كتابة سبب طلب الحذف للمراجعة الإدارية..."
+									required
+								></textarea>
+							</div>
+
+							<div class="form-group mb-4">
+								<label class="form-label text-xs font-bold" for="org-del-confirm">
+									لتأكيد الطلب، يرجى كتابة اسم المنشأة: <span class="text-primary font-black select-all">"{ data.OrgLegalName }"</span>
+								</label>
+								<input
+									type="text"
+									id="org-del-confirm"
+									class="form-input text-xs"
+									x-model="typedConfirm"
+									placeholder="اكتب اسم المنشأة كما هو موضح أعلاه..."
+									autocomplete="off"
+								/>
+							</div>
+
+							<div class="d-flex items-center justify-end gap-2 pt-3 border-t">
+								<button type="button" class="btn btn-secondary font-bold" data-modal-close="org-delete-modal">
+									إلغاء
+								</button>
+								<button
+									type="submit"
+									class="btn btn-danger font-black gap-1"
+									:disabled={ "typedConfirm.trim() !== expectedName.trim() && typedConfirm.trim() !== 'حذف'" }
+								>
+									@components.IconTrash("icon-xs")
+									<span>تأكيد تقديم طلب الحذف</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				}
+			}
+
+		</div>
+	}
+}
+
+func userNameVal(u *identity.User, lang string) string {
+	if u == nil {
+		return ""
+	}
+	return u.Name.Get(i18n.Lang(lang))
+}
+
+func userEmailVal(u *identity.User) string {
+	if u == nil {
+		return ""
+	}
+	return u.Email
+}
+
+func userPhoneVal(u *identity.User) string {
+	if u == nil {
+		return ""
+	}
+	return u.Phone
+}
+
+func userRoleVal(u *identity.User) string {
+	if u == nil {
+		return ""
+	}
+	return u.Role
+}
+
+func ternaryStr(cond bool, a, b string) string {
+	if cond {
+		return a
+	}
+	return b
+}
+
+// settingsWalletHref is the wallet this caller can actually open, or nothing.
+//
+// The header used to link to /customer/wallet unconditionally. That is a 404
+// for a supplier (the route is mounted inside the customer audience group), a
+// 404 for an administrator (same reason), and a 404 for a pharmacy member
+// without pharmacy.wallet.view. Three of the four kinds of visitor this page
+// has were offered a door that does not open.
+func settingsWalletHref(ctx context.Context) string {
+	actor, ok := authctx.From(ctx)
+	if !ok || actor.IsStaff {
+		return ""
+	}
+	if actor.IsVendor() {
+		if actor.Can("vendor.wallet.view") {
+			return "/vendor/wallet"
+		}
+		return ""
+	}
+	if actor.Can("pharmacy.wallet.view") {
+		return "/customer/wallet"
+	}
+	return ""
+}

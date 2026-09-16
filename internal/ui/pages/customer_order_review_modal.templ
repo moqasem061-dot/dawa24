@@ -1,0 +1,141 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorShipmentReviewButton renders the rate vendor button or the reviewed badge on a delivered shipment parcel.
+templ VendorShipmentReviewButton(orderID int64, sh *commerce.OrderShipment, isReviewed bool, reviewScore int, lang string) {
+	if isReviewed {
+		<span class="badge badge-amber text-xs font-black shadow-2xs gap-1">
+			@components.IconStar("icon-2xs")
+			<span>{ fmt.Sprintf(i18n.T(lang, "reviews.rated"), reviewScore) }</span>
+		</span>
+	} else {
+		<button
+			type="button"
+			class="btn btn-warning btn-xs font-extrabold gap-1 shadow-xs"
+			data-order-id={ fmt.Sprintf("%d", orderID) }
+			data-vendor-id={ fmt.Sprintf("%d", sh.OrganizationID) }
+			data-vendor-name={ sh.VendorName.Get(i18n.Lang(lang)) }
+			data-on-click="window.openVendorReviewModalFromBtn(this)"
+		>
+			@components.IconStar("icon-2xs")
+			<span>{ i18n.T(lang, "reviews.rate_supplier") }</span>
+		</button>
+	}
+}
+
+// StarRatingPicker renders an interactive 5-star rating control with accessible inputs and crisp SVG icons.
+templ StarRatingPicker(fieldName string, defaultVal int) {
+	<div class="star-rating-picker" dir="ltr">
+		for i := 5; i >= 1; i-- {
+			<input
+				type="radio"
+				id={ fmt.Sprintf("%s-%d", fieldName, i) }
+				name={ fieldName }
+				value={ fmt.Sprintf("%d", i) }
+				class="star-picker-input"
+				required
+				checked?={ i == defaultVal }
+			/>
+			<label for={ fmt.Sprintf("%s-%d", fieldName, i) } class="star-picker-label" title={ fmt.Sprintf("%d/5", i) }>
+				<svg class="star-picker-icon" viewBox="0 0 24 24" fill="currentColor">
+					<path fill-rule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clip-rule="evenodd"></path>
+				</svg>
+			</label>
+		}
+	</div>
+}
+
+// CustomerOrderReviewModal renders the multi-criteria rating modal for a specific vendor parcel.
+templ CustomerOrderReviewModal(order *commerce.Order, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:       "vendor-review-dialog",
+		Title:    i18n.T(lang, "reviews.rate_supplier"),
+		Subtitle: fmt.Sprintf(i18n.T(lang, "reviews.for_order_sub"), order.OrderNumber),
+		Icon:     "star",
+		Size:     "md",
+	}) {
+		<form method="POST" action="/reviews/submit" class="d-flex flex-col gap-4 m-0" id="vendor-review-form">
+			<input type="hidden" name="order_id" value={ fmt.Sprintf("%d", order.ID) } />
+			<input type="hidden" name="organization_id" id="review-vendor-id" value="" />
+			<input type="hidden" name="redirect_url" value={ fmt.Sprintf("/orders/%d", order.ID) } />
+			<input type="hidden" name="context" value="supplier" />
+
+			<!-- Criteria 1: Delivery Rep (المندوب) -->
+			<div class="p-3.5 bg-surface-sunken rounded-xl border flex-between items-center flex-wrap gap-2">
+				<div>
+					<strong class="text-xs font-black text-primary d-block">{ i18n.T(lang, "reviews.criteria_rep_title") }</strong>
+					<span class="text-2xs text-secondary">{ i18n.T(lang, "reviews.criteria_rep_desc") }</span>
+				</div>
+				@StarRatingPicker("rating_rep", 5)
+			</div>
+
+			<!-- Criteria 2: Service & Quality (الخدمة) -->
+			<div class="p-3.5 bg-surface-sunken rounded-xl border flex-between items-center flex-wrap gap-2">
+				<div>
+					<strong class="text-xs font-black text-primary d-block">{ i18n.T(lang, "reviews.criteria_quality_title") }</strong>
+					<span class="text-2xs text-secondary">{ i18n.T(lang, "reviews.criteria_quality_desc") }</span>
+				</div>
+				@StarRatingPicker("rating_quality", 5)
+			</div>
+
+			<!-- Criteria 3: Speed (السرعة) -->
+			<div class="p-3.5 bg-surface-sunken rounded-xl border flex-between items-center flex-wrap gap-2">
+				<div>
+					<strong class="text-xs font-black text-primary d-block">{ i18n.T(lang, "reviews.criteria_speed_title") }</strong>
+					<span class="text-2xs text-secondary">{ i18n.T(lang, "reviews.criteria_speed_desc") }</span>
+				</div>
+				@StarRatingPicker("rating_speed", 5)
+			</div>
+
+			<!-- Review Text Area -->
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold text-primary mb-1">{ i18n.T(lang, "reviews.comment_label") }</label>
+				<textarea
+					name="review_text"
+					rows="3"
+					class="form-input text-xs w-full"
+					placeholder={ i18n.T(lang, "reviews.comment_placeholder") }
+				></textarea>
+			</div>
+
+			<!-- Modal Actions -->
+			<div class="modal-footer">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					data-modal-close="vendor-review-dialog"
+				>
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm font-black px-5 shadow-xs">
+					@components.IconCheck("icon-xs")
+					<span>{ i18n.T(lang, "reviews.submit_btn") }</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		window.openVendorReviewModalFromBtn = function(btn) {
+			const vendorId = btn.getAttribute('data-vendor-id');
+			const vendorName = btn.getAttribute('data-vendor-name');
+			const dialog = document.getElementById('vendor-review-dialog');
+			if (!dialog) return;
+
+			document.getElementById('review-vendor-id').value = vendorId;
+			const titleEl = document.getElementById('vendor-review-dialog-title') || document.getElementById('review-modal-title');
+			if (titleEl) {
+				titleEl.textContent = (window.__DAWA_LANG__ === 'en' ? 'Rate Supplier: ' : 'تقييم المورد: ') + vendorName;
+			}
+			dialog.showModal();
+		};
+	</script>
+}

@@ -1,0 +1,275 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type OfferCardData struct {
+	ID                 int64
+	Title              i18n.Text
+	Description        i18n.Text
+	OrganizationID     int64
+	OrganizationName   string
+	BranchName         string
+	DiscountType       string
+	DiscountValue      money.Amount
+	DiscountPercentage float64
+	MinOrderAmount     money.Amount
+	TotalPrice         money.Amount
+	StartsAt           time.Time
+	ExpiresAt          time.Time
+	ProductsCount      int
+	Image              string
+	IsSponsored        bool
+	IsCustomerUser     bool
+	IsCovered          bool
+	CoverageReason     string
+}
+
+// OffersView is the board's state beyond its cards.
+type OffersView struct {
+	Sort     string
+	Page     int
+	PageSize int
+	Total    int
+	// Notice explains an empty board that has a specific cause, such as a
+	// buyer with no receiving branch selected.
+	Notice string
+}
+
+templ OffersPage(lang, dir string, offers []*OfferCardData, view OffersView) {
+	@layouts.ShellFor("العروض والخصومات الدوائية | دوا 24", "offers", lang, dir, authctx.FromContext(ctx)) {
+		@OffersContent(lang, offers, view)
+	}
+}
+
+templ OffersContent(lang string, offers []*OfferCardData, view OffersView) {
+	{{ sort := view.Sort }}
+	<div class="page-container py-2">
+		<!-- Page Header Banner (Design System Aligned) -->
+		<div class="glass-panel p-5 mb-5 flex-between flex-wrap gap-4 border rounded-2xl shadow-xs">
+			<div class="stack-2xs">
+				<nav class="text-xs text-muted mb-1 d-flex items-center gap-1.5 font-bold">
+					{{ actor := authctx.FromContext(ctx) }}
+					if actor.UserID == 0 {
+						<a href="/" class="text-secondary transition-colors">الرئيسية</a>
+					} else if actor.IsVendor() {
+						<a href="/vendor/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+					} else if actor.IsStaff {
+						<a href="/admin/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+					} else {
+						<a href="/customer/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+					}
+					<span class="text-muted">/</span>
+					<span class="text-primary font-black">العروض والخصومات</span>
+				</nav>
+				<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+					عروض التوريد والتخفيضات الدوائية الحصرية
+				</h1>
+				<p class="text-xs text-secondary mt-1 mb-0 font-medium">
+					استعراض ومقارنة العروض الترويجية والخصومات المباشرة من كبرى شركات التوزيع والمستودعات المعتمدة
+				</p>
+			</div>
+
+			<div class="d-flex items-center gap-2.5 flex-wrap">
+				<a href="/catalog" class="btn btn-secondary btn-sm font-bold gap-2 shadow-xs">
+					@components.IconPackage("icon-xs")
+					<span>كتالوج الأدوية</span>
+				</a>
+				<a href="/customer/purchase-request" class="btn btn-primary btn-sm font-extrabold gap-2 px-4 shadow-sm">
+					@components.IconZap("icon-xs")
+					<span>طلب شراء ذكي</span>
+				</a>
+				if actor, ok := authctx.From(ctx); ok && actor.IsVendor() {
+					<a href="/vendor/offers/new" class="btn btn-secondary btn-sm font-bold gap-2 shadow-xs">
+						@components.IconPlus("icon-xs")
+						<span>إنشاء عرض جديد</span>
+					</a>
+				}
+			</div>
+		</div>
+
+		<!-- Toolbar: Summary, Status & Sorting Filter Dropdown -->
+		<div class="glass-panel p-4 mb-5 border rounded-2xl shadow-xs flex-between items-center flex-wrap gap-4">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				@components.IconTag("icon-xs text-brand")
+				<span class="text-xs font-bold text-primary">العروض النشطة المتاحة:</span>
+				<span class="badge badge-emerald text-xs font-black tabular-nums px-2.5 py-1">
+					{ fmt.Sprintf("%d عروض ترويجية", view.Total) }
+				</span>
+			</div>
+
+			<!-- Sort Filter Form -->
+			<form method="GET" action="/offers" class="d-flex items-center gap-2.5 m-0" id="offers-filter-form">
+				<label for="offers-sort" class="text-xs text-muted font-extrabold whitespace-nowrap">الترتيب:</label>
+				<select
+					id="offers-sort"
+					name="sort"
+					class="form-select text-xs font-bold"
+					data-autosubmit="offers-filter-form"
+				>
+					<option value="newest" selected?={ sort == "" || sort == "newest" }>الأحدث</option>
+					<option value="discount_desc" selected?={ sort == "discount_desc" }>الأعلى خصماً</option>
+					<option value="discount_asc" selected?={ sort == "discount_asc" }>الأقل خصماً</option>
+					<option value="price_asc" selected?={ sort == "price_asc" }>الأقل سعراً</option>
+					<option value="price_desc" selected?={ sort == "price_desc" }>الأعلى سعراً</option>
+				</select>
+			</form>
+		</div>
+
+		if len(offers) == 0 {
+			<div class="glass-panel p-10 text-center border rounded-2xl shadow-xs">
+				<div class="w-12 h-12 rounded-full bg-primary-subtle text-primary d-flex items-center justify-center mx-auto mb-3">
+					@components.IconTag("icon-md")
+				</div>
+				<h3 class="text-base font-extrabold text-primary mb-1.5">لا توجد عروض ترويجية متاحة لك حالياً</h3>
+				<p class="text-xs text-secondary mb-4 max-w-md mx-auto font-medium">
+					if view.Notice != "" {
+						{ view.Notice }
+					} else {
+						تظهر هنا العروض المعتمدة التي يغطي موردوها فرع الاستلام اليوم. يمكنك تصفح الكتالوج الشامل لطلب احتياجاتك.
+					}
+				</p>
+				<a href="/catalog" class="btn btn-primary btn-sm font-bold px-4 shadow-xs">
+					تصفح كتالوج الأدوية
+				</a>
+			</div>
+		} else {
+			<div class="product-grid-wrapper mb-6">
+				for _, o := range offers {
+					<div class="product-card-glass d-flex flex-col justify-between">
+						<div>
+							<!-- Card Top Badges -->
+							<div class="flex-between items-center mb-3">
+								<div class="d-flex items-center gap-1.5 flex-wrap">
+									if o.DiscountPercentage > 0 {
+										<span class="badge badge-emerald font-black text-xs shadow-xs">
+											خصم { fmt.Sprintf("%.0f%%", o.DiscountPercentage) }
+										</span>
+									} else if o.DiscountValue.IsPositive() {
+										<span class="badge badge-emerald font-black text-xs shadow-xs">
+											خصم { o.DiscountValue.String() } ج.م
+										</span>
+									} else {
+										<span class="badge badge-sky font-bold text-xs shadow-xs">
+											عرض خاص
+										</span>
+									}
+									if o.IsCustomerUser && o.IsCovered {
+										<span class="badge badge-emerald text-2xs font-bold" title={ o.CoverageReason }>
+											@components.IconCheck("icon-2xs")
+											<span>مشمول بالتغطية</span>
+										</span>
+									}
+								</div>
+								if o.IsSponsored {
+									@components.SponsoredBadge(lang)
+								} else {
+									<span class="badge badge-slate text-2xs font-bold">
+										@components.IconCheck("icon-2xs text-emerald")
+										<span>معتمد</span>
+									</span>
+								}
+							</div>
+
+							<!-- Offer Title -->
+							<h3 class="text-sm font-black text-primary m-0 mb-1.5 line-clamp-2 leading-snug">
+								{ o.Title.Get(i18n.ParseLang(lang)) }
+							</h3>
+
+							<!-- Offer Description -->
+							if o.Description.Get(i18n.ParseLang(lang)) != "" {
+								<p class="text-xs text-secondary m-0 mb-3 line-clamp-2 font-medium">
+									{ o.Description.Get(i18n.ParseLang(lang)) }
+								</p>
+							}
+
+							<!-- Supplier Info Box -->
+							<div class="p-2.5 rounded-xl bg-surface-sunken border mb-3 flex-between">
+								<div class="d-flex items-center gap-1.5 text-truncate">
+									@components.IconBuilding("icon-xs text-brand flex-shrink-0")
+									<div class="text-truncate">
+										<div class="text-xs font-extrabold text-primary text-truncate">
+											if o.OrganizationName != "" {
+												{ o.OrganizationName }
+											} else {
+												<span>مورد أدوية معتمد</span>
+											}
+										</div>
+										if o.BranchName != "" {
+											<div class="text-2xs text-muted text-truncate">
+												{ o.BranchName }
+											</div>
+										}
+									</div>
+								</div>
+								if o.ProductsCount > 0 {
+									<span class="badge badge-sky text-2xs font-mono font-bold" title="عدد الأصناف">
+										{ fmt.Sprintf("%d أصناف", o.ProductsCount) }
+									</span>
+								}
+							</div>
+
+							<!-- Expiry Date -->
+							if !o.ExpiresAt.IsZero() {
+								<div class="d-flex items-center gap-1 text-2xs text-muted font-medium mb-3">
+									@components.IconClock("icon-2xs")
+									<span>ساري حتى: <strong class="tabular-nums font-bold text-secondary">{ format.Date(o.ExpiresAt, lang) }</strong></span>
+								</div>
+							}
+						</div>
+
+						<!-- Pricing & Action Footer -->
+						<div class="border-t pt-3 mt-auto">
+							<div class="flex-between items-baseline mb-2.5">
+								<div>
+									if o.TotalPrice.IsPositive() {
+										<span class="text-2xs text-muted font-bold d-block">سعر الحزمة:</span>
+										<div class="text-base font-black text-brand tabular-nums">
+											{ o.TotalPrice.String() } <span class="text-xs font-bold text-secondary">ج.م</span>
+										</div>
+									} else if o.MinOrderAmount.IsPositive() {
+										<span class="text-2xs text-muted font-bold d-block">الحد الأدنى:</span>
+										<div class="text-sm font-extrabold text-primary tabular-nums">
+											{ o.MinOrderAmount.String() } <span class="text-xs font-bold text-secondary">ج.م</span>
+										</div>
+									} else {
+										<span class="text-2xs text-muted font-bold d-block">نوع العرض:</span>
+										<div class="text-xs font-bold text-secondary">
+											خصم فوري مباشر
+										</div>
+									}
+								</div>
+							</div>
+
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/offers/%d", o.ID)) }
+								class="btn btn-primary btn-sm w-full font-bold justify-center gap-1.5 shadow-xs"
+							>
+								<span>استعراض تفاصيل العرض</span>
+								@components.IconArrowLeft("icon-xs")
+							</a>
+						</div>
+					</div>
+				}
+			</div>
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage:     view.Page,
+				PageSize:        view.PageSize,
+				TotalCount:      view.Total,
+				BaseURL:         "/offers",
+				QueryValues:     url.Values{"sort": []string{sort}},
+				PageSizeOptions: []int{12, 24, 48, 96},
+			})
+		}
+	</div>
+}

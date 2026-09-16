@@ -1,0 +1,333 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerCart(cart *commerce.Cart, groups []CartGroup, lang, dir string, isPartial bool) {
+	if isPartial {
+		@CustomerCartContent(cart, groups, lang)
+	} else {
+		@layouts.ShellFor(i18n.T(lang, "cart.title")+" | Dawa24", "cart", lang, dir, authctx.FromContext(ctx)) {
+			<div class="page-container max-w-6xl">
+				@components.PageHeader(components.PageHeaderProps{
+					Title:    i18n.T(lang, "cart.title"),
+					Subtitle: i18n.T(lang, "cart.subtitle"),
+				}) {
+					<a href="/catalog" class="btn btn-secondary font-semibold gap-2">
+						@components.IconArrowRight("icon-xs")
+						<span>{ i18n.T(lang, "cart.continue_shopping") }</span>
+					</a>
+				}
+
+				<div class="stack-sm" id="cart-content">
+					@CustomerCartContent(cart, groups, lang)
+				</div>
+			</div>
+		}
+	}
+}
+
+templ CustomerCartContent(cart *commerce.Cart, groups []CartGroup, lang string) {
+	if cart == nil || len(cart.Items) == 0 {
+		<div class="empty-state-glass p-8 text-center">
+			<div class="empty-state-icon-wrapper mx-auto mb-4">
+				@components.IconCart("icon-lg")
+			</div>
+			<h2 class="text-2xl font-black text-primary mb-2">
+				{ i18n.T(lang, "cart.empty_title") }
+			</h2>
+			<p class="text-sm text-muted max-w-md mx-auto mb-6 leading-relaxed">
+				{ i18n.T(lang, "cart.empty_subtitle") }
+			</p>
+			<a href="/catalog" class="btn btn-primary btn-lg font-extrabold px-8">
+				@components.IconSearch("icon-xs")
+				<span>{ i18n.T(lang, "cart.browse_catalog") }</span>
+			</a>
+		</div>
+	} else {
+		if buying, has := authctx.BuyingBranchFrom(ctx); has && len(buying.Branches) > 0 {
+			<div class="glass-panel p-4 mb-4 flex-between flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge">
+						@components.IconMapPin("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="text-xs text-muted font-semibold">{ i18n.T(lang, "cart.receiving_branch") }</div>
+						<div class="text-base font-extrabold text-primary d-flex items-center gap-2">
+							<span>
+								for _, b := range buying.Branches {
+									if buying.Active != nil && *buying.Active == b.ID {
+										{ b.Name }
+									}
+								}
+							</span>
+							<span class="badge badge-emerald text-xs">{ i18n.T(lang, "branch.active_badge") }</span>
+							if buying.IsLocked {
+								<span class="badge badge-amber text-xs font-bold gap-1">
+									@components.IconLock("icon-2xs")
+									<span>{ i18n.T(lang, "branch.locked_badge") }</span>
+								</span>
+							}
+						</div>
+					</div>
+				</div>
+				if !buying.IsLocked {
+					<div class="stack-sm">
+						<form method="POST" action="/customer/set-branch" class="m-0 d-inline-flex items-center gap-2">
+							<input type="hidden" name="redirect_to" value="/cart" />
+							<span class="text-xs text-secondary font-semibold">{ i18n.T(lang, "branch.change_branch") }</span>
+							<select
+								name="branch_id"
+								class="form-select form-input-sm"
+								data-autosubmit
+							>
+								for _, b := range buying.Branches {
+									<option
+										value={ fmt.Sprintf("%d", b.ID) }
+										selected?={ buying.Active != nil && *buying.Active == b.ID }
+									>
+										{ b.Name }
+									</option>
+								}
+							</select>
+						</form>
+					</div>
+				}
+			</div>
+		}
+		<div class="cart-grid-layout">
+			<!-- Left: Items Grouped by Supplier -->
+			<div class="d-flex flex-col gap-4">
+				for _, group := range groups {
+					<div class="cart-supplier-card">
+						<!-- Supplier Group Header -->
+						<div class="cart-supplier-header">
+							<div class="d-flex items-center gap-3">
+								<div class="user-avatar-badge">
+									@components.IconBuilding("icon-xs")
+								</div>
+        <div class="stack-sm">
+									<div class="font-extrabold text-lg text-primary">
+										{ group.SupplierName.Get(i18n.Lang(lang)) }
+									</div>
+									<div class="d-flex items-center gap-2 text-xs text-muted mt-1">
+										<span class="badge badge-sky text-xs">{ i18n.T(lang, "cart.verified_supplier") }</span>
+										<span>•</span>
+										<span>{ i18n.T(lang, "cart.cold_chain") }</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="text-end">
+								<span class="text-sm text-muted">{ i18n.T(lang, "cart.supplier_subtotal") }</span>
+								<div class="tabular-nums font-black text-xl text-brand">
+									@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: group.Subtotal, Lang: lang })
+								</div>
+								<div class="text-xs text-muted mt-1">
+									if group.Delivery.Fee.IsPositive() {
+										<span>{ i18n.T(lang, "cart.delivery_fee") } </span>
+										<strong class="tabular-nums">
+											@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: group.Delivery.Fee, Lang: lang })
+										</strong>
+									} else {
+										<span>{ i18n.T(lang, "cart.free_delivery") }</span>
+									}
+									if DeliveryNote(group.Delivery) != "" {
+										<span> · { DeliveryNote(group.Delivery) }</span>
+									}
+								</div>
+							</div>
+						</div>
+
+						if group.BelowMin {
+							<div class="alert alert-danger mb-4 p-3 d-flex items-center gap-2 text-xs">
+								@components.IconAlertCircle("icon-xs")
+								<span>
+									{ fmt.Sprintf(i18n.T(lang, "cart.min_order_notice"), format.Money(group.MinOrderPrice, lang), format.Money(money.FromMinor(group.MinOrderPrice.Minor() - group.Subtotal.Minor()), lang)) }
+								</span>
+							</div>
+						}
+
+						<!-- Items List -->
+						<div class="d-flex flex-col gap-3">
+							for _, item := range group.Items {
+								<div class="cart-item-row">
+									<div class="d-flex items-center gap-3 flex-1 min-w-0">
+										<div class="user-avatar-badge">
+											@components.IconPill("icon-sm")
+										</div>
+										<div class="stack-sm">
+											<h4 class="font-extrabold text-base text-primary m-0">
+												{ item.ProductName.Get(i18n.Lang(lang)) }
+											</h4>
+											<div class="d-flex items-center gap-3 text-xs text-secondary mt-1 flex-wrap">
+												<span>{ i18n.T(lang, "cart.unit_price") } <strong class="tabular-nums text-primary">{ format.Money(item.UnitPrice, lang) }</strong></span>
+												if item.AvailableStock > 0 && item.Quantity >= item.AvailableStock {
+													<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "cart.max_stock_badge") }</span>
+												}
+												if !item.IsCovered && item.CoverageReason != "" {
+													<span class="badge badge-rose text-xs font-bold">
+														{ item.CoverageReason }
+													</span>
+												}
+											</div>
+										</div>
+									</div>
+
+									<div class="d-flex items-center gap-4">
+										if item.IsOfferLine() {
+											@cartOfferQuantity(item.Quantity, lang)
+										} else {
+										<div class="cart-stepper-control">
+											<form action="/cart/update-quantity" method="POST" hx-post="/cart/update-quantity" hx-target="#cart-content" hx-swap="innerHTML" class="m-0 d-inline">
+												<input type="hidden" name="item_id" value={ fmt.Sprintf("%d", item.ID) } />
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", item.ProductVariantID) } />
+												<input type="hidden" name="quantity" value={ fmt.Sprintf("%d", item.Quantity - 1) } />
+												<button
+													type="submit"
+													class="cart-stepper-btn"
+													title={ i18n.T(lang, "cart.decrease_qty") }
+												>
+													@components.IconMinus("icon-xs")
+												</button>
+											</form>
+
+											<span class="tabular-nums font-extrabold text-sm text-primary px-2">
+												{ fmt.Sprintf("%d", item.Quantity) }
+											</span>
+
+											<form action="/cart/update-quantity" method="POST" hx-post="/cart/update-quantity" hx-target="#cart-content" hx-swap="innerHTML" class="m-0 d-inline">
+												<input type="hidden" name="item_id" value={ fmt.Sprintf("%d", item.ID) } />
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", item.ProductVariantID) } />
+												<input type="hidden" name="quantity" value={ fmt.Sprintf("%d", item.Quantity + 1) } />
+												<button
+													type="submit"
+													class="cart-stepper-btn"
+													disabled?={ item.AvailableStock > 0 && item.Quantity >= item.AvailableStock }
+													title={ fmt.Sprintf(i18n.T(lang, "cart.increase_qty_title"), item.AvailableStock) }
+												>
+													@components.IconPlus("icon-xs")
+												</button>
+											</form>
+										</div>
+										}
+
+										<!-- Total Line Item Price -->
+										<div class="tabular-nums text-end font-extrabold text-base text-primary min-w-0">
+											{ format.Money(money.FromMinor(item.UnitPrice.Minor() * int64(item.Quantity)), lang) }
+										</div>
+
+										<!-- Remove Button -->
+										<form action="/cart/remove" method="POST" hx-post="/cart/remove" hx-target="#cart-content" hx-swap="innerHTML" class="m-0 d-inline">
+											<input type="hidden" name="item_id" value={ fmt.Sprintf("%d", item.ID) } />
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", item.ProductVariantID) } />
+											<button
+												type="submit"
+												class="btn btn-secondary btn-icon text-danger"
+												title={ i18n.T(lang, "cart.delete_item") }
+											>
+												@components.IconTrash("icon-xs")
+											</button>
+										</form>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- Right: Order Summary Sidebar -->
+			<div class="cart-summary-card">
+				<h3 class="text-lg font-black text-primary mb-4">
+					{ i18n.T(lang, "cart.order_summary") }
+				</h3>
+
+				<div class="d-flex flex-col gap-3 mb-6 text-sm">
+					<div class="flex-between text-secondary">
+						<span>{ i18n.T(lang, "cart.subtotal") }</span>
+						<span class="tabular-nums font-bold text-primary">
+							@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: CartTotal(cart), Lang: lang })
+						</span>
+					</div>
+
+					<div class="flex-between text-secondary">
+						<span>{ i18n.T(lang, "cart.delivery_fee") }</span>
+						if DeliveryTotal(groups).IsPositive() {
+							<span class="tabular-nums font-bold text-primary">
+								@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: DeliveryTotal(groups), Lang: lang })
+							</span>
+						} else {
+							<span class="badge badge-emerald text-xs">{ i18n.T(lang, "cart.free_badge") }</span>
+						}
+					</div>
+
+					<div class="border-t pt-4 flex-between items-center">
+						<span class="font-black text-base text-primary">{ i18n.T(lang, "cart.grand_total") }</span>
+						<div class="font-black text-2xl text-brand tabular-nums">
+							@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: CartGrandTotal(cart, groups), Large: true, Lang: lang })
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex flex-col gap-3">
+					if HasUncoveredItems(cart) {
+						<div class="alert alert-danger p-3 text-xs leading-relaxed">
+							<strong>{ i18n.T(lang, "cart.coverage_alert_title") }</strong> { i18n.T(lang, "cart.coverage_alert_desc") }
+						</div>
+						<button type="button" disabled class="btn btn-secondary w-full p-3 font-bold opacity-60 cursor-not-allowed">
+							<span>{ i18n.T(lang, "cart.checkout_unavailable_coverage") }</span>
+						</button>
+					} else {
+						<a href="/checkout" class="btn btn-primary w-full p-3 font-extrabold flex-center gap-2">
+							@components.IconCheck("icon-xs")
+							<span>{ i18n.T(lang, "cart.proceed_checkout") }</span>
+						</a>
+					}
+
+					<a href="/catalog" class="btn btn-secondary w-full p-2 flex-center font-bold">
+						<span>{ i18n.T(lang, "cart.add_more") }</span>
+					</a>
+				</div>
+
+				<div class="mt-4 pt-4 border-t d-flex flex-col gap-2 text-xs text-muted">
+					<div class="d-flex items-center gap-2">
+						<span class="text-success">@components.IconCheckCircle("icon-xs")</span>
+						<span>{ i18n.T(lang, "cart.secure_shipping") }</span>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="text-brand">@components.IconFileText("icon-xs")</span>
+						<span>{ i18n.T(lang, "cart.supply_voucher") }</span>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// An offer is bought as a whole. Its cart line carries no variant, so the
+// stepper's own hidden variant_id would be 0 and the availability check it
+// triggers would have nothing to check; worse, a bundle priced as one thing
+// silently became "one thing × 3" at a price the vendor never set. The quantity
+// is shown, and the line is removed rather than adjusted.
+templ cartOfferQuantity(quantity int, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="cart-offer-qty" title={ i18n.T(lang, "cart.offer_fixed_qty") }>
+		@components.IconTag("icon-2xs")
+		<span class="tabular-nums font-extrabold">{ fmt.Sprintf("%d", quantity) }</span>
+		<span class="cart-offer-qty-label">{ i18n.T(lang, "cart.offer_bundle") }</span>
+	</div>
+}

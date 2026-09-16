@@ -1,0 +1,413 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ reviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<tr id={ fmt.Sprintf("row-%d", row.ID) } class={ templ.KV("opacity-50", row.IsExcluded) }>
+		<!-- Bulk selection -->
+		<td class="text-center align-middle">
+			<input type="checkbox" name="row_ids" value={ fmt.Sprint(row.ID) }
+				form="review-bulk" class="review-pick"/>
+		</td>
+
+		<!-- Checkbox Exclude/Include -->
+		<td class="text-center align-middle">
+			<form class="stack-md" method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "toggle")) }>
+				<input type="checkbox" checked?={ !row.IsExcluded } data-autosubmit/>
+			</form>
+		</td>
+
+		<!-- Row Number -->
+		<td class="review-col-num text-center align-middle tabular-nums text-muted font-bold text-sm">
+			{ fmt.Sprint(row.SourceRow) }
+		</td>
+
+		<!-- File Product Name (Direct Editable in same cell) -->
+		<td class="review-col-name align-middle">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="d-flex items-center gap-1 mb-1">
+				<input type="text" name="display_name" value={ row.DisplayName }
+					class="form-input text-sm font-bold py-1 px-2.5 h-8"
+					placeholder={ i18n.T(lang, "vendor_ingest.row.name_placeholder") }/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs h-8 w-8 flex-shrink-0" title={ i18n.T(lang, "vendor_ingest.row.save_name_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+			</form>
+			<div class="row-center-xs gap-xs flex-wrap">
+				if row.SourceCode != "" {
+					<span class="badge badge-secondary text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.code_badge"), row.SourceCode) }</span>
+				}
+				if row.Payload != nil && row.Payload.Barcode != "" {
+					<span class="badge badge-outline text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.barcode_badge"), row.Payload.Barcode) }</span>
+				}
+				if row.Payload != nil && row.Payload.Unit != "" {
+					<span class="text-xs text-muted">({ row.Payload.Unit })</span>
+				}
+				if row.Payload != nil && row.Payload.BatchNumber != "" {
+					<span class="badge badge-outline text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.batch_badge"), row.Payload.BatchNumber) }</span>
+				}
+				if row.Payload != nil && row.Payload.ExpiryDate != nil {
+					<span class="badge badge-outline text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.expiry_badge"), row.Payload.ExpiryDate.Format("2006-01-02")) }</span>
+				}
+				if row.Payload != nil && row.Payload.MinOrderQty > 1 {
+					<span class="badge badge-outline text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.min_order_badge"), row.Payload.MinOrderQty) }</span>
+				}
+			</div>
+			<div class="mt-1">
+				@reviewRowActionBadge(view.Session.Settings.Mode, row, lang)
+			</div>
+		</td>
+
+		<!-- Matched Central Catalog Product (with In-Cell Dropdown) -->
+		<td class="review-col-catalog align-middle catalog-cell-container">
+			<div class="catalog-cell-match">
+				if row.ProductID != nil && *row.ProductID > 0 {
+					<div class="row-center-xs gap-xs flex-wrap">
+						<div class="font-bold text-sm">{ row.MatchedCatalogName() }</div>
+						if AIMatchedRow(row) {
+							<span class="badge badge-outline text-xs"
+								title={ aiRowTitle(row, lang) }>{ i18n.T(lang, "vendor_ingest.row.ai_badge") }</span>
+						}
+					</div>
+					<button type="button"
+						data-row-id={ fmt.Sprint(row.ID) }
+						data-row-name={ row.DisplayName }
+						class="btn btn-ghost btn-xs text-primary font-bold shrink-0"
+						data-on-click="handleDropdownToggle(this)"
+						title={ i18n.T(lang, "vendor_ingest.row.change_match_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.change_match_btn") }
+					</button>
+				} else {
+					<div class="stack-2xs">
+						<span class="badge badge-rose text-xs">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+						if len(row.Candidates) > 0 {
+							<span class="text-xs text-muted truncate max-w-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.closest_prefix"), row.Candidates[0].Name) }</span>
+						}
+					</div>
+					<button type="button"
+						data-row-id={ fmt.Sprint(row.ID) }
+						data-row-name={ row.DisplayName }
+						class="btn btn-primary btn-xs font-bold shrink-0"
+						data-on-click="handleDropdownToggle(this)"
+						title={ i18n.T(lang, "vendor_ingest.row.link_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.link_btn") }
+					</button>
+				}
+			</div>
+
+			<!-- In-Cell Dropdown Menu (Theme-Aware, Hidden by Default) -->
+			<div id={ fmt.Sprintf("catalog-dropdown-%d", row.ID) }
+				class="catalog-dropdown-menu"
+				data-session-id={ view.Session.PublicID }
+				data-base-path={ view.SessionPath(view.Session.PublicID, "") }
+				data-filter-match={ view.Filter.MatchLevel }
+				data-sort={ view.Filter.SortBy }
+				data-order={ view.Filter.SortOrder }
+				data-page={ fmt.Sprint(view.Page) }
+				data-limit={ fmt.Sprint(view.PerPage) }
+				data-search={ view.Filter.Search }>
+				
+				<div class="catalog-dialog-head">
+					<span class="catalog-dialog-title" title={ row.DisplayName }>
+						{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.dialog_title"), row.DisplayName) }
+					</span>
+					<button type="button" class="btn btn-ghost btn-icon shrink-0"
+						aria-label="✕"
+						data-on-click="closeAllCatalogDropdowns()">✕</button>
+				</div>
+
+				<div class="catalog-dialog-search">
+					<input type="text" placeholder={ i18n.T(lang, "vendor_ingest.row.dialog_search_ph") }
+						data-row-id={ fmt.Sprint(row.ID) }
+						class="form-input"
+						data-on-input="handleDropdownSearchInput(this)"/>
+				</div>
+
+				if len(row.Candidates) > 0 {
+					<div class="review-suggestions">
+						<div class="text-xs fw-800 mb-1 text-primary">{ i18n.T(lang, "vendor_ingest.row.suggestions_title") }</div>
+						for _, c := range row.Candidates {
+							<form class="stack-md" method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "match")) }>
+								<input type="hidden" name="product_id" value={ fmt.Sprint(c.ProductID) }/>
+								<button type="submit" class="review-suggestion" title={ c.Reason }>
+									<span class={ "badge text-xs fw-800", matchScoreBadgeTone(c.Score) }>
+										{ PercentText(c.Score) }
+									</span>
+									<span class="review-suggestion-name">{ c.Name }</span>
+									if c.Concentration != "" || c.DosageForm != "" {
+										<span class="review-suggestion-meta">{ c.Concentration } { c.DosageForm }</span>
+									}
+								</button>
+							</form>
+						}
+					</div>
+				}
+
+				<div class="catalog-dropdown-results" id={ fmt.Sprintf("dropdown-results-%d", row.ID) }>
+					<div class="text-center text-muted p-sm text-xs">{ i18n.T(lang, "vendor_ingest.row.type_to_search") }</div>
+				</div>
+
+				if row.ProductID != nil && *row.ProductID > 0 {
+					<div class="mt-2 pt-2 border-t">
+						<form class="stack-md" method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "match") + "&product_id=0") }>
+							<button type="submit" class="btn btn-ghost btn-xs text-danger w-100 text-start">
+								{ i18n.T(lang, "vendor_ingest.row.unlink_action") }
+							</button>
+						</form>
+					</div>
+				}
+			</div>
+		</td>
+
+		<!-- Match Score / Degree -->
+		<td class="review-col-score text-center align-middle">
+			if row.ProductID != nil && *row.ProductID > 0 && row.IsManuallyMatched {
+				<span class="badge badge-emerald text-xs fw-800" title={ i18n.T(lang, "vendor_ingest.row.manual_match_hint") }>{ i18n.T(lang, "vendor_ingest.row.manual_match") }</span>
+			} else if row.ProductID != nil && *row.ProductID > 0 {
+				<span class={ "badge text-xs fw-800", matchScoreBadgeTone(row.MatchScore) } title={ matchLevelText(row.MatchLevel, lang) }>
+					{ PercentText(row.MatchScore) }
+				</span>
+			} else if len(row.Candidates) > 0 {
+				<span class={ "badge text-xs font-bold", matchScoreBadgeTone(row.Candidates[0].Score) } title={ i18n.T(lang, "vendor_ingest.row.candidate_unsettled_hint") }>
+					{ PercentText(row.Candidates[0].Score) }
+				</span>
+			} else {
+				<span class="badge badge-rose text-xs">0%</span>
+			}
+			if !reviewRowWillImport(row) {
+				<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_ingest.row.will_not_import") }</div>
+			} else if view.Session.Settings.Mode == ingest.ModeAddOnly && row.VariantID != nil && *row.VariantID > 0 {
+				<div class="text-2xs text-amber-600 font-bold mt-1" title={ i18n.T(lang, "vendor_ingest.row.will_skip_existing_title") }>{ i18n.T(lang, "vendor_ingest.row.will_skip_existing") }</div>
+			} else if view.Session.Settings.Mode == ingest.ModeUpdateOnly && (row.VariantID == nil || *row.VariantID == 0) {
+				<div class="text-2xs text-amber-600 font-bold mt-1" title={ i18n.T(lang, "vendor_ingest.row.will_skip_new_title") }>{ i18n.T(lang, "vendor_ingest.row.will_skip_new") }</div>
+			}
+		</td>
+
+		<!-- Public Price (Editable Inline) -->
+		<td class="review-col-price text-center align-middle tabular-nums">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="review-money-form">
+				<input type="hidden" name="display_name" value={ row.DisplayName }/>
+				if row.Payload != nil && row.Payload.HasQuantity {
+					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
+				}
+				<input type="number" name="price"
+					value={ rowPriceValue(row) }
+					step="0.01"
+					min="0"
+					placeholder="0.00"
+					class="form-input text-center tabular-nums font-bold"/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_price_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+			</form>
+		</td>
+
+		<!-- Discount Percentage % (Editable Inline) -->
+		<td class="review-col-discount text-center align-middle tabular-nums">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="review-money-form">
+				<input type="hidden" name="display_name" value={ row.DisplayName }/>
+				<input type="number" name="discount"
+					value={ rowDiscountPercentValue(row) }
+					step="0.1"
+					min="0"
+					max="100"
+					placeholder="0.0"
+					class="form-input text-center tabular-nums font-bold"/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_discount_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+			</form>
+		</td>
+
+		<!-- Net Price -->
+		<td class="review-col-net text-center align-middle tabular-nums">
+			<span class="fw-800 text-primary text-sm whitespace-nowrap">
+				{ rowNetPriceValue(row) } <span class="text-xs text-muted font-semibold">{ i18n.T(lang, "common.currency_egp") }</span>
+			</span>
+		</td>
+
+		<!-- Cost Price (Editable Inline) -->
+		<td class="review-col-money text-center align-middle tabular-nums">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="review-money-form">
+				<input type="hidden" name="display_name" value={ row.DisplayName }/>
+				if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
+					<input type="hidden" name="price" value={ rowPriceValue(row) }/>
+				}
+				if row.Payload != nil && row.Payload.DiscountBps > 0 {
+					<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
+				}
+				if row.Payload != nil && row.Payload.HasQuantity {
+					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
+				}
+				if row.Payload != nil && row.Payload.CostDiscountBps > 0 {
+					<input type="hidden" name="cost_discount" value={ rowCostDiscountPercentValue(row) }/>
+				}
+				<input type="number" name="cost_price"
+					value={ rowCostPriceValue(row) }
+					step="0.01"
+					min="0"
+					placeholder="0.00"
+					class="form-input text-center tabular-nums font-bold"/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_price_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+			</form>
+		</td>
+
+		<!-- Cost Discount % (Editable Inline) -->
+		<td class="review-col-discount text-center align-middle tabular-nums">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="review-money-form">
+				<input type="hidden" name="display_name" value={ row.DisplayName }/>
+				if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
+					<input type="hidden" name="price" value={ rowPriceValue(row) }/>
+				}
+				if row.Payload != nil && row.Payload.DiscountBps > 0 {
+					<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
+				}
+				if row.Payload != nil && row.Payload.HasQuantity {
+					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
+				}
+				if row.Payload != nil && row.Payload.CostPrice.IsPositive() {
+					<input type="hidden" name="cost_price" value={ rowCostPriceValue(row) }/>
+				}
+				<input type="number" name="cost_discount"
+					value={ rowCostDiscountPercentValue(row) }
+					step="0.1"
+					min="0"
+					max="100"
+					placeholder="0.0"
+					class="form-input text-center tabular-nums font-bold"/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_discount_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+			</form>
+		</td>
+
+		<!-- Quantity (Editable Inline) -->
+		<td class="review-col-qty text-center align-middle tabular-nums">
+			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+				class="review-money-form">
+				<input type="hidden" name="display_name" value={ row.DisplayName }/>
+				if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
+					if row.Payload.NetPrice.IsPositive() {
+						<input type="hidden" name="price" value={ row.Payload.NetPrice.String() }/>
+					} else {
+						<input type="hidden" name="price" value={ row.Payload.PublicPrice.String() }/>
+					}
+				}
+				<input type="number" name="quantity"
+					value={ rowQuantityValue(row) }
+					step="1"
+					min="0"
+					placeholder="0"
+					class="form-input text-center tabular-nums font-bold"/>
+				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_qty_title") }>
+					@components.IconCheck("icon-2xs")
+				</button>
+				if view.Session.Settings.StockMode == inventory.StockKeep {
+					<span class="text-3xs text-muted d-block mt-0.5" title={ i18n.T(lang, "vendor_ingest.row.ignore_qty_title") }>{ i18n.T(lang, "vendor_ingest.row.ignore_qty_note") }</span>
+				}
+			</form>
+		</td>
+	</tr>
+}
+
+templ reviewRowActionBadge(mode ingest.Mode, row *ingest.RowOutcome, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if row.IsExcluded {
+		<span class="badge badge-secondary text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.badge_excluded") }</span>
+	} else if row.ProductID == nil || *row.ProductID <= 0 {
+		<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+	} else if !productmatch.MatchLevel(row.MatchLevel).Settled() && !row.IsManuallyMatched {
+		<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.badge_needs_confirm") }</span>
+	} else {
+		{{
+			isInWarehouse := row.VariantID != nil && *row.VariantID > 0 && row.InWarehouse
+			isInCatalogOnly := row.VariantID != nil && *row.VariantID > 0 && !row.InWarehouse
+		}}
+		switch mode {
+			case ingest.ModeAddOnly:
+				if isInWarehouse {
+					<span class="badge badge-amber text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_existing_skipped_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_existing_skipped") }
+					</span>
+				} else if isInCatalogOnly {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh") }
+					</span>
+				} else {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_new_added_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_new_added") }
+					</span>
+				}
+			case ingest.ModeUpdateOnly:
+				if isInWarehouse {
+					<span class="badge badge-emerald text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_existing_updated_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_existing_updated") }
+					</span>
+				} else if isInCatalogOnly {
+					<span class="badge badge-amber text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_not_in_wh_skipped_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_not_in_wh_skipped") }
+					</span>
+				} else {
+					<span class="badge badge-amber text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_new_skipped_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_new_skipped") }
+					</span>
+				}
+			case ingest.ModeReplace:
+				if isInWarehouse {
+					<span class="badge badge-emerald text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_existing_updated_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_existing_updated") }
+					</span>
+				} else if isInCatalogOnly {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh") }
+					</span>
+				} else {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_replace_added_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_replace_added") }
+					</span>
+				}
+			default: // ModeUpsert
+				if isInWarehouse {
+					<span class="badge badge-emerald text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_existing_update_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_existing_update") }
+					</span>
+				} else if isInCatalogOnly {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_catalog_add_to_wh") }
+					</span>
+				} else {
+					<span class="badge badge-brand text-2xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.badge_new_add_title") }>
+						{ i18n.T(lang, "vendor_ingest.row.badge_new_add") }
+					</span>
+				}
+		}
+	}
+}

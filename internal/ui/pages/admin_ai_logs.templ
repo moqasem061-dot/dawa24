@@ -1,0 +1,294 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminAILogItem represents one enriched row in the admin AI audit ledger.
+type AdminAILogItem struct {
+	ID             int64
+	OrganizationID int64
+	OrgName        string
+	OrgType        string
+	UserID         int64
+	UserName       string
+	UserEmail      string
+	Capability     string
+	Feature        string
+	FeatureName    string
+	Model          string
+	RequestID      string
+	InputTokens    int
+	OutputTokens   int
+	TotalTokens    int
+	CostUSD        float64
+	CostKnown      bool
+	DurationMS     int
+	Status         string
+	StatusLabel    string
+	FinishReason   string
+	ErrorMessage   string
+	FromCache      bool
+	Fallback       bool
+	CreatedAt      time.Time
+}
+
+// AdminAILogsData contains data for rendering the system-wide AI usage page.
+type AdminAILogsData struct {
+	Logs          []AdminAILogItem
+	Organizations []*org.Organization
+	TotalRequests int
+	TotalTokens   int64
+	TotalCostUSD  float64
+	SuccessCount  int
+	FailedCount   int
+	CachedCount   int
+	FallbackCount int
+	SuccessRate   float64
+	FilterOrgID   int64
+	FilterFeature string
+	FilterModel   string
+	FilterStatus  string
+	FilterSearch  string
+	DateFrom      string
+	DateTo        string
+	Page          int
+	PerPage       int
+	TotalCount    int
+}
+
+templ adminAILogsPrintHeader(data AdminAILogsData) {
+	<!-- Clean Printable Report Header: Only visible when printing -->
+	<div class="print-report-header print-only">
+		<div class="print-brand-row">
+			<div class="print-brand-title">منصة دواء 24 | Dawa24 Platform</div>
+			<div class="print-report-badge">تقرير رسمي معتمد</div>
+		</div>
+		<div class="print-title">سجل تدقيق واستهلاك الذكاء الاصطناعي (AI Audit Ledger)</div>
+		<div class="print-meta-grid">
+			<div class="print-meta-item">
+				<span class="print-meta-label">تاريخ استخراج التقرير:</span>
+				<span class="print-meta-value">{ time.Now().Format("2006-01-02 03:04 PM") }</span>
+			</div>
+			<div class="print-meta-item">
+				<span class="print-meta-label">إجمالي العمليات:</span>
+				<span class="print-meta-value font-mono">{ fmt.Sprintf("%d عملية", data.TotalRequests) }</span>
+			</div>
+			<div class="print-meta-item">
+				<span class="print-meta-label">إجمالي التوكنز:</span>
+				<span class="print-meta-value font-mono">{ fmt.Sprintf("%d", data.TotalTokens) }</span>
+			</div>
+			<div class="print-meta-item">
+				<span class="print-meta-label">إجمالي التكلفة التقديرية:</span>
+				<span class="print-meta-value font-mono">{ fmt.Sprintf("$%.4f USD", data.TotalCostUSD) }</span>
+			</div>
+			<div class="print-meta-item">
+				<span class="print-meta-label">معدل النجاح:</span>
+				<span class="print-meta-value font-mono">{ fmt.Sprintf("%.1f%%", data.SuccessRate) }</span>
+			</div>
+		</div>
+	</div>
+}
+
+templ AdminAILogsPage(data AdminAILogsData, lang, dir string) {
+	@layouts.AdminShell("سجلات استهلاك الذكاء الاصطناعي", "ai_logs", lang, dir) {
+		<div class="page-container">
+			@adminAILogsPrintHeader(data)
+
+			<!-- Header Banner -->
+			<div class="glass-panel p-5 mb-5 border rounded-2xl shadow-xs screen-only">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="w-11 h-11 rounded-xl bg-purple-500/10 text-purple-600 border border-purple-500/20 d-flex items-center justify-center text-xl">
+							@components.IconSparkles("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-xl font-black text-primary m-0 d-flex items-center gap-2">
+								<span>سجلات استهلاك الذكاء الاصطناعي</span>
+								<span class="badge badge-purple text-xs font-black tabular-nums">{ fmt.Sprintf("%d عملية", data.TotalCount) }</span>
+							</h1>
+							<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+								مراقبة استهلاك النماذج الذكية والتوكنز وتدقيق العمليات والتكاليف عبر كافة الصيدليات والموردين
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<button
+							type="button"
+							data-on-click="window.print()"
+							class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs"
+							title="طباعة تقرير سجلات الذكاء الاصطناعي"
+						>
+							@components.IconPrinter("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/ai-logs" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث السجلات</span>
+						</a>
+						<a href="/admin/developers?tab=ai" class="btn btn-ghost btn-sm font-bold text-accent">
+							@components.IconSettings("icon-xs")
+							<span>إعدادات البوابة والـ AI</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Summary Strip -->
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-5 screen-only">
+				<!-- Total Requests -->
+				<div class="glass-panel p-4 mb-0 border rounded-2xl shadow-xs">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي استدعاءات AI</span>
+						<span class="badge badge-sky text-2xs font-mono font-bold">Total</span>
+					</div>
+					<div class="text-2xl font-black text-primary mt-2 tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalRequests) }
+					</div>
+					<div class="text-2xs text-secondary mt-1">
+						{ fmt.Sprintf("معدل النجاح: %.1f%%", data.SuccessRate) }
+					</div>
+				</div>
+
+				<!-- Total Tokens -->
+				<div class="glass-panel p-4 mb-0 border rounded-2xl shadow-xs">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي التوكنز</span>
+						<span class="badge badge-purple text-2xs font-mono font-bold">Tokens</span>
+					</div>
+					<div class="text-2xl font-black text-primary mt-2 tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalTokens) }
+					</div>
+					<div class="text-2xs text-secondary mt-1">
+						{ fmt.Sprintf("كاش: %d • احتياطي: %d", data.CachedCount, data.FallbackCount) }
+					</div>
+				</div>
+
+				<!-- Total Cost USD -->
+				<div class="glass-panel p-4 mb-0 border rounded-2xl shadow-xs">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">التكلفة التقديرية (USD)</span>
+						<span class="badge badge-emerald text-2xs font-mono font-bold">Cost</span>
+					</div>
+					<div class="text-2xl font-black text-emerald mt-2 tabular-nums">
+						{ fmt.Sprintf("$%.4f", data.TotalCostUSD) }
+					</div>
+					<div class="text-2xs text-secondary mt-1">
+						تكلفة استهلاك واجهات برمجة النماذج
+					</div>
+				</div>
+
+				<!-- Status counts -->
+				<div class="glass-panel p-4 mb-0 border rounded-2xl shadow-xs">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">حالات الطلبات</span>
+						<span class="badge badge-slate text-2xs font-mono font-bold">Status</span>
+					</div>
+					<div class="d-flex items-center gap-3 mt-2">
+						<div class="d-flex items-center gap-1.5">
+							<span class="badge badge-emerald font-black text-xs tabular-nums">{ fmt.Sprintf("%d", data.SuccessCount) }</span>
+							<span class="text-2xs text-secondary">ناجح</span>
+						</div>
+						<div class="d-flex items-center gap-1.5">
+							<span class="badge badge-rose font-black text-xs tabular-nums">{ fmt.Sprintf("%d", data.FailedCount) }</span>
+							<span class="text-2xs text-secondary">فشل</span>
+						</div>
+					</div>
+					<div class="text-2xs text-muted mt-1 font-mono">
+						{ fmt.Sprintf("%d محلي مخزن", data.CachedCount) }
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-5 border rounded-2xl shadow-xs screen-only">
+				<form method="GET" action="/admin/ai-logs" class="d-flex flex-col gap-3">
+					<div class="d-flex items-center flex-wrap gap-3">
+						<!-- Search Query -->
+						<div class="flex-1 min-w-[200px]">
+							<input
+								type="text"
+								name="q"
+								value={ data.FilterSearch }
+								placeholder="البحث برقم الطلب، اسم الصيدلية، المعرف..."
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<!-- Organization Filter -->
+						<div class="w-44">
+							<select name="org_id" class="form-select text-xs w-full font-bold">
+								<option value="">كافة المنشآت</option>
+								for _, o := range data.Organizations {
+									<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.FilterOrgID == o.ID }>
+										if o.LegalName != "" {
+											{ o.LegalName }
+										} else if !o.TradeName.IsEmpty() {
+											{ o.TradeName.Get(i18n.Lang(lang)) }
+										} else {
+											منشأة #{ fmt.Sprintf("%d", o.ID) }
+										}
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Feature Filter -->
+						<div class="w-36">
+							<select name="feature" class="form-select text-xs w-full">
+								<option value="">كافة الخصائص</option>
+								<option value="smart_order" selected?={ data.FilterFeature == "smart_order" }>الطلب الذكي</option>
+								<option value="variant_match" selected?={ data.FilterFeature == "variant_match" }>مطابقة الأصناف</option>
+								<option value="savings" selected?={ data.FilterFeature == "savings" }>بدائل التوفير</option>
+								<option value="assistant" selected?={ data.FilterFeature == "assistant" }>المساعد الآلي</option>
+								<option value="voice_ocr" selected?={ data.FilterFeature == "voice_ocr" }>الصوت والـ OCR</option>
+								<option value="column_detect" selected?={ data.FilterFeature == "column_detect" }>كشف الأعمدة</option>
+							</select>
+						</div>
+
+						<!-- Status Filter -->
+						<div class="w-36">
+							<select name="status" class="form-select text-xs w-full">
+								<option value="">كافة الحالات</option>
+								<option value="success" selected?={ data.FilterStatus == "success" }>ناجح</option>
+								<option value="timeout" selected?={ data.FilterStatus == "timeout" }>مهلة انتهاء</option>
+								<option value="quota_exceeded" selected?={ data.FilterStatus == "quota_exceeded" }>تجاوز الحصة</option>
+								<option value="rate_limited" selected?={ data.FilterStatus == "rate_limited" }>تجاوز المعدل</option>
+								<option value="unavailable" selected?={ data.FilterStatus == "unavailable" }>غير متاح</option>
+							</select>
+						</div>
+
+						<!-- Date Range -->
+						<div class="w-32">
+							<input type="date" name="date_from" value={ data.DateFrom } class="form-input text-xs w-full" />
+						</div>
+
+						<div class="w-32">
+							<input type="date" name="date_to" value={ data.DateTo } class="form-input text-xs w-full" />
+						</div>
+
+						<!-- Actions -->
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary btn-sm font-bold">
+								@components.IconFilter("icon-xs")
+								<span>تصفية</span>
+							</button>
+							<a href="/admin/ai-logs" class="btn btn-secondary btn-sm font-bold">
+								إلغاء
+							</a>
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<!-- Main Table Card -->
+			@AdminAILogsTable(data, lang, dir)
+		</div>
+	}
+}

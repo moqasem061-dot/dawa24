@@ -1,0 +1,381 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminAdvProductsData holds context for the admin product sponsorships dashboard.
+type AdminAdvProductsData struct {
+	Rows              []*promo.AdminSponsorshipRow
+	TotalCount        int
+	ActiveCount       int
+	PendingCount      int
+	ExpiredCount      int
+	RejectedCount     int
+	Packages          []*promo.OfferPackage
+	Vendors           []*org.Organization
+	CatalogProducts   []*catalog.Product
+	ActiveTab         string
+	SearchQuery       string
+	SelectedOrgID     int64
+	SelectedPackageID int64
+	SelectedTierLevel int
+	DateFrom          string
+	DateTo            string
+	NoticeType        string
+	NoticeMsg         string
+	Page              int
+	PerPage           int
+	FilteredTotal     int
+}
+
+func advTierBadgeClass(tier int) string {
+	switch tier {
+	case 5:
+		return "badge-primary"
+	case 4:
+		return "badge-purple"
+	case 3:
+		return "badge-amber"
+	case 2:
+		return "badge-slate"
+	default:
+		return "badge-sky"
+	}
+}
+
+func advTierName(tier int) string {
+	switch tier {
+	case 5:
+		return "ماسي (Diamond)"
+	case 4:
+		return "بلاتيني (Platinum)"
+	case 3:
+		return "ذهبي (Gold)"
+	case 2:
+		return "فضي (Silver)"
+	default:
+		return "عادي (Standard)"
+	}
+}
+
+func advDaysRemaining(expiresAt *time.Time) string {
+	if expiresAt == nil || expiresAt.IsZero() {
+		return "—"
+	}
+	remaining := time.Until(*expiresAt)
+	if remaining <= 0 {
+		return "منتهية"
+	}
+	days := int(remaining.Hours() / 24)
+	if days == 0 {
+		return "اليوم"
+	}
+	return fmt.Sprintf("متبقي %d يوم", days)
+}
+
+templ AdminAdvProductsPage(lang, dir string, data AdminAdvProductsData) {
+	@layouts.AdminShell("رعاية المنتجات | Product Sponsorships", "adv_products", lang, dir) {
+		<div class="page-container" x-data="{ rejectModalOpen: false, rejectId: 0, rejectAction: '', addModalOpen: false }">
+			
+			<!-- Notice Toast Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-2">
+						@components.IconAlert("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center gap-2">
+						@components.IconCheckCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-6 mb-6 flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-xl">
+						@components.IconSparkles("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							رعاية وتثبيت المنتجات (Product Sponsorships)
+						</h1>
+						<p class="text-xs text-secondary m-0 mt-0.5">
+							إدارة ومتابعة المنتجات المروجة في الصدارة، استهلاك باقات الرعاية للموردين، واعتماد طلبات التثبيت
+						</p>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-2.5 flex-wrap">
+					<a href="/admin/offers-packages" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-2xs">
+						@components.IconPackage("icon-xs")
+						<span>باقات الرعايات والعروض ↗</span>
+					</a>
+					<button
+						type="button"
+						class="btn btn-primary btn-sm font-bold gap-1.5 shadow-2xs"
+						@click="addModalOpen = true"
+					>
+						@components.IconPlus("icon-xs")
+						<span>+ إضافة وتثبيت رعاية لمنتج</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- 4 Executive Metric Cards Bound to Real Data -->
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+				<div class="glass-panel p-4 border-s-4 border-s-accent mb-0">
+					<div class="flex-between items-center mb-1">
+						<span class="text-xs font-bold text-muted">إجمالي المنتجات المروجة</span>
+						<span class="text-accent">@components.IconSparkles("icon-xs")</span>
+					</div>
+					<div class="text-2xl font-black text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalCount) }
+					</div>
+					<div class="text-2xs text-muted mt-1">كافة طلبات وسجلات الرعايات المسجلة</div>
+				</div>
+
+				<div class="glass-panel p-4 border-s-4 border-s-success mb-0">
+					<div class="flex-between items-center mb-1">
+						<span class="text-xs font-bold text-muted">الرعايات النشطة حالياً</span>
+						<span class="text-success">@components.IconCheckCircle("icon-xs")</span>
+					</div>
+					<div class="text-2xl font-black text-emerald tabular-nums">
+						{ fmt.Sprintf("%d", data.ActiveCount) }
+					</div>
+					<div class="text-2xs text-muted mt-1">مثبتة في صدارة البحث والكتالوج</div>
+				</div>
+
+				<div class="glass-panel p-4 border-s-4 border-s-warning mb-0">
+					<div class="flex-between items-center mb-1">
+						<span class="text-xs font-bold text-muted">طلبات بانتظار الموافقة</span>
+						<span class="text-warning">@components.IconClock("icon-xs")</span>
+					</div>
+					<div class="text-2xl font-black text-warning tabular-nums">
+						{ fmt.Sprintf("%d", data.PendingCount) }
+					</div>
+					<div class="text-2xs text-muted mt-1">تتطلب تدقيق وموافقة الإدارة</div>
+				</div>
+
+				<div class="glass-panel p-4 border-s-4 border-s-slate mb-0">
+					<div class="flex-between items-center mb-1">
+						<span class="text-xs font-bold text-muted">الطلبات المنتهية والمرفوضة</span>
+						<span class="text-muted">@components.IconPackage("icon-xs")</span>
+					</div>
+					<div class="text-2xl font-black text-muted tabular-nums">
+						{ fmt.Sprintf("%d", data.ExpiredCount + data.RejectedCount) }
+					</div>
+					<div class="text-2xs text-muted mt-1">
+						{ fmt.Sprintf("%d منتهية • %d مرفوضة", data.ExpiredCount, data.RejectedCount) }
+					</div>
+				</div>
+			</div>
+
+			<!-- Navigation Tabs -->
+			<div class="glass-panel p-3 mb-6">
+				<div class="tabs-nav">
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=all&q=%s&org_id=%d&package_id=%d&tier_level=%d&date_from=%s&date_to=%s", data.SearchQuery, data.SelectedOrgID, data.SelectedPackageID, data.SelectedTierLevel, data.DateFrom, data.DateTo)) }
+						class={ "tab-btn", templ.KV("active", data.ActiveTab == "all" || data.ActiveTab == "") }
+					>
+						<span>كافة الرعايات</span>
+						<span class="badge badge-slate text-2xs tabular-nums">{ fmt.Sprintf("%d", data.TotalCount) }</span>
+					</a>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=active&q=%s&org_id=%d&package_id=%d&tier_level=%d&date_from=%s&date_to=%s", data.SearchQuery, data.SelectedOrgID, data.SelectedPackageID, data.SelectedTierLevel, data.DateFrom, data.DateTo)) }
+						class={ "tab-btn", templ.KV("active", data.ActiveTab == "active") }
+					>
+						<span>النشطة والمعتمدة</span>
+						<span class="badge badge-emerald text-2xs tabular-nums">{ fmt.Sprintf("%d", data.ActiveCount) }</span>
+					</a>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=pending&q=%s&org_id=%d&package_id=%d&tier_level=%d&date_from=%s&date_to=%s", data.SearchQuery, data.SelectedOrgID, data.SelectedPackageID, data.SelectedTierLevel, data.DateFrom, data.DateTo)) }
+						class={ "tab-btn", templ.KV("active", data.ActiveTab == "pending") }
+					>
+						<span>بانتظار الموافقة</span>
+						if data.PendingCount > 0 {
+							<span class="badge badge-amber text-2xs tabular-nums animate-pulse">{ fmt.Sprintf("%d", data.PendingCount) }</span>
+						} else {
+							<span class="badge badge-slate text-2xs tabular-nums">0</span>
+						}
+					</a>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=expired&q=%s&org_id=%d&package_id=%d&tier_level=%d&date_from=%s&date_to=%s", data.SearchQuery, data.SelectedOrgID, data.SelectedPackageID, data.SelectedTierLevel, data.DateFrom, data.DateTo)) }
+						class={ "tab-btn", templ.KV("active", data.ActiveTab == "expired") }
+					>
+						<span>المنتهية</span>
+						<span class="badge badge-slate text-2xs tabular-nums">{ fmt.Sprintf("%d", data.ExpiredCount) }</span>
+					</a>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=rejected&q=%s&org_id=%d&package_id=%d&tier_level=%d&date_from=%s&date_to=%s", data.SearchQuery, data.SelectedOrgID, data.SelectedPackageID, data.SelectedTierLevel, data.DateFrom, data.DateTo)) }
+						class={ "tab-btn", templ.KV("active", data.ActiveTab == "rejected") }
+					>
+						<span>المرفوضة</span>
+						<span class="badge badge-rose text-2xs tabular-nums">{ fmt.Sprintf("%d", data.RejectedCount) }</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Filter Toolbar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/admin/adv-products" class="d-flex flex-col gap-3 m-0">
+					<input type="hidden" name="tab" value={ data.ActiveTab } />
+
+					<div class="d-grid grid-cols-1 md:grid-cols-4 gap-3">
+						<!-- Search input -->
+						<div class="md:col-span-2">
+							<label class="form-label text-2xs text-muted mb-1 d-block">البحث بالاسم أو الكود أو المورد</label>
+							<input
+								type="text"
+								name="q"
+								value={ data.SearchQuery }
+								placeholder="ابحث باسم المنتج، الكود، المورد، أو الباقة..."
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<!-- Organization filter -->
+						<div>
+							<label class="form-label text-2xs text-muted mb-1 d-block">المنشأة الموردة</label>
+							<select name="org_id" class="form-select text-xs w-full">
+								<option value="0">-- كافة الموردين --</option>
+								for _, v := range data.Vendors {
+									if v != nil {
+										<option value={ fmt.Sprintf("%d", v.ID) } selected?={ data.SelectedOrgID == v.ID }>
+											if v.LegalName != "" {
+												{ v.LegalName }
+											} else {
+												{ v.TradeName.Get(i18n.ParseLang(lang)) }
+											}
+										</option>
+									}
+								}
+							</select>
+						</div>
+
+						<!-- Package filter -->
+						<div>
+							<label class="form-label text-2xs text-muted mb-1 d-block">باقة الرعاية</label>
+							<select name="package_id" class="form-select text-xs w-full">
+								<option value="0">-- كافة الباقات --</option>
+								for _, p := range data.Packages {
+									if p != nil {
+										<option value={ fmt.Sprintf("%d", p.ID) } selected?={ data.SelectedPackageID == p.ID }>
+											{ p.Name.Get(i18n.ParseLang(lang)) } ({ advTierName(p.TierLevel) })
+										</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+
+					<div class="d-grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+						<!-- Tier Level filter -->
+						<div>
+							<label class="form-label text-2xs text-muted mb-1 d-block">مستوى التثبيت (Tier)</label>
+							<select name="tier_level" class="form-select text-xs w-full">
+								<option value="0">-- كافة المستويات --</option>
+								<option value="5" selected?={ data.SelectedTierLevel == 5 }>المستوى 5 - ماسي (Diamond)</option>
+								<option value="4" selected?={ data.SelectedTierLevel == 4 }>المستوى 4 - بلاتيني (Platinum)</option>
+								<option value="3" selected?={ data.SelectedTierLevel == 3 }>المستوى 3 - ذهبي (Gold)</option>
+								<option value="2" selected?={ data.SelectedTierLevel == 2 }>المستوى 2 - فضي (Silver)</option>
+								<option value="1" selected?={ data.SelectedTierLevel == 1 }>المستوى 1 - عادي (Standard)</option>
+							</select>
+						</div>
+
+						<!-- Date From -->
+						<div>
+							<label class="form-label text-2xs text-muted mb-1 d-block">تاريخ البدء من</label>
+							<input
+								type="date"
+								name="date_from"
+								value={ data.DateFrom }
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<!-- Date To -->
+						<div>
+							<label class="form-label text-2xs text-muted mb-1 d-block">تاريخ البدء إلى</label>
+							<input
+								type="date"
+								name="date_to"
+								value={ data.DateTo }
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<!-- Buttons -->
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary btn-sm font-bold flex-1">
+								@components.IconSearch("icon-xs")
+								<span>تصفية</span>
+							</button>
+
+							if data.SearchQuery != "" || data.SelectedOrgID > 0 || data.SelectedPackageID > 0 || data.SelectedTierLevel > 0 || data.DateFrom != "" || data.DateTo != "" {
+								<a href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products?tab=%s", data.ActiveTab)) } class="btn btn-secondary btn-sm font-bold">
+									إلغاء
+								</a>
+							}
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<!-- Listing Table Component -->
+			@AdminAdvProductsTable(data, lang, dir)
+
+			<!-- B2BPagination with preserved filter query values -->
+			if data.FilteredTotal > 0 {
+				{{
+					qVals := url.Values{}
+					if data.ActiveTab != "" {
+						qVals.Set("tab", data.ActiveTab)
+					}
+					if data.SearchQuery != "" {
+						qVals.Set("q", data.SearchQuery)
+					}
+					if data.SelectedOrgID > 0 {
+						qVals.Set("org_id", strconv.FormatInt(data.SelectedOrgID, 10))
+					}
+					if data.SelectedPackageID > 0 {
+						qVals.Set("package_id", strconv.FormatInt(data.SelectedPackageID, 10))
+					}
+					if data.SelectedTierLevel > 0 {
+						qVals.Set("tier_level", strconv.Itoa(data.SelectedTierLevel))
+					}
+					if data.DateFrom != "" {
+						qVals.Set("date_from", data.DateFrom)
+					}
+					if data.DateTo != "" {
+						qVals.Set("date_to", data.DateTo)
+					}
+				}}
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.FilteredTotal,
+					BaseURL:     "/admin/adv-products",
+					QueryValues: qVals,
+				})
+			}
+
+			<!-- Rejection & Manual Creation Modals -->
+			@AdminAdvProductsModals(data, lang)
+
+		</div>
+	}
+}

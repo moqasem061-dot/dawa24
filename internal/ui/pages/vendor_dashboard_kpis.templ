@@ -1,0 +1,97 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorDashboardKPIs(data VendorDashboardData, lang string) {
+	<div class="admin-kpi-grid mb-3">
+		
+		<!-- KPI 1: Sales & Net Profit -->
+		<div class="admin-kpi-card">
+			<div class="admin-kpi-header">
+				<span class="admin-kpi-title">{ i18n.T(lang, "vendor_dashboard.kpi_month_sales") }</span>
+				<div class="admin-kpi-icon bg-success-subtle text-success">
+					@components.IconChart("icon-sm")
+				</div>
+			</div>
+			<div class="tabular-nums admin-kpi-value text-success">
+				@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.MonthSales })
+			</div>
+			<div class="admin-kpi-footer">
+				<span>{ i18n.T(lang, "vendor_dashboard.kpi_net_profit") } <strong class="text-primary font-bold">@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.MonthNetProfit })</strong></span>
+				if data.MonthProfitMargin > 0 {
+					<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_profit_margin"), fmt.Sprintf("%.1f%%", data.MonthProfitMargin)) }</span>
+				}
+				<a href="/vendor/earnings/order" class="text-accent font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.kpi_earnings_link") }</a>
+			</div>
+		</div>
+
+		<!-- KPI 2: Pending Orders & Delivery -->
+		<div class="admin-kpi-card">
+			<div class="admin-kpi-header">
+				<span class="admin-kpi-title">{ i18n.T(lang, "vendor_dashboard.kpi_pending_shipments") }</span>
+				<div class="admin-kpi-icon bg-primary-subtle text-brand">
+					@components.IconTruck("icon-sm")
+				</div>
+			</div>
+			<div class="tabular-nums admin-kpi-value text-primary">
+				{ fmt.Sprintf("%d", data.PendingShipments) } <span class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_dashboard.kpi_pending_orders_in_progress") }</span>
+			</div>
+			<div class="admin-kpi-footer">
+				<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_pending_val_prefix"), data.PendingOrdersTotal.String()+" "+i18n.T(lang, "common.egp")) }</span>
+				<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_delivered_prefix"), data.DeliveredShipments) }</span>
+				<a href="/vendor/orders" class="text-accent font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.kpi_orders_link") }</a>
+			</div>
+		</div>
+
+		<!-- KPI 3: Wallet Liquidity -->
+		<div class="admin-kpi-card">
+			<div class="admin-kpi-header">
+				<span class="admin-kpi-title">{ i18n.T(lang, "vendor_dashboard.kpi_wallet_title") }</span>
+				<div class="admin-kpi-icon bg-sky-subtle text-sky">
+					@components.IconWallet("icon-sm")
+				</div>
+			</div>
+			<div class="tabular-nums admin-kpi-value text-sky">
+				@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.WalletBalance })
+			</div>
+			<div class="admin-kpi-footer">
+				<span>{ i18n.T(lang, "vendor_dashboard.kpi_wallet_sub") }</span>
+				<a href="/vendor/wallet" class="text-accent font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.kpi_wallet_link") }</a>
+			</div>
+		</div>
+
+		<!-- KPI 4: Inventory & Stock Health -->
+		<div class="admin-kpi-card">
+			<div class="admin-kpi-header">
+				<span class="admin-kpi-title">{ i18n.T(lang, "vendor_dashboard.kpi_inventory_title") }</span>
+				<div class="admin-kpi-icon bg-warning-subtle text-warning">
+					@components.IconPackage("icon-sm")
+				</div>
+			</div>
+			<div class="tabular-nums admin-kpi-value">
+				if data.LowStockCount > 0 {
+					<span class="text-danger font-black">{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_critical_stock"), data.LowStockCount) }</span>
+				} else {
+					<span class="text-primary">{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_verified_stock"), data.ActiveProducts) }</span>
+				}
+			</div>
+			<div class="admin-kpi-footer">
+				if data.LowStockCount > 0 {
+					<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_stock_alerts.stat_out_of_stock") }</span>
+					<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_items_count_prefix"), data.ActiveProducts) }</span>
+					<a href="/vendor/inventory/alerts?status=out_of_stock" class="text-accent font-bold no-underline">{ i18n.T(lang, "vendor_stock_alerts.page_title") }</a>
+				} else {
+					<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_dashboard.kpi_safe_stock") }</span>
+					<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.kpi_items_count_prefix"), data.ActiveProducts) }</span>
+					<a href="/vendor/warehouses" class="text-accent font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.kpi_warehouses_link") }</a>
+				}
+			</div>
+		</div>
+
+	</div>
+}

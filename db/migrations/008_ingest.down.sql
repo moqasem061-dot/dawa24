@@ -1,0 +1,9 @@
+BEGIN;
+
+DROP TABLE IF EXISTS ingest.import_rows CASCADE;
+DROP TABLE IF EXISTS ingest.import_sessions CASCADE;
+DROP TABLE IF EXISTS ingest.file_uploads CASCADE;
+
+DROP SCHEMA IF EXISTS ingest CASCADE;
+
+COMMIT;

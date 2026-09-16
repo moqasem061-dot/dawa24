@@ -1,0 +1,154 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The AI enhancement panel on the review screen.
+
+// aiPanel is the account of the enhancement stage.
+templ aiPanel(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	if view.Session != nil && view.Session.AI.Ran {
+		<section class="glass-panel p-6 mb-lg">
+			<div class="row-center-sm justify-between flex-wrap gap-sm mb-md">
+				<div class="row-center-sm gap-sm">
+					<span>@components.IconSparkles("icon-sm")</span>
+					<div class="stack-sm">
+						<div class="fw-800 text-base">{ aiHeadline(view.Session.AI, lang) }</div>
+						<div class="text-xs text-muted">{ aiSubline(view.Session.AI, lang) }</div>
+					</div>
+				</div>
+				if view.Session.AI.CacheHits > 0 {
+					<span class="badge badge-outline text-xs" title={ i18n.T(lang, "vendor_ingest.ai.memory_title") }>
+						{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.memory_badge"), view.Session.AI.CacheHits) }
+					</span>
+				}
+			</div>
+
+			<div class="import-stats">
+				@aiStat(i18n.T(lang, "vendor_ingest.ai.stat_improved"), fmt.Sprint(view.Session.AI.Improved), "import-stat--ok",
+					i18n.T(lang, "vendor_ingest.ai.stat_improved_hint"))
+				@aiStat(i18n.T(lang, "vendor_ingest.ai.stat_cache"), fmt.Sprint(view.Session.AI.CacheHits), "",
+					i18n.T(lang, "vendor_ingest.ai.stat_cache_hint"))
+				@aiStat(i18n.T(lang, "vendor_ingest.ai.stat_reviewed"), fmt.Sprint(view.Session.AI.Reviewed), "",
+					i18n.T(lang, "vendor_ingest.ai.stat_reviewed_hint"))
+				@aiStat(i18n.T(lang, "vendor_ingest.ai.stat_manual"), fmt.Sprint(view.Session.AI.Abstained+view.Session.AI.Rejected), "import-stat--warn",
+					i18n.T(lang, "vendor_ingest.ai.stat_manual_hint"))
+				@aiStat(i18n.T(lang, "vendor_ingest.ai.stat_requests"), fmt.Sprint(view.Session.AI.Requests), "",
+					i18n.T(lang, "vendor_ingest.ai.stat_requests_hint"))
+			</div>
+
+			if view.Session.AI.Skipped > 0 {
+				<p class="text-xs text-muted mt-md mb-0">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.skipped_note"), view.Session.AI.Skipped) }
+				</p>
+			}
+			if view.Session.AI.CeilingHit {
+				<p class="text-xs mt-md mb-0 review-gate-note">
+					{ i18n.T(lang, "vendor_ingest.ai.ceiling_note") }
+				</p>
+			}
+			<p class="text-xs text-muted mt-md mb-0">
+				{ i18n.T(lang, "vendor_ingest.ai.safety_note") }
+			</p>
+		</section>
+	} else if view.Session != nil && !view.Session.Settings.UseAI {
+		<section class="glass-panel p-6 mb-lg">
+			<div class="row-center-sm gap-sm">
+				<span>@components.IconSparkles("icon-sm")</span>
+				<div class="text-xs text-muted">
+					{ i18n.T(lang, "vendor_ingest.ai.disabled_note") }
+				</div>
+			</div>
+		</section>
+	}
+}
+
+// aiStat is one figure with the sentence that explains it on hover.
+templ aiStat(label, value, tone, hint string) {
+	<div class={ "import-stat", tone } title={ hint }>
+		<span class="import-stat-value">{ value }</span>
+		<span class="import-stat-label">{ label }</span>
+	</div>
+}
+
+// aiHeadline states the outcome in one line.
+func aiHeadline(s ingest.AIStats, lang string) string {
+	if lang == "" {
+		lang = "ar"
+	}
+	switch {
+	case s.Improved == 1:
+		return i18n.T(lang, "vendor_ingest.ai.headline_improved_one")
+	case s.Improved > 1:
+		return fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.headline_improved_many"), s.Improved)
+	default:
+		return i18n.T(lang, "vendor_ingest.ai.headline_none")
+	}
+}
+
+// aiSubline says what it cost and what it refused, in one sentence.
+func aiSubline(s ingest.AIStats, lang string) string {
+	if lang == "" {
+		lang = "ar"
+	}
+	parts := make([]string, 0, 3)
+	if s.Requests > 0 {
+		parts = append(parts, fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.requests_stat"), s.Requests))
+	}
+	if s.CacheHits > 0 {
+		parts = append(parts, fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.cache_stat"), s.CacheHits))
+	}
+	if left := s.Abstained + s.Rejected; left > 0 {
+		parts = append(parts, fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.left_stat"), left))
+	}
+	if len(parts) == 0 {
+		return i18n.T(lang, "vendor_ingest.ai.all_memory")
+	}
+	return strings.Join(parts, " · ")
+}
+
+// AIMatchedRow reports whether this row's match came from the AI stage.
+func AIMatchedRow(row *ingest.RowOutcome) bool {
+	return row != nil && row.ProductID != nil && *row.ProductID > 0 &&
+		(strings.HasPrefix(row.Message, "مطابقة بالذكاء الاصطناعي") ||
+			strings.HasPrefix(row.Message, "AI Match") ||
+			strings.HasPrefix(row.Message, "AI match"))
+}
+
+// AIMatchReason is the model's own short justification, without the prefix the
+// badge already carries.
+func AIMatchReason(row *ingest.RowOutcome) string {
+	reason := strings.TrimPrefix(row.Message, "مطابقة بالذكاء الاصطناعي:")
+	reason = strings.TrimPrefix(reason, "مطابقة بالذكاء الاصطناعي")
+	reason = strings.TrimPrefix(reason, "AI Match:")
+	reason = strings.TrimPrefix(reason, "AI match:")
+	return strings.TrimSpace(reason)
+}
+
+// aiRowTitle is the tooltip on an AI-matched row: the model's own reason, or a
+// plain statement when it gave none.
+func aiRowTitle(row *ingest.RowOutcome, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	if reason := AIMatchReason(row); reason != "" {
+		return fmt.Sprintf(i18n.T(lang, "vendor_ingest.ai.row_tooltip_reason"), reason)
+	}
+	return i18n.T(lang, "vendor_ingest.ai.row_tooltip_default")
+}

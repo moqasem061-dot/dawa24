@@ -1,0 +1,359 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/modules/workflow"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminWeeklyCoveragesData struct {
+	Coverages     []*workflow.CoverageView
+	Organizations []*org.Organization
+	Branches      []*org.Branch
+	Cities        []*platformadmin.City
+	SelectedOrgID int64
+	Page          int
+	PerPage       int
+	TotalCount    int
+}
+
+func countActiveCoverages(coverages []*workflow.CoverageView) int {
+	c := 0
+	for _, cov := range coverages {
+		if cov.IsActive {
+			c++
+		}
+	}
+	return c
+}
+
+func countCoveredCities(coverages []*workflow.CoverageView) int {
+	cities := make(map[string]bool)
+	for _, cov := range coverages {
+		if cov.CityName != "" {
+			cities[cov.CityName] = true
+		}
+	}
+	return len(cities)
+}
+
+func dayOfWeekAr(day int) string {
+	days := []string{"الأحد", "الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت"}
+	if day >= 0 && day < len(days) {
+		return days[day]
+	}
+	return "—"
+}
+
+func coordFloat(ptr *float64, def float64) float64 {
+	if ptr != nil && *ptr != 0 {
+		return *ptr
+	}
+	return def
+}
+
+templ AdminWeeklyCoveragesPage(data AdminWeeklyCoveragesData, lang, dir string) {
+	@layouts.AdminShell("إدارة نطاقات وتغطية التوصيل الأسبوعية", "weekly_coverages", lang, dir) {
+		<div class="d-flex flex-col gap-4 admin-page-container" x-data="dawaWeeklyCoverageModal()">
+			
+			<!-- Header Card -->
+			<div class="admin-banner">
+				<div class="flex-between flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="w-11 h-11 rounded-xl bg-primary-subtle text-brand flex-center text-xl">
+								@components.IconTruck("icon-sm")
+							</div>
+       <div class="stack-sm">
+								<h1 class="text-xl font-black text-primary m-0">نطاقات وجداول التغطية الأسبوعية</h1>
+								<span class="text-xs font-bold text-brand uppercase">Weekly Delivery Schedules & Routes</span>
+							</div>
+						</div>
+						<p class="text-sm text-secondary mt-1 m-0">استعراض، تدقيق، وإدارة مواعيد ومناطق تسليم الموردين للصيدليات في مختلف المحافظات بدقة تامة.</p>
+					</div>
+
+					<div class="d-flex items-center gap-3 flex-wrap">
+						<form method="GET" action="/admin/weekly-coverages" class="d-flex items-center gap-2 m-0">
+							<label class="text-xs font-bold text-secondary nowrap">تصفية المنشأة:</label>
+							<select name="org_id" class="form-select text-sm min-w-56 font-bold" data-autosubmit>
+								<option value="0" selected?={ data.SelectedOrgID == 0 }>كافة المنشآت والموردين</option>
+								for _, o := range data.Organizations {
+									<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.SelectedOrgID }>
+										{ o.LegalName }
+									</option>
+								}
+							</select>
+						</form>
+
+						<button
+							type="button"
+							class="btn btn-primary btn-sm font-black gap-1.5"
+							data-modal-open="add-weekly-coverage-modal"
+						>
+							@components.IconPlus("icon-xs")
+							<span>إضافة جدول تغطية جديد</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Stats KPI Strip -->
+				<div class="d-grid gap-3 mt-4 pt-3 border-t grid-auto-fit-sm">
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">إجمالي جداول التغطية</div>
+						<div class="text-xl font-black text-primary mt-0.5 tabular-nums">{ fmt.Sprintf("%d", len(data.Coverages)) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">الجداول النشطة للتوصيل</div>
+						<div class="text-xl font-black text-success mt-0.5 tabular-nums">{ fmt.Sprintf("%d", countActiveCoverages(data.Coverages)) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">المدن والمحافظات المشمولة</div>
+						<div class="text-xl font-black text-brand mt-0.5 tabular-nums">{ fmt.Sprintf("%d", countCoveredCities(data.Coverages)) }</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Coverages List Table -->
+			<div class="border bg-surface-raised rounded-2xl overflow-hidden shadow-sm">
+				if len(data.Coverages) == 0 {
+					<div class="p-10 text-center">
+						@components.EmptyState(components.EmptyStateProps{
+							Title:   "لا توجد جداول تغطية أسبوعية",
+							Message: "لم يتم ضبط أي جداول تغطية أسبوعية تطابق معايير الاختيار الحالية. يمكنك إضافة جدول تغطية جديد عبر الزر أعلاه.",
+						})
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table data-table-responsive">
+							<thead>
+								<tr>
+									<th>يوم التوصيل</th>
+									<th>المنشأة / المورد</th>
+									<th>المدينة / المحافظة</th>
+									<th>الفرع أو المخزن المنفذ</th>
+									<th>نطاق التغطية</th>
+									<th>مواعيد التوصيل</th>
+									<th>حالة التغطية</th>
+									<th class="col-actions">الإجراءات والتحكم</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, c := range data.Coverages {
+									<tr class="align-middle">
+										<td>
+											<span class="badge badge-sky font-black text-xs">
+												{ dayOfWeekAr(c.DayOfWeek) }
+											</span>
+										</td>
+										<td>
+											if c.OrgName != "" {
+												<strong class="text-primary">{ c.OrgName }</strong>
+											} else {
+												<span class="text-muted">منشأة #{ fmt.Sprintf("%d", c.OrganizationID) }</span>
+											}
+										</td>
+										<td>
+											if c.CityName != "" {
+												<strong class="text-primary">{ c.CityName }</strong>
+											} else {
+												<span class="text-muted">كافة المناطق</span>
+											}
+										</td>
+										<td>
+											if c.BranchName != "" {
+												<span>{ c.BranchName }</span>
+											} else {
+												<span class="text-muted">المقر الرئيسي</span>
+											}
+										</td>
+										<td class="tabular-nums">
+											<div class="d-flex items-center gap-1.5">
+												<strong class="text-accent">{ fmt.Sprintf("%d كم", c.DistanceMeters/1000) }</strong>
+												<button
+													type="button"
+													class="btn btn-secondary btn-xs font-bold gap-1 py-0.5 px-1.5"
+													title="معاينة دائرة التغطية على الخريطة"
+													data-cov-title={ c.OrgName }
+													data-cov-branch={ c.BranchName }
+													data-cov-city={ c.CityName }
+													data-cov-radius={ fmt.Sprintf("%d", c.DistanceMeters) }
+													data-cov-lat={ fmt.Sprintf("%.6f", coordFloat(c.Latitude, 30.0444)) }
+													data-cov-lon={ fmt.Sprintf("%.6f", coordFloat(c.Longitude, 31.2357)) }
+													@click="previewCoverageMapFromEl($el)"
+												>
+													@components.IconMapPin("icon-2xs")
+													<span>خريطة</span>
+												</button>
+											</div>
+										</td>
+										<td class="tabular-nums">
+											if (c.CoverageFrom != nil && *c.CoverageFrom != "") || (c.CoverageTo != nil && *c.CoverageTo != "") {
+												<span class="font-bold">{ FormatCoverageWindow(c.CoverageFrom, c.CoverageTo) }</span>
+											} else {
+												<span class="badge badge-slate text-xs">طوال اليوم</span>
+											}
+										</td>
+										<td>
+											if c.IsActive {
+												<span class="badge badge-emerald font-black">نشط ومتاح</span>
+											} else {
+												<span class="badge badge-danger font-black">معطل</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<!-- Toggle Button Form -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/weekly-coverages/%d/toggle", c.ID)) } class="m-0">
+													<input type="hidden" name="is_active" value={ fmt.Sprintf("%t", !c.IsActive) } />
+													<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.SelectedOrgID) } />
+													if c.IsActive {
+														<button type="submit" class="btn btn-secondary btn-xs font-bold" title="تعطيل هذا الجدول">
+															تعطيل
+														</button>
+													} else {
+														<button type="submit" class="btn btn-primary btn-xs font-bold" title="تفعيل هذا الجدول">
+															تفعيل
+														</button>
+													}
+												</form>
+
+												<!-- Delete Button Form -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/weekly-coverages/%d/delete", c.ID)) } data-confirm="هل أنت متأكد من حذف جدول التغطية هذا؟" class="m-0">
+													<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.SelectedOrgID) } />
+													<button type="submit" class="btn btn-danger btn-xs font-bold" title="حذف">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/weekly-coverages",
+							QueryValues: map[string][]string{
+								"org_id": {fmt.Sprintf("%d", data.SelectedOrgID)},
+							},
+						})
+					}
+				}
+			</div>
+
+		<!-- Modal: Add Weekly Coverage Rule -->
+		@components.Modal(components.ModalProps{
+			ID:    "add-weekly-coverage-modal",
+			Title: "إضافة جدول تغطية أسبوعية جديد",
+			Size:  "md",
+		}) {
+			<form method="POST" action="/admin/weekly-coverages/new" class="d-flex flex-col gap-4 m-0 text-start">
+				<input type="hidden" name="redirect_org_id" value={ fmt.Sprintf("%d", data.SelectedOrgID) } />
+
+				<div class="d-flex flex-col gap-3">
+     <div class="stack-sm">
+						<label class="form-label font-bold" for="cov-org-id">المنشأة / المورد المعتمد *</label>
+						<select id="cov-org-id" name="organization_id" class="form-select w-full" required>
+							for _, o := range data.Organizations {
+								<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.SelectedOrgID }>
+									{ o.LegalName }
+								</option>
+							}
+						</select>
+					</div>
+
+					<div class="d-grid grid-2-col gap-3">
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-branch-id">الفرع أو المخزن المنفذ *</label>
+							<select id="cov-branch-id" name="branch_id" class="form-select w-full" required>
+								for _, b := range data.Branches {
+									<option value={ fmt.Sprintf("%d", b.ID) }>
+										if b.Name["ar"] != "" {
+											{ b.Name["ar"] }
+										} else {
+											{ b.Name["en"] }
+										}
+									</option>
+								}
+							</select>
+						</div>
+
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-city-id">المدينة / المحافظة المشمولة</label>
+							<select id="cov-city-id" name="city_id" class="form-select w-full">
+								<option value="0">كافة مدن النطاق</option>
+								for _, ct := range data.Cities {
+									<option value={ fmt.Sprintf("%d", ct.ID) }>
+										{ ct.Name.Get(i18n.AR) }
+									</option>
+								}
+							</select>
+						</div>
+					</div>
+
+					<div class="d-grid grid-2-col gap-3">
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-day-id">يوم التوصيل *</label>
+							<select id="cov-day-id" name="day_of_week" class="form-select w-full font-bold" required>
+								<option value="0">الأحد (Sunday)</option>
+								<option value="1">الاثنين (Monday)</option>
+								<option value="2">الثلاثاء (Tuesday)</option>
+								<option value="3">الأربعاء (Wednesday)</option>
+								<option value="4">الخميس (Thursday)</option>
+								<option value="5">الجمعة (Friday)</option>
+								<option value="6">السبت (Saturday)</option>
+							</select>
+						</div>
+
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-dist-id">نصف قطر التغطية (كم) *</label>
+							<input id="cov-dist-id" type="number" name="distance_km" value="50" min="1" max="500" required class="form-input w-full font-bold tabular-nums" />
+						</div>
+					</div>
+
+					<div class="d-grid grid-2-col gap-3">
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-from-id">من الساعة (اختياري)</label>
+							<input id="cov-from-id" type="text" name="coverage_from" placeholder="مثال: 08:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" class="form-input w-full tabular-nums" />
+						</div>
+
+      <div class="stack-sm">
+							<label class="form-label font-bold" for="cov-to-id">إلى الساعة (اختياري)</label>
+							<input id="cov-to-id" type="text" name="coverage_to" placeholder="مثال: 18:00" pattern="^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$" class="form-input w-full tabular-nums" />
+						</div>
+					</div>
+
+     <div class="stack-sm">
+						<label class="form-label font-bold" for="cov-address-id">ملاحظات العنوان أو خط السير</label>
+						<input id="cov-address-id" type="text" name="address" placeholder="مثال: خط سير الصيدليات المركزية والمستشفيات" class="form-input w-full" />
+					</div>
+				</div>
+
+				<div class="d-flex justify-end gap-3 mt-2">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-modal-close="add-weekly-coverage-modal"
+					>
+						إلغاء
+					</button>
+					<button type="submit" class="btn btn-primary font-bold px-6">
+						حفظ الجدول
+					</button>
+				</div>
+			</form>
+		}
+
+		@AdminWeeklyCoverageMapModal()
+		</div>
+	}
+}

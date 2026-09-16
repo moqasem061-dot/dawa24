@@ -1,0 +1,190 @@
+package components
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+)
+
+// Turning the record names in an answer into links.
+//
+// The server decides WHICH records an answer refers to and where each one
+// lives; this decides WHERE IN THE TEXT to put the link. Splitting it that way
+// is what keeps it safe: the href is built server-side from a row id the server
+// itself read, and nothing here can invent a destination — it only matches a
+// string and wraps it.
+//
+// The matching runs over DOM text nodes, never over the HTML string. A regular
+// expression across markup would happily rewrite the inside of an attribute or
+// split a tag in half the first time a product was called "class" or an order
+// number appeared inside an href. Walking text nodes cannot: a tag is not a
+// text node, so it is not a thing the matcher can see.
+//
+// Three rules keep the result readable rather than merely correct:
+//
+//   - a record is linked once per answer, at its first mention. A table of ten
+//     orders gets ten links because each row names a different order; a
+//     paragraph that repeats one order number four times gets one.
+//   - matches must fall on word boundaries, so "1042" does not link inside
+//     "10425" and a two-letter code does not light up half the sentence.
+//   - code, existing links and the reference strip itself are skipped.
+
+templ capsuleEntityScript() {
+	<script nonce={ httpx.Nonce(ctx) }>
+		(function () {
+			if (window.capsuleLinkEntities) return;
+
+			// capsuleFold mirrors assistant.FoldForMatch on the server, and the
+			// two must stay identical: the server decides a record is mentioned
+			// and the client decides where, so a difference of opinion shows up
+			// as a chip with no matching link.
+			//
+			// It returns the folded string alongside a map back to the original
+			// offsets, because folding changes length — collapsing spaces and
+			// dropping harakat — and the link has to be placed in the text the
+			// reader is actually looking at.
+			function capsuleFold(text) {
+				let folded = '';
+				const map = [];
+				let lastSpace = false;
+				for (let i = 0; i < text.length; i++) {
+					let ch = text[i].toLowerCase();
+					const code = ch.charCodeAt(0);
+
+					if (ch === 'ـ') continue;                       // tatweel
+					if (code >= 0x064B && code <= 0x0652) continue;      // harakat
+					if (code >= 0x0660 && code <= 0x0669) ch = String.fromCharCode(code - 0x0660 + 48);
+					else if (code >= 0x06F0 && code <= 0x06F9) ch = String.fromCharCode(code - 0x06F0 + 48);
+					else if (ch === 'أ' || ch === 'إ' || ch === 'آ' || ch === 'ٱ') ch = 'ا';
+					else if (ch === 'ة') ch = 'ه';
+					else if (ch === 'ى') ch = 'ي';
+					else if (ch === 'ؤ') ch = 'و';
+					else if (ch === 'ئ') ch = 'ي';
+
+					if (/\s/.test(ch)) {
+						if (lastSpace) continue;
+						lastSpace = true;
+						folded += ' ';
+						map.push(i);
+						continue;
+					}
+					lastSpace = false;
+					folded += ch;
+					map.push(i);
+				}
+				return { folded: folded, map: map };
+			}
+			window.capsuleFold = capsuleFold;
+
+			const WORD = /[\p{L}\p{N}]/u;
+
+			function boundedAt(folded, start, end) {
+				const before = start > 0 ? folded[start - 1] : '';
+				const after = end < folded.length ? folded[end] : '';
+				return !(before && WORD.test(before)) && !(after && WORD.test(after));
+			}
+
+			// needlesFor lists every spelling of one record, longest first, so a
+			// full reference wins over its own numeric tail.
+			function needlesFor(entity) {
+				const raw = [entity.label].concat(entity.aliases || []);
+				const out = [];
+				raw.forEach(function (r) {
+					if (!r) return;
+					const n = capsuleFold(String(r)).folded;
+					if (n.length >= 3 && out.indexOf(n) === -1) out.push(n);
+				});
+				return out.sort(function (a, b) { return b.length - a.length; });
+			}
+
+			const SKIP_TAGS = { A: 1, CODE: 1, PRE: 1, SCRIPT: 1, STYLE: 1, TEXTAREA: 1 };
+
+			function skipped(node) {
+				for (let p = node.parentNode; p && p.nodeType === 1; p = p.parentNode) {
+					if (SKIP_TAGS[p.tagName]) return true;
+					if (p.hasAttribute && p.hasAttribute('data-capsule-no-link')) return true;
+				}
+				return false;
+			}
+
+			function anchorFor(entity, label) {
+				const a = document.createElement('a');
+				a.className = 'capsule-entity-link';
+				a.href = entity.url;
+				a.dataset.kind = entity.kind || '';
+				a.title = entity.title || label;
+				const icon = document.createElement('span');
+				icon.className = 'capsule-entity-dot';
+				icon.setAttribute('aria-hidden', 'true');
+				a.appendChild(icon);
+				a.appendChild(document.createTextNode(label));
+				return a;
+			}
+
+			// linkNode places at most one link per pass and returns the tail
+			// text node still to be scanned, so a paragraph naming three
+			// different records gets three links.
+			function linkNode(node, pending) {
+				const text = node.nodeValue;
+				if (!text || text.length < 3) return null;
+				const f = capsuleFold(text);
+				if (!f.folded) return null;
+
+				let best = null;
+				for (const entity of pending) {
+					for (const needle of needlesFor(entity)) {
+						let at = f.folded.indexOf(needle);
+						while (at !== -1) {
+							if (boundedAt(f.folded, at, at + needle.length)) break;
+							at = f.folded.indexOf(needle, at + 1);
+						}
+						if (at === -1) continue;
+						if (!best || at < best.at) {
+							best = { at: at, len: needle.length, entity: entity };
+						}
+						break;
+					}
+				}
+				if (!best) return null;
+
+				const start = f.map[best.at];
+				const end = f.map[best.at + best.len - 1] + 1;
+				const after = node.splitText(end);
+				const middle = node.splitText(start);
+				middle.parentNode.replaceChild(
+					anchorFor(best.entity, middle.nodeValue), middle);
+				pending.delete(best.entity);
+				return after;
+			}
+
+			// capsuleLinkEntities takes rendered HTML and returns it with the
+			// records named in it linked.
+			//
+			// It works on a detached element so it stays a pure function of its
+			// inputs: Alpine re-evaluates x-html on every streamed token, and a
+			// renderer with a side effect on the live document would fight it.
+			window.capsuleLinkEntities = function (html, entities) {
+				if (!html || !entities || !entities.length) return html;
+				// Only http(s) and same-origin paths become links.
+				const usable = entities.filter(function (e) {
+					return e && e.label && typeof e.url === 'string' && /^(https?:\/\/|\/[^\/])/i.test(e.url);
+				});
+				if (!usable.length) return html;
+
+				const host = document.createElement('div');
+				host.innerHTML = dawaHTML.sanitize(html);
+
+				const pending = new Set(usable);
+				const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+				const nodes = [];
+				while (walker.nextNode()) nodes.push(walker.currentNode);
+
+				for (const node of nodes) {
+					if (!pending.size) break;
+					if (skipped(node)) continue;
+					let cursor = node;
+					while (cursor && pending.size) cursor = linkNode(cursor, pending);
+				}
+				return host.innerHTML;
+			};
+		})();
+	</script>
+}

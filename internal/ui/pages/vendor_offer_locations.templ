@@ -1,0 +1,241 @@
+package pages
+
+import (
+	"fmt"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorOfferLocationsData struct {
+	Offer         *promo.SpecialOffer
+	Locations     []*promo.SpecialOfferLocation
+	Governorates  []*platformadmin.Governorate
+	Cities        []*platformadmin.City
+	EditLocation  *promo.SpecialOfferLocation
+	NoticeType    string
+	NoticeMessage string
+}
+
+var daysOfWeek = []struct {
+	ID   int
+	Name string
+}{
+	{ID: 1, Name: "السبت (Saturday)"},
+	{ID: 2, Name: "الأحد (Sunday)"},
+	{ID: 3, Name: "الاثنين (Monday)"},
+	{ID: 4, Name: "الثلاثاء (Tuesday)"},
+	{ID: 5, Name: "الأربعاء (Wednesday)"},
+	{ID: 6, Name: "الخميس (Thursday)"},
+	{ID: 7, Name: "الجمعة (Friday)"},
+}
+
+templ VendorOfferLocationsPage(data VendorOfferLocationsData, lang, dir string) {
+	@layouts.VendorShell("نطاقات التغطية الجغرافية للعرض | Offer Locations", "supply_offers", lang, dir) {
+		<!-- Hidden Coordinate & City Datasets for Instant Client-side City Selection & Map Panning -->
+		<div id="cities-dataset" data-cities={ citiesToJSON(data.Cities) } class="d-none"></div>
+		<div id="offer-loc-govs-coords" class="d-none" data-coords={ GovernoratesCoordinatesJSON(data.Governorates) }></div>
+		<div id="offer-loc-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
+
+		<div class="page-container py-4" x-data={ fmt.Sprintf("offerLocationsManager(%d)", data.Offer.ID) }>
+			<!-- Navigation Breadcrumb -->
+			<nav class="d-flex items-center gap-2 text-xs text-muted mb-4 font-bold">
+				<a href="/vendor/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+				<span>/</span>
+				<a href="/vendor/offers" class="text-secondary transition-colors">العروض والخصومات</a>
+				<span>/</span>
+				<span class="text-primary font-black">نطاقات التغطية الجغرافية</span>
+			</nav>
+
+			<!-- Notice / Toast Banner -->
+			if data.NoticeMessage != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger d-flex items-center gap-3 p-4 rounded-xl mb-6">
+						@components.IconAlert("icon-sm flex-shrink-0")
+						<span class="font-semibold text-sm">{ data.NoticeMessage }</span>
+					</div>
+				} else {
+					<div class="alert alert-success d-flex items-center gap-3 p-4 rounded-xl mb-6">
+						@components.IconCheckCircle("icon-sm flex-shrink-0")
+						<span class="font-semibold text-sm">{ data.NoticeMessage }</span>
+					</div>
+				}
+			}
+
+			<!-- Hero Header -->
+			<div class="glass-panel p-6 mb-6 flex-between flex-wrap gap-4 items-center border rounded-2xl shadow-sm">
+				<div>
+					<div class="d-flex items-center gap-2 mb-1">
+						<span class="badge badge-sky font-bold text-xs">
+							@components.IconGlobe("icon-2xs")
+							<span>تغطية العرض الحصرية</span>
+						</span>
+						if data.Offer.Status == "active" {
+							<span class="badge badge-emerald text-xs font-bold">العرض نشط</span>
+						} else {
+							<span class="badge badge-slate text-xs font-bold">{ data.Offer.Status }</span>
+						}
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+						نطاقات التغطية وأوقات التوصيل: { data.Offer.Title.Get(i18n.Lang(lang)) }
+					</h1>
+					<p class="text-xs text-secondary mt-1 mb-0 font-medium">
+						حدد المحافظات والمدن ونصف قطر التوصيل وأيام الأسبوع المخصصة لسريان هذا العرض الترويجي للطلب المباشر من الصيدليات
+					</p>
+				</div>
+
+				<div class="d-flex items-center gap-2.5">
+					<a href="/vendor/offers" class="btn btn-secondary btn-sm font-bold gap-2">
+						<span>← العودة لجميع العروض</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Stacked Layout: Full-Width Builder Form, Full-Width Data Table Below -->
+			<div class="d-flex flex-col gap-6 mb-6">
+				@VendorOfferLocationsForm(data, lang)
+
+				<!-- Existing Locations Data Table (Full Width) -->
+				<div class="glass-panel p-6 border rounded-2xl shadow-sm">
+					<div class="flex-between items-center mb-4 pb-3 border-b flex-wrap gap-2">
+						<div class="d-flex items-center gap-2">
+							@components.IconTruck("icon-sm text-brand flex-shrink-0")
+							<h2 class="text-base font-black text-primary m-0">
+								النطاقات المسجلة لهذا العرض
+							</h2>
+						</div>
+						<span class="badge badge-sky tabular-nums font-black text-xs px-2.5 py-1">
+							{ fmt.Sprintf("%d نطاقات مسجلة", len(data.Locations)) }
+						</span>
+					</div>
+
+					if len(data.Locations) == 0 {
+						<div class="p-8 bg-surface-sunken rounded-2xl border text-center">
+							<div class="w-12 h-12 rounded-full bg-primary-subtle text-primary d-flex items-center justify-center mx-auto mb-3">
+								@components.IconGlobe("icon-md")
+							</div>
+							<h3 class="text-sm font-black text-primary mb-1">لا توجد نطاقات جغرافية مخصصة بعد</h3>
+							<p class="text-xs text-secondary mb-3 max-w-sm mx-auto font-medium leading-relaxed">
+								عند عدم تخصيص نطاقات، يسري هذا العرض تلقائياً على كافة الصيدليات المشمولة بالتغطية الأسبوعية لمستودعك/فرعك.
+							</p>
+							<span class="text-2xs text-muted font-bold d-block">
+								أضف أول نطاق حصري من النموذج أعلاه لتحديد مدن أو أحياء معينة.
+							</span>
+						</div>
+					} else {
+						<div class="table-container m-0 border rounded-xl overflow-x-auto">
+							<table class="data-table text-xs w-full">
+								<thead>
+									<tr>
+										<th class="whitespace-nowrap">المدينة / المحافظة</th>
+										<th class="whitespace-nowrap">المنطقة / الحي</th>
+										<th class="text-center whitespace-nowrap">نصف القطر</th>
+										<th class="text-center whitespace-nowrap">الإحداثيات</th>
+										<th class="whitespace-nowrap">مواعيد التوصيل</th>
+										<th class="text-center whitespace-nowrap">الحالة</th>
+										<th class="text-center whitespace-nowrap">الإجراءات</th>
+									</tr>
+								</thead>
+								<tbody>
+									for _, loc := range data.Locations {
+										<tr class="transition-colors hover:bg-surface-sunken/60">
+											<td class="font-bold text-primary whitespace-nowrap">
+												<div class="d-flex flex-col gap-0.5">
+													<span class="font-black text-sm">
+														if loc.CityName != "" {
+															{ loc.CityName }
+														} else {
+															<span class="text-muted">مدينة غير محددة</span>
+														}
+													</span>
+													if loc.GovernorateName != "" {
+														<span class="badge badge-sky text-2xs w-fit font-bold">{ loc.GovernorateName }</span>
+													}
+												</div>
+											</td>
+											<td class="text-secondary max-w-xs">
+												if loc.AddressAr != "" {
+													<span class="truncate d-block" title={ loc.AddressAr }>{ loc.AddressAr }</span>
+												} else {
+													<span class="text-muted">—</span>
+												}
+											</td>
+											<td class="text-center whitespace-nowrap">
+												<span class="badge badge-sky font-bold text-xs tabular-nums">
+													{ formatOfferRadius(loc.Radius) }
+												</span>
+											</td>
+											<td class="text-center font-mono text-2xs tabular-nums whitespace-nowrap">
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("https://www.google.com/maps?q=%.6f,%.6f", loc.Latitude, loc.Longitude)) }
+													target="_blank"
+													rel="noopener"
+													class="badge badge-slate text-2xs hover:text-brand gap-1 font-bold"
+													title="فتح الموقع على خرائط Google"
+												>
+													@components.IconMapPin("icon-2xs")
+													<span>{ fmt.Sprintf("%.4f, %.4f", loc.Latitude, loc.Longitude) }</span>
+												</a>
+											</td>
+											<td class="whitespace-nowrap">
+												<div class="d-flex items-center gap-1.5">
+													<span class="badge badge-primary font-bold text-xs">{ formatDayName(loc.DayOfWeek) }</span>
+													if loc.TimeFrom != "" || loc.TimeTo != "" {
+														<span class="text-2xs text-muted tabular-nums font-medium">({ loc.TimeFrom } – { loc.TimeTo })</span>
+													}
+												</div>
+											</td>
+											<td class="text-center whitespace-nowrap">
+												if loc.Status == "active" {
+													<span class="badge badge-emerald font-bold text-2xs">نشط</span>
+												} else {
+													<span class="badge badge-slate font-bold text-2xs">{ loc.Status }</span>
+												}
+											</td>
+											<td class="text-center whitespace-nowrap">
+												<div class="d-flex items-center justify-center gap-1.5">
+													<button
+														type="button"
+														class="btn btn-secondary btn-xs font-bold gap-1 px-2.5 py-1"
+														data-edit-loc-btn={ fmt.Sprintf("%d", loc.ID) }
+														data-loc-data={ offerLocationJSON(loc) }
+														@click="setEditModeFromElement($el)"
+														title="تعديل نطاق التغطية"
+													>
+														@components.IconEdit("icon-2xs")
+														<span>تعديل</span>
+													</button>
+													<form
+														action={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/locations/%d/delete", data.Offer.ID, loc.ID)) }
+														method="POST"
+														data-confirm="هل أنت متأكد من حذف نطاق التغطية هذا من العرض؟"
+														class="m-0"
+													>
+														<button
+															type="submit"
+															class="btn btn-danger btn-xs font-bold gap-1 px-2.5 py-1"
+															title="حذف نطاق التغطية"
+														>
+															@components.IconTrash("icon-2xs")
+															<span>حذف</span>
+														</button>
+													</form>
+												</div>
+											</td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Script: Offer Locations Manager -->
+		@OfferLocationsScript(data.Offer.ID)
+	}
+}
+

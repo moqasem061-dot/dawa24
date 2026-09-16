@@ -1,0 +1,418 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SavingImportPage(view SavingImportView, lang, dir string) {
+	if view.Audience == "vendor" {
+		@layouts.VendorShell("استيراد قائمة أصناف التوفير | Dawa24", "saving_products", lang, dir) {
+			@savingImportContent(view)
+		}
+	} else if view.Audience == "admin" {
+		@layouts.AdminShell("استيراد منتجات التوفير لمنظمة | Dawa24", "org_imports", lang, dir) {
+			@savingImportContent(view)
+		}
+	} else {
+		@layouts.CustomerShell("استيراد قائمة أصناف التوفير | Dawa24", "saving_products", lang, dir, nil) {
+			@savingImportContent(view)
+		}
+	}
+}
+
+templ savingImportContent(view SavingImportView) {
+	<div class="page-container">
+		if view.TargetOrgName != "" {
+			<div class="alert alert-info mb-4 d-flex items-center gap-3 p-3.5 rounded-xl border border-blue-200 bg-blue-50/70 shadow-xs">
+				@components.IconBuilding("icon-sm text-blue-600 flex-shrink-0")
+				<div>
+					<span class="font-bold text-xs text-blue-900">الاستيراد جارٍ لحساب المنشأة: </span>
+					<strong class="text-sm font-black text-blue-950">{ view.TargetOrgName }</strong>
+					if view.TargetOrgType != "" {
+						<span class="badge badge-purple text-2xs ms-2">{ view.TargetOrgType }</span>
+					}
+				</div>
+			</div>
+		}
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-xl">
+						@components.IconPackage("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">استيراد قائمة أصناف التوفير والنواقص</h1>
+						<p class="text-sm text-secondary m-0 mt-1">ارفع ملف الأدوية، وافحص المطابقة التفاعلية مع الكتالوج المركزي، وراجع الكميات والأسعار قبل الحفظ النهائي</p>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href={ templ.SafeURL(view.BaseURL) } class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+						@components.IconPackage("icon-xs")
+						<span>العودة لقائمة التوفير</span>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<div class="wizard">
+			@WizardRail(SavingRail(view.WizardStep()))
+
+			if view.NoticeMsg != "" {
+				<div class={ "alert", templ.KV("alert-danger", view.NoticeType == "error"), templ.KV("alert-success", view.NoticeType == "success"), templ.KV("alert-info", view.NoticeType != "error" && view.NoticeType != "success") } role="alert">
+					{ view.NoticeMsg }
+				</div>
+			}
+
+			if view.Fatal != "" {
+				<div class="glass-panel p-6 mb-6">
+					<h2 class="wiz-head text-danger">تعذر إكمال العملية</h2>
+					<p class="wiz-sub">{ view.Fatal }</p>
+					<div class="row-center">
+						<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-primary">بدء استيراد جديد</a>
+					</div>
+				</div>
+			} else if view.Session == nil || view.Session.Phase == "" || view.Session.Phase == SavingPhaseUpload {
+				@savingUploadStage(view)
+				if len(view.Sessions) > 0 {
+					@savingSessionsHistoryCard(view)
+				}
+			} else if view.Session.IsProcessing() {
+				@savingProcessingStage(view)
+			} else {
+				switch view.Session.Phase {
+					case SavingPhaseMapping:
+						@savingMappingStage(view)
+					case SavingPhaseReview:
+						@savingReviewStage(view)
+					case SavingPhaseCompleted:
+						@savingCompletedStage(view)
+					default:
+						@savingReviewStage(view)
+				}
+			}
+		</div>
+	</div>
+}
+
+// savingProcessingStage is what the wizard shows while the matching runs.
+//
+// It did not exist, and its absence is the whole bug: the mapping form posted
+// to a handler that loaded the entire catalogue, matched every row against it
+// and then called the AI stage — all inside the POST. The browser sat on a
+// spinning tab for minutes with nothing on screen, and on a large file the
+// request deadline killed it before it finished.
+//
+// The work is detached now, and this is where the user waits: the same bar
+// every other import tool uses, fed by the same live stream.
+templ savingProcessingStage(view SavingImportView) {
+	<div class="glass-panel p-6" id="saving-progress-card" data-session={ view.Session.ID }>
+		<h2 class="wiz-head">جارٍ مطابقة الأصناف</h2>
+		<p class="wiz-sub" id="saving-progress-phase">{ view.Session.ProgressPhase }</p>
+
+		<div class="wiz-progress">
+			<div class="wiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+				<div class="wiz-progress-fill" id="saving-progress-fill"></div>
+			</div>
+			<div class="wiz-progress-meta">
+				<span id="saving-progress-count" class="tabular-nums"></span>
+				<span id="saving-progress-percent" class="wiz-progress-percent"></span>
+			</div>
+		</div>
+
+		<p class="text-xs text-muted mt-2">
+			يمكنك إغلاق هذه الصفحة؛ ستستمر المعالجة وستجد نتيجتها في سجل عمليات الاستيراد.
+		</p>
+	</div>
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		// import-progress.js is deferred, so it has NOT executed while this
+		// inline script runs. Starting the bar here would find
+		// window.ImportProgress undefined and silently do nothing — see
+		// internal/ui/pages/progress_bootstrap_test.go.
+		(function () {
+			function startProgress() {
+				const card = document.getElementById('saving-progress-card');
+				if (!card) return;
+				if (typeof window.ImportProgress !== 'function') {
+					console.error('import-progress.js did not load; the progress bar cannot update');
+					return;
+				}
+				const bar = new window.ImportProgress({
+					fill:    document.getElementById('saving-progress-fill'),
+					label:   document.getElementById('saving-progress-phase'),
+					percent: document.getElementById('saving-progress-percent'),
+					count:   document.getElementById('saving-progress-count'),
+					onDone:  function () { setTimeout(function () { window.location.reload(); }, 500); },
+				});
+				bar.watch(card.dataset.session, 1500);
+			}
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', startProgress);
+			} else {
+				startProgress();
+			}
+		})();
+	</script>
+}
+
+templ savingUploadStage(view SavingImportView) {
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">1. اختر ملف قائمة الأدوية والتوفير</h2>
+		<p class="wiz-sub">
+			ارفع ملف أدوية الصيدلية أو منتجات التوفير بصيغة Excel (.xlsx, .xls) أو CSV.
+		</p>
+
+		<form class="stack-md" method="POST" action={ templ.SafeURL(view.ImportURL + "/upload") } enctype="multipart/form-data" hx-boost="false">
+			<label class="dropzone saving-dropzone" id="saving-dropzone">
+				<input type="file" name="file" accept=".xlsx,.xls,.csv" required class="visually-hidden" data-on-change="handleSavingFileSelect(this)" />
+				<div class="saving-upload-mark" aria-hidden="true"></div>
+				<div class="dropzone-title" id="dropzone-title">اضغط لاختيار الملف أو اسحبه وأفلته هنا</div>
+				<div class="dropzone-hint" id="dropzone-hint">الصيغ المدعومة: Excel (.xlsx, .xls) و CSV — الحجم الأقصى: 30 ميجابايت</div>
+			</label>
+
+			<div class="flex-between mt-lg flex-wrap gap-md">
+				<div class="row-center-sm flex-wrap gap-xs">
+					<span class="text-xs text-muted font-bold">قوالب جاهزة للتحميل:</span>
+					<a href={ templ.SafeURL(view.BaseURL + "/sample.xlsx") } class="btn btn-secondary btn-xs font-bold">
+						@components.IconDownload("icon-xs")
+						<span>تحميل نموذج Excel</span>
+					</a>
+					<a href={ templ.SafeURL(view.BaseURL + "/sample.csv") } class="btn btn-secondary btn-xs font-bold">
+						@components.IconDownload("icon-xs")
+						<span>تحميل نموذج CSV</span>
+					</a>
+				</div>
+				<button type="submit" class="btn btn-primary font-bold" id="upload-submit-btn">
+					<span>تحليل الملف ومتابعة الخطوة التالية ←</span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		function handleSavingFileSelect(input) {
+			if (input.files && input.files[0]) {
+				var file = input.files[0];
+				var title = document.getElementById('dropzone-title');
+				var hint = document.getElementById('dropzone-hint');
+				if (title) title.textContent = '' + file.name;
+				if (hint) hint.textContent = 'الحجم: ' + (file.size / (1024 * 1024)).toFixed(2) + ' ميجابايت — جاهز للرفع';
+			}
+		}
+	</script>
+}
+
+templ savingSessionsHistoryCard(view SavingImportView) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		<div class="p-4 border-b flex-between items-center">
+   <div class="stack-sm">
+				<h3 class="text-sm font-black text-primary m-0">سجل جلسات الاستيراد السابقة والنشطة</h3>
+				<p class="text-xs text-secondary m-0 mt-0.5">يمكنك استئناف مراجعة أي جلسة قيد الانتظار أو مراجعة نتائج الجلسات المكتملة</p>
+			</div>
+		</div>
+
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>اسم الملف</th>
+							<th class="saving-col-date">تاريخ الجلسة</th>
+							<th class="saving-col-count">عدد الأصناف</th>
+							<th class="saving-col-status">الحالة</th>
+							<th class="col-actions saving-col-actions">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, sess := range view.Sessions {
+							<tr>
+								<td class="font-bold">
+									<div class="row-center-xs gap-xs">
+										<span class="saving-file-mark" aria-hidden="true"></span>
+										<span>{ sess.Filename }</span>
+									</div>
+								</td>
+								<td class="text-xs text-muted tabular-nums">
+									{ sess.CreatedAt.Format("2006-01-02 03:04 PM") }
+								</td>
+								<td class="text-center tabular-nums font-bold text-xs">
+									{ fmt.Sprint(sess.TotalRows) }
+								</td>
+								<td class="text-center">
+									if sess.Status == SessionStateCommitted {
+										<span class="badge badge-emerald text-xs">مكتمل</span>
+									} else if sess.Status == SessionStateReady || sess.Status == SessionStateProcessing {
+										<span class="badge badge-amber text-xs">قيد المراجعة</span>
+									} else {
+										<span class="badge badge-slate text-xs">{ string(sess.Status) }</span>
+									}
+								</td>
+								<td class="col-actions">
+									<div class="table-actions">
+										if sess.Status == SessionStateReady || sess.Status == SessionStateProcessing {
+											<a href={ templ.SafeURL(fmt.Sprintf("%s/%s", view.ImportURL, sess.ID)) } class="btn btn-primary btn-xs font-bold">
+												استكمال الجلسة ←
+											</a>
+										} else if sess.Status == SessionStateCommitted {
+											<a href={ templ.SafeURL(fmt.Sprintf("%s/%s", view.ImportURL, sess.ID)) } class="btn btn-secondary btn-xs font-bold">
+												عرض الملخص
+											</a>
+										}
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/cancel", view.ImportURL, sess.ID)) }
+											data-confirm="هل أنت متأكد من حذف هذه الجلسة والبيانات المؤقتة الخاصة بها؟" class="saving-delete-form">
+											<button type="submit" class="btn btn-ghost btn-xs text-danger" title="حذف الجلسة">
+												حذف
+											</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+}
+
+templ savingMappingStage(view SavingImportView) {
+	{{ sess := view.Session }}
+	<div class="glass-panel p-6">
+		<div class="flex-between items-center mb-md">
+   <div class="stack-sm">
+				<h2 class="wiz-head mb-0">2. ربط الأعمدة واستراتيجية المطابقة</h2>
+				<p class="wiz-sub mb-0">الملف: <strong>{ sess.Filename }</strong> ({ fmt.Sprint(sess.TotalRows) } صف)</p>
+			</div>
+			<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/cancel", view.ImportURL, sess.ID)) }
+				data-confirm="هل تريد إلغاء هذه الجلسة؟">
+				<button type="submit" class="btn btn-ghost btn-sm text-danger">إلغاء الجلسة</button>
+			</form>
+		</div>
+
+		@components.ImportFilePreview(sess.Filename, sess.Headers, sess.SampleRows)
+
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/map", view.ImportURL, sess.ID)) } class="stack-lg">
+			<div class="grid-2">
+    <div class="stack-sm">
+					<label class="form-label">عمود اسم الدواء / الصنف <span class="text-danger">*</span></label>
+					<select name="col_name" class="form-select">
+						for i, h := range sess.Headers {
+							<option value={ h } selected?={ i == sess.DetectedCols.NameCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+						}
+					</select>
+				</div>
+
+    <div class="stack-sm">
+					<label class="form-label">عمود كود الصنف / SKU / الباركود</label>
+					<select name="col_sku" class="form-select">
+						<option value="">-- غير محدد --</option>
+						for i, h := range sess.Headers {
+							<option value={ h } selected?={ i == sess.DetectedCols.SKUCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+						}
+					</select>
+				</div>
+
+    <div class="stack-sm">
+					<label class="form-label">عمود الكمية المطلوبة للتوفير</label>
+					<select name="col_qty" class="form-select">
+						<option value="">-- غير محدد (افتراضي: 1) --</option>
+						for i, h := range sess.Headers {
+							<option value={ h } selected?={ i == sess.DetectedCols.QtyCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+						}
+					</select>
+				</div>
+
+    <div class="stack-sm">
+					<label class="form-label">عمود سعر الجمهور المسجل (ج.م)</label>
+					<select name="col_price" class="form-select">
+						<option value="">-- غير محدد (افتراضي: 0.00) --</option>
+						for i, h := range sess.Headers {
+							<option value={ h } selected?={ i == sess.DetectedCols.PriceCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+						}
+					</select>
+				</div>
+
+    <div class="stack-sm">
+					<label class="form-label">عمود كود الصنف في دوا 24 (اختياري)</label>
+					<select name="col_product_id" class="form-select">
+						<option value="">-- غير محدد --</option>
+						for i, h := range sess.Headers {
+							<option value={ h } selected?={ i == sess.DetectedCols.ProductIDCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+						}
+					</select>
+					<p class="wiz-sub mt-xs">
+						إذا كان الملف يحتوي على كود الصنف في دوا 24، يُستخدم لربط الصف مباشرة بعد التحقق منه في الكتالوج.
+					</p>
+				</div>
+			</div>
+
+   <div class="stack-sm">
+				<label class="form-label">استراتيجية المطابقة مع الكتالوج المركزي</label>
+				<select name="match_strategy" class="form-select">
+					<option value="barcode_only">الباركود فقط</option>
+					<option value="id_only">دوا 24 كود الصنف فقط</option>
+					<option value="name_only" selected>الاسم فقط</option>
+					<option value="sku_barcode">الكود والباركود</option>
+				</select>
+				<p class="wiz-sub mt-xs">
+					تعمل المطابقة الحتمية دائماً وبدون تكلفة. كل صنف تحسمه لا يُرسل إلى أي خدمة خارجية.
+				</p>
+			</div>
+
+			<div class="stack-xs text-sm">
+				// The marker says this screen drew the AI switch, so an unticked
+				// box is read as "no" rather than as "the client never said".
+				// Without it a buyer who leaves the switch off is billed for an
+				// AI pass anyway — see ParseUseAIFromWizard.
+				<input type="hidden" name="ai_choice" value="1"/>
+				@WizardToggles([]WizardToggle{
+					AIToggle("use_ai", false, view.AIAvailable, view.AIUnavailableReason),
+				}, GroupAI)
+			</div>
+
+			<div class="flex-between items-center mt-md">
+				<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-ghost">العودة</a>
+				<button type="submit" class="btn btn-primary font-bold">
+					بدء المعالجة والمطابقة وتجهيز المسودة للمراجعة ←
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ savingCompletedStage(view SavingImportView) {
+	{{ sess := view.Session }}
+	<div class="glass-panel text-center p-xl">
+		<div class="saving-complete-mark" aria-hidden="true"></div>
+		<h2 class="wiz-head mb-sm">تم بنجاح استيراد وحفظ قائمة التوفير</h2>
+		<p class="wiz-sub mb-lg">
+			تم حفظ وتحديث <strong>{ fmt.Sprint(sess.InsertedCount + sess.UpdatedCount) }</strong> صنفاً في قائمة أدوية التوفير الخاصة بك بنجاح.
+		</p>
+
+		<div class="row-center justify-center gap-md">
+			<a href={ templ.SafeURL(view.BaseURL) } class="btn btn-primary btn-lg font-bold">
+				الانتقال لقائمة أصناف التوفير ومتابعة الأسعار ←
+			</a>
+			<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-secondary btn-lg font-bold">
+				استيراد ملف آخر
+			</a>
+		</div>
+	</div>
+}
+
+func buildSavingURL(importURL, sessionID, match, sortBy, sortOrder string, page, limit int, search string) string {
+	u := fmt.Sprintf("%s/%s?page=%d&limit=%d", importURL, sessionID, page, limit)
+	if match != "" {
+		u += "&match=" + match
+	}
+	if sortBy != "" {
+		u += "&sort=" + sortBy
+	}
+	if sortOrder != "" {
+		u += "&order=" + sortOrder
+	}
+	if search != "" {
+		u += "&q=" + search
+	}
+	return u
+}

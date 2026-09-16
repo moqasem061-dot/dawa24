@@ -1,0 +1,169 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorRecordPaymentModal renders the invoice payment recording dialog.
+templ VendorRecordPaymentModal(invoices []*billing.AdminInvoiceView, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "record-payment-modal",
+		Title: i18n.T(lang, "vendor_finance.modal.title"),
+		Icon:  "credit-card",
+		Size:  "lg",
+	}) {
+		<form method="POST" action="/vendor/payments/record" class="d-flex flex-col gap-4 m-0">
+			<!-- Invoice Selection -->
+			<div>
+				<label for="modal-payment-invoice" class="form-label text-xs font-bold mb-1.5 d-block">
+					{ i18n.T(lang, "vendor_finance.modal.lbl_invoice") } <span class="text-danger">*</span>
+				</label>
+				if len(invoices) == 0 {
+					<select id="modal-payment-invoice" name="invoice_id" class="form-select w-full text-xs font-bold" disabled>
+						<option value="">{ i18n.T(lang, "vendor_finance.modal.no_invoices") }</option>
+					</select>
+					<p class="text-3xs text-muted mt-1">{ i18n.T(lang, "vendor_finance.modal.no_invoices_note") }</p>
+				} else {
+					<select id="modal-payment-invoice" name="invoice_id" class="form-select w-full text-xs font-bold" required data-on-change="updateSuggestedAmount(this)">
+						<option value="">{ i18n.T(lang, "vendor_finance.modal.select_invoice_prompt") }</option>
+						for _, inv := range invoices {
+							<option
+								value={ fmt.Sprintf("%d", inv.ID) }
+								data-remaining={ inv.RemainingAmount.String() }
+							>
+								{ fmt.Sprintf(i18n.T(lang, "vendor_finance.modal.invoice_option_format"), inv.InvoiceNumber, inv.CustomerName, inv.RemainingAmount.String(), inv.TotalAmount.String()) }
+							</option>
+						}
+					</select>
+				}
+			</div>
+
+			<!-- Payment Amount -->
+			<div>
+				<label for="modal-payment-amount" class="form-label text-xs font-bold mb-1.5 d-block">
+					{ i18n.T(lang, "vendor_finance.modal.lbl_amount") } <span class="text-danger">*</span>
+				</label>
+				<input
+					type="number"
+					id="modal-payment-amount"
+					name="amount"
+					step="0.01"
+					min="0.01"
+					class="form-input w-full text-sm font-black tabular-nums"
+					placeholder="0.00"
+					required
+				/>
+				<span class="text-3xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_finance.modal.amount_hint") }</span>
+			</div>
+
+			<!-- Method & Reference in Grid -->
+			<div class="grid grid-cols-2 gap-3">
+				<div>
+					<label for="modal-payment-method" class="form-label text-xs font-bold mb-1.5 d-block">
+						{ i18n.T(lang, "vendor_finance.modal.lbl_method") }
+					</label>
+					<select id="modal-payment-method" name="method" class="form-select w-full text-xs font-bold">
+						<option value="bank_transfer">{ i18n.T(lang, "vendor_finance.method.bank_transfer") }</option>
+						<option value="cash">{ i18n.T(lang, "vendor_finance.method.cash") }</option>
+						<option value="cheque">{ i18n.T(lang, "vendor_finance.method.cheque") }</option>
+						<option value="electronic_wallet">{ i18n.T(lang, "vendor_finance.method.electronic_wallet") }</option>
+					</select>
+				</div>
+
+				<div>
+					<label for="modal-payment-ref" class="form-label text-xs font-bold mb-1.5 d-block">
+						{ i18n.T(lang, "vendor_finance.modal.lbl_ref") }
+					</label>
+					<input
+						type="text"
+						id="modal-payment-ref"
+						name="reference_number"
+						class="form-input w-full text-xs font-bold"
+						placeholder={ i18n.T(lang, "vendor_finance.modal.placeholder_ref") }
+					/>
+				</div>
+			</div>
+
+			<!-- Notes -->
+			<div>
+				<label for="modal-payment-notes" class="form-label text-xs font-bold mb-1.5 d-block">
+					{ i18n.T(lang, "vendor_finance.modal.lbl_notes") }
+				</label>
+				<textarea
+					id="modal-payment-notes"
+					name="notes"
+					rows="2"
+					class="form-input w-full text-xs font-medium"
+					placeholder={ i18n.T(lang, "vendor_finance.modal.placeholder_notes") }
+				></textarea>
+			</div>
+
+			<!-- Submit Buttons -->
+			<div class="flex-end gap-2 pt-3 border-t border-border">
+				<button type="button" data-on-click="closeRecordPaymentModal()" class="btn btn-secondary btn-sm font-bold" data-modal-close>
+					{ i18n.T(lang, "vendor_finance.modal.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm font-black" disabled?={ len(invoices) == 0 }>
+					{ i18n.T(lang, "vendor_finance.modal.btn_submit") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+// VendorPaymentsScript renders client-side script for payments ledger and modal interactions.
+templ VendorPaymentsScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openRecordPaymentModal() {
+			const modal = document.getElementById('record-payment-modal');
+			if (modal && typeof modal.showModal === 'function' && !modal.open) {
+				modal.showModal();
+			} else if (modal) {
+				modal.classList.remove('d-none');
+				modal.classList.add('d-flex');
+			}
+		}
+
+		function closeRecordPaymentModal() {
+			const modal = document.getElementById('record-payment-modal');
+			if (modal && typeof modal.close === 'function' && modal.open) {
+				modal.close();
+			} else if (modal) {
+				modal.classList.add('d-none');
+				modal.classList.remove('d-flex');
+			}
+		}
+
+		function updateSuggestedAmount(selectEl) {
+			const selectedOption = selectEl.options[selectEl.selectedIndex];
+			if (selectedOption) {
+				const remaining = selectedOption.getAttribute('data-remaining');
+				const amountInput = document.getElementById('modal-payment-amount');
+				if (amountInput && remaining) {
+					amountInput.value = remaining;
+				}
+			}
+		}
+
+		function handlePaymentRowClick(invoiceNumber) {
+			if (invoiceNumber && invoiceNumber.trim() !== "") {
+				var invoicesURL = `/vendor/invoices?q=${encodeURIComponent(invoiceNumber)}`;
+				if (window.dawaNavigate) { window.dawaNavigate(invoicesURL); } else { window.location.href = invoicesURL; }
+			}
+		}
+
+		if (!window.__dawaBound_vendor_payments_modal) {
+			window.__dawaBound_vendor_payments_modal = true;
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'Escape') {
+					closeRecordPaymentModal();
+				}
+			});
+		}
+	</script>
+}

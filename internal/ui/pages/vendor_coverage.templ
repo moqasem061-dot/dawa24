@@ -1,0 +1,104 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorCoveragePage(data VendorCoverageData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_coverage.page_title"), "coverage", lang, dir) {
+		<!-- Hidden dataset for client-side hierarchical cities & coverages -->
+		<div id="cities-dataset" data-cities={ citiesToJSON(data.Cities) } class="d-none"></div>
+		<div id="coverages-dataset" data-coverages={ coveragesToJSON(data.Coverages) } class="d-none"></div>
+
+		<div x-data={ vendorCoverageAlpineData() } class="d-flex flex-col gap-6">
+
+			<!-- Notice / Toast Banner -->
+			if data.NoticeMessage != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger d-flex items-center gap-3 p-4 rounded-xl">
+						<span>@components.IconAlert("icon-sm")</span>
+						<span class="font-semibold">{ data.NoticeMessage }</span>
+					</div>
+				} else {
+					<div class="alert alert-success d-flex items-center gap-3 p-4 rounded-xl">
+						<span>@components.IconCheckCircle("icon-sm")</span>
+						<span class="font-semibold">{ data.NoticeMessage }</span>
+					</div>
+				}
+			}
+
+			if data.CoverageUnavailable {
+				<div class="alert alert-warning d-flex items-center gap-3 p-4 rounded-xl">
+					<span>@components.IconAlert("icon-sm")</span>
+					<div class="stack-sm">
+						<div class="font-semibold">{ i18n.T(lang, "vendor_coverage.unavailable_title") }</div>
+						<div class="text-sm text-muted">{ i18n.T(lang, "vendor_coverage.unavailable_desc") }</div>
+					</div>
+				</div>
+			}
+
+			<!-- Hero Header -->
+			<div class="glass-panel p-6 mb-6 flex-between flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3 mb-1">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTruck("icon-sm")
+						</div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "vendor_coverage.header_title") }
+						</h1>
+					</div>
+					<p class="text-sm text-secondary m-0 max-w-2xl">
+						{ i18n.T(lang, "vendor_coverage.header_desc") }
+					</p>
+				</div>
+				<a href="#builder-section" class="btn btn-primary font-bold gap-2">
+					<span>+</span>
+					<span>{ i18n.T(lang, "vendor_coverage.btn_add_new") }</span>
+				</a>
+			</div>
+
+			<!-- Quick KPI Stats -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_coverage.stat_total") }</div>
+					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", len(data.Coverages)) }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_coverage.stat_govs") }</div>
+					<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", countCoveredGovernorates(data.Coverages)) }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_coverage.stat_cities") }</div>
+					<div class="stat-card-value text-sky tabular-nums">{ fmt.Sprintf("%d", countVendorCoveredCities(data.Coverages)) }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_coverage.stat_days") }</div>
+					<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d / 7", countActiveDays(data.Coverages)) }</div>
+				</div>
+			</div>
+
+			<!-- Interactive Coverage Builder Component -->
+			@VendorCoverageBuilder(data, lang)
+
+			<!-- Active Weekly Coverages Table Component -->
+			@VendorCoverageTable(data, lang)
+
+			<!-- Delivery Distance Pricing Bands Component -->
+			@VendorCoverageBands(data, lang)
+
+			<!-- Edit Coverage Modal Component -->
+			@VendorCoverageEditModal(data, lang)
+
+			<!-- Delete All Coverages Confirmation Modal Component -->
+			@VendorCoverageDeleteAllModal(data, lang)
+		</div>
+	}
+}

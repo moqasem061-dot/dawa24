@@ -1,0 +1,426 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type CompareResultsPageData struct {
+	Result             *compare.ComparisonResultSet
+	ActiveFilter       string
+	Query              string
+	SuppliersParam     string
+	Pagination         components.PaginationProps
+	TotalFilteredCount int
+	IsAdmin            bool
+	TargetOrgID        int64
+	TargetOrgName      string
+}
+
+func (d CompareResultsPageData) FileCenterURL() string {
+	if d.IsAdmin && d.TargetOrgID > 0 {
+		return fmt.Sprintf("/admin/organizations/import/%d/compare", d.TargetOrgID)
+	}
+	return "/compare/tool"
+}
+
+func (d CompareResultsPageData) SubtabURL(base string) string {
+	vals := url.Values{}
+	if d.SuppliersParam != "" && strings.Contains(base, "/results") {
+		vals.Set("suppliers", d.SuppliersParam)
+	}
+	if d.IsAdmin && d.TargetOrgID > 0 {
+		vals.Set("org_id", fmt.Sprintf("%d", d.TargetOrgID))
+	}
+	encoded := vals.Encode()
+	if encoded == "" {
+		return base
+	}
+	return base + "?" + encoded
+}
+
+func (d CompareResultsPageData) FilterURL(filter string) string {
+	vals := url.Values{}
+	if d.SuppliersParam != "" {
+		vals.Set("suppliers", d.SuppliersParam)
+	}
+	if filter != "" && filter != "all" {
+		vals.Set("filter", filter)
+	}
+	if d.Query != "" {
+		vals.Set("q", d.Query)
+	}
+	if d.IsAdmin && d.TargetOrgID > 0 {
+		vals.Set("org_id", fmt.Sprintf("%d", d.TargetOrgID))
+	}
+	encoded := vals.Encode()
+	if encoded == "" {
+		return "/compare/results"
+	}
+	return "/compare/results?" + encoded
+}
+
+func formatRowsCount(res *compare.ComparisonResultSet) string {
+	if res == nil {
+		return "0"
+	}
+	return fmt.Sprintf("%d", len(res.Rows))
+}
+
+templ CompareResultsPage(lang, dir string, data CompareResultsPageData) {
+	if data.IsAdmin {
+		@layouts.AdminShell("نتائج تحليل ومقارنة الخصومات", "org_imports", lang, dir) {
+			@compareResultsContent(lang, dir, data)
+		}
+	} else {
+		@layouts.VendorShell("نتائج تحليل ومقارنة الخصومات", "compare", lang, dir) {
+			@compareResultsContent(lang, dir, data)
+		}
+	}
+}
+
+templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
+	<div class="page-container">
+		<!-- Admin Target Organization Banner -->
+		if data.IsAdmin {
+			<div class="mb-5 p-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-between gap-4 flex-wrap">
+				<div class="d-flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-purple-600/15 text-purple-700 dark:text-purple-300 d-flex items-center justify-center border border-purple-500/30">
+						@components.IconBuilding("icon-sm")
+					</div>
+					<div>
+						<div class="text-sm font-black text-purple-950 dark:text-purple-100">
+							نتائج مقارنة الخصومات للمنشأة: <span class="underline decoration-purple-500 font-extrabold">{ data.TargetOrgName }</span>
+						</div>
+						<p class="text-2xs text-secondary m-0 mt-0.5 font-medium">
+							يتم احتساب أفضل العروض والخصومات المتاحة مباشرة على كشوف هذه المنشأة.
+						</p>
+					</div>
+				</div>
+				<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-2xs">
+					@components.IconArrowRight("icon-xs")
+					<span>العودة لمركز ملفات المنشأة</span>
+				</a>
+			</div>
+		}
+
+		<!-- Header Banner -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3 mb-1">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTrendingUp("icon-sm")
+						</div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							تقرير تحليل ومقارنة عروض الموردين
+						</h1>
+					</div>
+					<p class="text-sm text-secondary m-0">
+						مقارنة تفصيلية ذكية لأسعار وخصومات الأصناف بين كشوف الموردين واستخراج أفضل فرص الشراء.
+					</p>
+				</div>
+
+				<div class="d-flex items-center gap-3 flex-wrap">
+					<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary font-bold gap-2">
+						@components.IconArrowLeft("icon-xs")
+						<span>مركز الملفات</span>
+					</a>
+					<button
+						type="button"
+						class="btn btn-primary font-bold gap-2"
+						data-on-click="exportComparisonTableToCSV()"
+					>
+						@components.IconDownload("icon-xs")
+						<span>تصدير تقرير Excel / CSV</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Navigation Subtabs for all 4 Analysis Modes -->
+			<div class="tabs-nav mt-4">
+				<a href={ templ.SafeURL(data.SubtabURL("/compare/results")) } class="tab-btn active">
+					المقارنة المجمعة بين الموردين
+				</a>
+				<a href={ templ.SafeURL(data.SubtabURL("/compare/head-to-head")) } class="tab-btn">
+					مقارنة مورد بمورد
+				</a>
+				<a href={ templ.SafeURL(data.SubtabURL("/compare/market-benchmark")) } class="tab-btn">
+					مقارنة مع موردين السوق
+				</a>
+				<a href={ templ.SafeURL(data.SubtabURL("/compare/market-intelligence")) } class="tab-btn">
+					تقرير ذكاء السوق
+				</a>
+			</div>
+		</div>
+
+			<!-- KPI Summary Metric Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<!-- Total Compared -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label">إجمالي الأصناف المقارنة</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						if data.Result != nil {
+							{ fmt.Sprintf("%d", data.Result.Summary.TotalProducts) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">
+						if data.Result != nil {
+							{ fmt.Sprintf("عبر %d موردين", data.Result.Summary.TotalSuppliers) }
+						}
+					</span>
+				</div>
+
+				<!-- Average Discount -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label">متوسط الخصم في السوق</div>
+					<div class="stat-card-value text-success tabular-nums">
+						if data.Result != nil {
+							{ fmt.Sprintf("%.1f%%", data.Result.Summary.AverageDiscount) }
+						} else {
+							0%
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">أفضل فرصة شراء وتوفير</span>
+				</div>
+
+				<!-- Suppliers Analyzed -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label">الموردون المشمولون</div>
+					<div class="stat-card-value text-brand tabular-nums">
+						if data.Result != nil {
+							{ fmt.Sprintf("%d", data.Result.Summary.TotalSuppliers) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">كشوف أسعار نشطة ومطابقة</span>
+				</div>
+			</div>
+
+			<!-- Filter Bar & Search -->
+			<div class="glass-panel p-6 d-flex flex-col gap-4">
+				<div class="flex-between flex-wrap gap-3">
+					<!-- Quick Filter Tabs -->
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a
+							href={ templ.SafeURL(data.FilterURL("all")) }
+							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "all" || data.ActiveFilter == "") }
+						>
+							<span>الكل ({ fmt.Sprintf("%d", data.TotalFilteredCount) })</span>
+						</a>
+
+						<a
+							href={ templ.SafeURL(data.FilterURL("multi-offer")) }
+							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "multi-offer") }
+						>
+							<span>متوفر لدى أكثر من مورد</span>
+						</a>
+
+						<a
+							href={ templ.SafeURL(data.FilterURL("single-offer")) }
+							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "single-offer") }
+						>
+							<span>أصناف حصرية لمورد واحد</span>
+						</a>
+					</div>
+
+					<!-- Search Filter Form -->
+					<form method="GET" action="/compare/results" class="min-w-280 m-0 d-flex gap-2">
+						if data.SuppliersParam != "" {
+							<input type="hidden" name="suppliers" value={ data.SuppliersParam } />
+						}
+						if data.ActiveFilter != "" && data.ActiveFilter != "all" {
+							<input type="hidden" name="filter" value={ data.ActiveFilter } />
+						}
+						if data.IsAdmin && data.TargetOrgID > 0 {
+							<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
+						}
+						<input
+							type="text"
+							name="q"
+							value={ data.Query }
+							id="comparison-table-search"
+							placeholder="بحث باسم الصنف، الكود، أو المورد..."
+							class="form-input text-xs"
+						/>
+						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+							@components.IconSearch("icon-xs")
+						</button>
+					</form>
+				</div>
+
+				<!-- Comparison Table -->
+				if data.Result == nil || len(data.Result.Rows) == 0 {
+					<div class="empty-state-glass p-8 text-center">
+						<div class="empty-state-icon-wrapper mx-auto mb-3">
+							<span class="text-3xl">@components.IconBarChart("icon-sm")</span>
+						</div>
+						<h3 class="text-lg font-black text-primary mb-1">لا توجد أصناف مستخرجة في الكشوف المختارة</h3>
+						<p class="text-sm text-muted mb-4">تأكد من ضبط تعيين الأعمدة للملفات عبر أيقونة الترس في مركز الملفات.</p>
+						<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-primary font-bold">
+							العودة لمركز الملفات
+						</a>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0" id="comparison-results-table">
+							<thead>
+								<tr>
+									<th>الصنف وحالة الكتالوج</th>
+									<th class="tabular-nums">سعر الجمهور</th>
+									<th class="tabular-nums">أعلى نسبة خصم</th>
+									<th>المورد الفائز بالصفقة</th>
+									<th>عروض الموردين</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range data.Result.Rows {
+									<tr
+										class="comparison-row"
+										data-discount={ fmt.Sprintf("%.2f", row.BestDiscount) }
+										data-suppliers={ fmt.Sprintf("%d", row.TotalSuppliers) }
+										data-gaps={ fmt.Sprintf("%d", len(row.MissingSuppliers)) }
+										data-search={ row.ProductName + " " + row.SKU + " " + row.BestSupplier + " " + strings.Join(row.MissingSuppliers, " ") }
+									>
+										<!-- Product Name & Catalog Verification -->
+										<td>
+											<div class="d-flex items-center gap-2 flex-wrap mb-1">
+												<strong class="text-sm font-extrabold text-primary">{ row.ProductName }</strong>
+											</div>
+											if row.SKU != "" {
+												<span class="text-xs text-muted tabular-nums">كود: { row.SKU }</span>
+											}
+										</td>
+
+										<!-- Best Price -->
+										<td class="tabular-nums font-bold text-secondary">
+											if row.BestPrice.IsPositive() {
+												<span>{ row.BestPrice.String() } ج.م</span>
+											} else {
+												<span class="text-muted">--</span>
+											}
+										</td>
+
+										<!-- Best Discount -->
+										<td>
+											<span class="badge badge-emerald text-xs font-extrabold tabular-nums">
+												{ fmt.Sprintf("%.1f%%", row.BestDiscount) }
+											</span>
+										</td>
+
+										<!-- Best Supplier -->
+										<td>
+											<span class="badge badge-sky text-xs font-bold">
+												{ row.BestSupplier }
+											</span>
+										</td>
+
+										<!-- Detailed Offers & Gaps Breakdown -->
+										<td>
+											<div class="d-flex flex-wrap gap-1 mb-1">
+												for supName, off := range row.Offers {
+													if supName == row.BestSupplier {
+														<span class="badge badge-emerald text-xs font-bold" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
+															{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
+														</span>
+													} else {
+														<span class="badge badge-secondary text-xs" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
+															{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
+														</span>
+													}
+												}
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+
+			if data.TotalFilteredCount > 0 {
+				<div class="glass-panel p-4 mt-4 bg-surface-sunken">
+					@components.B2BPagination(data.Pagination)
+				</div>
+			}
+
+		<!-- Script for filter tabs, search and CSV export -->
+		<script nonce={ layouts.Nonce(ctx) }>
+			var currentFilter = 'all';
+
+			function applyTableFilter(filter, button) {
+				currentFilter = filter;
+				document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+				button.classList.add('active');
+
+				filterRows();
+			}
+
+			function filterTableBySearch(query) {
+				filterRows();
+			}
+
+			function filterRows() {
+				const query = (document.getElementById('comparison-table-search')?.value || '').toLowerCase().trim();
+				const rows = document.querySelectorAll('.comparison-row');
+
+				rows.forEach(row => {
+					const disc = parseFloat(row.getAttribute('data-discount') || '0');
+					const sups = parseInt(row.getAttribute('data-suppliers') || '1', 10);
+					const gaps = parseInt(row.getAttribute('data-gaps') || '0', 10);
+					const searchData = (row.getAttribute('data-search') || '').toLowerCase();
+
+					let matchesFilter = true;
+					if (currentFilter === 'multi-offer') {
+						matchesFilter = sups > 1;
+					} else if (currentFilter === 'single-offer') {
+						matchesFilter = sups === 1;
+					}
+
+					let matchesSearch = true;
+					if (query) {
+						matchesSearch = searchData.includes(query);
+					}
+
+					row.style.display = (matchesFilter && matchesSearch) ? '' : 'none';
+				});
+			}
+
+			function exportComparisonTableToCSV() {
+				const table = document.getElementById('comparison-results-table');
+				if (!table) return;
+
+				let csv = [];
+				const rows = table.querySelectorAll('tr');
+				for (let i = 0; i < rows.length; i++) {
+					if (rows[i].style.display === 'none') continue;
+					let row = [], cols = rows[i].querySelectorAll('td, th');
+					for (let j = 0; j < cols.length; j++) {
+						let text = cols[j].innerText.replace(/"/g, '""').trim();
+						row.push('"' + text + '"');
+					}
+					csv.push(row.join(','));
+				}
+
+				const csvFile = new Blob(["\uFEFF" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
+				const downloadLink = document.createElement("a");
+				downloadLink.download = `dawa24-discount-comparison-${new Date().toISOString().slice(0,10)}.csv`;
+				downloadLink.href = window.URL.createObjectURL(csvFile);
+				downloadLink.style.display = "none";
+				document.body.appendChild(downloadLink);
+				downloadLink.click();
+				document.body.removeChild(downloadLink);
+			}
+		</script>
+	</div>
+}
+

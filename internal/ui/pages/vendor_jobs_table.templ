@@ -1,0 +1,178 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorJobsTable(lang string, data VendorJobsData) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		<div class="p-4 px-6 border-b flex-between items-center">
+			<h2 class="text-base font-extrabold text-primary m-0 d-flex items-center gap-2">
+				<span>{ i18n.T(lang, "vendor_jobs.table_title") }</span>
+				<span class="badge badge-slate text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_jobs.jobs_count"), len(data.Jobs)) }</span>
+			</h2>
+		</div>
+
+		if len(data.Jobs) == 0 {
+			<div class="p-8 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconFileText("icon-sm")</div>
+				<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_jobs.empty_title") }</h3>
+				<p class="text-sm text-secondary max-w-md mx-auto mb-4">
+					{ i18n.T(lang, "vendor_jobs.empty_desc") }
+				</p>
+				<button type="button" class="btn btn-primary btn-sm font-bold" data-on-click="openAddJobModal()">
+					@components.IconPlus("icon-xs")
+					<span>{ i18n.T(lang, "vendor_jobs.empty_btn") }</span>
+				</button>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor_jobs.th_title") }</th>
+							<th>{ i18n.T(lang, "vendor_jobs.th_location") }</th>
+							<th>{ i18n.T(lang, "vendor_jobs.th_salary") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_jobs.th_applicants") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_jobs.th_status") }</th>
+							<th>{ i18n.T(lang, "vendor_jobs.th_published_date") }</th>
+							<th class="col-actions">{ i18n.T(lang, "vendor_jobs.th_actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range data.Jobs {
+							<tr>
+								<td>
+									<div class="font-extrabold text-primary text-sm">
+										{ item.Job.Title.Get(i18n.Lang(lang)) }
+									</div>
+									if item.Job.Description != "" {
+										<div class="text-xs text-muted mt-1 truncate" class="max-w-xs">
+											{ item.Job.Description }
+										</div>
+									}
+								</td>
+
+								<td>
+									if item.Job.Location != "" {
+										<div class="d-flex items-center gap-1 text-xs text-secondary font-bold">
+											<span>@components.IconMapPin("icon-sm")</span>
+											<span>{ item.Job.Location }</span>
+										</div>
+									} else {
+										<span class="text-muted text-xs">{ i18n.T(lang, "vendor_jobs.location_unspecified") }</span>
+									}
+								</td>
+
+								<td class="tabular-nums text-xs font-mono">
+									if item.Job.SalaryMin.IsPositive() || item.Job.SalaryMax.IsPositive() {
+										<span class="font-bold text-primary">
+											if item.Job.SalaryMin.IsPositive() {
+												{ item.Job.SalaryMin.String() }
+											}
+											if item.Job.SalaryMin.IsPositive() && item.Job.SalaryMax.IsPositive() {
+												<span> - </span>
+											}
+											if item.Job.SalaryMax.IsPositive() {
+												{ item.Job.SalaryMax.String() }
+											}
+											<span class="text-xs text-muted">{ i18n.T(lang, "vendor_jobs.currency") }</span>
+										</span>
+									} else {
+										<span class="text-muted text-xs">{ i18n.T(lang, "vendor_jobs.salary_negotiable") }</span>
+									}
+								</td>
+
+								<td class="col-actions">
+									<button
+										type="button"
+										class="btn btn-secondary btn-sm text-xs font-bold px-3 py-1 gap-1"
+										data-job-id={ fmt.Sprintf("%d", item.Job.ID) }
+										data-job-title={ item.Job.Title.Get(i18n.Lang(lang)) }
+										data-on-click="openApplicantsForJob(this)"
+									>
+										<span>@components.IconUsers("icon-sm")</span>
+										<span>{ fmt.Sprintf(i18n.T(lang, "vendor_jobs.applicants_count"), item.ApplicationsCount) }</span>
+									</button>
+								</td>
+
+								<td class="text-center">
+									if item.Job.Status == "published" {
+										<span class="badge badge-emerald text-xs font-bold">
+											{ i18n.T(lang, "vendor_jobs.status_published") }
+										</span>
+									} else {
+										<span class="badge badge-slate text-xs font-bold">
+											{ i18n.T(lang, "vendor_jobs.status_closed") }
+										</span>
+									}
+								</td>
+
+								<td class="text-xs text-muted tabular-nums">
+									{ item.Job.CreatedAt.Format("2006-01-02") }
+								</td>
+
+								<td class="col-actions">
+									<div class="table-actions">
+										<button
+											type="button"
+											class="btn btn-secondary btn-sm font-bold text-xs px-3"
+											data-job-id={ fmt.Sprintf("%d", item.Job.ID) }
+											data-title-ar={ item.Job.Title.Get(i18n.AR) }
+											data-title-en={ item.Job.Title.Get(i18n.EN) }
+											data-location={ item.Job.Location }
+											data-sal-min={ formatSalaryForInput(item.Job.SalaryMin) }
+											data-sal-max={ formatSalaryForInput(item.Job.SalaryMax) }
+											data-status={ item.Job.Status }
+											data-desc={ item.Job.Description }
+											data-reqs={ item.Job.Requirements }
+											data-on-click="openEditJobModalFromBtn(this)"
+											title={ i18n.T(lang, "vendor_jobs.btn_edit_title") }
+										>
+											@components.IconEdit("icon-xs")
+											<span>{ i18n.T(lang, "vendor_jobs.btn_edit") }</span>
+										</button>
+
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/jobs/%d/toggle", item.Job.ID)) } class="m-0">
+											if item.Job.Status == "published" {
+												<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold" title={ i18n.T(lang, "vendor_jobs.btn_close_title") }>
+													{ i18n.T(lang, "vendor_jobs.btn_close") }
+												</button>
+											} else {
+												<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold text-brand" title={ i18n.T(lang, "vendor_jobs.btn_republish_title") }>
+													{ i18n.T(lang, "vendor_jobs.btn_republish") }
+												</button>
+											}
+										</form>
+
+										<form
+											method="POST"
+											action={ templ.SafeURL(fmt.Sprintf("/vendor/jobs/%d/delete", item.Job.ID)) }
+											data-confirm={ i18n.T(lang, "vendor_jobs.delete_confirm") }
+											class="m-0"
+										>
+											<button type="submit" class="btn btn-secondary btn-sm btn-icon text-danger" title={ i18n.T(lang, "vendor_jobs.btn_delete_title") }>
+												@components.IconTrash("icon-xs")
+											</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/jobs",
+				})
+			}
+		}
+	</div>
+}

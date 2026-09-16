@@ -1,0 +1,269 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+func imageRowsJSON(rows []*AdminImageImportRow) string {
+	if len(rows) == 0 {
+		return "[]"
+	}
+	data, err := json.Marshal(rows)
+	if err != nil {
+		return "[]"
+	}
+	return string(data)
+}
+
+templ adminImageCompletedStage(view AdminProductImagesImportView) {
+	<div
+		x-data="{
+			rows: [],
+			searchQuery: '',
+			statusFilter: 'all',
+			perPage: 25,
+			currentPage: 1,
+			init() {
+				try {
+					var el = document.getElementById('admin-image-rows-json');
+					if (el && el.textContent) {
+						this.rows = JSON.parse(el.textContent);
+					}
+				} catch (e) {
+					console.error('Failed to parse image import rows', e);
+				}
+			},
+			filteredRows() {
+				var q = this.searchQuery.trim().toLowerCase();
+				var status = this.statusFilter;
+				return this.rows.filter(function(r) {
+					if (status !== 'all') {
+						if (status === 'failed' && (r.status === 'success' || r.status === 'not_found')) return false;
+						if (status !== 'failed' && r.status !== status) return false;
+					}
+					if (!q) return true;
+					return (r.sku && r.sku.toLowerCase().indexOf(q) !== -1) ||
+						(r.product_name && r.product_name.toLowerCase().indexOf(q) !== -1) ||
+						(r.image_url && r.image_url.toLowerCase().indexOf(q) !== -1);
+				});
+			},
+			totalPages() {
+				var count = this.filteredRows().length;
+				return Math.max(1, Math.ceil(count / this.perPage));
+			},
+			pagedRows() {
+				var list = this.filteredRows();
+				var start = (this.currentPage - 1) * this.perPage;
+				return list.slice(start, start + this.perPage);
+			},
+			setPage(p) {
+				if (p >= 1 && p <= this.totalPages()) {
+					this.currentPage = p;
+				}
+			}
+		}"
+	>
+		<!-- Stats Grid -->
+		<div class="dashboard-stat-grid cols-4 mb-6">
+			<div class="stat-card-3d">
+				<div class="stat-card-label">إجمالي الصفوف المفحوصة</div>
+				<div class="stat-card-value tabular-nums">{ fmt.Sprintf("%d", view.Session.TotalRows) }</div>
+			</div>
+			<div class="stat-card-3d">
+				<div class="stat-card-label">تم تنزيلها وربطها</div>
+				<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", view.Session.SuccessRows) }</div>
+			</div>
+			<div class="stat-card-3d">
+				<div class="stat-card-label">غير موجودة بالكتالوج</div>
+				<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", view.Session.NotFoundRows) }</div>
+			</div>
+			<div class="stat-card-3d">
+				<div class="stat-card-label">أخطاء تنزيل / روابط تالفة</div>
+				<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", view.Session.ErrorRows) }</div>
+			</div>
+		</div>
+
+		<!-- Panel with Table and Controls -->
+		<div class="glass-panel p-0 overflow-hidden">
+			<!-- Toolbar -->
+			<div class="p-4 border-b flex-between items-center flex-wrap gap-3">
+				<div class="stack-sm">
+					<h3 class="text-sm font-black text-primary m-0">نتائج معالجة وتنزيل صور المنتجات</h3>
+					<span class="text-xs text-muted">الملف: { view.Session.Filename }</span>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href="/admin/products/images/import" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconRefresh("icon-xs")
+						<span>عملية استرداد جديدة</span>
+					</a>
+					<a href="/admin/products" class="btn btn-primary btn-sm font-bold gap-1">
+						@components.IconPackage("icon-xs")
+						<span>كتالوج الأدوية المعتمدة</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="p-3 bg-surface/40 border-b d-flex flex-wrap items-center justify-between gap-3 text-xs">
+				<div class="d-flex items-center gap-3 flex-wrap flex-1">
+					<div class="relative min-w-[240px] max-w-sm">
+						<input
+							type="text"
+							x-model="searchQuery"
+							@input="currentPage = 1"
+							placeholder="بحث بالكود أو الاسم أو الرابط..."
+							class="form-control text-xs rounded-xl w-full border-default py-1.5 px-3"
+						/>
+					</div>
+					<div class="d-flex items-center gap-1.5">
+						<label class="text-secondary font-bold whitespace-nowrap">الحالة:</label>
+						<select
+							x-model="statusFilter"
+							@change="currentPage = 1"
+							class="form-select text-xs rounded-xl border-default py-1 px-2.5"
+						>
+							<option value="all">كل الحالات</option>
+							<option value="success">تم الحفظ والربط</option>
+							<option value="not_found">غير موجود بالكتالوج</option>
+							<option value="failed">أخطاء التنزيل</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-2">
+					<label class="text-secondary font-bold whitespace-nowrap">عرض بالصفحة:</label>
+					<select
+						x-model.number="perPage"
+						@change="currentPage = 1"
+						class="form-select text-xs rounded-xl border-default py-1 px-2.5"
+					>
+						<option value="10">10</option>
+						<option value="25">25</option>
+						<option value="50">50</option>
+						<option value="100">100</option>
+					</select>
+				</div>
+			</div>
+
+			<!-- Data Table -->
+			<div class="table-container m-0">
+				<table class="data-table m-0 text-xs">
+					<thead>
+						<tr>
+							<th class="col-num">#</th>
+							<th>الصورة</th>
+							<th>كود الصنف (SKU)</th>
+							<th>المنتج المطابق بالكتالوج</th>
+							<th>رابط الصورة الأصلي</th>
+							<th>الحالة</th>
+							<th>الملاحظة</th>
+						</tr>
+					</thead>
+					<tbody>
+						<template x-for="r in pagedRows()" :key="r.index">
+							<tr>
+								<td class="col-num font-mono text-muted tabular-nums" x-text="r.index"></td>
+								<td>
+									<template x-if="r.saved_image_path">
+										<img :src="r.saved_image_path" :alt="r.sku" class="w-10 h-10 object-cover rounded-lg border border-default"/>
+									</template>
+									<template x-if="!r.saved_image_path">
+										<span class="text-muted">—</span>
+									</template>
+								</td>
+								<td class="font-mono text-xs font-bold text-accent" x-text="r.sku"></td>
+								<td>
+									<template x-if="r.product_id && r.product_id > 0">
+										<a :href="'/admin/products/' + r.product_id" target="_blank" rel="noopener" class="font-bold text-brand hover:underline">
+											<span x-text="r.product_name"></span>
+										</a>
+									</template>
+									<template x-if="!r.product_id || r.product_id <= 0">
+										<span class="text-muted">—</span>
+									</template>
+								</td>
+								<td>
+									<a :href="r.image_url" target="_blank" rel="noopener" class="text-xs text-secondary hover:text-accent">
+										<span class="cell-clamp-1 truncate max-w-xs block font-mono" :title="r.image_url" x-text="r.image_url"></span>
+									</a>
+								</td>
+								<td>
+									<span
+										class="badge text-xs font-bold px-2 py-0.5 rounded-full"
+										:class="{
+											'badge-emerald': r.status === 'success',
+											'badge-amber': r.status === 'not_found',
+											'badge-rose': r.status !== 'success' && r.status !== 'not_found'
+										}"
+										x-text="r.status === 'success' ? 'تم الحفظ والربط' : (r.status === 'not_found' ? 'غير موجود بالكتالوج' : 'فشل التنزيل')"
+									></span>
+								</td>
+								<td class="text-xs text-secondary">
+									<span x-text="r.error_msg || 'تم الحفظ بنجاح'" :class="r.error_msg ? 'text-danger' : 'text-muted'"></span>
+								</td>
+							</tr>
+						</template>
+						<template x-if="filteredRows().length === 0">
+							<tr>
+								<td colspan="7" class="p-8 text-center text-muted">
+									لا توجد نتائج تطابق خيارات البحث والفلترة المحددة.
+								</td>
+							</tr>
+						</template>
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Pagination Footer -->
+			<div class="p-4 border-t d-flex flex-wrap items-center justify-between gap-3 bg-surface text-xs">
+				<div class="text-secondary tabular-nums">
+					<span>عرض </span>
+					<strong class="text-surface-fg" x-text="filteredRows().length === 0 ? 0 : ((currentPage - 1) * perPage + 1)"></strong>
+					<span> إلى </span>
+					<strong class="text-surface-fg" x-text="Math.min(currentPage * perPage, filteredRows().length)"></strong>
+					<span> من إجمالي </span>
+					<strong class="text-surface-fg" x-text="filteredRows().length"></strong>
+					<span> صنفاً</span>
+					<template x-if="filteredRows().length !== rows.length">
+						<span class="text-muted" x-text="' (مصفاة من ' + rows.length + ')'"></span>
+					</template>
+				</div>
+
+				<div class="d-flex items-center gap-1">
+					<button
+						type="button"
+						class="btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold"
+						:disabled="currentPage <= 1"
+						@click="setPage(currentPage - 1)"
+					>
+						السابق
+					</button>
+
+					<div class="d-flex items-center gap-1 px-2">
+						<span class="text-secondary">صفحة</span>
+						<strong class="text-accent tabular-nums" x-text="currentPage"></strong>
+						<span class="text-secondary">من</span>
+						<strong class="text-surface-fg tabular-nums" x-text="totalPages()"></strong>
+					</div>
+
+					<button
+						type="button"
+						class="btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold"
+						:disabled="currentPage >= totalPages()"
+						@click="setPage(currentPage + 1)"
+					>
+						التالي
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Hidden JSON Payload -->
+		<script id="admin-image-rows-json" type="application/json">
+			{ templ.Raw(imageRowsJSON(view.Session.Rows)) }
+		</script>
+	</div>
+}

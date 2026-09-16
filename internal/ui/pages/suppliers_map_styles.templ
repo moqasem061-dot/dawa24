@@ -1,0 +1,192 @@
+package pages
+
+import "github.com/muhiya/dawa24-store/internal/ui/layouts"
+
+templ SuppliersMapStyles() {
+	<style nonce={ layouts.Nonce(ctx) }>
+		.suppliers-map-layout {
+			display: grid;
+			grid-template-columns: 340px 1fr;
+			gap: 1.25rem;
+			min-height: 580px;
+		}
+		@media (max-width: 860px) {
+			.suppliers-map-layout {
+				grid-template-columns: 1fr;
+			}
+		}
+		.map-side-panel {
+			max-height: 600px;
+			overflow-y: auto;
+		}
+		.map-supplier-item {
+			border: 1px solid var(--border);
+			transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.map-supplier-item:hover {
+			border-color: var(--border-strong, #38bdf8);
+			transform: translateY(-1px);
+		}
+		.map-supplier-item.active {
+			border-color: #0ea5e9 !important;
+			background: rgba(14, 165, 233, 0.08) !important;
+			box-shadow: 0 0 0 2px rgba(14, 165, 233, 0.25), 0 4px 12px rgba(0,0,0,0.15);
+		}
+
+		/* Leaflet Custom Pin Markers */
+		.leaflet-div-icon.custom-map-pin {
+			background: transparent !important;
+			border: none !important;
+		}
+		.supplier-pin-wrapper {
+			position: relative;
+			width: 42px;
+			height: 48px;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			cursor: pointer;
+		}
+		.supplier-pin-body {
+			position: relative;
+			width: 38px;
+			height: 38px;
+			border-radius: 50% 50% 50% 0;
+			transform: rotate(-45deg);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+			border: 2px solid #ffffff;
+			transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+		}
+		.supplier-pin-body.is-open {
+			background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+		}
+		.supplier-pin-body.is-closed {
+			background: linear-gradient(135deg, #64748b 0%, #475569 100%);
+		}
+		.supplier-pin-icon {
+			transform: rotate(45deg);
+			font-size: 16px;
+			line-height: 1;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #ffffff;
+		}
+		.supplier-pin-status-dot {
+			position: absolute;
+			top: -2px;
+			right: -2px;
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			border: 2px solid #fff;
+		}
+		.supplier-pin-status-dot.is-open {
+			background-color: #22c55e;
+			box-shadow: 0 0 8px #22c55e;
+		}
+		.supplier-pin-status-dot.is-closed {
+			background-color: #94a3b8;
+		}
+
+		/* Active Focused Marker with Glowing Beacon Indicator */
+		.supplier-pin-wrapper.is-focused {
+			z-index: 1000 !important;
+		}
+		.supplier-pin-wrapper.is-focused .supplier-pin-body {
+			width: 44px;
+			height: 44px;
+			background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%) !important;
+			border: 3px solid #ffffff !important;
+			box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.4), 0 8px 20px rgba(14, 165, 233, 0.5) !important;
+			animation: supplier-pin-bounce 0.6s ease-out 1;
+		}
+		.supplier-pin-wrapper.is-focused .supplier-pin-icon {
+			font-size: 19px;
+		}
+
+		/* Pulse Ring Radiating on the Map */
+		.supplier-beacon-ring {
+			position: absolute;
+			bottom: 0px;
+			left: 50%;
+			width: 20px;
+			height: 20px;
+			transform: translate(-50%, 50%);
+			border-radius: 50%;
+			background: rgba(14, 165, 233, 0.45);
+			pointer-events: none;
+			animation: supplier-beacon-pulse 1.8s infinite ease-out;
+		}
+		.supplier-beacon-ring-2 {
+			position: absolute;
+			bottom: 0px;
+			left: 50%;
+			width: 20px;
+			height: 20px;
+			transform: translate(-50%, 50%);
+			border-radius: 50%;
+			background: rgba(14, 165, 233, 0.3);
+			pointer-events: none;
+			animation: supplier-beacon-pulse 1.8s infinite ease-out 0.6s;
+		}
+
+		/* Floating Active Label on Top */
+		.supplier-floating-badge {
+			position: absolute;
+			top: -30px;
+			left: 50%;
+			transform: translateX(-50%);
+			background: #0f172a;
+			color: #f8fafc;
+			padding: 2px 8px;
+			border-radius: 999px;
+			font-size: 11px;
+			font-weight: 800;
+			white-space: nowrap;
+			box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+			border: 1px solid rgba(14, 165, 233, 0.6);
+			pointer-events: none;
+			animation: supplier-badge-fadein 0.3s ease-out;
+			z-index: 1001;
+		}
+
+		@keyframes supplier-beacon-pulse {
+			0% {
+				width: 14px;
+				height: 14px;
+				opacity: 0.9;
+			}
+			100% {
+				width: 60px;
+				height: 60px;
+				opacity: 0;
+			}
+		}
+		@keyframes supplier-pin-bounce {
+			0% { transform: translateY(-20px) rotate(-45deg); opacity: 0.5; }
+			50% { transform: translateY(-4px) rotate(-45deg); }
+			70% { transform: translateY(-8px) rotate(-45deg); }
+			100% { transform: translateY(0) rotate(-45deg); opacity: 1; }
+		}
+		@keyframes supplier-badge-fadein {
+			0% { opacity: 0; transform: translate(-50%, 6px); }
+			100% { opacity: 1; transform: translate(-50%, 0); }
+		}
+
+		/* Custom Leaflet Popup Overrides */
+		.leaflet-popup-content-wrapper {
+			border-radius: 14px !important;
+			padding: 4px !important;
+			box-shadow: 0 10px 25px rgba(0,0,0,0.25) !important;
+			border: 1px solid var(--border) !important;
+			background: var(--surface-raised, #ffffff) !important;
+		}
+		.leaflet-popup-tip {
+			background: var(--surface-raised, #ffffff) !important;
+		}
+	</style>
+}

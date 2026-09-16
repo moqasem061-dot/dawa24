@@ -1,0 +1,291 @@
+package components
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+)
+
+// The assistant's Markdown renderer.
+//
+// The previous one was a chain of regular expressions over the whole message.
+// It had no tables, no ordered lists, no links and no blockquotes — which is a
+// problem when the answers are business summaries, because a spend breakdown
+// by supplier IS a table and rendering it as a run-on line of pipes is
+// unreadable.
+//
+// This is a small block parser instead: split into lines, recognise a few block
+// types, then run inline formatting inside each. It is deliberately not a full
+// CommonMark implementation. It handles exactly what the assistant produces.
+//
+// Escaping happens FIRST, on the raw text, before any tag is generated. Nothing
+// downstream can reintroduce markup, so a model that echoes a product
+// description containing <script> renders it as text. Links are additionally
+// restricted to http and https, so no javascript: URL can survive.
+
+templ capsuleMarkdownScript() {
+	<script nonce={ httpx.Nonce(ctx) }>
+		(function () {
+			if (window.capsuleMarkdown) return;
+
+			function escapeHTML(s) {
+				return String(s)
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;');
+			}
+
+			// safeHref admits only http(s) and same-origin dashboard paths.
+			// Everything else — javascript:, data:, vbscript:, protocol-relative
+			// //evil.example — renders as plain text instead of a link.
+			function safeHref(url) {
+				const trimmed = String(url).trim();
+				if (/^https?:\/\//i.test(trimmed)) return trimmed;
+				if (/^\/[^\/]/.test(trimmed)) return trimmed;
+				return null;
+			}
+
+			// inline runs on ALREADY-ESCAPED text, so the only angle brackets
+			// present are the ones this function itself writes.
+			function inline(text) {
+				let out = text;
+				// Code first: a snippet containing ** or a URL must survive the
+				// passes below untouched, so its content is parked and restored
+				// at the end.
+				const parked = [];
+				out = out.replace(/`([^`]+)`/g, function (m, code) {
+					parked.push('<code class="capsule-inline-code" dir="ltr">' + code + '</code>');
+					return '\u0000' + (parked.length - 1) + '\u0000';
+				});
+
+				out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, label, url) {
+					const href = safeHref(url.replace(/&amp;/g, '&'));
+					if (!href) return label;
+					return anchor(href, label);
+				});
+				// Bare URLs the model wrote without link syntax. Restricted to
+				// the same scheme allowlist, and skipped inside an existing
+				// href by running only on text that has no markup left in it.
+				out = out.replace(/(^|[\s(])((?:https?:\/\/)[^\s<>"']+[^\s<>"'.,;:!?)])/g,
+					function (m, lead, url) {
+						const href = safeHref(url.replace(/&amp;/g, '&'));
+						return href ? lead + anchor(href, url) : m;
+					});
+
+				out = out.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+				out = out.replace(/(^|[^*\w])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+				out = out.replace(/~~([^~]+)~~/g, '<s>$1</s>');
+
+				return out.replace(/\u0000(\d+)\u0000/g, function (m, i) { return parked[+i]; });
+			}
+
+			function anchor(href, label) {
+				const external = /^https?:\/\//i.test(href);
+				return '<a href="' + escapeHTML(href) + '"'
+					+ (external ? ' target="_blank" rel="noopener noreferrer"' : '')
+					+ '>' + label + '</a>';
+			}
+
+			function isTableSeparator(line) {
+				return /^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)+\|?\s*$/.test(line);
+			}
+
+			function splitRow(line) {
+				let s = line.trim();
+				if (s.startsWith('|')) s = s.slice(1);
+				if (s.endsWith('|')) s = s.slice(0, -1);
+				return s.split('|').map(c => c.trim());
+			}
+
+			// The separator row carries the column alignment the model chose.
+			// Honouring it is what makes a money column line up on the right
+			// and a label column stay on the start edge.
+			function alignments(sep) {
+				return splitRow(sep).map(function (c) {
+					const left = c.startsWith(':'), right = c.endsWith(':');
+					if (left && right) return ' data-align="center"';
+					if (right) return ' data-align="end"';
+					return '';
+				});
+			}
+
+			// A cell that is a number, a date or a short code must not wrap
+			// mid-value; anything else may. Detected from the content rather
+			// than declared, because the model writes the table and will not
+			// annotate it.
+			function isAtomic(v) {
+				return /^[\d\s.,:\-\/%+()ج.م٠-٩]+$/.test(v.replace(/&[a-z]+;/g, ''));
+			}
+
+			function renderTable(header, sep, rows) {
+				const align = alignments(sep);
+				let html = '<div class="capsule-table-wrap"><table class="capsule-table"><thead><tr>';
+				header.forEach(function (c, i) {
+					html += '<th' + (align[i] || '') + '>' + inline(c) + '</th>';
+				});
+				html += '</tr></thead><tbody>';
+				rows.forEach(function (r) {
+					html += '<tr>';
+					for (let c = 0; c < header.length; c++) {
+						const v = r[c] === undefined ? '' : r[c];
+						const cls = isAtomic(v) ? ' class="capsule-td-atomic"' : '';
+						html += '<td' + cls + (align[c] || '') + '>' + inline(v) + '</td>';
+					}
+					html += '</tr>';
+				});
+				return html + '</tbody></table></div>';
+			}
+
+			// listItem renders one bullet, recognising the checklist syntax the
+			// model reaches for when an answer is a set of actions.
+			function listItem(text) {
+				const task = text.match(/^\[( |x|X)\]\s+(.*)$/);
+				if (!task) return '<li>' + inline(text) + '</li>';
+				const done = task[1].toLowerCase() === 'x';
+				return '<li class="capsule-task' + (done ? ' is-done' : '') + '">'
+					+ '<span class="capsule-task-box" aria-hidden="true"></span>'
+					+ '<span>' + inline(task[2]) + '</span></li>';
+			}
+
+			window.capsuleMarkdown = function (raw, entities) {
+				const html = renderBlocks(raw);
+				if (!entities || !entities.length || !window.capsuleLinkEntities) return html;
+				return window.capsuleLinkEntities(html, entities);
+			};
+
+			function renderBlocks(raw) {
+				if (!raw) return '';
+				const lines = escapeHTML(raw).split('\n');
+				const out = [];
+				let i = 0;
+
+				while (i < lines.length) {
+					const line = lines[i];
+
+					// Fenced code. Rendered verbatim: no inline pass inside, or
+					// a snippet containing ** would silently become bold.
+					if (/^\s*```/.test(line)) {
+						const lang = line.replace(/^\s*```/, '').trim();
+						const body = [];
+						i++;
+						while (i < lines.length && !/^\s*```/.test(lines[i])) {
+							body.push(lines[i]);
+							i++;
+						}
+						i++;
+						out.push('<pre class="capsule-code-block" dir="ltr"'
+							+ (lang ? ' data-lang="' + escapeHTML(lang) + '"' : '')
+							+ '><code>' + body.join('\n') + '</code></pre>');
+						continue;
+					}
+
+					// Table: a header row followed by a separator row.
+					if (line.includes('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1])) {
+						const header = splitRow(line);
+						const sep = lines[i + 1];
+						i += 2;
+						const rows = [];
+						while (i < lines.length && lines[i].includes('|') && lines[i].trim() !== '') {
+							rows.push(splitRow(lines[i]));
+							i++;
+						}
+						out.push(renderTable(header, sep, rows));
+						continue;
+					}
+
+					// Headings.
+					const heading = line.match(/^(#{1,4})\s+(.*)$/);
+					if (heading) {
+						const level = Math.min(heading[1].length + 1, 5);
+						out.push('<h' + level + ' class="capsule-h' + level + '">'
+							+ inline(heading[2]) + '</h' + level + '>');
+						i++;
+						continue;
+					}
+
+					// Horizontal rule.
+					if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+						out.push('<hr class="capsule-hr"/>');
+						i++;
+						continue;
+					}
+
+					// Blockquote.
+					if (/^\s*&gt;\s?/.test(line)) {
+						const body = [];
+						while (i < lines.length && /^\s*&gt;\s?/.test(lines[i])) {
+							body.push(lines[i].replace(/^\s*&gt;\s?/, ''));
+							i++;
+						}
+						out.push('<blockquote class="capsule-quote">'
+							+ inline(body.join(' ')) + '</blockquote>');
+						continue;
+					}
+
+					// Ordered list.
+					if (/^\s*\d+[.)]\s+/.test(line)) {
+						const items = [];
+						while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+							items.push(listItem(lines[i].replace(/^\s*\d+[.)]\s+/, '')));
+							i++;
+						}
+						out.push('<ol class="capsule-ol">' + items.join('') + '</ol>');
+						continue;
+					}
+
+					// Unordered list, with one level of nesting. Two spaces of
+					// indent is what the model produces for a sub-point, and
+					// flattening it lost the structure of every "per supplier,
+					// then per item" answer.
+					if (/^\s*[-*•]\s+/.test(line)) {
+						out.push(renderBulletList(lines, i));
+						i = bulletListEnd(lines, i);
+						continue;
+					}
+
+					// Blank line: paragraph boundary, nothing to emit.
+					if (line.trim() === '') { i++; continue; }
+
+					// Paragraph: consume until a blank line or a block starter.
+					const para = [];
+					while (i < lines.length && lines[i].trim() !== ''
+						&& !/^\s*(```|#{1,4}\s|[-*•]\s|\d+[.)]\s|&gt;)/.test(lines[i])
+						&& !(lines[i].includes('|') && i + 1 < lines.length && isTableSeparator(lines[i + 1]))) {
+						para.push(lines[i]);
+						i++;
+					}
+					if (para.length) {
+						out.push('<p class="capsule-p">' + inline(para.join('<br/>')) + '</p>');
+					}
+				}
+
+				return out.join('');
+			}
+
+			function bulletListEnd(lines, start) {
+				let i = start;
+				while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) i++;
+				return i;
+			}
+
+			function renderBulletList(lines, start) {
+				const end = bulletListEnd(lines, start);
+				let html = '<ul class="capsule-ul">';
+				let nested = false;
+				for (let i = start; i < end; i++) {
+					const indent = lines[i].match(/^\s*/)[0].length;
+					const text = lines[i].replace(/^\s*[-*•]\s+/, '');
+					if (indent >= 2) {
+						if (!nested) { html += '<ul class="capsule-ul capsule-ul-nested">'; nested = true; }
+						html += listItem(text);
+						continue;
+					}
+					if (nested) { html += '</ul>'; nested = false; }
+					html += listItem(text);
+				}
+				if (nested) html += '</ul>';
+				return html + '</ul>';
+			}
+		})();
+	</script>
+	@capsuleEntityScript()
+}

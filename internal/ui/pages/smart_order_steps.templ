@@ -1,0 +1,245 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// SmartOrderMappingField is one target field with its detected column.
+type SmartOrderMappingField struct {
+	Key        string
+	Label      string
+	Required   bool
+	Column     int
+	Assigned   bool
+	Confidence float64
+}
+
+// SmartOrderMappingData is what the mapping screen renders.
+type SmartOrderMappingData struct {
+	Run       *smartorder.Run
+	Headers   []string
+	Fields    []SmartOrderMappingField
+	Preview   [][]string
+	HeaderRow int
+	Error     string
+}
+
+// smartOrderFilename is the uploaded file's name, for the preview header.
+func smartOrderFilename(run *smartorder.Run) string {
+	if run == nil {
+		return ""
+	}
+	return run.OriginalFile
+}
+
+// confidenceChip renders how sure the automatic detection was.
+//
+// Shown per field rather than as one overall score, because the buyer needs to
+// know *which* column to check, not that something somewhere is uncertain.
+func confidenceChip(c float64) string {
+	switch {
+	case c >= 0.85:
+		return "confidence-chip confidence-chip-high"
+	case c >= 0.6:
+		return "confidence-chip confidence-chip-medium"
+	default:
+		return "confidence-chip confidence-chip-low"
+	}
+}
+
+// SmartOrderMappingPage is step 2: confirm or correct the column mapping.
+templ SmartOrderMappingPage(lang, dir string, data SmartOrderMappingData) {
+	@layouts.ShellFor(i18n.T(lang, "smart_order.mapping_page_title"), "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-4xl so-mapping-page">
+			<h1 class="so-mapping-title">{ i18n.T(lang, "smart_order.mapping_title") }</h1>
+			@WizardRail(OrderRail(StepColumns))
+
+			if data.Error != "" {
+				<div class="so-alert so-alert-error">
+					{ data.Error }
+				</div>
+			}
+
+			<p class="so-mapping-intro">
+				{ i18n.T(lang, "smart_order.mapping_intro") }
+			</p>
+
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/mapping", data.Run.PublicID)) } class="glass-panel p-6 mb-0 so-mapping-form">
+				<input type="hidden" name="header_row" value={ fmt.Sprintf("%d", data.HeaderRow) }/>
+				for _, f := range data.Fields {
+					<div class="so-field">
+						<label class="so-field-label">
+							{ f.Label }
+							if f.Required {
+								<span class="required-mark">*</span>
+							}
+							if f.Assigned {
+								<span class={ confidenceChip(f.Confidence) }>{ fmt.Sprintf("%.0f%%", f.Confidence*100) }</span>
+							}
+						</label>
+						<select name={ "mapping_" + f.Key } class="form-select so-mapping-select">
+							<option value="">{ i18n.T(lang, "smart_order.mapping_none") }</option>
+							for i, h := range data.Headers {
+								<option value={ fmt.Sprintf("%d", i) } selected?={ f.Assigned && f.Column == i }>
+									{ fmt.Sprintf(i18n.T(lang, "smart_order.mapping_col_opt"), i+1, h) }
+								</option>
+							}
+						</select>
+						if f.Key == "quantity" {
+							<p class="text-2xs text-muted mt-1 m-0">
+								{ i18n.T(lang, "smart_order.mapping_qty_help") }
+							</p>
+						}
+					</div>
+				}
+
+				@components.ImportFilePreview(smartOrderFilename(data.Run), data.Headers, data.Preview)
+
+				<button type="submit" class="btn btn-primary so-mapping-submit">
+					{ i18n.T(lang, "smart_order.mapping_submit_btn") }
+				</button>
+			</form>
+		</div>
+	}
+}
+
+// SmartOrderProgressData drives the live progress screen.
+type SmartOrderProgressData struct {
+	Run     *smartorder.Run
+	Events  []*smartorder.Event
+	Failed  bool
+	Message string
+	// Percent is how far the run has got, 0-100.
+	Percent int
+	// Caption names the stage currently running, in one short phrase.
+	Caption string
+	// AIRunning says the deterministic engine has finished and the AI stage has
+	// not. It earns its own line of text because this is the one point in the
+	// run where "still working" and "nearly done" are both true, and a buyer who
+	// cannot tell them apart reads the pause as a fault.
+	AIRunning bool
+}
+
+// ringOffset is the stroke-dashoffset that draws Percent of the ring.
+//
+// The circle has r=52, so its circumference is 2*pi*52 = 326.7. The dash array
+// is that whole length and the offset is the part left undrawn, which is why a
+// higher percentage means a smaller offset.
+func (d SmartOrderProgressData) ringOffset() string {
+	const circumference = 326.7
+	p := d.Percent
+	if p < 0 {
+		p = 0
+	}
+	if p > 100 {
+		p = 100
+	}
+	return fmt.Sprintf("%.1f", circumference-circumference*float64(p)/100)
+}
+
+// SmartOrderProgressPage is step 3: processing.
+//
+// One number, one line of text. It used to be a spinner beside a list of every
+// stage the pipeline had entered, each with a count that read "0 / 804" because
+// stages reported before doing their work — four lines that told the buyer
+// nothing, and read as though the system had stalled at zero.
+//
+// Everything shown comes from the database, not from the connection that
+// started the run, which is what lets a buyer close the tab, come back from
+// another device, and find the run where it got to.
+templ SmartOrderProgressPage(lang, dir string, data SmartOrderProgressData) {
+	@layouts.ShellFor(i18n.T(lang, "smart_order.progress_page_title"), "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="container-fluid so-progress-page">
+			<h1 class="so-progress-title">{ i18n.T(lang, "smart_order.progress_title") }</h1>
+			@WizardRail(OrderRail(StepReview))
+
+			if data.Failed {
+				<div class="so-progress-failed">
+					<strong>{ i18n.T(lang, "smart_order.progress_failed") }</strong>
+					<p class="so-progress-failed-detail">{ data.Message }</p>
+				</div>
+			} else {
+				<div class="glass-panel so-progress-card">
+					<div class="so-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+						aria-valuenow={ fmt.Sprintf("%d", data.Percent) }
+						aria-label={ data.Caption }>
+						<svg class="so-ring-svg" viewBox="0 0 120 120" aria-hidden="true">
+							<circle class="so-ring-track" cx="60" cy="60" r="52"></circle>
+							<circle
+								class="so-ring-value"
+								cx="60"
+								cy="60"
+								r="52"
+								stroke-dashoffset={ data.ringOffset() }
+							></circle>
+						</svg>
+						<div class="so-ring-label">
+							<span class="so-ring-percent">{ fmt.Sprintf("%d%%", data.Percent) }</span>
+						</div>
+					</div>
+					<p class="so-progress-caption">{ data.Caption }</p>
+					if data.AIRunning {
+						<p class="so-progress-note">
+							{ i18n.T(lang, "smart_order.progress_ai_note") }
+						</p>
+					}
+					<p class="so-progress-note">
+						{ i18n.T(lang, "smart_order.progress_bg_note") }
+					</p>
+				</div>
+				<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+					// See vendor_ingest_results.templ: this inline script runs while
+					// the document is parsing, and import-progress.js is deferred,
+					// so the ring was never started and never moved.
+					(function () {
+						function startProgress() {
+							const card = document.querySelector('.so-progress-card');
+							if (!card) return;
+							if (typeof window.ImportProgress !== 'function') {
+								console.error('import-progress.js did not load; the progress ring cannot update');
+								return;
+							}
+							const ring = card.querySelector('.so-ring-value');
+							const label = card.querySelector('.so-ring-percent');
+							const caption = card.querySelector('.so-progress-caption');
+							// The ring is an SVG stroke, not a width, so the shared bar
+							// drives it through a shim: same easing, same drift, same
+							// refusal to show 100 before the run says it is done.
+							const circumference = 2 * Math.PI * 52;
+							const shim = {
+								style: {},
+								classList: { add(){}, remove(){} },
+								setAttribute(name, value) {
+									if (name !== 'aria-valuenow' || !ring) return;
+									const pct = Math.max(0, Math.min(100, Number(value)));
+									ring.style.strokeDashoffset = String(circumference * (1 - pct / 100));
+								},
+							};
+							const bar = new window.ImportProgress({
+								fill: shim, percent: label, label: caption,
+								onDone: function () { window.location.reload(); },
+							});
+							const base = window.location.pathname.replace(/\/+$/, '');
+							// Live, not polled twice a second. The stream is written
+							// to when a stage moves; the .json poll beside it is the
+							// fallback the shared bar takes by itself when the
+							// stream cannot be established.
+							bar.follow(base + '/stream', base + '.json', 1000);
+						}
+						if (document.readyState === 'loading') {
+							document.addEventListener('DOMContentLoaded', startProgress);
+						} else {
+							startProgress();
+						}
+					})();
+				</script>
+			}
+		</div>
+	}
+}

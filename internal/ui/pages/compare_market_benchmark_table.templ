@@ -1,0 +1,157 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ benchmarkTable(data MarketBenchmarkPageData) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		if len(data.PagedRows) == 0 {
+			@benchmarkEmpty(data)
+		} else {
+			<div class="table-container bench-scroll m-0">
+				<table class="data-table bench-table">
+					<thead>
+						<tr>
+							<th>اسم الصنف</th>
+							<th>الكود</th>
+							<th class="text-end tabular-nums">سعر الجمهور</th>
+							<th class="text-center tabular-nums">الخصم</th>
+							<th class="text-end tabular-nums">السعر بعد الخصم</th>
+							<th class="text-center">عروض أفضل بالسوق</th>
+							<th class="text-center">عروض مماثلة بالسوق</th>
+							<th class="text-center">عروض أقل بالسوق</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range data.PagedRows {
+							<tr>
+								<!-- Identity, with the standing this row has in one word -->
+								<td>
+									<div class="bench-name">{ row.ProductName }</div>
+									<div class="bench-name-meta">
+										<span class={ "bench-verdict", benchmarkVerdictTone(row.Classification) }>
+											{ benchmarkRowLabel(row.Classification) }
+										</span>
+										if !row.InCatalog {
+											<span class="bench-soft" title="لم يُربط هذا الصنف بالكتالوج بعد؛ المقارنة تمت بمطابقة الاسم">
+												مطابقة بالاسم
+											</span>
+										}
+									</div>
+								</td>
+
+								<td class="bench-code tabular-nums">
+									if row.SKU != "" {
+										{ row.SKU }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+
+								<!-- سعر الجمهور -->
+								<td class="text-end tabular-nums">
+									<span class="font-bold text-secondary">{ row.YourPrice.String() }</span>
+									<small class="text-muted text-xs ms-1">ج.م</small>
+								</td>
+
+								<!-- الخصم -->
+								<td class="text-center tabular-nums">
+									<span class="badge badge-emerald text-xs font-bold">{ formatBenchPercent(row.YourDiscount) }%</span>
+								</td>
+
+								<!-- السعر بعد الخصم -->
+								<td class="text-end tabular-nums">
+									<span class="bench-net font-extrabold text-primary">{ row.YourNet.String() }</span>
+									<small class="text-muted text-xs ms-1">ج.م</small>
+								</td>
+
+								<td class="text-center">
+									@benchmarkCountCell(data.FileID, row.RowID, "better", row.BetterOffers, "is-worse", "عروض أفضل بالسوق")
+								</td>
+								<td class="text-center">
+									@benchmarkCountCell(data.FileID, row.RowID, "equal", row.EqualOffers, "is-equal", "عروض مماثلة بالسوق")
+								</td>
+								<td class="text-center">
+									@benchmarkCountCell(data.FileID, row.RowID, "worse", row.WorseOffers, "is-better", "عروض أقل بالسوق")
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				<div class="glass-panel p-4 bg-surface-sunken">
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage:     data.Page,
+						PageSize:        data.Limit,
+						TotalCount:      data.TotalCount,
+						BaseURL:         "/compare/market-benchmark",
+						QueryValues:     benchmarkPaginationQueryValues(data),
+						PageSizeOptions: []int{10, 25, 50, 100},
+					})
+				</div>
+			}
+		}
+	</div>
+}
+
+// benchmarkCountCell renders one of the three counts. A count of zero is a dash
+templ benchmarkCountCell(fileID, rowID int64, bucket string, count int, tone, label string) {
+	if count > 0 {
+		<button
+			type="button"
+			class={ "bench-count", "is-link", tone, "tabular-nums" }
+			hx-get={ fmt.Sprintf("/compare/market-benchmark/offers?file=%d&row=%d&bucket=%s", fileID, rowID, bucket) }
+			hx-target="#benchmark-offers-modal"
+			hx-swap="innerHTML"
+			title={ fmt.Sprintf("عرض %s (%d)", label, count) }
+			aria-haspopup="dialog"
+		>
+			{ fmt.Sprintf("%d", count) }
+		</button>
+	} else {
+		<span class="bench-count is-none" aria-hidden="true">—</span>
+	}
+}
+
+// benchmarkEmpty says which of the several different empty states this is.
+templ benchmarkEmpty(data MarketBenchmarkPageData) {
+	<div class="p-6 stack-sm">
+		if data.Result.Total == 0 {
+			<div class="fw-800">هذه القائمة لا تحتوي على أصناف بأسعار</div>
+			<div class="text-sm text-muted">
+				راجع ربط الأعمدة للملف من مركز الملفات: صف بلا سعر لا يدخل المقارنة.
+			</div>
+		} else if data.Result.ComparedAgainst == 0 {
+			<div class="fw-800">لا توجد عروض أخرى في السوق للمقارنة</div>
+			<div class="text-sm text-muted">
+				لا يوجد حالياً أي ملف مورد آخر منشور أو مستودع مؤقت نشط. تظهر المقارنة فور توفر قائمة مورد أخرى.
+			</div>
+		} else if data.ActiveTab != "" && data.ActiveTab != "all" {
+			<div class="fw-800">لا توجد أصناف ضمن هذا التصنيف</div>
+			<div class="text-sm text-muted">
+				جرّب تبويب «الكل»، أو وسّع نطاق السعر والخصم.
+			</div>
+			<a href={ templ.SafeURL(benchmarkURL(data, "all", data.Sort)) } class="btn btn-sm btn-secondary">عرض الكل</a>
+		} else {
+			<div class="fw-800">لا توجد أصناف تطابق البحث أو النطاقات المحددة</div>
+			<a href={ templ.SafeURL(benchmarkURL(data, "", "")) } class="btn btn-sm btn-secondary">مسح عوامل التصفية</a>
+		}
+	</div>
+}
+
+templ benchmarkCoverage(res *compare.BenchmarkResult) {
+	<div class="glass-panel p-4 mb-6">
+		<p class="text-xs text-muted m-0">
+			{ fmt.Sprintf("قورنت بـ %d عرضاً من %d مورد آخر، %d منها (%.0f%%) مرتبط بالكتالوج المركزي.",
+				res.ComparedAgainst, res.Coverage.Suppliers, res.Coverage.MatchedOffers, res.Coverage.MatchedPercent()) }
+			if !res.Coverage.AIEnabled {
+				<span class="text-warning"> · مطابقة الذكاء الاصطناعي غير مفعّلة.</span>
+			}
+		</p>
+	</div>
+}

@@ -1,0 +1,749 @@
+/* ==========================================================================
+   DAWA 24 — ADMIN & MANAGEMENT PORTAL SURFACE STYLES (admin.css)
+   ========================================================================== */
+
+@layer components {
+  /* Admin Container & Header */
+  .admin-page-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding-bottom: var(--space-2xl);
+  }
+
+  .admin-banner {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-2xl);
+    padding: var(--space-md) var(--space-lg);
+    margin-bottom: var(--space-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .admin-banner-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-md);
+  }
+
+  .admin-banner-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .admin-banner-icon.primary {
+    background: var(--primary-subtle);
+    color: var(--primary);
+    border: 1px solid var(--primary-border);
+  }
+
+  .admin-banner-icon.purple {
+    background: rgba(144, 101, 208, 0.12); background: oklch(0.60 0.16 300 / 0.12);
+    color: rgb(161, 112, 235); color: oklch(0.65 0.18 300);
+    border: 1px solid rgba(144, 101, 208, 0.25); border: 1px solid oklch(0.60 0.16 300 / 0.25);
+  }
+
+  .admin-banner-title {
+    font-size: var(--text-lg);
+    font-weight: 900;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .admin-banner-subtitle {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin: 0.2rem 0 0 0;
+  }
+
+  /* Admin Status Indicator Pills */
+  .admin-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    background: var(--bg-surface-sunken);
+    border: 1px solid var(--border-subtle);
+  }
+
+  .admin-status-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-full);
+  }
+
+  .admin-status-dot.online {
+    background: var(--success);
+    box-shadow: 0 0 8px var(--success);
+  }
+
+  /* Admin KPI Grid & Cards */
+  .admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .admin-kpi-card {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    contain: content;
+  }
+
+  .admin-kpi-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .admin-kpi-title {
+    font-size: var(--text-xs);
+    font-weight: 800;
+    color: var(--text-secondary);
+  }
+
+  .admin-kpi-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .admin-kpi-value {
+    font-size: var(--text-2xl);
+    font-weight: 900;
+    margin: 0.4rem 0 0.5rem 0;
+    line-height: var(--leading-none);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .admin-kpi-footer {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-xs);
+    margin-top: auto;
+    font-size: var(--text-xs);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: var(--text-muted);
+  }
+
+  /* Admin Filter Bar */
+  .admin-filter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-md);
+    padding: var(--space-md) var(--space-lg);
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-xl);
+    margin-bottom: var(--space-md);
+    flex-wrap: wrap;
+  }
+
+  /* Admin Table Wrapper & Responsive Transformation below 768px */
+  .admin-table-wrapper {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-xs);
+    overflow: hidden;
+    margin-bottom: var(--space-md);
+  }
+
+  @media (max-width: 768px) {
+    .data-table-responsive thead {
+      display: none;
+    }
+    .data-table-responsive,
+    .data-table-responsive tbody,
+    .data-table-responsive tr,
+    .data-table-responsive td {
+      display: block;
+      width: 100%;
+    }
+    .data-table-responsive tr {
+      margin-bottom: var(--space-sm);
+      background: var(--bg-surface-raised);
+      border: 1px solid var(--border-card);
+      border-radius: var(--radius-xl);
+      padding: var(--space-sm);
+      box-shadow: var(--shadow-xs);
+    }
+    .data-table-responsive td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-xs) 0;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: var(--text-xs);
+    }
+    .data-table-responsive td:last-child {
+      border-bottom: none;
+      padding-top: var(--space-sm);
+      justify-content: flex-end;
+    }
+    .data-table-responsive td::before {
+      content: attr(data-label);
+      font-weight: 700;
+      font-size: var(--text-xs);
+      color: var(--text-muted);
+    }
+  }
+
+  /* Admin Finance Navigation Hub */
+  .finance-tabs-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+    align-items: center;
+    border-bottom: 1px solid var(--border-subtle);
+    padding-bottom: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .finance-tab-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--radius-lg);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+    background: var(--bg-surface-sunken);
+    border: 1px solid var(--border-subtle);
+    text-decoration: none;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .finance-tab-pill:hover {
+    color: var(--text-primary);
+    background: var(--bg-surface-raised);
+    border-color: var(--border-focus);
+    transform: translateY(-1px);
+  }
+
+  .finance-tab-pill.is-active {
+    color: #ffffff;
+    background: var(--brand);
+    border-color: var(--brand);
+    box-shadow: 0 4px 12px -2px rgba(14, 165, 233, 0.35);
+  }
+
+  .finance-tab-pill.is-active .badge {
+    background: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    border: none;
+  }
+
+  .finance-tab-pill-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Finance Invoices Toolbar & Status Pills */
+  .finance-status-filters {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .finance-filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: var(--bg-surface-sunken);
+    border: 1px solid var(--border-subtle);
+    text-decoration: none;
+    transition: all var(--duration-fast) var(--ease-smooth);
+    cursor: pointer;
+  }
+
+  .finance-filter-pill:hover {
+    color: var(--text-primary);
+    border-color: var(--border-focus);
+  }
+
+  .finance-filter-pill.is-active {
+    color: var(--brand);
+    background: var(--brand-subtle);
+    border-color: var(--brand);
+    font-weight: 700;
+  }
+
+  /* Invoices mini stat cards */
+  .finance-mini-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+  }
+
+  .finance-mini-stat-card {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-sm) var(--space-md);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .finance-mini-stat-label {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+    margin-bottom: 0.25rem;
+  }
+
+  .finance-mini-stat-val {
+    font-size: var(--text-lg);
+    font-weight: 900;
+    line-height: 1.2;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Admin Plans Cards Grid (WO-32) */
+  .admin-plans-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr));
+    gap: var(--space-lg);
+  }
+
+  @media (max-width: 640px) {
+    .admin-plans-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+  }
+
+  /* Admin System Directory Archive Cards (Pure CSS Masonry / Multi-Column) */
+  .admin-dir-grid {
+    column-width: 295px;
+    column-gap: 0.85rem;
+    margin-bottom: var(--space-lg);
+  }
+
+  .admin-dir-card {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 0.85rem;
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 0.85rem;
+    box-shadow: var(--shadow-sm);
+    box-sizing: border-box;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .admin-dir-card:hover {
+    border-color: var(--brand);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .admin-dir-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-dir-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.825rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .admin-dir-icon-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .admin-dir-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    background: var(--bg-surface-sunken);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.775rem;
+    font-weight: 600;
+    line-height: 1.25;
+    transition: all 0.12s ease;
+  }
+
+  .admin-dir-item:hover {
+    background: var(--bg-surface-raised);
+    border-color: var(--border-card);
+    color: var(--brand);
+    transform: translateX(-2px);
+  }
+
+  [dir="ltr"] .admin-dir-item:hover {
+    transform: translateX(2px);
+  }
+
+  .admin-dir-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .admin-dir-item-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-dir-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-item:hover .admin-dir-item-icon {
+    opacity: 1;
+    color: var(--brand);
+  }
+
+  .admin-dir-item-arrow {
+    opacity: 0.4;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-item:hover .admin-dir-item-arrow {
+    opacity: 1;
+    color: var(--brand);
+    transform: translateX(-2px);
+  }
+
+  [dir="ltr"] .admin-dir-item:hover .admin-dir-item-arrow {
+    transform: translateX(2px);
+  }
+}
+
+/* ==========================================================================
+   CUSTOM SCROLLBAR & PRINT HELPERS
+   ========================================================================== */
+.print-only {
+  display: none;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.03);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.6);
+}
+
+/* ==========================================================================
+   OFFICIAL ADMIN PRINT REPORT RULES
+   ========================================================================== */
+@media print {
+  @page {
+    size: auto;
+    margin: 10mm 12mm;
+  }
+
+  /* 1. Hide navigation, topbars, buttons, sidebars, modals, search forms, and KPI boxes */
+  aside,
+  header,
+  nav,
+  .sidebar,
+  .main-topbar,
+  .dashboard-topbar,
+  .no-print,
+  .screen-only,
+  .btn,
+  .btn-icon,
+  button,
+  .auth-notice-banner,
+  .toast-container,
+  .dashboard-stat-grid,
+  .stat-card-3d,
+  .admin-kpi-grid,
+  .finance-mini-stat-grid,
+  .finance-mini-stat-card,
+  form,
+  .tab-nav,
+  .nav-tabs,
+  .modal-backdrop,
+  .modal,
+  .pagination,
+  .b2b-pagination,
+  .b2b-pagination-info,
+  .b2b-pagination-controls,
+  .user-avatar-badge,
+  .sidebar-header-controls,
+  .theme-toggle,
+  .notification-bell,
+  .breadcrumb,
+  .app-breadcrumbs,
+  .alert,
+  [data-screen-only] {
+    display: none !important;
+  }
+
+  /* 2. Reset containers to full width, visible overflow, and unconstrained height for multi-page printing */
+  html,
+  body,
+  .app-shell,
+  .main-content,
+  .page-container,
+  .admin-page-container,
+  .glass-panel,
+  .table-container,
+  .overflow-hidden,
+  .overflow-x-auto,
+  .overflow-y-auto {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: auto !important;
+    height: auto !important;
+    max-height: none !important;
+    box-shadow: none !important;
+    display: block !important;
+    overflow: visible !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    position: static !important;
+    float: none !important;
+  }
+
+  .glass-panel {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* 3. Official Print Report Header */
+  .print-only {
+    display: block !important;
+  }
+
+  .screen-only {
+    display: none !important;
+  }
+
+  .print-report-header {
+    display: flex !important;
+    flex-direction: column !important;
+    border-bottom: 2px solid #0f172a !important;
+    padding-bottom: 10px !important;
+    margin-bottom: 14px !important;
+    page-break-after: avoid !important;
+  }
+
+  .print-report-header .print-brand-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    margin-bottom: 6px !important;
+  }
+
+  .print-report-header .print-brand-title {
+    font-size: 11pt !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+  }
+
+  .print-report-header .print-report-badge {
+    font-size: 8pt !important;
+    font-weight: 700 !important;
+    border: 1px solid #0f172a !important;
+    padding: 1px 6px !important;
+    border-radius: 4px !important;
+  }
+
+  .print-report-header .print-title {
+    font-size: 13pt !important;
+    font-weight: 900 !important;
+    color: #0f172a !important;
+    margin: 4px 0 8px 0 !important;
+  }
+
+  .print-report-header .print-meta-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    font-size: 8.5pt !important;
+    color: #475569 !important;
+  }
+
+  .print-report-header .print-meta-grid {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px 20px !important;
+    font-size: 8.5pt !important;
+    color: #475569 !important;
+    margin-top: 4px !important;
+  }
+
+  .print-report-header .print-meta-item {
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+  }
+
+  .print-report-header .print-meta-label {
+    color: #64748b !important;
+    font-weight: 600 !important;
+  }
+
+  .print-report-header .print-meta-value {
+    color: #0f172a !important;
+    font-weight: 700 !important;
+  }
+
+  /* 4. Organized Data Table for Print */
+  .table-container {
+    overflow: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .data-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8.5pt !important;
+    margin: 8px 0 !important;
+    page-break-inside: auto !important;
+    break-inside: auto !important;
+  }
+
+  .data-table thead {
+    display: table-header-group !important;
+  }
+
+  .data-table tbody {
+    display: table-row-group !important;
+  }
+
+  .data-table th,
+  .data-table td {
+    border: 1px solid #cbd5e1 !important;
+    padding: 5px 6px !important;
+    color: #0f172a !important;
+    background: transparent !important;
+    vertical-align: middle !important;
+  }
+
+  .data-table th {
+    background-color: #f1f5f9 !important;
+    font-weight: 700 !important;
+    text-align: right !important;
+    color: #0f172a !important;
+    font-size: 8.5pt !important;
+  }
+
+  .data-table tr {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  .badge,
+  .status-badge {
+    border: 1px solid #94a3b8 !important;
+    background: transparent !important;
+    color: #0f172a !important;
+    padding: 1px 4px !important;
+    font-size: 7.5pt !important;
+    box-shadow: none !important;
+  }
+
+  /* Unconstrain truncated cells and fixed-width containers so full text prints */
+  .truncate,
+  [class*="max-w-"] {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+    max-width: none !important;
+    word-break: break-word !important;
+  }
+
+  /* Hide table action column in print */
+  .data-table th.col-actions,
+  .data-table td.col-actions {
+    display: none !important;
+  }
+}
+

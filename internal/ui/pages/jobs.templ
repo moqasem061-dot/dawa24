@@ -1,0 +1,312 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/hr"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type JobItemView struct {
+	Job              *hr.JobOffer
+	CompanyName      string
+	CompanyLogoURL   string
+	CategoryName     string
+	IsVerified       bool
+	ApplicationCount int
+}
+
+type JobsPageData struct {
+	Jobs        []*JobItemView
+	TotalCount  int
+	Page        int
+	PerPage     int
+	Cities      []*platformadmin.City
+	Actor       authctx.Actor
+	IsLoggedIn  bool
+	IsCustomer  bool
+	IsVendor    bool
+	IsAdmin     bool
+	IsJobSeeker bool
+	CanPostJob  bool
+	PostJobURL  string
+}
+
+func jobInitial(company string) string {
+	runes := []rune(strings.TrimSpace(company))
+	if len(runes) >= 1 {
+		return string(runes[0:1])
+	}
+	return "د"
+}
+
+// JobsContent renders the core jobs board view.
+templ JobsContent(data JobsPageData, lang, dir string) {
+	<div class="jobs-container">
+		<!-- Hero Header Card -->
+		<div class="jobs-hero-card">
+			<div class="d-flex flex-col gap-1">
+				<div class="d-flex items-center gap-2">
+					<span class="jobs-hero-badge">
+						@components.IconBriefcase("icon-xs")
+						<span>بوابة التوظيف الطبي المعتمدة</span>
+					</span>
+				</div>
+				<h1 class="jobs-hero-title">
+					شواغر وفرص العمل في القطاع الصيدلاني والطبي
+				</h1>
+				<p class="jobs-hero-subtitle">
+					المنصة المعتمدة للصيادلة، مدراء الفروع، مسؤولي المشتريات، والمخازن الطبية الموثقة في مصر.
+				</p>
+			</div>
+
+			<!-- Post Job Button for Authorized Entities -->
+			if data.CanPostJob {
+				<div class="d-flex items-center gap-2">
+					<a href={ templ.SafeURL(data.PostJobURL) } class="btn btn-primary btn-sm fw-800 shadow-sm">
+						@components.IconPlus("icon-xs")
+						<span>نشر شاغر وظيفي جديد</span>
+					</a>
+				</div>
+			}
+		</div>
+
+		<!-- Metrics KPI Grid -->
+		<div class="jobs-kpi-grid">
+			<div class="jobs-kpi-card">
+				<div class="jobs-kpi-icon primary">
+					@components.IconBriefcase("icon-md")
+				</div>
+				<div class="jobs-kpi-info">
+					<span class="jobs-kpi-label">إجمالي الشواغر النشطة</span>
+					<span class="jobs-kpi-value tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalCount) } <span class="text-xs font-normal text-muted">وظيفة</span>
+					</span>
+				</div>
+			</div>
+
+			<div class="jobs-kpi-card">
+				<div class="jobs-kpi-icon success">
+					@components.IconCheckCircle("icon-md")
+				</div>
+				<div class="jobs-kpi-info">
+					<span class="jobs-kpi-label">ضمان الاعتماد</span>
+					<span class="jobs-kpi-value text-emerald">
+						100% جهات موثقة
+					</span>
+				</div>
+			</div>
+
+			<div class="jobs-kpi-card">
+				<div class="jobs-kpi-icon amber">
+					@components.IconPackage("icon-md")
+				</div>
+				<div class="jobs-kpi-info">
+					<span class="jobs-kpi-label">القطاعات المتاحة</span>
+					<span class="jobs-kpi-value text-sm">
+						صيدليات • مخازن • توزيع
+					</span>
+				</div>
+			</div>
+
+			<div class="jobs-kpi-card">
+				<div class="jobs-kpi-icon indigo">
+					@components.IconSparkles("icon-md")
+				</div>
+				<div class="jobs-kpi-info">
+					<span class="jobs-kpi-label">متوسط الرواتب</span>
+					<span class="jobs-kpi-value tabular-nums">
+						8,000 - 25,000 <span class="text-xs font-normal text-muted">ج.م</span>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Instant Filter & Search Panel -->
+		<div class="jobs-filter-panel">
+			<div class="jobs-filter-top-row">
+				<!-- Search Input -->
+				<div class="jobs-search-wrap">
+					<span class="jobs-search-icon">
+						@components.IconSearch("icon-sm")
+					</span>
+					<input
+						type="text"
+						id="jobs-search-input"
+						placeholder="ابحث بالمسمى الوظيفي، التخصص، أو جهة العمل..."
+						class="form-input input-sm jobs-search-input"
+						data-on-input="filterJobsList()"
+					/>
+				</div>
+
+				<!-- City Filter -->
+				<select id="jobs-city-filter" class="form-input input-sm" data-on-change="filterJobsList()">
+					<option value="">كل المحافظات والمدن</option>
+					for _, c := range data.Cities {
+						<option value={ c.Name["ar"] }>
+							if c.Name["ar"] != "" {
+								{ c.Name["ar"] }
+							} else {
+								{ c.Name["en"] }
+							}
+						</option>
+					}
+				</select>
+			</div>
+
+			<!-- Quick Type Filter Pills -->
+			<div class="job-filter-pills">
+				<button type="button" class="job-filter-pill active" data-on-click="setJobTypeFilter('', this)">الكل</button>
+				<button type="button" class="job-filter-pill" data-on-click="setJobTypeFilter('دوام كامل', this)">دوام كامل</button>
+				<button type="button" class="job-filter-pill" data-on-click="setJobTypeFilter('دوام جزئي', this)">دوام جزئي</button>
+				<button type="button" class="job-filter-pill" data-on-click="setJobTypeFilter('شيفت', this)">شيفتات</button>
+			</div>
+		</div>
+
+		<!-- Job Listings Grid -->
+		if len(data.Jobs) == 0 {
+			<div class="glass-panel text-center p-8 bg-surface-raised rounded-2xl border shadow-xs">
+				<div class="mb-3 text-3xl text-muted">
+					@components.IconBriefcase("icon-lg")
+				</div>
+				<h3 class="font-bold text-base m-0 text-primary">لا توجد فرص توظيف معلنة حالياً</h3>
+				<p class="text-sm text-muted m-0 mt-1 max-w-md mx-auto">لم يتم نشر أي شواغر وظيفية جديدة في الوقت الراهن. يرجى مراجعة القسم لاحقاً أو تفعيل إشعارات الوظائف.</p>
+			</div>
+		} else {
+			<div class="jobs-grid" id="jobs-cards-grid">
+				for _, item := range data.Jobs {
+					if item != nil && item.Job != nil {
+						<div
+							class="job-card"
+							data-job-title={ strings.ToLower(item.Job.Title.Get(i18n.AR) + " " + item.Job.Title.Get(i18n.EN) + " " + item.CompanyName) }
+							data-job-location={ item.Job.Location }
+							data-job-desc={ strings.ToLower(item.Job.Description + " " + item.Job.Requirements) }
+						>
+							<div class="d-flex flex-col gap-2">
+								<!-- Header: Company Avatar + Name + Verification + Date -->
+								<div class="job-card-header">
+									<div class="job-card-company-lockup">
+										<div class="job-avatar-pill">
+											{ jobInitial(item.CompanyName) }
+										</div>
+										<div class="job-card-company-meta">
+											<span class="job-card-company-name">{ item.CompanyName }</span>
+											<span class="badge badge-success-subtle badge-pill text-2xs font-bold">
+												@components.IconCheckCircle("icon-xs")
+												<span>معتمد</span>
+											</span>
+										</div>
+									</div>
+
+									<span class="job-date-stamp tabular-nums">
+										{ item.Job.CreatedAt.Format("2006-01-02") }
+									</span>
+								</div>
+
+								<!-- Title -->
+								<h3 class="job-card-title">
+									<a href={ templ.SafeURL(func() string { if data.IsCustomer { return fmt.Sprintf("/customer/jobs/%d", item.Job.ID) }; return fmt.Sprintf("/jobs/%d", item.Job.ID) }()) }>
+										{ item.Job.Title.Get(i18n.ParseLang(lang)) }
+									</a>
+								</h3>
+
+								<!-- Badges Row -->
+								<div class="job-card-badges">
+									if item.Job.Location != "" {
+										<span class="badge badge-gray text-xs">
+											@components.IconLocation("icon-xs")
+											<span>{ item.Job.Location }</span>
+										</span>
+									}
+									<span class="badge badge-brand text-xs">
+										دوام كامل
+									</span>
+								</div>
+
+								<!-- Description Excerpt -->
+								<p class="job-card-desc">
+									{ item.Job.Description }
+								</p>
+							</div>
+
+							<!-- Footer: Salary & Action CTA -->
+							<div class="job-card-footer">
+								<div class="job-card-salary-block">
+									if !item.Job.SalaryMin.IsZero() || !item.Job.SalaryMax.IsZero() {
+										<div class="job-card-salary-val tabular-nums">
+											@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: item.Job.SalaryMin })
+											if !item.Job.SalaryMax.IsZero() {
+												<span> - </span>
+												@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: item.Job.SalaryMax })
+											}
+										</div>
+									} else {
+										<span class="text-xs text-muted font-bold">الراتب يحدد بالمقابلة</span>
+									}
+								</div>
+
+								<a
+									href={ templ.SafeURL(func() string { if data.IsCustomer { return fmt.Sprintf("/customer/jobs/%d", item.Job.ID) }; return fmt.Sprintf("/jobs/%d", item.Job.ID) }()) }
+									class="btn btn-primary btn-sm fw-800"
+								>
+									<span>التفاصيل والتقديم</span>
+									@components.IconArrowLeft("icon-xs")
+								</a>
+							</div>
+						</div>
+					}
+				}
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/jobs",
+				})
+			}
+		}
+	</div>
+
+	<!-- Client-side zero-inline-style filtering script -->
+	<script nonce={ layouts.Nonce(ctx) }>
+		var activeJobTypeFilter = '';
+
+		function setJobTypeFilter(typeVal, btnEl) {
+			activeJobTypeFilter = typeVal.toLowerCase();
+			document.querySelectorAll('.job-filter-pill').forEach(b => b.classList.remove('active'));
+			if (btnEl) btnEl.classList.add('active');
+			filterJobsList();
+		}
+
+		function filterJobsList() {
+			const q = (document.getElementById('jobs-search-input')?.value || '').toLowerCase().trim();
+			const city = (document.getElementById('jobs-city-filter')?.value || '').toLowerCase().trim();
+			const cards = document.querySelectorAll('#jobs-cards-grid .job-card');
+
+			cards.forEach(card => {
+				const title = card.getAttribute('data-job-title') || '';
+				const loc = card.getAttribute('data-job-location') || '';
+				const desc = card.getAttribute('data-job-desc') || '';
+
+				const matchesQ = !q || title.includes(q) || desc.includes(q) || loc.includes(q);
+				const matchesCity = !city || loc.includes(city);
+				const matchesType = !activeJobTypeFilter || desc.includes(activeJobTypeFilter) || title.includes(activeJobTypeFilter);
+
+				card.classList.toggle('d-none', !(matchesQ && matchesCity && matchesType));
+			});
+		}
+	</script>
+}
+
+// JobsPage renders the complete job board adapted to the user's dashboard shell.
+templ JobsPage(data JobsPageData, lang string, dir string) {
+	@layouts.ShellFor(i18n.T(lang, "nav.jobs_and_careers"), "jobs", lang, dir, data.Actor) {
+		@JobsContent(data, lang, dir)
+	}
+}

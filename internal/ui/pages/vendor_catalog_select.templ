@@ -1,0 +1,80 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorCatalogSelectPage renders the master catalog selector.
+templ VendorCatalogSelectPage(products []*catalog.Product, search string, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "catalog_select.page_title"), "catalog_select", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconPill("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">{ fmt.Sprintf(i18n.T(lang, "catalog_select.header_title"), len(products)) }</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">{ i18n.T(lang, "catalog_select.header_desc") }</p>
+					</div>
+				</div>
+
+				<form method="GET" action="/vendor/catalog/select" class="mt-4 pt-3 border-t">
+					<div class="d-flex gap-2">
+						<input type="text" name="q" value={ search } placeholder={ i18n.T(lang, "catalog_select.search_ph") } class="form-input text-xs flex-1" />
+						<button type="submit" class="btn btn-secondary text-xs font-bold px-4">{ i18n.T(lang, "vendor_products.btn_search") }</button>
+					</div>
+				</form>
+			</div>
+
+			if len(products) == 0 {
+				<div class="glass-panel p-8 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "catalog_select.empty_title") }</h3>
+					<p class="text-sm text-secondary m-0">{ i18n.T(lang, "catalog_select.empty_desc") }</p>
+				</div>
+			} else {
+				<form class="stack-md" method="POST" action="/vendor/catalog/select">
+					<div class="glass-panel p-0 mb-6 overflow-hidden">
+						<div class="table-container m-0">
+							<table class="data-table m-0">
+								<thead>
+									<tr>
+										<th class="text-center">{ i18n.T(lang, "catalog_select.th_select") }</th>
+										<th>{ i18n.T(lang, "catalog_select.th_product") }</th>
+										<th>{ i18n.T(lang, "catalog_select.th_scientific") }</th>
+										<th>{ i18n.T(lang, "catalog_select.th_price") }</th>
+										<th class="text-center">{ i18n.T(lang, "catalog_select.th_status") }</th>
+									</tr>
+								</thead>
+								<tbody>
+									for _, p := range products {
+										<tr>
+											<td class="text-center">
+												<input type="checkbox" name="product_ids" value={ fmt.Sprintf("%d", p.ID) } class="form-checkbox" />
+											</td>
+											<td class="font-extrabold text-primary text-sm">{ p.Name.Get(i18n.Lang(lang)) }</td>
+											<td class="text-xs text-muted">{ p.ScientificName }</td>
+											<td class="tabular-nums font-bold text-xs">{ fmt.Sprintf("%s %s", p.Price.String(), i18n.T(lang, "common.currency_egp")) }</td>
+											<td class="text-center"><span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "catalog_select.badge_available") }</span></td>
+										</tr>
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="d-flex justify-end">
+						<button type="submit" class="btn btn-primary font-bold px-5 py-2 text-xs">{ i18n.T(lang, "catalog_select.btn_submit") }</button>
+					</div>
+				</form>
+			}
+		</div>
+	}
+}

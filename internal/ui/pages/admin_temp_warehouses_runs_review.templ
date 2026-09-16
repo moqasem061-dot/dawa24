@@ -1,0 +1,189 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminTempWarehouseRunReviewPage renders the batch review step before commit.
+templ AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWarehouseMappingFileView, lang, dir string) {
+	@layouts.AdminShell("مراجعة دفعة المستودعات المؤقتة", "inventory", lang, dir) {
+		<div class="max-w-5xl mx-auto pb-12">
+			<!-- Header -->
+			<div class="d-flex items-center justify-between mb-6">
+				<div>
+					<div class="text-xs text-secondary mb-1">
+						<a href={ templ.SafeURL(run.BaseURL) } class="hover:underline">المستودعات المؤقتة</a> / 
+						<span>جلسة رفع #{ fmt.Sprintf("%d", run.ID) }</span>
+					</div>
+					<h1 class="text-2xl font-black text-surface-fg">مراجعة واعتماد الدفعة</h1>
+					<p class="text-xs text-secondary mt-1">تأكد من مطابقة جميع الملفات وجاهزيتها قبل بدء المعالجة والتشغيل.</p>
+				</div>
+				<a href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping", run.BaseURL, run.ID)) } class="btn btn-outline btn-sm rounded-xl font-bold">
+					العودة لتعديل الأعمدة
+				</a>
+			</div>
+
+			<!-- Stepper Indicator -->
+			<div class="grid grid-cols-3 gap-3 mb-6">
+				<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+					<div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">الخطوة 1: الرفع</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">تم الرفع بنجاح</div>
+				</div>
+				<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+					<div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">الخطوة 2: الأعمدة</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">تم تعيين الأعمدة</div>
+				</div>
+				<div class="p-3 rounded-xl bg-accent/10 border border-accent text-center shadow-xs">
+					<div class="text-xs font-semibold text-accent">الخطوة 3: الاعتماد</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">جاهز للتشغيل</div>
+				</div>
+			</div>
+
+			<!-- Files Table -->
+			<div class="glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs mb-6 overflow-hidden">
+				<h3 class="text-base font-bold text-surface-fg mb-4">ملفات الدفعة ({ fmt.Sprintf("%d", len(files)) })</h3>
+				<div class="table-responsive border rounded-xl border-default overflow-hidden">
+					<table class="table table-hover text-xs w-full text-start">
+						<thead class="bg-surface border-b border-default font-bold text-secondary">
+							<tr>
+								<th class="p-3 w-12 text-center">#</th>
+								<th class="p-3">اسم المورد</th>
+								<th class="p-3">اسم الملف</th>
+								<th class="p-3 text-center">عدد الأصناف</th>
+								<th class="p-3 text-center">حالة التعيين</th>
+								<th class="p-3 text-end">إجراء</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-default">
+							for idx, f := range files {
+								<tr>
+									<td class="p-3 text-center font-bold text-secondary">{ strconv.Itoa(idx+1) }</td>
+									<td class="p-3 font-bold text-surface-fg">{ f.SupplierName }</td>
+									<td class="p-3 text-secondary font-mono">{ f.Filename }</td>
+									<td class="p-3 text-center font-bold">{ fmt.Sprintf("%d", f.RowCount) }</td>
+									<td class="p-3 text-center">
+										if f.IsMapped {
+											<span class="badge badge-success text-xs font-bold px-2 py-0.5 rounded-full">جاهز للاعتماد</span>
+										} else {
+											<span class="badge badge-warning text-xs font-bold px-2 py-0.5 rounded-full">يحتاج تعيين</span>
+										}
+									</td>
+									<td class="p-3 text-end">
+										<a
+											href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", run.BaseURL, run.ID, f.ID)) }
+											class="btn btn-ghost btn-xs text-accent font-bold hover:underline"
+										>
+											تعديل الأعمدة
+										</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Commit Form & Card -->
+			<div class="glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs d-flex flex-col md:flex-row items-center justify-between gap-4">
+				<div>
+					<div class="font-bold text-base text-surface-fg">تأكيد وتشغيل دفعة الملفات</div>
+					<div class="text-xs text-secondary mt-1">سيتم حفظ جميع المخططات وتفعيل الملفات المؤقتة لتصبح متاحة فوراً في النظام.</div>
+				</div>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/commit", run.BaseURL, run.ID)) } class="m-0">
+					<button
+						type="submit"
+						class="btn btn-emerald font-bold text-sm px-6 py-3 rounded-xl shadow-sm d-inline-flex items-center gap-2"
+					>
+						<span>اعتماد وتشغيل جميع الملفات</span>
+						<span>✓</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+// AdminTempWarehouseRunProgressPage renders live SSE tracking for a run.
+templ AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir string) {
+	@layouts.AdminShell("حالة معالجة الجلسة", "inventory", lang, dir) {
+		<div class="max-w-2xl mx-auto pb-12"
+			x-data={ fmt.Sprintf(`{
+				runId: %d,
+				percent: %d,
+				phase: '%s',
+				done: %t,
+				error: '',
+				init() {
+					if (this.done) return;
+					let src = new EventSource('/api/progress/' + this.runId);
+					src.onmessage = (e) => {
+						try {
+							let d = JSON.parse(e.data);
+							if (d.percent !== undefined) this.percent = d.percent;
+							if (d.phase) this.phase = d.phase;
+							if (d.done || this.percent >= 100 || this.phase === 'done') {
+								this.done = true;
+								this.percent = 100;
+								src.close();
+							}
+						} catch(err) {}
+					};
+					src.onerror = () => {
+						setInterval(() => {
+							if (this.done) return;
+							fetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })
+								.then(r => r.json())
+								.then(data => {
+									if (data.percent !== undefined) this.percent = data.percent;
+									if (data.phase) this.phase = data.phase;
+									if (data.done || this.percent >= 100) {
+										this.done = true;
+										this.percent = 100;
+									}
+								}).catch(() => {});
+						}, 2000);
+					};
+				}
+			}`, run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100) }
+		>
+			<div class="glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center">
+				<div class="w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4">
+					<span x-show="!done" class="animate-spin">⚙️</span>
+					<span x-show="done" style="display:none;">🎉</span>
+				</div>
+
+				<h1 class="text-2xl font-black text-surface-fg mb-1">
+					<span x-show="!done">جاري معالجة دفعة المستودعات</span>
+					<span x-show="done" style="display:none;">تم اكتمال المعالجة بنجاح!</span>
+				</h1>
+				<p class="text-xs text-secondary mb-6">
+					دفعة: { run.Filename } ({ fmt.Sprintf("%d", run.TotalFiles) } ملفات)
+				</p>
+
+				<!-- Progress Bar -->
+				<div class="w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5">
+					<div
+						class="bg-accent h-full rounded-full transition-all duration-300"
+						:style="'width: ' + percent + '%;'"
+					></div>
+				</div>
+				<div class="d-flex items-center justify-between text-xs font-mono text-secondary mb-8">
+					<span x-text="'المرحلة: ' + phase"></span>
+					<span class="font-bold text-accent" x-text="percent + '%'"></span>
+				</div>
+
+				<div class="pt-4 border-t border-default">
+					<a
+						href={ templ.SafeURL(run.BaseURL) }
+						class="btn btn-accent font-bold text-sm px-6 py-2.5 rounded-xl shadow-xs"
+					>
+						الانتقال إلى قائمة المستودعات
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}

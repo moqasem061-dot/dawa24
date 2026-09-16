@@ -1,0 +1,14 @@
+BEGIN;
+DROP TABLE IF EXISTS identity.account_deletion_requests CASCADE;
+DROP TABLE IF EXISTS identity.kyc_records CASCADE;
+DROP TABLE IF EXISTS profile.user_preferences CASCADE;
+DROP TABLE IF EXISTS profile.user_profiles CASCADE;
+DROP TABLE IF EXISTS identity.user_roles CASCADE;
+DROP TABLE IF EXISTS identity.role_permissions CASCADE;
+DROP TABLE IF EXISTS identity.permissions CASCADE;
+DROP TABLE IF EXISTS identity.roles CASCADE;
+DROP TABLE IF EXISTS identity.user_identities CASCADE;
+DROP TABLE IF EXISTS identity.user_mfa CASCADE;
+DROP TABLE IF EXISTS identity.user_security CASCADE;
+DROP TABLE IF EXISTS identity.users CASCADE;
+COMMIT;

@@ -1,0 +1,255 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorTeamTable(data VendorTeamData, lang string) {
+	<div class="glass-panel p-0 mb-0 overflow-hidden">
+		<!-- Table Control Bar: Search & Filter -->
+		<div class="p-4 border-b d-flex items-center justify-between flex-wrap gap-3">
+			<div class="d-flex items-center gap-2">
+				<span class="text-lg">@components.IconFileText("icon-sm")</span>
+				<h3 class="text-base font-black text-primary m-0">
+					{ i18n.T(lang, "vendor_team.table_title") }
+				</h3>
+				<span class="badge badge-sky text-xs font-bold tabular-nums">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_team.staff_count"), len(data.Members)) }
+				</span>
+			</div>
+
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<!-- Search Input -->
+				<div class="stack-sm">
+					<input
+						type="text"
+						x-model="searchQuery"
+						placeholder={ i18n.T(lang, "vendor_team.search_placeholder") }
+						class="form-input text-xs w-full"
+					/>
+				</div>
+
+				<!-- Role Filter -->
+				<select x-model="roleFilter" class="form-input text-xs">
+					<option value="all">{ i18n.T(lang, "vendor_team.filter_all_roles") }</option>
+					for _, role := range data.CompanyRoles {
+						<option value={ fmt.Sprintf("%d", role.ID) }>{ role.Name }</option>
+					}
+				</select>
+
+				<!-- Status Filter -->
+				<select x-model="statusFilter" class="form-input text-xs">
+					<option value="all">{ i18n.T(lang, "vendor_team.filter_all_statuses") }</option>
+					<option value="active">{ i18n.T(lang, "vendor_team.filter_active_only") }</option>
+					<option value="inactive">{ i18n.T(lang, "vendor_team.filter_inactive_only") }</option>
+				</select>
+			</div>
+		</div>
+
+		if len(data.Members) == 0 {
+			<div class="p-12 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconUsers("icon-sm")</div>
+				<h4 class="text-lg font-black text-primary m-0 mb-2">{ i18n.T(lang, "vendor_team.empty_title") }</h4>
+				<p class="text-xs text-secondary max-w-md mx-auto mb-4">
+					{ i18n.T(lang, "vendor_team.empty_desc") }
+				</p>
+				<button
+					type="button"
+					data-modal-open="add-employee-modal"
+					@click="showAddModal = true"
+					class="btn btn-primary btn-sm font-bold text-xs"
+				>
+					@components.IconPlus("icon-xs")
+					<span>{ i18n.T(lang, "vendor_team.btn_add_first") }</span>
+				</button>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor_team.th_employee") }</th>
+							<th>{ i18n.T(lang, "vendor_team.th_job_title") }</th>
+							<th>{ i18n.T(lang, "vendor_team.th_role") }</th>
+							<th>{ i18n.T(lang, "vendor_team.th_branch") }</th>
+							<th>{ i18n.T(lang, "vendor_team.th_email") }</th>
+							<th>{ i18n.T(lang, "vendor_team.th_phone") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_team.th_status") }</th>
+							<th class="col-actions">{ i18n.T(lang, "vendor_team.th_actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, m := range data.Members {
+							<tr
+								x-show={ fmt.Sprintf("matchesFilter({ name: %q, email: %q, phone: %q, jobTitle: %q, code: %q, roleKey: %q, roleId: %d, isActive: %t })", m.Name, m.Email, m.Phone, m.JobTitle, m.EmployeeCode, m.RoleKey, m.RoleID, m.IsActive) }
+							>
+								<!-- Employee Info -->
+								<td>
+									<div class="d-flex items-center gap-3">
+										<div class="user-avatar-badge font-black text-xs overflow-hidden">
+											if m.AvatarURL != "" {
+												<img src={ m.AvatarURL } alt={ m.Name } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="block" />
+												<span style="display: none;">{ getInitials(m.Name) }</span>
+											} else {
+												<span>{ getInitials(m.Name) }</span>
+											}
+										</div>
+										<div class="stack-sm">
+											<div class="font-extrabold text-primary text-sm">
+												{ m.Name }
+												if m.RoleKey == "org_owner" {
+													<span class="badge badge-amber text-xs font-bold ms-1">{ i18n.T(lang, "vendor_team.owner_badge") }</span>
+												}
+											</div>
+											if m.EmployeeCode != "" {
+												<div class="text-xs text-muted tabular-nums">
+													{ fmt.Sprintf(i18n.T(lang, "vendor_team.emp_code_prefix"), m.EmployeeCode) }
+												</div>
+											}
+										</div>
+									</div>
+								</td>
+
+								<!-- Job Title -->
+								<td class="text-xs font-bold text-secondary">
+									if m.JobTitle != "" {
+										<span>{ m.JobTitle }</span>
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+
+								<!-- Role -->
+								<td>
+									if data.CanAssignRole && m.RoleKey != "org_owner" {
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/team/%d/role", m.ID)) } class="m-0">
+											<select name="role_id" class="form-input form-input-sm text-xs" data-autosubmit>
+												for _, role := range data.CompanyRoles {
+													if !role.IsOwner && role.Key != "org_owner" {
+														<option value={ fmt.Sprintf("%d", role.ID) } selected?={ role.ID == m.RoleID }>{ role.Name }</option>
+													}
+												}
+											</select>
+										</form>
+									} else if m.RoleKey == "org_owner" {
+										<span class="badge badge-amber text-xs font-bold">{ m.RoleName }</span>
+									} else {
+										<span class="badge badge-slate text-xs font-bold">{ m.RoleName }</span>
+									}
+								</td>
+
+								<!-- Branch / Location -->
+								<td class="text-xs text-secondary font-bold">
+									if m.BranchName != "" {
+										<span>{ m.BranchName }</span>
+									} else {
+										<span class="text-muted text-xs">{ i18n.T(lang, "vendor_team.all_branches_admin") }</span>
+									}
+								</td>
+
+								<!-- Email -->
+								<td class="tabular-nums text-xs">
+									if m.Email != "" {
+										<a href={ templ.SafeURL("mailto:" + m.Email) } class="text-brand font-bold">
+											{ m.Email }
+										</a>
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+
+								<!-- Phone -->
+								<td class="tabular-nums text-xs text-secondary font-bold">
+									if m.Phone != "" {
+										<span>{ m.Phone }</span>
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+
+								<!-- Status Badge -->
+								<td class="text-center">
+									if m.IsActive {
+										<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_team.status_active") }</span>
+									} else {
+										<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_team.status_disabled") }</span>
+									}
+								</td>
+
+								<!-- Actions -->
+								<td class="col-actions">
+									<div class="table-actions">
+										if m.RoleKey != "org_owner" {
+											<!-- Edit Employee Info Button -->
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+												title={ i18n.T(lang, "vendor_team.tooltip_edit") }
+												@click={ fmt.Sprintf("openEdit({ id: %d, name: %q, phone: %q, jobTitle: %q, code: %q, roleKey: %q, roleId: %d, branchId: %d, isActive: %t })", m.ID, m.Name, m.Phone, m.JobTitle, m.EmployeeCode, m.RoleKey, m.RoleID, m.BranchID, m.IsActive) }
+											>
+												@components.IconEdit("icon-xs")
+												<span>{ i18n.T(lang, "vendor_team.btn_edit") }</span>
+											</button>
+
+											if m.UserID != data.CurrentUserID {
+												<!-- Toggle Active Status Form -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/team/%d/toggle", m.ID)) } class="m-0">
+													<button
+														type="submit"
+														class="btn btn-secondary btn-sm text-xs font-bold"
+														title={ ifElseStr(m.IsActive, i18n.T(lang, "vendor_team.tooltip_disable"), i18n.T(lang, "vendor_team.tooltip_enable")) }
+													>
+														if m.IsActive {
+															<span>{ i18n.T(lang, "vendor_team.btn_disable") }</span>
+														} else {
+															<span class="text-success font-bold">{ i18n.T(lang, "vendor_team.btn_enable") }</span>
+														}
+													</button>
+												</form>
+
+												<!-- Delete Member Form -->
+												<form
+													method="POST"
+													action={ templ.SafeURL(fmt.Sprintf("/vendor/team/%d/delete", m.ID)) }
+													class="m-0"
+													data-confirm={ i18n.T(lang, "vendor_team.delete_confirm") }
+												>
+													<button
+														type="submit"
+														class="btn btn-secondary btn-sm btn-icon text-danger"
+														title={ i18n.T(lang, "vendor_team.tooltip_delete") }
+													>
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											} else {
+												<span class="badge badge-sky text-2xs font-bold">
+													{ i18n.T(lang, "vendor_team.current_account_badge") }
+												</span>
+											}
+										} else {
+											<span class="badge badge-slate text-xs font-bold">
+												{ i18n.T(lang, "vendor_team.main_account_badge") }
+											</span>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/team",
+				})
+			}
+		}
+	</div>
+}

@@ -1,0 +1,115 @@
+package components
+
+import "fmt"
+
+// ImportFilePreview shows the first rows of the uploaded spreadsheet exactly as
+// they were read, before any column mapping is applied.
+//
+// Every import wizard shows this in the same place and the same shape: after
+// the upload, before the mapping step. It is the only chance a user has to
+// notice that the header row was misdetected, that a column is shifted, or that
+// they uploaded last month's file — before the mapping choices below it are
+// made against the wrong data and thousands of rows are committed.
+//
+// headers and rows come straight from the parsed file. Rows shorter than the
+// header row are padded so the columns stay aligned.
+templ ImportFilePreview(filename string, headers []string, rows [][]string) {
+	{{ width := previewWidth(headers, rows) }}
+	{{ headers = padPreviewHeaders(headers, width) }}
+	if width > 0 && len(rows) > 0 {
+		<section class="import-preview">
+			<header class="import-preview-head">
+				<h3 class="import-preview-title">
+					@IconGrid("icon-xs")
+					<span>معاينة بيانات ملف الإكسل</span>
+				</h3>
+				<span class="import-preview-meta tabular-nums">
+					if filename != "" {
+						{ filename }
+						<span aria-hidden="true"> • </span>
+					}
+					{ fmt.Sprintf("أول %d صفوف من %d عمود", len(rows), width) }
+				</span>
+			</header>
+
+			<div class="table-container import-preview-scroll m-0">
+				<table class="data-table data-table-compact m-0">
+					<thead>
+						<tr>
+							<th class="import-preview-rownum">#</th>
+							for i, h := range headers {
+								<th class="whitespace-nowrap" dir="auto">
+									<span class="import-preview-colnum tabular-nums">{ fmt.Sprintf("%d", i+1) }</span>
+									if h != "" {
+										{ h }
+									} else {
+										<span class="text-muted">(بدون عنوان)</span>
+									}
+								</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for n, row := range rows {
+							<tr>
+								<td class="import-preview-rownum tabular-nums">{ fmt.Sprintf("%d", n+1) }</td>
+								for _, cell := range padPreviewRow(row, width) {
+									<td class="whitespace-nowrap" dir="auto">
+										if cell != "" {
+											{ cell }
+										} else {
+											<span class="text-muted">—</span>
+										}
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			<p class="import-preview-note">
+				راجع الأعمدة أعلاه وتأكد أنها مطابقة لملفك قبل ربط الأعمدة والمتابعة.
+			</p>
+		</section>
+	}
+}
+
+// previewWidth is the column count the table renders.
+//
+// It is the widest of the header row and every preview row, not len(headers).
+// A sheet whose header row is shorter than its data rows — a trailing column
+// nobody titled — used to have those cells truncated away by padPreviewRow,
+// which is the one thing a preview must never do: it exists so the reader can
+// see what is really in the file.
+func previewWidth(headers []string, rows [][]string) int {
+	width := len(headers)
+	for _, row := range rows {
+		if len(row) > width {
+			width = len(row)
+		}
+	}
+	return width
+}
+
+// padPreviewHeaders pads the header row out to the table width so a titleless
+// trailing column still gets a column heading.
+func padPreviewHeaders(headers []string, width int) []string {
+	if len(headers) >= width {
+		return headers[:width]
+	}
+	out := make([]string, width)
+	copy(out, headers)
+	return out
+}
+
+// padPreviewRow pads a short row out to the table width so a row that ends in
+// blank cells still lines up under the right columns instead of shifting left.
+func padPreviewRow(row []string, width int) []string {
+	if len(row) >= width {
+		return row[:width]
+	}
+	out := make([]string, width)
+	copy(out, row)
+	return out
+}

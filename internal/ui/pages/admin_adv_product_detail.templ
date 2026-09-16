@@ -1,0 +1,297 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminAdvProductDetailData holds the data for the product sponsorship detail view.
+type AdminAdvProductDetailData struct {
+	Row           *promo.AdminSponsorshipRow
+	Purchase      *promo.SponsorshipPurchase
+	CreditEntries []*promo.CreditEntry
+	Events        []*promo.AdminSponsorshipEvent
+	NoticeType    string
+	NoticeMsg     string
+}
+
+templ AdminAdvProductDetailPage(lang, dir string, data AdminAdvProductDetailData) {
+	@layouts.AdminShell("تفاصيل رعاية المنتج | Product Sponsorship Detail", "adv_products", lang, dir) {
+		<div class="page-container" x-data={ fmt.Sprintf("{ rejectModalOpen: false, rejectId: %d, rejectAction: '/admin/adv-products/%d/reject' }", data.Row.ID, data.Row.ID) }>
+			
+			<!-- Breadcrumb & Back Link -->
+			<div class="mb-4 d-flex items-center gap-2 text-xs">
+				<a href="/admin/adv-products" class="text-accent hover:underline d-flex items-center gap-1 font-bold">
+					@components.IconArrowRight("icon-xs")
+					<span>العودة إلى رعاية المنتجات</span>
+				</a>
+				<span class="text-muted">/</span>
+				<span class="text-secondary font-semibold">تفاصيل الرعاية #{ fmt.Sprintf("%d", data.Row.ID) }</span>
+			</div>
+
+			<!-- Notice Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-2">
+						@components.IconAlert("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center gap-2">
+						@components.IconCheckCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			<!-- Header Glass Card -->
+			<div class="glass-panel p-6 mb-6 flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-xl">
+						@components.IconSparkles("icon-sm")
+					</div>
+					<div class="stack-xs text-start">
+						<div class="d-flex items-center gap-2 flex-wrap">
+							<h1 class="text-2xl font-black text-primary m-0">
+								رعاية: { data.Row.ProductName.Get(i18n.ParseLang(lang)) }
+							</h1>
+							if data.Row.Live(time.Now()) {
+								<span class="badge badge-emerald text-xs font-bold">نشط ومعتمد</span>
+							} else if data.Row.AdminStatus == "pending" {
+								<span class="badge badge-amber text-xs font-bold animate-pulse">بانتظار الموافقة</span>
+							} else if data.Row.Expired(time.Now()) {
+								<span class="badge badge-slate text-xs font-bold">منتهية الصلاحية</span>
+							} else if data.Row.AdminStatus == "rejected" {
+								<span class="badge badge-rose text-xs font-bold">مرفوضة</span>
+							}
+						</div>
+						<div class="text-xs text-secondary d-flex items-center gap-2">
+							<span>طلب رقم: <strong class="font-mono">{ data.Row.PublicID }</strong></span>
+							<span>•</span>
+							<span>المعرف الداخلي: <strong class="font-mono">#{ fmt.Sprintf("%d", data.Row.ID) }</strong></span>
+							<span>•</span>
+							<span>تاريخ الإنشاء: <span class="tabular-nums">{ format.DateTime(data.Row.CreatedAt, lang) }</span></span>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-2 flex-wrap">
+					if data.Row.AdminStatus == "pending" {
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/adv-products/%d/approve", data.Row.ID)) } class="m-0">
+							<button type="submit" class="btn btn-success btn-sm font-bold gap-1.5 text-white shadow-2xs">
+								@components.IconCheck("icon-xs")
+								<span>موافقة واعتماد التثبيت</span>
+							</button>
+						</form>
+						<button
+							type="button"
+							class="btn btn-danger btn-sm font-bold gap-1.5 text-white shadow-2xs"
+							@click="rejectModalOpen = true"
+						>
+							@components.IconClose("icon-xs")
+							<span>رفض الطلب</span>
+						</button>
+					} else if data.Row.Live(time.Now()) {
+						<button
+							type="button"
+							class="btn btn-secondary btn-sm font-bold text-rose-600 gap-1.5"
+							@click="rejectModalOpen = true"
+						>
+							@components.IconClose("icon-xs")
+							<span>إلغاء وتجميد الرعاية</span>
+						</button>
+					}
+				</div>
+			</div>
+
+			<!-- 4 Overview Info Cards -->
+			<div class="d-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+				<!-- 1. Product Info -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="text-xs font-bold text-muted mb-2 d-flex items-center justify-between">
+						<span>المنتج المروّج</span>
+						@components.IconPackage("icon-xs text-accent")
+					</div>
+					<div class="d-flex items-center gap-3 mb-3">
+						<div class="w-12 h-12 rounded-lg bg-surface-sunken border shrink-0 overflow-hidden d-flex items-center justify-center">
+							if data.Row.ProductImage != "" {
+								@components.ProductImage(imageurl.Thumb(data.Row.ProductImage, data.Row.ProductName.Get(i18n.ParseLang(lang)), "w-full h-full object-cover"))
+							} else {
+								@components.IconPackage("icon-sm text-muted")
+							}
+						</div>
+						<div class="stack-2xs text-start">
+							<div class="font-bold text-sm text-primary line-clamp-1">
+								{ data.Row.ProductName.Get(i18n.ParseLang(lang)) }
+							</div>
+							<div class="text-2xs text-muted font-mono">
+								كود: { data.Row.ProductSKU }
+							</div>
+						</div>
+					</div>
+					<div class="pt-2 border-t d-flex justify-between items-center text-2xs">
+						<span class="text-muted">معرف المنتج: #{ fmt.Sprintf("%d", data.Row.ProductID) }</span>
+						if data.Row.ProductID > 0 {
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/products/%d", data.Row.ProductID)) } target="_blank" class="text-accent hover:underline font-bold">
+								عرض بالكتالوج ↗
+							</a>
+						}
+					</div>
+				</div>
+
+				<!-- 2. Organization Info -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="text-xs font-bold text-muted mb-2 d-flex items-center justify-between">
+						<span>المنشأة الموردة (Sponsor)</span>
+						@components.IconSparkles("icon-xs text-primary")
+					</div>
+					<div class="font-bold text-sm text-primary mb-1">
+						{ data.Row.OrganizationName.Get(i18n.ParseLang(lang)) }
+					</div>
+					<div class="text-2xs text-muted mb-3">
+						<span>النوع: { data.Row.OrganizationType }</span>
+						<span> • </span>
+						<span>ID: #{ fmt.Sprintf("%d", data.Row.OrganizationID) }</span>
+					</div>
+					<div class="pt-2 border-t d-flex justify-between items-center text-2xs">
+						<span class="text-muted">حساب المنشأة</span>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", data.Row.OrganizationID)) } target="_blank" class="text-accent hover:underline font-bold">
+							ملف المنشأة ↗
+						</a>
+					</div>
+				</div>
+
+				<!-- 3. Package & Budget Info -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="text-xs font-bold text-muted mb-2 d-flex items-center justify-between">
+						<span>باقة الرعاية والتكلفة</span>
+						<span class={ "badge text-2xs font-bold", advTierBadgeClass(data.Row.TierLevel) }>
+							{ advTierName(data.Row.TierLevel) }
+						</span>
+					</div>
+					<div class="font-bold text-sm text-primary mb-1">
+						{ data.Row.PackageName.Get(i18n.ParseLang(lang)) }
+					</div>
+					<div class="text-2xs text-muted mb-3 tabular-nums">
+						<span>رصيد مستهلك: <strong>{ fmt.Sprintf("%d", data.Row.CreditsUsed) }</strong></span>
+						if data.Row.CreditsTotal > 0 {
+							<span> من { fmt.Sprintf("%d", data.Row.CreditsTotal) }</span>
+						}
+						if data.Row.Amount.IsPositive() {
+							<span> • { data.Row.Amount.String() } ج.م</span>
+						}
+					</div>
+					<div class="pt-2 border-t d-flex justify-between items-center text-2xs">
+						<span class="text-muted">حالة النافذة</span>
+						<span class="font-bold text-primary">{ advDaysRemaining(data.Row.ExpiresAt) }</span>
+					</div>
+				</div>
+
+				<!-- 4. Performance Tracking -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="text-xs font-bold text-muted mb-2 d-flex items-center justify-between">
+						<span>الأداء والتفاعل الحقيقي</span>
+						@components.IconEye("icon-xs text-success")
+					</div>
+					<div class="d-flex items-baseline gap-2 mb-1">
+						<span class="text-2xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.Row.Impressions) }</span>
+						<span class="text-2xs text-muted">مشاهدة إعلانية</span>
+					</div>
+					<div class="d-flex items-center gap-2 text-2xs text-secondary mb-3 tabular-nums">
+						<span><strong>{ fmt.Sprintf("%d", data.Row.Clicks) }</strong> نقرة</span>
+						<span>•</span>
+						<span>نسبة النقر (CTR): <strong class="text-accent">{ fmt.Sprintf("%.1f%%", data.Row.ClickRate()) }</strong></span>
+					</div>
+					<div class="pt-2 border-t d-flex justify-between items-center text-2xs">
+						<span class="text-muted">فترة التثبيت</span>
+						<span class="text-primary tabular-nums">
+							if data.Row.StartsAt != nil {
+								{ format.Date(*data.Row.StartsAt, lang) }
+							}
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Admin Notes / Moderation Banner if present -->
+			if data.Row.AdminNotes != "" {
+				<div class="glass-panel p-4 mb-6 border-s-4 border-s-amber">
+					<div class="font-bold text-xs text-amber mb-1 d-flex items-center gap-1.5">
+						@components.IconAlert("icon-2xs")
+						<span>ملاحظات التدقيق والإدارة:</span>
+					</div>
+					<p class="text-xs text-secondary m-0 leading-relaxed font-mono">
+						{ data.Row.AdminNotes }
+					</p>
+					if data.Row.ReviewedAt != nil {
+						<div class="text-2xs text-muted mt-2">
+							تمت المراجعة في: <span class="tabular-nums">{ format.DateTime(*data.Row.ReviewedAt, lang) }</span>
+						</div>
+					}
+				</div>
+			}
+
+			<!-- Tables: Credit Ledger & Events Telemetry -->
+			@AdminAdvProductDetailTables(data, lang)
+
+			<!-- ================= REJECT / REVOKE MODAL ================= -->
+			<div x-show="rejectModalOpen" x-cloak class="modal-backdrop" @click.self="rejectModalOpen = false">
+				<div class="modal-content max-w-md w-full mx-4 glass-panel border border-rose-200 rounded-3xl shadow-2xl overflow-hidden text-start" @click.stop>
+					<div class="modal-header p-5 border-b border-rose-100 flex-between items-center bg-rose-50/70">
+						<div class="d-flex items-center gap-2.5">
+							<div class="w-9 h-9 rounded-xl bg-rose-500 text-white d-flex items-center justify-center">
+								@components.IconAlert("icon-xs")
+							</div>
+							<div class="stack-xs text-start">
+								<h3 class="text-base font-black text-rose-700 m-0">رفض أو إلغاء رعاية المنتج</h3>
+								<span class="text-2xs text-muted">إيقاف التثبيت في الصدارة وإعادة الرصيد للمورد</span>
+							</div>
+						</div>
+						<button type="button" @click="rejectModalOpen = false" class="btn btn-ghost btn-sm text-slate-400 hover:text-slate-600">
+							@components.IconClose("icon-xs")
+						</button>
+					</div>
+
+					<form :action="rejectAction" method="POST" class="p-6 d-flex flex-col gap-4 m-0">
+						<p class="text-xs text-secondary m-0">
+							سيتم رفض طلب الرعاية وإيقاف ظهوره في الصدارة وإعادة رصيد الرعاية للمورد مع إرسال إشعار بالملاحظات المدونة أدناه.
+						</p>
+
+						<div class="stack-xs">
+							<label class="form-label text-xs font-bold text-primary">
+								سبب الرفض أو الملاحظات للمورد
+							</label>
+							<textarea
+								name="notes"
+								rows="3"
+								placeholder="اكتب سبب الرفض أو التوجيهات للمورد..."
+								class="form-input text-xs w-full"
+							></textarea>
+						</div>
+
+						<div class="d-flex justify-between items-center pt-4 border-t mt-2">
+							<button
+								type="button"
+								class="btn btn-secondary font-bold"
+								@click="rejectModalOpen = false"
+							>
+								تراجع
+							</button>
+							<button type="submit" class="btn btn-danger font-bold px-6">
+								تأكيد الرفض والإلغاء
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+		</div>
+	}
+}

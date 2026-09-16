@@ -1,0 +1,45 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ ComparePlansPage(lang, dir string, plans []*billing.Plan) {
+	@layouts.PublicShell("خطط مقارنة الخصومات | Plans", lang, dir) {
+  <div class="stack-sm">
+			<h2 class="font-bold text-base m-0">خطط مقارنة الخصومات</h2>
+			<p class="text-sm text-secondary m-0">قارن أسعار الموردين واحصل على أفضل صفقة لصيدليتك.</p>
+		</div>
+		if len(plans) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:       "لا توجد خطط متاحة",
+				Message:     "لم يتم تفعيل أي خطط بعد.",
+				ActionLabel: "تواصل معنا",
+			})
+		} else {
+   <div class="stack-sm">
+				for _, p := range plans {
+					<div class="glass-panel hover-lift">
+      <div class="stack-sm">
+							<h3 class="font-bold text-sm m-0">{ p.Name.Get(i18n.Lang(lang)) }</h3>
+							<p class="text-sm text-secondary m-0">{ p.Description.Get(i18n.Lang(lang)) }</p>
+							<div class="stack-sm">@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: p.PriceMonth })<span> / شهرياً</span></div>
+							<div class="stack-sm">@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: p.PriceYear })<span> / سنوياً</span></div>
+						</div>
+      <div class="stack-sm">
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/compare/subscribe?plan=%s", p.Slug)) } class="m-0">
+								<button type="submit" class="btn btn-primary">اشترك الآن</button>
+							</form>
+						</div>
+					</div>
+				}
+			</div>
+		}
+	}
+}
+

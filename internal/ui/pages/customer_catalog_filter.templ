@@ -1,0 +1,155 @@
+package pages
+
+import (
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ CustomerCatalogFilter(data CatalogPageData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- Filter Sidebar (Positioned on Left in RTL) -->
+	<aside class="catalog-sidebar-filter">
+		<div class="flex-between items-center pb-3 mb-4 border-b">
+			<div class="d-flex items-center gap-2">
+				@components.IconFilter("icon-sm text-primary")
+				<h2 class="text-sm font-extrabold text-primary m-0">
+					{ i18n.T(lang, "catalog.filter_heading") }
+				</h2>
+			</div>
+			<a href="/catalog" class="text-xs font-bold text-rose" title={ i18n.T(lang, "catalog.filter_reset") }>
+				{ i18n.T(lang, "catalog.filter_reset") }
+			</a>
+		</div>
+
+		<form action="/catalog" method="GET" class="d-flex flex-col gap-4" id="catalog-filter-form">
+			<!-- Anti-Scraping Honeypot Trap (Hidden from users) -->
+			<input type="text" name="company_tax_ref" class="hidden" tabindex="-1" autocomplete="off" />
+			<input type="hidden" name="filter_applied" value="1" />
+
+			if data.Query != "" {
+				<input type="hidden" name="q" value={ data.Query } />
+			}
+			if data.Sort != "" {
+				<input type="hidden" name="sort" value={ data.Sort } />
+			}
+			if data.ViewMode != "" {
+				<input type="hidden" name="view" value={ data.ViewMode } />
+			}
+			if data.PageSize > 0 {
+				<input type="hidden" name="page_size" value={ strconv.Itoa(data.PageSize) } />
+			}
+
+			<!-- Categories Tree -->
+			<div>
+				<label class="form-label text-xs font-bold mb-2 text-primary d-flex items-center gap-1.5">
+					@components.IconLayers("icon-xs text-muted")
+					<span>{ i18n.T(lang, "catalog.filter_categories") }</span>
+				</label>
+				<div class="category-filter-list">
+					<a
+						href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) }
+						class={ "category-filter-item", templ.KV("active", data.CategoryID == nil) }
+					>
+						<span>{ i18n.T(lang, "catalog.filter_all_categories") }</span>
+						<span class="badge badge-slate text-xs font-bold">
+							if lang == "en" {
+								All
+							} else {
+								الكل
+							}
+						</span>
+					</a>
+
+					for _, cat := range data.Categories {
+						<a
+							href={ templ.SafeURL(buildCatalogURL(CatalogPageData{Query: data.Query, CategoryID: &cat.ID, BrandID: data.BrandID, MinPrice: data.MinPrice, MaxPrice: data.MaxPrice, DosageForm: data.DosageForm, InStock: data.InStock, HasDiscount: data.HasDiscount, PageSize: data.PageSize, ViewMode: data.ViewMode}, 1, data.PageSize, data.Sort, data.ViewMode)) }
+							class={ "category-filter-item", templ.KV("active", data.CategoryID != nil && *data.CategoryID == cat.ID) }
+						>
+							<span class="text-truncate">
+								if lang == "en" && cat.Name["en"] != "" {
+									{ cat.Name["en"] }
+								} else if cat.Name["ar"] != "" {
+									{ cat.Name["ar"] }
+								} else {
+									{ cat.Name["en"] }
+								}
+							</span>
+						</a>
+					}
+				</div>
+			</div>
+
+			<!-- Dosage Form Filter -->
+			<div class="pt-3 border-t">
+				<label class="form-label text-xs font-bold mb-2 text-primary d-flex items-center gap-1.5">
+					@components.IconPill("icon-xs text-muted")
+					<span>{ i18n.T(lang, "catalog.filter_dosage_form") }</span>
+				</label>
+				<select
+					name="dosage_form"
+					class="form-select text-xs w-full"
+					data-autosubmit="catalog-filter-form"
+				>
+					<option value="" selected?={ data.DosageForm == "" }>{ i18n.T(lang, "catalog.filter_all_forms") }</option>
+					if lang == "en" {
+						<option value="أقراص" selected?={ data.DosageForm == "أقراص" || data.DosageForm == "tablet" }>Tablets</option>
+						<option value="كبسولات" selected?={ data.DosageForm == "كبسولات" || data.DosageForm == "capsule" }>Capsules</option>
+						<option value="شراب" selected?={ data.DosageForm == "شراب" || data.DosageForm == "syrup" }>Syrups & Liquids</option>
+						<option value="حقن" selected?={ data.DosageForm == "حقن" || data.DosageForm == "ampoule" }>Injections & Ampoules</option>
+						<option value="مرهم" selected?={ data.DosageForm == "مرهم" || data.DosageForm == "cream" || data.DosageForm == "ointment" }>Ointments & Creams</option>
+						<option value="فوار" selected?={ data.DosageForm == "فوار" || data.DosageForm == "sachet" }>Sachets & Effervescents</option>
+						<option value="قطرة" selected?={ data.DosageForm == "قطرة" || data.DosageForm == "drops" }>Drops & Solutions</option>
+					} else {
+						<option value="أقراص" selected?={ data.DosageForm == "أقراص" || data.DosageForm == "tablet" }>أقراص</option>
+						<option value="كبسولات" selected?={ data.DosageForm == "كبسولات" || data.DosageForm == "capsule" }>كبسولات</option>
+						<option value="شراب" selected?={ data.DosageForm == "شراب" || data.DosageForm == "syrup" }>شراب وسوائل</option>
+						<option value="حقن" selected?={ data.DosageForm == "حقن" || data.DosageForm == "ampoule" }>حقن وأمبولات</option>
+						<option value="مرهم" selected?={ data.DosageForm == "مرهم" || data.DosageForm == "cream" || data.DosageForm == "ointment" }>مراهم وكريمات</option>
+						<option value="فوار" selected?={ data.DosageForm == "فوار" || data.DosageForm == "sachet" }>فوار وأكياس</option>
+						<option value="قطرة" selected?={ data.DosageForm == "قطرة" || data.DosageForm == "drops" }>قطرات ومحاليل</option>
+					}
+				</select>
+			</div>
+
+			<!-- Price Range -->
+			<div class="pt-3 border-t">
+				<label class="form-label text-xs font-bold mb-2 text-primary d-flex items-center gap-1.5">
+					@components.IconTag("icon-xs text-muted")
+					<span>{ i18n.T(lang, "catalog.filter_price_range") }</span>
+				</label>
+				<div class="grid grid-cols-2 gap-2">
+					<div>
+						<input type="number" name="min_price" value={ data.MinPrice } placeholder={ i18n.T(lang, "search.price_from") } class="form-input text-xs tabular-nums font-semibold w-full" />
+					</div>
+					<div>
+						<input type="number" name="max_price" value={ data.MaxPrice } placeholder={ i18n.T(lang, "search.price_to") } class="form-input text-xs tabular-nums font-semibold w-full" />
+					</div>
+				</div>
+			</div>
+
+			<!-- Availability & Discount Checkboxes -->
+			<div class="pt-3 border-t d-flex flex-col gap-2.5">
+				<label class="d-flex items-center gap-2.5 text-xs font-bold text-primary cursor-pointer select-none">
+					<input type="checkbox" name="in_stock" value="true" checked?={ data.InStock } class="form-checkbox" data-autosubmit="catalog-filter-form" />
+					<span>{ i18n.T(lang, "catalog.filter_in_stock_only") }</span>
+				</label>
+				<label class="d-flex items-center gap-2.5 text-xs font-bold text-primary cursor-pointer select-none">
+					<input type="checkbox" name="has_discount" value="true" checked?={ data.HasDiscount } class="form-checkbox" data-autosubmit="catalog-filter-form" />
+					<span>{ i18n.T(lang, "catalog.filter_discount_only") }</span>
+				</label>
+			</div>
+
+			<button type="submit" class="btn btn-primary btn-sm w-full justify-center font-bold mt-1 shadow-xs gap-2">
+				@components.IconSearch("icon-xs")
+				<span>{ i18n.T(lang, "catalog.filter_apply") }</span>
+			</button>
+		</form>
+	</aside>
+}

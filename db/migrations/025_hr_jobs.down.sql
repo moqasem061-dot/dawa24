@@ -1,0 +1,3 @@
+DROP TABLE IF EXISTS hr.job_applications CASCADE;
+DROP TABLE IF EXISTS hr.job_offers CASCADE;
+DROP TABLE IF EXISTS hr.job_categories CASCADE;

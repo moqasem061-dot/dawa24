@@ -1,0 +1,43 @@
+package components
+
+// The closing call to action, shared by the landing page, /about and
+// /how-it-works.
+//
+// It was a centred card with a gradient ground, a pill badge, a headline, a
+// paragraph and two large buttons — the block that made all three pages end the
+// same way as every other product page on the internet.
+//
+// It is the last entry in the record now: the platform's panel component tinted
+// with the brand subtle, the offer stated in one line, and the two routes in as
+// what they actually are — one for a pharmacy, one for a supplier. Two weights
+// of button, not two of the same button.
+templ PublicCTA(title, desc, lang string) {
+	<section class="glass-panel mk-close">
+		<div class="mk-close-text">
+			<h2 class="mk-close-title">
+				if title != "" {
+					{ title }
+				} else {
+					افتح حساباً وابدأ التوريد هذا الأسبوع
+				}
+			</h2>
+			<p class="mk-close-desc">
+				if desc != "" {
+					{ desc }
+				} else {
+					التسجيل مجاني. التفعيل بعد مراجعة الترخيص، وعادةً خلال ساعات عمل قليلة.
+				}
+			</p>
+		</div>
+		<div class="mk-close-actions">
+			<a href="/auth/register" class="btn btn-primary">
+				@IconPill("icon-xs")
+				<span>تسجيل صيدلية</span>
+			</a>
+			<a href="/auth/register" class="btn btn-secondary">
+				@IconBuilding("icon-xs")
+				<span>انضمام كمورد</span>
+			</a>
+		</div>
+	</section>
+}

@@ -1,0 +1,518 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorStockAlertsData struct {
+	Stocks       []*inventory.Stock
+	AllLowStocks []*inventory.Stock
+	Warehouses   []*inventory.Warehouse
+	Branches     []*org.Branch
+	Variants     []*catalog.ProductVariant
+	Total        int
+	Page         int
+	PerPage      int
+	TotalPages   int
+	Query        string
+	WarehouseID  int64
+	StatusFilter string
+	NoticeType   string
+	NoticeMsg    string
+}
+
+templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial bool) {
+	if isPartial {
+		@VendorStockAlertsTable(data, lang)
+	} else {
+		@layouts.VendorShell(i18n.T(lang, "vendor_stock_alerts.page_title"), "inventory", lang, dir) {
+			<div class="page-container" x-data="{ adjustModal: false, selectedStock: { id: 0, variantName: '', currentQty: 0 }, transferModal: false, transferStock: { id: 0, variant_id: 0, product_id: 0, name: '', from_wh_id: 0, from_wh_name: '', qty: 0 } }">
+				
+				<!-- Header Notice -->
+				if data.NoticeMsg != "" {
+					if data.NoticeType == "error" {
+						<div class="alert alert-danger mb-4 d-flex items-center gap-3 p-4">
+							<span class="text-xl">@components.IconAlert("icon-sm")</span>
+							<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+						</div>
+					} else {
+						<div class="alert alert-success mb-4 d-flex items-center gap-3 p-4">
+							<span class="text-xl">@components.IconCheck("icon-sm")</span>
+							<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+						</div>
+					}
+				}
+
+				<!-- Page Header -->
+				<div class="d-flex items-center justify-between flex-wrap gap-4 mb-4">
+					<div>
+						<div class="d-flex items-center gap-2 mb-1">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_stock_alerts.title") }
+							</h1>
+							<span class="badge badge-amber text-xs font-black tabular-nums">
+								{ fmt.Sprintf("%d", data.Total) }
+							</span>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_stock_alerts.subtitle") }
+						</p>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href="/vendor/inventory" class="btn btn-secondary btn-sm font-bold gap-1.5">
+							@components.IconLayers("icon-xs")
+							<span>{ i18n.T(lang, "vendor_stock_alerts.btn_all_inventory") }</span>
+						</a>
+						<a href="/vendor/warehouses" class="btn btn-secondary btn-sm font-bold gap-1.5">
+							@components.IconBuilding("icon-xs")
+							<span>{ i18n.T(lang, "vendor_stock_alerts.btn_warehouses") }</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Alerts Metric Cards -->
+				{{
+					outOfStockCount := 0
+					lowStockCount := 0
+					affectedWHMap := make(map[int64]bool)
+					for _, s := range data.AllLowStocks {
+						if s.Quantity <= 0 {
+							outOfStockCount++
+						} else {
+							lowStockCount++
+						}
+						affectedWHMap[s.WarehouseID] = true
+					}
+				}}
+				<div class="dashboard-stat-grid cols-4 mb-4">
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-rose">{ i18n.T(lang, "vendor_stock_alerts.stat_out_of_stock") }</div>
+						<div class="stat-card-value text-rose tabular-nums">{ fmt.Sprintf("%d", outOfStockCount) }</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_out_of_stock_desc") }</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_stock_alerts.stat_approaching_empty") }</div>
+						<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", lowStockCount) }</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_approaching_empty_desc") }</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-primary">{ i18n.T(lang, "vendor_stock_alerts.stat_total_alerts") }</div>
+						<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", len(data.AllLowStocks)) }</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_total_alerts_desc") }</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_stock_alerts.stat_affected_warehouses") }</div>
+						<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", len(affectedWHMap)) }</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_affected_warehouses_desc") }</div>
+					</div>
+				</div>
+
+				<!-- Filter & Search Bar -->
+				<div class="filter-bar mb-4">
+					<form method="GET" action="/vendor/inventory/alerts" class="d-flex items-center gap-3 flex-wrap m-0">
+						<div class="flex-1">
+							<input
+								type="text"
+								name="q"
+								value={ data.Query }
+								placeholder={ i18n.T(lang, "vendor_stock_alerts.search_placeholder") }
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<div class="stack-sm">
+							<select name="warehouse_id" data-autosubmit class="form-input text-xs w-full">
+								<option value="">{ fmt.Sprintf(i18n.T(lang, "vendor_inventory.all_warehouses"), len(data.Warehouses)) }</option>
+								for _, wh := range data.Warehouses {
+									<option value={ fmt.Sprintf("%d", wh.ID) } selected?={ data.WarehouseID == wh.ID }>
+										{ wh.Name }
+									</option>
+								}
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<select name="status" data-autosubmit class="form-input text-xs w-full">
+								<option value="" selected?={ data.StatusFilter == "" }>{ i18n.T(lang, "vendor_stock_alerts.filter_all_statuses") }</option>
+								<option value="out_of_stock" selected?={ data.StatusFilter == "out_of_stock" }>{ i18n.T(lang, "vendor_stock_alerts.filter_out_of_stock") }</option>
+								<option value="low_stock" selected?={ data.StatusFilter == "low_stock" }>{ i18n.T(lang, "vendor_stock_alerts.filter_low_stock") }</option>
+							</select>
+						</div>
+
+						<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.PerPage) }/>
+
+						<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-4">
+							<span>{ i18n.T(lang, "common.search") }</span>
+						</button>
+
+						if data.Query != "" || data.WarehouseID > 0 || data.StatusFilter != "" {
+							<a href="/vendor/inventory/alerts" class="btn btn-secondary btn-sm text-xs">
+								<span>{ i18n.T(lang, "common.cancel") }</span>
+							</a>
+						}
+					</form>
+				</div>
+
+				<!-- Alerts Table Card -->
+				<div class="glass-panel p-0 mb-0 overflow-hidden">
+					<div class="stack-sm" id="vendor-stock-alerts-content">
+						@VendorStockAlertsTable(data, lang)
+					</div>
+				</div>
+
+				<!-- Stock Adjust Modal -->
+				<div
+					class="modal-backdrop"
+					x-show="adjustModal"
+					x-cloak
+					x-transition:enter="transition ease-out duration-200"
+					x-transition:enter-start="opacity-0"
+					x-transition:enter-end="opacity-100"
+					x-transition:leave="transition ease-in duration-150"
+					x-transition:leave-start="opacity-100"
+					x-transition:leave-end="opacity-0"
+				>
+					<div class="modal-dialog modal-sm" @click.away="adjustModal = false">
+						<div class="modal-header">
+							<div>
+								<h3 class="modal-title">{ i18n.T(lang, "vendor_inventory.adjust_title") }</h3>
+								<p class="modal-subtitle" x-text="selectedStock.variantName"></p>
+							</div>
+							<button type="button" @click="adjustModal = false" class="btn btn-secondary btn-icon btn-sm">&times;</button>
+						</div>
+
+						<div class="bg-surface-sunken border rounded-xl p-3.5 mb-3 text-xs d-flex justify-between items-center">
+							<span class="text-secondary font-bold">{ i18n.T(lang, "vendor_inventory.current_stock_label") }</span>
+							<strong class="tabular-nums text-brand font-black" x-text="selectedStock.currentQty"></strong>
+						</div>
+
+						<form :action="'/vendor/inventory/' + selectedStock.id + '/adjust'" method="POST" class="d-flex flex-col gap-4 m-0">
+							<input type="hidden" name="redirect_url" value="/vendor/inventory/alerts"/>
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_qty") } <span class="text-danger">*</span></label>
+								<input type="number" name="delta" required class="form-input text-center font-bold tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_inventory.fld_delta_ph") } />
+								<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_help") }</span>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_adjust_reason") }</label>
+								<select name="reason" class="form-input text-xs w-full font-bold">
+									<option value="تسوية جرد دوري">{ i18n.T(lang, "vendor_inventory.reason_audit") }</option>
+									<option value="استلام شحنة جديدة من المصنع">{ i18n.T(lang, "vendor_inventory.reason_receipt") }</option>
+									<option value="تالف / كسر / انتهاء صلاحية">{ i18n.T(lang, "vendor_inventory.reason_damage") }</option>
+									<option value="تسوية مبيعات يدوية">{ i18n.T(lang, "vendor_inventory.reason_manual_sale") }</option>
+									<option value="أخرى">{ i18n.T(lang, "vendor_inventory.reason_other") }</option>
+								</select>
+							</div>
+
+							<div class="modal-actions mt-2">
+								<button type="button" @click="adjustModal = false" class="btn btn-secondary btn-sm flex-1 font-bold">
+									{ i18n.T(lang, "common.cancel") }
+								</button>
+								<button type="submit" class="btn btn-primary btn-sm flex-1 font-black">
+									{ i18n.T(lang, "vendor_inventory.btn_confirm_adjust") }
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<!-- Stock Transfer Modal -->
+				<div
+					class="modal-backdrop"
+					x-show="transferModal"
+					x-cloak
+					x-transition:enter="transition ease-out duration-200"
+					x-transition:enter-start="opacity-0"
+					x-transition:enter-end="opacity-100"
+					x-transition:leave="transition ease-in duration-150"
+					x-transition:leave-start="opacity-100"
+					x-transition:leave-end="opacity-0"
+				>
+					<div class="modal-dialog modal-md" @click.away="transferModal = false">
+						<div class="modal-header">
+							<div>
+								<h3 class="modal-title">{ i18n.T(lang, "vendor_inventory.transfer_title") }</h3>
+								<p class="modal-subtitle" x-text="transferStock.name"></p>
+							</div>
+							<button type="button" @click="transferModal = false" class="btn btn-secondary btn-icon btn-sm">&times;</button>
+						</div>
+
+						<form action="/vendor/inventory/transfer" method="POST" class="d-flex flex-col gap-4 m-0">
+							<input type="hidden" name="stock_id" :value="transferStock.id"/>
+							<input type="hidden" name="variant_id" :value="transferStock.variant_id"/>
+							<input type="hidden" name="product_id" :value="transferStock.product_id"/>
+							<input type="hidden" name="from_warehouse_id" :value="transferStock.from_wh_id"/>
+							<input type="hidden" name="redirect_url" value="/vendor/inventory/alerts"/>
+
+							<div class="bg-surface-sunken border rounded-xl p-3.5 text-xs stack-xs">
+								<div class="text-2xs text-muted font-bold">{ i18n.T(lang, "vendor_inventory.transfer_source_label") }</div>
+								<div class="d-flex justify-between items-center">
+									<strong class="text-primary font-bold" x-text="transferStock.from_wh_name"></strong>
+									<span class="text-secondary">{ i18n.T(lang, "vendor_inventory.available_label") }: <strong class="text-brand tabular-nums font-black" x-text="transferStock.qty"></strong></span>
+								</div>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_inventory.transfer_dest_label") }
+								</label>
+								<select name="to_warehouse_id" required class="form-input text-xs w-full">
+									<option value="">{ i18n.T(lang, "vendor_inventory.select_dest_warehouse") }</option>
+									for _, wh := range data.Warehouses {
+										<option value={ fmt.Sprintf("%d", wh.ID) } :disabled={ fmt.Sprintf("transferStock.from_wh_id == %d", wh.ID) }>
+											{ wh.Name }
+										</option>
+									}
+								</select>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_inventory.transfer_qty_label") }
+								</label>
+								<input
+									type="number"
+									name="quantity"
+									min="1"
+									required
+									placeholder="1"
+									class="form-input text-sm w-full font-bold tabular-nums"
+								/>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_inventory.transfer_notes_label") }
+								</label>
+								<input
+									type="text"
+									name="notes"
+									placeholder={ i18n.T(lang, "vendor_inventory.transfer_notes_ph") }
+									class="form-input text-xs w-full"
+								/>
+							</div>
+
+							<div class="modal-actions mt-2">
+								<button type="button" @click="transferModal = false" class="btn btn-secondary btn-sm flex-1 font-bold">
+									{ i18n.T(lang, "common.cancel") }
+								</button>
+								<button type="submit" class="btn btn-primary btn-sm flex-1 font-black">
+									{ i18n.T(lang, "vendor_inventory.btn_confirm_transfer") }
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+
+			</div>
+		}
+	}
+}
+
+// VendorStockAlertsTable renders the detailed data table for stock alerts.
+templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if len(data.Stocks) == 0 {
+		<div class="p-12 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconCheck("icon-sm")</div>
+			<h3 class="text-lg font-black text-primary mb-2">
+				if data.Query != "" || data.WarehouseID > 0 || data.StatusFilter != "" {
+					{ i18n.T(lang, "vendor_stock_alerts.empty_filter_title") }
+				} else {
+					{ i18n.T(lang, "vendor_stock_alerts.empty_healthy_title") }
+				}
+			</h3>
+			<p class="text-sm text-secondary m-0">
+				if data.Query != "" || data.WarehouseID > 0 || data.StatusFilter != "" {
+					{ i18n.T(lang, "vendor_stock_alerts.empty_filter_desc") }
+				} else {
+					{ i18n.T(lang, "vendor_stock_alerts.empty_healthy_desc") }
+				}
+			</p>
+			<div class="mt-4">
+				<a href="/vendor/inventory" class="btn btn-secondary btn-sm font-bold">
+					<span>{ i18n.T(lang, "vendor_stock_alerts.btn_all_inventory") }</span>
+				</a>
+			</div>
+		</div>
+	} else {
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>{ i18n.T(lang, "vendor_stock_alerts.th_product_variant") }</th>
+						<th>{ i18n.T(lang, "vendor_stock_alerts.th_branch") }</th>
+						<th>{ i18n.T(lang, "vendor_stock_alerts.th_warehouse") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_stock_alerts.th_available_qty") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_stock_alerts.th_reorder_level") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_stock_alerts.th_deficit") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_stock_alerts.th_status") }</th>
+						<th class="col-actions text-end">{ i18n.T(lang, "vendor_stock_alerts.th_actions") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, s := range data.Stocks {
+						{{
+							deficit := s.MinThreshold - s.Quantity
+							if deficit < 0 {
+								deficit = 0
+							}
+						}}
+						<tr>
+							<td>
+								<div class="d-flex items-center gap-3">
+									<div class={ "user-avatar-badge", templ.KV("bg-rose-subtle", s.Quantity <= 0), templ.KV("bg-amber-subtle", s.Quantity > 0) }>
+										@components.IconPackage("icon-xs")
+									</div>
+									<div class="stack-sm">
+										<strong class="text-primary text-sm font-extrabold d-block">
+											{ resolveVariantName(s.ProductVariantID, data.Variants, lang) }
+										</strong>
+										<div class="text-xs text-muted tabular-nums">
+											<span>Variant #{ fmt.Sprintf("%d", s.ProductVariantID) }</span>
+											{ resolveVariantMeta(s.ProductVariantID, data.Variants, lang) }
+										</div>
+									</div>
+								</div>
+							</td>
+							<td>
+								<div class="d-flex items-center gap-1.5">
+									@components.IconBuilding("icon-xs text-muted")
+									<span class="font-bold text-primary text-xs">
+										{ resolveBranchName(s.WarehouseID, data.Warehouses, data.Branches, lang) }
+									</span>
+								</div>
+							</td>
+							<td>
+								<div class="stack-xs">
+									<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", s.WarehouseID)) } class="font-bold text-brand text-xs no-underline hover-underline">
+										{ resolveWarehouseName(s.WarehouseID, data.Warehouses, lang) }
+									</a>
+									<span class="text-2xs text-muted tabular-nums">WH #{ fmt.Sprintf("%d", s.WarehouseID) }</span>
+								</div>
+							</td>
+							<td class="text-center">
+								if s.Quantity <= 0 {
+									<span class="badge badge-rose tabular-nums text-xs font-black">
+										{ i18n.T(lang, "vendor_products.stock_out") }
+									</span>
+								} else {
+									<span class="badge badge-amber tabular-nums text-xs font-black">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), s.Quantity) }
+									</span>
+								}
+							</td>
+							<td class="text-center tabular-nums">
+								<span class="text-xs text-secondary font-bold">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), s.MinThreshold) }
+								</span>
+							</td>
+							<td class="text-center tabular-nums">
+								if s.Quantity <= 0 {
+									<span class="badge badge-rose text-2xs font-bold">
+										{ fmt.Sprintf("عجز %d عبوة", s.MinThreshold) }
+									</span>
+								} else if deficit > 0 {
+									<span class="badge badge-amber text-2xs font-bold">
+										{ fmt.Sprintf("نقص %d عبوة", deficit) }
+									</span>
+								} else {
+									<span class="text-muted text-xs">—</span>
+								}
+							</td>
+							<td class="text-center">
+								if s.Quantity <= 0 {
+									<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_inventory.status_unavailable") }</span>
+								} else {
+									<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "vendor_inventory.badge_low_stock") }</span>
+								}
+							</td>
+							<td class="col-actions text-end">
+								<div class="table-actions justify-end">
+									<button
+										type="button"
+										class="btn btn-primary btn-xs font-bold gap-1"
+										@click={ fmt.Sprintf("selectedStock = { id: %d, variantName: %q, currentQty: %d }; adjustModal = true;", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.Quantity) }
+										title={ i18n.T(lang, "vendor_stock_alerts.btn_adjust_title") }
+									>
+										<span>{ i18n.T(lang, "vendor_stock_alerts.btn_restock") }</span>
+									</button>
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold gap-1"
+										@click={ fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, from_wh_id: %d, from_wh_name: %q, qty: %d }; transferModal = true;", s.ID, s.ProductVariantID, s.ProductID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.WarehouseID, resolveWarehouseName(s.WarehouseID, data.Warehouses, lang), s.Quantity) }
+										title={ i18n.T(lang, "vendor_inventory.btn_transfer_title") }
+									>
+										@components.IconRefresh("icon-xs")
+										<span>{ i18n.T(lang, "vendor_inventory.btn_transfer_stock") }</span>
+									</button>
+									<a
+										href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", s.WarehouseID)) }
+										class="btn btn-secondary btn-xs font-bold gap-1 text-muted"
+										title={ i18n.T(lang, "vendor_stock_alerts.btn_view_wh") }
+									>
+										@components.IconArrowLeft("icon-xs")
+									</a>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+
+		@components.B2BPagination(components.PaginationProps{
+			CurrentPage: data.Page,
+			PageSize:    data.PerPage,
+			TotalCount:  data.Total,
+			BaseURL:     "/vendor/inventory/alerts",
+			QueryValues: url.Values{
+				"q":            {data.Query},
+				"warehouse_id": {fmt.Sprintf("%d", data.WarehouseID)},
+				"status":       {data.StatusFilter},
+			},
+		})
+	}
+}
+
+func resolveBranchName(whID int64, warehouses []*inventory.Warehouse, branches []*org.Branch, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	for _, w := range warehouses {
+		if w.ID == whID {
+			if w.BranchName != "" {
+				return w.BranchName
+			}
+			if w.BranchID != nil {
+				for _, b := range branches {
+					if b.ID == *w.BranchID {
+						if name := b.Name.Get(i18n.Lang(lang)); name != "" {
+							return name
+						}
+					}
+				}
+			}
+		}
+	}
+	return i18n.T(lang, "vendor_stock_alerts.main_branch")
+}

@@ -1,0 +1,121 @@
+package components
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+)
+
+import "fmt"
+
+type InvoiceExportDropdownProps struct {
+	PrintURL string
+	ExcelURL string
+	WordURL  string
+	Size     string // "xs", "sm", "md"
+	Align    string // "start", "end"
+	Label    string
+}
+
+templ InvoiceExportDropdown(props InvoiceExportDropdownProps) {
+	<div
+		class="relative inline-block text-start"
+		x-data="{ open: false }"
+		@click.outside="open = false"
+	>
+		<button
+			type="button"
+			@click="open = !open"
+			class={ "btn btn-secondary font-bold d-inline-flex items-center gap-1.5",
+				templ.KV("btn-xs py-1 px-2.5 text-2xs", props.Size == "xs"),
+				templ.KV("btn-sm py-1.5 px-3 text-xs", props.Size == "" || props.Size == "sm"),
+				templ.KV("btn-md py-2 px-4 text-sm", props.Size == "md") }
+			title="خيارات طباعة وتصدير الفاتورة"
+		>
+			@IconPrinter("icon-xs")
+			if props.Label != "" {
+				<span>{ props.Label }</span>
+			} else {
+				<span>طباعة / تصدير</span>
+			}
+			<span class="text-[10px] opacity-70">▼</span>
+		</button>
+
+		<div
+			x-show="open"
+			class={ "absolute z-50 mt-1.5 w-56 rounded-2xl border border-default bg-surface-raised shadow-xl p-1.5 text-xs text-start",
+				templ.KV("start-0", props.Align == "start"),
+				templ.KV("end-0", props.Align == "" || props.Align == "end") }
+			style="display:none;"
+		>
+			<!-- 1. Print / PDF (Via Hidden Iframe without leaving page) -->
+			<button
+				type="button"
+				class="w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start"
+				@click={ fmt.Sprintf("open = false; if (window.printInvoiceDirectly) { window.printInvoiceDirectly('%s'); } else { window.open('%s', '_blank'); }", props.PrintURL, props.PrintURL) }
+			>
+				<span class="text-accent">🖨️</span>
+				<div class="d-flex flex-col text-start">
+					<span>طباعة / تصدير PDF</span>
+					<span class="text-2xs text-secondary font-normal">طباعة فورية دون مغادرة الصفحة</span>
+				</div>
+			</button>
+
+			<!-- 2. Export Excel -->
+			<a
+				href={ templ.SafeURL(props.ExcelURL) }
+				download
+				class="w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start"
+				@click="open = false"
+			>
+				<span class="text-emerald-600">📊</span>
+				<div class="d-flex flex-col text-start">
+					<span>تصدير Excel (XLSX)</span>
+					<span class="text-2xs text-secondary font-normal">جدول بيانات تفصيلي جاهز</span>
+				</div>
+			</a>
+
+			<!-- 3. Export Word -->
+			<a
+				href={ templ.SafeURL(props.WordURL) }
+				download
+				class="w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start"
+				@click="open = false"
+			>
+				<span class="text-blue-600">📝</span>
+				<div class="d-flex flex-col text-start">
+					<span>تصدير Word (DOCX)</span>
+					<span class="text-2xs text-secondary font-normal">مستند قابل للتعديل والطباعة</span>
+				</div>
+			</a>
+		</div>
+	</div>
+	<script nonce={ httpx.Nonce(ctx) }>
+		if (!window.printInvoiceDirectly) {
+			window.printInvoiceDirectly = function(url) {
+				var iframe = document.getElementById('print-invoice-hidden-iframe');
+				if (!iframe) {
+					iframe = document.createElement('iframe');
+					iframe.id = 'print-invoice-hidden-iframe';
+					iframe.style.position = 'fixed';
+					iframe.style.right = '0';
+					iframe.style.bottom = '0';
+					iframe.style.width = '0';
+					iframe.style.height = '0';
+					iframe.style.border = '0';
+					iframe.style.opacity = '0';
+					iframe.style.pointerEvents = 'none';
+					document.body.appendChild(iframe);
+				}
+				var printUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';
+				iframe.src = printUrl;
+				iframe.onload = function() {
+					try {
+						iframe.contentWindow.focus();
+						iframe.contentWindow.print();
+					} catch (e) {
+						window.open(url, '_blank');
+					}
+				};
+			};
+		}
+	</script>
+}

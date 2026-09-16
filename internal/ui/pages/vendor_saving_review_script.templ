@@ -1,0 +1,201 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorSavingReviewScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function renderVendorStagedReview(sess) {
+			showVendorImportStep('review');
+
+			document.getElementById('vendor-review-total-count').textContent = sess.total_rows || (sess.items ? sess.items.length : 0);
+			document.getElementById('vendor-review-matched-count').textContent = sess.matched_rows || 0;
+			document.getElementById('vendor-review-unlinked-count').textContent = sess.unlinked_rows || 0;
+			document.getElementById('vendor-review-total-qty').textContent = Number(sess.total_quantity || 0).toLocaleString();
+
+			document.getElementById('vendor-badge-all').textContent = sess.items ? sess.items.length : 0;
+			document.getElementById('vendor-badge-matched').textContent = sess.matched_rows || 0;
+			document.getElementById('vendor-badge-unlinked').textContent = sess.unlinked_rows || 0;
+
+			renderVendorReviewRows(sess.items || []);
+		}
+
+		function renderVendorReviewRows(items) {
+			const tbody = document.getElementById('vendor-review-table-body');
+			if (!tbody) return;
+
+			const searchVal = (document.getElementById('vendor-review-search')?.value || '').trim().toLowerCase();
+
+			// Names and codes come from the uploaded file: escaped, sanitised,
+			// and the checkbox (an <input>, which the sanitiser does not pass)
+			// is added as a node afterwards.
+			const esc = dawaHTML.escape;
+			let html = '';
+			let selectedCount = 0;
+
+			items.forEach((item, idx) => {
+				const isMatched = !!item.product_id;
+				if (vendorCurrentTab === 'matched' && !isMatched) return;
+				if (vendorCurrentTab === 'unlinked' && isMatched) return;
+
+				if (searchVal) {
+					const n = (item.name_product || '').toLowerCase();
+					const s = (item.sku || '').toLowerCase();
+					const m = (item.master_product_name || '').toLowerCase();
+					if (!n.includes(searchVal) && !s.includes(searchVal) && !m.includes(searchVal)) return;
+				}
+
+				if (item.included !== false) selectedCount++;
+
+				let matchBadge = '<span class="badge badge-amber font-size-10">غير مرتبط (جديد)</span>';
+				if (item.match_type === 'ai_disputed') {
+					matchBadge = '<span class="badge badge-danger font-size-10">نزاع ذكاء اصطناعي ⚠️</span>';
+				} else if (isMatched) {
+					if (item.match_type === 'ai') {
+						const conf = Math.round((item.confidence || 0) * 100);
+						matchBadge = '<span class="badge badge-purple font-size-10">ذكاء اصطناعي ' + conf + '% 🤖</span>';
+					} else if (item.match_type === 'exact_sku' || item.match_type === 'clean_sku') {
+						matchBadge = '<span class="badge badge-emerald font-size-10">كود SKU</span>';
+					} else if (item.match_type === 'exact_name' || item.match_type === 'norm_name') {
+						matchBadge = '<span class="badge badge-emerald font-size-10">اسم متطابق</span>';
+					} else if (item.match_type === 'core_name') {
+						matchBadge = '<span class="badge badge-sky font-size-10">اسم مجرد</span>';
+					} else {
+						const conf = Math.round((item.confidence || 0) * 100);
+						matchBadge = '<span class="badge badge-purple font-size-10">تشابه ' + conf + '%</span>';
+					}
+				}
+
+				const masterDisplay = item.master_product_name ? 
+					('<strong>' + esc(item.master_product_name) + '</strong>' + (item.master_product_sku ? ' <code class="text-xs text-muted">(' + esc(item.master_product_sku) + ')</code>' : '')) : 
+					'<span>— صنف حر غير مقيد —</span>';
+
+				html += '<tr class="rule-bottom">' +
+					'<td class="text-center" data-cb-idx="' + idx + '" data-cb-checked="' + (item.included !== false ? '1' : '0') + '"></td>' +
+					'<td><strong class="text-body">' + esc(item.name_product || '') + '</strong></td>' +
+					'<td><code class="text-xs">' + esc(item.sku || '—') + '</code></td>' +
+					'<td>' + masterDisplay + '</td>' +
+					'<td class="text-center">' + matchBadge + '</td>' +
+					'<td class="text-center tabular-nums font-bold">' + esc(item.quantity || 0) + '</td>' +
+					'<td class="text-end tabular-nums font-bold">' + esc(item.price || '0.00') + ' ج.م</td>' +
+					'</tr>';
+			});
+
+			if (!html) {
+				html = '<tr><td colspan="7">لا توجد أصناف تطابق الفلتر الحالي.</td></tr>';
+			}
+
+			tbody.innerHTML = dawaHTML.sanitize(html, 'tbody');
+			tbody.querySelectorAll('[data-cb-idx]').forEach(td => {
+				const idx = parseInt(td.dataset.cbIdx, 10);
+				const cb = document.createElement('input');
+				cb.type = 'checkbox';
+				cb.className = 'vendor-staged-row-cb';
+				cb.dataset.idx = String(idx);
+				cb.checked = td.dataset.cbChecked === '1';
+				cb.addEventListener('change', () => updateVendorRowInclusion(idx, cb.checked));
+				td.appendChild(cb);
+			});
+			document.getElementById('vendor-selected-count').textContent = selectedCount;
+		}
+
+		function updateVendorRowInclusion(idx, included) {
+			if (vendorStagedData && vendorStagedData.items && vendorStagedData.items[idx]) {
+				vendorStagedData.items[idx].included = included;
+			}
+			let count = 0;
+			if (vendorStagedData && vendorStagedData.items) {
+				vendorStagedData.items.forEach(it => { if (it.included !== false) count++; });
+			}
+			document.getElementById('vendor-selected-count').textContent = count;
+		}
+
+		function toggleAllVendorStagedRows(checked) {
+			if (vendorStagedData && vendorStagedData.items) {
+				vendorStagedData.items.forEach(it => { it.included = checked; });
+			}
+			const cbs = document.querySelectorAll('.vendor-staged-row-cb');
+			cbs.forEach(cb => cb.checked = checked);
+			document.getElementById('vendor-selected-count').textContent = checked && vendorStagedData && vendorStagedData.items ? vendorStagedData.items.length : 0;
+		}
+
+		function filterVendorReviewTable(tab) {
+			vendorCurrentTab = tab;
+			['all', 'matched', 'unlinked'].forEach(t => {
+				const btn = document.getElementById('vendor-tab-' + t);
+				if (btn) {
+					if (t === tab) {
+						btn.style.background = 'var(--surface-raised)';
+						btn.style.color = 'var(--accent)';
+					} else {
+						btn.style.background = 'transparent';
+						btn.style.color = 'var(--text-muted)';
+					}
+				}
+			});
+			if (vendorStagedData && vendorStagedData.items) {
+				renderVendorReviewRows(vendorStagedData.items);
+			}
+		}
+
+		function searchVendorReviewTable(val) {
+			if (vendorStagedData && vendorStagedData.items) {
+				renderVendorReviewRows(vendorStagedData.items);
+			}
+		}
+
+		function commitVendorStagedImport() {
+			if (!vendorActiveSessionId) return;
+
+			const btn = document.getElementById('vendor-commit-btn');
+			btn.disabled = true;
+			btn.textContent = '⏳ جاري الحفظ النهائي في قاعدة البيانات...';
+
+			fetch('/vendor/saving-products/import/session/' + vendorActiveSessionId + '/commit', {
+				method: 'POST',
+			})
+			.then(r => r.json())
+			.then(res => {
+				if (!res.success) {
+					alert(res.error || 'فشل حفظ الأصناف.');
+					btn.disabled = false;
+					btn.textContent = 'تأكيد الاستيراد والحفظ النهائي في قائمة المنتجات';
+					return;
+				}
+				alert(res.message || 'تم استيراد وحفظ الأصناف بنجاح!');
+				if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+			})
+			.catch(err => {
+				console.error('commit error', err);
+				alert('حدث خطأ في الاتصال أثناء تأكيد الحفظ.');
+				btn.disabled = false;
+				btn.textContent = 'تأكيد الاستيراد والحفظ النهائي في قائمة المنتجات';
+			});
+		}
+
+		function handleVendorImportCancelClick() {
+			if (vendorPollInterval) clearInterval(vendorPollInterval);
+
+			if (vendorActiveSessionId) {
+				fetch('/vendor/saving-products/import/session/' + vendorActiveSessionId + '/cancel', { method: 'POST' }).catch(() => {});
+				vendorActiveSessionId = null;
+				vendorStagedData = null;
+			}
+			closeImportModal();
+		}
+
+		function backToVendorImportConfig() {
+			if (vendorPollInterval) clearInterval(vendorPollInterval);
+			showVendorImportStep('config');
+		}
+
+		window.filterVendorReviewTable = filterVendorReviewTable;
+		window.searchVendorReviewTable = searchVendorReviewTable;
+		window.toggleAllVendorStagedRows = toggleAllVendorStagedRows;
+		window.updateVendorRowInclusion = updateVendorRowInclusion;
+		window.commitVendorStagedImport = commitVendorStagedImport;
+		window.handleVendorImportCancelClick = handleVendorImportCancelClick;
+		window.backToVendorImportConfig = backToVendorImportConfig;
+	</script>
+}

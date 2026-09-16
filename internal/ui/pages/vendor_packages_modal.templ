@@ -1,0 +1,117 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// PackagePurchaseConfirmationModal renders the checkout/confirmation dialog before deducting wallet credits.
+templ PackagePurchaseConfirmationModal(walletBal money.Amount, lang string) {
+	<div
+		x-show="showPurchaseModal"
+		class="modal-backdrop"
+		x-cloak
+		@keydown.escape.window="showPurchaseModal = false"
+	>
+		<div class="modal-dialog modal-md text-start" @click.away="showPurchaseModal = false">
+			<div class="modal-header d-flex justify-between items-center pb-3 border-b border-slate-100">
+				<div class="d-flex items-center gap-2">
+					<div class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center">
+						@components.IconCreditCard("icon-xs")
+					</div>
+					<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_packages.modal_title") }</h3>
+				</div>
+				<button
+					type="button"
+					class="btn btn-ghost btn-icon btn-sm text-slate-400 hover:text-slate-600"
+					@click="showPurchaseModal = false"
+					aria-label={ i18n.T(lang, "common.close") }
+				>
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<div class="modal-body py-4">
+				<div class="bg-surface-sunken p-4 rounded-xl border border-slate-200/80 mb-3">
+					<div class="flex-between items-center mb-2">
+						<h4 class="text-sm font-black text-primary m-0" x-text="selectedPkg.name"></h4>
+						<span class="badge badge-amber font-extrabold text-2xs" x-show="selectedPkg.tier > 0" x-text="'مستوى ' + selectedPkg.tier"></span>
+					</div>
+					<div class="d-flex flex-col gap-2 text-xs text-secondary mt-3">
+						<div class="d-flex items-center justify-between">
+							<span>{ i18n.T(lang, "vendor_packages.lbl_duration") }</span>
+							<strong class="text-primary tabular-nums" x-text="selectedPkg.duration + ' ' + (lang === 'en' ? 'Days' : 'يوماً')"></strong>
+						</div>
+						<div class="d-flex items-center justify-between">
+							<span>{ i18n.T(lang, "vendor_packages.lbl_credits") }</span>
+							<strong class="text-brand tabular-nums font-black" x-text="selectedPkg.credits + ' ' + (lang === 'en' ? 'Credits' : 'رعاية ترويجية')"></strong>
+						</div>
+					</div>
+				</div>
+
+				<!-- Wallet Balance & Summary Breakdown -->
+				<div class="p-4 rounded-xl bg-surface-sunken border border-slate-200/80 mb-3">
+					<div class="flex-between items-center text-xs text-secondary mb-2 font-medium">
+						<span>{ i18n.T(lang, "vendor_packages.lbl_total_due") }</span>
+						<strong class="text-base font-black text-primary tabular-nums" x-text="selectedPkgPriceFormatted"></strong>
+					</div>
+					<div class="flex-between items-center text-xs text-secondary mb-2 font-medium">
+						<span>{ i18n.T(lang, "vendor_packages.lbl_wallet_bal") }</span>
+						<strong class="text-sm font-bold text-brand tabular-nums">
+							@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: walletBal })
+						</strong>
+					</div>
+					<div class="border-t border-slate-200/80 pt-2 mt-2 flex-between items-center text-xs font-medium">
+						<span>{ i18n.T(lang, "vendor_packages.lbl_rem_bal") }</span>
+						<strong
+							class="font-black tabular-nums"
+							:class="hasSufficientBalance ? 'text-success' : 'text-danger'"
+							x-text="hasSufficientBalance ? remainingBalanceFormatted : (lang === 'en' ? 'Insufficient Balance' : 'رصيد غير كافٍ')"
+						></strong>
+					</div>
+				</div>
+
+				<!-- Insufficient Balance Warning -->
+				<template x-if="!hasSufficientBalance && selectedPkgPriceMinor > 0">
+					<div class="alert alert-danger p-3.5 rounded-xl d-flex items-center gap-2.5 text-xs border border-rose-200 bg-rose-50/70 shadow-xs mb-3">
+						@components.IconAlert("icon-xs text-rose-600 flex-shrink-0")
+						<div class="flex-1 font-medium">
+							<strong class="text-rose-800 d-block font-bold">{ i18n.T(lang, "vendor_packages.insufficient_bal_title") }</strong>
+							<span class="text-rose-700 text-2xs">{ i18n.T(lang, "vendor_packages.insufficient_bal_sub") }</span>
+						</div>
+						<a href="/vendor/wallet" class="btn btn-secondary btn-xs font-bold shadow-2xs" target="_blank">{ i18n.T(lang, "vendor_packages.btn_topup_now") }</a>
+					</div>
+				</template>
+
+				<div class="p-3 bg-amber-50/80 border border-amber-200/60 rounded-xl text-xs text-amber-900 d-flex items-start gap-2 mb-2">
+					@components.IconAlert("icon-xs text-amber-600 flex-shrink-0 mt-0.5")
+					<div>
+						{ i18n.T(lang, "vendor_packages.wallet_deduct_notice") }
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer d-flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					@click="showPurchaseModal = false"
+				>
+					{ i18n.T(lang, "common.close") }
+				</button>
+				<form method="POST" action="/vendor/offers-packages/purchase" class="m-0">
+					<input type="hidden" name="package_id" :value="selectedPkg.id" />
+					<button
+						type="submit"
+						class="btn btn-primary btn-sm font-black px-6 shadow-sm gap-1.5"
+						:disabled="!hasSufficientBalance"
+					>
+						@components.IconCheck("icon-xs")
+						<span>{ i18n.T(lang, "vendor_packages.btn_confirm_purchase") }</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}

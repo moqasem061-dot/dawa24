@@ -1,0 +1,238 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorBranchesForm(data VendorBranchesData, lang string) {
+	<!-- Sticky form panel, add and edit modes (left in RTL, right in LTR) -->
+	<div
+		id="branch-form-panel"
+		class="glass-panel p-6 d-flex flex-col gap-4 sticky top-6"
+		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'vendor-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
+		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+	>
+		<!-- City & Governorate coordinates lookup for instant map auto-pan -->
+		<div id="vendor-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
+		<div id="vendor-branch-govs-coords" class="d-none" data-coords={ GovernoratesCoordinatesJSON(data.Governorates) }></div>
+
+		<!-- Form Header -->
+		<div class="flex-between items-center pb-3 border-b">
+			<div class="d-flex items-center gap-2">
+				<span class="text-xl" x-text="mode === 'edit' ? '' : ''"></span>
+				<div class="stack-sm">
+					<h2
+						class="text-base font-black text-primary m-0"
+						x-text={ fmt.Sprintf("mode === 'edit' ? (%q + (%s)) : %q", ifElseStr(lang == "en", "Edit Branch: ", "تعديل بيانات الفرع: "), ifElseStr(lang == "en", "form.name_en || form.name_ar || ''", "form.name_ar || ''"), i18n.T(lang, "vendor_branches.form_title_new")) }
+					></h2>
+					<p
+						class="text-xs text-secondary m-0 mt-0.5"
+						x-text={ fmt.Sprintf("mode === 'edit' ? %q : %q", i18n.T(lang, "vendor_branches.form_desc_edit"), i18n.T(lang, "vendor_branches.form_desc_new")) }
+					></p>
+				</div>
+			</div>
+
+			<!-- Exit Edit Mode Button -->
+			<template x-if="mode === 'edit'">
+				<button
+					type="button"
+					class="btn btn-secondary btn-xs font-bold gap-1"
+					@click="resetToAddMode()"
+					title={ i18n.T(lang, "vendor_branches.btn_exit_edit") }
+				>
+					<span>{ i18n.T(lang, "vendor_branches.btn_exit_edit") }</span>
+				</button>
+			</template>
+		</div>
+
+		<form
+			method="POST"
+			:action="formAction"
+			class="d-flex flex-col gap-3 m-0"
+			@submit={ fmt.Sprintf("if (!form.city_id) { $event.preventDefault(); if (window.showToast) { window.showToast(%q, 'warning'); } else { alert(%q); } }", i18n.T(lang, "vendor_branches.empty_city"), i18n.T(lang, "vendor_branches.empty_city")) }
+		>
+			<!-- Section 1: Names & Code -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_name_ar") } <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="name_ar" x-model="form.name_ar" required placeholder={ i18n.T(lang, "vendor_branches.placeholder_name_ar") } class="form-input text-xs w-full"/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_name_en") } <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="name_en" x-model="form.name_en" placeholder={ i18n.T(lang, "vendor_branches.placeholder_name_en") } class="form-input text-xs w-full" dir="ltr"/>
+				</div>
+			</div>
+
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_code") }
+					</label>
+					<input type="text" name="code" x-model="form.code" placeholder={ i18n.T(lang, "vendor_branches.placeholder_code") } class="form-input text-xs tabular-nums w-full"/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_facility_type") } <span class="text-danger">*</span>
+					</label>
+					<select name="warehouse_type" x-model="form.warehouse_type" class="form-input text-xs w-full">
+						<option value="warehouse">{ i18n.T(lang, "vendor_branches.type_warehouse") }</option>
+						<option value="fast_hub">{ i18n.T(lang, "vendor_branches.type_fast_hub") }</option>
+						<option value="cold_depot">{ i18n.T(lang, "vendor_branches.type_cold_depot") }</option>
+						<option value="pharmacy_branch">{ i18n.T(lang, "vendor_branches.type_pharmacy_branch") }</option>
+					</select>
+				</div>
+			</div>
+
+			<!-- Section 2: Interactive Location Map & GPS -->
+			<div class="d-flex flex-col gap-1">
+				<label class="form-label text-xs font-bold text-secondary mb-1 d-block">
+					{ i18n.T(lang, "vendor_branches.lbl_map_section") }
+				</label>
+
+				<div id="vendor-branch-map-picker" data-map-picker data-default-lat="30.0444" data-default-lon="31.2357" class="border rounded-xl overflow-hidden bg-surface-sunken position-relative">
+					<div class="map-container map-canvas"></div>
+					
+					<div class="flex-between items-center p-2 bg-surface-raised border-t text-xs">
+						<span data-map-coords-badge class="tabular-nums font-bold text-brand">30.0444, 31.2357</span>
+						<button type="button" data-map-locate class="btn btn-secondary btn-xs font-bold">
+							<span>{ i18n.T(lang, "vendor_branches.btn_current_location") }</span>
+						</button>
+					</div>
+
+					<input type="hidden" name="latitude" data-map-input="lat" x-model="form.latitude"/>
+					<input type="hidden" name="longitude" data-map-input="lon" x-model="form.longitude"/>
+				</div>
+			</div>
+
+			<!-- Google Maps URL Input -->
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+					{ i18n.T(lang, "vendor_branches.lbl_google_url") }
+				</label>
+				<input type="text" name="google_maps_url" x-model="form.google_maps_url" data-map-input="google_url" placeholder={ i18n.T(lang, "vendor_branches.placeholder_google_url") } class="form-input text-xs w-full"/>
+			</div>
+
+			<!-- Section 3: Governorate, City, Manager -->
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="stack-sm">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "governorate_id",
+						Label:       i18n.T(lang, "vendor_branches.lbl_governorate"),
+						Placeholder: i18n.T(lang, "vendor_branches.placeholder_governorate"),
+						Options:     GovernorateOptions(data.Governorates, lang),
+						Required:    true,
+						EmptyText:   i18n.T(lang, "vendor_branches.empty_governorate"),
+						Class:       "w-full",
+					})
+				</div>
+
+				<div class="stack-sm">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "city_id",
+						Label:       i18n.T(lang, "vendor_branches.lbl_city"),
+						Placeholder: i18n.T(lang, "vendor_branches.placeholder_city"),
+						Options:     CityOptions(data.Cities, lang),
+						DependsOn:   "governorate_id",
+						Required:    true,
+						EmptyText:   i18n.T(lang, "vendor_branches.empty_city"),
+						Class:       "w-full",
+					})
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_manager_select") }
+					</label>
+					<select name="manager_id" x-model="form.manager_id" class="form-input text-xs w-full">
+						<option value="">{ i18n.T(lang, "vendor_branches.manager_prompt") }</option>
+						for _, emp := range data.Employees {
+							if emp.Member != nil {
+								<option value={ fmt.Sprintf("%d", emp.Member.UserID) }>
+									{ emp.UserName } ({ emp.RoleName })
+								</option>
+							}
+						}
+					</select>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+					{ i18n.T(lang, "vendor_branches.lbl_detail_address") } <span class="text-danger">*</span>
+				</label>
+				<input type="text" name="address" x-model="form.address" required placeholder={ i18n.T(lang, "vendor_branches.placeholder_address") } class="form-input text-xs w-full"/>
+			</div>
+
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_phone") }
+					</label>
+					<input type="tel" name="phone" x-model="form.phone" placeholder="010XXXXXXXX" class="form-input text-xs tabular-nums w-full"/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_branches.lbl_capacity_input") }
+					</label>
+					<input type="number" name="capacity_sqm" x-model="form.capacity_sqm" placeholder="500" class="form-input text-xs tabular-nums w-full"/>
+				</div>
+			</div>
+
+			<!-- Section 4: Institutional Works -->
+			<div class="bg-surface-sunken p-3 rounded-xl border d-flex flex-col gap-2">
+				<label class="text-xs font-black text-primary m-0 d-block">
+					{ i18n.T(lang, "vendor_branches.lbl_institutional_section") }
+				</label>
+
+				<div class="d-grid grid-cols-2 gap-1.5 mt-1">
+					for _, work := range data.InstitutionalWorks {
+						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded">
+							<input type="checkbox" name="institutional_works" value={ fmt.Sprintf("%d", work.ID) } x-model="form.institutional_works" class="form-checkbox"/>
+							<span>
+								if work.Icon != "" {
+									{ work.Icon } 
+								}
+								if title := work.Title.Get(i18n.Lang(lang)); title != "" {
+									{ title }
+								} else if title := work.Title.Get(i18n.AR); title != "" {
+									{ title }
+								} else {
+									{ work.Title.Get(i18n.EN) }
+								}
+							</span>
+						</label>
+					}
+				</div>
+			</div>
+
+			<!-- Section 5: Checkboxes -->
+			<div class="d-grid grid-cols-2 gap-3 py-1">
+				<label class="d-flex items-center gap-2 text-xs font-bold text-primary cursor-pointer p-2 rounded-lg bg-surface-sunken border">
+					<input type="checkbox" name="has_cold_storage" value="true" x-model="form.has_cold_storage" class="form-checkbox"/>
+					<span>{ i18n.T(lang, "vendor_branches.chk_cold_storage") }</span>
+				</label>
+
+				<label class="d-flex items-center gap-2 text-xs font-bold text-primary cursor-pointer p-2 rounded-lg bg-surface-sunken border">
+					<input type="checkbox" name="is_main" value="true" x-model="form.is_main" class="form-checkbox"/>
+					<span>{ i18n.T(lang, "vendor_branches.chk_is_main") }</span>
+				</label>
+			</div>
+
+			<!-- Submit Button -->
+			<button type="submit" class="btn btn-primary btn-sm font-black w-full justify-center py-2.5 mt-2">
+				@components.IconCheck("icon-xs")
+				<span x-text={ fmt.Sprintf("mode === 'edit' ? %q : %q", i18n.T(lang, "vendor_branches.btn_save_edit"), i18n.T(lang, "vendor_branches.btn_save_new")) }></span>
+			</button>
+		</form>
+	</div>
+}

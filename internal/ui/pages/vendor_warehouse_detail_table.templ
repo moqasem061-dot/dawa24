@@ -1,0 +1,205 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorWarehouseStockTable(data VendorWarehouseDetailData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="table-container m-0">
+		<table class="data-table m-0">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>{ i18n.T(lang, "vendor_warehouse_detail.th_drug_specs") }</th>
+					<th>{ i18n.T(lang, "vendor_warehouse_detail.th_codes_batch_exp") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_public_price") }</th>
+					<th class="text-center tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_discount") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_net_price") }</th>
+					<th>{ i18n.T(lang, "vendor_warehouse_detail.th_actual_stock") }</th>
+					<th class="text-center">{ i18n.T(lang, "vendor_warehouse_detail.th_safety_limit") }</th>
+					<th class="col-actions">{ i18n.T(lang, "vendor_inventory.th_actions") }</th>
+				</tr>
+			</thead>
+			<tbody>
+				for idx, s := range data.Stocks {
+					<tr>
+						<!-- Index -->
+						<td class="tabular-nums text-muted text-xs">
+							{ fmt.Sprintf("%d", data.FromItem + idx) }
+						</td>
+
+						<!-- Product Information -->
+						<td>
+							<div class="font-extrabold text-primary text-sm">
+								if s.ProductName != "" {
+									{ s.ProductName }
+								} else if s.VariantName != "" {
+									{ s.VariantName }
+								} else {
+									{ fmt.Sprintf("الصنف #%d", s.ProductID) }
+								}
+							</div>
+							
+							if s.VariantName != "" && s.VariantName != s.ProductName {
+								<div class="text-xs text-brand font-bold mt-1">
+									{ s.VariantName }
+								</div>
+							}
+
+							if s.ScientificName != "" {
+								<div class="text-xs text-muted mt-1">
+									{ s.ScientificName }
+								</div>
+							}
+
+							<div class="d-flex items-center gap-1 mt-1 flex-wrap">
+								if s.DosageForm != "" {
+									<span class="badge badge-slate text-xs">
+										{ s.DosageForm }
+									</span>
+								}
+								if s.Manufacturer != "" {
+									<span class="badge badge-slate text-xs">
+										{ s.Manufacturer }
+									</span>
+								}
+							</div>
+						</td>
+
+						<!-- Codes, Batch & Expiry -->
+						<td>
+							if s.SKU != "" || s.Barcode != "" {
+								<div class="d-flex items-center gap-1 flex-wrap mb-1">
+									if s.SKU != "" {
+										<code class="bg-surface-sunken border p-1 rounded text-xs font-mono">SKU: { s.SKU }</code>
+									}
+									if s.Barcode != "" {
+										<code class="bg-surface-sunken border p-1 rounded text-xs font-mono">باركود: { s.Barcode }</code>
+									}
+								</div>
+							}
+
+							if s.BatchNumber != "" {
+								<div class="text-xs text-muted tabular-nums mt-1">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.batch_prefix"), s.BatchNumber) }
+								</div>
+							}
+
+							if s.ExpiryDate != nil {
+								<div class="mt-1">
+									if isExpired(s.ExpiryDate) {
+										<span class="badge badge-rose text-xs tabular-nums font-black" title="صلاحية منتهية">
+											منتهي: { s.ExpiryDate.Format("2006-01-02") }
+										</span>
+									} else if isExpiringSoon(s.ExpiryDate) {
+										<span class="badge badge-amber text-xs tabular-nums font-black" title="ينتهي قريباً خلال 6 أشهر">
+											ينتهي: { s.ExpiryDate.Format("2006-01-02") }
+										</span>
+									} else {
+										<span class="text-xs text-muted tabular-nums">
+											الصلاحية: { s.ExpiryDate.Format("2006-01-02") }
+										</span>
+									}
+								</div>
+							}
+						</td>
+
+						<!-- سعر الجمهور -->
+						<td class="whitespace-nowrap">
+							if s.PublicPriceStr != "" && s.PublicPriceStr != "0.00" && s.PublicPriceStr != "0" {
+								<div class="tabular-nums font-bold text-primary text-sm">
+									<span>{ s.PublicPriceStr }</span> <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+								</div>
+							} else {
+								<span class="text-muted text-xs font-bold">—</span>
+							}
+						</td>
+
+						<!-- نسبة الخصم -->
+						<td class="text-center whitespace-nowrap">
+							if s.DiscountStr != "" && s.DiscountStr != "0.00" && s.DiscountStr != "0" {
+								<span class="badge badge-emerald text-xs tabular-nums font-black">
+									%{ s.DiscountStr }
+								</span>
+							} else {
+								<span class="text-muted text-xs font-bold">—</span>
+							}
+						</td>
+
+						<!-- سعر بعد الخصم -->
+						<td class="whitespace-nowrap">
+							if s.PriceStr != "" && s.PriceStr != "0.00" {
+								<div class="tabular-nums font-black text-sm text-brand">
+									<span>{ s.PriceStr }</span> <span class="text-xs font-bold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+								</div>
+							} else {
+								<span class="text-muted text-xs font-bold">—</span>
+							}
+						</td>
+
+						<!-- Actual Stock Balance -->
+						<td>
+							if s.Quantity == 0 {
+								<div class="badge badge-rose text-xs font-black tabular-nums">
+									{ i18n.T(lang, "vendor_products.stock_out") }
+								</div>
+							} else if s.Quantity <= s.MinThreshold {
+								<div class="stack-sm">
+									<span class="badge badge-amber text-xs font-black tabular-nums">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_inventory.badge_low"), s.Quantity) }
+									</span>
+								</div>
+							} else {
+								<span class="badge badge-emerald text-xs font-black tabular-nums">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), s.Quantity) }
+								</span>
+							}
+						</td>
+
+						<!-- Reorder Threshold -->
+						<td class="tabular-nums text-center">
+							<span class="badge badge-slate text-xs font-bold">
+								{ fmt.Sprintf("%d", s.MinThreshold) }
+							</span>
+						</td>
+
+						<!-- Actions -->
+						<td class="col-actions">
+							<div class="table-actions">
+								<button
+									type="button"
+									class="btn btn-secondary btn-sm font-black text-xs px-2.5 gap-1"
+									@click={ fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, qty: %d }; transferModal = true;", s.StockID, s.ProductVariantID, s.ProductID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.Quantity) }
+									title={ i18n.T(lang, "vendor_inventory.btn_transfer_title") }
+								>
+									@components.IconRefresh("icon-2xs")
+									<span>{ i18n.T(lang, "vendor_inventory.btn_transfer_stock") }</span>
+								</button>
+								<button
+									type="button"
+									class="btn btn-secondary btn-sm font-black text-xs px-2.5"
+									@click={ fmt.Sprintf("adjustStock = { id: %d, name: %q, batch: %q, qty: %d, min: %d }; adjustModal = true;", s.StockID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.BatchNumber, s.Quantity, s.MinThreshold) }
+									title={ i18n.T(lang, "vendor_inventory.btn_adjust_stock") }
+								>
+									<span>{ i18n.T(lang, "common.edit") }</span>
+								</button>
+								<a href="/vendor/products" class="btn btn-ghost btn-sm text-xs font-bold" title={ i18n.T(lang, "vendor_inventory.btn_saving_products") }>
+									↗
+								</a>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

@@ -1,0 +1,167 @@
+package components
+
+import (
+	"fmt"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+)
+
+// MapPickerProps defines configuration for the geographic coordinate and radius picker.
+type MapPickerProps struct {
+	Lat          *float64
+	Lon          *float64
+	RadiusMeters int
+	NamePrefix   string
+	Label        string
+	ReadOnly     bool
+	ShowRadius   bool
+	Height       string
+	Cities       []*platformadmin.City
+}
+
+templ MapPicker(props MapPickerProps) {
+	{{
+		latVal := 30.0444
+		if props.Lat != nil && *props.Lat != 0 {
+			latVal = *props.Lat
+		}
+		lonVal := 31.2357
+		if props.Lon != nil && *props.Lon != 0 {
+			lonVal = *props.Lon
+		}
+		radiusVal := props.RadiusMeters
+		if radiusVal <= 0 {
+			radiusVal = 10000
+		}
+		namePrefix := props.NamePrefix
+		if namePrefix == "" {
+			namePrefix = "geo"
+		}
+		mapHeight := props.Height
+		if mapHeight == "" {
+			mapHeight = "280px"
+		}
+		mapID := fmt.Sprintf("leaflet-map-%s-%d", namePrefix, int(latVal*1000)%100000)
+		gmapsLinkURL := fmt.Sprintf("https://www.google.com/maps?q=%.8f,%.8f", latVal, lonVal)
+	}}
+	<div class="map-picker-container" style="border:1px solid var(--border); border-radius:var(--radius-xl); padding:var(--space-4); background:var(--surface-raised); display:flex; flex-direction:column; gap:var(--space-3);" data-map-picker>
+		<input type="hidden" name={ fmt.Sprintf("%s_city_id", namePrefix) } data-map-city-id />
+		<!-- Header Toolbar -->
+		<div class="stack-sm" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-2);">
+   <div class="stack-sm">
+				<div class="stack-sm" style="display:flex; align-items:center; gap:var(--space-2);">
+					<span style="color:var(--accent); font-weight:700; font-size:var(--text-sm);">
+						if props.Label != "" {
+							{ props.Label }
+						} else {
+							تحديد الموقع الجغرافي والإحداثيات (GPS)
+						}
+					</span>
+					<span class="badge badge-sky" style="font-size:11px; font-variant-numeric:tabular-nums;" data-map-badge>
+						{ fmt.Sprintf("%.4f, %.4f", latVal, lonVal) }
+					</span>
+				</div>
+				<div class="stack-sm" style="font-size:var(--text-xs); color:var(--text-muted); margin-top:2px;">
+					انقر على الخريطة أو اسحب المؤشر لتحديد موقع المنشأة بدقة
+				</div>
+			</div>
+
+			<!-- Toolbar Buttons -->
+			<div class="stack-sm" style="display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap;">
+				<!-- Current Location GPS Button -->
+				<button type="button" class="btn btn-secondary btn-sm" style="padding:0.25rem 0.6rem; font-size:11px; gap:4px;" data-locate-me-btn title="تحديد موقعي الحالي بدقة">
+					<span>موقعي الحالي</span>
+				</button>
+
+
+				<!-- Google Maps Link Button -->
+				<a
+					href={ templ.SafeURL(gmapsLinkURL) }
+					target="_blank"
+					rel="noopener"
+					class="btn btn-secondary btn-sm"
+					style="padding:0.25rem 0.6rem; font-size:11px; gap:4px; text-decoration:none;"
+					data-google-maps-link
+					title="فتح الموقع على خرائط Google"
+				>
+					<span>خرائط Google</span>
+				</a>
+			</div>
+		</div>
+
+		<!-- Interactive Map Canvas (Pure Leaflet Container - No Blocked Iframes) -->
+		<div
+			id={ mapID }
+			class="map-canvas"
+			data-lat={ fmt.Sprintf("%.8f", latVal) }
+			data-lon={ fmt.Sprintf("%.8f", lonVal) }
+			data-radius={ fmt.Sprintf("%d", radiusVal) }
+			style={ fmt.Sprintf("width: 100%%; height: %s; border-radius: var(--radius-lg); border: 1px solid var(--border); position: relative; z-index: 1; min-height: 200px; background: var(--surface-sunken);", mapHeight) }
+		>
+		</div>
+
+		<!-- Coordinate Inputs Matrix -->
+		<div class="stack-sm" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--space-3); margin-top:var(--space-1);">
+   <div class="stack-sm">
+				<label class="form-label text-xs" style="color:var(--text-secondary); margin-bottom:4px; display:block;">خط العرض (Latitude) *</label>
+				<input
+					type="number"
+					step="0.00000001"
+					name={ fmt.Sprintf("%s_lat", namePrefix) }
+					value={ fmt.Sprintf("%.8f", latVal) }
+					class="form-control tabular-nums"
+					style="width:100%; font-size:var(--text-xs);"
+					data-map-lat
+					if props.ReadOnly {
+						readonly
+					}
+				/>
+			</div>
+   <div class="stack-sm">
+				<label class="form-label text-xs" style="color:var(--text-secondary); margin-bottom:4px; display:block;">خط الطول (Longitude) *</label>
+				<input
+					type="number"
+					step="0.00000001"
+					name={ fmt.Sprintf("%s_lon", namePrefix) }
+					value={ fmt.Sprintf("%.8f", lonVal) }
+					class="form-control tabular-nums"
+					style="width:100%; font-size:var(--text-xs);"
+					data-map-lon
+					if props.ReadOnly {
+						readonly
+					}
+				/>
+			</div>
+			if props.ShowRadius {
+    <div class="stack-sm">
+					<label class="form-label text-xs" style="color:var(--text-secondary); margin-bottom:4px; display:block;">نصف قطر التغطية (بالمتر)</label>
+					<input
+						type="number"
+						step="500"
+						min="500"
+						max="500000"
+						name={ fmt.Sprintf("%s_radius", namePrefix) }
+						value={ fmt.Sprintf("%d", radiusVal) }
+						class="form-control tabular-nums"
+						style="width:100%; font-size:var(--text-xs);"
+						data-map-radius
+						if props.ReadOnly {
+							readonly
+						}
+					/>
+				</div>
+			}
+			<div class="stack-sm" style="grid-column: 1 / -1;">
+				<label class="form-label text-xs" style="color:var(--text-secondary); margin-bottom:4px; display:block;">رابط الموقع على خرائط Google Maps</label>
+				<input
+					type="url"
+					name={ fmt.Sprintf("%s_google_maps_url", namePrefix) }
+					value={ gmapsLinkURL }
+					class="form-control tabular-nums text-xs w-full"
+					placeholder="https://maps.google.com/?q=..."
+					data-map-google-url
+				/>
+			</div>
+		</div>
+	</div>
+}
+

@@ -1,0 +1,335 @@
+/* Wrapped in @layer components in Phase 4: this sheet was unlayered,
+   so every rule in it outranked the entire cascade. */
+
+@layer components {
+/* ==========================================================================
+   DAWA 24 — VENDOR & SUPPLIER PORTAL SURFACE STYLES (vendor.css)
+   ========================================================================== */
+
+  .admin-page-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding-bottom: var(--space-2xl);
+  }
+
+  .admin-banner {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-xl);
+    padding: var(--space-sm) var(--space-md);
+    margin-bottom: var(--space-md);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .admin-banner-inner {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+  }
+
+  .admin-banner-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .admin-banner-icon.primary {
+    background: var(--primary-subtle);
+    color: var(--primary);
+    border: 1px solid var(--primary-border);
+  }
+
+  .admin-banner-icon.purple {
+    background: rgba(144, 101, 208, 0.12);
+    color: rgb(161, 112, 235);
+    border: 1px solid rgba(144, 101, 208, 0.25);
+  }
+
+  .admin-banner-title {
+    font-size: var(--text-base);
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  .admin-banner-subtitle {
+    font-size: var(--text-xs);
+    color: var(--text-secondary);
+    margin: 0.2rem 0 0 0;
+  }
+
+  .admin-status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: var(--radius-md);
+    background: var(--bg-surface-sunken);
+    border: 1px solid var(--border-subtle);
+    font-size: 0.725rem;
+    font-weight: 700;
+  }
+
+  .admin-status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    display: inline-block;
+  }
+
+  .admin-status-dot.online {
+    background: var(--color-success);
+    box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  }
+
+  /* Vendor Executive 4-KPI Grid */
+  .admin-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: var(--space-md);
+    margin-bottom: var(--space-md);
+  }
+
+  .admin-kpi-card {
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-md);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .admin-kpi-card:hover {
+    border-color: var(--brand);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+  }
+
+  .admin-kpi-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+  }
+
+  .admin-kpi-title {
+    font-size: var(--text-xs);
+    font-weight: 700;
+    color: var(--text-secondary);
+  }
+
+  .admin-kpi-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .admin-kpi-value {
+    font-size: var(--text-xl);
+    font-weight: 900;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0.2rem 0;
+  }
+
+  .admin-kpi-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.725rem;
+    color: var(--text-secondary);
+    border-top: 1px solid var(--border-subtle);
+    padding-top: var(--space-xs);
+    margin-top: var(--space-xs);
+    flex-wrap: wrap;
+    gap: var(--space-xs);
+  }
+
+  /* Vendor System Directory Archive Cards (Pure CSS Masonry / Multi-Column) */
+  .admin-dir-grid {
+    column-width: 295px;
+    column-gap: 0.85rem;
+    margin-bottom: var(--space-md);
+  }
+
+  .admin-dir-card {
+    break-inside: avoid;
+    -webkit-column-break-inside: avoid;
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 0.85rem;
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: 0.75rem 0.85rem;
+    box-shadow: var(--shadow-sm);
+    box-sizing: border-box;
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .admin-dir-card:hover {
+    border-color: var(--brand);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+    transform: translateY(-2px);
+  }
+
+  .admin-dir-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 0.45rem;
+    border-bottom: 1px solid var(--border-subtle);
+    margin-bottom: 0.5rem;
+  }
+
+  .admin-dir-card-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.825rem;
+    font-weight: 800;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  .admin-dir-icon-badge {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .admin-dir-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.35rem 0.55rem;
+    border-radius: 6px;
+    background: var(--bg-surface-sunken);
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 0.775rem;
+    font-weight: 600;
+    line-height: 1.25;
+    transition: all 0.12s ease;
+  }
+
+  .admin-dir-item:hover {
+    background: var(--bg-surface-raised);
+    border-color: var(--border-card);
+    color: var(--brand);
+    transform: translateX(-2px);
+  }
+
+  [dir="ltr"] .admin-dir-item:hover {
+    transform: translateX(2px);
+  }
+
+  .admin-dir-item-content {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+  }
+
+  .admin-dir-item-name {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-dir-item-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.75;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-item:hover .admin-dir-item-icon {
+    opacity: 1;
+    color: var(--brand);
+  }
+
+  .admin-dir-item-arrow {
+    opacity: 0.4;
+    transition: transform 0.12s ease, opacity 0.12s ease;
+    flex-shrink: 0;
+  }
+
+  .admin-dir-item:hover .admin-dir-item-arrow {
+    opacity: 1;
+    color: var(--brand);
+    transform: translateX(-2px);
+  }
+
+  [dir="ltr"] .admin-dir-item:hover .admin-dir-item-arrow {
+    transform: translateX(2px);
+  }
+
+  .vendor-op-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+    gap: 0.85rem;
+    margin-bottom: 1rem;
+    align-items: stretch;
+  }
+
+  @media (max-width: 640px) {
+    .vendor-op-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+@layer components {
+.branches-split {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+@media (min-width: 1024px) {
+  .branches-split { grid-template-columns: minmax(0, 1.35fr) minmax(22rem, 1fr); }
+}
+
+.compare-col-card {
+  background: var(--bg-surface-raised, #ffffff);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-2xl, 1rem);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-xs, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+}

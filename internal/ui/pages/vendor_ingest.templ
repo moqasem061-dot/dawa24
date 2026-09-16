@@ -1,0 +1,238 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// The vendor catalogue import.
+//
+// One page that renders whichever stage the import has reached, because the
+// stage lives on the session rather than in the URL: a vendor who reloads, or
+// comes back to yesterday's link, lands where they left off.
+
+templ VendorIngestPage(view VendorImportView, lang, dir string) {
+	if view.IsAdmin() {
+		@layouts.AdminShell(i18n.T(lang, "vendor_ingest.page_title_admin"), "org_imports", lang, dir) {
+			@vendorIngestContent(view, lang)
+		}
+	} else {
+		@layouts.VendorShell(i18n.T(lang, "vendor_ingest.page_title_vendor"), "ingest", lang, dir) {
+			@vendorIngestContent(view, lang)
+		}
+	}
+}
+
+templ vendorIngestContent(view VendorImportView, lang string) {
+	<div class="vendor-ingest-container">
+		if view.IsAdmin() {
+			<div class="mb-5 p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center justify-between gap-4 flex-wrap">
+				<div class="d-flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-amber-600/15 text-amber-700 dark:text-amber-300 d-flex items-center justify-center border border-amber-500/30">
+						@components.IconBuilding("icon-sm")
+					</div>
+					<div>
+						<div class="text-sm font-black text-amber-950 dark:text-amber-100">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.admin_banner_title"), view.TargetOrgName) }
+						</div>
+						<p class="text-2xs text-secondary m-0 mt-0.5 font-medium">
+							{ i18n.T(lang, "vendor_ingest.admin_banner_desc") }
+						</p>
+					</div>
+				</div>
+				<a href="/admin/organizations/import?tab=vendor" class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-2xs">
+					@components.IconArrowRight("icon-xs")
+					<span>{ i18n.T(lang, "vendor_ingest.btn_back_vendors") }</span>
+				</a>
+			</div>
+		}
+
+		@components.PageHeader(components.PageHeaderProps{
+			Title:    i18n.T(lang, "vendor_ingest.header_title"),
+			Subtitle: i18n.T(lang, "vendor_ingest.header_subtitle"),
+		}) {
+			<div class="row-center">
+				if view.IsAdmin() {
+					<a href="/admin/organizations/import?tab=vendor" class="btn btn-secondary btn-sm font-bold">
+						@components.IconArrowRight("icon-xs")
+						<span>{ i18n.T(lang, "vendor_ingest.btn_orgs_list") }</span>
+					</a>
+				} else {
+					<a href="/vendor/products" class="btn btn-secondary btn-sm font-bold">
+						@components.IconPackage("icon-xs")
+						<span>{ i18n.T(lang, "vendor_ingest.btn_vendor_products") }</span>
+					</a>
+				}
+			</div>
+		}
+		<div class="wizard">
+			@WizardRail(VendorRail(view.WizardStep(), lang))
+			if view.NoticeMessage != "" {
+				@importNotice(view.NoticeType, view.NoticeMessage)
+			}
+			if view.Fatal != "" {
+				@importFatal(view.Fatal, view.Session, view, lang)
+			} else if !view.Started() {
+				@importUploadStage(view, lang)
+			} else {
+				switch view.Phase() {
+					case ingest.PhaseMapping:
+						@importMappingStage(view, lang)
+					case ingest.PhaseSettings:
+						@importSettingsStage(view, lang)
+					case ingest.PhaseReview:
+						@importReviewStage(view, lang)
+					case ingest.PhaseConfirm:
+						@importConfirmStage(view, lang)
+					case ingest.PhaseProcessing:
+						@importProcessingStage(view, lang)
+					default:
+						@importResultsStage(view, lang)
+				}
+			}
+		</div>
+	</div>
+}
+
+templ importNotice(kind, message string) {
+	<div
+		class={ "alert",
+			templ.KV("alert-danger", kind == "error"),
+			templ.KV("alert-success", kind == "success"),
+			templ.KV("alert-info", kind != "error" && kind != "success") }
+		role="alert"
+	>
+		{ message }
+	</div>
+}
+
+templ importFatal(message string, session *ingest.Session, view VendorImportView, lang string) {
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.fatal_title") }</h2>
+		<p class="wiz-sub">{ message }</p>
+		<div class="row-center">
+			<a href={ templ.SafeURL(view.BaseIngestPath()) } class="btn btn-primary">{ i18n.T(lang, "vendor_ingest.btn_upload_another") }</a>
+			if session != nil {
+				<form class="stack-md" method="POST" action={ templ.SafeURL(view.SessionPath(session.PublicID, "cancel")) }>
+					<button type="submit" class="btn btn-ghost">{ i18n.T(lang, "vendor_ingest.btn_cancel_session") }</button>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+// --- stage 1: upload -------------------------------------------------------
+
+templ importUploadStage(view VendorImportView, lang string) {
+	<form class="stack-md" method="POST" action={ templ.SafeURL(view.UploadPath()) } enctype="multipart/form-data" hx-boost="false" id="import-upload-form">
+		<div class="glass-panel p-6">
+			<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.upload.title") }</h2>
+			<p class="wiz-sub">
+				{ i18n.T(lang, "vendor_ingest.upload.desc") }
+			</p>
+			<label class="wiz-drop" id="import-drop">
+				<input type="file" name="file" accept=".xlsx,.xls,.csv,.txt" required id="import-file-input"/>
+				<span class="wiz-drop-icon" aria-hidden="true">@components.IconUpload("icon-sm")</span>
+				<span class="wiz-drop-title" id="import-drop-title">{ i18n.T(lang, "vendor_ingest.upload.drop_title") }</span>
+				<span class="wiz-drop-text" id="import-drop-text">{ i18n.T(lang, "vendor_ingest.upload.drop_max") }</span>
+			</label>
+			<div class="wiz-actions">
+				<span class="wiz-actions-note">
+					{ i18n.T(lang, "vendor_ingest.upload.actions_note") }
+				</span>
+				<div class="row-center gap-2">
+					<a href="/vendor/ingest/sample.xlsx" class="btn btn-secondary btn-sm font-bold gap-1 text-brand shadow-2xs">
+						@components.IconFileText("icon-xs")
+						<span>{ i18n.T(lang, "vendor_ingest.upload.sample_xlsx") }</span>
+					</a>
+					<a href="/vendor/ingest/sample.csv" class="btn btn-ghost btn-sm font-bold gap-1 text-secondary">
+						@components.IconFileText("icon-xs")
+						<span>{ i18n.T(lang, "vendor_ingest.upload.sample_csv") }</span>
+					</a>
+					<button type="submit" class="btn btn-primary" id="import-submit-btn">
+						<span id="import-submit-text">{ i18n.T(lang, "vendor_ingest.upload.btn_analyze") }</span>
+					</button>
+				</div>
+			</div>
+		</div>
+	</form>
+	if len(view.Recent) > 0 {
+		@importHistory(view.Recent, view, lang)
+	}
+	<script nonce={ layouts.Nonce(ctx) }>
+		(function () {
+			const input = document.getElementById('import-file-input');
+			const drop = document.getElementById('import-drop');
+			const title = document.getElementById('import-drop-title');
+			const text = document.getElementById('import-drop-text');
+			if (!input || !drop) return;
+			input.addEventListener('change', function () {
+				if (!this.files || !this.files[0]) return;
+				const f = this.files[0];
+				title.textContent = '' + f.name;
+				const mb = (f.size / 1048576).toFixed(2);
+				text.textContent = (document.documentElement.lang === 'en')
+					? ('Size: ' + mb + ' MB — Ready for analysis')
+					: ('الحجم: ' + mb + ' ميجابايت — جاهز للتحليل');
+				drop.classList.add('is-over');
+			});
+			['dragenter', 'dragover'].forEach(function (name) {
+				drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.add('is-dragover'); });
+			});
+			['dragleave', 'drop'].forEach(function (name) {
+				drop.addEventListener(name, function (e) { e.preventDefault(); drop.classList.remove('is-dragover'); });
+			});
+			const form = document.getElementById('import-upload-form');
+			form.addEventListener('submit', function () {
+				const btn = document.getElementById('import-submit-btn');
+				const label = document.getElementById('import-submit-text');
+				if (btn) { btn.disabled = true; }
+				if (label) {
+					label.textContent = (document.documentElement.lang === 'en')
+						? '⏳ Analyzing file...'
+						: '⏳ جارٍ تحليل الملف...';
+				}
+			});
+		})();
+	</script>
+}
+
+templ importHistory(recent []*ingest.Session, view VendorImportView, lang string) {
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.history.title") }</h2>
+		<div class="table-container">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_file") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_status") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_inserted") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_updated") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_skipped") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.history.th_errors") }</th>
+						<th></th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, s := range recent {
+						<tr>
+							<td class="font-bold">{ s.Filename }</td>
+							<td><span class="badge badge-slate text-xs">{ s.Phase.LabelLang(lang) }</span></td>
+							<td>{ fmt.Sprint(s.InsertedRows) }</td>
+							<td>{ fmt.Sprint(s.UpdatedRows) }</td>
+							<td>{ fmt.Sprint(s.SkippedRows) }</td>
+							<td>{ fmt.Sprint(s.ErrorRows) }</td>
+							<td class="col-actions">
+								<a class="btn btn-ghost btn-sm" href={ templ.SafeURL(view.SessionPath(s.PublicID, "")) }>{ i18n.T(lang, "vendor_ingest.history.btn_open") }</a>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

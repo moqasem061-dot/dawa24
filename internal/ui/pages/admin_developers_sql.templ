@@ -1,0 +1,202 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// AdminDevelopersSQLTab renders Tab 1: SQL Console & Query Log.
+templ AdminDevelopersSQLTab(values AdminDevelopersValues, lang string) {
+	<div x-show="activeTab === 'sql'" class="stack-lg" x-data="adminSQLManager()" x-cloak>
+		<div class="glass-panel mb-0">
+			<div class="flex-between items-center mb-4 pb-3 border-b flex-wrap gap-2">
+				<div class="stack-sm">
+					<h3 class="m-0 text-lg font-black">
+						وحدة استعلامات SQL التفاعلية
+					</h3>
+					<p class="text-xs text-secondary mt-0.5 mb-0">
+						تنفيذ استعلامات قواعد البيانات المباشرة وعرض النتائج ومعدل زمن الاستجابة
+					</p>
+				</div>
+			</div>
+
+			<!-- Categorized Quick SQL Templates -->
+			<div class="bg-slate-50/90 border border-slate-200/80 rounded-2xl p-3.5 mb-4">
+				<div class="d-flex items-center justify-between flex-wrap gap-2 mb-2.5 pb-2 border-b border-slate-200/60">
+					<div class="d-flex items-center gap-1.5 text-xs font-bold text-primary">
+						@components.IconDatabase("icon-xs text-brand")
+						<span>نماذج واستعلامات جاهزة ومختبرة:</span>
+					</div>
+					<!-- Category Selector Pills -->
+					<div class="d-flex items-center gap-1 flex-wrap">
+						<template x-for="cat in categories" :key="cat.id">
+							<button
+								type="button"
+								class="badge text-2xs font-extrabold cursor-pointer transition-all border"
+								:class="activeCategory === cat.id ? 'bg-brand text-white border-brand shadow-2xs' : 'bg-white text-secondary border-slate-200 hover:bg-slate-100'"
+								@click="activeCategory = cat.id"
+								x-text="cat.name"
+							></button>
+						</template>
+					</div>
+				</div>
+
+				<!-- Preset Query Buttons for Active Category -->
+				<div class="d-flex items-center gap-1.5 flex-wrap">
+					<template x-for="q in presetQueries[activeCategory]" :key="q.name">
+						<button
+							type="button"
+							@click="setQuery(q.sql)"
+							class="btn btn-secondary btn-2xs font-bold gap-1 shadow-2xs"
+							:title="q.sql"
+						>
+							@components.IconTerminal("icon-2xs text-muted")
+							<span x-text="q.name"></span>
+						</button>
+					</template>
+				</div>
+			</div>
+
+			<form @submit.prevent="runQuery()" class="stack">
+				<div class="form-group m-0">
+					<textarea
+						x-model="sqlQuery"
+						rows="5"
+						required
+						class="form-input font-mono text-sm leading-relaxed bg-slate-900 text-sky-400 border-slate-700"
+						dir="ltr"
+						placeholder="SELECT * FROM catalog.products LIMIT 10;"
+					></textarea>
+				</div>
+
+				<div class="flex-between flex-wrap gap-3">
+					<div class="text-xs text-muted">
+						الاستعلامات مسجلة وموثقة في سجل المطورين الزمني.
+					</div>
+					<div class="row-center-sm">
+						<button type="button" @click="sqlQuery = ''" class="btn btn-secondary btn-sm">مسح</button>
+						<button type="submit" class="btn btn-primary font-bold px-6 py-2" :disabled="isRunning">
+							<span x-show="!isRunning">▶ تنفيذ الاستعلام (Execute)</span>
+							<span x-show="isRunning">جاري التنفيذ...</span>
+						</button>
+					</div>
+				</div>
+			</form>
+
+			<!-- Query Output Area -->
+			<div x-show="queryExecuted" class="mt-6 pt-5 border-t">
+				<!-- Execution Summary Pill -->
+				<div class="flex-between items-center mb-3 flex-wrap gap-2">
+					<div class="row-center-sm">
+						<template x-if="!queryResult.error">
+							<span class="badge badge-emerald">نجاح التنفيذ</span>
+						</template>
+						<template x-if="queryResult.error">
+							<span class="badge badge-rose">خطأ في الاستعلام</span>
+						</template>
+						<span class="text-sm text-muted tabular-nums" x-text="'المدة: ' + queryResult.duration_ms + ' ms'"></span>
+						<span class="text-sm text-muted tabular-nums" x-text="'الصفوف: ' + queryResult.rows_affected"></span>
+						<template x-if="queryResult.truncated">
+							<span class="badge badge-amber text-xs" x-text="queryResult.message || 'تم تقييد النتائج بـ 1000 صف'"></span>
+						</template>
+					</div>
+				</div>
+
+				<!-- Error Display if any -->
+				<template x-if="queryResult.error">
+					<div class="bg-danger-subtle border border-danger rounded-xl p-4 text-danger font-mono text-sm text-start overflow-x-auto" dir="ltr" x-text="queryResult.error"></div>
+				</template>
+
+				<!-- Results Table -->
+				<template x-if="!queryResult.error && queryResult.columns && queryResult.columns.length > 0">
+					<div class="table-container m-0 max-h-96 overflow-auto border rounded-lg">
+						<table class="data-table m-0 font-mono text-xs w-full">
+							<thead>
+								<tr class="sticky top-0 z-1 bg-surface-raised">
+									<template x-for="(col, cIdx) in queryResult.columns" :key="'col_' + cIdx">
+										<th class="whitespace-nowrap font-bold px-3 py-2 text-start" x-text="col"></th>
+									</template>
+								</tr>
+							</thead>
+							<tbody>
+								<template x-if="queryResult.rows && queryResult.rows.length > 0">
+									<template x-for="(row, rIdx) in queryResult.rows" :key="'row_' + rIdx">
+										<tr>
+											<template x-for="(cell, cIdx) in row" :key="'cell_' + rIdx + '_' + cIdx">
+												<td class="whitespace-nowrap px-3 py-2 max-w-sm truncate" :title="String(cell)" x-text="cell"></td>
+											</template>
+										</tr>
+									</template>
+								</template>
+								<template x-if="!queryResult.rows || queryResult.rows.length === 0">
+									<tr>
+										<td :colspan="queryResult.columns.length" class="text-center p-6 text-muted text-xs">
+											تم تنفيذ الاستعلام بنجاح ولكن لم يتم إرجاع أي صفوف (0 صفوف).
+										</td>
+									</tr>
+								</template>
+							</tbody>
+						</table>
+					</div>
+				</template>
+			</div>
+		</div>
+
+		<!-- SQL Execution History Table -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<h4 class="text-sm font-black text-primary m-0">
+					سجل الاستعلامات السابقة (Query Execution History)
+				</h4>
+				<span class="badge badge-slate text-xs">{ fmt.Sprintf("%d استعلام مسجل", len(values.SQLLogs)) }</span>
+			</div>
+
+			if len(values.SQLLogs) == 0 {
+				<div class="p-6 text-center text-muted text-xs">
+					لم يتم تنفيذ أي استعلامات بعد.
+				</div>
+			} else {
+				<div class="table-container m-0">
+					<table class="data-table m-0 text-xs">
+						<thead>
+							<tr>
+								<th class="w-1/5">التوقيت والمستخدم</th>
+								<th class="w-1/2">نص الاستعلام (SQL Query)</th>
+								<th class="text-center w-24">المدة (ms)</th>
+								<th class="text-center w-20">الصفوف</th>
+								<th class="text-center w-24">الحالة</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, log := range values.SQLLogs {
+								<tr>
+									<td class="text-start">
+										<div class="tabular-nums font-bold text-primary">{ log.CreatedAt.Format("2006-01-02 03:04:05 PM") }</div>
+										<div class="text-xs text-muted">{ log.ActorName }</div>
+									</td>
+									<td class="text-start">
+										<code class="bg-surface-sunken p-1 rounded font-mono block max-w-lg truncate" dir="ltr">{ log.Query }</code>
+									</td>
+									<td class="text-center tabular-nums">
+										<span>{ fmt.Sprintf("%d", log.DurationMS) } ms</span>
+									</td>
+									<td class="text-center tabular-nums">
+										<span>{ fmt.Sprintf("%d", log.RowsAffected) }</span>
+									</td>
+									<td class="text-center">
+										if log.ErrorMessage == "" {
+											<span class="badge badge-emerald">نجاح</span>
+										} else {
+											<span class="badge badge-rose" title={ log.ErrorMessage }>خطأ</span>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	</div>
+}

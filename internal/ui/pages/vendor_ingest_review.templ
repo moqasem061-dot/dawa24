@@ -1,0 +1,267 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ importReviewStage(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<!-- Stage Header Card -->
+	<div class="glass-panel p-5 mb-5 border border-slate-200/80 rounded-2xl shadow-xs">
+		<div class="flex-between items-center flex-wrap gap-4">
+			<div class="stack-sm">
+				<div class="d-flex items-center gap-2.5 mb-1">
+					<div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+						@components.IconCheckCircle("icon-sm")
+					</div>
+					<div>
+						<h2 class="text-xl font-black text-primary m-0">{ i18n.T(lang, "vendor_ingest.review.title") }</h2>
+						<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+							{ i18n.T(lang, "vendor_ingest.review.subtitle") }
+						</p>
+					</div>
+				</div>
+			</div>
+			<div class="d-flex items-center gap-2">
+				<form class="m-0" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "back-settings")) }>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-xs">
+						@components.IconSettings("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_ingest.review.btn_edit_settings") }</span>
+					</button>
+				</form>
+				<form class="m-0" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "cancel")) }
+					@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "vendor_ingest.review.confirm_cancel")) }>
+					<button type="submit" class="btn btn-ghost btn-sm text-danger font-bold text-xs gap-1">
+						@components.IconTrash("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_ingest.review.btn_cancel") }</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Active Settings & Mode Banner -->
+	{{ modeOpt := ImportModeOption(view.Session.Settings.Mode, lang) }}
+	<div class={ "glass-panel p-4 mb-5 border rounded-2xl shadow-xs",
+		templ.KV("border-amber-300/80 bg-amber-50/25", modeOpt.Destructive),
+		templ.KV("border-brand-200/80 bg-brand-50/20", !modeOpt.Destructive) }>
+		<div class="flex-between items-center flex-wrap gap-3">
+			<div class="d-flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-surface d-flex items-center justify-center text-xl shadow-2xs border border-slate-200/60 flex-shrink-0">
+					{ modeOpt.Icon }
+				</div>
+				<div>
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<span class="font-black text-sm text-primary">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.mode_label"), modeOpt.Title) }
+						</span>
+						if modeOpt.Destructive {
+							<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.review.destructive_badge") }</span>
+						}
+					</div>
+					<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+						{ modeOpt.Description }
+						if modeOpt.Destructive {
+							<strong class="text-rose-600 ms-1">{ i18n.T(lang, "vendor_ingest.review.destructive_warn") }</strong>
+						}
+					</p>
+				</div>
+			</div>
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<div class="badge badge-outline text-xs gap-1.5 py-1.5 px-3">
+					@components.IconBuilding("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_ingest.review.badge_warehouse") } <strong>{ importWarehouseName(view) }</strong></span>
+				</div>
+				<div class="badge badge-outline text-xs gap-1.5 py-1.5 px-3">
+					@components.IconPackage("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_ingest.review.badge_quantities") } <strong>{ ImportStockModeLabel(view.Session.Settings.StockMode, lang) }</strong></span>
+				</div>
+				<form class="m-0" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "back-settings")) }>
+					<button type="submit" class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs">
+						@components.IconSettings("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_ingest.review.btn_change") }</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+
+	<!-- Summary Stats Grid -->
+	<div class="dashboard-stat-grid cols-4 gap-4 mb-5">
+		<div class="stat-card-3d p-4 rounded-2xl border border-slate-200/80 bg-surface-sunken">
+			<div class="stat-card-label text-xs font-bold text-muted">{ i18n.T(lang, "vendor_ingest.review.stat_total_rows") }</div>
+			<div class="stat-card-value text-2xl font-black text-primary tabular-nums mt-1">{ fmt.Sprint(view.Session.TotalRows) }</div>
+			<span class="text-2xs text-secondary mt-1 d-block font-medium">{ i18n.T(lang, "vendor_ingest.review.stat_total_desc") }</span>
+		</div>
+		<div class="stat-card-3d p-4 rounded-2xl border border-emerald-200/80 bg-emerald-50/20">
+			<div class="stat-card-label text-xs font-bold text-emerald-600">{ i18n.T(lang, "vendor_ingest.review.stat_matched") }</div>
+			<div class="stat-card-value text-2xl font-black text-emerald-600 tabular-nums mt-1">{ fmt.Sprint(view.Session.MatchedRows) }</div>
+			<span class="text-2xs text-emerald-800/80 mt-1 d-block font-medium">{ i18n.T(lang, "vendor_ingest.review.stat_matched_desc") }</span>
+		</div>
+		<div class="stat-card-3d p-4 rounded-2xl border border-amber-200/80 bg-amber-50/20">
+			<div class="stat-card-label text-xs font-bold text-amber-600">{ i18n.T(lang, "vendor_ingest.review.stat_review") }</div>
+			<div class="stat-card-value text-2xl font-black text-amber-600 tabular-nums mt-1">{ fmt.Sprint(view.Session.ReviewRows) }</div>
+			<span class="text-2xs text-amber-800/80 mt-1 d-block font-medium">{ i18n.T(lang, "vendor_ingest.review.stat_review_desc") }</span>
+		</div>
+		<div class="stat-card-3d p-4 rounded-2xl border border-rose-200/80 bg-rose-50/20">
+			<div class="stat-card-label text-xs font-bold text-rose-600">{ i18n.T(lang, "vendor_ingest.review.stat_unmatched") }</div>
+			<div class="stat-card-value text-2xl font-black text-rose-600 tabular-nums mt-1">{ fmt.Sprint(view.Session.UnmatchedRows) }</div>
+			<span class="text-2xs text-rose-800/80 mt-1 d-block font-medium">{ i18n.T(lang, "vendor_ingest.review.stat_unmatched_desc") }</span>
+		</div>
+	</div>
+
+	<!-- What the AI stage did, directly under the counters it changed -->
+	@aiPanel(view, lang)
+
+	<!-- Filter Tabs and Search Bar -->
+	<div class="glass-panel p-3 px-4 mb-4 border border-slate-200/80 rounded-2xl shadow-xs flex-between items-center flex-wrap gap-3">
+		<div class="tabs-nav d-flex items-center gap-1.5 flex-wrap m-0">
+			@reviewFilterTab(view, "", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_all"), view.Session.TotalRows))
+			if view.Plan != nil {
+				@reviewFilterTab(view, "new", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_new"), view.Plan.Insert))
+				@reviewFilterTab(view, "update", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_update"), view.Plan.Update))
+			} else {
+				@reviewFilterTab(view, "new", i18n.T(lang, "vendor_ingest.review.tab_new_simple"))
+				@reviewFilterTab(view, "update", i18n.T(lang, "vendor_ingest.review.tab_update_simple"))
+			}
+			@reviewFilterTab(view, "matched", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_matched"), view.Session.MatchedRows))
+			@reviewFilterTab(view, "review", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_review"), view.Session.ReviewRows))
+			@reviewFilterTab(view, "unmatched", fmt.Sprintf(i18n.T(lang, "vendor_ingest.review.tab_unmatched"), view.Session.UnmatchedRows))
+		</div>
+
+		<form method="GET" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "")) } class="d-flex items-center gap-2 flex-wrap ms-auto m-0">
+			if view.Filter.MatchLevel != "" {
+				<input type="hidden" name="match" value={ view.Filter.MatchLevel }/>
+			}
+			if view.Filter.SortBy != "" {
+				<input type="hidden" name="sort" value={ view.Filter.SortBy }/>
+			}
+			if view.Filter.SortOrder != "" {
+				<input type="hidden" name="order" value={ view.Filter.SortOrder }/>
+			}
+			<div class="position-relative">
+				<input type="text" name="q" value={ view.Filter.Search } placeholder={ i18n.T(lang, "vendor_ingest.review.search_placeholder") }
+					class="form-input text-xs w-48"/>
+			</div>
+			<input type="hidden" name="limit" value={ fmt.Sprint(view.PerPage) }/>
+			<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs gap-1 shadow-2xs">
+				@components.IconSearch("icon-2xs")
+				<span>{ i18n.T(lang, "vendor_ingest.review.btn_search") }</span>
+			</button>
+			if view.Filter.Search != "" {
+				<a href={ templ.SafeURL(view.ReviewURL(view.Filter.MatchLevel, view.Filter.SortBy, view.Filter.SortOrder, 1, view.PerPage, "")) } class="btn btn-ghost btn-sm text-xs">{ i18n.T(lang, "vendor_ingest.review.btn_clear_search") }</a>
+			}
+		</form>
+	</div>
+
+	<!-- Batch Quantity Setter Card -->
+	<div class="glass-panel p-3.5 px-4 mb-4 border border-slate-200/80 rounded-2xl shadow-xs bg-surface-raised">
+		<form method="POST" action={ templ.SafeURL(view.BatchQuantityPath()) }
+			class="flex-between items-center flex-wrap gap-3 m-0"
+			@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "vendor_ingest.review.batch_qty_confirm")) }>
+			<div class="d-flex items-center gap-2.5">
+				<div class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs flex-shrink-0">
+					@components.IconPackage("icon-xs")
+				</div>
+				<div>
+					<span class="font-extrabold text-xs text-primary">{ i18n.T(lang, "vendor_ingest.review.batch_qty_title") }</span>
+					<span class="text-2xs text-muted d-block mt-0.5 font-medium">{ i18n.T(lang, "vendor_ingest.review.batch_qty_sub") }</span>
+				</div>
+			</div>
+			<div class="d-flex items-center gap-2">
+				<input type="number" name="batch_quantity" min="0" placeholder={ i18n.T(lang, "vendor_ingest.review.batch_qty_ph") } required
+					class="form-input text-center tabular-nums font-bold text-xs w-28"/>
+				<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1.5 shadow-2xs">
+					@components.IconCheck("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_ingest.review.batch_qty_btn") }</span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	@reviewBulkBar(view, lang)
+
+	<!-- Table -->
+	<div class="glass-panel p-0 mb-6 review-table-shell border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+		<div class="review-table-scroll">
+			<table class="data-table review-table m-0 w-full">
+				<thead>
+					<tr>
+						<th class="text-center review-col-pick">
+							<input type="checkbox" class="review-pick-all"
+								data-on-change="reviewToggleAll(this)"
+								title={ i18n.T(lang, "vendor_ingest.table.th_pick") }/>
+						</th>
+						<th class="text-center review-col-flag">{ i18n.T(lang, "vendor_ingest.table.th_import") }</th>
+						<th class="text-center review-col-num">
+							@reviewSortHeader(view, "row", i18n.T(lang, "vendor_ingest.table.th_row_num"))
+						</th>
+						<th class="review-col-name">
+							@reviewSortHeader(view, "name", i18n.T(lang, "vendor_ingest.table.th_file_name"))
+						</th>
+						<th class="review-col-catalog">
+							@reviewSortHeader(view, "catalog_name", i18n.T(lang, "vendor_ingest.table.th_catalog_name"))
+						</th>
+						<th class="text-center review-col-score">
+							@reviewSortHeader(view, "score", i18n.T(lang, "vendor_ingest.table.th_score"))
+						</th>
+						<th class="text-center review-col-price">
+							@reviewSortHeader(view, "price", i18n.T(lang, "vendor_ingest.table.th_public_price"))
+						</th>
+						<th class="text-center review-col-discount">
+							@reviewSortHeader(view, "discount", i18n.T(lang, "vendor_ingest.table.th_discount"))
+						</th>
+						<th class="text-center review-col-net">
+							{ i18n.T(lang, "vendor_ingest.table.th_net_price") }
+						</th>
+						<th class="text-center review-col-money">
+							{ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
+						</th>
+						<th class="text-center review-col-discount">
+							{ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
+						</th>
+						<th class="text-center review-col-qty">
+							@reviewSortHeader(view, "quantity", i18n.T(lang, "vendor_ingest.table.th_quantity"))
+						</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(view.Rows) == 0 {
+						<tr>
+							<td colspan="12" class="text-center p-8 text-muted">
+								<div class="font-extrabold text-sm">{ i18n.T(lang, "vendor_ingest.table.empty_filter") }</div>
+								<div class="text-xs mt-1">{ i18n.T(lang, "vendor_ingest.table.empty_filter_desc") }</div>
+							</td>
+						</tr>
+					}
+					for _, row := range view.Rows {
+						@reviewTableRow(view, row, lang)
+					}
+				</tbody>
+			</table>
+		</div>
+
+		<!-- Pagination Footer -->
+		if view.RowTotal > 0 {
+			@reviewPagination(view)
+		}
+	</div>
+
+	<!-- Final Confirmation Footer -->
+	{{ held := view.Session.ReviewRows + view.Session.UnmatchedRows }}
+	@importCommitFooter(view, held, lang)
+
+	<!-- Review interaction script -->
+	@reviewStageScript(lang)
+}

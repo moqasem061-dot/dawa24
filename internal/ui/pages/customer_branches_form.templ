@@ -1,0 +1,440 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerBranchesForm(data CustomerBranchesData, lang string) {
+	<!-- Unified Pharmacy Branch Form (Add / Edit Modes) -->
+	<div
+		class="glass-panel p-5"
+		id="new-branch-form"
+		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'customer-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
+		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+	>
+		<!-- City and Governorate coordinates lookup for instant map auto-pan -->
+		<div id="customer-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
+		<div id="customer-branch-govs-coords" class="d-none" data-coords={ GovernoratesCoordinatesJSON(data.Governorates) }></div>
+
+		<div class="d-flex items-start justify-between gap-3 pb-3 mb-3 border-b">
+			<div>
+				<h3 class="text-base font-bold text-primary m-0" x-text="mode === 'edit' ? 'تعديل بيانات الفرع: ' + (form.name_ar || '') : 'إضافة فرع صيدلية جديد'"></h3>
+				<p class="text-xs text-secondary m-0 mt-0.5" x-text="mode === 'edit' ? 'تحديث بيانات الموقع، العنوان، وخصائص الفرع الحالية' : 'أدخل بيانات الفرع وموقعه على الخريطة لتفعيل التغطية'"></p>
+			</div>
+
+			<!-- Exit Edit Mode Button -->
+			<template x-if="mode === 'edit'">
+				<button
+					type="button"
+					class="btn btn-secondary btn-xs font-bold"
+					@click="resetToAddMode()"
+					title="إلغاء التعديل والعودة لوضع إضافة فرع جديد"
+				>
+					<span>إلغاء</span>
+				</button>
+			</template>
+		</div>
+
+		<form class="d-flex flex-col gap-3 m-0" method="POST" :action="formAction" @submit="if (!form.city_id) { $event.preventDefault(); if (window.showToast) { window.showToast('يرجى اختيار المدينة والمحافظة من القائمة', 'warning'); } else { alert('يرجى اختيار المدينة والمحافظة من القائمة'); } }">
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						اسم الفرع بالعربية <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="name_ar" x-model="form.name_ar" required placeholder="صيدلية الأمل - المعادي" class="form-control font-semibold"/>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						اسم الفرع بالإنجليزية
+					</label>
+					<input type="text" name="name_en" x-model="form.name_en" placeholder="Al Amal - Maadi" class="form-control font-semibold"/>
+				</div>
+			</div>
+
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						كود الفرع الداخلي
+					</label>
+					<input type="text" name="code" x-model="form.code" placeholder="PH-01" class="form-control tabular-nums"/>
+				</div>
+				<div class="form-group mb-0">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "governorate_id",
+						Label:       "المحافظة",
+						Placeholder: "اختر المحافظة…",
+						Options:     GovernorateOptions(data.Governorates, lang),
+						Required:    true,
+						EmptyText:   "لم يتم العثور على محافظة بهذا الاسم.",
+						Class:       "w-full",
+					})
+				</div>
+				<div class="form-group mb-0">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "city_id",
+						Label:       "المدينة / الحي",
+						Placeholder: "اختر المدينة التابعة…",
+						Options:     CityOptions(data.Cities, lang),
+						DependsOn:   "governorate_id",
+						Required:    true,
+						EmptyText:   "اختر المحافظة أولاً، أو ابحث باسم آخر.",
+						Class:       "w-full",
+					})
+				</div>
+			</div>
+
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					العنوان التفصيلي <span class="text-danger">*</span>
+				</label>
+				<input type="text" name="address" x-model="form.address" required placeholder="شارع النصر، أمام مستشفى المعادي" class="form-control font-semibold"/>
+			</div>
+
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						رقم هاتف الفرع
+					</label>
+					<input type="tel" name="phone" x-model="form.phone" placeholder="01012345678" class="form-control tabular-nums"/>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						ساعات العمل
+					</label>
+					<input type="text" name="operating_hours" x-model="form.operating_hours" placeholder="9 صباحاً - 11 مساءً" class="form-control font-semibold"/>
+				</div>
+			</div>
+
+			<!-- Leaflet Map Picker with Auto-Pan -->
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					موقع الفرع على الخريطة (سيتم التحريك تلقائياً عند اختيار المدينة)
+				</label>
+				<div id="customer-branch-map-picker" class="d-flex flex-col gap-2" data-map-picker data-default-lat="30.0444" data-default-lon="31.2357">
+					<div class="map-container map-canvas map-canvas-sm rounded-lg border"></div>
+					<div class="d-flex items-center justify-between text-xs">
+						<span data-map-coords-badge class="tabular-nums font-bold text-primary">30.0444, 31.2357</span>
+						<button type="button" data-map-locate class="btn btn-secondary btn-xs font-bold">موقعي الحالي</button>
+					</div>
+					<input type="hidden" name="latitude" data-map-input="lat" x-model="form.latitude"/>
+					<input type="hidden" name="longitude" data-map-input="lon" x-model="form.longitude"/>
+				</div>
+			</div>
+
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					رابط خرائط Google (اختياري)
+				</label>
+				<input type="url" name="google_maps_url" x-model="form.google_maps_url" data-map-google-url placeholder="https://maps.google.com/?q=30.0444,31.2357" class="form-control text-xs font-semibold" dir="ltr"/>
+			</div>
+
+			<!-- Section: Institutional Works -->
+			<div class="bg-surface-sunken p-3 rounded-xl border d-flex flex-col gap-2">
+				<label class="text-xs font-black text-primary m-0 d-block">
+					الأعمال المؤسسية المغطاة (Institutional Works)
+				</label>
+
+				<div class="d-grid grid-cols-2 gap-1.5 mt-1">
+					for _, work := range data.InstitutionalWorks {
+						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded">
+							<input type="checkbox" name="institutional_works" value={ fmt.Sprintf("%d", work.ID) } x-model="form.institutional_works" class="form-checkbox"/>
+							<span>
+								if work.Icon != "" {
+									{ work.Icon } 
+								}
+								if title := work.Title["ar"]; title != "" {
+									{ title }
+								} else {
+									{ work.Title["en"] }
+								}
+							</span>
+						</label>
+					}
+				</div>
+			</div>
+
+			<div class="d-flex flex-col gap-2 pt-1">
+				<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold">
+					<input type="checkbox" name="has_cold_storage" value="true" x-model="form.has_cold_storage" class="form-checkbox"/>
+					<span>تتوفر ثلاجة لحفظ وتبريد الأدوية (2-8°C)</span>
+				</label>
+				<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold">
+					<input type="checkbox" name="is_main" value="true" x-model="form.is_main" class="form-checkbox"/>
+					<span>تعيين كفرع رئيسي لاستلام طلبيات الصيدلية</span>
+				</label>
+			</div>
+
+			<button type="submit" class="btn btn-primary btn-sm font-bold w-full justify-center mt-2">
+				@components.IconCheck("icon-xs")
+				<span x-text="mode === 'edit' ? 'حفظ تعديلات الفرع' : 'حفظ وإضافة فرع الصيدلية'"></span>
+			</button>
+		</form>
+	</div>
+}
+
+templ CustomerBranchesScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function customerBranchManager() {
+			return {
+				mode: 'add',
+				editId: 0,
+				formAction: '/customer/branches/new',
+				_settingEditMode: false,
+				form: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					code: '',
+					governorate_id: '',
+					city_id: '',
+					address: '',
+					phone: '',
+					operating_hours: '',
+					google_maps_url: '',
+					has_cold_storage: false,
+					is_main: false,
+					latitude: 30.0444,
+					longitude: 31.2357,
+					institutional_works: []
+				},
+				init() {
+					const urlParams = new URLSearchParams(window.location.search);
+					const editParam = urlParams.get('edit');
+					if (editParam) {
+						this.$nextTick(() => {
+							const btn = document.querySelector(`[data-edit-branch-btn="${editParam}"]`);
+							if (btn) {
+								this.setEditModeFromElement(btn);
+							}
+						});
+					}
+				},
+				onComboboxChange(detail) {
+					if (!detail || !detail.name) return;
+					if (detail.name === 'governorate_id') {
+						this.onGovChange(detail.value, detail.item);
+					} else if (detail.name === 'city_id') {
+						this.onCityChange(detail.value, detail.item);
+					}
+				},
+				onGovChange(govId, item) {
+					const prevGovId = this.form.governorate_id;
+					this.form.governorate_id = govId ? String(govId) : '';
+					if (!govId || this._settingEditMode) return;
+
+					// If a city is already selected or if governorate didn't change, do not re-pan to governorate center
+					if (this.form.city_id && prevGovId === String(govId)) return;
+
+					let lat = null, lon = null;
+					const coordsEl = document.getElementById('customer-branch-govs-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(govId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+							}
+						} catch (e) {
+							console.error('Failed to parse gov coordinates:', e);
+						}
+					}
+					if ((lat === null || lon === null || (lat === 0 && lon === 0)) && item && item.label) {
+						if (typeof window.findCityCoordsByName === 'function') {
+							const found = window.findCityCoordsByName(item.label);
+							if (found) { lat = found[0]; lon = found[1]; }
+						}
+					}
+					// Only pan to governorate if NO city is currently selected
+					if (!this.form.city_id && lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('customer-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#customer-branch-map-picker', lat, lon, 11);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				onCityChange(cityId, item) {
+					this.form.city_id = cityId ? String(cityId) : '';
+					if (!cityId || this._settingEditMode) return;
+					let lat = null, lon = null, parentGovId = null;
+					const coordsEl = document.getElementById('customer-branch-cities-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(cityId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+								if (pos[2]) parentGovId = String(pos[2]);
+							}
+						} catch (e) {
+							console.error('Failed to parse city coordinates:', e);
+						}
+					}
+					if ((lat === null || lon === null || (lat === 0 && lon === 0)) && item && item.label) {
+						if (typeof window.findCityCoordsByName === 'function') {
+							const found = window.findCityCoordsByName(item.label);
+							if (found) {
+								lat = found[0];
+								lon = found[1];
+							}
+						}
+					}
+					// Auto-select parent governorate if not set or different
+					if (parentGovId && (!this.form.governorate_id || this.form.governorate_id !== parentGovId)) {
+						this.form.governorate_id = parentGovId;
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', parentGovId);
+						}
+					}
+					if (lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('customer-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#customer-branch-map-picker', lat, lon, 14);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				setEditModeFromElement(btnEl) {
+					if (!btnEl) return;
+					try {
+						const raw = btnEl.getAttribute('data-branch-data');
+						if (!raw) return;
+						const b = JSON.parse(raw);
+						this.setEditMode(b);
+					} catch (e) {
+						console.error('Failed to parse branch data for editing:', e);
+					}
+				},
+				setEditMode(b) {
+					if (!b || !b.id) return;
+					this._settingEditMode = true;
+					this.mode = 'edit';
+					this.editId = b.id;
+					this.formAction = '/customer/branches/' + b.id + '/edit';
+					const latVal = (b.latitude !== undefined && b.latitude !== null && b.latitude !== 0) ? Number(b.latitude) : 30.0444;
+					const lonVal = (b.longitude !== undefined && b.longitude !== null && b.longitude !== 0) ? Number(b.longitude) : 31.2357;
+					const targetCityId = (b.city_id && b.city_id !== 0) ? String(b.city_id) : '';
+					let targetGovId = (b.governorate_id && b.governorate_id !== 0) ? String(b.governorate_id) : '';
+					if (!targetGovId && targetCityId) {
+						const coordsEl = document.getElementById('customer-branch-cities-coords');
+						if (coordsEl) {
+							try {
+								const coords = JSON.parse(coordsEl.textContent);
+								const pos = coords[String(targetCityId)];
+								if (pos && pos[2]) targetGovId = String(pos[2]);
+							} catch (e) {}
+						}
+					}
+					this.form = {
+						id: b.id,
+						name_ar: b.name_ar || '',
+						name_en: b.name_en || '',
+						code: b.code || '',
+						governorate_id: targetGovId,
+						city_id: targetCityId,
+						address: b.address || '',
+						phone: b.phone || '',
+						operating_hours: b.operating_hours || '',
+						google_maps_url: b.google_maps_url || '',
+						has_cold_storage: !!b.has_cold_storage,
+						is_main: !!b.is_main,
+						latitude: latVal,
+						longitude: lonVal,
+						institutional_works: Array.isArray(b.institutional_works) ? b.institutional_works : []
+					};
+					const formEl = document.getElementById('new-branch-form');
+					if (formEl) {
+						formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+					this.$nextTick(() => {
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#customer-branch-map-picker', latVal, lonVal, 14);
+						}
+						const syncCb = () => {
+							if (typeof window.dawaComboboxSet === 'function') {
+								if (targetGovId) {
+									window.dawaComboboxSet('governorate_id', targetGovId);
+								}
+								window.dawaComboboxSet('city_id', targetCityId);
+							}
+						};
+						syncCb();
+						setTimeout(syncCb, 50);
+						setTimeout(() => {
+							this._settingEditMode = false;
+						}, 120);
+					});
+				},
+				resetToAddMode() {
+					this.mode = 'add';
+					this.editId = 0;
+					this.formAction = '/customer/branches/new';
+					this.form = {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						code: '',
+						governorate_id: '',
+						city_id: '',
+						address: '',
+						phone: '',
+						operating_hours: '',
+						google_maps_url: '',
+						has_cold_storage: false,
+						is_main: false,
+						latitude: 30.0444,
+						longitude: 31.2357,
+						institutional_works: []
+					};
+					this.$nextTick(() => {
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', '');
+							window.dawaComboboxSet('city_id', '');
+						}
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#customer-branch-map-picker', 30.0444, 31.2357, 13);
+						}
+					});
+				}
+			};
+		}
+
+		// Global modal open/close delegation
+		if (!window.__dawaBound_customer_branches_form) {
+			window.__dawaBound_customer_branches_form = true;
+			document.addEventListener('click', function(e) {
+				const openBtn = e.target.closest('[data-modal-open]');
+				if (openBtn) {
+					const modalId = openBtn.getAttribute('data-modal-open');
+					const modal = document.getElementById(modalId);
+					if (modal && typeof modal.showModal === 'function') {
+						modal.showModal();
+					}
+				}
+				const closeBtn = e.target.closest('[data-modal-close]');
+				if (closeBtn) {
+					const modalId = closeBtn.getAttribute('data-modal-close');
+					const modal = document.getElementById(modalId);
+					if (modal && typeof modal.close === 'function') {
+						modal.close();
+					}
+				}
+			});
+		}
+	</script>
+}

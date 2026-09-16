@@ -1,0 +1,370 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminProductsImportMapping is step two: how the file will be read.
+//
+// One form, two buttons. "تحديث المعاينة" re-reads the file under the changes
+// and redraws this screen; "بدء المعالجة" hands the same settings to the
+// background run. Neither writes to the catalogue, and the admin can go round
+// the loop as often as they like — which is the point, because the previous
+// screen made that decision for them and only showed the result afterwards.
+templ AdminProductsImportMapping(lang, dir string, view ImportMappingView) {
+	@layouts.AdminShell("مراجعة أعمدة الملف | Import Column Mapping", "import", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							🧭
+						</div>
+						<div>
+							<h1 class="text-2xl font-black text-primary m-0">مراجعة الأعمدة قبل المعالجة</h1>
+							<p class="text-sm text-secondary m-0 mt-1">تأكد من أن كل عمود في الملف مربوط بالحقل الصحيح، وراجع عيّنة من الأصناف كما ستُقرأ فعلياً</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/products/import" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconUpload("icon-xs")
+							<span>رفع ملف آخر</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="wizard">
+				@WizardRail(ImportRail(StepColumns))
+				if view.Notice != "" {
+					@importStepNotice(view.Notice, view.NoticeKind)
+				}
+				<form class="d-flex flex-col gap-6" method="POST" hx-boost="false" id="mapping-form">
+					@importFileCard(view)
+					@components.ImportFilePreview(view.Session.Filename, view.FileHeaders, view.FileSampleRows)
+					@importMappingCard(view)
+					@importPreviewCard(view)
+					@importModeCard(view.Modes, view.Session.Mode)
+					@importOptionsCard(view.Toggles, view.Categories, view.Session.Options.DefaultCategoryID, view.AIAvailable)
+					@importMappingActions(view)
+				</form>
+			</div>
+		</div>
+	}
+}
+
+templ importStepNotice(message, kind string) {
+	<div
+		class={ "import-banner",
+			templ.KV("import-banner--error", kind == "error"),
+			templ.KV("import-banner--ok", kind != "error") }
+	>
+		<p class="import-banner-text">{ message }</p>
+	</div>
+}
+
+// importFileCard states what was read, before anything about mapping.
+templ importFileCard(view ImportMappingView) {
+	<div class="glass-panel p-6 mb-6">
+		<h2 class="wiz-head">الملف المرفوع</h2>
+		<p class="wiz-sub">{ view.HeaderSummary() }</p>
+		<div class="wiz-stats">
+			@wizStat(FormatCount(view.Structure.TotalRows), "صف في الملف", "")
+			@wizStat(fmt.Sprintf("%d", view.Structure.Width), "عمود", "")
+			@wizStat(view.HeaderRowLabel(), "صف العناوين", tonedHeaderRow(view))
+			@wizStat(FormatCount(view.TotalProducts), "صنف سيتم استخراجه", tonedProducts(view))
+			if view.RejectedRows > 0 {
+				@wizStat(FormatCount(view.RejectedRows), "صف مرفوض", "warn")
+			}
+		</div>
+		if view.Structure.Positional {
+			<div class="import-banner import-banner--error mt-md">
+				<p class="import-banner-text">
+					لم يتعرّف النظام على صف عناوين في هذا الملف، وتمت قراءة الأعمدة بترتيبها.
+					حدّد رقم صف العناوين أدناه ثم اضغط «تحديث المعاينة».
+				</p>
+			</div>
+		}
+		if len(view.Structure.SheetsSkipped) > 0 {
+			<p class="wiz-sub mt-md">
+				{ fmt.Sprintf("تمت قراءة ورقة واحدة فقط. أوراق أخرى تحتوي على بيانات ولم تُقرأ: %s",
+					joinList(view.Structure.SheetsSkipped)) }
+			</p>
+		}
+	</div>
+}
+
+// importMappingCard is the screen's centre: every field, the column it reads
+// from, and what that column contains.
+templ importMappingCard(view ImportMappingView) {
+	<div class="glass-panel p-6 mb-6">
+		<div class="flex-between items-center flex-wrap gap-3 mb-4 pb-3 border-b">
+			<div>
+				<h2 class="text-xl font-black text-primary m-0">ربط وتعيين أعمدة الملف</h2>
+				<p class="text-xs text-secondary m-0 mt-1">
+					تم تقسيم الحقول إلى 3 أقسام منظمة لتسهيل المراجعة: الحقول الأساسية، المواصفات الدوائية، وبيانات الأسعار والمخزون.
+				</p>
+			</div>
+		</div>
+
+		if len(view.Missing) > 0 {
+			<div class="alert alert-danger mb-4 p-4 flex-between">
+				<div class="d-flex items-center gap-3 font-bold text-xs">
+					<span class="text-xl">@components.IconAlert("icon-sm")</span>
+					<span>{ fmt.Sprintf("حقول أساسية غير مربوطة: %s. يرجى تحديد الأعمدة الخاصة بها للمتابعة.", joinList(view.Missing)) }</span>
+				</div>
+			</div>
+		}
+
+		<div class="wiz-map mb-6">
+			@wizMapNumber("header_row", "صف العناوين", "رقم الصف الذي يحتوي على أسماء الأعمدة", view.Session.Overrides.HeaderRow)
+			@wizMapNumber("first_data_row", "أول صف بيانات", "اتركه فارغاً للبدء بعد صف العناوين", view.Session.Overrides.FirstDataRow)
+			@wizMapNumber("last_data_row", "آخر صف بيانات", "لتجاهل صفوف الإجماليات في نهاية الملف", view.Session.Overrides.LastDataRow)
+		</div>
+
+		<!-- Section 1: Core Required Fields -->
+		{{ coreFields := view.CoreFields() }}
+		<div class="glass-panel p-4 mb-4">
+			<div class="flex-between items-center mb-3">
+				<div class="d-flex items-center gap-2">
+					<span class="text-base">@components.IconStar("icon-sm")</span>
+					<h3 class="text-sm font-black text-primary m-0">الحقول الأساسية لتعريف الصنف (Core Fields)</h3>
+				</div>
+				<span class="badge badge-emerald text-xs font-bold">
+					{ fmt.Sprintf("%d حقول أساسية", len(coreFields)) }
+				</span>
+			</div>
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>الحقل المطلوب</th>
+							<th>العمود في الملف</th>
+							<th>عيّنة من القيم</th>
+							<th>دقة المطابقة</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, field := range coreFields {
+							@importFieldLine(view, field)
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Section 2: Pharmaceutical & Clinical Specs -->
+		{{ pharmaFields := view.PharmaFields() }}
+		<div class="glass-panel p-4 mb-4">
+			<div class="flex-between items-center mb-3">
+				<div class="d-flex items-center gap-2">
+					<span class="text-base">@components.IconPill("icon-sm")</span>
+					<h3 class="text-sm font-black text-primary m-0">المواصفات الدوائية والصيدلانية (Pharmaceutical Specs)</h3>
+				</div>
+				<span class="badge badge-sky text-xs font-bold">
+					{ fmt.Sprintf("%d حقول دوائية", len(pharmaFields)) }
+				</span>
+			</div>
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>الحقل المطلوب</th>
+							<th>العمود في الملف</th>
+							<th>عيّنة من القيم</th>
+							<th>دقة المطابقة</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, field := range pharmaFields {
+							@importFieldLine(view, field)
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Section 3: Pricing, Inventory & Taxonomy -->
+		{{ pricingFields := view.PricingTaxonomyFields() }}
+		<div class="glass-panel p-4 mb-0">
+			<div class="flex-between items-center mb-3">
+				<div class="d-flex items-center gap-2">
+					<span class="text-base">@components.IconTag("icon-sm")</span>
+					<h3 class="text-sm font-black text-primary m-0">بيانات الأسعار الإضافية، المخزون، والتصنيف (Pricing & Details)</h3>
+				</div>
+				<span class="badge badge-slate text-xs font-bold">
+					{ fmt.Sprintf("%d حقول إضافية", len(pricingFields)) }
+				</span>
+			</div>
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>الحقل المطلوب</th>
+							<th>العمود في الملف</th>
+							<th>عيّنة من القيم</th>
+							<th>دقة المطابقة</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, field := range pricingFields {
+							@importFieldLine(view, field)
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+}
+
+templ importFieldLine(view ImportMappingView, field ImportFieldRow) {
+	<tr>
+		<td>
+			<div class="d-flex items-center gap-2">
+				<span class="font-extrabold text-xs text-primary">{ field.Label }</span>
+				if field.Critical {
+					<span class="badge badge-amber text-xs font-bold">أساسي</span>
+				} else {
+					<span class="badge badge-slate text-xs text-muted">اختياري</span>
+				}
+			</div>
+		</td>
+		<td>
+			<select name={ fieldSelectName(field.Field) } class="form-select text-xs w-full">
+				<option value="0" selected?={ field.Column == 0 }>— لا تقرأ هذا الحقل —</option>
+				for _, option := range view.Options {
+					<option value={ fmt.Sprintf("%d", option.Value) } selected?={ option.Value == field.Column }>
+						{ option.Label }
+					</option>
+				}
+			</select>
+		</td>
+		<td class="text-xs text-secondary font-mono">
+			if field.Bound() {
+				{ field.Sample }
+			} else {
+				<span class="text-muted text-xs">—</span>
+			}
+		</td>
+		<td class="text-center">
+			if field.Bound() && field.Confidence != "" {
+				<span class={ "badge text-xs font-bold", importConfidenceBadge(field.Confidence) }>{ field.Confidence }</span>
+			} else if field.Bound() {
+				<span class="badge badge-slate text-xs font-bold">يدوي</span>
+			} else {
+				<span class="badge badge-slate text-xs opacity-50">غير مربوط</span>
+			}
+		</td>
+	</tr>
+}
+
+// importPreviewCard shows the products this mapping produces. It is the answer
+// to "will this work", and it costs nothing to look at.
+templ importPreviewCard(view ImportMappingView) {
+	<div class="glass-panel p-6 mb-6">
+		<h2 class="wiz-head">
+			{ fmt.Sprintf("معاينة أول %d صنف", len(view.PreviewRows)) }
+		</h2>
+		if view.PreviewIsEmpty() {
+			<div class="import-banner import-banner--error">
+				<p class="import-banner-text">
+					لن يُقرأ أي صنف بهذه الإعدادات. صحّح صف العناوين أو ربط عمود «اسم الصنف» ثم اضغط «تحديث المعاينة».
+				</p>
+			</div>
+		} else {
+			<p class="wiz-sub">
+				{ fmt.Sprintf("سيتم استخراج %s صنف من الملف. هذه أول الصفوف كما سيقرأها النظام.",
+					FormatCount(view.TotalProducts)) }
+			</p>
+			<div class="table-container m-0 mt-4">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>الصف</th>
+							for _, column := range view.PreviewColumns {
+								<th>{ column.Label }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range view.PreviewRows {
+							<tr>
+								<td class="tabular-nums text-muted">{ fmt.Sprintf("%d", row.SourceRow) }</td>
+								for _, value := range row.Values {
+									<td>{ value }</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+		if len(view.Issues) > 0 {
+			@importIssueList(view.Issues)
+		}
+	</div>
+}
+
+templ importIssueList(issues []catalog.RowIssue) {
+	<h3 class="wiz-head mt-md">ملاحظات على القراءة</h3>
+	<ul class="wiz-issues">
+		for _, issue := range issues {
+			<li class={ "wiz-issue", templ.KV("is-error", issue.Severity == catalog.SeverityError) }>
+				if issue.Row > 1 {
+					<span class="tabular-nums text-muted">{ fmt.Sprintf("صف %d:", issue.Row) }</span>
+				}
+				<span>{ issue.Message }</span>
+			</li>
+		}
+	</ul>
+}
+
+templ importMappingActions(view ImportMappingView) {
+	<div class="glass-panel p-6 mb-0">
+		<div class="wiz-actions">
+			<span class="wiz-actions-note">
+				لم يُحفظ أي صنف بعد. «تحديث المعاينة» يعيد قراءة الملف فقط، و«بدء المعالجة» يجهّز النتائج للمراجعة.
+			</span>
+			<div class="row-center">
+				<button
+					type="submit"
+					class="btn btn-secondary"
+					formaction={ mappingAction(view, "preview") }
+				>تحديث المعاينة</button>
+				<button
+					type="submit"
+					class="btn btn-primary"
+					formaction={ mappingAction(view, "prepare") }
+					disabled?={ !view.CanProcess() }
+				>▶ بدء المعالجة</button>
+			</div>
+		</div>
+	</div>
+}
+
+// wizMapNumber is one row-bound control: header row, first data row, last data
+// row. Empty means "keep what was detected", which is a different instruction
+// from any number the admin could type.
+templ wizMapNumber(name, label, hint string, value int) {
+	<div class="wiz-map-item">
+		<label class="wiz-map-label" for={ "map-" + name }>{ label }</label>
+		<input
+			id={ "map-" + name }
+			class="wiz-map-input"
+			type="number"
+			min="0"
+			name={ name }
+			if value > 0 {
+				value={ fmt.Sprintf("%d", value) }
+			}
+		/>
+		if hint != "" {
+			<span class="wiz-map-hint">{ hint }</span>
+		}
+	</div>
+}

@@ -1,0 +1,140 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// benchmarkBucketLabel names the column the reader clicked, so the modal says
+// which of the three lists this is.
+func benchmarkBucketLabel(b compare.BenchmarkBucket) string {
+	switch b {
+	case compare.BucketBetter:
+		return "عروض أفضل بالسوق"
+	case compare.BucketWorse:
+		return "عروض أقل بالسوق"
+	}
+	return "عروض مماثلة بالسوق"
+}
+
+func benchmarkBucketTone(b compare.BenchmarkBucket) string {
+	switch b {
+	case compare.BucketBetter:
+		return "is-worse"
+	case compare.BucketWorse:
+		return "is-better"
+	}
+	return "is-equal"
+}
+
+// BenchmarkOffersModal lists the suppliers behind one count on the benchmark
+// table: who they are, what they charge, and how far that is from your price.
+//
+// Rendered as an htmx fragment into an empty container on the page, so the
+// table itself carries no offer data for the few thousand rows nobody clicks.
+templ BenchmarkOffersModal(data *compare.BenchmarkOffers) {
+	<div class="bmo-overlay" x-data="{ open: true }" x-show="open" @keydown.escape.window="$refs.close.click()">
+		<div class="bmo-backdrop" hx-get="/compare/market-benchmark/offers/close" hx-target="#benchmark-offers-modal" hx-swap="innerHTML"></div>
+
+		<div class="bmo-dialog" role="dialog" aria-modal="true" aria-labelledby="bmo-title">
+			<header class="bmo-head">
+				<div class="bmo-head-copy">
+					<h2 class="bmo-title" id="bmo-title">{ data.ProductName }</h2>
+					<div class="bmo-head-meta">
+						if data.SKU != "" {
+							<span class="bmo-code">{ data.SKU }</span>
+						}
+						<span class="bmo-yours tabular-nums">
+							سعرك: <strong>{ data.YourNet.String() } ج.م</strong>
+							<small>{ fmt.Sprintf("(%s ج.م − %s%%)", data.YourPrice.String(), formatBenchPercent(data.YourDiscount)) }</small>
+						</span>
+					</div>
+				</div>
+				<div class="bmo-head-side">
+					<span class={ "bmo-bucket", benchmarkBucketTone(data.Bucket) }>
+						{ benchmarkBucketLabel(data.Bucket) }
+						<span class="tabular-nums">({ fmt.Sprintf("%d", len(data.Offers)) })</span>
+					</span>
+					<button
+						type="button"
+						x-ref="close"
+						class="bmo-close"
+						hx-get="/compare/market-benchmark/offers/close"
+						hx-target="#benchmark-offers-modal"
+						hx-swap="innerHTML"
+						aria-label="إغلاق"
+					>
+						@components.IconClose("icon-xs")
+					</button>
+				</div>
+			</header>
+
+			<div class="bmo-body">
+				if len(data.Offers) == 0 {
+					<p class="bmo-empty">لا توجد عروض في هذه الفئة لهذا الصنف.</p>
+				} else {
+					<table class="bmo-table">
+						<thead>
+							<tr>
+								<th>الشركة الموردة</th>
+								<th class="text-center">سعر الجمهور</th>
+								<th class="text-center">الخصم</th>
+								<th class="text-center">السعر بعد الخصم</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, o := range data.Offers {
+								<tr>
+									<td>
+										<div class="bmo-supplier">
+											if o.SupplierName != "" {
+												{ o.SupplierName }
+											} else {
+												<span class="text-muted">مورد غير مسمى</span>
+											}
+										</div>
+										if o.SKU != "" {
+											<div class="bmo-supplier-sub tabular-nums">{ o.SKU }</div>
+										}
+									</td>
+									<td class="text-center tabular-nums">
+										<span class="font-bold text-secondary text-sm">{ o.Price.String() }</span>
+										<small class="text-muted text-2xs ms-1">ج.م</small>
+									</td>
+									<td class="text-center tabular-nums">
+										<div class="bmo-disc">{ formatBenchPercent(o.Discount) }%</div>
+										if o.GapFromYours.Minor() != 0 {
+											if o.Cheaper {
+												<div class="bmo-gap is-cheaper tabular-nums">{ o.GapFromYours.String() }</div>
+											} else {
+												<div class="bmo-gap is-dearer tabular-nums">+{ o.GapFromYours.String() }</div>
+											}
+										}
+									</td>
+									<td class="text-center tabular-nums">
+										<div class="bmo-net">{ o.NetPrice.String() }</div>
+										<div class="bmo-cur">ج.م</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				}
+			</div>
+
+			<footer class="bmo-foot">
+				<button
+					type="button"
+					class="btn btn-primary btn-sm font-bold"
+					hx-get="/compare/market-benchmark/offers/close"
+					hx-target="#benchmark-offers-modal"
+					hx-swap="innerHTML"
+				>
+					إغلاق
+				</button>
+			</footer>
+		</div>
+	</div>
+}

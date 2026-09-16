@@ -1,0 +1,143 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ RequestsPage(lang, dir, statusFilter string, data RequestsData) {
+	@layouts.ShellFor("الطلبات | Requests", "requests", lang, dir, authctx.FromContext(ctx)) {
+		@RequestsContent(lang, statusFilter, data)
+	}
+}
+
+
+templ RequestsContent(lang, statusFilter string, data RequestsData) {
+	<div class="page-container">
+		<div class="glass-panel p-6 mb-6">
+			<div class="d-flex items-center gap-3">
+				<div class="user-avatar-badge text-xl">
+					@components.IconDownload("icon-sm")
+				</div>
+    <div class="stack-sm">
+					<h1 class="text-2xl font-black text-primary m-0">طلبات المستندات والإجراءات</h1>
+					<p class="text-sm text-secondary m-0 mt-1">إرسال واستقبال طلبات المستندات، التراخيص، والاعتمادات الرسمية بين المنشآت</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="glass-panel p-6 mb-6">
+			<h3 class="text-base font-black text-primary m-0 mb-4">طلب جديد</h3>
+			<form class="stack-md" method="POST" action="/requests">
+				<div class="form-grid-2">
+					<div class="form-group mb-0">
+						<label class="form-label" for="r-type">النوع</label>
+						<select id="r-type" name="type" class="form-input text-xs">
+							<option value="document">مستند</option>
+							<option value="action">إجراء</option>
+							<option value="approval">اعتماد</option>
+						</select>
+					</div>
+					<div class="form-group mb-0">
+						<label class="form-label" for="r-to">إلى (المؤسسة)</label>
+						<select id="r-to" name="to_org_id" required class="form-input text-xs">
+							<option value="" disabled selected>اختر المؤسسة</option>
+							for _, s := range data.Suppliers {
+								<option value={ fmt.Sprintf("%d", s.ID) }>{ s.TradeName.Get(i18n.Lang(lang)) }</option>
+							}
+						</select>
+					</div>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label" for="r-title">العنوان</label>
+					<input type="text" id="r-title" name="title" required class="form-input text-xs" />
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label" for="r-desc">الوصف</label>
+					<textarea id="r-desc" name="description" rows="3" class="form-textarea text-xs"></textarea>
+				</div>
+    <div class="stack-sm">
+					<button type="submit" class="btn btn-primary font-bold text-xs gap-1">
+						@components.IconPlus("icon-xs")
+						<span>إرسال الطلب</span>
+					</button>
+				</div>
+			</form>
+		</div>
+
+		<div class="glass-panel p-6 mb-6">
+			<div class="tabs-nav">
+				<a href="/requests" class={ "tab-btn", templ.KV("active", statusFilter == "") }>الكل</a>
+				<a href="/requests?status=pending" class={ "tab-btn", templ.KV("active", statusFilter == "pending") }>المعلقة</a>
+				<a href="/requests?status=accepted" class={ "tab-btn", templ.KV("active", statusFilter == "accepted") }>المقبولة</a>
+				<a href="/requests?status=declined" class={ "tab-btn", templ.KV("active", statusFilter == "declined") }>المرفوضة</a>
+			</div>
+			if len(data.Requests) == 0 {
+				<div class="p-8 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconDownload("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">لا توجد طلبات</h3>
+					<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على أي طلبات في هذه الحالة.</p>
+				</div>
+			} else {
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>العنوان</th>
+								<th>النوع</th>
+								<th>الاتجاه</th>
+								<th class="text-center">الحالة</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, q := range data.Requests {
+								<tr>
+									<td><strong class="text-xs text-primary">{ q.Title.Get(i18n.Lang(lang)) }</strong></td>
+									<td><span class="badge badge-slate text-xs font-bold">{ reqTypeLabel(q.Type) }</span></td>
+									<td class="text-xs">
+										if q.FromOrgID == data.CurrentOrgID {
+											<span class="badge badge-sky text-xs">صادر</span>
+										} else {
+											<span class="badge badge-indigo text-xs">وارد</span>
+										}
+									</td>
+									<td class="text-center"><span class="badge badge-amber text-xs font-bold">{ reqStatusLabel(q.Status) }</span></td>
+									<td class="col-actions">
+										if q.ToOrgID == data.CurrentOrgID && q.Status == "pending" {
+											<div class="table-actions">
+												<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/requests/%d/respond", q.ID)) }>
+													<input type="hidden" name="status" value="accepted" />
+													<button type="submit" class="btn btn-primary btn-sm font-bold text-xs">قبول</button>
+												</form>
+												<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/requests/%d/respond", q.ID)) }>
+													<input type="hidden" name="status" value="declined" />
+													<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs text-danger">رفض</button>
+												</form>
+											</div>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				if data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     "/requests",
+						QueryValues: map[string][]string{
+							"status": {statusFilter},
+						},
+					})
+				}
+			}
+		</div>
+	</div>
+}

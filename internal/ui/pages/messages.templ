@@ -1,0 +1,65 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ MessagesPage(lang, dir string, data MessagesData) {
+	@layouts.ShellFor("الرسائل | Messages", "messages", lang, dir, authctx.FromContext(ctx)) {
+		@MessagesContent(lang, dir, data)
+	}
+}
+
+
+templ MessagesContent(lang, dir string, data MessagesData) {
+ <div class="stack-sm">
+			<aside class="glass-panel">
+				<h2 class="text-base font-bold text-primary">المحادثات</h2>
+				if len(data.Items) == 0 {
+					<p class="text-sm text-secondary m-0">لا توجد محادثات بعد.</p>
+				} else {
+					for _, item := range data.Items {
+						<a href={ templ.SafeURL(fmt.Sprintf("/messages/%d", item.Conversation.ID)) }
+						
+							class={ templ.KV("active-item", data.Active != nil && data.Active.ID == item.Conversation.ID) }>
+							<div class="stack-xs text-sm">{ item.OtherName.Get(i18n.Lang(lang)) }</div>
+							<div class="stack-xs text-sm">{ item.Conversation.Subject.Get(i18n.Lang(lang)) }</div>
+						</a>
+					}
+				}
+			</aside>
+
+			<section class="glass-panel">
+				if data.Active == nil {
+					<div class="stack-xs text-sm">اختر محادثة من القائمة</div>
+				} else {
+     <div class="stack-sm">
+						<h2 class="m-0 text-base font-bold text-primary">{ data.ActiveOther.Get(i18n.Lang(lang)) }</h2>
+					</div>
+     <div class="stack-sm">
+						for _, m := range data.Thread {
+							<div class={ templ.KV("msg-mine", m.SenderOrgID != nil && *m.SenderOrgID == data.CurrentOrgID) }>
+								<div class="stack-xs text-sm">{ m.Body }</div>
+								<div class="stack-xs text-sm">
+									if m.SenderOrgID != nil && *m.SenderOrgID == data.CurrentOrgID {
+										أنت
+									} else {
+										الطرف الآخر
+									}
+									{ " · " }{ m.CreatedAt.Format("03:04 PM") }
+								</div>
+							</div>
+						}
+					</div>
+					<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/messages/%d/send", data.Active.ID)) }>
+						<input type="text" name="body" required class="form-input flex-1" placeholder="اكتب رسالتك…" />
+						<button type="submit" class="btn btn-primary">إرسال</button>
+					</form>
+				}
+			</section>
+		</div>
+}

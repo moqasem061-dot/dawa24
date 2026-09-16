@@ -1,0 +1,264 @@
+[
+  {
+    "system": "admin",
+    "source": "admin:198",
+    "file": "admin-198.xlsx",
+    "bytes": 2772621,
+    "rows": 19997,
+    "duplicates": [
+      "smartorder:12",
+      "smartorder:38",
+      "smartorder:40"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:203",
+    "file": "admin-203.xlsx",
+    "bytes": 351678,
+    "duplicates": [
+      "admin:204",
+      "admin:205",
+      "admin:206"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:208",
+    "file": "admin-208.csv",
+    "bytes": 420,
+    "rows": 4,
+    "duplicates": [
+      "admin:219",
+      "admin:229",
+      "admin:240",
+      "admin:257",
+      "admin:279",
+      "admin:296",
+      "admin:313"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:209",
+    "file": "admin-209.csv",
+    "bytes": 432,
+    "rows": 4,
+    "duplicates": [
+      "admin:220",
+      "admin:230"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:211",
+    "file": "admin-211.csv",
+    "bytes": 209,
+    "rows": 2,
+    "duplicates": [
+      "admin:222",
+      "admin:232"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:212",
+    "file": "admin-212.csv",
+    "bytes": 204,
+    "rows": 2,
+    "duplicates": [
+      "admin:223",
+      "admin:233"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:213",
+    "file": "admin-213.csv",
+    "bytes": 323,
+    "rows": 3,
+    "duplicates": [
+      "admin:224",
+      "admin:234"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:214",
+    "file": "admin-214.csv",
+    "bytes": 453,
+    "rows": 4,
+    "duplicates": [
+      "admin:225",
+      "admin:235",
+      "admin:247",
+      "admin:265",
+      "admin:286",
+      "admin:303",
+      "admin:320"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:215",
+    "file": "admin-215.csv",
+    "bytes": 426,
+    "rows": 4,
+    "duplicates": [
+      "admin:226",
+      "admin:236"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:216",
+    "file": "admin-216.csv",
+    "bytes": 453,
+    "rows": 4,
+    "duplicates": [
+      "admin:227",
+      "admin:237"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:217",
+    "file": "admin-217.csv",
+    "bytes": 278,
+    "rows": 2,
+    "duplicates": [
+      "admin:228",
+      "admin:238"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:218",
+    "file": "admin-218.csv",
+    "bytes": 3573,
+    "rows": 36,
+    "duplicates": [
+      "admin:239"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:252",
+    "file": "admin-252.csv",
+    "bytes": 444,
+    "rows": 4,
+    "duplicates": [
+      "admin:270",
+      "admin:291",
+      "admin:308",
+      "admin:325"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:253",
+    "file": "admin-253.csv",
+    "bytes": 453,
+    "rows": 4,
+    "duplicates": [
+      "admin:271",
+      "admin:292",
+      "admin:309",
+      "admin:326"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:254",
+    "file": "admin-254.csv",
+    "bytes": 432,
+    "rows": 4,
+    "duplicates": [
+      "admin:272",
+      "admin:293",
+      "admin:310",
+      "admin:327"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:255",
+    "file": "admin-255.csv",
+    "bytes": 453,
+    "rows": 4,
+    "duplicates": [
+      "admin:256",
+      "admin:273",
+      "admin:294",
+      "admin:311",
+      "admin:328"
+    ]
+  },
+  {
+    "system": "admin",
+    "source": "admin:274",
+    "file": "admin-274.csv",
+    "bytes": 760,
+    "rows": 7
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:30",
+    "file": "vendor-30.xlsx",
+    "bytes": 30950,
+    "rows": 474
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:31",
+    "file": "vendor-31.xlsx",
+    "bytes": 48765,
+    "rows": 1196,
+    "duplicates": [
+      "vendor:32",
+      "vendor:33",
+      "vendor:34",
+      "vendor:39"
+    ]
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:35",
+    "file": "vendor-35.xlsx",
+    "bytes": 27308,
+    "rows": 364,
+    "duplicates": [
+      "vendor:36"
+    ]
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:37",
+    "file": "vendor-37.xls",
+    "bytes": 155136,
+    "rows": 1012
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:38",
+    "file": "vendor-38.xlsx",
+    "bytes": 23499,
+    "rows": 387
+  },
+  {
+    "system": "vendor",
+    "source": "vendor:40",
+    "file": "vendor-40.xls",
+    "bytes": 178176,
+    "rows": 1135
+  },
+  {
+    "system": "smartorder",
+    "source": "smartorder:14",
+    "file": "smartorder-14.xlsx",
+    "bytes": 67495,
+    "duplicates": [
+      "smartorder:15"
+    ]
+  }
+]

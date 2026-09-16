@@ -1,0 +1,254 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type CustomerSavingPageData struct {
+	Items        []*catalog.SavingProductEnriched
+	Stats        *catalog.SavingProductStats
+	SearchQuery  string
+	FilterStatus string
+	NoticeType   string
+	NoticeMsg    string
+	Pagination   components.PaginationProps
+}
+
+// CustomerSavingProductsPage renders customer saving products workspace and best supplier price delta tracker.
+templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) {
+	@layouts.CustomerShell(i18n.T(lang, "saving.page_title"), "saving_products", lang, dir, nil) {
+		<div class="page-container" x-data="customerSavingManager()">
+
+			<!-- Notice / Toast Banner -->
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-danger", data.NoticeType == "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconPill("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "saving.banner_title") }
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								{ i18n.T(lang, "saving.banner_desc") }
+							</p>
+						</div>
+					</div>
+
+					<!-- Top Action Buttons -->
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							class="btn btn-primary font-bold text-xs px-3 py-2"
+							data-modal-open="pharmacy-saving-product-modal"
+							data-on-click="openPharmacyCreateModal()"
+						>
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "saving.add_item_top") }</span>
+						</button>
+
+						<a
+							href="/customer/saving-products/import"
+							class="btn btn-secondary font-bold text-xs px-3 py-2 text-decoration-none"
+						>
+							@components.IconUpload("icon-xs")
+							<span>{ i18n.T(lang, "saving.import_list") }</span>
+						</a>
+
+						<a
+							href="/customer/saving-products/export"
+							class="btn btn-secondary font-bold text-xs px-3 py-2 text-decoration-none"
+							download
+						>
+							@components.IconDownload("icon-xs")
+							<span>{ i18n.T(lang, "saving.export_excel") }</span>
+						</a>
+
+						if data.Stats != nil && data.Stats.CountAll > 0 {
+							<form class="stack-md"
+								method="POST"
+								action="/customer/saving-products/delete-all"
+								@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "saving.delete_all_confirm")) }
+							>
+								<button
+									type="submit"
+									class="btn btn-secondary font-bold text-xs px-3 py-2 text-danger"
+									title={ i18n.T(lang, "saving.delete_all_btn") }
+								>
+									@components.IconTrash("icon-xs")
+									<span>{ i18n.T(lang, "saving.delete_all_btn") }</span>
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- 4 Status Metric Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<a
+					href="/customer/saving-products?filter=all"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "all")) }
+				>
+					<div class="stat-card-label">{ i18n.T(lang, "saving.stat_all") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountAll) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "saving.stat_all_desc") }</span>
+				</a>
+
+				<a
+					href="/customer/saving-products?filter=linked"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "linked")) }
+				>
+					<div class="stat-card-label text-sky">{ i18n.T(lang, "saving.stat_linked") }</div>
+					<div class="stat-card-value text-sky tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountLinked) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "saving.stat_linked_desc") }</span>
+				</a>
+
+				<a
+					href="/customer/saving-products?filter=unlinked"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "unlinked")) }
+				>
+					<div class="stat-card-label text-warning">{ i18n.T(lang, "saving.stat_unlinked") }</div>
+					<div class="stat-card-value text-warning tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountUnlinked) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "saving.stat_unlinked_desc") }</span>
+				</a>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-emerald">{ i18n.T(lang, "saving.stat_est_value") }</div>
+					<div class="stat-card-value text-emerald tabular-nums">
+						if data.Stats != nil && data.Stats.TotalValue.IsPositive() {
+							{ data.Stats.TotalValue.String() } <span class="text-xs font-normal">{ i18n.T(lang, "common.egp") }</span>
+						} else {
+							0 <span class="text-xs font-normal">{ i18n.T(lang, "common.egp") }</span>
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">
+						if data.Stats != nil && data.Stats.TotalQuantity > 0 {
+							{ fmt.Sprintf(i18n.T(lang, "saving.stat_total_qty"), data.Stats.TotalQuantity) }
+						} else {
+							{ i18n.T(lang, "saving.stat_items_value") }
+						}
+					</span>
+				</div>
+			</div>
+
+			<!-- Search Filter Bar -->
+			<div class="glass-panel p-4 mb-6 flex-between items-center flex-wrap gap-4">
+				<form method="GET" action="/customer/saving-products" class="position-relative w-80 max-w-full m-0 d-flex gap-2">
+					if data.FilterStatus != "" && data.FilterStatus != "all" {
+						<input type="hidden" name="filter" value={ data.FilterStatus } />
+					}
+					<input
+						type="text"
+						id="pharmacy-saving-search-input"
+						name="search"
+						value={ data.SearchQuery }
+						placeholder={ i18n.T(lang, "saving.search_placeholder") }
+						class="form-input text-xs w-full"
+						data-on-input="filterPharmacySavingTable(this.value)"
+					/>
+					<button type="submit" class="btn btn-secondary btn-sm px-3" title={ i18n.T(lang, "saving.search_db_title") }>
+						@components.IconSearch("icon-xs")
+					</button>
+					if data.SearchQuery != "" {
+						<a href={ templ.SafeURL(fmt.Sprintf("/customer/saving-products?filter=%s", data.FilterStatus)) } class="btn btn-secondary btn-sm px-2 text-muted" title={ i18n.T(lang, "saving.clear_search_title") }>
+							✕
+						</a>
+					}
+				</form>
+
+				<div class="badge badge-slate text-xs font-bold tabular-nums">
+					if data.Pagination.TotalCount > 0 {
+						{ fmt.Sprintf(i18n.T(lang, "saving.showing_count"), len(data.Items), data.Pagination.TotalCount) }
+					} else {
+						{ fmt.Sprintf(i18n.T(lang, "saving.showing_simple"), len(data.Items)) }
+					}
+				</div>
+			</div>
+
+			<!-- Floating / Dynamic Bulk Selection Action Bar -->
+			<div
+				x-show="selectedIds.length > 0"
+				x-cloak
+				x-transition
+				class="glass-panel p-3 mb-6 border border-danger-subtle rounded-xl flex-between items-center flex-wrap gap-3 bg-danger-subtle shadow-sm"
+			>
+				<div class="d-flex items-center gap-3">
+					<div class="w-8 h-8 rounded-lg bg-danger text-white flex-center font-black text-sm shadow-xs">
+						@components.IconTrash("icon-xs")
+					</div>
+					<div class="stack-2xs">
+						<div class="d-flex items-center gap-2">
+							<span class="badge badge-danger text-xs font-black tabular-nums py-1 px-2.5">
+								<span x-text="selectedIds.length"></span> { i18n.T(lang, "common.items") }
+							</span>
+							<strong class="text-xs text-primary font-bold">{ i18n.T(lang, "saving.bulk_options_title") }</strong>
+						</div>
+						<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "saving.bulk_options_desc") }</span>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<button type="button" class="btn btn-secondary btn-xs font-bold" @click="clearSelection()">
+						{ i18n.T(lang, "saving.deselect") }
+					</button>
+					<form method="POST" action="/customer/saving-products/bulk-delete" @submit="confirmBulkDelete($event)" class="m-0 d-inline-flex">
+						<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+						<template x-for="id in selectedIds" :key="id">
+							<input type="hidden" name="selected_ids" :value="id" />
+						</template>
+						<button type="submit" class="btn btn-danger btn-xs font-bold gap-1.5 shadow-xs">
+							@components.IconTrash("icon-xs")
+							<span>{ i18n.T(lang, "saving.bulk_delete_btn") } (<span x-text="selectedIds.length"></span>)</span>
+						</button>
+					</form>
+				</div>
+			</div>
+
+			<!-- Saving Products Table Card (Decomposed) -->
+			@CustomerSavingTable(data, lang)
+
+		</div>
+
+		@CustomerSavingModals(lang)
+		@CustomerSavingScript()
+	}
+}

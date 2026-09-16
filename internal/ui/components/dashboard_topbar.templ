@@ -1,0 +1,77 @@
+package components
+
+import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+
+// The dashboard top bar.
+//
+// There were four of these. The public marketing navbar and the three dashboard
+// shells all rendered the same header class, and a single CSS rule listing both
+// that class and the public one set height, padding, sticky positioning and
+// shadow for all four at once. Splitting them fixed that, but left two
+// unrelated visual systems: the marketing bar and this one shared no tokens, so
+// the account menu changed shape depending on which page you opened it from.
+//
+// Both bars are now .nav-root from nav.css. They differ only in the custom
+// properties the modifier sets — height, gap — and in what fills the three
+// regions. Every control inside them (menu trigger, icon button, popover) is
+// literally the same component with the same tokens.
+//
+// The contract is three regions and nothing else:
+//
+//   - Lead: the drawer toggle (below 1024px) and the page title.
+//   - Context: whatever this surface needs to say about *where* the caller is —
+//     the pharmacy branch selector, an organization switcher. Optional.
+//   - Actions: surface-specific controls, then notifications, then the account
+//     menu. The order is fixed so the account control does not move between
+//     dashboards.
+//
+// Language and theme used to sit here as two separate always-visible toggles.
+// They are settings, not actions: they are changed rarely and they were taking
+// the width that notifications and the account menu need on a phone. Both moved
+// into the account menu, which is where a reader looks for "things about me".
+type TopBarProps struct {
+	Title string
+	Lang  string
+	// Compact selects the denser of the two density modes. Admin and vendor set
+	// it; the pharmacy surface does not, because its users are on phones at a
+	// counter and need the larger touch targets (.impeccable.md, "the counter
+	// test").
+	Compact bool
+	// Context renders between the title and the actions. Optional.
+	Context templ.Component
+	// Actions renders before the user menu, for controls only one surface has —
+	// the pharmacy cart button, for example. Optional.
+	Actions templ.Component
+}
+
+templ DashboardTopBar(props TopBarProps) {
+	<header class={ "nav-root", "nav-root--app", templ.KV("is-compact", props.Compact) }>
+		<div class="nav-inner">
+			<div class="nav-lead">
+				<button
+					type="button"
+					class="nav-btn nav-btn--icon nav-drawer-toggle"
+					data-drawer-toggle
+					aria-controls="app-sidebar"
+					aria-expanded="false"
+					aria-label={ i18n.T(props.Lang, "nav.open_menu") }
+				>
+					@IconMenu("icon-sm")
+				</button>
+				<h1 class="nav-title">{ props.Title }</h1>
+				if props.Context != nil {
+					<div class="nav-context">
+						@props.Context
+					</div>
+				}
+			</div>
+			<div class="nav-trail">
+				if props.Actions != nil {
+					@props.Actions
+				}
+				@NotificationsBell(props.Lang)
+				@UserMenu(props.Lang, true)
+			</div>
+		</div>
+	</header>
+}

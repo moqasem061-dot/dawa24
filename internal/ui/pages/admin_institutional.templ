@@ -1,0 +1,728 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWorks []*org.InstitutionalWork, unassignedBranches []*org.BranchWithoutWorks) {
+	@layouts.AdminShell("الهيكل المؤسسي والأنشطة | Institutional Structure", "institutional", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				searchQuery: '',
+				statusFilter: 'all',
+				isModalOpen: false,
+				isEdit: false,
+				form: {
+					id: 0,
+					title_ar: '',
+					title_en: '',
+					description_ar: '',
+					description_en: '',
+					icon: 'building',
+					pricing_type: 'free',
+					view_type: 1,
+					parent_id: 0,
+					is_active: true,
+					connections: []
+				},
+				availableIcons: [
+					{ id: 'building', label: 'مبنى / مؤسسة' },
+					{ id: 'pill', label: 'صيدلية / دواء' },
+					{ id: 'truck', label: 'مخزن / توزيع' },
+					{ id: 'package', label: 'مصنع / إنتاج' },
+					{ id: 'shield', label: 'خدمات / أمان' },
+					{ id: 'briefcase', label: 'شركة مساهمة' },
+					{ id: 'cart', label: 'تجزئة / منفذ بيع' },
+					{ id: 'tag', label: 'شركة ناشئة' },
+					{ id: 'users', label: 'تعاونيات' },
+					{ id: 'file', label: 'مكتب علمي' },
+					{ id: 'plus', label: 'رعاية صحية' },
+					{ id: 'bell', label: 'إشعارات وخدمات' }
+				],
+				openNewModal() {
+					this.isEdit = false;
+					this.form = {
+						id: 0,
+						title_ar: '',
+						title_en: '',
+						description_ar: '',
+						description_en: '',
+						icon: 'building',
+						pricing_type: 'free',
+						view_type: 1,
+						parent_id: 0,
+						is_active: true,
+						connections: []
+					};
+					const modal = document.getElementById('institutional-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openEditModal(item) {
+					this.isEdit = true;
+					this.form = {
+						id: item.id,
+						title_ar: item.title_ar || '',
+						title_en: item.title_en || '',
+						description_ar: item.description_ar || '',
+						description_en: item.description_en || '',
+						icon: item.icon || 'building',
+						pricing_type: item.pricing_type || 'free',
+						view_type: item.view_type || 1,
+						parent_id: item.parent_id || 0,
+						is_active: item.is_active,
+						connections: item.connections ? JSON.parse(JSON.stringify(item.connections)) : []
+					};
+					const modal = document.getElementById('institutional-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				toggleConnection(targetId) {
+					const idx = this.form.connections.indexOf(targetId);
+					if (idx > -1) {
+						this.form.connections.splice(idx, 1);
+					} else {
+						this.form.connections.push(targetId);
+					}
+				},
+				isConnectionSelected(targetId) {
+					return this.form.connections.includes(targetId);
+				}
+			}"
+		>
+			
+			<!-- Top Header & Metrics Bar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBank("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								الهيكل المؤسسي والأنشطة التجارية
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								إدارة الشجرة الهيكلية للكيانات (جملة، مصنع، صيدلية، خدمات) وتحديد شبكة الاتصالات والتبادل التجاري المسموح بها
+							</p>
+						</div>
+					</div>
+
+					<div class="row-center">
+						<button type="button" @click="openNewModal()" class="btn btn-primary font-bold text-xs gap-1">
+							@components.IconPlus("icon-xs")
+							<span>إضافة كيان مؤسسي جديد</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Summary Stats Strip -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي الكيانات المؤسسية</span>
+						<span class="text-brand">@components.IconBuilding("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", len(allWorks)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">الكيانات النشطة والمفعلة</span>
+						<span class="text-success">@components.IconCheck("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-success mt-2">
+						{ fmt.Sprintf("%d", countActiveWorks(allWorks)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">الفئات والقطاعات الرئيسية</span>
+						<span class="text-cyan">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-cyan mt-2">
+						{ fmt.Sprintf("%d", len(items)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">مسارات الاتصال التجاري</span>
+						<span class="text-purple">@components.IconTruck("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-purple mt-2">
+						{ fmt.Sprintf("%d", countTotalConnections(allWorks)) }
+					</div>
+				</div>
+			</div>
+
+			<!-- Unassigned Branches Alert Panel (Defect #11 & #16 visibility) -->
+			if len(unassignedBranches) > 0 {
+				<div class="glass-panel p-5 mb-6 border border-amber-500/30 bg-amber-500/5 rounded-2xl">
+					<div class="flex-between items-center mb-3 flex-wrap gap-2">
+						<div class="d-flex items-center gap-2">
+							<span class="text-amber-500 text-lg">@components.IconAlert("icon-sm")</span>
+							<div>
+								<h2 class="text-base font-black text-amber-600 dark:text-amber-400 m-0">
+									فروع بلا أعمال مؤسسية ({ fmt.Sprintf("%d", len(unassignedBranches)) })
+								</h2>
+								<p class="text-xs text-secondary m-0 mt-0.5">
+									هذه الفروع تفتقر إلى تعيين الأنشطة المؤسسية، وبالتالي يتم حظرها تلقائياً من عمليات البيع والشراء والاتصال التجاري حتى إصلاحها.
+								</p>
+							</div>
+						</div>
+					</div>
+
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>معرف الفرع</th>
+									<th>اسم الفرع</th>
+									<th>المنشأة التابع لها</th>
+									<th>نوع المنشأة</th>
+									<th class="col-actions">إجراء التصحيح</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, ub := range unassignedBranches {
+									<tr>
+										<td class="tabular-nums font-bold">#{ fmt.Sprintf("%d", ub.BranchID) }</td>
+										<td class="font-bold text-primary">{ ub.BranchName }</td>
+										<td>{ ub.OrgName } (ID #{ fmt.Sprintf("%d", ub.OrgID) })</td>
+										<td>
+											<span class="badge badge-slate text-xs">{ ub.OrgType }</span>
+										</td>
+										<td class="col-actions">
+											<a
+												href={ templ.SafeURL(fmt.Sprintf("/admin/branches/%d", ub.BranchID)) }
+												class="btn btn-primary btn-xs font-bold gap-1"
+											>
+												<span>إصلاح وتعيين الأنشطة</span>
+												@components.IconArrowLeft("icon-2xs")
+											</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+
+			<!-- Search & Filter Controls -->
+			<div class="glass-panel p-4 mb-6 flex-between items-center gap-4 flex-wrap">
+				<div class="d-flex items-center gap-3 flex-1">
+					<input
+						type="text"
+						x-model="searchQuery"
+						placeholder="بحث باسم الكيان أو النشاط (عربي / إنجليزي)..."
+						class="form-input text-xs"
+					/>
+				</div>
+
+				<div class="tabs-nav">
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': statusFilter === 'all' }"
+						@click="statusFilter = 'all'"
+					>
+						الكل ({ fmt.Sprintf("%d", len(allWorks)) })
+					</button>
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': statusFilter === 'active' }"
+						@click="statusFilter = 'active'"
+					>
+						النشطة فقط ({ fmt.Sprintf("%d", countActiveWorks(allWorks)) })
+					</button>
+				</div>
+			</div>
+
+			<!-- Main Hierarchy Table Panel -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>الكيان والنشاط التجاري</th>
+								<th>التصنيف الأب</th>
+								<th>الاتصالات المسموح بها (يتصل بـ)</th>
+								<th>التغطية والتسعير</th>
+								<th>الحالة</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(allWorks) == 0 {
+								<tr>
+									<td colspan="6">
+										<div class="stack-xs text-sm">@components.IconBank("icon-sm")</div>
+										<div class="stack-xs text-sm">لا توجد كيانات مؤسسية مسجلة حالياً</div>
+										<div class="stack-xs text-sm">
+											اضغط على "إضافة كيان مؤسسي جديد" لإنشاء أول تصنيف في الهيكل.
+										</div>
+									</td>
+								</tr>
+							} else {
+								for _, item := range allWorks {
+									<tr
+									
+										x-show={ fmt.Sprintf("(statusFilter === 'all' || (statusFilter === 'active' && %t)) && (searchQuery === '' || %q.toLowerCase().includes(searchQuery.toLowerCase()) || %q.toLowerCase().includes(searchQuery.toLowerCase()))", item.IsActive, item.Title.Get("ar"), item.Title.Get("en")) }
+									>
+										<!-- 1. Title & Hierarchy -->
+										<td class="p-card-sm">
+											<div class="row-center">
+												<!-- Level Indent Spacer -->
+												if item.Level > 0 {
+													<div class="stack-sm" style={ fmt.Sprintf("width:%dpx; display:flex; justify-content:flex-end; color:var(--accent); font-weight:900;", item.Level*20) }>
+														↳
+													</div>
+												}
+												
+												<!-- Icon Graphic -->
+												<div class="stack-xs text-sm">
+													@renderVisualIcon(item.Icon, "icon-xs")
+												</div>
+
+            <div class="stack-sm">
+													<div class="inline-row-wrap">
+														<span>
+															{ item.Title.Get("ar") }
+														</span>
+														if item.Level == 0 {
+															<span class="badge badge-sky">فئة رئيسية</span>
+														} else {
+															<span class="badge badge-slate">
+																{ fmt.Sprintf("مستوى %d", item.Level) }
+															</span>
+														}
+													</div>
+													if item.Title.Get("en") != "" {
+														<div class="stack-xs text-sm">
+															{ item.Title.Get("en") }
+														</div>
+													}
+													if item.Description.Get("ar") != "" {
+														<div class="stack-sm" title={ item.Description.Get("ar") }>
+															{ item.Description.Get("ar") }
+														</div>
+													}
+												</div>
+											</div>
+										</td>
+
+										<!-- 2. Parent -->
+										<td class="p-card-sm">
+											if item.ParentTitle != "" {
+												<span class="badge badge-indigo text-xs font-bold">
+													{ item.ParentTitle }
+												</span>
+											} else {
+												<span class="text-muted text-sm">رئيسي (جذر)</span>
+											}
+										</td>
+
+										<!-- 3. Allowed Connections (يتصل بـ) -->
+										<td class="p-card-sm">
+											if len(item.AllowedConnectionNames) > 0 {
+            <div class="stack-sm">
+													for _, name := range item.AllowedConnectionNames {
+														<span class="badge badge-slate">
+															{ name }
+														</span>
+													}
+												</div>
+											} else {
+												<span>لا توجد اتصالات محددة</span>
+											}
+										</td>
+
+										<!-- 4. View Type & Pricing -->
+										<td class="p-card-sm">
+           <div class="stack-sm">
+												if item.ViewType == 2 {
+													<span class="badge badge-sky">
+														صيدلية (Pharmacy) - 2
+													</span>
+												} else {
+													<span class="badge badge-slate">
+														تغطية عادية - 1
+													</span>
+												}
+												<span class={ "badge", pricingBadgeClass(string(item.PricingType)) }>
+													{ pricingTypeAr(string(item.PricingType)) }
+												</span>
+											</div>
+										</td>
+
+										<!-- 5. Active Status Toggle -->
+										<td>
+											<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/status", item.ID)) }>
+												<button
+													type="submit"
+													class={ "badge", templ.KV("badge-emerald", item.IsActive), templ.KV("badge-danger", !item.IsActive) }
+												
+													title={ ternary(item.IsActive, "انقر للتعطيل", "انقر للتفعيل") }
+												>
+													if item.IsActive {
+														@components.IconCheck("icon-xs")
+														<span>نشط</span>
+													} else {
+														<span>معطل</span>
+													}
+												</button>
+											</form>
+										</td>
+
+										<!-- 6. Actions -->
+										<td class="col-actions">
+           <div class="table-actions">
+												<button
+													type="button"
+													class="btn btn-secondary btn-icon"
+												
+													title="تعديل الكيان"
+													@click={ fmt.Sprintf("openEditModal(%s)", entityToJSON(item)) }
+												>
+													@components.IconEdit("icon-xs")
+												</button>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/delete", item.ID)) } class="m-0" data-confirm="هل أنت متأكد من حذف هذا الكيان المؤسسي؟">
+													<button type="submit" class="btn btn-secondary btn-icon" title="حذف">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Unified Modal: Create / Edit Institutional Work (High-Craft) -->
+			@components.Modal(components.ModalProps{
+				ID:    "institutional-modal",
+				Title: "إضافة مجموعة هيكلية جديدة",
+				Size:  "lg",
+			}) {
+				<form
+						:action="isEdit ? ('/admin/institutional/' + form.id) : '/admin/institutional/new'"
+						method="POST"
+						class="d-flex flex-col gap-4 m-0"
+					>
+						<div class="modal-body d-flex flex-col gap-3">
+							<!-- Active Status Toggle Switch -->
+							<div class="flex-between items-center bg-surface-sunken p-3 rounded-xl border">
+        <div class="stack-sm">
+									<span class="font-bold text-sm text-primary">الحالة:</span>
+									<span class="text-xs font-bold ms-2" :class="form.is_active ? 'text-success' : 'text-danger'" x-text="form.is_active ? 'نشطة ومفعلة' : 'معطلة'"></span>
+								</div>
+								<label class="d-flex items-center gap-2 cursor-pointer m-0">
+									<span class="text-xs font-bold text-primary">الحالة نشطة</span>
+									<input type="checkbox" name="is_active" value="true" x-model="form.is_active" class="cursor-pointer"/>
+								</label>
+							</div>
+
+							<!-- Hierarchy Parent Selector -->
+							<div class="form-group m-0">
+								<label class="form-label font-bold">التصنيف الأب (Parent Entity) *</label>
+								<select name="parent_id" x-model="form.parent_id" class="form-select w-full">
+									<option value="0">بند رئيسي (بدون أب - Root Level)</option>
+									for _, parent := range allWorks {
+										<option
+											value={ fmt.Sprintf("%d", parent.ID) }
+											x-show={ fmt.Sprintf("!isEdit || form.id !== %d", parent.ID) }
+										>
+											{ formatOptionIndent(parent.Level) + parent.Title.Get("ar") + " (" + parent.Title.Get("en") + ")" }
+										</option>
+									}
+								</select>
+								<span class="text-xs text-muted mt-1 d-block">
+									يتيح النظام بناء هيكل متعدد المستويات (مثال: جملة جملة ↳ قطاع ↳ مصنع).
+								</span>
+							</div>
+
+							<!-- Bilingual Titles -->
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label font-bold">اسم الكيان المؤسسي (باللغة العربية) *</label>
+									<input type="text" name="title_ar" x-model="form.title_ar" required placeholder="مثال: جملة جملة، مصنع، صيدلية" class="form-input w-full"/>
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label font-bold">الاسم باللغة الإنجليزية (English Title)</label>
+									<input type="text" name="title_en" x-model="form.title_en" placeholder="e.g. Wholesale, Factory, Pharmacy" class="form-input w-full" dir="ltr"/>
+								</div>
+							</div>
+
+							<!-- Bilingual Descriptions -->
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label font-bold">الوصف التعريفي (بالعربية)</label>
+									<textarea name="description_ar" x-model="form.description_ar" rows="3" placeholder="وصف الكيان ودوره في السوق..." class="form-input w-full"></textarea>
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label font-bold">الوصف بالإنجليزية (English Description)</label>
+									<textarea name="description_en" x-model="form.description_en" rows="3" placeholder="Entity description and role..." class="form-input w-full" dir="ltr"></textarea>
+								</div>
+							</div>
+
+							<!-- Classification & Pricing -->
+							<div class="d-grid grid-cols-2 gap-3">
+								<div class="form-group m-0">
+									<label class="form-label font-bold">نوع عرض التغطية (View Type) *</label>
+									<select name="view_type" x-model="form.view_type" class="form-select w-full">
+										<option value="1">تغطية عادية (Normal Hub / Supplier) - 1</option>
+										<option value="2">تغطية صيدلية (Pharmacy Dispensing) - 2</option>
+									</select>
+								</div>
+								<div class="form-group m-0">
+									<label class="form-label font-bold">نوع التسعير والاشتراك (Pricing Type) *</label>
+									<select name="pricing_type" x-model="form.pricing_type" class="form-select w-full">
+										<option value="free">مجاني (Free)</option>
+										<option value="paid">مدفوع (Paid)</option>
+										<option value="subscription">اشتراك دوري (Subscription)</option>
+										<option value="monthly">شهري (Monthly)</option>
+										<option value="hourly">بالساعة (Hourly)</option>
+										<option value="per_project">لكل مشروع / طلب (Per Project)</option>
+									</select>
+								</div>
+							</div>
+
+							<!-- Visual Icon Picker Grid -->
+							<div class="form-group m-0">
+								<label class="form-label font-bold">اختيار أيقونة الكيان المؤسسي (Visual Icon Picker)</label>
+								<input type="hidden" name="icon" :value="form.icon"/>
+								<div class="d-grid gap-2 p-2 bg-surface-sunken border rounded-xl overflow-y-auto max-h-40">
+									<template x-for="ic in availableIcons" :key="ic.id">
+										<button
+											type="button"
+											class="btn btn-sm d-flex flex-col items-center justify-center p-2 gap-1 h-16"
+											:class="form.icon === ic.id ? 'btn-primary font-bold' : 'btn-secondary'"
+											@click="form.icon = ic.id"
+										>
+											<span class="text-xl" x-text="getIconEmoji(ic.id)"></span>
+											<span class="text-xs text-center" x-text="ic.label"></span>
+										</button>
+									</template>
+								</div>
+							</div>
+
+							<!-- Allowed Connections (يتصل بـ) -->
+							<div class="border-t pt-3 mt-1">
+								<div class="mb-2">
+									<label class="font-bold text-sm text-primary d-block">
+										الاتصالات المسموح بها (يتصل بـ)
+									</label>
+									<p class="text-xs text-muted m-0 mt-0.5">
+										حدد الكيانات والأنشطة التي يسمح لهذا الكيان بالاتصال والتعامل التجاري معها (Matching & Trading Channels)
+									</p>
+								</div>
+
+								if len(allWorks) > 0 {
+									<div class="d-grid gap-2 p-3 bg-surface-sunken border rounded-xl overflow-y-auto max-h-48">
+										for _, target := range allWorks {
+											<label
+												class="flex-between items-center p-2 bg-surface-raised border rounded-lg cursor-pointer gap-2"
+												x-show={ fmt.Sprintf("!isEdit || form.id !== %d", target.ID) }
+											>
+												<div class="d-flex items-center gap-1.5">
+													<span class="text-xs font-bold text-primary">
+														{ target.Title.Get("ar") }
+													</span>
+													if target.Title.Get("en") != "" {
+														<span class="text-xs text-muted" dir="ltr">
+															({ target.Title.Get("en") })
+														</span>
+													}
+												</div>
+												<input
+													type="checkbox"
+													name="connections"
+													value={ fmt.Sprintf("%d", target.ID) }
+													:checked={ fmt.Sprintf("isConnectionSelected(%d)", target.ID) }
+													@change={ fmt.Sprintf("toggleConnection(%d)", target.ID) }
+													class="cursor-pointer"
+												
+												/>
+											</label>
+										}
+									</div>
+								}
+							</div>
+						</div>
+
+						<!-- Modal Actions -->
+						<div class="modal-footer">
+							<button type="button" data-on-click="closeDialog('institutional-modal')" class="btn btn-secondary font-bold px-6">
+								إلغاء
+							</button>
+							<button type="submit" class="btn btn-primary font-bold px-8 gap-2">
+								@components.IconCheck("icon-xs")
+								<span x-text="isEdit ? 'حفظ التعديلات' : 'إضافة الكيان المؤسسي'"></span>
+							</button>
+						</div>
+					</form>
+			}
+
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			function getIconEmoji(id) {
+				const map = {
+					'building': '',
+					'pill': '',
+					'truck': '',
+					'package': '',
+					'shield': '',
+					'briefcase': '',
+					'cart': '',
+					'tag': '',
+					'users': '',
+					'file': '',
+					'plus': '',
+					'bell': ''
+				};
+				return map[id] || '';
+			}
+		</script>
+	}
+}
+
+templ renderVisualIcon(name, class string) {
+	switch name {
+		case "pill":
+			@components.IconPill(class)
+		case "truck":
+			@components.IconTruck(class)
+		case "package":
+			@components.IconPackage(class)
+		case "shield":
+			@components.IconShield(class)
+		case "cart":
+			@components.IconCart(class)
+		case "briefcase":
+			@components.IconBriefcase(class)
+		case "users":
+			@components.IconUsers(class)
+		case "tag":
+			@components.IconTag(class)
+		case "file":
+			@components.IconFileText(class)
+		case "plus":
+			@components.IconPlus(class)
+		case "bell":
+			@components.IconBell(class)
+		default:
+			@components.IconBuilding(class)
+	}
+}
+
+func countActiveWorks(items []*org.InstitutionalWork) int {
+	cnt := 0
+	for _, it := range items {
+		if it.IsActive {
+			cnt++
+		}
+	}
+	return cnt
+}
+
+func countTotalConnections(items []*org.InstitutionalWork) int {
+	cnt := 0
+	for _, it := range items {
+		cnt += len(it.AllowedConnections)
+	}
+	return cnt
+}
+
+func formatOptionIndent(level int) string {
+	if level <= 0 {
+		return ""
+	}
+	return strings.Repeat("— ", level) + "↳ "
+}
+
+func entityToJSON(it *org.InstitutionalWork) string {
+	if it == nil {
+		return "{}"
+	}
+	var conns []string
+	for _, c := range it.AllowedConnections {
+		conns = append(conns, fmt.Sprintf("%d", c))
+	}
+	connsJSON := "[" + strings.Join(conns, ",") + "]"
+
+	return fmt.Sprintf(
+		`{"id":%d,"title_ar":%q,"title_en":%q,"description_ar":%q,"description_en":%q,"icon":%q,"pricing_type":%q,"view_type":%d,"parent_id":%d,"is_active":%t,"connections":%s}`,
+		it.ID,
+		it.Title.Get("ar"),
+		it.Title.Get("en"),
+		it.Description.Get("ar"),
+		it.Description.Get("en"),
+		it.Icon,
+		string(it.PricingType),
+		it.ViewType,
+		it.ParentIDVal(),
+		it.IsActive,
+		connsJSON,
+	)
+}
+
+func pricingBadgeClass(pricing string) string {
+	switch pricing {
+	case "free":
+		return "badge-emerald"
+	case "paid":
+		return "badge-amber"
+	case "subscription":
+		return "badge-sky"
+	case "monthly":
+		return "badge-indigo"
+	case "hourly":
+		return "badge-rose"
+	case "per_project":
+		return "badge-purple"
+	default:
+		return "badge-slate"
+	}
+}
+
+func pricingTypeAr(pricing string) string {
+	switch pricing {
+	case "free":
+		return "مجاني"
+	case "paid":
+		return "مدفوع"
+	case "subscription":
+		return "اشتراك دوري"
+	case "monthly":
+		return "شهري"
+	case "hourly":
+		return "بالساعة"
+	case "per_project":
+		return "لكل مشروع"
+	default:
+		return "غير محدد"
+	}
+}
+
+func ternary(cond bool, a, b string) string {
+	if cond {
+		return a
+	}
+	return b
+}
+

@@ -1,0 +1,24 @@
+# =============================================================================
+# Dawa24 Store — Production Caddy Configuration
+# Caddy natively provides TLS 1.3, PQC (X25519MLKEM768), and automatic certificates
+# =============================================================================
+
+dawa24.com, *.dawa24.com {
+    tls {
+        # Enforce TLS 1.2 minimum with strict modern AEAD/PFS cipher suites
+        protocols tls1.2 tls1.3
+        ciphers TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384 TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+        curves x25519mlkem768 x25519 p256
+    }
+
+    # Reverse proxy to the Dawa24 Go application
+    reverse_proxy 172.17.0.1:8070 {
+        header_up Host {host}
+        header_up X-Real-IP {remote_host}
+        header_up X-Forwarded-For {remote_host}
+        header_up X-Forwarded-Proto {scheme}
+
+        # Flush immediately for SSE streams
+        flush_interval -1
+    }
+}

@@ -1,0 +1,339 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func formatVariantDiscount(price, discount money.Amount) string {
+	if !discount.IsPositive() {
+		return "0%"
+	}
+	pct := float64(discount.Minor()) / 100.0
+	if pct == float64(int(pct)) {
+		return fmt.Sprintf("%.0f%%", pct)
+	}
+	return fmt.Sprintf("%.2f%%", pct)
+}
+
+// AdminProductDetailPage renders master product view with full specifications and supplier offerings.
+templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVariant, orgNames map[int64]string, branchNames map[int64]string, warehouseNames map[int64]string, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("تفاصيل الصنف: %s", p.Name.Get("ar")), "products", lang, dir) {
+		<div class="page-container max-w-5xl mx-auto">
+			
+			<!-- Header Card -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-start flex-wrap gap-6">
+					<div class="d-flex items-start gap-5 flex-wrap sm:flex-nowrap">
+						<div class="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-xs flex-center shrink-0 p-2.5 relative group">
+							if p.Image != "" {
+								<a href={ templ.SafeURL(p.Image) } target="_blank" class="w-full h-full flex-center cursor-zoom-in" title="عرض الصورة بالحجم الكامل">
+									@components.ProductImage(imageurl.Full(p.Image, p.Name.Get("ar"), "w-full h-full object-contain transition-transform duration-300 group-hover:scale-105"))
+								</a>
+							} else {
+								<div class="d-flex flex-col items-center justify-center text-muted gap-2">
+									<span class="text-4xl">@components.IconPill("icon-lg text-slate-300")</span>
+									<span class="text-2xs font-bold text-slate-400">لا توجد صورة</span>
+								</div>
+							}
+						</div>
+
+						<div class="stack-sm">
+							<div class="d-flex items-center gap-2 mb-1">
+								if p.Status == catalog.StatusActive {
+									<span class="badge badge-emerald text-xs font-bold">نشط ومتاح في السوق</span>
+								} else {
+									<span class="badge badge-rose text-xs font-bold">موقوف / معطل</span>
+								}
+								if p.IsFeatured {
+									<span class="badge badge-sky text-xs font-bold">مميز </span>
+								}
+								<span class="text-xs text-muted tabular-nums font-mono">ID: #{ fmt.Sprintf("%d", p.ID) }</span>
+							</div>
+
+							<h1 class="text-2xl font-black text-primary m-0 mb-1">
+								{ p.Name.Get("ar") }
+							</h1>
+
+							if p.Name.Get("en") != "" {
+								<div class="text-sm text-secondary font-medium mb-2" dir="ltr">
+									{ p.Name.Get("en") }
+								</div>
+							}
+
+							<div class="d-flex items-center gap-4 flex-wrap text-xs text-muted">
+								if p.SKU != "" {
+									<span>SKU: <strong class="text-primary tabular-nums font-mono">{ p.SKU }</strong></span>
+								}
+								if p.Barcode != "" {
+									<span>باركود: <strong class="text-primary tabular-nums font-mono">{ p.Barcode }</strong></span>
+								}
+								if p.ManufacturingCompanies != "" {
+									<span>الشركة: <strong class="text-primary">{ p.ManufacturingCompanies }</strong></span>
+								}
+							</div>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs">
+							@components.IconArrowRight("icon-xs")
+							<span>العودة لقائمة المنتجات</span>
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/catalog?q=%s", url.QueryEscape(p.Name.Get("ar")))) } target="_blank" class="btn btn-primary btn-sm font-bold text-xs">
+							@components.IconExternalLink("icon-xs")
+							<span>عرض في الكتالوج العام</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Stats Strip -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">سعر الجمهور الرسمي</div>
+					<div class="stat-card-value text-primary tabular-nums text-2xl font-black">
+						{ p.Price.String() } <span class="text-xs font-normal">ج.م</span>
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">السعر المعتمد للصيدليات والجمهور</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">عروض التوريد النشطة</div>
+					<div class="stat-card-value text-sky tabular-nums text-2xl font-black">
+						{ fmt.Sprintf("%d", len(variants)) }
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">عدد عروض الموردين المتاحة في السوق</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">مرات الطلب والبيع</div>
+					<div class="stat-card-value text-success tabular-nums text-2xl font-black">
+						{ fmt.Sprintf("%d", p.SoldTimes) }
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">إجمالي مرات الشراء المسجلة للصنف</div>
+				</div>
+			</div>
+
+			<!-- Specifications Grid & Info -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center pb-3 mb-4 border-b">
+					<div class="d-flex items-center gap-2">
+						<span class="text-lg">@components.IconFileText("icon-sm")</span>
+						<h2 class="text-base font-black text-primary m-0">
+							المواصفات والبيانات القياسية للأصناف
+						</h2>
+					</div>
+				</div>
+
+				<div class="d-grid grid-auto-fit-md gap-4">
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">الاسم العلمي (Scientific Name)</div>
+						<div class="text-xs font-bold text-primary font-mono">
+							if p.ScientificName != "" {
+								{ p.ScientificName }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">المادة الفعالة (Active Ingredient)</div>
+						<div class="text-xs font-bold text-primary">
+							if p.Active != "" {
+								{ p.Active }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">الشكل الصيدلي (Dosage Form)</div>
+						<div class="text-xs font-bold text-primary">
+							if p.DosageForm != "" {
+								{ p.DosageForm }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">التركيز الدوائي (Concentration)</div>
+						<div class="text-xs font-bold text-primary">
+							if p.Concentration != "" {
+								{ p.Concentration }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">وحدة التعبئة (Unit)</div>
+						<div class="text-xs font-bold text-primary">
+							if p.Unit != "" {
+								{ p.Unit }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+
+					<div class="p-3 bg-surface-sunken border rounded-lg">
+						<div class="text-xs text-muted mb-1">التصنيف الدوائي (Pharmacology)</div>
+						<div class="text-xs font-bold text-primary">
+							if p.Pharmacology != "" {
+								{ p.Pharmacology }
+							} else {
+								<span class="text-muted"></span>
+							}
+						</div>
+					</div>
+				</div>
+
+				if p.Description.Get("ar") != "" || p.Description.Get("en") != "" {
+					<div class="mt-4 pt-4 border-t">
+						<div class="text-xs font-bold text-muted mb-1">الوصف ودواعي الاستعمال:</div>
+						<div class="text-xs text-primary leading-relaxed">
+							if p.Description.Get("ar") != "" {
+								{ p.Description.Get("ar") }
+							} else {
+								{ p.Description.Get("en") }
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- Linked Vendor Offers / Variants -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="p-4 border-b flex-between items-center flex-wrap gap-2">
+					<div class="d-flex items-center gap-2">
+						<span class="text-lg">@components.IconBuilding("icon-sm")</span>
+						<h3 class="text-base font-black text-primary m-0">
+							عروض التوريد المسجلة من الموردين لهذا الصنف ({ fmt.Sprintf("%d", len(variants)) })
+						</h3>
+					</div>
+				</div>
+
+				if len(variants) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-3xl mb-2">@components.IconPackage("icon-sm")</div>
+						<h4 class="text-base font-bold text-primary mb-1">لا توجد عروض توريد مسجلة حالياً</h4>
+						<p class="text-xs text-secondary max-w-md mx-auto">لم يقم أي مورد بإدراج كميات أو عروض أسعار لهذا الصنف الدوائي بعد.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table data-table-responsive m-0">
+							<thead>
+								<tr>
+									<th>اسم العرض / التشغيلة</th>
+									<th>المورد والمنشأة</th>
+									<th>المخزن والفرع</th>
+									<th class="text-center">سعر البيع</th>
+									<th class="text-center">الخصم</th>
+									<th class="text-center">الكمية المتوفرة</th>
+									<th class="text-center">الصلاحية</th>
+									<th class="text-center">الحالة</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, v := range variants {
+									<tr>
+										<td>
+											<div class="font-bold text-xs text-primary">
+												if v.Name.Get("ar") != "" {
+													{ v.Name.Get("ar") }
+												} else {
+													<span>{ p.Name.Get("ar") }</span>
+												}
+											</div>
+											if v.BatchNumber != "" {
+												<div class="text-2xs text-muted font-mono">تشغيلة: { v.BatchNumber }</div>
+											}
+											if v.SKU != "" {
+												<div class="text-2xs text-muted font-mono" dir="ltr"><code>{ v.SKU }</code></div>
+											}
+										</td>
+										<td>
+											if name, ok := orgNames[v.OrganizationID]; ok && name != "" {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", v.OrganizationID)) } class="font-bold text-xs text-primary hover:underline block">
+													{ name }
+												</a>
+												<span class="badge badge-purple text-2xs font-mono font-bold">#{ fmt.Sprintf("ORG-%d", v.OrganizationID) }</span>
+											} else {
+												<span class="badge badge-sky text-xs font-mono">منشأة #{ fmt.Sprintf("%d", v.OrganizationID) }</span>
+											}
+										</td>
+										<td>
+											if whName, ok := warehouseNames[v.ID]; ok && whName != "" {
+												<div class="font-bold text-xs text-primary">{ whName }</div>
+											}
+											if brName, ok := branchNames[v.ID]; ok && brName != "" {
+												<div class="text-2xs text-secondary mt-0.5">فرع: { brName }</div>
+											} else if v.BranchID != nil && *v.BranchID > 0 {
+												<div class="text-2xs text-muted mt-0.5">فرع #{ fmt.Sprintf("%d", *v.BranchID) }</div>
+											} else if _, ok := warehouseNames[v.ID]; !ok {
+												<span class="text-muted text-2xs">المستودع الرئيسي</span>
+											}
+										</td>
+										<td class="tabular-nums font-bold text-xs text-primary text-center">
+											{ v.Price.String() } ج.م
+										</td>
+										<td class="tabular-nums font-bold text-xs text-brand text-center">
+											{ formatVariantDiscount(v.Price, v.Discount) }
+										</td>
+										<td class="tabular-nums text-center">
+											if v.StockQty > 10 {
+												<span class="badge badge-emerald text-xs font-bold">{ fmt.Sprintf("%d وحدة", v.StockQty) }</span>
+											} else if v.StockQty > 0 {
+												<span class="badge badge-amber text-xs font-bold">{ fmt.Sprintf("%d وحدة", v.StockQty) }</span>
+											} else {
+												<span class="badge badge-rose text-xs font-bold">0 وحدة (نافد)</span>
+											}
+										</td>
+										<td class="text-xs text-muted tabular-nums text-center">
+											if v.ExpiryDate != nil {
+												{ v.ExpiryDate.Format("2006-01-02") }
+											} else {
+												<span class="text-muted">—</span>
+											}
+										</td>
+										<td class="text-center">
+											if string(v.Status) == "active" {
+												<span class="badge badge-emerald text-xs">نشط</span>
+											} else {
+												<span class="badge badge-slate text-xs">معطل</span>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+
+		</div>
+	}
+}
+
+// AdminProductChildrenPage renders vendor variant listings with real database structure.
+templ AdminApisProductsPage(lang, dir string) {
+	@layouts.AdminShell("ربط وتزامن واجهات API للمنتجات", "catalog", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<h2 class="mb-sm text-base font-bold text-primary">مزامنة المنتجات عبر واجهات API الخارجية</h2>
+			<p class="text-sm text-secondary mb-6">سجل الروابط ونقاط النهاية (Endpoints) الخاصة بالتكامل والمزامنة التلقائية للأصناف.</p>
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد روابط API متصلة", Message: "قم بإضافة موفر API لمزامنة المخزون تلقائياً."})
+		</div>
+	}
+}

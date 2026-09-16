@@ -1,0 +1,467 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorJobs(lang, dir string, data VendorJobsData) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_jobs.shell_title"), "jobs", lang, dir) {
+		<div class="page-container">
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-danger", data.NoticeType == "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconBriefcase("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_jobs.header_title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_jobs.header_desc") }
+						</p>
+					</div>
+					<button type="button" class="btn btn-primary font-bold px-4 py-2" data-modal-open="add-job-modal" data-on-click="openAddJobModal()">
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "vendor_jobs.btn_new_job") }</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Metric Stats Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_jobs.stat_total") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalCount) }
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_jobs.stat_total_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_jobs.stat_active") }</div>
+					<div class="stat-card-value text-success tabular-nums">
+						{ fmt.Sprintf("%d", data.PublishedCount) }
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_jobs.stat_active_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-muted">{ i18n.T(lang, "vendor_jobs.stat_closed") }</div>
+					<div class="stat-card-value text-secondary tabular-nums">
+						{ fmt.Sprintf("%d", data.ClosedCount) }
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_jobs.stat_closed_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_jobs.stat_apps") }</div>
+					<div class="stat-card-value text-warning tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalApplications) }
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_jobs.stat_apps_sub") }</span>
+				</div>
+			</div>
+
+			<!-- Main Jobs Table -->
+			@VendorJobsTable(lang, data)
+		</div>
+
+		<!-- Modals -->
+		@VendorJobsAddModal(lang, data.Branches)
+		@VendorJobsEditModal(lang, data.Branches)
+		@VendorJobsApplicantsModal(lang)
+		@VendorJobsOnboardModal(lang, data.Branches)
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			var currentJobId = 0;
+			var currentJobTitle = '';
+
+			function escapeHtml(str) {
+				if (!str) return '';
+				return String(str)
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;');
+			}
+
+			function escapeAttr(str) {
+				if (!str) return '';
+				return String(str)
+					.replace(/&/g, '&amp;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;');
+			}
+
+			function openAddJobModal() {
+				const el = document.getElementById('add-job-modal');
+				if (el) {
+					if (typeof el.showModal === 'function') {
+						if (!el.open) el.showModal();
+					} else {
+						el.setAttribute('open', '');
+					}
+				}
+			}
+
+			function closeAddJobModal() {
+				const el = document.getElementById('add-job-modal');
+				if (el) {
+					if (typeof el.close === 'function') {
+						el.close();
+					} else {
+						el.removeAttribute('open');
+					}
+				}
+			}
+
+			function openEditJobModalFromBtn(btn) {
+				if (!btn) return;
+				const jobId = btn.getAttribute('data-job-id');
+				const titleAr = btn.getAttribute('data-title-ar') || '';
+				const titleEn = btn.getAttribute('data-title-en') || '';
+				const location = btn.getAttribute('data-location') || '';
+				const salMin = btn.getAttribute('data-sal-min') || '';
+				const salMax = btn.getAttribute('data-sal-max') || '';
+				const status = btn.getAttribute('data-status') || '';
+				const desc = btn.getAttribute('data-desc') || '';
+				const reqs = btn.getAttribute('data-reqs') || '';
+
+				const form = document.getElementById('edit-job-form');
+				if (form) form.action = `/vendor/jobs/${jobId}/edit`;
+
+				const titleArInput = document.getElementById('edit-job-title-ar');
+				const titleEnInput = document.getElementById('edit-job-title-en');
+				const branchSelect = document.getElementById('edit-job-branch-id');
+				const statusInput = document.getElementById('edit-job-status');
+				const salMinInput = document.getElementById('edit-job-salary-min');
+				const salMaxInput = document.getElementById('edit-job-salary-max');
+				const descInput = document.getElementById('edit-job-description');
+				const reqsInput = document.getElementById('edit-job-requirements');
+
+				if (titleArInput) titleArInput.value = titleAr;
+				if (titleEnInput) titleEnInput.value = titleEn;
+				if (statusInput) statusInput.value = status || 'published';
+				if (salMinInput) salMinInput.value = (salMin && salMin !== '0' && salMin !== '0.00') ? salMin : '';
+				if (salMaxInput) salMaxInput.value = (salMax && salMax !== '0' && salMax !== '0.00') ? salMax : '';
+				if (descInput) descInput.value = desc;
+				if (reqsInput) reqsInput.value = reqs;
+
+				const modal = document.getElementById('edit-job-modal');
+				if (modal) {
+					if (typeof modal.showModal === 'function') {
+						if (!modal.open) modal.showModal();
+					} else {
+						modal.setAttribute('open', '');
+					}
+				}
+			}
+
+			function closeEditJobModal() {
+				const modal = document.getElementById('edit-job-modal');
+				if (modal) {
+					if (typeof modal.close === 'function') {
+						modal.close();
+					} else {
+						modal.removeAttribute('open');
+					}
+				}
+			}
+
+			function openApplicantsModal() {
+				const el = document.getElementById('job-applicants-modal');
+				if (el) {
+					if (typeof el.showModal === 'function') {
+						if (!el.open) el.showModal();
+					} else {
+						el.setAttribute('open', '');
+					}
+				}
+			}
+
+			function closeApplicantsModal() {
+				const el = document.getElementById('job-applicants-modal');
+				if (el) {
+					if (typeof el.close === 'function') {
+						el.close();
+					} else {
+						el.removeAttribute('open');
+					}
+				}
+			}
+
+			function openApplicantsForJob(btn) {
+				if (!btn) return;
+				const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
+				const jobTitle = btn.getAttribute('data-job-title') || '';
+				viewApplicants(jobId, jobTitle);
+			}
+
+			function openOnboardModal(appId, applicantName, jobTitle) {
+				const jIdEl = document.getElementById('onboard-job-id');
+				if (jIdEl) jIdEl.value = currentJobId;
+				const aIdEl = document.getElementById('onboard-app-id');
+				if (aIdEl) aIdEl.value = appId;
+				const subEl = document.getElementById('onboard-modal-subtitle');
+				if (subEl) subEl.textContent = `${applicantName} • ${jobTitle}`;
+				const jtEl = document.getElementById('onboard-job-title');
+				if (jtEl) jtEl.value = jobTitle || '';
+				const modal = document.getElementById('onboard-modal');
+				if (modal) {
+					if (typeof modal.showModal === 'function') {
+						if (!modal.open) modal.showModal();
+					} else {
+						modal.setAttribute('open', '');
+					}
+				}
+			}
+
+			function openOnboardModalFromBtn(btn) {
+				if (!btn) return;
+				const appId = parseInt(btn.getAttribute('data-app-id'), 10);
+				const applicantName = btn.getAttribute('data-applicant-name') || '';
+				const jobTitle = btn.getAttribute('data-job-title') || currentJobTitle;
+				openOnboardModal(appId, applicantName, jobTitle);
+			}
+
+			function closeOnboardModal() {
+				const modal = document.getElementById('onboard-modal');
+				if (modal) {
+					if (typeof modal.close === 'function') {
+						modal.close();
+					} else {
+						modal.removeAttribute('open');
+					}
+				}
+			}
+
+			async function viewApplicants(jobId, jobTitle) {
+				currentJobId = jobId;
+				currentJobTitle = jobTitle;
+				const subEl = document.getElementById('applicants-modal-subtitle');
+				if (subEl) subEl.textContent = jobTitle;
+				const contentEl = document.getElementById('applicants-modal-content');
+				if (contentEl) {
+					contentEl.innerHTML = dawaHTML.sanitize(`
+						<div class="p-10 text-center text-muted">
+							<div class="text-2xl mb-2">⏳</div>
+							<div class="stat-card-label">جاري التحميل...</div>
+						</div>
+					`);
+					// Buttons in the rendered list are plain markup; their
+					// behaviour is attached here, once, by delegation.
+					contentEl.onclick = onApplicantsClick;
+				}
+				openApplicantsModal();
+
+				try {
+					const res = await fetch(`/vendor/jobs/${jobId}/applications`);
+					if (!res.ok) throw new Error('فشل في جلب البيانات');
+					const apps = await res.json();
+
+					if (!apps || apps.length === 0) {
+						if (contentEl) {
+							contentEl.innerHTML = dawaHTML.sanitize(`
+								<div class="text-center p-10">
+									<div class="text-3xl mb-2">📬</div>
+									<h4 class="text-primary font-extrabold text-sm m-0">لا يوجد متقدمين حتى الآن</h4>
+								</div>
+							`);
+						}
+						return;
+					}
+
+					let html = '<div class="d-flex flex-col gap-3 p-4">';
+					apps.forEach(app => {
+						const dateStr = app.created_at ? new Date(app.created_at).toLocaleDateString() : '';
+						let cvUrl = app.cv_storage_key || '';
+						if (cvUrl && !cvUrl.startsWith('http') && !cvUrl.startsWith('/')) {
+							cvUrl = '/' + cvUrl;
+						}
+						const cvBtn = cvUrl 
+							? `<a href="${escapeAttr(cvUrl)}" target="_blank" download class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-2xs">
+									<span>تحميل السيرة الذاتية (CV)</span>
+							   </a>`
+							: `<span class="badge badge-slate text-2xs font-medium">لم يُرفق CV</span>`;
+
+						let statusBadge = '';
+						let actionButtons = '';
+
+						if (app.status === 'accepted' || app.status === 'hired') {
+							const branchText = app.branch_name ? ` (${escapeHtml(app.branch_name)})` : '';
+							statusBadge = `<span class="badge badge-emerald text-2xs font-bold">تم القبول والتعيين${branchText}</span>`;
+						} else if (app.status === 'rejected') {
+							statusBadge = `<span class="badge badge-slate text-2xs font-bold">تم رفض الطلب</span>`;
+						} else {
+							statusBadge = `<span class="badge badge-sky text-2xs font-bold">⏳ قيد المراجعة</span>`;
+							actionButtons = `
+								<div class="d-flex gap-1.5 items-center">
+									<button type="button" class="btn btn-primary btn-sm font-bold text-xs px-3 py-1.5 gap-1"
+										data-app-id="${escapeAttr(app.id)}"
+										data-applicant-name="${escapeAttr(app.applicant_name || '')}"
+										data-job-title="${escapeAttr(jobTitle || '')}"
+										data-act="onboard">
+										<span>قبول وتعيين</span>
+									</button>
+									<button type="button" class="btn btn-secondary btn-sm font-bold text-danger text-xs px-2.5 py-1.5"
+										data-job-id="${escapeAttr(jobId)}"
+										data-app-id="${escapeAttr(app.id)}"
+										data-act="reject">
+										<span>رفض</span>
+									</button>
+								</div>
+							`;
+						}
+
+						html += `
+							<div class="p-4 bg-surface-sunken border rounded-2xl flex-between items-center flex-wrap gap-4 shadow-2xs">
+								<div class="stack-2xs">
+									<div class="d-flex items-center gap-2 flex-wrap">
+										<strong class="font-black text-sm text-primary">${escapeHtml(app.applicant_name || 'متقدم')}</strong>
+										${statusBadge}
+									</div>
+									<div class="d-flex gap-3 text-xs text-muted mt-1 flex-wrap font-medium">
+										<span>${escapeHtml(app.applicant_email || '-')}</span>
+										<span>•</span>
+										<span>${escapeHtml(app.applicant_phone || '-')}</span>
+										<span>•</span>
+										<span>${escapeHtml(dateStr)}</span>
+									</div>
+								</div>
+								<div class="d-flex items-center gap-2.5 flex-wrap">
+									${cvBtn}
+									${actionButtons}
+								</div>
+							</div>
+						`;
+					});
+					html += '</div>';
+					if (contentEl) contentEl.innerHTML = dawaHTML.sanitize(html);
+				} catch (err) {
+					if (contentEl) {
+						contentEl.innerHTML = dawaHTML.sanitize(`<div class="alert alert-danger p-md">حدث خطأ: ${escapeHtml(err.message)}</div>`);
+					}
+				}
+			}
+
+			function onApplicantsClick(e) {
+				const btn = e.target.closest('[data-act]');
+				if (!btn || btn.disabled) return;
+				if (btn.dataset.act === 'onboard') openOnboardModalFromBtn(btn);
+				else if (btn.dataset.act === 'reject') rejectApplicantFromBtn(btn);
+			}
+
+			function rejectApplicantFromBtn(btn) {
+				if (!btn) return;
+				const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
+				const appId = parseInt(btn.getAttribute('data-app-id'), 10);
+				rejectApplicant(jobId, appId);
+			}
+
+			async function submitOnboardEmployee(e) {
+				e.preventDefault();
+				const jobId = document.getElementById('onboard-job-id')?.value;
+				const appId = document.getElementById('onboard-app-id')?.value;
+				const branchId = document.getElementById('onboard-branch-id')?.value;
+				const roleKey = document.getElementById('onboard-role-key')?.value || document.getElementById('onboard-role')?.value || 'org_sales_rep';
+				const jobTitle = document.getElementById('onboard-job-title')?.value;
+				const baseSalary = document.getElementById('onboard-base-salary')?.value || '';
+				const notes = document.getElementById('onboard-notes')?.value || '';
+				const submitBtn = document.getElementById('onboard-submit-btn');
+				if (submitBtn) {
+					submitBtn.disabled = true;
+					submitBtn.innerHTML = dawaHTML.sanitize('<span>جاري التعيين...</span>');
+				}
+
+				try {
+					const res = await fetch(`/vendor/jobs/${jobId}/applications/${appId}/accept`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							branch_id: branchId ? parseInt(branchId, 10) : 0,
+							role_key: roleKey,
+							job_title: jobTitle,
+							base_salary: baseSalary,
+							notes: notes
+						})
+					});
+					const data = await res.json();
+					if (!res.ok || data.error) throw new Error(data.error || 'فشلت العملية');
+					closeOnboardModal();
+					alert('تم قبول المتقدم وتعيينه بنجاح!');
+					viewApplicants(currentJobId, currentJobTitle);
+				} catch (err) {
+					alert('حدث خطأ: ' + err.message);
+				} finally {
+					if (submitBtn) {
+						submitBtn.disabled = false;
+						submitBtn.innerHTML = dawaHTML.sanitize('<span>تأكيد القبول وتعيين الموظف</span>');
+					}
+				}
+			}
+
+			async function rejectApplicant(jobId, appId) {
+				if (!confirm('هل أنت متأكد من رفض هذا الطلب؟')) return;
+				try {
+					const res = await fetch(`/vendor/jobs/${jobId}/applications/${appId}/reject`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ notes: 'تمت المراجعة والاعتذار' })
+					});
+					const data = await res.json();
+					if (!res.ok || data.error) throw new Error(data.error || 'فشلت العملية');
+					alert('تم رفض الطلب بنجاح.');
+					viewApplicants(currentJobId, currentJobTitle);
+				} catch (err) {
+					alert('حدث خطأ: ' + err.message);
+				}
+			}
+
+			window.openApplicantsForJob = openApplicantsForJob;
+			window.viewApplicants = viewApplicants;
+			window.openOnboardModal = openOnboardModal;
+			window.openOnboardModalFromBtn = openOnboardModalFromBtn;
+			window.closeOnboardModal = closeOnboardModal;
+			window.openApplicantsModal = openApplicantsModal;
+			window.closeApplicantsModal = closeApplicantsModal;
+			window.rejectApplicant = rejectApplicant;
+			window.rejectApplicantFromBtn = rejectApplicantFromBtn;
+			window.submitOnboardEmployee = submitOnboardEmployee;
+
+			if (!window.__dawaBound_vendor_jobs) {
+				window.__dawaBound_vendor_jobs = true;
+				window.addEventListener('click', function(e) {
+					var addModal = document.getElementById('add-job-modal');
+					var editModal = document.getElementById('edit-job-modal');
+					var appModal = document.getElementById('job-applicants-modal');
+					var onbModal = document.getElementById('onboard-modal');
+					if (e.target === addModal) closeAddJobModal();
+					if (e.target === editModal) closeEditJobModal();
+					if (e.target === appModal) closeApplicantsModal();
+					if (e.target === onbModal) closeOnboardModal();
+				});
+			}
+		</script>
+	}
+}

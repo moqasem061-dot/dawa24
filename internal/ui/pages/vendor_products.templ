@@ -1,0 +1,333 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorVariantView struct {
+	Variant       *catalog.ProductVariant
+	MasterProduct *catalog.Product
+	BranchName    string
+	StockQuantity int
+}
+
+type VendorBranchOption struct {
+	ID     int64
+	Name   string
+	IsMain bool
+}
+
+type VendorVariantsData struct {
+	Variants   []*VendorVariantView
+	Branches   []VendorBranchOption
+	Filter     catalog.VendorVariantQuery
+	Total      int
+	Stats      catalog.VendorVariantStats
+	LoadError  string
+	NoticeType string
+	NoticeMsg  string
+}
+
+templ VendorProducts(data VendorVariantsData, lang, dir string, isPartial bool) {
+	if isPartial {
+		@VendorVariantsTable(data.Variants, lang)
+	} else {
+		@layouts.VendorShell(i18n.T(lang, "vendor_products.page_title"), "products", lang, dir) {
+			<div class="page-container">
+				
+				<!-- Notice / Toast Banner -->
+				if data.NoticeMsg != "" {
+					if data.NoticeType == "error" {
+						<div class="alert alert-danger mb-4 p-4 flex-between">
+							<div class="d-flex items-center gap-3 font-extrabold text-sm">
+								<span class="text-2xl">@components.IconAlert("icon-sm")</span>
+								<span>{ data.NoticeMsg }</span>
+							</div>
+						</div>
+					} else {
+						<div class="alert alert-success mb-4 p-4 flex-between">
+							<div class="d-flex items-center gap-3 font-extrabold text-sm">
+								<span class="text-2xl">@components.IconCheckCircle("icon-sm")</span>
+								<span>{ data.NoticeMsg }</span>
+							</div>
+						</div>
+					}
+				}
+
+				if data.LoadError != "" {
+					<div class="alert alert-danger mb-4 p-4 font-bold">
+						<span>{ fmt.Sprintf(i18n.T(lang, "vendor_products.load_error"), data.LoadError) }</span>
+					</div>
+				}
+
+				<!-- Header Bar -->
+				@components.PageHeader(components.PageHeaderProps{
+					Title:      i18n.T(lang, "vendor_products.header_title"),
+					Subtitle:   i18n.T(lang, "vendor_products.header_sub"),
+					Count:      &data.Total,
+					CountLabel: i18n.T(lang, "vendor_products.header_count_label"),
+				}) {
+					<button
+						type="button"
+						class="btn btn-primary font-bold gap-2"
+						data-modal-open="add-from-catalog-modal"
+						data-on-click="openAddFromCatalogModal()"
+					>
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "vendor_products.btn_add_from_catalog") }</span>
+					</button>
+
+					<button
+						type="button"
+						class="btn btn-secondary font-semibold gap-2"
+						data-modal-open="add-custom-variant-modal"
+						data-on-click="openAddCustomVariantModal()"
+					>
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "vendor_products.btn_add_custom") }</span>
+					</button>
+
+					<a href="/vendor/ingest" class="btn btn-secondary font-semibold gap-2">
+						@components.IconUpload("icon-xs")
+						<span>{ i18n.T(lang, "vendor_products.btn_import_excel") }</span>
+					</a>
+
+					if data.Total > 0 && data.Stats.Active < data.Stats.Total {
+						<form method="POST" action="/vendor/products/activate-all" class="d-inline m-0">
+							<button type="submit" class="btn btn-emerald font-bold gap-2" title={ i18n.T(lang, "vendor_products.btn_activate_all_title") }>
+								@components.IconCheckCircle("icon-xs")
+								<span>{ fmt.Sprintf(i18n.T(lang, "vendor_products.btn_activate_all"), fmt.Sprintf("%d", data.Stats.Total - data.Stats.Active)) }</span>
+							</button>
+						</form>
+					}
+
+					if data.Total > 0 {
+						<form method="POST" action="/vendor/products/delete-all" class="d-inline m-0"
+							data-confirm={ i18n.T(lang, "vendor_products.confirm_delete_all") }>
+							<button type="submit" class="btn btn-ghost text-danger font-bold gap-2">
+								<span>{ i18n.T(lang, "vendor_products.btn_delete_all") }</span>
+							</button>
+						</form>
+					}
+				}
+
+				<!-- Headline Stats Strip -->
+				if data.Stats.Total > 0 || len(data.Variants) > 0 {
+					<div class="dashboard-stat-grid mb-6">
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_total"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.Total),
+							Tone:  "neutral",
+						})
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_active"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.Active),
+							Tone:  "success",
+						})
+						if data.Stats.Total - data.Stats.Active > 0 {
+							@components.StatCard(components.StatCardProps{
+								Label: i18n.T(lang, "vendor_products.stat_inactive"),
+								Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.Total - data.Stats.Active),
+								Tone:  "warning",
+							})
+						}
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_instock"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.InStock),
+							Tone:  "primary",
+						})
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_lowstock"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.LowStock),
+							Tone:  "warning",
+						})
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_outofstock"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.OutOfStock),
+							Tone:  "danger",
+						})
+						@components.StatCard(components.StatCardProps{
+							Label: i18n.T(lang, "vendor_products.stat_expiring"),
+							Value: fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), data.Stats.Expiring),
+							Tone:  "warning",
+						})
+					</div>
+				}
+
+				<!-- Search, Filter & Sort Toolbar -->
+				<div class="filter-bar">
+					<form method="GET" action="/vendor/products" id="vendor-products-filter-form" class="m-0">
+						if data.Filter.PerPage > 0 {
+							<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.Filter.PerPage) } />
+						}
+
+						<div class="d-flex items-center justify-between flex-wrap gap-4">
+							<!-- Search Input -->
+							<div class="d-flex items-center gap-2 flex-1 min-w-280">
+								<div class="position-relative flex-1">
+									<input
+										type="text"
+										name="q"
+										value={ data.Filter.Query }
+										placeholder={ i18n.T(lang, "vendor_products.search_ph") }
+										class="form-input ps-8"
+									/>
+									<div class="position-absolute start-3 top-half translate-middle-y text-muted pointer-events-none">
+										@components.IconSearch("icon-xs")
+									</div>
+								</div>
+								<button type="submit" class="btn btn-primary font-bold px-4">
+									{ i18n.T(lang, "vendor_products.btn_search") }
+								</button>
+								if data.Filter.Query != "" || data.Filter.Stock != "" || data.Filter.Expiring || data.Filter.Status != "" || data.Filter.Sort != "" {
+									<a href="/vendor/products" class="btn btn-secondary" title={ i18n.T(lang, "vendor_products.reset_title") }>
+										{ i18n.T(lang, "vendor_products.btn_reset") }
+									</a>
+								}
+							</div>
+
+							<!-- Quick Status Filter Pills -->
+							<div class="d-flex items-center gap-1.5 flex-wrap">
+								<span class="text-xs text-muted font-bold me-1">
+									{ i18n.T(lang, "vendor_products.status_label") }
+								</span>
+								<a
+									href={ templ.SafeURL(vendorStatusFilterURL(data.Filter, "")) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Status == ""), templ.KV("btn-secondary", data.Filter.Status != "") }
+								>
+									{ i18n.T(lang, "vendor_products.tab_all") }
+								</a>
+								<a
+									href={ templ.SafeURL(vendorStatusFilterURL(data.Filter, "active")) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Status == "active"), templ.KV("btn-secondary", data.Filter.Status != "active") }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_active_count"), data.Stats.Active) }
+								</a>
+								if data.Stats.Total - data.Stats.Active > 0 {
+									<a
+										href={ templ.SafeURL(vendorStatusFilterURL(data.Filter, "inactive")) }
+										class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Status == "inactive"), templ.KV("btn-secondary", data.Filter.Status != "inactive") }
+									>
+										{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_inactive_count"), data.Stats.Total - data.Stats.Active) }
+									</a>
+								}
+							</div>
+
+							<!-- Quick Stock & Expiry Filter Pills -->
+							<div class="d-flex items-center gap-1.5 flex-wrap">
+								<span class="text-xs text-muted font-bold me-1">
+									{ i18n.T(lang, "vendor_products.stock_label") }
+								</span>
+								<a
+									href={ templ.SafeURL(vendorFilterURL(data.Filter, catalog.StockFilterAny, false)) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Stock == catalog.StockFilterAny && !data.Filter.Expiring), templ.KV("btn-secondary", data.Filter.Stock != catalog.StockFilterAny || data.Filter.Expiring) }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_stock_total"), data.Stats.Total) }
+								</a>
+								<a
+									href={ templ.SafeURL(vendorFilterURL(data.Filter, catalog.StockFilterIn, false)) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Stock == catalog.StockFilterIn && !data.Filter.Expiring), templ.KV("btn-secondary", data.Filter.Stock != catalog.StockFilterIn || data.Filter.Expiring) }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_stock_in"), data.Stats.InStock) }
+								</a>
+								<a
+									href={ templ.SafeURL(vendorFilterURL(data.Filter, catalog.StockFilterLow, false)) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Stock == catalog.StockFilterLow && !data.Filter.Expiring), templ.KV("btn-secondary", data.Filter.Stock != catalog.StockFilterLow || data.Filter.Expiring) }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_stock_low"), data.Stats.LowStock) }
+								</a>
+								<a
+									href={ templ.SafeURL(vendorFilterURL(data.Filter, catalog.StockFilterOut, false)) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Stock == catalog.StockFilterOut && !data.Filter.Expiring), templ.KV("btn-secondary", data.Filter.Stock != catalog.StockFilterOut || data.Filter.Expiring) }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_stock_out"), data.Stats.OutOfStock) }
+								</a>
+								<a
+									href={ templ.SafeURL(vendorFilterURL(data.Filter, catalog.StockFilterAny, true)) }
+									class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.Filter.Expiring), templ.KV("btn-secondary", !data.Filter.Expiring) }
+								>
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.tab_stock_expiring"), data.Stats.Expiring) }
+								</a>
+							</div>
+
+							<!-- Sort Dropdown -->
+							<div class="d-flex items-center gap-2">
+								<label for="sort-select" class="text-xs text-secondary font-bold whitespace-nowrap">
+									{ i18n.T(lang, "vendor_products.sort_label") }
+								</label>
+								<select
+									id="sort-select"
+									name="sort"
+									class="form-select form-input-sm font-bold"
+									data-autosubmit="vendor-products-filter-form"
+								>
+									<option value="" selected?={ data.Filter.Sort == "" }>{ i18n.T(lang, "vendor_products.sort_newest") }</option>
+									<option value="oldest" selected?={ data.Filter.Sort == "oldest" }>{ i18n.T(lang, "vendor_products.sort_oldest") }</option>
+									<option value="name" selected?={ data.Filter.Sort == "name" }>{ i18n.T(lang, "vendor_products.sort_name") }</option>
+									<option value="price_asc" selected?={ data.Filter.Sort == "price_asc" }>{ i18n.T(lang, "vendor_products.sort_price_asc") }</option>
+									<option value="price_desc" selected?={ data.Filter.Sort == "price_desc" }>{ i18n.T(lang, "vendor_products.sort_price_desc") }</option>
+									<option value="stock_asc" selected?={ data.Filter.Sort == "stock_asc" }>{ i18n.T(lang, "vendor_products.sort_stock_asc") }</option>
+									<option value="stock_desc" selected?={ data.Filter.Sort == "stock_desc" }>{ i18n.T(lang, "vendor_products.sort_stock_desc") }</option>
+									<option value="expiry" selected?={ data.Filter.Sort == "expiry" }>{ i18n.T(lang, "vendor_products.sort_expiry") }</option>
+								</select>
+							</div>
+						</div>
+					</form>
+				</div>
+
+				<!-- Variants Table -->
+				<div class="stack-sm" id="vendor-products-content">
+					if len(data.Variants) == 0 {
+						if data.Filter.Query != "" || data.Filter.Stock != "" || data.Filter.Expiring || data.Filter.Status != "" {
+							<div class="empty-state-glass p-8 text-center">
+								<div class="empty-state-icon-wrapper mx-auto mb-3">@components.IconSearch("icon-sm")</div>
+								<h3 class="font-extrabold text-lg text-primary m-0 mb-2">{ i18n.T(lang, "vendor_products.empty_filter_title") }</h3>
+								<p class="text-sm text-muted mb-4 max-w-md mx-auto">
+									{ i18n.T(lang, "vendor_products.empty_filter_desc") }
+								</p>
+								<a href="/vendor/products" class="btn btn-secondary font-bold">
+									{ i18n.T(lang, "vendor_products.btn_clear_filter") }
+								</a>
+							</div>
+						} else {
+							@components.EmptyState(components.EmptyStateProps{
+								Title:         i18n.T(lang, "vendor_products.empty_products_title"),
+								Message:       i18n.T(lang, "vendor_products.empty_products_msg"),
+								ActionLabel:   i18n.T(lang, "vendor_products.empty_products_cta"),
+								ActionModalID: "add-from-catalog-modal",
+								ActionOnClick: "openAddFromCatalogModal()",
+							})
+						}
+					} else {
+						@VendorVariantsTable(data.Variants, lang)
+					}
+				</div>
+
+				<!-- Bottom Pagination & Rows-Per-Page Controls -->
+				if data.Total > 0 {
+					<div class="glass-panel p-4 mt-4">
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Filter.PageNumber,
+							PageSize:    data.Filter.PerPage,
+							TotalCount:  data.Total,
+							BaseURL:     "/vendor/products",
+							QueryValues: vendorPaginationQuery(data.Filter),
+						})
+					</div>
+				}
+
+			</div>
+
+			<!-- MODAL 1: Master Catalog Selection Modal -->
+			@VendorProductsAddFromCatalogModal(data, lang)
+
+			<!-- MODAL 2: Quick Edit Variant Modal & Custom Variant Modal -->
+			@VendorProductsModals(data, lang)
+		}
+	}
+}

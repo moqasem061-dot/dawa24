@@ -1,0 +1,420 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ TenantSubscriptionPage(data TenantSubscriptionPageData, orgType string, lang string, dir string) {
+	if orgType == "vendor" || orgType == "supplier" {
+		@layouts.VendorShell("الاشتراك والعضوية", "subscription", lang, dir) {
+			@tenantSubscriptionBody(data, orgType, lang, dir)
+		}
+	} else {
+		@layouts.CustomerShell("الاشتراك والعضوية", "subscription", lang, dir, nil) {
+			@tenantSubscriptionBody(data, orgType, lang, dir)
+		}
+	}
+}
+
+templ tenantSubscriptionBody(data TenantSubscriptionPageData, orgType string, lang string, dir string) {
+	<div
+		class="d-flex flex-col gap-6 w-full"
+		x-data="{
+			isCheckoutOpen: false,
+			isConfirmOpen: false,
+			selectedPlanSlug: '',
+			selectedPlanName: '',
+			selectedPlanMonthMinor: 0,
+			selectedPlanYearMinor: 0,
+			planBillingPeriod: 'monthly',
+			autoRenew: true,
+			walletBalanceMinor: 0,
+			isUpgrade: false,
+			openCheckout(slug, name, monthMinor, yearMinor, isUp) {
+				this.selectedPlanSlug = slug;
+				this.selectedPlanName = name;
+				this.selectedPlanMonthMinor = Number(monthMinor) || 0;
+				this.selectedPlanYearMinor = Number(yearMinor) || 0;
+				this.isUpgrade = Boolean(isUp);
+				this.autoRenew = true;
+				this.isCheckoutOpen = true;
+				this.isConfirmOpen = false;
+			},
+			openConfirm() {
+				if (!this.hasSufficientBalance && this.currentCostMinor > 0) return;
+				this.isCheckoutOpen = false;
+				this.isConfirmOpen = true;
+			},
+			backToCheckout() {
+				this.isConfirmOpen = false;
+				this.isCheckoutOpen = true;
+			},
+			get currentCostMinor() {
+				return this.planBillingPeriod === 'annual' ? this.selectedPlanYearMinor : this.selectedPlanMonthMinor;
+			},
+			get currentCostFormatted() {
+				return (this.currentCostMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+			},
+			get hasSufficientBalance() {
+				return this.walletBalanceMinor >= this.currentCostMinor;
+			},
+			get remainingBalanceFormatted() {
+				const rem = (this.walletBalanceMinor - this.currentCostMinor) / 100;
+				return rem.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+			}
+		}"
+		x-init={ fmt.Sprintf("walletBalanceMinor = %d; const upSlug = new URLSearchParams(window.location.search).get('upgrade'); if (upSlug) { const btn = document.querySelector('[data-plan-slug=\"' + upSlug + '\"]'); if (btn && !btn.disabled) btn.click(); }", data.WalletBalance.Minor()) }
+	>
+		<!-- Toast Notices -->
+		if data.NoticeMsg != "" {
+			if data.NoticeType == "error" {
+				<div class="alert alert-danger mb-4 d-flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50/60 shadow-xs">
+					@components.IconAlert("icon-sm text-rose-600 flex-shrink-0")
+					<span class="font-bold text-xs text-rose-800">{ data.NoticeMsg }</span>
+				</div>
+			} else {
+				<div class="alert alert-success mb-4 d-flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 shadow-xs">
+					@components.IconCheckCircle("icon-sm text-emerald-600 flex-shrink-0")
+					<span class="font-bold text-xs text-emerald-800">{ data.NoticeMsg }</span>
+				</div>
+			}
+		}
+
+		<!-- Page Header & Wallet Summary -->
+		<div class="glass-panel p-6 border border-slate-200/80 rounded-2xl shadow-sm">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-2.5 mb-1.5">
+						<div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+							@components.IconSparkles("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								الاشتراك وإدارة خطط العضوية
+							</h1>
+							<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+								متابعة باقتك المعتمدة، ترقية العضوية، الدفع المباشر من المحفظة، وحدود الذكاء الاصطناعي
+							</p>
+						</div>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-3">
+					<div class="stat-card-3d p-3 px-4 border border-slate-200/80 rounded-xl bg-surface-sunken">
+						<div class="stat-card-label text-xs font-bold text-muted">رصيد محفظتك المتاح</div>
+						<div class="text-lg font-black text-primary tabular-nums mt-0.5">
+							@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.WalletBalance })
+						</div>
+					</div>
+					if orgType == "vendor" || orgType == "supplier" {
+						<a href="/vendor/wallet" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconWallet("icon-xs")
+							<span>شحن المحفظة</span>
+						</a>
+					} else {
+						<a href="/customer/wallet" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconWallet("icon-xs")
+							<span>شحن المحفظة</span>
+						</a>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Current Active Subscription Details -->
+		if data.Subscription != nil {
+			<div class="glass-panel p-6 border border-slate-200/80 rounded-2xl shadow-xs">
+				<div class="flex-between items-center flex-wrap gap-3 mb-5 pb-3 border-b border-slate-100">
+					<div class="d-flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 d-flex items-center justify-center border border-sky-200/60 shadow-2xs">
+							@components.IconShield("icon-xs")
+						</div>
+						<div class="stack-sm">
+							<h2 class="text-base font-extrabold text-primary m-0">
+								باقتك الحالية المفعّلة
+							</h2>
+							<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+								الحدود والكوتا المطبقة على حساب منشأتك بالكامل
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<span class="badge badge-emerald text-xs font-bold shadow-2xs d-inline-flex items-center gap-1">
+							@components.IconCheckCircle("icon-2xs")
+							<span>{ data.Subscription.Status }</span>
+						</span>
+						if data.Subscription.IsDefaultPlan {
+							<span class="badge badge-slate text-xs font-bold">باقة أساسية دائمة</span>
+						} else {
+							if data.Subscription.HasDaysRemaining {
+								if data.Subscription.DaysRemaining > 3 {
+									<span class="badge badge-sky text-xs font-bold d-inline-flex items-center gap-1">
+										@components.IconClock("icon-2xs")
+										<span>{ data.Subscription.DaysRemainingText() }</span>
+									</span>
+								} else if data.Subscription.DaysRemaining > 0 {
+									<span class="badge badge-amber text-xs font-bold d-inline-flex items-center gap-1">
+										@components.IconClock("icon-2xs")
+										<span>{ data.Subscription.DaysRemainingText() }</span>
+									</span>
+								} else {
+									<span class="badge badge-rose text-xs font-bold d-inline-flex items-center gap-1">
+										@components.IconAlert("icon-2xs")
+										<span>{ data.Subscription.DaysRemainingText() }</span>
+									</span>
+								}
+							}
+							if data.AutoRenew {
+								<span class="badge badge-sky text-xs font-bold">تجديد تلقائي من المحفظة ({ func() string { if data.BillingCycle == "annual" { return "سنوي" }; return "شهري" }() })</span>
+							} else {
+								<span class="badge badge-slate text-xs font-bold">التجديد التلقائي معطّل</span>
+							}
+						}
+					</div>
+				</div>
+
+				if data.Subscription.HasExtraSessions {
+					<div class="p-3.5 px-4 mb-4 rounded-xl bg-emerald-50/90 border border-emerald-200/80 text-emerald-950 d-flex items-center justify-between flex-wrap gap-3 shadow-2xs">
+						<div class="d-flex items-center gap-2.5">
+							<div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 d-flex items-center justify-center flex-shrink-0">
+								@components.IconSparkles("icon-xs")
+							</div>
+							<div>
+								<div class="text-xs font-black text-emerald-900">
+									تمت ترقية الجلسات المتزامنة لمنشأتك (+{ fmt.Sprintf("%d", data.Subscription.ExtraLoginSessions) } جلسة إضافية)
+								</div>
+								<div class="text-2xs text-emerald-800/90 mt-0.5">
+									منحت إدارة المنصة لمنشأتك جلسات متزامنة وأجهزة متصلة إضافية لتمكين فريق عملك من العمل على المنظومة في وقت واحد.
+								</div>
+							</div>
+						</div>
+						if data.Subscription.ExtraSessionsExpiresAt != "" {
+							<div class="d-flex items-center gap-1.5 bg-white/80 px-3 py-1.5 rounded-lg border border-emerald-200/60 text-xs font-bold text-emerald-900">
+								@components.IconClock("icon-2xs text-emerald-600")
+								<span>تاريخ الصلاحية: <strong class="tabular-nums">{ data.Subscription.ExtraSessionsExpiresAt }</strong></span>
+							</div>
+						}
+					</div>
+				}
+
+				if data.Subscription.HasDaysRemaining && !data.Subscription.IsDefaultPlan && data.Subscription.DaysRemaining <= 7 && data.Subscription.DaysRemaining >= 0 {
+					<div class="p-4 mb-4 rounded-xl bg-amber-50/95 border border-amber-300/90 text-amber-950 d-flex items-center justify-between flex-wrap gap-3 shadow-xs">
+						<div class="d-flex items-center gap-3">
+							<div class="w-9 h-9 rounded-lg bg-amber-100 text-amber-700 d-flex items-center justify-center flex-shrink-0">
+								@components.IconAlert("icon-sm text-amber-700")
+							</div>
+							<div>
+								<div class="text-xs font-black text-amber-950">
+									تنبيه: اقتراب موعد تجديد باقة الاشتراك ({ data.Subscription.DaysRemainingText() })
+								</div>
+								<div class="text-2xs text-amber-800/90 mt-0.5">
+									ينتهي اشتراك باقتك الحالية في { data.Subscription.ExpiresAt }. يرجى التأكد من توفر رصيد كافٍ في محفظتك للتجديد التلقائي لتجنب توقف الميزات.
+								</div>
+							</div>
+						</div>
+						<div class="d-flex items-center gap-2">
+							if orgType == "vendor" || orgType == "supplier" {
+								<a href="/vendor/wallet" class="btn btn-warning btn-sm font-bold gap-1 shadow-2xs">
+									@components.IconWallet("icon-2xs")
+									<span>شحن المحفظة</span>
+								</a>
+							} else {
+								<a href="/customer/wallet" class="btn btn-warning btn-sm font-bold gap-1 shadow-2xs">
+									@components.IconWallet("icon-2xs")
+									<span>شحن المحفظة</span>
+								</a>
+							}
+						</div>
+					</div>
+				}
+
+				<div class="dashboard-stat-grid cols-4 mb-0">
+					<!-- Plan Name & Duration -->
+					<div class="stat-card-3d">
+						<div class="stat-card-label">خطة الاشتراك الحالية</div>
+						<div class="text-base font-black text-primary mt-1">{ data.Subscription.PlanName }</div>
+						if data.Subscription.IsDefaultPlan {
+							<div class="text-xs text-emerald-600 font-bold mt-1">باقة أساسية مجانية دائمة</div>
+						} else {
+							<div class="text-xs text-muted mt-1 tabular-nums">
+								موعد التجديد: <strong class="text-primary font-bold">{ data.Subscription.ExpiresAt }</strong>
+							</div>
+							<div class="text-xs font-extrabold text-brand mt-0.5">
+								{ data.Subscription.DaysRemainingText() }
+							</div>
+						}
+					</div>
+
+					<!-- Concurrent Login Sessions -->
+					<div class="stat-card-3d">
+						<div class="flex-between items-center">
+							<div class="stat-card-label">الجلسات المتزامنة</div>
+							if data.Subscription.HasExtraSessions {
+								<span class="badge badge-emerald text-2xs font-extrabold shadow-2xs">
+									+{ fmt.Sprintf("%d", data.Subscription.ExtraLoginSessions) } إضافية
+								</span>
+							}
+						</div>
+						<div class="stat-card-value text-brand tabular-nums mt-1">
+							{ fmt.Sprintf("%d", data.Subscription.MaxLoginSessions) }
+						</div>
+						if data.Subscription.HasExtraSessions {
+							<div class="text-xs text-emerald-700 font-bold mt-1">
+								(الأساسية: { fmt.Sprintf("%d", data.Subscription.BaseLoginSessions) } + الإضافية: { fmt.Sprintf("%d", data.Subscription.ExtraLoginSessions) })
+							</div>
+							if data.Subscription.ExtraSessionsExpiresAt != "" {
+								<div class="text-2xs text-muted mt-0.5">
+									صالحة حتى { data.Subscription.ExtraSessionsExpiresAt }
+								</div>
+							}
+						} else {
+							<div class="text-xs text-muted mt-1">مشتركة لكافة مستخدمي المنشأة</div>
+						}
+					</div>
+
+					<!-- Max Devices -->
+					<div class="stat-card-3d">
+						<div class="flex-between items-center">
+							<div class="stat-card-label">حد الأجهزة المصرح بها</div>
+							if data.Subscription.HasExtraSessions {
+								<span class="badge badge-emerald text-2xs font-extrabold shadow-2xs">
+									+{ fmt.Sprintf("%d", data.Subscription.ExtraLoginSessions) } أجهزة
+								</span>
+							}
+						</div>
+						<div class="stat-card-value text-primary tabular-nums mt-1">
+							{ fmt.Sprintf("%d", data.Subscription.MaxDevices) }
+						</div>
+						if data.Subscription.HasExtraSessions {
+							<div class="text-xs text-emerald-700 font-bold mt-1">
+								تمت زيادة الأجهزة بفضل الجلسات الإضافية
+							</div>
+						} else {
+							<div class="text-xs text-muted mt-1">الحد الأقصى للأجهزة المتزامنة</div>
+						}
+					</div>
+
+					<!-- AI Gateway Budget & Usage -->
+					<div class="stat-card-3d d-flex flex-col justify-between">
+						<div class="stack-sm">
+							<div class="flex-between items-center mb-1">
+								<span class="stat-card-label text-brand font-black">بوابة الذكاء الاصطناعي</span>
+								<span class="badge badge-sky text-xs font-bold font-mono" dir="ltr">{ data.Subscription.AIPlanID }</span>
+							</div>
+							
+							<div class="mt-2">
+								if data.Subscription.HasAIBudget {
+									<div class="flex-between items-baseline mb-1">
+										<span class="text-xs text-secondary font-bold">الاستهلاك:</span>
+										<div class="tabular-nums text-base font-black text-brand">
+											{ fmt.Sprintf("%d%%", data.Subscription.AIPercentage()) }
+										</div>
+									</div>
+									<div class="progress-bar-container">
+										<div class="progress-bar-fill" style={ fmt.Sprintf("width:%d%%;", data.Subscription.AIPercentage()) }></div>
+									</div>
+									<div class="flex-between text-xs text-muted mt-1">
+										<span>المتبقي: <strong class="text-success tabular-nums">{ fmt.Sprintf("%d%%", 100-data.Subscription.AIPercentage()) }</strong></span>
+										<span>التجديد: <strong class="text-primary">{ data.Subscription.AIResetText() }</strong></span>
+									</div>
+								} else {
+									<div class="text-xs text-secondary font-bold mb-1">الاستهلاك الفعلي:</div>
+									<div class="tabular-nums text-base font-black text-brand">{ data.Subscription.AIUsageText() }</div>
+									<div class="text-xs text-muted mt-1">لا يوجد سقف محدد لهذه الباقة.</div>
+								}
+							</div>
+						</div>
+
+						<div class="mt-3 pt-2 border-t">
+							<a href={ templ.SafeURL(func() string { if orgType == "vendor" || orgType == "supplier" { return "/vendor/ai-logs" }; return "/customer/ai-logs" }()) } class="text-xs font-bold text-brand text-decoration-none d-inline-flex items-center gap-1">
+								<span>سجل الاستهلاك (AI Logs)</span>
+							</a>
+						</div>
+					</div>
+				</div>
+
+				<!-- Auto-Renewal Information & Wallet Balance Status Banner -->
+				if !data.Subscription.IsDefaultPlan {
+					<div class="mt-5 pt-4 border-t border-slate-100">
+						<div class="p-4 rounded-xl border border-slate-200/80 bg-surface-sunken">
+							<div class="d-flex items-center justify-between flex-wrap gap-3 mb-2">
+								<div class="d-flex items-center gap-2">
+									<div class="w-8 h-8 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60">
+										@components.IconWallet("icon-xs")
+									</div>
+									<div>
+										<div class="font-extrabold text-sm text-primary">
+											نظام الفوترة والتجديد التلقائي عبر المحفظة
+										</div>
+										<div class="text-2xs text-secondary">
+											يتم التجديد دورياً وبشكل تلقائي دون أي حاجة للتجديد اليدوي
+										</div>
+									</div>
+								</div>
+								<div class="d-flex items-center gap-2 bg-surface-raised p-2 px-3 rounded-lg border border-slate-200/80">
+									<span class="text-xs text-secondary font-medium">قيمة التجديد القادم:</span>
+									<strong class="text-sm font-black text-primary tabular-nums">
+										@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.NextRenewalAmount() })
+									</strong>
+									<span class="text-2xs text-muted font-bold">
+										if data.BillingCycle == "annual" {
+											/ سنة
+										} else {
+											/ شهر
+										}
+									</span>
+								</div>
+							</div>
+
+							<p class="text-xs text-secondary leading-relaxed mb-3 font-medium">
+								يقوم النظام تلقائياً بتجديد باقتك عند حلول موعد الاستحقاق (<strong>{ data.Subscription.ExpiresAt }</strong>) وخصم القيمة مباشرة من رصيد محفظتك الإلكترونية لضمان استمرارية الخدمات والوصول لمنظومة دوّا 24 وخدمات الذكاء الاصطناعي دون انقطاع.
+							</p>
+
+							<!-- Wallet Balance Coverage Status -->
+							if data.HasSufficientForRenewal() {
+								<div class="p-3 rounded-xl bg-emerald-50/90 border border-emerald-200 d-flex items-center justify-between flex-wrap gap-2 text-xs">
+									<div class="d-flex items-center gap-2 text-emerald-800 font-bold">
+										@components.IconCheckCircle("icon-xs text-emerald-600 flex-shrink-0")
+										<span>رصيدك المتاح حالياً ({ data.WalletBalance.String() } ج.م) يغطي تكلفة التجديد القادم بنجاح.</span>
+									</div>
+									<span class="text-2xs text-emerald-700 font-medium">سيتم التجديد والخصم التلقائي عند حلول الموعد.</span>
+								</div>
+							} else {
+								<div class="p-3.5 rounded-xl bg-amber-50/90 border border-amber-200 d-flex items-center justify-between flex-wrap gap-3 text-xs">
+									<div class="d-flex items-center gap-2 text-amber-900 font-bold">
+										@components.IconAlert("icon-sm text-amber-600 flex-shrink-0")
+										<div>
+											<div>تنبيه: رصيد محفظتك الحالي ({ data.WalletBalance.String() } ج.م) غير كافٍ لتغطية التجديد القادم ({ data.NextRenewalAmount().String() } ج.م).</div>
+											<div class="text-2xs font-normal text-amber-800 mt-0.5">
+												يرجى شحن المحفظة بمبلغ <strong>{ data.ShortfallAmount().String() } ج.م</strong> على الأقل قبل موعد الاستحقاق لتفادي توقف ميزات الباقة.
+											</div>
+										</div>
+									</div>
+									if orgType == "vendor" || orgType == "supplier" {
+										<a href="/vendor/wallet" class="btn btn-primary btn-sm font-bold shadow-xs gap-1.5 px-4">
+											@components.IconPlus("icon-2xs")
+											<span>شحن المحفظة الآن</span>
+										</a>
+									} else {
+										<a href="/customer/wallet" class="btn btn-primary btn-sm font-bold shadow-xs gap-1.5 px-4">
+											@components.IconPlus("icon-2xs")
+											<span>شحن المحفظة الآن</span>
+										</a>
+									}
+								</div>
+							}
+						</div>
+					</div>
+				}
+			</div>
+		}
+
+		<!-- Plans Pricing Cards Section -->
+		@TenantSubscriptionPlans(data, orgType)
+
+		<!-- Checkout and Confirmation Modals -->
+		@TenantSubscriptionModals(data, orgType)
+	</div>
+}

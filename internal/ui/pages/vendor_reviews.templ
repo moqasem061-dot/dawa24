@@ -1,0 +1,242 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorReviewsViewData struct {
+	Reviews       []*org.Review
+	AverageRating float64
+	AvgRep        float64
+	AvgQuality    float64
+	AvgSpeed      float64
+	TotalCount    int
+}
+
+// VendorReviewsPage renders all pharmacy ratings and reviews received by the vendor.
+templ VendorReviewsPage(data VendorReviewsViewData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "reviews.page_title"), "reviews", lang, dir) {
+		<div class="page-container py-2">
+			
+			<!-- Header Banner -->
+			<div class="glass-panel p-5 mb-5 flex-between flex-wrap gap-4 border rounded-2xl shadow-xs">
+				<div class="stack-2xs">
+					<nav class="text-xs text-muted mb-1 d-flex items-center gap-1.5 font-bold">
+						<a href="/vendor/dashboard" class="text-secondary transition-colors">{ i18n.T(lang, "vendor_dashboard.page_title") }</a>
+						<span class="text-muted">/</span>
+						<span class="text-primary font-black">{ i18n.T(lang, "reviews.page_title") }</span>
+					</nav>
+					<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+						{ fmt.Sprintf(i18n.T(lang, "reviews.header_title"), data.TotalCount) }
+					</h1>
+					<p class="text-xs text-secondary mt-1 mb-0 font-medium">
+						{ i18n.T(lang, "reviews.header_desc") }
+					</p>
+				</div>
+
+				<div class="d-flex items-center gap-3">
+					<div class="d-flex items-center gap-2 px-3.5 py-2 bg-surface-sunken border rounded-xl shadow-2xs">
+						@components.IconStar("icon-sm text-amber")
+						<div class="d-flex flex-col">
+							<span class="text-2xs text-muted font-bold">{ i18n.T(lang, "reviews.overall_avg") }</span>
+							<strong class="text-base font-black text-primary tabular-nums">
+								if data.TotalCount > 0 {
+									{ fmt.Sprintf("%.1f / 5.0", data.AverageRating) }
+								} else {
+									<span>—</span>
+								}
+							</strong>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Scorecards Breakdown -->
+			if data.TotalCount > 0 {
+				<div class="dashboard-stat-grid cols-3 mb-6">
+					
+					<div class="stat-card-3d">
+						<div class="flex-between items-center mb-1">
+							<span class="stat-card-label">{ i18n.T(lang, "reviews.rep_title") }</span>
+							@components.IconUsers("icon-xs text-brand")
+						</div>
+						<div class="stat-card-value text-brand tabular-nums">
+							{ fmt.Sprintf("%.1f", data.AvgRep) } <span class="text-xs font-bold text-muted">/ 5</span>
+						</div>
+						<span class="text-xs text-secondary mt-1 d-block font-medium">{ i18n.T(lang, "reviews.rep_desc") }</span>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="flex-between items-center mb-1">
+							<span class="stat-card-label">{ i18n.T(lang, "reviews.quality_title") }</span>
+							@components.IconShield("icon-xs text-emerald")
+						</div>
+						<div class="stat-card-value text-emerald tabular-nums">
+							{ fmt.Sprintf("%.1f", data.AvgQuality) } <span class="text-xs font-bold text-muted">/ 5</span>
+						</div>
+						<span class="text-xs text-secondary mt-1 d-block font-medium">{ i18n.T(lang, "reviews.quality_desc") }</span>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="flex-between items-center mb-1">
+							<span class="stat-card-label">{ i18n.T(lang, "reviews.speed_title") }</span>
+							@components.IconClock("icon-xs text-sky")
+						</div>
+						<div class="stat-card-value text-sky tabular-nums">
+							{ fmt.Sprintf("%.1f", data.AvgSpeed) } <span class="text-xs font-bold text-muted">/ 5</span>
+						</div>
+						<span class="text-xs text-secondary mt-1 d-block font-medium">{ i18n.T(lang, "reviews.speed_desc") }</span>
+					</div>
+
+				</div>
+			}
+
+			<!-- Reviews List -->
+			if len(data.Reviews) == 0 {
+				<div class="glass-panel p-10 text-center border rounded-2xl shadow-xs">
+					<div class="w-12 h-12 rounded-full bg-primary-subtle text-primary d-flex items-center justify-center mx-auto mb-3">
+						@components.IconStar("icon-md")
+					</div>
+					<h3 class="text-base font-extrabold text-primary mb-1.5">{ i18n.T(lang, "reviews.empty_title") }</h3>
+					<p class="text-xs text-secondary mb-0 max-w-md mx-auto font-medium">
+						{ i18n.T(lang, "reviews.empty_desc") }
+					</p>
+				</div>
+			} else {
+				<div class="d-flex flex-col gap-4 mb-6">
+					for _, rv := range data.Reviews {
+						{{
+							scRep := rv.ScoreRep
+							if scRep <= 0 {
+								scRep = rv.Rating
+							}
+							scQuality := rv.ScoreQuality
+							if scQuality <= 0 {
+								scQuality = rv.Rating
+							}
+							scSpeed := rv.ScoreSpeed
+							if scSpeed <= 0 {
+								scSpeed = rv.Rating
+							}
+						}}
+						<div class="review-card-item">
+							<!-- Card Top Bar: Pharmacy Name, Rating, Date -->
+							<div class="review-card-header">
+								<div class="d-flex items-center gap-3">
+									<div class="w-9 h-9 rounded-full bg-emerald-50 text-emerald-700 font-black d-flex items-center justify-center flex-shrink-0 text-xs border border-emerald-200">
+										@components.IconBuilding("icon-2xs")
+									</div>
+									<div class="stack-2xs">
+										<div class="d-flex items-center gap-2">
+											<strong class="text-xs font-black text-primary">{ rv.ReviewerOrgName }</strong>
+											if rv.OrderNumber != "" {
+												<span class="badge badge-slate text-2xs font-mono font-bold">
+													{ fmt.Sprintf(i18n.T(lang, "reviews.order_num_prefix"), rv.OrderNumber) }
+												</span>
+											}
+										</div>
+										<span class="text-2xs text-muted font-medium d-block mt-0.5">
+											{ format.Date(rv.CreatedAt, lang) }
+										</span>
+									</div>
+								</div>
+
+								<div class="d-flex items-center gap-2">
+									@components.RatingStars(float64(rv.Rating), 0)
+									<span class="badge badge-amber text-2xs font-black tabular-nums">
+										{ fmt.Sprintf("%d / 5", rv.Rating) }
+									</span>
+								</div>
+							</div>
+
+							<!-- 3 Metrics Criteria Badges -->
+							<div class="review-criteria-strip">
+								<span class="review-criteria-chip">
+									<span>{ i18n.T(lang, "reviews.crit_rep") }</span>
+									<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scRep) }</strong>
+								</span>
+								<span class="review-criteria-chip">
+									<span>{ i18n.T(lang, "reviews.crit_quality") }</span>
+									<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scQuality) }</strong>
+								</span>
+								<span class="review-criteria-chip">
+									<span>{ i18n.T(lang, "reviews.crit_speed") }</span>
+									<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scSpeed) }</strong>
+								</span>
+							</div>
+
+							<!-- Pharmacy Review Text -->
+							if rv.ReviewText != "" {
+								<blockquote class="review-quote-body">
+									{ rv.ReviewText }
+								</blockquote>
+							}
+
+							<!-- Vendor Reply Section -->
+							if rv.Response != "" {
+								<div class="p-3.5 bg-brand-subtle border border-brand/20 rounded-xl">
+									<div class="flex-between items-center mb-1">
+										<div class="d-flex items-center gap-1.5 text-xs font-black text-brand">
+											@components.IconCheck("icon-2xs")
+											<span>{ i18n.T(lang, "reviews.official_reply") }</span>
+										</div>
+										if rv.ResponseAt != nil {
+											<span class="text-2xs text-muted font-medium">
+												{ format.Date(*rv.ResponseAt, lang) }
+											</span>
+										}
+									</div>
+									<p class="text-xs text-primary m-0 font-medium leading-relaxed">
+										{ rv.Response }
+									</p>
+								</div>
+							}
+
+							<!-- Reply Action / Form (Toggleable) -->
+							<div class="pt-2 border-t mt-1">
+								<details class="group">
+									<summary class="btn btn-secondary btn-xs font-bold cursor-pointer inline-flex items-center gap-1.5 select-none">
+										@components.IconMessageSquare("icon-2xs")
+										if rv.Response != "" {
+											<span>{ i18n.T(lang, "reviews.edit_reply_btn") }</span>
+										} else {
+											<span>{ i18n.T(lang, "reviews.add_reply_btn") }</span>
+										}
+									</summary>
+									<form
+										method="POST"
+										action={ templ.SafeURL(fmt.Sprintf("/vendor/reviews/%d/reply", rv.ID)) }
+										class="mt-3 p-3.5 bg-surface-sunken border rounded-xl d-flex flex-col gap-2.5"
+									>
+										<label class="text-xs font-bold text-primary">{ i18n.T(lang, "reviews.reply_label") }</label>
+										<textarea
+											name="response"
+											rows="3"
+											required
+											class="form-input text-xs w-full"
+											placeholder={ i18n.T(lang, "reviews.reply_placeholder") }
+										>{ rv.Response }</textarea>
+										<div class="d-flex justify-end gap-2">
+											<button type="submit" class="btn btn-primary btn-sm font-black px-4 shadow-xs">
+												@components.IconCheck("icon-xs")
+												<span>{ i18n.T(lang, "reviews.publish_reply") }</span>
+											</button>
+										</div>
+									</form>
+								</details>
+							</div>
+
+						</div>
+					}
+				</div>
+			}
+
+		</div>
+	}
+}

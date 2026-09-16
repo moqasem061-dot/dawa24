@@ -1,0 +1,231 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+)
+
+// One error, in full.
+//
+// The modal this replaces was empty, and it was empty for a reason worth
+// recording. The page embedded each row's detail as a `<script
+// type="application/json">` block built from templ expressions:
+//
+//	"error_message": { fmt.Sprintf("%q", err.ErrorMessage) },
+//
+// templ escapes a text expression, so every quote came out as `&#34;` and the
+// document was not JSON. JSON.parse threw, and the Alpine handler's catch
+// substituted a two-field placeholder — an id and the words "error details" —
+// which is precisely what an administrator saw.
+//
+// Loading the body over HTMX removes the escaping problem rather than working
+// around it, and stops a thirty-row page from carrying thirty stack traces it
+// will never show.
+
+templ AdminErrorDetailFragment(e *platformadmin.ErrorLog, lang string) {
+	if e == nil {
+		<p class="text-xs text-secondary p-4 text-center m-0">{ i18n.T(lang, "admin.err.not_found") }</p>
+	} else {
+		<div class="d-flex flex-col gap-4 text-start">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				@errorLevelBadge(e.ErrorLevel)
+				<span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "admin.err.status_"+e.Status) }</span>
+				<span class="text-2xs text-muted tabular-nums" dir="ltr">
+					{ e.CreatedAt.Format("2006-01-02 15:04:05") }
+				</span>
+				<span class="text-2xs text-muted" dir="ltr"><code>#{ fmt.Sprintf("%d", e.ID) }</code></span>
+			</div>
+			<div class="glass-panel p-4 mb-0 bg-surface-sunken border rounded-xl">
+				<p class="font-bold text-primary m-0">{ e.ErrorMessage }</p>
+				if e.ExceptionClass != "" {
+					<p class="text-2xs text-muted m-0 mt-1" dir="ltr"><code>{ e.ExceptionClass }</code></p>
+				}
+			</div>
+			<div class="grid-2 gap-3">
+				@errorDetailField(i18n.T(lang, "admin.err.request"), errorRequestLine(e), true)
+				@errorDetailField(i18n.T(lang, "admin.err.source"), errorSourceLine(e), true)
+				@errorDetailField(i18n.T(lang, "admin.err.user"), errorUserLine(e), false)
+				@errorDetailField(i18n.T(lang, "admin.err.organization"), e.OrganizationName, false)
+				@errorDetailField(i18n.T(lang, "admin.err.ip"), e.IPAddress, true)
+				@errorDetailField(i18n.T(lang, "admin.err.user_agent"), e.UserAgent, true)
+			</div>
+			if len(e.RequestPayload) > 0 {
+				<div class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.err.payload") }</h4>
+					<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0" dir="ltr">{ prettyJSON(e.RequestPayload) }</pre>
+				</div>
+			}
+			if e.StackTrace != "" {
+				<div class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.err.stack") }</h4>
+					<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0" style="max-height:22rem" dir="ltr">{ e.StackTrace }</pre>
+				</div>
+			} else {
+				<p class="text-2xs text-muted m-0">{ i18n.T(lang, "admin.err.no_stack") }</p>
+			}
+			<div class="modal-footer">
+				for _, st := range []string{"investigating", "resolved", "ignored"} {
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/developers/errors/%d/status", e.ID)) } class="m-0">
+						<input type="hidden" name="status" value={ st }/>
+						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+							{ i18n.TKey(lang, "admin.err.mark_"+st) }
+						</button>
+					</form>
+				}
+			</div>
+		</div>
+	}
+}
+
+templ errorDetailField(label, value string, ltr bool) {
+	<div class="stack-xs">
+		<span class="text-2xs text-muted font-bold">{ label }</span>
+		if value == "" {
+			<span class="text-2xs text-muted">—</span>
+		} else if ltr {
+			<span class="text-xs font-bold text-primary" dir="ltr">{ value }</span>
+		} else {
+			<span class="text-xs font-bold text-primary">{ value }</span>
+		}
+	</div>
+}
+
+templ errorLevelBadge(level string) {
+	switch level {
+		case "CRITICAL", "critical":
+			<span class="badge badge-rose font-black text-2xs">{ level }</span>
+		case "WARNING", "warning":
+			<span class="badge badge-amber font-bold text-2xs">{ level }</span>
+		default:
+			<span class="badge badge-slate font-bold text-2xs">{ level }</span>
+	}
+}
+
+// errorRequestLine is the method and path together, because neither is useful
+// on its own.
+func errorRequestLine(e *platformadmin.ErrorLog) string {
+	if e == nil {
+		return ""
+	}
+	switch {
+	case e.HTTPMethod != "" && e.URLPath != "":
+		return e.HTTPMethod + " " + e.URLPath
+	case e.URLPath != "":
+		return e.URLPath
+	default:
+		return e.HTTPMethod
+	}
+}
+
+// errorSourceLine is the file and line the fault was raised from.
+func errorSourceLine(e *platformadmin.ErrorLog) string {
+	if e == nil || e.FilePath == "" {
+		return ""
+	}
+	if e.LineNumber > 0 {
+		return fmt.Sprintf("%s:%d", e.FilePath, e.LineNumber)
+	}
+	return e.FilePath
+}
+
+func errorUserLine(e *platformadmin.ErrorLog) string {
+	if e == nil {
+		return ""
+	}
+	switch {
+	case e.UserName != "" && e.UserEmail != "":
+		return e.UserName + " · " + e.UserEmail
+	case e.UserName != "":
+		return e.UserName
+	default:
+		return e.UserEmail
+	}
+}
+
+// prettyJSON renders the captured request body for a person to read.
+//
+// A payload that cannot be re-encoded is shown as the reason it could not,
+// rather than as an empty block: an operator needs to know the difference
+// between "there was no payload" and "the payload is unreadable".
+func prettyJSON(v map[string]any) string {
+	if len(v) == 0 {
+		return ""
+	}
+	out, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return fmt.Sprintf("<unrenderable payload: %v>", err)
+	}
+	return string(out)
+}
+
+
+// One audit entry, in full.
+//
+// The same escaping defect emptied this modal: the page embedded each entry's
+// before/after diff as a script block of templ-escaped JSON, so JSON.parse
+// threw and the Alpine handler substituted a placeholder naming the entry id
+// and nothing else.
+templ AdminAuditDetailFragment(e *platformadmin.AuditEntry, lang string) {
+	if e == nil {
+		<p class="text-xs text-secondary p-4 text-center m-0">{ i18n.T(lang, "admin.err.not_found") }</p>
+	} else {
+		<div class="d-flex flex-col gap-4 text-start">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<span class="badge badge-brand text-2xs font-bold">{ e.Action }</span>
+				<span class="text-2xs text-muted tabular-nums" dir="ltr">{ e.CreatedAt.Format("2006-01-02 15:04:05") }</span>
+				<span class="text-2xs text-muted" dir="ltr"><code>#{ fmt.Sprintf("%d", e.ID) }</code></span>
+			</div>
+			<div class="grid-2 gap-3">
+				@errorDetailField(i18n.T(lang, "admin.err.user"), errorAuditActor(e), false)
+				@errorDetailField(i18n.T(lang, "admin.err.organization"), e.OrganizationName, false)
+				@errorDetailField(i18n.T(lang, "admin.audit.entity"), auditEntityLine(e), true)
+				@errorDetailField(i18n.T(lang, "admin.err.ip"), e.IPAddress, true)
+			</div>
+			<div class="grid-2 gap-3">
+				<div class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.audit.before") }</h4>
+					if len(e.Before) == 0 {
+						<p class="text-2xs text-muted m-0">{ i18n.T(lang, "admin.audit.no_before") }</p>
+					} else {
+						<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0" dir="ltr">{ prettyJSON(e.Before) }</pre>
+					}
+				</div>
+				<div class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.audit.after") }</h4>
+					if len(e.After) == 0 {
+						<p class="text-2xs text-muted m-0">{ i18n.T(lang, "admin.audit.no_after") }</p>
+					} else {
+						<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0" dir="ltr">{ prettyJSON(e.After) }</pre>
+					}
+				</div>
+			</div>
+		</div>
+	}
+}
+
+func errorAuditActor(e *platformadmin.AuditEntry) string {
+	if e == nil {
+		return ""
+	}
+	switch {
+	case e.ActorName != "" && e.ActorEmail != "":
+		return e.ActorName + " · " + e.ActorEmail
+	case e.ActorName != "":
+		return e.ActorName
+	default:
+		return e.ActorEmail
+	}
+}
+
+func auditEntityLine(e *platformadmin.AuditEntry) string {
+	if e == nil || e.EntityType == "" {
+		return ""
+	}
+	if e.EntityID != "" {
+		return e.EntityType + " #" + e.EntityID
+	}
+	return e.EntityType
+}

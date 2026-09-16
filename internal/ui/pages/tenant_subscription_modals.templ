@@ -1,0 +1,202 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ TenantSubscriptionModals(data TenantSubscriptionPageData, orgType string) {
+	<!-- Step 1: In-App Wallet Checkout Modal -->
+	@components.Modal(components.ModalProps{
+		ID:         "checkout-plan-modal",
+		AlpineOpen: "isCheckoutOpen",
+		Title:      "ترقية وتفعيل باقة الاشتراك عبر المحفظة",
+		Size:       "md",
+	}) {
+		<div class="d-flex flex-col gap-4">
+			<!-- Upgrade Notice -->
+			<div x-show="isUpgrade" class="p-3.5 rounded-xl bg-amber-50/90 border border-amber-300 text-amber-950 text-xs d-flex items-start gap-2.5 shadow-2xs">
+				@components.IconSparkles("icon-xs text-amber-600 flex-shrink-0 mt-0.5")
+				<div class="leading-relaxed">
+					<strong class="d-block font-black text-amber-950 mb-1">
+						تنبيه هام حول ترقية الباقة وتصفير الاستهلاك:
+					</strong>
+					<span class="text-amber-900 text-xs font-medium">
+						عند ترقية باقتك الحالية، يتم <strong>تصفير الاستهلاك السابق تلقائياً</strong> وبدء دورة استهلاك جديدة فوراً بكامل حصة الذكاء الاصطناعي (AI Quota)، وعدد الجلسات، وكافة مميزات الباقة الجديدة.
+					</span>
+				</div>
+			</div>
+
+			<!-- Informational Notice on Automatic Renewal -->
+			<div x-show="!isUpgrade" class="p-3 rounded-xl bg-sky-50/80 border border-sky-200/80 text-sky-900 text-xs d-flex items-start gap-2">
+				@components.IconInfo("icon-xs text-sky-600 flex-shrink-0 mt-0.5")
+				<div class="text-2xs leading-relaxed">
+					<strong class="d-block font-bold mb-0.5 text-sky-950">اشتراك فوري ودفع من المحفظة:</strong>
+					سيتم خصم قيمة الاشتراك لأول دورة فوترة الآن من رصيدك المتاح، ويتولى النظام تلقائياً تجديد الباقة في نهاية كل دورة من رصيد المحفظة.
+				</div>
+			</div>
+
+			<!-- Billing Cycle Choice -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs mb-2 d-block text-primary">دورة الفوترة والتجديد:</label>
+				<div class="d-grid grid-auto-fit-sm gap-2">
+					<!-- Monthly Radio -->
+					<label
+						class="p-3 rounded-xl border cursor-pointer d-flex flex-col gap-1 transition-all"
+						:class="planBillingPeriod === 'monthly' ? 'bg-brand-50/50 border-brand-500 shadow-2xs' : 'bg-surface-sunken border-slate-200/80'"
+					>
+						<div class="flex-between items-center">
+							<span class="font-bold text-xs text-primary">اشتراك شهري</span>
+							<input type="radio" name="billing_cycle_choice" value="monthly" x-model="planBillingPeriod" class="form-check-input" />
+						</div>
+						<div class="text-sm font-black text-primary tabular-nums mt-1" x-text="(selectedPlanMonthMinor / 100).toLocaleString('en-US', {minimumFractionDigits:2}) + ' ج.م / شهر'"></div>
+					</label>
+
+					<!-- Annual Radio -->
+					<label
+						class="p-3 rounded-xl border cursor-pointer d-flex flex-col gap-1 transition-all"
+						:class="planBillingPeriod === 'annual' ? 'bg-brand-50/50 border-brand-500 shadow-2xs' : 'bg-surface-sunken border-slate-200/80'"
+					>
+						<div class="flex-between items-center">
+							<span class="font-bold text-xs text-primary">اشتراك سنوي</span>
+							<input type="radio" name="billing_cycle_choice" value="annual" x-model="planBillingPeriod" class="form-check-input" />
+						</div>
+						<div class="text-sm font-black text-primary tabular-nums mt-1" x-text="(selectedPlanYearMinor / 100).toLocaleString('en-US', {minimumFractionDigits:2}) + ' ج.م / سنة'"></div>
+						<span class="badge badge-emerald font-extrabold text-2xs mt-1">وفر شهرين مجاناً</span>
+					</label>
+				</div>
+			</div>
+
+			<!-- Wallet Balance & Summary Breakdown -->
+			<div class="p-4 rounded-xl bg-surface-sunken border border-slate-200/80">
+				<div class="flex-between items-center text-xs text-secondary mb-2 font-medium">
+					<span>المبلغ الإجمالي المستحق:</span>
+					<strong class="text-base font-black text-primary tabular-nums" x-text="currentCostFormatted"></strong>
+				</div>
+				<div class="flex-between items-center text-xs text-secondary mb-2 font-medium">
+					<span>رصيدك المتاح في المحفظة:</span>
+					<strong class="text-sm font-bold text-brand tabular-nums">
+						@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.WalletBalance })
+					</strong>
+				</div>
+				<div class="border-t border-slate-200/80 pt-2 mt-2 flex-between items-center text-xs font-medium">
+					<span>الرصيد المتبقي بعد الخصم:</span>
+					<strong
+						class="font-black tabular-nums"
+						:class="hasSufficientBalance ? 'text-success' : 'text-danger'"
+						x-text="hasSufficientBalance ? remainingBalanceFormatted : 'رصيد غير كافٍ'"
+					></strong>
+				</div>
+			</div>
+
+			<!-- Insufficient Balance Warning -->
+			<template x-if="!hasSufficientBalance && currentCostMinor > 0">
+				<div class="alert alert-danger p-3.5 rounded-xl d-flex items-center gap-2.5 text-xs border border-rose-200 bg-rose-50/70 shadow-xs">
+					@components.IconAlert("icon-xs text-rose-600 flex-shrink-0")
+					<div class="flex-1 font-medium">
+						<strong class="text-rose-800 d-block font-bold">رصيد محفظتك غير كافٍ لإتمام الترقية.</strong>
+						<span class="text-rose-700 text-2xs">يرجى شحن المحفظة أولاً بالقيمة المطلوبة.</span>
+					</div>
+					if orgType == "vendor" || orgType == "supplier" {
+						<a href="/vendor/wallet" class="btn btn-secondary btn-xs font-bold shadow-2xs" target="_blank">شحن الآن ↗</a>
+					} else {
+						<a href="/customer/wallet" class="btn btn-secondary btn-xs font-bold shadow-2xs" target="_blank">شحن الآن ↗</a>
+					}
+				</div>
+			</template>
+
+			<!-- Auto Renewal Checkbox -->
+			<div class="p-3.5 rounded-xl border border-slate-200/80 bg-surface-raised d-flex items-start gap-3">
+				<input
+					type="checkbox"
+					id="sub_auto_renew_preview"
+					x-model="autoRenew"
+					class="form-checkbox mt-0.5"
+				/>
+				<label for="sub_auto_renew_preview" class="text-xs cursor-pointer">
+					<strong class="text-primary d-block font-bold mb-0.5">تفعيل التجديد التلقائي للاشتراك</strong>
+					<span class="text-muted leading-relaxed font-medium text-2xs">
+						يقوم النظام تلقائياً بتجديد باقتك عند موعد الاستحقاق وخصم القيمة من محفظتك لضمان عدم توقف الخدمات.
+					</span>
+				</label>
+			</div>
+
+			<!-- Buttons advancing to Confirmation Modal -->
+			<div class="flex-between items-center pt-3 border-t border-slate-100 gap-2">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					@click="isCheckoutOpen = false"
+				>
+					إلغاء
+				</button>
+
+				<button
+					type="button"
+					class="btn btn-primary btn-sm font-black gap-1.5 shadow-sm px-5"
+					:disabled="!hasSufficientBalance && currentCostMinor > 0"
+					@click="openConfirm()"
+				>
+					@components.IconSparkles("icon-xs")
+					<span>متابعة التأكيد</span>
+				</button>
+			</div>
+		</div>
+	}
+
+	<!-- Step 2: Second, Smaller Confirmation Modal (WO-15 Rule 5 - 'مش أكتر ولا أقل') -->
+	@components.Modal(components.ModalProps{
+		ID:         "confirm-plan-modal",
+		AlpineOpen: "isConfirmOpen",
+		Title:      "تأكيد الاشتراك وتغيير الباقة",
+		Size:       "sm",
+	}) {
+		<form
+			method="POST"
+			action={ templ.SafeURL(func() string { if orgType == "vendor" || orgType == "supplier" { return "/vendor/subscription/checkout" }; return "/customer/subscription/checkout" }()) }
+			class="m-0 d-flex flex-col gap-4"
+		>
+			<input type="hidden" name="plan_slug" :value="selectedPlanSlug" />
+			<input type="hidden" name="billing_cycle" :value="planBillingPeriod" />
+			<input type="hidden" name="auto_renew" :value="autoRenew ? 'true' : 'false'" />
+
+			<!-- Clean Restatement Card (Plan, Cycle, Amount, Cooldown Finality Notice) -->
+			<div class="p-4 rounded-xl bg-surface-sunken border border-slate-200/80 d-flex flex-col gap-3 text-xs">
+				<div class="flex-between items-center pb-2.5 border-b border-slate-200/60">
+					<span class="text-secondary font-medium">الباقة المختارة:</span>
+					<strong class="text-sm font-black text-primary" x-text="selectedPlanName"></strong>
+				</div>
+				<div class="flex-between items-center pb-2.5 border-b border-slate-200/60">
+					<span class="text-secondary font-medium">دورة الفوترة:</span>
+					<strong class="font-bold text-primary" x-text="planBillingPeriod === 'annual' ? 'اشتراك سنوي' : 'اشتراك شهري'"></strong>
+				</div>
+				<div class="flex-between items-center pb-2.5 border-b border-slate-200/60">
+					<span class="text-secondary font-medium">المبلغ المخصوم من المحفظة:</span>
+					<strong class="text-base font-black text-brand tabular-nums" x-text="currentCostFormatted"></strong>
+				</div>
+				<div class="p-3 rounded-lg bg-amber-50/90 border border-amber-200/90 text-amber-900 leading-relaxed font-bold text-2xs">
+					@components.IconAlert("icon-2xs text-amber-600 me-1 d-inline")
+					<span>تنبيه نهائي: هذا التغيير نهائي ولا يمكن تغيير الباقة مرة أخرى طوال فترة التهدئة ({ data.CooldownPeriodLabel() }).</span>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="flex-between items-center pt-3 border-t border-slate-100 gap-2">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					@click="backToCheckout()"
+				>
+					رجوع
+				</button>
+
+				<button
+					type="submit"
+					class="btn btn-primary btn-sm font-black gap-1.5 shadow-sm px-5"
+				>
+					@components.IconCheckCircle("icon-xs")
+					<span>تأكيد الخصم المباشر من المحفظة</span>
+				</button>
+			</div>
+		</form>
+	}
+}

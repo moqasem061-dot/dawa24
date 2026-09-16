@@ -1,0 +1,92 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"fmt"
+)
+
+// The shared wizard chrome.
+//
+// One rail, one switch, one group heading, rendered identically by all four
+// importers. The markup is the administrator's `.wiz-*` vocabulary, which the
+// stylesheet already carries; the smart order's parallel `.so-stepbar` set is
+// folded onto it so a fix to either lands on both.
+
+// WizardRail renders the numbered progress rail.
+//
+// A step this wizard does not offer is still rendered, greyed and unnumbered in
+// the reader's mind but numbered on the page, so "the settings are step 3" is
+// true everywhere — including where step 3 is not offered.
+templ WizardRail(steps []WizardStep) {
+	<nav class="wiz-rail" aria-label="مراحل الاستيراد">
+		for i, step := range steps {
+			if i > 0 {
+				<span class="wiz-sep" aria-hidden="true"></span>
+			}
+			<span
+				class={ "wiz-node",
+					templ.KV("is-active", step.Active),
+					templ.KV("is-done", step.Done),
+					templ.KV("is-skipped", step.Skipped) }
+				if step.Active {
+					aria-current="step"
+				}
+				if step.Skipped {
+					title="هذه الخطوة غير مطلوبة في هذا النوع من الاستيراد"
+				}
+			>
+				<span class="wiz-bubble" aria-hidden="true">
+					if step.Done {
+						@components.IconCheck("icon-sm")
+					} else if step.Skipped {
+						—
+					} else {
+						{ step.Icon }
+					}
+				</span>
+				<span>{ fmt.Sprintf("%d. %s", step.Number, step.Title) }</span>
+			</span>
+		}
+	</nav>
+}
+
+// WizardToggles renders one group of switches under its heading.
+//
+// The group is omitted entirely when it holds nothing, rather than leaving a
+// heading over empty space.
+templ WizardToggles(all []WizardToggle, group ToggleGroup) {
+	if len(TogglesInGroup(all, group)) > 0 {
+		<div class="glass-panel">
+			<h3 class="wiz-head">{ group.Label() }</h3>
+			<div class="wiz-switches">
+				for _, t := range TogglesInGroup(all, group) {
+					@WizardSwitch(t)
+				}
+			</div>
+		</div>
+	}
+}
+
+// WizardSwitch renders one switch, enabled or explained.
+templ WizardSwitch(t WizardToggle) {
+	<label class={ "wiz-switch", templ.KV("is-disabled", t.Disabled) }>
+		if t.Disabled {
+			<input type="checkbox" disabled/>
+		} else {
+			<input type="checkbox" name={ t.Name } value="1" checked?={ t.Checked }/>
+		}
+		<span class="wiz-switch-icon" aria-hidden="true">{ t.Icon }</span>
+		<span class="wiz-switch-main">
+			<span class="wiz-switch-title">{ t.Title }</span>
+			if t.Description != "" {
+				<span class="wiz-switch-text">{ t.Description }</span>
+			}
+			if t.Note != "" {
+				<span class="wiz-switch-text">{ t.Note }</span>
+			}
+		</span>
+		if !t.Disabled {
+			<span class="wiz-track" aria-hidden="true"></span>
+		}
+	</label>
+}

@@ -1,0 +1,309 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
+	@SuppliersMapStyles()
+
+	<!-- View 2: Interactive Map View -->
+	<div id="suppliers-map-view" class={ templ.KV("d-none", data.ActiveTab != "map") }>
+		<div class="suppliers-map-layout mb-6">
+			<!-- Map Side Panel: Quick List & Focus -->
+			<div class="glass-panel p-4 map-side-panel">
+				<div class="pb-3 mb-3 border-b">
+					<h3 class="font-bold text-sm m-0 text-primary">
+						مواقع فروع ومخازن الموردين
+					</h3>
+					<p class="text-xs text-secondary m-0 mt-0.5">
+						انقر على أي فرع أو مورد للتركيز عليه وتكبير الخريطة
+					</p>
+				</div>
+
+				<div class="d-flex flex-col gap-2">
+					if len(data.AllPins) > 0 {
+						for idx, pin := range data.AllPins {
+							<div
+								id={ fmt.Sprintf("supplier-card-%d", idx) }
+								data-supplier-idx={ fmt.Sprintf("%d", idx) }
+								class="map-supplier-item p-3 rounded-xl bg-surface-sunken border cursor-pointer transition-all"
+								data-on-click="focusSupplierOnMap" data-args={ components.JSArgs(idx) }
+							>
+								<div class="flex-between items-center gap-2 mb-1">
+									<strong class="text-xs text-primary font-extrabold line-clamp-1">
+										{ pin.Name }
+									</strong>
+									if pin.IsOpen {
+										<span class="badge badge-emerald text-2xs font-bold py-0 px-1.5">مفتوح</span>
+									} else {
+										<span class="badge badge-slate text-2xs font-bold py-0 px-1.5">مغلق</span>
+									}
+								</div>
+								if pin.Hours != "" {
+									<div class="d-flex items-center gap-1.5 text-2xs text-secondary">
+										<span>⏱</span>
+										<span>{ pin.Hours }</span>
+									</div>
+								}
+								if pin.Address != "" {
+									<div class="text-2xs text-muted mt-1 line-clamp-1">
+										📍 { pin.Address }
+									</div>
+								}
+							</div>
+						}
+					} else {
+						for idx, s := range data.Suppliers {
+							<div
+								id={ fmt.Sprintf("supplier-card-%d", idx) }
+								data-supplier-idx={ fmt.Sprintf("%d", idx) }
+								class="map-supplier-item p-3 rounded-xl bg-surface-sunken border cursor-pointer transition-all"
+								data-on-click="focusSupplierOnMap" data-args={ components.JSArgs(idx) }
+							>
+								<div class="flex-between items-center gap-2 mb-1">
+									<strong class="text-xs text-primary font-extrabold line-clamp-1">
+										if s.Org.TradeName.Get(i18n.Lang(lang)) != "" {
+											{ s.Org.TradeName.Get(i18n.Lang(lang)) }
+										} else {
+											{ s.Org.LegalName }
+										}
+									</strong>
+									if s.IsOpenNow {
+										<span class="badge badge-emerald text-2xs font-bold py-0 px-1.5">مفتوح</span>
+									} else {
+										<span class="badge badge-slate text-2xs font-bold py-0 px-1.5">مغلق</span>
+									}
+								</div>
+								<div class="d-flex items-center gap-1.5 text-2xs text-secondary">
+									<span>⏱</span>
+									<span>{ s.WorkingHours }</span>
+								</div>
+								if s.Address != "" {
+									<div class="text-2xs text-muted mt-1 line-clamp-1">
+										📍 { s.Address }
+									</div>
+								}
+							</div>
+						}
+					}
+				</div>
+			</div>
+
+			<!-- Map Container -->
+			<div class="glass-panel p-0 overflow-hidden map-container-frame">
+				<div id="suppliers-leaflet-map" style="width: 100%; height: 600px; min-height: 480px;"></div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Hidden data carrier for map pins -->
+	<div id="suppliers-map-data" class="d-none" data-pins={ SuppliersMapJSON(data, lang) }></div>
+
+	<!-- Interactive Map & View Switcher Script -->
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		let mapInstance = null;
+		const markers = [];
+		let activeMarkerIdx = -1;
+
+		function getSuppliersData() {
+			try {
+				const el = document.getElementById('suppliers-map-data');
+				if (!el) return [];
+				const raw = el.getAttribute('data-pins');
+				if (!raw) return [];
+				const parsed = JSON.parse(raw);
+				return Array.isArray(parsed) ? parsed : [];
+			} catch (e) {
+				console.error('Failed to parse suppliers map data:', e);
+				return [];
+			}
+		}
+
+		function getSupplierPinIcon(isOpen, isFocused, name) {
+			const statusClass = isOpen ? 'is-open' : 'is-closed';
+			const focusedClass = isFocused ? 'is-focused' : '';
+			const beaconHtml = isFocused ? '<div class="supplier-beacon-ring"></div><div class="supplier-beacon-ring-2"></div><div class="supplier-floating-badge">' + (name || 'فرع / مورد') + ' 📍</div>' : '';
+			
+			return L.divIcon({
+				className: 'custom-map-pin',
+				html: '<div class="supplier-pin-wrapper ' + focusedClass + '">' +
+					beaconHtml +
+					'<div class="supplier-pin-body ' + statusClass + '">' +
+						'<div class="supplier-pin-icon">🏢</div>' +
+						'<span class="supplier-pin-status-dot ' + statusClass + '"></span>' +
+					'</div>' +
+				'</div>',
+				iconSize: [42, 48],
+				iconAnchor: [21, 44],
+				popupAnchor: [0, -44]
+			});
+		}
+
+		function initSuppliersMap() {
+			if (mapInstance) return;
+			const mapEl = document.getElementById('suppliers-leaflet-map');
+			if (!mapEl) return;
+
+			if (typeof L === 'undefined') {
+				if (typeof ensureLeaflet === 'function') {
+					ensureLeaflet().then(initSuppliersMap).catch(function (err) {
+						mapEl.setAttribute('data-map-failed', 'true');
+						console.error('suppliers map:', err);
+					});
+				}
+				return;
+			}
+
+			// Center on Egypt / Cairo by default (30.0444, 31.2357)
+			mapInstance = L.map('suppliers-leaflet-map').setView([30.0444, 31.2357], 6);
+
+			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				maxZoom: 19,
+				attribution: '© OpenStreetMap contributors'
+			}).addTo(mapInstance);
+
+			const data = getSuppliersData();
+			const bounds = [];
+
+			data.forEach((s, idx) => {
+				let lat = parseFloat(s.lat);
+				let lng = parseFloat(s.lng);
+
+				if (!lat || !lng || (lat === 0 && lng === 0)) {
+					lat = 30.0444 + ((idx * 0.035) % 0.35) - 0.15;
+					lng = 31.2357 + (((idx * 7) % 10) * 0.04) - 0.20;
+				}
+
+				bounds.push([lat, lng]);
+
+				const statusText = s.isOpen ? 'مفتوح الآن 🟢' : 'مغلق حالياً ⚪';
+				const customIcon = getSupplierPinIcon(s.isOpen, false, s.name);
+				const marker = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance);
+
+				const linkHtml = '<a href="/suppliers/' + s.id + '" class="btn btn-primary btn-xs font-bold text-decoration-none d-inline-block mt-2">عرض الكتالوج والطلب ↗</a>';
+				const popupContent = '<div class="p-2 text-start font-sans" dir="rtl">' +
+					'<div class="font-extrabold text-sm text-primary mb-1">' + (s.name || s.supplierName) + '</div>' +
+					(s.branchName && s.branchName !== s.name ? '<div class="text-xs text-muted mb-1">🏢 ' + s.branchName + '</div>' : '') +
+					'<div class="text-xs font-bold text-secondary mb-1">' + statusText + '</div>' +
+					(s.hours ? '<div class="text-2xs text-muted mb-0.5">⏱ مواعيد العمل: <strong>' + s.hours + '</strong></div>' : '') +
+					(s.coverageDays ? '<div class="text-2xs text-muted mb-0.5">أيام التغطية: ' + s.coverageDays + '</div>' : '') +
+					(s.address ? '<div class="text-2xs text-muted mt-1">📍 ' + s.address + '</div>' : '') +
+					linkHtml +
+				'</div>';
+
+				marker.bindPopup(popupContent);
+				marker.on('click', function() {
+					focusSupplierOnMap(idx);
+				});
+
+				markers.push(marker);
+			});
+
+			if (bounds.length > 0) {
+				mapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });
+			}
+		}
+
+		function focusSupplierOnMap(idx) {
+			if (typeof idx === 'string') idx = parseInt(idx, 10);
+			switchSupplierView('map');
+			if (!mapInstance) {
+				initSuppliersMap();
+			}
+
+			const data = getSuppliersData();
+
+			// Highlight active card in the side list
+			document.querySelectorAll('.map-supplier-item').forEach((el) => {
+				el.classList.remove('active');
+			});
+			const activeCard = document.getElementById('supplier-card-' + idx);
+			if (activeCard) {
+				activeCard.classList.add('active');
+				activeCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+			}
+
+			if (mapInstance && markers[idx]) {
+				mapInstance.invalidateSize(true);
+
+				// Restore previous active marker to normal
+				if (activeMarkerIdx >= 0 && markers[activeMarkerIdx] && activeMarkerIdx !== idx) {
+					const prevData = data[activeMarkerIdx];
+					if (prevData) {
+						markers[activeMarkerIdx].setIcon(getSupplierPinIcon(prevData.isOpen, false, prevData.name));
+						markers[activeMarkerIdx].setZIndexOffset(0);
+					}
+				}
+
+				const currData = data[idx];
+				const targetPos = markers[idx].getLatLng();
+
+				markers[idx].setIcon(getSupplierPinIcon(currData ? currData.isOpen : true, true, currData ? currData.name : ''));
+				markers[idx].setZIndexOffset(1000);
+				activeMarkerIdx = idx;
+
+				mapInstance.flyTo([targetPos.lat, targetPos.lng], 15, { animate: true, duration: 0.8 });
+				setTimeout(() => {
+					if (markers[idx]) markers[idx].openPopup();
+				}, 450);
+			}
+		}
+
+		function switchSupplierView(view) {
+			const listView = document.getElementById('suppliers-list-view');
+			const mapView = document.getElementById('suppliers-map-view');
+			const listBtn = document.getElementById('view-toggle-list');
+			const mapBtn = document.getElementById('view-toggle-map');
+
+			if (view === 'map') {
+				if (listView) listView.classList.add('d-none');
+				if (mapView) mapView.classList.remove('d-none');
+				if (listBtn) listBtn.classList.remove('active');
+				if (mapBtn) mapBtn.classList.add('active');
+				setTimeout(() => {
+					initSuppliersMap();
+					if (mapInstance) mapInstance.invalidateSize(true);
+				}, 50);
+			} else {
+				if (listView) listView.classList.remove('d-none');
+				if (mapView) mapView.classList.add('d-none');
+				if (listBtn) listBtn.classList.add('active');
+				if (mapBtn) mapBtn.classList.remove('active');
+			}
+		}
+
+		// Event delegation to guarantee clicks on sidebar cards work regardless of inner elements
+		document.addEventListener('click', function(e) {
+			const item = e.target.closest('.map-supplier-item');
+			if (item) {
+				const idxVal = item.getAttribute('data-supplier-idx');
+				if (idxVal !== null && idxVal !== '') {
+					focusSupplierOnMap(parseInt(idxVal, 10));
+				}
+			}
+		});
+
+		function setupSuppliersMapOnLoad() {
+			const mapView = document.getElementById('suppliers-map-view');
+			const urlParams = new URLSearchParams(window.location.search);
+			if (urlParams.get('view') === 'map' || (mapView && !mapView.classList.contains('d-none'))) {
+				switchSupplierView('map');
+				if (typeof ensureLeaflet === 'function') {
+					ensureLeaflet().then(() => {
+						initSuppliersMap();
+					}).catch(console.error);
+				} else {
+					initSuppliersMap();
+				}
+			}
+		}
+
+		document.addEventListener('DOMContentLoaded', setupSuppliersMapOnLoad);
+		window.addEventListener('load', setupSuppliersMapOnLoad);
+	</script>
+}

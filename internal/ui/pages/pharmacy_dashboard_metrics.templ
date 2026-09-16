@@ -1,0 +1,128 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ PharmacyDashboardMetrics(lang string, data PharmacyDashboardData) {
+	<!-- 4-Pillar Executive Metrics Strip -->
+	<div class="dashboard-stat-grid">
+		
+		<!-- Pillar 1: Purchases & Spending -->
+		<div class="stat-card-3d">
+			<div class="stat-card-top">
+				<span class="stat-card-title">{ i18n.T(lang, "pharmacy.dashboard.total_spend") }</span>
+				<div class="stat-card-icon-wrapper">
+					@components.IconChart("icon-sm")
+				</div>
+			</div>
+			<div class="stack-sm">
+				<div class="stat-card-value">
+					@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.TotalSpend, Large: true })
+				</div>
+				<div class="stat-card-footer">
+					<span>{ i18n.T(lang, "pharmacy.dashboard.current_month") } <strong class="tabular-nums text-primary">{ data.MonthSpend.String() }</strong> { i18n.T(lang, "common.currency_egp") }</span>
+					<span class="badge badge-slate text-xs">{ fmt.Sprintf(i18n.T(lang, "common.items_count"), data.TotalOrderedItems) }</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Pillar 2: Orders Lifecycle Status -->
+		<div class="stat-card-3d">
+			<div class="stat-card-top">
+				<span class="stat-card-title">{ i18n.T(lang, "pharmacy.dashboard.orders_status") }</span>
+				<div class="stat-card-icon-wrapper">
+					@components.IconPackage("icon-sm")
+				</div>
+			</div>
+			<div class="stack-sm">
+				<div class="d-flex items-baseline gap-2">
+					<span class="stat-card-value">
+						{ fmt.Sprintf("%d", data.TotalOrders) }
+					</span>
+					<span class="text-xs text-muted font-semibold">{ i18n.T(lang, "pharmacy.dashboard.orders_registered") }</span>
+				</div>
+				<div class="stat-card-footer flex-wrap gap-2">
+					<span class="text-warning d-flex items-center gap-1">
+						<span>●</span>
+						<span>{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.in_progress"), data.ActiveOrders) }</span>
+					</span>
+					<span class="text-muted">•</span>
+					<span class="text-success d-flex items-center gap-1">
+						<span>●</span>
+						<span>{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.completed"), data.CompletedOrders) }</span>
+					</span>
+					if data.CancelledOrders > 0 {
+						<span class="text-muted">•</span>
+						<span class="text-danger d-flex items-center gap-1">
+							<span>●</span>
+							<span>{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.cancelled"), data.CancelledOrders) }</span>
+						</span>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Pillar 3: Wallet Balance & Funds -->
+		<div class="stat-card-3d">
+			<div class="stat-card-top">
+				<span class="stat-card-title">{ i18n.T(lang, "pharmacy.dashboard.wallet_balance") }</span>
+				<div class="stat-card-icon-wrapper emerald">
+					@components.IconWallet("icon-sm")
+				</div>
+			</div>
+			<div class="stack-sm">
+				<div class="stat-card-value text-success">
+					@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.WalletBalance, Large: true })
+				</div>
+				<div class="stat-card-footer">
+					if data.PendingDepositsCount > 0 {
+						<span class="text-warning font-bold">{ i18n.T(lang, "pharmacy.dashboard.pending_deposits") } <strong class="tabular-nums">{ data.PendingDepositsTotal.String() }</strong> { i18n.T(lang, "common.currency_egp") }</span>
+					} else {
+						<span class="text-muted">{ i18n.T(lang, "pharmacy.dashboard.available_for_orders") }</span>
+					}
+					<a href="/wallet" class="btn btn-secondary btn-xs font-bold">
+						{ i18n.T(lang, "wallet.topup_btn") }
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Pillar 4: Smart Procurement -->
+		<div class="stat-card-3d">
+			<div class="stat-card-top">
+				<div class="d-flex items-center gap-2">
+					<span class="stat-card-title">{ i18n.T(lang, "pharmacy.dashboard.smart_order") }</span>
+					<span class="badge badge-sky text-xs">AI</span>
+				</div>
+				<div class="stat-card-icon-wrapper violet">
+					@components.IconZap("icon-sm")
+				</div>
+			</div>
+			<div class="stack-sm">
+				<div class="d-flex items-baseline gap-2">
+					<span class="stat-card-value text-brand">
+						{ fmt.Sprintf("%d", data.SmartOrdersCount) }
+					</span>
+					<span class="text-xs text-muted font-semibold">{ i18n.T(lang, "pharmacy.dashboard.shortage_files") }</span>
+				</div>
+				<div class="stat-card-footer">
+					if data.SmartOrdersProcessing > 0 {
+						<span class="text-warning">{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.in_progress"), data.SmartOrdersProcessing) }</span>
+					} else if data.SmartOrdersNeedsReview > 0 {
+						<span class="text-info">{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.needs_review"), data.SmartOrdersNeedsReview) }</span>
+					} else {
+						<span class="text-success">{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.completed"), data.SmartOrdersCompleted) }</span>
+					}
+					<a href="/customer/smart-order/new" class="btn btn-secondary btn-xs font-bold">
+						{ i18n.T(lang, "pharmacy.dashboard.upload_new") }
+					</a>
+				</div>
+			</div>
+		</div>
+
+	</div>
+}

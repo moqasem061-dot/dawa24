@@ -1,0 +1,1819 @@
+/* ==========================================================================
+   DAWA 24 DESIGN SYSTEM — CUSTOMER SURFACE (customer.css)
+   ========================================================================== */
+
+@layer components {
+/* ===========================================================================
+   AI & Processing Keyframes
+   =========================================================================== */
+@keyframes ai-pulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50%      { opacity: 0.65; transform: scale(0.97); }
+}
+@keyframes indeterminate-progress {
+	0%   { transform: translateX(-100%); }
+	50%  { transform: translateX(0%); }
+	100% { transform: translateX(100%); }
+}
+
+/* ---------------------------------------------------------------------------
+   Smart order: the processing screen.
+
+   One ring with one number in it. The previous screen listed every stage the
+   pipeline had entered, each with a count that always read "0 / 804" — four
+   lines of text answering a question the buyer had not asked, while leaving
+   the one they had ("how much longer?") unanswered.
+
+   The ring is SVG rather than a div with a width, because a ring reads as
+   "working" at a glance even when the number has not moved for a few seconds,
+   which during the AI stage it legitimately has not.
+   --------------------------------------------------------------------------- */
+.so-progress-page { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem; }
+.so-progress-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 1.5rem 0; }
+
+.so-progress-card {
+	padding: 2.5rem 2rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 0.75rem;
+}
+
+.so-ring { position: relative; width: 140px; height: 140px; }
+.so-ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.so-ring-track {
+	fill: none;
+	stroke: var(--border);
+	stroke-width: 8;
+}
+.so-ring-value {
+	fill: none;
+	stroke: var(--primary);
+	stroke-width: 8;
+	stroke-linecap: round;
+	stroke-dasharray: 326.7;
+	/* The ring is driven by the shared import bar, which updates four times a
+	   second and does its own easing. The transition here only smooths the gap
+	   between those frames; it was 3200ms, tuned for a page that reloaded
+	   itself every three seconds, and at that length the ring lagged a second
+	   or more behind the number printed inside it. */
+	transition: stroke-dashoffset 300ms linear;
+}
+.so-ring-label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.so-ring-percent {
+	font-size: 1.75rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--text);
+}
+
+.so-progress-caption { margin: 0; font-weight: 700; font-size: 1rem; }
+.so-progress-note { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+.so-progress-failed {
+	padding: 1.25rem;
+	border-radius: var(--radius-lg);
+	background: rgba(239, 68, 68, 0.10);
+	border: 1px solid var(--danger);
+}
+.so-progress-failed-detail { margin: 0.5rem 0 0 0; font-size: 0.88rem; }
+
+                                                                               
+.so-mapping-page,
+.so-results-page{
+  width: min(100% - 2rem, 86.25rem);
+  margin-inline: auto;
+  padding-block: var(--space-lg);
+}
+
+.so-mapping-title,
+.so-page-title{
+  margin: 0 0 var(--space-lg);
+  color: var(--text);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+}
+
+.so-mapping-intro,
+.so-page-subtitle{
+  margin-block: 0 var(--space-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.so-mapping-form {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+}
+
+.so-field-label {
+  display: block;
+  margin-block-end: var(--space-xs);
+  font-weight: 700;
+}
+
+.required-mark {
+  color: var(--danger);
+}
+
+.confidence-chip,
+.outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.confidence-chip {
+  margin-inline-start: var(--space-xs);
+  padding: 0.15rem 0.5rem;
+}
+
+.confidence-chip-high,
+.outcome-chip-success {
+  color: var(--success);
+  background: var(--success-subtle);
+  border-color: var(--success-border);
+}
+
+.confidence-chip-medium,
+.outcome-chip-warning {
+  color: var(--warning);
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+}
+
+.confidence-chip-low,
+.outcome-chip-danger {
+  color: var(--danger);
+  background: var(--danger-subtle);
+  border-color: var(--danger-border);
+}
+
+.so-mapping-select {
+  width: 100%;
+}
+
+.so-preview-title {
+  display: block;
+  margin-block-end: var(--space-xs);
+}
+
+.so-preview-table {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.so-preview-table .table {
+  width: 100%;
+  min-width: 42rem;
+  font-size: var(--text-xs);
+}
+
+.so-preview-table th,
+.so-preview-table td {
+  padding: 0.5rem;
+  white-space: nowrap;
+}
+
+.so-preview-head {
+  background: var(--surface-sunken);
+}
+
+.so-mapping-submit {
+  justify-content: center;
+  padding-block: 0.85rem;
+  font-weight: 700;
+}
+
+.so-alert {
+  margin-block-end: var(--space-lg);
+  padding: 1rem 1.25rem;
+  border: 1px solid;
+  border-radius: var(--radius-xl);
+}
+
+.so-alert-error {
+  color: var(--danger);
+  background: var(--danger-subtle);
+  border-color: var(--danger-border);
+}
+
+.so-alert-warning {
+  color: var(--warning);
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+}
+
+.so-alert-detail {
+  margin-block-start: 0.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.so-ai-summary {
+  padding: 0.9rem 1.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  background: var(--success-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.so-ai-summary-title {
+  color: var(--success);
+}
+
+.so-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: 1rem 1.25rem;
+}
+
+.so-filter-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  padding-block-end: 0.85rem;
+  overflow-x: auto;
+  border-block-end: 1px solid var(--border);
+}
+
+.so-filter-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+.so-filter-search {
+  flex: 1;
+  min-width: 15rem;
+}
+
+.so-filter-submit,
+.so-filter-clear {
+  min-height: 2.375rem;
+}
+
+.so-results-table-card {
+  overflow: hidden;
+  padding: 0;
+}
+
+.so-results-table {
+  width: 100%;
+  min-width: 54rem;
+  margin: 0;
+}
+
+.so-results-table-head {
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  text-align: start;
+  background: var(--surface-sunken);
+  border-block-end: 1px solid var(--border);
+}
+
+.so-results-table th {
+  padding: 0.85rem 0.75rem;
+}
+
+.so-col-index {
+  width: 3.5rem;
+  text-align: center;
+}
+
+.so-col-item {
+  min-width: 14.375rem;
+  padding-inline: 1rem;
+}
+
+.so-col-match {
+  min-width: 18.75rem;
+  padding-inline: 1rem;
+}
+
+.so-col-status {
+  width: 8.125rem;
+  text-align: center;
+}
+
+.so-col-qty {
+  width: 6.875rem;
+  text-align: center;
+}
+
+.so-col-confidence {
+  width: 5.625rem;
+  text-align: center;
+}
+
+.so-col-actions {
+  width: 8.75rem;
+  text-align: center;
+}
+
+.so-empty-state {
+  padding: 3.5rem 1rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.so-empty-title {
+  color: var(--text);
+  font-size: var(--text-lg);
+  font-weight: 700;
+}
+
+.so-empty-detail {
+  margin-block-start: 0.25rem;
+  font-size: var(--text-sm);
+}
+
+.so-footer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.so-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding-block-end: var(--space-lg);
+  border-block-end: 1px solid var(--border);
+}
+
+.so-page-title {
+  margin-block-end: var(--space-xs);
+}
+
+.so-page-subtitle {
+  margin-block-end: 0;
+}
+
+.so-page-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.so-results-row {
+  border-block-end: 1px solid var(--border);
+  transition: background-color 150ms var(--ease-smooth);
+}
+
+.so-results-row:hover {
+  background: var(--surface-sunken);
+}
+
+.so-results-cell {
+  padding: 0.85rem 0.75rem;
+  text-align: center;
+}
+
+.so-results-index {
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.so-results-item {
+  padding-inline: 1rem;
+  text-align: start;
+}
+
+.so-results-item-name {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.so-results-item-meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-block-start: 0.25rem;
+}
+
+.so-results-meta-badge,
+.so-results-status-badge,
+.so-results-method-badge {
+  font-size: var(--text-xs);
+}
+
+.so-results-qty-note {
+  color: var(--warning);
+  font-size: var(--text-xs);
+  font-weight: 600;
+}
+
+.so-results-match {
+  position: relative;
+  padding-inline: 1rem;
+  text-align: start;
+}
+
+.so-catalog-match,
+.so-catalog-unmatched {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.so-catalog-product {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.so-catalog-product-name {
+  color: var(--text);
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.so-catalog-product-id {
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.so-catalog-dropdown {
+  display: none;
+  top: calc(100% + 4px);
+  inset-inline-start: 0;
+  z-index: var(--z-dropdown);
+  width: min(27.5rem, calc(100vw - 2rem));
+  max-width: 27.5rem;
+  max-height: none;
+  padding: 0.75rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-lg);
+}
+
+.so-catalog-dropdown.is-open {
+  display: block;
+}
+
+.so-catalog-search {
+  margin-block-end: var(--space-xs);
+}
+
+.so-catalog-search-input {
+  height: 2.25rem;
+  padding: 0.4rem 0.65rem;
+  font-size: var(--text-sm);
+}
+
+.so-catalog-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: min(24rem, 50vh);
+  overflow-y: auto;
+}
+
+.so-catalog-empty {
+  padding: 0.75rem;
+  color: var(--text-muted);
+  font-size: var(--text-xs);
+  text-align: center;
+}
+
+.so-catalog-error {
+  color: var(--danger);
+}
+
+.so-catalog-result {
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-sunken);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.so-catalog-result-form,
+.so-catalog-unlink-form {
+  margin: 0;
+}
+
+.so-catalog-result-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0;
+  color: var(--text);
+  text-align: start;
+}
+
+.so-catalog-result-name {
+  color: var(--text);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.so-catalog-result-meta {
+  margin-block-start: 2px;
+  color: var(--text-muted);
+  font-size: 0.7rem;
+}
+
+.so-catalog-result-badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.so-catalog-unlink {
+  margin-block-start: 0.5rem;
+  padding-block-start: 0.5rem;
+  border-block-start: 1px solid var(--border);
+}
+
+.so-catalog-unlink-button {
+  justify-content: flex-start;
+  width: 100%;
+  text-align: start;
+}
+
+.so-results-method,
+.so-results-confidence,
+.so-results-quantity,
+.so-results-outcome {
+  text-align: center;
+}
+
+.so-results-method-badge {
+  font-weight: 600;
+}
+
+.so-results-confidence {
+  font-size: var(--text-sm);
+  font-weight: 700;
+}
+
+.so-results-quantity {
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.so-results-outcome {
+  padding-inline: 1rem;
+}
+
+.so-results-muted {
+  color: var(--text-muted);
+}
+
+/* The smart order's own step bar is gone: every wizard now renders .wiz-rail,
+   so a fix to the rail lands on all four instead of on one. */
+
+.so-new-order-page {
+  width: min(100% - 2rem, 62.5rem);
+  margin-inline: auto;
+  padding-block: var(--space-lg);
+}
+
+.so-new-order-form {
+  display: grid;
+  gap: 1.75rem;
+  padding: var(--space-xl);
+}
+
+.so-form-field {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.so-file-input {
+  width: 100%;
+  padding: 0.75rem;
+  background: var(--surface-raised);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.so-help-text {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.so-help-text-small {
+  font-size: var(--text-xs);
+}
+
+.so-criteria-fieldset {
+  padding: 1.25rem;
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-2xl, 1rem);
+  background: var(--bg-surface-raised, #ffffff);
+}
+
+.so-criteria-help {
+  margin-block-end: var(--space-md);
+}
+
+.so-criteria-row,
+.so-option-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 0.75rem var(--space-md);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-xl, 0.75rem);
+  background: var(--bg-surface-raised, #ffffff);
+  cursor: pointer;
+  transition: all var(--duration-fast, 0.15s) ease;
+  user-select: none;
+}
+
+.so-criteria-row:hover,
+.so-option-row:hover {
+  border-color: var(--primary, #0284c7);
+  background: var(--bg-surface-sunken, #f8fafc);
+}
+
+.so-criteria-row input[type="checkbox"],
+.so-option-row input[type="checkbox"] {
+  inline-size: 1.15rem;
+  block-size: 1.15rem;
+  flex-shrink: 0;
+  accent-color: var(--primary, #0284c7);
+  cursor: pointer;
+  margin: 0;
+}
+
+.so-criteria-label {
+  flex: 1;
+}
+
+.so-priority-input {
+  width: 3.5rem;
+  height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-card, #cbd5e1);
+  border-radius: var(--radius-md, 0.375rem);
+  background: var(--bg-surface-sunken, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  font-weight: 800;
+  font-size: 0.875rem;
+  text-align: center;
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.so-priority-input:focus {
+  outline: none;
+  border-color: var(--primary, #0284c7);
+  box-shadow: 0 0 0 2px var(--primary-subtle, rgba(2, 132, 199, 0.18));
+}
+
+.so-tolerance-field {
+  margin-block-start: var(--space-md);
+}
+
+.so-subfield-label {
+  display: block;
+  margin-block-end: var(--space-xs);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.so-tolerance-input {
+  width: 5.5rem;
+  height: 2.25rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--border-card, #cbd5e1);
+  border-radius: var(--radius-md, 0.375rem);
+  background: var(--bg-surface-sunken, #f1f5f9);
+  color: var(--text-primary, #0f172a);
+  font-weight: 800;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+.so-tolerance-input:focus {
+  outline: none;
+  border-color: var(--primary, #0284c7);
+  box-shadow: 0 0 0 2px var(--primary-subtle, rgba(2, 132, 199, 0.18));
+}
+
+.so-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));
+  gap: 1.25rem;
+}
+
+.so-options {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.so-option-help,
+.so-option-warning {
+  margin: -0.35rem 0 0;
+  padding-inline-start: 1.9rem;
+  font-size: var(--text-sm);
+}
+
+.so-option-help {
+  color: var(--text-secondary);
+}
+
+.so-option-warning {
+  color: var(--warning);
+}
+
+.so-new-order-submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding-block: 0.85rem;
+  font-weight: 800;
+  border-radius: var(--radius-xl, 0.75rem);
+}
+
+[data-theme="dark"] .so-criteria-fieldset {
+  background: var(--bg-surface-raised, #1e293b);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .so-criteria-row,
+[data-theme="dark"] .so-option-row {
+  background: var(--bg-surface-raised, #1e293b);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .so-criteria-row:hover,
+[data-theme="dark"] .so-option-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: var(--primary-light, #38bdf8);
+}
+
+[data-theme="dark"] .so-priority-input,
+[data-theme="dark"] .so-tolerance-input {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.15);
+  color: #f8fafc;
+}
+
+@media (max-width: 768px) {
+  .so-new-order-page {
+    width: min(100% - 1.25rem, 62.5rem);
+    padding-block: var(--space-md);
+  }
+
+  .so-new-order-form {
+    padding: var(--space-lg);
+  }
+
+}
+
+@media (max-width: 768px) {
+}
+
+.so-primary-action {
+  padding-inline: 1.25rem;
+}
+
+.so-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+  gap: var(--space-sm);
+}
+
+.so-stat-card {
+  min-width: 0;
+  padding: 1rem 1.25rem;
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xs);
+}
+
+.so-stat-value {
+  color: var(--text);
+  font-size: 1.5rem;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.so-stat-label {
+  margin-block-start: 0.35rem;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.so-sort-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: inherit;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.so-sort-icon {
+  font-size: 0.7rem;
+  opacity: 0.75;
+}
+
+.wiz-chip .badge {
+  padding: 0.15rem 0.45rem;
+  background: var(--text); background: color-mix(in srgb, var(--text) 8%, transparent);
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+}
+
+@media (max-width: 768px) {
+  .so-mapping-page,
+  .so-results-page{
+    width: min(100% - 1.25rem, 86.25rem);
+    padding-block: var(--space-md);
+  }
+
+  .so-mapping-form {
+    padding: var(--space-lg);
+  }
+
+  .so-page-header {
+    flex-direction: column;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.so-ring-value { transition: none; }
+}
+
+/* ==========================================================================
+   DAWA 24 — CUSTOMER & PHARMACY PORTAL SURFACE STYLES (customer.css)
+   ========================================================================== */
+
+/* Smart Ordering workflow */
+.so-progress-page { max-width: 820px; margin: 0 auto; padding: 1.5rem 1rem; }
+.so-progress-title { font-size: 1.6rem; font-weight: 800; margin: 0 0 1.5rem 0; }
+
+.so-progress-card {
+	padding: 2.5rem 2rem;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 0.75rem;
+}
+
+.so-ring { position: relative; width: 140px; height: 140px; }
+.so-ring-svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.so-ring-track {
+	fill: none;
+	stroke: var(--border);
+	stroke-width: 8;
+}
+.so-ring-value {
+	fill: none;
+	stroke: var(--primary);
+	stroke-width: 8;
+	stroke-linecap: round;
+	stroke-dasharray: 326.7;
+	transition: stroke-dashoffset 300ms linear;
+}
+.so-ring-label {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+.so-ring-percent {
+	font-size: 1.75rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	color: var(--text);
+}
+
+.so-progress-caption { margin: 0; font-weight: 700; font-size: 1rem; }
+.so-progress-note { margin: 0; font-size: 0.85rem; color: var(--text-secondary); }
+
+.so-progress-failed {
+	padding: 1.25rem;
+	border-radius: var(--radius-lg);
+	background: rgba(239, 68, 68, 0.10);
+	border: 1px solid var(--danger);
+}
+.so-progress-failed-detail { margin: 0.5rem 0 0 0; font-size: 0.88rem; }
+
+.so-mapping-page,
+.so-results-page{
+  width: min(100% - 2rem, 86.25rem);
+  margin-inline: auto;
+  padding-block: var(--space-lg);
+}
+
+.so-mapping-title,
+.so-page-title{
+  margin: 0 0 var(--space-lg);
+  color: var(--text);
+  font-size: var(--text-2xl);
+  font-weight: 800;
+}
+
+.so-mapping-intro,
+.so-page-subtitle{
+  margin-block: 0 var(--space-lg);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+}
+
+.so-mapping-form {
+  display: grid;
+  gap: var(--space-lg);
+  padding: var(--space-xl);
+}
+
+.so-field-label {
+  display: block;
+  margin-block-end: var(--space-xs);
+  font-weight: 700;
+}
+
+.confidence-chip,
+.outcome-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: 1px solid transparent;
+  border-radius: var(--radius-full);
+  font-size: var(--text-xs);
+  font-weight: 700;
+}
+
+.confidence-chip {
+  margin-inline-start: var(--space-xs);
+  padding: 0.15rem 0.5rem;
+}
+
+.confidence-chip-high,
+.outcome-chip-success {
+  color: var(--success);
+  background: var(--success-subtle);
+  border-color: var(--success-border);
+}
+
+.confidence-chip-medium,
+.outcome-chip-warning {
+  color: var(--warning);
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+}
+
+.confidence-chip-low,
+.outcome-chip-danger {
+  color: var(--danger);
+  background: var(--danger-subtle);
+  border-color: var(--danger-border);
+}
+
+.so-mapping-select {
+  width: 100%;
+}
+
+.so-preview-title {
+  display: block;
+  margin-block-end: var(--space-xs);
+}
+
+.so-preview-table {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+.so-preview-table .table {
+  width: 100%;
+  min-width: 42rem;
+  font-size: var(--text-xs);
+}
+
+.so-preview-table th,
+.so-preview-table td {
+  padding: 0.5rem;
+  white-space: nowrap;
+}
+
+.so-preview-head {
+  background: var(--surface-sunken);
+}
+
+.so-mapping-submit {
+  justify-content: center;
+  padding-block: 0.85rem;
+  font-weight: 700;
+}
+
+.so-alert {
+  margin-block-end: var(--space-lg);
+  padding: 1rem 1.25rem;
+  border: 1px solid;
+  border-radius: var(--radius-xl);
+}
+
+.so-alert-error {
+  color: var(--danger);
+  background: var(--danger-subtle);
+  border-color: var(--danger-border);
+}
+
+.so-alert-warning {
+  color: var(--warning);
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+}
+
+.so-alert-detail {
+  margin-block-start: 0.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.so-ai-summary {
+  padding: 0.9rem 1.25rem;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  background: var(--success-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+}
+
+.so-ai-summary-title {
+  color: var(--success);
+}
+
+/* The customer copy of the tab system is gone; see .tabs-nav in
+   components.css. Its active rule painted with --primary-600, which no
+   stylesheet declares, so the active tab on every customer screen had
+   neither colour nor underline. */
+
+.cb-split-grid {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .cb-split-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cb-branch-card {
+  background: var(--surface-raised);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: 1.35rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  box-shadow: var(--shadow-xs);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.cb-branch-card:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Product Grid, Cart, Checkout, Order Cards */
+/* ---- Product Grid & Card System ---- */
+.product-grid-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 1.5rem 1.15rem;
+  padding-top: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+@media (max-width: 640px) {
+  .product-grid-wrapper {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem 0.75rem;
+  }
+}
+
+@media (max-width: 640px) {
+  .product-grid-wrapper {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.product-card-glass {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-2xl);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+  overflow: hidden;
+  contain: content;
+  transform: translateZ(0);
+  content-visibility: auto;
+  contain-intrinsic-size: 0 320px;
+  transition: transform var(--duration-fast) var(--ease-spring),
+              box-shadow var(--duration-fast) var(--ease-smooth),
+              border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.product-card-glass.is-sponsored {
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4), 0 4px 20px rgba(245, 158, 11, 0.15);
+  position: relative;
+}
+
+.product-card-glass.is-sponsored:hover {
+  transform: translateY(-3px);
+  border-color: #d97706;
+  box-shadow: 0 0 0 1px rgba(217, 119, 6, 0.5), 0 8px 25px rgba(245, 158, 11, 0.25);
+}
+
+.product-card-sponsored-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 12px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  border-top-left-radius: calc(var(--radius-2xl) - 1px);
+  border-top-right-radius: calc(var(--radius-2xl) - 1px);
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  z-index: 2;
+}
+
+.product-card-sponsored-bar .sponsored-star {
+  color: #fef3c7;
+  font-size: 0.85rem;
+  line-height: 1;
+}
+
+.product-card-sponsored-bar .sponsored-title {
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.75rem;
+}
+
+.product-detail-sponsored-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.25rem;
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.15) 0%, rgba(217, 119, 6, 0.08) 100%);
+  border: 1.5px solid rgba(245, 158, 11, 0.4);
+  border-radius: var(--radius-xl);
+  color: #b45309;
+}
+
+.product-detail-sponsored-banner .sponsored-star {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  line-height: 1;
+}
+
+.product-card-body {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.product-card-glass:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary-border);
+}
+
+.product-card-media {
+  position: relative;
+  width: 100%;
+  height: 120px;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(135deg, var(--bg-surface-sunken) 0%, rgba(2, 132, 199, 0.05) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 1px solid var(--border-subtle);
+  margin-bottom: 0.75rem;
+}
+
+.product-card-img {
+  max-height: 95px;
+  max-width: 88%;
+  object-fit: contain;
+}
+
+.product-card-badges-floating {
+  position: absolute;
+  top: 6px;
+  inset-inline-start: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-start;
+  z-index: 2;
+}
+
+.product-card-fav-btn {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 6px;
+  margin: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-raised);
+  box-shadow: var(--shadow-xs);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+
+
+
+/* Compact Product Card for Dense Views */
+.product-card-glass.compact {
+  padding: 0.75rem;
+}
+
+.product-card-glass.compact .product-card-media {
+  height: 90px;
+}
+
+.product-card-glass.compact .product-card-title {
+  font-size: 0.85rem;
+  min-height: 2.5em;
+}
+
+/* ---- Cart & Checkout System ---- */
+.cart-grid-layout {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: 1.75rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .cart-grid-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.cart-supplier-card {
+  padding: 1.5rem;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  margin-bottom: 1.5rem;
+}
+
+.cart-supplier-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.cart-item-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.85rem 1rem;
+  background: var(--bg-surface-sunken);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.cart-stepper-control {
+  display: inline-flex;
+  align-items: center;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-md);
+  padding: 2px;
+  gap: 2px;
+  user-select: none;
+}
+
+.cart-stepper-control form {
+  display: inline-flex;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+
+.cart-stepper-btn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-primary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  border-radius: var(--radius-sm);
+  transition: background var(--duration-fast) var(--ease-smooth);
+  padding: 0;
+}
+
+.cart-stepper-btn:hover:not(:disabled) {
+  background: var(--bg-surface-sunken);
+}
+
+.cart-stepper-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cart-summary-card {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-xl);
+  padding: 1.5rem;
+  position: sticky;
+  top: 85px;
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 1024px) {
+  .cart-summary-card {
+    position: static;
+  }
+}
+
+@media (max-width: 640px) {
+  .cart-item-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  .cart-item-row > .d-flex.items-center.gap-4 {
+    justify-content: space-between;
+    width: 100%;
+    padding-top: 0.5rem;
+    border-top: 1px dashed var(--border-subtle);
+  }
+}
+
+/* ---- Order & Shipment Cards ---- */
+.order-card-glass {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-card);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-xs);
+  content-visibility: auto;
+  contain-intrinsic-size: 0 64px;
+  transition: transform var(--duration-normal) var(--ease-spring),
+              border-color var(--duration-normal) var(--ease-smooth),
+              box-shadow var(--duration-normal) var(--ease-smooth);
+}
+
+.order-card-glass:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md), 0 0 16px -3px var(--accent-glow);
+  border-color: var(--primary-border);
+}
+
+.order-card-num {
+  font-weight: 800;
+  font-size: 1.15rem;
+  color: var(--text-primary);
+  text-decoration: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.order-card-meta {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+}
+
+.order-card-total-title {
+  font-size: var(--text-xs);
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+.order-card-total-val {
+  font-weight: 900;
+  font-size: 1.35rem;
+  color: var(--primary);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Dashboard Workspace & Action Hubs ---- */
+.dashboard-workspace-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .dashboard-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 0.75rem;
+}
+
+.quick-action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  font-weight: 700;
+  padding: 0.65rem 0.85rem;
+  font-size: var(--text-xs);
+  border-radius: var(--radius-lg);
+  gap: 0.5rem;
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  color: var(--text-primary);
+  text-decoration: none;
+  transition: transform var(--duration-fast) var(--ease-smooth),
+              border-color var(--duration-fast) var(--ease-smooth),
+              background-color var(--duration-fast) var(--ease-smooth);
+}
+
+.quick-action-btn:hover {
+  background: var(--bg-surface-sunken);
+  border-color: var(--primary-border);
+  transform: translateY(-1px);
+}
+
+/* .dashboard-stat-grid moved to layout.css, which every shell loads. */
+
+/* ---- Checkout System ---- */
+.checkout-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 0.7fr;
+  gap: 2rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .checkout-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.checkout-step-card {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-2xl);
+  padding: 1.75rem;
+}
+
+.checkout-branch-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  background: var(--bg-surface-sunken);
+  transition: border-color var(--duration-fast) var(--ease-smooth);
+}
+
+.checkout-branch-item:hover {
+  border-color: var(--primary-border);
+}
+
+.checkout-summary-card {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-2xl);
+  padding: 1.75rem;
+  position: sticky;
+  top: 24px;
+  box-shadow: var(--shadow-md);
+}
+
+/* ---- Compare Tool System ---- */
+
+.compare-col-card {
+  background: var(--bg-surface-raised);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-2xl);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+/* ---- Smart Order Review Table & Cart Overhaul ---- */
+.so-review-table {
+  width: 100%;
+  table-layout: auto;
+}
+.so-review-table th,
+.so-review-table td {
+  vertical-align: middle;
+  padding: 0.45rem 0.35rem;
+  font-size: 0.8125rem;
+}
+.so-rev-col-check { width: 34px; min-width: 30px; text-align: center; }
+.so-rev-col-name { min-width: 140px; }
+.so-rev-col-sku { width: 65px; min-width: 55px; text-align: center; }
+.so-rev-col-qty { width: 88px; min-width: 80px; text-align: center; }
+.so-rev-col-match { min-width: 140px; }
+.so-rev-col-vendor { width: 95px; min-width: 80px; }
+.so-rev-col-stock { width: 80px; min-width: 70px; text-align: center; }
+.so-rev-col-price { width: 75px; min-width: 65px; text-align: center; }
+.so-rev-col-discount { width: 65px; min-width: 55px; text-align: center; }
+.so-rev-col-net { width: 85px; min-width: 75px; text-align: center; }
+.so-rev-col-actions { width: 105px; min-width: 95px; text-align: center; }
+
+/* ---- Smart Order Quantity Stepper Component ---- */
+.so-qty-form {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+}
+
+.so-qty-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.so-qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  background: var(--bg-surface-raised, #ffffff);
+  border: 1px solid var(--border-card, #cbd5e1);
+  border-radius: var(--radius-md, 6px);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: border-color var(--duration-fast, 0.15s) ease, box-shadow var(--duration-fast, 0.15s) ease, opacity var(--duration-fast, 0.15s) ease;
+}
+
+.so-qty-stepper:focus-within {
+  border-color: var(--primary, #0284c7);
+  box-shadow: 0 0 0 2px var(--primary-subtle, rgba(2, 132, 199, 0.18));
+}
+
+.so-qty-step-btn {
+  width: 24px;
+  height: 28px;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: var(--bg-surface-sunken, #f1f5f9);
+  color: var(--text-secondary, #475569);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color var(--duration-fast, 0.15s) ease, color var(--duration-fast, 0.15s) ease;
+}
+
+.so-qty-step-btn:hover {
+  background: var(--primary-subtle, rgba(2, 132, 199, 0.15));
+  color: var(--primary, #0284c7);
+}
+
+.so-qty-step-btn:active {
+  background: var(--primary, #0284c7);
+  color: #ffffff;
+}
+
+/* Stepper Input */
+/* The smart-order quantity field.
+   The selector list already contained `input[type="number"].so-qty-input`,
+   which at (0,2,1) beats the global number-input rule outright — so the
+   !important on all twenty-two declarations was overriding nothing. The two
+   weaker selectors are dropped with it; keeping them meant the rule appeared
+   to work for reasons it did not. */
+input[type="number"].so-qty-input {
+  width: 36px;
+  min-width: 36px;
+  max-width: 36px;
+  height: 28px;
+  line-height: 28px;
+  margin: 0;
+  padding: 0 1px;
+  border: none;
+  /* Physical on purpose, and symmetric, so RTL is unaffected: this control is
+     a segmented stepper and these two borders are the seams between the field
+     and the buttons either side of it. They were converted to `border-inline`
+     during the logical-properties pass and converted back, because the
+     dark-theme override below could not be confirmed to still apply and a
+     seam that stays light-grey on a dark background is a visible regression.
+     This is the shape that has been in production; leave it unless you can
+     check both themes in a real browser. */
+  border-left: 1px solid var(--border-card, #e2e8f0);
+  border-right: 1px solid var(--border-card, #e2e8f0);
+  border-radius: 0;
+  background: transparent;
+  color: var(--text-primary, #0f172a);
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 800;
+  text-align: center;
+  box-shadow: none;
+  outline: none;
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"].so-qty-input::-webkit-outer-spin-button,
+input[type="number"].so-qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+  display: none;
+}
+
+/* Save / Confirm Button */
+.so-qty-save-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-surface-raised, #ffffff);
+  border: 1px solid var(--border-card, #cbd5e1);
+  border-radius: var(--radius-md, 8px);
+  color: var(--text-muted, #94a3b8);
+  cursor: pointer;
+  box-shadow: var(--shadow-xs, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: all var(--duration-fast, 0.15s) ease;
+}
+
+.so-qty-save-btn:hover {
+  background: rgba(16, 185, 129, 0.12);
+  border-color: var(--success, #10b981);
+  color: var(--success, #10b981);
+  transform: scale(1.05);
+}
+
+.so-qty-save-btn:active {
+  transform: scale(0.96);
+}
+
+/* Dirty State (Unsaved Changes) */
+/* The unsaved state. .is-dirty compounds with .so-qty-save-btn, so it is
+   (0,2,0) against the base rule's (0,1,0) and wins on specificity alone; the
+   button carries no utility class that could outrank either. */
+.so-qty-save-btn.is-dirty {
+  background: var(--success, #10b981);
+  border-color: var(--success, #10b981);
+  color: #ffffff;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.3);
+  animation: so-qty-save-pulse 1.8s infinite ease-in-out;
+}
+
+.so-qty-save-btn.is-dirty:hover {
+  background: #059669;
+  border-color: #059669;
+}
+
+@keyframes so-qty-save-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.5);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
+}
+
+/* Dark Mode Overrides */
+[data-theme="dark"] .so-qty-stepper {
+  background: var(--bg-surface-raised, #1e293b);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+[data-theme="dark"] .so-qty-step-btn {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-secondary, #94a3b8);
+}
+
+[data-theme="dark"] .so-qty-step-btn:hover {
+  background: rgba(2, 132, 199, 0.25);
+  color: var(--primary-light, #38bdf8);
+}
+
+/* Ties with the light rule on specificity and wins on source order, so no
+   force is needed. The two physical border colours are one logical pair now,
+   matching the border-inline the light rule sets. */
+[data-theme="dark"] input[type="number"].so-qty-input {
+  color: #f8fafc;
+  border-left-color: rgba(255, 255, 255, 0.12);
+  border-right-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .so-qty-save-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-muted, #64748b);
+}
+
+[data-theme="dark"] .so-qty-save-btn:hover {
+  background: rgba(16, 185, 129, 0.25);
+  border-color: var(--success, #10b981);
+  color: #34d399;
+}
+
+/* ===========================================================================
+   Wallet Deposit Modal Scrollable Layout
+   =========================================================================== */
+/* .deposit-modal-* lived here and in components.css in identical copies.
+   The components.css one is a superset and loads on every shell, so this copy
+   is gone; the !important on both was each overriding the other. */
+
+}
+

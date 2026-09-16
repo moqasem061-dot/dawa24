@@ -1,0 +1,230 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminEmployeeActivitiesData holds context for the admin employee activity logs screen.
+type AdminEmployeeActivitiesData struct {
+	Entries        []*platformadmin.AuditEntry
+	TotalCount     int
+	Page           int
+	PerPage        int
+	TotalPages     int
+	SearchQuery    string
+	SelectedOrgID  int64
+	SelectedUserID int64
+	SelectedAction string
+	DateFrom       string
+	DateTo         string
+	Organizations  []*org.Organization
+	Users          []*identity.User
+}
+
+func formatEmployeeAuditAction(action, labelAr string) (string, string) {
+	if label, ok := i18n.Lookup(i18n.AR, "audit.action."+action); ok && label != "" {
+		return label, badgeClassForAction(action)
+	}
+	if labelAr != "" {
+		return labelAr, badgeClassForAction(action)
+	}
+	return action, "badge-slate"
+}
+
+func badgeClassForAction(action string) string {
+	act := strings.ToLower(action)
+	switch {
+	case strings.Contains(act, "approve") || strings.Contains(act, "reactivate") || strings.Contains(act, "create"):
+		return "badge-emerald"
+	case strings.Contains(act, "reject") || strings.Contains(act, "suspend") || strings.Contains(act, "delete"):
+		return "badge-rose"
+	case strings.Contains(act, "update") || strings.Contains(act, "edit") || strings.Contains(act, "adjust"):
+		return "badge-amber"
+	case strings.Contains(act, "toggle") || strings.Contains(act, "status"):
+		return "badge-indigo"
+	default:
+		return "badge-sky"
+	}
+}
+
+func employeeAuditExportURL(data AdminEmployeeActivitiesData) string {
+	v := url.Values{}
+	if data.SearchQuery != "" {
+		v.Set("q", data.SearchQuery)
+	}
+	if data.SelectedOrgID > 0 {
+		v.Set("org_id", strconv.FormatInt(data.SelectedOrgID, 10))
+	}
+	if data.SelectedUserID > 0 {
+		v.Set("user_id", strconv.FormatInt(data.SelectedUserID, 10))
+	}
+	if data.SelectedAction != "" {
+		v.Set("action", data.SelectedAction)
+	}
+	if data.DateFrom != "" {
+		v.Set("date_from", data.DateFrom)
+	}
+	if data.DateTo != "" {
+		v.Set("date_to", data.DateTo)
+	}
+	qs := v.Encode()
+	if qs == "" {
+		return "/admin/employee-activities/export"
+	}
+	return "/admin/employee-activities/export?" + qs
+}
+
+// AdminEmployeeActivitiesPage renders employee activity logs with full multi-parameter filtering and export.
+templ AdminEmployeeActivitiesPage(data AdminEmployeeActivitiesData, lang, dir string) {
+	@layouts.AdminShell("سجل نشاطات وعمليات الموظفين بالمنشآت", "employee_activities", lang, dir) {
+		<div class="page-container" x-data="{ selected: null, isDetailsOpen: false }">
+			
+			<!-- Page Header -->
+			<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="w-11 h-11 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs text-xl">
+							@components.IconClock("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجل نشاطات وعمليات الموظفين بالمنشآت</h1>
+							<p class="text-xs text-secondary m-0 mt-1 font-medium">
+								تدقيق وتتبع كافة الإجراءات والعمليات المنفذة من قِبل موظفي الصيدليات والشركات الموردة ({ fmt.Sprintf("%d عملية موثقة", data.TotalCount) })
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href={ templ.SafeURL(employeeAuditExportURL(data)) } class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-xs">
+							@components.IconDownload("icon-xs")
+							<span>تصدير Excel</span>
+						</a>
+						<a href="/admin/employee-activities" class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-xs">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث السجل</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Strip -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/employee-activities" class="d-flex flex-col gap-3 m-0">
+					<div class="d-grid grid-auto-fit-sm gap-3 items-end">
+						<!-- Search Query -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">البحث العام</label>
+							<input
+								type="text"
+								name="q"
+								value={ data.SearchQuery }
+								placeholder="اسم الموظف، البريد، الإجراء، أو المعرف..."
+								class="form-input text-xs font-medium w-full"
+							/>
+						</div>
+
+						<!-- Organization Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">المنشأة التابع لها</label>
+							<select name="org_id" class="form-input text-xs font-medium w-full">
+								<option value="0">كافة المنشآت (صيدليات وموردين)</option>
+								for _, o := range data.Organizations {
+									<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>
+										if o.TradeName["ar"] != "" {
+											{ o.TradeName["ar"] }
+										} else {
+											{ o.LegalName }
+										}
+										(ID #{ fmt.Sprintf("%d", o.ID) })
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- User / Employee Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">الموظف المنفذ</label>
+							<select name="user_id" class="form-input text-xs font-medium w-full">
+								<option value="0">كافة المستخدمين والموظفين</option>
+								for _, u := range data.Users {
+									<option value={ fmt.Sprintf("%d", u.ID) } selected?={ data.SelectedUserID == u.ID }>
+										{ u.Name.Get("ar") } ({ u.Email })
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Action Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">نوع العملية</label>
+							<select name="action" class="form-input text-xs font-medium w-full">
+								<option value="">كافة العمليات</option>
+								<option value="user" selected?={ data.SelectedAction == "user" }>المستخدمين والصلاحيات</option>
+								<option value="org" selected?={ data.SelectedAction == "org" }>المنشآت والفروع</option>
+								<option value="catalog" selected?={ data.SelectedAction == "catalog" }>الكتالوج والأصناف</option>
+								<option value="offer" selected?={ data.SelectedAction == "offer" }>العروض والأسعار</option>
+								<option value="order" selected?={ data.SelectedAction == "order" }>طلبات وأوامر التوريد</option>
+								<option value="commerce" selected?={ data.SelectedAction == "commerce" }>المبيعات والمالية</option>
+								<option value="payment" selected?={ data.SelectedAction == "payment" }>المحافظ والمدفوعات</option>
+								<option value="reference" selected?={ data.SelectedAction == "reference" }>البيانات المرجعية</option>
+							</select>
+						</div>
+
+						<!-- Date From Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">من تاريخ</label>
+							<input
+								type="date"
+								name="date_from"
+								value={ data.DateFrom }
+								class="form-input text-xs font-medium w-full"
+							/>
+						</div>
+
+						<!-- Date To Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1 d-block">إلى تاريخ</label>
+							<input
+								type="date"
+								name="date_to"
+								value={ data.DateTo }
+								class="form-input text-xs font-medium w-full"
+							/>
+						</div>
+					</div>
+
+					<!-- Filter Actions -->
+					<div class="d-flex items-center gap-2 justify-end pt-1">
+						<button type="submit" class="btn btn-primary btn-sm font-black text-xs px-5 shadow-sm">
+							@components.IconSearch("icon-xs")
+							<span>تصفية</span>
+						</button>
+
+						if data.SearchQuery != "" || data.SelectedOrgID > 0 || data.SelectedUserID > 0 || data.SelectedAction != "" || data.DateFrom != "" || data.DateTo != "" {
+							<a href="/admin/employee-activities" class="btn btn-secondary btn-sm text-xs font-bold">
+								إلغاء التصفية
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Activities Table Panel -->
+			@AdminEmployeeActivitiesTable(data)
+
+			<!-- Details & JSON Diff Modal -->
+			@AdminEmployeeActivitiesModal()
+
+		</div>
+	}
+}

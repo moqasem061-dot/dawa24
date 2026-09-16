@@ -1,0 +1,175 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// بيانات المنشأة — one page, five independent forms.
+//
+// It was one form with one "حفظ التعديلات والتحديث الفوري" button covering the
+// company's identity, its order limits, its contact details, its description
+// and its artwork. Two things followed:
+//
+//   - Saving anything re-wrote everything, including the fields the person had
+//     not looked at.
+//   - The one field it did write — org.organizations.name — is read by nothing.
+//     Every list on the platform reads trade_name first, so the save succeeded
+//     and the name went on showing the old value everywhere.
+//
+// Each section now posts on its own, and the identity section — the four fields
+// the platform verified when it approved the company — goes to an administrator
+// rather than straight onto the row.
+
+// OrganizationProfileSection is one rendered section.
+type OrganizationProfileSection struct {
+	Key      org.ProfileSection
+	Title    string
+	Subtitle string
+	// Fields are the stored values, keyed by form field name.
+	Fields org.ProfileFields
+	// Pending is the open change request for this section, if any.
+	Pending *org.ProfileChangeRequest
+}
+
+// NeedsApproval reports whether saving this section opens a request.
+func (s OrganizationProfileSection) NeedsApproval() bool { return s.Key.NeedsApproval() }
+
+// OrganizationProfileView is the whole page.
+type OrganizationProfileView struct {
+	Lang            string
+	Title           string
+	OrgID           int64
+	OrgLegalName    string
+	IsVendor        bool
+	ActionBase      string
+	PublicURL       string
+	CanUpdate       bool
+	IsOwner         bool
+	PendingDeletion *org.OrganizationDeletionRequest
+	Sections        []OrganizationProfileSection
+	NoticeKind      string
+	Notice          string
+}
+
+templ OrganizationProfilePage(v OrganizationProfileView, lang, dir string) {
+	@layouts.ShellFor(v.Title+" | دوا 24", "organization", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-6xl">
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBuilding("icon-sm")
+						</div>
+						<div>
+							<h1 class="text-2xl font-black text-primary m-0">{ v.Title }</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								كل قسم يُحفظ على حدة. تعديل الهوية التجارية يُرسل لمراجعة إدارة المنصة لأنها البيانات التي اعتُمدت بها المنشأة.
+							</p>
+						</div>
+					</div>
+					if v.PublicURL != "" {
+						<a href={ templ.SafeURL(v.PublicURL) } target="_blank" rel="noopener" class="btn btn-secondary font-bold gap-2">
+							@components.IconGlobe("icon-xs")
+							<span>الصفحة العامة للمنشأة</span>
+						</a>
+					}
+				</div>
+			</div>
+
+			for _, section := range v.Sections {
+				@organizationSection(v, section)
+			}
+		</div>
+	}
+}
+
+templ organizationSection(v OrganizationProfileView, s OrganizationProfileSection) {
+	<section class="glass-panel p-6 mb-4" id={ "section-" + string(s.Key) }>
+		<div class="flex-between items-start flex-wrap gap-3 pb-3 mb-4 border-b">
+			<div class="stack-2xs">
+				<h2 class="text-base font-black text-primary m-0">{ s.Title }</h2>
+				<p class="text-xs text-secondary m-0">{ s.Subtitle }</p>
+			</div>
+			if s.NeedsApproval() {
+				<span class="badge badge-amber text-2xs font-bold">يتطلب مراجعة الإدارة</span>
+			}
+		</div>
+
+		if s.Pending != nil {
+			@organizationPendingNotice(v, s)
+		}
+
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("%s/%s", v.ActionBase, s.Key)) }
+			if s.Key == org.SectionMedia {
+				enctype="multipart/form-data"
+			}
+			class="d-flex flex-col gap-4 m-0"
+		>
+			switch s.Key {
+				case org.SectionIdentity:
+					@organizationIdentityFields(s)
+				case org.SectionLimits:
+					@organizationLimitsFields(s)
+				case org.SectionContact:
+					@organizationContactFields(s)
+				case org.SectionDescription:
+					@organizationDescriptionFields(s)
+				case org.SectionMedia:
+					@organizationMediaFields(s)
+			}
+
+			if v.CanUpdate {
+				<div class="d-flex justify-end pt-2 border-t">
+					<button type="submit" class="btn btn-primary font-bold px-6 gap-1" disabled?={ s.Pending != nil }>
+						@components.IconCheck("icon-xs")
+						if s.NeedsApproval() {
+							<span>إرسال للمراجعة</span>
+						} else {
+							<span>حفظ هذا القسم</span>
+						}
+					</button>
+				</div>
+			}
+		</form>
+	</section>
+}
+
+// organizationPendingNotice shows what was proposed beside what is stored, so
+// the person can see their own request rather than only that one exists.
+templ organizationPendingNotice(v OrganizationProfileView, s OrganizationProfileSection) {
+	<div class="alert alert-warning d-flex flex-col gap-2 mb-4">
+		<div class="flex-between items-center flex-wrap gap-2">
+			<span class="text-xs font-black">
+				{ fmt.Sprintf("طلب تعديل قيد مراجعة الإدارة منذ %s", s.Pending.CreatedAt.Format("2006-01-02")) }
+			</span>
+			if v.CanUpdate {
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/requests/%d/withdraw", v.ActionBase, s.Pending.ID)) } class="m-0">
+					<button type="submit" class="btn btn-secondary btn-xs font-bold">سحب الطلب</button>
+				</form>
+			}
+		</div>
+		<dl class="org-diff">
+			for _, key := range s.Pending.Changed() {
+				<div class="org-diff-row">
+					<dt>{ organizationFieldLabel(v.Lang, key) }</dt>
+					<dd>
+						<span class="org-diff-was">{ orgFieldOrDash(s.Pending.Previous[key]) }</span>
+						<span aria-hidden="true">←</span>
+						<strong class="org-diff-next">{ orgFieldOrDash(s.Pending.Proposed[key]) }</strong>
+					</dd>
+				</div>
+			}
+		</dl>
+	</div>
+}
+
+

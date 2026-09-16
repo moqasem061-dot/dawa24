@@ -1,0 +1,184 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AdminCitiesTable(data AdminCitiesData) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		<div class="p-4 border-b flex-between items-center flex-wrap gap-2">
+			<div>
+				<h3 class="text-base font-black text-primary m-0">
+					سجل المدن والمراكز المعتمدة
+				</h3>
+				if data.SelectedGovernorateID > 0 {
+					for _, g := range data.Governorates {
+						if g.ID == data.SelectedGovernorateID {
+							<div class="text-xs text-brand font-bold mt-1">
+								عرض مدن محافظة: { g.Name["ar"] } ({ g.Name["en"] })
+							</div>
+						}
+					}
+				}
+				if data.Status == "active" {
+					<span class="badge badge-emerald text-2xs font-bold mt-1">مفلتر: المدن المفعّلة فقط</span>
+				} else if data.Status == "inactive" {
+					<span class="badge badge-rose text-2xs font-bold mt-1">مفلتر: المدن المعطّلة فقط</span>
+				}
+			</div>
+			<div class="d-flex items-center gap-2">
+				<span class="badge badge-emerald tabular-nums text-xs font-bold">{ fmt.Sprintf("%d مدينة معروضة", len(data.Cities)) }</span>
+			</div>
+		</div>
+
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>المدينة / الحي</th>
+						<th>المحافظة التابعة</th>
+						<th>الإحداثيات الجغرافية (GPS)</th>
+						<th>نطاق التغطية</th>
+						<th>الحالة</th>
+						<th class="col-actions">الإجراءات</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(data.Cities) == 0 {
+						<tr>
+							<td colspan="6" class="p-8 text-center text-muted">
+								<div class="text-3xl mb-2">@components.IconSearch("icon-sm")</div>
+								<div class="font-bold text-sm text-primary">لم يتم العثور على أي مدن تطابق شروط البحث</div>
+								<div class="text-xs text-secondary mt-1">جرب تغيير المحافظة أو حالة التفعيل أو عبارة البحث في الأعلى.</div>
+							</td>
+						</tr>
+					}
+					for _, c := range data.Cities {
+						<tr class={ templ.KV("opacity-60 bg-slate-50/50 dark:bg-slate-900/20", !c.IsActive) }>
+							<td>
+								<div class="font-black text-primary d-flex items-center gap-1">
+									if c.IsCapital {
+										<span title="عاصمة / مركز رئيسي" class="text-xs">@components.IconStar("icon-sm")</span>
+									}
+									if c.Name["ar"] != "" {
+										<span>{ c.Name["ar"] }</span>
+									} else {
+										<span>{ c.Name["en"] }</span>
+									}
+								</div>
+								if c.Name["en"] != "" && c.Name["ar"] != "" {
+									<div class="text-xs text-muted font-normal">{ c.Name["en"] }</div>
+								}
+							</td>
+							<td>
+								if c.GovernorateName != nil && (*c.GovernorateName)["ar"] != "" {
+									<span class="badge badge-sky text-xs font-bold">
+										{ (*c.GovernorateName)["ar"] }
+									</span>
+								} else {
+									<span class="badge badge-slate text-xs">غير محدد</span>
+								}
+							</td>
+							<td class="font-mono text-xs tabular-nums">
+								if c.Latitude != 0 && c.Longitude != 0 {
+									<a
+										href={ templ.SafeURL(fmt.Sprintf("https://www.google.com/maps?q=%.6f,%.6f", c.Latitude, c.Longitude)) }
+										target="_blank"
+										rel="noopener noreferrer"
+										title="فتح الموقع على خرائط جوجل"
+										class="text-brand text-xs font-bold text-decoration-none d-inline-flex items-center gap-1"
+									>
+										<span>{ fmt.Sprintf("%.4f, %.4f", c.Latitude, c.Longitude) }</span>
+									</a>
+								} else {
+									<span class="text-muted text-xs">غير محدد</span>
+								}
+							</td>
+							<td>
+								<button
+									type="button"
+									class="badge badge-sky text-xs font-bold font-mono cursor-pointer hover:opacity-80 transition d-inline-flex items-center gap-1 border-0"
+									@click={ fmt.Sprintf("openEdit(%d, %d, %q, %q, %f, %f, %d, %t, %t)",
+										c.ID,
+										govIDOrDefault(c.GovernorateID),
+										c.Name["ar"],
+										c.Name["en"],
+										c.Latitude,
+										c.Longitude,
+										c.NormalizedRadius(),
+										c.IsCapital,
+										c.IsActive,
+									) }
+									title="معاينة وتعديل نطاق التغطية على الخريطة"
+								>
+									@components.IconMapPin("icon-2xs")
+									<span>{ fmt.Sprintf("%.1f كم (%d م)", c.CoverageRadiusKM(), c.NormalizedRadius()) }</span>
+								</button>
+							</td>
+							<td>
+								if c.IsActive {
+									<span class="badge badge-emerald text-xs">مفعلة</span>
+								} else {
+									<span class="badge badge-rose text-xs font-bold">معطلة</span>
+								}
+							</td>
+							<td class="col-actions">
+								<div class="table-actions">
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold text-xs"
+										@click={ fmt.Sprintf("openEdit(%d, %d, %q, %q, %f, %f, %d, %t, %t)",
+											c.ID,
+											govIDOrDefault(c.GovernorateID),
+											c.Name["ar"],
+											c.Name["en"],
+											c.Latitude,
+											c.Longitude,
+											c.NormalizedRadius(),
+											c.IsCapital,
+											c.IsActive,
+										) }
+									>
+										<span>تعديل</span>
+									</button>
+
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/cities/%d/toggle", c.ID)) } class="m-0 d-inline">
+										<button
+											type="submit"
+											class={ "btn btn-xs text-xs", templ.KV("btn-secondary", c.IsActive), templ.KV("btn-primary font-bold", !c.IsActive) }
+											title={ map[bool]string{true: "تعطيل هذه المدينة", false: "تفعيل هذه المدينة"}[c.IsActive] }
+										>
+											if c.IsActive {
+												<span>تعطيل</span>
+											} else {
+												<span>تفعيل</span>
+											}
+										</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+
+		if data.TotalFiltered > 0 {
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage: data.Page,
+				PageSize:    data.Limit,
+				TotalCount:  data.TotalFiltered,
+				BaseURL:     "/admin/cities",
+				QueryValues: data.QueryValues,
+			})
+		}
+	</div>
+}
+
+func govIDOrDefault(id *int64) int64 {
+	if id == nil {
+		return 0
+	}
+	return *id
+}

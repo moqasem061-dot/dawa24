@@ -1,0 +1,303 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorOfferFormPage(data VendorOfferFormData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_offer_form.shell_title"), "supply_offers", lang, dir) {
+		<div
+			class="page-container"
+			x-data={ fmt.Sprintf(`{
+				availableItems: %s,
+				selectedItems: %s,
+				searchQuery: '',
+				showDropdown: false,
+				get filteredItems() {
+					if (!this.searchQuery.trim()) return this.availableItems.slice(0, 20);
+					const q = this.searchQuery.toLowerCase();
+					return this.availableItems.filter(i => 
+						(i.name_ar && i.name_ar.toLowerCase().includes(q)) ||
+						(i.name_en && i.name_en.toLowerCase().includes(q)) ||
+						(i.sku && i.sku.toLowerCase().includes(q)) ||
+						(i.batch_number && i.batch_number.toLowerCase().includes(q))
+					).slice(0, 30);
+				},
+				addItem(item) {
+					if (!this.selectedItems.find(i => i.variant_id === item.variant_id)) {
+						this.selectedItems.push({
+							variant_id: item.variant_id,
+							name: item.name_ar || item.name_en || item.sku,
+							sku: item.sku,
+							batch: item.batch_number,
+							expiry: item.expiry_date,
+							warehouse: item.warehouse_name,
+							stock: item.available_stock,
+							original_price: item.price_float,
+							original_price_str: item.price,
+							qty: 1,
+							discount_pct: 0,
+							custom_price: item.price_float
+						});
+					}
+					this.searchQuery = '';
+					this.showDropdown = false;
+				},
+				removeItem(idx) {
+					this.selectedItems.splice(idx, 1);
+				},
+				onDiscountChange(item) {
+					if (item.original_price > 0 && item.discount_pct >= 0) {
+						item.custom_price = Math.max(0, +(item.original_price * (1 - (item.discount_pct / 100))).toFixed(2));
+					}
+				},
+				onPriceChange(item) {
+					if (item.original_price > 0 && item.custom_price >= 0) {
+						const d = ((1 - (item.custom_price / item.original_price)) * 100);
+						item.discount_pct = Math.max(0, +d.toFixed(1));
+					}
+				}
+			}`, itemsToJSON(data.ItemOptions), selectedItemsJSON(data.Offer, data.ItemOptions)) }
+		>
+			
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-2xl">
+							@components.IconPackage("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<div class="text-xs text-muted font-extrabold uppercase mb-1">
+								{ i18n.T(lang, "vendor_offer_form.header_tag") }
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								if data.IsEdit {
+									{ i18n.T(lang, "vendor_offer_form.title_edit") }
+								} else {
+									{ i18n.T(lang, "vendor_offer_form.title_new") }
+								}
+							</h1>
+						</div>
+					</div>
+
+					<a href="/vendor/offers" class="btn btn-secondary btn-sm font-bold text-xs">
+						<span>{ i18n.T(lang, "vendor_offer_form.btn_back") }</span>
+					</a>
+				</div>
+			</div>
+
+			<form
+				if data.IsEdit && data.Offer != nil {
+					action={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/edit", data.Offer.ID)) }
+				} else {
+					action="/vendor/offers/new"
+				}
+				method="POST"
+				enctype="multipart/form-data"
+				class="d-flex flex-col gap-6 m-0"
+			>
+				
+				<!-- Grid 1: Basic Info & Pricing Details -->
+				<div class="d-grid grid-cols-2 gap-6 offer-form-grid">
+					
+					<!-- Card 1: Basic Details -->
+					<div class="glass-panel p-6 d-flex flex-col gap-4">
+						<div class="d-flex items-center gap-2 pb-3 border-b">
+							<span class="text-lg">@components.IconFileText("icon-sm")</span>
+							<h3 class="text-base font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_offer_form.basic_card_title") }
+							</h3>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+								{ i18n.T(lang, "vendor_offer_form.lbl_title_ar") } <span class="text-danger">*</span>
+							</label>
+							<input
+								type="text"
+								name="title_ar"
+								value={ offerTitleAr(data.Offer) }
+								required
+								placeholder={ i18n.T(lang, "vendor_offer_form.placeholder_title_ar") }
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+								{ i18n.T(lang, "vendor_offer_form.lbl_title_en") }
+							</label>
+							<input
+								type="text"
+								name="title_en"
+								value={ offerTitleEn(data.Offer) }
+								placeholder={ i18n.T(lang, "vendor_offer_form.placeholder_title_en") }
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+								{ i18n.T(lang, "vendor_offer_form.lbl_description") }
+							</label>
+							<textarea
+								name="description_ar"
+								rows="3"
+								placeholder={ i18n.T(lang, "vendor_offer_form.placeholder_desc") }
+								class="form-input text-xs w-full"
+							>{ offerDesc(data.Offer) }</textarea>
+						</div>
+
+						<div class="d-grid grid-cols-2 gap-3">
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_target_branch") }
+								</label>
+								<select name="branch_id" class="form-input text-xs w-full">
+									<option value="">{ i18n.T(lang, "vendor_offer_form.all_branches") }</option>
+									for _, b := range data.Branches {
+										<option
+											value={ fmt.Sprintf("%d", b.ID) }
+											selected?={ data.Offer != nil && data.Offer.BranchID != nil && *data.Offer.BranchID == b.ID }
+										>
+											{ b.Name.Get(i18n.Lang(lang)) }
+										</option>
+									}
+								</select>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_status") } <span class="text-danger">*</span>
+								</label>
+								<select name="status" class="form-input text-xs w-full">
+									<option value="active" selected?={ data.Offer == nil || data.Offer.Status == "active" }>{ i18n.T(lang, "vendor_offer_form.status_active") }</option>
+									<option value="draft" selected?={ data.Offer != nil && data.Offer.Status == "draft" }>{ i18n.T(lang, "vendor_offer_form.status_draft") }</option>
+									<option value="inactive" selected?={ data.Offer != nil && data.Offer.Status == "inactive" }>{ i18n.T(lang, "vendor_offer_form.status_inactive") }</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Card 2: Pricing, Dates & Image -->
+					<div class="glass-panel p-6 d-flex flex-col gap-4">
+						<div class="d-flex items-center gap-2 pb-3 border-b">
+							<span class="text-lg">@components.IconWallet("icon-sm")</span>
+							<h3 class="text-base font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_offer_form.pricing_card_title") }
+							</h3>
+						</div>
+
+						<div class="d-grid grid-cols-2 gap-3">
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_general_disc_pct") }
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									name="discount_percentage"
+									value={ offerDiscPct(data.Offer) }
+									placeholder="15.00"
+									class="form-input text-xs tabular-nums w-full"
+								/>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_total_price") }
+								</label>
+								<input
+									type="number"
+									step="0.01"
+									name="total_price"
+									value={ offerTotalPrice(data.Offer) }
+									placeholder="250.00"
+									class="form-input text-xs tabular-nums w-full"
+								/>
+							</div>
+						</div>
+
+						<div class="d-grid grid-cols-2 gap-3">
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_start_date") }
+								</label>
+								<input
+									type="date"
+									name="start_date"
+									value={ offerStartDate(data.Offer) }
+									class="form-input text-xs w-full"
+								/>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+									{ i18n.T(lang, "vendor_offer_form.lbl_end_date") }
+								</label>
+								<input
+									type="date"
+									name="end_date"
+									value={ offerEndDate(data.Offer) }
+									class="form-input text-xs w-full"
+								/>
+							</div>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+								{ i18n.T(lang, "vendor_offer_form.lbl_min_order") }
+							</label>
+							<input
+								type="number"
+								step="0.01"
+								name="min_order_amount"
+								value={ offerMinOrder(data.Offer) }
+								placeholder="500.00"
+								class="form-input text-xs tabular-nums w-full"
+							/>
+						</div>
+
+						<!-- Banner Upload System -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+								{ i18n.T(lang, "vendor_offer_form.lbl_banner_upload") }
+							</label>
+							if data.Offer != nil && data.Offer.Image != "" {
+								<div class="mb-2 p-2 rounded-xl border bg-surface-sunken d-flex items-center gap-3">
+									<img src={ data.Offer.Image } alt="Offer Banner" class="w-16 h-16 rounded-lg object-cover border" />
+									<div class="stack-xs text-start">
+										<span class="text-xs font-bold text-primary">{ i18n.T(lang, "vendor_offer_form.current_image_title") }</span>
+										<span class="text-2xs text-muted">{ i18n.T(lang, "vendor_offer_form.current_image_hint") }</span>
+									</div>
+								</div>
+								<input type="hidden" name="image" value={ data.Offer.Image } />
+							}
+							<div class="d-flex flex-col gap-1.5" x-data="{ fileName: '' }">
+								<input
+									type="file"
+									name="image_file"
+									accept="image/png,image/jpeg,image/webp,image/jpg"
+									class="form-input text-xs w-full"
+									@change="fileName = $event.target.files.length > 0 ? $event.target.files[0].name : ''"
+								/>
+								<div class="d-flex items-center justify-between text-2xs text-muted">
+									<span>{ i18n.T(lang, "vendor_offer_form.upload_formats_hint") }</span>
+									<span x-show="fileName" class="text-emerald font-bold" x-text="'Selected: ' + fileName"></span>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Section 2: Products Selection & Custom Offer Pricing -->
+				@VendorOfferFormProducts(data.IsEdit, lang)
+			</form>
+		</div>
+	}
+}

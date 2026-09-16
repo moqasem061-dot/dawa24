@@ -1,0 +1,311 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// إدارة الشحنات — the dispatch board.
+
+type DeliveryCourierOption struct {
+	UserID       int64
+	Name         string
+	Phone        string
+	EmployeeCode string
+	BranchName   string
+}
+
+type VendorDeliveryData struct {
+	Queue      commerce.CourierQueue
+	Shipments  []*commerce.OrderShipment
+	Counts     commerce.CourierQueueCounts
+	Workload   []*commerce.CourierWorkload
+	Couriers   []DeliveryCourierOption
+	Search     string
+	Page       int
+	PerPage    int
+	TotalCount int
+	CanAssign  bool
+	Route      *commerce.CourierRoute
+	ActorID    int64
+	NoticeType string
+	NoticeMsg  string
+}
+
+func deliveryQueueHref(queue commerce.CourierQueue, search string) string {
+	v := url.Values{"queue": {string(queue)}}
+	if search != "" {
+		v.Set("q", search)
+	}
+	return "/vendor/delivery?" + v.Encode()
+}
+
+templ VendorDeliveryPage(data VendorDeliveryData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_delivery.page_title"), "delivery", lang, dir) {
+		<div class="page-container">
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 d-flex items-center gap-3 p-4">
+						@components.IconAlert("icon-sm")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 d-flex items-center gap-3 p-4">
+						@components.IconCheckCircle("icon-sm")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconTruck("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.header_title") }</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							if data.CanAssign {
+								{ i18n.T(lang, "vendor_delivery.header_desc_dispatch") }
+							} else {
+								{ i18n.T(lang, "vendor_delivery.header_desc_courier") }
+							}
+						</p>
+					</div>
+
+					<form method="GET" action="/vendor/delivery" class="delivery-search m-0">
+						<input type="hidden" name="queue" value={ string(data.Queue) }/>
+						<input
+							type="text"
+							name="q"
+							value={ data.Search }
+							placeholder={ i18n.T(lang, "vendor_delivery.search_ph") }
+							class="form-input text-xs delivery-search-input"
+						/>
+						<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs gap-1.5">
+							@components.IconSearch("icon-2xs")
+							<span>{ i18n.T(lang, "vendor_delivery.btn_search") }</span>
+						</button>
+					</form>
+				</div>
+
+				if data.Counts.Mine > 0 {
+					@deliveryRouteBanner(data, lang)
+				}
+
+				<!-- Queue tabs -->
+				<div class="tabs-nav mt-4 tabs-nav-mobile-scroll">
+					<a
+						href={ templ.SafeURL(deliveryQueueHref(commerce.CourierQueueMine, data.Search)) }
+						class={ "tab-btn", templ.KV("active", data.Queue == commerce.CourierQueueMine) }
+					>
+						{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.tab_mine"), data.Counts.Mine) }
+					</a>
+					<a
+						href={ templ.SafeURL(deliveryQueueHref(commerce.CourierQueueCompleted, data.Search)) }
+						class={ "tab-btn", templ.KV("active", data.Queue == commerce.CourierQueueCompleted) }
+					>
+						{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.tab_completed"), data.Counts.Completed) }
+					</a>
+					<a
+						href={ templ.SafeURL(deliveryQueueHref(commerce.CourierQueueFailed, data.Search)) }
+						class={ "tab-btn", templ.KV("active", data.Queue == commerce.CourierQueueFailed) }
+					>
+						{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.tab_failed"), data.Counts.Failed) }
+					</a>
+					if data.CanAssign {
+						<a
+							href={ templ.SafeURL(deliveryQueueHref(commerce.CourierQueueUnassigned, data.Search)) }
+							class={ "tab-btn", templ.KV("active", data.Queue == commerce.CourierQueueUnassigned) }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.tab_unassigned"), data.Counts.Unassigned) }
+						</a>
+						<a
+							href={ templ.SafeURL(deliveryQueueHref(commerce.CourierQueueAll, data.Search)) }
+							class={ "tab-btn", templ.KV("active", data.Queue == commerce.CourierQueueAll) }
+						>
+							{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.tab_all"), data.Counts.All) }
+						</a>
+					}
+				</div>
+			</div>
+
+			<!-- Metrics -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_delivery.stat_mine") }</div>
+					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", data.Counts.Mine) }</div>
+				</div>
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-warning d-flex items-center gap-2">
+						<span class="status-dot warning"></span>
+						<span>{ i18n.T(lang, "vendor_delivery.stat_overdue") }</span>
+					</div>
+					<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", data.Counts.Overdue) }</div>
+				</div>
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success d-flex items-center gap-2">
+						<span class="status-dot success"></span>
+						<span>{ i18n.T(lang, "vendor_delivery.stat_completed") }</span>
+					</div>
+					<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", data.Counts.Completed) }</div>
+				</div>
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-danger d-flex items-center gap-2">
+						<span class="status-dot danger"></span>
+						<span>{ i18n.T(lang, "vendor_delivery.stat_failed") }</span>
+					</div>
+					<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", data.Counts.Failed) }</div>
+				</div>
+				if data.CanAssign {
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-accent d-flex items-center gap-2">
+							<span class="status-dot"></span>
+							<span>{ i18n.T(lang, "vendor_delivery.stat_unassigned") }</span>
+						</div>
+						<div class="stat-card-value text-accent tabular-nums">{ fmt.Sprintf("%d", data.Counts.Unassigned) }</div>
+					</div>
+				}
+			</div>
+
+			if data.CanAssign && len(data.Workload) > 0 {
+				@VendorDeliveryWorkload(data.Workload, lang)
+			}
+
+			<!-- Parcels -->
+			if len(data.Shipments) == 0 {
+				<div class="glass-panel p-12 text-center empty-state-glass">
+					<div class="mb-3">@components.IconTruck("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_delivery.empty_title") }</h3>
+					<p class="text-sm text-secondary m-0">
+						if data.Queue == commerce.CourierQueueMine {
+							{ i18n.T(lang, "vendor_delivery.empty_mine") }
+						} else if data.Queue == commerce.CourierQueueCompleted {
+							{ i18n.T(lang, "vendor_delivery.empty_completed") }
+						} else if data.Queue == commerce.CourierQueueFailed {
+							{ i18n.T(lang, "vendor_delivery.empty_failed") }
+						} else if data.Queue == commerce.CourierQueueUnassigned {
+							{ i18n.T(lang, "vendor_delivery.empty_unassigned") }
+						} else {
+							{ i18n.T(lang, "vendor_delivery.empty_default") }
+						}
+					</p>
+				</div>
+			} else {
+				<div class="d-flex flex-col gap-4">
+					for _, sh := range data.Shipments {
+						@VendorDeliveryParcelCard(sh, data, lang)
+					}
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/vendor/delivery",
+							QueryValues: url.Values{
+								"queue": {string(data.Queue)},
+								"q":     {data.Search},
+							},
+						})
+					}
+				</div>
+			}
+		</div>
+	}
+}
+
+templ VendorDeliveryWorkload(workload []*commerce.CourierWorkload, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="glass-panel p-5 mb-6">
+		<div class="d-flex items-center gap-2 mb-3">
+			@components.IconUsers("icon-xs")
+			<h2 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.workload_title") }</h2>
+		</div>
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>{ i18n.T(lang, "vendor_delivery.th_courier") }</th>
+						<th class="text-center tabular-nums">{ i18n.T(lang, "vendor_delivery.th_active_parcels") }</th>
+						<th class="text-center tabular-nums">{ i18n.T(lang, "vendor_delivery.th_delivered_parcels") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_delivery.th_oldest_parcel") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, c := range workload {
+						<tr>
+							<td>
+								<strong class="text-primary text-sm font-bold">{ c.Name }</strong>
+								if c.Phone != "" {
+									<div class="text-xs text-muted tabular-nums">{ c.Phone }</div>
+								}
+							</td>
+							<td class="text-center">
+								if c.OpenCount > 0 {
+									<span class="badge badge-sky text-xs font-black tabular-nums">{ fmt.Sprintf("%d", c.OpenCount) }</span>
+								} else {
+									<span class="text-xs text-muted">—</span>
+								}
+							</td>
+							<td class="text-center tabular-nums text-xs font-bold text-secondary">
+								{ fmt.Sprintf("%d", c.DeliveredCount) }
+							</td>
+							<td class="text-center text-xs">
+								if c.OldestAssignedAt != nil {
+									<span class="tabular-nums font-mono text-secondary">
+										{ c.OldestAssignedAt.Format("2006-01-02 03:04 PM") }
+									</span>
+								} else {
+									<span class="text-muted">—</span>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+
+templ deliveryRouteBanner(data VendorDeliveryData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="delivery-route-banner">
+		<div class="delivery-route-banner-copy min-w-0">
+			<div class="d-flex items-center gap-2">
+				@components.IconTruck("icon-xs")
+				<strong class="text-sm font-black text-primary">{ i18n.T(lang, "vendor_delivery.route_banner_title") }</strong>
+			</div>
+			if data.Route != nil && data.Route.StopCount() > 0 {
+				<p class="text-xs text-secondary m-0">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.route_banner_desc_stops"), data.Route.StopCount(), data.Route.ShipmentCount, data.Route.TotalKm()) }
+				</p>
+			} else {
+				<p class="text-xs text-secondary m-0">
+					{ i18n.T(lang, "vendor_delivery.route_banner_desc_hint") }
+				</p>
+			}
+		</div>
+		<a href="/vendor/delivery/route" class="btn btn-primary btn-sm font-black text-xs gap-1.5">
+			@components.IconLocation("icon-2xs")
+			<span>{ i18n.T(lang, "vendor_delivery.route_banner_btn_open") }</span>
+		</a>
+	</div>
+}

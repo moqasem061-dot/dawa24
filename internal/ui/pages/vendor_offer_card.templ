@@ -1,0 +1,188 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorOfferCard renders a single offer card in the vendor offers grid.
+templ VendorOfferCard(o *promo.SpecialOffer, lang, dir string) {
+	<div class="glass-panel p-5 mb-0 h-full d-flex flex-col justify-between overflow-hidden border">
+		<div class="stack-sm flex-1 d-flex flex-col">
+			<!-- Banner Image or Branded Placeholder -->
+			if o.Image != "" {
+				<div class="w-full h-36 rounded-2xl overflow-hidden mb-3 border bg-surface-sunken shrink-0 relative">
+					<img src={ o.Image } alt={ o.Title.Get(i18n.Lang(lang)) } class="w-full h-full object-cover" />
+				</div>
+			} else {
+				<div class="w-full h-36 rounded-2xl overflow-hidden mb-3 border bg-surface-sunken d-flex flex-col items-center justify-center shrink-0 relative text-muted select-none">
+					<span class="text-3xl opacity-30">🎁</span>
+					<span class="text-3xs font-bold mt-1 text-muted opacity-80">{ i18n.T(lang, "vendor_offers.card_promo_badge") }</span>
+				</div>
+			}
+
+			<!-- Header Strip -->
+			<div class="flex-between items-start gap-2 mb-2">
+				<div class="stack-xs text-start min-w-0 flex-1">
+					<h3 class="text-base font-extrabold text-primary m-0 leading-snug truncate" title={ o.Title.Get(i18n.Lang(lang)) }>
+						{ o.Title.Get(i18n.Lang(lang)) }
+					</h3>
+					if o.BranchName != "" {
+						<div class="text-2xs text-accent font-bold mt-0.5 truncate">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_offers.card_branch_prefix"), o.BranchName) }
+						</div>
+					}
+					if o.BranchUnavailable {
+						<div class="text-2xs text-danger font-bold mt-1">
+							الفرع المرتبط بهذا العرض محذوف أو موقوف، لذلك لا يظهر العرض للمشترين. عدّل العرض واختر فرعاً فعّالاً.
+						</div>
+					}
+				</div>
+
+				<div class="d-flex flex-col items-end gap-1 shrink-0">
+					<!-- Active/Draft Status -->
+					if o.Status == "active" {
+						<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "vendor_offers.badge_status_active") }</span>
+					} else if o.Status == "draft" {
+						<span class="badge badge-slate text-2xs font-bold">{ i18n.T(lang, "vendor_offers.badge_status_draft") }</span>
+					} else {
+						<span class="badge badge-rose text-2xs font-bold">{ o.Status }</span>
+					}
+
+					<!-- Admin Moderation Status -->
+					if o.AdminStatus == "pending" {
+						<span class="badge badge-amber text-2xs font-extrabold animate-pulse">{ i18n.T(lang, "vendor_offers.badge_admin_pending") }</span>
+					} else if o.AdminStatus == "changes_requested" {
+						<span class="badge badge-amber text-2xs font-extrabold">{ i18n.T(lang, "vendor_offers.badge_admin_changes") }</span>
+					} else if o.AdminStatus == "approved" {
+						<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "vendor_offers.badge_admin_approved") }</span>
+					} else if o.AdminStatus == "rejected" {
+						<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "vendor_offers.badge_admin_rejected") }</span>
+					}
+				</div>
+			</div>
+
+			<!-- Admin Feedback Note Banner (if changes requested or rejected) -->
+			if (o.AdminStatus == "changes_requested" || o.AdminStatus == "rejected") && o.AdminNotes != "" {
+				<div class="p-3 my-2 rounded-2xl bg-amber-50 border border-amber-200 text-xs text-start">
+					<div class="d-flex items-center gap-1.5 font-bold text-amber-900 mb-1">
+						@components.IconAlert("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_offers.admin_notes_title") }</span>
+					</div>
+					<p class="m-0 text-amber-800 text-2xs leading-relaxed">{ o.AdminNotes }</p>
+					<div class="mt-2 text-end">
+						<a href={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/edit", o.ID)) } class="btn btn-primary btn-xs font-bold">
+							{ i18n.T(lang, "vendor_offers.btn_edit_apply_now") }
+						</a>
+					</div>
+				</div>
+			}
+
+			if o.Description.Get(i18n.Lang(lang)) != "" {
+				<p class="text-xs text-secondary leading-relaxed mb-3 line-clamp-2" title={ o.Description.Get(i18n.Lang(lang)) }>
+					{ o.Description.Get(i18n.Lang(lang)) }
+				</p>
+			}
+
+			<!-- Pricing & Products Summary Pill -->
+			<div class="p-3 rounded-xl bg-surface-sunken border mb-3">
+				<div class="flex-between items-baseline">
+					<div class="stack-xs text-start">
+						<span class="text-2xs text-muted font-bold d-block">{ i18n.T(lang, "vendor_offers.lbl_discount_pct") }</span>
+						<span class="text-base font-black text-emerald tabular-nums">
+							{ fmt.Sprintf("%.0f%%", o.DiscountPercentage) }
+						</span>
+					</div>
+
+					<div class="text-end">
+						<span class="text-2xs text-muted font-bold d-block">{ i18n.T(lang, "vendor_offers.lbl_total_price") }</span>
+						<span class="text-sm font-extrabold text-primary tabular-nums">
+							if o.TotalPrice.Minor() > 0 {
+								{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), o.TotalPrice.String()) }
+							} else {
+								<span>{ i18n.T(lang, "vendor_offers.price_per_item") }</span>
+							}
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- Validity Dates & Location Cover Badge -->
+			<div class="flex-between items-center text-2xs text-muted mb-2">
+				if o.StartDate != nil && o.EndDate != nil {
+					<span class="tabular-nums">{ o.StartDate.Format("02/01/2006") } - { o.EndDate.Format("02/01/2006") }</span>
+				} else {
+					<span>{ i18n.T(lang, "vendor_offers.status_valid_ongoing") }</span>
+				}
+
+				<span class="badge badge-sky text-2xs font-bold gap-1">
+					@components.IconPackage("icon-2xs")
+					<span>{ fmt.Sprintf(i18n.T(lang, "vendor_offers.badge_included_products"), len(o.Products)) }</span>
+				</span>
+			</div>
+
+			<!-- Included Products Manifest -->
+			<div class="mt-2 pt-2 border-t flex-1">
+				<div class="text-2xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
+					<span>{ i18n.T(lang, "vendor_offers.lbl_included_medicines") }</span>
+				</div>
+				if len(o.Products) > 0 {
+					<div class="d-flex flex-col gap-1.5 max-h-32 overflow-y-auto">
+						for _, p := range o.Products {
+							<div class="p-1.5 rounded-lg bg-surface-sunken border d-flex items-center justify-between text-xs gap-2">
+								<span class="font-bold text-primary truncate text-2xs" title={ p.VariantName }>{ p.VariantName }</span>
+								<div class="d-flex items-center gap-1.5 shrink-0">
+									<span class="badge badge-slate text-2xs font-bold tabular-nums">{ fmt.Sprintf("× %d", p.Quantity) }</span>
+									if p.CustomPrice.IsPositive() {
+										<strong class="text-emerald tabular-nums text-2xs font-black">{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.CustomPrice.String()) }</strong>
+									} else if p.DiscountPercentage > 0 {
+										<span class="badge badge-amber text-2xs font-bold">{ fmt.Sprintf("-%.0f%%", p.DiscountPercentage) }</span>
+									}
+								</div>
+							</div>
+						}
+					</div>
+				} else {
+					<div class="p-2.5 rounded-lg bg-surface-sunken border text-center text-3xs text-muted">
+						{ i18n.T(lang, "vendor_offers.no_included_items") }
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- Action Buttons (Pinned to Bottom) -->
+		<div class="flex-between items-center border-t pt-3 mt-auto flex-wrap gap-2">
+			<div class="d-flex items-center gap-1.5">
+				<!-- Edit Offer Button -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/edit", o.ID)) }
+					class="btn btn-primary btn-xs font-bold gap-1 shadow-2xs"
+					title={ i18n.T(lang, "vendor_offers.tooltip_edit") }
+				>
+					@components.IconEdit("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_offers.btn_edit") }</span>
+				</a>
+
+				<!-- Geographic Coverage -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/locations", o.ID)) }
+					class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
+					title={ i18n.T(lang, "vendor_offers.tooltip_coverage") }
+				>
+					@components.IconMapPin("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_offers.btn_coverage") }</span>
+				</a>
+			</div>
+
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/offers/%d/delete", o.ID)) } class="m-0" data-confirm={ i18n.T(lang, "vendor_offers.delete_confirm") }>
+				<button type="submit" class="btn btn-ghost btn-xs text-rose-600 hover:bg-rose-50" title={ i18n.T(lang, "vendor_offers.tooltip_delete") }>
+					@components.IconClose("icon-xs")
+					<span>{ i18n.T(lang, "vendor_offers.btn_delete") }</span>
+				</button>
+			</form>
+		</div>
+	</div>
+}

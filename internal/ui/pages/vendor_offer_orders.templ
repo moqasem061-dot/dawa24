@@ -1,0 +1,110 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorOfferOrdersPage renders vendor offer orders list.
+templ VendorOfferOrdersPage(shipments []*commerce.OrderShipment, lang, dir string, page, perPage, totalCount int) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_finance.offer_orders.shell_title"), "offer_orders", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconPackage("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_finance.offer_orders.header_title"), totalCount) }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_finance.offer_orders.header_desc") }
+						</p>
+					</div>
+				</div>
+			</div>
+
+			if len(shipments) == 0 {
+				<div class="glass-panel p-8 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">
+						{ i18n.T(lang, "vendor_finance.offer_orders.empty_title") }
+					</h3>
+					<p class="text-sm text-secondary m-0">
+						{ i18n.T(lang, "vendor_finance.offer_orders.empty_desc") }
+					</p>
+				</div>
+			} else {
+				<div class="glass-panel p-0 mb-6 overflow-hidden">
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>{ i18n.T(lang, "vendor_finance.offer_orders.th_shipment_num") }</th>
+									<th>{ i18n.T(lang, "vendor_finance.offer_orders.th_amount") }</th>
+									<th class="text-center">{ i18n.T(lang, "vendor_finance.offer_orders.th_status") }</th>
+									<th>{ i18n.T(lang, "vendor_finance.offer_orders.th_date") }</th>
+									<th class="col-actions">{ i18n.T(lang, "vendor_finance.offer_orders.th_actions") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, s := range shipments {
+									<tr>
+										<td class="tabular-nums font-bold text-primary">#{ s.ShipmentNumber }</td>
+										<td class="tabular-nums font-extrabold text-success">
+											{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.TotalAmount.String()) }
+										</td>
+										<td class="text-center">
+											<span class="badge badge-sky text-xs font-bold">{ string(s.Status) }</span>
+										</td>
+										<td class="tabular-nums text-xs text-muted">{ s.CreatedAt.Format("2006-01-02") }</td>
+										<td class="col-actions">
+											<a href={ templ.SafeURL(fmt.Sprintf("/vendor/orders/offers/%d", s.ID)) } class="btn btn-secondary btn-sm font-bold text-xs">
+												{ i18n.T(lang, "vendor_finance.offer_orders.btn_view_shipment") }
+											</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     "/vendor/orders/offers",
+						})
+					}
+				</div>
+			}
+		</div>
+	}
+}
+
+// VendorOfferOrderDetailPage renders single offer order details.
+templ VendorOfferOrderDetailPage(id int64, lang, dir string) {
+	@layouts.VendorShell(fmt.Sprintf(i18n.T(lang, "vendor_finance.offer_orders.detail_title"), id), "offer_orders", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 max-w-2xl mx-auto">
+				<div class="flex-between items-center mb-4 pb-2 border-b">
+					<div class="stack-sm">
+						<h1 class="text-xl font-black text-primary m-0">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_finance.offer_orders.detail_title"), id) }
+						</h1>
+					</div>
+					<a href="/vendor/orders/offers" class="btn btn-secondary btn-sm font-bold">
+						{ i18n.T(lang, "vendor_finance.offer_orders.btn_back") }
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}

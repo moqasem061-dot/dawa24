@@ -1,0 +1,35 @@
+{
+  "ci": {
+    "collect": {
+      "numberOfRuns": 3,
+      "settings": {
+        "formFactor": "mobile",
+        "screenEmulation": {
+          "mobile": true,
+          "width": 375,
+          "height": 667,
+          "deviceScaleFactor": 2,
+          "disabled": false
+        },
+        "throttling": {
+          "rttMs": 150,
+          "throughputKbps": 1638.4,
+          "requestLatencyMs": 150,
+          "downloadThroughputKbps": 1638.4,
+          "uploadThroughputKbps": 750,
+          "cpuSlowdownMultiplier": 4
+        }
+      }
+    },
+    "assert": {
+      "assertions": {
+        "categories:performance": ["error", {"minScore": 0.8}],
+        "largest-contentful-paint": ["error", {"maxNumericValue": 2500}],
+        "total-blocking-time": ["error", {"maxNumericValue": 300}],
+        "cumulative-layout-shift": ["error", {"maxNumericValue": 0.1}],
+        "resource-summary:stylesheet:size": ["error", {"maxNumericValue": 92160}],
+        "resource-summary:script:size": ["error", {"maxNumericValue": 122880}]
+      }
+    }
+  }
+}

@@ -1,0 +1,37 @@
+# =============================================================================
+# Docker Compose Override for 2 vCPU / 8 GB RAM VPS (Hostinger KVM 4)
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f deploy/tuning/docker-compose.8gb.override.yml up -d
+# =============================================================================
+
+services:
+  server:
+    environment:
+      GOMEMLIMIT: 2400MiB
+      GOMAXPROCS: 2
+      DB_MAX_CONNS: 35
+      DB_MIN_CONNS: 5
+      REDIS_POOL_SIZE: 20
+    deploy:
+      resources:
+        limits:
+          memory: 3000M
+          cpus: "2"
+        reservations:
+          memory: 1500M
+
+  worker:
+    environment:
+      GOMEMLIMIT: 1200MiB
+      GOMAXPROCS: 1
+      WORKER_IMPORTS: 2
+      WORKER_AI: 4
+      WORKER_NOTIFICATIONS: 4
+      DB_MAX_CONNS: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+          cpus: "1"
+        reservations:
+          memory: 600M

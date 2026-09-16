@@ -1,0 +1,338 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorUserOrgData struct {
+	UserOrgs      []*org.UserOrganization
+	AllCustomers  []*identity.User
+	ActiveTab     string
+	TotalCount    int
+	PendingCount  int
+	ApprovedCount int
+	RejectedCount int
+	NoticeType    string
+	NoticeMsg     string
+	Page          int
+	PerPage       int
+	FilteredTotal int
+}
+
+templ VendorUserOrganizationsPage(lang, dir string, data *VendorUserOrgData) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_user_org.shell_title"), "user_organization", lang, dir) {
+		<div class="page-container">
+			if data != nil && data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-2">
+						<span>@components.IconAlert("icon-sm")</span>
+						<strong>{ data.NoticeMsg }</strong>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center gap-2">
+						<span>@components.IconCheckCircle("icon-sm")</span>
+						<strong>{ data.NoticeMsg }</strong>
+					</div>
+				}
+			}
+
+			<!-- Header Banner matching platform system -->
+			<div class="glass-panel p-5 mb-5 flex-between flex-wrap gap-4 border rounded-2xl shadow-xs">
+				<div class="stack-2xs">
+					<nav class="text-xs text-muted mb-1 d-flex items-center gap-1.5 font-bold">
+						<a href="/vendor/dashboard" class="text-secondary transition-colors">{ i18n.T(lang, "vendor_user_org.crumb_dashboard") }</a>
+						<span class="text-muted">/</span>
+						<a href="/vendor/organization" class="text-secondary transition-colors">{ i18n.T(lang, "vendor_user_org.crumb_org") }</a>
+						<span class="text-muted">/</span>
+						<span class="text-primary font-black">{ i18n.T(lang, "vendor_user_org.crumb_user_org") }</span>
+					</nav>
+					<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_user_org.header_title"), data.TotalCount) }
+					</h1>
+					<p class="text-xs text-secondary mt-1 mb-0 font-medium">
+						{ i18n.T(lang, "vendor_user_org.header_desc") }
+					</p>
+				</div>
+
+				<div class="d-flex items-center gap-3">
+					<button
+						type="button"
+						class="btn btn-primary font-bold text-xs px-4 py-2.5 gap-1.5 shadow-xs"
+						data-modal-open="add-vendor-user-org-modal"
+					>
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "vendor_user_org.btn_add_user") }</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Add User Organization Modal -->
+			@VendorUserOrgAddModal(lang)
+
+			<!-- Filter Status Pills -->
+			if data != nil {
+				<div class="d-flex items-center gap-2 mb-4 flex-wrap">
+					<a
+						href="/vendor/user-organization?status=all"
+						class={ "btn btn-xs fw-800", templ.KV("btn-primary", data.ActiveTab == "" || data.ActiveTab == "all"), templ.KV("btn-secondary", data.ActiveTab != "" && data.ActiveTab != "all") }
+					>
+						<span>{ i18n.T(lang, "vendor_user_org.tab_all") }</span>
+						<span class="badge text-2xs tabular-nums">{ fmt.Sprintf("%d", data.TotalCount) }</span>
+					</a>
+
+					<a
+						href="/vendor/user-organization?status=pending"
+						class={ "btn btn-xs fw-800", templ.KV("btn-primary", data.ActiveTab == "pending"), templ.KV("btn-secondary", data.ActiveTab != "pending") }
+					>
+						<span>{ i18n.T(lang, "vendor_user_org.tab_pending") }</span>
+						<span class="badge badge-amber text-2xs tabular-nums">{ fmt.Sprintf("%d", data.PendingCount) }</span>
+					</a>
+
+					<a
+						href="/vendor/user-organization?status=approved"
+						class={ "btn btn-xs fw-800", templ.KV("btn-primary", data.ActiveTab == "approved"), templ.KV("btn-secondary", data.ActiveTab != "approved") }
+					>
+						<span>{ i18n.T(lang, "vendor_user_org.tab_approved") }</span>
+						<span class="badge badge-emerald text-2xs tabular-nums">{ fmt.Sprintf("%d", data.ApprovedCount) }</span>
+					</a>
+
+					<a
+						href="/vendor/user-organization?status=rejected"
+						class={ "btn btn-xs fw-800", templ.KV("btn-primary", data.ActiveTab == "rejected"), templ.KV("btn-secondary", data.ActiveTab != "rejected") }
+					>
+						<span>{ i18n.T(lang, "vendor_user_org.tab_rejected") }</span>
+						<span class="badge badge-rose text-2xs tabular-nums">{ fmt.Sprintf("%d", data.RejectedCount) }</span>
+					</a>
+				</div>
+			}
+
+			<!-- List of Users / Connected Organizations -->
+			if data == nil || len(data.UserOrgs) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   i18n.T(lang, "vendor_user_org.empty_title"),
+					Message: i18n.T(lang, "vendor_user_org.empty_desc"),
+				})
+			} else {
+				<div class="d-flex flex-col gap-3">
+					for _, uo := range data.UserOrgs {
+						if uo != nil {
+							<div class="glass-panel p-4 d-flex items-center justify-between flex-wrap gap-3">
+								<div class="d-flex items-center gap-3">
+									<div class="w-10 h-10 rounded-lg bg-primary-subtle text-primary border border-primary-subtle d-flex items-center justify-center font-bold text-base flex-shrink-0">
+										if len(uo.UserName) > 0 {
+											{ string([]rune(uo.UserName)[0:1]) }
+										} else {
+											<span>@components.IconUser("icon-sm")</span>
+										}
+									</div>
+
+									<div>
+										<div class="d-flex items-center gap-2 flex-wrap">
+											<strong class="text-sm font-bold text-primary">{ uo.UserName }</strong>
+											if uo.CustomerOrgName != "" {
+												<span class="badge badge-slate text-2xs">{ uo.CustomerOrgName }</span>
+											}
+											<span class="badge badge-sky text-2xs fw-800 tabular-nums" dir="ltr">
+												{ uo.OrganizationNumber }
+											</span>
+										</div>
+
+										<div class="text-xs text-muted tabular-nums" dir="ltr">
+											{ uo.UserEmail }
+										</div>
+
+										<div class="text-2xs text-secondary mt-0.5">
+											{ i18n.T(lang, "vendor_user_org.req_date") }<span class="tabular-nums font-bold">{ format.Date(uo.CreatedAt, "ar") }</span>
+										</div>
+
+										if uo.Notes != "" {
+											<div class="text-2xs text-muted mt-0.5">
+												<strong>{ i18n.T(lang, "vendor_user_org.notes_prefix") }</strong>{ uo.Notes }
+											</div>
+										}
+									</div>
+								</div>
+
+								<div class="d-flex items-center gap-2 flex-wrap">
+									if uo.Status == org.UserOrgStatusPending {
+										<span class="badge badge-amber text-2xs fw-800">{ i18n.T(lang, "vendor_user_org.tab_pending") }</span>
+
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/user-organization/%d/approve", uo.ID)) } class="m-0 d-inline">
+											<button type="submit" class="btn btn-primary btn-xs fw-800">
+												@components.IconCheck("icon-xs")
+												<span>{ i18n.T(lang, "vendor_user_org.btn_approve") }</span>
+											</button>
+										</form>
+
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/user-organization/%d/reject", uo.ID)) } class="m-0 d-inline">
+											<button type="submit" class="btn btn-secondary btn-xs fw-800 text-danger">
+												@components.IconClose("icon-xs")
+												<span>{ i18n.T(lang, "vendor_user_org.btn_reject") }</span>
+											</button>
+										</form>
+									} else if uo.Status == org.UserOrgStatusApproved {
+										<span class="badge badge-emerald text-2xs fw-800">{ i18n.T(lang, "vendor_user_org.tab_approved") }</span>
+									} else if uo.Status == org.UserOrgStatusRejected {
+										<span class="badge badge-rose text-2xs fw-800">{ i18n.T(lang, "vendor_user_org.tab_rejected") }</span>
+									}
+
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs"
+										title={ i18n.T(lang, "vendor_user_org.title_edit_modal") }
+										data-modal-open={ fmt.Sprintf("vendor-edit-uo-modal-%d", uo.ID) }
+									>
+										@components.IconEdit("icon-xs")
+									</button>
+
+									<form
+										method="POST"
+										action={ templ.SafeURL(fmt.Sprintf("/vendor/user-organization/%d/delete", uo.ID)) }
+										class="m-0 d-inline"
+										data-confirm={ i18n.T(lang, "vendor_user_org.delete_confirm") }
+									>
+										<button type="submit" class="btn btn-secondary btn-xs text-danger" title={ i18n.T(lang, "vendor_user_org.title_delete") }>
+											@components.IconTrash("icon-xs")
+										</button>
+									</form>
+								</div>
+
+								<!-- Edit Modal for Vendor -->
+								@VendorUserOrgEditModal(lang, uo)
+							</div>
+						}
+					}
+				</div>
+				if data != nil && data.FilteredTotal > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.FilteredTotal,
+						BaseURL:     "/vendor/user-organization",
+						QueryValues: map[string][]string{
+							"status": {data.ActiveTab},
+						},
+					})
+				}
+			}
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			var searchDebounceTimer = null;
+
+			function handleVendorUserSearch(val) {
+				clearTimeout(searchDebounceTimer);
+				const dropdown = document.getElementById('vendor-user-search-dropdown');
+				const spinner = document.getElementById('vendor-search-spinner');
+				if (!dropdown) return;
+
+				const query = (val || '').trim();
+				if (!query) {
+					dropdown.style.display = 'none';
+					dropdown.innerHTML = '';
+					if (spinner) spinner.style.display = 'none';
+					return;
+				}
+
+				if (spinner) spinner.style.display = 'block';
+
+				searchDebounceTimer = setTimeout(() => {
+					fetch('/vendor/api/users/search?q=' + encodeURIComponent(query))
+						.then(res => res.json())
+						.then(users => {
+							if (spinner) spinner.style.display = 'none';
+							if (!users || users.length === 0) {
+								dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-xs text-muted text-center">لا توجد حسابات صيدليات أو مستخدمين مطابقة</div>');
+								dropdown.style.display = 'block';
+								return;
+							}
+
+							// Account names, emails and phones are typed by their
+							// owners: escaped, and read back from data attributes.
+							const esc = dawaHTML.escape;
+							let html = '';
+							users.forEach(u => {
+								html += `
+									<div class="uo-search-item" data-pick-id="${esc(u.id)}" data-pick-name="${esc(u.name || 'بدون اسم')}"
+										data-pick-email="${esc(u.email || '')}" data-pick-phone="${esc(u.phone || '')}">
+										<div>
+											<strong class="d-block text-xs font-bold text-primary">${esc(u.name)}</strong>
+											<div class="text-2xs text-muted" dir="ltr">${esc(u.email)} ${u.phone ? '• ' + esc(u.phone) : ''}</div>
+										</div>
+										<span class="badge badge-sky text-2xs tabular-nums">#${esc(u.id)}</span>
+									</div>
+								`;
+							});
+							dropdown.innerHTML = dawaHTML.sanitize(html);
+							dropdown.onclick = function (e) {
+								const pick = e.target.closest('[data-pick-id]');
+								if (!pick) return;
+								const d = pick.dataset;
+								selectVendorUser(parseInt(d.pickId, 10), d.pickName, d.pickEmail, d.pickPhone);
+							};
+							dropdown.style.display = 'block';
+						})
+						.catch(err => {
+							if (spinner) spinner.style.display = 'none';
+							dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-xs text-danger text-center">حدث خطأ أثناء البحث</div>');
+							dropdown.style.display = 'block';
+						});
+				}, 250);
+			}
+
+			function selectVendorUser(id, name, email, phone) {
+				const hiddenInput = document.getElementById('vendor-selected-user-id');
+				const chip = document.getElementById('vendor-selected-user-chip');
+				const chipName = document.getElementById('vendor-selected-user-name');
+				const chipDetails = document.getElementById('vendor-selected-user-details');
+				const searchWrapper = document.getElementById('vendor-search-input-wrapper');
+				const dropdown = document.getElementById('vendor-user-search-dropdown');
+				const searchInput = document.getElementById('vendor-uo-user-search');
+
+				if (hiddenInput) hiddenInput.value = id;
+				if (chipName) chipName.textContent = name;
+				if (chipDetails) chipDetails.textContent = email + (phone ? ' • ' + phone : '') + ' (ID: #' + id + ')';
+				if (chip) chip.style.display = 'flex';
+				if (searchWrapper) searchWrapper.style.display = 'none';
+				if (dropdown) {
+					dropdown.style.display = 'none';
+					dropdown.innerHTML = '';
+				}
+				if (searchInput) searchInput.value = '';
+			}
+
+			function clearVendorSelectedUser() {
+				const hiddenInput = document.getElementById('vendor-selected-user-id');
+				const chip = document.getElementById('vendor-selected-user-chip');
+				const searchWrapper = document.getElementById('vendor-search-input-wrapper');
+				const searchInput = document.getElementById('vendor-uo-user-search');
+
+				if (hiddenInput) hiddenInput.value = '';
+				if (chip) chip.style.display = 'none';
+				if (searchWrapper) searchWrapper.style.display = 'block';
+				if (searchInput) {
+					searchInput.value = '';
+					searchInput.focus();
+				}
+			}
+
+			if (!window.__dawaBound_vendor_user_organizations) {
+				window.__dawaBound_vendor_user_organizations = true;
+				document.addEventListener('click', (e) => {
+					const dropdown = document.getElementById('vendor-user-search-dropdown');
+					const searchInput = document.getElementById('vendor-uo-user-search');
+					if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
+						dropdown.style.display = 'none';
+					}
+				});
+			}
+		</script>
+	}
+}

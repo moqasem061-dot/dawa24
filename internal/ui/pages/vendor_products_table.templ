@@ -1,0 +1,280 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+)
+
+templ VendorVariantsTable(variants []*VendorVariantView, lang string) {
+	<div class="table-container vendor-variants-scroll">
+		<table class="data-table vendor-variants-table">
+			<thead>
+				<tr>
+					<th>{ i18n.T(lang, "vendor_products.th_master_product") }</th>
+					<th>{ i18n.T(lang, "vendor_products.th_specs_sku") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_public_price") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_discount") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_net_price") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_price") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_discount") }</th>
+					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_unit_profit") }</th>
+					<th class="text-center whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_available_stock") }</th>
+					<th class="whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_expiry_date") }</th>
+					<th class="whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_shipping_warehouse") }</th>
+					<th class="text-center whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_visibility_status") }</th>
+					<th class="col-actions">{ i18n.T(lang, "vendor_products.th_actions") }</th>
+				</tr>
+			</thead>
+			<tbody>
+				for _, v := range variants {
+					<tr
+						class="vendor-variant-row"
+						data-id={ fmt.Sprintf("%d", v.Variant.ID) }
+						data-variant={ variantEditJSON(v.Variant) }
+						id={ fmt.Sprintf("variant-row-%d", v.Variant.ID) }
+					>
+						<!-- Product Info & Avatar -->
+						<td>
+							<div class="d-flex items-center gap-3">
+								<div class="user-avatar-badge">
+									if v.MasterProduct != nil && v.MasterProduct.Image != "" {
+										@components.ProductImage(imageurl.Thumb(v.MasterProduct.Image, "Product", "w-full h-full object-contain p-1"))
+									} else {
+										<div class="text-brand">
+											@components.IconPill("icon-sm")
+										</div>
+									}
+								</div>
+								<div class="d-flex flex-col min-w-0">
+									<div class="font-extrabold text-primary text-sm line-clamp-2">
+										if v.MasterProduct != nil {
+											{ v.MasterProduct.Name.Get(i18n.Lang(lang)) }
+										} else {
+											{ v.Variant.Name.Get(i18n.Lang(lang)) }
+										}
+									</div>
+									<div class="d-flex items-center gap-2 text-xs text-muted mt-1">
+										if v.MasterProduct != nil && v.MasterProduct.DosageForm != "" {
+											<span class="badge badge-slate text-xs">{ v.MasterProduct.DosageForm }</span>
+										}
+										if v.MasterProduct != nil && v.MasterProduct.ManufacturingCompanies != "" {
+											<span class="text-truncate max-w-140">{ v.MasterProduct.ManufacturingCompanies }</span>
+										}
+									</div>
+								</div>
+							</div>
+						</td>
+
+						<!-- Variant Name & SKU -->
+						<td>
+							<div class="text-xs font-bold text-primary">
+								{ v.Variant.Name.Get(i18n.Lang(lang)) }
+							</div>
+							if v.Variant.SKU != "" {
+								<div class="tabular-nums text-xs text-muted mt-1">
+									<code>SKU: { v.Variant.SKU }</code>
+								</div>
+							}
+							if v.Variant.BatchNumber != "" {
+								<div class="tabular-nums text-xs text-secondary mt-1">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.batch_prefix"), v.Variant.BatchNumber) }
+								</div>
+							}
+							if v.Variant.IsNegotiable {
+								<div class="mt-1">
+									<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "vendor_products.badge_negotiable") }</span>
+								</div>
+							}
+						</td>
+
+						<!-- سعر الجمهور -->
+						<td class="whitespace-nowrap">
+							<div class="tabular-nums font-bold text-primary text-sm whitespace-nowrap">
+								<span>{ v.Variant.Price.String() }</span> <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+							</div>
+							if v.Variant.MinOrderQty > 1 {
+								<div class="text-xs text-muted mt-0.5 whitespace-nowrap">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.min_order_prefix"), fmt.Sprintf("%d", v.Variant.MinOrderQty)) }
+								</div>
+							}
+						</td>
+
+						<!-- الخصم -->
+						<td class="whitespace-nowrap">
+							if v.Variant.Discount.IsPositive() {
+								<span class="badge badge-emerald text-xs font-bold whitespace-nowrap">-{ v.Variant.Discount.String() }%</span>
+							} else {
+								<span class="text-muted text-xs">—</span>
+							}
+						</td>
+
+						<!-- سعر بعد الخصم -->
+						<td class="whitespace-nowrap">
+							<span class="tabular-nums font-black text-brand text-sm whitespace-nowrap">
+								{ v.Variant.EffectiveSellingPrice().String() } <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+							</span>
+						</td>
+
+						<!-- سعر التكلفة -->
+						<td class="whitespace-nowrap">
+							if v.Variant.HasCost() {
+								<div class="tabular-nums font-bold text-primary text-sm whitespace-nowrap">
+									if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() {
+										<span>{ v.Variant.CostPrice.String() }</span>
+									} else {
+										<span>{ v.Variant.DiscountedCost().String() }</span>
+									}
+									<span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+								</div>
+								if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() && v.Variant.CostDiscountPercentage > 0 {
+									<div class="tabular-nums text-xs text-muted mt-0.5 whitespace-nowrap">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_products.after_discount_prefix"), v.Variant.DiscountedCost().String() + " " + i18n.T(lang, "common.currency_egp")) }
+									</div>
+								}
+							} else {
+								<span class="badge badge-slate text-xs whitespace-nowrap">{ i18n.T(lang, "vendor_products.unspecified") }</span>
+							}
+						</td>
+
+						<!-- نسبة خصم التكلفة -->
+						<td class="whitespace-nowrap">
+							if v.Variant.CostDiscountPercentage > 0 {
+								<span class="badge badge-sky text-xs font-bold whitespace-nowrap">-{ fmt.Sprintf("%.1f%%", v.Variant.CostDiscountPercentage) }</span>
+							} else {
+								<span class="text-muted text-xs">—</span>
+							}
+						</td>
+
+						<!-- صافي ربح الوحدة (بدون هامش) -->
+						<td class="whitespace-nowrap">
+							<div class="tabular-nums font-black text-success text-sm whitespace-nowrap">
+								+{ v.Variant.UnitNetProfit().String() } <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+							</div>
+						</td>
+
+						<!-- Stock Quantity -->
+						<td class="text-center whitespace-nowrap">
+							if v.StockQuantity > 10 {
+								<span class="badge badge-emerald tabular-nums font-extrabold text-xs">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), v.StockQuantity) }
+								</span>
+							} else if v.StockQuantity > 0 {
+								<span class="badge badge-amber tabular-nums font-extrabold text-xs">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_remaining"), v.StockQuantity) }
+								</span>
+							} else {
+								<span class="badge badge-rose tabular-nums font-bold text-xs">
+									{ i18n.T(lang, "vendor_products.stock_out") }
+								</span>
+							}
+						</td>
+
+						<!-- Expiry Date -->
+						<td class="whitespace-nowrap">
+							if v.Variant.ExpiryDate != nil {
+								<div class="tabular-nums font-bold text-secondary text-xs">
+									{ v.Variant.ExpiryDate.Format("2006-01-02") }
+								</div>
+							} else {
+								<span class="text-muted text-sm">-</span>
+							}
+						</td>
+
+						<!-- Shipping Branch / Warehouse -->
+						<td class="whitespace-nowrap">
+							if v.BranchName != "" {
+								<span class="badge badge-sky font-bold text-xs">
+									{ v.BranchName }
+								</span>
+							} else {
+								<span class="text-secondary text-xs">{ i18n.T(lang, "vendor_products.main_warehouse") }</span>
+							}
+						</td>
+
+						<!-- Status Badge -->
+						<td class="text-center whitespace-nowrap">
+							if v.Variant.Status == catalog.StatusActive {
+								<span class="badge badge-emerald font-extrabold text-xs">
+									{ i18n.T(lang, "vendor_products.status_active_available") }
+								</span>
+							} else if v.Variant.Status == catalog.StatusInactive {
+								<span class="badge badge-slate font-extrabold text-xs">
+									{ i18n.T(lang, "vendor_products.status_inactive_paused") }
+								</span>
+							} else if v.Variant.Status == catalog.StatusPending {
+								<span class="badge badge-amber font-extrabold text-xs">
+									{ i18n.T(lang, "vendor_products.status_pending_review") }
+								</span>
+							} else {
+								<span class="badge badge-rose font-extrabold text-xs">
+									{ string(v.Variant.Status) }
+								</span>
+							}
+						</td>
+
+						<!-- Actions -->
+						<td class="col-actions whitespace-nowrap">
+							<div class="table-actions">
+								<!-- Quick Status Toggle -->
+								<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/variants/%d/toggle-status", v.Variant.ID)) } class="m-0 d-inline">
+									if v.Variant.Status == catalog.StatusActive {
+										<button
+											type="submit"
+											class="btn btn-secondary btn-icon text-muted"
+											title={ i18n.T(lang, "vendor_products.action_pause") }
+										>
+											@components.IconPause("icon-xs")
+										</button>
+									} else {
+										<button
+											type="submit"
+											class="btn btn-secondary btn-icon text-emerald"
+											title={ i18n.T(lang, "vendor_products.action_activate") }
+										>
+											@components.IconPlay("icon-xs")
+										</button>
+									}
+								</form>
+
+								<button
+									type="button"
+									class="btn btn-secondary btn-icon text-brand"
+									title={ i18n.T(lang, "vendor_products.action_edit") }
+									data-variant-id={ fmt.Sprintf("%d", v.Variant.ID) }
+									data-on-click="openEditVariantModal(this.dataset.variantId)"
+								>
+									@components.IconEdit("icon-xs")
+								</button>
+
+								if v.Variant.ProductID > 0 {
+									<a
+										href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", v.Variant.ProductID)) }
+										target="_blank"
+										class="btn btn-secondary btn-icon text-muted"
+										title={ i18n.T(lang, "vendor_products.action_preview") }
+									>
+										@components.IconEye("icon-xs")
+									</a>
+								}
+
+								<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/variants/%d/delete", v.Variant.ID)) } class="m-0 d-inline" data-confirm={ i18n.T(lang, "vendor_products.confirm_delete_offer") }>
+									<button
+										type="submit"
+										class="btn btn-secondary btn-icon text-danger"
+										title={ i18n.T(lang, "vendor_products.action_delete") }
+									>
+										@components.IconTrash("icon-xs")
+									</button>
+								</form>
+							</div>
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+	</div>
+}

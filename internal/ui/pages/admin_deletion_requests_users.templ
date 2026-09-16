@@ -1,0 +1,130 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ renderUserDeletionsTable(v AdminDeletionRequestsView) {
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		if len(v.UserRequests) == 0 {
+			<div class="empty-state p-12 text-center">
+				<div class="empty-icon text-4xl mb-3 text-muted">@components.IconTrash("icon-lg")</div>
+				<h3 class="text-base font-bold text-primary mb-1">لا توجد طلبات حذف مستخدمين</h3>
+				<p class="text-xs text-secondary">لم يتم العثور على أي طلبات تطابق معايير التصفية الحالية.</p>
+			</div>
+		} else {
+			<div class="table-container">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th class="nowrap">#</th>
+							<th>المستخدم</th>
+							<th>البريد الإلكتروني</th>
+							<th>المنشأة التابعة</th>
+							<th>الدور</th>
+							<th>السبب</th>
+							<th class="text-center">الحالة</th>
+							<th class="nowrap">تاريخ الطلب</th>
+							<th>قرار الإدارة</th>
+							if v.CanDecide {
+								<th class="text-center nowrap">الإجراءات</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, req := range v.UserRequests {
+							@renderUserDeletionRow(req, v)
+						}
+					</tbody>
+				</table>
+			</div>
+			if v.Total > v.PerPage {
+				<div class="p-4 border-t border-border">
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: v.Page,
+						PageSize:    v.PerPage,
+						TotalCount:  v.Total,
+						BaseURL:     fmt.Sprintf("/admin/deletion-requests?tab=users&status=%s", v.Status),
+					})
+				</div>
+			}
+		}
+	</div>
+}
+
+templ renderUserDeletionRow(req *identity.AccountDeletionRequest, v AdminDeletionRequestsView) {
+	<tr>
+		<td class="tabular-nums font-bold text-xs text-muted">#{ fmt.Sprintf("%d", req.ID) }</td>
+		<td>
+			<div class="font-bold text-xs text-primary">{ req.UserName }</div>
+			<div class="text-2xs text-muted">مستخدم #{ fmt.Sprintf("%d", req.UserID) }</div>
+		</td>
+		<td class="text-xs tabular-nums text-secondary">{ req.UserEmail }</td>
+		<td class="text-xs font-medium">
+			if req.OrganizationName != "" {
+				<span>{ req.OrganizationName }</span>
+			} else {
+				<span class="text-muted">— بدون منشأة —</span>
+			}
+		</td>
+		<td><span class="badge badge-secondary text-2xs font-bold">{ req.UserRole }</span></td>
+		<td>
+			<div class="text-xs text-secondary max-w-xs break-words" title={ req.Reason }>
+				if req.Reason != "" {
+					{ req.Reason }
+				} else {
+					<span class="text-muted">— لم يُذكر سبب —</span>
+				}
+			</div>
+		</td>
+		<td class="text-center">
+			switch req.Status {
+				case "pending":
+					<span class="badge badge-amber text-2xs font-bold">⏳ قيد المراجعة</span>
+				case "approved":
+					<span class="badge badge-danger text-2xs font-bold">✅ محذوف ومعطل</span>
+				case "rejected":
+					<span class="badge badge-slate text-2xs font-bold">❌ مرفوض</span>
+				default:
+					<span class="badge badge-secondary text-2xs">{ req.Status }</span>
+			}
+		</td>
+		<td class="nowrap text-2xs tabular-nums text-secondary">
+			{ req.CreatedAt.Format("2006-01-02 15:04") }
+		</td>
+		<td class="text-xs">
+			if req.ReviewedAt != nil {
+				<div class="text-2xs">
+					<div class="text-muted tabular-nums">{ req.ReviewedAt.Format("2006-01-02 15:04") }</div>
+					if req.AdminNotes != "" {
+						<div class="text-secondary bg-surface-sunken p-1 rounded text-2xs mt-1 border">{ req.AdminNotes }</div>
+					}
+				</div>
+			} else {
+				<span class="text-xs text-muted">— بانتظار القرار —</span>
+			}
+		</td>
+		if v.CanDecide {
+			<td class="nowrap text-center">
+				if req.Status == "pending" {
+					<div class="d-flex items-center justify-center gap-2">
+						<button type="button" class="btn btn-danger btn-xs font-bold" data-modal-open={ fmt.Sprintf("modal-user-approve-%d", req.ID) }>
+							@components.IconTrash("icon-xs")
+							<span>حذف</span>
+						</button>
+						<button type="button" class="btn btn-secondary btn-xs font-bold" data-modal-open={ fmt.Sprintf("modal-user-reject-%d", req.ID) }>
+							@components.IconX("icon-xs")
+							<span>رفض</span>
+						</button>
+					</div>
+					@userDeletionModals(req)
+				} else {
+					<span class="text-xs text-muted">—</span>
+				}
+			</td>
+		}
+	</tr>
+}

@@ -1,0 +1,319 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerSavingScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openPharmacyCreateModal() {
+			const titleEl = document.getElementById('pharmacy-saving-product-modal-title') || document.getElementById('pharmacy-modal-title');
+			if (titleEl) titleEl.textContent = 'إضافة صنف توفير جديد';
+
+			const form = document.getElementById('pharmacy-saving-product-form');
+			if (form) form.action = '/customer/saving-products';
+
+			const idInput = document.getElementById('pharmacy-form-saving-id');
+			if (idInput) idInput.value = '';
+			const nameInput = document.getElementById('pharmacy-form-name-product');
+			if (nameInput) nameInput.value = '';
+			const skuInput = document.getElementById('pharmacy-form-sku');
+			if (skuInput) skuInput.value = '';
+			const qtyInput = document.getElementById('pharmacy-form-qty');
+			if (qtyInput) qtyInput.value = '';
+			const priceInput = document.getElementById('pharmacy-form-price');
+			if (priceInput) priceInput.value = '';
+
+			clearPharmacySelectedProduct();
+
+			const el = document.getElementById('pharmacy-saving-product-modal');
+			if (el && typeof el.showModal === 'function') {
+				el.showModal();
+			}
+		}
+
+		function openPharmacyEditModalFromRow(id) {
+			const row = document.querySelector(`.pharmacy-saving-row[data-id="${id}"]`);
+			if (!row) return;
+
+			const titleEl = document.getElementById('pharmacy-saving-product-modal-title') || document.getElementById('pharmacy-modal-title');
+			if (titleEl) {
+				titleEl.textContent = 'تعديل صنف التوفير وتعيين الربط بالكتالوج';
+			}
+
+			const form = document.getElementById('pharmacy-saving-product-form');
+			if (form) form.action = `/customer/saving-products/${id}/update`;
+
+			const idInput = document.getElementById('pharmacy-form-saving-id');
+			if (idInput) idInput.value = id;
+			const nameInput = document.getElementById('pharmacy-form-name-product');
+			if (nameInput) nameInput.value = row.dataset.name || '';
+			const skuInput = document.getElementById('pharmacy-form-sku');
+			if (skuInput) skuInput.value = row.dataset.sku || '';
+			const qtyInput = document.getElementById('pharmacy-form-qty');
+			if (qtyInput) qtyInput.value = row.dataset.qty || '';
+			const priceInput = document.getElementById('pharmacy-form-price');
+			if (priceInput) priceInput.value = row.dataset.price || '';
+
+			const prodId = row.dataset.productId;
+			const prodName = row.dataset.productName;
+			if (prodId && prodId !== '' && prodId !== '0') {
+				selectPharmacyCatalogProduct(prodId, prodName);
+			} else {
+				clearPharmacySelectedProduct();
+				const searchInput = document.getElementById('pharmacy-product-search-input');
+				if (searchInput && row.dataset.name) {
+					searchInput.value = row.dataset.name;
+					searchPharmacyCatalogProductsLive(row.dataset.name);
+				}
+			}
+
+			const el = document.getElementById('pharmacy-saving-product-modal');
+			if (el) {
+				if (typeof el.showModal === 'function') {
+					el.showModal();
+				} else {
+					el.setAttribute('open', '');
+				}
+			}
+		}
+
+		function closePharmacyCreateModal() {
+			const el = document.getElementById('pharmacy-saving-product-modal');
+			if (el) {
+				if (typeof el.close === 'function') {
+					el.close();
+				} else {
+					el.removeAttribute('open');
+				}
+			}
+		}
+
+		function selectPharmacyCatalogProduct(id, name) {
+			const prodIdInput = document.getElementById('pharmacy-form-product-id');
+			if (prodIdInput) prodIdInput.value = id;
+			const label = document.getElementById('pharmacy-selected-product-label');
+			if (label) label.textContent = name;
+			const selectedBox = document.getElementById('pharmacy-selected-product-box');
+			if (selectedBox) selectedBox.classList.remove('d-none');
+			const searchContainer = document.getElementById('pharmacy-search-product-container');
+			if (searchContainer) searchContainer.classList.add('d-none');
+			const dropdown = document.getElementById('pharmacy-product-search-dropdown');
+			if (dropdown) dropdown.classList.add('d-none');
+			const searchInput = document.getElementById('pharmacy-product-search-input');
+			if (searchInput) searchInput.value = '';
+		}
+
+		function clearPharmacySelectedProduct() {
+			const prodIdInput = document.getElementById('pharmacy-form-product-id');
+			if (prodIdInput) prodIdInput.value = '';
+			const label = document.getElementById('pharmacy-selected-product-label');
+			if (label) label.textContent = '';
+			const selectedBox = document.getElementById('pharmacy-selected-product-box');
+			if (selectedBox) selectedBox.classList.add('d-none');
+			const searchContainer = document.getElementById('pharmacy-search-product-container');
+			if (searchContainer) searchContainer.classList.remove('d-none');
+		}
+
+		var pharmacySearchDebounce = null;
+		function searchPharmacyCatalogProductsLive(query) {
+			clearTimeout(pharmacySearchDebounce);
+			const dropdown = document.getElementById('pharmacy-product-search-dropdown');
+			if (!dropdown) return;
+			if (!query || query.trim().length < 2) {
+				dropdown.classList.add('d-none');
+				return;
+			}
+
+			pharmacySearchDebounce = setTimeout(() => {
+				fetch('/customer/saving-products/search-products?q=' + encodeURIComponent(query.trim()))
+					.then(r => r.json())
+					.then(items => {
+						if (!items || items.length === 0) {
+							dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-sm text-secondary text-center">لم يتم العثور على نتائج بالكتالوج العام</div>');
+							dropdown.classList.remove('d-none');
+							return;
+						}
+
+						// Catalogue names are data: escaped, and the choice is read
+						// back from data attributes rather than spliced into code.
+						const esc = dawaHTML.escape;
+						let html = '';
+						items.forEach(it => {
+							const skuText = it.sku ? (' <code class="text-xs text-secondary">(' + esc(it.sku) + ')</code>') : '';
+							html += '<div class="d-flex items-center justify-between p-2 rounded cursor-pointer hover-bg-surface border-b" ' +
+								'data-pick-id="' + esc(it.id) + '" data-pick-name="' + esc(it.name || '') + '">' +
+								'<div class="stack-xs"><strong class="text-xs text-primary">' + esc(it.name) + '</strong>' + skuText + '</div>' +
+								'<span class="badge badge-emerald text-xs font-bold">اختيار</span></div>';
+						});
+						dropdown.innerHTML = dawaHTML.sanitize(html);
+						dropdown.onclick = function (e) {
+							const pick = e.target.closest('[data-pick-id]');
+							if (pick) selectPharmacyCatalogProduct(pick.dataset.pickId, pick.dataset.pickName);
+						};
+						dropdown.classList.remove('d-none');
+					})
+					.catch(() => {
+						dropdown.classList.add('d-none');
+					});
+			}, 200);
+		}
+
+		function getCsrfToken() {
+			if (typeof getCookie === 'function') {
+				const t = getCookie('dawa_csrf');
+				if (t) return t;
+			}
+			const match = document.cookie.match(/(?:^|;\s*)dawa_csrf=([^;]+)/);
+			return match ? decodeURIComponent(match[1]) : '';
+		}
+
+		function submitWithCsrf(action, method = 'POST', fields = {}) {
+			const form = document.createElement('form');
+			form.method = method;
+			form.action = action;
+			const csrf = getCsrfToken();
+			if (csrf) {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = '_csrf';
+				input.value = csrf;
+				form.appendChild(input);
+			}
+			for (const [k, v] of Object.entries(fields)) {
+				const input = document.createElement('input');
+				input.type = 'hidden';
+				input.name = k;
+				input.value = v;
+				form.appendChild(input);
+			}
+			document.body.appendChild(form);
+			if (typeof form.requestSubmit === 'function') {
+				form.requestSubmit();
+			} else {
+				form.submit();
+			}
+		}
+
+		function confirmPharmacyDeleteSavingProduct(id) {
+			if (!confirm("هل أنت متأكد من حذف هذا الصنف من قائمة أدوية التوفير؟")) {
+				return;
+			}
+			submitWithCsrf('/customer/saving-products/' + id + '/delete');
+		}
+
+		function customerSavingManager() {
+			return {
+				selectedIds: [],
+
+				toggleSelectAll(el) {
+					const rows = document.querySelectorAll('.pharmacy-saving-row');
+					const visibleIds = [];
+					rows.forEach(r => {
+						const isVisible = !r.classList.contains('d-none') && r.style.display !== 'none';
+						if (isVisible) {
+							const id = r.getAttribute('data-id');
+							if (id) visibleIds.push(String(id));
+						}
+					});
+					if (el.checked) {
+						const set = new Set(this.selectedIds);
+						visibleIds.forEach(id => set.add(id));
+						this.selectedIds = Array.from(set);
+					} else {
+						const removeSet = new Set(visibleIds);
+						this.selectedIds = this.selectedIds.filter(id => !removeSet.has(id));
+					}
+				},
+
+				isAllSelected() {
+					const rows = document.querySelectorAll('.pharmacy-saving-row');
+					const visibleIds = [];
+					rows.forEach(r => {
+						const isVisible = !r.classList.contains('d-none') && r.style.display !== 'none';
+						if (isVisible) {
+							const id = r.getAttribute('data-id');
+							if (id) visibleIds.push(String(id));
+						}
+					});
+					if (visibleIds.length === 0) return false;
+					return visibleIds.every(id => this.selectedIds.includes(String(id)));
+				},
+
+				clearSelection() {
+					this.selectedIds = [];
+				},
+
+				confirmBulkDelete(e) {
+					if (this.selectedIds.length === 0) {
+						e.preventDefault();
+						return;
+					}
+					if (!confirm(`هل أنت متأكد من رغبتك في حذف ${this.selectedIds.length} صنف من قائمة أدوية التوفير؟ لا يمكن التراجع عن هذه العملية.`)) {
+						e.preventDefault();
+						return;
+					}
+				}
+			};
+		}
+
+		function openPharmacyProvidersModal(productId, productName) {
+			const subtitleEl = document.getElementById('pharmacy-providers-modal-subtitle');
+			if (subtitleEl) subtitleEl.textContent = 'الصنف: ' + productName;
+			const contentEl = document.getElementById('pharmacy-providers-modal-content');
+			if (contentEl) contentEl.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted p-6">⏳ جاري استرجاع عروض الموردين والأسعار...</div>');
+			
+			const modalEl = document.getElementById('pharmacy-providers-modal');
+			if (modalEl && typeof modalEl.showModal === 'function') {
+				modalEl.showModal();
+			}
+
+			fetch('/customer/saving-products/providers/' + productId)
+				.then(r => r.json())
+				.then(providers => {
+					if (!providers || providers.length === 0) {
+						if (contentEl) contentEl.innerHTML = dawaHTML.sanitize('<div class="text-center p-6 text-secondary font-bold">لا توجد عروض موردين متاحة حالياً لهذا الصنف في الكتالوج.<br><a href="/catalog" class="btn btn-secondary btn-sm mt-3">تصفح الكتالوج العام</a></div>');
+						return;
+					}
+
+					// Supplier names and prices: escaped.
+					const esc = dawaHTML.escape;
+					let html = '<div class="table-container m-0"><table class="data-table"><thead><tr>' +
+						'<th class="text-start">المورد / الشركة</th><th class="text-start">المخزن / المستودع</th><th class="text-center">الرصيد</th><th class="text-center">سعر الجمهور</th>' +
+						'<th class="text-center">نسبة الخصم</th><th class="text-center">السعر بعد الخصم</th><th class="text-center">طلب الصنف</th></tr></thead><tbody>';
+
+					providers.forEach(p => {
+						const finalPrice = (p.price && p.price > 0) ? (p.price * (1 - (p.discount || 0) / 100)).toFixed(2) : '—';
+						html += '<tr>' +
+							'<td class="font-bold text-primary">' + esc(p.org_name || 'مورد معتمد') + '</td>' +
+							'<td class="text-secondary">' + esc(p.branch_name || 'الفرع الرئيسي') + '</td>' +
+							'<td class="text-center tabular-nums font-bold">' + esc(p.stock_qty || 0) + '</td>' +
+							'<td class="text-center tabular-nums">' + (p.price ? esc(Number(p.price).toFixed(2)) + ' ج.م' : '—') + '</td>' +
+							'<td class="text-center"><span class="badge badge-emerald text-xs font-bold">%' + esc(p.discount || 0) + '</span></td>' +
+							'<td class="text-center tabular-nums font-black text-primary">' + esc(finalPrice) + ' ج.م</td>' +
+							'<td class="text-center"><a href="/catalog/' + encodeURIComponent(productId) + '" class="btn btn-primary btn-xs font-bold">عرض الشراء</a></td>' +
+							'</tr>';
+					});
+
+					html += '</tbody></table></div>';
+					if (contentEl) contentEl.innerHTML = dawaHTML.sanitize(html);
+				})
+				.catch(err => {
+					console.error('load providers error', err);
+					if (contentEl) contentEl.innerHTML = dawaHTML.sanitize('<div class="text-danger text-center p-4">تعذر استرجاع عروض الموردين في الوقت الحالي.</div>');
+				});
+		}
+
+		function filterPharmacySavingTable(query) {
+			const term = (query || '').trim().toLowerCase();
+			const rows = document.querySelectorAll('.pharmacy-saving-row');
+			rows.forEach(row => {
+				const name = (row.dataset.name || '').toLowerCase();
+				const sku = (row.dataset.sku || '').toLowerCase();
+				const pName = (row.dataset.productName || '').toLowerCase();
+				const match = term === '' || name.includes(term) || sku.includes(term) || pName.includes(term);
+				row.classList.toggle('d-none', !match);
+			});
+		}
+	</script>
+}

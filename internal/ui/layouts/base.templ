@@ -1,0 +1,208 @@
+package layouts
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// Base is the document shell every page renders inside.
+//
+// Three things changed here and each was a real cost:
+//
+//   - Every stylesheet and script is served from this application. htmx, Alpine
+//     and Leaflet were loaded from unpkg and cdnjs on every request, which made
+//     each page render depend on two third-party hosts being up and fast, and
+//     two of the three carried no integrity attribute. The self-hosted copies
+//     were verified against the integrity hashes that were pinned here before
+//     they were moved.
+//
+//   - Leaflet is no longer loaded at all by default. It was on every page in
+//     the platform and is used by two of them. app.js pulls it in when a map
+//     element is actually present.
+//
+//   - Asset URLs carry a content hash instead of a hand-typed version string.
+//     The old ones had drifted: the stylesheets said 2026082903 and the script
+//     said 2026082901, so a CSS change could ship without its JavaScript.
+//
+// GetSiteSettings never returns nil — it falls back to a complete default — so
+// the nil check that used to wrap this entire template could not fire. It has
+// been removed rather than left to imply a failure mode that does not exist.
+templ Base(title string, lang string, dir string, extraCSS ...string) {
+	{{ site := GetSiteSettings(ctx) }}
+	{{ seo := ResolveSEO(ctx, title, lang) }}
+	<!DOCTYPE html>
+	<html lang={ lang } dir={ dir }>
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<meta name="color-scheme" content="light dark"/>
+			<meta name="session-idle-timeout-mins" content={ fmt.Sprintf("%d", site.SessionIdleTimeoutMinutes) }/>
+			<title>{ seo.Title } | { site.SiteName }</title>
+			<meta name="description" content={ seo.MetaDescription }/>
+			if seo.Keywords != "" {
+				<meta name="keywords" content={ seo.Keywords }/>
+			}
+			<meta name="robots" content={ seo.RobotsDirectives }/>
+			if seo.CanonicalURL != "" {
+				<link rel="canonical" href={ seo.CanonicalURL }/>
+				<link rel="alternate" hreflang="ar" href={ seo.CanonicalURL }/>
+				<link rel="alternate" hreflang="en" href={ seo.CanonicalURL }/>
+				<link rel="alternate" hreflang="x-default" href={ seo.CanonicalURL }/>
+			}
+			<!-- Open Graph Metadata -->
+			<meta property="og:title" content={ seo.OGTitle }/>
+			<meta property="og:description" content={ seo.OGDescription }/>
+			<meta property="og:image" content={ seo.OGImage }/>
+			<meta property="og:type" content="website"/>
+			if seo.CanonicalURL != "" {
+				<meta property="og:url" content={ seo.CanonicalURL }/>
+			}
+			<!-- Twitter Card Metadata -->
+			<meta name="twitter:card" content={ seo.TwitterCard }/>
+			<meta name="twitter:title" content={ seo.OGTitle }/>
+			<meta name="twitter:description" content={ seo.OGDescription }/>
+			<meta name="twitter:image" content={ seo.OGImage }/>
+			<!-- Structured Data JSON-LD -->
+			if seo.JSONLD != "" {
+				<script type="application/ld+json">
+					@templ.Raw(seo.JSONLD)
+				</script>
+			}
+			// htmx reads this when it initialises. allowEval off: no hx-on, no
+			// trigger filters, no js: values -- the policy has no 'unsafe-eval'.
+			// Indicator styles live in components.css; htmx's own injected
+			// <style> has no nonce and would be refused.
+			<meta name="htmx-config" content={ htmxConfig }/>
+			// Trusted Types policies and the htmx swap gate. Synchronous and
+			// first: every later script, and every image that fails to load
+			// while the body is parsed, depends on it.
+			<script nonce={ Nonce(ctx) } src={ Asset("/static/js/security.js") }></script>
+			<script nonce={ Nonce(ctx) }>
+				(function() {
+					var urlTheme =new URLSearchParams(window.location.search).get('theme');
+					var t = urlTheme || localStorage.getItem('dawa24-theme') || 'system';
+					var isDark = t === 'dark' || (t === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+					document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
+
+					// Early scroll restoration, before first paint.
+					try {
+						var raw = sessionStorage.getItem('dawa24_scroll_pos');
+						if (raw) {
+							var data = JSON.parse(raw);
+							if (data && typeof data.y === 'number' && (Date.now() - data.time < 20000)) {
+								window.scrollTo(0, data.y);
+							}
+						}
+					} catch (e) {}
+				})();
+			</script>
+			// Asset leaves an uploaded favicon URL alone and hashes a bundled one.
+			<link rel="icon" type="image/png" href={ Asset(site.FaviconURL) }/>
+			<link rel="apple-touch-icon" href={ Asset("/static/img/logo-icon.png") }/>
+			<link rel="preconnect" href="https://fonts.googleapis.com"/>
+			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
+			// The font stylesheet is fetched without blocking the first paint.
+			//
+			// As a plain <link rel="stylesheet"> it was render-blocking AND on a
+			// third-party host, so nothing at all appeared until two extra DNS
+			// lookups, two TLS handshakes and a round trip to Google had finished.
+			// On Egyptian mobile data that is most of the time to first paint, and
+			// it is time spent before the browser has even asked for a font file.
+			//
+			// media="print" makes the browser fetch the sheet at low priority
+			// without applying it; the onload flips it to all, at which point the
+			// faces apply. Combined with display=swap — already set below — text is
+			// painted immediately in the fallback face and re-rendered in Readex
+			// Pro when it arrives, instead of not being painted at all.
+			//
+			// The <noscript> copy keeps the fonts for a client with JavaScript
+			// disabled, which is the one case where onload never fires.
+			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"/>
+			<link
+				id="google-fonts-sheet"
+				rel="stylesheet"
+				href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"
+				media="print"
+			/>
+			<script nonce={ Nonce(ctx) }>
+				(function() {
+					var f = document.getElementById('google-fonts-sheet');
+					if (f) {
+						f.addEventListener('load', function() { f.media = 'all'; });
+						if (f.sheet) { f.media = 'all'; }
+					}
+				})();
+			</script>
+			<noscript>
+				<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"/>
+			</noscript>
+			<link rel="stylesheet" href={ Asset("/static/css/tokens.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/base.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/layout.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/components.css") }/>
+			// nav.css carries the whole navigation visual system -- both bars, every
+			// popover, the mobile drawer. It loads on every page because the chrome
+			// is on every page, and it sits after components.css because it
+			// deliberately supersedes the header rules that used to live there.
+			<link rel="stylesheet" href={ Asset("/static/css/nav.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/foundations.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/utilities.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/wizard.css") }/>
+			<link rel="stylesheet" href={ Asset("/static/css/app.css") }/>
+			for _, cssPath := range extraCSS {
+				<link rel="stylesheet" href={ Asset(cssPath) }/>
+			}
+			@clientI18nScript(lang, dir)
+			<script defer src={ Asset("/static/vendor/htmx-1.9.10.min.js") }></script>
+			// In-place navigation for the dashboard shells. Must run after htmx and
+			// before htmx initialises (DOMContentLoaded); defer preserves that order.
+			<script defer src={ Asset("/static/js/boost-nav.js") }></script>
+			// Component scripts define their window globals and Alpine data components
+			// before Alpine boots. With defer, execution preserves document order.
+			<script defer src={ Asset("/static/js/combobox.js") }></script>
+			<script defer src={ Asset("/static/js/ads-wizard.js") }></script>
+			<script defer src={ Asset("/static/js/wallet.js") }></script>
+			// actions.js replaces inline event handlers (data-on-*, data-confirm,
+			// data-autosubmit); page scripts register Alpine components through
+			// its dawaData helper, so it loads before Alpine.
+			<script defer src={ Asset("/static/js/actions.js") }></script>
+			// The CSP build interprets directive expressions without eval. See
+			// scripts/alpine-csp/check.cjs for the subset it understands.
+			<script defer src={ Asset("/static/vendor/alpine-csp-3.17.3.min.js") }></script>
+			<script defer src={ Asset("/static/js/app.js") }></script>
+			// maps.js defines ensureLeaflet + initMapPickers. It is ~9 KB and self
+			// -contained; Leaflet itself (the ~200 KB payload) is still fetched on
+			// demand by ensureLeaflet only when a map element is present. Loading
+			// this shim on every page is what makes the picker work everywhere it
+			// appears -- registration, branches, admin cities, offer locations.
+			<script defer src={ Asset("/static/js/maps.js") }></script>
+			// One progress-bar implementation for all four import tools. Small,
+			// self-contained, and loaded everywhere because the importers live on
+			// four different shells and each used to ship its own copy of the
+			// same three bugs. See import-progress.js.
+			<script defer src={ Asset("/static/js/import-progress.js") }></script>
+			// The other half of the same story: the bytes leaving the machine.
+			// import-progress.js renders what the SERVER reports; this renders
+			// what the browser can measure exactly, which is the phase that used
+			// to take the longest and show nothing. See upload-progress.js.
+			<script defer src={ Asset("/static/js/upload-progress.js") }></script>
+			// Universal file & image in-window lightbox previewer.
+			<script defer src={ Asset("/static/js/preview.js") }></script>
+			// Interactive 3D pharmaceutical model renderer for landing and showcases.
+			<script defer src={ Asset("/static/js/hero_3d.js") }></script>
+		</head>
+		<body>
+			{ children... }
+			@components.UniversalFilePreviewModal(lang)
+			// The floating assistant is rendered only when the authenticated user has permission to use it.
+			if actor := authctx.FromContext(ctx); actor.UserID > 0 {
+				if _, allowed := assistant.Allowed(actor); allowed {
+					@components.CapsuleAssistantTrigger()
+				}
+			}
+		</body>
+	</html>
+}

@@ -1,0 +1,265 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// OrganizationDocumentsModals renders the in-app document viewer and replacement modals.
+templ OrganizationDocumentsModals() {
+	<!-- Dynamic In-App Document Viewer Modal (PDF + Image Responsive) -->
+	@components.Modal(components.ModalProps{
+		ID:       "doc-viewer-modal",
+		Title:    "معاينة المستند الرسمي",
+		Subtitle: "مستند رقمي مشفر ومحمي لمنشأتك فقط",
+		Size:     "xl",
+	}) {
+		<div class="stack-md">
+			<!-- Modal Sub-header Actions -->
+			<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+				<div class="stack-2xs">
+					<div class="text-sm font-bold text-primary" id="modal-doc-title">
+						معاينة المستند
+					</div>
+					<div class="text-xs text-muted font-mono" id="modal-doc-filename" dir="ltr">
+						filename.pdf
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-2">
+					<a
+						id="modal-doc-tab"
+						href="/documents"
+						target="_blank"
+						class="btn btn-secondary btn-sm font-bold gap-1"
+					>
+						@components.IconExternalLink("icon-xs")
+						<span>فتح في نافذة جديدة ↗</span>
+					</a>
+					<a
+						id="modal-doc-download-btn"
+						href="/documents"
+						class="btn btn-primary btn-sm font-bold gap-1"
+					>
+						@components.IconDownload("icon-xs")
+						<span>تحميل الملف</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Dynamic Interactive Viewer Viewport -->
+			<div class="doc-viewer-viewport" id="modal-doc-viewport">
+				<!-- Mode 1: PDF Viewer Iframe -->
+				<iframe
+					id="modal-doc-iframe"
+					src="about:blank"
+					class="doc-viewer-iframe"
+					loading="lazy"
+				></iframe>
+
+				<!-- Mode 2: Image Viewer -->
+				<div id="modal-doc-img-container" class="doc-viewer-img-container hidden">
+					<img
+						id="modal-doc-img"
+						src=""
+						alt="معاينة المستند"
+						class="doc-viewer-img"
+					/>
+				</div>
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<span class="text-xs text-muted">مستند رقمي مشفر ومحمي لمنشأتك فقط</span>
+				<button
+					type="button"
+					class="btn btn-secondary font-bold"
+					data-on-click="closeDocViewer()"
+				>
+					إغلاق المعاينة
+				</button>
+			</div>
+		</div>
+	}
+
+	<!-- Modal: Replace Document Modal with Replacement Reason -->
+	@components.Modal(components.ModalProps{
+		ID:       "replace-doc-modal",
+		Title:    "استبدال وتحديث المستند",
+		Subtitle: "رفع نسخة جديدة مع توضيح سبب الاستبدال لإدارة المنصة",
+		Size:     "md",
+	}) {
+		<form class="stack-md" action="/documents/upload" method="POST" enctype="multipart/form-data" data-boost-upload>
+			<input type="hidden" name="document_type" id="replace-doc-type" value="" />
+			<input type="hidden" name="existing_doc_id" id="replace-existing-id" value="" />
+
+			<!-- Current File Info Box -->
+			<div class="p-3 bg-surface-sunken rounded-xl border">
+				<span class="text-xs text-muted font-bold d-block mb-1">الملف الحالي المسجل:</span>
+				<span id="replace-modal-current-file" class="font-mono text-sm font-bold text-primary" dir="ltr">file.pdf</span>
+			</div>
+
+			<!-- New File Upload Field -->
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold">
+					اختر ملف المستند الجديد <span class="text-danger">*</span>
+				</label>
+				<input
+					type="file"
+					name="file"
+					required
+					accept=".pdf,.png,.jpg,.jpeg,.webp"
+					class="form-input text-xs"
+				/>
+				<span class="text-xs text-muted mt-1 d-block">
+					الصيغ المقبولة: PDF أو صور (PNG, JPG, WebP) بحجم أقصى 20 ميجابايت.
+				</span>
+			</div>
+
+			<!-- Replacement Reason Field -->
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold">
+					سبب استبدال / تحديث المستند <span class="text-danger">*</span>
+				</label>
+				<textarea
+					name="replacement_reason"
+					id="replace-doc-reason"
+					required
+					rows="3"
+					class="form-input text-sm"
+					placeholder="يرجى توضيح سبب الاستبدال لإدارة المنصة (مثال: تجديد ترخيص المنشأة السنوي، تصحيح خطأ بالصورة السابقة، صدور سجل تجاري محدث...)"
+				></textarea>
+			</div>
+
+			<!-- Footer Actions -->
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<button
+					type="button"
+					class="btn btn-secondary font-bold"
+					data-on-click="closeReplaceDocModal()"
+				>
+					إلغاء
+				</button>
+				<button
+					type="submit"
+					class="btn btn-primary font-bold px-6"
+				>
+					<span>تأكيد واستبدال المستند</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Viewer & Replace Modal Logic Scripts -->
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openDocViewerFromBtn(btn) {
+			if (!btn) return;
+			const docId = btn.getAttribute('data-doc-id');
+			const title = btn.getAttribute('data-title') || '';
+			const docType = btn.getAttribute('data-doctype') || '';
+			const name = btn.getAttribute('data-name') || '';
+			const status = btn.getAttribute('data-status') || '';
+			const url = btn.getAttribute('data-url') || '';
+			openDocViewer(docId, title, docType, name, status, url);
+		}
+
+		function openReplaceDocModalFromBtn(btn) {
+			if (!btn) return;
+			const docId = btn.getAttribute('data-doc-id');
+			const docType = btn.getAttribute('data-doctype') || '';
+			const title = btn.getAttribute('data-title') || '';
+			const name = btn.getAttribute('data-name') || '';
+			openReplaceDocModal(docId, docType, title, name);
+		}
+
+		function openDocViewer(docId, title, docType, originalName, status, rawUrl) {
+			const viewUrl = '/documents/' + docId + '/view';
+			const downloadUrl = '/documents/' + docId + '/download';
+
+			const titleEl = document.getElementById('modal-doc-title');
+			const filenameEl = document.getElementById('modal-doc-filename');
+			const tabBtn = document.getElementById('modal-doc-tab');
+			const downloadBtn = document.getElementById('modal-doc-download-btn');
+			const iframe = document.getElementById('modal-doc-iframe');
+			const imgContainer = document.getElementById('modal-doc-img-container');
+			const img = document.getElementById('modal-doc-img');
+			const modal = document.getElementById('doc-viewer-modal');
+
+			if (titleEl) titleEl.textContent = title;
+			if (filenameEl) filenameEl.textContent = originalName || ('Document #' + docId);
+			if (tabBtn) tabBtn.href = viewUrl;
+			if (downloadBtn) downloadBtn.href = downloadUrl;
+
+			// Sniff image-vs-PDF from the original filename first, then the
+			// stored URL (registration-era rows were saved with an empty
+			// original name, but their URL still carries the extension).
+			const sniffSrc = ((originalName || '') !== '' ? originalName : (rawUrl || '')).split('?')[0];
+			const ext = (sniffSrc.split('.').pop() || '').toLowerCase();
+			const isImage = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'].includes(ext);
+
+			if (isImage) {
+				if (iframe) {
+					iframe.classList.add('hidden');
+					iframe.src = 'about:blank';
+				}
+				if (img && imgContainer) {
+					img.src = viewUrl;
+					imgContainer.classList.remove('hidden');
+				}
+			} else {
+				if (imgContainer) {
+					imgContainer.classList.add('hidden');
+				}
+				if (iframe) {
+					iframe.src = viewUrl;
+					iframe.classList.remove('hidden');
+				}
+			}
+
+			if (modal) {
+				if (typeof modal.showModal === 'function') modal.showModal();
+				else modal.setAttribute('open', '');
+			}
+		}
+
+		function closeDocViewer() {
+			const modal = document.getElementById('doc-viewer-modal');
+			const iframe = document.getElementById('modal-doc-iframe');
+			const img = document.getElementById('modal-doc-img');
+			if (modal) {
+				if (typeof modal.close === 'function') modal.close();
+				else modal.removeAttribute('open');
+			}
+			if (iframe) iframe.src = 'about:blank';
+			if (img) img.src = '';
+		}
+
+		function openReplaceDocModal(docId, docType, titleAr, origName) {
+			const modal = document.getElementById('replace-doc-modal');
+			const titleEl = document.getElementById('replace-modal-title');
+			const currFileEl = document.getElementById('replace-modal-current-file');
+			const docTypeInput = document.getElementById('replace-doc-type');
+			const existingIdInput = document.getElementById('replace-existing-id');
+			const reasonInput = document.getElementById('replace-doc-reason');
+
+			if (titleEl) titleEl.textContent = 'استبدال مستند: ' + (titleAr || '');
+			if (currFileEl) currFileEl.textContent = origName || ('مستند #' + docId);
+			if (docTypeInput) docTypeInput.value = docType || '';
+			if (existingIdInput) existingIdInput.value = docId || '';
+			if (reasonInput) reasonInput.value = '';
+
+			if (modal) {
+				if (typeof modal.showModal === 'function') modal.showModal();
+				else modal.setAttribute('open', '');
+			}
+		}
+
+		function closeReplaceDocModal() {
+			const modal = document.getElementById('replace-doc-modal');
+			if (modal) {
+				if (typeof modal.close === 'function') modal.close();
+				else modal.removeAttribute('open');
+			}
+		}
+	</script>
+}

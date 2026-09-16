@@ -1,0 +1,104 @@
+package layouts
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// PublicShell is the marketing layout for pages a visitor may reach without
+// signing in: navbar + footer around the content. Authenticated screens never
+// render it — they use the sidebar shells (Rebuild V2 §1.5).
+//
+// The header is .nav-root from nav.css, the same shell the dashboard bar uses.
+// It differs in three things and nothing else: it is taller, it carries a brand
+// lockup instead of a page title, and it fills the middle region with the
+// measure rail — the ruled link group whose active item inks a segment of the
+// rail beneath it. Every control on the trailing edge (bell, account menu,
+// their popovers) is literally the same component the dashboard renders, so an
+// account menu opened from the marketing site and one opened from the dashboard
+// are the same object.
+templ PublicShell(title string, lang string, dir string) {
+	{{ site := GetSiteSettings(ctx) }}
+	@Base(title, lang, dir, "/static/css/customer.css", "/static/css/public.css", "/static/css/marketing.css") {
+		<div x-data="{ mobileNav: false }" class="public-shell-root" hx-boost="true">
+			<header class="nav-root nav-root--public" data-nav-scroll>
+				<div class="nav-inner">
+					<div class="nav-lead">
+						<a href="/" class="nav-brand" title={ site.SiteName }>
+							if site.LogoURL != "" {
+								<img src={ site.LogoURL } alt={ site.SiteName } class={ "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="next" data-fallback-display="inline-flex" />
+							}
+							if site.LogoDarkURL != "" {
+								<img src={ site.LogoDarkURL } alt={ site.SiteName } class="nav-brand-logo logo-dark" data-img-fallback="next" data-fallback-display="inline-flex" />
+							}
+							if site.LogoURL == "" && site.LogoDarkURL == "" {
+								<span class="nav-brand-text">
+									<span class="nav-brand-name">{ site.SiteName }</span>
+								</span>
+							} else {
+								<span class="nav-brand-text" style="display: none;">
+									<span class="nav-brand-name">{ site.SiteName }</span>
+								</span>
+							}
+						</a>
+					</div>
+
+					<nav class="nav-mid" aria-label={ i18n.T(lang, "nav.main_nav") }>
+						<div class="nav-links">
+							@publicNavLink("/how-it-works", i18n.T(lang, "nav.how_it_works"))
+							@publicNavLink("/about", i18n.T(lang, "nav.about"))
+							@publicNavLink("/contact", i18n.T(lang, "nav.contact"))
+						</div>
+					</nav>
+
+					<div class="nav-trail">
+						if _, ok := authctx.From(ctx); ok {
+							@components.NotificationsBell(lang)
+							@components.UserMenu(lang, false)
+						} else {
+							<a href="/auth/login" class="nav-btn nav-btn--outline nav-desktop-only">
+								@components.IconUser("icon-xs")
+								<span>{ i18n.T(lang, "nav.login") }</span>
+							</a>
+							<a href="/auth/register" class="nav-btn nav-btn--solid">
+								<span>{ i18n.T(lang, "nav.register") }</span>
+							</a>
+						}
+
+						<button
+							type="button"
+							@click="mobileNav = true"
+							class="nav-btn nav-btn--icon nav-mobile-only"
+							aria-label={ i18n.T(lang, "nav.browse_menu") }
+						>
+							@components.IconMenu("icon-sm")
+						</button>
+					</div>
+				</div>
+			</header>
+
+			@publicMobileNav(site, lang)
+
+			<main class="page-body" id="main-content" data-shell="public">
+				<div class="page-container">
+					{ children... }
+				</div>
+			</main>
+		</div>
+
+		@publicFooter(site, lang)
+	}
+}
+
+// publicNavLink is a rail item. It is a component rather than three copies of
+// the same anchor so that the active rule lives in one place.
+templ publicNavLink(href string, label string) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "nav-link", templ.KV("is-active", IsCurrentPath(ctx, href)) }
+		if IsCurrentPath(ctx, href) {
+			aria-current="page"
+		}
+	>{ label }</a>
+}

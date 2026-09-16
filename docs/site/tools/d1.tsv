@@ -1,0 +1,282 @@
+.dockerignore	بيحدد الملفات اللي مش هتتنسخ جوه صورة Docker وقت البناء، زي البيانات المحلية وملفات الاختبار، عشان الصورة تفضل صغيرة ونظيفة.
+.env.example	نموذج كامل لكل متغيرات البيئة اللي السيرفر بيقراها، مع شرح لكل مجموعة. بتنسخه لملف .env وتملى القيم الحقيقية.
+.gitattributes	بيوحّد نهايات السطور بين ويندوز ولينكس عشان الـ migrations والـ checksums ما تتلخبطش.
+.github/workflows/ci.yml	خط التكامل المستمر على GitHub: بيبني المشروع ويشغّل الـ lint والاختبارات وفحوص حجم الملفات وعزل مزوّدي الذكاء الاصطناعي مع كل push.
+.gitignore	الملفات اللي Git بيتجاهلها: الملفات التنفيذية، مجلد البيانات، ملفات البيئة السرية.
+.golangci.yml	إعدادات أداة الـ lint. أهم حاجة فيها قواعد depguard اللي بتمنع أي حزمة في platform أو shared إنها تستورد من modules، يعني حدود المعمارية بيفرضها الـ build نفسه.
+.impeccable.md	سياق التصميم البصري للمنصة (الألوان، الخطوط، الإحساس العام) اللي بترجع له أدوات التصميم.
+.lighthouserc.json	إعدادات فحص Lighthouse لقياس أداء وجودة الصفحات في المتصفح.
+.specify/init-options.json	إعدادات أداة Spec Kit لتخطيط الميزات. أداة مساعدة للتطوير، مش جزء من تشغيل المنصة.
+.specify/integration.json	ربط Spec Kit بأداة الوكيل المستخدمة في التطوير.
+.specify/integrations/claude.manifest.json	ملف تعريف تكامل Spec Kit مع Claude.
+.specify/integrations/speckit.manifest.json	ملف تعريف أوامر Spec Kit نفسها.
+.specify/memory/constitution.md	قالب "دستور المشروع" بتاع Spec Kit، لسه بصيغة القالب ومش متملي.
+.specify/scripts/powershell/check-prerequisites.ps1	سكربت Spec Kit بيتأكد إن ملفات الميزة موجودة قبل الخطوة الجاية.
+.specify/scripts/powershell/common.ps1	دوال مشتركة لسكربتات Spec Kit.
+.specify/scripts/powershell/create-new-feature.ps1	بينشئ فرع ومجلد مواصفات لميزة جديدة في Spec Kit.
+.specify/scripts/powershell/setup-plan.ps1	بيجهز ملف خطة التنفيذ لميزة في Spec Kit.
+.specify/scripts/powershell/setup-tasks.ps1	بيجهز ملف المهام لميزة في Spec Kit.
+.specify/templates/checklist-template.md	قالب قائمة مراجعة لـ Spec Kit.
+.specify/templates/constitution-template.md	قالب الدستور لـ Spec Kit.
+.specify/templates/plan-template.md	قالب خطة التنفيذ لـ Spec Kit.
+.specify/templates/spec-template.md	قالب مواصفات ميزة لـ Spec Kit.
+.specify/templates/tasks-template.md	قالب قائمة المهام لـ Spec Kit.
+.specify/workflows/speckit/workflow.yml	تعريف تسلسل خطوات Spec Kit.
+.specify/workflows/workflow-registry.json	سجل مسارات العمل المتاحة في Spec Kit.
+AGENTS.md	القواعد الإلزامية لأي حد بيعدل في الكود: الفلوس ما تتخزنش float، ممنوع ذكر مزوّدي الذكاء الاصطناعي برا الـ gateway، كل قدرة AI لازم ليها بديل بدون AI، حدود الموديولات، وحد 400 سطر للملف.
+DEPLOY.md	الخطوات الدقيقة لنشر المنصة على Elestio: متغيرات البيئة، الخدمات، والترتيب الصح.
+Dockerfile	بيبني صورة واحدة فيها ثلاث برامج: السيرفر والـ worker والـ cli. بناء متعدد المراحل عشان الصورة النهائية تكون صغيرة.
+HANDOFF.md	وثيقة التسليم الهندسية: إيه اللي اتبنى وإيه اللي لسه، ومسارات المراجع، والمراحل الباقية بالترتيب. أول ملف يتقري لأي مطور جديد.
+Makefile	أوامر التطوير الجاهزة: تشغيل البنية المحلية، الـ migrations، السيرفر، الـ worker، وبوابات الجودة اللي بيشغلها CI.
+README.md	مقدمة المشروع وطريقة تشغيله محليًا بسرعة.
+docker-compose.dev.yml	بيشغّل البنية المحلية للتطوير: PostgreSQL وRedis وMinIO.
+docker-compose.yml	ملف النشر الفعلي: خدمات web وworker وmigrate مع كل متغيرات البيئة اللي بتتمرر للحاويات.
+go.mod	تعريف موديول Go وكل المكتبات الخارجية بإصداراتها.
+go.sum	البصمات المشفرة لكل مكتبة عشان التحميل يكون موثوق.
+run-dev.ps1	سكربت PowerShell بيشغّل السيرفر محليًا على ويندوز بالإعدادات المناسبة.
+watch-dev.ps1	سكربت بيراقب ملفات templ ويعيد توليدها ويعيد تشغيل السيرفر أثناء التطوير.
+split.py	سكربت مساعد صغير اتستخدم لتقسيم ملفات كبيرة عشان تلتزم بحد الـ 400 سطر.
+scratch/db_audit_output.txt	ناتج فحص قديم لقاعدة البيانات اتحفظ للمرجعية. مش مستخدم في التشغيل.
+test_products_challenging_ai.csv	ملف منتجات تجريبي صعب لاختبار المطابقة الذكية يدويًا.
+test_products_challenging_ai.xlsx	نفس ملف الاختبار الصعب بصيغة Excel.
+test_products_import.csv	ملف منتجات بسيط لتجربة الاستيراد يدويًا.
+test_products_import.xlsx	نفس ملف تجربة الاستيراد بصيغة Excel.
+cmd/cli/main.go	نقطة دخول أداة التشغيل cli. بتوزع الأوامر: migrate، migrate-status، seed، reset، استيراد البيانات القديمة وغيرها.
+cmd/cli/activate_imported.go	أمر بيفعّل المستخدمين والمنشآت اللي اتنقلت من النظام القديم دفعة واحدة بعد مراجعتها.
+cmd/cli/ai_identities.go	أمر بينشئ مستخدمين ومفاتيح في بوابة الذكاء الاصطناعي للمنشآت اللي معندهاش.
+cmd/cli/corpus.go	أمر بيصدّر ملفات استيراد حقيقية مع ملف وصف، عشان تستخدم في اختبارات دقة المطابقة.
+cmd/cli/corpus_catalogue.go	بيصدّر لقطة من الكتالوج الرئيسي تستخدمها اختبارات المطابقة بدل قاعدة البيانات.
+cmd/cli/imports_recover.go	أمر بيفك عمليات الاستيراد اللي علقت في مرحلة المعالجة بسبب إعادة تشغيل أو crash.
+cmd/cli/reset_db.go	بيمسح كل البيانات التشغيلية والكتالوج والمنشآت مع الإبقاء على حساب مدير المنصة والجداول المرجعية. خطير ويستخدم على بيئات الاختبار بس.
+cmd/cli/seed.go	بيدخل البيانات المرجعية الأساسية: الدول، المحافظات والمدن المصرية، العملات، اللغات، الأدوار، وإعدادات النظام.
+cmd/cli/seed_users.go	بينشئ حسابات تجريبية جاهزة للتطوير بكلمة مرور موحدة. ممنوع يستخدم على الإنتاج.
+cmd/cli/smartorder.go	اختبار دخان للطلب الذكي على الكتالوج الحقيقي من أوله لآخره قبل ما حد يثق في الميزة.
+cmd/dbcheck/main.go	أداة فحص قاعدة بيانات حية. بتقرا بس، إلا لو اتشغلت بخيار ‎-create.
+cmd/dbcheck/cols.go	بتطبع أعمدة جداول معينة من قاعدة البيانات الحية مباشرة.
+cmd/dbcheck/nullscan.go	بتدور على أعمدة ممكن تبقى NULL في PostgreSQL بس الكود بيقراها في حقل Go مش بيقبل NULL، وده سبب شائع للأعطال.
+cmd/dbcheck/provision.go	بتنشئ دور قاعدة بيانات بأقل صلاحيات للتطبيق بدل ما يشتغل كـ superuser.
+cmd/dbcheck/rehash.go	بتصلح بصمات الـ migrations المسجلة لما طريقة الحساب تتغير (نهايات السطور).
+cmd/dbcheck/scoping.go	بتطلع الجداول اللي مفيهاش row-level security وبتقول ممكن تتقيد بأي عمود.
+cmd/dbcheck/verify.go	بتتحقق إن كل جدول خاص بمنشأة عليه سياسات أمان الصفوف مفعّلة.
+cmd/etl/main.go	نقطة دخول أداة نقل البيانات من قاعدة MariaDB القديمة (Laravel) لـ PostgreSQL.
+cmd/etl/extractor.go	بيقرا المستخدمين والمنتجات والمنشآت من MariaDB على دفعات.
+cmd/etl/transformer.go	بيحوّل سجلات النظام القديم لشكل الجداول الجديدة.
+cmd/etl/validator.go	بيتأكد إن السجلات المنقولة مستوفية قيود الجداول الجديدة قبل الإدخال.
+cmd/etl/loader.go	بيدخل البيانات المحولة في PostgreSQL جوه transactions.
+cmd/etl/pipeline.go	بينسق مراحل الاستخراج والتحويل والإدخال وبيتحقق من النتيجة.
+cmd/loadseed/main.go	بيملى قاعدة بيانات مؤقتة بسوق واقعي كامل (كتالوج، موردين، فروع، تغطية، مخزون، عروض، صيدليات) لاختبارات الحمل.
+cmd/migratecheck/main.go	بيجرب الـ migrations المعلقة على قاعدة حقيقية وبيرجع كل حاجة (rollback) عشان يكشف أي migration هتفشل قبل الإنتاج.
+cmd/migratecheck/drift.go	بيكتشف الـ migrations اللي ملفها اتعدل بعد ما اتنفذت.
+cmd/server/main.go	نقطة دخول سيرفر الويب. بيحمل الإعدادات ويفتح المنفذ فورًا حتى لو قاعدة البيانات لسه ما اتصلتش، وبعدين يربط كل الموديولات.
+cmd/server/deps.go	بيمسك الاتصالات اللي ممكن ما تكونش جاهزة وقت الإقلاع (PostgreSQL وRedis) وبيعيد المحاولة لحد ما تتصل.
+cmd/server/health.go	نقاط الصحة (health/ready) ورقم الإصدار المحفور وقت البناء عشان تعرف أي نسخة شغالة.
+cmd/server/routes.go	بيسجل كل المسارات اللي محتاجة مستخدم مسجل دخول، وبيربط تيليجرام وواتساب والتسويق.
+cmd/server/routes_api.go	بيسجل مسارات الـ API لكل الموديولات.
+cmd/server/routes_ui_builder.go	بيجمع معالج الواجهة (UIHandler) بكل الخدمات اللي محتاجها.
+cmd/server/assistant_wiring.go	بيركب المساعد كبسولة ويربطه بالبوابة والأدوات وحد الأسئلة.
+cmd/server/assistant_actions_wiring.go	بيوصل إجراءات كبسولة (زي إنشاء طلب) بكود لوحة التحكم نفسه عشان ما يبقاش في منطق مكرر.
+cmd/server/assistant_coverage.go	بيجاوب سؤال المساعد "مين بيغطي منطقتي" بنفس قاعدة التغطية المستخدمة في المنصة.
+cmd/server/availability.go	بيجاوب أسئلة التوفر اللي بتعبر أكتر من موديول: المورد معتمد؟ المنتج موجود وله مخزون؟ الفرع مغطى؟
+cmd/server/catalog_adjudicate.go	بيحسم الصفوف الغامضة في مطابقة الكتالوج باستخدام قدرة الذكاء الاصطناعي المشتركة.
+cmd/server/chat_wiring.go	الجسر بين المساعد كبسولة وقنوات الدردشة (تيليجرام وواتساب). كل قناة بتاخد نفس خدمة المساعد مع تسجيل اسم القناة.
+cmd/server/telegram_wiring.go	بيركب جسر تيليجرام لو المتغيرات بتاعته متظبطة، وإلا بيسيبه مقفول.
+cmd/server/whatsapp_wiring.go	بيركب جسر واتساب لو رقم البيزنس والتوكن متظبطين، وإلا بيسيبه مقفول.
+cmd/server/marketing_wiring.go	بيفتح مسار ملخص المحتوى لورك فلو السوشيال ميديا لو MARKETING_BRIDGE_TOKEN متظبط.
+cmd/server/errtrack_sink.go	بيكتب الأخطاء اللي المستخدمين بيقابلوها في جدول error_logs اللي بتقراه شاشة التشخيص في لوحة الإدارة.
+cmd/server/gateway_admin_key.go	بيجيب ويخزن مؤقتًا ويصلح مفتاح لوحة الإدارة في بوابة الذكاء الاصطناعي.
+cmd/server/gateway_settings.go	بيقرا بيانات البوابة اللي الأدمن حفظها من شاشة الإعدادات.
+cmd/server/gateway_tenant_key.go	بيصدر لكل منشأة مفتاح خاص بيها في البوابة حسب خطة اشتراكها، مع تخزين مؤقت للخطة.
+cmd/server/imports.go	بيربط عمليات الاستيراد الدائمة وعمالها بالواجهة.
+cmd/server/ingest_enhance.go	بيوصل مرحلة التحسين بالذكاء الاصطناعي في الاستيراد بالبوابة.
+cmd/server/match_memory.go	ذاكرة قرارات المطابقة في الكاش عشان نفس السؤال ما يتبعتش للذكاء الاصطناعي مرتين.
+cmd/server/smartorder.go	بيجمع ميزة الطلب الذكي ويركبها على الواجهة، ولو ناقصها حاجة بتظهر إنها غير متاحة بدل ما توقع السيرفر.
+cmd/server/smartorder_runner.go	بيشغل عملية طلب ذكي واحدة بحد زمني واضح.
+cmd/worker/main.go	نقطة دخول الـ worker اللي بيشغل المهام الخلفية على طوابير منفصلة (إشعارات، استيراد، صيانة، طلب ذكي).
+cmd/worker/builtin_workers.go	مهام أساسية في الـ worker زي نبضة التأكد إن الطابور شغال.
+cmd/worker/assistant_retention.go	مهمة بتمسح محادثات المساعد بعد ستة شهور، تنفيذًا للوعد المكتوب للمستخدم.
+cmd/worker/availability.go	نفس مجاوب التوفر بتاع السيرفر بس جوه الـ worker.
+cmd/worker/smartorder.go	بيسجل عامل الطلب الذكي في الـ worker.
+test/corpus/corpus.go	بيشغل ملفات استيراد حقيقية على محرك المطابقة ويطلع تقرير دقة، عشان أي ادعاء عن تحسن المطابقة يكون بالأرقام.
+test/corpus/accuracy.json	نتائج الدقة المرجعية لملفات المطابقة المعلّمة.
+test/corpus/baseline.json	خط الأساس اللي بتتقارن بيه نتائج المطابقة الجديدة.
+test/corpus/catalogue.jsonl.gz	لقطة مضغوطة من الكتالوج تستخدمها اختبارات المطابقة.
+test/corpus/manifest.json	وصف ملفات الاختبار الحقيقية ومصادرها.
+test/load/k6_pages.js	اختبار حمل بـ k6 على صفحات لوحة التحكم (100 مستخدم متزامن، والهدف p95 أقل من 500ms).
+internal/platform/aiusage/domain.go	سجل المنصة الخاص باستهلاك الذكاء الاصطناعي، منفصل عن البوابة عشان يجاوب أسئلة الفوترة والتحليل.
+internal/platform/aiusage/atomic.go	عداد بسيط لعدد الأحداث اللي اتفقدت لما المخزن المؤقت يتملي.
+internal/platform/aiusage/recorder.go	بيجمع أحداث الاستهلاك في مخزن مؤقت ويكتبها في الخلفية بدون ما يبطأ الطلب.
+internal/platform/aiusage/postgres/repository.go	بيكتب ويقرا أحداث الاستهلاك من جدول ai.usage_events مع ملخصات حسب الميزة.
+internal/platform/antiscrape/classify.go	بيصنّف الزوار: محركات البحث ومساعدات الذكاء الاصطناعي مسموحة، وأدوات الكشط الجماعي ممنوعة. بيحمي صفحات الكتالوج والموردين.
+internal/platform/antiscrape/guard.go	الـ middleware اللي بيعد الطلبات في نافذتين (دفعة سريعة وفترة طويلة) وبيوقف الكاشط.
+internal/platform/antiscrape/respond.go	أسباب الرفض بتتسجل في اللوج بس، وما بتتقالش للكاشط.
+internal/platform/antiscrape/store.go	تخزين العدادات في Redis، وبديل في الذاكرة لو Redis مش متاح.
+internal/platform/authctx/actor.go	بيحمل هوية المستخدم الحالي (المستخدم، المنشأة، الدور، الصلاحيات، الفرع) جوه الـ context لأي handler.
+internal/platform/authctx/audience.go	middleware بيحدد مين يدخل مجموعة صفحات: صيدلية، مورد، أو إدارة.
+internal/platform/authctx/authctxtest/testhelper.go	أداة للاختبارات بتبني مستخدم بصلاحيات دور معين.
+internal/platform/authctx/capability.go	بيحدد مين يقدر يوصل لسطح الشراء المشترك وغيره من القدرات المشتركة بين اللوحتين.
+internal/platform/authctx/grant.go	المكان الوحيد اللي بيحوّل الصلاحيات المقروءة حالًا من قاعدة البيانات لمستخدم فعلي، وبيستخدمه المتصفح وتيليجرام وواتساب.
+internal/platform/authctx/middleware.go	middleware التحقق من الصلاحيات واعتماد المنشأة.
+internal/platform/cache/cache.go	غلاف Redis للكاش والجلسات وتحديد معدل الطلبات.
+internal/platform/config/config.go	بيحمّل كل الإعدادات من متغيرات البيئة مرة واحدة وقت الإقلاع، وبيرفض يشتغل لو في إعداد ناقص أو غلط.
+internal/platform/config/http.go	إعدادات السيرفر: المنفذ والمهل الزمنية.
+internal/platform/config/marketing.go	إعداد توكن ملخص التسويق MARKETING_BRIDGE_TOKEN (32 حرف على الأقل).
+internal/platform/config/telegram.go	إعداد جسر تيليجرام: اسم البوت والتوكن، الاتنين مع بعض أو ولا واحد.
+internal/platform/config/whatsapp.go	إعداد جسر واتساب: رقم البيزنس والتوكن والقالب ولغته، مع التحقق من صحة كل قيمة.
+internal/platform/database/connection.go	الاتصال بـ PostgreSQL وإدارة مجموعة الاتصالات وفحص الصحة.
+internal/platform/database/query_helpers.go	InTx وInReadTx اللي بيحددوا المنشأة الحالية لسياسات الأمان، وAsSystem للعمليات العابرة للمنشآت.
+internal/platform/database/lazy_tx.go	قراءة ما بتفتحش transaction إلا لو احتاجت فعلًا، وده وفّر وقت كبير في الصفحات.
+internal/platform/database/long_tx.go	transactions طويلة للمهام الخلفية بحد عشر دقائق.
+internal/platform/database/audit.go	بيرفق عنوان IP ورقم المستخدم بالـ context عشان سجل التدقيق يعرف مين عمل إيه.
+internal/platform/database/migrate.go	محرك الـ migrations: بيقرا ملفات db/migrations وبينفذ المعلق منها بالترتيب مع بصمة لكل ملف.
+internal/platform/database/migrate_orphans.go	بيكتشف migrations متسجلة كمنفذة بس ملفها اتمسح.
+internal/platform/database/saturation.go	خطأ واضح لما كل الاتصالات تبقى مشغولة، عشان يتفرق عن أخطاء الاستعلامات.
+internal/platform/database/stats.go	بيعد استعلامات كل طلب ويكشف الاستعلامات المكررة لتحليل الأداء.
+internal/platform/errtrack/errtrack.go	بيلتقط الأخطاء اللي المستخدمين بيشوفوها ويبعتها للتخزين عشان شاشة الأخطاء في الإدارة.
+internal/platform/errtrack/global.go	المتتبع الافتراضي اللي بتستخدمه طبقات الأخطاء في HTTP والواجهة.
+internal/platform/features/features.go	تقييم مفاتيح تشغيل الميزات (feature flags) في الذاكرة وmiddleware لقفل مسارات.
+internal/platform/gateway/gateway.go	الاتصال الوحيد بالذكاء الاصطناعي في المنصة. المنصة بتطلب "قدرة" زي مطابقة منتج، ومفيش اسم مزوّد أو موديل يظهر برا الحزمة دي.
+internal/platform/gateway/chat.go	أنواع رسائل الدردشة والأدوات والاستهلاك اللي بتتبعت للبوابة.
+internal/platform/gateway/chat_stream.go	فتح رد متدفق (streaming) من البوابة وقراءة أحداثه.
+internal/platform/gateway/breaker.go	قاطع دائرة: لو البوابة واقعة بيقفل بسرعة بدل ما كل صف استيراد يستنى دقيقة.
+internal/platform/gateway/capabilities.go	قدرات الموديل الحالية: أنواع المدخلات والمرفقات وحجم السياق.
+internal/platform/gateway/config_source.go	بيانات البوابة والموديلات السارية دلوقتي، من البيئة أو من شاشة الإعدادات.
+internal/platform/gateway/disabled.go	عميل بديل بيقول إن البوابة مقفولة، للتطوير المحلي والاختبارات ولما مفيش إعدادات.
+internal/platform/gateway/errors.go	مجموعة الأخطاء المغلقة اللي الموديولات بتتعامل معاها، من غير ما رسائل المزوّد تتسرب.
+internal/platform/gateway/roles.go	ربط كل "دور" بيحتاجه المساعد بموديل معين، كإعداد.
+internal/platform/gateway/transcribe.go	تحويل الصوت لنص بمفتاح المنشأة نفسها.
+internal/platform/gateway/usage.go	تسجيل كل استدعاء ذكاء اصطناعي كحدث استهلاك.
+internal/platform/gateway/wire.go	شكل الطلبات على الشبكة، ومنها قفل "التفكير" في الموديلات اللي بتفكر عشان التكلفة.
+internal/platform/gateway/admin_client.go	عميل واجهة إدارة البوابة: الخطط والمستخدمين والميزانيات.
+internal/platform/gateway/admin_client_provision.go	بينشئ مستخدم لوحة الإدارة في البوابة ويصدر له مفتاح.
+internal/platform/gateway/admin_models.go	كتالوج الموديلات المتاحة في البوابة، ومنها موديلات تحويل الصوت.
+internal/platform/gateway/admin_tenant.go	الخطة الافتراضية لأي منشأة خطتها مش محددة، وإدارة مفاتيح المنشآت.
+internal/platform/httpx/middleware.go	middleware النقل: اللوج، رقم الطلب، الحماية من الانهيار، ترويسات الأمان. مفيش منطق أعمال هنا.
+internal/platform/httpx/csrf.go	حماية CSRF بطريقة الكوكي المزدوجة لكل النماذج.
+internal/platform/httpx/nonce.go	رمز nonce لكل طلب يستخدم في سياسة أمان المحتوى CSP للسكربتات.
+internal/platform/httpx/ratelimit.go	تحديد معدل الطلبات حسب IP أو المنشأة أو المستخدم باستخدام Redis.
+internal/platform/httpx/request_timeout.go	مهلة زمنية لكل طلب، مع استثناء المسارات الطويلة زي الاستيراد وجسور الدردشة.
+internal/platform/httpx/respond.go	مساعدات الرد JSON والأخطاء وتحديد لغة الطلب.
+internal/platform/importjobs/stage_worker.go	عامل مرحلة الاستيراد: يقرا الملف ويطابق الصفوف.
+internal/platform/importjobs/commit_worker.go	عامل مرحلة الحفظ: يكتب الصفوف المعتمدة في الجداول النهائية.
+internal/platform/importjobs/helpers.go	مساعدات مطابقة خفيفة لعمال الاستيراد.
+internal/platform/importjobs/stage_saving.go	شكل بيانات استيراد المنتجات المحفوظة.
+internal/platform/importrun/importrun.go	نموذج جلسة الاستيراد الدائمة اللي بتستخدمها كل أدوات الاستيراد في المنصة.
+internal/platform/importrun/notify.go	بيعلن كل تغيير في حالة أو تقدم الاستيراد للمتابعين لحظيًا.
+internal/platform/importrun/postgres/repository.go	تخزين جلسات الاستيراد في platform.import_runs.
+internal/platform/importrun/postgres/repository_rows.go	إدخال صفوف الملف دفعة واحدة في transaction طويلة.
+internal/platform/media/derive.go	بيحوّل الصورة المرفوعة للمقاسات اللي المنصة بتعرضها فعلًا بدل تحميل صورة الموبايل الضخمة.
+internal/platform/media/compress.go	ضغط الصور لحد أقصى 1200 بكسل.
+internal/platform/observability/log.go	إعداد اللوج المنظم بصيغة JSON على المخرج القياسي.
+internal/platform/pagecontrol/domain.go	تفعيل وتعطيل صفحات النظام من لوحة الإدارة على مستوى المسار.
+internal/platform/pagecontrol/discovery.go	اكتشاف كل المسارات المركبة تلقائيًا عشان تظهر في شاشة التحكم.
+internal/platform/pagecontrol/engine.go	قواعد التعطيل في الذاكرة. لو حصل خطأ بيفتح كل حاجة بدل ما يقفل المنصة.
+internal/platform/pagecontrol/guard.go	الغلاف الخارجي للراوتر: الصفحة المعطلة بترد كأنها مش موجودة.
+internal/platform/pagecontrol/store.go	قراءة جدول managed_pages.
+internal/platform/pagecontrol/store_writes.go	الإضافة والتعديل والحذف في جدول managed_pages.
+internal/platform/progress/hub.go	بينقل تقدم الاستيراد لحظيًا من مكان التنفيذ لأي حد متابع.
+internal/platform/progress/bridge.go	قناة Redis واحدة لنقل التقدم بين السيرفر والـ worker.
+internal/platform/progress/stream.go	بث التقدم للمتصفح عن طريق SSE.
+internal/platform/queue/queue.go	غلاف River للمهام الخلفية مع إمكانية إضافة مهمة جوه نفس الـ transaction.
+internal/platform/queue/jobs.go	تعريف أنواع المهام وبياناتها (إشعارات الطلبات، توصيل الإشعارات، وغيرها).
+internal/platform/rbac/permission.go	المصدر الوحيد لتعريف الصلاحيات وطريقة مطابقة الصلاحية المطلوبة بالممنوحة.
+internal/platform/rbac/catalog.go	سجل الصلاحيات ومجموعاتها المجمّع.
+internal/platform/rbac/catalog_admin.go	صلاحيات لوحة الإدارة.
+internal/platform/rbac/catalog_pharmacy.go	صلاحيات لوحة الصيدلية وتجميع كل المجموعات.
+internal/platform/rbac/catalog_vendor.go	صلاحيات لوحة المورد، ومنها إدارة الشحنات.
+internal/platform/rbac/capability.go	القدرات المشتركة بين اللوحتين (زي الشراء) ومفتاح كل واحدة.
+internal/platform/rbac/menu.go	بيحدد عناصر قائمة الحساب اللي المستخدم يقدر يوصلها فعلًا حسب اعتماد منشأته.
+internal/platform/rbac/nav.go	نموذج روابط القائمة الجانبية وإخفاء اللي مالوش صلاحية.
+internal/platform/rbac/nav_admin.go	روابط القائمة الجانبية للإدارة.
+internal/platform/rbac/nav_pharmacy.go	روابط القائمة الجانبية للصيدلية.
+internal/platform/rbac/nav_vendor.go	روابط القائمة الجانبية للمورد، ومنها قسم الشراء المشترك.
+internal/platform/rbac/provision.go	بينشئ الأدوار المبدئية لكل منشأة جديدة.
+internal/platform/rbac/resolver.go	بيقرا صلاحيات المستخدم الفعلية من قاعدة البيانات مع كاش قصير بيتلغي لما rbac_version يتغير.
+internal/platform/rbac/resolver_load.go	الاستعلامات الفعلية لقراءة دور المنصة والعضوية والصلاحيات.
+internal/platform/rbac/roles.go	أدوار النظام الثابتة اللي ما ينفعش تتمسح.
+internal/platform/rbac/roles_org_grants.go	الصلاحيات المبدئية لكل دور داخل المنشأة.
+internal/platform/rbac/sync.go	بيكتب كتالوج الصلاحيات في قاعدة البيانات عند كل إقلاع.
+internal/platform/reqcache/reqcache.go	كاش لعمر الطلب الواحد عشان نفس القراءة ما تتكررش من أجزاء الصفحة المختلفة.
+internal/platform/safe/safe.go	تشغيل goroutine بأمان: أي panic بيتسجل ومبيوقعش السيرفر.
+internal/platform/storage/storage.go	عميل تخزين ملفات متوافق مع S3 وMinIO، وكل ملفات المنشأة في مسار خاص بيها.
+internal/platform/storage/media_cleanup.go	مسار الرفع على القرص ومسح الملفات القديمة.
+internal/shared/apperr/apperr.go	أنواع أخطاء الأعمال المغلقة. طبقة HTTP بس هي اللي بتحولها لأكواد حالة.
+internal/shared/arabic/arabic.go	توحيد النص العربي للبحث والمطابقة (الهمزات، التاء المربوطة، الياء). منقول حرفيًا من النظام القديم.
+internal/shared/filesecurity/scanner.go	فحص النصوص المرفوعة، ورسالة الرفض العربية الموحدة.
+internal/shared/filesecurity/scanner_inspect.go	بيرفض ملفات Excel وCSV اللي فيها روابط أو دومينات أو صيغ خطرة.
+internal/shared/format/format.go	تنسيق موحد للأرقام والفلوس والمسافات والتواريخ في كل المنصة.
+internal/shared/i18n/i18n.go	التعامل مع القيم ثنائية اللغة {"ar","en"} المخزنة في قاعدة البيانات.
+internal/shared/i18n/engine.go	محرك الترجمة: البحث عن المفتاح والنص الافتراضي والنصوص المعدلة من الإدارة.
+internal/shared/i18n/catalog.go	بيحمّل كل ملفات الترجمة عند الإقلاع.
+internal/shared/importprogress/progress.go	بيحوّل مرحلة الاستيراد وعداداته لنسبة تقدم واحدة موحدة.
+internal/shared/matchflow/contract.go	العقد المشترك لمرحلة المطابقة بالذكاء الاصطناعي في كل أدوات الاستيراد.
+internal/shared/matchflow/cachekey.go	مفتاح الكاش لقرار المطابقة بفاصل آمن.
+internal/shared/matchflow/ceilings.go	حدود عدد الأسئلة والتكلفة في كل عملية تحسين.
+internal/shared/matchflow/memory.go	شكل الإجابة المحفوظة، ومنها "ولا واحد منهم" كإجابة صحيحة.
+internal/shared/matchflow/plan.go	تجهيز الأسئلة اللي هتتبعت للموديل ودرجة خطورتها.
+internal/shared/matchflow/verify.go	التحقق من إجابة الموديل قبل قبولها وحفظها.
+internal/shared/money/money.go	تمثيل الفلوس بدقة كأعداد صحيحة بالقروش. ممنوع float في أي مكان.
+internal/shared/pagination/pagination.go	الترقيم بالمؤشر وبالصفحات لكل قوائم المنصة.
+internal/shared/timeutil/cairo.go	توحيد التوقيت على القاهرة في الاستعلامات والمهام والعرض.
+internal/shared/sheet/text.go	قراءة ملفات Excel الحقيقية بكل مشاكلها وتحويل الخلايا لقيم قابلة للمقارنة.
+internal/shared/sheet/types.go	أنواع الملفات والأوراق ومعاينة المحتوى.
+internal/shared/sheet/reader.go	اكتشاف نوع الملف من أول بايتات مش من الامتداد.
+internal/shared/sheet/reader_xlsx.go	قراءة ملفات xlsx واختيار الورقة اللي فيها الكتالوج فعلًا.
+internal/shared/sheet/reader_biff.go	قراءة ملفات Excel القديمة xls بقارئ BIFF مصلح.
+internal/shared/sheet/reader_biff_decode.go	تحويل ورقة xls لشبكة خلايا.
+internal/shared/sheet/reader_biff_native.go	أرقام سجلات صيغة BIFF.
+internal/shared/sheet/reader_biff_sst.go	قراءة جدول النصوص المشتركة في xls.
+internal/shared/sheet/ole2.go	قراءة الحاوية المركبة OLE2 اللي جواها ملف xls.
+internal/shared/sheet/reader_csv_xls.go	قراءة CSV وإعادة اختيار الأوراق في الصيغ القديمة.
+internal/shared/sheet/reader_text.go	قراءة الصيغ النصية والـ xls اللي النظام القديم كان بيرفضها.
+internal/shared/sheet/reader_xml2003.go	قراءة صيغة Excel XML 2003.
+internal/shared/sheet/readrows.go	حد أقصى للصفوف المقروءة في الذاكرة مرة واحدة.
+internal/shared/sheet/number.go	تحويل الأرقام والأسعار مع إزالة رموز العملة زي ج.م.
+internal/shared/sheet/date.go	تحويل خلايا التواريخ بصيغها المختلفة.
+internal/shared/sheet/profile.go	تحليل إحصائي لكل عمود لمعرفة نوع بياناته.
+internal/shared/sheet/testdata/sst-continue.xls	ملف xls حقيقي لاختبار حالة نصوص مقسومة على أكتر من سجل.
+internal/shared/productmatch/fields.go	محرك تحويل ملف المورد لصفوف كتالوج بشكل حتمي: نفس الملف يطلع نفس النتيجة دايمًا.
+internal/shared/productmatch/fieldset.go	الحقول المسموحة لكل أداة استيراد.
+internal/shared/productmatch/header_specs.go	الأسماء المعروفة لعناوين الأعمدة بالعربي والإنجليزي.
+internal/shared/productmatch/headers.go	قوة تطابق عنوان العمود مع الحقل.
+internal/shared/productmatch/layout.go	اكتشاف صف العناوين وشكل الورقة.
+internal/shared/productmatch/analyze.go	تحليل عينة من الصفوف لفهم كل عمود.
+internal/shared/productmatch/evidence.go	أدلة محتوى العمود اللي بتأكد أو تنفي نوعه.
+internal/shared/productmatch/evidence_money.go	اكتشاف أعمدة الأسعار.
+internal/shared/productmatch/evidence_price.go	مكافأة تطابق السعر المطبوع في المطابقة.
+internal/shared/productmatch/crosscheck.go	مقارنة الأعمدة الرقمية ببعض لكشف التبديل.
+internal/shared/productmatch/resolve.go	ربط الأعمدة بالحقول مع درجة ثقة للمراجعة.
+internal/shared/productmatch/resolve_scores.go	تقييم كل حقل مقابل كل عمود.
+internal/shared/productmatch/vocabulary.go	القيم المعروفة اللي المحرك يقدر يتعرف عليها.
+internal/shared/productmatch/identifiers.go	أعمدة المعرفات (باركود، كود) اللي المستخدم ربطها.
+internal/shared/productmatch/identity.go	أسباب رفض مطابقة مقترحة (تعارض الهوية أو التركيز).
+internal/shared/productmatch/identity_swap.go	اكتشاف عمود محتواه عكس عنوانه.
+internal/shared/productmatch/identity_words.go	حدود فحص الكلمات المشتركة.
+internal/shared/productmatch/infer.go	استنتاج الشكل الدوائي من اسم المنتج المصري.
+internal/shared/productmatch/facts.go	المعلومات اللي اسم المنتج بيقولها (تركيز، شكل، عدد).
+internal/shared/productmatch/quantity.go	قراءة الكميات زي 30 قرص أو 10 أكياس.
+internal/shared/productmatch/strength_set.go	حالات خاصة لقراءة التركيز بالوحدات الدولية.
+internal/shared/productmatch/letters.go	الحروف المفردة اللي بتفرق بين خطوط منتجات كاملة.
+internal/shared/productmatch/text.go	توحيد اسم المنتج للمقارنة.
+internal/shared/productmatch/translit.go	تحويل الحروف العربية لهيكل صوتي لاتيني لمطابقة الأسماء المكتوبة بالعربي والإنجليزي.
+internal/shared/productmatch/variants.go	تهجئات بديلة للكلمة.
+internal/shared/productmatch/annotations.go	الكلمات اللي بتبدأ ملاحظة تجارية في الاسم وتتشال من المطابقة.
+internal/shared/productmatch/match.go	مستويات المطابقة ونتائجها وخياراتها.
+internal/shared/productmatch/match_all.go	مطابقة كل الصفوف بالتوازي مع الحفاظ على الترتيب.
+internal/shared/productmatch/match_index.go	فهرس الكتالوج في الذاكرة بأكتر من مفتاح.
+internal/shared/productmatch/match_product.go	منتج الكتالوج بالحقول اللي المطابقة بتقراها بس.
+internal/shared/productmatch/match_query.go	الصف بعد تحويله لإشارات مطابقة.
+internal/shared/productmatch/match_score.go	حساب درجة التطابق.
+internal/shared/productmatch/match_evidence.go	طريقة اتفاق اسمين مش مجرد نسبة التشابه.
+internal/shared/productmatch/match_decide.go	الحسم بين مرشحين درجاتهم متقاربة.
+internal/shared/productmatch/match_containment.go	تهجئات منتج الكتالوج المحسوبة وقت الفهرسة.
+internal/shared/productmatch/match_tokens.go	تقليل الاسم للكلمات المميزة بس.
+internal/shared/productmatch/trigram_index.go	فهرس ثلاثيات الحروف للبحث السريع عن المرشحين.
+internal/shared/productmatch/recall.go	اتساع البحث عن المرشحين.
+internal/shared/productmatch/discriminate.go	نقاط الاختلاف بين الصف والمرشح.
+internal/shared/productmatch/discriminate_compare.go	مجموع وزن الاختلافات.
+internal/shared/productmatch/debug.go	شرح سبب اختيار مرشح عن التاني.
+internal/shared/productmatch/process.go	إحصائيات الملف كاملة بحيث الأرقام تتجمع بالظبط لعدد صفوف المورد.
+internal/shared/productmatch/product_key.go	مفتاح هوية المنتج لتجميع الملفات.
+internal/shared/productmatch/row.go	الملاحظات على كل صف برقم الصف في الملف وعنوان العمود.
+internal/shared/productmatch/row_price.go	التحقق إن السعر يتخزن في العمود.
+internal/shared/productmatch/shape.go	قياسات شكل العمود.

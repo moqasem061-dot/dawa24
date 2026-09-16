@@ -1,0 +1,206 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ LoginPage(lang, dir, errorMsg string) {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	@layouts.Base("تسجيل الدخول", lang, dir) {
+		<div class="auth-page-wrapper">
+			<div class="auth-card glass-panel" x-data="{ showPwd: false }">
+				<div class="auth-header">
+					<a href="/" class="auth-brand-logo">
+						if site.LogoURL != "" {
+							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						} else {
+							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						}
+						if site.LogoDarkURL != "" {
+							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+						}
+					</a>
+					<h1 class="auth-title">منصة { site.SiteName }</h1>
+					<p class="auth-subtitle">تسجيل الدخول إلى حسابك الصيدلي أو التجاري</p>
+				</div>
+
+				if errorMsg != "" {
+					<div class="alert alert-danger mb-5 d-flex items-center gap-3">
+						<div class="alert-icon flex-shrink-0">@components.IconAlert("icon-xs")</div>
+						<div class="alert-message text-sm font-semibold">{ errorMsg }</div>
+					</div>
+				}
+
+				<form method="POST" action="/auth/login" class="d-flex flex-col gap-4">
+					<div class="form-group mb-0">
+						<label class="form-label font-semibold text-xs" for="email">البريد الإلكتروني أو اسم المستخدم</label>
+						<input
+							type="email"
+							id="email"
+							name="email"
+							required
+							autofocus
+							class="form-input tabular-nums"
+							placeholder="pharmacist@dawa24.eg"
+						/>
+					</div>
+
+					<div class="form-group mb-0">
+						<div class="d-flex items-center justify-between mb-1">
+							<label class="form-label font-semibold text-xs m-0" for="password">كلمة المرور</label>
+							<a href="/auth/forgot" class="text-xs font-semibold text-accent text-decoration-none">نسيت كلمة المرور؟</a>
+						</div>
+						<div class="pwd-input-wrap">
+							<input
+								:type="showPwd ? 'text' : 'password'"
+								id="password"
+								name="password"
+								required
+								class="form-input"
+								placeholder="••••••••"
+							/>
+							<button
+								type="button"
+								class="pwd-toggle-btn"
+								@click="showPwd = !showPwd"
+								title="إظهار / إخفاء كلمة المرور"
+							>
+								@components.IconEye("icon-xs")
+							</button>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 mt-1">
+						<input type="checkbox" id="remember_me" name="remember_me" value="1" checked class="form-checkbox" />
+						<label for="remember_me" class="form-check-label text-xs m-0 cursor-pointer user-select-none">
+							تذكرني على هذا الجهاز
+						</label>
+					</div>
+
+					<button type="submit" class="btn btn-primary btn-lg w-100 font-bold mt-2">
+						@components.IconCheck("icon-xs")
+						<span>دخول للنظام</span>
+					</button>
+
+					<div class="auth-legal-terms">
+						<span>بتسجيلك في المنصة، أنت توافق على</span>
+						<a href="/terms" target="_blank">شروط وأحكام المنصة</a>
+						<span>و</span>
+						<a href="/privacy" target="_blank">سياسة الخصوصية</a>
+					</div>
+				</form>
+
+				<div class="auth-footer">
+					<span>ليس لديك حساب؟</span>
+					<a href="/auth/register" class="font-bold text-accent text-decoration-none ms-1">تسجيل حساب صيدلية جديد</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ ForgotPasswordPage(lang, dir string) {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	@layouts.Base("استعادة كلمة المرور", lang, dir) {
+		<div class="auth-page-wrapper">
+			<div class="auth-card glass-panel">
+				<div class="auth-header">
+					<a href="/" class="auth-brand-logo">
+						if site.LogoURL != "" {
+							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						} else {
+							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						}
+						if site.LogoDarkURL != "" {
+							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+						}
+					</a>
+					<h1 class="auth-title">استعادة كلمة المرور</h1>
+					<p class="auth-subtitle">أدخل بريدك الإلكتروني المسجل لإرسال رابط إعادة التعيين</p>
+				</div>
+
+				<form method="POST" action="/auth/forgot" class="d-flex flex-col gap-4">
+					<div class="form-group mb-0">
+						<label class="form-label font-semibold text-xs" for="forgot-email">البريد الإلكتروني</label>
+						<input
+							type="email"
+							id="forgot-email"
+							name="email"
+							required
+							autofocus
+							class="form-input tabular-nums"
+							placeholder="pharmacist@dawa24.eg"
+						/>
+					</div>
+					<button type="submit" class="btn btn-primary btn-lg w-100 font-bold">
+						@components.IconMail("icon-xs")
+						<span>إرسال رابط الاستعادة</span>
+					</button>
+				</form>
+
+				<div class="auth-footer">
+					<a href="/auth/login" class="font-bold text-accent text-decoration-none">العودة لتسجيل الدخول</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ ResetPasswordPage(lang, dir, token string) {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	@layouts.Base("تعيين كلمة المرور الجديدة", lang, dir) {
+		<div class="auth-page-wrapper">
+			<div class="auth-card glass-panel" x-data="{ showPwd: false }">
+				<div class="auth-header">
+					<a href="/" class="auth-brand-logo">
+						if site.LogoURL != "" {
+							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						} else {
+							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						}
+						if site.LogoDarkURL != "" {
+							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+						}
+					</a>
+					<h1 class="auth-title">تعيين كلمة المرور</h1>
+					<p class="auth-subtitle">أدخل كلمة المرور الجديدة لحسابك الصيدلي</p>
+				</div>
+
+				<form method="POST" action="/auth/reset" class="d-flex flex-col gap-4">
+					<input type="hidden" name="token" value={ token } />
+					<div class="form-group mb-0">
+						<label class="form-label font-semibold text-xs" for="reset-pass">كلمة المرور الجديدة</label>
+						<div class="pwd-input-wrap">
+							<input
+								:type="showPwd ? 'text' : 'password'"
+								id="reset-pass"
+								name="password"
+								required
+								minlength="8"
+								class="form-input"
+								placeholder="••••••••"
+							/>
+							<button
+								type="button"
+								class="pwd-toggle-btn"
+								@click="showPwd = !showPwd"
+								title="إظهار / إخفاء كلمة المرور"
+							>
+								@components.IconEye("icon-xs")
+							</button>
+						</div>
+					</div>
+					<button type="submit" class="btn btn-primary btn-lg w-100 font-bold">
+						@components.IconCheck("icon-xs")
+						<span>تحديث كلمة المرور والدخول</span>
+					</button>
+				</form>
+
+				<div class="auth-footer">
+					<a href="/auth/login" class="font-bold text-accent text-decoration-none">العودة لتسجيل الدخول</a>
+				</div>
+			</div>
+		</div>
+	}
+}

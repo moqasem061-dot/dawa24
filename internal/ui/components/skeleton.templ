@@ -1,0 +1,21 @@
+package components
+
+// Loading placeholders.
+//
+// These are the shape of the content that is coming, not a spinner in the
+// middle of an empty box. A list skeleton with the row height of the real rows
+// means the page does not jump when the data lands.
+
+// SkeletonText renders n placeholder lines, the last one short so it reads as
+// the end of a paragraph.
+templ SkeletonText(lines int) {
+	<div class="skeleton-text" aria-hidden="true">
+		for i := 0; i < lines; i++ {
+			if i == lines-1 {
+				<div class="skeleton skeleton-line" style="width:65%;"></div>
+			} else {
+				<div class="skeleton skeleton-line w-full"></div>
+			}
+		}
+	</div>
+}

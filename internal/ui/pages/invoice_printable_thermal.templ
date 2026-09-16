@@ -1,0 +1,154 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+)
+
+templ InvoicePrintableThermal(data billing.PrintableInvoiceData) {
+	<div class="invoice-paper-thermal" id="thermal-invoice-container">
+		
+		<div class="thermal-center">
+			if data.Vendor.LogoURL != "" {
+				<img
+					src={ data.Vendor.LogoURL }
+					alt={ data.Vendor.DisplayName }
+					data-img-fallback="hide"
+					class="thermal-logo"
+				/>
+			}
+			<div class="stack-sm font-size-15 font-black letter-spacing-tight">
+				{ data.Vendor.DisplayName }
+			</div>
+			if data.Vendor.TaxNumber != "" {
+				<div class="font-size-10">ب.ض: { data.Vendor.TaxNumber } | س.ت: { data.Vendor.CommercialRegister }</div>
+			}
+			if data.Vendor.Phone != "" {
+				<div class="font-size-10">هاتف: { data.Vendor.Phone }</div>
+			}
+			<div class="thermal-divider"></div>
+			<div class="stack-sm font-size-13 font-black">
+				دوا 24 — إيصال استلام وتوريد
+			</div>
+			<div class="tabular-nums font-size-10">#{ data.InvoiceNumber }</div>
+			<div class="thermal-divider"></div>
+		</div>
+
+		<!-- Meta -->
+		<div class="thermal-row">
+			<span>التاريخ:</span>
+			<span class="tabular-nums">{ data.IssueDate.Format("2006-01-02 03:04 PM") }</span>
+		</div>
+		if data.OrderNumber != "" {
+			<div class="thermal-row">
+				<span>أمر الشراء:</span>
+				<span class="tabular-nums font-bold">#{ data.OrderNumber }</span>
+			</div>
+		}
+		<div class="thermal-row">
+			<span>السداد:</span>
+			if data.PaymentMethod == "cash" || data.PaymentMethod == "cash_on_delivery" || data.PaymentMethod == "cod" {
+				<span>نقداً عند الاستلام</span>
+			} else if data.PaymentMethod == "wallet" {
+				<span>المحفظة الإلكترونية</span>
+			} else {
+				<span>آجل / حساب ائتماني</span>
+			}
+		</div>
+		<div class="thermal-row">
+			<span>العميل:</span>
+			<span class="thermal-bold">{ data.Customer.DisplayName }</span>
+		</div>
+		if data.Customer.OrganizationNumber != "" {
+			<div class="thermal-row">
+				<span>رقم المنظمة:</span>
+				<span class="font-mono tabular-nums">{ data.Customer.OrganizationNumber }</span>
+			</div>
+		}
+		if data.Customer.PharmacistLicense != "" {
+			<div class="thermal-row">
+				<span>الترخيص:</span>
+				<span>{ data.Customer.PharmacistLicense }</span>
+			</div>
+		}
+		<div class="thermal-divider"></div>
+
+		<!-- Items Header: Sequence includes Item Name -> Public Price -> Discount -> Qty -> Total -->
+		<div class="thermal-row thermal-bold font-size-9 border-b-black pb-2px mb-4px">
+			<span class="flex-2">الصنف الدوائي</span>
+			<span class="col-w-48 text-center">سعر الجمهور</span>
+			<span class="col-w-34 text-center">الخصم</span>
+			<span class="col-w-26 text-center">الكمية</span>
+			<span class="col-w-50 text-left">الإجمالي</span>
+		</div>
+
+		<!-- Items List -->
+		for _, line := range data.Lines {
+			<div class="thermal-item-block">
+				<div class="thermal-bold font-size-10">
+					{ line.ItemName }
+				</div>
+				<div class="thermal-row font-size-8-5 text-muted">
+					<span>
+						كود:
+						if line.SKU != "" {
+							<strong class="font-mono">{ line.SKU }</strong>
+						} else {
+							-
+						}
+					</span>
+					<span>
+						تشغيلة:
+						if line.BatchNumber != "" {
+							<strong class="font-mono">{ line.BatchNumber }</strong>
+						} else {
+							-
+						}
+					</span>
+					<span>
+						صلاحية:
+						if line.ExpiryDate != "" {
+							<strong class="tabular-nums">{ line.ExpiryDate }</strong>
+						} else {
+							-
+						}
+					</span>
+				</div>
+				<div class="thermal-row font-size-9-5 text-dark mt-1px">
+					<span class="flex-2 text-muted font-size-8-5"></span>
+					<span class="col-w-48 text-center tabular-nums">{ line.UnitPrice.String() }</span>
+					<span class="col-w-34 text-center tabular-nums">{ formatDiscountInt(line.DiscountPercent) }</span>
+					<span class="col-w-26 text-center font-bold tabular-nums">{ fmt.Sprintf("%d", line.Quantity) }</span>
+					<span class="col-w-50 text-left font-bold tabular-nums">{ line.TotalPrice.String() }</span>
+				</div>
+			</div>
+		}
+
+		<div class="thermal-divider"></div>
+
+		<!-- Totals -->
+		<div class="thermal-row">
+			<span>إجمالي سعر الجمهور:</span>
+			<span class="tabular-nums">{ data.Subtotal.String() } ج.م</span>
+		</div>
+		if data.TotalDiscount.IsPositive() {
+			<div class="thermal-row">
+				<span>إجمالي الخصم:</span>
+				<span class="tabular-nums">-{ data.TotalDiscount.String() } ج.م</span>
+			</div>
+		}
+		<div class="thermal-divider"></div>
+		<div class="thermal-row thermal-bold font-size-13">
+			<span>الصافي المطلوب:</span>
+			<span class="tabular-nums">{ data.TotalAmount.String() } ج.م</span>
+		</div>
+		<div class="thermal-divider"></div>
+
+		<!-- Exact Required Disclaimer Statement (Bottom of Thermal) -->
+		<div class="thermal-center disclaimer-thermal">
+			Dawa24 منصة وسيطة ولا تتحمل أي مسؤولية عن البيع أو التسليم أو الاستلام أو التحصيل أو السداد بين العميل والمورد، وتظل المسؤولية كاملة على أطراف المعاملة، كلٌ حسب التزامه القانوني والتعاقدي.
+		</div>
+
+	</div>
+}

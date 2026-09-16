@@ -1,0 +1,293 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func formatAuditAction(action, labelAr string, langOpt ...string) (string, string) {
+	isEn := len(langOpt) > 0 && langOpt[0] == "en"
+	if labelAr != "" && !isEn {
+		return labelAr, "badge-sky"
+	}
+	switch strings.ToLower(action) {
+	case "org.registered", "user.registered":
+		if isEn {
+			return "New Registration", "badge-emerald"
+		}
+		return "تسجيل منشأة جديدة", "badge-emerald"
+	case "user.login":
+		if isEn {
+			return "User Login", "badge-sky"
+		}
+		return "تسجيل دخول", "badge-sky"
+	case "offer.created", "product.created":
+		if isEn {
+			return "Create Offer / Item", "badge-emerald"
+		}
+		return "إضافة صنف / عرض", "badge-emerald"
+	case "offer.updated", "product.updated":
+		if isEn {
+			return "Update Offer / Price", "badge-amber"
+		}
+		return "تحديث صنف / سعر", "badge-amber"
+	case "offer.deleted", "product.deleted":
+		if isEn {
+			return "Delete Offer / Item", "badge-rose"
+		}
+		return "حذف صنف / عرض", "badge-rose"
+	case "order.approved", "order.status_changed":
+		if isEn {
+			return "Update Order Status", "badge-indigo"
+		}
+		return "تحديث حالة أمر توريد", "badge-indigo"
+	case "invoice.created":
+		if isEn {
+			return "Issue Invoice", "badge-sky"
+		}
+		return "إصدار فاتورة", "badge-sky"
+	case "branch.created", "warehouse.created":
+		if isEn {
+			return "Add Branch / Warehouse", "badge-emerald"
+		}
+		return "إضافة فرع / مخزن", "badge-emerald"
+	default:
+		clean := strings.ReplaceAll(action, ".", " — ")
+		clean = strings.ReplaceAll(clean, "_", " ")
+		return clean, "badge-slate"
+	}
+}
+
+func formatEntityType(entityType, entityTypeAr string, langOpt ...string) string {
+	isEn := len(langOpt) > 0 && langOpt[0] == "en"
+	if entityTypeAr != "" && !isEn {
+		return entityTypeAr
+	}
+	switch strings.ToLower(entityType) {
+	case "organization", "org":
+		if isEn {
+			return "Organization"
+		}
+		return "المنشأة"
+	case "user":
+		if isEn {
+			return "Staff / User"
+		}
+		return "موظف / مستخدم"
+	case "offer", "variant":
+		if isEn {
+			return "Supply Offer"
+		}
+		return "عرض توريد"
+	case "product":
+		if isEn {
+			return "Drug Product"
+		}
+		return "منتج دوائي"
+	case "order":
+		if isEn {
+			return "Supply Order"
+		}
+		return "أمر توريد"
+	case "invoice":
+		if isEn {
+			return "Tax Invoice"
+		}
+		return "فاتورة ضريبية"
+	case "warehouse", "branch":
+		if isEn {
+			return "Warehouse / Branch"
+		}
+		return "مخزن / فرع"
+	default:
+		return entityType
+	}
+}
+
+func formatShortID(id string) string {
+	if len(id) > 12 {
+		return id[:8] + "…"
+	}
+	return id
+}
+
+// VendorActivitiesPage renders activity history for the vendor's team.
+templ VendorActivitiesPage(entries []*platformadmin.AuditEntry, lang, dir string, page, perPage, totalCount int) {
+	@layouts.VendorShell(i18n.T(lang, "activities.page_title"), "activities", lang, dir) {
+		@tenantActivitiesBody(entries, "vendor", lang, dir, page, perPage, totalCount)
+	}
+}
+
+// CustomerActivitiesPage renders activity history for the pharmacy team.
+templ CustomerActivitiesPage(entries []*platformadmin.AuditEntry, lang, dir string, page, perPage, totalCount int) {
+	@layouts.CustomerShell(i18n.T(lang, "activities.page_title"), "activities", lang, dir, nil) {
+		@tenantActivitiesBody(entries, "customer", lang, dir, page, perPage, totalCount)
+	}
+}
+
+templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, lang, dir string, page, perPage, totalCount int) {
+	<div class="page-container" x-data="{ search: '', selectedEntry: null, isDetailsOpen: false }">
+		
+		<!-- Header & Action Summary -->
+		<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+			<div class="flex-between items-start flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3 mb-1">
+						<div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+							@components.IconClock("icon-sm")
+						</div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							if orgType == "vendor" {
+								{ i18n.T(lang, "activities.header_vendor") }
+							} else {
+								{ i18n.T(lang, "activities.header_customer") }
+							}
+						</h1>
+					</div>
+					<p class="text-xs text-secondary m-0 font-medium">
+						{ i18n.T(lang, "activities.desc") }
+					</p>
+				</div>
+
+				<div class="d-flex items-center">
+					<span class="badge badge-sky text-xs font-extrabold px-3.5 py-2 shadow-2xs tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "activities.total_count"), totalCount) }
+					</span>
+				</div>
+			</div>
+
+			<!-- Quick Filter Search -->
+			<div class="mt-4 pt-3 border-t border-slate-100">
+				<input
+					type="search"
+					x-model="search"
+					placeholder={ i18n.T(lang, "activities.search_placeholder") }
+					class="form-input text-xs font-medium"
+				/>
+			</div>
+		</div>
+
+		if len(entries) == 0 {
+			<div class="glass-panel p-8 text-center empty-state-glass border border-slate-200/80 rounded-2xl shadow-xs">
+				<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3 text-2xl">
+					@components.IconClock("icon-sm")
+				</div>
+				<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "activities.empty_title") }</h3>
+				<p class="text-xs text-secondary max-w-md mx-auto">{ i18n.T(lang, "activities.empty_desc") }</p>
+			</div>
+		} else {
+			<div class="glass-panel p-0 mb-6 overflow-hidden border border-slate-200/80 rounded-2xl shadow-xs">
+				<div class="table-container m-0 overflow-x-auto">
+					<table class="data-table m-0 text-xs w-full">
+						<thead>
+							<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+								<th class="py-3 text-start ps-4">{ i18n.T(lang, "activities.col_actor") }</th>
+								<th class="py-3 text-start">{ i18n.T(lang, "activities.col_action") }</th>
+								<th class="py-3 text-start">{ i18n.T(lang, "activities.col_entity") }</th>
+								<th class="py-3 text-start">{ i18n.T(lang, "activities.col_id") }</th>
+								<th class="text-center py-3">{ i18n.T(lang, "activities.col_ip") }</th>
+								<th class="text-end py-3 pe-4">{ i18n.T(lang, "activities.col_date") }</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-slate-100">
+							for _, e := range entries {
+								{{ actionLabel, badgeClass := formatAuditAction(e.Action, e.ActionLabelAr, lang) }}
+								<tr
+									class="transition-colors"
+									x-show={ fmt.Sprintf("search === '' || '%s'.toLowerCase().includes(search.toLowerCase()) || '%s'.toLowerCase().includes(search.toLowerCase()) || '%s'.toLowerCase().includes(search.toLowerCase())", e.ActorName, actionLabel, e.EntityID) }
+								>
+									<!-- Actor Info -->
+									<td class="py-3 ps-4">
+										<div class="d-flex items-center gap-2">
+											<div class="user-avatar-badge text-xs font-black">
+												if len(e.ActorName) > 0 {
+													{ string([]rune(e.ActorName)[0]) }
+												} else {
+													م
+												}
+											</div>
+											<div class="stack-sm">
+												<div class="font-extrabold text-xs text-primary">
+													if e.ActorName != "" {
+														{ e.ActorName }
+													} else {
+														{ i18n.T(lang, "activities.default_actor") }
+													}
+												</div>
+												if e.ActorEmail != "" {
+													<div class="text-2xs text-muted tabular-nums">
+														{ e.ActorEmail }
+													</div>
+												}
+											</div>
+										</div>
+									</td>
+
+									<!-- Action -->
+									<td class="py-3">
+										<span class={ "badge text-xs font-bold", badgeClass }>
+											{ actionLabel }
+										</span>
+									</td>
+
+									<!-- Entity Type -->
+									<td class="py-3">
+										<span class="badge badge-slate text-xs font-bold">
+											{ formatEntityType(e.EntityType, e.EntityTypeAr, lang) }
+										</span>
+									</td>
+
+									<!-- Entity ID -->
+									<td class="py-3">
+										if e.EntityID != "" {
+											<code
+												class="tabular-nums text-xs bg-surface-sunken border border-slate-200/80 px-1.5 py-0.5 rounded font-mono font-bold"
+												title={ e.EntityID }
+											>
+												{ formatShortID(e.EntityID) }
+											</code>
+										} else {
+											<span class="text-xs text-muted">—</span>
+										}
+									</td>
+
+									<!-- IP Address -->
+									<td class="text-center tabular-nums text-xs font-mono text-secondary py-3">
+										if e.IPAddress != "" {
+											{ e.IPAddress }
+										} else {
+											<span class="text-muted">{ i18n.T(lang, "activities.ip_internal") }</span>
+										}
+									</td>
+
+									<!-- Timestamp -->
+									<td class="text-end tabular-nums text-xs text-secondary font-bold py-3 pe-4">
+										{ e.CreatedAt.Format("2006-01-02 03:04:05 PM") }
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     func() string {
+								if orgType == "vendor" {
+									return "/vendor/activities"
+								}
+								return "/customer/activities"
+							}(),
+						})
+					}
+				</div>
+			}
+		</div>
+}

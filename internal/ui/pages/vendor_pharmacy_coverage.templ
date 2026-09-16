@@ -1,0 +1,280 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorPharmacyCoveragePage renders pharmacies and vendors covered by vendor schedules.
+templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_coverage.pharmacy_shell_title"), "pharmacy_coverage", lang, dir) {
+		<div class="page-container">
+			<!-- Header & Action Bar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconGlobe("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_coverage.pharmacy_header_title") }</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_coverage.pharmacy_header_desc") }
+						</p>
+					</div>
+					<div class="d-flex gap-2 flex-wrap">
+						<a href="/vendor/coverage" class="btn btn-primary btn-sm font-bold gap-1">
+							@components.IconClock("icon-xs")
+							<span>{ i18n.T(lang, "vendor_coverage.btn_manage_schedule") }</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Stat Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_coverage.stat_total_fac") }</div>
+					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", data.TotalFacilities) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_coverage.stat_total_fac_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-sky">{ i18n.T(lang, "vendor_coverage.stat_pharmacies") }</div>
+					<div class="stat-card-value text-sky tabular-nums">{ fmt.Sprintf("%d", data.TotalPharmacies) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_coverage.stat_pharmacies_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_coverage.stat_vendors") }</div>
+					<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", data.TotalVendors) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_coverage.stat_vendors_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_coverage.stat_today") }</div>
+					<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", data.CoveredTodayCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_coverage.stat_today_sub") }</span>
+				</div>
+			</div>
+
+			<!-- Horizontal Filter Bar Card -->
+			<div class="glass-panel p-5 mb-6 border border-slate-200/80 rounded-2xl shadow-xs">
+				<form method="GET" action="/vendor/pharmacy-coverage" class="d-flex items-end gap-3 flex-wrap m-0">
+					<!-- Search Input -->
+					<div class="flex-1" style="min-width: 220px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_search") }</label>
+						<div class="position-relative">
+							<input type="text" name="q" value={ data.SearchQuery } class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_coverage.placeholder_search") } />
+						</div>
+					</div>
+
+					<!-- Entity Type Selector -->
+					<div style="min-width: 130px; flex: 1 1 130px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_type") }</label>
+						<select name="type" class="form-select text-xs w-full">
+							<option value="" selected?={ data.FilterType == "" }>{ i18n.T(lang, "vendor_coverage.all_types") }</option>
+							<option value="customer" selected?={ data.FilterType == "customer" }>{ i18n.T(lang, "vendor_coverage.type_pharmacies") }</option>
+							<option value="vendor" selected?={ data.FilterType == "vendor" }>{ i18n.T(lang, "vendor_coverage.type_vendors") }</option>
+						</select>
+					</div>
+
+					<!-- Delivery Day Selector -->
+					<div style="min-width: 130px; flex: 1 1 130px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_day") }</label>
+						<select name="day" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "vendor_coverage.all_days") }</option>
+							<option value="today" selected?={ data.FilterDay == "today" }>{ i18n.T(lang, "vendor_coverage.day_today") }</option>
+							<option value="0" selected?={ data.FilterDay == "0" }>الأحد</option>
+							<option value="1" selected?={ data.FilterDay == "1" }>الاثنين</option>
+							<option value="2" selected?={ data.FilterDay == "2" }>الثلاثاء</option>
+							<option value="3" selected?={ data.FilterDay == "3" }>الأربعاء</option>
+							<option value="4" selected?={ data.FilterDay == "4" }>الخميس</option>
+							<option value="5" selected?={ data.FilterDay == "5" }>الجمعة</option>
+							<option value="6" selected?={ data.FilterDay == "6" }>السبت</option>
+						</select>
+					</div>
+
+					<!-- Distribution Branch Selector -->
+					<div style="min-width: 130px; flex: 1 1 130px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_branch") }</label>
+						<select name="branch" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "vendor_coverage.all_branches") }</option>
+							for _, b := range data.CoveredBranches {
+								<option value={ b } selected?={ data.FilterBranch == b }>{ b }</option>
+							}
+						</select>
+					</div>
+
+					<!-- City Selector -->
+					<div style="min-width: 130px; flex: 1 1 130px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_city") }</label>
+						<select name="city" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "vendor_coverage.all_cities") }</option>
+							for _, c := range data.CoveredCities {
+								<option value={ c } selected?={ data.FilterCity == c }>{ c }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="d-flex items-center gap-2" style="flex: 0 0 auto;">
+						<button type="submit" class="btn btn-primary text-xs font-bold px-4 gap-1.5 shadow-xs">
+							@components.IconSearch("icon-xs")
+							<span>{ i18n.T(lang, "vendor_coverage.btn_filter") }</span>
+						</button>
+						if data.SearchQuery != "" || data.FilterDay != "" || data.FilterBranch != "" || data.FilterCity != "" || data.FilterType != "" {
+							<a href="/vendor/pharmacy-coverage" class="btn btn-secondary text-xs px-3 font-bold gap-1 shadow-2xs" title={ i18n.T(lang, "common.reset") }>
+								@components.IconRefresh("icon-2xs")
+								<span>{ i18n.T(lang, "vendor_coverage.btn_reset") }</span>
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Facilities Table / Directory -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Pharmacies) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_coverage.empty_fac_title") }</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto mb-4">{ i18n.T(lang, "vendor_coverage.empty_fac_desc") }</p>
+						<a href="/vendor/coverage" class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "vendor_coverage.btn_edit_schedule") }</a>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>{ i18n.T(lang, "vendor_coverage.th_facility") }</th>
+									<th>{ i18n.T(lang, "vendor_coverage.th_classification") }</th>
+									<th>{ i18n.T(lang, "vendor_coverage.th_location") }</th>
+									<th>{ i18n.T(lang, "vendor_coverage.th_dist_branch") }</th>
+									<th>{ i18n.T(lang, "vendor_coverage.th_days") }</th>
+									<th class="text-center">{ i18n.T(lang, "vendor_coverage.th_today_status") }</th>
+									<th class="text-end">{ i18n.T(lang, "vendor_coverage.th_actions") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, p := range data.Pharmacies {
+									<tr>
+										<td>
+											<div class="d-flex items-center gap-2">
+												<div class={ "user-avatar-badge text-xs font-black", templ.KV("bg-sky-50 text-sky-700", !p.IsVendor), templ.KV("bg-indigo-50 text-indigo-700", p.IsVendor) }>
+													@components.IconBuilding("icon-sm")
+												</div>
+												<div class="stack-sm">
+													<div class="font-extrabold text-primary text-sm">
+														if p.PharmacyTradeName != "" {
+															{ p.PharmacyTradeName }
+														} else {
+															{ p.PharmacyName }
+														}
+													</div>
+													<div class="text-xs text-muted">
+														<span>{ p.BranchName }</span>
+														if p.Phone != "" {
+															<span class="tabular-nums">• { p.Phone }</span>
+														}
+													</div>
+												</div>
+											</div>
+										</td>
+										<td>
+											if p.IsVendor {
+												<span class="badge badge-indigo text-xs font-bold gap-1">
+													<span>{ i18n.T(lang, "vendor_coverage.badge_vendor") }</span>
+												</span>
+											} else {
+												<span class="badge badge-sky text-xs font-bold gap-1">
+													<span>{ i18n.T(lang, "vendor_coverage.badge_pharmacy") }</span>
+												</span>
+											}
+										</td>
+										<td>
+											<div class="text-xs text-primary font-bold">
+												if p.CityName != "" {
+													<span class="badge badge-slate text-xs font-bold mb-1">
+														{ p.CityName }
+													</span>
+												}
+												if p.Address != "" {
+													<div class="text-xs text-secondary mt-1">{ p.Address }</div>
+												}
+											</div>
+										</td>
+										<td>
+											<div class="stack-sm">
+												<div class="font-bold text-primary text-xs">{ p.CoveringBranchName }</div>
+												<div class="text-xs text-brand font-bold mt-1">
+													if p.DistanceKM > 0 {
+														if p.DistanceMeters < 1000 {
+															<span>{ fmt.Sprintf(i18n.T(lang, "vendor_coverage.dist_meters"), p.DistanceMeters) }</span>
+														} else {
+															<span>{ fmt.Sprintf(i18n.T(lang, "vendor_coverage.dist_km"), p.DistanceKM) }</span>
+														}
+													} else {
+														<span>{ p.MatchReason }</span>
+													}
+												</div>
+											</div>
+										</td>
+										<td>
+											<div class="d-flex flex-col gap-1">
+												<div class="d-flex gap-1 flex-wrap">
+													for _, dLabel := range p.CoveredDaysLabels {
+														<span class="badge badge-slate text-xs font-bold">
+															{ dLabel }
+														</span>
+													}
+												</div>
+												if p.TimeWindow != "" {
+													<div class="text-xs text-muted tabular-nums">
+														⏰ { p.TimeWindow }
+													</div>
+												}
+											</div>
+										</td>
+										<td class="text-center">
+											if p.IsCoveredToday {
+												<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_coverage.badge_covered_today") }</span>
+											} else {
+												<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_coverage.badge_not_today") }</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												if p.IsVendor {
+													<a href={ templ.SafeURL(fmt.Sprintf("/customer/suppliers/%d", p.PharmacyID)) } class="btn btn-primary btn-sm font-bold text-xs gap-1" title={ i18n.T(lang, "common.products") }>
+														@components.IconPackage("icon-2xs")
+														<span>{ i18n.T(lang, "common.products") }</span>
+													</a>
+												}
+												if p.Phone != "" {
+													<a href={ templ.SafeURL("tel:" + p.Phone) } class="btn btn-secondary btn-sm btn-icon" title="Call">
+														@components.IconPhone("icon-xs")
+													</a>
+													<a href={ templ.SafeURL("https://wa.me/" + p.Phone) } target="_blank" rel="noopener" class="btn btn-secondary btn-sm btn-icon text-success" title="WhatsApp">
+														@components.IconWhatsApp("icon-xs")
+													</a>
+												}
+												<a href="/vendor/coverage" class="btn btn-secondary btn-sm font-bold text-xs" title={ i18n.T(lang, "vendor_coverage.btn_view_schedule") }>
+													{ i18n.T(lang, "vendor_coverage.btn_view_schedule") }
+												</a>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}

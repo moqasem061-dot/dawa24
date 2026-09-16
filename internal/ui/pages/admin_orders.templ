@@ -1,0 +1,538 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminOrdersData contains dataset for unified orders and procurement oversight.
+type AdminOrdersData struct {
+	ActiveTab        string // "all", "direct", "negotiations"
+	Query            string
+	Status           string
+	PaymentStatus    string
+	CustomerOrgID    int64
+	VendorOrgID      int64
+	DateFrom         string
+	DateTo           string
+	Orders           []*commerce.Order
+	KPIs             commerce.AdminOrderKPIs
+	Organizations    []*org.Organization
+	// Parties is the buyer and seller selects, derived from the orders
+	// themselves so a supplier that bought from another supplier appears.
+	Parties   commerce.AdminOrderParties
+	BuyerType string
+	Page             int
+	PerPage          int
+	TotalCount       int
+	AllCount         int
+	DirectCount      int
+	NegotiationCount int
+}
+
+func formatAdminOrderStatusBadge(status commerce.OrderStatus) (label string, badgeClass string) {
+	switch status {
+	case commerce.StatusPending:
+		return "بانتظار التأكيد", "badge-amber"
+	case commerce.StatusProcessing:
+		return "قيد التجهيز", "badge-amber"
+	case commerce.StatusConfirmed:
+		return "تم التأكيد", "badge-sky"
+	case commerce.StatusShipped, commerce.StatusInTransit:
+		return "قيد الشحن والتوصيل", "badge-sky"
+	case commerce.StatusOutForDelivery:
+		return "مع المندوب للتسليم", "badge-cyan"
+	case commerce.StatusDelivered, commerce.StatusCompleted:
+		return "تم التسليم بنجاح", "badge-emerald"
+	case commerce.StatusCancelled:
+		return "ملغي", "badge-rose"
+	case commerce.StatusFailed:
+		return "فشل التوريد", "badge-rose"
+	case commerce.StatusReturned, commerce.StatusRefunded:
+		return "مرتجع / مسترد", "badge-purple"
+	default:
+		if status == "" {
+			return "جديد", "badge-slate"
+		}
+		return string(status), "badge-slate"
+	}
+}
+
+func formatAdminPaymentStatusBadge(status commerce.PaymentStatus) (label string, badgeClass string) {
+	switch status {
+	case commerce.PaymentPaid:
+		return "مدفوع بالكامل", "badge-emerald"
+	case commerce.PaymentAuthorized:
+		return "بانتظار السداد", "badge-amber"
+	case commerce.PaymentUnpaid:
+		return "غير مدفوع", "badge-rose"
+	case commerce.PaymentRefunded, commerce.PaymentPartiallyRefunded:
+		return "مسترجع", "badge-purple"
+	case commerce.PaymentFailed:
+		return "فشلت العملية", "badge-rose"
+	default:
+		if status == "" {
+			return "معلق", "badge-slate"
+		}
+		return string(status), "badge-slate"
+	}
+}
+
+func formatAdminPaymentMethodLabel(method string) string {
+	switch method {
+	case "cod":
+		return "الدفع عند الاستلام"
+	case "wallet":
+		return "خصم من المحفظة"
+	case "online", "card":
+		return "بطاقة بنكية"
+	case "credit":
+		return "آجل تجاري"
+	default:
+		if method == "" {
+			return "غير محدد"
+		}
+		return method
+	}
+}
+
+templ AdminOrders(lang, dir, query string, orders []*commerce.Order) {
+	@AdminOrdersHub(AdminOrdersData{ActiveTab: "all", Query: query, Orders: orders, TotalCount: len(orders)}, lang, dir)
+}
+
+templ AdminOrdersHub(data AdminOrdersData, lang, dir string) {
+	@layouts.AdminShell("إدارة الطلبات وأوامر التوريد", "orders", lang, dir) {
+		<div class="page-container">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl bg-accent-soft text-accent">
+							@components.IconTruck("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">مركز إدارة الطلبات وأوامر التوريد الموحد</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								متابعة وإشراف شامل على كافة طلبات الشراء الصادرة من الصيدليات وأوامر التوريد المنفذة من الموردين، وتتبع مراحل السداد والشحن والتسليم.
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/orders" class="btn btn-secondary btn-sm font-bold">
+							@components.IconActivity("icon-xs")
+							<span>تحديث البيانات</span>
+						</a>
+						<a href="/admin/finance" class="btn btn-ghost btn-sm font-bold text-accent">
+							@components.IconWallet("icon-xs")
+							<span>الإدارة المالية والمحافظ</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Stat Cards Strip -->
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+				<!-- Total Orders -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي الطلبات والتوريدات</span>
+						<span class="text-accent">@components.IconTruck("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.KPIs.TotalOrders) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">
+						{ fmt.Sprintf("%d توريد مباشر • %d تفاوض", data.KPIs.DirectOrders, data.KPIs.NegotiationOrders) }
+					</span>
+				</div>
+
+				<!-- Total Volume (GMV) -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">حجم التعاملات الإجمالي</span>
+						<span class="text-emerald">@components.IconCreditCard("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-emerald mt-2">
+						{ fmt.Sprintf("%s ج.م", data.KPIs.TotalVolume.String()) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">قيمة البضائع الموردة</span>
+				</div>
+
+				<!-- Pending / Processing -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">بانتظار المعالجة والتجهيز</span>
+						<span class="text-amber-500">@components.IconClock("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-amber-500 mt-2">
+						{ fmt.Sprintf("%d", data.KPIs.PendingOrders) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">طلبات جديدة وتجهيز مستودع</span>
+				</div>
+
+				<!-- In Delivery -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">قيد الشحن والتوصيل</span>
+						<span class="text-sky">@components.IconMapPin("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-sky mt-2">
+						{ fmt.Sprintf("%d", data.KPIs.ShippingOrders) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">مع مندوبي الشحن والتوزيع</span>
+				</div>
+
+				<!-- Completed -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات مكتملة ومسلّمة</span>
+						<span class="text-emerald">@components.IconCheckCircle("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-emerald mt-2">
+						{ fmt.Sprintf("%d", data.KPIs.CompletedOrders) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">تم الاستلام بنجاح</span>
+				</div>
+
+				<!-- Cancelled -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">ملغية ومسترجعة</span>
+						<span class="text-rose">@components.IconX("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-rose mt-2">
+						{ fmt.Sprintf("%d", data.KPIs.CancelledOrders) }
+					</div>
+					<span class="text-2xs text-secondary mt-1 d-block">إلغاء أو رفض أو إرجاع</span>
+				</div>
+			</div>
+
+			<!-- Tab Navigation -->
+			<div class="tabs-nav mb-6">
+				<a href="/admin/orders?tab=all" class={ "tab-btn", templ.KV("active", data.ActiveTab == "all" || data.ActiveTab == "") }>
+					@components.IconTruck("icon-xs")
+					<span>كافة الطلبات والتوريدات ({ fmt.Sprintf("%d", data.AllCount) })</span>
+				</a>
+				<a href="/admin/orders?tab=direct" class={ "tab-btn", templ.KV("active", data.ActiveTab == "direct") }>
+					@components.IconLayers("icon-xs")
+					<span>أوامر التوريد المباشر ({ fmt.Sprintf("%d", data.DirectCount) })</span>
+				</a>
+				<a href="/admin/orders?tab=negotiations" class={ "tab-btn", templ.KV("active", data.ActiveTab == "negotiations") }>
+					@components.IconUsers("icon-xs")
+					<span>طلبات تفاوض الأسعار ({ fmt.Sprintf("%d", data.NegotiationCount) })</span>
+				</a>
+			</div>
+
+			<!-- Comprehensive Filter Toolbar -->
+			<div class="glass-panel p-5 mb-6">
+				<form method="GET" action="/admin/orders" class="m-0">
+					<input type="hidden" name="tab" value={ data.ActiveTab } />
+					<div class="d-flex flex-wrap items-end gap-3">
+						<!-- Search Keyword -->
+						<div class="form-group mb-0 flex-1 min-w-[220px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">بحث شامل</label>
+							<input
+								type="text"
+								name="q"
+								value={ data.Query }
+								class="form-input text-xs w-full"
+								placeholder={ i18n.T(lang, "admin.orders.search_ph") }
+							/>
+						</div>
+
+						<!-- Buyer: any company that placed an order, pharmacy or supplier -->
+						<div class="form-group mb-0 min-w-[200px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">{ i18n.T(lang, "admin.orders.filter_buyer") }</label>
+							<select name="customer_org_id" class="form-select text-xs w-full">
+								<option value="">{ i18n.T(lang, "admin.orders.all_buyers") }</option>
+								for _, p := range data.Parties.Buyers {
+									<option value={ fmt.Sprintf("%d", p.ID) } selected?={ data.CustomerOrgID == p.ID }>
+										{ fmt.Sprintf("%s — %s (%d)", p.Name, i18n.TKey(lang, "org.type."+p.Type), p.Count) }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Buyer type -->
+						<div class="form-group mb-0 min-w-[150px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">{ i18n.T(lang, "admin.orders.filter_buyer_type") }</label>
+							<select name="buyer_type" class="form-select text-xs w-full">
+								<option value="">{ i18n.T(lang, "common.all") }</option>
+								for _, t := range []string{"customer", "vendor", "company", "agency"} {
+									<option value={ t } selected?={ data.BuyerType == t }>{ i18n.TKey(lang, "org.type."+t) }</option>
+								}
+							</select>
+						</div>
+
+						<!-- Seller -->
+						<div class="form-group mb-0 min-w-[200px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">{ i18n.T(lang, "admin.orders.filter_seller") }</label>
+							<select name="vendor_org_id" class="form-select text-xs w-full">
+								<option value="">{ i18n.T(lang, "admin.orders.all_sellers") }</option>
+								for _, p := range data.Parties.Sellers {
+									<option value={ fmt.Sprintf("%d", p.ID) } selected?={ data.VendorOrgID == p.ID }>
+										{ fmt.Sprintf("%s (%d)", p.Name, p.Count) }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Order Status -->
+						<div class="form-group mb-0 min-w-[140px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">حالة الطلب</label>
+							<select name="status" class="form-select text-xs w-full">
+								<option value="">كافة الحالات</option>
+								<option value="pending" selected?={ data.Status == "pending" }>بانتظار التأكيد</option>
+								<option value="processing" selected?={ data.Status == "processing" }>قيد التجهيز</option>
+								<option value="confirmed" selected?={ data.Status == "confirmed" }>تم التأكيد</option>
+								<option value="shipped" selected?={ data.Status == "shipped" }>قيد الشحن</option>
+								<option value="out_for_delivery" selected?={ data.Status == "out_for_delivery" }>مع المندوب</option>
+								<option value="delivered" selected?={ data.Status == "delivered" }>تم التسليم</option>
+								<option value="completed" selected?={ data.Status == "completed" }>مكتمل</option>
+								<option value="cancelled" selected?={ data.Status == "cancelled" }>ملغي</option>
+							</select>
+						</div>
+
+						<!-- Payment Status -->
+						<div class="form-group mb-0 min-w-[130px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">حالة الدفع</label>
+							<select name="payment_status" class="form-select text-xs w-full">
+								<option value="">كافة الحالات</option>
+								<option value="paid" selected?={ data.PaymentStatus == "paid" }>مدفوع</option>
+								<option value="pending" selected?={ data.PaymentStatus == "pending" }>بانتظار السداد</option>
+								<option value="unpaid" selected?={ data.PaymentStatus == "unpaid" }>غير مدفوع</option>
+								<option value="refunded" selected?={ data.PaymentStatus == "refunded" }>مسترد</option>
+							</select>
+						</div>
+
+						<!-- Date Range -->
+						<div class="form-group mb-0 min-w-[125px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">من تاريخ</label>
+							<input type="date" name="date_from" value={ data.DateFrom } class="form-input text-xs w-full" />
+						</div>
+
+						<div class="form-group mb-0 min-w-[125px]">
+							<label class="form-label text-xs font-bold text-primary mb-1">إلى تاريخ</label>
+							<input type="date" name="date_to" value={ data.DateTo } class="form-input text-xs w-full" />
+						</div>
+
+						<!-- Action buttons -->
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary btn-sm font-bold">
+								@components.IconFilter("icon-xs")
+								<span>تصفية</span>
+							</button>
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders?tab=%s", data.ActiveTab)) } class="btn btn-ghost btn-sm text-secondary">
+								إلغاء
+							</a>
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<!-- Unified Master Orders Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Orders) == 0 {
+					@components.EmptyState(components.EmptyStateProps{
+						Title:   "لا توجد طلبات أو أوامر توريد مطابقة",
+						Message: "لم يتم العثور على أي طلبات تطابق معايير البحث والتصفية المحددة.",
+					})
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table data-table-compact m-0 w-full text-xs">
+							<thead>
+								<tr>
+									<th class="w-[12%]">رقم الطلب والنوع</th>
+									<th class="w-[18%]">{ i18n.T(lang, "admin.orders.filter_buyer") }</th>
+									<th class="w-[18%]">المورد المنفّذ</th>
+									<th class="w-[12%] text-center">الأصناف والإجمالي</th>
+									<th class="w-[13%] text-center">طريقة وحالة السداد</th>
+									<th class="w-[11%] text-center">حالة الطلب والتوريد</th>
+									<th class="w-[8%] text-center">التاريخ</th>
+									<th class="w-[6%] text-center col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, o := range data.Orders {
+									<tr>
+										<!-- Order Number & Type -->
+										<td>
+											<div class="tabular-nums font-extrabold text-primary text-sm">
+												{ o.OrderNumber }
+											</div>
+											<div class="mt-0.5">
+												if o.IsNegotiation {
+													<span class="badge badge-amber text-2xs font-bold">
+														تفاوض أسعار
+													</span>
+												} else {
+													<span class="badge badge-slate text-2xs font-bold">
+														توريد مباشر
+													</span>
+												}
+											</div>
+										</td>
+
+										<!-- Customer Pharmacy -->
+										<td>
+											<div class="d-flex items-center gap-1.5">
+												<span class="font-bold text-primary truncate max-w-[170px]" title={ o.CustomerOrgName.Get(i18n.Lang(lang)) }>
+													if o.CustomerOrgName.Get(i18n.Lang(lang)) != "" {
+														{ o.CustomerOrgName.Get(i18n.Lang(lang)) }
+													} else if o.OrganizationID != nil {
+														<span>صيدلية #{ fmt.Sprintf("%d", *o.OrganizationID) }</span>
+													} else {
+														<span>عميل #{ fmt.Sprintf("%d", o.CustomerID) }</span>
+													}
+												</span>
+											</div>
+											<div class="d-flex items-center gap-1 mt-0.5">
+												if o.CustomerBranchName.Get(i18n.Lang(lang)) != "" {
+													<span class="text-2xs text-secondary truncate max-w-[110px]">
+														فرع: { o.CustomerBranchName.Get(i18n.Lang(lang)) }
+													</span>
+												}
+												if o.CustomerCityName != "" {
+													<span class="badge badge-cyan text-2xs font-bold">
+														{ o.CustomerCityName }
+													</span>
+												}
+											</div>
+										</td>
+
+										<!-- Supplier Vendor -->
+										<td>
+											<div class="font-bold text-primary truncate max-w-[170px]" title={ o.VendorOrgName.Get(i18n.Lang(lang)) }>
+												if o.VendorOrgName.Get(i18n.Lang(lang)) != "" {
+													{ o.VendorOrgName.Get(i18n.Lang(lang)) }
+												} else {
+													<span class="text-secondary">مورد معتمد</span>
+												}
+											</div>
+											if o.VendorBranchName.Get(i18n.Lang(lang)) != "" {
+												<div class="text-2xs text-accent font-bold mt-0.5 truncate max-w-[140px]">
+													مستودع: { o.VendorBranchName.Get(i18n.Lang(lang)) }
+												</div>
+											}
+										</td>
+
+										<!-- Items & Total -->
+										<td class="text-center">
+											<div class="tabular-nums font-black text-emerald text-sm">
+												{ fmt.Sprintf("%s ج.م", o.TotalAmount.String()) }
+											</div>
+											<div class="text-2xs text-muted mt-0.5 tabular-nums">
+												if o.ItemsCount > 0 {
+													{ fmt.Sprintf("%d أصناف", o.ItemsCount) }
+												} else {
+													<span>أصناف متعددة</span>
+												}
+											</div>
+										</td>
+
+										<!-- Payment Status & Method -->
+										<td class="text-center">
+											<div class="d-flex flex-col items-center gap-1">
+												{{ label, class := formatAdminPaymentStatusBadge(o.PaymentStatus) }}
+												<span class={ "badge text-2xs font-bold", class }>
+													{ label }
+												</span>
+												<span class="text-2xs text-muted">
+													{ formatAdminPaymentMethodLabel(o.PaymentMethod) }
+												</span>
+											</div>
+										</td>
+
+										<!-- Order Fulfillment Status -->
+										<td class="text-center">
+											{{ statusLabel, statusClass := formatAdminOrderStatusBadge(o.Status) }}
+											<span class={ "badge text-2xs font-bold", statusClass }>
+												{ statusLabel }
+											</span>
+											if o.IsNegotiation && o.NegotiationStatus != "" && o.NegotiationStatus != "none" {
+												<div class="text-2xs text-secondary mt-0.5">
+													if o.NegotiationStatus == "accepted" {
+														<span class="text-emerald font-bold">تم قبول السعر</span>
+													} else if o.NegotiationStatus == "rejected" {
+														<span class="text-rose font-bold">تم رفض السعر</span>
+													} else {
+														<span class="text-amber font-bold">قيد التفاوض</span>
+													}
+												</div>
+											}
+										</td>
+
+										<!-- Date -->
+										<td class="text-center tabular-nums text-secondary">
+											<div class="font-bold text-primary text-xs">{ o.CreatedAt.Format("2006-01-02") }</div>
+											<div class="text-2xs text-muted">{ o.CreatedAt.Format("03:04 PM") }</div>
+										</td>
+
+										<!-- Actions -->
+										<td class="col-actions text-center">
+											<a
+												href={ templ.SafeURL(fmt.Sprintf("/admin/orders/%d", o.ID)) }
+												class="btn btn-secondary btn-xs font-bold"
+												title="عرض تفاصيل الطلب والفاتورة الكاملة"
+											>
+												تفاصيل
+											</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/orders",
+							QueryValues: AdminOrdersQueryValues(data),
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}
+
+func AdminOrdersQueryValues(data AdminOrdersData) url.Values {
+	v := url.Values{}
+	if data.ActiveTab != "" && data.ActiveTab != "all" {
+		v.Set("tab", data.ActiveTab)
+	}
+	if data.Query != "" {
+		v.Set("q", data.Query)
+	}
+	if data.Status != "" && data.Status != "all" {
+		v.Set("status", data.Status)
+	}
+	if data.PaymentStatus != "" && data.PaymentStatus != "all" {
+		v.Set("payment_status", data.PaymentStatus)
+	}
+	if data.CustomerOrgID > 0 {
+		v.Set("customer_org_id", fmt.Sprintf("%d", data.CustomerOrgID))
+	}
+	if data.VendorOrgID > 0 {
+		v.Set("vendor_org_id", fmt.Sprintf("%d", data.VendorOrgID))
+	}
+	if data.BuyerType != "" {
+		v.Set("buyer_type", data.BuyerType)
+	}
+	if data.DateFrom != "" {
+		v.Set("date_from", data.DateFrom)
+	}
+	if data.DateTo != "" {
+		v.Set("date_to", data.DateTo)
+	}
+	return v
+}

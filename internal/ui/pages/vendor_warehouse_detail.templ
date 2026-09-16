@@ -1,0 +1,345 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorWarehouseDetailPage renders complete warehouse inventory details, filters, KPIs, and stock adjustment tools.
+templ VendorWarehouseDetailPage(data VendorWarehouseDetailData, lang, dir string) {
+	@layouts.VendorShell(fmt.Sprintf(i18n.T(lang, "vendor_warehouse_detail.shell_title"), data.Warehouse.Name), "warehouses", lang, dir) {
+		<div x-data="{ adjustModal: false, adjustStock: { id: 0, name: '', batch: '', qty: 0, min: 0 }, transferModal: false, transferStock: { id: 0, variant_id: 0, product_id: 0, name: '', qty: 0 }, clearModal: false }" class="page-container">
+			
+			<!-- Breadcrumb & Top Action Navigation -->
+			<div class="flex-between items-center flex-wrap gap-4 mb-4">
+				<div class="d-flex items-center gap-2 text-sm text-secondary">
+					<a href="/vendor/warehouses" class="text-brand font-bold text-decoration-none">{ i18n.T(lang, "vendor_warehouse_detail.breadcrumb_warehouses") }</a>
+					<span>/</span>
+					<span class="text-primary font-extrabold">{ data.Warehouse.Name }</span>
+				</div>
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<a href="/vendor/warehouses" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconArrowRight("icon-xs")
+						<span>{ i18n.T(lang, "vendor_warehouse_detail.btn_back_warehouses") }</span>
+					</a>
+					<a href="/vendor/transfers" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconRefresh("icon-xs")
+						<span>{ i18n.T(lang, "vendor_inventory.btn_transfers") }</span>
+					</a>
+					<a href="/vendor/ingest" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconPackage("icon-xs")
+						<span>{ i18n.T(lang, "vendor_warehouse_detail.btn_import_sheet") }</span>
+					</a>
+					<button type="button" @click="clearModal = true" class="btn btn-ghost btn-sm font-bold text-danger gap-1 border border-rose-200 hover:bg-rose-50" title={ i18n.T(lang, "vendor_warehouse_detail.btn_clear_all_title") }>
+						@components.IconTrash("icon-xs")
+						<span>{ i18n.T(lang, "vendor_warehouse_detail.btn_clear_all_stock") }</span>
+					</button>
+					<a href="/vendor/inventory" class="btn btn-primary btn-sm font-black gap-1">
+						@components.IconPackage("icon-xs")
+						<span>{ i18n.T(lang, "vendor_warehouse_detail.btn_manage_inventory") }</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Notice / Alert Banner -->
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType == "success"),
+						templ.KV("alert-danger", data.NoticeType == "error"),
+						templ.KV("alert-info", data.NoticeType != "success" && data.NoticeType != "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Warehouse Header Profile Card -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-start flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-2 flex-wrap">
+							<div class="user-avatar-badge text-xl">
+								@components.IconBuilding("icon-sm")
+							</div>
+							<div class="stack-sm">
+								<div class="d-flex items-center gap-3 flex-wrap">
+									<h1 class="text-2xl font-black text-primary m-0">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_warehouse_detail.title_prefix"), data.Warehouse.Name) }
+									</h1>
+									if data.Warehouse.IsActive {
+										<span class="badge badge-emerald text-xs font-black">
+											{ i18n.T(lang, "vendor_warehouse_detail.badge_active") }
+										</span>
+									} else {
+										<span class="badge badge-rose text-xs font-black">
+											{ i18n.T(lang, "vendor_warehouse_detail.badge_inactive") }
+										</span>
+									}
+								</div>
+								<div class="text-xs text-secondary mt-1">
+									{ i18n.T(lang, "vendor_warehouse_detail.sub_desc") }
+								</div>
+							</div>
+						</div>
+						
+						<div class="d-flex gap-4 flex-wrap text-xs text-secondary mt-3 pt-3 border-t">
+							<div class="d-flex items-center gap-1">
+								<span class="text-muted">{ i18n.T(lang, "vendor_warehouse_detail.lbl_code") }</span>
+								<code class="bg-surface-sunken border p-1 px-2 rounded font-bold font-mono text-brand">{ data.Warehouse.Code }</code>
+							</div>
+							if data.Warehouse.BranchID != nil && *data.Warehouse.BranchID > 0 {
+								<div class="d-flex items-center gap-1">
+									<span class="text-muted">{ i18n.T(lang, "vendor_warehouse_detail.lbl_branch") }</span>
+									if data.Warehouse.BranchName != "" {
+										<strong class="text-primary font-bold">{ data.Warehouse.BranchName }</strong>
+									} else {
+										<strong class="text-primary font-bold">{ fmt.Sprintf(i18n.T(lang, "vendor_warehouses.branch_prefix"), *data.Warehouse.BranchID) }</strong>
+									}
+								</div>
+							} else {
+								<div class="d-flex items-center gap-1">
+									<span class="text-muted">{ i18n.T(lang, "vendor_warehouse_detail.lbl_type") }</span>
+									<span class="badge badge-slate text-xs font-bold">{ i18n.T(lang, "vendor_warehouses.main_general_warehouse") }</span>
+								</div>
+							}
+							if data.Warehouse.Address != "" {
+								<div class="d-flex items-center gap-1">
+									<span class="text-muted">{ i18n.T(lang, "vendor_warehouse_detail.lbl_address") }</span>
+									<span class="text-primary font-bold">{ data.Warehouse.Address }</span>
+								</div>
+							}
+							if data.Warehouse.Phone != "" {
+								<div class="d-flex items-center gap-1">
+									<span class="text-muted">{ i18n.T(lang, "vendor_warehouse_detail.lbl_phone") }</span>
+									<span class="text-primary font-bold tabular-nums" dir="ltr">{ data.Warehouse.Phone }</span>
+								</div>
+							}
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d/edit", data.Warehouse.ID)) } class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconEdit("icon-xs")
+							<span>{ i18n.T(lang, "vendor_warehouse_detail.btn_edit_wh") }</span>
+						</a>
+						<form action={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d/toggle", data.Warehouse.ID)) } method="POST" class="m-0">
+							if data.Warehouse.IsActive {
+								<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold text-danger" data-confirm={ i18n.T(lang, "vendor_warehouse_detail.confirm_deactivate") }>
+									{ i18n.T(lang, "vendor_warehouse_detail.btn_deactivate") }
+								</button>
+							} else {
+								<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold text-success">
+									{ i18n.T(lang, "vendor_warehouse_detail.btn_activate") }
+								</button>
+							}
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<!-- Warehouse Inventory Analytics Metrics -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_warehouse_detail.stat_total_items") }</div>
+					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", data.Stats.TotalItems) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_total_items_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_warehouse_detail.stat_total_units") }</div>
+					<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", data.Stats.TotalUnits) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_total_units_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_warehouse_detail.stat_low_stock") }</div>
+					<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", data.Stats.LowStockCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_low_stock_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-danger">{ i18n.T(lang, "vendor_warehouse_detail.stat_out_of_stock") }</div>
+					<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", data.Stats.OutOfStockCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_out_of_stock_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-amber">{ i18n.T(lang, "vendor_warehouse_detail.stat_expiring_soon") }</div>
+					<div class="stat-card-value text-amber tabular-nums">{ fmt.Sprintf("%d", data.Stats.ExpiringSoonCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_expiring_soon_sub") }</span>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-danger">{ i18n.T(lang, "vendor_warehouse_detail.stat_expired") }</div>
+					<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", data.Stats.ExpiredCount) }</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_warehouse_detail.stat_expired_sub") }</span>
+				</div>
+			</div>
+
+			<!-- Search, Stock Status, Expiry, Sort Filter Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", data.Warehouse.ID)) } class="m-0">
+					<div class="d-flex items-end gap-3 flex-wrap">
+						<!-- Query Search -->
+						<div class="stack-sm flex-1 min-w-xs">
+							<label class="form-label text-xs font-bold text-secondary mb-1">{ i18n.T(lang, "vendor_warehouse_detail.lbl_search_wh") }</label>
+							<div class="relative">
+								<input
+									type="text"
+									name="q"
+									value={ data.Filter.Query }
+									class="form-input text-xs w-full pe-8"
+									placeholder={ i18n.T(lang, "vendor_warehouse_detail.search_wh_ph") }
+								/>
+								<span class="absolute inset-inline-end-3 top-half translate-y-half text-muted pointer-events-none">
+									@components.IconSearch("icon-xs")
+								</span>
+							</div>
+						</div>
+
+						<!-- Stock Status Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1">{ i18n.T(lang, "vendor_warehouse_detail.filter_stock_status") }</label>
+							<select name="stock_status" class="form-select text-xs w-full">
+								<option value="all" selected?={ data.Filter.StockStatus == "all" || data.Filter.StockStatus == "" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_stock_all") }</option>
+								<option value="available" selected?={ data.Filter.StockStatus == "available" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_stock_available") }</option>
+								<option value="low" selected?={ data.Filter.StockStatus == "low" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_stock_low") }</option>
+								<option value="out_of_stock" selected?={ data.Filter.StockStatus == "out_of_stock" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_stock_out") }</option>
+							</select>
+						</div>
+
+						<!-- Expiry Status Filter -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1">{ i18n.T(lang, "vendor_warehouse_detail.filter_expiry_status") }</label>
+							<select name="expiry_status" class="form-select text-xs w-full">
+								<option value="all" selected?={ data.Filter.ExpiryStatus == "all" || data.Filter.ExpiryStatus == "" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_expiry_all") }</option>
+								<option value="expiring_soon" selected?={ data.Filter.ExpiryStatus == "expiring_soon" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_expiry_soon") }</option>
+								<option value="expired" selected?={ data.Filter.ExpiryStatus == "expired" }>{ i18n.T(lang, "vendor_warehouse_detail.filter_expiry_expired") }</option>
+							</select>
+						</div>
+
+						<!-- Sort Selector -->
+						<div class="stack-sm">
+							<label class="form-label text-xs font-bold text-secondary mb-1">{ i18n.T(lang, "vendor_warehouse_detail.filter_sort_label") }</label>
+							<select name="sort" class="form-select text-xs w-full">
+								<option value="updated_desc" selected?={ data.Filter.Sort == "updated_desc" || data.Filter.Sort == "" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_updated_desc") }</option>
+								<option value="name_asc" selected?={ data.Filter.Sort == "name_asc" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_name_asc") }</option>
+								<option value="name_desc" selected?={ data.Filter.Sort == "name_desc" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_name_desc") }</option>
+								<option value="qty_desc" selected?={ data.Filter.Sort == "qty_desc" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_qty_desc") }</option>
+								<option value="qty_asc" selected?={ data.Filter.Sort == "qty_asc" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_qty_asc") }</option>
+								<option value="expiry_asc" selected?={ data.Filter.Sort == "expiry_asc" }>{ i18n.T(lang, "vendor_warehouse_detail.sort_expiry_asc") }</option>
+							</select>
+						</div>
+
+						<!-- Filter Buttons -->
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary text-xs font-bold px-4">
+								@components.IconSearch("icon-xs")
+								<span>{ i18n.T(lang, "common.filter") }</span>
+							</button>
+							if data.Filter.Query != "" || (data.Filter.StockStatus != "" && data.Filter.StockStatus != "all") || (data.Filter.ExpiryStatus != "" && data.Filter.ExpiryStatus != "all") || (data.Filter.Sort != "" && data.Filter.Sort != "updated_desc") {
+								<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", data.Warehouse.ID)) } class="btn btn-secondary text-xs px-3" title={ i18n.T(lang, "vendor_products.reset_title") }>
+									{ i18n.T(lang, "common.cancel") }
+								</a>
+							}
+						</div>
+					</div>
+				</form>
+			</div>
+
+			<!-- Inventory Data Table Section -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="p-4 px-6 border-b flex-between items-center flex-wrap gap-2">
+					<div class="stack-sm">
+						<h2 class="text-base font-extrabold text-primary m-0">
+							{ i18n.T(lang, "vendor_warehouse_detail.table_title") }
+						</h2>
+						<p class="text-xs text-secondary m-0 mt-1">
+							{ i18n.T(lang, "vendor_warehouse_detail.table_subtitle") }
+						</p>
+					</div>
+					<div class="badge badge-slate text-xs font-black tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_warehouse_detail.total_results"), data.TotalFiltered) }
+					</div>
+				</div>
+
+				if len(data.Stocks) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">
+							{ i18n.T(lang, "vendor_products.empty_filter_title") }
+						</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto mb-4">
+							{ i18n.T(lang, "vendor_products.empty_filter_desc") }
+						</p>
+						<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", data.Warehouse.ID)) } class="btn btn-secondary btn-sm font-bold">
+							{ i18n.T(lang, "vendor_products.btn_clear_filter") }
+						</a>
+					</div>
+				} else {
+					@VendorWarehouseStockTable(data, lang)
+
+					<!-- Pagination Footer -->
+					<div class="p-4 px-6 border-t flex-between items-center flex-wrap gap-4">
+						<div class="text-xs text-muted font-bold tabular-nums">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_warehouse_detail.pagination_info"), data.FromItem, data.ToItem, data.TotalFiltered, data.Filter.Page, data.TotalPages) }
+						</div>
+
+						if data.TotalPages > 1 {
+							<div class="d-flex items-center gap-1">
+								<!-- Previous Page Button -->
+								if data.Filter.Page > 1 {
+									<a
+										href={ templ.SafeURL(buildWarehouseInventoryURL(data.Warehouse.ID, data.Filter, data.Filter.Page-1, data.Filter.PerPage)) }
+										class="btn btn-secondary btn-sm font-bold text-xs"
+									>
+										{ i18n.T(lang, "common.previous") }
+									</a>
+								} else {
+									<button type="button" class="btn btn-secondary btn-sm text-xs" disabled>{ i18n.T(lang, "common.previous") }</button>
+								}
+
+								<!-- Page Numbers -->
+								for p := 1; p <= data.TotalPages; p++ {
+									if p == data.Filter.Page {
+										<span class="btn btn-primary btn-sm text-xs font-black tabular-nums">{ fmt.Sprint(p) }</span>
+									} else if p == 1 || p == data.TotalPages || (p >= data.Filter.Page-1 && p <= data.Filter.Page+1) {
+										<a
+											href={ templ.SafeURL(buildWarehouseInventoryURL(data.Warehouse.ID, data.Filter, p, data.Filter.PerPage)) }
+											class="btn btn-secondary btn-sm text-xs tabular-nums"
+										>
+											{ fmt.Sprint(p) }
+										</a>
+									} else if p == 4 && data.Filter.Page > 4 {
+										<span class="text-muted px-1 text-xs">...</span>
+									} else if p == data.TotalPages - 3 && data.Filter.Page < data.TotalPages - 3 {
+										<span class="text-muted px-1 text-xs">...</span>
+									}
+								}
+
+								<!-- Next Page Button -->
+								if data.Filter.Page < data.TotalPages {
+									<a
+										href={ templ.SafeURL(buildWarehouseInventoryURL(data.Warehouse.ID, data.Filter, data.Filter.Page+1, data.Filter.PerPage)) }
+										class="btn btn-secondary btn-sm font-bold text-xs"
+									>
+										{ i18n.T(lang, "common.next") }
+									</a>
+								} else {
+									<button type="button" class="btn btn-secondary btn-sm text-xs" disabled>{ i18n.T(lang, "common.next") }</button>
+								}
+							</div>
+						}
+					</div>
+				}
+			</div>
+
+			<!-- Quick Stock Adjustment & Transfer Modals -->
+			@VendorWarehouseDetailModals(data, lang)
+		</div>
+	}
+}

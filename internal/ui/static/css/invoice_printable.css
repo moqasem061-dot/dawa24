@@ -1,0 +1,356 @@
+				:root {
+					--primary: #0f172a;
+					--accent: #2563eb;
+					--border: #cbd5e1;
+					--border-light: #e2e8f0;
+					--text: #0f172a;
+					--text-secondary: #475569;
+					--text-muted: #64748b;
+					--bg-light: #f8fafc;
+				}
+				* {
+					box-sizing: border-box;
+					margin: 0;
+					padding: 0;
+					font-family: 'Readex Pro', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+				}
+				body {
+					background-color: #f1f5f9;
+					color: var(--text);
+					direction: rtl;
+					font-size: 13px;
+					line-height: 1.45;
+					padding: 1.5rem 1rem 3rem 1rem;
+				}
+
+				/* Action Bar (Hidden in Print) */
+				.no-print-toolbar {
+					max-width: 840px;
+					margin: 0 auto 1.5rem auto;
+					background: #ffffff;
+					padding: 0.85rem 1.25rem;
+					border-radius: 12px;
+					box-shadow: 0 4px 14px rgba(0,0,0,0.06);
+					border: 1px solid var(--border-light);
+					display: flex;
+					align-items: center;
+					justify-content: space-between;
+					flex-wrap: wrap;
+					gap: 0.75rem;
+				}
+				.toolbar-btn-group {
+					display: flex;
+					align-items: center;
+					gap: 0.5rem;
+				}
+				.btn-action {
+					display: inline-flex;
+					align-items: center;
+					gap: 0.4rem;
+					padding: 0.55rem 1.1rem;
+					font-size: 0.85rem;
+					font-weight: 700;
+					border-radius: 8px;
+					cursor: pointer;
+					text-decoration: none;
+					transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+					border: 1px solid transparent;
+				}
+				.btn-primary {
+					background: #2563eb;
+					color: #ffffff;
+				}
+				.btn-primary:hover {
+					background: #1d4ed8;
+				}
+				.btn-thermal {
+					background: #0f172a;
+					color: #ffffff;
+				}
+				.btn-thermal:hover {
+					background: #1e293b;
+				}
+				.btn-secondary {
+					background: #f8fafc;
+					color: #334155;
+					border-color: #cbd5e1;
+				}
+				.btn-secondary:hover {
+					background: #e2e8f0;
+				}
+
+				/* A4 Container */
+				.invoice-paper-a4 {
+					max-width: 840px;
+					margin: 0 auto;
+					background: #ffffff;
+					padding: 2.25rem 2.25rem 2rem 2.25rem;
+					border-radius: 10px;
+					box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+					border: 1px solid var(--border-light);
+				}
+
+				/* Thermal Container */
+				.invoice-paper-thermal {
+					display: none;
+					width: 80mm;
+					max-width: 80mm;
+					margin: 0 auto;
+					background: #ffffff;
+					padding: 12px 10px;
+					font-size: 11px;
+					line-height: 1.35;
+					color: #000000;
+				}
+
+				/* Typography & Number tabular format */
+				.tabular-nums {
+					font-variant-numeric: tabular-nums;
+					font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+				}
+
+				/* Top Header: 3-column layout (Right: Vendor Logo/Info, Center: Dawa24 Logo, Left: Invoice Meta) */
+				.invoice-header {
+					display: grid;
+					grid-template-columns: 1.2fr 1fr 1.2fr;
+					align-items: center;
+					border-bottom: 2px solid #0f172a;
+					padding-bottom: 1.25rem;
+					margin-bottom: 1.25rem;
+					gap: 1rem;
+				}
+				.header-vendor {
+					text-align: right;
+				}
+				.header-center,
+				.header-center-logo {
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					justify-content: center;
+					text-align: center;
+				}
+				.header-meta {
+					text-align: left;
+					direction: ltr;
+				}
+
+				/* Parties Info Grid */
+				.parties-grid {
+					display: grid;
+					grid-template-columns: 1fr 1fr;
+					gap: 1.25rem;
+					margin-bottom: 1.25rem;
+					border: 1px solid var(--border-light);
+					border-radius: 8px;
+					padding: 0.85rem 1.1rem;
+					background: #fafafa;
+				}
+				.party-column h4 {
+					font-size: 0.85rem;
+					font-weight: 800;
+					color: #0f172a;
+					margin-bottom: 0.4rem;
+					padding-bottom: 0.25rem;
+					border-bottom: 1px solid #e2e8f0;
+				}
+				.party-info-row {
+					font-size: 0.825rem;
+					color: #334155;
+					margin-bottom: 0.2rem;
+					line-height: 1.4;
+				}
+				.party-info-row strong {
+					color: #0f172a;
+				}
+
+				/* Items Table */
+				.invoice-table {
+					width: 100%;
+					border-collapse: collapse;
+					margin-bottom: 1.25rem;
+				}
+				.invoice-table th {
+					background: #0f172a;
+					color: #ffffff;
+					font-size: 0.775rem;
+					font-weight: 800;
+					padding: 0.55rem 0.5rem;
+					text-align: right;
+					border: 1px solid #0f172a;
+				}
+				.invoice-table td {
+					padding: 0.5rem 0.5rem;
+					border: 1px solid #cbd5e1;
+					font-size: 0.825rem;
+					color: #0f172a;
+					vertical-align: middle;
+				}
+				.invoice-table tr:nth-child(even) {
+					background: #f8fafc;
+				}
+
+				/* Totals & Signatures */
+				.invoice-bottom-grid {
+					display: grid;
+					grid-template-columns: 1.2fr 1fr;
+					gap: 1.5rem;
+					align-items: start;
+					margin-top: 1rem;
+					margin-bottom: 1.25rem;
+				}
+				.signatures-box {
+					border: 1px dashed #cbd5e1;
+					border-radius: 8px;
+					padding: 0.75rem 1rem;
+					background: #fafafa;
+					display: flex;
+					justify-content: space-between;
+					gap: 1rem;
+				}
+				.sig-col {
+					flex: 1;
+					font-size: 0.75rem;
+					color: #475569;
+				}
+				.sig-line {
+					height: 38px;
+					border-bottom: 1px solid #94a3b8;
+					margin-top: 0.25rem;
+				}
+				.totals-table {
+					width: 100%;
+					border-collapse: collapse;
+					border: 1px solid var(--border-light);
+					border-radius: 6px;
+					overflow: hidden;
+				}
+				.totals-table td {
+					padding: 0.4rem 0.6rem;
+					font-size: 0.825rem;
+					border-bottom: 1px solid var(--border-light);
+				}
+				.totals-table tr.grand-total {
+					background: #f1f5f9;
+					font-weight: 900;
+					font-size: 0.95rem;
+					color: #0f172a;
+					border-top: 2px solid #0f172a;
+				}
+
+				/* Legal Disclaimer Box (Strictly Required) */
+				.legal-disclaimer-box {
+					border-top: 1px solid var(--border);
+					padding-top: 0.75rem;
+					margin-top: 0.75rem;
+					text-align: center;
+					font-size: 0.75rem;
+					color: #64748b;
+					line-height: 1.5;
+				}
+
+				/* Print Styles (Pixel-perfect A4 Output) */
+				@media print {
+					@page {
+						size: A4 portrait;
+						margin: 10mm 12mm;
+					}
+					html, body {
+						background: #ffffff !important;
+						padding: 0 !important;
+						margin: 0 !important;
+						color: #000000 !important;
+						font-size: 11pt !important;
+						-webkit-print-color-adjust: exact !important;
+						print-color-adjust: exact !important;
+					}
+					.no-print-toolbar, .no-print {
+						display: none !important;
+					}
+					.invoice-paper-a4 {
+						max-width: 100% !important;
+						width: 100% !important;
+						margin: 0 !important;
+						padding: 0 !important;
+						border: none !important;
+						box-shadow: none !important;
+						border-radius: 0 !important;
+					}
+					.invoice-header {
+						border-bottom: 2px solid #000000 !important;
+					}
+					.invoice-table th {
+						background: #0f172a !important;
+						color: #ffffff !important;
+						border: 1px solid #000000 !important;
+					}
+					.invoice-table td {
+						border: 1px solid #94a3b8 !important;
+						color: #000000 !important;
+					}
+					.invoice-table tr {
+						page-break-inside: avoid !important;
+					}
+					.invoice-bottom-grid, .legal-disclaimer-box {
+						page-break-inside: avoid !important;
+					}
+				}
+
+				/* Thermal Receipt Specifics */
+				.thermal-divider {
+					border-top: 1px dashed #000000;
+					margin: 5px 0;
+				}
+				.thermal-center {
+					text-align: center;
+				}
+				.thermal-row {
+					display: flex;
+					justify-content: space-between;
+					margin-bottom: 2px;
+				}
+				.thermal-bold {
+					font-weight: 800;
+				}
+
+/* Utility classes for A4 & Thermal Invoices */
+.header-logo { max-height: 52px; max-width: 150px; object-fit: contain; margin-bottom: 0.35rem; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.vendor-name-title { font-size: 1.15rem; font-weight: 900; color: #0f172a; line-height: 1.2; }
+.dawa-brand-logo { height: 52px; max-width: 190px; width: auto; object-fit: contain; margin: 0 auto 6px auto; display: block; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.invoice-type-badge { font-size: 0.75rem; font-weight: 800; color: #0f172a; margin-top: 4px; padding: 0.2rem 0.6rem; background: #f1f5f9; border-radius: 4px; display: inline-block; border: 1px solid #e2e8f0; }
+.font-size-9 { font-size: 9px; }
+.font-size-9-5 { font-size: 9.5px; }
+.font-size-10 { font-size: 10px; }
+.font-size-11 { font-size: 11px; }
+.font-size-12 { font-size: 12px; }
+.font-size-13 { font-size: 13px; }
+.font-size-15 { font-size: 15px; }
+.letter-spacing-tight { letter-spacing: -0.5px; }
+.text-slate { color: #334155; }
+.text-dark { color: #0f172a; }
+.m-right-1 { margin-right: 4px; }
+.m-inline-start-1 { margin-inline-start: 0.35rem; }
+.m-inline-start-2 { margin-inline-start: 0.4rem; }
+.mt-2px { margin-top: 2px; }
+.pb-2px { padding-bottom: 2px; }
+.mb-4px { margin-bottom: 4px; }
+.border-b-black { border-bottom: 1px solid #000; }
+.col-w-30 { width: 30px; }
+.col-w-35 { width: 35px; }
+.col-w-48 { width: 48px; }
+.col-w-50 { width: 50px; }
+.col-w-60 { width: 60px; }
+.col-w-75 { width: 75px; }
+.col-w-80 { width: 80px; }
+.col-w-85 { width: 85px; }
+.col-w-95 { width: 95px; }
+.col-w-105 { width: 105px; }
+.col-w-115 { width: 115px; }
+.col-w-34 { width: 34px; }
+.col-w-26 { width: 26px; }
+.font-size-8-5 { font-size: 8.5px; }
+.mt-1px { margin-top: 1px; }
+.badge-batch { background: #f1f5f9; border: 1px solid #cbd5e1; border-radius: 4px; padding: 1px 4px; font-size: 10px; display: inline-block; }
+.thermal-logo { max-height: 36px; max-width: 120px; object-fit: contain; margin: 0 auto 4px auto; display: block; filter: grayscale(100%) contrast(150%); }
+.disclaimer-thermal { font-size: 8.5px; line-height: 1.35; color: #333; margin-top: 6px; padding-top: 4px; border-top: 1px dashed #000; }
+

@@ -1,0 +1,246 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorBranchesPage(data VendorBranchesData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_branches.shell_title"), "branches", lang, dir) {
+		<div x-data="vendorBranchManager()" x-init="init()" class="page-container">
+			
+			<!-- Header Action Bar -->
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-2xl">
+							@components.IconMapPin("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_branches.header_title") }
+							</h1>
+							<p class="text-xs text-secondary mt-1 mb-0">
+								{ i18n.T(lang, "vendor_branches.header_desc") }
+							</p>
+						</div>
+					</div>
+
+					<div class="stack-sm">
+						<button
+							type="button"
+							class="btn btn-primary font-bold text-xs px-4 py-2 gap-2"
+							@click="resetToAddMode(); document.getElementById('branch-form-panel').scrollIntoView({behavior:'smooth'});"
+						>
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "vendor_branches.btn_new_branch") }</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Quick Logistics Metrics -->
+			<div class="dashboard-stat-grid cols-3 mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_branches.stat_total") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", len(data.Branches)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_branches.stat_total_sub") }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_branches.stat_cold_storage") }</div>
+					<div class="stat-card-value text-success tabular-nums">
+						{ fmt.Sprintf("%d", countColdStorageBranches(data.Branches)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_branches.stat_cold_storage_sub") }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_branches.stat_capacity") }</div>
+					<div class="stat-card-value text-brand tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_branches.capacity_val"), totalCapacitySQM(data.Branches)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_branches.stat_capacity_sub") }</div>
+				</div>
+			</div>
+
+			<!-- Two-column split. In RTL the first grid child sits on the right, so
+			     the list is declared first and the form lands on the left, which is
+			     where it is expected. The wrapper had no class at all, so there was
+			     no grid and the two panels simply stacked. -->
+			<div class="branches-split">
+				
+				<!-- Branch cards list (right in RTL, left in LTR) -->
+				<div class="d-flex flex-col gap-4">
+					
+					<!-- Search Input -->
+					<div class="glass-panel p-3 mb-0">
+						<input
+							type="text"
+							id="branch-search-input"
+							placeholder={ i18n.T(lang, "vendor_branches.search_placeholder") }
+							class="form-input text-xs w-full"
+							data-on-input="filterBranchesList(this.value)"
+						/>
+					</div>
+
+					<div class="alert alert-warning p-3 d-flex items-center gap-2 text-xs mb-0">
+						<span class="text-base">@components.IconInfo("icon-sm")</span>
+						<span>
+							{ i18n.T(lang, "vendor_branches.geo_alert") }
+						</span>
+					</div>
+
+					<!-- Branch List Items -->
+					if len(data.Branches) == 0 {
+						<div class="glass-panel p-12 text-center empty-state-glass">
+							<div class="text-4xl mb-3">@components.IconMapPin("icon-sm")</div>
+							<h3 class="text-lg font-black text-primary mb-2">
+								{ i18n.T(lang, "vendor_branches.empty_title") }
+							</h3>
+							<p class="text-xs text-secondary max-w-md mx-auto mb-4">
+								{ i18n.T(lang, "vendor_branches.empty_desc") }
+							</p>
+							<button type="button" class="btn btn-primary btn-sm font-bold text-xs" @click="resetToAddMode()">
+								@components.IconPlus("icon-xs")
+								<span>{ i18n.T(lang, "vendor_branches.btn_start_first") }</span>
+							</button>
+						</div>
+					} else {
+						<div id="branches-container" class="d-flex flex-col gap-3">
+							for _, b := range data.Branches {
+								<div
+									class="branch-card glass-panel p-5 d-flex flex-col gap-3"
+									data-name={ b.Name.Get(i18n.Lang(lang)) }
+									data-code={ b.Code }
+								>
+									<!-- Card Header -->
+									<div class="flex-between items-start gap-3 flex-wrap">
+										<div class="stack-sm">
+											<div class="d-flex items-center gap-2">
+												<h3 class="text-base font-black text-primary m-0">
+													{ b.Name.Get(i18n.Lang(lang)) }
+												</h3>
+												if b.IsMain {
+													<span class="badge badge-sky text-xs font-black">{ i18n.T(lang, "vendor_branches.card_main_badge") }</span>
+												}
+												if b.Status == "active" {
+													<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_branches.card_status_active") }</span>
+												} else {
+													<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "vendor_branches.card_status_inactive") }</span>
+												}
+											</div>
+											if b.Code != "" {
+												<div class="text-xs text-brand font-bold mt-1 tabular-nums">
+													{ fmt.Sprintf(i18n.T(lang, "vendor_branches.code_prefix"), b.Code) }
+												</div>
+											}
+										</div>
+
+										<div class="d-flex items-center gap-2">
+											if b.GoogleMapsURL != "" {
+												<a href={ templ.SafeURL(b.GoogleMapsURL) } target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm font-bold text-xs" title="Google Maps">
+													<span>{ i18n.T(lang, "vendor_branches.btn_google_maps") }</span>
+												</a>
+											}
+										</div>
+									</div>
+
+									<!-- Card Details Grid -->
+									<div class="d-grid grid-cols-2 gap-2 text-xs bg-surface-sunken p-3 rounded-xl border">
+										<div class="stack-sm">
+											<strong class="text-muted d-block text-xs mb-0.5">{ i18n.T(lang, "vendor_branches.lbl_address") }</strong>
+											<span class="text-primary font-bold">{ b.Address }</span>
+										</div>
+										<div class="stack-sm">
+											<strong class="text-muted d-block text-xs mb-0.5">{ i18n.T(lang, "vendor_branches.lbl_manager") }</strong>
+											if b.ManagerName != "" {
+												<span class="text-brand font-bold">{ b.ManagerName }</span>
+											} else {
+												<span class="text-muted">—</span>
+											}
+										</div>
+										<div class="stack-sm">
+											<strong class="text-muted d-block text-xs mb-0.5">{ i18n.T(lang, "vendor_branches.lbl_cold_storage") }</strong>
+											if b.HasColdStorage {
+												<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_branches.cold_storage_badge") }</span>
+											} else {
+												<span class="text-secondary">{ i18n.T(lang, "vendor_branches.dry_storage") }</span>
+											}
+										</div>
+										<div class="stack-sm">
+											<strong class="text-muted d-block text-xs mb-0.5">{ i18n.T(lang, "vendor_branches.lbl_capacity") }</strong>
+											<span class="tabular-nums font-bold text-primary">{ fmt.Sprintf(i18n.T(lang, "vendor_branches.capacity_val"), b.CapacitySQM) }</span>
+										</div>
+									</div>
+
+									<!-- Institutional Works Tags -->
+									if len(b.InstitutionalWorks) > 0 {
+										<div class="stack-sm">
+											<div class="text-xs font-bold text-muted uppercase mb-1">
+												{ i18n.T(lang, "vendor_branches.lbl_institutional") }
+											</div>
+											<div class="d-flex flex-wrap gap-1">
+												for _, cat := range b.InstitutionalWorks {
+													<span class="badge badge-slate text-xs font-bold">
+														{ data.WorkLabel(cat, lang) }
+													</span>
+												}
+											</div>
+										</div>
+									}
+
+									<!-- Card Actions -->
+									<div class="flex-between items-center border-t pt-3 mt-1">
+										<div class="text-xs text-muted tabular-nums">
+											if b.Latitude != nil && b.Longitude != nil {
+												<span>{ fmt.Sprintf("%.4f, %.4f", *b.Latitude, *b.Longitude) }</span>
+											}
+										</div>
+
+										<div class="d-flex items-center gap-2">
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+												data-edit-branch-btn={ fmt.Sprintf("%d", b.ID) }
+												data-branch-data={ formatVendorBranchJSON(b, data.Cities) }
+												@click="setEditModeFromElement($el)"
+											>
+												@components.IconEdit("icon-xs")
+												<span>{ i18n.T(lang, "vendor_branches.btn_edit") }</span>
+											</button>
+
+											<form action={ templ.SafeURL(fmt.Sprintf("/vendor/branches/%d/delete", b.ID)) } method="POST" data-confirm={ i18n.T(lang, "vendor_branches.delete_confirm") } class="m-0">
+												<button type="submit" class="btn btn-secondary btn-sm btn-icon text-danger" title={ i18n.T(lang, "vendor_branches.btn_delete") }>
+													@components.IconTrash("icon-xs")
+												</button>
+											</form>
+										</div>
+									</div>
+								</div>
+							}
+						</div>
+						if data.TotalCount > 0 {
+							@components.B2BPagination(components.PaginationProps{
+								CurrentPage: data.Page,
+								PageSize:    data.PerPage,
+								TotalCount:  data.TotalCount,
+								BaseURL:     "/vendor/branches",
+							})
+						}
+					}
+				</div>
+
+				<!-- Sticky form panel, add and edit modes (left in RTL, right in LTR) -->
+				@VendorBranchesForm(data, lang)
+			</div>
+		</div>
+
+		@VendorBranchesScript()
+	}
+}

@@ -1,0 +1,274 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ reviewStageScript(langOpt ...string) {
+	<!-- Review interaction script -->
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		// Bulk selection. Every checkbox belongs to the toolbar's form through
+		// the form attribute, so "select all" is a query over the document
+		// rather than over a container.
+		function reviewPickBoxes() {
+			return Array.prototype.slice.call(
+				document.querySelectorAll('input.review-pick[form="review-bulk"]'));
+		}
+
+		function reviewToggleAll(source) {
+			var on = !!source.checked;
+			reviewPickBoxes().forEach(function (box) { box.checked = on; });
+			document.querySelectorAll('.review-pick-all, .review-bulk-pickall input')
+				.forEach(function (box) { if (box !== source) box.checked = on; });
+			reviewUpdateCount();
+		}
+
+		function reviewUpdateCount() {
+			var label = document.getElementById('review-bulk-count');
+			if (!label) return;
+			var n = reviewPickBoxes().filter(function (b) { return b.checked; }).length;
+			var isEnglish = (document.documentElement.lang === 'en');
+			if (n === 0) {
+				label.textContent = isEnglish ? 'No items selected' : 'لم يتم تحديد أي صنف';
+			} else {
+				label.textContent = isEnglish ? (n + ' items selected') : ('تم تحديد ' + n + ' صنف');
+			}
+		}
+
+		document.addEventListener('change', function (e) {
+			if (e.target && e.target.classList && e.target.classList.contains('review-pick')) {
+				reviewUpdateCount();
+			}
+		});
+
+		// A commit that would silently drop rows, or take products off sale,
+		// says so first. Every figure is the server's own commit preview —
+		// the same decide() the write runs — so the dialog and the run cannot
+		// disagree about what is about to happen.
+		function confirmReviewCommit(form) {
+			var writes = parseInt(form.getAttribute('data-writes'), 10) || 0;
+			var held = parseInt(form.getAttribute('data-held'), 10) || 0;
+			var retire = parseInt(form.getAttribute('data-retire'), 10) || 0;
+			var isEnglish = (document.documentElement.lang === 'en');
+			var lines = [];
+			if (writes <= 0) {
+				lines.push(isEnglish
+					? 'Warning: No items will be added or modified in this mode (all items skipped or no new changes).'
+					: 'تنبيه: لن يتم إضافة أو تعديل أي صنف بهذا النمط (تم تخطي جميع الأصناف أو لا توجد تعديلات جديدة).');
+			} else {
+				lines.push(isEnglish
+					? (writes + ' items will be saved in your catalogue.')
+					: ('سيتم حفظ ' + writes + ' صنف في كتالوجك.'));
+			}
+			if (held > 0) {
+				lines.push(isEnglish
+					? (held + ' items will not be imported because they are still pending review or unmatched.')
+					: (held + ' صنف لن يُستورد لأنه ما زال يحتاج مراجعة أو غير مطابق.'));
+			}
+			if (retire > 0) {
+				lines.push(isEnglish
+					? ('Warning: stock for ' + retire + ' items will be removed from this warehouse because they are absent from this file.')
+					: ('تنبيه: سيتم حذف مخزون ' + retire + ' صنف من هذا المخزن لعدم وجودها في هذا الملف.'));
+			}
+			lines.push(isEnglish
+				? 'Do you want to proceed and confirm the import?'
+				: 'هل تريد المتابعة واعتماد الاستيراد؟');
+			if (!confirm(lines.join(String.fromCharCode(10, 10)))) {
+				return false;
+			}
+			if (retire > 0) {
+				// Replace is the only mode that removes warehouse stocks, so
+				// it is the only one that asks twice.
+				return confirm(isEnglish
+					? ('Final confirmation: Clicking \x27OK\x27 will remove stock of ' + retire + ' items absent from file from this warehouse.')
+					: ('تأكيد أخير: بالضغط على «موافق» سيتم حذف مخزون ' + retire + ' صنف غير موجود بالملف من هذا المخزن.'));
+			}
+			return true;
+		}
+
+		var activeDropdownRowId = null;
+		var catalogSearchTimer = null;
+
+		function handleDropdownToggle(btn) {
+			var rowId = btn.getAttribute('data-row-id');
+			var rowName = btn.getAttribute('data-row-name') || '';
+			toggleCatalogDropdown(btn, rowId, rowName);
+		}
+
+		function handleDropdownSearchInput(input) {
+			var rowId = input.getAttribute('data-row-id');
+			onDropdownSearchInput(input, rowId);
+		}
+
+		var dropdownHome = null;   // { parent, next } to restore on close
+		var dropdownBackdrop = null;
+
+		function portalDropdownOut(dropdown) {
+			if (dropdownHome) return;
+			dropdownHome = { parent: dropdown.parentNode, next: dropdown.nextSibling };
+			dropdownBackdrop = document.createElement('div');
+			dropdownBackdrop.className = 'catalog-dialog-backdrop';
+			dropdownBackdrop.addEventListener('click', closeAllCatalogDropdowns);
+			document.body.appendChild(dropdownBackdrop);
+			document.body.appendChild(dropdown);
+		}
+
+		function portalDropdownBack(dropdown) {
+			if (dropdownBackdrop) {
+				dropdownBackdrop.remove();
+				dropdownBackdrop = null;
+			}
+			if (dropdownHome && dropdown) {
+				dropdownHome.parent.insertBefore(dropdown, dropdownHome.next);
+			}
+			dropdownHome = null;
+		}
+
+		function toggleCatalogDropdown(btn, rowId, defaultQuery) {
+			var dropdown = document.getElementById('catalog-dropdown-' + rowId);
+			if (!dropdown) return;
+
+			var wasOpen = activeDropdownRowId === rowId;
+			closeAllCatalogDropdowns();
+			if (wasOpen) return;
+
+			portalDropdownOut(dropdown);
+			dropdown.style.display = 'block';
+			dropdown.classList.add('is-open');
+			activeDropdownRowId = rowId;
+
+			var input = dropdown.querySelector('input[type="text"]');
+			if (input) {
+				if (!input.value.trim()) {
+					input.value = defaultQuery;
+				}
+				input.focus();
+				searchCatalogForDropdown(rowId, input.value.trim());
+			}
+		}
+
+		function closeAllCatalogDropdowns() {
+			if (!activeDropdownRowId) {
+				portalDropdownBack(null);
+				return;
+			}
+			var el = document.getElementById('catalog-dropdown-' + activeDropdownRowId);
+			if (el) {
+				el.style.display = 'none';
+				el.classList.remove('is-open');
+			}
+			portalDropdownBack(el);
+			activeDropdownRowId = null;
+		}
+
+		// A click outside closes it.
+		document.addEventListener('click', function(e) {
+			if (!activeDropdownRowId) return;
+			if (e.target.closest('.catalog-cell-container')) return;
+			if (e.target.closest('.catalog-dropdown-menu')) return;
+			closeAllCatalogDropdowns();
+		});
+
+		document.addEventListener('keydown', function(e) {
+			if (e.key === 'Escape') closeAllCatalogDropdowns();
+		});
+
+		function onDropdownSearchInput(input, rowId) {
+			clearTimeout(catalogSearchTimer);
+			catalogSearchTimer = setTimeout(function() {
+				searchCatalogForDropdown(rowId, input.value.trim());
+			}, 300);
+		}
+
+		function searchCatalogForDropdown(rowId, query) {
+			var resultsBox = document.getElementById('dropdown-results-' + rowId);
+			var dropdown = document.getElementById('catalog-dropdown-' + rowId);
+			if (!resultsBox || !dropdown) return;
+
+			var sessionId = dropdown.getAttribute('data-session-id');
+			var basePath = dropdown.getAttribute('data-base-path') || ('/vendor/ingest/' + encodeURIComponent(sessionId));
+			var matchLevel = dropdown.getAttribute('data-filter-match') || '';
+			var sortBy = dropdown.getAttribute('data-sort') || '';
+			var sortOrder = dropdown.getAttribute('data-order') || '';
+			var page = dropdown.getAttribute('data-page') || '1';
+			var limit = dropdown.getAttribute('data-limit') || '25';
+			var search = dropdown.getAttribute('data-search') || '';
+			var isEnglish = (document.documentElement.lang === 'en');
+
+			function showMessage(cls, text) {
+				var div = document.createElement('div');
+				div.className = cls;
+				div.textContent = text;
+				resultsBox.replaceChildren(div);
+			}
+
+			if (!query) {
+				showMessage('text-center text-muted p-sm text-xs', isEnglish ? 'Please type a word to search' : 'يرجى كتابة كلمة للبحث');
+				return;
+			}
+
+			showMessage('text-center text-muted p-sm text-xs', isEnglish ? 'Searching central catalogue...' : 'جارٍ البحث في الكتالوج المركزي...');
+
+			fetch(basePath + '/catalog-search?q=' + encodeURIComponent(query))
+				.then(function(res) { return res.json(); })
+				.then(function(data) {
+					if (!data || data.length === 0) {
+						showMessage('text-center text-muted p-sm text-xs', isEnglish ? 'No results found in catalogue' : 'لم يتم العثور على نتائج في الكتالوج');
+						return;
+					}
+					resultsBox.innerHTML = '';
+					data.forEach(function(p) {
+						var item = document.createElement('div');
+						item.className = 'catalog-search-card';
+
+						var form = document.createElement('form');
+						form.method = 'POST';
+						form.action = basePath + '/rows/' + encodeURIComponent(rowId) + '/match?match=' + encodeURIComponent(matchLevel) + '&sort=' + encodeURIComponent(sortBy) + '&order=' + encodeURIComponent(sortOrder) + '&page=' + encodeURIComponent(page) + '&limit=' + encodeURIComponent(limit) + '&q=' + encodeURIComponent(search);
+
+						var inputHidden = document.createElement('input');
+						inputHidden.type = 'hidden';
+						inputHidden.name = 'product_id';
+						inputHidden.value = p.id;
+						form.appendChild(inputHidden);
+
+						var btn = document.createElement('button');
+						btn.type = 'submit';
+						btn.className = 'catalog-search-card-btn';
+
+						var infoDiv = document.createElement('div');
+						var nameDiv = document.createElement('div');
+						nameDiv.className = 'font-bold text-xs';
+						if (isEnglish) {
+							nameDiv.textContent = p.name_en || p.name_ar || 'Unnamed';
+						} else {
+							nameDiv.textContent = p.name_ar || p.name_en || 'بدون اسم';
+						}
+						infoDiv.appendChild(nameDiv);
+
+						var metaDiv = document.createElement('div');
+						metaDiv.className = 'text-xs text-muted mt-1';
+						var metaText = '';
+						if (p.sku) metaText += 'SKU: ' + p.sku + ' ';
+						if (p.dosage_form) metaText += '· ' + p.dosage_form + ' ';
+						if (p.concentration) metaText += '· ' + p.concentration;
+						metaDiv.textContent = metaText;
+						infoDiv.appendChild(metaDiv);
+
+						btn.appendChild(infoDiv);
+
+						var chooseSpan = document.createElement('span');
+						chooseSpan.className = 'badge badge-primary text-xs shrink-0';
+						chooseSpan.textContent = isEnglish ? 'Choose' : 'اختيار';
+						btn.appendChild(chooseSpan);
+
+						form.appendChild(btn);
+						item.appendChild(form);
+						resultsBox.appendChild(item);
+					});
+				})
+				.catch(function() {
+					showMessage('text-center text-danger p-sm text-xs', isEnglish ? 'Failed to load results' : 'تعذر تحميل النتائج');
+				});
+		}
+	</script>
+}

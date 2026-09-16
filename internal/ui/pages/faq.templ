@@ -1,0 +1,178 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type FAQItem struct {
+	Question string
+	Answer   string
+	Category string
+}
+
+// GetFAQs is the question list.
+//
+// The entry claiming the platform issues accredited tax e-invoices through the
+// Egyptian tax authority's system has been removed rather than reworded, and
+// the invoice half of the "الدفع والفواتير" category with it. It described an
+// accreditation the platform does not hold, and an FAQ is the one page a reader
+// consults precisely because they intend to rely on the answer.
+func GetFAQs() []FAQItem {
+	return []FAQItem{
+		{
+			Category: "عام ونظرة عامة",
+			Question: "ما هي منصة دوا 24؟",
+			Answer:   "دوا 24 هي أول منصة إلكترونية متخصصة في الربط والتوريد الدوائي المباشر بين شركات الأدوية والموزعين المعتمدين من جهة، وبين الصيدليات والمستشفيات والمراكز الطبية المرخصة في جمهورية مصر العربية من جهة أخرى، لضمان توافر الدواء بأفضل الأسعار وبأعلى معايير الجودة والتتبع.",
+		},
+		{
+			Category: "عام ونظرة عامة",
+			Question: "من يحق له التسجيل والشراء عبر المنصة؟",
+			Answer:   "الشراء مقتصر حصراً على المؤسسات الطبية والصيدلانية المرخصة (الصيدليات العامة والخاصة، المستشفيات، المراكز الطبية، والعيادات المرخصة) بموجب ترخيص مزاولة المهنة والسجل التجاري والبطاقة الضريبية.",
+		},
+		{
+			Category: "الطلبات والتوريد",
+			Question: "كيف يتم تقسيم الطلب إذا اشتريت من أكثر من مورد؟",
+			Answer:   "يقوم النظام تلقائياً بتجميع أصنافك في سلة واحدة، وتوزيع أمر التوريد إلى شحنات منفصلة لكل مورد معتمد، مع إصدار رقم تتبع مستقل لكل شحنة دون أي تعقيد على الصيدلي.",
+		},
+		{
+			Category: "الطلبات والتوريد",
+			Question: "ما هو الحد الأدنى لقيمة الطلب؟",
+			Answer:   "يحدد كل مورد حد أدنى خاص به لضمان مجانية الشحن، ويظهر لك في السلة قبل إتمام الطلب بوضوح. كما نوفر تنبيهات ذكية لمساعدتك في استكمال الحد الأدنى والحصول على أقصى خصم ممكن.",
+		},
+		{
+			Category: "الشحن والجودة",
+			Question: "كيف يتم ضمان سلامة الأدوية الحساسة وسلسلة التبريد؟",
+			Answer:   "يلتزم جميع الموردين وشركات التوزيع المسجلة بنقل الأدوية الحساسة كالأنسولين والأمصال عبر سيارات مجهزة بثلاجات تبريد ومجسات تتبع لدرجات الحرارة طبقاً لاشتراطات هيئة الدواء المصرية.",
+		},
+		{
+			Category: "الدفع والسداد",
+			Question: "ما هي طرق الدفع المتاحة؟",
+			Answer:   "نوفر الدفع عند الاستلام نقداً أو بشيك مقبول الدفع لمندوب التوزيع، بالإضافة إلى التسهيلات الائتمانية والتحويلات البنكية للمؤسسات التي تمتلك حسابات معتمدة وحدود ائتمانية سارية.",
+		},
+		{
+			Category: "المرتجعات والضمان",
+			Question: "كيف يتم التعامل مع الأدوية منتهية الصلاحية أو القريبة من الانتهاء؟",
+			Answer:   "تلتزم الشركات بقبول المرتجعات وفقاً للوائح قطاع الصيدلة وقرارات الإرجاع الوزارية المنظمة، مع إمكانية تقديم طلب إرجاع إلكتروني مباشر من صفحة تفاصيل الطلب.",
+		},
+		{
+			Category: "انضمام الموردين",
+			Question: "كيف يمكن لشركات التوزيع ومصانع الأدوية الانضمام كموردين؟",
+			Answer:   "يمكن التقديم عبر صفحة الانضمام ورفع السجل التجاري ورخصة المخزن أو المصنع، ويتم مراجعة الطلب واعتماد الحساب وبدء ربط المخزون خلال 24 ساعة عمل.",
+		},
+	}
+}
+
+// faqCategories is the filter rail, in the order a reader meets the subjects.
+func faqCategories() []string {
+	return []string{
+		"عام ونظرة عامة",
+		"الطلبات والتوريد",
+		"الشحن والجودة",
+		"الدفع والسداد",
+		"المرتجعات والضمان",
+		"انضمام الموردين",
+	}
+}
+
+// FAQPage.
+//
+// Brought onto the same ledger the other three public pages use: a masthead, a
+// filter rail that is the same device as the role switch on /how-it-works and
+// the link rail in the navigation bar, and questions as ruled rows.
+//
+// What it replaced: a hero card with a gradient bar across its top, a row of
+// pill tabs, and every question inside its own bordered card carrying a
+// coloured category badge. Nine cards in a column is nine borders the reader
+// has to look past to find the one question they came for; the category is a
+// small grey line above the question now, because it is context, not a label to
+// be highlighted.
+templ FAQPage(lang, dir, customTitle, customSubtitle string) {
+	@layouts.PublicShell("الأسئلة الشائعة وإرشادات الاستخدام | FAQ", lang, dir) {
+		<article class="mk-page" x-data="{ cat: 'all' }">
+			<header class="mk-masthead">
+				<p class="mk-eyebrow">مركز المساعدة</p>
+				<h1 class="mk-title">
+					if customTitle != "" {
+						{ customTitle }
+					} else {
+						الأسئلة الشائعة
+					}
+				</h1>
+				<p class="mk-lede">
+					if customSubtitle != "" {
+						{ customSubtitle }
+					} else {
+						الطلب والتوريد، الشحن وسلسلة التبريد، الدفع والمرتجعات — في سطور.
+					}
+				</p>
+			</header>
+
+			<div class="mk-rail" role="tablist" aria-label="تصفية حسب الموضوع">
+				<button
+					type="button"
+					role="tab"
+					class="mk-switch-btn"
+					:class="{ 'is-on': cat === 'all' }"
+					:aria-selected="cat === 'all' ? 'true' : 'false'"
+					@click="cat = 'all'"
+				>الكل</button>
+				for _, c := range faqCategories() {
+					<button
+						type="button"
+						role="tab"
+						class="mk-switch-btn"
+						:class={ "{ 'is-on': cat === '" + c + "' }" }
+						:aria-selected={ "cat === '" + c + "' ? 'true' : 'false'" }
+						@click={ "cat = '" + c + "'" }
+					>{ c }</button>
+				}
+			</div>
+
+			<div class="mk-qa-list">
+				for _, item := range GetFAQs() {
+					<div
+						class="mk-qa"
+						x-data="{ open: false }"
+						x-show={ "cat === 'all' || cat === '" + item.Category + "'" }
+					>
+						<button
+							type="button"
+							class="mk-qa-head"
+							@click="open = !open"
+							:aria-expanded="open ? 'true' : 'false'"
+						>
+							<span class="mk-qa-q">
+								<span class="mk-qa-cat">{ item.Category }</span>
+								<span class="mk-qa-title">{ item.Question }</span>
+							</span>
+							@components.IconChevronDown("icon-sm mk-qa-chevron")
+						</button>
+						<div class="mk-qa-body" x-show="open" x-cloak x-collapse>
+							{ item.Answer }
+						</div>
+					</div>
+				}
+			</div>
+
+			<section class="glass-panel mk-close">
+				<div class="mk-close-text">
+					<h2 class="mk-close-title">لم تجد إجابة؟</h2>
+					<p class="mk-close-desc">
+						الدعم الفني وخدمة العملاء متاح على مدار الساعة للصيدليات والشركات الموردة.
+					</p>
+				</div>
+				<div class="mk-close-actions">
+					<a href="tel:01065397000" class="btn btn-primary">
+						@components.IconPhone("icon-xs")
+						<span>01065397000</span>
+					</a>
+					<a href="/contact" class="btn btn-secondary">
+						@components.IconMail("icon-xs")
+						<span>أرسل استفساراً</span>
+					</a>
+				</div>
+			</section>
+		</article>
+	}
+}

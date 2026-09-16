@@ -1,0 +1,74 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorTeamImportPage renders bulk employee spreadsheet upload interface.
+templ VendorTeamImportPage(lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_team_ext.import_shell_title"), "team_import", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<div class="header-row">
+				<div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">{ i18n.T(lang, "vendor_team_ext.import_title") }</h2>
+					<p class="subtitle">{ i18n.T(lang, "vendor_team_ext.import_desc") }</p>
+				</div>
+				<a href="/settings/employees" class="btn btn-secondary btn-sm">{ i18n.T(lang, "vendor_team_ext.btn_back_team") }</a>
+			</div>
+
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "vendor_team_ext.import_empty_title"),
+				Message: i18n.T(lang, "vendor_team_ext.import_empty_desc"),
+			})
+		</div>
+	}
+}
+
+// VendorTeamFastAddPage renders fast add form.
+templ VendorTeamFastAddPage(lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_team_ext.fast_shell_title"), "team", lang, dir) {
+		<div class="glass-panel max-w-lg mx-auto">
+			<h2 class="mb-lg text-base font-bold text-primary">{ i18n.T(lang, "vendor_team_ext.fast_title") }</h2>
+			<form method="POST" action="/settings/employees" class="stack">
+				<div class="stack-sm">
+					<label class="form-label">{ i18n.T(lang, "vendor_team_ext.lbl_name") }</label>
+					<input type="text" name="name" class="form-input" required />
+				</div>
+				<div class="stack-sm">
+					<label class="form-label">{ i18n.T(lang, "vendor_team_ext.lbl_email") }</label>
+					<input type="email" name="email" class="form-input" required />
+				</div>
+				<div class="stack-sm">
+					<label class="form-label">{ i18n.T(lang, "vendor_team_ext.lbl_phone") }</label>
+					<input type="text" name="phone" class="form-input" required />
+				</div>
+				<div class="stack-sm">
+					<a href="/settings/employees" class="btn btn-secondary">{ i18n.T(lang, "vendor_team_ext.btn_cancel") }</a>
+					<button type="submit" class="btn btn-primary">{ i18n.T(lang, "vendor_team_ext.btn_send_invite") }</button>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// VendorTeamUserDetailPage renders single employee profile.
+templ VendorTeamUserDetailPage(empID int64, lang, dir string) {
+	@layouts.VendorShell(fmt.Sprintf(i18n.T(lang, "vendor_team_ext.detail_shell_title"), empID), "team", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<div class="header-row">
+				<div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">{ fmt.Sprintf(i18n.T(lang, "vendor_team_ext.detail_title"), empID) }</h2>
+				</div>
+				<a href="/settings/employees" class="btn btn-secondary btn-sm">{ i18n.T(lang, "vendor_team_ext.btn_back") }</a>
+			</div>
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "vendor_team_ext.detail_empty_title"),
+				Message: i18n.T(lang, "vendor_team_ext.detail_empty_desc"),
+			})
+		</div>
+	}
+}

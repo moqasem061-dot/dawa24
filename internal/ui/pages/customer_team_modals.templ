@@ -1,0 +1,276 @@
+package pages
+
+import (
+	"encoding/json"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// The add and edit dialogs for the team screen.
+//
+// One edit dialog, populated from the row's data-member payload, rather than
+// one dialog per employee. The branches tab rendered N dialogs into the
+// document — a company with four hundred staff shipped four hundred copies of
+// the same form — and each carried its own copy of every branch and role
+// option.
+
+// teamMemberJSON is the row payload the edit dialog reads.
+//
+// One attribute holding JSON rather than nine data-* attributes: the previous
+// screen had eleven of them and the opener read ten, so a field added to one
+// list and forgotten in the other silently submitted a zero value.
+func teamMemberJSON(m TenantTeamMember) string {
+	payload := struct {
+		ID           int64  `json:"id"`
+		Name         string `json:"name"`
+		Email        string `json:"email"`
+		Phone        string `json:"phone"`
+		JobTitle     string `json:"job_title"`
+		EmployeeCode string `json:"employee_code"`
+		BranchID     int64  `json:"branch_id"`
+		RoleID       int64  `json:"role_id"`
+		IsActive     bool   `json:"is_active"`
+	}{m.ID, m.Name, m.Email, m.Phone, m.JobTitle, m.EmployeeCode, m.BranchID, m.RoleID, m.IsActive}
+	b, err := json.Marshal(payload)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
+}
+
+templ teamAddModal(v TenantTeamView, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if v.CanCreate {
+		@components.Modal(components.ModalProps{
+			ID:       "add-employee-modal",
+			Title:    i18n.T(lang, "team.modal_add_title"),
+			Subtitle: i18n.T(lang, "team.modal_add_sub"),
+			Size:     "md",
+			Icon:     "users",
+		}) {
+			<form method="POST" action={ templ.SafeURL(v.ActionBase + "/new") } class="m-0">
+				<div class="modal-body d-flex flex-col gap-3">
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-name">
+								{ i18n.T(lang, "team.full_name") } <span class="text-danger">*</span>
+							</label>
+							<input id="add-emp-name" type="text" name="name" required maxlength="120" placeholder="Dr. Ahmed Mohamed" class="form-input font-semibold"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-email">
+								{ i18n.T(lang, "team.email") } <span class="text-danger">*</span>
+							</label>
+							<input id="add-emp-email" type="email" name="email" required placeholder="ahmed@pharmacy.com" class="form-input font-semibold" dir="ltr"/>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-phone">{ i18n.T(lang, "team.phone") }</label>
+							<input id="add-emp-phone" type="tel" name="phone" maxlength="20" placeholder="01099887766" class="form-input tabular-nums" dir="ltr"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-job">{ i18n.T(lang, "team.col_job_title") }</label>
+							<input id="add-emp-job" type="text" name="job_title" maxlength="80" placeholder="Pharmacist / Branch Manager" class="form-input font-semibold"/>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-code">{ i18n.T(lang, "team.employee_code") }</label>
+							<input id="add-emp-code" type="text" name="employee_code" placeholder="EMP-01" class="form-input tabular-nums"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-password">{ i18n.T(lang, "team.temp_password") }</label>
+							<input id="add-emp-password" type="password" name="password" minlength="8" placeholder="••••••••" class="form-input"/>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-branch">{ i18n.T(lang, "team.assigned_branch") }</label>
+							<select id="add-emp-branch" name="branch_id" class="form-select font-semibold">
+								<option value="">{ i18n.T(lang, "team.all_branches_option") }</option>
+								for _, b := range v.Branches {
+									<option value={ strconv.FormatInt(b.ID, 10) } selected?={ v.FocusBranch == b.ID }>{ b.Name }</option>
+								}
+							</select>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="add-emp-role">
+								{ i18n.T(lang, "team.role_label") } <span class="text-danger">*</span>
+							</label>
+							<select id="add-emp-role" name="role_id" required class="form-select font-semibold">
+								for _, role := range v.Roles {
+									if !role.IsOwner && role.Key != "org_owner" {
+										<option value={ strconv.FormatInt(role.ID, 10) } selected?={ role.Key == "org_employee" || role.Key == "employee" }>{ role.Name }</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary font-bold" data-on-click="closeTeamModal('add-employee-modal')">{ i18n.T(lang, "common.cancel") }</button>
+					<button type="submit" class="btn btn-primary font-bold px-6 gap-1">
+						@components.IconCheck("icon-xs")
+						<span>{ i18n.T(lang, "team.add_member") }</span>
+					</button>
+				</div>
+			</form>
+		}
+	}
+}
+
+templ teamEditModal(v TenantTeamView, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if v.CanUpdate {
+		@components.Modal(components.ModalProps{
+			ID:       "edit-employee-modal",
+			Title:    i18n.T(lang, "common.edit"),
+			Subtitle: i18n.T(lang, "team.col_role"),
+			Size:     "md",
+			Icon:     "edit",
+		}) {
+			<form method="POST" id="edit-employee-form" action="#" class="m-0">
+				<div class="modal-body d-flex flex-col gap-3">
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-name">{ i18n.T(lang, "team.full_name") }</label>
+							<input id="edit-emp-name" type="text" disabled class="form-input bg-surface-sunken"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-email">{ i18n.T(lang, "team.email") }</label>
+							<input id="edit-emp-email" type="email" disabled class="form-input bg-surface-sunken" dir="ltr"/>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-job">{ i18n.T(lang, "team.col_job_title") }</label>
+							<input id="edit-emp-job" type="text" name="job_title" maxlength="80" class="form-input font-semibold"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-code">{ i18n.T(lang, "team.employee_code") }</label>
+							<input id="edit-emp-code" type="text" name="employee_code" class="form-input tabular-nums"/>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-3">
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-branch">{ i18n.T(lang, "team.assigned_branch") }</label>
+							<select id="edit-emp-branch" name="branch_id" class="form-select font-semibold">
+								<option value="">{ i18n.T(lang, "team.all_branches_option") }</option>
+								for _, b := range v.Branches {
+									<option value={ strconv.FormatInt(b.ID, 10) }>{ b.Name }</option>
+								}
+							</select>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label font-bold text-xs" for="edit-emp-role">{ i18n.T(lang, "team.role_label") }</label>
+							<select id="edit-emp-role" name="role_id" class="form-select font-semibold">
+								for _, role := range v.Roles {
+									if !role.IsOwner && role.Key != "org_owner" {
+										<option value={ strconv.FormatInt(role.ID, 10) }>{ role.Name }</option>
+									}
+								}
+							</select>
+						</div>
+					</div>
+
+					<div class="p-3 rounded-lg border">
+						<label class="d-flex items-center gap-2 cursor-pointer font-bold text-xs m-0" for="edit-emp-active">
+							<input id="edit-emp-active" type="checkbox" name="is_active" value="true" class="form-checkbox"/>
+							<span>{ i18n.T(lang, "common.active") }</span>
+						</label>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary font-bold" data-on-click="closeTeamModal('edit-employee-modal')">{ i18n.T(lang, "common.cancel") }</button>
+					<button type="submit" class="btn btn-primary font-bold px-6 gap-1">
+						@components.IconCheck("icon-xs")
+						<span>{ i18n.T(lang, "common.save_changes") }</span>
+					</button>
+				</div>
+			</form>
+		}
+	}
+}
+
+templ teamScript(v TenantTeamView) {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openAddEmployeeModal(branchID) {
+			const el = document.getElementById('add-employee-modal');
+			if (!el || typeof el.showModal !== 'function') return;
+			if (branchID) {
+				const sel = document.getElementById('add-emp-branch');
+				if (sel) sel.value = String(branchID);
+			}
+			el.showModal();
+		}
+
+		function closeTeamModal(id) {
+			const el = document.getElementById(id);
+			if (el && typeof el.close === 'function') el.close();
+		}
+
+		function openEditEmployeeModal(btn) {
+			const row = btn.closest('tr');
+			if (!row) return;
+			let m;
+			try { m = JSON.parse(row.dataset.member || '{}'); } catch (e) { return; }
+
+			const form = document.getElementById('edit-employee-form');
+			if (!form) return;
+			const base = document.getElementById('team-table')?.dataset.actionBase
+				|| document.body.dataset.teamActionBase || '';
+			form.action = base + '/' + m.id + '/edit';
+
+			const set = (id, value) => { const el = document.getElementById(id); if (el) el.value = value == null ? '' : value; };
+			set('edit-emp-name', m.name);
+			set('edit-emp-email', m.email);
+			set('edit-emp-job', m.job_title);
+			set('edit-emp-code', m.employee_code);
+			set('edit-emp-branch', m.branch_id ? String(m.branch_id) : '');
+			set('edit-emp-role', m.role_id ? String(m.role_id) : '');
+
+			const active = document.getElementById('edit-emp-active');
+			if (active) active.checked = !!m.is_active;
+
+			const el = document.getElementById('edit-employee-modal');
+			if (el && typeof el.showModal === 'function') el.showModal();
+		}
+
+		function filterTeamRows() {
+			const q = (document.getElementById('team-search-input')?.value || '').trim().toLowerCase();
+			const branch = document.getElementById('team-branch-filter')?.value || '';
+			const rows = document.querySelectorAll('#team-table tbody tr.team-row');
+			let shown = 0;
+			rows.forEach((row) => {
+				const matchesText = !q || (row.dataset.search || '').indexOf(q) !== -1;
+				const matchesBranch = branch === '' || (row.dataset.branch || '0') === branch;
+				const visible = matchesText && matchesBranch;
+				row.hidden = !visible;
+				if (visible) shown++;
+			});
+			const counter = document.getElementById('team-filter-count');
+			if (counter) counter.textContent = (q || branch) ? shown + ' / ' + rows.length : '';
+		}
+
+		(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', filterTeamRows) : filterTeamRows());
+	</script>
+}

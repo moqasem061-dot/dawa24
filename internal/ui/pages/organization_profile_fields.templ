@@ -1,0 +1,121 @@
+package pages
+
+// The five sections' inputs.
+//
+// Every input's name is the key SaveProfileSection stores, so a section's form
+// and its repository branch cannot drift apart: adding a field here without
+// adding it to org/postgres/profile_sections.go simply does nothing, rather
+// than silently writing the wrong column.
+
+templ organizationIdentityFields(s OrganizationProfileSection) {
+	<div class="d-grid grid-cols-2 gap-4">
+		<div>
+			<label class="form-label" for="legal_name">الاسم القانوني للمنشأة <span class="text-danger">*</span></label>
+			<input id="legal_name" type="text" name="legal_name" value={ s.Fields["legal_name"] } required class="form-input" placeholder="شركة سمارت كودز لتوزيع الأدوية"/>
+			<p class="form-hint">كما هو مكتوب في السجل التجاري.</p>
+		</div>
+		<div>
+			<label class="form-label" for="commercial_register">رقم السجل التجاري</label>
+			<input id="commercial_register" type="text" name="commercial_register" value={ s.Fields["commercial_register"] } class="form-input" dir="ltr" placeholder="123456"/>
+		</div>
+		<div>
+			<label class="form-label" for="trade_name_ar">الاسم التجاري بالعربية <span class="text-danger">*</span></label>
+			<input id="trade_name_ar" type="text" name="trade_name_ar" value={ s.Fields["trade_name_ar"] } required class="form-input" placeholder="سمارت كودز"/>
+			<p class="form-hint">هذا هو الاسم الذي يظهر للعملاء في كل صفحات المنصة.</p>
+		</div>
+		<div>
+			<label class="form-label" for="trade_name_en">الاسم التجاري بالإنجليزية</label>
+			<input id="trade_name_en" type="text" name="trade_name_en" value={ s.Fields["trade_name_en"] } class="form-input" dir="ltr" placeholder="Smart Codes"/>
+		</div>
+		<div>
+			<label class="form-label" for="tax_number">الرقم الضريبي</label>
+			<input id="tax_number" type="text" name="tax_number" value={ s.Fields["tax_number"] } class="form-input" dir="ltr" placeholder="TX431256"/>
+		</div>
+	</div>
+}
+
+templ organizationLimitsFields(s OrganizationProfileSection) {
+	<div class="d-grid grid-cols-2 gap-4">
+		<div>
+			<label class="form-label" for="min_order_price">الحد الأدنى لقيمة الطلب <span class="text-danger">*</span></label>
+			<input id="min_order_price" type="number" step="0.01" min="0" name="min_order_price" value={ s.Fields["min_order_price"] } required class="form-input font-bold tabular-nums" dir="ltr" placeholder="10.00"/>
+		</div>
+		<div>
+			<label class="form-label" for="max_order_price">الحد الأقصى لقيمة الطلب <span class="text-danger">*</span></label>
+			<input id="max_order_price" type="number" step="0.01" min="0" name="max_order_price" value={ s.Fields["max_order_price"] } required class="form-input font-bold tabular-nums" dir="ltr" placeholder="50000.00"/>
+			<p class="form-hint">لا يمكن أن يقل الحد الأقصى عن الحد الأدنى.</p>
+		</div>
+	</div>
+}
+
+templ organizationContactFields(s OrganizationProfileSection) {
+	<div class="d-grid grid-cols-2 gap-4">
+		<div>
+			<label class="form-label" for="phone">رقم الهاتف</label>
+			<input id="phone" type="tel" name="phone" value={ s.Fields["phone"] } class="form-input" dir="ltr" placeholder="01099887766"/>
+		</div>
+		<div>
+			<label class="form-label" for="email">البريد الإلكتروني</label>
+			<input id="email" type="email" name="email" value={ s.Fields["email"] } class="form-input" dir="ltr" placeholder="info@example.com"/>
+		</div>
+		<div>
+			<label class="form-label" for="organization_number">رقم المنشأة الداخلي</label>
+			<input id="organization_number" type="text" name="organization_number" value={ s.Fields["organization_number"] } class="form-input" dir="ltr" placeholder="267244"/>
+		</div>
+		<div>
+			<label class="form-label" for="address">العنوان الرئيسي</label>
+			<input id="address" type="text" name="address" value={ s.Fields["address"] } class="form-input" placeholder="الجيزة، مصر"/>
+		</div>
+	</div>
+}
+
+templ organizationDescriptionFields(s OrganizationProfileSection) {
+	<div class="d-grid grid-cols-2 gap-4">
+		<div>
+			<label class="form-label" for="description_ar">الوصف بالعربية</label>
+			<textarea id="description_ar" name="description_ar" rows="4" class="form-input" placeholder="نبذة تظهر للعملاء في الصفحة العامة للمنشأة...">{ s.Fields["description_ar"] }</textarea>
+		</div>
+		<div>
+			<label class="form-label" for="description_en">الوصف بالإنجليزية</label>
+			<textarea id="description_en" name="description_en" rows="4" class="form-input" dir="ltr" placeholder="A short public description...">{ s.Fields["description_en"] }</textarea>
+		</div>
+	</div>
+}
+
+// Leaving a file empty keeps the stored image. The repository's media branch
+// only overwrites a column when the new value is non-empty, so "save" on this
+// section never blanks a logo the person did not mean to remove.
+templ organizationMediaFields(s OrganizationProfileSection) {
+	<div class="d-grid grid-cols-2 gap-4">
+		<div class="glass-panel p-4 mb-0 d-flex flex-col gap-3 border">
+			<div class="flex-between items-center">
+				<label class="form-label font-bold text-xs m-0" for="logo_file">شعار المنشأة</label>
+				<span class="text-2xs text-muted">PNG / JPG — 2MB</span>
+			</div>
+			<div class="d-flex items-center gap-3 flex-wrap">
+				if s.Fields["image"] != "" {
+					<div class="user-avatar-badge">
+						<img src={ s.Fields["image"] } alt="" class="product-thumb-img"/>
+					</div>
+				}
+				<div class="flex-1 min-w-0">
+					<input id="logo_file" type="file" name="logo_file" accept="image/*" class="form-input text-xs"/>
+				</div>
+			</div>
+		</div>
+		<div class="glass-panel p-4 mb-0 d-flex flex-col gap-3 border">
+			<div class="flex-between items-center">
+				<label class="form-label font-bold text-xs m-0" for="coverage_file">صورة الغلاف</label>
+				<span class="text-2xs text-muted">PNG / JPG — 2MB</span>
+			</div>
+			<div class="d-flex items-center gap-3 flex-wrap">
+				if s.Fields["coverage_image"] != "" {
+					<img src={ s.Fields["coverage_image"] } alt="" class="org-cover-thumb"/>
+				}
+				<div class="flex-1 min-w-0">
+					<input id="coverage_file" type="file" name="coverage_file" accept="image/*" class="form-input text-xs"/>
+				</div>
+			</div>
+		</div>
+	</div>
+}

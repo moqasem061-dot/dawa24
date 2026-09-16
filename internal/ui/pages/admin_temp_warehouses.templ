@@ -1,0 +1,1240 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminTempWarehouseItem represents a single temporary warehouse or uploaded price spreadsheet.
+type AdminTempWarehouseItem struct {
+	ID               int64
+	SupplierName     string
+	OriginalFilename string
+	RowCount         int
+	SizeBytes        int64
+	Status           string
+	ArchiveReason    string
+	CreatedBy        *int64
+	CreatedAt        time.Time
+	ArchivedAt       *time.Time
+	// UploaderName is the moderator / vendor user who uploaded this warehouse.
+	UploaderName string
+	// OrgName is the vendor organization name when this is a vendor compare-tool file.
+	OrgName string
+	// SourceType is "vendor" (compare-tool upload) or "moderator" (admin upload).
+	SourceType string
+	// Visibility is "public" or "private"; only meaningful for vendor uploads.
+	Visibility string
+}
+
+// AdminTempWarehouseUploader is one distinct uploader for the filter dropdown.
+type AdminTempWarehouseUploader struct {
+	UserID int64
+	Name   string
+}
+
+// AdminTempWarehousesData carries data for the temporary warehouses admin page.
+type AdminTempWarehousesData struct {
+	Items         []*AdminTempWarehouseItem
+	TotalCount    int
+	TotalRows     int64
+	ActiveCount   int
+	ArchivedCount int
+	Query         string
+	StatusFilter  string
+	Scope         string
+	NoticeMsg     string
+	NoticeType    string
+	ActiveRun     *TempWarehouseRunView
+	// MineOnly renders the "مستودعاتي المرفوعة" variant: own uploads only,
+	// no cross-account scope tabs, no uploader filter.
+	MineOnly bool
+	// Base is the URL root for row mutations / JSON endpoints
+	// ("/admin/temporary-warehouses" or "/admin/my/temparte-warehouses").
+	Base string
+	// PageURL is the GET page + filter form action.
+	PageURL string
+	// UploaderFilter / SourceFilter hold the current filter selection.
+	UploaderFilter string
+	SourceFilter   string
+	SortBy         string
+	SortOrder      string
+	Page           int
+	PerPage        int
+	Uploaders      []AdminTempWarehouseUploader
+	// TeamView renders the "مستودعات المشرفين تحت إدارتي" variant: the uploads
+	// of the moderators reporting to the signed-in main moderator, and only
+	// those. It reuses MineOnly's chrome — no cross-account scope tabs — but
+	// swaps the uploader filter for the team roster.
+	TeamView bool
+	// TeamSize is how many moderators report to the caller, so the empty state
+	// can distinguish "you lead nobody yet" from "your team has uploaded
+	// nothing", which are different things to do something about.
+	TeamSize    int
+	TeamMembers []TeamModerator
+}
+
+// TeamModerator is one moderator on a main moderator's roster.
+type TeamModerator struct {
+	UserID int64
+	Name   string
+	Email  string
+}
+
+func tempWarehousesShellTitle(data *AdminTempWarehousesData) string {
+	if data.TeamView {
+		return "مستودعات المشرفين تحت إدارتي"
+	}
+	if data.MineOnly {
+		return "مستودعاتي المرفوعة"
+	}
+	return "قوائم المستودعات المؤقتة"
+}
+
+func tempWarehousesNavKey(data *AdminTempWarehousesData) string {
+	if data.TeamView {
+		return "team_temp_warehouses"
+	}
+	if data.MineOnly {
+		return "my_temp_warehouses"
+	}
+	return "temp_warehouses"
+}
+
+// tempWarehouseFilterURL builds a status-pill link that carries the current
+// search / uploader / source / sort filters.
+func tempWarehouseFilterURL(data *AdminTempWarehousesData, status string) string {
+	q := url.Values{}
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.SourceFilter != "" {
+		q.Set("type", data.SourceFilter)
+	}
+	if data.UploaderFilter != "" {
+		q.Set("uploader", data.UploaderFilter)
+	}
+	if data.SortBy != "" {
+		q.Set("sort", data.SortBy)
+	}
+	if data.SortOrder != "" {
+		q.Set("order", data.SortOrder)
+	}
+	if status != "" {
+		q.Set("status", status)
+	}
+	if len(q) == 0 {
+		return data.PageURL
+	}
+	return data.PageURL + "?" + q.Encode()
+}
+
+// tempWarehouseSortURL toggles sorting on a column and preserves existing filters.
+func tempWarehouseSortURL(data *AdminTempWarehousesData, col string) string {
+	q := url.Values{}
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.SourceFilter != "" {
+		q.Set("type", data.SourceFilter)
+	}
+	if data.UploaderFilter != "" {
+		q.Set("uploader", data.UploaderFilter)
+	}
+	if data.StatusFilter != "" {
+		q.Set("status", data.StatusFilter)
+	}
+	newOrder := "asc"
+	if data.SortBy == col && data.SortOrder != "desc" {
+		newOrder = "desc"
+	}
+	q.Set("sort", col)
+	q.Set("order", newOrder)
+	return data.PageURL + "?" + q.Encode()
+}
+
+func tempWarehouseCleanQuery(data *AdminTempWarehousesData) url.Values {
+	q := url.Values{}
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.SourceFilter != "" {
+		q.Set("type", data.SourceFilter)
+	}
+	if data.UploaderFilter != "" {
+		q.Set("uploader", data.UploaderFilter)
+	}
+	if data.StatusFilter != "" {
+		q.Set("status", data.StatusFilter)
+	}
+	if data.SortBy != "" {
+		q.Set("sort", data.SortBy)
+	}
+	if data.SortOrder != "" {
+		q.Set("order", data.SortOrder)
+	}
+	return q
+}
+
+// AdminTempWarehousesPage renders the full temporary warehouses management and staging interface.
+templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
+	@layouts.AdminShell(tempWarehousesShellTitle(data), tempWarehousesNavKey(data), lang, dir) {
+		<div class="d-flex flex-col gap-6"
+			data-base={ data.Base }
+			x-data="{
+				selectedIds: [],
+				selectAll: false,
+				toggleSelectAll(e) {
+					if (e.target.checked) {
+						this.selectedIds = Array.from(document.querySelectorAll('.warehouse-row-checkbox')).map(el => el.value);
+						this.selectAll = true;
+					} else {
+						this.selectedIds = [];
+						this.selectAll = false;
+					}
+				},
+				updateSelectState() {
+					const allBoxes = Array.from(document.querySelectorAll('.warehouse-row-checkbox'));
+					if (allBoxes.length === 0) {
+						this.selectAll = false;
+						return;
+					}
+					this.selectAll = allBoxes.every(el => this.selectedIds.includes(el.value));
+				},
+				isSelected(id) {
+					return this.selectedIds.includes(String(id));
+				},
+				clearSelection() {
+					this.selectedIds = [];
+					this.selectAll = false;
+				},
+				submitBulk(action) {
+					if (this.selectedIds.length === 0) return;
+					if (action === 'delete') {
+						if (!confirm('هل أنت متأكد تماماً من حذف المستودعات المحددة (' + this.selectedIds.length + ' مستودع) وكافة أصنافها نهائياً؟')) {
+							return;
+						}
+					} else if (action === 'archive') {
+						if (!confirm('هل تريد أرشفة المستودعات المحددة (' + this.selectedIds.length + ' مستودع)؟')) {
+							return;
+						}
+					}
+					const form = document.getElementById('warehouse-bulk-form');
+					if (!form) return;
+					document.getElementById('bulk-action-input').value = action;
+					const idsInput = document.getElementById('bulk-selected-ids-input');
+					if (idsInput) idsInput.value = this.selectedIds.join(',');
+					form.querySelectorAll('input.dynamic-bulk-id').forEach(el => el.remove());
+					this.selectedIds.forEach(id => {
+						const inp = document.createElement('input');
+						inp.type = 'hidden';
+						inp.name = 'selected_ids';
+						inp.className = 'dynamic-bulk-id';
+						inp.value = id;
+						form.appendChild(inp);
+					});
+					form.submit();
+				},
+				uploadModal: false,
+				itemsModal: false,
+				mappingModal: false,
+				mappingLoading: false,
+				mappingSubmitting: false,
+				mappingFile: { id: 0, supplier_name: '', original_filename: '', row_count: 0 },
+				mappingHeaders: [],
+				mappingPreview: [],
+				mappingCode: 0,
+				mappingName: 1,
+				mappingPrice: 2,
+				mappingDiscount: 3,
+				mappingQueue: [],
+				mappingStep: 1,
+				mappingTotal: 1,
+				autoLaunchSetup: true,
+				selectedWarehouse: { id: 0, name: '', total: 0 },
+				modalItems: [],
+				modalPage: 1,
+				modalTotalPages: 1,
+				modalLoading: false,
+				uploadStep: 1,
+				fileHeaders: [],
+				sampleRows: [],
+				detectedCode: 0,
+				detectedName: 1,
+				detectedPrice: 2,
+				detectedDiscount: 3,
+				isDragging: false,
+				isBulkUploading: false,
+				uploadProgress: 0,
+				uploadStatusText: '',
+				selectedFiles: [],
+				bulkUploadResults: null,
+				getBase() {
+					return (this.$root && this.$root.dataset && this.$root.dataset.base) || window.location.pathname.replace(/\/$/, '') || '/admin/temporary-warehouses';
+				},
+				init() {
+					const urlParams = new URLSearchParams(window.location.search);
+					const setupFile = urlParams.get('setup_file');
+					const setupQueue = urlParams.get('setup_queue');
+					if (setupFile) {
+						const queue = setupQueue ? setupQueue.split(',').filter(x => x.trim().length > 0) : [];
+						const step = parseInt(urlParams.get('setup_step'), 10) || 1;
+						const total = parseInt(urlParams.get('setup_total'), 10) || (queue.length + 1);
+						this.openMapping(parseInt(setupFile, 10), queue, step, total);
+					}
+				},
+				async openItems(id, name, total) {
+					this.selectedWarehouse = { id: id, name: name, total: total };
+					this.modalPage = 1;
+					this.itemsModal = true;
+					const dlg = document.getElementById('warehouse-items-modal');
+					if (dlg && typeof dlg.showModal === 'function' && !dlg.open) {
+						dlg.showModal();
+					}
+					await this.fetchItems();
+				},
+				async fetchItems() {
+					this.modalLoading = true;
+					try {
+						const base = this.getBase();
+						let res = await fetch(base + '/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');
+						if (!res.ok && base !== '/admin/temporary-warehouses') {
+							res = await fetch('/admin/temporary-warehouses/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');
+						}
+						const json = await res.json();
+						if (json.success) {
+							this.modalItems = json.items || [];
+							this.modalTotalPages = json.total_pages || 1;
+							this.selectedWarehouse.total = json.total || 0;
+						}
+					} catch(e) {
+						console.error('Error fetching items:', e);
+					} finally {
+						this.modalLoading = false;
+					}
+				},
+				async nextModalPage() {
+					if (this.modalPage < this.modalTotalPages) {
+						this.modalPage++;
+						await this.fetchItems();
+					}
+				},
+				async prevModalPage() {
+					if (this.modalPage > 1) {
+						this.modalPage--;
+						await this.fetchItems();
+					}
+				},
+				async deleteItem(rowId) {
+					if (!confirm('هل أنت متأكد من حذف هذا الصنف من المستودع؟')) return;
+					try {
+						const base = this.getBase();
+						const formData = new FormData();
+						let res = await fetch(base + '/items/' + rowId + '/delete', {
+							method: 'POST',
+							body: formData
+						});
+						if (!res.ok && base !== '/admin/temporary-warehouses') {
+							res = await fetch('/admin/temporary-warehouses/items/' + rowId + '/delete', {
+								method: 'POST',
+								body: formData
+							});
+						}
+						const json = await res.json();
+						if (json.success) {
+							await this.fetchItems();
+						} else {
+							alert(json.error || 'حدث خطأ أثناء الحذف');
+						}
+					} catch(e) {
+						alert('فشل الاتصال بالخادم');
+					}
+				},
+				async openMapping(id, queue, step, total) {
+					if (!id || id <= 0) return;
+					this.mappingLoading = true;
+					this.mappingModal = true;
+					this.mappingQueue = queue || [];
+					this.mappingStep = step || 1;
+					this.mappingTotal = total || (this.mappingQueue.length + 1);
+					const dlg = document.getElementById('warehouse-mapping-modal');
+					if (dlg && typeof dlg.showModal === 'function' && !dlg.open) {
+						dlg.showModal();
+					}
+					const base = this.getBase();
+					try {
+						let res = await fetch(base + '/' + id + '/mapping-json', {
+							headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+						});
+						if (!res.ok && base !== '/admin/temporary-warehouses') {
+							res = await fetch('/admin/temporary-warehouses/' + id + '/mapping-json', {
+								headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+							});
+						}
+						if (!res.ok) {
+							throw new Error('HTTP ' + res.status);
+						}
+						const json = await res.json();
+						if (json.success) {
+							this.mappingFile = {
+								id: json.id,
+								supplier_name: json.supplier_name,
+								original_filename: json.original_filename,
+								row_count: json.row_count
+							};
+							this.mappingHeaders = json.headers || [];
+							this.mappingPreview = json.preview || [];
+							this.mappingCode = json.code_col >= 0 ? json.code_col : 0;
+							this.mappingName = json.name_col >= 0 ? json.name_col : 1;
+							this.mappingPrice = json.price_col >= 0 ? json.price_col : 2;
+							this.mappingDiscount = json.discount_col >= 0 ? json.discount_col : 3;
+						} else {
+							alert(json.error || 'تعذر تحميل بيانات أعمدة المستودع');
+							this.mappingModal = false;
+							document.getElementById('warehouse-mapping-modal')?.close();
+						}
+					} catch(e) {
+						console.error('Mapping load error:', e);
+						alert('تعذر تحميل تفاصيل الأعمدة، يرجى المحاولة مرة أخرى');
+						this.mappingModal = false;
+						document.getElementById('warehouse-mapping-modal')?.close();
+					} finally {
+						this.mappingLoading = false;
+					}
+				},
+				async submitMapping(form) {
+					if (!this.mappingFile || !this.mappingFile.id) return;
+					this.mappingSubmitting = true;
+					const base = this.getBase();
+					try {
+						const formData = new FormData();
+						formData.append('supplier_name', this.mappingFile.supplier_name || '');
+						formData.append('col_code', this.mappingCode);
+						formData.append('col_name', this.mappingName);
+						formData.append('col_price', this.mappingPrice);
+						formData.append('col_discount', this.mappingDiscount);
+						formData.append('setup_queue', this.mappingQueue.join(','));
+						formData.append('step', this.mappingStep);
+						formData.append('total', this.mappingTotal);
+
+						let res = await fetch(base + '/' + this.mappingFile.id + '/mapping', {
+							method: 'POST',
+							body: formData,
+							headers: {
+								'Accept': 'application/json',
+								'X-Requested-With': 'XMLHttpRequest'
+							}
+						});
+						if (!res.ok && base !== '/admin/temporary-warehouses') {
+							res = await fetch('/admin/temporary-warehouses/' + this.mappingFile.id + '/mapping', {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'Accept': 'application/json',
+									'X-Requested-With': 'XMLHttpRequest'
+								}
+							});
+						}
+						const json = await res.json();
+						if (json.success) {
+							if (this.mappingQueue && this.mappingQueue.length > 0) {
+								const nextId = parseInt(this.mappingQueue[0], 10);
+								const nextQueue = this.mappingQueue.slice(1);
+								await this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);
+							} else {
+								this.mappingModal = false;
+								document.getElementById('warehouse-mapping-modal')?.close();
+								if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+							}
+						} else {
+							alert(json.error || 'فشل حفظ وضبط الأعمدة');
+						}
+					} catch(e) {
+						console.error('Mapping submit error:', e);
+						alert('حدث خطأ أثناء حفظ الإعدادات');
+					} finally {
+						this.mappingSubmitting = false;
+					}
+				},
+				async skipMapping() {
+					if (this.mappingQueue && this.mappingQueue.length > 0) {
+						const nextId = parseInt(this.mappingQueue[0], 10);
+						const nextQueue = this.mappingQueue.slice(1);
+						await this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);
+					} else {
+						this.mappingModal = false;
+						document.getElementById('warehouse-mapping-modal')?.close();
+						if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+					}
+				},
+				skipAllMapping() {
+					this.mappingModal = false;
+					document.getElementById('warehouse-mapping-modal')?.close();
+					if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+				},
+				handleFilesSelect(event) {
+					const files = Array.from(event.target.files || []);
+					if (files.length === 0) return;
+					this.selectedFiles = files;
+					this.bulkUploadResults = null;
+					if (files.length === 1) {
+						this.handleSingleFileHeaders(files[0]);
+					}
+				},
+				handleDrop(event) {
+					this.isDragging = false;
+					if (event.dataTransfer && event.dataTransfer.files) {
+						const files = Array.from(event.dataTransfer.files).filter(f => 
+							f.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv') || f.name.endsWith('.txt')
+						);
+						if (files.length > 0) {
+							this.selectedFiles = files;
+							this.bulkUploadResults = null;
+							if (files.length === 1) {
+								this.handleSingleFileHeaders(files[0]);
+							}
+						}
+					}
+				},
+				removeSelectedFile(idx) {
+					this.selectedFiles.splice(idx, 1);
+					if (this.selectedFiles.length === 1) {
+						this.handleSingleFileHeaders(this.selectedFiles[0]);
+					}
+				},
+				clearSelectedFiles() {
+					this.selectedFiles = [];
+					this.fileHeaders = [];
+					this.bulkUploadResults = null;
+					if (this.$refs && this.$refs.fileInput) {
+						this.$refs.fileInput.value = '';
+					}
+				},
+				formatFileSize(bytes) {
+					if (!bytes || bytes === 0) return '0 B';
+					const k = 1024;
+					const sizes = ['B', 'KB', 'MB', 'GB'];
+					const i = Math.floor(Math.log(bytes) / Math.log(k));
+					return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+				},
+				totalSelectedSize() {
+					const totalBytes = this.selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0);
+					return this.formatFileSize(totalBytes);
+				},
+				cleanName(filename) {
+					if (!filename) return '';
+					let name = filename.replace(/\.[^/.]+$/, '');
+					name = name.replace(/[_\-]/g, ' ').trim();
+					return name || filename;
+				},
+				handleSingleFileHeaders(file) {
+					if (!file) return;
+					const reader = new FileReader();
+					reader.onload = (e) => {
+						const text = e.target.result;
+						if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+							const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+							if (lines.length > 0) {
+								this.fileHeaders = lines[0].split(',').map(h => h.trim().replace(/^['\x22]|['\x22]$/g, ''));
+								this.guessColumns();
+							}
+						} else {
+							this.fileHeaders = ['كود الصنف (SKU)', 'اسم المنتج / الصنف', 'سعر الجمهور', 'نسبة الخصم %', 'الكمية'];
+							this.detectedCode = 0;
+							this.detectedName = 1;
+							this.detectedPrice = 2;
+							this.detectedDiscount = 3;
+						}
+					};
+					if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+						reader.readAsText(file);
+					} else {
+						reader.readAsArrayBuffer(file);
+					}
+				},
+				guessColumns() {
+					if (!this.fileHeaders || this.fileHeaders.length === 0) return;
+					this.detectedCode = 0;
+					this.detectedName = 1;
+					this.detectedPrice = 2;
+					this.detectedDiscount = 3;
+					this.fileHeaders.forEach((h, idx) => {
+						const norm = h.toLowerCase().replace(/[\s_\-]/g, '');
+						if (norm.includes('كود') || norm.includes('code') || norm.includes('sku') || norm.includes('باركود') || norm.includes('barcode')) {
+							this.detectedCode = idx;
+						} else if (norm.includes('اسم') || norm.includes('name') || norm.includes('صنف') || norm.includes('منتج')) {
+							this.detectedName = idx;
+						} else if ((norm.includes('سعر') || norm.includes('price') || norm.includes('جمهور') || norm.includes('رسمي')) && !norm.includes('خصم') && !norm.includes('صافي')) {
+							this.detectedPrice = idx;
+						} else if (norm.includes('خصم') || norm.includes('discount') || norm.includes('%') || norm.includes('نسبة')) {
+							this.detectedDiscount = idx;
+						}
+					});
+				},
+				async submitBulkUpload(form) {
+					if (this.selectedFiles.length === 0) {
+						alert('يرجى اختيار ملف أو أكثر أولاً');
+						return;
+					}
+					this.isBulkUploading = true;
+					this.uploadProgress = 10;
+					this.uploadStatusText = 'جاري رفع ' + this.selectedFiles.length + ' ملف إلى الخادم...';
+
+					const formData = new FormData();
+					if (this.selectedFiles.length === 1) {
+						formData.append('supplier_name', form.supplier_name ? form.supplier_name.value : '');
+						formData.append('col_code', this.detectedCode);
+						formData.append('col_name', this.detectedName);
+						formData.append('col_price', this.detectedPrice);
+						formData.append('col_discount', this.detectedDiscount);
+					} else if (form.supplier_name && form.supplier_name.value) {
+						formData.append('supplier_name', form.supplier_name.value);
+					}
+
+					for (let i = 0; i < this.selectedFiles.length; i++) {
+						formData.append('files', this.selectedFiles[i]);
+					}
+
+					try {
+						this.uploadProgress = 35;
+						this.uploadStatusText = 'جاري المعالجة المتوازية فائقة السرعة واستخراج أصناف المستودعات في قاعدة البيانات...';
+
+						const response = await fetch(form.action || (this.$root.dataset.base + '/upload'), {
+							method: 'POST',
+							body: formData,
+							headers: {
+								'Accept': 'application/json',
+								'X-Requested-With': 'XMLHttpRequest'
+							}
+						});
+
+						this.uploadProgress = 45;
+						let result = null;
+						try {
+							result = await response.json();
+						} catch (jsonErr) {
+							console.warn('Non-JSON response:', jsonErr);
+						}
+
+						if (response.ok && result && result.success) {
+							this.bulkUploadResults = result;
+							this.uploadStatusText = result.message || 'تم الرفع، وجارٍ قراءة الأصناف…';
+
+							// The upload now RETURNS as soon as the files are
+							// recorded; their rows are read by goroutines that
+							// outlive the request. So the bar tracks the real
+							// staging instead of the fake 35→85→100 it used to
+							// animate, and the mapping wizard is not opened until
+							// the columns have actually been detected — it would
+							// otherwise show a preview of nothing.
+							await this.awaitStaging(result.uploaded_ids || []);
+
+							this.uploadProgress = 100;
+							this.uploadStatusText = 'اكتملت قراءة الأصناف.';
+
+							if (this.autoLaunchSetup && result.uploaded_ids && result.uploaded_ids.length > 0) {
+								setTimeout(() => {
+									this.isBulkUploading = false;
+									this.uploadModal = false;
+									document.getElementById('warehouse-upload-modal')?.close();
+									this.clearSelectedFiles();
+									const firstId = parseInt(result.uploaded_ids[0], 10);
+									const queue = result.uploaded_ids.slice(1);
+									this.openMapping(firstId, queue, 1, result.uploaded_ids.length);
+								}, 500);
+							} else {
+								setTimeout(() => {
+								if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+							}, 1200);
+							}
+						} else {
+							let errMsg = 'حدث خطأ أثناء معالجة الملفات';
+							if (result) {
+								if (typeof result.error === 'string' && result.error.trim()) {
+									errMsg = result.error;
+								} else if (result.error && typeof result.error === 'object') {
+									errMsg = result.error.message || result.error.detail || JSON.stringify(result.error);
+								} else if (Array.isArray(result.errors) && result.errors.length > 0) {
+									errMsg = result.errors.join('\n');
+								} else if (typeof result.message === 'string' && result.message.trim()) {
+									errMsg = result.message;
+								}
+							} else if (!response.ok) {
+								errMsg = 'فشل الاتصال بالخادم (' + response.status + ' ' + (response.statusText || '') + ')';
+							}
+							alert(errMsg);
+							this.isBulkUploading = false;
+						}
+					} catch(err) {
+						console.error('Upload error:', err);
+						this.uploadStatusText = 'تم إرسال الملفات بنجاح، جاري تحديث الصفحة...';
+						setTimeout(() => {
+						if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+					}, 2000);
+					}
+				},
+
+				/*
+				 * awaitStaging polls until every file of the batch has been read.
+				 *
+				 * The percentage is files finished out of files uploaded, which
+				 * is the only honest figure available: the server can say a file
+				 * is done, and nothing trustworthy about how far through one it
+				 * is. Failing to reach the endpoint is not failure of the import
+				 * — the files are recorded and the parse is running regardless —
+				 * so after a run of errors this stops waiting rather than
+				 * trapping the admin in a dialog that never closes.
+				 */
+				async awaitStaging(ids) {
+					if (!ids || ids.length === 0) return;
+					const query = ids.join(',');
+					let failures = 0;
+
+					for (;;) {
+						try {
+							const res = await fetch(this.$root.dataset.base + '/staging?ids=' + encodeURIComponent(query), {
+								headers: { 'Accept': 'application/json' }
+							});
+							if (!res.ok) throw new Error('HTTP ' + res.status);
+							const data = await res.json();
+							failures = 0;
+
+							if (!data || data.ready) return;
+
+							const done = data.done || 0;
+							const total = data.total || ids.length;
+							// 45..95: the first 45 was the upload itself.
+							this.uploadProgress = 45 + Math.round((data.percent || 0) * 0.5);
+							this.uploadStatusText = 'جارٍ قراءة الأصناف… (' + done + ' / ' + total + ')';
+						} catch (e) {
+							failures++;
+							if (failures >= 5) return;
+						}
+						await new Promise((r) => setTimeout(r, 1000));
+					}
+				}
+			}"
+			class="d-flex flex-col gap-6 max-w-7xl mx-auto mb-14"
+		>
+			
+			<!-- 1. Header Banner & Top Action Tabs -->
+			<div class="glass-panel mb-0 bg-surface-raised border rounded-2xl p-7 shadow-xs">
+				<div class="flex-between items-start flex-wrap gap-6">
+     <div>
+						<div class="d-flex items-center gap-3 mb-1.5">
+							<div class="w-12 h-12 rounded-2xl bg-accent-subtle text-accent flex-center text-2xl shrink-0">
+								@components.IconBuilding("icon-sm")
+							</div>
+							<div>
+								<h1 class="text-2xl font-black text-primary m-0">
+									if data.TeamView {
+										مستودعات المشرفين تحت إدارتي
+									} else if data.MineOnly {
+										مستودعاتي المرفوعة
+									} else {
+										قوائم المستودعات المؤقتة
+									}
+								</h1>
+								<span class="text-xs font-bold text-accent uppercase">
+									Temporary Warehouses & Staged Supplier Catalogs
+								</span>
+							</div>
+						</div>
+						<p class="text-sm text-secondary m-0 mt-1.5 leading-relaxed max-w-3xl">
+							if data.TeamView {
+								{ fmt.Sprintf("مستودعات %d مشرف يعملون تحت إدارتك. لا تظهر هنا مستودعاتك أنت — لها صفحة «مستودعاتي المرفوعة» — ولا مستودعات أي مشرف خارج فريقك.", data.TeamSize) }
+							} else {
+								تعرض هذه الصفحة ملفات المستودعات وكشوف الأسعار المؤقتة التي تم رفعها، والمرتبطة بعروض خصومات السوق العامة.
+							}
+						</p>
+					</div>
+
+					<!-- Top Navigation Scope Tabs + Upload Button -->
+					<div class="d-flex gap-2.5 items-center flex-wrap">
+						if !data.MineOnly {
+							<a
+								href={ templ.SafeURL(data.PageURL + "?type=") }
+								class={ "btn btn-sm px-4 py-2 rounded-lg font-bold", templ.KV("btn-primary", data.SourceFilter == ""), templ.KV("btn-secondary", data.SourceFilter != "") }
+							>
+								<span>كل المستودعات</span>
+							</a>
+							<a
+								href={ templ.SafeURL(data.PageURL + "?type=moderator") }
+								class={ "btn btn-sm px-4 py-2 rounded-lg font-bold", templ.KV("btn-primary", data.SourceFilter == "moderator"), templ.KV("btn-secondary", data.SourceFilter != "moderator") }
+							>
+								<span>مستودعات المشرفين</span>
+							</a>
+							<a
+								href={ templ.SafeURL(data.PageURL + "?type=vendor") }
+								class={ "btn btn-sm px-4 py-2 rounded-lg font-bold", templ.KV("btn-primary", data.SourceFilter == "vendor"), templ.KV("btn-secondary", data.SourceFilter != "vendor") }
+							>
+								<span>مستودعات البائعين (أداة المقارنة)</span>
+							</a>
+						}
+						<a
+							href={ templ.SafeURL(data.PageURL + "/upload") }
+							class="btn btn-primary btn-sm inline-flex items-center gap-1.5 font-black px-5 py-2.5 rounded-lg text-decoration-none shadow-2xs"
+						>
+							@components.IconUpload("icon-xs")
+							<span>رفع كشوف ومستودعات جديدة</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Notice Banner -->
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert rounded-2xl font-bold",
+						templ.KV("alert-success", data.NoticeType == "success"),
+						templ.KV("alert-danger", data.NoticeType == "error"),
+						templ.KV("alert-info", data.NoticeType != "success" && data.NoticeType != "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Active Session Resumption Banner (WO-40) -->
+			if data.ActiveRun != nil {
+				@AdminTempWarehouseActiveSessionCard(data.ActiveRun, data.Base, lang)
+			}
+
+			<!-- 2. 4 Stat Metric Cards -->
+			<div class="d-grid grid-auto-fit-md gap-4">
+				<!-- Card 1: Total Items -->
+				<div class="glass-panel mb-0 p-5 border rounded-2xl bg-surface-raised shadow-xs text-center">
+					<div class="tabular-nums text-4xl font-black text-accent leading-tight">
+						{ fmt.Sprintf("%d", data.TotalRows) }
+					</div>
+					<div class="text-sm font-bold text-secondary mt-1.5">
+						إجمالي الأصناف المرفوعة
+					</div>
+				</div>
+
+				<!-- Card 2: Total Files -->
+				<div class="glass-panel mb-0 p-5 border rounded-2xl bg-surface-raised shadow-xs text-center">
+					<div class="tabular-nums text-4xl font-black text-emerald leading-tight">
+						{ fmt.Sprintf("%d", data.TotalCount) }
+					</div>
+					<div class="text-sm font-bold text-secondary mt-1.5">
+						إجمالي ملفات الموردين
+					</div>
+				</div>
+
+				<!-- Card 3: Active Warehouses -->
+				<div class="glass-panel mb-0 p-5 border rounded-2xl bg-surface-raised shadow-xs text-center">
+					<div class="tabular-nums text-4xl font-black text-emerald leading-tight">
+						{ fmt.Sprintf("%d", data.ActiveCount) }
+					</div>
+					<div class="text-sm font-bold text-secondary mt-1.5">
+						المستودعات النشطة
+					</div>
+				</div>
+
+				<!-- Card 4: Archived Warehouses -->
+				<div class="glass-panel mb-0 p-5 border rounded-2xl bg-surface-raised shadow-xs text-center">
+					<div class="tabular-nums text-4xl font-black text-muted leading-tight">
+						{ fmt.Sprintf("%d", data.ArchivedCount) }
+					</div>
+					<div class="text-sm font-bold text-secondary mt-1.5">
+						المستودعات المؤرشفة
+					</div>
+				</div>
+			</div>
+
+			<!-- 3. Search & Status Tabs Bar -->
+			<div class="filter-bar">
+				<form method="GET" action={ templ.SafeURL(data.PageURL) } class="flex-between items-center flex-wrap gap-4 m-0">
+					if !data.MineOnly {
+						<input type="hidden" name="type" value={ data.SourceFilter } />
+					}
+					if data.SortBy != "" {
+						<input type="hidden" name="sort" value={ data.SortBy } />
+					}
+					if data.SortOrder != "" {
+						<input type="hidden" name="order" value={ data.SortOrder } />
+					}
+
+					<!-- Search Input -->
+					<div class="relative min-w-60 flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ data.Query }
+							class="form-input ps-9 text-sm h-10 w-full rounded-lg"
+							placeholder="بحث باسم المورد / المستودع..."
+						/>
+						<div class="absolute start-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none">
+							@components.IconSearch("icon-xs")
+						</div>
+					</div>
+
+					if data.TeamView && len(data.TeamMembers) > 0 {
+						<select name="uploader" class="form-input text-sm h-10 rounded-lg min-w-56">
+							<option value="">كل المشرفين تحت إدارتي</option>
+							for _, m := range data.TeamMembers {
+								<option value={ fmt.Sprintf("%d", m.UserID) } selected?={ data.UploaderFilter == fmt.Sprintf("%d", m.UserID) }>
+									{ m.Name }
+								</option>
+							}
+						</select>
+					} else if !data.MineOnly && len(data.Uploaders) > 0 {
+						<select name="uploader" class="form-input text-sm h-10 rounded-lg min-w-56">
+							<option value="">كل المشرفين والبائعين</option>
+							for _, u := range data.Uploaders {
+								<option value={ fmt.Sprintf("%d", u.UserID) } selected?={ data.UploaderFilter == fmt.Sprintf("%d", u.UserID) }>
+									{ u.Name }
+								</option>
+							}
+						</select>
+					}
+
+					<!-- Status Pill Tabs -->
+					<div class="d-flex items-center gap-2">
+						<div class="d-flex bg-surface-sunken border rounded-lg p-0.5 gap-0.5">
+							<a
+								href={ templ.SafeURL(tempWarehouseFilterURL(data, "ready")) }
+								class={ "btn btn-sm px-3 py-1.5 text-xs rounded-md", templ.KV("btn-primary font-black", data.StatusFilter == "ready"), templ.KV("btn-ghost text-secondary", data.StatusFilter != "ready") }
+							>
+								<span>النشطة</span>
+							</a>
+							<a
+								href={ templ.SafeURL(tempWarehouseFilterURL(data, "archived")) }
+								class={ "btn btn-sm px-3 py-1.5 text-xs rounded-md", templ.KV("btn-primary font-black", data.StatusFilter == "archived"), templ.KV("btn-ghost text-secondary", data.StatusFilter != "archived") }
+							>
+								<span>المؤرشفة</span>
+							</a>
+							<a
+								href={ templ.SafeURL(tempWarehouseFilterURL(data, "")) }
+								class={ "btn btn-sm px-3 py-1.5 text-xs rounded-md", templ.KV("btn-primary font-black", data.StatusFilter == ""), templ.KV("btn-ghost text-secondary", data.StatusFilter != "") }
+							>
+								<span>الكل</span>
+							</a>
+						</div>
+
+						<button type="submit" class="btn btn-primary btn-sm d-flex items-center gap-1.5 h-10 px-5 font-black rounded-lg">
+							@components.IconSearch("icon-xs")
+							<span>بحث</span>
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- 4. Bulk Actions Toolbar (Sticky / Visible on Selection) -->
+			<div x-show="selectedIds.length > 0" x-cloak class="warehouse-bulk-bar">
+				<form id="warehouse-bulk-form" method="POST" action={ templ.SafeURL(data.Base + "/bulk") } class="w-full flex-between items-center flex-wrap gap-3 m-0">
+					<input type="hidden" name="bulk_action" id="bulk-action-input" value=""/>
+					<input type="hidden" name="selected_ids" id="bulk-selected-ids-input" value=""/>
+
+					<div class="warehouse-bulk-info">
+						<div class="w-8 h-8 rounded-lg bg-accent-subtle text-accent flex-center font-black text-sm">
+							@components.IconCheck("icon-xs")
+						</div>
+						<div class="d-flex items-center gap-2">
+							<span class="badge badge-sky font-black text-xs px-2.5 py-1" x-text="'تم تحديد ' + selectedIds.length + ' مستودع'"></span>
+							<span class="text-xs text-secondary font-bold">إجراءات جماعية موحدة على المستودعات المحددة:</span>
+						</div>
+					</div>
+
+					<div class="warehouse-bulk-actions">
+						<button
+							type="button"
+							@click="submitBulk('archive')"
+							class="btn btn-secondary btn-sm font-black text-xs gap-1"
+							title="أرشفة كافة المستودعات المحددة"
+						>
+							@components.IconFolder("icon-xs")
+							<span>أرشفة المحددة</span>
+						</button>
+
+						<button
+							type="button"
+							@click="submitBulk('unarchive')"
+							class="btn btn-secondary btn-sm font-black text-xs text-emerald gap-1"
+							title="تفعيل واسترجاع كافة المستودعات المحددة"
+						>
+							@components.IconRefresh("icon-xs")
+							<span>تفعيل / استرجاع</span>
+						</button>
+
+						<button
+							type="button"
+							@click="submitBulk('delete')"
+							class="btn btn-secondary btn-sm font-black text-xs text-danger gap-1"
+							title="حذف كافة المستودعات المحددة نهائياً"
+						>
+							@components.IconTrash("icon-xs")
+							<span>حذف المحددة</span>
+						</button>
+
+						<button
+							type="button"
+							@click="clearSelection()"
+							class="btn btn-ghost btn-sm text-xs font-bold text-muted"
+						>
+							إلغاء التحديد
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- 5. Table Surface -->
+			<div class="glass-panel mb-0 border rounded-2xl p-0 overflow-hidden bg-surface-raised shadow-xs">
+				if len(data.Items) == 0 {
+					<div class="text-center p-16">
+						<div class="w-14 h-14 rounded-full bg-surface-sunken text-muted flex-center mx-auto mb-4 text-2xl">
+							@components.IconPackage("icon-sm")
+						</div>
+						<h3 class="text-lg font-black text-primary mb-1.5">
+							لا توجد مستودعات مؤقتة مطابقة
+						</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto mb-6">
+							يمكنك رفع كشف أسعار ومستودع جديد بالنقر على زر الرفع أعلاه.
+						</p>
+						<button type="button" data-modal-open="warehouse-upload-modal" @click="uploadModal = true" class="btn btn-primary btn-sm font-black rounded-lg">
+							رفع كشف مستودع جديد الآن
+						</button>
+					</div>
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 w-full text-xs">
+							<thead>
+								<tr>
+									<th class="w-10 text-center">
+										<input
+											type="checkbox"
+											@change="toggleSelectAll($event)"
+											:checked="selectAll"
+											class="form-checkbox cursor-pointer"
+											title="تحديد أو إلغاء تحديد كل المستودعات"
+										/>
+									</th>
+									<th class="w-10 text-center">#</th>
+									<th class="min-w-[180px]">
+										<a href={ templ.SafeURL(tempWarehouseSortURL(data, "supplier")) } class="d-flex items-center justify-between text-inherit text-decoration-none font-black gap-1">
+											<span>اسم المورد / الملف</span>
+											if data.SortBy == "supplier" {
+												if data.SortOrder == "asc" {
+													<span class="text-accent font-black">▲</span>
+												} else {
+													<span class="text-accent font-black">▼</span>
+												}
+											} else {
+												<span class="text-muted opacity-40">⇅</span>
+											}
+										</a>
+									</th>
+									if !data.MineOnly {
+										<th class="min-w-[130px]">
+											<a href={ templ.SafeURL(tempWarehouseSortURL(data, "uploader")) } class="d-flex items-center justify-between text-inherit text-decoration-none font-black gap-1">
+												<span>المشرف / المورد</span>
+												if data.SortBy == "uploader" {
+													if data.SortOrder == "asc" {
+														<span class="text-accent font-black">▲</span>
+													} else {
+														<span class="text-accent font-black">▼</span>
+													}
+												} else {
+													<span class="text-muted opacity-40">⇅</span>
+												}
+											</a>
+										</th>
+									}
+									<th class="w-24">
+										<a href={ templ.SafeURL(tempWarehouseSortURL(data, "type")) } class="d-flex items-center justify-between text-inherit text-decoration-none font-black gap-1">
+											<span>النوع</span>
+											if data.SortBy == "type" {
+												if data.SortOrder == "asc" {
+													<span class="text-accent font-black">▲</span>
+												} else {
+													<span class="text-accent font-black">▼</span>
+												}
+											} else {
+												<span class="text-muted opacity-40">⇅</span>
+											}
+										</a>
+									</th>
+									<th class="w-28 text-center">
+										<a href={ templ.SafeURL(tempWarehouseSortURL(data, "rows")) } class="d-flex items-center justify-center text-inherit text-decoration-none font-black gap-1">
+											<span>عدد الأصناف</span>
+											if data.SortBy == "rows" {
+												if data.SortOrder == "asc" {
+													<span class="text-accent font-black">▲</span>
+												} else {
+													<span class="text-accent font-black">▼</span>
+												}
+											} else {
+												<span class="text-muted opacity-40">⇅</span>
+											}
+										</a>
+									</th>
+									<th class="w-36">
+										<a href={ templ.SafeURL(tempWarehouseSortURL(data, "date")) } class="d-flex items-center justify-between text-inherit text-decoration-none font-black gap-1">
+											<span>تاريخ الرفع</span>
+											if data.SortBy == "date" || data.SortBy == "" {
+												if data.SortOrder == "asc" {
+													<span class="text-accent font-black">▲</span>
+												} else {
+													<span class="text-accent font-black">▼</span>
+												}
+											} else {
+												<span class="text-muted opacity-40">⇅</span>
+											}
+										</a>
+									</th>
+									<th class="col-actions text-center min-w-[210px]">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for idx, item := range data.Items {
+									<tr :class={ fmt.Sprintf("isSelected(%d) ? 'warehouse-row-selected' : ''", item.ID) }>
+										<td class="text-center align-middle">
+											<input
+												type="checkbox"
+												value={ fmt.Sprintf("%d", item.ID) }
+												x-model="selectedIds"
+												@change="updateSelectState()"
+												class="warehouse-row-checkbox form-checkbox cursor-pointer"
+												title="تحديد هذا المستودع"
+											/>
+										</td>
+										<td class="tabular-nums text-muted text-xs text-center align-middle">
+											{ fmt.Sprintf("%d", (data.Page-1)*data.PerPage + idx + 1) }
+										</td>
+										<td class="align-middle">
+											<div class="d-flex items-center gap-2 flex-wrap">
+												<div class="font-black text-primary text-sm leading-snug">
+													{ item.SupplierName }
+												</div>
+												if item.Status == "archived" {
+													<span class="badge badge-rose font-black text-2xs px-2 py-0.5 rounded-md">مؤرشف</span>
+												}
+											</div>
+											if item.Status == "archived" && item.ArchiveReason != "" {
+												<div class="text-3xs text-secondary mt-0.5" title={ item.ArchiveReason }>
+													{ item.ArchiveReason }
+												</div>
+											}
+											if item.OriginalFilename != "" && item.OriginalFilename != item.SupplierName {
+												<div class="tabular-nums text-2xs text-muted font-mono mt-0.5 truncate max-w-xs" title={ item.OriginalFilename }>
+													{ item.OriginalFilename }
+												</div>
+											}
+										</td>
+										if !data.MineOnly {
+											<td class="align-middle">
+												<div class="font-bold text-primary text-xs">
+													if item.UploaderName != "" {
+														{ item.UploaderName }
+													} else {
+														—
+													}
+												</div>
+												if item.OrgName != "" {
+													<div class="text-2xs text-muted mt-0.5 truncate max-w-xs">{ item.OrgName }</div>
+												}
+											</td>
+										}
+										<td class="align-middle">
+											if item.SourceType == "vendor" {
+												<span class="badge badge-amber font-black text-2xs px-2 py-0.5 rounded-md">أداة المقارنة</span>
+												if item.Visibility == "public" {
+													<div class="mt-0.5"><span class="badge badge-emerald font-bold text-3xs px-1.5 py-0.5 rounded">عام</span></div>
+												} else {
+													<div class="mt-0.5"><span class="badge badge-slate font-bold text-3xs px-1.5 py-0.5 rounded">خاص</span></div>
+												}
+											} else {
+												<span class="badge badge-sky font-black text-2xs px-2 py-0.5 rounded-md">مستودع مشرف</span>
+											}
+										</td>
+										<td class="align-middle text-center">
+											<span class="badge badge-sky font-black text-xs tabular-nums px-2.5 py-1 rounded-md">
+												{ fmt.Sprintf("%d صنف", item.RowCount) }
+											</span>
+										</td>
+										<td class="tabular-nums text-2xs text-muted whitespace-nowrap align-middle">
+											{ item.CreatedAt.Format("2006-01-02 03:04 PM") }
+										</td>
+										<td class="col-actions align-middle">
+											<div class="table-actions d-flex items-center justify-center gap-1.5 flex-wrap">
+												<!-- Review & Mapping Setup Modal -->
+												<button
+													type="button"
+													@click.stop={ fmt.Sprintf("openMapping(%d, [], 1, 1)", item.ID) }
+													class="btn btn-primary btn-xs font-black px-2.5 py-1 rounded-md text-xs d-inline-flex items-center gap-1 shadow-xs"
+													title="مراجعة وضبط وتأكيد تعيين أعمدة المستودع"
+												>
+													@components.IconSliders("icon-2xs")
+													<span>مراجعة</span>
+												</button>
+
+												<!-- View Items Button -->
+												<button
+													type="button"
+													@click.stop={ fmt.Sprintf("openItems(%d, %q, %d)", item.ID, item.SupplierName, item.RowCount) }
+													class="btn btn-secondary btn-xs font-bold px-2 py-1 rounded-md text-accent text-xs d-inline-flex items-center gap-1"
+													title="عرض وفحص كافة أصناف هذا المستودع"
+												>
+													@components.IconPackage("icon-2xs")
+													<span>الأصناف</span>
+												</button>
+
+												<!-- Download XLSX -->
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("%s/%d/export", data.Base, item.ID)) }
+													class="btn btn-secondary btn-xs font-bold px-2 py-1 rounded-md text-emerald text-xs d-inline-flex items-center gap-1"
+													title="تنزيل كشف المستودع بصيغة Excel"
+												>
+													@components.IconDownload("icon-2xs")
+													<span>XLSX</span>
+												</a>
+
+												<!-- Toggle Archive -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%d/toggle-archive", data.Base, item.ID)) } class="inline m-0">
+													if item.Status == "archived" {
+														<button type="submit" class="btn btn-secondary btn-xs font-bold px-2 py-1 rounded-md text-xs text-emerald" title="إعادة تفعيل المستودع بالخصومات">
+															@components.IconRefresh("icon-2xs")
+															<span>تفعيل</span>
+														</button>
+													} else {
+														<button type="submit" class="btn btn-secondary btn-xs font-bold px-2 py-1 rounded-md text-xs text-muted" title="أرشفة المستودع">
+															@components.IconFolder("icon-2xs")
+															<span>أرشفة</span>
+														</button>
+													}
+												</form>
+
+												<!-- Delete Warehouse -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%d/delete", data.Base, item.ID)) } data-confirm="هل أنت متأكد تماماً من حذف هذا المستودع وكافة أصنافه نهائياً؟" class="inline m-0">
+													<button type="submit" class="btn btn-secondary btn-xs font-bold px-2 py-1 rounded-md text-danger text-xs" title="حذف المستودع بالكامل">
+														@components.IconTrash("icon-2xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     data.PageURL,
+							QueryValues: tempWarehouseCleanQuery(data),
+						})
+					}
+				}
+			</div>
+
+			@AdminTempWarehousesModals(data)
+		</div>
+	}
+}

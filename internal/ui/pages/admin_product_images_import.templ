@@ -1,0 +1,319 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// imageImportStep maps the session phase onto the shared wizard rail so this
+// importer reads with the same 1-2-3 numbering as every other one.
+func imageImportStep(view AdminProductImagesImportView) Step {
+	if view.Session == nil {
+		return StepFile
+	}
+	switch view.Session.Phase {
+	case AdminImagePhaseUpload:
+		return StepFile
+	case AdminImagePhaseMapping:
+		return StepColumns
+	default:
+		return StepResults
+	}
+}
+
+templ AdminProductImagesImportPage(view AdminProductImagesImportView, lang, dir string) {
+	@layouts.AdminShell("استرداد صور المنتجات أو الكتالوج الرسمي | Dawa24", "product_images_import", lang, dir) {
+		<div class="page-container">
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconImage("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">استرداد صور المنتجات أو الكتالوج الرسمي</h1>
+							<p class="text-sm text-secondary m-0">ارفع ملف Excel أو CSV يحتوي على كود الصنف (SKU) أو الباركود ورابط الصورة لتحميلها وربطها بالكتالوج المعتمد تلقائياً</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href="/admin/products/images/import/sample.xlsx" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconDownload("icon-xs")
+							<span>نموذج Excel</span>
+						</a>
+						<a href="/admin/products/images/import/sample.csv" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconDownload("icon-xs")
+							<span>نموذج CSV</span>
+						</a>
+						<a href="/admin/products" class="btn btn-primary btn-sm font-bold gap-1">
+							@components.IconPackage("icon-xs")
+							<span>كتالوج الأدوية المعتمدة</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="wizard">
+				@WizardRail(WizardRailFor(imageImportStep(view), StepFile, StepColumns, StepResults))
+
+				if view.NoticeMsg != "" {
+					<div
+						class={ "alert",
+							templ.KV("alert-danger", view.NoticeType == "error"),
+							templ.KV("alert-success", view.NoticeType != "error") }
+						role="alert"
+					>
+						if view.NoticeType == "error" {
+							@components.IconAlert("icon-xs")
+						} else {
+							@components.IconCheckCircle("icon-xs")
+						}
+						<span>{ view.NoticeMsg }</span>
+					</div>
+				}
+
+				if view.Session == nil || view.Session.Phase == AdminImagePhaseUpload {
+					@adminImageUploadStage(view)
+				} else if view.Session.Phase == AdminImagePhaseMapping {
+					@adminImageMappingStage(view)
+				} else if view.Session.Phase == AdminImagePhaseProcessing {
+					@adminImageProcessingStage(view)
+				} else {
+					@adminImageCompletedStage(view)
+				}
+			</div>
+		</div>
+	}
+}
+
+templ adminImageUploadStage(view AdminProductImagesImportView) {
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">1. اختر ملف صور المنتجات</h2>
+		<p class="wiz-sub">
+			يجب أن يحتوي ملف Excel (.xlsx, .xls) أو CSV على عمود كود الصنف (SKU) أو الباركود، وعمود رابط الصورة (Image URL).
+			ستراجع طريقة التعريف وربط الأعمدة في الخطوة التالية قبل بدء التنزيل.
+		</p>
+		<form method="POST" action="/admin/products/images/import/upload" enctype="multipart/form-data" class="stack-md">
+			<label class="wiz-drop" id="image-drop">
+				<input type="file" name="file" accept=".xlsx,.xls,.csv" required id="image-file-input"/>
+				<span class="wiz-drop-icon" aria-hidden="true">@components.IconUpload("icon-sm")</span>
+				<span class="wiz-drop-title" id="image-drop-title">اسحب الملف إلى هنا أو اضغط للاختيار</span>
+				<span class="wiz-drop-text" id="image-drop-text">الصيغ المدعومة: Excel و CSV</span>
+			</label>
+			<div class="wiz-actions">
+				<span class="wiz-actions-note">لن يبدأ أي تنزيل قبل تأكيدك لربط الأعمدة.</span>
+				<button type="submit" class="btn btn-primary font-bold">
+					@components.IconUpload("icon-xs")
+					<span>تحليل الملف ومتابعة</span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	if len(view.Sessions) > 0 {
+		<div class="glass-panel p-0 overflow-hidden">
+			<div class="p-4 border-b flex-between items-center">
+				<h3 class="text-sm font-black text-primary m-0">سجل جلسات استرداد الصور</h3>
+				<span class="badge badge-slate text-xs font-bold">{ fmt.Sprintf("%d جلسة", len(view.Sessions)) }</span>
+			</div>
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>الملف</th>
+							<th class="cell-nowrap">التاريخ</th>
+							<th class="col-num">الصفوف</th>
+							<th class="col-num">الناجحة</th>
+							<th class="col-num">غير موجودة</th>
+							<th class="col-num">الأخطاء</th>
+							<th>الحالة</th>
+							<th class="col-actions">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, sess := range view.Sessions {
+							<tr>
+								<td class="cell-title">{ sess.Filename }</td>
+								<td class="cell-nowrap text-xs text-muted tabular-nums">{ sess.CreatedAt.Format("2006-01-02 03:04 PM") }</td>
+								<td class="col-num font-bold">{ fmt.Sprintf("%d", sess.TotalRows) }</td>
+								<td class="col-num"><span class="badge badge-emerald text-xs font-bold">{ fmt.Sprintf("%d", sess.SuccessRows) }</span></td>
+								<td class="col-num"><span class="badge badge-amber text-xs font-bold">{ fmt.Sprintf("%d", sess.NotFoundRows) }</span></td>
+								<td class="col-num"><span class="badge badge-rose text-xs font-bold">{ fmt.Sprintf("%d", sess.ErrorRows) }</span></td>
+								<td>
+									if sess.Phase == AdminImagePhaseCompleted {
+										<span class="badge badge-emerald text-xs font-bold">مكتمل</span>
+									} else if sess.Phase == AdminImagePhaseProcessing {
+										<span class="badge badge-sky text-xs font-bold">جارٍ التحميل…</span>
+									} else if sess.Phase == AdminImagePhaseFailed {
+										<span class="badge badge-rose text-xs font-bold">فشل</span>
+									} else {
+										<span class="badge badge-slate text-xs font-bold">بانتظار التأكيد</span>
+									}
+								</td>
+								<td class="col-actions">
+									<div class="table-actions">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/products/images/import/%s", sess.ID)) } class="btn btn-secondary btn-sm has-label font-bold">
+											<span>فتح</span>
+										</a>
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/products/images/import/%s/cancel", sess.ID)) } data-confirm="هل أنت متأكد من حذف هذه الجلسة؟">
+											<button type="submit" class="btn btn-secondary text-danger" title="حذف الجلسة">
+												@components.IconTrash("icon-xs")
+											</button>
+										</form>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		(function () {
+			var input = document.getElementById('image-file-input');
+			var drop = document.getElementById('image-drop');
+			var title = document.getElementById('image-drop-title');
+			var text = document.getElementById('image-drop-text');
+			if (!input || !drop) return;
+			input.addEventListener('change', function () {
+				if (!this.files || !this.files[0]) return;
+				var f = this.files[0];
+				title.textContent = f.name;
+				text.textContent = 'الحجم: ' + (f.size / 1048576).toFixed(2) + ' ميجابايت — جاهز للتحليل';
+				drop.classList.add('is-over');
+			});
+			['dragenter', 'dragover'].forEach(function (n) {
+				drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.add('is-dragover'); });
+			});
+			['dragleave', 'drop'].forEach(function (n) {
+				drop.addEventListener(n, function (e) { e.preventDefault(); drop.classList.remove('is-dragover'); });
+			});
+		})();
+	</script>
+}
+
+templ adminImageMappingStage(view AdminProductImagesImportView) {
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">2. تأكيد ربط أعمدة الملف</h2>
+		<p class="wiz-sub">
+			الملف: <strong>{ view.Session.Filename }</strong> — تحقّق من عمود كود الصنف وعمود رابط الصورة قبل بدء التنزيل والربط.
+		</p>
+
+		@components.ImportFilePreview(view.Session.Filename, view.Session.Headers, view.Session.SampleRows)
+
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/products/images/import/%s/mapping", view.Session.ID)) } class="stack-lg">
+			<div class="p-4 rounded-xl border mb-2 bg-surface-sunken">
+				<label class="form-label text-sm font-black text-primary mb-2 d-block">
+					طريقة تعريف ومطابقة المنتجات في الملف:
+				</label>
+				<div class="d-flex items-center gap-6 flex-wrap">
+					<label class="d-inline-flex items-center gap-2 cursor-pointer font-bold text-sm">
+						<input
+							type="radio"
+							name="identifier_type"
+							value="sku"
+							checked?={ view.Session.IdentifierType != "barcode" }
+							class="form-check-input"
+						/>
+						<span>كود الصنف (SKU)</span>
+					</label>
+					<label class="d-inline-flex items-center gap-2 cursor-pointer font-bold text-sm">
+						<input
+							type="radio"
+							name="identifier_type"
+							value="barcode"
+							checked?={ view.Session.IdentifierType == "barcode" }
+							class="form-check-input"
+						/>
+						<span>الباركود المرتبط بالمنتج في الكتالوج الرسمي (Barcode)</span>
+					</label>
+				</div>
+				<p class="text-xs text-muted mt-2 mb-0">
+					اختر مطابقة الصور بكود الصنف المعتمد (SKU)، أو باستخدام الباركود المرتبط بالصنف في الكتالوج الرسمي.
+				</p>
+			</div>
+
+			<div class="wiz-map">
+				<div class="wiz-map-item">
+					<label class="wiz-map-label">عمود معرّف الصنف (كود SKU أو الباركود) *</label>
+					<select name="sku_col" class="form-select" required>
+						for idx, h := range view.Session.Headers {
+							<option value={ fmt.Sprintf("%d", idx) } selected?={ idx == view.Session.DetectedSKUCol }>
+								{ fmt.Sprintf("العمود %d: %s", idx+1, h) }
+							</option>
+						}
+					</select>
+				</div>
+				<div class="wiz-map-item">
+					<label class="wiz-map-label">عمود رابط صورة المنتج (Image URL) *</label>
+					<select name="url_col" class="form-select" required>
+						for idx, h := range view.Session.Headers {
+							<option value={ fmt.Sprintf("%d", idx) } selected?={ idx == view.Session.DetectedURLCol }>
+								{ fmt.Sprintf("العمود %d: %s", idx+1, h) }
+							</option>
+						}
+					</select>
+				</div>
+			</div>
+
+			<div class="wiz-actions">
+				<a href="/admin/products/images/import" class="btn btn-ghost">إلغاء والعودة</a>
+				<button type="submit" class="btn btn-primary font-bold">
+					@components.IconImage("icon-xs")
+					<span>تأكيد وبدء تنزيل وربط الصور</span>
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ adminImageProcessingStage(view AdminProductImagesImportView) {
+	<div class="glass-panel p-6" id="image-processing-card">
+		<h2 class="wiz-head d-flex items-center gap-2">
+			@components.IconRefresh("icon-sm")
+			<span>جارٍ تنزيل الصور وربطها بالكتالوج…</span>
+		</h2>
+		<p class="wiz-sub" id="progress-note">{ view.Session.ProgressNote }</p>
+
+		<div class="wiz-progress">
+			<div class="wiz-progress-track">
+				<div class="wiz-progress-fill" id="progress-bar-fill" style={ fmt.Sprintf("width:%d%%", view.Session.Progress) }></div>
+			</div>
+			<div class="wiz-progress-meta">
+				<span id="progress-percent-label">{ fmt.Sprintf("%d%%", view.Session.Progress) }</span>
+				<span>إجمالي { fmt.Sprintf("%d", view.Session.TotalRows) } صنفاً</span>
+			</div>
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+			(function () {
+				var sessionID = window.location.pathname.split('/').pop();
+				var interval = setInterval(function () {
+					fetch('/admin/products/images/import/' + sessionID + '/progress')
+						.then(function (res) { return res.json(); })
+						.then(function (data) {
+							if (!data || !data.success) return;
+							var p = data.progress || 0;
+							var fill = document.getElementById('progress-bar-fill');
+							var label = document.getElementById('progress-percent-label');
+							var note = document.getElementById('progress-note');
+							if (fill) fill.style.width = p + '%';
+							if (label) label.textContent = p + '%';
+							if (note && data.progress_note) note.textContent = data.progress_note;
+							if (data.phase === 'completed' || data.phase === 'failed') {
+								clearInterval(interval);
+								setTimeout(function () { window.location.reload(); }, 600);
+							}
+						})
+						.catch(function () {});
+				}, 1500);
+			})();
+		</script>
+	</div>
+}
+
+

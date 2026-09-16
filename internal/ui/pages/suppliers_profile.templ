@@ -1,0 +1,305 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SupplierProfile(lang, dir string, data SupplierProfileData) {
+	@layouts.ShellFor(fmt.Sprintf(i18n.T(lang, "supplier_profile.page_title"), data.Org.TradeName.Get(i18n.Lang(lang))), "suppliers", lang, dir, authctx.FromContext(ctx)) {
+		<div class="sp-container">
+			
+			<!-- Breadcrumbs -->
+			<nav>
+				{{ actor := authctx.FromContext(ctx) }}
+				{{ dashboardURL := "/customer/dashboard" }}
+				{{ if actor.IsVendor() {
+					dashboardURL = "/vendor/dashboard"
+				} else if actor.IsStaff {
+					dashboardURL = "/admin/dashboard"
+				} }}
+				<a href={ templ.SafeURL(dashboardURL) }>{ i18n.T(lang, "nav.dashboard") }</a>
+				<span>/</span>
+				<a href="/suppliers">{ i18n.T(lang, "nav.suppliers") }</a>
+				<span>/</span>
+				<span>{ data.Org.TradeName.Get(i18n.Lang(lang)) }</span>
+			</nav>
+
+			<!-- 1. Verified Supplier Flagship Header Banner -->
+			<div class="sp-hero-card">
+				<div class="sp-hero-identity">
+					<div class="sp-hero-logo">
+						@components.IconBuilding("icon-sm")
+					</div>
+					<div class="sp-hero-details">
+						<div class="sp-hero-title-row">
+							<h1 class="sp-hero-title">
+								{ data.Org.TradeName.Get(i18n.Lang(lang)) }
+							</h1>
+							<span class="badge badge-emerald text-xs font-bold">
+								@components.IconCheckCircle("icon-xs")
+								<span>{ i18n.T(lang, "supplier_profile.verified_distributor") }</span>
+							</span>
+						</div>
+
+						if data.Org.LegalName != "" && data.Org.LegalName != data.Org.TradeName.Get(i18n.Lang(lang)) {
+							<p class="sp-hero-legal-name">
+								{ data.Org.LegalName }
+							</p>
+						}
+
+						<!-- Credentials & Real Rating Strip -->
+						<div class="sp-hero-meta-row">
+							if data.ReviewCount > 0 {
+								<div class="row-center-xs">
+									@components.RatingStars(data.Rating, data.ReviewCount)
+								</div>
+							} else {
+								<span class="text-xs text-muted">{ i18n.T(lang, "supplier_profile.verified_note") }</span>
+							}
+							if data.Org.CommercialRegister != "" {
+								<span>•</span>
+								<span class="tabular-nums">{ fmt.Sprintf(i18n.T(lang, "supplier_profile.cr_label"), data.Org.CommercialRegister) }</span>
+							}
+							if data.Org.TaxNumber != "" {
+								<span>•</span>
+								<span class="tabular-nums">{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tax_label"), data.Org.TaxNumber) }</span>
+							}
+						</div>
+					</div>
+				</div>
+
+				<!-- Right Action Buttons -->
+				<div class="sp-hero-actions">
+					<div class="row-center-sm">
+						<a href="https://wa.me/201012345678" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+							@components.IconWhatsApp("icon-xs")
+							<span>{ i18n.T(lang, "supplier_profile.whatsapp") }</span>
+						</a>
+
+						<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/suppliers/%d/follow", data.Org.ID)) }>
+							if data.IsFollowing {
+								<button type="submit" class="btn btn-secondary btn-sm">
+									@components.IconHeart("icon-xs")
+									<span>{ i18n.T(lang, "supplier_profile.unfollow") }</span>
+								</button>
+							} else {
+								<button type="submit" class="btn btn-primary btn-sm">
+									@components.IconHeart("icon-xs")
+									<span>{ i18n.T(lang, "supplier_profile.follow") }</span>
+								</button>
+							}
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<!-- 2. Operational & Coverage Live Command Strip -->
+			<div class="sp-ops-strip">
+				<!-- Working Hours -->
+				<div class="sp-ops-item">
+					<div class="sp-ops-icon">
+						⏱
+					</div>
+					<div class="sp-ops-content">
+						<div class="sp-ops-label">
+							if data.IsOpenNow {
+								<span class="badge badge-emerald text-xs font-bold">
+									<span></span>
+									<span>{ i18n.T(lang, "suppliers.open_now") }</span>
+								</span>
+							} else {
+								<span class="badge badge-slate text-xs font-bold">
+									<span></span>
+									<span>{ i18n.T(lang, "suppliers.closed_now") }</span>
+								</span>
+							}
+						</div>
+						<div class="sp-ops-val tabular-nums">
+							{ data.WorkingHours }
+						</div>
+					</div>
+				</div>
+
+				<!-- Coverage Days & Cold Storage -->
+				<div class="sp-ops-item">
+					<div class="sp-ops-icon">
+						@components.IconTruck("icon-sm")
+					</div>
+					<div class="sp-ops-content">
+						<div class="sp-ops-label">{ i18n.T(lang, "suppliers.coverage_days_label") }</div>
+						<div class="sp-ops-val">
+							{ data.CoverageDays }
+						</div>
+					</div>
+				</div>
+
+				<!-- Covered Areas -->
+				if len(data.CoverageAreas) > 0 {
+					<div class="sp-ops-item">
+						<div class="sp-ops-icon">
+							@components.IconMapPin("icon-sm")
+						</div>
+						<div class="sp-ops-content">
+							<div class="sp-ops-label">{ i18n.T(lang, "supplier_profile.covered_areas") }</div>
+							<div class="sp-ops-val">
+								{ strings.Join(data.CoverageAreas, ", ") }
+							</div>
+						</div>
+					</div>
+				}
+
+				<!-- Minimum Order -->
+				<div class="sp-ops-item">
+					<div class="sp-ops-icon">
+						@components.IconCreditCard("icon-sm")
+					</div>
+					<div class="sp-ops-content">
+						<div class="sp-ops-label">{ i18n.T(lang, "suppliers.min_order_label") }</div>
+						<div class="sp-ops-val tabular-nums text-primary">
+							if data.Org.MinOrderPrice.Minor() > 0 {
+								{ data.Org.MinOrderPrice.String() } { i18n.T(lang, "common.egp") }
+							} else {
+								<span class="text-emerald">{ i18n.T(lang, "suppliers.no_min_order") }</span>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 3. Navigation Tabs -->
+			<div class="tabs-nav">
+				<button type="button" class={ "tab-btn", templ.KV("active", data.ActiveTab == "catalog" || data.ActiveTab == "") } id="tab-btn-catalog" data-on-click="switchProfileTab('catalog')">
+					@components.IconPackage("icon-xs")
+					<span>{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tab_catalog"), data.TotalVariants) }</span>
+				</button>
+
+				if len(data.Sections) > 0 {
+					<button type="button" class={ "tab-btn", templ.KV("active", data.ActiveTab == "sections") } id="tab-btn-sections" data-on-click="switchProfileTab('sections')">
+						<span>@components.IconSparkles("icon-sm")</span>
+						<span>{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tab_sections"), len(data.Sections)) }</span>
+					</button>
+				}
+
+				<button type="button" class={ "tab-btn", templ.KV("active", data.ActiveTab == "policies") } id="tab-btn-policies" data-on-click="switchProfileTab('policies')">
+					@components.IconShield("icon-xs")
+					<span>{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tab_policies"), len(data.Policies)) }</span>
+				</button>
+
+				<button type="button" class={ "tab-btn", templ.KV("active", data.ActiveTab == "branches") } id="tab-btn-branches" data-on-click="switchProfileTab('branches')">
+					@components.IconBuilding("icon-xs")
+					<span>{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tab_branches"), len(data.Branches)) }</span>
+				</button>
+
+				<button type="button" class={ "tab-btn", templ.KV("active", data.ActiveTab == "reviews") } id="tab-btn-reviews" data-on-click="switchProfileTab('reviews')">
+					@components.IconUser("icon-xs")
+					<span>{ fmt.Sprintf(i18n.T(lang, "supplier_profile.tab_reviews"), data.ReviewCount) }</span>
+				</button>
+			</div>
+
+			<!-- 4. Tab 1: Catalog & Batches Content -->
+			@SupplierProfileCatalog(data, lang)
+
+			<!-- Secondary Tabs: Sections, Policies, Branches & Modals -->
+			@SupplierProfileTabs(data, lang)
+
+			<!-- 8. Tab 5: Reviews -->
+			@SupplierProfileReviewsTab(data.Reviews, data.Rating, data.ReviewCount, lang, data.ActiveTab)
+		</div>
+
+		<!-- Client Tab & View Switcher Script -->
+		<script nonce={ layouts.Nonce(ctx) }>
+			function switchProfileTab(tabName, updateUrl) {
+				if (updateUrl === undefined) updateUrl = true;
+				const tabs = ['catalog', 'sections', 'policies', 'branches', 'reviews'];
+				if (!tabs.includes(tabName)) tabName = 'catalog';
+
+				tabs.forEach(t => {
+					const btn = document.getElementById('tab-btn-' + t);
+					const panel = document.getElementById('tab-content-' + t);
+					if (btn) {
+						if (t === tabName) {
+							btn.classList.add('active');
+						} else {
+							btn.classList.remove('active');
+						}
+					}
+					if (panel) {
+						if (t === tabName) {
+							panel.classList.remove('d-none');
+						} else {
+							panel.classList.add('d-none');
+						}
+					}
+				});
+
+				try {
+					if (updateUrl) {
+						if (window.history && window.history.replaceState) {
+							window.history.replaceState(null, null, '#' + tabName);
+						} else {
+							window.location.hash = '#' + tabName;
+						}
+					}
+					sessionStorage.setItem('dawa24_active_tab_' + window.location.pathname, tabName);
+				} catch (e) {}
+			}
+
+			function restoreActiveProfileTab() {
+				var targetTab = '';
+				if (window.location.hash) {
+					targetTab = window.location.hash.replace('#', '').trim();
+				}
+				if (!targetTab) {
+					try {
+						const params = new URLSearchParams(window.location.search);
+						targetTab = params.get('tab') || '';
+					} catch (e) {}
+				}
+				if (!targetTab) {
+					try {
+						targetTab = sessionStorage.getItem('dawa24_active_tab_' + window.location.pathname) || '';
+					} catch (e) {}
+				}
+
+				if (targetTab && ['catalog', 'sections', 'policies', 'branches', 'reviews'].includes(targetTab)) {
+					switchProfileTab(targetTab, false);
+				}
+			}
+
+			(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', restoreActiveProfileTab) : restoreActiveProfileTab());
+			
+			if (!window.__dawaBound_suppliers_profile) {
+				window.__dawaBound_suppliers_profile = true;
+				window.addEventListener('hashchange', function() {
+					restoreActiveProfileTab();
+				});
+			}
+
+			function switchCatalogView(view) {
+				const tbl = document.getElementById('catalog-table-view');
+				const grd = document.getElementById('catalog-grid-view');
+				const tblBtn = document.getElementById('cat-view-table-btn');
+				const grdBtn = document.getElementById('cat-view-grid-btn');
+
+				if (view === 'grid') {
+					if (tbl) tbl.classList.add('d-none');
+					if (grd) grd.classList.remove('d-none');
+					if (tblBtn) { tblBtn.classList.remove('btn-primary'); tblBtn.classList.add('btn-secondary'); }
+					if (grdBtn) { grdBtn.classList.remove('btn-secondary'); grdBtn.classList.add('btn-primary'); }
+				} else {
+					if (tbl) tbl.classList.remove('d-none');
+					if (grd) grd.classList.add('d-none');
+					if (tblBtn) { tblBtn.classList.remove('btn-secondary'); tblBtn.classList.add('btn-primary'); }
+					if (grdBtn) { grdBtn.classList.remove('btn-primary'); grdBtn.classList.add('btn-secondary'); }
+				}
+			}
+		</script>
+		@CustomerNegotiationModal()
+	}
+}

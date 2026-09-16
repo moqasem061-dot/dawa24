@@ -1,0 +1,295 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ statCard(label string, value string) {
+	<div class="so-stat-card">
+		<div class="so-stat-value tabular-nums">{ value }</div>
+		<div class="so-stat-label">{ label }</div>
+	</div>
+}
+
+templ soSortHeader(data SmartOrderResultsData, colKey, label string) {
+	{{
+		isCurrent := data.SortBy == colKey || (data.SortBy == "" && colKey == "row")
+		nextOrder := "asc"
+		icon := "⇅"
+		if isCurrent {
+			if data.SortOrder == "desc" {
+				nextOrder = "asc"
+				icon = "▼"
+			} else {
+				nextOrder = "desc"
+				icon = "▲"
+			}
+		} else if colKey == "confidence" {
+			nextOrder = "asc"
+		} else if colKey == "qty" {
+			nextOrder = "desc"
+		}
+		href := buildSmartOrderResultsURL(data.Run.PublicID, data.Match, colKey, nextOrder, 1, data.PerPage, data.Search)
+	}}
+	<a href={ templ.SafeURL(href) }
+		class="so-sort-link"
+		title={ fmt.Sprintf("Sort by %s", label) }>
+		<span>{ label }</span>
+		<span class="so-sort-icon">{ icon }</span>
+	</a>
+}
+
+templ soFilterTab(data SmartOrderResultsData, matchKey, label string, count int) {
+	{{
+		active := (matchKey == "all" && data.Match == "") || data.Match == matchKey
+		sortBy := data.SortBy
+		sortOrder := data.SortOrder
+		if (matchKey == "matched_product" || matchKey == "matched") && sortBy == "" {
+			sortBy = "confidence"
+			sortOrder = "asc"
+		}
+		href := buildSmartOrderResultsURL(data.Run.PublicID, matchKey, sortBy, sortOrder, 1, data.PerPage, data.Search)
+	}}
+	<a href={ templ.SafeURL(href) }
+		class={ "wiz-chip", templ.KV("is-on", active), templ.KV("wiz-chip-danger", matchKey == "unmatched" && count > 0) }>
+		<span>{ label }</span>
+		<span class={ "badge", "tabular-nums", templ.KV("badge-rose", matchKey == "unmatched" && count > 0) }>{ fmt.Sprintf("%d", count) }</span>
+	</a>
+}
+
+templ SmartOrderResultsPage(lang, dir string, data SmartOrderResultsData) {
+	@layouts.ShellFor(i18n.T(lang, "smart_order.page_title"), "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="container-fluid so-results-page">
+			
+			<!-- Header Banner -->
+			<div class="so-page-header">
+				<div class="stack-sm">
+					<h1 class="so-page-title">
+						{ fmt.Sprintf(i18n.T(lang, "smart_order.results_title"), data.Run.RunNumber) }
+					</h1>
+					<p class="so-page-subtitle">
+						{ i18n.T(lang, "smart_order.results_sub") }
+					</p>
+				</div>
+				<div class="so-page-actions">
+					<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/export", data.Run.PublicID)) } class="btn btn-secondary btn-sm font-bold">
+						<span>{ i18n.T(lang, "smart_order.export_csv") }</span>
+					</a>
+					<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/review", data.Run.PublicID)) } class="btn btn-primary btn-sm fw-800 so-primary-action">
+						<span>{ i18n.T(lang, "smart_order.proceed_to_review") }</span>
+					</a>
+				</div>
+			</div>
+
+			@WizardRail(OrderRail(StepResults))
+
+			<!-- Summary Stats Grid -->
+			<div class="so-stat-grid">
+				@statCard(i18n.T(lang, "smart_order.stat_total_items"), fmt.Sprintf("%d", data.Counts.Total))
+				@statCard(i18n.T(lang, "smart_order.stat_unmatched"), fmt.Sprintf("%d", data.Counts.Unmatched))
+				@statCard(i18n.T(lang, "smart_order.stat_matched_product"), fmt.Sprintf("%d", data.Counts.MatchedProduct))
+				@statCard(i18n.T(lang, "smart_order.stat_has_supplier"), fmt.Sprintf("%d", data.Counts.MatchedSupplier))
+				@statCard(i18n.T(lang, "smart_order.stat_in_stock"), fmt.Sprintf("%d", data.Counts.AvailableStock))
+				@statCard(i18n.T(lang, "smart_order.stat_covered"), fmt.Sprintf("%d", data.Counts.CoveredBranch))
+				@statCard(i18n.T(lang, "smart_order.stat_ready"), fmt.Sprintf("%d", data.Counts.ReadyToOrder))
+				@statCard(i18n.T(lang, "smart_order.stat_est_cost"), data.Run.EstimatedTotal.String())
+			</div>
+
+			if data.Run.BudgetExceeded != nil && *data.Run.BudgetExceeded {
+				<div class="so-alert so-alert-warning">
+					<strong>تنبيه: تجاوز الميزانية المحددة</strong>
+					if data.Run.BudgetOverage != nil {
+						<span> — بزيادة { data.Run.BudgetOverage.String() }</span>
+					}
+					<div class="so-alert-detail">
+						هذا تنبيه للمتابعة فقط: لم يُحذف أي صنف ويمكنك استكمال الطلب أو تعديل الكميات.
+					</div>
+				</div>
+			}
+
+			if data.Run.AI.Enabled && data.Run.AI.LinesReviewed+data.Run.AI.CacheHits > 0 {
+				<div class="so-ai-summary">
+					<strong class="so-ai-summary-title">تحسين المطابقة بالذكاء الاصطناعي</strong>
+					<div class="so-alert-detail">
+						{ aiSummary(data.Run.AI, lang) }
+					</div>
+				</div>
+			}
+
+			@soBlockedPanel(data, lang)
+
+			<!-- Filter Tabs Bar & Search Toolbar -->
+			<div class="glass-panel so-filter-card">
+				
+				<!-- Tabs: Organised logically with Unmatched & Matched first for review -->
+				<div class="so-filter-tabs">
+					@soFilterTab(data, "all", i18n.T(lang, "smart_order.tab_all"), data.Counts.Total)
+					@soFilterTab(data, "unmatched", i18n.T(lang, "smart_order.tab_unmatched"), data.Counts.Unmatched)
+					@soFilterTab(data, "matched_product", i18n.T(lang, "smart_order.tab_matched_product"), data.Counts.MatchedProduct)
+					@soFilterTab(data, "ready_to_order", i18n.T(lang, "smart_order.tab_ready"), data.Counts.ReadyToOrder)
+					@soFilterTab(data, "blocked", i18n.T(lang, "smart_order.tab_blocked"), data.Blocked.Total())
+					@soFilterTab(data, "matched_supplier", i18n.T(lang, "smart_order.tab_has_supplier"), data.Counts.MatchedSupplier)
+					@soFilterTab(data, "available_stock", i18n.T(lang, "smart_order.tab_in_stock"), data.Counts.AvailableStock)
+					@soFilterTab(data, "covered_branch", i18n.T(lang, "smart_order.tab_covered"), data.Counts.CoveredBranch)
+					@soFilterTab(data, "price_available", i18n.T(lang, "smart_order.tab_price_available"), data.Counts.PriceAvailable)
+				</div>
+
+				<!-- Search & Rows-Per-Page Form -->
+				<form method="GET" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/results", data.Run.PublicID)) } class="so-filter-form">
+					if data.Match != "" {
+						<input type="hidden" name="match" value={ data.Match } />
+					}
+					if data.SortBy != "" {
+						<input type="hidden" name="sort" value={ data.SortBy } />
+					}
+					if data.SortOrder != "" {
+						<input type="hidden" name="order" value={ data.SortOrder } />
+					}
+
+					<div class="so-filter-search">
+						<input
+							type="text"
+							name="q"
+							value={ data.Search }
+							placeholder={ i18n.T(lang, "smart_order.search_placeholder") }
+							class="form-control"
+						/>
+					</div>
+
+					<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.PerPage) }/>
+
+					<button type="submit" class="btn btn-primary btn-sm font-bold so-filter-submit">
+						{ i18n.T(lang, "smart_order.search_btn") }
+					</button>
+
+					if data.Search != "" {
+						<a href={ templ.SafeURL(buildSmartOrderResultsURL(data.Run.PublicID, data.Match, data.SortBy, data.SortOrder, 1, data.PerPage, "")) } class="btn btn-secondary btn-sm so-filter-clear">
+							{ i18n.T(lang, "smart_order.clear_search") }
+						</a>
+					}
+				</form>
+			</div>
+
+			<!-- Main Table Card -->
+			<div class="glass-panel so-results-table-card">
+				<div class="table-responsive">
+					<table class="data-table so-results-table">
+						<thead>
+							<tr class="so-results-table-head">
+								<th class="so-col-index">
+									@soSortHeader(data, "row", i18n.T(lang, "smart_order.col_index"))
+								</th>
+								<th class="so-col-item">
+									@soSortHeader(data, "name", i18n.T(lang, "smart_order.col_raw_item"))
+								</th>
+								<th class="so-col-match">
+									@soSortHeader(data, "matched_name", i18n.T(lang, "smart_order.col_matched_product"))
+								</th>
+								<th class="so-col-status">
+									@soSortHeader(data, "method", i18n.T(lang, "smart_order.col_match_method"))
+								</th>
+								<th class="so-col-confidence">
+									@soSortHeader(data, "confidence", i18n.T(lang, "smart_order.col_confidence"))
+								</th>
+								<th class="so-col-qty">
+									@soSortHeader(data, "qty", i18n.T(lang, "smart_order.col_qty"))
+								</th>
+								<th class="so-col-actions">
+									@soSortHeader(data, "outcome", i18n.T(lang, "smart_order.col_outcome"))
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(data.Lines) == 0 {
+								<tr>
+									<td colspan="7" class="so-empty-state">
+										<div class="so-empty-title">{ i18n.T(lang, "smart_order.empty_filtered") }</div>
+										<div class="so-empty-detail">{ i18n.T(lang, "smart_order.empty_filtered_sub") }</div>
+									</td>
+								</tr>
+							}
+							for _, l := range data.Lines {
+								@smartOrderResultRow(data, l)
+							}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Pagination Bar -->
+				if data.Total > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage:  data.Page,
+						PageSize:     data.PerPage,
+						TotalCount:   data.Total,
+						BaseURL:      fmt.Sprintf("/customer/smart-order/%s/results", data.Run.PublicID),
+						QueryValues:  smartOrderResultsQuery(data),
+						AllowShowAll: true,
+					})
+				}
+			</div>
+
+			<!-- Footer Action Buttons -->
+			<div class="so-footer-actions">
+				<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/export", data.Run.PublicID)) } class="btn btn-secondary font-bold">
+					{ i18n.T(lang, "smart_order.export_csv") }
+				</a>
+				<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/review", data.Run.PublicID)) } class="btn btn-primary font-bold so-primary-action">
+					{ i18n.T(lang, "smart_order.proceed_to_review") }
+				</a>
+			</div>
+		</div>
+
+		@smartOrderScript()
+	}
+}
+
+templ soBlockedPanel(data SmartOrderResultsData, lang string) {
+	{{ blocked := data.Blocked }}
+	if blocked.Total() > 0 {
+		<details class="so-blocked-panel">
+			<summary class="so-blocked-summary">
+				<span class="so-blocked-title">
+					{ fmt.Sprintf(i18n.T(lang, "smart_order.blocked_title"), blocked.Total()) }
+				</span>
+				<span class="so-blocked-hint">
+					{ i18n.T(lang, "smart_order.blocked_hint") }
+				</span>
+			</summary>
+			<div class="so-blocked-body">
+				@soBlockedRow(data, "unmatched", "لم يُطابَق بالكتالوج", blocked.Unmatched,
+					"اربط الصنف يدوياً بالكتالوج المركزي ليصبح قابلاً للطلب.", lang)
+				@soBlockedRow(data, "no_supplier", "لا يوجد مورد", blocked.NoSupplier,
+					"الصنف مطابق لكن لا يعرضه أي مورد حالياً.", lang)
+				@soBlockedRow(data, "out_of_stock", "غير متوفر بالمخزون", blocked.OutOfStock,
+					"العرض موجود لكن رصيده صفر لدى المورد.", lang)
+				@soBlockedRow(data, "coverage_blocked", "خارج نطاق التغطية", blocked.CoverageBlocked,
+					"المورد لا يغطي فرع التسليم المختار.", lang)
+				@soBlockedRow(data, "institutional_blocked", "غير متاح مؤسسياً", blocked.InstitutionalBlocked,
+					"العمل المؤسسي لفرع الاستلام غير متصل بالأعمال المؤسسية لفروع هذا المورد، وهو نفس الشرط الذي يطبَّق عند الشراء العادي ومن الكتالوج.", lang)
+				@soBlockedRow(data, "quota_blocked", "تجاوز الكوتة المتاحة", blocked.QuotaBlocked,
+					"تجاوزت الكمية المطلوبة الحصة المتاحة لفرعك من هذا المورد.", lang)
+				@soBlockedRow(data, "below_min_qty", "أقل من الحد الأدنى للطلب", blocked.BelowMinQty,
+					"ارفع الكمية إلى الحد الأدنى الذي يشترطه المورد.", lang)
+				@soBlockedRow(data, "zero_qty", "الكمية صفر", blocked.ZeroQty,
+					"لم يُقرأ للصنف كمية من الملف؛ أدخلها يدوياً.", lang)
+			</div>
+		</details>
+	}
+}
+
+templ soBlockedRow(data SmartOrderResultsData, outcome, label string, count int, hint, lang string) {
+	if count > 0 {
+		<a class="so-blocked-row"
+			href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/results?match=%s", data.Run.PublicID, outcome)) }>
+			<span class="so-blocked-count tabular-nums">{ fmt.Sprintf("%d", count) }</span>
+			<span class="so-blocked-label">{ label }</span>
+			<span class="so-blocked-detail">{ hint }</span>
+			<span class="so-blocked-go">{ i18n.T(lang, "smart_order.resolve_arrow") }</span>
+		</a>
+	}
+}

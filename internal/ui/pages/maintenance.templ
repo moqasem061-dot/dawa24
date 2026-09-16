@@ -1,0 +1,131 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// MaintenancePageView provides view data for pages temporarily disabled by administrators.
+type MaintenancePageView struct {
+	PageName    string
+	Path        string
+	Description string
+	HomeURL     string
+	SupportURL  string
+}
+
+// MaintenancePage renders a polished, user-friendly maintenance screen for disabled routes.
+templ MaintenancePage(data MaintenancePageView, lang, dir string) {
+	{{
+		site := layouts.GetSiteSettings(ctx)
+		title := "هذه الصفحة تحت الصيانة حالياً"
+		if data.PageName != "" {
+			title = fmt.Sprintf("صفحة %s تحت الصيانة حالياً", data.PageName)
+		}
+		homeURL := data.HomeURL
+		if homeURL == "" {
+			homeURL = "/"
+		}
+	}}
+	@layouts.Base(title, lang, dir) {
+		<div class="min-h-screen d-flex flex-col justify-between py-8 px-4 sm:px-6 bg-surface-sunken">
+			<!-- Header with Logo -->
+			<div class="w-full max-w-2xl mx-auto d-flex items-center justify-between">
+				<a href={ templ.SafeURL(homeURL) } class="d-inline-flex items-center gap-2.5 text-decoration-none">
+					if site.LogoURL != "" {
+						<img src={ site.LogoURL } alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
+					} else {
+						<img src="/static/img/logo.png" alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
+					}
+					if site.LogoDarkURL != "" {
+						<img src={ site.LogoDarkURL } alt={ site.SiteName } class="h-9 w-auto object-contain logo-dark" data-img-fallback="hide" />
+					}
+					<span class="text-base font-black text-primary tracking-tight">{ site.SiteName }</span>
+				</a>
+				<div class="d-flex items-center gap-2">
+					<span class="badge badge-amber text-xs font-bold shadow-2xs d-inline-flex items-center gap-1.5">
+						<span class="relative d-flex h-2 w-2">
+							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+							<span class="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+						</span>
+						<span>وضع الصيانة والتطوير</span>
+					</span>
+				</div>
+			</div>
+
+			<!-- Main Maintenance Card -->
+			<div class="w-full max-w-xl mx-auto my-auto py-6">
+				<div class="glass-panel p-8 sm:p-10 rounded-3xl border border-slate-200/80 shadow-md text-center bg-surface relative overflow-hidden">
+					<!-- Ambient Glow Behind Icon -->
+					<div class="absolute -top-12 start-1/2 -translate-x-1/2 w-48 h-48 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+
+					<!-- Hero Maintenance Icon Badge -->
+					<div class="relative mx-auto mb-6 w-20 h-20 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/80 dark:border-amber-700/50 d-flex items-center justify-center shadow-xs">
+						@components.IconWrench("w-10 h-10")
+						<div class="absolute -bottom-1 -end-1 w-7 h-7 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-brand d-flex items-center justify-center shadow-2xs">
+							@components.IconSettings("w-4 h-4")
+						</div>
+					</div>
+
+					<!-- Title -->
+					<h1 class="text-2xl sm:text-3xl font-black text-primary m-0 tracking-tight leading-snug">
+						if data.PageName != "" {
+							صفحة <span class="text-brand font-black">"{ data.PageName }"</span> تحت الصيانة حالياً
+						} else {
+							هذه الصفحة تحت الصيانة حالياً
+						}
+					</h1>
+
+					<!-- Explanation Message -->
+					<p class="text-sm sm:text-base text-secondary mt-3 mb-6 max-w-md mx-auto leading-relaxed font-medium">
+						if data.Description != "" {
+							{ data.Description }
+						} else {
+							نعمل حالياً على إجراء أعمال صيانة دورية وتحديثات هامة لتحسين الأداء وتطوير تجربة الاستخدام. نعتذر عن أي إزعاج مؤقت، وسيعود هذا القسم للعمل قريباً.
+						}
+					</p>
+
+					<!-- Route / Technical Info Box -->
+					if data.Path != "" {
+						<div class="p-3 px-4 mb-6 rounded-xl bg-surface-sunken border border-slate-200/80 d-flex items-center justify-between flex-wrap gap-2 text-xs">
+							<div class="d-flex items-center gap-1.5 text-muted">
+								<span>المسار:</span>
+								<code class="text-primary font-bold font-mono px-1.5 py-0.5 rounded bg-surface border border-slate-200/60" dir="ltr">{ data.Path }</code>
+							</div>
+							<span class="text-2xs font-bold text-amber-800 dark:text-amber-300 bg-amber-100/70 dark:bg-amber-900/40 px-2 py-0.5 rounded-md">
+								الحالة: 503 مؤقت
+							</span>
+						</div>
+					}
+
+					<!-- Action Buttons -->
+					<div class="d-flex items-center justify-center flex-wrap gap-3">
+						<a href={ templ.SafeURL(homeURL) } class="btn btn-primary font-extrabold px-6 py-2.5 shadow-sm d-inline-flex items-center gap-2">
+							@components.IconHome("icon-xs")
+							<span>العودة للصفحة الرئيسية</span>
+						</a>
+						<button type="button" data-on-click="window.location.reload()" class="btn btn-secondary font-bold px-5 py-2.5 shadow-2xs d-inline-flex items-center gap-2">
+							@components.IconRefresh("icon-xs")
+							<span>إعادة المحاولة</span>
+						</button>
+					</div>
+
+					<!-- Support Footer -->
+					<div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-800/80 text-xs text-muted">
+						<span>هل تحتاج لمساعدة عاجلة؟ </span>
+						<a href="/help" class="text-brand font-bold text-decoration-none hover:underline">
+							مركز المساعدة والدعم الفني
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Page Footer -->
+			<div class="w-full max-w-2xl mx-auto text-center text-xs text-muted">
+				<span>منظومة { site.SiteName } للرعاية الصيدلانية والتجارة الطبية الرقمية</span>
+			</div>
+		</div>
+	}
+}

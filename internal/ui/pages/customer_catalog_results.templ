@@ -1,0 +1,362 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+)
+
+templ CustomerCatalogResults(data CatalogPageData, lang string) {
+	if data.IsAdminStaff {
+		<div class="glass-panel p-10 text-center border rounded-2xl shadow-xs">
+			<div class="w-14 h-14 rounded-2xl bg-amber-500/10 text-amber-500 d-flex items-center justify-center mx-auto mb-4 border border-amber-500/20">
+				@components.IconShield("icon-lg")
+			</div>
+			<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "catalog.admin_notice_title") }</h3>
+			<p class="text-xs text-secondary mb-5 max-w-lg mx-auto leading-relaxed">
+				{ i18n.T(lang, "catalog.admin_notice_body") }
+			</p>
+			<a href="/admin/products" class="btn btn-primary btn-sm font-bold shadow-xs gap-2">
+				@components.IconBoxes("icon-xs")
+				<span>{ i18n.T(lang, "catalog.admin_notice_btn") }</span>
+			</a>
+		</div>
+	} else if data.RequiresBranch {
+		<div class="glass-panel p-10 text-center border rounded-2xl shadow-xs">
+			<div class="w-14 h-14 rounded-2xl bg-sky-500/10 text-sky-500 d-flex items-center justify-center mx-auto mb-4 border border-sky-500/20">
+				@components.IconBuilding("icon-lg")
+			</div>
+			<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "catalog.branch_notice_title") }</h3>
+			<p class="text-xs text-secondary mb-5 max-w-lg mx-auto leading-relaxed">
+				{ i18n.T(lang, "catalog.branch_notice_body") }
+			</p>
+			<a href="/customer/branches" class="btn btn-secondary btn-sm font-bold shadow-xs gap-2">
+				@components.IconArrowLeft("icon-xs")
+				<span>{ i18n.T(lang, "catalog.branch_notice_btn") }</span>
+			</a>
+		</div>
+	} else if len(data.Variants) == 0 {
+		<div class="glass-panel p-10 text-center border rounded-2xl shadow-xs">
+			<div class="w-12 h-12 rounded-full bg-primary-subtle text-primary d-flex items-center justify-center mx-auto mb-3">
+				@components.IconSearch("icon-md")
+			</div>
+			<h3 class="text-base font-extrabold text-primary mb-1.5">{ i18n.T(lang, "catalog.no_results_title") }</h3>
+			<p class="text-xs text-secondary mb-4 max-w-md mx-auto">
+				{ i18n.T(lang, "catalog.no_results_body") }
+			</p>
+			<a href="/catalog" class="btn btn-secondary btn-sm font-bold shadow-xs">
+				{ i18n.T(lang, "catalog.no_results_btn") }
+			</a>
+		</div>
+	} else {
+		<!-- Mode Renderer -->
+		if data.ViewMode == "table" {
+			@CustomerCatalogTable(data.Variants, lang)
+		} else {
+			@CustomerCatalogGrid(data.Variants, lang)
+		}
+
+		<!-- Smart Pagination Bar -->
+		@CustomerCatalogPagination(data)
+	}
+}
+
+templ CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) {
+	<div class="product-grid-wrapper mb-6">
+		for _, v := range variants {
+			<div
+				class={ "product-card-glass", templ.KV("is-sponsored", v.IsSponsored) }
+				data-on-click="navigateToVariant" data-args={ components.JSArgs(v.VariantID, v.ProductID) }
+			>
+				if v.IsSponsored {
+					<div class="product-card-sponsored-bar">
+						<span class="sponsored-star">★</span>
+						<span class="sponsored-title">{ i18n.T(lang, "catalog.sponsored") }</span>
+					</div>
+				}
+
+				<div class="product-card-body">
+					<!-- Top Visual Media Box -->
+					<div class="product-card-media">
+						if v.ProductImage != "" {
+							@components.ProductImage(imageurl.Card(v.ProductImage, v.ProductNameAr, "product-card-img"))
+						} else {
+							<div class="product-card-placeholder">
+								@components.IconPill("icon-lg")
+								<span class="text-xs font-bold opacity-60">
+									if lang == "en" {
+										Item image
+									} else {
+										صورة الصنف
+									}
+								</span>
+							</div>
+						}
+
+						<!-- Favorite Button -->
+						<div data-on-click="event.stopPropagation();" class="product-card-fav-btn">
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/favorites/%d/toggle", v.ProductID)) } hx-post={ fmt.Sprintf("/favorites/%d/toggle", v.ProductID) } hx-swap="none" class="m-0 flex-center">
+								<button
+									type="submit"
+									class={ "fav-icon-btn", templ.KV("is-active", v.IsFavorite) }
+									data-favorite-product-id={ fmt.Sprintf("%d", v.ProductID) }
+									title={ i18n.T(lang, "catalog.save_favorite") }
+								>
+									if v.IsFavorite {
+										<span class="fav-icon-outline" style="display:none">@components.IconHeart("icon-xs")</span>
+										<span class="fav-icon-filled">@components.IconHeartFilled("icon-xs text-rose")</span>
+									} else {
+										<span class="fav-icon-outline">@components.IconHeart("icon-xs")</span>
+										<span class="fav-icon-filled" style="display:none">@components.IconHeartFilled("icon-xs text-rose")</span>
+									}
+								</button>
+							</form>
+						</div>
+					</div>
+
+					<!-- Product Title & Subtitle -->
+					<div class="mb-2">
+						<h3 class="text-sm font-black text-primary m-0 line-clamp-2 leading-snug">
+							if lang == "en" && v.ProductNameEn != "" {
+								{ v.ProductNameEn }
+							} else if v.ProductNameAr != "" {
+								{ v.ProductNameAr }
+							} else {
+								{ v.ProductNameEn }
+							}
+						</h3>
+						if lang != "en" && v.ProductNameEn != "" && v.ProductNameEn != v.ProductNameAr {
+							<div class="text-xs text-muted font-bold mt-0.5 text-truncate" dir="ltr">
+								{ v.ProductNameEn }
+							</div>
+						}
+					</div>
+
+					<!-- Manufacturer & Dosage Form Meta -->
+					<div class="d-flex items-center gap-1.5 text-xs text-secondary mb-1.5 flex-wrap">
+						if v.BrandName != "" || v.Manufacturer != "" {
+							<div class="d-flex items-center gap-1 min-w-0">
+								@components.IconBuilding("icon-xs text-muted flex-shrink-0")
+								<span class="text-muted font-medium">{ i18n.T(lang, "catalog.company") }</span>
+								<strong class="text-primary text-truncate">
+									if v.BrandName != "" {
+										{ v.BrandName }
+									} else {
+										{ v.Manufacturer }
+									}
+								</strong>
+							</div>
+						}
+						if v.DosageForm != "" {
+							<span class="badge badge-sky text-2xs font-bold py-0.5 px-2">
+								{ v.DosageForm }
+							</span>
+						}
+					</div>
+
+					if v.ScientificName != "" {
+						<div class="text-xs text-secondary mb-2 text-truncate font-medium">
+							<span class="text-muted">{ i18n.T(lang, "catalog.active_substance") } </span>
+							<span class="font-bold text-primary">{ v.ScientificName }</span>
+						</div>
+					}
+
+					<!-- Supplier Info Box -->
+					<div class="p-2.5 rounded-xl bg-surface-sunken border mb-2.5 flex-between items-center">
+						<div class="d-flex items-center gap-2 text-truncate">
+							@components.IconTruck("icon-xs text-primary flex-shrink-0")
+							<div class="text-truncate">
+								<div class="text-xs font-black text-primary text-truncate">
+									{ v.SupplierName }
+								</div>
+								if v.CityName != "" || v.BranchName != "" {
+									<div class="text-2xs text-muted text-truncate font-medium">
+										if v.CityName != "" {
+											{ v.CityName }
+										} else {
+											{ v.BranchName }
+										}
+									</div>
+								}
+							</div>
+						</div>
+						<div class="d-flex items-center gap-1 flex-shrink-0">
+							if v.DistanceText != "" {
+								<span class="badge badge-sky text-2xs font-mono font-bold" title={ i18n.T(lang, "catalog.estimated_distance") }>
+									{ v.DistanceText }
+								</span>
+							}
+							if v.IsVerified {
+								<span class="badge badge-emerald text-2xs font-bold" title={ i18n.T(lang, "cart.verified_supplier") }>
+									{ i18n.T(lang, "cart.verified_supplier") }
+								</span>
+							}
+						</div>
+					</div>
+
+					<!-- Stock & Expiry -->
+					<div class="flex-between text-xs mb-3 font-semibold items-center">
+						<div class="d-flex items-center gap-1.5 flex-wrap">
+							if v.AvailableStock > 0 {
+								<span class="badge badge-emerald gap-1 font-bold text-xs py-0.5 px-2">
+									<span>{ fmt.Sprintf(i18n.T(lang, "catalog.units_count"), v.AvailableStock) }</span>
+								</span>
+							} else {
+								<span class="badge badge-rose gap-1 font-bold text-xs py-0.5 px-2">
+									<span>{ i18n.T(lang, "catalog.out_of_stock") }</span>
+								</span>
+							}
+							if !v.IsCovered {
+								<span class="badge badge-rose gap-1 font-bold text-xs py-0.5 px-2" title={ v.CoverageReason }>
+									@components.IconAlert("icon-2xs")
+									<span>{ i18n.T(lang, "catalog.out_of_coverage") }</span>
+								</span>
+							}
+							if v.IsNegotiable {
+								<span class="badge badge-amber gap-1 font-bold text-xs py-0.5 px-2">
+									@components.IconTag("icon-2xs")
+									<span>{ i18n.T(lang, "catalog.negotiable") }</span>
+								</span>
+							}
+						</div>
+						if v.ExpiryDate != "" {
+							<div class="tabular-nums text-muted text-2xs font-mono font-medium">
+								{ i18n.T(lang, "catalog.expiry_date") } { v.ExpiryDate }
+							</div>
+						}
+					</div>
+
+					<!-- Pricing & Action Footer -->
+					<div class="border-t pt-2.5 mt-auto">
+						<div class="p-2.5 rounded-xl bg-surface-sunken border mb-3">
+							<div class="flex-between items-center gap-2">
+								<div class="d-flex flex-col gap-1">
+									<!-- سعر الجمهور -->
+									<div class="d-flex items-baseline gap-1 text-xs">
+										<span class="text-secondary font-medium">{ i18n.T(lang, "catalog.public_price") }</span>
+										if v.PublicPrice.IsPositive() {
+											<span class="font-bold text-secondary line-through tabular-nums">
+												{ v.PublicPrice.String() } <small class="text-2xs text-muted font-bold">{ i18n.T(lang, "common.currency_egp") }</small>
+											</span>
+										} else if v.OriginalPrice.IsPositive() {
+											<span class="font-bold text-secondary line-through tabular-nums">
+												{ v.OriginalPrice.String() } <small class="text-2xs text-muted font-bold">{ i18n.T(lang, "common.currency_egp") }</small>
+											</span>
+										} else {
+											<span class="text-muted tabular-nums">—</span>
+										}
+									</div>
+
+									<!-- سعر بعد الخصم (مباشرة بعد النقطتين) -->
+									<div class="d-flex items-baseline gap-1.5">
+										<span class="text-primary font-black text-xs">{ i18n.T(lang, "catalog.net_price_label") }</span>
+										if v.Price.IsPositive() {
+											<span class="text-base font-black text-emerald-500 tabular-nums">
+												{ v.Price.String() } <small class="text-xs font-extrabold text-secondary">{ i18n.T(lang, "common.currency_egp") }</small>
+											</span>
+										} else {
+											<span class="text-xs font-bold text-secondary">{ i18n.T(lang, "catalog.tiered_pricing") }</span>
+										}
+									</div>
+								</div>
+
+								<!-- نسبة الخصم -->
+								if v.DiscountPercent > 0 {
+									<div class="flex-shrink-0">
+										<span class="badge badge-emerald font-black text-xs py-1 px-2.5 tabular-nums shadow-2xs">
+											if lang == "en" {
+												{ formatDiscount(v.DiscountPercent) }% OFF
+											} else {
+												خصم { formatDiscount(v.DiscountPercent) }%
+											}
+										</span>
+									</div>
+								}
+							</div>
+						</div>
+
+						if v.CanAddToCart {
+							<div data-on-click="event.stopPropagation();">
+								<form method="POST" action="/cart/add" hx-post="/cart/add" hx-swap="none" class="d-flex items-center gap-2 m-0">
+									<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", v.VariantID) } />
+									<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", v.ProductID) } />
+									<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", v.SupplierID) } />
+									<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", v.SupplierID) } />
+									<input type="hidden" name="offer_price" value={ v.Price.String() } />
+									
+									<button
+										type="submit"
+										class="btn btn-primary btn-sm flex-1 font-black justify-center gap-1.5 shadow-xs"
+									>
+										@components.IconPlus("icon-xs")
+										<span>{ i18n.T(lang, "catalog.btn_add_to_cart") }</span>
+									</button>
+
+									<div class="cart-stepper-control">
+										<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, -1)">−</button>
+										<input
+											type="number"
+											name="qty"
+											value={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) }
+											min={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) }
+											max={ fmt.Sprintf("%d", v.OrderCeiling()) }
+											class="cart-stepper-input"
+										/>
+										<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, 1)">+</button>
+									</div>
+								</form>
+
+								if v.IsNegotiable {
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs w-full mt-1.5 font-bold justify-center text-amber-700 gap-1.5 shadow-2xs border-amber-300"
+										data-variant-id={ fmt.Sprintf("%d", v.VariantID) }
+										data-product-id={ fmt.Sprintf("%d", v.ProductID) }
+										data-vendor-id={ fmt.Sprintf("%d", v.SupplierID) }
+										data-product-name={ v.ProductNameAr }
+										data-current-price={ v.Price.String() }
+										data-min-qty={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) }
+										data-on-click="openNegotiationModal(this)"
+									>
+										@components.IconTag("icon-2xs")
+										<span>{ i18n.T(lang, "catalog.btn_negotiate") }</span>
+									</button>
+								}
+							</div>
+						} else {
+							<div class="d-flex flex-col gap-1 w-full text-center">
+								if !v.IsCovered && v.CoverageReason != "" {
+									<span class="text-2xs text-danger font-bold d-block truncate" title={ v.CoverageReason }>
+										{ v.CoverageReason }
+									</span>
+								}
+								<a href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", resolveTargetID(v.VariantID, v.ProductID))) } class="btn btn-secondary btn-sm w-full font-bold justify-center gap-1.5 shadow-xs">
+									<span>{ i18n.T(lang, "catalog.btn_details") }</span>
+									@components.IconArrowLeft("icon-xs")
+								</a>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+templ CustomerCatalogPagination(data CatalogPageData) {
+	if data.TotalItems > 0 {
+		<div class="glass-panel p-4 border rounded-2xl shadow-xs">
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage:     data.Page,
+				PageSize:        data.PageSize,
+				TotalCount:      data.TotalItems,
+				BaseURL:         "/catalog",
+				QueryValues:     catalogQueryValues(data),
+				PageSizeOptions: []int{12, 24, 48, 96},
+				SizeParam:       "page_size",
+			})
+		</div>
+	}
+}

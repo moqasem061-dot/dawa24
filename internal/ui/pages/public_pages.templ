@@ -1,0 +1,38 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ PrivacyPolicy() {
+	@layouts.PublicShell("سياسة الخصوصية | Privacy Policy", "ar", "rtl") {
+		<div class="glass-panel">
+   <div class="stack-sm">
+				@components.IconShield("icon-md")
+				<h1 class="page-title font-bold text-xl m-0">سياسة الخصوصية — دوا 24</h1>
+			</div>
+   <p class="text-sm text-secondary m-0">
+				نحن في منصة دوا 24 نحترم خصوصيتك ونلتزم بحماية بياناتك الشخصية والتجارية. تهدف هذه الوثيقة إلى توضيح كيفية جمع واستخدام وحماية البيانات الخاصة بالصيدليات والموردين والمؤسسات الطبية المعتمدة.
+			</p>
+			<h2 class="font-bold text-base m-0">جمع واستخدام البيانات</h2>
+   <p class="text-sm text-secondary m-0">
+				يتم جمع البيانات الأساسية للتسجيل والتحقق من التراخيص الطبية والتجارية لضمان أمان المعاملات الدوائية ومطابقتها للمواصفات والقوانين المصرية.
+			</p>
+		</div>
+	}
+}
+
+templ TermsOfService() {
+	@layouts.PublicShell("شروط الخدمة | Terms of Service", "ar", "rtl") {
+		<div class="glass-panel">
+   <div class="stack-sm">
+				@components.IconFileText("icon-md")
+				<h1 class="page-title font-bold text-xl m-0">شروط الاستخدام والخدمة — دوا 24</h1>
+			</div>
+   <p class="text-sm text-secondary m-0">
+				باستخدامك لمنصة دوا 24 لتوزيع الأدوية والمستلزمات الصيدلانية، فإنك توافق على الالتزام بجميع القوانين واللوائح المنظمة لتداول الأدوية المعمول بها في جمهورية مصر العربية، والالتزام بمعايير الحفظ والتخزين والتسليم المعتمدة.
+			</p>
+		</div>
+	}
+}

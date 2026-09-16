@@ -1,0 +1,111 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorCoverageEditModal(data VendorCoverageData, lang string) {
+	<!-- Edit Coverage Modal -->
+	@components.Modal(components.ModalProps{ID: "edit-coverage-modal", Title: i18n.T(lang, "vendor_coverage.modals.edit_title"), Size: "md"}) {
+		<form :action="'/vendor/coverage/' + editCov.id + '/update'" method="POST" class="d-flex flex-col gap-4 m-0">
+			<input type="hidden" name="gorilla.csrf.Token" value=""/>
+			<input type="hidden" name="id" :value="editCov.id"/>
+			<input type="hidden" name="coverage_id" :value="editCov.id"/>
+
+			<div class="stack-sm">
+				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_day") }</label>
+				<select name="day_of_week" x-model="editCov.day_of_week" class="form-control font-bold">
+					<option value="6">{ i18n.T(lang, "vendor_coverage.builder.day_sat") }</option>
+					<option value="0">{ i18n.T(lang, "vendor_coverage.builder.day_sun") }</option>
+					<option value="1">{ i18n.T(lang, "vendor_coverage.builder.day_mon") }</option>
+					<option value="2">{ i18n.T(lang, "vendor_coverage.builder.day_tue") }</option>
+					<option value="3">{ i18n.T(lang, "vendor_coverage.builder.day_wed") }</option>
+					<option value="4">{ i18n.T(lang, "vendor_coverage.builder.day_thu") }</option>
+					<option value="5">{ i18n.T(lang, "vendor_coverage.builder.day_fri") }</option>
+				</select>
+			</div>
+
+			<div class="stack-sm">
+				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_branch") }</label>
+				<select name="branch_id" x-model="editCov.branch_id" class="form-control">
+					for _, b := range data.Branches {
+						<option value={ fmt.Sprintf("%d", b.ID) }>
+							{ b.Name.Get(i18n.Lang(lang)) }
+						</option>
+					}
+				</select>
+			</div>
+
+			<div class="stack-sm">
+				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_city") }</label>
+				<select name="city_id" x-model="editCov.city_id" class="form-control">
+					<option value="">{ i18n.T(lang, "vendor_coverage.modals.select_city_ph") }</option>
+					for _, c := range data.Cities {
+						<option value={ fmt.Sprintf("%d", c.ID) }>
+							{ c.Name.Get(i18n.Lang(lang)) }
+						</option>
+					}
+				</select>
+			</div>
+
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_from") }</label>
+					<input type="time" name="coverage_from" x-model="editCov.coverage_from" class="form-control text-xs"/>
+				</div>
+				<div class="stack-sm">
+					<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_to") }</label>
+					<input type="time" name="coverage_to" x-model="editCov.coverage_to" class="form-control text-xs"/>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.approved_radius") }</label>
+				<div class="d-flex items-center gap-2">
+					<span class="badge badge-primary text-xs" x-text="((editCov.distance_meters || 3000) / 1000).toFixed(1) + (window.__DAWA_LANG__ === 'en' ? ' km from city center' : ' كم من مركز المدينة')"></span>
+					<span class="text-xs text-muted">{ i18n.T(lang, "vendor_coverage.modals.radius_auto_hint") }</span>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.fld_address") }</label>
+				<input type="text" name="address" x-model="editCov.address" placeholder={ i18n.T(lang, "vendor_coverage.modals.address_ph") } class="form-control text-xs"/>
+			</div>
+
+			<div class="d-flex items-center gap-2 mt-2">
+				<input type="checkbox" name="is_active" value="true" :checked="editCov.is_active" id="edit_is_active" class="w-4 h-4"/>
+				<label for="edit_is_active" class="text-xs font-bold text-primary cursor-pointer">{ i18n.T(lang, "vendor_coverage.modals.activate_chk") }</label>
+			</div>
+
+			<div class="modal-footer pt-3 border-t mt-3 flex-between items-center">
+				<button type="button" @click="closeEdit()" class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "common.cancel") }</button>
+				<button type="submit" class="btn btn-primary btn-sm font-extrabold px-6">{ i18n.T(lang, "vendor_coverage.modals.btn_save_changes") }</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorCoverageDeleteAllModal(data VendorCoverageData, lang string) {
+	<!-- Delete All Coverages Confirmation Modal -->
+	@components.Modal(components.ModalProps{ID: "delete-all-coverage-modal", Title: i18n.T(lang, "vendor_coverage.modals.delete_all_title"), Size: "sm"}) {
+		<form method="POST" action="/vendor/coverage/delete-all" class="d-flex flex-col gap-4 m-0">
+			<input type="hidden" name="gorilla.csrf.Token" value=""/>
+			<div class="alert alert-danger d-flex items-center gap-3 p-4 rounded-xl">
+				<span>@components.IconAlert("icon-sm")</span>
+				<div class="stack-sm">
+					<div class="font-bold">{ i18n.T(lang, "vendor_coverage.modals.delete_all_warning") }</div>
+					<div class="text-xs text-secondary mt-1">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_coverage.modals.delete_all_desc"), len(data.Coverages)) }
+					</div>
+				</div>
+			</div>
+			<div class="modal-footer pt-3 border-t mt-3 flex-between items-center">
+				<button type="button" @click="closeDeleteAllModal()" class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "common.cancel") }</button>
+				<button type="submit" class="btn btn-danger btn-sm font-extrabold px-6">{ i18n.T(lang, "vendor_coverage.modals.btn_confirm_delete_all") }</button>
+			</div>
+		</form>
+	}
+}

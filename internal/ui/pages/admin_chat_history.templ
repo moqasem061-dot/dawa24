@@ -1,0 +1,389 @@
+package pages
+
+import (
+	"net/url"
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminChatHistoryData struct {
+	SearchQuery string
+	// The single search box could not answer "this person's conversations" or
+	// "this company's conversations": it matched the title too, so a company
+	// name found conversations that merely mentioned it. These ask precisely.
+	UserQuery   string
+	OrgQuery    string
+	DateFrom    string
+	DateTo      string
+	FlaggedOnly bool
+
+	Page       int
+	PerPage    int
+	TotalCount int
+	Stats      *assistant.AssistantStats
+	AIConvs    []*assistant.ConversationSummary
+}
+
+// ChatHistoryQueryValues carries the active filters into the pager.
+func (d AdminChatHistoryData) ChatHistoryQueryValues() url.Values {
+	v := url.Values{}
+	if d.SearchQuery != "" {
+		v.Set("q", d.SearchQuery)
+	}
+	if d.UserQuery != "" {
+		v.Set("user_q", d.UserQuery)
+	}
+	if d.OrgQuery != "" {
+		v.Set("org_q", d.OrgQuery)
+	}
+	if d.DateFrom != "" {
+		v.Set("date_from", d.DateFrom)
+	}
+	if d.DateTo != "" {
+		v.Set("date_to", d.DateTo)
+	}
+	if d.FlaggedOnly {
+		v.Set("flagged", "1")
+	}
+	return v
+}
+
+// AdminChatHistoryPage renders conversation threads list for AI Assistant.
+templ AdminChatHistoryPage(data AdminChatHistoryData, lang, dir string) {
+	@layouts.AdminShell("سجلات محادثات المساعد الذكي دكتور كبسولة AI", "chat_history", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconSparkles("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجلات محادثات المساعد الذكي دكتور كبسولة AI</h1>
+							<p class="text-sm text-secondary m-0 mt-1">مراقبة وتدقيق كافة جلسات ومحادثات الذكاء الاصطناعي مع المستخدمين (صيدليات وموردين) واستهلاك الرموز وتفاصيل الحوارات</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Stats Overview Cards -->
+			if data.Stats != nil {
+				<div class="dashboard-stat-grid mb-6">
+					<div class="stat-card-3d">
+						<div class="text-xs font-bold text-muted mb-1">إجمالي الجلسات</div>
+						<div class="text-2xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.Stats.TotalConversations) }</div>
+					</div>
+					<div class="stat-card-3d">
+						<div class="text-xs font-bold text-muted mb-1">إجمالي الرسائل المتبادلة</div>
+						<div class="text-2xl font-black text-brand tabular-nums">{ fmt.Sprintf("%d", data.Stats.TotalMessages) }</div>
+					</div>
+					<div class="stat-card-3d">
+						<div class="text-xs font-bold text-muted mb-1">المستخدمون النشطون</div>
+						<div class="text-2xl font-black text-success tabular-nums">{ fmt.Sprintf("%d", data.Stats.ActiveUsers) }</div>
+					</div>
+					<div class="stat-card-3d">
+						<div class="text-xs font-bold text-muted mb-1">إجمالي الرموز (Tokens)</div>
+						<div class="text-xl font-black text-primary tabular-nums">
+							<span>{ fmt.Sprintf("%d", data.Stats.TotalInputTokens + data.Stats.TotalOutputTokens) }</span>
+							<span class="text-xs text-muted font-normal block mt-0.5">({ fmt.Sprintf("إدخال %d / توليد %d", data.Stats.TotalInputTokens, data.Stats.TotalOutputTokens) })</span>
+						</div>
+					</div>
+				</div>
+			}
+
+			<!-- Filter / Search Bar -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/chat/history" class="d-flex gap-3 items-center flex-wrap m-0">
+					<div class="flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ data.SearchQuery }
+							placeholder="البحث باسم المستخدم، البريد الإلكتروني، الهاتف، اسم المنشأة، أو موضوع الجلسة..."
+							class="form-input text-xs w-full"
+						/>
+					</div>
+					<div class="stack-xs">
+						<label class="form-label text-2xs">المستخدم</label>
+						<input type="search" name="user_q" value={ data.UserQuery } placeholder="اسم أو بريد المستخدم" class="form-input form-input-sm"/>
+					</div>
+					<div class="stack-xs">
+						<label class="form-label text-2xs">المنشأة</label>
+						<input type="search" name="org_q" value={ data.OrgQuery } placeholder="اسم المنشأة" class="form-input form-input-sm"/>
+					</div>
+					<div class="stack-xs">
+						<label class="form-label text-2xs">من تاريخ</label>
+						<input type="date" name="date_from" value={ data.DateFrom } class="form-input form-input-sm"/>
+					</div>
+					<div class="stack-xs">
+						<label class="form-label text-2xs">إلى تاريخ</label>
+						<input type="date" name="date_to" value={ data.DateTo } class="form-input form-input-sm"/>
+					</div>
+					<label class="d-flex items-center gap-1.5 text-2xs font-bold">
+						<input type="checkbox" name="flagged" value="1" checked?={ data.FlaggedOnly } class="form-checkbox"/>
+						<span>المحادثات المُعلَّمة فقط</span>
+					</label>
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-3">
+						@components.IconSearch("icon-xs")
+						<span>بحث وتصفية</span>
+					</button>
+					if data.SearchQuery != "" || data.UserQuery != "" || data.OrgQuery != "" || data.FlaggedOnly {
+						<a href="/admin/chat/history" class="btn btn-secondary btn-sm text-xs">
+							@components.IconClose("icon-xs")
+							<span>إلغاء التصفية</span>
+						</a>
+					}
+				</form>
+			</div>
+
+			<!-- AI Assistant Conversations Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.AIConvs) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconSparkles("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد جلسات مطابقة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على أي جلسات محادثة للذكاء الاصطناعي تطابق معايير البحث.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>#</th>
+								<th>المستخدم المنشئ</th>
+								<th>المنشأة</th>
+								<th>عنوان / موضوع الجلسة</th>
+								<th>عدد الرسائل</th>
+								<th>استهلاك الرموز (Tokens)</th>
+								<th>تاريخ البدء</th>
+								<th>آخر نشاط</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, c := range data.AIConvs {
+								<tr>
+									<td class="tabular-nums">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/chat/ai/%d", c.ID)) } class="font-bold text-primary">
+											#{ fmt.Sprintf("%d", c.ID) }
+										</a>
+									</td>
+									<td>
+										<div class="font-bold text-primary">{ c.UserName }</div>
+										if c.UserRole != "" {
+											<span class="badge badge-slate">{ c.UserRole }</span>
+										}
+										if c.UserPhone != "" {
+											<div class="text-xs text-muted" dir="ltr">{ c.UserPhone }</div>
+										} else if c.UserEmail != "" {
+											<div class="text-xs text-muted" dir="ltr">{ c.UserEmail }</div>
+										}
+									</td>
+									<td>
+										<div class="stack-xs text-sm">{ c.OrganizationName }</div>
+          <div class="stack-sm">
+											if c.OrganizationType == "vendor" {
+												<span class="badge badge-sky">مورد</span>
+											} else if c.OrganizationType == "customer" {
+												<span class="badge badge-emerald">صيدلية</span>
+											}
+											<span class="text-xs text-muted">منشأة #{ fmt.Sprintf("%d", c.OrganizationID) }</span>
+										</div>
+									</td>
+									<td>
+          <div class="stack-sm">
+											if c.Title != "" {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/chat/ai/%d", c.ID)) } title={ c.Title }>
+													{ c.Title }
+												</a>
+											} else {
+												<span>محادثة بدون عنوان</span>
+											}
+										</div>
+									</td>
+									<td class="tabular-nums">
+										<span class="badge badge-emerald">{ fmt.Sprintf("%d رسائل", c.MessageCount) }</span>
+									</td>
+									<td class="tabular-nums text-sm">
+										<div class="stack-sm"><span class="text-muted">إدخال:</span> { fmt.Sprintf("%d", c.TotalInputTokens) }</div>
+										<div class="stack-sm"><span class="text-muted">توليد:</span> { fmt.Sprintf("%d", c.TotalOutputTokens) }</div>
+									</td>
+									<td class="text-sm text-muted tabular-nums">
+										{ c.CreatedAt.Format("2006-01-02 03:04 PM") }
+									</td>
+									<td class="text-sm text-secondary tabular-nums">
+										{ c.UpdatedAt.Format("2006-01-02 03:04 PM") }
+									</td>
+									<td class="col-actions">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/chat/ai/%d", c.ID)) } class="btn btn-secondary btn-sm font-bold">
+											@components.IconEye("icon-xs")
+											<span>عرض المحادثة</span>
+										</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/admin/chat/history",
+					QueryValues: data.ChatHistoryQueryValues(),
+				})
+			}
+			</div>
+		</div>
+	}
+}
+
+// AdminAIChatDetailPage renders full messages transcript for an AI assistant conversation.
+templ AdminAIChatDetailPage(summary *assistant.ConversationSummary, msgs []*assistant.Message, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("محادثة ذكاء اصطناعي #%d", summary.ID), "chat_history", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header Card -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-2 mb-1">
+							<span class="badge badge-sky text-xs font-black">جلسة دكتور كبسولة AI</span>
+							<strong class="text-primary text-base tabular-nums font-mono font-black">#{ fmt.Sprintf("%d", summary.ID) }</strong>
+						</div>
+						<h1 class="text-xl font-black text-primary m-0 mb-2">
+							if summary.Title != "" {
+								{ summary.Title }
+							} else {
+								<span>محادثة استشارية دوائية</span>
+							}
+						</h1>
+						<div class="d-flex items-center gap-3 flex-wrap text-xs text-secondary">
+							<div class="stack-sm"><strong>المستخدم:</strong> { summary.UserName } <span class="tabular-nums" dir="ltr">({ summary.UserEmail })</span></div>
+							<div class="stack-sm"><strong>المنشأة:</strong> { summary.OrganizationName } <span class="tabular-nums">(#{ fmt.Sprintf("%d", summary.OrganizationID) })</span></div>
+							<div class="stack-sm"><strong>البدء:</strong> <span class="tabular-nums">{ summary.CreatedAt.Format("2006-01-02 03:04 PM") }</span></div>
+							<div class="stack-sm">⏱️ <strong>آخر نشاط:</strong> <span class="tabular-nums">{ summary.UpdatedAt.Format("2006-01-02 03:04 PM") }</span></div>
+						</div>
+					</div>
+
+     <div class="stack-sm">
+						<a href="/admin/chat/history" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconArrowRight("icon-xs")
+							<span>العودة لقائمة السجلات</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Stats Strip -->
+				<div class="dashboard-stat-grid cols-3 mt-4 pt-4 border-t mb-0">
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-xs">إجمالي الرسائل</div>
+						<div class="stat-card-value text-primary tabular-nums text-lg">{ fmt.Sprintf("%d", len(msgs)) }</div>
+					</div>
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-brand text-xs">رموز الإدخال (Input)</div>
+						<div class="stat-card-value text-brand tabular-nums text-lg">{ fmt.Sprintf("%d", summary.TotalInputTokens) }</div>
+					</div>
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-success text-xs">رموز التوليد (Output)</div>
+						<div class="stat-card-value text-success tabular-nums text-lg">{ fmt.Sprintf("%d", summary.TotalOutputTokens) }</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Transcript -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center pb-3 mb-4 border-b">
+					<div class="d-flex items-center gap-2">
+						<span class="text-lg">@components.IconFileText("icon-sm")</span>
+						<h2 class="text-base font-black text-primary m-0">
+							سجل الحوار والرسائل الكامل (Full Transcript)
+						</h2>
+					</div>
+					<span class="badge badge-slate text-xs font-bold tabular-nums">{ fmt.Sprintf("%d رسالة", len(msgs)) }</span>
+				</div>
+
+				if len(msgs) == 0 {
+					<div class="p-12 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconMessageSquare("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد رسائل مسجلة</h3>
+						<p class="text-xs text-secondary max-w-md mx-auto">هذه الجلسة لا تحتوي على رسائل مسجلة.</p>
+					</div>
+				} else {
+					<div class="d-flex flex-col gap-4">
+						for _, m := range msgs {
+							if m.Role == "user" {
+								<!-- User Bubble -->
+								<div class="d-flex justify-start">
+									<div class="p-4 bg-surface-sunken border rounded-2xl">
+										<div class="flex-between items-center gap-4 mb-2 pb-1 border-b text-xs text-muted">
+											<div class="d-flex items-center gap-1.5 font-extrabold text-primary">
+												<span>@components.IconUser("icon-sm")</span>
+												<span>{ summary.UserName }</span>
+											</div>
+											<span class="tabular-nums font-mono">{ m.CreatedAt.Format("03:04:05 PM") }</span>
+										</div>
+										<div class="text-xs text-primary leading-relaxed" dir="auto">{ m.Content }</div>
+										if len(m.Attachments) > 0 {
+											<div class="d-flex flex-wrap gap-2 mt-3 pt-2 border-t">
+												for _, att := range m.Attachments {
+													<div class="border rounded-lg overflow-hidden bg-surface-raised">
+														if strings.HasPrefix(att.MIMEType, "image/") || strings.HasPrefix(att.DataURL, "data:image/") {
+															<a href={ templ.SafeURL(att.DataURL) } target="_blank" title="عرض الصورة بالحجم الكامل">
+																<img 
+																	src={ att.DataURL } 
+																	alt={ att.Filename } 
+																	class="w-full object-cover d-block" 
+																 
+																/>
+															</a>
+														}
+														<div class="p-2 text-xs text-secondary flex-between gap-2">
+															<span class="font-bold truncate" title={ att.Filename }>
+																{ att.Filename }
+															</span>
+															if att.SizeMB > 0 {
+																<span class="text-muted tabular-nums font-mono">{ fmt.Sprintf("%.2f MB", att.SizeMB) }</span>
+															}
+														</div>
+													</div>
+												}
+											</div>
+										}
+									</div>
+								</div>
+							} else if m.Role == "assistant" {
+								<!-- Assistant Bubble -->
+								<div class="d-flex justify-start">
+									<div class="p-4 bg-surface-raised border rounded-2xl w-full">
+										<div class="flex-between items-center gap-4 mb-2 pb-2 border-b text-xs">
+											<div class="d-flex items-center gap-2">
+												<span class="badge badge-sky text-xs font-black">دكتور كبسولة AI</span>
+												if m.ModelRole != "" {
+													<span class="badge badge-slate text-xs font-mono">{ m.ModelRole }</span>
+												}
+											</div>
+											<div class="d-flex items-center gap-2 text-muted tabular-nums text-xs">
+												<span>{ m.CreatedAt.Format("03:04:05 PM") }</span>
+												<span class="badge badge-slate text-xs font-mono font-bold">{ fmt.Sprintf("%d tokens", m.OutputTokens) }</span>
+											</div>
+										</div>
+										<div class="text-xs text-primary leading-relaxed" dir="auto">{ m.Content }</div>
+									</div>
+								</div>
+							}
+						}
+					</div>
+				}
+			</div>
+
+		</div>
+	}
+}
+

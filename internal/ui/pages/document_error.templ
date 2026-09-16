@@ -1,0 +1,125 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/attachments"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// DocumentUnavailableView carries context about the missing document.
+type DocumentUnavailableView struct {
+	DocID        int64
+	DocTypeLabel string
+	OriginalName string
+	OrgName      string
+	OrgID        int64
+	UploadDate   string
+	StatusLabel  string
+	ReturnURL    string
+	IsAdmin      bool
+}
+
+// DocumentUnavailablePage renders a clear, polished error notification when a document file cannot be opened.
+templ DocumentUnavailablePage(data DocumentUnavailableView, lang, dir string) {
+	@layouts.Base("تعذر فتح المستند — منصة دوا 24", lang, dir) {
+  <div class="stack-sm">
+			<div class="glass-panel">
+				
+				<!-- Icon Badge -->
+				<div class="stack-xs text-sm">
+					@components.IconFile("icon-sm")
+				</div>
+
+				<!-- Main Title & Reason -->
+				<h1 class="page-title font-bold text-xl m-0">
+					تعذر فتح المستند — الملف غير متوفر
+				</h1>
+    <p class="text-sm text-secondary m-0">
+					لم يتم العثور على الملف الرقمي الفعلي لهذا المستند على وسائط التخزين السحابي، أو قد تم حذفه أو نقله أثناء تحديث البيئة.
+				</p>
+
+				<!-- Document Meta Details Box -->
+    <div class="stack-sm">
+     <div class="stack-sm">
+						<span class="text-muted">نوع المستند:</span>
+						<strong class="text-body">{ data.DocTypeLabel }</strong>
+					</div>
+
+     <div class="stack-sm">
+						<span class="text-muted">اسم الملف الأصلي:</span>
+						<span dir="ltr" class="tabular-nums">{ data.OriginalName }</span>
+					</div>
+
+					if data.OrgName != "" {
+      <div class="stack-sm">
+							<span class="text-muted">المنشأة التابع لها:</span>
+							<strong class="text-body">{ data.OrgName }</strong>
+						</div>
+					}
+
+					if data.UploadDate != "" {
+      <div class="stack-sm">
+							<span class="text-muted">تاريخ الرفع والتسجيل:</span>
+							<span class="tabular-nums text-body">{ data.UploadDate }</span>
+						</div>
+					}
+
+     <div class="stack-sm">
+						<span class="text-muted">رقم المستند بالنظام:</span>
+						<code>#{ fmt.Sprintf("%d", data.DocID) }</code>
+					</div>
+				</div>
+
+				<!-- Administrative Guidance Notice -->
+				if data.IsAdmin {
+     <div class="stack-sm">
+						<strong>توجيه للإدارة:</strong> يمكنك مراسلة المنشأة أو إرسال طلب رسمي لإعادة رفع المستند عبر تبويب <strong>"طلبات المستندات"</strong> في لوحة الموافقات.
+					</div>
+				} else {
+     <div class="stack-sm">
+						<strong>تنبيه:</strong> يمكنك إعادة رفع المستند المحدث مباشرة عبر صفحة <strong>"المستندات والتراخيص"</strong> في حسابك.
+					</div>
+				}
+
+				<!-- Action Buttons -->
+    <div class="stack-sm">
+					<a
+						href={ templ.SafeURL(data.ReturnURL) }
+						class="btn btn-primary"
+					
+					>
+						@components.IconArrowRight("icon-xs")
+						<span>العودة للشاشة السابقة</span>
+					</a>
+				</div>
+
+			</div>
+		</div>
+	}
+}
+
+func FormatDocTypeLabel(docType attachments.DocumentType) string {
+	switch docType {
+	case attachments.DocCommercialRegister:
+		return "السجل التجاري (Commercial Register)"
+	case attachments.DocTaxCard:
+		return "البطاقة الضريبية (Tax Card)"
+	case attachments.DocPharmacyLicense:
+		return "ترخيص الصيدلية / المنشأة (Pharmacy License)"
+	case attachments.DocPharmacistLicense:
+		return "ترخيص مزاولة المهنة للصيدلي (Pharmacist License)"
+	case attachments.DocNationalID:
+		return "بطاقة الرقم القومي (National ID)"
+	case attachments.DocPassport:
+		return "جواز السفر (Passport)"
+	case attachments.DocBankCertificate:
+		return "شهادة الحساب البنكي (Bank Certificate)"
+	case attachments.DocAuthorizationLetter:
+		return "خطاب تفويض رسمي (Authorization Letter)"
+	case attachments.DocSyndicateCard:
+		return "كارنيه نقابة الصيادلة (Syndicate Card)"
+	default:
+		return "مستند رسمي معتمد"
+	}
+}

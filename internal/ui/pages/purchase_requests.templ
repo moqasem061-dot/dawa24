@@ -1,0 +1,438 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// CustomerPurchaseRequestWizardPage renders the clean gateway to catalog and suppliers.
+templ CustomerPurchaseRequestWizardPage(lang, dir string, step int, option string) {
+	@layouts.ShellFor("طلبات الشراء والتوريد", "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconShoppingBag("icon-sm")
+							</div>
+       <div class="stack-sm">
+								<h1 class="text-2xl font-black text-primary m-0">طلبات الشراء والتوريد</h1>
+								<p class="text-sm text-secondary m-0 mt-1">
+									اختر الطريقة المناسبة للبدء: استعراض دليل الموردين المعتمدين وفروعهم، أو البحث المباشر في كتالوج الأصناف، أو تجهيز طلب ذكي من ملف.
+								</p>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- 3 Direct Options Grid -->
+			<div class="dashboard-grid-3col mb-0">
+				<!-- Option 1: By Supplier -->
+				<div
+					class="glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer"
+					data-on-click="navigate('/suppliers')"
+				>
+     <div class="stack-sm">
+						<div class="user-avatar-badge text-2xl mx-auto mb-4">
+							@components.IconBuilding("icon-lg")
+						</div>
+						<h2 class="text-lg font-black text-primary mb-2">البدء باختيار المورد</h2>
+						<p class="text-xs text-secondary leading-relaxed mb-6">
+							تصفح قائمة الموردين والشركات المعتمدة، وتعرف على الفروع ونطاق التغطية وتفاصيل المخازن المتاحة.
+						</p>
+					</div>
+					<a href="/suppliers" class="btn btn-primary w-full justify-center font-bold text-xs gap-1">
+						<span>تصفح دليل الموردين</span>
+						@components.IconArrowLeft("icon-xs")
+					</a>
+				</div>
+
+				<!-- Option 2: By Products -->
+				<div
+					class="glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer"
+					data-on-click="navigate('/catalog')"
+				>
+     <div class="stack-sm">
+						<div class="user-avatar-badge text-2xl mx-auto mb-4">
+							@components.IconPackage("icon-lg")
+						</div>
+						<h2 class="text-lg font-black text-primary mb-2">البحث في كتالوج الأصناف</h2>
+						<p class="text-xs text-secondary leading-relaxed mb-6">
+							ابحث في كتالوج المنتجات والأصناف المتاحة عبر جميع الموردين، وقارن الأسعار والخصومات وأضف مشترياتك للسلة مباشرة.
+						</p>
+					</div>
+					<a href="/catalog" class="btn btn-secondary w-full justify-center font-bold text-xs gap-1">
+						<span>البحث في كتالوج الأصناف</span>
+						@components.IconArrowLeft("icon-xs")
+					</a>
+				</div>
+
+				<!-- Option 3: Smart Ordering -->
+				<div
+					class="glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer border-brand"
+					data-on-click="navigate('/customer/smart-order/new')"
+				>
+     <div class="stack-sm">
+						<div class="user-avatar-badge text-2xl mx-auto mb-4">
+							@components.IconSparkles("icon-lg")
+						</div>
+						<h2 class="text-lg font-black text-primary mb-2">الطلب الذكي من ملف</h2>
+						<p class="text-xs text-secondary leading-relaxed mb-6">
+							ارفع ملف الأصناف المطلوبة بالكميات، ويتولى النظام مطابقتها بالكتالوج واختيار المورد الأفضل وتجهيز الطلب للمراجعة.
+						</p>
+					</div>
+					<a href="/customer/smart-order/new" class="btn btn-primary w-full justify-center font-bold text-xs gap-1">
+						<span>ابدأ الطلب الذكي</span>
+						@components.IconArrowLeft("icon-xs")
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// VendorPurchaseRequestsPage lists incoming purchase and negotiation requests for supplier.
+templ VendorPurchaseRequestsPage(lang, dir string, requests []*commerce.PurchaseRequest, negOrders []*commerce.Order, activeStatus string, page, perPage, totalCount int) {
+	@layouts.VendorShell("طلبات الشراء الواردة", "purchase-requests", lang, dir) {
+		<div class="page-container">
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconDownload("icon-sm")
+							</div>
+							<div class="stack-sm">
+								<h1 class="text-2xl font-black text-primary m-0">طلبات الشراء والتفاوض الواردة</h1>
+								<p class="text-sm text-secondary m-0 mt-1">مراجعة وإدارة طلبات الشراء والتفاوض على الأسعار الواردة من الصيدليات، وتحويلها مباشرة إلى أوامر توريد وشحنات.</p>
+							</div>
+						</div>
+					</div>
+
+					<!-- Status Filter Tabs -->
+					<div class="tabs-nav">
+						<a href="/vendor/purchase-requests?status=all" class={ "tab-btn", templ.KV("active", activeStatus == "all" || activeStatus == "") }>الكل</a>
+						<a href="/vendor/purchase-requests?status=pending" class={ "tab-btn", templ.KV("active", activeStatus == "pending") }>قيد التفاوض / بانتظار التأكيد</a>
+						<a href="/vendor/purchase-requests?status=accepted" class={ "tab-btn", templ.KV("active", activeStatus == "accepted") }>تم التحويل لأمر توريد</a>
+						<a href="/vendor/purchase-requests?status=rejected" class={ "tab-btn", templ.KV("active", activeStatus == "rejected") }>مرفوضة</a>
+					</div>
+				</div>
+			</div>
+
+			if len(negOrders) == 0 && len(requests) == 0 {
+				<div class="glass-panel p-12 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconShoppingBag("icon-lg")</div>
+					<h3 class="text-lg font-black text-primary mb-2">لا توجد طلبات شراء أو تفاوض واردة</h3>
+					<p class="text-sm text-secondary max-w-md mx-auto">لم تتلق منشأتك طلبات شراء أو تفاوض جديدة في هذا القسم حالياً.</p>
+				</div>
+			} else {
+				<!-- Negotiated Purchase Orders -->
+				if len(negOrders) > 0 {
+					<div class="d-flex flex-col gap-4">
+						for _, o := range negOrders {
+							<div class="glass-panel p-5 d-flex flex-col gap-4">
+								<!-- Order Header -->
+								<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+									<div class="d-flex items-center gap-3 flex-wrap">
+										<span class="text-base font-black text-primary tabular-nums">
+											طلب شراء #{ o.OrderNumber }
+										</span>
+										if o.NegotiationStatus == "pending" {
+											<span class="badge badge-amber text-xs font-black gap-1">
+												@components.IconClock("icon-xs")
+												<span>بانتظار المراجعة / قيد التفاوض</span>
+											</span>
+										} else if o.NegotiationStatus == "accepted" {
+											<span class="badge badge-emerald text-xs font-black gap-1">
+												@components.IconCheckCircle("icon-xs")
+												<span>تم التحويل لأمر توريد</span>
+											</span>
+										} else if o.NegotiationStatus == "rejected" {
+											<span class="badge badge-rose text-xs font-black gap-1">
+												@components.IconX("icon-xs")
+												<span>تم رفض التفاوض</span>
+											</span>
+										} else {
+											<span class="badge badge-slate text-xs font-black">{ o.NegotiationStatus }</span>
+										}
+
+										<span class="text-xs text-muted tabular-nums">
+											{ o.CreatedAt.Format("2006-01-02 03:04 PM") }
+										</span>
+									</div>
+
+									<div class="d-flex items-center gap-2">
+										<span class="badge badge-slate text-xs font-bold gap-1">
+											@components.IconBuilding("icon-xs")
+											<span>
+												if o.CustomerOrgName.Get(i18n.Lang(lang)) != "" {
+													{ o.CustomerOrgName.Get(i18n.Lang(lang)) }
+												} else {
+													صيدلية معتمدة
+												}
+												if o.CustomerBranchName.Get(i18n.Lang(lang)) != "" {
+													- { o.CustomerBranchName.Get(i18n.Lang(lang)) }
+												}
+											</span>
+										</span>
+										if o.CustomerBranchPhone != "" {
+											<span class="badge badge-secondary text-xs font-bold tabular-nums">
+												{ o.CustomerBranchPhone }
+											</span>
+										}
+									</div>
+								</div>
+
+								<!-- Negotiation Notes Banner (if present) -->
+								if o.NegotiationNotes != "" {
+									<div class="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs d-flex items-start gap-2">
+										<div class="text-amber-500 font-bold mt-0.5">
+											@components.IconMessageSquare("icon-xs")
+										</div>
+										<div>
+											<strong class="text-amber-700 dark:text-amber-400 d-block font-bold mb-0.5">ملاحظات ومقترح التفاوض من العميل:</strong>
+											<span class="text-primary font-medium">{ o.NegotiationNotes }</span>
+										</div>
+									</div>
+								}
+
+								<!-- Line Items Table -->
+								if len(o.Lines) > 0 {
+									<div class="table-container m-0">
+										<table class="data-table m-0">
+											<thead>
+												<tr>
+													<th>الصنف المطلوبة مواصفاته</th>
+													<th class="text-center">الكمية المطلوبة</th>
+													<th class="text-end">سعر الكتالوج</th>
+													<th class="text-end">السعر المقترح للتفاوض</th>
+													<th class="text-end">إجمالي السعر المقترح</th>
+												</tr>
+											</thead>
+											<tbody>
+												for _, line := range o.Lines {
+													<tr>
+														<td>
+															<div class="font-extrabold text-xs text-primary">{ line.ProductName.Get(i18n.Lang(lang)) }</div>
+															if line.VariantName.Get(i18n.Lang(lang)) != "" {
+																<div class="text-muted text-xs">{ line.VariantName.Get(i18n.Lang(lang)) }</div>
+															}
+															if line.SKU != "" {
+																<div class="text-muted text-xs font-mono">{ line.SKU }</div>
+															}
+														</td>
+														<td class="text-center tabular-nums font-bold text-xs">
+															{ fmt.Sprintf("%d", line.Quantity) }
+														</td>
+														<td class="text-end tabular-nums text-xs text-muted">
+															if line.OriginalPrice.IsPositive() {
+																{ line.OriginalPrice.String() } ج.م
+															} else {
+																{ line.UnitPrice.String() } ج.م
+															}
+														</td>
+														<td class="text-end tabular-nums text-xs">
+															if line.IsNegotiated && line.ProposedUnitPrice.IsPositive() {
+																<strong class="text-amber-600 dark:text-amber-400 font-black">
+																	{ line.ProposedUnitPrice.String() } ج.م
+																</strong>
+															} else {
+																<span class="text-primary font-bold">{ line.UnitPrice.String() } ج.م</span>
+															}
+														</td>
+														<td class="text-end tabular-nums text-xs font-black text-brand">
+															{ line.TotalPrice.String() } ج.م
+														</td>
+													</tr>
+												}
+											</tbody>
+										</table>
+									</div>
+								}
+
+								<!-- Summary & Actions Bar -->
+								<div class="flex-between items-center flex-wrap gap-4 pt-3 border-t">
+									<div class="d-flex items-center gap-3">
+										<span class="text-xs text-secondary font-bold">إجمالي قيمة الطلب المقترح:</span>
+										<strong class="text-lg font-black text-brand tabular-nums">
+											{ o.TotalAmount.String() } <span class="text-xs font-bold text-muted">ج.م</span>
+										</strong>
+									</div>
+
+									<div class="d-flex items-center gap-2 flex-wrap">
+										if o.NegotiationStatus == "pending" {
+											<!-- Transfer to Supply Order (Accept) -->
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/negotiation/accept", o.ID)) } class="m-0 d-inline">
+												<input type="hidden" name="return_to" value="/vendor/purchase-requests" />
+												<button type="submit" class="btn btn-emerald btn-sm font-bold text-xs gap-1">
+													@components.IconCheckCircle("icon-xs")
+													<span>تحويل إلى أمر توريد</span>
+												</button>
+											</form>
+
+											<!-- Reject with reason -->
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/negotiation/reject", o.ID)) } class="m-0 d-inline flex items-center gap-2">
+												<input type="hidden" name="return_to" value="/vendor/purchase-requests" />
+												<input type="text" name="reason" placeholder="سبب الرفض (اختياري)..." class="form-input text-xs py-1 px-2" style="max-width: 170px;" />
+												<button type="submit" class="btn btn-rose btn-sm font-bold text-xs gap-1" data-confirm="هل أنت متأكد من رفض طلب التفاوض؟">
+													@components.IconX("icon-xs")
+													<span>رفض التفاوض</span>
+												</button>
+											</form>
+										} else if o.NegotiationStatus == "accepted" {
+											<span class="badge badge-emerald text-xs font-bold gap-1">
+												@components.IconCheckCircle("icon-xs")
+												<span>معتمد وتم تحويله</span>
+											</span>
+											<a href="/vendor/orders" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+												<span>استعراض في أوامر التوريد والشحنات</span>
+												@components.IconArrowLeft("icon-xs")
+											</a>
+										} else if o.NegotiationStatus == "rejected" {
+											<span class="badge badge-rose text-xs font-bold">تم رفض هذا العرض</span>
+										}
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+				}
+
+				<!-- Legacy RFQ Requests (if any) -->
+				if len(requests) > 0 {
+					<div class="mt-8">
+						<h2 class="text-base font-black text-primary mb-3">طلبات عروض الأسعار الإضافية (RFQ)</h2>
+						<div class="d-flex flex-col gap-3">
+							for _, req := range requests {
+								<div class="glass-panel p-4 flex-between items-center flex-wrap gap-4">
+									<div class="stack-sm">
+										<div class="d-flex items-center gap-2 mb-1">
+											<h3 class="m-0 text-base font-extrabold text-primary">طلب #{ req.RequestNumber }</h3>
+											<span class="badge badge-primary text-xs font-bold">{ string(req.Status) }</span>
+										</div>
+										<div class="text-xs text-secondary">
+											العميل / الصيدلية: <strong class="text-primary">{ req.CustomerName }</strong> | تاريخ الطلب: <span class="tabular-nums">{ req.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+										</div>
+									</div>
+									<a href={ templ.SafeURL(fmt.Sprintf("/vendor/purchase-requests/%d", req.ID)) } class="btn btn-primary btn-sm font-bold text-xs gap-1">
+										<span>معاينة والرد</span>
+										@components.IconArrowLeft("icon-xs")
+									</a>
+								</div>
+							}
+						</div>
+					</div>
+				}
+
+				if totalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: page,
+						PageSize:    perPage,
+						TotalCount:  totalCount,
+						BaseURL:     "/vendor/purchase-requests",
+						QueryValues: map[string][]string{
+							"status": {activeStatus},
+						},
+					})
+				}
+			}
+		</div>
+	}
+}
+
+// VendorPurchaseRequestDetailPage renders one incoming request for response.
+templ VendorPurchaseRequestDetailPage(lang, dir string, request *commerce.PurchaseRequest) {
+	@layouts.VendorShell(fmt.Sprintf("تفاصيل طلب شراء #%s", request.RequestNumber), "purchase-requests", lang, dir) {
+		<div class="page-container">
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconFile("icon-sm")
+							</div>
+       <div class="stack-sm">
+								<h1 class="text-2xl font-black text-primary m-0">طلب شراء #{ request.RequestNumber }</h1>
+								<p class="text-sm text-secondary m-0 mt-1">العميل: { request.CustomerName } | الحالة: { string(request.Status) }</p>
+							</div>
+						</div>
+					</div>
+					<a href="/vendor/purchase-requests" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+						@components.IconArrowRight("icon-xs")
+						<span>قائمة الطلبات</span>
+					</a>
+				</div>
+			</div>
+
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/purchase-requests/%d/respond", request.ID)) } class="d-flex flex-col gap-6 m-0">
+				<div class="glass-panel p-6 mb-0">
+					<h2 class="text-base font-extrabold text-primary m-0 mb-4 pb-3 border-b">الأصناف المطلوبة</h2>
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>اسم الصنف</th>
+									<th class="text-center">الكمية</th>
+									<th class="text-end">السعر المستهدف</th>
+									<th class="text-center">الخصم المطلوب</th>
+									<th class="text-end">السعر المعروض</th>
+									<th class="text-center">الخصم المعروض %</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, line := range request.Lines {
+									<tr>
+										<td class="font-bold text-xs text-primary">{ line.ProductName }</td>
+										<td class="text-center tabular-nums font-bold text-xs">{ fmt.Sprintf("%d", line.Quantity) }</td>
+										<td class="text-end tabular-nums text-xs">{ line.TargetPrice.String() } ج.م</td>
+										<td class="text-center tabular-nums text-xs text-brand font-bold">{ fmt.Sprintf("%.1f%%", line.TargetDiscount) }</td>
+										<td class="text-end">
+											<input type="text" name={ fmt.Sprintf("line_price_%d", line.ID) } value={ line.OfferedPrice.String() } placeholder={ line.TargetPrice.String() } class="form-input text-xs w-full text-end tabular-nums" />
+										</td>
+										<td class="text-center">
+											<input type="number" step="0.5" name={ fmt.Sprintf("line_discount_%d", line.ID) } value={ fmt.Sprintf("%.1f", line.OfferedDiscount) } class="form-input text-xs w-full text-center tabular-nums" />
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="glass-panel p-6 mb-0">
+					<div class="mb-4">
+						<label class="form-label text-xs font-bold text-primary mb-1">القرار والحالة</label>
+						<select name="status" class="form-input text-xs">
+							<option value="approved">قبول وتأكيد الطلب</option>
+							<option value="processing">قبول وقيد التجهيز</option>
+							<option value="cancelled">اعتذار / رفض الطلب</option>
+						</select>
+					</div>
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold text-primary mb-1">ملاحظات التوريد الموجهة للصيدلية</label>
+						<textarea name="vendor_notes" rows="3" class="form-input text-xs w-full" placeholder="اكتب أية شروط أو ملاحظات للمشتري...">{ request.VendorNotes }</textarea>
+					</div>
+				</div>
+
+				<div class="flex-between items-center">
+					<a href="/vendor/purchase-requests" class="btn btn-secondary btn-sm font-bold text-xs">إلغاء</a>
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-6 gap-1">
+						@components.IconCheckCircle("icon-xs")
+						<span>حفظ وإرسال الرد للصيدلية</span>
+					</button>
+				</div>
+			</form>
+		</div>
+	}
+}
+

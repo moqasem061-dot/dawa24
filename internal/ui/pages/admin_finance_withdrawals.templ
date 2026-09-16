@@ -1,0 +1,332 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceWithdrawalsPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("طلبات سحب الرصيد", "withdrawals", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				rejectWithdrawalID: 0,
+				rejectWithdrawalAmount: '',
+				rejectWithdrawalUserName: '',
+				approveWithdrawalID: 0,
+				approveWithdrawalAmount: '',
+				approveWithdrawalUserName: '',
+				approveWithdrawalMethod: '',
+				approveWithdrawalDestination: '',
+				receiptModalURL: '',
+				openApproveWithdrawalModal(id, amount, userName, method, destination) {
+					this.approveWithdrawalID = id;
+					this.approveWithdrawalAmount = amount;
+					this.approveWithdrawalUserName = userName;
+					this.approveWithdrawalMethod = method;
+					this.approveWithdrawalDestination = destination;
+					const modal = document.getElementById('finance-approve-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRejectWithdrawalModal(id, amount, userName) {
+					this.rejectWithdrawalID = id;
+					this.rejectWithdrawalAmount = amount;
+					this.rejectWithdrawalUserName = userName;
+					const modal = document.getElementById('finance-reject-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openReceiptModal(url) {
+					this.receiptModalURL = url;
+					const modal = document.getElementById('finance-receipt-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTrendingUp("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">مراجعة وتدقيق طلبات سحب الرصيد</h1>
+							<p class="text-sm text-secondary m-0 mt-1">الموافقة والاعتماد الفوري لسحوبات الصيدليات والموردين وخصم الرصيد، أو الرفض مع ذكر السبب</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/deposits" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconCreditCard("icon-xs")
+							<span>طلبات الشحن</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات سحب معلقة</span>
+						<span class="text-danger">@components.IconTrendingUp("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-danger mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingWithdrawalsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						تحتاج التحويل والصرف
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي طلبات السحب</span>
+						<span class="text-brand">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.TotalWithdrawals) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						طلب سحب مسجل بالنظام
+					</div>
+				</div>
+
+				<a href="/admin/finance/wallets" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أرصدة المحافظ المحتجزة</span>
+						<span class="text-indigo">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalHeld.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d محفظة نشطة", data.TotalWallets) }
+					</div>
+				</a>
+
+				<a href="/admin/finance/deposits" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات شحن معلقة</span>
+						<span class="text-warning">@components.IconCreditCard("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingDepositsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						تحتاج مراجعة واعتماد
+					</div>
+				</a>
+			</div>
+
+			<!-- Main Withdrawals Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinanceWithdrawalsTab(data, lang, dir)
+			</div>
+
+			<!-- Modals -->
+			@AdminFinanceModals(data, lang, dir)
+		</div>
+	}
+}
+
+templ AdminFinanceWithdrawalsTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<div class="flex-between items-center flex-wrap gap-4 pb-3 border-b">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0 d-flex items-center gap-2">
+					<span>@components.IconArrowLeft("icon-sm")</span>
+					<span>مراجعة وتدقيق طلبات سحب الرصيد</span>
+				</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">الموافقة والاعتماد الفوري لسحوبات الصيدليات والموردين وخصم الرصيد، أو الرفض مع ذكر السبب.</p>
+			</div>
+			<!-- Search & Filter Form -->
+			<form method="GET" action="/admin/finance/withdrawals" class="d-flex gap-2 items-center flex-wrap m-0">
+				<input type="hidden" name="tab" value="withdrawals"/>
+				<input type="text" name="q" value={ data.Query } placeholder="ابحث بالاسم، الإيميل، الهاتف، أو الحساب..." class="form-input text-sm min-w-64"/>
+				<select name="status" class="form-select text-sm w-auto">
+					<option value="">كل الحالات</option>
+					<option value="pending" selected?={ data.StatusFilter == "pending" }>⏳ قيد المراجعة (Pending)</option>
+					<option value="approved" selected?={ data.StatusFilter == "approved" }>معتمدة ومصروفة (Approved)</option>
+					<option value="rejected" selected?={ data.StatusFilter == "rejected" }>مرفوضة (Rejected)</option>
+				</select>
+				<select name="org_id" class="form-select text-sm w-auto">
+					<option value="">كل المنشآت والشركات</option>
+					for _, o := range data.Organizations {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+					}
+				</select>
+				<button type="submit" class="btn btn-secondary btn-sm font-bold">تصفية</button>
+				if data.Query != "" || data.StatusFilter != "" || data.SelectedOrgID > 0 {
+					<a href="/admin/finance/withdrawals" class="btn btn-secondary btn-sm text-muted">إلغاء</a>
+				}
+			</form>
+		</div>
+
+		if len(data.Withdrawals) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات سحب مطابقة", Message: "لم يتم العثور على أي طلبات سحب رصيد تطابق معايير الفلترة المحددة."})
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th class="nowrap"># الطلب</th>
+							<th>المنشأة</th>
+							<th>المستخدم مقدم الطلب</th>
+							<th class="nowrap">المبلغ المطلوب</th>
+							<th>وسيلة وبيانات الاستلام</th>
+							<th class="nowrap">تاريخ الطلب</th>
+							<th>الحالة والملاحظات</th>
+							<th class="col-actions nowrap min-w-40">الإجراءات والتدقيق</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, w := range data.Withdrawals {
+							<tr class="align-middle">
+								<td class="tabular-nums font-black text-accent nowrap">
+									#{ fmt.Sprintf("WTH-%d", w.ID) }
+								</td>
+								<td>
+									if w.OrganizationName != "" {
+										<div class="font-extrabold text-primary text-sm">{ w.OrganizationName }</div>
+										<div class="d-flex items-center gap-1.5 mt-1 flex-wrap">
+											if w.OrganizationType == "vendor" || w.OrganizationType == "supplier" {
+												<span class="badge badge-purple text-xs font-bold">مورد</span>
+											} else if w.OrganizationType == "pharmacy" || w.OrganizationType == "customer" {
+												<span class="badge badge-emerald text-xs font-bold">صيدلية</span>
+											} else if w.OrganizationType != "" {
+												<span class="badge badge-sky text-xs font-bold">{ w.OrganizationType }</span>
+											}
+											if w.OrganizationID != nil && *w.OrganizationID > 0 {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/orgs/%d", *w.OrganizationID)) } class="badge badge-slate text-xs font-bold text-decoration-none tabular-nums">
+													#ORG-{ fmt.Sprintf("%d", *w.OrganizationID) }
+												</a>
+											}
+										</div>
+									} else {
+										<div class="text-sm font-bold text-muted">حساب فردي / غير مرتبط</div>
+									}
+								</td>
+								<td>
+									<div class="font-bold text-primary text-sm">{ w.UserName }</div>
+									<div class="text-xs text-muted tabular-nums mt-0.5" dir="ltr">
+										<span>{ w.UserEmail }</span>
+										if w.UserPhone != "" {
+											<span> • { w.UserPhone }</span>
+										}
+									</div>
+								</td>
+								<td>
+									<div class="tabular-nums font-black text-danger text-base nowrap">
+										- { w.Amount.String() } ج.م
+									</div>
+								</td>
+								<td>
+									<div class="d-flex flex-col gap-1">
+										if w.PayoutMethodType != "" {
+											<span class="badge badge-purple text-xs font-black w-fit">{ paymentProviderTitle(w.PayoutMethodType) }</span>
+										}
+										<div class="text-xs font-bold text-primary select-all">
+											{ w.DestinationDetails }
+										</div>
+									</div>
+								</td>
+								<td class="tabular-nums text-xs text-muted nowrap">
+									{ w.CreatedAt.Format("2006-01-02 03:04 PM") }
+								</td>
+								<td>
+									<div class="d-flex flex-col gap-1 items-start">
+										if w.Status == billing.WithdrawalPending {
+											<span class="badge badge-amber text-xs font-black">
+												<span>⏳ قيد المراجعة</span>
+											</span>
+										} else if w.Status == billing.WithdrawalApproved {
+											<span class="badge badge-emerald text-xs font-black">
+												<span>معتمد ومخصوم</span>
+											</span>
+											if w.ReviewerName != "" {
+												<div class="text-xs text-muted">بواسطة: { w.ReviewerName }</div>
+											}
+											if w.TransactionID != nil {
+												<div class="text-xs text-muted tabular-nums">معاملة #{ fmt.Sprintf("TX-%d", *w.TransactionID) }</div>
+											}
+											if w.TransferReceiptURL != "" {
+												<button
+													type="button"
+													class="btn btn-secondary btn-2xs font-bold gap-1 mt-1"
+													@click={ fmt.Sprintf("openReceiptModal('%s')", w.TransferReceiptURL) }
+												>
+													@components.IconFile("icon-xs")
+													<span>إشعار التحويل</span>
+												</button>
+											}
+										} else if w.Status == billing.WithdrawalRejected {
+											<span class="badge badge-danger text-xs font-black">
+												<span>مرفوض</span>
+											</span>
+											if w.RejectionReason != "" {
+												<div class="text-xs text-danger bg-danger-subtle p-1 rounded border max-w-xs break-words">
+													<strong>السبب:</strong> { w.RejectionReason }
+												</div>
+											}
+											if w.ReviewerName != "" {
+												<div class="text-xs text-muted">بواسطة: { w.ReviewerName }</div>
+											}
+										}
+										if w.UserNotes != "" {
+											<div class="text-xs text-secondary bg-surface-sunken p-1 rounded border max-w-xs break-words">
+												{ w.UserNotes }
+											</div>
+										}
+									</div>
+								</td>
+								<td class="col-actions nowrap">
+									if w.Status == billing.WithdrawalPending {
+										<div class="table-actions">
+											<button
+												type="button"
+												class="btn btn-success btn-xs font-bold gap-1"
+												@click={ fmt.Sprintf("openApproveWithdrawalModal(%d, '%s', '%s', '%s', '%s')", w.ID, w.Amount.String(), strings.ReplaceAll(w.UserName, "'", "\\'"), paymentProviderTitle(w.PayoutMethodType), strings.ReplaceAll(w.DestinationDetails, "'", "\\'")) }
+											>
+												@components.IconCheck("icon-xs")
+												<span>اعتماد وصرف</span>
+											</button>
+											<button
+												type="button"
+												class="btn btn-danger btn-xs font-bold gap-1"
+												@click={ fmt.Sprintf("openRejectWithdrawalModal(%d, '%s', '%s')", w.ID, w.Amount.String(), strings.ReplaceAll(w.UserName, "'", "\\'")) }
+											>
+												@components.IconClose("icon-xs")
+												<span>رفض</span>
+											</button>
+										</div>
+									} else {
+										<span class="badge badge-secondary text-xs">تمت المعالجة</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if data.TotalWithdrawals > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalWithdrawals,
+					BaseURL:     "/admin/finance/withdrawals",
+					QueryValues: financePaginationQuery("", data.Query, data.StatusFilter, "", "", data.SelectedWalletID, data.SelectedOrgID),
+				})
+			}
+		}
+	</div>
+}

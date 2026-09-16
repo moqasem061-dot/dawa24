@@ -1,0 +1,271 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminCitiesData struct {
+	Governorates          []*platformadmin.Governorate
+	Cities                []*platformadmin.City
+	SelectedGovernorateID int64
+	TotalCities           int
+	TotalGovernorates     int
+	TotalFiltered         int
+	Page                  int
+	Limit                 int
+	TotalPages            int
+	Query                 string
+	Status                string
+	ActiveTab             string
+	QueryValues           url.Values
+}
+
+templ AdminCities(data AdminCitiesData, lang string, dir string, isHTMX bool) {
+	@layouts.AdminShell("إدارة المحافظات والمدن الجغرافية", "cities", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				isEditOpen: false,
+				isGovEditOpen: false,
+				editForm: {
+					id: 0,
+					gov_id: '',
+					name_ar: '',
+					name_en: '',
+					lat: '',
+					lon: '',
+					radius: 3000,
+					is_capital: false,
+					is_active: true,
+					map_link: '#'
+				},
+				govEditForm: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					lat: '',
+					lon: '',
+					radius: 25000,
+					is_active: true
+				},
+				openEdit(id, govId, nameAr, nameEn, lat, lon, radius, isCapital, isActive) {
+					const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
+					const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
+					const radVal = (radius && radius > 0) ? Number(radius) : 3000;
+					this.editForm = {
+						id: id,
+						gov_id: govId > 0 ? String(govId) : '',
+						name_ar: nameAr || '',
+						name_en: nameEn || '',
+						lat: (lat && lat !== 0) ? String(lat) : '',
+						lon: (lon && lon !== 0) ? String(lon) : '',
+						radius: radVal,
+						is_capital: !!isCapital,
+						is_active: !!isActive,
+						map_link: (lat && lon) ? 'https://www.google.com/maps?q=' + lat + ',' + lon : '#'
+					};
+					this.isEditOpen = true;
+					this.$nextTick(() => {
+						if (window.dawaSetMapLocation) {
+							window.dawaSetMapLocation('#edit-city-map-picker', latVal, lonVal, null, radVal);
+						}
+					});
+				},
+				closeEdit() {
+					this.isEditOpen = false;
+				},
+				openGovEdit(id, nameAr, nameEn, lat, lon, radius, isActive) {
+					const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
+					const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
+					const radVal = (radius && radius > 0) ? Number(radius) : 25000;
+					this.govEditForm = {
+						id: id,
+						name_ar: nameAr || '',
+						name_en: nameEn || '',
+						lat: (lat && lat !== 0) ? String(lat) : '',
+						lon: (lon && lon !== 0) ? String(lon) : '',
+						radius: radVal,
+						is_active: !!isActive
+					};
+					this.isGovEditOpen = true;
+					this.$nextTick(() => {
+						if (window.dawaSetMapLocation) {
+							window.dawaSetMapLocation('#edit-gov-map-picker', latVal, lonVal, null, radVal);
+						}
+					});
+				},
+				closeGovEdit() {
+					this.isGovEditOpen = false;
+				},
+				setCityRadius(rad) {
+					const r = Number(rad);
+					if (isNaN(r) || r <= 0) return;
+					this.editForm.radius = r;
+					const picker = document.querySelector('#edit-city-map-picker');
+					if (picker && picker._leaflet_circle) {
+						picker._leaflet_circle.setRadius(r);
+						if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
+					}
+				},
+				setGovRadius(rad) {
+					const r = Number(rad);
+					if (isNaN(r) || r <= 0) return;
+					this.govEditForm.radius = r;
+					const picker = document.querySelector('#edit-gov-map-picker');
+					if (picker && picker._leaflet_circle) {
+						picker._leaflet_circle.setRadius(r);
+						if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
+					}
+				}
+			}"
+		>
+			<!-- Page Header -->
+			<div class="page-header flex-between items-start flex-wrap gap-4 pb-4 mb-6 border-b">
+				<div>
+					<div class="d-flex items-center gap-2 mb-1">
+						<span class="badge badge-emerald text-xs font-black">النطاق المكاني الذكي</span>
+						<span class="text-muted text-xs">خرائط ومسافات التوصيل (مصر)</span>
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+						المحافظات والمدن الجغرافية
+					</h1>
+					<p class="text-sm text-secondary m-0 mt-1">
+						إدارة التقسيم الإداري لمحافظات ومدن جمهورية مصر العربية، مع تحديد إحداثيات GPS ونطاق التغطية الدائري بالمتر لحساب أقرب فروع التوريد.
+					</p>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href="#new-city-card" class="btn btn-primary btn-sm font-black gap-2">
+						@components.IconPlus("icon-xs")
+						<span>إضافة مدينة جديدة</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Quick Spatial Stats Cards -->
+			<div class="stats-grid-auto mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">إجمالي المحافظات</div>
+					<div class="stat-card-value text-2xl text-primary font-black mt-1">
+						if data.TotalGovernorates > 0 {
+							{ fmt.Sprintf("%d", data.TotalGovernorates) }
+						} else {
+							{ fmt.Sprintf("%d", len(data.Governorates)) }
+						}
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">محافظة معتمدة بجمهورية مصر العربية</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">إجمالي المدن والمراكز</div>
+					<div class="stat-card-value text-2xl text-emerald font-black mt-1">
+						if data.TotalCities > 0 {
+							{ fmt.Sprintf("%d", data.TotalCities) }
+						} else {
+							{ fmt.Sprintf("%d", len(data.Cities)) }
+						}
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">مدينة وحي مسجل بالمنظومة</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">جاهزية الإحداثيات المكانية</div>
+					<div class="mt-2">
+						<span class="badge badge-emerald text-xs font-bold">100% إحداثيات GPS دقيقة</span>
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">حساب مسافات التوصيل بالخرائط التفاعلية</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-xs">حالة النطاق الجغرافي</div>
+					<div class="mt-2">
+						<span class="badge badge-sky text-xs font-bold">تغطية شاملة للمحافظات</span>
+					</div>
+					<div class="stat-card-sub text-muted text-xs mt-1">محدثة ومطابقة للمخطط الإداري</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/cities" class="d-flex flex-wrap items-center justify-between gap-3 m-0">
+					<div class="d-flex flex-wrap items-center gap-3 flex-1 min-w-72">
+						<div class="flex-1 min-w-48">
+							<select name="gov_id" data-autosubmit class="form-input text-xs w-full font-bold">
+								<option value="0">كل المحافظات (عرض جميع المدن)</option>
+								for _, g := range data.Governorates {
+									<option value={ fmt.Sprintf("%d", g.ID) } selected?={ data.SelectedGovernorateID == g.ID }>
+										{ g.Name["ar"] } ({ g.Name["en"] }) - { fmt.Sprintf("%d", g.CityCount) } مدينة
+									</option>
+								}
+							</select>
+						</div>
+
+						<div class="min-w-36">
+							<select name="status" data-autosubmit class="form-input text-xs w-full font-bold">
+								<option value="" selected?={ data.Status == "" }>كل الحالات (الكل)</option>
+								<option value="active" selected?={ data.Status == "active" }>مفعّلة فقط</option>
+								<option value="inactive" selected?={ data.Status == "inactive" }>معطّلة فقط</option>
+							</select>
+						</div>
+
+						<div class="flex-1 min-w-56">
+							<input
+								type="text"
+								name="q"
+								value={ data.Query }
+								placeholder="بحث باسم المدينة أو المحافظة..."
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.Limit) }/>
+
+						<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-3">
+							@components.IconSearch("icon-xs")
+							<span>بحث</span>
+						</button>
+
+						if data.Query != "" || data.SelectedGovernorateID > 0 || data.Status != "" {
+							<a href="/admin/cities" class="btn btn-secondary btn-sm text-xs">
+								@components.IconClose("icon-xs")
+								<span>إعادة ضبط</span>
+							</a>
+						}
+					</div>
+
+					<div class="d-flex items-center gap-3">
+						<span class="text-xs text-muted font-bold">إجمالي المطابق:</span>
+						<span class="badge badge-sky tabular-nums text-xs font-bold">
+							{ fmt.Sprintf("%d مدينة", data.TotalFiltered) }
+						</span>
+					</div>
+				</form>
+			</div>
+
+			<!-- Main 2-Column Grid: Cities Table (Start/Right 1fr) + Sticky Action Sidebar (End/Left 400px) -->
+			<div class="cities-layout-grid">
+				@AdminCitiesTable(data)
+				@AdminCitiesSidebar(data)
+			</div>
+
+			@AdminCitiesModals(data)
+		</div>
+	}
+}
+
+func AdminCitiesQuery(data AdminCitiesData) url.Values {
+	v := url.Values{}
+	if data.SelectedGovernorateID > 0 {
+		v.Set("gov_id", fmt.Sprintf("%d", data.SelectedGovernorateID))
+	}
+	if data.Query != "" {
+		v.Set("q", data.Query)
+	}
+	if data.Status != "" {
+		v.Set("status", data.Status)
+	}
+	return v
+}

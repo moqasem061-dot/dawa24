@@ -1,0 +1,6 @@
+BEGIN;
+
+DROP TABLE IF EXISTS ai.usage_events;
+DROP SCHEMA IF EXISTS ai;
+
+COMMIT;

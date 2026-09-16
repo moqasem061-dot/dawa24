@@ -1,0 +1,363 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceDepositsPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("طلبات شحن المحفظة", "deposits", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				rejectDepositID: 0,
+				rejectDepositAmount: '',
+				rejectUserName: '',
+				receiptModalURL: '',
+				refundTargetID: 0,
+				refundAmount: '',
+				refundOrgName: '',
+				refundTargetType: 'deposit',
+				openRejectModal(id, amount, userName) {
+					this.rejectDepositID = id;
+					this.rejectDepositAmount = amount;
+					this.rejectUserName = userName;
+					const modal = document.getElementById('finance-reject-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openReceiptModal(url) {
+					this.receiptModalURL = url;
+					const modal = document.getElementById('finance-receipt-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRefundModal(id, amount, orgName, targetType) {
+					this.refundTargetID = id;
+					this.refundAmount = amount;
+					this.refundOrgName = orgName;
+					this.refundTargetType = targetType || 'deposit';
+					const modal = document.getElementById('finance-refund-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconCreditCard("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">مراجعة وتدقيق طلبات شحن المحفظة</h1>
+							<p class="text-sm text-secondary m-0 mt-1">الموافقة والاعتماد الفوري لتحويلات الصيدليات والعملاء، أو الرفض مع ذكر السبب</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/withdrawals" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconTrendingUp("icon-xs")
+							<span>طلبات السحب</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات شحن معلقة</span>
+						<span class="text-warning">@components.IconCreditCard("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingDepositsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						بانتظار المراجعة والاعتماد
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي طلبات الشحن</span>
+						<span class="text-brand">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.TotalDeposits) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						طلب إيداع مسجل بالنظام
+					</div>
+				</div>
+
+				<a href="/admin/finance/payments" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي المدفوعات المحصلة</span>
+						<span class="text-success">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalPaid.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						عبر كل وسائل الدفع
+					</div>
+				</a>
+
+				<a href="/admin/finance/wallets" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أرصدة المحافظ المحتجزة</span>
+						<span class="text-indigo">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalHeld.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d محفظة نشطة", data.TotalWallets) }
+					</div>
+				</a>
+			</div>
+
+			<!-- Main Deposits Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinanceDepositsTab(data, lang, dir)
+			</div>
+
+			<!-- Modals -->
+			@AdminFinanceModals(data, lang, dir)
+		</div>
+	}
+}
+
+templ AdminFinanceDepositsTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<div class="flex-between items-center flex-wrap gap-4 pb-3 border-b">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0 d-flex items-center gap-2">
+					<span>@components.IconCreditCard("icon-sm")</span>
+					<span>مراجعة وتدقيق طلبات شحن المحفظة</span>
+				</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">الموافقة والاعتماد الفوري لتحويلات الصيدليات والعملاء، أو الرفض مع ذكر السبب.</p>
+			</div>
+			<!-- Search & Filter Form -->
+			<form method="GET" action="/admin/finance/deposits" class="d-flex gap-2 items-center flex-wrap m-0">
+				<input type="hidden" name="tab" value="deposits"/>
+				<input type="text" name="q" value={ data.Query } placeholder="ابحث بالاسم، الإيميل، الهاتف، أو المرجع..." class="form-input text-sm min-w-64"/>
+				<select name="status" class="form-select text-sm w-auto">
+					<option value="">كل الحالات</option>
+					<option value="pending" selected?={ data.StatusFilter == "pending" }>⏳ قيد المراجعة (Pending)</option>
+					<option value="approved" selected?={ data.StatusFilter == "approved" }>معتمدة ومقبولة (Approved)</option>
+					<option value="rejected" selected?={ data.StatusFilter == "rejected" }>مرفوضة (Rejected)</option>
+				</select>
+				<select name="method" class="form-select text-sm w-auto">
+					<option value="">كل وسائل الدفع</option>
+					<option value="instapay" selected?={ data.MethodFilter == "instapay" }>إنستاباي InstaPay</option>
+					<option value="bank_transfer" selected?={ data.MethodFilter == "bank_transfer" }>تحويل بنكي Bank</option>
+					<option value="wallet" selected?={ data.MethodFilter == "wallet" }>محفظة هاتف كاش</option>
+					<option value="card" selected?={ data.MethodFilter == "card" }>بطاقة دفع إلكترونية</option>
+				</select>
+				<select name="org_id" class="form-select text-sm w-auto">
+					<option value="">كل المنشآت والشركات</option>
+					for _, o := range data.Organizations {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+					}
+				</select>
+				<button type="submit" class="btn btn-secondary btn-sm font-bold">تصفية</button>
+				if data.Query != "" || data.StatusFilter != "" || data.MethodFilter != "" || data.SelectedOrgID > 0 {
+					<a href="/admin/finance/deposits" class="btn btn-secondary btn-sm text-muted">إلغاء</a>
+				}
+			</form>
+		</div>
+
+		if len(data.Deposits) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات إيداع مطابقة", Message: "لم يتم العثور على أي طلبات شحن محفظة تطابق معايير الفلترة المحددة."})
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th class="nowrap"># الطلب</th>
+							<th>المنشأة</th>
+							<th>المستخدم مقدم الطلب</th>
+							<th class="nowrap">المبلغ المودع</th>
+							<th>وسيلة الدفع والرقم المرجعي</th>
+							<th class="nowrap">إشعار التحويل</th>
+							<th class="nowrap">تاريخ الطلب</th>
+							<th>الحالة والملاحظات</th>
+							<th class="col-actions nowrap min-w-40">الإجراءات والتدقيق</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, d := range data.Deposits {
+							<tr class="align-middle">
+								<td class="tabular-nums font-black text-accent nowrap">
+									#{ fmt.Sprintf("DEP-%d", d.ID) }
+								</td>
+								<td>
+									if d.OrganizationName != "" {
+										<div class="font-extrabold text-primary text-sm">{ d.OrganizationName }</div>
+										<div class="d-flex items-center gap-1.5 mt-1 flex-wrap">
+											if d.OrganizationType == "vendor" || d.OrganizationType == "supplier" {
+												<span class="badge badge-purple text-xs font-bold">مورد</span>
+											} else if d.OrganizationType == "pharmacy" || d.OrganizationType == "customer" {
+												<span class="badge badge-emerald text-xs font-bold">صيدلية</span>
+											} else if d.OrganizationType != "" {
+												<span class="badge badge-sky text-xs font-bold">{ d.OrganizationType }</span>
+											}
+											if d.OrganizationID != nil && *d.OrganizationID > 0 {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/orgs/%d", *d.OrganizationID)) } class="badge badge-slate text-xs font-bold text-decoration-none tabular-nums">
+													#ORG-{ fmt.Sprintf("%d", *d.OrganizationID) }
+												</a>
+											}
+										</div>
+									} else {
+										<div class="text-sm font-bold text-muted">حساب فردي / غير مرتبط</div>
+									}
+								</td>
+								<td>
+									<div class="font-bold text-primary text-sm">{ d.UserName }</div>
+									<div class="text-xs text-muted tabular-nums mt-0.5" dir="ltr">
+										<span>{ d.UserEmail }</span>
+										if d.UserPhone != "" {
+											<span> • { d.UserPhone }</span>
+										}
+									</div>
+								</td>
+								<td>
+									<div class="tabular-nums font-black text-success text-base nowrap">
+										+ { d.Amount.String() } ج.م
+									</div>
+								</td>
+								<td>
+									<div class="d-flex flex-col gap-1">
+										<span class="badge badge-purple text-xs font-black w-fit" dir="ltr">{ d.PaymentMethod }</span>
+										<div class="tabular-nums text-xs font-bold text-secondary" dir="ltr">
+											<span class="text-muted">المرجع:</span> { d.ReferenceNumber }
+										</div>
+									</div>
+								</td>
+								<td class="col-actions">
+									if d.AttachmentURL != "" {
+										<button
+											type="button"
+											class="btn btn-secondary btn-xs font-bold nowrap gap-1"
+											@click={ fmt.Sprintf("openReceiptModal('%s')", d.AttachmentURL) }
+										>
+											@components.IconFile("icon-xs")
+											<span>عرض الإيصال</span>
+										</button>
+									} else {
+										<span class="text-muted text-xs">لا يوجد مرفق</span>
+									}
+								</td>
+								<td class="tabular-nums text-xs text-muted nowrap">
+									{ d.CreatedAt.Format("2006-01-02 03:04 PM") }
+								</td>
+								<td>
+									<div class="d-flex flex-col gap-1 items-start">
+										if d.Status == billing.DepositPending {
+											<span class="badge badge-amber text-xs font-black">
+												<span>⏳ قيد المراجعة</span>
+											</span>
+										} else if d.Status == billing.DepositApproved {
+											<span class="badge badge-emerald text-xs font-black">
+												<span>معتمد ومضاف</span>
+											</span>
+											if d.ReviewerName != "" {
+												<div class="text-xs text-muted">بواسطة: { d.ReviewerName }</div>
+											}
+											if d.TransactionID != nil {
+												<div class="text-xs text-muted tabular-nums">معاملة #{ fmt.Sprintf("TX-%d", *d.TransactionID) }</div>
+											}
+										} else if d.Status == billing.DepositRefunded {
+											<span class="badge badge-amber text-xs font-black">
+												<span>مسترد</span>
+											</span>
+											if d.RefundedByName != "" {
+												<div class="text-xs text-muted">بواسطة: { d.RefundedByName }</div>
+											}
+											if d.RefundTransactionID != nil {
+												<div class="text-xs text-muted tabular-nums">قيد الاسترداد #{ fmt.Sprintf("TX-%d", *d.RefundTransactionID) }</div>
+											}
+										} else if d.Status == billing.DepositRejected {
+											<span class="badge badge-danger text-xs font-black">
+												<span>مرفوض</span>
+											</span>
+											if d.RejectionReason != "" {
+												<div class="text-xs text-danger bg-danger-subtle p-1 rounded border max-w-xs break-words">
+													<strong>السبب:</strong> { d.RejectionReason }
+												</div>
+											}
+											if d.ReviewerName != "" {
+												<div class="text-xs text-muted">بواسطة: { d.ReviewerName }</div>
+											}
+										}
+										if d.UserNotes != "" {
+											<div class="text-xs text-secondary bg-surface-sunken p-1 rounded border max-w-xs break-words">
+												{ d.UserNotes }
+											</div>
+										}
+									</div>
+								</td>
+								<td class="col-actions nowrap">
+									if d.Status == billing.DepositPending {
+										<div class="table-actions">
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/finance/deposits/%d/approve", d.ID)) } class="m-0" data-confirm="هل أنت متأكد من رغبتك في اعتماد هذا الإيداع وإضافته للرصيد الآن؟">
+												<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+												<button
+													type="submit"
+													class="btn btn-success btn-xs font-bold gap-1"
+												>
+													@components.IconCheck("icon-xs")
+													<span>اعتماد</span>
+												</button>
+											</form>
+											<button
+												type="button"
+												class="btn btn-danger btn-xs font-bold gap-1"
+												@click={ fmt.Sprintf("openRejectModal(%d, '%s', '%s')", d.ID, d.Amount.String(), strings.ReplaceAll(d.UserName, "'", "\\'")) }
+											>
+												@components.IconClose("icon-xs")
+												<span>رفض</span>
+											</button>
+										</div>
+									} else if d.Status == billing.DepositApproved {
+										<button
+											type="button"
+											class="btn btn-warning btn-xs font-bold gap-1"
+											@click={ fmt.Sprintf("openRefundModal(%d, '%s', '%s', 'deposit')", d.ID, d.Amount.String(), strings.ReplaceAll(d.OrganizationName, "'", "\\'")) }
+										>
+											@components.IconRotateCcw("icon-xs")
+											<span>استرداد</span>
+										</button>
+									} else if d.Status == billing.DepositRefunded {
+										<span class="badge badge-amber text-xs">مسترد</span>
+									} else {
+										<span class="badge badge-secondary text-xs">مرفوض</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if data.TotalDeposits > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalDeposits,
+					BaseURL:     "/admin/finance/deposits",
+					QueryValues: financePaginationQuery("", data.Query, data.StatusFilter, "", data.MethodFilter, data.SelectedWalletID, data.SelectedOrgID),
+				})
+			}
+		}
+	</div>
+}

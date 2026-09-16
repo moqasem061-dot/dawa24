@@ -1,0 +1,133 @@
+package components
+
+// Status badges.
+//
+// Two things were wrong with the previous version. It emitted badge-success /
+// badge-warning / badge-danger / badge-neutral, none of which exist in app.css
+// — the stylesheet defines badge-emerald, badge-amber, badge-rose, badge-sky
+// and badge-slate — so every badge rendered with the base .badge rule and no
+// colour at all. And it printed the raw status key, so an Arabic-first
+// interface showed "pending" and "delivered" to its readers.
+
+// StatusBadge renders a domain status with its localized label and tone.
+templ StatusBadge(status string, langOpt ...string) {
+	<span class={ "badge", statusTone(status) }>{ statusLabel(status, langOpt...) }</span>
+}
+
+// BadgeProps is the generic badge, for counts and free labels.
+type BadgeProps struct {
+	Label string
+	// Tone is one of emerald, amber, rose, sky, slate. Defaults to slate.
+	Tone string
+}
+
+templ Badge(props BadgeProps) {
+	<span class={ "badge", badgeTone(props.Tone) }>{ props.Label }</span>
+}
+
+func badgeTone(tone string) string {
+	switch tone {
+	case "emerald", "amber", "rose", "sky", "slate":
+		return "badge-" + tone
+	default:
+		return "badge-slate"
+	}
+}
+
+// statusTone maps a status onto one of the five tones the stylesheet defines.
+func statusTone(status string) string {
+	switch status {
+	case "active", "completed", "approved", "delivered", "published", "paid", "received", "resolved":
+		return "badge-emerald"
+	case "pending", "processing", "draft", "in_progress", "in_transit", "dispatched", "partially_paid":
+		return "badge-amber"
+	case "failed", "cancelled", "rejected", "suspended", "expired", "overdue", "inactive":
+		return "badge-rose"
+	case "confirmed", "shipped", "quoted", "reviewed":
+		return "badge-sky"
+	default:
+		return "badge-slate"
+	}
+}
+
+func statusLabel(status string, langOpt ...string) string {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] == "en" {
+		lang = "en"
+	}
+	if lang == "en" {
+		return statusLabelEn(status)
+	}
+	return statusLabelAr(status)
+}
+
+func statusLabelEn(status string) string {
+	labels := map[string]string{
+		"active":         "Active",
+		"inactive":       "Inactive",
+		"pending":        "Pending",
+		"processing":     "Processing",
+		"in_progress":    "In Progress",
+		"draft":          "Draft",
+		"published":      "Published",
+		"approved":       "Approved",
+		"rejected":       "Rejected",
+		"suspended":      "Suspended",
+		"cancelled":      "Cancelled",
+		"failed":         "Delivery Failed",
+		"expired":        "Expired",
+		"completed":      "Completed",
+		"confirmed":      "Confirmed",
+		"dispatched":     "Dispatched",
+		"in_transit":     "In Transit",
+		"shipped":        "Shipped",
+		"delivered":      "Delivered",
+		"received":       "Received",
+		"paid":           "Paid",
+		"partially_paid": "Partially Paid",
+		"overdue":        "Overdue",
+		"resolved":       "Resolved",
+		"quoted":         "Quoted",
+		"reviewed":       "Reviewed",
+	}
+	if en, ok := labels[status]; ok {
+		return en
+	}
+	return status
+}
+
+// statusLabelAr is the Arabic wording for a status key.
+func statusLabelAr(status string) string {
+	labels := map[string]string{
+		"active":         "نشط",
+		"inactive":       "غير نشط",
+		"pending":        "قيد المراجعة",
+		"processing":     "قيد المعالجة",
+		"in_progress":    "قيد التنفيذ",
+		"draft":          "مسودة",
+		"published":      "منشور",
+		"approved":       "معتمد",
+		"rejected":       "مرفوض",
+		"suspended":      "موقوف",
+		"cancelled":      "ملغى",
+		"failed":         "تعذّر التسليم",
+		"expired":        "منتهي",
+		"completed":      "مكتمل",
+		"confirmed":      "مؤكد",
+		"dispatched":     "تم الشحن",
+		"in_transit":     "في الطريق",
+		"shipped":        "تم الإرسال",
+		"delivered":      "تم التسليم",
+		"received":       "تم الاستلام",
+		"paid":           "مدفوع",
+		"partially_paid": "مدفوع جزئياً",
+		"overdue":        "متأخر",
+		"resolved":       "تم الحل",
+		"quoted":         "تم التسعير",
+		"reviewed":       "تمت المراجعة",
+	}
+	if ar, ok := labels[status]; ok {
+		return ar
+	}
+	return status
+}

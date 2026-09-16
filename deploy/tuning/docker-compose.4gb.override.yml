@@ -1,0 +1,37 @@
+# =============================================================================
+# Docker Compose Override for 2 vCPU / 4 GB RAM VPS (Netcup / Elest.io)
+# =============================================================================
+# Usage: docker compose -f docker-compose.yml -f deploy/tuning/docker-compose.4gb.override.yml up -d
+# =============================================================================
+
+services:
+  server:
+    environment:
+      GOMEMLIMIT: 1200MiB
+      GOMAXPROCS: 2
+      DB_MAX_CONNS: 20
+      DB_MIN_CONNS: 2
+      REDIS_POOL_SIZE: 10
+    deploy:
+      resources:
+        limits:
+          memory: 1500M
+          cpus: "2"
+        reservations:
+          memory: 800M
+
+  worker:
+    environment:
+      GOMEMLIMIT: 600MiB
+      GOMAXPROCS: 1
+      WORKER_IMPORTS: 1
+      WORKER_AI: 2
+      WORKER_NOTIFICATIONS: 2
+      DB_MAX_CONNS: 5
+    deploy:
+      resources:
+        limits:
+          memory: 800M
+          cpus: "1"
+        reservations:
+          memory: 300M

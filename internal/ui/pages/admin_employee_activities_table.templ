@@ -1,0 +1,245 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// AdminEmployeeActivitiesTable renders the activities table rows and pagination footer.
+templ AdminEmployeeActivitiesTable(data AdminEmployeeActivitiesData) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden border border-slate-200/80 rounded-2xl shadow-xs">
+		if len(data.Entries) == 0 {
+			<div class="p-8 text-center empty-state-glass">
+				<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3 text-2xl">
+					@components.IconClock("icon-sm")
+				</div>
+				<h3 class="text-lg font-black text-primary mb-2">لا توجد أنشطة مسجلة</h3>
+				<p class="text-xs text-secondary max-w-md mx-auto">لم يتم العثور على أي عمليات تطابق معايير التصفية والبحث الحالية في سجل النظام.</p>
+			</div>
+		} else {
+			<div class="table-container m-0 overflow-x-auto">
+				<table class="data-table m-0 text-xs w-full">
+					<thead>
+						<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+							<th class="py-3 text-center ps-4"># ID</th>
+							<th class="py-3 text-start">التوقيت والتاريخ</th>
+							<th class="py-3 text-start">الموظف المنفذ</th>
+							<th class="py-3 text-start">المنشأة التابع لها</th>
+							<th class="py-3 text-start">نوع الإجراء</th>
+							<th class="py-3 text-start">القسم / العنصر</th>
+							<th class="py-3 text-start">معرف الصنف</th>
+							<th class="text-center py-3">عنوان IP</th>
+							<th class="col-actions py-3 pe-4">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-slate-100">
+						for _, e := range data.Entries {
+							{{ actionLabel, badgeClass := formatEmployeeAuditAction(e.Action, e.ActionLabelAr) }}
+							<tr class="transition-colors">
+								<!-- 1. ID -->
+								<td class="text-center ps-4">
+									<span class="tabular-nums font-mono font-bold text-muted">
+										#{ fmt.Sprintf("%d", e.ID) }
+									</span>
+								</td>
+
+								<!-- 2. Timestamp -->
+								<td class="text-start">
+									<div class="tabular-nums font-bold text-primary">
+										{ e.CreatedAt.Format("2006-01-02") }
+									</div>
+									<div class="tabular-nums text-2xs text-muted mt-0.5">
+										{ e.CreatedAt.Format("03:04:05 PM") }
+									</div>
+								</td>
+
+								<!-- 3. Actor -->
+								<td class="text-start">
+									<div class="d-flex items-center gap-2">
+										<div class="user-avatar-badge text-xs font-black">
+											if len(e.ActorName) > 0 {
+												{ string([]rune(e.ActorName)[0]) }
+											} else {
+												م
+											}
+										</div>
+										<div class="stack-sm">
+											<div class="font-extrabold text-xs text-primary">
+												{ e.ActorName }
+											</div>
+											if e.ActorEmail != "" {
+												<div class="text-2xs text-muted tabular-nums" dir="ltr">
+													{ e.ActorEmail }
+												</div>
+											}
+										</div>
+									</div>
+								</td>
+
+								<!-- 4. Organization -->
+								<td class="text-start">
+									<div class="font-bold text-primary text-xs">
+										{ e.OrganizationName }
+									</div>
+									if e.OrganizationID != nil && *e.OrganizationID > 0 {
+										<div class="text-2xs text-muted tabular-nums">
+											ID #{ fmt.Sprintf("%d", *e.OrganizationID) }
+										</div>
+									}
+								</td>
+
+								<!-- 5. Action -->
+								<td class="text-start">
+									<div class="d-flex flex-col gap-1 items-start">
+										<span class={ "badge text-xs font-bold", badgeClass }>
+											{ actionLabel }
+										</span>
+										<code class="text-2xs font-mono text-muted bg-surface-sunken px-1.5 py-0.5 rounded border border-slate-200/60" dir="ltr">
+											{ e.Action }
+										</code>
+									</div>
+								</td>
+
+								<!-- 6. Entity Type -->
+								<td class="text-start">
+									<span class="badge badge-slate text-xs font-bold">
+										{ formatEntityType(e.EntityType, e.EntityTypeAr) }
+									</span>
+								</td>
+
+								<!-- 7. Entity ID -->
+								<td class="text-start">
+									if e.EntityID != "" {
+										<code class="tabular-nums text-xs bg-surface-sunken border border-slate-200/80 px-1.5 py-0.5 rounded font-mono font-bold">
+											{ formatShortID(e.EntityID) }
+										</code>
+									} else {
+										<span class="text-xs text-muted">—</span>
+									}
+								</td>
+
+								<!-- 8. IP Address -->
+								<td class="text-center tabular-nums text-xs font-mono text-secondary">
+									if e.IPAddress != "" {
+										{ e.IPAddress }
+									} else {
+										<span class="text-muted">داخلي</span>
+									}
+								</td>
+
+								<!-- 9. Actions -->
+								<td class="col-actions pe-4">
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
+										@click={ fmt.Sprintf("selected = %s; isDetailsOpen = true; document.getElementById('user-audit-details-modal')?.showModal();", func() string { s, _ := templ.JSONString(e); return s }()) }
+									>
+										@components.IconEye("icon-2xs")
+										<span>تفاصيل</span>
+									</button>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			<!-- Pagination Footer with B2BPagination -->
+			if data.TotalCount > 0 {
+				{{
+					queryVals := url.Values{}
+					if data.SearchQuery != "" {
+						queryVals.Set("q", data.SearchQuery)
+					}
+					if data.SelectedOrgID > 0 {
+						queryVals.Set("org_id", strconv.FormatInt(data.SelectedOrgID, 10))
+					}
+					if data.SelectedUserID > 0 {
+						queryVals.Set("user_id", strconv.FormatInt(data.SelectedUserID, 10))
+					}
+					if data.SelectedAction != "" {
+						queryVals.Set("action", data.SelectedAction)
+					}
+					if data.DateFrom != "" {
+						queryVals.Set("date_from", data.DateFrom)
+					}
+					if data.DateTo != "" {
+						queryVals.Set("date_to", data.DateTo)
+					}
+				}}
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/admin/employee-activities",
+					QueryValues: queryVals,
+				})
+			}
+		}
+	</div>
+}
+
+// AdminEmployeeActivitiesModal renders the JSON diff and details modal.
+templ AdminEmployeeActivitiesModal() {
+	@components.Modal(components.ModalProps{
+		ID:          "user-audit-details-modal",
+		Title:       "تفاصيل العملية",
+		Icon:        "clock",
+		Size:        "lg",
+		AlpineClose: "isDetailsOpen = false",
+	}) {
+		<div class="flex-between items-center pb-3 mb-4 border-b border-slate-100">
+			<div class="d-flex items-center gap-2.5">
+				<div class="stack-sm">
+					<h3 class="text-base font-black text-primary m-0" x-text="'تفاصيل العملية #' + (selected ? selected.id : '')"></h3>
+					<p class="text-2xs text-secondary m-0 mt-0.5 font-medium" x-text="selected ? (selected.action + ' • ' + selected.entity_type) : ''"></p>
+				</div>
+			</div>
+		</div>
+
+		<template x-if="selected">
+			<div class="d-flex flex-col gap-4">
+				<div class="d-grid grid-cols-2 gap-3 p-3.5 bg-surface-sunken rounded-xl border border-slate-200/80 text-xs">
+					<div class="stack-sm">
+						<span class="text-muted d-block text-2xs">الموظف المنفذ:</span>
+						<strong class="text-primary font-bold" x-text="selected.actor_name"></strong>
+					</div>
+					<div class="stack-sm">
+						<span class="text-muted d-block text-2xs">المنشأة:</span>
+						<strong class="text-primary font-bold" x-text="selected.organization_name"></strong>
+					</div>
+					<div class="stack-sm">
+						<span class="text-muted d-block text-2xs">عنوان IP:</span>
+						<code class="font-mono text-secondary" x-text="selected.ip_address || 'داخلي'"></code>
+					</div>
+					<div class="stack-sm">
+						<span class="text-muted d-block text-2xs">التوقيت:</span>
+						<span class="tabular-nums font-bold text-secondary" x-text="selected.created_at"></span>
+					</div>
+				</div>
+
+				<!-- Before / After JSON Payloads -->
+				<div class="d-grid grid-auto-fit-sm gap-3">
+					<div class="p-3 bg-rose-50/40 rounded-xl border border-rose-100">
+						<div class="text-2xs font-extrabold text-rose-800 mb-1.5">البيانات السابقة (Before):</div>
+						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-rose-200 overflow-x-auto text-slate-700" x-text="JSON.stringify(selected.before || {}, null, 2)"></pre>
+					</div>
+					<div class="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100">
+						<div class="text-2xs font-extrabold text-emerald-800 mb-1.5">البيانات بعد التعديل (After):</div>
+						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-emerald-200 overflow-x-auto text-slate-700" x-text="JSON.stringify(selected.after || {}, null, 2)"></pre>
+					</div>
+				</div>
+			</div>
+		</template>
+
+		<div class="flex-between items-center pt-3 mt-4 border-t border-slate-100">
+			<span></span>
+			<button type="button" data-modal-close class="btn btn-secondary btn-sm font-bold px-6">
+				إغلاق
+			</button>
+		</div>
+	}
+}

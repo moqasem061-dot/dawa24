@@ -1,0 +1,366 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// TempWarehouseRunView carries view model data for a resumable upload run.
+type TempWarehouseRunView struct {
+	ID            int64
+	PublicID      string
+	Filename      string
+	State         string
+	Phase         string
+	Percent       int
+	TotalRows     int
+	ProcessedRows int
+	Step          int
+	TotalFiles    int
+	CurrentFileID int64
+	BaseURL       string
+	FileIDs       []int64
+	SupplierNames map[int64]string
+}
+
+// TempWarehouseMappingFileView holds per-file column choices and preview rows.
+type TempWarehouseMappingFileView struct {
+	ID           int64
+	Filename     string
+	SupplierName string
+	RowCount     int
+	Status       string
+	IsMapped     bool
+	CodeCol      int
+	NameCol      int
+	PriceCol     int
+	DiscountCol  int
+	Headers      []string
+	Preview      [][]string
+}
+
+// AdminTempWarehouseActiveSessionCard renders a prominent resume banner on index pages.
+templ AdminTempWarehouseActiveSessionCard(run *TempWarehouseRunView, base string, lang string) {
+	<div class="glass-panel p-5 border border-amber-300 dark:border-amber-700 bg-amber-50/70 dark:bg-amber-950/40 rounded-2xl shadow-sm mb-6">
+		<div class="d-flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+			<div class="d-flex items-center gap-3">
+				<div class="w-12 h-12 rounded-xl bg-amber-500/20 text-amber-600 dark:text-amber-400 d-flex items-center justify-center text-2xl flex-shrink-0">
+					⚡
+				</div>
+				<div>
+					<div class="d-flex items-center gap-2">
+						<span class="font-bold text-base text-surface-fg">استكمال جلسة الرفع غير المكتملة</span>
+						<span class="badge badge-warning text-xs font-semibold px-2 py-0.5 rounded-full">
+							if run.Phase == "mapping" {
+								تحديد الأعمدة
+							} else if run.Phase == "review" {
+								مراجعة الدفعة
+							} else if run.Phase == "staging" || run.Phase == "committing" {
+								قيد المعالجة
+							} else {
+								{ run.Phase }
+							}
+						</span>
+					</div>
+					<div class="text-xs text-secondary mt-1">
+						الملفات: <strong>{ fmt.Sprintf("%d", run.TotalFiles) }</strong> | الدفعة: <strong>{ run.Filename }</strong>
+						if run.Percent > 0 {
+							| تم الإنجاز: <strong>{ fmt.Sprintf("%d%%", run.Percent) }</strong>
+						}
+					</div>
+				</div>
+			</div>
+			<div class="d-flex items-center gap-2 w-full md:w-auto">
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d", base, run.ID)) }
+					class="btn btn-warning font-bold text-sm px-4 py-2 rounded-xl shadow-xs d-inline-flex items-center gap-2 flex-grow md:flex-grow-0 justify-center"
+				>
+					<span>متابعة من حيث توقفت</span>
+					<span>←</span>
+				</a>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", base, run.ID)) } class="m-0">
+					<button
+						type="submit"
+						class="btn btn-ghost text-xs text-secondary hover:text-danger px-3 py-2 rounded-xl"
+						data-confirm="هل أنت متأكد من رغبتك في إلغاء هذه الجلسة؟"
+					>
+						إلغاء
+					</button>
+				</form>
+			</div>
+		</div>
+		if run.Percent > 0 {
+			<div class="w-full bg-amber-200 dark:bg-amber-900/60 rounded-full h-1.5 mt-4 overflow-hidden">
+				<div class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style={ fmt.Sprintf("width: %d%%;", run.Percent) }></div>
+			</div>
+		}
+	</div>
+}
+
+// AdminTempWarehouseRunMappingPage renders the full-page column mapping wizard.
+templ AdminTempWarehouseRunMappingPage(run *TempWarehouseRunView, curFile *TempWarehouseMappingFileView, files []*TempWarehouseMappingFileView, lang, dir string) {
+	@layouts.AdminShell("تحديد وتعيين أعمدة المستودع", "inventory", lang, dir) {
+		<div class="max-w-6xl mx-auto pb-12"
+			x-data="{
+				autosaving: false,
+				autosaved: false,
+				saveError: '',
+				autosave() {
+					this.autosaving = true;
+					this.autosaved = false;
+					this.saveError = '';
+					let form = this.$refs.mappingForm;
+					let data = new FormData(form);
+					data.append('is_autosave', '1');
+					fetch(form.action, {
+						method: 'POST',
+						body: data,
+						headers: { 'Accept': 'application/json' }
+					})
+					.then(r => r.json())
+					.then(res => {
+						this.autosaving = false;
+						if (res.success) {
+							this.autosaved = true;
+							setTimeout(() => { this.autosaved = false; }, 3000);
+						} else {
+							this.saveError = res.error || 'فشل الحفظ التلقائي';
+						}
+					})
+					.catch(e => {
+						this.autosaving = false;
+						this.saveError = 'خطأ في الاتصال';
+					});
+				}
+			}"
+		>
+			<!-- Wizard Header & Breadcrumbs -->
+			<div class="d-flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
+				<div>
+					<div class="text-xs text-secondary mb-1">
+						<a href={ templ.SafeURL(run.BaseURL) } class="hover:underline">المستودعات المؤقتة</a> / 
+						<span>جلسة رفع #{ fmt.Sprintf("%d", run.ID) }</span>
+					</div>
+					<h1 class="text-2xl font-black text-surface-fg">تحديد الأعمدة ومطابقة البيانات</h1>
+					<p class="text-xs text-secondary mt-1">تحديد أعمدة الكود، الاسم، السعر، والخصم لملفات الدفعة. يُحفظ عملك تلقائياً دون فقدان.</p>
+				</div>
+				<div class="d-flex items-center gap-3">
+					<div class="text-xs font-bold" x-show="autosaving" style="display:none;">
+						<span class="text-amber-500 animate-pulse">⏳ جاري الحفظ التلقائي...</span>
+					</div>
+					<div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" x-show="autosaved" style="display:none;">
+						✓ تم حفظ التعيين تلقائياً
+					</div>
+					<div class="text-xs font-bold text-danger" x-show="saveError" x-text="saveError" style="display:none;"></div>
+					<a href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/review", run.BaseURL, run.ID)) } class="btn btn-outline btn-sm rounded-xl font-bold">
+						مراجعة الدفعة ({ fmt.Sprintf("%d", len(files)) } ملفات)
+					</a>
+				</div>
+			</div>
+
+			<!-- Stepper Indicator -->
+			<div class="grid grid-cols-3 gap-3 mb-6">
+				<div class="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center">
+					<div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400">الخطوة 1: الرفع</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">تم رفع { fmt.Sprintf("%d", run.TotalFiles) } ملف</div>
+				</div>
+				<div class="p-3 rounded-xl bg-accent/10 border border-accent text-center shadow-xs">
+					<div class="text-xs font-semibold text-accent">الخطوة 2: تعيين الأعمدة</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">ملف { fmt.Sprintf("%d", run.Step) } من { fmt.Sprintf("%d", run.TotalFiles) }</div>
+				</div>
+				<div class="p-3 rounded-xl bg-surface-raised border border-default text-center opacity-70">
+					<div class="text-xs font-semibold text-secondary">الخطوة 3: الاعتماد</div>
+					<div class="text-sm font-bold text-surface-fg mt-0.5">مراجعة وتأكيد</div>
+				</div>
+			</div>
+
+			<!-- Multi-file Tabs Bar -->
+			if len(files) > 1 {
+				<div class="d-flex items-center gap-2 overflow-x-auto pb-3 mb-6 no-scrollbar border-b border-default">
+					for idx, f := range files {
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", run.BaseURL, run.ID, f.ID)) }
+							class={ "px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap border transition-all",
+								templ.KV("bg-accent text-white border-accent shadow-xs", f.ID == curFile.ID),
+								templ.KV("bg-surface border-default text-secondary hover:text-surface-fg hover:border-accent/40", f.ID != curFile.ID) }
+						>
+							<span>ملف { fmt.Sprintf("%d", idx+1) }:</span>
+							<span class="ms-1">{ f.SupplierName }</span>
+							if f.IsMapped {
+								<span class="ms-1.5 text-emerald-400 font-black">✓</span>
+							}
+						</a>
+					}
+				</div>
+			}
+
+			<!-- Current File Details & Mapping Form -->
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				<!-- Left/Main: Column Selectors -->
+				<div class="lg:col-span-1 glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs">
+					<div class="border-b border-default pb-4 mb-4">
+						<div class="text-xs font-semibold text-accent">الملف الحالي</div>
+						<h2 class="text-lg font-bold text-surface-fg mt-0.5">{ curFile.SupplierName }</h2>
+						<div class="text-xs text-secondary mt-1 truncate" title={ curFile.Filename }>
+							الملف: { curFile.Filename } ({ fmt.Sprintf("%d", curFile.RowCount) } سطر)
+						</div>
+					</div>
+
+					<form
+						x-ref="mappingForm"
+						method="POST"
+						action={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping", run.BaseURL, run.ID)) }
+						class="d-flex flex-col gap-4"
+					>
+						<input type="hidden" name="file_id" value={ fmt.Sprintf("%d", curFile.ID) }/>
+						<input type="hidden" name="step" value={ fmt.Sprintf("%d", run.Step) }/>
+
+						<!-- Name Column (Required) -->
+						<div>
+							<label class="block text-xs font-bold text-surface-fg mb-1">
+								اسم الصنف / الدواء <span class="text-danger">*</span>
+							</label>
+							<select
+								name="col_name"
+								class="form-select w-full text-xs font-semibold rounded-xl border-default bg-surface"
+								@change="autosave()"
+							>
+								<option value="-1">-- اختر العمود --</option>
+								for idx, h := range curFile.Headers {
+									<option value={ strconv.Itoa(idx) } selected?={ idx == curFile.NameCol }>
+										عمود { strconv.Itoa(idx+1) }: { h }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Code/Barcode Column -->
+						<div>
+							<label class="block text-xs font-bold text-surface-fg mb-1">
+								كود الصنف / الباركود
+							</label>
+							<select
+								name="col_code"
+								class="form-select w-full text-xs font-semibold rounded-xl border-default bg-surface"
+								@change="autosave()"
+							>
+								<option value="-1">-- غير متوفر --</option>
+								for idx, h := range curFile.Headers {
+									<option value={ strconv.Itoa(idx) } selected?={ idx == curFile.CodeCol }>
+										عمود { strconv.Itoa(idx+1) }: { h }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Price Column -->
+						<div>
+							<label class="block text-xs font-bold text-surface-fg mb-1">
+								سعر الجمهور / السعر
+							</label>
+							<select
+								name="col_price"
+								class="form-select w-full text-xs font-semibold rounded-xl border-default bg-surface"
+								@change="autosave()"
+							>
+								<option value="-1">-- غير متوفر --</option>
+								for idx, h := range curFile.Headers {
+									<option value={ strconv.Itoa(idx) } selected?={ idx == curFile.PriceCol }>
+										عمود { strconv.Itoa(idx+1) }: { h }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Discount Column -->
+						<div>
+							<label class="block text-xs font-bold text-surface-fg mb-1">
+								نسبة الخصم %
+							</label>
+							<select
+								name="col_discount"
+								class="form-select w-full text-xs font-semibold rounded-xl border-default bg-surface"
+								@change="autosave()"
+							>
+								<option value="-1">-- غير متوفر --</option>
+								for idx, h := range curFile.Headers {
+									<option value={ strconv.Itoa(idx) } selected?={ idx == curFile.DiscountCol }>
+										عمود { strconv.Itoa(idx+1) }: { h }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Actions -->
+						<div class="d-flex flex-col gap-2 pt-4 border-t border-default">
+							<button
+								type="submit"
+								name="action"
+								value="next"
+								class="btn btn-accent w-full font-bold text-sm py-2.5 rounded-xl shadow-xs"
+							>
+								حفظ ومتابعة للملف التالي ←
+							</button>
+							<button
+								type="submit"
+								name="action"
+								value="review"
+								class="btn btn-outline w-full font-bold text-xs py-2 rounded-xl"
+							>
+								إنهاء ومراجعة الدفعة
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<!-- Right: Live Data Preview -->
+				<div class="lg:col-span-2 glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs overflow-hidden">
+					<div class="d-flex items-center justify-between mb-3">
+						<h3 class="text-sm font-bold text-surface-fg">معاينة أولية لبيانات الملف ({ fmt.Sprintf("%d", len(curFile.Preview)) } أسطر تجريبية)</h3>
+						<span class="text-xs text-secondary font-mono">{ fmt.Sprintf("%d", len(curFile.Headers)) } أعمدة متوفرة</span>
+					</div>
+
+					<div class="table-responsive max-h-[460px] overflow-auto border rounded-xl border-default">
+						<table class="table table-sm text-xs w-full text-start">
+							<thead class="bg-surface sticky top-0 border-b border-default font-bold text-secondary">
+								<tr>
+									<th class="p-2 text-center w-8">#</th>
+									for idx, h := range curFile.Headers {
+										<th class={ "p-2 whitespace-nowrap",
+											templ.KV("text-accent font-black bg-accent/10", idx == curFile.NameCol),
+											templ.KV("text-emerald-600 font-bold bg-emerald-500/10", idx == curFile.CodeCol),
+											templ.KV("text-blue-600 font-bold bg-blue-500/10", idx == curFile.PriceCol),
+											templ.KV("text-purple-600 font-bold bg-purple-500/10", idx == curFile.DiscountCol) }
+										>
+											{ h }
+										</th>
+									}
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-default font-mono">
+								for rowIdx, row := range curFile.Preview {
+									<tr class="hover:bg-surface/50">
+										<td class="p-2 text-center text-secondary">{ strconv.Itoa(rowIdx+1) }</td>
+										for colIdx, val := range row {
+											<td class={ "p-2 truncate max-w-[180px]",
+												templ.KV("bg-accent/5 font-semibold text-accent", colIdx == curFile.NameCol),
+												templ.KV("bg-emerald-500/5", colIdx == curFile.CodeCol),
+												templ.KV("bg-blue-500/5", colIdx == curFile.PriceCol),
+												templ.KV("bg-purple-500/5", colIdx == curFile.DiscountCol) }
+												title={ val }
+											>
+												{ val }
+											</td>
+										}
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

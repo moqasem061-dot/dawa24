@@ -1,0 +1,60 @@
+package components
+
+import "strings"
+
+type EmptyStateProps struct {
+	// ActionOnClick is a data-on-click call list (static/js/actions.js), for
+	// example "openAddFromCatalogModal()". It is not JavaScript.
+	Title         string
+	Message       string
+	ActionLabel   string
+	ActionURL     string
+	ActionModalID string
+	ActionOnClick string
+}
+
+templ EmptyState(props EmptyStateProps) {
+	<div class="empty-state-glass">
+		<div class="empty-state-icon-wrapper">
+			@IconPackage("icon-xl")
+		</div>
+		<h3 class="empty-state-title">{ props.Title }</h3>
+		<p class="empty-state-desc">{ props.Message }</p>
+		if props.ActionLabel != "" {
+			if props.ActionModalID != "" || props.ActionOnClick != "" || strings.HasPrefix(props.ActionURL, "javascript:") {
+				{{
+					modalID := props.ActionModalID
+					call := props.ActionOnClick
+					if call == "" && strings.HasPrefix(props.ActionURL, "javascript:") {
+						call = strings.TrimPrefix(props.ActionURL, "javascript:")
+					}
+				}}
+				<button
+					type="button"
+					if modalID != "" {
+						data-modal-open={ modalID }
+					}
+					if call != "" {
+						data-on-click={ call }
+					}
+					class="btn btn-primary btn-md font-bold px-6"
+				>
+					{ props.ActionLabel }
+				</button>
+			} else {
+				<a
+					if props.ActionURL != "" {
+						href={ templ.SafeURL(props.ActionURL) }
+					} else {
+						href="/catalog"
+					}
+					class="btn btn-primary btn-md font-bold px-6"
+				>
+					{ props.ActionLabel }
+				</a>
+			}
+		}
+		{ children... }
+	</div>
+}
+

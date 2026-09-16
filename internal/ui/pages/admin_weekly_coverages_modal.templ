@@ -1,0 +1,136 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminWeeklyCoverageMapModal() {
+	<div
+		x-show="mapModalOpen"
+		x-cloak
+		class="modal-backdrop"
+		style="z-index: 9999;"
+		@click.self="mapModalOpen = false"
+		@keydown.escape.window="mapModalOpen = false"
+	>
+		<div class="modal-card modal-lg p-0 overflow-hidden" @click.stop>
+			<div class="flex-between items-center p-4 border-b bg-surface-raised">
+				<div>
+					<h3 class="text-base font-black text-primary m-0" x-text="'دائرة التغطية: ' + (mapBranch || mapTitle || 'نطاق التوصيل')"></h3>
+					<div class="text-xs text-secondary mt-0.5" x-text="'المدينة: ' + (mapCity || 'كافة المناطق') + ' • نصف القطر: ' + (mapRadius/1000) + ' كم'"></div>
+				</div>
+				<button type="button" class="btn btn-ghost btn-xs" @click="mapModalOpen = false">✕</button>
+			</div>
+			<div class="p-3 bg-surface">
+				<div id="weekly-cov-map" style="min-height: 380px; height: 380px; width: 100%; border-radius: 8px;" class="border"></div>
+			</div>
+			<div class="p-3 border-t bg-surface-raised flex-between items-center text-xs">
+				<span class="text-muted">الدائرة الزرقاء تمثل النطاق الجغرافي الفعلي المتاح لخدمة الطلبات والتوصيل الأسبوعي.</span>
+				<button type="button" class="btn btn-secondary btn-xs font-bold" @click="mapModalOpen = false">إغلاق</button>
+			</div>
+		</div>
+	</div>
+	<script nonce={ layouts.Nonce(ctx) }>
+		function dawaWeeklyCoverageModal() {
+			return {
+				mapModalOpen: false,
+				mapTitle: '',
+				mapBranch: '',
+				mapCity: '',
+				mapRadius: 50000,
+				mapLat: 30.0444,
+				mapLon: 31.2357,
+				covMap: null,
+				covCircle: null,
+				covMarker: null,
+				init() {
+					window.weeklyCoverageModalInstance = this;
+				},
+				previewCoverageMapFromEl(el) {
+					if (!el) return;
+					const btn = el.closest('button') || el;
+					const r = parseInt(btn.getAttribute('data-cov-radius') || '50000', 10);
+					const lat = parseFloat(btn.getAttribute('data-cov-lat') || '30.0444');
+					const lon = parseFloat(btn.getAttribute('data-cov-lon') || '31.2357');
+					this.previewCoverageMap({
+						title: btn.getAttribute('data-cov-title') || '',
+						branch: btn.getAttribute('data-cov-branch') || '',
+						city: btn.getAttribute('data-cov-city') || '',
+						radius: isNaN(r) || r <= 0 ? 50000 : r,
+						lat: isNaN(lat) ? 30.0444 : lat,
+						lon: isNaN(lon) ? 31.2357 : lon
+					});
+				},
+				previewCoverageMap(item) {
+					if (!item) return;
+					this.mapTitle = item.title || '';
+					this.mapBranch = item.branch || '';
+					this.mapCity = item.city || '';
+					this.mapRadius = item.radius || 50000;
+					this.mapLat = item.lat || 30.0444;
+					this.mapLon = item.lon || 31.2357;
+					this.mapModalOpen = true;
+					this.$nextTick(() => {
+						if (typeof ensureLeaflet === 'function') {
+							ensureLeaflet().then(() => this.drawCircle()).catch(err => {
+								console.error('Leaflet load failed:', err);
+							});
+						} else {
+							this.drawCircle();
+						}
+					});
+				},
+				drawCircle() {
+					if (typeof L === 'undefined') {
+						if (typeof ensureLeaflet === 'function') {
+							ensureLeaflet().then(() => this.drawCircle()).catch(console.error);
+						}
+						return;
+					}
+					const el = document.getElementById('weekly-cov-map');
+					if (!el) return;
+					if (!this.covMap) {
+						this.covMap = L.map(el).setView([this.mapLat, this.mapLon], 10);
+						L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+							maxZoom: 19,
+							attribution: '© OSM'
+						}).addTo(this.covMap);
+					} else {
+						this.covMap.setView([this.mapLat, this.mapLon], 10);
+					}
+					if (this.covMarker) {
+						this.covMarker.setLatLng([this.mapLat, this.mapLon]);
+					} else {
+						this.covMarker = L.marker([this.mapLat, this.mapLon]).addTo(this.covMap);
+					}
+					if (this.covCircle) {
+						this.covCircle.setLatLng([this.mapLat, this.mapLon]);
+						this.covCircle.setRadius(this.mapRadius);
+					} else {
+						this.covCircle = L.circle([this.mapLat, this.mapLon], {
+							radius: this.mapRadius,
+							color: '#0284c7',
+							fillColor: '#38bdf8',
+							fillOpacity: 0.25,
+							weight: 2
+						}).addTo(this.covMap);
+					}
+					if (this.covCircle && typeof this.covCircle.getBounds === 'function') {
+						this.covMap.fitBounds(this.covCircle.getBounds(), { padding: [20, 20] });
+					}
+					setTimeout(() => { if (this.covMap) this.covMap.invalidateSize(); }, 100);
+					setTimeout(() => { if (this.covMap) this.covMap.invalidateSize(); }, 300);
+				}
+			};
+		}
+		window.dawaWeeklyCoverageModal = dawaWeeklyCoverageModal;
+		if (!window.__dawaBound_admin_weekly_coverages_modal) {
+			window.__dawaBound_admin_weekly_coverages_modal = true;
+			document.addEventListener('alpine:init', () => {
+				if (window.Alpine && typeof window.Alpine.data === 'function') {
+					window.Alpine.data('dawaWeeklyCoverageModal', dawaWeeklyCoverageModal);
+				}
+			});
+		}
+	</script>
+}

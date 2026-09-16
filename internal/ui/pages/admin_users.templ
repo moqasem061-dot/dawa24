@@ -1,0 +1,354 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminUsersPageData struct {
+	Users            []*identity.User
+	Organizations    []*org.Organization
+	OrgNames         map[int64]string
+	AllBranches      []*org.Branch
+	UserNationalIDs  map[int64]string
+	UserMemberships  map[int64]*identity.UserOrgMembership
+	UserMFAStatuses  map[int64]*identity.MFAStatus
+	DeletionRequests []*identity.AccountDeletionRequest
+	TotalUsers       int
+	CustomerUsers    int
+	VendorUsers      int
+	StaffUsers       int
+	ActiveUsers      int
+	SuspendedUsers   int
+	Page             int
+	PerPage          int
+	TotalCount       int
+	SearchQuery      string
+	RoleFilter       string
+	TypeFilter       string
+	StatusFilter     string
+	OrgFilter        int64
+	MFAFilter        string
+	LoginFromFilter  string
+	LoginToFilter    string
+	StaffRoles       []AdminUserRoleOption
+	Notice           string
+	NoticeKind       string
+	MainModerators   []AdminModeratorOption
+}
+
+// AdminModeratorOption is one selectable main moderator.
+type AdminModeratorOption struct {
+	UserID int64
+	Name   string
+	Team   int
+}
+
+templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
+	@layouts.AdminShell("إدارة المستخدمين والحسابات", "users", lang, dir) {
+		<div
+			class="admin-page-container"
+			x-data="{
+				showAddStaff: false,
+				showEditModal: false,
+				showPasswordModal: false,
+				editUser: { id: 0, name_ar: '', name_en: '', email: '', phone: '', avatar_url: '', national_id: '', status: 'active', org_id: '0', branch_id: '0', job_title: '' },
+				passwordUser: { id: 0, name: '', email: '' },
+				openEdit(u) {
+					this.editUser = u;
+					this.showEditModal = true;
+				},
+				openPassword(u) {
+					this.passwordUser = u;
+					this.showPasswordModal = true;
+				}
+			}"
+		>
+			<!-- Prominent Notice Banner (e.g. MFA re-activation, updates) -->
+			if data.Notice != "" {
+				if data.NoticeKind == "error" {
+					<div class="p-4 mb-5 rounded-2xl border border-rose-500/20 bg-rose-500/10 text-rose-700 dark:text-rose-400 d-flex items-center gap-3 shadow-xs">
+						<span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-600 d-flex items-center justify-center flex-shrink-0">
+							@components.IconAlertCircle("icon-sm")
+						</span>
+						<div class="flex-1 font-bold text-xs">{ data.Notice }</div>
+					</div>
+				} else {
+					<div class="p-4 mb-5 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 d-flex items-center gap-3 shadow-xs">
+						<span class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-600 d-flex items-center justify-center flex-shrink-0">
+							@components.IconShield("icon-sm")
+						</span>
+						<div class="flex-1 font-bold text-xs">{ data.Notice }</div>
+					</div>
+				}
+			}
+
+			@adminStaffCreateForm(data)
+
+			<!-- Header Banner -->
+			<div class="glass-panel p-5 mb-5 border rounded-2xl shadow-xs">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="w-11 h-11 rounded-xl bg-surface-sunken text-primary d-flex items-center justify-center border">
+							@components.IconUsers("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-xl font-black text-primary m-0 d-flex items-center gap-2">
+								<span>إدارة المستخدمين والحسابات المركزية</span>
+								<span class="badge badge-indigo text-xs font-black tabular-nums">{ fmt.Sprintf("%d حساب", data.TotalUsers) }</span>
+							</h1>
+							<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+								التحكم في حسابات الصيادلة، مدراء وموظفي الموردين، ومشرفي وإدارة المنصة
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						if len(data.StaffRoles) > 0 {
+							<button
+								type="button"
+								class="btn btn-primary btn-sm font-bold gap-1.5 shadow-xs"
+								@click="showAddStaff = !showAddStaff"
+							>
+								@components.IconPlus("icon-xs")
+								<span x-text="showAddStaff ? 'إخفاء نموذج الإضافة' : 'إضافة مشرف جديد'">إضافة مشرف جديد</span>
+							</button>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-5 border rounded-2xl shadow-xs">
+				<form method="GET" action="/admin/users" class="d-flex flex-col gap-3">
+					<div class="d-flex items-center flex-wrap gap-3">
+						<div class="flex-1 min-w-[200px]">
+							<input
+								type="text"
+								name="q"
+								value={ data.SearchQuery }
+								placeholder="البحث بالاسم، البريد الإلكتروني، الهاتف..."
+								class="form-input text-xs w-full"
+							/>
+						</div>
+
+						<div class="w-40">
+							<select name="role" class="form-select text-xs w-full">
+								<option value="">كافة الأدوار</option>
+								<option value="super_admin" selected?={ data.RoleFilter == "super_admin" }>مدير نظام عام</option>
+								<option value="admin" selected?={ data.RoleFilter == "admin" }>مدير منصة</option>
+								<option value="pharmacy" selected?={ data.RoleFilter == "pharmacy" }>صيدلية</option>
+								<option value="supplier" selected?={ data.RoleFilter == "supplier" }>مورد</option>
+								<option value="vendor" selected?={ data.RoleFilter == "vendor" }>بائع / مخزن</option>
+							</select>
+						</div>
+
+						<div class="w-36">
+							<select name="status" class="form-select text-xs w-full">
+								<option value="">كافة الحالات</option>
+								<option value="active" selected?={ data.StatusFilter == "active" }>نشط</option>
+								<option value="suspended" selected?={ data.StatusFilter == "suspended" }>موقوف / معلق</option>
+							</select>
+						</div>
+
+						<div class="w-36">
+							<select name="mfa" class="form-select text-xs w-full">
+								<option value="">حالة الـ MFA</option>
+								<option value="1" selected?={ data.MFAFilter == "1" }>MFA مفعّلة</option>
+								<option value="0" selected?={ data.MFAFilter == "0" }>MFA غير مفعّلة</option>
+							</select>
+						</div>
+
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary btn-sm font-bold">
+								@components.IconFilter("icon-xs")
+								<span>تصفية</span>
+							</button>
+							<a href="/admin/users" class="btn btn-secondary btn-sm font-bold">إعادة ضبط</a>
+						</div>
+					</div>
+
+					if data.OrgFilter > 0 {
+						<div class="d-flex items-center">
+							<div class="badge badge-sky text-xs font-bold gap-1">
+								<span>منشأة: { data.OrgNames[data.OrgFilter] }</span>
+								<a href="/admin/users" class="text-danger no-underline ms-1" title="إلغاء تصفية المنشأة">✕</a>
+							</div>
+						</div>
+					}
+				</form>
+			</div>
+
+			<!-- Users Table -->
+			if len(data.Users) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   "لا يوجد مستخدمون",
+					Message: "لم يتم العثور على أي مستخدمين يطابقون معايير الفلترة المحددة.",
+				})
+			} else {
+				<div class="glass-panel p-0 border rounded-2xl shadow-xs overflow-hidden">
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
+							<thead>
+								<tr class="bg-surface-raised border-b font-bold">
+									<th class="py-3 text-start ps-4">المستخدم</th>
+									<th class="py-3 text-start">البريد الإلكتروني ورقم الهاتف</th>
+									<th class="py-3 text-start">الدور الوظيفي والمنشأة</th>
+									<th class="py-3 text-center">تاريخ الانضمام</th>
+									<th class="py-3 text-center">الحالة</th>
+									<th class="py-3 text-center">حالة المصادقة (MFA)</th>
+									<th class="col-actions py-3 pe-4">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, u := range data.Users {
+									{{
+										userNID := data.UserNationalIDs[u.ID]
+										userOrgID := int64(0)
+										userBranchID := int64(0)
+										userJobTitle := ""
+										userOrgName := ""
+										if mem := data.UserMemberships[u.ID]; mem != nil {
+											userOrgID = mem.OrganizationID
+											userOrgName = mem.OrgName.Get("ar")
+											if userOrgName == "" && data.OrgNames[mem.OrganizationID] != "" {
+												userOrgName = data.OrgNames[mem.OrganizationID]
+											}
+										}
+									}}
+									<tr>
+										<td class="py-3 ps-4">
+											<div class="d-flex items-center gap-2.5">
+												<div class="w-8 h-8 rounded-lg bg-surface-sunken text-primary border d-flex items-center justify-center font-black text-xs overflow-hidden flex-shrink-0">
+													if u.AvatarURL != "" {
+														<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="block" />
+														<span style="display: none;">
+															{ userInitials(u) }
+														</span>
+													} else {
+														{ userInitials(u) }
+													}
+												</div>
+												<div class="stack-sm">
+													<div class="font-extrabold text-primary text-xs">{ userDisplayName(u) }</div>
+													<div class="d-flex items-center gap-2 text-2xs text-muted tabular-nums font-mono">
+														<span>#{ fmt.Sprintf("USR-%d", u.ID) }</span>
+														if userNID != "" {
+															<span class="badge badge-slate text-2xs">هوية: { userNID }</span>
+														}
+													</div>
+												</div>
+											</div>
+										</td>
+										<td class="py-3">
+											<div class="tabular-nums text-xs font-mono text-secondary" dir="ltr">{ u.Email }</div>
+											if u.Phone != "" {
+												<div class="text-2xs text-muted mt-0.5 tabular-nums">{ u.Phone }</div>
+											}
+										</td>
+										<td class="py-3">
+											<div class="d-flex flex-col gap-1 items-start">
+												<span class={ "badge text-xs font-bold", roleBadgeClass(u.Role) }>
+													{ roleDisplayAr(u.Role) }
+												</span>
+												if userOrgName != "" {
+													<span class="text-2xs text-secondary font-medium">
+														{ userOrgName }
+													</span>
+												}
+											</div>
+										</td>
+										<td class="tabular-nums text-xs text-muted text-center py-3">
+											{ u.CreatedAt.Format("2006-01-02") }
+										</td>
+										<td class="text-center py-3">
+											if u.Status == identity.StatusActive {
+												<span class="badge badge-emerald text-xs font-black">نشط ومفعل</span>
+											} else if u.Status == identity.StatusSuspended {
+												<span class="badge badge-rose text-xs font-black">موقوف / معلق</span>
+											} else {
+												<span class="badge badge-amber text-xs font-black">قيد المراجعة</span>
+											}
+										</td>
+										<td class="text-center py-3">
+											if mfa, ok := data.UserMFAStatuses[u.ID]; ok && mfa != nil && mfa.Enabled {
+												<span class="badge badge-emerald text-xs font-black inline-flex items-center gap-1" title={ fmt.Sprintf("مفعّلة ومحمية منذ %s", mfa.ConfirmedAt.Format("2006-01-02")) }>
+													@components.IconShield("icon-2xs")
+													<span>مفعّلة ومحمية</span>
+												</span>
+											} else {
+												<span class="badge badge-slate text-xs font-medium inline-flex items-center gap-1 text-muted">
+													<span>غير مفعّلة</span>
+												</span>
+											}
+										</td>
+										<td class="col-actions py-3 pe-4">
+											<div class="table-actions">
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", u.ID)) } class="btn btn-secondary btn-xs font-bold">
+													عرض
+												</a>
+												<button
+													type="button"
+													class="btn btn-secondary btn-xs font-bold"
+													@click={ fmt.Sprintf("openEdit({ id: %d, name_ar: %q, name_en: %q, email: %q, phone: %q, avatar_url: %q, national_id: %q, status: %q, org_id: '%d', branch_id: '%d', job_title: %q })",
+														u.ID, u.Name.Get("ar"), u.Name.Get("en"), u.Email, u.Phone, u.AvatarURL, userNID, string(u.Status), userOrgID, userBranchID, userJobTitle) }
+												>
+													تعديل
+												</button>
+												<button
+													type="button"
+													class="btn btn-secondary btn-xs font-bold"
+													@click={ fmt.Sprintf("openPassword({ id: %d, name: %q, email: %q })", u.ID, userDisplayName(u), u.Email) }
+												>
+													كلمة المرور
+												</button>
+												if u.Status == identity.StatusActive {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/suspend", u.ID)) } class="m-0" data-confirm="هل أنت متأكد من رغبتك في تعليق هذا الحساب؟">
+														<input type="hidden" name="redirect" value="/admin/users" />
+														<button type="submit" class="btn btn-secondary btn-xs font-bold text-danger">
+															تعليق
+														</button>
+													</form>
+												} else {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/reactivate", u.ID)) } class="m-0">
+														<input type="hidden" name="redirect" value="/admin/users" />
+														<button type="submit" class="btn btn-primary btn-xs font-bold">
+															تفعيل
+														</button>
+													</form>
+												}
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/reset-mfa", u.ID)) } class="m-0" data-confirm="إعادة ضبط وتفعيل التحقق الثنائي MFA لهذا الحساب؟">
+													<input type="hidden" name="redirect" value="/admin/users" />
+													<button type="submit" class="btn btn-secondary btn-xs font-bold inline-flex items-center gap-1" title="إعادة ضبط التحقق الثنائي MFA">
+														@components.IconRefresh("icon-2xs")
+														<span>إعادة ضبط MFA</span>
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/users",
+							QueryValues: adminUsersQueryValues(data),
+						})
+					}
+				</div>
+			}
+
+			@adminUserEditModal(data)
+			@adminUserPasswordModal()
+		</div>
+	}
+}

@@ -1,0 +1,25 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ OfferBundleBadge(orderID, lineID int64, isOffer bool) {
+	if isOffer {
+		<div class="mt-1">
+			<button
+				type="button"
+				class="badge badge-primary text-2xs font-bold cursor-pointer hover:opacity-85 transition-all d-inline-flex items-center gap-1 border-0"
+				hx-get={ fmt.Sprintf("/orders/%d/lines/%d/offer-details", orderID, lineID) }
+				hx-target="#order-offer-modal-container"
+				hx-swap="innerHTML"
+				title="عرض الأصناف المشمولة في هذه الباقة"
+			>
+				@components.IconPackage("icon-2xs")
+				<span>باقة / عرض ترويجي (معاينة الأصناف)</span>
+			</button>
+		</div>
+	}
+}

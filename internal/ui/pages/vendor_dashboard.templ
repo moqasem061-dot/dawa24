@@ -1,0 +1,239 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func vendorVisibleNav(actor authctx.Actor) []rbac.NavSection {
+	held := rbac.NewSet(actor.Permissions)
+	if actor.IsOwner || actor.IsPlatformAdmin() {
+		held = rbac.NewSet([]string{"*"})
+	}
+	allSections := rbac.VisibleNav(rbac.ScopeVendor, held)
+	var out []rbac.NavSection
+	for _, sec := range allSections {
+		var keptItems []rbac.NavItem
+		for _, item := range sec.Items {
+			if item.Key == "dashboard" || item.Href == "/vendor/dashboard" {
+				continue
+			}
+			keptItems = append(keptItems, item)
+		}
+		if len(keptItems) > 0 {
+			sec.Items = keptItems
+			out = append(out, sec)
+		}
+	}
+	return out
+}
+
+func vendorSectionIcon(key string) string {
+	switch key {
+	case "company":
+		return "building"
+	case "catalog":
+		return "package"
+	case "promo":
+		return "tag"
+	case "commerce":
+		return "wallet"
+	case "delivery":
+		return "truck"
+	case "buying":
+		return "cart"
+	case "tools":
+		return "bar-chart"
+	case "content":
+		return "file"
+	case "account":
+		return "shield"
+	default:
+		return "layers"
+	}
+}
+
+func vendorSectionBadgeClass(key string) string {
+	switch key {
+	case "company":
+		return "bg-purple-subtle text-purple"
+	case "catalog":
+		return "bg-emerald-subtle text-emerald"
+	case "promo":
+		return "bg-amber-subtle text-amber"
+	case "commerce":
+		return "bg-success-subtle text-success"
+	case "delivery":
+		return "bg-sky-subtle text-sky"
+	case "buying":
+		return "bg-primary-subtle text-brand"
+	case "tools":
+		return "bg-sky-subtle text-sky"
+	case "content":
+		return "bg-surface-sunken text-secondary"
+	case "account":
+		return "bg-warning-subtle text-warning"
+	default:
+		return "bg-surface-raised text-primary"
+	}
+}
+
+templ VendorDashboard(lang, dir string, data VendorDashboardData, actor authctx.Actor) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_dashboard.page_title"), "dashboard", lang, dir) {
+		<div class="admin-page-container">
+			
+			<!-- Emergency Legal Document Request Banner -->
+			if len(data.PendingDocRequests) > 0 {
+				<div class="alert alert-warning mb-3 p-3 flex-between flex-wrap gap-3 rounded-xl">
+					<div class="d-flex items-center gap-3">
+						<div class="text-warning flex-shrink-0">
+							@components.IconAlert("icon-lg")
+						</div>
+						<div class="stack-sm">
+							<div class="font-extrabold text-sm text-warning">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.emergency_doc_title"), data.PendingDocRequests[0].Title) }
+							</div>
+							<div class="text-xs text-muted mt-0.5">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.emergency_doc_deadline"), data.PendingDocRequests[0].DaysRemaining(), format.Date(data.PendingDocRequests[0].DeadlineAt, lang)) }
+							</div>
+						</div>
+					</div>
+					<a href="/vendor/documents" class="btn btn-primary btn-sm font-bold gap-1 rounded-md">
+						@components.IconFile("icon-xs")
+						<span>{ i18n.T(lang, "vendor_dashboard.emergency_doc_btn") }</span>
+					</a>
+				</div>
+			}
+
+			<!-- Executive Header Banner -->
+			<div class="admin-banner mb-3">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon primary">
+							@components.IconBuilding("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>{ i18n.T(lang, "vendor_dashboard.banner_title") }</span>
+							</h1>
+							<p class="admin-banner-subtitle">
+								{ i18n.T(lang, "vendor_dashboard.banner_sub") }
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<!-- Subscription Pill -->
+						if data.Subscription != nil && data.Subscription.HasSubscription {
+							<div class="admin-status-pill">
+								<span class="admin-status-dot online"></span>
+								<span class="text-secondary">{ i18n.T(lang, "vendor_dashboard.plan_label") }</span>
+								<span class="text-success">{ data.Subscription.PlanName }</span>
+							</div>
+							<div class="admin-status-pill">
+								<span class="text-secondary">{ i18n.T(lang, "vendor_dashboard.devices_label") }</span>
+								<span class="text-primary tabular-nums">{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.devices_authorized"), data.Subscription.MaxDevices) }</span>
+							</div>
+							if data.Subscription.HasAIBudget {
+								<div class="admin-status-pill">
+									<span>@components.IconSparkles("icon-xs")</span>
+									<span class="text-secondary">{ i18n.T(lang, "vendor_dashboard.ai_budget_label") }</span>
+									<span class="text-brand tabular-nums">{ fmt.Sprintf("%d%%", data.Subscription.AIPercentage()) }</span>
+								</div>
+							}
+						} else {
+							<div class="admin-status-pill">
+								<span class="admin-status-dot online"></span>
+								<span class="text-secondary">{ i18n.T(lang, "vendor_dashboard.account_status_label") }</span>
+								<span class="text-success">{ i18n.T(lang, "vendor_dashboard.account_active") }</span>
+							</div>
+						}
+
+						<!-- Quick Refresh Button -->
+						<a href="/vendor/dashboard" class="btn btn-secondary btn-sm fw-800 text-xs gap-1 rounded-md">
+							@components.IconRefresh("icon-xs")
+							<span>{ i18n.T(lang, "common.refresh") }</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- 1. Top 4 KPIs -->
+			@VendorDashboardKPIs(data, lang)
+
+			<!-- 2. Central Core: Expanded Sidebar Cards Archive -->
+			<div class="admin-banner mb-2.5">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-2.5">
+						<div class="admin-banner-icon bg-primary-subtle text-brand">
+							@components.IconGrid("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h2 class="admin-banner-title text-sm">
+								<span>{ i18n.T(lang, "vendor_dashboard.dir_title") }</span>
+							</h2>
+							<p class="admin-banner-subtitle text-xs">
+								{ i18n.T(lang, "vendor_dashboard.dir_sub") }
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-sky text-2xs font-bold px-2.5 py-1 rounded-md">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.active_portals_count"), len(vendorVisibleNav(actor))) }
+						</span>
+					</div>
+				</div>
+			</div>
+
+			<div class="admin-dir-grid">
+				for _, section := range vendorVisibleNav(actor) {
+					<div class="admin-dir-card">
+						<div class="admin-dir-card-header">
+							<h3 class="admin-dir-card-title">
+								<div class={ "admin-dir-icon-badge", vendorSectionBadgeClass(section.Key) }>
+									@components.Icon(vendorSectionIcon(section.Key), "icon-xs")
+								</div>
+								<span>{ section.Label(lang) }</span>
+							</h3>
+							<span class="badge badge-slate text-2xs font-bold">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.pages_count"), len(section.Items)) }
+							</span>
+						</div>
+						<div class="admin-dir-items-list">
+							for _, item := range section.Items {
+								<a href={ templ.SafeURL(item.Href) } class="admin-dir-item">
+									<div class="admin-dir-item-content">
+										<span class="admin-dir-item-icon">
+											@components.Icon(item.Icon, "icon-xs")
+										</span>
+										<span class="admin-dir-item-name">{ item.Label(lang) }</span>
+									</div>
+									<span class="admin-dir-item-arrow">
+										if dir == "rtl" {
+											@components.IconArrowLeft("icon-xs")
+										} else {
+											@components.IconArrowRight("icon-xs")
+										}
+									</span>
+								</a>
+							}
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- 3. Operations Feeds -->
+			@VendorDashboardOperations(data, lang, dir)
+
+		</div>
+
+		<!-- 4. Shipment Execution Modals -->
+		@VendorDashboardShipmentModals(data, lang, dir)
+	}
+}

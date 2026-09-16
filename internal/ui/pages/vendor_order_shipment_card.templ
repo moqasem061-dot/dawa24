@@ -1,0 +1,276 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorOrderShipmentCard(sh *commerce.OrderShipment, data VendorOrdersData, lang string) {
+	<div
+		id={ fmt.Sprintf("shipment-%d", sh.ID) }
+		x-data="{ expanded: false }"
+		class="glass-panel p-5 transition-all capsule-anchor-target"
+	>
+		<!-- Compact Summary Header (Always Visible, Clickable to Expand) -->
+		<div
+			class="flex-between items-center flex-wrap gap-4 cursor-pointer"
+			@click="expanded = !expanded"
+		>
+			<div class="d-flex items-center gap-3 flex-wrap">
+				<!-- Expand / Collapse Indicator -->
+				<button
+					type="button"
+					class="btn btn-secondary btn-icon btn-sm"
+					:title={ fmt.Sprintf("expanded ? '%s' : '%s'", i18n.T(lang, "vendor_orders.title_collapse"), i18n.T(lang, "vendor_orders.title_expand")) }
+				>
+					<span x-text="expanded ? '▲' : '▼'"></span>
+				</button>
+
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d", sh.ID)) }
+					class="text-base font-black text-primary tabular-nums text-none hover:underline"
+					@click.stop=""
+					title="فتح صفحة إدارة الطلب"
+				>
+					{ fmt.Sprintf(i18n.T(lang, "vendor_orders.shipment_prefix"), sh.ShipmentNumber) }
+				</a>
+
+				if sh.OrderNumber != "" {
+					<span class="badge badge-secondary text-xs font-bold">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_orders.po_prefix"), sh.OrderNumber) }
+					</span>
+				}
+
+				if sh.Status == commerce.StatusPending {
+					<span class="badge badge-amber text-xs font-black">{ i18n.T(lang, "vendor_orders.stat_pending") }</span>
+				} else if sh.Status == commerce.StatusConfirmed {
+					<span class="badge badge-sky text-xs font-black">{ i18n.T(lang, "vendor_orders.stat_confirmed") }</span>
+				} else if sh.Status == commerce.StatusShipped {
+					<span class="badge badge-indigo text-xs font-black">{ i18n.T(lang, "vendor_orders.stat_shipped") }</span>
+				} else if sh.Status == commerce.StatusDelivered || sh.Status == commerce.StatusCompleted {
+					<span class="badge badge-emerald text-xs font-black">{ i18n.T(lang, "vendor_orders.stat_delivered") }</span>
+				} else if sh.Status == commerce.StatusFailed {
+					<span class="badge badge-rose text-xs font-black">{ i18n.T(lang, "vendor_orders.badge_failed_delivery") }</span>
+				} else if sh.Status == commerce.StatusReturned {
+					<span class="badge badge-rose text-xs font-black">{ i18n.T(lang, "vendor_orders.badge_returned") }</span>
+				} else if sh.Status == commerce.StatusCancelled {
+					<span class="badge badge-rose text-xs font-black">{ i18n.T(lang, "vendor_orders.badge_cancelled") }</span>
+				} else {
+					<span class="badge badge-slate text-xs font-black">{ string(sh.Status) }</span>
+				}
+
+				if sh.IsNegotiation {
+					<span class="badge badge-amber text-xs font-black gap-1">
+						@components.IconTag("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.badge_negotiated_approved") }</span>
+					</span>
+				}
+
+				<!-- Destination Chip -->
+				<span class="badge badge-slate text-xs font-bold gap-1 d-none d-md-inline-flex">
+					@components.IconBuilding("icon-xs")
+					<span>{ sh.CustomerBranchName.Get(i18n.Lang(lang)) }</span>
+				</span>
+
+				<!-- Items count chip -->
+				<span class="badge badge-secondary text-xs font-bold tabular-nums">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_products.stat_items_unit"), len(sh.Lines)) }
+				</span>
+			</div>
+
+			<div class="d-flex items-center gap-4">
+				<div class="text-end">
+					<span class="text-xs text-muted d-block font-bold">{ i18n.T(lang, "vendor_orders.total_value_lbl") }</span>
+					<strong class="text-lg font-black text-brand tabular-nums">
+						{ sh.TotalAmount.String() } <span class="text-xs font-bold text-muted">{ i18n.T(lang, "common.currency_egp") }</span>
+					</strong>
+				</div>
+
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d", sh.ID)) }
+					class="btn btn-primary btn-sm font-bold text-xs gap-1.5 shadow-xs"
+					@click.stop=""
+					title="فتح وإدارة صفحة الطلب بالتفصيل"
+				>
+					@components.IconExternalLink("icon-xs")
+					<span>عرض وإدارة الطلب</span>
+				</a>
+
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+					@click.stop="expanded = !expanded"
+				>
+					<span x-text={ fmt.Sprintf("expanded ? '%s' : '%s'", i18n.T(lang, "vendor_orders.collapse_details"), i18n.T(lang, "vendor_orders.expand_details")) }></span>
+				</button>
+			</div>
+		</div>
+
+		<!-- Expandable Details Section (Shown when expanded == true) -->
+		<div x-show="expanded" x-cloak class="mt-4 pt-4 border-t">
+			
+			<!-- Destination & Contact Grid -->
+			<div class="d-grid gap-4 bg-surface-sunken p-4 rounded-xl border mb-5 text-sm" class="grid-auto-fit-md">
+				<div class="stack-sm">
+					<div class="text-muted text-xs font-bold mb-1 d-flex items-center gap-2">
+						@components.IconBuilding("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.dest_branch_lbl") }</span>
+					</div>
+					<strong class="text-base font-extrabold text-primary d-block">
+						{ sh.CustomerBranchName.Get(i18n.Lang(lang)) }
+					</strong>
+					if sh.CustomerOrgName.Get(i18n.Lang(lang)) != "" {
+						<span class="text-secondary text-xs">
+							{ sh.CustomerOrgName.Get(i18n.Lang(lang)) }
+						</span>
+					}
+				</div>
+
+				<div class="stack-sm">
+					<div class="text-muted text-xs font-bold mb-1 d-flex items-center gap-2">
+						@components.IconTruck("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.geo_address_lbl") }</span>
+					</div>
+					<div class="text-primary leading-normal text-xs">
+						if sh.CustomerBranchAddress != "" {
+							{ sh.CustomerBranchAddress }
+						} else {
+							<span class="text-muted">{ i18n.T(lang, "vendor_orders.registered_address") }</span>
+						}
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<div class="text-muted text-xs font-bold mb-1 d-flex items-center gap-2">
+						@components.IconPhone("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.recipient_contact_lbl") }</span>
+					</div>
+					<div class="text-primary text-xs">
+						if sh.CustomerManagerName != "" {
+							<div class="font-bold">{ sh.CustomerManagerName }</div>
+						}
+						if sh.CustomerBranchPhone != "" {
+							<div class="tabular-nums text-secondary">{ sh.CustomerBranchPhone }</div>
+						} else if sh.CustomerManagerName == "" {
+							<span class="text-muted">{ i18n.T(lang, "vendor_orders.responsible_pharmacist") }</span>
+						}
+					</div>
+				</div>
+
+				if sh.Notes != "" {
+					<div class="border-t pt-2 mt-1">
+						<div class="text-muted text-xs font-bold mb-1">{ i18n.T(lang, "vendor_orders.pharmacy_notes_lbl") }</div>
+						<div class="text-primary text-xs">{ sh.Notes }</div>
+					</div>
+				}
+			</div>
+
+			<!-- Detailed Line Items Table with Zero-Latency Pagination -->
+			<div class="mb-5">
+				<div class="flex-between items-center mb-3">
+					<h4 class="text-xs font-black text-primary m-0 d-flex items-center gap-2">
+						@components.IconPackage("icon-xs")
+						<span>{ fmt.Sprintf(i18n.T(lang, "vendor_orders.items_requested_title"), len(sh.Lines)) }</span>
+					</h4>
+					<span class="badge badge-sky text-xs font-bold">{ i18n.T(lang, "vendor_orders.cold_chain_badge") }</span>
+				</div>
+
+				<div x-data={ shipmentPaginationAlpineData(len(sh.Lines)) }>
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>{ i18n.T(lang, "vendor_orders.th_drug_item") }</th>
+									<th class="text-center tabular-nums">{ i18n.T(lang, "vendor_orders.th_requested_qty") }</th>
+									<th class="text-center tabular-nums">{ i18n.T(lang, "vendor_orders.th_public_price") }</th>
+									<th class="text-center tabular-nums">{ i18n.T(lang, "vendor_orders.th_discount_pct") }</th>
+									<th class="text-end tabular-nums">{ i18n.T(lang, "vendor_orders.th_net_total") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for lineIdx, line := range sh.Lines {
+									<tr x-show={ fmt.Sprintf("pageSize === -1 || (%d >= (page - 1) * pageSize && %d < page * pageSize)", lineIdx, lineIdx) }>
+										<td>
+											<div class="d-flex items-center gap-2 flex-wrap">
+												<strong class="text-primary text-sm font-bold">{ line.ProductName.Get(i18n.Lang(lang)) }</strong>
+												if line.IsNegotiated {
+													<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "vendor_orders.badge_negotiated_price") }</span>
+												}
+												if isOrderLineAnOffer(line) {
+													<button
+														type="button"
+														class="btn btn-secondary btn-sm font-bold text-xs gap-1.5"
+														data-modal-open="order-offer-modal"
+														hx-get={ fmt.Sprintf("/vendor/orders/%d/lines/%d/offer-details", sh.OrderID, line.ID) }
+														hx-target="#order-offer-modal-container"
+														hx-swap="innerHTML"
+														title={ i18n.T(lang, "vendor_orders.offer_modal_title") }
+													>
+														@components.IconSparkles("icon-xs text-amber-500")
+														<span>{ i18n.T(lang, "vendor_orders.btn_view_offer_details") }</span>
+													</button>
+												}
+											</div>
+											if line.VariantName.Get(i18n.Lang(lang)) != "" {
+												<div class="text-xs text-muted">
+													{ line.VariantName.Get(i18n.Lang(lang)) }
+												</div>
+											}
+										</td>
+										<td class="text-center">
+											<span class="badge badge-secondary text-xs font-black">
+												{ fmt.Sprintf(i18n.T(lang, "vendor_products.stock_packs"), line.Quantity) }
+											</span>
+										</td>
+										<td class="text-center font-bold text-secondary tabular-nums text-xs">
+											{ linePublicPrice(line).String() } { i18n.T(lang, "common.currency_egp") }
+										</td>
+										<td class="text-center tabular-nums text-xs">
+											{{
+												discPct := lineDiscountPercent(line)
+											}}
+											if discPct > 0 {
+												<span class="badge badge-emerald tabular-nums text-xs font-bold">{ formatDiscount(discPct) }%</span>
+											} else {
+												<span class="text-xs text-muted">0%</span>
+											}
+										</td>
+										<td class="text-end tabular-nums">
+											<strong class="text-brand font-black text-sm">{ line.TotalPrice.String() } { i18n.T(lang, "common.currency_egp") }</strong>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					@ShipmentLinesPagination(len(sh.Lines))
+				</div>
+			</div>
+
+			<!-- Delivery assignment: which مندوب carries this parcel -->
+			if data.CanAssign {
+				<div class="bg-surface-sunken p-4 rounded-xl border mb-5">
+					<div class="d-flex items-center justify-between gap-2 mb-3">
+						<div class="d-flex items-center gap-2 text-primary">
+							@components.IconTruck("icon-xs")
+							<h4 class="text-xs font-black m-0">{ i18n.T(lang, "vendor_orders.assign_courier_title") }</h4>
+						</div>
+						if sh.Status == commerce.StatusPending {
+							<span class="badge badge-amber text-2xs font-bold gap-1 d-flex items-center">
+								@components.IconLock("icon-3xs")
+								<span>بانتظار قبول الطلب</span>
+							</span>
+						}
+					</div>
+					@VendorDeliveryAssignForm(sh, data.Couriers, "orders", lang)
+				</div>
+			}
+
+			<!-- Action Controls Toolbar -->
+			@VendorOrderShipmentActions(sh, data, lang)
+		</div>
+	</div>
+}

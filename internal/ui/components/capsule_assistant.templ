@@ -1,0 +1,298 @@
+package components
+
+// CapsuleAssistantTrigger is the single mount point rendered once in the base
+// layout. The floating launcher button and the full chat drawer share ONE
+// Alpine component (capsuleAssistantManager) rendered inline — no HTMX lazy
+// load, so there is no swap/Alpine-init race and the buttons are always live.
+templ CapsuleAssistantTrigger() {
+	<div
+		id="capsule-assistant-host"
+		x-data="capsuleAssistantManager()"
+		class="capsule-assistant-host"
+	>
+		<!-- Floating Trigger: Polished Circular Button (Positioned on the Left) -->
+		<button
+			type="button"
+			x-show="!isOpen"
+			x-transition:enter="transition ease-out duration-200"
+			x-transition:enter-start="opacity-0 scale-90"
+			x-transition:enter-end="opacity-100 scale-100"
+			@click="openAssistant()"
+			class="capsule-circle-btn"
+			:title="usageTooltip()"
+		>
+			<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="capsule-circle-btn-img" />
+			<!-- Online Pulse Indicator -->
+			<span class="capsule-online-badge"></span>
+			<template x-if="usagePercent() > 0">
+				<span class="capsule-usage-floating-pill" x-text="usagePercent() + '%'"></span>
+			</template>
+		</button>
+
+		@capsuleDrawerBody()
+
+		<!-- Assistant Core Logic -->
+		@CapsuleAssistantScript()
+	</div>
+}
+
+templ CapsuleAssistant() {
+	@CapsuleAssistantTrigger()
+}
+
+// CapsuleAssistantPanel stays as a valid endpoint target for backwards
+// compatibility, but the drawer is now rendered inline by the trigger, so this
+// deliberately renders nothing.
+templ CapsuleAssistantPanel() {
+	<div data-capsule-panel-noop></div>
+}
+
+templ capsuleDrawerBody() {
+	<div x-cloak>
+		<!-- ChatGPT-Style Chat Window (Positioned on the Left) -->
+		<div
+			x-show="isOpen"
+			x-transition:enter="transition ease-out duration-250"
+			x-transition:enter-start="opacity-0 transform translate-y-6 scale-95"
+			x-transition:enter-end="opacity-100 transform translate-y-0 scale-100"
+			x-transition:leave="transition ease-in duration-200"
+			x-transition:leave-start="opacity-100 transform translate-y-0 scale-100"
+			x-transition:leave-end="opacity-0 transform translate-y-6 scale-95"
+			@dragenter.prevent="onDragEnter($event)"
+			@dragover.prevent=""
+			@dragleave.prevent="onDragLeave($event)"
+			@drop.prevent="onDrop($event)"
+			class="capsule-drawer"
+		>
+			<!-- Drag & Drop Overlay Zone -->
+			<div
+				x-show="isDragging"
+				x-transition:enter="transition ease-out duration-150"
+				x-transition:enter-start="opacity-0 scale-95"
+				x-transition:enter-end="opacity-100 scale-100"
+				x-transition:leave="transition ease-in duration-100"
+				x-transition:leave-start="opacity-100 scale-100"
+				x-transition:leave-end="opacity-0 scale-95"
+				class="capsule-drag-zone"
+			>
+				<div class="w-12 h-12 rounded-full bg-white/20 flex-center border border-white/30">
+					@IconUpload("icon-md")
+				</div>
+				<div>
+					<div class="font-extrabold text-sm mb-1" x-text="window.dawaT ? window.dawaT('capsule.drop_files', 'أفلت الملفات هنا للإرفاق') : 'أفلت الملفات هنا للإرفاق'">أفلت الملفات هنا للإرفاق</div>
+					<div class="text-xs opacity-90" x-text="window.dawaT ? window.dawaT('capsule.drop_files_sub', 'يدعم الصور، الروشتات، وملفات PDF الدوائية') : 'يدعم الصور، الروشتات، وملفات PDF الدوائية'">يدعم الصور، الروشتات، وملفات PDF الدوائية</div>
+				</div>
+			</div>
+
+			<!-- Sleek Minimal Header -->
+			<div class="capsule-header">
+				<div class="d-flex items-center gap-2.5">
+					<div class="capsule-avatar-icon">
+						<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="capsule-header-avatar-img" />
+					</div>
+					<div>
+						<div class="font-black text-xs text-primary d-flex items-center gap-1.5">
+							<span x-text="window.dawaT ? window.dawaT('capsule.title', 'دكتور كبسولة') : 'دكتور كبسولة'">دكتور كبسولة</span>
+							<span class="w-1.5 h-1.5 rounded-full shadow-xs" :class="connection === 'connected' ? 'bg-emerald' : (connection === 'degraded' ? 'bg-amber' : 'bg-muted')" :title="connection === 'connected' ? 'متصل' : (connection === 'degraded' ? 'الخدمة غير مستقرة' : 'الخدمة غير مفعّلة')"></span>
+						</div>
+						<div class="text-2xs text-muted leading-tight" x-text="agentLabel || (window.dawaT ? window.dawaT('capsule.subtitle', 'المساعد التحليلي الذكي') : 'المساعد التحليلي الذكي')"></div>
+					</div>
+				</div>
+
+				<!-- Header Action Buttons (Icon-Only, Clean & Minimalist) -->
+				<div class="d-flex items-center gap-1">
+					<!-- New Chat Button -->
+					<button
+						type="button"
+						@click="startNewConversation()"
+						class="capsule-hdr-icon-btn"
+						:title="window.dawaT ? window.dawaT('capsule.new_chat', 'محادثة جديدة') : 'محادثة جديدة'"
+					>
+						@IconPlus("icon-xs")
+					</button>
+
+					<!-- Memory Button -->
+					<button
+						type="button"
+						@click="toggleMemoryDrawer()"
+						class="capsule-hdr-icon-btn"
+						:class="{ 'active': showMemoryDrawer }"
+						:title="window.dawaT ? window.dawaT('capsule.memory_title', 'ذاكرة المنشأة') : 'ذاكرة المنشأة'"
+					>
+						@IconDatabase("icon-xs")
+					</button>
+
+					<!-- History / Sessions Button -->
+					<button
+						type="button"
+						@click="toggleSessionsDrawer()"
+						class="capsule-hdr-icon-btn"
+						:class="{ 'active': showSessionsDrawer }"
+						:title="window.dawaT ? window.dawaT('capsule.history_title', 'سجل المحادثات') : 'سجل المحادثات'"
+					>
+						@IconClock("icon-xs")
+					</button>
+
+					<!-- Close Button -->
+					<button
+						type="button"
+						@click="closeAssistant()"
+						class="capsule-hdr-icon-btn"
+						:title="window.dawaT ? window.dawaT('common.close', 'إغلاق النافذة') : 'إغلاق النافذة'"
+					>
+						@IconClose("icon-xs")
+					</button>
+				</div>
+			</div>
+
+			<!-- Sessions & Memory Overlays -->
+			@CapsuleAssistantOverlays()
+
+			<!-- Messages Scroll Area -->
+			@CapsuleAssistantMessages()
+
+			<!-- Pinned Bottom Controls (ChatGPT-Style Docked Prompt Capsule) -->
+			<div class="capsule-footer">
+
+				<div x-show="statusMessage && !isStreaming" x-cloak class="capsule-composer-notice" role="status" aria-live="polite">
+					<span x-text="statusMessage"></span>
+				</div>
+
+				<!-- Attached Files Preview Strip -->
+				<div x-show="attachedFiles.length > 0" class="mb-2 d-flex gap-2 overflow-x-auto py-1 items-center">
+					<template x-for="(f, i) in attachedFiles" :key="i">
+						<div class="capsule-attachment-thumb">
+							<template x-if="f.isImage && f.previewUrl">
+								<img :src="f.previewUrl" class="capsule-thumb-img" alt="مرفق" />
+							</template>
+							<template x-if="!f.isImage || !f.previewUrl">
+								<div class="capsule-thumb-doc">
+									@IconPaperclip("icon-2xs")
+									<span class="text-2xs font-black uppercase mt-0.5" x-text="(f.name.split('.').pop() || 'file').substring(0,4)"></span>
+								</div>
+							</template>
+							
+							<div x-show="f.uploading && !f.error" class="capsule-thumb-overlay">
+								<span class="capsule-spinner"></span>
+							</div>
+							<button
+								type="button"
+								x-show="f.error"
+								@click="retryAttachment(i)"
+								class="capsule-thumb-overlay capsule-thumb-error"
+								:title="f.error + ' — اضغط لإعادة المحاولة'"
+							>
+								@IconRefresh("icon-2xs")
+							</button>
+							<button type="button" @click="removeAttachment(i)" class="capsule-thumb-delete" :title="window.dawaT ? window.dawaT('common.delete', 'حذف') : 'حذف'">
+								@IconClose("icon-2xs")
+							</button>
+						</div>
+					</template>
+				</div>
+
+				<!-- Voice Recording Active Bar -->
+				<div x-show="isRecordingVoice" class="p-2 px-3 d-flex items-center justify-between gap-2 bg-surface-sunken border rounded-full mb-2">
+					<div class="d-flex items-center gap-2 ps-1">
+						<span class="w-2 h-2 rounded-full bg-danger animate-pulse"></span>
+						<span class="text-xs font-bold text-primary" x-text="'جاري الاستماع... ' + formatDuration(recordingSeconds)"></span>
+					</div>
+					<div class="d-flex gap-1.5">
+						<button type="button" @click="cancelVoiceRecord()" class="btn btn-secondary btn-xs py-1 px-2.5" x-text="window.dawaT ? window.dawaT('common.cancel', 'إلغاء') : 'إلغاء'">إلغاء</button>
+						<button type="button" @click="finishVoiceRecord()" class="btn btn-primary btn-xs py-1 px-2.5 font-bold" x-text="window.dawaT ? window.dawaT('common.finish', 'إنهاء') : 'إنهاء'">إنهاء</button>
+					</div>
+				</div>
+
+				<!-- ChatGPT-Style Floating Input Capsule Form -->
+				<form x-show="!isRecordingVoice" @submit.prevent="sendMessage()" class="relative m-0 w-full">
+					<input type="file" multiple :accept="attachAccept" x-ref="fileInput" @change="handleFileSelect($event)" class="hidden" />
+					
+					<div class="capsule-input-capsule">
+						
+						<!-- Attach File Button -->
+						<button
+							type="button"
+							@click="$refs.fileInput.click()"
+							class="capsule-tool-btn"
+							:title="window.dawaT ? window.dawaT('capsule.attach_file', 'إرفاق ملف أو روشتة') : 'إرفاق ملف أو روشتة'"
+							:disabled="isStreaming"
+						>
+							@IconPaperclip("icon-xs")
+						</button>
+
+						<!-- Voice Input Button -->
+						<button
+							type="button"
+							@click="startVoiceRecord()"
+							class="capsule-tool-btn"
+							:title="window.dawaT ? window.dawaT('capsule.voice_input', 'تسجيل صوتي') : 'تسجيل صوتي'"
+							:disabled="isStreaming"
+						>
+							@IconMicrophone("icon-xs")
+						</button>
+
+						<!-- Auto-Expanding Textarea -->
+						<textarea
+							x-ref="chatTextarea"
+							x-model="inputQuery"
+							@keydown="handleKeydown($event)"
+							@paste="handlePaste($event)"
+							@input="autoResizeTextarea()"
+							:placeholder="window.dawaT ? window.dawaT('capsule.ask_placeholder', 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...') : 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...'"
+							rows="1"
+							class="capsule-textarea"
+							:disabled="isStreaming"
+							dir="auto"
+						></textarea>
+
+						<!-- Submit Send Button / Stop Button -->
+						<template x-if="!isStreaming">
+							<button
+								type="submit"
+								class="capsule-send-btn"
+								:class="{ 'active': inputQuery.trim().length > 0 || attachedFiles.length }"
+								:disabled="!inputQuery.trim() && attachedFiles.length === 0"
+								:title="window.dawaT ? window.dawaT('capsule.send_tooltip', 'إرسال (Enter)') : 'إرسال (Enter)'"
+							>
+								@IconSend("icon-xs")
+							</button>
+						</template>
+
+						<template x-if="isStreaming">
+							<button
+								type="button"
+								@click="cancelStream()"
+								class="capsule-stop-btn"
+								:title="window.dawaT ? window.dawaT('capsule.stop_tooltip', 'إيقاف التوليد') : 'إيقاف التوليد'"
+							>
+								@IconClose("icon-xs")
+							</button>
+						</template>
+
+					</div>
+				</form>
+
+				<!-- Polished Footer with Circular Usage Meter and Retention Indicator -->
+				<div class="capsule-footnote flex-between items-center px-1">
+					<div class="d-flex items-center gap-2">
+						<!-- Circular Usage Meter -->
+						<div class="capsule-usage-circle-wrap" :title="usageTooltip()">
+							<svg class="capsule-usage-svg" viewBox="0 0 36 36">
+								<path class="capsule-usage-circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+								<path class="capsule-usage-circle-fg" :stroke-dasharray="usagePercent() + ', 100'" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"></path>
+							</svg>
+							<span class="capsule-usage-text tabular-nums" x-text="usagePercent() + '%'"></span>
+						</div>
+						<span class="text-2xs text-muted font-medium" x-text="usedTokens ? (usedTokens.toLocaleString() + ' / ' + (contextWindow || 128000).toLocaleString() + ' توكن') : (window.dawaT ? window.dawaT('capsule.context_ready', 'السياق جاهز') : 'السياق جاهز')"></span>
+					</div>
+					<div class="d-flex items-center gap-1 text-2xs text-muted" :title="retentionNote()">
+						@IconClock("icon-2xs")
+						<span x-text="window.dawaT ? window.dawaT('capsule.auto_save', 'الحفظ التلقائي') : 'الحفظ التلقائي'">الحفظ التلقائي</span>
+					</div>
+				</div>
+
+			</div>
+
+		</div>
+	</div>
+}

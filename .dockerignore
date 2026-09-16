@@ -1,0 +1,69 @@
+# Keep the build context tiny, fast, and secrets out of the image.
+#
+# Anything that is not Go source, go.mod/go.sum, db/migrations/*.sql or
+# internal/ui/static/** has no effect on `go build ./cmd/...` and only serves to
+# invalidate the `COPY . .` layer. Excluding it here is what lets a docs-only or
+# test-only commit reuse the cached build layer instead of recompiling the tree.
+
+# Version control and editor noise
+.git
+.github
+.idea
+.vscode
+.DS_Store
+.system_generated
+
+# Compiled binaries and local builds
+bin
+tmp
+dist
+build
+*.exe
+*.dll
+*.so
+*.dylib
+*.out
+*.log
+*.tar
+*.zip
+*.gz
+*.7z
+
+# Go test files and helpers - never compiled by `go build ./cmd/...`, so their
+# only effect on a Docker build is to bust the source layer's cache.
+**/*_test.go
+test
+testdata
+*.test
+coverage.html
+coverage.out
+*.prof
+
+# Local development data, scratch space and uploads (runtime-only)
+.data
+data
+scratch
+q.exe
+qcheck.exe
+
+# Tooling and spec directories that never enter the binary
+.specify
+.agents
+.claude
+.gocache
+.gotmp
+__pycache__
+*.pyc
+*.csv
+*.xlsx
+
+# Secrets must never enter a build context
+.env
+.env.*
+!.env.example
+
+# Local-only compose and documentation
+docker-compose*.yml
+*.md
+!README.md
+docs

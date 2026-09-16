@@ -1,0 +1,7 @@
+Static assets are served from this directory and copied into the runtime image
+by the Dockerfile. It must exist in the repository even while empty, otherwise
+the image build fails at the COPY step.
+
+Populated during Phase 2 of the UI work: Tailwind output (css/app.css), HTMX,
+Alpine, and Chart.js. css/app.css is generated and therefore gitignored, which
+is why this file — not that one — is what keeps the directory tracked.

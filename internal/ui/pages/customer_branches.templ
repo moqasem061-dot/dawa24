@@ -1,0 +1,239 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// CustomerBranchesData is the branches screen, and only the branches.
+//
+// The employees list, its toolbar, its pagination and its two dialogs used to
+// live here behind a second tab, over the same org.members rows /customer/team
+// already showed — worse there, better here, and neither could do what the
+// other could. The tab moved to /customer/team whole; this page kept the
+// branches and a head count per branch, which is one GROUP BY rather than the
+// whole staff list.
+type CustomerBranchesData struct {
+	Branches           []*org.Branch
+	StaffPerBranch     map[int64]int
+	TotalStaff         int
+	Governorates       []*platformadmin.Governorate
+	Cities             []*platformadmin.City
+	InstitutionalWorks []*org.InstitutionalWork
+	NoticeType         string
+	NoticeMsg          string
+}
+
+// BranchStaffCount is how many members are assigned to one branch.
+func (d CustomerBranchesData) BranchStaffCount(branchID int64) int {
+	return d.StaffPerBranch[branchID]
+}
+
+func (d CustomerBranchesData) GetMainBranch() *org.Branch {
+	for _, b := range d.Branches {
+		if b != nil && b.IsMain {
+			return b
+		}
+	}
+	if len(d.Branches) > 0 {
+		return d.Branches[0]
+	}
+	return nil
+}
+
+func (d CustomerBranchesData) WorkLabel(key string) string {
+	for _, w := range d.InstitutionalWorks {
+		if fmt.Sprintf("%d", w.ID) == key || w.Slug == key {
+			if title := w.Title["ar"]; title != "" {
+				return title
+			}
+			if title := w.Title["en"]; title != "" {
+				return title
+			}
+		}
+	}
+	return formatBranchCategoryLabel(key)
+}
+
+// institutionalWorkCategories lives in institutional_categories.go — shared with
+// the vendor branch screen.
+
+func formatBranchWorksJSON(works []string) string {
+	if len(works) == 0 {
+		return "[]"
+	}
+	b, err := json.Marshal(works)
+	if err != nil {
+		return "[]"
+	}
+	return string(b)
+}
+
+func formatCustomerBranchJSON(b *org.Branch, cities []*platformadmin.City) string {
+	if b == nil {
+		return "{}"
+	}
+	cityID := int64(0)
+	govID := int64(0)
+	if b.CityID != nil {
+		cityID = *b.CityID
+		for _, c := range cities {
+			if c != nil && c.ID == cityID && c.GovernorateID != nil {
+				govID = *c.GovernorateID
+				break
+			}
+		}
+	}
+	lat := 30.0444
+	if b.Latitude != nil {
+		lat = *b.Latitude
+	}
+	lon := 31.2357
+	if b.Longitude != nil {
+		lon = *b.Longitude
+	}
+	m := map[string]any{
+		"id":                  b.ID,
+		"name_ar":             b.Name.Get("ar"),
+		"name_en":             b.Name.Get("en"),
+		"code":                b.Code,
+		"city_id":             cityID,
+		"governorate_id":      govID,
+		"address":             b.Address,
+		"phone":               b.Phone,
+		"operating_hours":     b.OperatingHours,
+		"google_maps_url":     b.GoogleMapsURL,
+		"has_cold_storage":    b.HasColdStorage,
+		"is_main":             b.IsMain,
+		"latitude":            lat,
+		"longitude":           lon,
+		"institutional_works": b.InstitutionalWorks,
+	}
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "{}"
+	}
+	return string(bytes)
+}
+
+templ CustomerBranches(data CustomerBranchesData, lang string, dir string, perms []string) {
+	@layouts.CustomerShell(i18n.T(lang, "nav.pharmacy_branches"), "branches", lang, dir, perms) {
+		<div x-data="customerBranchManager()" x-init="init()" class="page-container">
+			
+			<!-- Notice Feedback Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconAlert("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconCheckCircle("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				}
+			}
+			
+			<!-- Header Banner -->
+			<div class="glass-panel p-5 mb-4">
+				<div class="d-flex items-center justify-between flex-wrap gap-4">
+					<div>
+						<div class="d-flex items-center gap-2 mb-1">
+							<div class="user-avatar-badge">
+								@components.IconBuilding("icon-sm")
+							</div>
+							<h1 class="page-title text-xl font-bold m-0">
+								{ i18n.T(lang, "branches.title") }
+							</h1>
+						</div>
+						<p class="text-xs text-secondary m-0">
+							{ i18n.T(lang, "branches.empty_desc") }
+						</p>
+					</div>
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href="/customer/team" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconUsers("icon-xs")
+							<span>{ i18n.T(lang, "nav.team") }</span>
+						</a>
+						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="resetToAddMode(); document.getElementById('new-branch-form').scrollIntoView({behavior:'smooth'});">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "branches.add_new") }</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Metrics Strip -->
+			<div class="dashboard-stat-grid cols-4 mb-4">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "branches.total_registered") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", len(data.Branches)) }
+					</div>
+					<div class="stat-card-sub">{ i18n.T(lang, "branches.title") }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "branches.main_receiving") }</div>
+					<div class="stat-card-value text-primary truncate text-base">
+						if mb := data.GetMainBranch(); mb != nil {
+							<span>{ mb.Name.Get(i18n.ParseLang(lang)) }</span>
+						} else {
+							<span>{ i18n.T(lang, "branches.not_specified") }</span>
+						}
+					</div>
+					<div class="stat-card-sub">{ i18n.T(lang, "branches.main_badge") }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "branches.staff_metrics") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalStaff) }
+					</div>
+					<div class="stat-card-sub">{ i18n.T(lang, "team.title") }</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "branches.coverage_status") }</div>
+					<div class="mt-1">
+						<span class="badge badge-emerald text-2xs font-bold">
+							@components.IconCheck("icon-xs")
+							<span>{ i18n.T(lang, "branches.ready_for_supply") }</span>
+						</span>
+					</div>
+					<div class="stat-card-sub">{ i18n.T(lang, "branches.active_govs") }</div>
+				</div>
+			</div>
+
+			<!-- Branches network -->
+			<div>
+				<div class="cb-split-grid">
+					
+					<!-- Right Column (in RTL DOM): Existing Pharmacy Branches List -->
+					@CustomerBranchesList(data, lang)
+
+					<!-- Left Column (in RTL DOM): Unified Pharmacy Branch Form (Add / Edit Modes) -->
+					@CustomerBranchesForm(data, lang)
+				</div>
+			</div>
+			@CustomerBranchesScript()
+		</div>
+	}
+}
+
+// formatBranchCategoryLabel is kept as a thin alias of the shared
+// formatInstitutionalWorkLabel so existing template call sites need no change.
+func formatBranchCategoryLabel(key string) string {
+	return formatInstitutionalWorkLabel(key)
+}
+

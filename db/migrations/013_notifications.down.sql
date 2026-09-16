@@ -1,0 +1,8 @@
+BEGIN;
+
+DROP TABLE IF EXISTS notifications.logs CASCADE;
+DROP TABLE IF EXISTS notifications.templates CASCADE;
+
+DROP SCHEMA IF EXISTS notifications CASCADE;
+
+COMMIT;

@@ -1,0 +1,161 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorTeamPage(data VendorTeamData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_team.shell_title"), "team", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				showAddModal: false,
+				showEditModal: false,
+				edit: { id: 0, name: '', phone: '', jobTitle: '', code: '', roleKey: '', roleId: '', branchId: '', isActive: true },
+				openEdit(m) {
+					this.edit = {
+						id: m.id, name: m.name || '', phone: m.phone || '',
+						jobTitle: m.jobTitle || '', code: m.code || '',
+						roleKey: m.roleKey || 'org_employee',
+						roleId: m.roleId ? String(m.roleId) : '',
+						branchId: m.branchId ? String(m.branchId) : '',
+						isActive: !!m.isActive
+					};
+					this.showEditModal = true;
+					const dlg = document.getElementById('edit-employee-modal');
+					if (dlg && typeof dlg.showModal === 'function' && !dlg.open) {
+						dlg.showModal();
+					}
+				},
+				searchQuery: '',
+				roleFilter: 'all',
+				statusFilter: 'all',
+				matchesFilter(m) {
+					const q = this.searchQuery.toLowerCase().trim();
+					const matchesSearch = !q || 
+						(m.name && m.name.toLowerCase().includes(q)) || 
+						(m.email && m.email.toLowerCase().includes(q)) || 
+						(m.phone && m.phone.toLowerCase().includes(q)) || 
+						(m.jobTitle && m.jobTitle.toLowerCase().includes(q)) || 
+						(m.code && m.code.toLowerCase().includes(q));
+					
+					const matchesRole = this.roleFilter === 'all' || 
+						String(m.roleId) === this.roleFilter || 
+						m.roleKey === this.roleFilter;
+					const matchesStatus = this.statusFilter === 'all' || 
+						(this.statusFilter === 'active' && m.isActive) || 
+						(this.statusFilter === 'inactive' && !m.isActive);
+					
+					return matchesSearch && matchesRole && matchesStatus;
+				}
+			}"
+		>
+			<!-- Notice / Alert Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-0 d-flex items-center gap-3 p-4">
+						<span class="text-xl">@components.IconAlert("icon-sm")</span>
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-0 d-flex items-center gap-3 p-4">
+						<span class="text-xl">@components.IconCheckCircle("icon-sm")</span>
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			<!-- Header Action Bar -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-2xl">
+							@components.IconUsers("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_team.header_title") }
+							</h1>
+							<p class="text-xs text-secondary mt-1 mb-0">
+								{ i18n.T(lang, "vendor_team.header_desc") }
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-3 flex-wrap">
+						<a href="/vendor/roles" class="btn btn-secondary font-bold text-xs px-4 py-2 gap-2">
+							@components.IconSettings("icon-xs")
+							<span>{ i18n.T(lang, "vendor_team.btn_roles") }</span>
+						</a>
+						<a href="/vendor/team/import" class="btn btn-secondary font-bold text-xs px-4 py-2 gap-2">
+							@components.IconUpload("icon-xs")
+							<span>{ i18n.T(lang, "vendor_team.btn_import") }</span>
+						</a>
+						<button
+							type="button"
+							data-modal-open="add-employee-modal"
+							@click="showAddModal = true"
+							class="btn btn-primary font-bold text-xs px-4 py-2 gap-2"
+						>
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "vendor_team.btn_new_member") }</span>
+						</button>
+					</div>
+				</div>
+			</div>
+
+			<!-- Team Overview Metrics Cards -->
+			<div class="dashboard-stat-grid cols-4 mb-0">
+				<!-- Total Staff -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_team.stat_total_staff") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", len(data.Members)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_team.stat_total_staff_sub") }</div>
+				</div>
+
+				<!-- Active Accounts -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_team.stat_active") }</div>
+					<div class="stat-card-value text-success tabular-nums">
+						{ fmt.Sprintf("%d", countActiveMembers(data.Members)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_team.stat_active_sub") }</div>
+				</div>
+
+				<!-- Managers & Operations -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_team.stat_managers") }</div>
+					<div class="stat-card-value text-brand tabular-nums">
+						{ fmt.Sprintf("%d", countManagers(data.Members)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_team.stat_managers_sub") }</div>
+				</div>
+
+				<!-- Branches Covered -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_team.stat_branches") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", len(data.Branches)) }
+					</div>
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_team.stat_branches_sub") }</div>
+				</div>
+			</div>
+
+			<!-- Team Members Table Section -->
+			@VendorTeamTable(data, lang)
+
+			<!-- Add Employee Modal Dialog -->
+			@VendorTeamAddModal(data, lang)
+
+			<!-- Edit Employee Modal Dialog -->
+			@VendorTeamEditModal(data, lang)
+
+		</div>
+	}
+}

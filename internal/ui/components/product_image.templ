@@ -1,0 +1,39 @@
+package components
+
+import "github.com/muhiya/dawa24-store/internal/ui/imageurl"
+
+// ProductImage renders an uploaded image at the size the page actually needs.
+//
+// It replaces `<img src={ p.Image }>` written by hand in fifty-seven places.
+// Every one of those pointed at the stored original, so a forty-pixel table
+// cell downloaded a vendor's four-thousand-pixel phone photograph in full; and
+// not one of them carried width and height, so every page reflowed as its
+// images arrived.
+//
+// Four attributes do the work, and all four were missing before:
+//
+//   - src picks the rendition for this slot rather than the original.
+//   - srcset offers the 2x rendition so a phone gets a sharp image without a
+//     desktop paying for one.
+//   - width and height reserve the space before the bytes arrive, which is what
+//     stops the layout jumping.
+//   - loading="lazy" keeps images below the fold off the critical path, and
+//     decoding="async" keeps their decode off the main thread.
+//
+// The two exceptions are deliberate. The first image on a page — a product
+// detail hero — should NOT be lazy, because the browser then delays the one
+// image the reader is waiting for; pass Eager for those. And a remote
+// image_link is passed through untouched, because we neither host nor resize it.
+templ ProductImage(img imageurl.Image) {
+	<img
+		src={ img.Src() }
+		srcset={ img.SrcSet() }
+		sizes={ img.Sizes() }
+		width={ img.WidthAttr() }
+		height={ img.HeightAttr() }
+		loading={ img.Loading() }
+		decoding="async"
+		alt={ img.Alt }
+		class={ img.Class }
+	/>
+}

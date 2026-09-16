@@ -1,0 +1,101 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ CheckoutBranchList(branches []*CheckoutBranchItem, lang string) {
+	<div class="d-flex flex-col gap-3">
+		if len(branches) == 0 {
+			<div class="empty-state-glass p-6 text-center border-dashed">
+				<div class="text-sm text-muted mb-4">
+					{ i18n.T(lang, "checkout.no_branches") }
+				</div>
+				<a href={ templ.SafeURL(func() string {
+					if actor := authctx.FromContext(ctx); actor.IsVendor() {
+						return "/vendor/branches"
+					}
+					return "/customer/branches"
+				}()) } class="btn btn-primary btn-sm font-extrabold gap-1">
+					@components.IconPlus("icon-xs")
+					<span>{ i18n.T(lang, "checkout.add_branch_btn") }</span>
+				</a>
+			</div>
+		} else {
+			if !HasAvailableCheckoutBranch(branches) {
+				<div class="alert alert-amber text-sm font-semibold p-3.5 rounded-lg border border-amber-500/30 bg-amber-500/10 d-flex items-start gap-3">
+					@components.IconAlertCircle("icon-sm text-amber-500 shrink-0 mt-0.5")
+					<div class="stack-xs">
+						<div class="font-extrabold text-amber-400">{ i18n.T(lang, "checkout.no_available_branches_alert_title") }</div>
+						<div class="text-xs text-muted leading-relaxed">{ i18n.T(lang, "checkout.no_available_branches_alert") }</div>
+					</div>
+				</div>
+			}
+			for _, b := range branches {
+				{{ isChecked := IsCheckoutBranchChecked(ctx, b, branches) }}
+				<label
+					class={
+						"checkout-branch-item",
+						templ.KV("opacity-60 bg-surface-raised cursor-not-allowed border-dashed select-none", !b.IsAvailable),
+						templ.KV("border-brand bg-surface-sunken", b.IsAvailable && isChecked),
+					}
+				>
+					<input
+						type="radio"
+						name="branch_id"
+						value={ fmt.Sprintf("%d", b.Branch.ID) }
+						checked?={ isChecked }
+						disabled?={ !b.IsAvailable }
+						class={ "form-radio mt-1", templ.KV("cursor-not-allowed opacity-40", !b.IsAvailable) }
+						@change={ fmt.Sprintf("fetch('/customer/set-branch', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'branch_id=%d' })", b.Branch.ID) }
+					/>
+					<div class="flex-1">
+						<div class="flex-between mb-1 flex-wrap gap-2">
+							<strong class={ "text-base font-extrabold", templ.KV("text-primary", b.IsAvailable), templ.KV("text-muted", !b.IsAvailable) }>
+								{ b.Branch.Name.Get(i18n.Lang(lang)) }
+							</strong>
+							<div class="d-flex items-center gap-2">
+								if b.Branch.IsMain {
+									<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "checkout.main_branch_badge") }</span>
+								}
+								if b.IsAvailable {
+									if b.Branch.Status == "active" || b.Branch.Status == "" {
+										<span class="badge badge-sky text-xs font-bold">{ i18n.T(lang, "checkout.active_branch_badge") }</span>
+									}
+								} else {
+									<span class="badge badge-amber text-xs font-bold gap-1">
+										@components.IconLock("icon-2xs")
+										<span>{ i18n.T(lang, "checkout.branch_unavailable_badge") }</span>
+									</span>
+								}
+							</div>
+						</div>
+						<div class={ "text-xs mb-2 leading-relaxed", templ.KV("text-secondary", b.IsAvailable), templ.KV("text-muted", !b.IsAvailable) }>
+							{ b.Branch.Address }
+						</div>
+						if !b.IsAvailable && b.Reason != "" {
+							<div class="text-xs text-amber-500 font-semibold mb-2 d-flex items-center gap-1.5 leading-relaxed">
+								@components.IconAlert("icon-xs text-amber-500 shrink-0")
+								<span>{ b.Reason }</span>
+							</div>
+						}
+						<div class="text-xs text-muted d-flex items-center gap-3 flex-wrap tabular-nums">
+							if b.Branch.Phone != "" {
+								<span class="d-flex items-center gap-1">
+									@components.IconPhone("icon-xs")
+									<span>{ b.Branch.Phone }</span>
+								</span>
+							}
+							if b.Branch.ManagerName != "" {
+								<span>{ fmt.Sprintf(i18n.T(lang, "checkout.branch_manager"), b.Branch.ManagerName) }</span>
+							}
+						</div>
+					</div>
+				</label>
+			}
+		}
+	</div>
+}

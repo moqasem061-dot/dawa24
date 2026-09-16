@@ -1,0 +1,182 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// CustomerSavingTable renders the items table or empty state for saving products.
+templ CustomerSavingTable(data CustomerSavingPageData, lang string) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		if len(data.Items) == 0 {
+			<div class="p-8 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+				<h3 class="text-lg font-black text-primary mb-2">
+					{ i18n.T(lang, "saving.empty_title") }
+				</h3>
+				<p class="text-sm text-secondary max-w-md mx-auto mb-4">
+					{ i18n.T(lang, "saving.empty_desc") }
+				</p>
+				<div class="d-flex justify-center gap-2 flex-wrap">
+					<button type="button" class="btn btn-primary font-bold text-xs px-4" data-on-click="openPharmacyCreateModal()">
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "saving.add_item_btn") }</span>
+					</button>
+					<a
+						href="/customer/saving-products/import"
+						class="btn btn-secondary font-bold text-xs px-4 text-decoration-none"
+					>
+						@components.IconUpload("icon-xs")
+						<span>{ i18n.T(lang, "saving.import_excel_btn") }</span>
+					</a>
+				</div>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th style="width: 44px;" class="text-center">
+								<input
+									type="checkbox"
+									class="form-check-input"
+									title={ i18n.T(lang, "saving.select_all_tooltip") }
+									@change="toggleSelectAll($el)"
+									:checked="isAllSelected()"
+								/>
+							</th>
+							<th class="text-start">{ i18n.T(lang, "saving.col_item_name") }</th>
+							<th class="text-start">{ i18n.T(lang, "saving.col_catalog_link") }</th>
+							<th class="col-min text-center">{ i18n.T(lang, "saving.col_qty") }</th>
+							<th class="col-min text-center">{ i18n.T(lang, "saving.col_purchase_price") }</th>
+							<th class="col-min text-center">{ i18n.T(lang, "saving.col_supplier_offers") }</th>
+							<th class="col-actions text-center">{ i18n.T(lang, "saving.col_actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, it := range data.Items {
+							<tr
+								class="pharmacy-saving-row"
+								data-id={ fmt.Sprintf("%d", it.ID) }
+								data-name={ it.NameProduct }
+								data-sku={ it.SKU }
+								data-qty={ fmt.Sprintf("%v", it.Quantity) }
+								data-price={ it.Price.String() }
+								data-product-id={ savingProductIDStr(it.ProductID) }
+								data-product-name={ it.LinkedProductName.Get(i18n.Lang(lang)) }
+								:class={ fmt.Sprintf("selectedIds.includes('%d') ? 'bg-primary-subtle' : ''", it.ID) }
+							>
+								<!-- Selection Checkbox -->
+								<td class="text-center align-middle" style="width: 44px;">
+									<input
+										type="checkbox"
+										class="form-check-input"
+										value={ fmt.Sprintf("%d", it.ID) }
+										x-model="selectedIds"
+									/>
+								</td>
+								<!-- Name & SKU -->
+								<td class="text-start">
+									<div class="fw-800 text-primary text-base">
+										{ it.NameProduct }
+									</div>
+									if it.SKU != "" {
+										<div class="text-xs text-muted mt-1">
+											<code>{ it.SKU }</code>
+										</div>
+									}
+								</td>
+
+								<!-- Linked Product -->
+								<td class="text-start">
+									if it.ProductID != nil && *it.ProductID > 0 {
+										<div class="d-flex items-center gap-2">
+											<span
+												class="badge badge-emerald text-xs fw-800 cell-clamp cell-clamp-1"
+												title={ it.LinkedProductName.Get(i18n.Lang(lang)) }
+											>
+												{ it.LinkedProductName.Get(i18n.Lang(lang)) }
+											</span>
+											<a href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *it.ProductID)) } target="_blank" class="btn btn-secondary btn-icon" title={ i18n.T(lang, "saving.view_in_catalog") }>
+												@components.IconEye("icon-xs")
+											</a>
+										</div>
+									} else {
+										<div class="d-flex items-center gap-2">
+											<span class="badge badge-amber text-xs font-bold">
+												{ i18n.T(lang, "saving.unlinked_badge") }
+											</span>
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm font-bold gap-1"
+												data-on-click="openPharmacyEditModalFromRow" data-args={ components.JSArgs(it.ID) }
+												title={ i18n.T(lang, "saving.link_to_catalog") }
+											>
+												@components.IconExternalLink("icon-xs")
+												<span>{ i18n.T(lang, "saving.link_to_catalog") }</span>
+											</button>
+										</div>
+									}
+								</td>
+
+								<!-- Quantity -->
+								<td class="col-min text-center tabular-nums">
+									<strong>{ fmt.Sprintf("%v", it.Quantity) }</strong>
+								</td>
+
+								<!-- Price -->
+								<td class="col-min text-center tabular-nums">
+									<strong class="text-primary">{ it.Price.String() } { i18n.T(lang, "common.egp") }</strong>
+								</td>
+
+								<!-- Providers & Market Offers -->
+								<td class="col-min text-center">
+									if it.ProductID != nil && *it.ProductID > 0 {
+										<button
+											type="button"
+											class="btn btn-secondary btn-sm"
+											data-open-providers-id={ fmt.Sprintf("%d", *it.ProductID) }
+											data-open-providers-name={ it.NameProduct }
+											data-on-click="openPharmacyProvidersModal" data-args={ components.JSArgs(*it.ProductID, it.NameProduct) }
+										>
+											<span>{ fmt.Sprintf(i18n.T(lang, "saving.suppliers_count"), it.ProvidingOrgsCount) }</span>
+										</button>
+									} else {
+										<span class="text-xs text-muted">-</span>
+									}
+								</td>
+
+								<!-- Actions -->
+								<td class="col-actions text-center">
+									<div class="table-actions justify-center">
+										<button
+											type="button"
+											class="btn btn-secondary btn-icon"
+											title={ i18n.T(lang, "saving.edit_tooltip") }
+											data-on-click="openPharmacyEditModalFromRow" data-args={ components.JSArgs(it.ID) }
+										>
+											@components.IconEdit("icon-xs")
+										</button>
+										<button
+											type="button"
+											class="btn btn-secondary btn-icon text-danger"
+											title={ i18n.T(lang, "saving.delete_tooltip") }
+											data-on-click="confirmPharmacyDeleteSavingProduct" data-args={ components.JSArgs(it.ID) }
+										>
+											@components.IconTrash("icon-xs")
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.Pagination.TotalCount > 0 {
+				@components.B2BPagination(data.Pagination)
+			}
+		}
+	</div>
+}

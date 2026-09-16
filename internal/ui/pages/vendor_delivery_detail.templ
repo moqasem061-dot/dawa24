@@ -1,0 +1,260 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorDeliveryDetailData struct {
+	Shipment *commerce.OrderShipment
+	Couriers []DeliveryCourierOption
+	CanAssign bool
+	CanUpdate bool
+	IsMine    bool
+	ActorID   int64
+	NoticeType string
+	NoticeMsg  string
+}
+
+templ VendorDeliveryDetailPage(data VendorDeliveryDetailData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_delivery.detail.page_title"), "delivery", lang, dir) {
+		<div class="page-container courier-page-mobile-padded">
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 d-flex items-center gap-3 p-4">
+						@components.IconAlert("icon-sm")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 d-flex items-center gap-3 p-4">
+						@components.IconCheckCircle("icon-sm")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			if data.Shipment == nil {
+				<div class="glass-panel p-12 text-center empty-state-glass">
+					<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_delivery.detail.empty_title") }</h3>
+					<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor_delivery.detail.empty_desc") }</p>
+				</div>
+			} else {
+				<div class="mb-4">
+					<a href="/vendor/delivery" class="text-xs font-bold text-secondary text-decoration-none">
+						<span>{ i18n.T(lang, "vendor_delivery.detail.back_to_list") }</span>
+					</a>
+				</div>
+
+				<!-- Identity & status -->
+				<div class="glass-panel p-5 mb-4">
+					<div class="flex-between items-start flex-wrap gap-3">
+						<div class="stack-2xs">
+							<span class="text-2xs text-muted font-bold">{ i18n.T(lang, "vendor_delivery.detail.parcel_num_lbl") }</span>
+							<h1 class="text-xl font-black text-primary font-mono m-0">{ data.Shipment.ShipmentNumber }</h1>
+							if data.Shipment.TrackingNumber != "" {
+								<span class="text-2xs text-secondary font-mono font-bold">{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.detail.waybill_prefix"), data.Shipment.TrackingNumber) }</span>
+							}
+							if data.Shipment.OrderNumber != "" {
+								<span class="text-2xs text-secondary font-bold">{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.detail.po_prefix"), data.Shipment.OrderNumber) }</span>
+							}
+						</div>
+						<div class="d-flex items-center gap-2 flex-wrap">
+							@DeliveryStatusBadge(data.Shipment.Status, lang)
+							if data.Shipment.CourierAssignedAt != nil {
+								<span class="badge badge-secondary text-xs font-bold gap-1.5">
+									@components.IconClock("icon-3xs")
+									<span class="tabular-nums font-mono">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.detail.assigned_at"), data.Shipment.CourierAssignedAt.Format("2006-01-02 03:04 PM")) }
+									</span>
+								</span>
+							}
+						</div>
+					</div>
+
+					if data.Shipment.CourierName != "" {
+						<div class="pt-3 mt-3 border-t flex-between items-center text-xs flex-wrap gap-2">
+							<span class="text-muted font-medium">{ i18n.T(lang, "vendor_delivery.detail.courier_in_charge") }</span>
+							<strong class="text-primary font-bold">
+								{ data.Shipment.CourierName }
+								if data.IsMine {
+									<span class="badge badge-emerald text-2xs font-bold ms-2">{ i18n.T(lang, "vendor_delivery.detail.badge_you") }</span>
+								}
+							</strong>
+						</div>
+					}
+					if data.Shipment.VendorName.Get(i18n.ParseLang(lang)) != "" {
+						<div class="pt-2 mt-2 border-t flex-between items-center text-xs">
+							<span class="text-muted font-medium">{ i18n.T(lang, "vendor_delivery.detail.vendor_lbl") }</span>
+							<strong class="text-primary font-bold">{ data.Shipment.VendorName.Get(i18n.ParseLang(lang)) }</strong>
+						</div>
+					}
+				</div>
+
+				if data.CanAssign {
+					<div class="glass-panel p-5 mb-4">
+						<div class="d-flex items-center gap-2 mb-3">
+							@components.IconUsers("icon-xs")
+							<h2 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.detail.assign_box_title") }</h2>
+						</div>
+						@VendorDeliveryAssignForm(data.Shipment, data.Couriers, "", lang)
+					</div>
+				}
+
+				@VendorDeliveryRecipientCard(data.Shipment, lang)
+				@VendorDeliveryCollectionCard(data.Shipment, lang)
+				@VendorDeliveryItemsCard(data.Shipment, lang)
+				@VendorDeliveryActions(data, lang)
+
+				if data.Shipment.HasExactCoordinates() {
+					@CourierMiniMapScript()
+				}
+
+				if !data.Shipment.IsClosed() && data.CanUpdate {
+					<div class="courier-mobile-bottom-bar d-md-none">
+						<div class="d-flex items-center gap-2 w-full">
+							if data.Shipment.CustomerBranchPhone != "" {
+								<a
+									href={ templ.SafeURL("tel:" + data.Shipment.CustomerBranchPhone) }
+									class="btn btn-secondary flex-1 py-2.5 font-bold text-xs d-flex items-center justify-center gap-1.5"
+									title="اتصال بالصيدلي"
+								>
+									@components.IconPhone("icon-2xs")
+									<span>{ i18n.T(lang, "vendor_delivery.detail.btn_bottom_call") }</span>
+								</a>
+							}
+							if locURL := data.Shipment.BranchLocationURL(); locURL != "" {
+								<a
+									href={ templ.SafeURL(locURL) }
+									target="_blank"
+									rel="noopener noreferrer"
+									class="btn btn-secondary flex-1 py-2.5 font-bold text-xs d-flex items-center justify-center gap-1.5"
+									title="خرائط Google"
+								>
+									@components.IconMapPin("icon-2xs")
+									<span>{ i18n.T(lang, "vendor_delivery.detail.btn_bottom_gps") }</span>
+								</a>
+							}
+							<button
+								type="button"
+								class="btn btn-primary flex-1 py-2.5 font-black text-xs d-flex items-center justify-center gap-1.5"
+								data-on-click="focusSection('handover-pin-section', 'progress-status-section', '.courier-pin-input')"
+							>
+								@components.IconShield("icon-2xs")
+								<span>{ i18n.T(lang, "vendor_delivery.detail.btn_bottom_pin") }</span>
+							</button>
+						</div>
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+// VendorDeliveryRecipientCard is where the parcel is going and who signs for
+// it: the branch, the address, the exact coordinates when the pharmacy
+// recorded them, and the one-tap navigation and call the courier needs while
+// holding a phone in one hand.
+templ VendorDeliveryRecipientCard(sh *commerce.OrderShipment, lang string) {
+	<div class="courier-card">
+		<div class="flex-between items-center mb-3 pb-2 border-b text-primary">
+			<div class="d-flex items-center gap-2">
+				@components.IconMapPin("icon-xs")
+				<h3 class="text-xs font-black m-0">{ i18n.T(lang, "vendor_delivery.detail.recipient_title") }</h3>
+			</div>
+			if sh.HasExactCoordinates() {
+				<span class="badge badge-emerald text-2xs font-bold font-mono py-0.5 px-2 gap-1 d-inline-flex items-center">
+					@components.IconCheckCircle("icon-3xs shrink-0")
+					<span>{ i18n.T(lang, "vendor_delivery.detail.gps_accurate_badge") }</span>
+				</span>
+			}
+		</div>
+
+		<div class="d-flex flex-col gap-2.5 text-xs text-start">
+			<div class="flex-between items-baseline flex-wrap gap-1">
+				<span class="text-secondary font-medium">{ i18n.T(lang, "vendor_delivery.detail.pharmacy_name_lbl") }</span>
+				<strong class="text-primary font-extrabold text-sm">{ sh.CustomerOrgName.Get(i18n.ParseLang(lang)) }</strong>
+			</div>
+
+			if sh.CustomerBranchName.Get(i18n.ParseLang(lang)) != "" {
+				<div class="flex-between items-baseline flex-wrap gap-1">
+					<span class="text-secondary font-medium">{ i18n.T(lang, "vendor_delivery.detail.branch_lbl") }</span>
+					<span class="text-primary font-bold">{ sh.CustomerBranchName.Get(i18n.ParseLang(lang)) }</span>
+				</div>
+			}
+
+			if sh.CustomerBranchAddress != "" {
+				<div class="pt-2 border-t">
+					<span class="text-secondary font-medium d-block mb-1">{ i18n.T(lang, "vendor_delivery.detail.address_lbl") }</span>
+					<div class="p-2.5 rounded-lg bg-surface-sunken border text-primary font-bold leading-relaxed">
+						{ sh.CustomerBranchAddress }
+					</div>
+				</div>
+			}
+
+			if sh.HasExactCoordinates() {
+				<div
+					id="courier-branch-map"
+					class="courier-map-preview"
+					data-lat={ fmt.Sprintf("%.6f", *sh.CustomerBranchLatitude) }
+					data-lon={ fmt.Sprintf("%.6f", *sh.CustomerBranchLongitude) }
+					data-name={ sh.CustomerOrgName.Get(i18n.ParseLang(lang)) }
+					data-branch={ sh.CustomerBranchName.Get(i18n.ParseLang(lang)) }
+				>
+					<div class="courier-map-canvas"></div>
+				</div>
+			}
+
+			<div class="pt-2 border-t flex-between items-center gap-2 flex-wrap">
+				<div class="stack-2xs text-start">
+					<span class="text-2xs text-muted font-medium">{ i18n.T(lang, "vendor_delivery.detail.manager_lbl") }</span>
+					<span class="text-xs font-bold text-primary">
+						if sh.CustomerManagerName != "" {
+							{ sh.CustomerManagerName }
+						} else {
+							<span>{ i18n.T(lang, "vendor_delivery.detail.pharmacist_ph") }</span>
+						}
+					</span>
+				</div>
+				if sh.CustomerBranchPhone != "" {
+					<a
+						href={ templ.SafeURL("tel:" + sh.CustomerBranchPhone) }
+						class="courier-action-btn-call"
+						title="اتصال هاتفي بالصيدلي"
+					>
+						@components.IconPhone("icon-2xs")
+						<span class="tabular-nums font-mono">{ sh.CustomerBranchPhone }</span>
+					</a>
+				}
+			</div>
+
+			<div class="d-flex flex-col gap-2 pt-2 border-t">
+				if locURL := sh.BranchLocationURL(); locURL != "" {
+					<a
+						href={ templ.SafeURL(locURL) }
+						target="_blank"
+						rel="noopener noreferrer"
+						class="courier-btn-navigate"
+						title="فتح الملاحة المباشرة عبر خرائط جوجل"
+					>
+						@components.IconMapPin("icon-xs")
+						<span>{ i18n.T(lang, "vendor_delivery.detail.btn_navigate_gps") }</span>
+					</a>
+				}
+				if sh.CustomerBranchPhone != "" {
+					<a
+						href={ templ.SafeURL("tel:" + sh.CustomerBranchPhone) }
+						class="courier-btn-call"
+						title="اتصال هاتفي بالفرع"
+					>
+						@components.IconPhone("icon-xs")
+						<span>{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.detail.btn_call_branch"), sh.CustomerBranchPhone) }</span>
+					</a>
+				}
+			</div>
+		</div>
+	</div>
+}

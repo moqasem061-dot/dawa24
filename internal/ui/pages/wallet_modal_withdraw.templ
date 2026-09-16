@@ -1,0 +1,151 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ WalletModalWithdraw(data WalletViewData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- Withdraw Modal -->
+	<div
+		class="modal-backdrop"
+		x-show="isWithdrawModalOpen"
+		x-cloak
+		x-transition.opacity
+		@keydown.escape.window="isWithdrawModalOpen = false"
+	>
+		<div
+			class="modal-container"
+			@click.away="isWithdrawModalOpen = false"
+		>
+			<div class="modal-header">
+				<h3 class="modal-title font-black d-flex items-center gap-2">
+					@components.IconArrowLeft("icon-xs")
+					<span>{ i18n.T(lang, "wallet.withdraw_title") }</span>
+				</h3>
+				<button type="button" class="btn btn-icon btn-ghost btn-sm" @click="isWithdrawModalOpen = false">
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<form
+				action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/wallet/withdraw", "/customer/wallet/withdraw")) }
+				method="POST"
+				class="stack-sm p-5"
+			>
+				<input type="hidden" name="payout_method_type" :value="withdrawPayoutType" />
+				<input type="hidden" name="destination_details" :value="withdrawDestinationDetails" />
+
+				<!-- Balance Card -->
+				<div class="glass-panel p-3 mb-3 bg-surface-sunken border rounded-lg flex-between items-center">
+					<div>
+						<span class="text-xs text-muted d-block">{ i18n.T(lang, "wallet.available_balance") }</span>
+						<strong class={ "text-base font-black tabular-nums", walletAvailableBalanceClass(data.Wallet) }>
+							{ walletAvailableBalance(data.Wallet) }
+						</strong>
+						if data.Wallet != nil && data.Wallet.PendingWithdrawal.IsPositive() {
+							<span class="text-2xs text-amber d-block mt-0.5 font-bold">
+								({ i18n.T(lang, "wallet.pending_balance") }: { data.Wallet.PendingWithdrawal.String() } { i18n.T(lang, "common.currency_egp") })
+							</span>
+						}
+					</div>
+					<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "wallet.ready_for_withdraw") }</span>
+				</div>
+
+				if data.Wallet == nil || data.Wallet.AvailableBalance.Minor() <= 0 {
+					<div class="alert alert-warning text-xs mb-3">
+						@components.IconAlert("icon-xs")
+						<span>{ i18n.T(lang, "wallet.insufficient_balance_alert") }</span>
+					</div>
+				}
+
+				<div class="alert alert-info text-xs mb-3">
+					@components.IconInfo("icon-xs")
+					<span>{ i18n.T(lang, "wallet.withdraw_info_alert") }</span>
+				</div>
+
+				<div class="form-group mb-2">
+					<label class="form-label text-xs">{ i18n.T(lang, "wallet.amount") } ({ i18n.T(lang, "common.currency_egp") }) *</label>
+					<input
+						type="number"
+						name="amount"
+						step="0.01"
+						min="1"
+						required
+						class="form-input form-input-sm"
+						placeholder="5000"
+					/>
+				</div>
+
+				if len(data.PaymentMethods) == 0 {
+					<div class="alert alert-warning text-xs mb-3 p-3 rounded-lg d-flex gap-2.5 items-start">
+						@components.IconAlert("icon-xs flex-shrink-0 mt-0.5")
+						<div>
+							<div class="font-black text-xs mb-1">{ i18n.T(lang, "wallet.no_methods_alert_title") }</div>
+							<p class="text-2xs text-secondary mb-2 m-0">{ i18n.T(lang, "wallet.no_methods_alert_desc") }</p>
+							<button
+								type="button"
+								class="btn btn-primary btn-xs font-bold"
+								@click="isWithdrawModalOpen = false; openPaymentAdd()"
+							>
+								{ i18n.T(lang, "wallet.add_method_now") }
+							</button>
+						</div>
+					</div>
+				}
+
+				<div class="form-group mb-2">
+					<div class="flex-between items-center mb-1">
+						<label class="form-label text-xs m-0">{ i18n.T(lang, "wallet.payment_methods") } *</label>
+						<button
+							type="button"
+							class="btn-link text-2xs font-bold text-brand"
+							@click="isWithdrawModalOpen = false; openPaymentAdd()"
+						>
+							{ i18n.T(lang, "wallet.add_method_new") }
+						</button>
+					</div>
+
+					<select
+						name="user_payment_method_id"
+						x-model="withdrawUserMethodId"
+						@change="onWithdrawMethodChange()"
+						class="form-select form-select-sm"
+						required
+					>
+						<option value="">-- { i18n.T(lang, "common.select") } --</option>
+						for _, pm := range data.PaymentMethods {
+							if pm != nil {
+								<option value={ fmt.Sprintf("%d", pm.ID) }>{ userMethodDisplayLabel(pm) }</option>
+							}
+						}
+					</select>
+				</div>
+
+				<div class="form-group mb-3">
+					<label class="form-label text-xs">{ i18n.T(lang, "wallet.notes") }</label>
+					<input type="text" name="reason" class="form-input form-input-sm" placeholder="..." />
+				</div>
+
+				<div class="d-flex items-center justify-end gap-2 pt-2 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" @click="isWithdrawModalOpen = false">{ i18n.T(lang, "common.cancel") }</button>
+					<button
+						type="submit"
+						class="btn btn-primary btn-sm font-bold"
+						disabled?={ data.Wallet == nil || data.Wallet.AvailableBalance.Minor() <= 0 || len(data.PaymentMethods) == 0 }
+					>
+						{ i18n.T(lang, "wallet.confirm_withdraw_btn") }
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}

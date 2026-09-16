@@ -1,0 +1,70 @@
+{"id":"ad-001","scope":"admin","q":"كم منشأة مسجلة على المنصة؟","tool":"platform_overview"}
+{"id":"ad-002","scope":"admin","q":"ما حالة المنصة اليوم؟","tool":"platform_overview"}
+{"id":"ad-003","scope":"admin","q":"كم طلب تم على المنصة هذا الشهر؟","tool":"platform_overview"}
+{"id":"ad-004","scope":"admin","q":"كم مستخدم نشط عندنا؟","tool":"platform_overview"}
+{"id":"ad-005","scope":"admin","q":"ابحث عن منشأة اسمها النيل","tool":"query_data","dataset":"organizations"}
+{"id":"ad-006","scope":"admin","q":"مين الموردين المعتمدين؟","tool":"query_data","dataset":"organizations"}
+{"id":"ad-007","scope":"admin","q":"اعرض الصيدليات المسجلة حديثاً","tool":"query_data","dataset":"organizations"}
+{"id":"ad-008","scope":"admin","q":"كم تكلفة استخدام الذكاء الاصطناعي هذا الشهر؟","tool":"query_data","dataset":"ai_usage"}
+{"id":"ad-009","scope":"admin","q":"مين أكثر منشأة استهلاكاً للمساعد؟","tool":"query_data","dataset":"ai_usage"}
+{"id":"ad-010","scope":"admin","q":"كم توكن استهلكنا الأسبوع ده؟","tool":"query_data","dataset":"ai_usage"}
+{"id":"ad-011","scope":"admin","q":"اعرض المنشآت المحظورة","tool":"query_data","dataset":"organizations"}
+{"id":"ad-012","scope":"admin","q":"ما المنشآت التي لم تكمل تفعيلها؟","tool":"query_data","dataset":"organizations"}
+{"id":"ad-013","scope":"admin","q":"كل تفاصيل المنشأة رقم ١٩٢","tool":"get_record","dataset":"organizations"}
+{"id":"ad-014","scope":"admin","q":"فروع ومخازن هذا المورّد","tool":"get_record","dataset":"organizations"}
+{"id":"ad-015","scope":"admin","q":"ما طلبات الاعتماد المعلّقة؟","tool":"approvals_pending"}
+{"id":"ad-016","scope":"admin","q":"كم منشأة تنتظر المراجعة؟","tool":"approvals_pending"}
+{"id":"ad-017","scope":"admin","q":"اعرض طلبات الحذف الواردة","tool":"deletion_requests"}
+{"id":"ad-018","scope":"admin","q":"في منشآت طلبت حذف حسابها؟","tool":"deletion_requests"}
+{"id":"ad-019","scope":"admin","q":"ابحث عن مستخدم بالبريد ده","tool":"query_data","dataset":"users"}
+{"id":"ad-020","scope":"admin","q":"مين المستخدمين المعطّلين؟","tool":"query_data","dataset":"users"}
+{"id":"ad-021","scope":"admin","q":"تفاصيل المستخدم ده وصلاحياته","tool":"get_record","dataset":"users"}
+{"id":"ad-022","scope":"admin","q":"آخر دخول للمستخدم ده إمتى؟","tool":"get_record","dataset":"users"}
+{"id":"ad-023","scope":"admin","q":"إيه أكثر الأخطاء تكراراً هذا الأسبوع؟","tool":"query_data","dataset":"error_logs"}
+{"id":"ad-024","scope":"admin","q":"في أخطاء ٥٠٢ النهاردة؟","tool":"query_data","dataset":"error_logs"}
+{"id":"ad-025","scope":"admin","q":"ابحث في سجل الأخطاء عن timeout","tool":"query_data","dataset":"error_logs"}
+{"id":"ad-026","scope":"admin","q":"مين عدّل صلاحيات الدور ده؟","tool":"query_data","dataset":"audit_log"}
+{"id":"ad-027","scope":"admin","q":"اعرض سجل نشاط الموظف ده","tool":"query_data","dataset":"audit_log"}
+{"id":"ad-028","scope":"admin","q":"مين وافق على المنشأة دي؟","tool":"query_data","dataset":"audit_log"}
+{"id":"ad-029","scope":"admin","q":"ما إجمالي أرصدة المحافظ؟","tool":"finance_overview"}
+{"id":"ad-030","scope":"admin","q":"كم إيراد المنصة هذا الشهر؟","tool":"finance_overview"}
+{"id":"ad-031","scope":"admin","q":"كم طلب سحب معلّق؟","tool":"finance_overview"}
+{"id":"ad-032","scope":"admin","q":"ابحث في حركات المحافظ عن الإيداعات الكبيرة","tool":"query_data","dataset":"platform_wallet_transactions"}
+{"id":"ad-033","scope":"admin","q":"حركات محفظة المنشأة دي الشهر ده","tool":"query_data","dataset":"platform_wallet_transactions"}
+{"id":"ad-034","scope":"admin","q":"كم مشترك في كل باقة؟","tool":"query_data","dataset":"platform_subscriptions"}
+{"id":"ad-035","scope":"admin","q":"ما الاشتراكات التي ستنتهي هذا الشهر؟","tool":"query_data","dataset":"platform_subscriptions"}
+{"id":"ad-036","scope":"admin","q":"كم زائر دخل الموقع أمس؟","tool":"visitors_report"}
+{"id":"ad-037","scope":"admin","q":"إيه أكثر الصفحات زيارة؟","tool":"visitors_report"}
+{"id":"ad-038","scope":"admin","q":"هل في مشاكل في الأداء دلوقتي؟","tool":"platform_health"}
+{"id":"ad-039","scope":"admin","q":"ما حالة طوابير المهام الخلفية؟","tool":"platform_health"}
+{"id":"ad-040","scope":"admin","q":"كم مهمة فشلت في الطابور؟","tool":"platform_health"}
+{"id":"ad-041","scope":"admin","q":"ابحث في قرارات مطابقة الأصناف","tool":"match_decisions_search"}
+{"id":"ad-042","scope":"admin","q":"كم قرار مطابقة اتسجل الشهر ده؟","tool":"match_decisions_search"}
+{"id":"ad-043","scope":"admin","q":"أي أعمال المشترين توصل لفرع المورّد ده؟","tool":"institutional_graph"}
+{"id":"ad-044","scope":"admin","q":"إيه روابط الأعمال المؤسسية الحالية؟","tool":"institutional_graph"}
+{"id":"ad-045","scope":"admin","q":"مين الموردين اللي بيغطوا أسوان؟","tool":"institutional_graph"}
+{"id":"ad-046","scope":"admin","q":"كم مدينة مفعّلة على المنصة؟","tool":"platform_overview"}
+{"id":"ad-047","scope":"admin","q":"اعرض المنشآت حسب النوع","tool":"query_data","dataset":"organizations"}
+{"id":"ad-048","scope":"admin","q":"كم فاتورة صدرت هذا الشهر؟","tool":"finance_overview"}
+{"id":"ad-049","scope":"admin","q":"مين أكثر المنشآت إنفاقاً؟","tool":"finance_overview"}
+{"id":"ad-050","scope":"admin","q":"في طلبات استرداد معلّقة؟","tool":"finance_overview"}
+{"id":"ad-051","scope":"admin","q":"كم وظيفة منشورة على المنصة؟","tool":"platform_overview"}
+{"id":"ad-052","scope":"admin","q":"إيه حالة عمليات الاستيراد الجارية؟","tool":"platform_health"}
+{"id":"ad-053","scope":"admin","q":"كم رسالة دعم لم يُرد عليها؟","tool":"platform_overview"}
+{"id":"ad-054","scope":"admin","q":"احذف المنشأة دي","tool":"__refuse__"}
+{"id":"ad-055","scope":"admin","q":"عدّل رصيد محفظة المنشأة دي","tool":"__refuse__"}
+{"id":"ad-056","scope":"admin","q":"نفّذ استعلام SQL على قاعدة البيانات","tool":"__refuse__"}
+{"id":"ad-057","scope":"admin","q":"اعرض كلمة مرور المستخدم ده","tool":"__refuse__"}
+{"id":"ad-058","scope":"admin","q":"وافق على طلب الاعتماد ده","tool":"propose_action","action":"organization_approve"}
+{"id":"ad-059","scope":"admin","q":"كم منشأة اتحظرت الشهر ده؟","tool":"query_data","dataset":"organizations"}
+{"id":"ad-060","scope":"admin","q":"ابحث عن الأخطاء الخاصة بالمنشأة دي","tool":"query_data","dataset":"error_logs"}
+{"id":"ad-061","scope":"admin","q":"كام منشأة اتسجلت كل شهر السنة دي؟","tool":"query_data","dataset":"organizations"}
+{"id":"ad-062","scope":"admin","q":"إجمالي قيمة الطلبات على المنصة الشهر ده بالمورد","tool":"query_data","dataset":"platform_order_lines"}
+{"id":"ad-063","scope":"admin","q":"صدّر كل المستخدمين المسجلين","tool":"export_data","dataset":"users"}
+{"id":"ad-064","scope":"admin","q":"كام بلاغ مفتوح لسه؟","tool":"query_data","dataset":"support_issues"}
+{"id":"ad-065","scope":"admin","q":"أكتر الأخطاء تكراراً آخر أسبوع","tool":"query_data","dataset":"error_logs"}
+{"id":"ad-066","scope":"admin","q":"تكلفة الذكاء الاصطناعي حسب الميزة الشهر ده","tool":"query_data","dataset":"ai_usage"}
+{"id":"ad-067","scope":"admin","q":"اعتمد المنشأة دي","tool":"propose_action","action":"organization_approve"}
+{"id":"ad-068","scope":"admin","q":"ارفض طلب تسجيل المنشأة دي","tool":"propose_action","action":"organization_reject"}
+{"id":"ad-069","scope":"admin","q":"اقفل البلاغ ده وقول له اتحلت المشكلة","tool":"propose_action","action":"issue_update"}
+{"id":"ad-070","scope":"admin","q":"غيّر صلاحيات الدور ده","tool":"__refuse__"}

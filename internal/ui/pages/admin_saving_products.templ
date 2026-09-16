@@ -1,0 +1,357 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// SavingUserOrgOption provides select option details for organizations and users.
+type SavingUserOrgOption struct {
+	ID   int64
+	Name string
+	Type string
+}
+
+// AdminSavingProductsData carries all view models for the admin saving products page.
+type AdminSavingProductsData struct {
+	Items          []*catalog.SavingProductAdminView
+	Stats          *catalog.SavingProductAdminStats
+	Organizations  []*SavingUserOrgOption
+	Users          []*SavingUserOrgOption
+	SelectedOrgID  int64
+	SelectedUserID int64
+	SearchQuery    string
+	ActiveFilter   string
+	NoticeType     string
+	NoticeMsg      string
+	Pagination     components.PaginationProps
+}
+
+// AdminSavingProductsPage renders the full platform-wide saving products manager for admins.
+templ AdminSavingProductsPage(data AdminSavingProductsData, lang, dir string) {
+	@layouts.AdminShell("إدارة منتجات التوفير للمستخدمين (Saving Products)", "saving_products", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Notice Feedback Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconAlert("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconCheckCircle("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				}
+			}
+
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconTag("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								إدارة أصناف التوفير للمستخدمين (Saving Products)
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								استعراض وتدقيق أصناف التوفير المرفوعة من الصيدليات والمنشآت ومطابقتها مع كتالوج المنصة
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/saving-products" class="btn btn-secondary btn-sm font-bold text-xs">
+							@components.IconRefresh("icon-xs")
+							<span>إعادة ضبط</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Stats KPI Cards -->
+			if data.Stats != nil {
+				<div class="dashboard-stat-grid mb-6">
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-xs">إجمالي أصناف التوفير</div>
+						<div class="stat-card-value text-primary tabular-nums text-2xl font-black">
+							{ fmt.Sprintf("%d", data.Stats.TotalProducts) }
+						</div>
+						<div class="stat-card-sub text-muted text-xs mt-1">إجمالي الأصناف المسجلة بالنظام</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-xs">المنشآت والصيدليات</div>
+						<div class="stat-card-value text-brand tabular-nums text-2xl font-black">
+							{ fmt.Sprintf("%d", data.Stats.TotalOrganizations) } <span class="text-xs font-normal text-secondary">منشأة ({ fmt.Sprintf("%d", data.Stats.TotalUsers) } مستخدم)</span>
+						</div>
+						<div class="stat-card-sub text-muted text-xs mt-1">الجهات العارضة للمنتجات</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-xs">إجمالي الكميات المسجلة</div>
+						<div class="stat-card-value text-success tabular-nums text-2xl font-black">
+							{ fmt.Sprintf("%.0f", data.Stats.TotalQuantity) }
+						</div>
+						<div class="stat-card-sub text-muted text-xs mt-1">
+							if !data.Stats.TotalValue.IsZero() {
+								<span>بقيمة { fmt.Sprintf("%s ج.م", data.Stats.TotalValue.String()) }</span>
+							} else {
+								<span>وحدة / عبوة دوائية معروضة</span>
+							}
+						</div>
+					</div>
+
+					<div class="stat-card-3d">
+						<div class="stat-card-label text-xs">حالة المطابقة مع الكتالوج</div>
+						<div class="d-flex items-center gap-2 mt-1">
+							<span class="badge badge-emerald text-xs font-bold">{ fmt.Sprintf("%d", data.Stats.CountLinked) } مربوط</span>
+							<span class="badge badge-amber text-xs font-bold">{ fmt.Sprintf("%d", data.Stats.CountUnlinked) } غير مربوط</span>
+						</div>
+						<div class="stat-card-sub text-muted text-xs mt-1">
+							if data.Stats.TotalProducts > 0 {
+								<span>نسبة الربط: { fmt.Sprintf("%.1f%%", float64(data.Stats.CountLinked)*100.0/float64(data.Stats.TotalProducts)) }</span>
+							} else {
+								<span>جاهزية الربط بالكتالوج</span>
+							}
+						</div>
+					</div>
+				</div>
+			}
+
+			<!-- Filter & Search Toolbar -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/saving-products" class="stack-md">
+					<div class="d-grid grid-auto-fit-md gap-4 items-end">
+						
+						<!-- Org Selector -->
+						<div class="form-group mb-0">
+							<label class="form-label text-xs font-bold text-secondary mb-1">المنشأة / الصيدلية</label>
+							<select name="org_id" class="form-input text-xs w-full">
+								<option value="">-- كل المنشآت ({ fmt.Sprintf("%d", len(data.Organizations)) }) --</option>
+								for _, o := range data.Organizations {
+									<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>
+										{ o.Name } ({ o.Type })
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- User Selector -->
+						<div class="form-group mb-0">
+							<label class="form-label text-xs font-bold text-secondary mb-1">المستخدم / العميل</label>
+							<select name="user_id" class="form-input text-xs w-full">
+								<option value="">-- كل المستخدمين ({ fmt.Sprintf("%d", len(data.Users)) }) --</option>
+								for _, u := range data.Users {
+									<option value={ fmt.Sprintf("%d", u.ID) } selected?={ data.SelectedUserID == u.ID }>
+										{ u.Name }
+									</option>
+								}
+							</select>
+						</div>
+
+						<!-- Linking Filter -->
+						<div class="form-group mb-0">
+							<label class="form-label text-xs font-bold text-secondary mb-1">حالة الربط بالكتالوج</label>
+							<select name="filter" class="form-input text-xs w-full">
+								<option value="all" selected?={ data.ActiveFilter == "all" || data.ActiveFilter == "" }>جميع الحالات</option>
+								<option value="linked" selected?={ data.ActiveFilter == "linked" }>مربوط بكتالوج المنصة فقط</option>
+								<option value="unlinked" selected?={ data.ActiveFilter == "unlinked" }>غير مربوط (يحتاج مطابقة)</option>
+							</select>
+						</div>
+
+						<!-- Search Query -->
+						<div class="form-group mb-0">
+							<label class="form-label text-xs font-bold text-secondary mb-1">البحث بالاسم أو الكود (SKU)</label>
+							<input 
+								type="text" 
+								name="q" 
+								value={ data.SearchQuery } 
+								placeholder="كود الصنف SKU أو اسم المستحضر..." 
+								class="form-input text-xs w-full"
+							/>
+						</div>
+					</div>
+
+					<!-- Filter Actions -->
+					<div class="flex-between items-center pt-3 border-t mt-3 flex-wrap gap-2">
+						<div class="stack-sm">
+							if data.SelectedOrgID > 0 || data.SelectedUserID > 0 || data.SearchQuery != "" || (data.ActiveFilter != "all" && data.ActiveFilter != "") {
+								<a href="/admin/saving-products" class="btn btn-ghost btn-sm font-bold text-xs text-muted d-flex items-center gap-1">
+									@components.IconX("icon-xxs")
+									<span>إلغاء التصفية</span>
+								</a>
+							}
+						</div>
+						<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-4 d-flex items-center gap-1">
+							@components.IconSearch("icon-xs")
+							<span>بحث وتصفية</span>
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- Saving Products Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="p-4 border-b flex-between items-center">
+					<div class="text-sm font-black text-primary d-flex items-center gap-2">
+						<span>أصناف التوفير المسجلة ({ fmt.Sprintf("%d", len(data.Items)) })</span>
+						if data.Stats != nil && data.Stats.FilteredCount > len(data.Items) {
+							<span class="text-xs text-muted font-normal">من إجمالي { fmt.Sprintf("%d", data.Stats.FilteredCount) } صنف</span>
+						}
+					</div>
+				</div>
+
+				if len(data.Items) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconTag("icon-sm")</div>
+						<h3 class="text-base font-black text-primary mb-2">لا توجد نتائج مطابقة</h3>
+						<p class="text-xs text-secondary max-w-md mx-auto mb-4">
+							لم يتم العثور على منتجات توفير تطابق معايير الفلترة المحددة. جرب تغيير خيارات البحث أو إعادة ضبط التصفية.
+						</p>
+						<a href="/admin/saving-products" class="btn btn-secondary btn-sm font-bold text-xs">عرض كل منتجات التوفير</a>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th class="w-16">#</th>
+									<th>صنف التوفير المسجل</th>
+									<th>المنشأة / العميل</th>
+									<th>المطابقة بكتالوج المنصة</th>
+									<th>الكمية</th>
+									<th>سعر الوحدة</th>
+									<th>إجمالي القيمة</th>
+									<th>تاريخ الإضافة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range data.Items {
+									<tr>
+										<td class="tabular-nums text-muted text-xs font-mono">
+											#{ fmt.Sprintf("%d", item.ID) }
+										</td>
+										<td>
+											<div class="font-bold text-xs text-primary">{ item.NameProduct }</div>
+											if item.SKU != "" {
+												<div class="text-xs text-muted font-mono mt-0.5">
+													SKU: { item.SKU }
+												</div>
+											}
+										</td>
+										<td>
+											<div class="font-bold text-xs text-primary">
+												{ item.UserName }
+											</div>
+											<div class="d-flex items-center gap-1 text-xs text-secondary mt-0.5">
+												<span class="badge badge-sky text-xs font-mono">
+													{ item.OrganizationName }
+												</span>
+												if item.UserPhone != "" {
+													<span dir="ltr" class="tabular-nums text-muted">{ item.UserPhone }</span>
+												}
+											</div>
+										</td>
+										<td>
+											if item.ProductID != nil && *item.ProductID > 0 {
+												<div class="stack-sm">
+													<span class="badge badge-emerald text-xs font-bold mb-1 d-inline-flex items-center gap-1">
+														@components.IconCheck("icon-xxs")
+														<span>مربوط: #{ fmt.Sprintf("%d", *item.ProductID) }</span>
+													</span>
+													if item.MasterProductName != "" {
+														<div class="text-xs text-secondary font-medium">
+															{ item.MasterProductName }
+														</div>
+													}
+												</div>
+											} else {
+												<span class="badge badge-amber text-xs font-bold d-inline-flex items-center gap-1">
+													@components.IconClock("icon-xxs")
+													<span>غير مربوط بالكتالوج</span>
+												</span>
+											}
+										</td>
+										<td class="tabular-nums font-bold text-xs text-primary">
+											{ fmt.Sprintf("%.0f", item.Quantity) }
+										</td>
+										<td class="tabular-nums font-bold text-xs text-brand">
+											{ fmt.Sprintf("%s ج.م", item.Price.String()) }
+										</td>
+										<td class="tabular-nums font-bold text-xs text-success">
+											{ fmt.Sprintf("%s ج.م", item.TotalValue.String()) }
+										</td>
+										<td class="text-xs text-muted tabular-nums whitespace-nowrap">
+											{ item.CreatedAt.Format("2006-01-02 03:04 PM") }
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												if item.ProductID != nil && *item.ProductID > 0 {
+													<button
+														type="button"
+														class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1"
+														data-id={ fmt.Sprintf("%d", item.ID) }
+														data-name={ item.NameProduct }
+														data-sku={ item.SKU }
+														data-product-id={ fmt.Sprintf("%d", *item.ProductID) }
+														data-master-name={ item.MasterProductName }
+														data-master-sku={ item.MasterProductSKU }
+														data-on-click="openAdminLinkModalFromBtn(this)"
+														title="تعديل ربط الصنف بالكتالوج"
+													>
+														@components.IconEdit("icon-xxs")
+														<span>تعديل الربط</span>
+													</button>
+													<a href={ templ.SafeURL(fmt.Sprintf("/admin/products/%d", *item.ProductID)) } class="btn btn-ghost btn-xs font-bold d-inline-flex items-center gap-1" title="عرض تفاصيل الصنف بالكتالوج">
+														@components.IconExternalLink("icon-xxs")
+														<span>عرض</span>
+													</a>
+												} else {
+													<button
+														type="button"
+														class="btn btn-primary btn-xs font-bold d-inline-flex items-center gap-1"
+														data-id={ fmt.Sprintf("%d", item.ID) }
+														data-name={ item.NameProduct }
+														data-sku={ item.SKU }
+														data-product-id="0"
+														data-master-name=""
+														data-master-sku=""
+														data-on-click="openAdminLinkModalFromBtn(this)"
+														title="ربط الصنف بكتالوج المنصة"
+													>
+														@components.IconCheck("icon-xxs")
+														<span>ربط بالكتالوج</span>
+													</button>
+												}
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.Pagination.TotalCount > 0 {
+						@components.B2BPagination(data.Pagination)
+					}
+				}
+			</div>
+
+			<!-- Linking & Matching Modal -->
+			@AdminSavingProductLinkModal(data)
+
+		</div>
+	}
+}

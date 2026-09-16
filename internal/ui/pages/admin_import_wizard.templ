@@ -1,0 +1,305 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// The catalogue import wizard.
+//
+// Step one asks what to do, step two shows what will happen, step three does it.
+// The screen this replaced put an explanation next to every control and then
+// redirected with the outcome in the query string; here the controls carry their
+// own meaning and the outcome is a page the admin can read and act on.
+
+// AdminProductsImportPage is step one: the file, the strategy, and the switches.
+templ AdminProductsImportPage(lang, dir string, view ImportConfigureView) {
+	@layouts.AdminShell("استيراد وتحديث الكتالوج المعتمد | Master Catalog Ingestion Studio", "import", lang, dir) {
+		<div class="page-container">
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconDownload("icon-sm")
+						</div>
+						<div>
+							<h1 class="text-2xl font-black text-primary m-0">استيراد وتحديث الكتالوج المركزي العام</h1>
+							<p class="text-sm text-secondary m-0 mt-1">معالجة ملفات Excel و CSV، التعرف الذكي على الأعمدة، واستكمال البيانات والأسماء العلمية بالذكاء الاصطناعي</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconLayers("icon-xs")
+							<span>العودة للأصناف المعتمدة</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<div class="wizard">
+				@WizardRail(ImportRail(StepFile))
+				if view.Fatal != "" {
+					@wizardFatal(view.Fatal, view.FatalDetail)
+				}
+				<form class="d-flex flex-col gap-6" method="POST" action="/admin/products/import" enctype="multipart/form-data" hx-boost="false" id="import-form" data-on-submit="handleImportSubmit()">
+					@importUploadCard()
+					<div class="glass-panel p-6 mb-6">
+						<div class="wiz-actions">
+							<span class="wiz-actions-note">
+								الخطوة التالية هي مراجعة أعمدة الملف ومعاينة الأصناف — لن يُحفظ أي صنف قبل تأكيدك.
+							</span>
+							<div class="row-center">
+								<a href="/admin/products" class="btn btn-ghost">إلغاء</a>
+								<button type="submit" id="import-submit-btn" class="btn btn-primary">
+									@components.IconUpload("icon-xs")
+									<span id="import-submit-text">قراءة الملف ومراجعة الأعمدة</span>
+								</button>
+							</div>
+						</div>
+					</div>
+				</form>
+				if len(view.Recent) > 0 {
+					@importHistoryCard(view.Recent)
+				}
+			</div>
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			var dropZone = document.getElementById('import-drop');
+			var fileInput = document.getElementById('import-file-input');
+			var titleEl = document.getElementById('import-drop-title');
+			var textEl = document.getElementById('import-drop-text');
+
+			if (dropZone && fileInput) {
+				fileInput.addEventListener('change', function(e) {
+					if (this.files && this.files[0]) {
+						const f = this.files[0];
+						const sizeMb = (f.size / (1024 * 1024)).toFixed(2);
+						if (titleEl) titleEl.textContent = '' + f.name;
+						if (textEl) textEl.textContent = 'الحجم: ' + sizeMb + ' ميجابايت — جاهز للتحليل';
+						dropZone.classList.add('is-over');
+					}
+				});
+
+				['dragenter', 'dragover'].forEach(eventName => {
+					dropZone.addEventListener(eventName, e => {
+						e.preventDefault();
+						e.stopPropagation();
+						dropZone.classList.add('is-dragover');
+					}, false);
+				});
+
+				['dragleave', 'drop'].forEach(eventName => {
+					dropZone.addEventListener(eventName, e => {
+						e.preventDefault();
+						e.stopPropagation();
+						dropZone.classList.remove('is-dragover');
+					}, false);
+				});
+			}
+
+			function handleImportSubmit() {
+				const btn = document.getElementById('import-submit-btn');
+				const txt = document.getElementById('import-submit-text');
+				if (btn && txt) {
+					btn.disabled = true;
+					txt.textContent = '⏳ جاري رفع الملف وقراءة أعمدته...';
+				}
+			}
+		</script>
+	}
+}
+
+
+templ wizardFatal(message, detail string) {
+	<div class="import-banner import-banner--error">
+		<h2 class="import-banner-title text-danger">تعذر قراءة الملف</h2>
+		<p class="import-banner-text">{ message }</p>
+		if detail != "" {
+			<p class="import-banner-detail">{ detail }</p>
+		}
+	</div>
+}
+
+templ importUploadCard() {
+	<div class="glass-panel p-6 mb-0">
+		<h2 class="wiz-head">ملف الأصناف</h2>
+		<p class="wiz-sub">
+			Excel (.xlsx) أو CSV. يتعرّف النظام تلقائياً على الأعمدة وترتيبها، ويقرأ الملفات المقسّمة
+			التي يتكرر فيها صف العناوين — وستراجع النتيجة بنفسك في الخطوة التالية قبل أي معالجة.
+		</p>
+		<label class="wiz-drop" id="import-drop">
+			<input
+				type="file"
+				id="import-file-input"
+				name="import_file"
+				accept=".xlsx,.xlsm,.csv,.tsv,.txt"
+				required
+			/>
+			<div class="wiz-drop-icon" aria-hidden="true">
+				@components.IconUpload("icon-md")
+			</div>
+			<div class="wiz-drop-title" id="import-drop-title">اختر ملف الكتالوج أو اسحبه إلى هنا</div>
+			<div class="wiz-drop-text" id="import-drop-text">الحد الأقصى 32 ميجابايت · يدعم تنسيقات Excel (.xlsx, .xlsm) وملفات القيم المفصولة (.csv, .tsv)</div>
+		</label>
+		<div class="import-chip-list">
+			<a href="/admin/products/sample.xlsx" class="wiz-chip">
+				@components.IconDownload("icon-xs")
+				<span>تحميل نموذج Excel القياسي (.xlsx)</span>
+			</a>
+			<a href="/admin/products/sample.csv" class="wiz-chip">
+				@components.IconDownload("icon-xs")
+				<span>تحميل نموذج CSV القياسي (.csv)</span>
+			</a>
+		</div>
+	</div>
+}
+
+templ importModeCard(modes []catalog.ImportModeOption, selected catalog.ImportMode) {
+	<div class="glass-panel p-6 mb-0">
+		<h2 class="wiz-head">طريقة وخطة معالجة الاستيراد</h2>
+		<p class="wiz-sub">حدد سلوك الاستيراد للأصناف المستخرجة</p>
+		<div class="wiz-choices">
+			for _, mode := range modes {
+				<label class="wiz-choice">
+					<input
+						type="radio"
+						name="import_mode"
+						value={ string(mode.Mode) }
+						checked?={ mode.Mode == selected }
+					/>
+					<span class="wiz-choice-body">
+						<span class="wiz-choice-icon" aria-hidden="true">{ mode.Icon }</span>
+						<span class="flex-1">
+							<span class="wiz-choice-title">{ mode.Title }</span>
+							<p class="wiz-choice-text">{ mode.Description }</p>
+							if mode.Destructive {
+								<span class="wiz-choice-warn">يؤثر على كل الأصناف الحالية</span>
+							}
+						</span>
+					</span>
+				</label>
+			}
+		</div>
+	</div>
+}
+
+templ importOptionsCard(toggles []ImportToggle, categories []catalog.TaxonomyOption, defaultCategory int64, aiAvailable bool) {
+	<div class="glass-panel p-6 mb-0">
+		<h2 class="wiz-head">استكمال بيانات الأصناف</h2>
+		<p class="wiz-sub">اختر البيانات التي تريد من النظام استكمالها للأصناف التي لا يوفرها الملف</p>
+		<div class="wiz-switches">
+			for _, toggle := range toggles {
+				@importSwitch(toggle)
+			}
+		</div>
+		if !aiAvailable {
+			<p class="wiz-sub mt-md">
+				خدمة الذكاء الاصطناعي غير متصلة حالياً. يمكنك ضبط بوابة الذكاء الاصطناعي من
+				<a href="/admin/developers?tab=ai" class="text-accent font-bold">إعدادات النظام</a>؛ سيعمل الاستيراد بالقواعد التلقائية حتى ذلك الحين.
+			</p>
+		}
+		<div class="wiz-map-item mt-md">
+			<label class="wiz-map-label" for="min-match-score">أقل نسبة مطابقة تُعتمد تلقائياً (%)</label>
+			<input
+				id="min-match-score"
+				class="wiz-map-input"
+				type="number"
+				name="min_match_score"
+				min={ fmt.Sprint(int(productmatch.DefaultMinReview * 100)) }
+				max="100"
+				value={ fmt.Sprint(int(productmatch.DefaultMinStrong * 100)) }
+			/>
+			<span class="wiz-map-hint">
+				الافتراضي { fmt.Sprint(int(productmatch.DefaultMinStrong*100)) }%. المطابقة بالاسم أولاً ثم الذكاء الاصطناعي، ولا يُعتمد أي تطابق دون تأكيد التركيز والشكل الصيدلي.
+			</span>
+		</div>
+		if len(categories) > 0 {
+			<div class="wiz-map-item mt-md">
+				<label class="wiz-map-label" for="default-category">الفئة الافتراضية عند تعذّر التحديد</label>
+				<select id="default-category" name="default_category_id" class="form-select">
+					<option value="0">بدون فئة</option>
+					for _, category := range categories {
+						<option
+							value={ fmt.Sprintf("%d", category.ID) }
+							selected?={ category.ID == defaultCategory }
+						>{ category.Name }</option>
+					}
+				</select>
+			</div>
+		}
+	</div>
+}
+
+templ importSwitch(toggle ImportToggle) {
+	<label class={ "wiz-switch", templ.KV("is-disabled", toggle.Disabled) }>
+		<span class="wiz-switch-icon" aria-hidden="true">{ toggle.Icon }</span>
+		<span class="wiz-switch-main">
+			<span class="wiz-switch-title">{ toggle.Title }</span>
+			<span class="wiz-switch-text">
+				if toggle.Disabled && toggle.Note != "" {
+					{ toggle.Note }
+				} else {
+					{ toggle.Description }
+				}
+			</span>
+		</span>
+		<input
+			type="checkbox"
+			name={ toggle.Name }
+			value="1"
+			checked?={ toggle.Checked }
+			disabled?={ toggle.Disabled }
+		/>
+		<span class="wiz-track" aria-hidden="true"></span>
+	</label>
+}
+
+templ importHistoryCard(sessions []*catalog.ImportSession) {
+	<div class="glass-panel p-6 mb-6">
+		<h2 class="wiz-head">آخر عمليات الاستيراد</h2>
+		<div class="table-container m-0 mt-4">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>الملف</th>
+						<th>الطريقة</th>
+						<th>إضافة</th>
+						<th>تحديث</th>
+						<th>الحالة</th>
+						<th>التاريخ</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, session := range sessions {
+						<tr>
+							<td>
+								if session.IsReviewable() {
+									<a href={ templ.SafeURL("/admin/products/import/" + session.PublicID) } class="text-accent font-bold">{ session.Filename }</a>
+								} else {
+									{ session.Filename }
+								}
+							</td>
+							<td>{ session.Mode.Label() }</td>
+							<td class="tabular-nums">{ FormatCount(session.InsertRows) }</td>
+							<td class="tabular-nums">{ FormatCount(session.UpdateRows) }</td>
+							<td>
+								<span class={ "badge", SessionStatusBadge(session.Status) }>
+									{ SessionStatusLabel(session.Status) }
+								</span>
+							</td>
+							<td class="tabular-nums">{ session.CreatedAt.Format("2006-01-02 03:04 PM") }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+

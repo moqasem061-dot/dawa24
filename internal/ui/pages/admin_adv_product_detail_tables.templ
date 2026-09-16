@@ -1,0 +1,136 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AdminAdvProductDetailTables(data AdminAdvProductDetailData, lang string) {
+	<!-- Table 1: Credit Ledger Movement -->
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		<div class="p-4 border-b flex-between items-center">
+			<h3 class="font-bold text-sm text-primary m-0 d-flex items-center gap-2">
+				@components.IconSparkles("icon-xs text-accent")
+				<span>سجل حركات الرصيد (Credit Ledger Entries)</span>
+			</h3>
+			<span class="badge badge-slate text-2xs tabular-nums font-bold">
+				{ fmt.Sprintf("%d حركة مسجلة", len(data.CreditEntries)) }
+			</span>
+		</div>
+
+		if len(data.CreditEntries) == 0 {
+			<div class="p-8 text-center text-muted text-xs">
+				لا توجد حركات رصيد منفصلة مسجلة في جدول الأستاذ لهذه الرعاية.
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0 text-xs w-full">
+					<thead>
+						<tr>
+							<th># المعرف</th>
+							<th>كود الحركة</th>
+							<th>التغيير (Delta)</th>
+							<th>الرصيد بعد الحركة</th>
+							<th>السبب (Reason)</th>
+							<th>الملاحظات</th>
+							<th>التاريخ والوقت</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, entry := range data.CreditEntries {
+							<tr>
+								<td class="font-mono text-2xs text-muted tabular-nums">#{ fmt.Sprintf("%d", entry.ID) }</td>
+								<td class="font-mono text-2xs font-bold">{ entry.PublicID }</td>
+								<td class="tabular-nums font-bold">
+									if entry.IsRefund() {
+										<span class="text-emerald">+{ fmt.Sprintf("%d", entry.Delta) } رصيد (استرجاع)</span>
+									} else {
+										<span class="text-rose-600">{ fmt.Sprintf("%d", entry.Delta) } رصيد (استهلاك)</span>
+									}
+								</td>
+								<td class="tabular-nums font-mono text-primary font-bold">
+									{ fmt.Sprintf("%d", entry.BalanceAfter) }
+								</td>
+								<td>
+									<span class="badge badge-slate text-2xs">{ string(entry.Reason) }</span>
+								</td>
+								<td class="text-secondary text-2xs">
+									if entry.Note != "" {
+										{ entry.Note }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+								<td class="tabular-nums text-2xs text-muted">
+									{ format.DateTime(entry.CreatedAt, lang) }
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+
+	<!-- Table 2: Recent Impression & Click Events Telemetry -->
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		<div class="p-4 border-b flex-between items-center">
+			<h3 class="font-bold text-sm text-primary m-0 d-flex items-center gap-2">
+				@components.IconEye("icon-xs text-primary")
+				<span>سجل الأحداث والتفاعل (Impression & Click Events)</span>
+			</h3>
+			<span class="badge badge-sky text-2xs tabular-nums font-bold">
+				{ fmt.Sprintf("%d حدث مسجل", len(data.Events)) }
+			</span>
+		</div>
+
+		if len(data.Events) == 0 {
+			<div class="p-8 text-center text-muted text-xs">
+				لم يتم تسجيل أي أحداث مشاهدة أو نقر مباشرة على هذا العنصر حتى الآن.
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0 text-xs w-full">
+					<thead>
+						<tr>
+							<th>نوع الحدث</th>
+							<th># المعرف</th>
+							<th>معرف المستخدم</th>
+							<th>عنوان IP</th>
+							<th>التفاصيل والموضع</th>
+							<th>الوقت والتاريخ</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, ev := range data.Events {
+							<tr>
+								<td>
+									if ev.EventType == "click" {
+										<span class="badge badge-emerald text-2xs font-bold">نقر إعلاني</span>
+									} else {
+										<span class="badge badge-sky text-2xs font-bold">مشاهدة ظهور</span>
+									}
+								</td>
+								<td class="font-mono text-2xs text-muted tabular-nums">#{ fmt.Sprintf("%d", ev.ID) }</td>
+								<td class="font-mono text-2xs text-secondary">
+									if ev.UserID != nil && *ev.UserID > 0 {
+										<span>مستخدم #{ fmt.Sprintf("%d", *ev.UserID) }</span>
+									} else {
+										<span class="text-muted">زائر غير مسجل</span>
+									}
+								</td>
+								<td class="font-mono text-2xs text-muted">{ ev.IPAddress }</td>
+								<td class="text-secondary text-2xs">{ ev.Detail }</td>
+								<td class="tabular-nums text-2xs text-muted">
+									{ format.DateTime(ev.CreatedAt, lang) }
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}

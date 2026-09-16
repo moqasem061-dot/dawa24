@@ -1,0 +1,117 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ WalletModalPaymentMethod(data WalletViewData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- Payment method dialog — one form for adding and for editing -->
+	<div class="modal-backdrop" x-show="isAddPaymentModalOpen" x-cloak x-transition.opacity @keydown.escape.window="isAddPaymentModalOpen = false">
+		<div class="modal-dialog modal-md" @click.outside="isAddPaymentModalOpen = false" role="dialog" aria-modal="true">
+			<div class="modal-header">
+				<h3 class="modal-title font-black d-flex items-center gap-2">
+					@components.IconCreditCard("icon-xs")
+					<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('wallet.edit_method_title', 'تعديل وسيلة الدفع') : 'تعديل وسيلة الدفع') : (window.dawaT ? window.dawaT('wallet.add_method_title', 'إضافة وسيلة دفع وحساب معتمد') : 'إضافة وسيلة دفع وحساب معتمد')"></span>
+				</h3>
+				<button type="button" class="btn btn-icon btn-ghost btn-sm" @click="isAddPaymentModalOpen = false" aria-label="Close">
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<form :action="paymentFormAction()" method="POST" class="m-0">
+				<div class="modal-body stack-sm">
+					<div class="form-group mb-2">
+						<label class="form-label text-xs" for="pm-type">{ i18n.T(lang, "wallet.method_type_label") }</label>
+						<select id="pm-type" name="type" x-model="paymentType" required class="form-select form-select-sm">
+							<option value="bank">{ i18n.T(lang, "wallet.type_bank") }</option>
+							<option value="instapay">{ i18n.T(lang, "wallet.type_instapay") }</option>
+							<option value="vodafone_cash">{ i18n.T(lang, "wallet.type_vodafone_cash") }</option>
+							<option value="card">{ i18n.T(lang, "wallet.type_card") }</option>
+						</select>
+					</div>
+
+					<div class="form-group mb-2">
+						<label class="form-label text-xs" for="pm-holder">{ i18n.T(lang, "wallet.account_holder") }</label>
+						<input id="pm-holder" type="text" name="account_holder" x-model="paymentForm.account_holder" class="form-input form-input-sm" :placeholder="window.dawaT ? window.dawaT('wallet.account_holder_ph', 'الاسم المطابق للسجل التجاري') : 'الاسم المطابق للسجل التجاري'"/>
+					</div>
+
+					<div x-show="paymentType === 'bank'" class="stack-sm">
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-bank">{ i18n.T(lang, "wallet.bank_name") }</label>
+							<input id="pm-bank" type="text" name="bank_name" x-model="paymentForm.bank_name" class="form-input form-input-sm" :placeholder="window.dawaT ? window.dawaT('wallet.bank_name_ph', 'مثال: البنك التجاري الدولي CIB') : 'مثال: البنك التجاري الدولي CIB'"/>
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-iban">{ i18n.T(lang, "wallet.iban") }</label>
+							<input id="pm-iban" type="text" name="iban" x-model="paymentForm.iban" class="form-input form-input-sm" placeholder="EG38..." dir="ltr"/>
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-account">{ i18n.T(lang, "wallet.account_number") }</label>
+							<input id="pm-account" type="text" name="account_number" x-model="paymentForm.account_number" class="form-input form-input-sm tabular-nums" dir="ltr"/>
+						</div>
+						<p class="text-2xs text-muted m-0">{ i18n.T(lang, "wallet.iban_or_account_hint") }</p>
+					</div>
+
+					<div x-show="paymentType === 'instapay'" class="stack-sm">
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-ipa">{ i18n.T(lang, "wallet.instapay_label") }</label>
+							<input id="pm-ipa" type="text" name="instapay_handle" x-model="paymentForm.instapay_handle" class="form-input form-input-sm" placeholder="username@instapay" dir="ltr"/>
+						</div>
+					</div>
+
+					<div x-show="paymentType === 'vodafone_cash'" class="stack-sm">
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-wallet-provider">{ i18n.T(lang, "wallet.wallet_provider") }</label>
+							<select id="pm-wallet-provider" name="wallet_provider" x-model="paymentForm.wallet_provider" class="form-select form-select-sm font-semibold">
+								<option value="">{ i18n.T(lang, "wallet.wallet_provider_select") }</option>
+								<option value="فودافون كاش">Vodafone Cash</option>
+								<option value="أورنج كاش">Orange Cash</option>
+								<option value="اتصالات كاش">Etisalat Cash</option>
+								<option value="وي باي">WE Pay</option>
+							</select>
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-wallet-phone">{ i18n.T(lang, "wallet.wallet_phone") }</label>
+							<input id="pm-wallet-phone" type="text" name="wallet_phone" x-model="paymentForm.wallet_phone" class="form-input form-input-sm tabular-nums" placeholder="01012345678" dir="ltr"/>
+						</div>
+					</div>
+
+					<div x-show="paymentType === 'card'" class="stack-sm">
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-card-brand">{ i18n.T(lang, "wallet.card_brand") }</label>
+							<input id="pm-card-brand" type="text" name="card_brand" x-model="paymentForm.card_brand" class="form-input form-input-sm" placeholder="Visa / Mastercard"/>
+						</div>
+						<div class="form-group mb-2">
+							<label class="form-label text-xs" for="pm-card-number">
+								<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('wallet.card_number_full', 'رقم البطاقة (أدخله كاملاً لتحديثه)') : 'رقم البطاقة (أدخله كاملاً لتحديثه)') : (window.dawaT ? window.dawaT('wallet.card_number_new', 'رقم البطاقة (16 رقم) *') : 'رقم البطاقة (16 رقم) *')"></span>
+							</label>
+							<input id="pm-card-number" type="text" name="card_number" class="form-input form-input-sm tabular-nums" placeholder="4111 2222 3333 4444" dir="ltr" autocomplete="off"/>
+							<p class="text-2xs text-muted m-0 mt-1">
+								{ i18n.T(lang, "wallet.card_security_hint") }
+								<span x-show="paymentEditID && paymentForm.card_last4" x-text="' (•••• ' + paymentForm.card_last4 + ')'"></span>
+							</p>
+						</div>
+					</div>
+
+					<div class="form-check mt-2 mb-3">
+						<input type="checkbox" id="pm-default" name="is_default" value="1" x-model="paymentForm.is_default" class="form-check-input"/>
+						<label for="pm-default" class="form-check-label text-xs font-semibold">{ i18n.T(lang, "wallet.set_default_method") }</label>
+					</div>
+				</div>
+
+				<div class="modal-footer">
+					<button type="button" class="btn btn-secondary btn-sm" @click="isAddPaymentModalOpen = false">{ i18n.T(lang, "common.cancel") }</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold">
+						<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('common.save_changes', 'حفظ التعديلات') : 'حفظ التعديلات') : (window.dawaT ? window.dawaT('wallet.save_method_btn', 'حفظ وسيلة الدفع') : 'حفظ وسيلة الدفع')"></span>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}

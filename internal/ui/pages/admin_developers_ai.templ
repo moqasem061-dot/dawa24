@@ -1,0 +1,404 @@
+package pages
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// maskedAPIKey returns a display-safe version of an API key: "••••abcd" showing
+// only the last 4 characters. An empty key returns empty (= not configured).
+// The full secret must never appear in rendered HTML.
+func maskedAPIKey(key string) string {
+	if key == "" {
+		return ""
+	}
+	if len(key) <= 4 {
+		return "••••"
+	}
+	return "••••" + key[len(key)-4:]
+}
+
+type AIToolRow struct {
+	Role         string
+	NameAR       string
+	Description  string
+	DefaultModel string
+	CurrentModel string
+	IsActive     bool
+	MaxTokens    int
+	Notes        string
+}
+
+func getAIToolRows(configured []*platformadmin.AIRoleModel) []AIToolRow {
+	byRole := make(map[string]*platformadmin.AIRoleModel, len(configured))
+	for _, m := range configured {
+		byRole[m.Role] = m
+	}
+
+	tools := []struct {
+		role, name, desc, defModel string
+	}{
+		{"matching.vendor_import", "مطابقة استيراد المورد", "مطابقة أصناف ملفات الموردين مع الكتالوج (/vendor/ingest)", "qwen3.7-flash"},
+		{"matching.saving_products", "مطابقة منتجات التوفير", "مطابقة وتحديد بدائل التوفير المتاحة في عروض الموردين", "qwen3.7-flash"},
+		{"matching.smart_order", "الطلب الذكي بالذكاء الاصطناعي", "تحليل ومطابقة نواقص الطلب الذكي للصيدليات (/customer/smart-order)", "qwen3.7-flash"},
+		{"matching.admin_catalog", "استيراد دليل الإدارة", "مطابقة استيراد الكتالوج العام للمنصة (/admin/products/import)", "qwen3.7-flash"},
+		{"matching.adjudicate", "المطابقة العامة الافتراضية", "النموذج البديل عند عدم تعيين نموذج مخصص لأدوات المطابقة", "qwen3.7-flash"},
+		{"assistant.primary", "المساعد الذكي الأساسي", "المحادثة والتفاعل المباشر وقراءة الصور", "gemma-4-31b-it"},
+		{"assistant.attachment", "تحليل مرفقات المساعد", "معالجة الملفات والمستندات والجداول المرفقة في المحادثة", "gemma-4-31b-it"},
+		{"assistant.transcribe", "التفريغ الصوتي للمحادثات", "تحويل الرسائل الصوتية إلى نصوص دقيقة", "whisper-large-v3-turbo"},
+		{"import.detect_columns", "كشف أعمدة الملفات", "التعرف التلقائي على رؤوس أعمدة الجداول المستوردة", "qwen3.7-flash"},
+		{"search.expand_query", "توسيع البحث بالمرادفات", "توليد مرادفات دوائية بديلة للبحث", "qwen3.7-flash"},
+		{"support.classify", "تصنيف تذاكر الدعم", "التصنيف والتحليل التلقائي لطلبات الدعم الفني", "qwen3.7-flash"},
+	}
+
+	rows := make([]AIToolRow, 0, len(tools))
+	for _, t := range tools {
+		row := AIToolRow{
+			Role:         t.role,
+			NameAR:       t.name,
+			Description:  t.desc,
+			DefaultModel: t.defModel,
+			CurrentModel: t.defModel,
+			IsActive:     true,
+			MaxTokens:    0,
+		}
+		if found, ok := byRole[t.role]; ok {
+			if found.Model != "" {
+				row.CurrentModel = found.Model
+			}
+			row.IsActive = found.IsActive
+			if found.MaxTokens != nil {
+				row.MaxTokens = *found.MaxTokens
+			}
+			row.Notes = found.Notes
+		}
+		rows = append(rows, row)
+	}
+	return rows
+}
+
+templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
+	<div
+		x-show="activeTab === 'ai'"
+		class="stack-lg"
+		x-data={ fmt.Sprintf("adminAIManager(%q, %q)", values.GatewaySettings.EndpointURL, maskedAPIKey(values.GatewaySettings.APIKey)) }
+		x-cloak
+	>
+		<!-- 1. الاتصال: Gateway Connection & Credentials -->
+		<div class="glass-panel mb-6">
+			<div class="flex-between items-center mb-5 pb-3 border-b">
+				<div class="row-center">
+					<div class="b2b-icon-box">
+						@components.IconSparkles("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h3 class="m-0 text-lg font-black">
+							1. الاتصال ببوابة الذكاء الاصطناعي (AI Gateway Connection)
+						</h3>
+						<p class="text-xs text-secondary mt-0.5 mb-0">
+							نقطة النهاية، بيانات اعتماد المدير، والمفتاح الافتراضي الخاص بإدارة المنصة.
+						</p>
+					</div>
+				</div>
+				if values.GatewaySettings.IsActive {
+					<span class="badge badge-emerald">البوابة مفعلة</span>
+				} else {
+					<span class="badge badge-slate">معطلة</span>
+				}
+			</div>
+
+			if values.GatewaySettings.CredentialLooksMisconfigured() {
+				<div class="bg-danger-subtle border border-danger rounded-xl p-4 text-sm leading-relaxed mb-4">
+					<strong class="text-danger block mb-1">بيانات الاعتماد المحفوظة تبدو غير صحيحة</strong>
+					<span class="text-secondary">
+						القيمة المحفوظة في حقل بيانات اعتماد المدير تطابق شكل بيانات اتصال قاعدة بيانات، وليست بيانات اعتماد بوابة الذكاء الاصطناعي.
+					</span>
+				</div>
+			}
+
+			<form action="/admin/developers/ai" method="POST" class="stack-md">
+				<div class="d-grid grid-cols-2 gap-4">
+					<div class="form-group m-0">
+						<label class="form-label font-bold text-xs">رابط بوابة الذكاء الاصطناعي (Endpoint URL) *</label>
+						<input
+							type="url"
+							name="endpoint_url"
+							x-model="gatewayURL"
+							required
+							class="form-input text-sm"
+							dir="ltr"
+							placeholder="https://api.muhiya.com"
+						/>
+					</div>
+
+					<div class="form-group m-0">
+						<label class="form-label font-bold text-xs">حالة البوابة العامة</label>
+						<select name="is_active" class="form-select text-sm">
+							<option value="true" selected?={ values.GatewaySettings.IsActive }>مفعلة (Active)</option>
+							<option value="false" selected?={ !values.GatewaySettings.IsActive }>معطلة (Disabled)</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="d-grid grid-cols-2 gap-4">
+					<div class="form-group m-0">
+						<label class="form-label font-bold text-xs">اسم مستخدم مدير البوابة (Admin Username) *</label>
+						<input
+							type="text"
+							name="admin_username"
+							x-model="gatewayUser"
+							required
+							class="form-input text-sm"
+							dir="ltr"
+							placeholder="admin"
+						/>
+					</div>
+
+					<div class="form-group m-0">
+						<label class="form-label font-bold text-xs">كلمة مرور مدير البوابة (Admin Password) *</label>
+						<div class="relative d-flex items-center">
+							<input
+								:type="showKey ? 'text' : 'password'"
+								name="api_key"
+								x-model="gatewayKey"
+								class="form-input pe-12 text-sm"
+								dir="ltr"
+								placeholder="كلمة مرور لوحة البوابة..."
+							/>
+							<button
+								type="button"
+								@click="showKey = !showKey"
+								class="absolute end-3 bg-transparent border-0 text-muted cursor-pointer text-xs font-bold"
+								x-text="showKey ? 'إخفاء' : 'إظهار'"
+							></button>
+						</div>
+					</div>
+				</div>
+
+				<div class="p-3 border rounded-lg bg-surface-sunken flex-between items-center text-xs">
+					<div>
+						<div class="font-bold mb-0.5">مفتاح لوحة التحكم الافتراضي (Admin Virtual Key):</div>
+						if values.GatewaySettings.VirtualKey != "" {
+							<span class="text-success font-bold" dir="ltr">{ values.GatewaySettings.VirtualKey }</span>
+						} else {
+							<span class="text-muted">يتم توليده تلقائياً عند أول استخدام عبر البوابة</span>
+						}
+					</div>
+					<div class="d-flex gap-2 items-center">
+						<button
+							type="button"
+							class="btn btn-secondary btn-sm font-bold gap-1"
+							@click="testConnection()"
+							:disabled="isTesting"
+						>
+							@components.IconSparkles("icon-xs")
+							<span x-show="!isTesting">اختبار الاتصال المباشر</span>
+							<span x-show="isTesting">جاري الفحص...</span>
+						</button>
+						<button type="submit" class="btn btn-primary btn-sm font-bold gap-1">
+							@components.IconCheck("icon-xs")
+							<span>حفظ بيانات الاتصال</span>
+						</button>
+					</div>
+				</div>
+				<div x-show="testResult" class="mt-1" x-cloak>
+					<div
+						:class="testResult && testResult.status === 'healthy' ? 'badge badge-emerald w-full p-2 justify-center' : 'badge badge-rose w-full p-2 justify-center'"
+						x-text="testResult ? testResult.message : ''"
+					></div>
+				</div>
+			</form>
+		</div>
+
+		<!-- 2. النماذج: Per-tool Model Configuration Table -->
+		<div class="glass-panel mb-6">
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="row-center">
+					<div class="b2b-icon-box">
+						@components.IconSettings("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h3 class="m-0 text-lg font-black">
+							2. النماذج والأدوار (Tool AI Models)
+						</h3>
+						<p class="text-xs text-secondary mt-0.5 mb-0">
+							تخصيص نموذج الذكاء الاصطناعي لكل أداة بالمنظومة مع دعم الاكتشاف الحي والتعطيل المستقل.
+						</p>
+					</div>
+				</div>
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold gap-1"
+					@click="refreshModels()"
+					:disabled="isLoadingModels"
+				>
+					<span x-show="!isLoadingModels">تحديث قائمة النماذج الحية</span>
+					<span x-show="isLoadingModels">جاري الجلب...</span>
+				</button>
+			</div>
+
+			<div class="table-responsive">
+				<table class="table w-full align-middle text-sm">
+					<thead>
+						<tr class="text-xs text-secondary bg-surface-sunken">
+							<th class="py-2.5 px-3">الأداة والمهمة</th>
+							<th class="py-2.5 px-3">الدور (Role Key)</th>
+							<th class="py-2.5 px-3" style="min-width: 200px;">النموذج المعتمد (Model)</th>
+							<th class="py-2.5 px-3" style="width: 120px;">الحد الأقصى للرموز</th>
+							<th class="py-2.5 px-3 text-center" style="width: 80px;">الحالة</th>
+							<th class="py-2.5 px-3 text-center" style="width: 90px;">الإجراء</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, tool := range getAIToolRows(values.AIRoleModels) {
+							<tr class="border-b hover:bg-surface-subtle">
+								<form action="/admin/developers/ai/role-models" method="POST">
+									<input type="hidden" name="role" value={ tool.Role }/>
+									<td class="py-3 px-3">
+										<div class="font-bold text-primary">{ tool.NameAR }</div>
+										<div class="text-xs text-muted mt-0.5">{ tool.Description }</div>
+									</td>
+									<td class="py-3 px-3">
+										<code class="text-xs bg-surface-sunken px-1.5 py-0.5 rounded" dir="ltr">{ tool.Role }</code>
+									</td>
+									<td class="py-3 px-3">
+										<div class="stack-xs">
+											<input
+												type="text"
+												name="model"
+												value={ tool.CurrentModel }
+												list="available-models-list"
+												class="form-input text-xs"
+												dir="ltr"
+												required
+												placeholder={ tool.DefaultModel }
+											/>
+											<span class="text-xs text-muted" dir="ltr">افتراضي: { tool.DefaultModel }</span>
+										</div>
+									</td>
+									<td class="py-3 px-3">
+										<input
+											type="number"
+											name="max_tokens"
+											value={ fmt.Sprintf("%d", tool.MaxTokens) }
+											placeholder="تلقائي"
+											min="0"
+											max="65536"
+											class="form-input text-xs text-center"
+											dir="ltr"
+										/>
+									</td>
+									<td class="py-3 px-3 text-center">
+										<label class="d-inline-flex items-center cursor-pointer">
+											<input
+												type="checkbox"
+												name="is_active"
+												value="true"
+												class="form-checkbox"
+												checked?={ tool.IsActive }
+											/>
+										</label>
+									</td>
+									<td class="py-3 px-3 text-center">
+										<button type="submit" class="btn btn-primary btn-sm px-2.5 py-1 text-xs font-bold gap-1">
+											@components.IconCheck("icon-xs")
+											<span>حفظ</span>
+										</button>
+									</td>
+								</form>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			<datalist id="available-models-list">
+				<template x-for="m in liveModels" :key="m.id">
+					<option :value="m.id" x-text="m.display_name || m.id"></option>
+				</template>
+			</datalist>
+		</div>
+
+		<!-- 3. الحدود: Ceilings from matchflow/ceilings.go -->
+		<div class="glass-panel mb-6">
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="row-center">
+					<div class="b2b-icon-box">
+						@components.IconShield("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h3 class="m-0 text-lg font-black">
+							3. الحدود وسقوف الأمان (Cost & Spend Ceilings)
+						</h3>
+						<p class="text-xs text-secondary mt-0.5 mb-0">
+							الحدود الصارمة المطبقة لمنع استنزاف الميزانية والوقت (internal/shared/matchflow/ceilings.go).
+						</p>
+					</div>
+				</div>
+				<span class="badge badge-sky">مضبوطة برمجياً لحماية المنظومة</span>
+			</div>
+
+			<div class="d-grid grid-cols-3 gap-4 text-xs">
+				<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+					<div class="font-black text-sm text-primary">ملفات الموردين (Vendor Profile)</div>
+					<p class="text-muted m-0">قوائم أسعار الموردين (طويلة ومتكررة أسبوعياً)</p>
+					<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+						<li>• أقصى عناصر بالدفعة: <strong>200 بند</strong></li>
+						<li>• أقصى طلبات بالعملية: <strong>60 طلباً</strong> (12,000 بند)</li>
+						<li>• المهلة الزمنية القصوى: <strong>20 دقيقة</strong></li>
+						<li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li>
+						<li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li>
+					</ul>
+				</div>
+
+				<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+					<div class="font-black text-sm text-primary">الطلب الذكي (Order Profile)</div>
+					<p class="text-muted m-0">طلبات الصيدليات المباشرة مع شريط تقدم مباشر</p>
+					<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+						<li>• أقصى عناصر بالدفعة: <strong>120 بند</strong></li>
+						<li>• أقصى طلبات بالعملية: <strong>30 طلباً</strong></li>
+						<li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li>
+						<li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li>
+						<li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li>
+					</ul>
+				</div>
+
+				<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+					<div class="font-black text-sm text-primary">كتالوج الإدارة (Catalog Profile)</div>
+					<p class="text-muted m-0">دليل الأصناف الموحد لمنصة دوا 24 (أعلى معايير الدقة)</p>
+					<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+						<li>• أقصى عناصر بالدفعة: <strong>100 بند</strong></li>
+						<li>• أقصى طلبات بالعملية: <strong>12 طلباً</strong></li>
+						<li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li>
+						<li>• الحد الأدنى للمطابقة التلقائية: <strong>90%</strong> (دقة فائقة)</li>
+						<li>• بوابة استبعاد البنود غير المعقولة: <strong>40%</strong></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+
+		<!-- 4. الاستهلاك: Usage Logs & Metrics -->
+		<div class="glass-panel">
+			<div class="flex-between items-center">
+				<div class="row-center">
+					<div class="b2b-icon-box">
+						@components.IconActivity("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h3 class="m-0 text-lg font-black">
+							4. الاستهلاك ومراقبة التكاليف (AI Consumption & Audit)
+						</h3>
+						<p class="text-xs text-secondary mt-0.5 mb-0">
+							تتبع استهلاك الرموز (Tokens) ومصروفات كل أداة ومنشأة بالتفصيل.
+						</p>
+					</div>
+				</div>
+				<a href="/admin/ai-logs" class="btn btn-secondary font-bold text-xs gap-1.5">
+					<span>عرض سجلات الاستهلاك الكاملة (AI Usage Logs)</span>
+					@components.IconArrowLeft("icon-xs")
+				</a>
+			</div>
+		</div>
+	</div>
+}

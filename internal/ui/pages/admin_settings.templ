@@ -1,0 +1,399 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminSettingsValues carries the stored platform settings, feature flags, AI gateway, and site branding.
+type AdminSettingsValues struct {
+	ActiveTab                 string // "features", "site", "policies", "payment_methods"
+	SupportEmail              string
+	CommissionRate            string
+	SessionIdleTimeoutMinutes string
+	GatewaySettings           *platformadmin.GatewaySettings
+	SiteSettings              *platformadmin.SiteSettings
+	TempWarehouseLifecycle    *platformadmin.TempWarehouseLifecycleSettings
+	Policies                  []*platformadmin.Policy
+	PolicyKey                 string
+	ActivePolicy              *platformadmin.Policy
+	ActivePolicyKey           string
+	PlatformPaymentMethods    []*billing.PlatformPaymentMethod
+}
+
+func tempWhArchiveHours(s *platformadmin.TempWarehouseLifecycleSettings) int {
+	if s == nil || s.AutoArchiveHours <= 0 {
+		return 720
+	}
+	return s.AutoArchiveHours
+}
+
+func tempWhDeleteDays(s *platformadmin.TempWarehouseLifecycleSettings) int {
+	if s == nil || s.AutoDeleteDays <= 0 {
+		return 30
+	}
+	return s.AutoDeleteDays
+}
+
+templ AdminSettings(values AdminSettingsValues, lang, dir string) {
+	@layouts.AdminShell("إعدادات المنصة والمنظومة | Platform Settings", "settings", lang, dir) {
+		<div
+			class="settings-page d-flex flex-col gap-6"
+			x-data="{
+				activeTab: 'features',
+				isMethodModalOpen: false,
+				isEditingMethod: false,
+				methodForm: {
+					id: '',
+					name_ar: '',
+					name_en: '',
+					provider_type: 'bank',
+					description_ar: '',
+					description_en: '',
+					account_name: '',
+					bank_name: '',
+					account_number: '',
+					iban: '',
+					swift_code: '',
+					branch_name: '',
+					instapay_handle: '',
+					phone_number: '',
+					is_active: true,
+					is_deposit_enabled: true,
+					is_checkout_enabled: true,
+					display_order: 1
+				},
+				init() {
+					const urlParams = new URLSearchParams(window.location.search);
+					let tab = urlParams.get('tab') || localStorage.getItem('dawa24-admin-tab') || 'features';
+					if (tab !== 'features' && tab !== 'site' && tab !== 'policies' && tab !== 'payment_methods') {
+						tab = 'features';
+					}
+					this.activeTab = tab;
+				},
+				setTab(tab) {
+					this.activeTab = tab;
+					localStorage.setItem('dawa24-admin-tab', tab);
+					const u = new URL(window.location);
+					u.searchParams.set('tab', tab);
+					window.history.replaceState({}, '', u);
+				},
+				openNewMethodModal() {
+					this.isEditingMethod = false;
+					this.methodForm = {
+						id: '',
+						name_ar: '',
+						name_en: '',
+						provider_type: 'bank',
+						description_ar: '',
+						description_en: '',
+						account_name: '',
+						bank_name: '',
+						account_number: '',
+						iban: '',
+						swift_code: '',
+						branch_name: '',
+						instapay_handle: '',
+						phone_number: '',
+						is_active: true,
+						is_deposit_enabled: true,
+						is_checkout_enabled: true,
+						display_order: 1
+					};
+					const modal = document.getElementById('payment-method-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openEditMethodModal(pm) {
+					this.isEditingMethod = true;
+					this.methodForm = {
+						id: pm.id || '',
+						name_ar: pm.name_ar || '',
+						name_en: pm.name_en || '',
+						provider_type: pm.provider_type || 'bank',
+						description_ar: pm.description_ar || '',
+						description_en: pm.description_en || '',
+						account_name: pm.account_name || '',
+						bank_name: pm.bank_name || '',
+						account_number: pm.account_number || '',
+						iban: pm.iban || '',
+						swift_code: pm.swift_code || '',
+						branch_name: pm.branch_name || '',
+						instapay_handle: pm.instapay_handle || '',
+						phone_number: pm.phone_number || '',
+						is_active: pm.is_active,
+						is_deposit_enabled: pm.is_deposit_enabled,
+						is_checkout_enabled: pm.is_checkout_enabled,
+						display_order: pm.display_order || 1
+					};
+					const modal = document.getElementById('payment-method-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-2">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-xl">
+						@components.IconSettings("icon-md")
+					</div>
+					<div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							إعدادات المنصة والمنظومة
+						</h1>
+						<p class="text-sm text-secondary m-0 mt-1">
+							إدارة الهوية البصرية، بيانات التواصل، السياسات، الإعدادات المالية، وقنوات الدفع المعتمدة
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- Main Persistent Tabs Bar -->
+			<div class="tabs-nav">
+				<button
+					type="button"
+					class="tab-btn"
+					:class="activeTab === 'features' ? 'active' : ''"
+					@click="setTab('features')"
+				>
+					@components.IconSettings("icon-xs")
+					<span>1. الإعدادات المالية والمنظومة</span>
+				</button>
+
+				<button
+					type="button"
+					class="tab-btn"
+					:class="activeTab === 'site' ? 'active' : ''"
+					@click="setTab('site')"
+				>
+					@components.IconBuilding("icon-xs")
+					<span>2. إعدادات الموقع والهوية</span>
+				</button>
+
+				<button
+					type="button"
+					class="tab-btn"
+					:class="activeTab === 'policies' ? 'active' : ''"
+					@click="setTab('policies')"
+				>
+					@components.IconFileText("icon-xs")
+					<span>3. السياسات والشروط القانونية</span>
+				</button>
+
+				<button
+					type="button"
+					class="tab-btn"
+					:class="activeTab === 'payment_methods' ? 'active' : ''"
+					@click="setTab('payment_methods')"
+				>
+					@components.IconWallet("icon-xs")
+					<span>4. طرق وقنوات الدفع المعتمدة</span>
+				</button>
+			</div>
+
+			<!-- ========================================== -->
+			<!-- TAB 1: Financial & Platform Config         -->
+			<!-- ========================================== -->
+			<div x-show="activeTab === 'features'" x-cloak class="d-flex flex-col gap-6">
+				
+				<!-- Financial & General Config -->
+				<div class="glass-panel p-6 mb-0">
+					<div class="d-flex items-center gap-2 pb-3 mb-4 border-b">
+						@components.IconSettings("icon-sm")
+						<h3 class="text-base font-black text-primary m-0">
+							الإعدادات المالية والمنظومة
+						</h3>
+					</div>
+
+					<form action="/admin/settings" method="POST" class="d-flex flex-col gap-4 m-0">
+						<div class="form-grid-2">
+							<div class="form-group mb-0">
+								<label class="form-label text-xs font-bold">العملة الافتراضية للمعاملات</label>
+								<input type="text" value="EGP (الجنيه المصري)" disabled class="form-input text-xs"/>
+							</div>
+							<div class="form-group mb-0">
+								<label class="form-label text-xs font-bold">اللغات المعتمدة في النظام</label>
+								<input type="text" value="العربية (الرئيسية)، English" disabled class="form-input text-xs"/>
+							</div>
+						</div>
+
+						<div class="form-grid-2">
+							<div class="form-group mb-0">
+								<label class="form-label text-xs font-bold">بريد إشعارات الدعم الفني *</label>
+								<input type="email" name="support_email" value={ values.SupportEmail } required class="form-input text-xs font-mono" dir="ltr"/>
+							</div>
+							<div class="form-group mb-0">
+								<label class="form-label text-xs font-bold">نسبة عمولة المنصة الافتراضية (%) *</label>
+								<input type="number" name="commission_rate" value={ values.CommissionRate } step="0.1" min="0" max="100" required class="form-input text-xs tabular-nums"/>
+							</div>
+						</div>
+
+						<div class="form-grid-2">
+							<div class="form-group mb-0">
+								<label class="form-label text-xs font-bold">مهلة عدم النشاط لتسجيل الخروج التلقائي (بالدقائق) *</label>
+								<input
+									type="number"
+									name="session_idle_timeout_minutes"
+									value={ values.SessionIdleTimeoutMinutes }
+									min="1"
+									max="1440"
+									required
+									class="form-input text-xs tabular-nums"
+									placeholder="30"
+								/>
+								<span class="text-2xs text-secondary mt-1 d-block">
+									المدة بالدقائق قبل إنهاء الجلسة وتسجيل خروج المستخدم تلقائياً عند عدم وجود نشاط (الافتراضي: 30 دقيقة).
+								</span>
+							</div>
+						</div>
+
+						<div>
+							<button type="submit" class="btn btn-primary font-bold text-xs">
+								@components.IconCheck("icon-xs")
+								<span>حفظ إعدادات المنصة</span>
+							</button>
+						</div>
+					</form>
+				</div>
+
+				<!-- Temp Warehouse & Compare Files Lifecycle & Retention Card -->
+				<div class="glass-panel p-6 mb-0">
+					<div class="d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3">
+						<div class="d-flex items-center gap-2">
+							@components.IconDatabase("icon-sm text-brand")
+							<div>
+								<h3 class="text-base font-black text-primary m-0">
+									دورة حياة وأرشفة المستودعات المؤقتة وملفات المقارنة
+								</h3>
+								<p class="text-xs text-secondary m-0 mt-0.5">
+									التحكم الكامل في مدد الأرشفة التلقائية وحذف سجلات ملفات المقارنة والمستودعات لتوفير مساحة التخزين وموارد الخادم
+								</p>
+							</div>
+						</div>
+						<form action="/admin/settings/temp-warehouses/run-lifecycle" method="POST" class="m-0" data-confirm="هل تريد بدء فحص وتشغيل دورة أرشفة وحذف المستودعات المؤقتة فوراً؟">
+							<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs d-flex items-center gap-1.5" title="تشغيل دورة الفحص يدوياً وتطبيق مدد الأرشفة والحذف فوراً">
+								@components.IconClock("icon-xs")
+								<span>تشغيل الفحص والتنظيف الآن</span>
+							</button>
+						</form>
+					</div>
+
+					<form action="/admin/settings/temp-warehouses/lifecycle" method="POST" class="d-flex flex-col gap-4 m-0">
+						<div class="form-grid-2">
+							<!-- Auto Archive Box -->
+							<div class="p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3">
+								<div class="d-flex items-center justify-between">
+									<div class="d-flex items-center gap-2">
+										@components.IconBoxes("icon-xs text-amber-500")
+										<span class="font-bold text-xs text-primary">الأرشفة التلقائية للمستودعات وملفات المقارنة</span>
+									</div>
+									<label class="d-flex items-center gap-1.5 cursor-pointer">
+										<input
+											type="checkbox"
+											name="auto_archive_enabled"
+											value="true"
+											checked?={ values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoArchiveEnabled }
+											class="form-checkbox"
+										/>
+										<span class="text-xs font-semibold text-primary">تفعيل الأرشفة</span>
+									</label>
+								</div>
+								<p class="text-2xs text-secondary m-0">
+									نقل المستودعات المؤقتة وملفات المقارنة الجاهزة إلى حالة "مؤرشفة" بعد انقضاء هذه المدة من وقت رفعها وإضافتها.
+								</p>
+								<div class="form-group mb-0">
+									<label class="form-label text-xs font-bold">مهلة الأرشفة بعد الإضافة (بالساعات) *</label>
+									<input
+										type="number"
+										name="auto_archive_hours"
+										value={ fmt.Sprintf("%d", tempWhArchiveHours(values.TempWarehouseLifecycle)) }
+										min="1"
+										max="87600"
+										required
+										class="form-input text-xs tabular-nums"
+										placeholder="720"
+									/>
+									<span class="text-2xs text-secondary mt-1 d-block">
+										أمثلة شائعة: 24 ساعة (يوم واحد)، 48 ساعة (يومان)، 168 ساعة (أسبوع)، 720 ساعة (30 يوماً).
+									</span>
+								</div>
+							</div>
+
+							<!-- Auto Delete Box -->
+							<div class="p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3">
+								<div class="d-flex items-center justify-between">
+									<div class="d-flex items-center gap-2">
+										@components.IconTrash("icon-xs text-rose-500")
+										<span class="font-bold text-xs text-primary">الحذف والتفريغ النهائي لبيانات المستودع</span>
+									</div>
+									<label class="d-flex items-center gap-1.5 cursor-pointer">
+										<input
+											type="checkbox"
+											name="auto_delete_enabled"
+											value="true"
+											checked?={ values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoDeleteEnabled }
+											class="form-checkbox"
+										/>
+										<span class="text-xs font-semibold text-primary">تفعيل الحذف النهائي</span>
+									</label>
+								</div>
+								<p class="text-2xs text-secondary m-0">
+									حذف سجلات ومواد المستودع بالكامل من قاعدة البيانات وتفريغ الملفات من التخزين بعد مرور هذه المدة من وقت الأرشفة.
+								</p>
+								<div class="form-group mb-0">
+									<label class="form-label text-xs font-bold">مهلة الحذف النهائي بعد الأرشفة (بالأيام) *</label>
+									<input
+										type="number"
+										name="auto_delete_days"
+										value={ fmt.Sprintf("%d", tempWhDeleteDays(values.TempWarehouseLifecycle)) }
+										min="1"
+										max="3650"
+										required
+										class="form-input text-xs tabular-nums"
+										placeholder="30"
+									/>
+									<span class="text-2xs text-secondary mt-1 d-block">
+										أمثلة: 7 أيام، 14 يوماً، 30 يوماً (شهر)، 60 يوماً. هذه العملية تمسح المواد نهائياً لتحرير الموارد وتوفير مساحة السيرفر.
+									</span>
+								</div>
+							</div>
+						</div>
+
+						<div class="d-flex items-center justify-between pt-3 border-t flex-wrap gap-2">
+							<span class="text-2xs text-secondary">
+								💡 يتم تشغيل فحص دورة الحياة تلقائياً في الخلفية كل ساعة بنظام دفعات مباشر ومحسن في قاعدة البيانات.
+							</span>
+							<button type="submit" class="btn btn-primary font-bold text-xs">
+								@components.IconCheck("icon-xs")
+								<span>حفظ إعدادات دورة الحياة</span>
+							</button>
+						</div>
+					</form>
+				</div>
+			</div>
+
+			<!-- ========================================== -->
+			<!-- TAB 2: Site Branding & Metadata            -->
+			<!-- ========================================== -->
+			@adminSettingsSiteTab(values.SiteSettings)
+
+			<!-- ========================================== -->
+			<!-- TAB 3: Legal Policies & Documents          -->
+			<!-- ========================================== -->
+			@adminSettingsPoliciesTab(values.Policies)
+
+			<!-- ========================================== -->
+			<!-- TAB 4: Payment Methods & Gateways          -->
+			<!-- ========================================== -->
+			@adminSettingsPaymentTab(values.PlatformPaymentMethods)
+
+			<!-- Dialog for Adding/Editing Payment Method -->
+			@adminSettingsPaymentModal()
+
+		</div>
+	}
+}

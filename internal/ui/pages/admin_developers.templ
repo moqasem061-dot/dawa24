@@ -1,0 +1,318 @@
+package pages
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminDevelopersValues struct {
+	ActiveTab       string // "sql", "ai", "errors", "audit"
+	GatewaySettings *platformadmin.GatewaySettings
+	AISettings      *platformadmin.AISettings
+	AIRoleModels    []*platformadmin.AIRoleModel
+	SQLLogs         []*platformadmin.SQLLog
+	ErrorLogs       []*platformadmin.ErrorLog
+	ErrorMetrics    struct {
+		Total         int
+		Critical24h   int
+		Unresolved    int
+		AffectedUsers int
+	}
+	ErrorLevelFilter  string
+	ErrorStatusFilter string
+	ErrorSearch       string
+	ErrorPage         int
+	ErrorPerPage      int
+	ErrorTotalCount   int
+	AuditEntries     []*platformadmin.AuditEntry
+	AuditPage        int
+	AuditPerPage     int
+	AuditTotalCount  int
+	AuditSearchQuery string
+	SEO              *AdminDevelopersSEOValues
+}
+
+templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
+	@layouts.AdminShell("أدوات المطورين وتشخيص النظام | Developer Tools & Diagnostics", "developers", lang, dir) {
+		<div class="page-container" x-data={ fmt.Sprintf("adminDevelopersManager(%q)", values.ActiveTab) }>
+			
+			<!-- Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconMonitor("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">أدوات المطورين وتشخيص النظام</h1>
+							<p class="text-sm text-secondary m-0 mt-1">وحدة استعلامات SQL، بوابة الذكاء الاصطناعي، نظام مراقبة الأخطاء المتقدم، وسجلات التدقيق</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Main Persistent Tabs Bar -->
+				<div class="tabs-nav mt-6">
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'sql' }"
+						@click="setTab('sql')"
+					>
+						@components.IconDatabase("icon-xs")
+						<span>1. وحدة استعلامات SQL</span>
+					</button>
+
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'ai' }"
+						@click="setTab('ai')"
+					>
+						@components.IconSparkles("icon-xs")
+						<span>2. بوابة الذكاء الاصطناعي</span>
+					</button>
+
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'errors' }"
+						@click="setTab('errors')"
+					>
+						@components.IconBug("icon-xs")
+						<span>3. سجلات وتشخيص الأخطاء</span>
+					</button>
+
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'audit' }"
+						@click="setTab('audit')"
+					>
+						@components.IconClock("icon-xs")
+						<span>4. سجلات الأنشطة والتدقيق</span>
+					</button>
+
+					<button
+						type="button"
+						class="tab-btn"
+						:class="{ 'active': activeTab === 'seo' }"
+						@click="setTab('seo')"
+					>
+						@components.IconGlobe("icon-xs")
+						<span>5. تهيئة محركات البحث والذكاء الاصطناعي</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- ========================================== -->
+			<!-- TAB 1: SQL Console & Query Log             -->
+			<!-- ========================================== -->
+			@AdminDevelopersSQLTab(values, lang)
+
+			<!-- ========================================== -->
+			<!-- TAB 2: AI Gateway, Roles & Ceilings        -->
+			<!-- ========================================== -->
+			@AdminDevelopersAITab(values, lang)
+
+			@AdminDevelopersDiagnostics(values, lang)
+
+			<!-- ========================================== -->
+			<!-- TAB 5: SEO & AI Discoverability            -->
+			<!-- ========================================== -->
+			<div x-show="activeTab === 'seo'" style="display:none;" x-cloak>
+				if values.SEO != nil {
+					@AdminDevelopersSEOTab(values.SEO, lang, dir)
+				}
+			</div>
+		<script nonce={ layouts.Nonce(ctx) }>
+			function adminDevelopersManager(initialTab) {
+				const urlParams = new URLSearchParams(window.location.search);
+				const storedTab = urlParams.get('tab') || localStorage.getItem('dawa24-dev-tab') || initialTab || 'sql';
+
+				return {
+					activeTab: storedTab,
+
+					setTab(tab) {
+						this.activeTab = tab;
+						localStorage.setItem('dawa24-dev-tab', tab);
+						const u = new URL(window.location);
+						u.searchParams.set('tab', tab);
+						window.history.replaceState({}, '', u);
+					}
+				};
+			}
+
+			function adminSQLManager() {
+				return {
+					sqlQuery: "SELECT id, name->>'ar' AS name_ar, type, status, created_at FROM org.organizations ORDER BY id DESC LIMIT 15;",
+					isRunning: false,
+					queryExecuted: false,
+					activeCategory: 'users',
+					categories: [
+						{ id: 'users', name: 'المستخدمين' },
+						{ id: 'orgs', name: 'المنظمات' },
+						{ id: 'catalog', name: 'الكتالوج والمخزون' },
+						{ id: 'commerce', name: 'الطلبيات' },
+						{ id: 'billing', name: 'الفوترة والمحافظ' },
+						{ id: 'promo', name: 'الرعايات' },
+						{ id: 'system', name: 'النظام والتدقيق' }
+					],
+					presetQueries: {
+						users: [
+							{ name: 'أحدث المستخدمين', sql: 'SELECT id, name, email, phone, status, created_at FROM identity.users ORDER BY id DESC LIMIT 15;' },
+							{ name: 'الجلسات المسجلة', sql: 'SELECT id, user_id, device_name, ip_address, is_active, last_activity_at FROM identity.user_sessions ORDER BY id DESC LIMIT 15;' },
+							{ name: 'إحصائيات الحالات', sql: 'SELECT status, count(*) AS count FROM identity.users GROUP BY status;' }
+						],
+						orgs: [
+							{ name: 'أحدث المنظمات', sql: "SELECT id, name->>'ar' AS name_ar, type, status, created_at FROM org.organizations ORDER BY id DESC LIMIT 15;" },
+							{ name: 'الصيدليات المعتمدة', sql: "SELECT id, name->>'ar' AS name, legal_name, status FROM org.organizations WHERE type = 'pharmacy' AND status = 'approved' LIMIT 15;" },
+							{ name: 'الموردين المعتمدين', sql: "SELECT id, name->>'ar' AS name, legal_name, status FROM org.organizations WHERE type = 'vendor' AND status = 'approved' LIMIT 15;" },
+							{ name: 'فروع المنشآت', sql: 'SELECT id, organization_id, name, address, status, is_main FROM org.branches ORDER BY id DESC LIMIT 15;' }
+						],
+						catalog: [
+							{ name: 'أحدث المنتجات', sql: "SELECT id, name->>'ar' AS name_ar, sku, barcode, price, status, created_at FROM catalog.products ORDER BY id DESC LIMIT 15;" },
+							{ name: 'أصناف بمخزون نشط', sql: "SELECT p.id, p.name->>'ar' AS name, pv.sku, st.quantity, pv.status FROM catalog.products p JOIN catalog.product_variants pv ON pv.product_id = p.id JOIN inventory.stocks st ON st.product_variant_id = pv.id WHERE st.quantity > 0 AND pv.status = 'active' LIMIT 15;" },
+							{ name: 'المستودعات', sql: 'SELECT id, organization_id, name, code, is_active, created_at FROM inventory.warehouses ORDER BY id DESC LIMIT 15;' },
+							{ name: 'إجمالي كميات المخزون', sql: 'SELECT warehouse_id, count(*) AS total_items, sum(quantity) AS total_qty FROM inventory.stocks WHERE deleted_at IS NULL GROUP BY warehouse_id;' }
+						],
+						commerce: [
+							{ name: 'أحدث الطلبيات', sql: 'SELECT id, order_number, customer_id, organization_id, total_amount, status, created_at FROM commerce.orders ORDER BY id DESC LIMIT 15;' },
+							{ name: 'الطلبات حسب الحالة', sql: 'SELECT status, count(*) AS total_orders, sum(total_amount) AS gmv FROM commerce.orders GROUP BY status;' },
+							{ name: 'عناصر الطلبيات الأخيرة', sql: 'SELECT id, order_id, product_name, quantity, unit_price, total_price FROM commerce.order_lines ORDER BY id DESC LIMIT 15;' }
+						],
+						billing: [
+							{ name: 'حسابات المحافظ', sql: 'SELECT id, user_id, organization_id, currency, created_at FROM billing.wallets ORDER BY id DESC LIMIT 15;' },
+							{ name: 'حركات المحافظ الأخيرة', sql: 'SELECT id, wallet_id, type, amount, balance_after, description, created_at FROM billing.wallet_transactions ORDER BY id DESC LIMIT 15;' },
+							{ name: 'الاشتراكات النشطة', sql: 'SELECT id, organization_id, plan_id, status, starts_at, expires_at FROM billing.subscriptions ORDER BY id DESC LIMIT 15;' },
+							{ name: 'وسائل دفع المنصة', sql: 'SELECT id, name_ar, provider_type, account_name, is_active FROM billing.platform_payment_methods;' }
+						],
+						promo: [
+							{ name: 'باقات الرعاية المتاحة', sql: "SELECT id, name->>'ar' AS name, tier_level, price, credits, duration_days, is_active FROM promo.offer_packages;" },
+							{ name: 'باقات الرعاية المشتراة', sql: 'SELECT id, organization_id, package_id, credits_total, credits_used, status, expires_at FROM promo.sponsorship_purchases ORDER BY id DESC LIMIT 15;' },
+							{ name: 'طلبات الرعاية', sql: 'SELECT id, organization_id, item_type, item_id, admin_status, status, created_at FROM promo.sponsorship_requests ORDER BY id DESC LIMIT 15;' },
+							{ name: 'الإعلانات المعروضة', sql: 'SELECT id, organization_id, title, position, media_type, admin_status, is_active FROM promo.ads ORDER BY id DESC LIMIT 15;' }
+						],
+						system: [
+							{ name: 'سجلات التدقيق', sql: 'SELECT id, organization_id, actor_user_id, action, entity_type, entity_id, created_at FROM platform.audit_log ORDER BY id DESC LIMIT 15;' },
+							{ name: 'سجلات استعلامات SQL', sql: 'SELECT id, actor_name, query, duration_ms, rows_affected, error_message, created_at FROM platform_admin.sql_logs ORDER BY id DESC LIMIT 15;' },
+							{ name: 'سجلات أخطاء النظام', sql: 'SELECT id, error_level, error_message, http_method, url_path, created_at FROM platform_admin.error_logs ORDER BY id DESC LIMIT 15;' }
+						]
+					},
+					queryResult: {
+						columns: [],
+						rows: [],
+						duration_ms: 0,
+						rows_affected: 0,
+						error: ''
+					},
+
+					setQuery(q) {
+						this.sqlQuery = q;
+					},
+
+					async runQuery() {
+						if (!this.sqlQuery.trim()) return;
+						this.isRunning = true;
+						try {
+							const form = new FormData();
+							form.append('query', this.sqlQuery);
+							const resp = await fetch('/admin/developers/sql', {
+								method: 'POST',
+								body: form
+							});
+							const data = await resp.json();
+							this.queryResult = data;
+							this.queryExecuted = true;
+						} catch (e) {
+							this.queryResult = {
+								columns: [],
+								rows: [],
+								duration_ms: 0,
+								rows_affected: 0,
+								error: 'Network / server error: ' + e.message
+							};
+							this.queryExecuted = true;
+						} finally {
+							this.isRunning = false;
+						}
+					}
+				};
+			}
+
+			function adminAIManager(initURL, initKey) {
+				let user = 'admin';
+				let key = initKey || '';
+				if (key.includes(':')) {
+					const parts = key.split(':');
+					user = parts[0];
+					key = parts[1];
+				}
+				return {
+					showKey: false,
+					gatewayURL: initURL || 'https://api.muhiya.com',
+					gatewayUser: user,
+					gatewayKey: key,
+					isTesting: false,
+					testResult: null,
+					liveModels: [],
+					isLoadingModels: false,
+
+					init() {
+						this.refreshModels();
+					},
+
+					async refreshModels() {
+						this.isLoadingModels = true;
+						try {
+							const resp = await fetch('/admin/developers/ai/fetch-models', {
+								method: 'POST'
+							});
+							const data = await resp.json();
+							if (data && Array.isArray(data.models)) {
+								this.liveModels = data.models;
+							}
+						} catch (e) {
+							console.warn('Could not fetch live models:', e);
+						} finally {
+							this.isLoadingModels = false;
+						}
+					},
+
+					async testConnection() {
+						this.isTesting = true;
+						this.testResult = null;
+						try {
+							const form = new FormData();
+							form.append('endpoint_url', this.gatewayURL);
+							form.append('admin_username', this.gatewayUser);
+							form.append('api_key', this.gatewayKey);
+							const resp = await fetch('/admin/developers/ai/test', {
+								method: 'POST',
+								body: form
+							});
+							const data = await resp.json();
+							this.testResult = data;
+						} catch (e) {
+							this.testResult = { status: 'error', message: 'تعذر الاتصال بالخادم: ' + e.message };
+						} finally {
+							this.isTesting = false;
+						}
+					}
+				};
+			}
+
+			// adminErrorsManager is gone. It parsed a per-row JSON block that
+			// templ had HTML-escaped, so JSON.parse always threw and the catch
+			// rendered a two-field placeholder -- the empty diagnostics modal.
+			// The body is loaded from /admin/developers/errors/{id}/details now.
+
+			// adminAuditManager is gone for the same reason adminErrorsManager was:
+			// it parsed templ-escaped JSON that never parsed. The diff is loaded
+			// from /admin/developers/audit/{id}/details.
+		</script>
+		</div>
+	}
+}

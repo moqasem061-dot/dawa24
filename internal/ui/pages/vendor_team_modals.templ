@@ -1,0 +1,186 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorTeamAddModal(data VendorTeamData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:          "add-employee-modal",
+		Title:       i18n.T(lang, "vendor_team.add_modal_title"),
+		Icon:        "user",
+		Size:        "lg",
+		AlpineClose: "showAddModal = false",
+	}) {
+		<form method="POST" action="/vendor/team/new" class="d-flex flex-col gap-4 m-0">
+			<!-- Row 1: Name & Title -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_name") } <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="name" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_name") } required />
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_job_title") } <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="job_title" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_job_title") } required />
+				</div>
+			</div>
+
+			<!-- Row 2: Email & Phone -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_email") } <span class="text-danger">*</span>
+					</label>
+					<input type="email" name="email" class="form-input text-xs tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_email") } required />
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_phone") } <span class="text-danger">*</span>
+					</label>
+					<input type="tel" name="phone" class="form-input text-xs tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_phone") } required />
+				</div>
+			</div>
+
+			<!-- Row 3: Role & Branch -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_role") } <span class="text-danger">*</span>
+					</label>
+					<select name="role_id" class="form-input text-xs w-full" required>
+						for _, role := range data.CompanyRoles {
+							if !role.IsOwner && role.Key != "org_owner" {
+								<option value={ fmt.Sprintf("%d", role.ID) } selected?={ role.Key == "org_employee" || role.Key == "employee" }>{ role.Name }</option>
+							}
+						}
+					</select>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_branch") }
+					</label>
+					<select name="branch_id" class="form-input text-xs w-full">
+						<option value="">{ i18n.T(lang, "vendor_team.branch_all_prompt") }</option>
+						for _, b := range data.Branches {
+							<option value={ fmt.Sprintf("%d", b.ID) }>{ b.Name }</option>
+						}
+					</select>
+				</div>
+			</div>
+
+			<!-- Row 4: Employee Code & Initial Password -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_emp_code") }
+					</label>
+					<input type="text" name="employee_code" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_emp_code") } />
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
+						{ i18n.T(lang, "vendor_team.lbl_password") } <span class="text-danger">*</span>
+					</label>
+					<input type="password" name="password" minlength="6" class="form-input text-xs w-full" value="Password123!" required />
+				</div>
+			</div>
+
+			<!-- Modal Action Footer -->
+			<div class="flex-between items-center gap-3 pt-3 border-t mt-2">
+				<button
+					type="button"
+					data-modal-close
+					class="btn btn-secondary text-xs font-bold"
+				>
+					{ i18n.T(lang, "vendor_team.btn_cancel") }
+				</button>
+				<button
+					type="submit"
+					class="btn btn-primary text-xs font-black px-6"
+				>
+					@components.IconCheck("icon-xs")
+					<span>{ i18n.T(lang, "vendor_team.btn_save_member") }</span>
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorTeamEditModal(data VendorTeamData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:          "edit-employee-modal",
+		Title:       i18n.T(lang, "vendor_team.edit_modal_title"),
+		Icon:        "edit",
+		Size:        "lg",
+		AlpineClose: "showEditModal = false",
+	}) {
+		<form method="POST" :action="'/vendor/team/' + edit.id + '/edit'" class="d-flex flex-col gap-4 m-0">
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_name") }</label>
+					<input type="text" name="name" x-model="edit.name" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_name") } />
+				</div>
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_job_title") }</label>
+					<input type="text" name="job_title" x-model="edit.jobTitle" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_job_title") } />
+				</div>
+			</div>
+
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_phone") }</label>
+					<input type="tel" name="phone" x-model="edit.phone" class="form-input text-xs tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_phone") } />
+				</div>
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_emp_code") }</label>
+					<input type="text" name="employee_code" x-model="edit.code" class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_team.placeholder_emp_code") } />
+				</div>
+			</div>
+
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_role") }</label>
+					<select name="role_id" x-model="edit.roleId" class="form-input text-xs w-full">
+						for _, role := range data.CompanyRoles {
+							if !role.IsOwner && role.Key != "org_owner" {
+								<option value={ fmt.Sprintf("%d", role.ID) }>{ role.Name }</option>
+							}
+						}
+					</select>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_team.lbl_branch") }</label>
+					<select name="branch_id" x-model="edit.branchId" class="form-input text-xs w-full">
+						<option value="">{ i18n.T(lang, "vendor_team.branch_all_prompt") }</option>
+						for _, b := range data.Branches {
+							<option value={ fmt.Sprintf("%d", b.ID) }>{ b.Name }</option>
+						}
+					</select>
+				</div>
+			</div>
+
+			<label class="d-flex items-center gap-2 text-xs font-bold text-primary cursor-pointer p-2 rounded-lg bg-surface-sunken border">
+				<input type="checkbox" name="is_active" value="true" x-model="edit.isActive" class="form-checkbox" />
+				<span>{ i18n.T(lang, "vendor_team.active_checkbox") }</span>
+			</label>
+
+			<div class="flex-between items-center gap-3 pt-3 border-t mt-2">
+				<button type="button" data-modal-close class="btn btn-secondary text-xs font-bold">{ i18n.T(lang, "vendor_team.btn_cancel") }</button>
+				<button type="submit" class="btn btn-primary text-xs font-black px-6">
+					@components.IconCheck("icon-xs")
+					<span>{ i18n.T(lang, "vendor_team.btn_save_changes") }</span>
+				</button>
+			</div>
+		</form>
+	}
+}

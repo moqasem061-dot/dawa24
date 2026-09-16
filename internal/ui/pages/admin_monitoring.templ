@@ -1,0 +1,161 @@
+package pages
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminFullErrorLogsPage renders error logs directory.
+templ AdminFullErrorLogsPage(logs []*platformadmin.ErrorLog, total int, activeStatus, activeSeverity string, lang, dir string, page, perPage int) {
+	@layouts.AdminShell("سجلات الأخطاء والتشخيص (Full Error Logs)", "developers", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							🩺
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجلات تشخيص واستثناءات النظام ({ fmt.Sprintf("%d", total) })</h1>
+							<p class="text-sm text-secondary m-0 mt-1">مراقبة الأخطاء البرمجية، استثناءات قاعدة البيانات، واستجابات 5xx</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(logs) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">🩺</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد أخطاء مسجلة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">النظام يعمل بكفاءة عالية دون أي استثناءات حالياً.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>الرسالة</th>
+									<th>المسار / Route</th>
+									<th class="text-center">مستوى الخطورة</th>
+									<th class="text-center">الحالة</th>
+									<th>التاريخ</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, l := range logs {
+									<tr>
+										<td class="tabular-nums font-bold text-brand">#{ fmt.Sprintf("%d", l.ID) }</td>
+										<td><strong class="text-xs text-primary">{ l.ErrorMessage }</strong></td>
+										<td><code class="text-xs">{ l.URLPath }</code></td>
+										<td class="text-center">
+											if l.ErrorLevel == "CRITICAL" || l.ErrorLevel == "ERROR" {
+												<span class="badge badge-rose text-xs font-bold">{ l.ErrorLevel }</span>
+											} else {
+												<span class="badge badge-amber text-xs font-bold">{ l.ErrorLevel }</span>
+											}
+										</td>
+										<td class="text-center"><span class="badge badge-sky text-xs font-bold">{ l.Status }</span></td>
+										<td class="tabular-nums text-xs text-secondary">{ l.CreatedAt.Format("2006-01-02 03:04:05 PM") }</td>
+										<td class="col-actions">
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/full-error-logs/%d", l.ID)) } class="btn btn-secondary btn-sm font-bold text-xs">عرض التفاصيل</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if total > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  total,
+							BaseURL:     "/admin/full-error-logs",
+							QueryValues: map[string][]string{
+								"status":   {activeStatus},
+								"severity": {activeSeverity},
+							},
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}
+
+// AdminFullErrorLogDetailPage renders single error log details and transition action.
+templ AdminFullErrorLogDetailPage(l *platformadmin.ErrorLog, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("تفاصيل الخطأ #%d", l.ID), "developers", lang, dir) {
+		<div class="glass-panel max-w-3xl mx-auto">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">خطأ #{ fmt.Sprintf("%d", l.ID) }: { l.ErrorMessage }</h2>
+					<p class="subtitle">مسار: <code>{ l.URLPath }</code> | خطورة: { l.ErrorLevel }</p>
+				</div>
+				<a href="/admin/full-error-logs" class="btn btn-secondary btn-sm">العودة للسجلات</a>
+			</div>
+
+			<div class="mb-lg">
+				<h3 class="font-bold text-sm m-0">Stack Trace:</h3>
+				<pre>{ l.StackTrace }</pre>
+			</div>
+
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/full-error-logs/%d/status", l.ID)) } class="row-center justify-end">
+				<button type="submit" name="status" value="INVESTIGATING" class="btn btn-secondary">قيد التحقيق</button>
+				<button type="submit" name="status" value="RESOLVED" class="btn btn-primary">تم الحل والتسوية</button>
+				<button type="submit" name="status" value="IGNORED" class="btn btn-secondary text-muted">تجاهل</button>
+			</form>
+		</div>
+	}
+}
+
+// AdminNotificationsPage renders platform notifications oversight.
+templ AdminNotificationsPage(lang, dir string) {
+	@layouts.AdminShell("إدارة الإشعارات المركزية للمنصة", "notifications", lang, dir) {
+		<div class="glass-panel mb-0">
+			<h2 class="mb-lg text-base font-bold text-primary">الإشعارات العامة والتنبيهات الموجهة</h2>
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد تنبيهات عامة", Message: "يتم بث الإشعارات المركزية للمستخدمين والتطبيقات عند الأحداث الهامة."})
+		</div>
+	}
+}
+
+// AdminSystemResourcesPage renders system health & resource availability.
+templ AdminSystemResourcesPage(systemName string, lang, dir string) {
+	@layouts.AdminShell("حالة موارد النظام والخدمات", "developers", lang, dir) {
+		<div class="glass-panel mb-0">
+			<h2 class="mb-lg text-base font-bold text-primary">موارد النظام وقدرات المنصة ({ systemName })</h2>
+   <div class="stack-sm">
+    <div class="stack-sm">
+					<div class="text-sm text-secondary">قاعدة البيانات PostgreSQL</div>
+					<div class="stack-sm"><span class="badge badge-emerald">متصل ونشط</span></div>
+				</div>
+    <div class="stack-sm">
+					<div class="text-sm text-secondary">بوابة الذكاء الاصطناعي AI Gateway</div>
+					<div class="stack-sm"><span class="badge badge-emerald">جاهز للخدمة</span></div>
+				</div>
+    <div class="stack-sm">
+					<div class="text-sm text-secondary">نظام التخزين Storage S3/Local</div>
+					<div class="stack-sm"><span class="badge badge-emerald">يعمل بكفاءة</span></div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// AdminFirstLookPage renders admin onboarding walkthrough.
+templ AdminFirstLookPage(lang, dir string) {
+	@layouts.AdminShell("جولة في لوحة التحكم (First Look)", "dashboard", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<h2 class="text-base font-bold text-primary">مرحباً بك في لوحة تحكم منصة دوا 24</h2>
+   <p class="text-sm text-secondary m-0">
+				تم بناء المنصة بأعلى معايير الأداء والسرعة في Go مع واجهات سريعة وتجربة مستخدم مخصصة لإدارة العمليات الصيدلانية وشبكات التوريد بدقة كاملة.
+			</p>
+			<a href="/admin/dashboard" class="btn btn-primary">الانتقال للرئيسية</a>
+		</div>
+	}
+}

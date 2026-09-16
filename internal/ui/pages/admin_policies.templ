@@ -1,0 +1,294 @@
+package pages
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// AdminPoliciesPanel is the policy editor. It renders inside the Policies tab
+// of /admin/settings; there is no separate policies page any more, because two
+// editors over platform_admin.policies could disagree about what a policy says
+// (PLAN_V7 Task 2.3).
+templ AdminPoliciesPanel(lang, dir string, currentKey string, policies []*platformadmin.Policy) {
+	{{ _ = dir }}
+	<div
+		class="glass-panel p-6 mb-6"
+		x-data="{ policyFilter: 'all' }"
+	>
+		<div class="flex-between items-center flex-wrap gap-4 mb-6">
+			<div class="d-flex items-center gap-3">
+				<div class="user-avatar-badge text-xl">
+					@components.IconFileText("icon-sm")
+				</div>
+    <div class="stack-sm">
+					<h2 class="text-xl font-black text-primary m-0">
+						إدارة إصدارات السياسات والوثائق القانونية
+					</h2>
+					<p class="text-xs text-secondary m-0 mt-1">
+						تعديل ونشر الإصدارات المحدثة لشروط الاستخدام، سياسة الخصوصية، والاتفاقيات التجارية باللغتين العربية والإنجليزية
+					</p>
+				</div>
+			</div>
+
+			<div class="d-flex items-center gap-2">
+				@components.ModalTrigger("create-policy-version-modal", "btn btn-primary btn-sm font-bold text-xs gap-1") {
+					@components.IconPlus("icon-xs")
+					<span>إنشاء إصدار جديد من سياسة</span>
+				}
+			</div>
+		</div>
+
+		<!-- Filter by Policy Type -->
+		<div class="tabs-nav">
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'all' ? 'active' : ''"
+				@click="policyFilter = 'all'"
+			>
+				<span>كافة السياسات ({ fmt.Sprintf("%d", len(policies)) })</span>
+			</button>
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'terms' ? 'active' : ''"
+				@click="policyFilter = 'terms'"
+			>
+				<span>شروط الاستخدام</span>
+			</button>
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'privacy' ? 'active' : ''"
+				@click="policyFilter = 'privacy'"
+			>
+				<span>سياسة الخصوصية</span>
+			</button>
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'shipping_return' ? 'active' : ''"
+				@click="policyFilter = 'shipping_return'"
+			>
+				<span>الشحن والاسترجاع والإلغاء</span>
+			</button>
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'cookies' ? 'active' : ''"
+				@click="policyFilter = 'cookies'"
+			>
+				<span>ملفات الكوكيز</span>
+			</button>
+			<button
+				type="button"
+				class="tab-btn"
+				:class="policyFilter === 'payment' ? 'active' : ''"
+				@click="policyFilter = 'payment'"
+			>
+				<span>سياسة الدفع</span>
+			</button>
+		</div>
+
+		if len(policies) == 0 {
+			<div class="p-8 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconFileText("icon-sm")</div>
+				<h3 class="text-lg font-black text-primary mb-2">لا توجد إصدارات مسجلة</h3>
+				<p class="text-sm text-secondary max-w-md mx-auto">يمكنك إنشاء إصدار جديد لأي سياسة من سياسات المنصة.</p>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>السياسة القانونية</th>
+							<th>رقم الإصدار</th>
+							<th>العنوان (عربي / English)</th>
+							<th>ملخص التعديلات</th>
+							<th class="text-center">حالة النشر</th>
+							<th>تاريخ التحديث</th>
+							<th class="col-actions">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, p := range policies {
+							<tr x-show={ fmt.Sprintf("policyFilter === 'all' || policyFilter === '%s'", p.PolicyKey) }>
+								<td>
+									<span class="badge badge-slate font-bold">{ policyKeyAr(p.PolicyKey) }</span>
+								</td>
+								<td>
+									<strong class="tabular-nums">v{ p.Version }</strong>
+								</td>
+								<td>
+									<div class="stat-card-label">{ p.Title["ar"] }</div>
+									if p.Title["en"] != "" {
+										<div class="stat-card-label">{ p.Title["en"] }</div>
+									}
+								</td>
+								<td>
+         <div class="stack-sm">
+										{ p.Summary["ar"] }
+									</div>
+								</td>
+								<td>
+									if p.IsPublished {
+										<span class="badge badge-emerald">
+											@components.IconCheck("icon-xs")
+											<span>منشور ونشط</span>
+										</span>
+									} else {
+										<span class="badge badge-amber">مسودة غير منشورة</span>
+									}
+								</td>
+								<td>
+									{ p.UpdatedAt.Format("2006-01-02 03:04 PM") }
+								</td>
+								<td class="col-actions">
+									<div class="table-actions">
+										@components.ModalTrigger(fmt.Sprintf("view-policy-modal-%d", p.ID), "btn btn-secondary btn-sm") {
+											<span>معاينة</span>
+										}
+
+										if !p.IsPublished {
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/policies/%d/publish", p.ID)) } class="m-0">
+												<button type="submit" class="btn btn-primary btn-sm">
+													@components.IconCheck("icon-xs")
+													<span>نشر هذا الإصدار</span>
+												</button>
+											</form>
+										}
+
+										<!-- View Policy Modal -->
+										@components.Modal(components.ModalProps{
+											ID:    fmt.Sprintf("view-policy-modal-%d", p.ID),
+											Title: fmt.Sprintf("%s (الإصدار %s)", p.Title["ar"], p.Version),
+											Size:  "lg",
+										}) {
+           <div class="table-actions">
+            <div class="table-actions">
+													<strong>ملخص التغييرات:</strong> { p.Summary["ar"] }
+												</div>
+
+            <div class="table-actions">
+             <div class="table-actions">
+														<h4 class="font-semibold text-sm m-0">المحتوى بالعربية:</h4>
+              <div class="table-actions">
+															{ p.Content["ar"] }
+														</div>
+													</div>
+             <div class="table-actions">
+														<h4 class="font-semibold text-sm m-0">English Content:</h4>
+														<div class="table-actions" dir="ltr">
+															{ p.Content["en"] }
+														</div>
+													</div>
+												</div>
+
+            <div class="table-actions">
+													<button type="button" class="btn btn-secondary" data-modal-close>إغلاق</button>
+												</div>
+											</div>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+
+		<!-- Policy Version Creation Modal -->
+		@components.Modal(components.ModalProps{
+			ID:    "create-policy-version-modal",
+			Title: "إنشاء إصدار جديد من سياسة المنصة",
+			Size:  "lg",
+		}) {
+			<form method="POST" class="m-0" action="/admin/policies">
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-key">نوع الوثيقة القانونية *</label>
+						<select id="policy-key" name="policy_key" required class="form-select">
+							<option value="terms">شروط وأحكام الاستخدام (Terms of Service)</option>
+							<option value="privacy">سياسة الخصوصية وحماية البيانات (Privacy Policy)</option>
+							<option value="shipping_return">سياسة الشحن والاسترجاع والإلغاء (Shipping, Returns & Cancellation)</option>
+							<option value="cookies">سياسة ملفات تعريف الارتباط (Cookie Policy)</option>
+							<option value="payment">سياسة الدفع والتعاملات المالية (Payment Policy)</option>
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-version">رقم الإصدار (Version) *</label>
+						<input type="text" id="policy-version" name="version" required class="form-input tabular-nums" placeholder="1.1 أو 2.0" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-title-ar">عنوان الوثيقة (عربي) *</label>
+						<input type="text" id="policy-title-ar" name="title_ar" required class="form-input" placeholder="شروط الاستخدام والخدمة" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-title-en">Title (English)</label>
+						<input type="text" id="policy-title-en" name="title_en" class="form-input" dir="ltr" placeholder="Terms of Service" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-summary-ar">ملخص التغييرات في هذا الإصدار (عربي)</label>
+						<input type="text" id="policy-summary-ar" name="summary_ar" class="form-input" placeholder="تحديث بنود الفواتير الإلكترونية والتسويات الدوائية" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-summary-en">Changelog Summary (English)</label>
+						<input type="text" id="policy-summary-en" name="summary_en" class="form-input" dir="ltr" placeholder="Updated e-invoicing and settlement clauses" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-content-ar">نص الوثيقة القانونية (عربي) *</label>
+						<textarea id="policy-content-ar" name="content_ar" rows="8" required class="form-input" placeholder="أدخل نص وبنود السياسة القانونية بالتفصيل..."></textarea>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label" for="policy-content-en">Legal Policy Text (English)</label>
+						<textarea id="policy-content-en" name="content_en" rows="8" class="form-input" dir="ltr" placeholder="Enter policy text and terms..."></textarea>
+					</div>
+				</div>
+
+				<div class="row-center-sm">
+					<input type="checkbox" id="policy-publish" name="is_published" value="1" />
+					<label class="form-label" for="policy-publish">
+						نشر هذا الإصدار وتفعيله للجمهور فوراً
+					</label>
+				</div>
+
+				<div class="d-flex justify-end gap-3 mt-2">
+					<button type="button" class="btn btn-secondary" data-modal-close>إلغاء</button>
+					<button type="submit" class="btn btn-primary fw-800">
+						@components.IconCheck("icon-xs")
+						<span>حفظ الإصدار</span>
+					</button>
+				</div>
+			</form>
+		}
+	</div>
+}
+
+func policyKeyAr(k string) string {
+	switch k {
+	case "terms":
+		return "شروط الاستخدام"
+	case "privacy":
+		return "سياسة الخصوصية"
+	case "shipping_return", "refund":
+		return "الشحن والاسترجاع والإلغاء"
+	case "cookies":
+		return "ملفات تعريف الارتباط"
+	case "payment":
+		return "سياسة الدفع"
+	default:
+		return k
+	}
+}

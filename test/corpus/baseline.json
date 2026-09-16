@@ -1,0 +1,729 @@
+[
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:198",
+      "file": "admin-198.xlsx",
+      "bytes": 2772621,
+      "rows": 19997,
+      "duplicates": [
+        "smartorder:12",
+        "smartorder:38",
+        "smartorder:40"
+      ]
+    },
+    "columns": [
+      "active_ingredient",
+      "barcode",
+      "category",
+      "concentration",
+      "description",
+      "discount_percent",
+      "dosage_form",
+      "manufacturer",
+      "name",
+      "net_price",
+      "pack_size",
+      "price",
+      "public_price",
+      "scientific_name",
+      "sku",
+      "warehouse"
+    ],
+    "data_rows": 19996,
+    "parsed": 19996,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 237,
+      "exact": 3691,
+      "none": 16,
+      "review": 39,
+      "strong": 16013
+    },
+    "settled_pct": 98,
+    "matched_pct": 99
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:203",
+      "file": "admin-203.xlsx",
+      "bytes": 351678,
+      "duplicates": [
+        "admin:204",
+        "admin:205",
+        "admin:206"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "sku"
+    ],
+    "data_rows": 8790,
+    "parsed": 8790,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 418,
+      "exact": 34,
+      "none": 7480,
+      "review": 716,
+      "strong": 142
+    },
+    "settled_pct": 2,
+    "matched_pct": 14
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:208",
+      "file": "admin-208.csv",
+      "bytes": 420,
+      "rows": 4,
+      "duplicates": [
+        "admin:219",
+        "admin:229",
+        "admin:240",
+        "admin:257",
+        "admin:279",
+        "admin:296",
+        "admin:313"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:209",
+      "file": "admin-209.csv",
+      "bytes": 432,
+      "rows": 4,
+      "duplicates": [
+        "admin:220",
+        "admin:230"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:211",
+      "file": "admin-211.csv",
+      "bytes": 209,
+      "rows": 2,
+      "duplicates": [
+        "admin:222",
+        "admin:232"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 1,
+    "parsed": 1,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:212",
+      "file": "admin-212.csv",
+      "bytes": 204,
+      "rows": 2,
+      "duplicates": [
+        "admin:223",
+        "admin:233"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 1,
+    "parsed": 1,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:213",
+      "file": "admin-213.csv",
+      "bytes": 323,
+      "rows": 3,
+      "duplicates": [
+        "admin:224",
+        "admin:234"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 2,
+    "parsed": 2,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 1
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:214",
+      "file": "admin-214.csv",
+      "bytes": 453,
+      "rows": 4,
+      "duplicates": [
+        "admin:225",
+        "admin:235",
+        "admin:247",
+        "admin:265",
+        "admin:286",
+        "admin:303",
+        "admin:320"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:215",
+      "file": "admin-215.csv",
+      "bytes": 426,
+      "rows": 4,
+      "duplicates": [
+        "admin:226",
+        "admin:236"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:216",
+      "file": "admin-216.csv",
+      "bytes": 453,
+      "rows": 4,
+      "duplicates": [
+        "admin:227",
+        "admin:237"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:217",
+      "file": "admin-217.csv",
+      "bytes": 278,
+      "rows": 2,
+      "duplicates": [
+        "admin:228",
+        "admin:238"
+      ]
+    },
+    "columns": [
+      "barcode",
+      "manufacturer",
+      "name",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 1,
+    "parsed": 1,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:218",
+      "file": "admin-218.csv",
+      "bytes": 3573,
+      "rows": 36,
+      "duplicates": [
+        "admin:239"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 30,
+    "parsed": 30,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "none": 30
+    },
+    "settled_pct": 0,
+    "matched_pct": 0
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:252",
+      "file": "admin-252.csv",
+      "bytes": 444,
+      "rows": 4,
+      "duplicates": [
+        "admin:270",
+        "admin:291",
+        "admin:308",
+        "admin:325"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:253",
+      "file": "admin-253.csv",
+      "bytes": 453,
+      "rows": 4,
+      "duplicates": [
+        "admin:271",
+        "admin:292",
+        "admin:309",
+        "admin:326"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:254",
+      "file": "admin-254.csv",
+      "bytes": 432,
+      "rows": 4,
+      "duplicates": [
+        "admin:272",
+        "admin:293",
+        "admin:310",
+        "admin:327"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:255",
+      "file": "admin-255.csv",
+      "bytes": 453,
+      "rows": 4,
+      "duplicates": [
+        "admin:256",
+        "admin:273",
+        "admin:294",
+        "admin:311",
+        "admin:328"
+      ]
+    },
+    "columns": [
+      "manufacturer",
+      "name",
+      "price",
+      "sku"
+    ],
+    "data_rows": 3,
+    "parsed": 3,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 1,
+      "review": 2
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "admin",
+      "source": "admin:274",
+      "file": "admin-274.csv",
+      "bytes": 760,
+      "rows": 7
+    },
+    "columns": [
+      "dosage_form",
+      "manufacturer",
+      "name",
+      "price",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 6,
+    "parsed": 6,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 6
+    },
+    "settled_pct": 0,
+    "matched_pct": 100
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:30",
+      "file": "vendor-30.xlsx",
+      "bytes": 30950,
+      "rows": 474
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 468,
+    "parsed": 468,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 61,
+      "exact": 150,
+      "none": 50,
+      "review": 73,
+      "strong": 134
+    },
+    "settled_pct": 60,
+    "matched_pct": 89
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:31",
+      "file": "vendor-31.xlsx",
+      "bytes": 48765,
+      "rows": 1196,
+      "duplicates": [
+        "vendor:32",
+        "vendor:33",
+        "vendor:34",
+        "vendor:39"
+      ]
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price"
+    ],
+    "data_rows": 1194,
+    "parsed": 1194,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 123,
+      "exact": 367,
+      "none": 367,
+      "review": 109,
+      "strong": 228
+    },
+    "settled_pct": 49,
+    "matched_pct": 69
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:35",
+      "file": "vendor-35.xlsx",
+      "bytes": 27308,
+      "rows": 364,
+      "duplicates": [
+        "vendor:36"
+      ]
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 362,
+    "parsed": 362,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 28,
+      "exact": 168,
+      "none": 44,
+      "review": 37,
+      "strong": 85
+    },
+    "settled_pct": 69,
+    "matched_pct": 87
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:37",
+      "file": "vendor-37.xls",
+      "bytes": 155136,
+      "rows": 1012
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 1011,
+    "parsed": 1011,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 62,
+      "exact": 449,
+      "none": 155,
+      "review": 94,
+      "strong": 251
+    },
+    "settled_pct": 69,
+    "matched_pct": 84
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:38",
+      "file": "vendor-38.xlsx",
+      "bytes": 23499,
+      "rows": 387
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "price"
+    ],
+    "data_rows": 381,
+    "parsed": 381,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 46,
+      "exact": 99,
+      "none": 55,
+      "review": 75,
+      "strong": 106
+    },
+    "settled_pct": 53,
+    "matched_pct": 85
+  },
+  {
+    "entry": {
+      "system": "vendor",
+      "source": "vendor:40",
+      "file": "vendor-40.xls",
+      "bytes": 178176,
+      "rows": 1135
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price",
+      "sku"
+    ],
+    "data_rows": 1134,
+    "parsed": 1134,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 67,
+      "exact": 496,
+      "none": 170,
+      "review": 108,
+      "strong": 293
+    },
+    "settled_pct": 69,
+    "matched_pct": 85
+  },
+  {
+    "entry": {
+      "system": "smartorder",
+      "source": "smartorder:14",
+      "file": "smartorder-14.xlsx",
+      "bytes": 67495,
+      "duplicates": [
+        "smartorder:15"
+      ]
+    },
+    "columns": [
+      "discount_percent",
+      "name",
+      "public_price"
+    ],
+    "data_rows": 1643,
+    "parsed": 1643,
+    "rejected": 0,
+    "duplicates": 0,
+    "levels": {
+      "ambiguous": 214,
+      "exact": 529,
+      "none": 201,
+      "review": 213,
+      "strong": 486
+    },
+    "settled_pct": 61,
+    "matched_pct": 87
+  }
+]

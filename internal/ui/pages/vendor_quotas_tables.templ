@@ -1,0 +1,368 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ vendorQuotaFilters(data VendorQuotasData, lang string) {
+	<div class="filter-bar mb-6">
+		<form method="GET" action="/vendor/quotas" class="d-flex items-end flex-wrap gap-3">
+			<input type="hidden" name="tab" value={ data.tab() } />
+			<div class="stack-sm flex-1">
+				<input
+					type="search"
+					name="q"
+					value={ data.Query }
+					placeholder={ i18n.T(lang, "vendor.quota.search_placeholder") }
+					class="form-input w-full-rounded"
+				/>
+			</div>
+			<div class="stack-sm">
+				<select name="variant" class="form-select">
+					<option value="">{ i18n.T(lang, "vendor.quota.filter_all_items") }</option>
+					for _, o := range data.VariantOptions {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.VariantID }>
+							{ o.Label }
+						</option>
+					}
+				</select>
+			</div>
+			if data.tab() == "branches" {
+				if len(data.CustomerOptions) > 0 {
+					<div class="stack-sm">
+						<select name="customer" class="form-select">
+							<option value="">{ i18n.T(lang, "vendor.quota.filter_all_customers") }</option>
+							for _, o := range data.CustomerOptions {
+								<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.CustomerOrgID }>
+									{ o.Label }
+								</option>
+							}
+						</select>
+					</div>
+				}
+				<div class="stack-sm">
+					<select name="branch" class="form-select">
+						<option value="">{ i18n.T(lang, "vendor.quota.filter_all_branches") }</option>
+						for _, o := range data.BranchOptions {
+							<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.BranchID }>
+								{ o.Label }
+							</option>
+						}
+					</select>
+				</div>
+				<div class="stack-sm">
+					<select name="state" class="form-select">
+						<option value="">{ i18n.T(lang, "vendor.quota.filter_all_states") }</option>
+						<option value="exhausted" selected?={ data.State == "exhausted" }>
+							{ i18n.T(lang, "vendor.quota.filter_exhausted") }
+						</option>
+						<option value="active" selected?={ data.State == "active" }>
+							{ i18n.T(lang, "vendor.quota.filter_active") }
+						</option>
+						<option value="released" selected?={ data.State == "released" }>
+							{ i18n.T(lang, "vendor.quota.filter_released") }
+						</option>
+					</select>
+				</div>
+			}
+			<button type="submit" class="btn btn-primary btn-sm font-bold gap-1.5">
+				@components.IconSearch("icon-xs")
+				<span>{ i18n.T(lang, "common.search") }</span>
+			</button>
+		</form>
+	</div>
+}
+
+templ vendorQuotaBranchTable(data VendorQuotasData, lang string) {
+	if len(data.BranchRows) == 0 {
+		<div class="glass-panel p-10 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconUsers("icon-sm")</div>
+			<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor.quota.empty_branches") }</p>
+		</div>
+	} else {
+		<div class="glass-panel p-0 mb-6 overflow-hidden">
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor.quota.col_item") }</th>
+							<th>{ i18n.T(lang, "vendor.quota.col_customer") }</th>
+							<th>{ i18n.T(lang, "vendor.quota.col_branch") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_limit") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_used") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_remaining") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_orders") }</th>
+							<th>{ i18n.T(lang, "vendor.quota.col_last_order") }</th>
+							if data.CanManage {
+								<th class="col-actions">{ i18n.T(lang, "vendor.quota.col_actions") }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range data.BranchRows {
+							<tr>
+								<td>
+									<div class="stack-sm">
+										<strong class="text-primary text-xs font-bold">
+											{ quotaItemLabel(row) }
+										</strong>
+										if row.SKU != "" {
+											<span class="text-2xs text-muted tabular-nums">{ row.SKU }</span>
+										}
+									</div>
+								</td>
+								<td class="text-primary text-xs font-bold">
+									{ quotaFallback(row.CustomerName, fmt.Sprintf("#%d", row.CustomerOrgID)) }
+								</td>
+								<td>
+									<div class="d-flex items-center gap-2">
+										<strong class="text-primary text-xs font-bold">
+											{ quotaFallback(row.BranchName, fmt.Sprintf("#%d", row.BranchID)) }
+										</strong>
+										if row.WasReleased() {
+											<span class="badge badge-amber text-2xs font-bold">
+												{ i18n.T(lang, "vendor.quota.released_badge") }
+											</span>
+										}
+									</div>
+									if row.WasReleased() && row.ReleasedUnits > 0 {
+										<span class="text-2xs text-muted">
+											{ fmt.Sprintf(i18n.T(lang, "vendor.quota.released_units"), row.ReleasedUnits) }
+										</span>
+									}
+								</td>
+								<td class="text-center tabular-nums font-black text-primary">
+									{ fmt.Sprintf("%d", row.QuotaLimit) }
+								</td>
+								<td class="text-center">
+									<div class="stack-sm">
+										<span class="tabular-nums font-black text-primary">
+											{ fmt.Sprintf("%d", row.Used) }
+										</span>
+										<progress
+											class="progress w-full"
+											value={ fmt.Sprintf("%d", row.PercentUsed()) }
+											max="100"
+										></progress>
+									</div>
+								</td>
+								<td class="text-center">
+									if row.Exhausted() {
+										<span class="badge badge-rose text-2xs font-bold">
+											{ i18n.T(lang, "vendor.quota.exhausted_badge") }
+										</span>
+									} else {
+										<span class="badge badge-emerald tabular-nums text-xs font-black">
+											{ fmt.Sprintf("%d", row.Remaining()) }
+										</span>
+									}
+								</td>
+								<td class="text-center tabular-nums text-xs text-secondary">
+									{ fmt.Sprintf("%d", row.OrderCount) }
+								</td>
+								<td class="tabular-nums text-2xs text-muted">
+									{ quotaTimeLabel(row.LastOrderAt) }
+								</td>
+								if data.CanManage {
+									<td class="col-actions">
+										<div class="table-actions">
+											<form
+												method="POST"
+												action="/vendor/quotas/release"
+												class="m-0"
+												data-confirm={ i18n.T(lang, "vendor.quota.release_confirm") }
+											>
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", row.VariantID) } />
+												<input type="hidden" name="branch_id" value={ fmt.Sprintf("%d", row.BranchID) } />
+												<input type="hidden" name="return_to" value={ data.currentURL() } />
+												<button type="submit" class="btn btn-secondary btn-sm text-2xs font-bold py-1 px-2.5">
+													{ i18n.T(lang, "vendor.quota.release") }
+												</button>
+											</form>
+											if row.WasReleased() {
+												<form method="POST" action="/vendor/quotas/release/undo" class="m-0">
+													<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", row.VariantID) } />
+													<input type="hidden" name="branch_id" value={ fmt.Sprintf("%d", row.BranchID) } />
+													<input type="hidden" name="return_to" value={ data.currentURL() } />
+													<button type="submit" class="btn btn-secondary btn-sm text-2xs font-bold py-1 px-2">
+														{ i18n.T(lang, "vendor.quota.undo_release") }
+													</button>
+												</form>
+											}
+										</div>
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/quotas",
+					QueryValues: data.PagerValues(),
+				})
+			}
+		</div>
+	}
+}
+
+templ vendorQuotaVariantTable(data VendorQuotasData, lang string) {
+	if len(data.VariantRows) == 0 {
+		<div class="glass-panel p-10 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+			<p class="text-sm text-secondary m-0">{ i18n.T(lang, "vendor.quota.empty") }</p>
+		</div>
+	} else {
+		<div class="glass-panel p-0 mb-6 overflow-hidden">
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor.quota.col_item") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_limit") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_branches") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_exhausted") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor.quota.col_used") }</th>
+							if data.CanManage {
+								<th class="col-actions">{ i18n.T(lang, "vendor.quota.col_actions") }</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range data.VariantRows {
+							<tr>
+								<td>
+									<div class="stack-sm">
+										<strong class="text-primary text-xs font-bold">
+											{ quotaVariantLabel(row) }
+										</strong>
+										if row.SKU != "" {
+											<span class="text-2xs text-muted tabular-nums">{ row.SKU }</span>
+										}
+									</div>
+								</td>
+								<td class="text-center tabular-nums font-black text-primary">
+									{ fmt.Sprintf("%d", row.QuotaLimit) }
+								</td>
+								<td class="text-center tabular-nums text-xs text-secondary">
+									{ fmt.Sprintf("%d", row.BranchCount) }
+								</td>
+								<td class="text-center">
+									if row.ExhaustedBranches > 0 {
+										<span class="badge badge-rose tabular-nums text-2xs font-bold">
+											{ fmt.Sprintf("%d", row.ExhaustedBranches) }
+										</span>
+									} else {
+										<span class="text-2xs text-muted">-</span>
+									}
+								</td>
+								<td class="text-center tabular-nums font-black text-primary">
+									{ fmt.Sprintf("%d", row.TotalUsed) }
+								</td>
+								if data.CanManage {
+									<td class="col-actions">
+										<div class="table-actions">
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm text-2xs font-bold py-1 px-2.5"
+												data-quota-variant={ fmt.Sprintf("%d", row.VariantID) }
+												data-quota-limit={ fmt.Sprintf("%d", row.QuotaLimit) }
+												data-quota-name={ quotaVariantLabel(row) }
+												data-on-click="openQuotaLimitModal(this)"
+											>
+												{ i18n.T(lang, "vendor.quota.set_limit") }
+											</button>
+											<form
+												method="POST"
+												action="/vendor/quotas/limit"
+												class="m-0"
+												data-confirm={ i18n.T(lang, "vendor.quota.remove_confirm") }
+											>
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", row.VariantID) } />
+												<input type="hidden" name="quota_limit" value="" />
+												<input type="hidden" name="return_to" value={ data.currentURL() } />
+												<button type="submit" class="btn btn-secondary btn-sm text-2xs text-danger font-bold py-1 px-2">
+													{ i18n.T(lang, "vendor.quota.remove_limit") }
+												</button>
+											</form>
+										</div>
+									</td>
+								}
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/quotas",
+					QueryValues: data.PagerValues(),
+				})
+			}
+		</div>
+	}
+}
+
+templ vendorQuotaLimitModal(lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "quota-limit-modal",
+		Title: i18n.T(lang, "vendor.quota.set_limit"),
+		Icon:  "shield",
+		Size:  "sm",
+	}) {
+		<form method="POST" action="/vendor/quotas/limit" id="quota-limit-form" class="stack-md">
+			<input type="hidden" name="variant_id" id="quota-limit-variant" value="" />
+			<input type="hidden" name="return_to" id="quota-limit-return" value="/vendor/quotas?tab=variants" />
+			<p class="text-sm text-secondary m-0" id="quota-limit-name"></p>
+			<div class="stack-sm">
+				<label class="form-label font-bold text-primary text-sm" for="quota-limit-value">
+					{ i18n.T(lang, "vendor.quota.new_limit") }
+				</label>
+				<input
+					type="number"
+					min="1"
+					id="quota-limit-value"
+					name="quota_limit"
+					class="form-input w-full-rounded tabular-nums"
+					placeholder={ i18n.T(lang, "vendor.quota.unlimited") }
+				/>
+				<p class="text-muted text-xs">{ i18n.T(lang, "vendor.catalog.quota_hint") }</p>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeQuotaLimitModal()">
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold">
+					{ i18n.T(lang, "common.save") }
+				</button>
+			</div>
+		</form>
+	}
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openQuotaLimitModal(btn) {
+			const modal = document.getElementById('quota-limit-modal');
+			if (!modal || !btn) return;
+			document.getElementById('quota-limit-variant').value = btn.getAttribute('data-quota-variant') || '';
+			document.getElementById('quota-limit-value').value = btn.getAttribute('data-quota-limit') || '';
+			document.getElementById('quota-limit-name').textContent = btn.getAttribute('data-quota-name') || '';
+			document.getElementById('quota-limit-return').value = window.location.pathname + window.location.search;
+			if (typeof modal.showModal === 'function') { modal.showModal(); } else { modal.setAttribute('open', ''); }
+		}
+		function closeQuotaLimitModal() {
+			const modal = document.getElementById('quota-limit-modal');
+			if (!modal) return;
+			if (typeof modal.close === 'function') { modal.close(); } else { modal.removeAttribute('open'); }
+		}
+	</script>
+}

@@ -1,0 +1,297 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// Every supplier's stock, from the platform's side.
+//
+// The screen answered "who sells this" and stopped, which was the complaint:
+// an operator needs the branch an offer sits on and the warehouses holding it,
+// with quantities — not a supplier name and a single number.
+//
+// The warehouse breakdown is a detail row rather than a column because a
+// variant can sit in several warehouses and a column would either truncate or
+// wrap the table into unreadability.
+
+templ AdminProductChildrenPage(data AdminProductChildrenData, lang, dir string) {
+	@layouts.AdminShell(i18n.T(lang, "admin.child.title"), "product_child", lang, dir) {
+		<div class="admin-page-container">
+			<!-- Header Banner & Quick Actions -->
+			<div class="admin-banner mb-4">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon purple">
+							@components.IconPackage("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>عروض وتفرعات الموردين (Product Variants)</span>
+								<span class="badge badge-purple text-xs font-black tabular-nums">{ fmt.Sprintf("%d عرض", data.Total) }</span>
+							</h1>
+							<p class="admin-banner-subtitle">
+								متابعة وتدقيق مخزون كافة الموردين والشركات ومواقع تواجدها في الفروع والمستودعات
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href="/admin/products" class="btn btn-secondary btn-sm font-bold gap-1 text-xs">
+							@components.IconArrowRight("icon-xs")
+							<span>الكتالوج الرسمي</span>
+						</a>
+						<a href="/admin/product-child" class="btn btn-secondary btn-sm font-bold gap-1 text-xs">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Structured Filter Bar -->
+				@adminProductChildFilters(data, lang)
+			</div>
+
+			<!-- Variants Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Rows) == 0 {
+					@components.EmptyState(components.EmptyStateProps{
+						Title:   i18n.T(lang, "admin.child.empty_title"),
+						Message: i18n.T(lang, "admin.child.empty_body"),
+					})
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table data-table-responsive m-0 text-xs w-full">
+							<thead>
+								<tr>
+									<th class="w-12">{ i18n.T(lang, "admin.child.col_image") }</th>
+									<th>{ i18n.T(lang, "admin.child.col_item") }</th>
+									<th>{ i18n.T(lang, "admin.child.col_supplier") }</th>
+									<th>{ i18n.T(lang, "admin.child.col_branch") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.child.col_price") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.child.col_stock") }</th>
+									<th>{ i18n.T(lang, "admin.child.col_warehouses") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.child.col_status") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range data.Rows {
+									@adminProductChildRow(row, lang)
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.Total > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.Total,
+							BaseURL:     "/admin/product-child",
+							QueryValues: data.QueryValues(),
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}
+
+templ adminProductChildRow(row *catalog.AdminVariantRow, lang string) {
+	<tr>
+		<td class="w-12">
+			if row.Image != "" {
+				@components.ProductImage(imageurl.Thumb(row.Image, row.VariantName.Get(i18n.AR),
+					"w-11 h-11 object-contain rounded-md border bg-surface-raised p-0.5"))
+				if row.ImageIsParent {
+					<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.child.parent_image") }</span>
+				}
+			} else {
+				<span class="text-muted text-2xs">—</span>
+			}
+		</td>
+		<td>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/products/%d", row.ProductID)) }
+				class="font-extrabold text-primary block hover:underline"
+			>{ displayVariantName(row, lang) }</a>
+			if row.SKU != "" {
+				<div class="text-2xs text-muted" dir="ltr"><code>{ row.SKU }</code></div>
+			}
+			if row.BatchNumber != "" {
+				<span class="badge badge-slate text-2xs">{ row.BatchNumber }</span>
+			}
+			if row.ExpiryDate != nil && *row.ExpiryDate != "" {
+				<span class="badge badge-amber text-2xs" dir="ltr">{ *row.ExpiryDate }</span>
+			}
+		</td>
+		<td>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", row.OrganizationID)) }
+				class="font-bold text-primary block hover:underline"
+			>{ row.DisplayOrgName(lang) }</a>
+			<span class="badge badge-purple text-2xs font-mono font-bold">#{ fmt.Sprintf("ORG-%d", row.OrganizationID) }</span>
+		</td>
+		<td>
+			if row.BranchID != nil && *row.BranchID > 0 {
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/admin/branches/%d", *row.BranchID)) }
+					class="font-bold text-primary block hover:underline"
+				>{ row.BranchName.Get(i18n.Lang(lang)) }</a>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.child.any_branch") }</span>
+			}
+		</td>
+		<td class="text-center tabular-nums">
+			@components.MoneyDisplay(components.MoneyDisplayProps{Amount: row.Price})
+		</td>
+		<td class="text-center tabular-nums">
+			if row.TotalQuantity <= 0 {
+				<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "admin.child.out_of_stock") }</span>
+			} else if row.LowStock() {
+				<span class="badge badge-amber font-bold text-2xs">{ fmt.Sprintf("%d وحدة", row.TotalQuantity) }</span>
+			} else {
+				<span class="badge badge-emerald font-bold text-2xs">{ fmt.Sprintf("%d وحدة", row.TotalQuantity) }</span>
+			}
+		</td>
+		<td>
+			if len(row.Warehouses) == 0 {
+				<span class="text-muted text-2xs">—</span>
+			} else {
+				<div class="stack-xs">
+					for _, wh := range row.Warehouses {
+						<div class="d-flex items-center gap-2 text-2xs">
+							<span class="font-bold text-primary">{ wh.WarehouseName }</span>
+							if wh.BranchName != "" {
+								<span class="text-muted">({ wh.BranchName })</span>
+							}
+							<span class="badge badge-slate text-2xs tabular-nums font-bold">{ fmt.Sprintf("%d", wh.Quantity) }</span>
+						</div>
+					}
+				</div>
+			}
+		</td>
+		<td class="text-center">
+			if row.Status == "active" {
+				<span class="badge badge-emerald font-bold text-2xs">{ i18n.T(lang, "admin.child.status_active") }</span>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.child.status_inactive") }</span>
+			}
+		</td>
+	</tr>
+}
+
+templ adminProductChildFilters(data AdminProductChildrenData, lang string) {
+	<form method="GET" action="/admin/product-child" class="d-flex flex-col gap-3 mt-4 pt-3 border-t">
+		<!-- Top Bar: Search Input, Action Buttons, and Expiring Toggle -->
+		<div class="flex-between items-center flex-wrap gap-3">
+			<div class="d-flex items-center gap-2 flex-1 max-w-xl">
+				<div class="relative w-full">
+					<input
+						type="search"
+						name="q"
+						value={ data.SearchQuery }
+						class="form-input text-xs w-full py-2 font-medium"
+						placeholder="ابحث بالاسم، كود SKU، الباركود، رقم التشغيلة، أو اسم المورد..."
+					/>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm font-bold gap-1 shrink-0">
+					@components.IconSearch("icon-xs")
+					<span>تصفية</span>
+				</button>
+				if data.SearchQuery != "" || data.OrganizationID > 0 || data.BranchID > 0 || data.WarehouseID > 0 || data.StockFilter != "" || data.StatusFilter != "" || data.ExpiringSoon {
+					<a href="/admin/product-child" class="btn btn-secondary btn-sm font-bold text-muted shrink-0">إلغاء</a>
+				}
+			</div>
+
+			<!-- Expiring Soon Quick Filter Switch -->
+			<label class="d-flex items-center gap-2 text-xs font-bold bg-amber-500/10 border border-amber-500/25 px-3 py-1.5 rounded-lg cursor-pointer hover:bg-amber-500/20 transition">
+				<input type="checkbox" name="expiring" value="1" checked?={ data.ExpiringSoon } data-autosubmit class="form-checkbox"/>
+				<span class="text-amber-700 dark:text-amber-300">ينتهي خلال 90 يوماً ⏳</span>
+			</label>
+		</div>
+
+		<!-- Bottom Grid: Secondary Filters in 6-column responsive grid -->
+		<div class="d-grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">المورد / الشركة</label>
+				<select name="org_id" class="form-select form-select-sm text-xs font-semibold">
+					<option value="">كل الموردين</option>
+					for _, o := range data.Options.Organizations {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.OrganizationID == o.ID }>{ o.Label }</option>
+					}
+				</select>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">الفرع التابع</label>
+				<select name="branch_id" class="form-select form-select-sm text-xs font-semibold">
+					<option value="">كل الفروع</option>
+					for _, b := range data.Options.Branches {
+						<option value={ fmt.Sprintf("%d", b.ID) } selected?={ data.BranchID == b.ID }>{ b.Label }</option>
+					}
+				</select>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">المستودع / المخزن</label>
+				<select name="warehouse_id" class="form-select form-select-sm text-xs font-semibold">
+					<option value="">كل المخازن</option>
+					for _, w := range data.Options.Warehouses {
+						<option value={ fmt.Sprintf("%d", w.ID) } selected?={ data.WarehouseID == w.ID }>{ w.Label }</option>
+					}
+				</select>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">حالة المخزون</label>
+				<select name="stock" class="form-select form-select-sm text-xs font-semibold">
+					<option value="">كل المخزون</option>
+					<option value="in" selected?={ data.StockFilter == "in" }>متوفر فقط (In Stock)</option>
+					<option value="low" selected?={ data.StockFilter == "low" }>مخزون منخفض (Low)</option>
+					<option value="out" selected?={ data.StockFilter == "out" }>نافد المخزون (Out)</option>
+				</select>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">حالة العرض</label>
+				<select name="status" class="form-select form-select-sm text-xs font-semibold">
+					<option value="">كل الحالات</option>
+					<option value="active" selected?={ data.StatusFilter == "active" }>نشط ومفعل</option>
+					<option value="inactive" selected?={ data.StatusFilter == "inactive" }>معطل وموقوف</option>
+				</select>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-2xs font-bold text-muted">عدد النتائج</label>
+				<select name="limit" class="form-select form-select-sm text-xs font-semibold">
+					for _, n := range []int{10, 25, 50, 100} {
+						<option value={ fmt.Sprintf("%d", n) } selected?={ data.PerPage == n }>{ fmt.Sprintf("%d عنصر", n) }</option>
+					}
+				</select>
+			</div>
+		</div>
+	</form>
+}
+
+// displayVariantName prefers the supplier's own name for the offer and falls
+// back to the master product's, so a supplier that did not rename its listing
+// still shows a name rather than an empty cell.
+func displayVariantName(row *catalog.AdminVariantRow, lang string) string {
+	if row == nil {
+		return ""
+	}
+	if name := row.VariantName.Get(i18n.Lang(lang)); name != "" {
+		return name
+	}
+	if name := row.ProductName.Get(i18n.Lang(lang)); name != "" {
+		return name
+	}
+	if name := row.ProductName.Get(i18n.AR); name != "" {
+		return name
+	}
+	return row.SKU
+}

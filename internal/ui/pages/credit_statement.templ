@@ -1,0 +1,111 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// كشف حساب للباقة — where a package's credits went.
+//
+// The vendor's packages screen showed "31 / 50 رعاية" and nothing else. Nineteen
+// credits were gone and the only way to learn to what was to ask support, who
+// could not find out either: promo.sponsorship_purchases carries a counter, not
+// a history. Every movement now writes a row, and this is that row rendered.
+
+// CreditStatementView is one purchase's statement.
+type CreditStatementView struct {
+	Lang       string
+	Statement  *promo.CreditStatement
+	BackURL    string
+	Page       int
+	PerPage    int
+	Total      int
+	OrgName    string
+	NoticeKind string
+	Notice     string
+}
+
+templ CreditStatementPage(v CreditStatementView, lang, dir string) {
+	@layouts.ShellFor(i18n.T(lang, "promo.credits.statement_title")+" | دوا 24", "offers_packages", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-5xl">
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-start flex-wrap gap-4">
+					<div class="stack-2xs">
+						<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "promo.credits.statement_title") }</h1>
+						<p class="text-sm text-secondary m-0">
+							{ creditStatementSubtitle(v) }
+						</p>
+					</div>
+					<a href={ templ.SafeURL(v.BackURL) } class="btn btn-secondary font-bold">{ i18n.T(lang, "common.back") }</a>
+				</div>
+			</div>
+
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-4">
+				@creditStatMetric(i18n.T(lang, "promo.credits.total"), v.Statement.Total)
+				@creditStatMetric(i18n.T(lang, "promo.credits.consumed"), v.Statement.Consumed)
+				@creditStatMetric(i18n.T(lang, "promo.credits.refunded"), v.Statement.Refunded)
+				@creditStatMetric(i18n.T(lang, "promo.credits.remaining"), v.Statement.Remaining)
+			</div>
+
+			if len(v.Statement.Entries) == 0 {
+				<div class="glass-panel p-8 text-center">
+					<h2 class="text-lg font-black text-primary m-0">{ i18n.T(lang, "promo.credits.empty_title") }</h2>
+					<p class="text-sm text-secondary m-0 mt-2">{ i18n.T(lang, "promo.credits.empty_message") }</p>
+				</div>
+			} else {
+				<div class="glass-panel p-0 mb-4">
+					<div class="table-container m-0">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>{ i18n.T(lang, "promo.credits.col_date") }</th>
+									<th>{ i18n.T(lang, "promo.credits.col_reason") }</th>
+									<th>{ i18n.T(lang, "promo.credits.col_reference") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.col_delta") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.col_balance") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, entry := range v.Statement.Entries {
+									@creditEntryRow(v.Lang, entry)
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: v.Page,
+					PageSize:    v.PerPage,
+					TotalCount:  v.Total,
+					BaseURL:     creditStatementPath(v),
+				})
+			}
+		</div>
+	}
+}
+
+templ creditStatMetric(label string, value int) {
+	<div class="stat-card-3d">
+		<span class="stat-card-label">{ label }</span>
+		<strong class="stat-card-value tabular-nums">{ fmt.Sprintf("%d", value) }</strong>
+	</div>
+}
+
+templ creditEntryRow(lang string, entry *promo.CreditEntry) {
+	<tr>
+		<td class="tabular-nums text-xs" dir="ltr">{ entry.CreatedAt.Format("2006-01-02 15:04") }</td>
+		<td class="font-bold text-xs">{ creditReasonLabel(lang, entry.Reason) }</td>
+		<td class="text-xs text-secondary">{ creditEntryReference(lang, entry) }</td>
+		<td class={ "text-center font-black tabular-nums", creditDeltaClass(entry) }>
+			{ creditDeltaLabel(entry) }
+		</td>
+		<td class="text-center font-bold tabular-nums">{ fmt.Sprintf("%d", entry.BalanceAfter) }</td>
+	</tr>
+}

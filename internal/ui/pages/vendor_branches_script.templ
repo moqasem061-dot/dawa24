@@ -1,0 +1,263 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorBranchesScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function vendorBranchManager() {
+			return {
+				mode: 'add',
+				editId: 0,
+				formAction: '/vendor/branches/new',
+				_settingEditMode: false,
+				form: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					code: '',
+					warehouse_type: 'warehouse',
+					governorate_id: '',
+					city_id: '',
+					manager_id: '',
+					address: '',
+					phone: '',
+					capacity_sqm: '',
+					google_maps_url: '',
+					has_cold_storage: false,
+					is_main: false,
+					latitude: 30.0444,
+					longitude: 31.2357,
+					institutional_works: []
+				},
+				init() {
+					const urlParams = new URLSearchParams(window.location.search);
+					const editParam = urlParams.get('edit');
+					if (editParam) {
+						this.$nextTick(() => {
+							const btn = document.querySelector(`[data-edit-branch-btn="${editParam}"]`);
+							if (btn) {
+								this.setEditModeFromElement(btn);
+							}
+						});
+					}
+				},
+				onComboboxChange(detail) {
+					if (!detail || !detail.name) return;
+					if (detail.name === 'governorate_id') {
+						this.onGovChange(detail.value, detail.item);
+					} else if (detail.name === 'city_id') {
+						this.onCityChange(detail.value, detail.item);
+					}
+				},
+				onGovChange(govId, item) {
+					const prevGovId = this.form.governorate_id;
+					this.form.governorate_id = govId ? String(govId) : '';
+					if (!govId || this._settingEditMode) return;
+
+					// If a city is already selected or if governorate didn't change, do not re-pan to governorate center
+					if (this.form.city_id && prevGovId === String(govId)) return;
+
+					let lat = null, lon = null;
+					const coordsEl = document.getElementById('vendor-branch-govs-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(govId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+							}
+						} catch (e) {
+							console.error('Failed to parse gov coordinates:', e);
+						}
+					}
+					if ((lat === null || lon === null || (lat === 0 && lon === 0)) && item && item.label) {
+						if (typeof window.findCityCoordsByName === 'function') {
+							const found = window.findCityCoordsByName(item.label);
+							if (found) { lat = found[0]; lon = found[1]; }
+						}
+					}
+					// Only pan to governorate if NO city is currently selected
+					if (!this.form.city_id && lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('vendor-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#vendor-branch-map-picker', lat, lon, 11);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				onCityChange(cityId, item) {
+					this.form.city_id = cityId ? String(cityId) : '';
+					if (!cityId || this._settingEditMode) return;
+					let lat = null, lon = null, parentGovId = null;
+					const coordsEl = document.getElementById('vendor-branch-cities-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(cityId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+								if (pos[2]) parentGovId = String(pos[2]);
+							}
+						} catch (e) {
+							console.error('Failed to parse city coordinates:', e);
+						}
+					}
+					if ((lat === null || lon === null || (lat === 0 && lon === 0)) && item && item.label) {
+						if (typeof window.findCityCoordsByName === 'function') {
+							const found = window.findCityCoordsByName(item.label);
+							if (found) {
+								lat = found[0];
+								lon = found[1];
+							}
+						}
+					}
+					// Auto-select parent governorate if not set or different
+					if (parentGovId && (!this.form.governorate_id || this.form.governorate_id !== parentGovId)) {
+						this.form.governorate_id = parentGovId;
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', parentGovId);
+						}
+					}
+					if (lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('vendor-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#vendor-branch-map-picker', lat, lon, 14);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				setEditModeFromElement(btnEl) {
+					if (!btnEl) return;
+					try {
+						const raw = btnEl.getAttribute('data-branch-data');
+						if (!raw) return;
+						const b = JSON.parse(raw);
+						this.setEditMode(b);
+					} catch (e) {
+						console.error('Failed to parse branch data for editing:', e);
+					}
+				},
+				setEditMode(b) {
+					if (!b || !b.id) return;
+					this._settingEditMode = true;
+					this.mode = 'edit';
+					this.editId = b.id;
+					this.formAction = '/vendor/branches/' + b.id + '/edit';
+					const latVal = (b.latitude !== undefined && b.latitude !== null && b.latitude !== 0) ? Number(b.latitude) : 30.0444;
+					const lonVal = (b.longitude !== undefined && b.longitude !== null && b.longitude !== 0) ? Number(b.longitude) : 31.2357;
+					const targetCityId = (b.city_id && b.city_id !== 0) ? String(b.city_id) : '';
+					let targetGovId = (b.governorate_id && b.governorate_id !== 0) ? String(b.governorate_id) : '';
+					if (!targetGovId && targetCityId) {
+						const coordsEl = document.getElementById('vendor-branch-cities-coords');
+						if (coordsEl) {
+							try {
+								const coords = JSON.parse(coordsEl.textContent);
+								const pos = coords[String(targetCityId)];
+								if (pos && pos[2]) targetGovId = String(pos[2]);
+							} catch (e) {}
+						}
+					}
+					this.form = {
+						id: b.id,
+						name_ar: b.name_ar || '',
+						name_en: b.name_en || '',
+						code: b.code || '',
+						warehouse_type: b.warehouse_type || 'warehouse',
+						governorate_id: targetGovId,
+						city_id: targetCityId,
+						manager_id: b.manager_id ? String(b.manager_id) : '',
+						address: b.address || '',
+						phone: b.phone || '',
+						capacity_sqm: b.capacity_sqm || '',
+						google_maps_url: b.google_maps_url || '',
+						has_cold_storage: !!b.has_cold_storage,
+						is_main: !!b.is_main,
+						latitude: latVal,
+						longitude: lonVal,
+						institutional_works: Array.isArray(b.institutional_works) ? b.institutional_works : []
+					};
+					const formEl = document.getElementById('branch-form-panel');
+					if (formEl) {
+						formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+					this.$nextTick(() => {
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#vendor-branch-map-picker', latVal, lonVal, 14);
+						}
+						const syncCb = () => {
+							if (typeof window.dawaComboboxSet === 'function') {
+								if (targetGovId) {
+									window.dawaComboboxSet('governorate_id', targetGovId);
+								}
+								window.dawaComboboxSet('city_id', targetCityId);
+							}
+						};
+						syncCb();
+						setTimeout(syncCb, 50);
+						setTimeout(() => {
+							this._settingEditMode = false;
+						}, 120);
+					});
+				},
+				resetToAddMode() {
+					this.mode = 'add';
+					this.editId = 0;
+					this.formAction = '/vendor/branches/new';
+					this.form = {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						code: '',
+						warehouse_type: 'warehouse',
+						governorate_id: '',
+						city_id: '',
+						manager_id: '',
+						address: '',
+						phone: '',
+						capacity_sqm: '',
+						google_maps_url: '',
+						has_cold_storage: false,
+						is_main: false,
+						latitude: 30.0444,
+						longitude: 31.2357,
+						institutional_works: []
+					};
+					this.$nextTick(() => {
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', '');
+							window.dawaComboboxSet('city_id', '');
+						}
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#vendor-branch-map-picker', 30.0444, 31.2357, 13);
+						}
+					});
+				}
+			};
+		}
+
+		function filterBranchesList(q) {
+			const query = (q || '').toLowerCase().trim();
+			const cards = document.querySelectorAll('.branch-card');
+			cards.forEach(card => {
+				const name = (card.getAttribute('data-name') || '').toLowerCase();
+				const code = (card.getAttribute('data-code') || '').toLowerCase();
+				const match = !query || name.includes(query) || code.includes(query);
+				card.classList.toggle('d-none', !match);
+			});
+		}
+	</script>
+}

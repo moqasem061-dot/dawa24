@@ -1,0 +1,127 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorAdEditModal renders an interactive modal dialog for editing an existing ad.
+templ VendorAdEditModal(ad *promo.Ad, lang, dir string) {
+	<div
+		x-data="{ isOpen: false }"
+		class="d-inline-block"
+	>
+		<!-- Trigger Button -->
+		<button
+			type="button"
+			@click="isOpen = true"
+			class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
+		>
+			@components.IconEdit("icon-2xs")
+			<span>{ i18n.T(lang, "common.edit") }</span>
+		</button>
+
+		<!-- Modal Backdrop & Window -->
+		<div
+			x-show="isOpen"
+			x-cloak
+			class="modal-backdrop"
+			@click.self="isOpen = false"
+		>
+			<div
+				class="modal-content max-w-xl w-full mx-4 glass-panel border border-slate-200/90 rounded-3xl shadow-2xl overflow-hidden"
+				@click.stop
+			>
+				<!-- Header -->
+				<div class="modal-header p-4 border-b border-slate-100 flex-between items-center bg-slate-50/80">
+					<div class="d-flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center">
+							@components.IconEdit("icon-xs")
+						</div>
+						<div class="stack-xs text-start">
+							<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_ads.edit_modal_title") }</h3>
+							<span class="text-2xs text-muted">ID: { fmt.Sprintf("%d", ad.ID) }</span>
+						</div>
+					</div>
+					<button type="button" @click="isOpen = false" class="btn btn-ghost btn-icon btn-sm text-slate-400 hover:text-slate-600">
+						@components.IconClose("icon-xs")
+					</button>
+				</div>
+
+				<!-- Form -->
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/ads/%d/edit", ad.ID)) } method="POST" enctype="multipart/form-data" class="m-0" data-boost-upload>
+					<input type="hidden" name="click_target_type" value={ string(ad.ClickTargetType) } />
+					if ad.ClickTargetID != nil {
+						<input type="hidden" name="click_target_id" value={ fmt.Sprintf("%d", *ad.ClickTargetID) } />
+					}
+
+					<div class="modal-body p-5 d-flex flex-col gap-4 text-start">
+						<!-- Title Arabic -->
+						<div class="form-group">
+							<label class="form-label text-xs font-bold mb-1">{ i18n.T(lang, "vendor_branches.lbl_name_ar") } <span class="text-rose-500">*</span></label>
+							<input type="text" name="title_ar" value={ ad.TitleAr } required class="form-input text-xs font-bold w-full" />
+						</div>
+
+						<!-- Title English -->
+						<div class="form-group">
+							<label class="form-label text-xs font-bold mb-1">{ i18n.T(lang, "vendor_branches.lbl_name_en") }</label>
+							<input type="text" name="title_en" value={ ad.TitleEn } class="form-input text-xs font-bold w-full" />
+						</div>
+
+						<!-- Ad Copy Text Arabic -->
+						<div class="form-group">
+							<label class="form-label text-xs font-bold mb-1">{ i18n.T(lang, "vendor_ads.lbl_title") }</label>
+							<textarea name="ad_text_ar" rows="3" class="form-textarea text-xs font-medium w-full">{ ad.AdTextAr }</textarea>
+						</div>
+
+						<!-- Position Placement -->
+						<div class="form-group">
+							<label class="form-label text-xs font-bold mb-1">{ i18n.T(lang, "vendor_ads.th_placement") }</label>
+							<select name="position" class="form-select text-xs font-bold w-full">
+								<option value="home_hero" selected?={ ad.Position == "home_hero" }>الرئيسية - معرض البانر العلوي (Home Hero)</option>
+								<option value="catalog_top" selected?={ ad.Position == "catalog_top" }>الكتالوج - بانر صدارة الأصناف (Catalog Top)</option>
+								<option value="home_deals" selected?={ ad.Position == "home_deals" }>الرئيسية - قسم العروض والصفقات (Home Deals)</option>
+								<option value="home_banner" selected?={ ad.Position == "home_banner" }>الرئيسية - بانر وسط الصفحة (Home Banner)</option>
+								<option value="home_bottom" selected?={ ad.Position == "home_bottom" }>الرئيسية - بانر أسفل الصفحة (Home Bottom)</option>
+							</select>
+						</div>
+
+						<!-- Media File Upload / Current Preview -->
+						<div class="form-group">
+							<label class="form-label text-xs font-bold mb-1">{ i18n.T(lang, "vendor_ads.lbl_image") }</label>
+							<div class="d-flex items-center gap-3">
+								if ad.MediaURL != "" {
+									<div class="w-24 h-16 rounded-xl border p-1 bg-surface-sunken flex-shrink-0 overflow-hidden relative shadow-inner">
+										if ad.IsVideo() || ad.MediaType == "video" {
+											<video src={ ad.MediaURL } autoplay muted loop playsinline class="w-full h-full object-cover rounded-lg"></video>
+										} else {
+											<img src={ ad.MediaURL } alt="Current Media" class="w-full h-full object-contain" />
+										}
+									</div>
+								}
+								<div class="flex-1">
+									<input type="file" name="media_file" accept="image/*,video/mp4" class="form-input text-xs w-full" />
+									<input type="hidden" name="media_url" value={ ad.MediaURL } />
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Footer -->
+					<div class="modal-footer p-3.5 border-t border-slate-100 bg-slate-50/70 flex-between items-center">
+						<button type="button" @click="isOpen = false" class="btn btn-ghost btn-sm font-bold">
+							{ i18n.T(lang, "common.cancel") }
+						</button>
+						<button type="submit" class="btn btn-primary btn-sm font-black px-5 shadow-sm gap-1.5">
+							@components.IconCheck("icon-xs")
+							<span>{ i18n.T(lang, "vendor_ads.btn_save_edit") }</span>
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+	</div>
+}

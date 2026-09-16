@@ -1,0 +1,392 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/attachments"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ OrganizationDocuments(lang, dir string, data *OrganizationDocumentsData, perms []string) {
+	@layouts.ShellFor("المستندات والتراخيص الرسمية", "documents", lang, dir, authctx.FromContext(ctx)) {
+		@OrganizationDocumentsContent(lang, data)
+	}
+}
+
+templ OrganizationDocumentsContent(lang string, data *OrganizationDocumentsData) {
+	<!-- Header Banner -->
+	<div class="glass-panel p-6 mb-0">
+		<div class="flex-between items-center flex-wrap gap-4">
+			<div class="stack-sm">
+				<div class="d-flex items-center gap-3 mb-1">
+					<div class="user-avatar-badge text-xl">
+						@components.IconFileText("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							المستندات والتراخيص الرسمية للمنشأة
+						</h1>
+						<span class="text-xs text-muted font-bold">Legal Compliance & Official Licensing Records</span>
+					</div>
+				</div>
+				<p class="text-sm text-secondary m-0 mt-2">
+					إدارة وتوثيق التراخيص والسجلات القانونية لضمان مطابقة اشتراطات هيئة الدواء المصرية وبدء التداول والتعاملات الرسمية بأمان تام.
+				</p>
+			</div>
+
+			<div class="d-flex items-center gap-2 flex-wrap">
+				if data != nil && data.VerifiedCount() > 0 && len(data.Missing) == 0 {
+					<div class="badge badge-emerald text-xs font-bold gap-1 py-2 px-3">
+						@components.IconCheckCircle("icon-xs")
+						<span>موثق ومعتمد رسمياً </span>
+					</div>
+				} else if data != nil && data.PendingCount() > 0 {
+					<div class="badge badge-sky text-xs font-bold gap-1 py-2 px-3">
+						@components.IconClock("icon-xs")
+						<span>قيد المراجعة والتدقيق</span>
+					</div>
+				} else {
+					<div class="badge badge-amber text-xs font-bold gap-1 py-2 px-3">
+						@components.IconAlert("icon-xs")
+						<span>مستندات مطلوبة للتفعيل</span>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+
+	<!-- Executive Verification Strip (3-stat Grid) -->
+	if data != nil {
+		<div class="dashboard-stat-grid cols-3 mb-0">
+			
+			<!-- Card 1: Completion Progress -->
+			<div class="stat-card-3d d-flex flex-col justify-between">
+				<div class="stack-sm">
+					<div class="flex-between items-center mb-1">
+						<span class="stat-card-label">نسبة اكتمال التوثيق</span>
+						<span class="badge badge-sky text-xs font-bold tabular-nums">{ fmt.Sprintf("%d / %d", data.VerifiedCount(), data.TotalRequirementsCount()) }</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-1">
+						{ fmt.Sprintf("%d%%", data.CompletionPercentage()) }
+					</div>
+					<!-- Dynamic Progress Bar -->
+					<div class="progress-bar-container mt-2">
+						<div class={ "progress-bar-fill", progressPctClass(data.CompletionPercentage()) }></div>
+					</div>
+				</div>
+				<div class="text-xs text-muted mt-3 pt-2 border-t">
+					<span>{ fmt.Sprintf("%d مستندات معتمدة ومطابقة", data.VerifiedCount()) }</span>
+				</div>
+			</div>
+
+			<!-- Card 2: Legal Status -->
+			<div class="stat-card-3d d-flex flex-col justify-between">
+				<div class="stack-sm">
+					<span class="stat-card-label">حالة الحساب والاعتماد</span>
+					<div class="mt-2 d-flex items-center gap-2">
+						if data.VerifiedCount() > 0 && len(data.Missing) == 0 {
+							<span class="status-dot success"></span>
+							<strong class="text-base font-black text-primary">منشأة موثقة ومطابقة</strong>
+						} else if data.PendingCount() > 0 {
+							<span class="status-dot"></span>
+							<strong class="text-base font-black text-primary">قيد التدقيق الإداري</strong>
+						} else {
+							<span class="status-dot warning"></span>
+							<strong class="text-base font-black text-primary">بانتظار استكمال المستندات</strong>
+						}
+					</div>
+				</div>
+				<div class="text-xs text-muted mt-3 pt-2 border-t">
+					<span>تتم مراجعة كافة المستندات المرفوعة خلال 24 ساعة</span>
+				</div>
+			</div>
+
+			<!-- Card 3: Official Requests Status -->
+			<div class="stat-card-3d d-flex flex-col justify-between">
+				<div class="stack-sm">
+					<span class="stat-card-label">طلبات الإدارة والمهل</span>
+					<div class="tabular-nums text-2xl font-black text-primary mt-1">
+						{ fmt.Sprintf("%d", len(data.ActiveDocRequests())) } <span class="text-xs font-bold text-muted">طلبات معلقة</span>
+					</div>
+				</div>
+				<div class="text-xs text-muted mt-3 pt-2 border-t">
+					if len(data.ActiveDocRequests()) > 0 {
+						<span class="text-warning font-bold">يوجد مستندات مطلوبة من إدارة المنصة</span>
+					} else {
+						<span class="text-success font-bold">لا توجد طلبات مستندات معلقة حالياً</span>
+					}
+				</div>
+			</div>
+
+		</div>
+	}
+
+	<!-- Missing Mandatory Documents Warning -->
+	if data != nil && len(data.Missing) > 0 {
+		<div class="alert alert-warning mb-0 p-4 d-flex items-center gap-3">
+			<span class="text-2xl">@components.IconAlert("icon-sm")</span>
+			<div class="text-xs text-warning leading-relaxed font-bold">
+				<strong>تنبيه توثيق الحساب:</strong> يتطلب تفعيل الحساب وإتمام المعاملات اعتماد { data.MissingTitles() } من إدارة المنصة.
+			</div>
+		</div>
+	}
+
+	<!-- Error Message Banner -->
+	if data != nil && data.Error != "" {
+		<div class="alert alert-danger mb-0 p-4 text-xs">
+			{ data.Error }
+		</div>
+	}
+
+	<!-- SECTION 1: Administrative Document Requests (If any) -->
+	if data != nil && len(data.Requests) > 0 {
+		<div class="glass-panel p-6 mb-0 border-warning">
+			<div class="flex-between items-center mb-4 pb-3 border-b flex-wrap gap-2">
+				<div class="d-flex items-center gap-2">
+					<span class="text-xl">⏳</span>
+					<div class="stack-sm">
+						<h2 class="text-base font-extrabold text-warning m-0">
+							مستندات وتراخيص مطلوبة من إدارة المنصة
+						</h2>
+						<p class="text-xs text-secondary m-0 mt-1">
+							يرجى رفع المستندات المحددة أدناه خلال المهلة الزمنية المقررة لضمان استمرار تفعيل حساب المنشأة.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<div class="d-flex flex-col gap-3">
+				for _, req := range data.Requests {
+					if req != nil {
+						<div class="doc-req-card">
+							<div class="stack-sm">
+								<div class="d-flex items-center gap-2 flex-wrap mb-1">
+									<strong class="text-sm font-extrabold text-primary">{ req.Title }</strong>
+									if req.Status == attachments.DocReqFulfilled {
+										<span class="badge badge-emerald text-xs font-bold">معتمد ومطابق </span>
+									} else if req.Status == attachments.DocReqSubmitted {
+										<span class="badge badge-sky text-xs font-bold">تم الرفع (قيد المراجعة)</span>
+									} else if req.IsOverdue() {
+										<span class="badge badge-rose text-xs font-bold">انتهت المهلة </span>
+									} else {
+										<span class="badge badge-amber text-xs font-bold">متبقي { fmt.Sprintf("%d", req.DaysRemaining()) } يوم</span>
+									}
+								</div>
+								if req.Description != "" {
+									<div class="text-xs text-secondary leading-relaxed">
+										{ req.Description }
+									</div>
+								}
+								<div class="text-xs text-muted mt-2 tabular-nums">
+									الموعد النهائي: <strong class="text-primary font-bold">{ format.Date(req.DeadlineAt, "ar") }</strong>
+								</div>
+							</div>
+
+							<div class="stack-sm">
+								if req.Status == attachments.DocReqPending {
+									<form action="/documents/upload" method="POST" enctype="multipart/form-data" class="doc-upload-form">
+										<input type="hidden" name="request_id" value={ fmt.Sprintf("%d", req.ID) } />
+										<input type="hidden" name="document_type" value={ string(req.DocumentType) } />
+										<input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp" required class="doc-file-input" />
+										<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1">
+											@components.IconUpload("icon-xs")
+											<span>رفع المستند</span>
+										</button>
+									</form>
+								} else if req.Status == attachments.DocReqSubmitted {
+									<div class="d-flex items-center gap-2 text-xs font-bold text-primary">
+										@components.IconClock("icon-xs")
+										<span>تم الرفع وبانتظار اعتماد الإدارة</span>
+									</div>
+								}
+							</div>
+						</div>
+					}
+				}
+			</div>
+		</div>
+	}
+
+	<!-- SECTION 2: Official Organization Documents Grid -->
+	<div class="glass-panel p-6 mb-0">
+		<div class="flex-between items-center mb-6 pb-3 border-b flex-wrap gap-2">
+			<div class="stack-sm">
+				<h2 class="text-base font-extrabold text-primary m-0">
+					قائمة التراخيص والمستندات القانونية
+				</h2>
+				<p class="text-xs text-secondary m-0 mt-1">
+					يمكنك رفع المستندات بصيغة (PDF، PNG، JPG، WebP) بحد أقصى 20 ميجابايت للملف.
+				</p>
+			</div>
+		</div>
+
+		if data == nil || len(data.Requirements) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   "لا توجد متطلبات",
+				Message: "لا توجد مستندات مطلوبة لهذا النوع من الحسابات.",
+			})
+		} else {
+			<div class="d-flex flex-col gap-4">
+				for _, req := range data.Requirements {
+					@DocumentRequirementCard(data, req)
+				}
+			</div>
+		}
+	</div>
+
+	<!-- Render Modals -->
+	@OrganizationDocumentsModals()
+}
+
+templ DocumentRequirementCard(data *OrganizationDocumentsData, req DocRequirement) {
+	{{ doc := data.LatestFor(req.DocType) }}
+	<div class="doc-req-card">
+		<!-- Document Info -->
+		<div class="d-flex items-start gap-3.5 flex-1 min-w-0">
+			<div class={ "doc-icon-box", templ.KV("verified", doc != nil && doc.Status == attachments.StatusVerified) }>
+				if doc != nil && doc.Status == attachments.StatusVerified {
+					@components.IconCheck("icon-sm")
+				} else {
+					@components.IconFile("icon-sm")
+				}
+			</div>
+			<div class="stack-xs flex-1 min-w-0">
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<h3 class="text-sm font-extrabold text-primary m-0">
+						{ req.TitleAr }
+					</h3>
+					if req.Required {
+						<span class="badge badge-rose text-2xs font-bold">إلزامي</span>
+					} else {
+						<span class="badge badge-slate text-2xs font-bold">اختياري</span>
+					}
+
+					<!-- Status Pill -->
+					if doc != nil {
+						switch doc.Status {
+							case attachments.StatusVerified:
+								<span class="badge badge-emerald text-2xs font-bold">معتمد ومطابق </span>
+							case attachments.StatusRejected:
+								<span class="badge badge-rose text-2xs font-bold">مرفوض </span>
+							default:
+								<span class="badge badge-sky text-2xs font-bold">قيد التدقيق والمراجعة</span>
+						}
+					} else {
+						<span class="badge badge-slate text-2xs">لم يُرفع بعد</span>
+					}
+				</div>
+
+				if req.Description != "" {
+					<p class="text-xs text-secondary leading-relaxed m-0 mt-0.5">
+						{ req.Description }
+					</p>
+				}
+
+				<!-- File Meta Details -->
+				if doc != nil {
+					<div class="doc-file-meta-tag">
+						<span class="font-bold text-primary font-mono" dir="ltr">{ doc.OriginalName }</span>
+						<span>•</span>
+						if doc.SizeBytes > 0 {
+							<span class="tabular-nums">{ format.Bytes(doc.SizeBytes) }</span>
+							<span>•</span>
+						}
+						<span class="tabular-nums">تاريخ الرفع: { format.Date(doc.CreatedAt, "ar") }</span>
+					</div>
+
+					if doc.Status == attachments.StatusRejected && doc.ReviewNotes != "" {
+						<div class="mt-2 p-2 px-3 rounded-lg bg-danger-subtle border text-xs text-danger">
+							<strong>سبب الرفض:</strong> { doc.ReviewNotes }
+						</div>
+					}
+				}
+			</div>
+		</div>
+
+		<!-- Actions & Upload / Replace Buttons -->
+		<div class="d-flex items-center gap-2 flex-wrap">
+			if doc != nil {
+				<!-- View Button: Triggers Dynamic In-App Viewer Modal -->
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+					data-doc-id={ fmt.Sprintf("%d", doc.ID) }
+					data-title={ req.TitleAr }
+					data-doctype={ string(doc.DocumentType) }
+					data-name={ doc.OriginalName }
+					data-status={ string(doc.Status) }
+					data-url={ doc.FileURL }
+					data-on-click="openDocViewerFromBtn(this)"
+				>
+					@components.IconEye("icon-xs")
+					<span>معاينة</span>
+				</button>
+
+				<!-- Direct Download Button -->
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/documents/%d/download", doc.ID)) }
+					class="btn btn-secondary btn-icon btn-sm"
+					title="تحميل الملف إلى جهازك"
+				>
+					@components.IconDownload("icon-xs")
+				</a>
+
+				<!-- Replace Document Button (Opens Replacement Reason Modal) -->
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold text-xs gap-1"
+					data-doc-id={ fmt.Sprintf("%d", doc.ID) }
+					data-doctype={ string(req.DocType) }
+					data-title={ req.TitleAr }
+					data-name={ doc.OriginalName }
+					data-on-click="openReplaceDocModalFromBtn(this)"
+					title="استبدال وتحديث هذا المستند"
+				>
+					<span>استبدال</span>
+				</button>
+			} else {
+				<!-- Initial Upload Form (When doc is not uploaded yet) -->
+				<form action="/documents/upload" method="POST" enctype="multipart/form-data" class="doc-upload-form">
+					<input type="hidden" name="document_type" value={ string(req.DocType) } />
+					<input
+						type="file"
+						name="file"
+						id={ fmt.Sprintf("file-input-%s", req.DocType) }
+						accept=".pdf,.png,.jpg,.jpeg,.webp"
+						required
+						class="doc-file-input"
+					/>
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs">
+						<span>رفع المستند</span>
+					</button>
+				</form>
+			}
+		</div>
+	</div>
+}
+
+func progressPctClass(pct int) string {
+	switch {
+	case pct >= 100:
+		return "progress-pct-100"
+	case pct >= 85:
+		return "progress-pct-80"
+	case pct >= 70:
+		return "progress-pct-75"
+	case pct >= 60:
+		return "progress-pct-66"
+	case pct >= 45:
+		return "progress-pct-50"
+	case pct >= 30:
+		return "progress-pct-33"
+	case pct >= 20:
+		return "progress-pct-20"
+	case pct >= 10:
+		return "progress-pct-10"
+	default:
+		return "progress-pct-0"
+	}
+}

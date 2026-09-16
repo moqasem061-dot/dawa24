@@ -1,0 +1,261 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceWalletsPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("محافظ المنشآت والأرصدة", "wallets", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				adjustWalletID: 0,
+				adjustWalletOrgName: '',
+				adjustCurrentBalance: '',
+				openAdjustModal(id, orgName, balance) {
+					this.adjustWalletID = id;
+					this.adjustWalletOrgName = orgName;
+					this.adjustCurrentBalance = balance;
+					const modal = document.getElementById('walletAdjustModal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconLayers("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">محافظ المنشآت والأرصدة</h1>
+							<p class="text-sm text-secondary m-0 mt-1">تدقيق وإدارة محافظ المنشآت الرقمية وإجراء الشحن والتسويات المحاسبية المباشرة</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/transactions" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconClock("icon-xs")
+							<span>سجل الحركات</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي المحافظ المسجلة</span>
+						<span class="text-brand">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.TotalWallets) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						محفظة نشطة في النظام
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أرصدة المحافظ المحتجزة</span>
+						<span class="text-indigo">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalHeld.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						إجمالي رصيد محافظ المنشآت
+					</div>
+				</div>
+
+				<a href="/admin/finance/deposits" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات شحن معلقة</span>
+						<span class="text-warning">@components.IconCreditCard("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingDepositsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						تحتاج مراجعة واعتماد
+					</div>
+				</a>
+
+				<a href="/admin/finance/withdrawals" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات سحب معلقة</span>
+						<span class="text-danger">@components.IconTrendingUp("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-danger mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingWithdrawalsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						تحتاج صرف واعتماد
+					</div>
+				</a>
+			</div>
+
+			<!-- Main Wallets Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinanceWalletsTab(data, lang, dir)
+			</div>
+
+			<!-- Modals -->
+			@AdminFinanceModals(data, lang, dir)
+		</div>
+	}
+}
+
+templ AdminFinanceWalletsTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0">محافظ الصيدليات والموردين والأرصدة</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">تدقيق وإدارة محافظ المنشآت الرقمية وإجراء الشحن والتسويات المحاسبية المباشرة.</p>
+			</div>
+			<!-- Search & Filter Form -->
+			<form method="GET" action="/admin/finance/wallets" class="d-flex gap-2 items-center flex-wrap m-0">
+				<input type="hidden" name="tab" value="wallets"/>
+				<input type="text" name="q" value={ data.Query } placeholder="ابحث باسم المنشأة، المالك، الهاتف، الإيميل..." class="form-input text-sm min-w-64"/>
+				<select name="type" class="form-select text-sm w-auto">
+					<option value="">كل المنشآت</option>
+					<option value="customer" selected?={ data.TypeFilter == "customer" }>صيدليات</option>
+					<option value="vendor" selected?={ data.TypeFilter == "vendor" }>موردون ومخازن</option>
+				</select>
+				<select name="org_id" class="form-select text-sm w-auto">
+					<option value="">كل المنشآت والشركات</option>
+					for _, o := range data.Organizations {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+					}
+				</select>
+				<button type="submit" class="btn btn-secondary btn-sm font-bold">تصفية</button>
+				if data.Query != "" || data.TypeFilter != "" || data.SelectedOrgID > 0 {
+					<a href="/admin/finance/wallets" class="btn btn-secondary btn-sm text-muted">إلغاء</a>
+				}
+			</form>
+		</div>
+
+		if len(data.Wallets) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد محافظ مطابقة", Message: "تنشأ المحافظ الرقمية تلقائياً لجميع المنشآت والمستخدمين عند التسجيل في المنصة."})
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>رقم المحفظة</th>
+							<th>المنشأة والمالك</th>
+							<th>نوع النشاط</th>
+							<th>الرصيد المتاح</th>
+							<th>العملة</th>
+							<th>إجمالي الحركات</th>
+							<th>تاريخ الإنشاء</th>
+							<th class="col-actions">إجراءات إدارية</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, w := range data.Wallets {
+							<tr>
+								<td class="tabular-nums">
+									<span class="badge badge-secondary font-black font-mono">{ fmt.Sprintf("WLT-%d", w.ID) }</span>
+								</td>
+								<td>
+									<div class="row-center-sm">
+										<div class="w-9 h-9 rounded-xl bg-surface-sunken border flex-center font-black text-success text-sm shrink-0">
+											if w.OrganizationName != "" {
+												{ string([]rune(w.OrganizationName)[0:1]) }
+											} else {
+												{ string([]rune(w.UserName)[0:1]) }
+											}
+										</div>
+										<div class="stack-sm">
+											if w.OrganizationName != "" {
+												<div class="font-black text-primary text-base">{ w.OrganizationName }</div>
+												<div class="text-xs text-secondary">المالك: { w.UserName } • { w.UserEmail }</div>
+											} else {
+												<div class="font-black text-primary text-base">{ w.UserName }</div>
+												<div class="text-xs text-secondary">{ w.UserEmail }</div>
+											}
+											if w.UserPhone != "" {
+												<div class="text-xs text-muted">{ w.UserPhone }</div>
+											}
+										</div>
+									</div>
+								</td>
+								<td>
+									if w.OrganizationType == "customer" {
+										<span class="badge badge-emerald">صيدلية</span>
+									} else if w.OrganizationType == "vendor" || w.OrganizationType == "supplier" {
+										<span class="badge badge-indigo">مورّد معتمد</span>
+									} else {
+										<span class="badge badge-secondary">حساب فردي</span>
+									}
+								</td>
+								<td class="tabular-nums font-black text-lg text-success">
+									{ fmt.Sprintf("%s", w.Balance.String()) }
+									<span class="text-xs font-bold text-muted mr-1">{ w.Currency }</span>
+								</td>
+								<td><span class="badge badge-secondary">{ w.Currency }</span></td>
+								<td class="tabular-nums">
+									if w.OrganizationID != nil && *w.OrganizationID > 0 {
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/transactions?wallet_id=%d&org_id=%d", w.ID, *w.OrganizationID)) } class="badge badge-sky no-underline" title="عرض سجل الحركات">
+											{ fmt.Sprintf("%d حركة", w.TransactionsCount) } ↗
+										</a>
+									} else {
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/transactions?wallet_id=%d", w.ID)) } class="badge badge-sky no-underline" title="عرض سجل الحركات">
+											{ fmt.Sprintf("%d حركة", w.TransactionsCount) } ↗
+										</a>
+									}
+								</td>
+								<td class="tabular-nums text-sm text-muted">{ w.CreatedAt.Format("2006-01-02") }</td>
+								<td class="col-actions">
+									<div class="table-actions">
+										<button type="button" data-on-click="openWalletAdjustModal" data-args={ components.JSArgs(w.ID, w.OrganizationName, w.UserName, w.Balance.String(), w.Currency) } class="btn btn-primary btn-xs font-bold">
+											<span>تعديل الرصيد</span>
+										</button>
+										if w.OrganizationID != nil && *w.OrganizationID > 0 {
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/transactions?wallet_id=%d&org_id=%d", w.ID, *w.OrganizationID)) } class="btn btn-secondary btn-xs font-bold" title="كشف الحساب">
+												<span>كشف الحساب</span>
+											</a>
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/statement?org_id=%d", *w.OrganizationID)) } target="_blank" class="btn btn-secondary btn-xs font-bold gap-1" title="طباعة كشف الحساب">
+												@components.IconFile("icon-xs")
+												<span class="d-none d-md-inline">طباعة</span>
+											</a>
+										} else {
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/transactions?wallet_id=%d", w.ID)) } class="btn btn-secondary btn-xs font-bold" title="كشف الحساب">
+												<span>كشف الحساب</span>
+											</a>
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/statement?wallet_id=%d", w.ID)) } target="_blank" class="btn btn-secondary btn-xs font-bold gap-1" title="طباعة كشف الحساب">
+												@components.IconFile("icon-xs")
+												<span class="d-none d-md-inline">طباعة</span>
+											</a>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if data.TotalWallets > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalWallets,
+					BaseURL:     "/admin/finance/wallets",
+					QueryValues: financePaginationQuery("", data.Query, "", data.TypeFilter, "", data.SelectedWalletID, data.SelectedOrgID),
+				})
+			}
+		}
+	</div>
+}

@@ -1,0 +1,288 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// طلبات تعديل بيانات المنشآت — the review queue.
+//
+// Every row shows the whole diff rather than a "view" link to it. A moderator
+// deciding whether a supplier may rename itself needs the old and new value
+// side by side, and hiding that behind a second request is how the decision
+// gets made on the strength of the company's name alone.
+
+// AdminOrgChangeRow is one request with the organization it belongs to.
+type AdminOrgChangeRow struct {
+	Request       *org.ProfileChangeRequest
+	OrgName       string
+	RequesterName string
+	ReviewerName  string
+}
+
+// AdminOrgChangesView is the queue page.
+type AdminOrgChangesView struct {
+	Lang       string
+	Rows       []AdminOrgChangeRow
+	Status     string
+	Section    string
+	Search     string
+	DateFrom   string
+	DateTo     string
+	Counts     org.ProfileChangeCounts
+	Total         int
+	Page          int
+	PerPage       int
+	Organizations []*org.Organization
+	SelectedOrgID int64
+	CanDecide     bool
+	NoticeKind string
+	Notice     string
+}
+
+templ AdminOrgChangesPage(v AdminOrgChangesView, lang, dir string) {
+	@layouts.AdminShell(i18n.T(lang, "admin.org_changes.title")+" | دوا 24", "org_changes", lang, dir) {
+		<div class="page-container">
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<div class="glass-panel p-6 mb-4">
+				<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "admin.org_changes.title") }</h1>
+				<p class="text-sm text-secondary m-0 mt-1">{ i18n.T(lang, "admin.org_changes.subtitle") }</p>
+			</div>
+
+			<div class="tabs-nav mb-4">
+				@orgChangeTab(v, "pending", i18n.T(lang, "admin.org_changes.tab_pending"), v.Counts.Pending)
+				@orgChangeTab(v, "approved", i18n.T(lang, "admin.org_changes.tab_approved"), v.Counts.Approved)
+				@orgChangeTab(v, "rejected", i18n.T(lang, "admin.org_changes.tab_rejected"), v.Counts.Rejected)
+				@orgChangeTab(v, "", i18n.T(lang, "admin.org_changes.tab_all"), v.Counts.All)
+			</div>
+
+			<div class="filter-bar mb-4">
+				<form method="GET" action="/admin/organizations/change-requests" class="flex-between items-center flex-wrap gap-3 m-0">
+					if v.Status != "" {
+						<input type="hidden" name="status" value={ v.Status }/>
+					}
+					<div class="d-flex gap-2 items-center flex-wrap flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ v.Search }
+							placeholder={ i18n.T(lang, "admin.org_changes.search_placeholder") }
+							class="form-input text-xs min-w-64"
+						/>
+						<select name="org_id" class="form-select text-xs font-bold w-auto">
+							<option value="">-- كافة المنشآت والموردين --</option>
+							for _, o := range v.Organizations {
+								<option value={ strconv.FormatInt(o.ID, 10) } selected?={ v.SelectedOrgID == o.ID }>
+									{ o.LegalName }
+								</option>
+							}
+						</select>
+						<select name="section" class="form-select text-xs font-bold w-auto">
+							<option value="">{ i18n.T(lang, "admin.org_changes.all_sections") }</option>
+							<option value="identity" selected?={ v.Section == "identity" }>{ i18n.T(lang, "org.profile.section.identity") }</option>
+							<option value="limits" selected?={ v.Section == "limits" }>{ i18n.T(lang, "org.profile.section.limits") }</option>
+							<option value="contact" selected?={ v.Section == "contact" }>{ i18n.T(lang, "org.profile.section.contact") }</option>
+							<option value="description" selected?={ v.Section == "description" }>{ i18n.T(lang, "org.profile.section.description") }</option>
+							<option value="media" selected?={ v.Section == "media" }>{ i18n.T(lang, "org.profile.section.media") }</option>
+						</select>
+						<div class="d-flex items-center gap-1">
+							<label class="text-xs text-secondary font-bold" for="from-date">{ i18n.T(lang, "admin.org_changes.date_from") }:</label>
+							<input id="from-date" type="date" name="from" value={ v.DateFrom } class="form-input text-xs w-auto"/>
+						</div>
+						<div class="d-flex items-center gap-1">
+							<label class="text-xs text-secondary font-bold" for="to-date">{ i18n.T(lang, "admin.org_changes.date_to") }:</label>
+							<input id="to-date" type="date" name="to" value={ v.DateTo } class="form-input text-xs w-auto"/>
+						</div>
+						<button type="submit" class="btn btn-secondary btn-sm font-black shadow-2xs">
+							{ i18n.T(lang, "admin.org_changes.filter_btn") }
+						</button>
+						if v.Search != "" || v.Section != "" || v.SelectedOrgID > 0 || v.DateFrom != "" || v.DateTo != "" {
+							<a href={ templ.SafeURL(orgChangesResetHref(v.Status)) } class="btn btn-secondary btn-sm text-muted font-bold shadow-2xs">
+								{ i18n.T(lang, "admin.org_changes.reset_btn") }
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			if len(v.Rows) == 0 {
+				<div class="glass-panel p-8 text-center">
+					<h2 class="text-lg font-black text-primary m-0">{ i18n.T(lang, "admin.org_changes.empty_title") }</h2>
+					<p class="text-sm text-secondary m-0 mt-2">{ i18n.T(lang, "admin.org_changes.empty_message") }</p>
+				</div>
+			} else {
+				for _, row := range v.Rows {
+					@adminOrgChangeCard(v, row)
+				}
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: v.Page,
+					PageSize:    v.PerPage,
+					TotalCount:  v.Total,
+					BaseURL:     "/admin/organizations/change-requests",
+					QueryValues: orgChangesQuery(v, v.Status),
+				})
+			}
+		</div>
+	}
+}
+
+templ orgChangeTab(v AdminOrgChangesView, status, label string, count int) {
+	<a
+		href={ templ.SafeURL(orgChangesHref(v, status)) }
+		class={ "tab-btn", templ.KV("active", v.Status == status) }
+	>
+		<span>{ label }</span>
+		<span class="tab-btn-count">{ strconv.Itoa(count) }</span>
+	</a>
+}
+
+templ adminOrgChangeCard(v AdminOrgChangesView, row AdminOrgChangeRow) {
+	<article class="glass-panel p-5 mb-4">
+		<div class="flex-between items-start flex-wrap gap-3 pb-3 mb-3 border-b border-subtle">
+			<div class="stack-2xs">
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", row.Request.OrganizationID)) }
+						target="_blank"
+						rel="noopener noreferrer"
+						class="text-base font-black text-brand hover:underline"
+						title={ i18n.T(v.Lang, "admin.org_changes.view_org") }
+					>
+						{ row.OrgName }
+						<span class="text-xs text-muted font-normal ms-1" aria-hidden="true">↗</span>
+					</a>
+					<span class="badge badge-slate text-xs font-bold">
+						{ i18n.Translate(v.Lang, "org.profile.section."+string(row.Request.Section)) }
+					</span>
+				</div>
+				<div class="text-xs text-secondary d-flex items-center gap-2 flex-wrap mt-1">
+					<span>
+						<strong>{ i18n.T(v.Lang, "admin.org_changes.requester") }:</strong>
+						if row.Request.RequestedBy > 0 {
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", row.Request.RequestedBy)) }
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-primary hover:underline font-bold"
+								title={ i18n.T(v.Lang, "admin.org_changes.view_user") }
+							>
+								if row.RequesterName != "" {
+									{ row.RequesterName }
+								} else {
+									{ fmt.Sprintf("#%d", row.Request.RequestedBy) }
+								}
+							</a>
+						} else {
+							<span>—</span>
+						}
+					</span>
+					<span class="text-muted">•</span>
+					<span title={ row.Request.CreatedAt.Format("2006-01-02 15:04:05") }>
+						{ row.Request.CreatedAt.Format("2006-01-02 15:04") }
+					</span>
+					if row.Request.ReviewedBy != nil && *row.Request.ReviewedBy > 0 {
+						<span class="text-muted">•</span>
+						<span>
+							<strong>{ i18n.T(v.Lang, "admin.org_changes.reviewer") }:</strong>
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", *row.Request.ReviewedBy)) }
+								target="_blank"
+								rel="noopener noreferrer"
+								class="text-primary hover:underline font-bold"
+								title={ i18n.T(v.Lang, "admin.org_changes.view_user") }
+							>
+								if row.ReviewerName != "" {
+									{ row.ReviewerName }
+								} else {
+									{ fmt.Sprintf("#%d", *row.Request.ReviewedBy) }
+								}
+							</a>
+						</span>
+						if row.Request.ReviewedAt != nil {
+							<span class="text-muted">({ row.Request.ReviewedAt.Format("2006-01-02 15:04") })</span>
+						}
+					}
+				</div>
+			</div>
+			@orgChangeStatusBadge(v.Lang, row.Request.Status)
+		</div>
+
+		<div class="overflow-x-auto rounded-lg border border-subtle mb-3">
+			<table class="data-table table-compact m-0">
+				<thead>
+					<tr>
+						<th class="w-1/4">{ i18n.T(v.Lang, "admin.org_changes.diff_col_field") }</th>
+						<th class="w-3/8 text-danger">{ i18n.T(v.Lang, "admin.org_changes.diff_col_previous") }</th>
+						<th class="w-3/8 text-success">{ i18n.T(v.Lang, "admin.org_changes.diff_col_proposed") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					if len(row.Request.Changed()) == 0 {
+						<tr>
+							<td colspan="3" class="text-center text-muted p-3">
+								{ i18n.T(v.Lang, "org.profile.no_change") }
+							</td>
+						</tr>
+					} else {
+						for _, key := range row.Request.Changed() {
+							<tr>
+								<td class="font-bold text-secondary">{ organizationFieldLabel(v.Lang, key) }</td>
+								<td class="bg-danger-subtle font-mono text-break">
+									<span class="text-danger" style="text-decoration: line-through;">
+										{ orgFieldOrDash(row.Request.Previous[key]) }
+									</span>
+								</td>
+								<td class="bg-success-subtle font-mono text-break">
+									<span class="text-success font-bold">
+										{ orgFieldOrDash(row.Request.Proposed[key]) }
+									</span>
+								</td>
+							</tr>
+						}
+					}
+				</tbody>
+			</table>
+		</div>
+
+		if row.Request.AdminNotes != "" {
+			<div class="alert alert-info p-3 text-xs mb-3">
+				<strong class="d-block mb-1">{ i18n.T(v.Lang, "admin.org_changes.admin_notes_label") }:</strong>
+				<span>{ row.Request.AdminNotes }</span>
+			</div>
+		}
+
+		if v.CanDecide && row.Request.Status == org.ChangePending {
+			<div class="d-flex gap-2 flex-wrap items-end pt-3 border-t border-subtle">
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/organizations/change-requests/%d/approve", row.Request.ID)) } class="m-0">
+					<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(v.Lang, "org.approve_org") }</button>
+				</form>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/organizations/change-requests/%d/reject", row.Request.ID)) } class="m-0 d-flex gap-2 items-end flex-wrap">
+					<div>
+						<label class="form-label text-2xs" for={ fmt.Sprintf("reason-%d", row.Request.ID) }>
+							{ i18n.T(v.Lang, "org.rejection_reason") }
+						</label>
+						<input id={ fmt.Sprintf("reason-%d", row.Request.ID) } type="text" name="notes" required class="form-input text-xs" placeholder={ i18n.T(v.Lang, "admin.org_changes.rejection_reason_required") }/>
+					</div>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold text-danger">{ i18n.T(v.Lang, "org.reject_org") }</button>
+				</form>
+			</div>
+		}
+	</article>
+}
+
+templ orgChangeStatusBadge(lang string, status org.ProfileChangeStatus) {
+	switch status {
+		case org.ChangePending:
+			<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "admin.org_changes.tab_pending") }</span>
+		case org.ChangeApproved:
+			<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "admin.org_changes.tab_approved") }</span>
+		default:
+			<span class="badge badge-slate text-2xs font-bold">{ i18n.T(lang, "admin.org_changes.tab_rejected") }</span>
+	}
+}

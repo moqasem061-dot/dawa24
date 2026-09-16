@@ -1,0 +1,346 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ smartOrderResultRow(data SmartOrderResultsData, l *smartorder.Line) {
+	<tr class="so-results-row">
+		<!-- Row Number -->
+		<td class="so-results-cell so-results-index tabular-nums">
+			{ fmt.Sprintf("%d", l.RowNumber) }
+		</td>
+
+		<!-- Raw Name & Details -->
+		<td class="so-results-cell so-results-item">
+			<div class="so-results-item-name">
+				{ l.RawName }
+			</div>
+			<div class="so-results-item-meta">
+				if l.RawSKU != "" {
+					<span class="badge badge-slate so-results-meta-badge">كود: { l.RawSKU }</span>
+				}
+				if l.RawBarcode != "" {
+					<span class="badge badge-outline so-results-meta-badge">باركود: { l.RawBarcode }</span>
+				}
+				if l.QtyParseNote != "" {
+					<span class="so-results-qty-note">({ l.QtyParseNote })</span>
+				}
+			</div>
+		</td>
+
+		<!-- Catalog Matched Product Cell with In-Cell Dropdown -->
+		<td class="so-results-cell so-results-match catalog-cell-container">
+			<div class="so-catalog-match">
+				if l.Matched() {
+					<div class="so-catalog-product">
+						<div class="so-catalog-product-name">
+							if l.MatchedProductName != "" {
+								{ l.MatchedProductName }
+							} else {
+								صنف كتالوج #{ fmt.Sprintf("%d", *l.MatchedProductID) }
+							}
+						</div>
+						<div class="so-catalog-product-id">
+							#{ fmt.Sprintf("%d", *l.MatchedProductID) }
+						</div>
+					</div>
+					<button
+						type="button"
+						data-line-id={ fmt.Sprint(l.ID) }
+						data-line-name={ l.RawName }
+						class="btn btn-secondary btn-xs font-bold"
+						data-on-click="toggleCatalogDropdown(this)"
+						title="تغيير الصنف المربوط بالكتالوج">
+						تغيير
+					</button>
+				} else {
+					<div class="so-catalog-unmatched">
+						<span class="badge badge-rose so-results-status-badge">
+							غير مطابق بالكتالوج
+						</span>
+					</div>
+					<button
+						type="button"
+						data-line-id={ fmt.Sprint(l.ID) }
+						data-line-name={ l.RawName }
+						class="btn btn-primary btn-xs font-bold"
+						data-on-click="toggleCatalogDropdown(this)"
+						title="بحث وربط بالكتالوج المركزي">
+						ربط
+					</button>
+				}
+			</div>
+
+			<!-- Catalog Link Dialog (Fixed Portal Modal) -->
+			<div id={ fmt.Sprintf("catalog-dropdown-%d", l.ID) }
+				data-public-id={ data.Run.PublicID }
+				data-match={ data.Match }
+				data-sort={ data.SortBy }
+				data-order={ data.SortOrder }
+				data-page={ fmt.Sprint(data.Page) }
+				data-limit={ fmt.Sprint(data.PerPage) }
+				data-search={ data.Search }
+				class="catalog-dropdown-menu">
+				
+				<div class="catalog-dialog-head">
+					<span class="catalog-dialog-title" title={ l.RawName }>
+						{ fmt.Sprintf("ربط بالكتالوج المركزي: %s", l.RawName) }
+					</span>
+					<button type="button" class="btn btn-ghost btn-icon shrink-0"
+						aria-label="✕"
+						data-on-click="closeAllCatalogDropdowns()">✕</button>
+				</div>
+
+				<div class="catalog-dialog-search">
+					<input
+						type="text"
+						placeholder="ابحث بالاسم أو SKU في الكتالوج المركزي..."
+						data-line-id={ fmt.Sprint(l.ID) }
+						class="form-control so-catalog-search-input"
+						data-on-input="onDropdownSearchInput(this)"
+					/>
+				</div>
+
+				<div id={ fmt.Sprintf("dropdown-results-%d", l.ID) } class="so-catalog-results">
+					<div class="so-catalog-empty">
+						جارٍ البحث في الكتالوج...
+					</div>
+				</div>
+
+				if l.Matched() {
+					<div class="so-catalog-unlink mt-3 pt-2 border-t">
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/lines/%d/match?product_id=0&match=%s&sort=%s&order=%s&page=%d&limit=%d&q=%s", data.Run.PublicID, l.ID, data.Match, data.SortBy, data.SortOrder, data.Page, data.PerPage, data.Search)) } class="so-catalog-unlink-form">
+							<button type="submit" class="btn btn-ghost btn-xs text-danger w-100 text-start">
+								إلغاء الربط (جعله غير مطابق)
+							</button>
+						</form>
+					</div>
+				}
+			</div>
+		</td>
+
+		<!-- Match Method -->
+		<td class="so-results-cell so-results-method">
+			<span class="badge badge-slate so-results-method-badge">
+				{ MatchMethodLabel(l.MatchMethod) }
+			</span>
+		</td>
+
+		<!-- Confidence Score -->
+		<td class="so-results-cell so-results-confidence tabular-nums">
+			if l.MatchConfidence > 0 {
+				{ fmt.Sprintf("%.0f%%", l.MatchConfidence*100) }
+			} else {
+				<span class="so-results-muted">—</span>
+			}
+		</td>
+
+		<!-- Quantity -->
+		<td class="so-results-cell so-results-quantity tabular-nums">
+			{ fmt.Sprintf("%g", l.EffectiveQty) }
+		</td>
+
+		<!-- Outcome Status Badge -->
+		<td class="so-results-cell so-results-outcome">
+			<span class={ outcomeChip(l.Outcome) }>
+				{ SmartOrderOutcomeLabel(l.Outcome) }
+			</span>
+		</td>
+	</tr>
+}
+
+templ smartOrderScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		var activeDropdownLineId = null;
+		var catalogSearchTimer = null;
+		var dropdownHome = null;
+		var dropdownBackdrop = null;
+
+		function portalDropdownOut(dropdown) {
+			if (dropdownHome) return;
+			dropdownHome = { parent: dropdown.parentNode, next: dropdown.nextSibling };
+			dropdownBackdrop = document.createElement('div');
+			dropdownBackdrop.className = 'catalog-dialog-backdrop';
+			dropdownBackdrop.addEventListener('click', closeAllCatalogDropdowns);
+			document.body.appendChild(dropdownBackdrop);
+			document.body.appendChild(dropdown);
+		}
+
+		function portalDropdownBack(dropdown) {
+			if (dropdownBackdrop) {
+				dropdownBackdrop.remove();
+				dropdownBackdrop = null;
+			}
+			if (dropdownHome && dropdown) {
+				dropdownHome.parent.insertBefore(dropdown, dropdownHome.next);
+			}
+			dropdownHome = null;
+		}
+
+		function toggleCatalogDropdown(btn) {
+			var lineId = btn.getAttribute('data-line-id');
+			var lineName = btn.getAttribute('data-line-name') || '';
+			var dropdown = document.getElementById('catalog-dropdown-' + lineId);
+			if (!dropdown) return;
+
+			var wasOpen = activeDropdownLineId === lineId;
+			closeAllCatalogDropdowns();
+			if (wasOpen) return;
+
+			portalDropdownOut(dropdown);
+			dropdown.style.display = 'block';
+			dropdown.classList.add('is-open');
+			activeDropdownLineId = lineId;
+
+			var input = dropdown.querySelector('input[type="text"]');
+			if (input) {
+				if (!input.value.trim()) {
+					input.value = lineName;
+				}
+				input.focus();
+				searchCatalogForDropdown(lineId, input.value.trim());
+			}
+		}
+
+		function closeAllCatalogDropdowns() {
+			if (!activeDropdownLineId) {
+				portalDropdownBack(null);
+				return;
+			}
+			var el = document.getElementById('catalog-dropdown-' + activeDropdownLineId);
+			if (el) {
+				el.style.display = 'none';
+				el.classList.remove('is-open');
+			}
+			portalDropdownBack(el);
+			activeDropdownLineId = null;
+		}
+
+		if (!window.__dawaBound_smart_order_results_row) {
+			window.__dawaBound_smart_order_results_row = true;
+			document.addEventListener('keydown', function(e) {
+				if (e.key === 'Escape') {
+					closeAllCatalogDropdowns();
+				}
+			});
+		}
+
+		function onDropdownSearchInput(input) {
+			var lineId = input.getAttribute('data-line-id');
+			clearTimeout(catalogSearchTimer);
+			catalogSearchTimer = setTimeout(function() {
+				searchCatalogForDropdown(lineId, input.value.trim());
+			}, 300);
+		}
+
+		function searchCatalogForDropdown(lineId, query) {
+			var resultsBox = document.getElementById('dropdown-results-' + lineId);
+			var dropdown = document.getElementById('catalog-dropdown-' + lineId);
+			if (!resultsBox || !dropdown) return;
+
+			var publicId = dropdown.getAttribute('data-public-id');
+			var match = dropdown.getAttribute('data-match') || '';
+			var sortBy = dropdown.getAttribute('data-sort') || '';
+			var sortOrder = dropdown.getAttribute('data-order') || '';
+			var page = dropdown.getAttribute('data-page') || '1';
+			var limit = dropdown.getAttribute('data-limit') || '25';
+			var search = dropdown.getAttribute('data-search') || '';
+
+			if (!query) {
+				resultsBox.innerHTML = dawaHTML.sanitize('<div class="so-catalog-empty">يرجى كتابة اسم الصنف للبحث</div>');
+				return;
+			}
+
+			resultsBox.innerHTML = dawaHTML.sanitize('<div class="so-catalog-empty">جارٍ البحث في الكتالوج المركزي...</div>');
+
+			fetch('/customer/smart-order/' + encodeURIComponent(publicId) + '/catalog-search?q=' + encodeURIComponent(query))
+				.then(function(res) { return res.json(); })
+				.then(function(data) {
+					if (!data || data.length === 0) {
+						resultsBox.innerHTML = dawaHTML.sanitize('<div class="so-catalog-empty">لم يتم العثور على نتائج في الكتالوج</div>');
+						return;
+					}
+					resultsBox.innerHTML = '';
+					data.forEach(function(p) {
+						var card = document.createElement('div');
+						card.className = 'so-catalog-result';
+
+						var form = document.createElement('form');
+						form.method = 'POST';
+						form.action = '/customer/smart-order/' + encodeURIComponent(publicId) + '/lines/' + encodeURIComponent(lineId) + '/match?match=' + encodeURIComponent(match) + '&sort=' + encodeURIComponent(sortBy) + '&order=' + encodeURIComponent(sortOrder) + '&page=' + encodeURIComponent(page) + '&limit=' + encodeURIComponent(limit) + '&q=' + encodeURIComponent(search);
+						form.className = 'so-catalog-result-form';
+
+						var hiddenInput = document.createElement('input');
+						hiddenInput.type = 'hidden';
+						hiddenInput.name = 'product_id';
+						hiddenInput.value = p.id;
+						form.appendChild(hiddenInput);
+
+						var btn = document.createElement('button');
+						btn.type = 'button';
+						btn.className = 'btn btn-ghost btn-xs so-catalog-result-button';
+						btn.onclick = function(ev) {
+							ev.preventDefault();
+							btn.disabled = true;
+							btn.style.opacity = '0.5';
+							var matchUrl = '/customer/smart-order/' + encodeURIComponent(publicId) + '/lines/' + encodeURIComponent(lineId) + '/match';
+							var formData = new FormData();
+							formData.append('product_id', p.id);
+							fetch(matchUrl, {
+								method: 'POST',
+								headers: {
+									'Accept': 'application/json',
+									'X-Requested-With': 'XMLHttpRequest'
+								},
+								body: formData
+							}).then(function(res) { return res.json(); })
+							.then(function(resData) {
+								if (resData && resData.ok) {
+									// The dropdown and its backdrop live on <body> while open; an
+									// in-place refresh only replaces <main>, so put them back first.
+									closeAllCatalogDropdowns();
+									if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+								} else {
+									form.submit();
+								}
+							}).catch(function() {
+								form.submit();
+							});
+						};
+
+						var info = document.createElement('div');
+						var nameDiv = document.createElement('div');
+						nameDiv.className = 'so-catalog-result-name';
+						nameDiv.textContent = p.name_ar || p.name_en || 'بدون اسم';
+						info.appendChild(nameDiv);
+
+						var metaDiv = document.createElement('div');
+						metaDiv.className = 'so-catalog-result-meta';
+						var metaText = '';
+						if (p.sku) metaText += 'SKU: ' + p.sku + ' ';
+						if (p.dosage_form) metaText += '· ' + p.dosage_form + ' ';
+						if (p.concentration) metaText += '· ' + p.concentration;
+						metaDiv.textContent = metaText;
+						info.appendChild(metaDiv);
+
+						btn.appendChild(info);
+
+						var badge = document.createElement('span');
+						badge.className = 'badge badge-primary so-catalog-result-badge';
+						badge.textContent = 'اختيار';
+						btn.appendChild(badge);
+
+						form.appendChild(btn);
+						card.appendChild(form);
+						resultsBox.appendChild(card);
+					});
+				})
+				.catch(function() {
+					resultsBox.innerHTML = dawaHTML.sanitize('<div class="so-catalog-empty so-catalog-error">تعذر تحميل النتائج</div>');
+				});
+		}
+	</script>
+}

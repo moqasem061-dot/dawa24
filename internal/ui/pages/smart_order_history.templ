@@ -1,0 +1,179 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SmartOrderHistoryPage(runs []*smartorder.Run, lang, dir string) {
+	@layouts.ShellFor("سجل الطلبات الذكية", "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-5xl">
+			<!-- Header -->
+			<div class="flex-between items-center mb-6 flex-wrap gap-4">
+				<div class="stack-2xs">
+					<nav class="text-xs text-secondary mb-1 d-flex items-center gap-1.5 font-bold">
+						<a href="/customer/dashboard" class="text-secondary text-decoration-none">لوحة التحكم</a>
+						<span>/</span>
+						<a href="/customer/smart-order/new" class="text-secondary text-decoration-none">الطلب الذكي</a>
+						<span>/</span>
+						<span class="text-primary font-bold">سجل العمليات السابقة</span>
+					</nav>
+					<h1 class="text-2xl font-black text-primary m-0">
+						سجل عمليات الطلب الذكي
+					</h1>
+					<p class="text-xs text-secondary mt-1 mb-0">
+						متابعة واستكمال عمليات مقارنة وتوريد الطلبات الذكية السابقة واستعراض مسوداتها.
+					</p>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href="/customer/smart-order/new" class="btn btn-primary btn-sm font-bold gap-2 shadow-xs">
+						@components.IconPlus("icon-xs")
+						<span>بدء طلب ذكي جديد</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Content List -->
+			if len(runs) == 0 {
+				<div class="glass-panel p-8 text-center rounded-2xl border shadow-xs">
+					<div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand d-inline-flex items-center justify-center mb-3 shadow-2xs">
+						@components.IconFileText("icon-md")
+					</div>
+					<h3 class="text-base font-black text-primary m-0 mb-1">لا توجد عمليات طلب ذكي سابقة</h3>
+					<p class="text-xs text-secondary max-w-sm mx-auto mb-4 font-medium">
+						لم تقم بإجراء أي طلبات ذكية حتى الآن. يمكنك رفع ملف نواقص أو أصناف للبدء بمقارنة الأسعار فوراً.
+					</p>
+					<a href="/customer/smart-order/new" class="btn btn-primary btn-sm font-bold">
+						<span>رفع ملف وتجربة الطلب الذكي</span>
+					</a>
+				</div>
+			} else {
+				<div class="glass-panel p-0 overflow-hidden rounded-2xl border shadow-xs">
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>رقم العملية والملف</th>
+									<th class="text-center">الحالة</th>
+									<th class="text-center">الأصناف والمطابقة</th>
+									<th class="text-end">القيمة المقدرة</th>
+									<th class="text-center">تاريخ الإنشاء</th>
+									<th class="text-center">الإجراء</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, r := range runs {
+									<tr>
+										<td>
+											<div class="stack-2xs">
+												<div class="font-black text-primary text-xs font-mono">
+													if r.RunNumber != "" {
+														{ r.RunNumber }
+													} else {
+														{ fmt.Sprintf("RUN-%d", r.ID) }
+													}
+												</div>
+												<div class="text-2xs text-muted truncate max-w-xs font-medium">
+													if r.OriginalFile != "" {
+														{ r.OriginalFile }
+													} else {
+														<span>ملف إكسل مرفوع</span>
+													}
+												</div>
+											</div>
+										</td>
+										<td class="text-center">
+											@smartOrderRunBadge(r.Status)
+										</td>
+										<td class="text-center">
+											if r.Stats.TotalRows > 0 {
+												<div class="stack-2xs items-center">
+													<span class="badge badge-slate font-bold text-2xs tabular-nums">
+														{ fmt.Sprintf("%d / %d صنف", r.Stats.MatchedRows, r.Stats.TotalRows) }
+													</span>
+													if r.Stats.TotalRows > 0 && r.Stats.MatchedRows > 0 {
+														<span class="text-2xs text-emerald-700 font-bold tabular-nums">
+															{ fmt.Sprintf("%%%d مطابقة", int((float64(r.Stats.MatchedRows)/float64(r.Stats.TotalRows))*100)) }
+														</span>
+													}
+												</div>
+											} else {
+												<span class="text-2xs text-muted">-</span>
+											}
+										</td>
+										<td class="text-end tabular-nums font-black text-xs text-brand">
+											if r.EstimatedTotal.IsPositive() {
+												{ r.EstimatedTotal.String() } ج.م
+											} else {
+												<span class="text-muted text-2xs font-normal">قيد الاحتساب</span>
+											}
+										</td>
+										<td class="text-center text-2xs text-muted tabular-nums">
+											{ r.CreatedAt.Format("2006-01-02 03:04 PM") }
+										</td>
+										<td class="text-center">
+											if r.Status == smartorder.StatusCompleted || r.Status == smartorder.StatusStale {
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/results", r.PublicID)) }
+													class="btn btn-primary btn-xs font-bold gap-1"
+												>
+													<span>مراجعة النتائج</span>
+													@components.IconArrowLeft("icon-2xs")
+												</a>
+											} else if r.Status == smartorder.StatusPlaced && r.OrderID != nil {
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/orders/%d", *r.OrderID)) }
+													class="btn btn-secondary btn-xs font-bold gap-1 text-brand"
+												>
+													<span>عرض الطلب</span>
+													@components.IconArrowLeft("icon-2xs")
+												</a>
+											} else if r.Status == smartorder.StatusProcessing || r.Status == smartorder.StatusFinalizing {
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/progress", r.PublicID)) }
+													class="btn btn-secondary btn-xs font-bold gap-1 text-sky-700"
+												>
+													<span>متابعة المعالجة...</span>
+												</a>
+											} else {
+												<!-- Staging or Failed: Can Resume/Re-enter -->
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/mapping", r.PublicID)) }
+													class="btn btn-secondary btn-xs font-bold gap-1"
+												>
+													<span>استكمال المسودة</span>
+													@components.IconArrowLeft("icon-2xs")
+												</a>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ smartOrderRunBadge(status smartorder.RunStatus) {
+	switch status {
+		case smartorder.StatusCompleted:
+			<span class="badge badge-emerald text-2xs font-bold">مكتمل للمراجعة</span>
+		case smartorder.StatusPlaced:
+			<span class="badge badge-primary text-2xs font-bold">تم إصدار الطلب</span>
+		case smartorder.StatusProcessing, smartorder.StatusFinalizing:
+			<span class="badge badge-sky text-2xs font-bold">جاري المقارنة</span>
+		case smartorder.StatusFailed:
+			<span class="badge badge-rose text-2xs font-bold">فشل التحليل</span>
+		case smartorder.StatusStale:
+			<span class="badge badge-amber text-2xs font-bold">تغيرت العروض</span>
+		default:
+			<span class="badge badge-slate text-2xs font-bold">مسودة / قيد الرفع</span>
+	}
+}

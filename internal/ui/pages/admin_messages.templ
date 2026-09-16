@@ -1,0 +1,187 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, page, perPage, totalCount int) {
+	@layouts.AdminShell("رسائل واستفسارات التواصل", "messages", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconMail("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								رسائل واستفسارات التواصل ({ fmt.Sprintf("%d", totalCount) })
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								صندوق الرسائل والطلبات الواردة عبر نموذج "تواصل معنا" من الصيدليات والشركات والعملاء
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/messages" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث الرسائل</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Messages Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(messages) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconMail("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد رسائل تواصل واردة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يقم أي مستخدم بإرسال رسائل أو استفسارات عبر صفحة تواصل معنا حتى الآن.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>المرسل وبيانات الاتصال</th>
+									<th>الموضوع / نوع الطلب</th>
+									<th>نص الرسالة</th>
+									<th class="text-center">الحالة</th>
+									<th>التاريخ والتوقيت</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, m := range messages {
+									<tr id={ fmt.Sprintf("message-row-%d", m.ID) }>
+										<td class="tabular-nums">
+											#{ fmt.Sprintf("%d", m.ID) }
+										</td>
+										<td>
+											<div class="fw-800 text-primary text-base">
+												{ m.Name }
+											</div>
+											if m.Email != "" {
+												<div class="stack-sm" dir="ltr">
+													<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) }>
+														{ m.Email }
+													</a>
+												</div>
+											}
+											if m.Phone != "" {
+												<div dir="ltr" class="tabular-nums">
+													<span>{ m.Phone }</span>
+													{{ cleanPhone := strings.TrimPrefix(strings.TrimPrefix(m.Phone, "+"), "0") }}
+													if cleanPhone != "" {
+														<a href={ templ.SafeURL(fmt.Sprintf("https://wa.me/20%s", cleanPhone)) } target="_blank" rel="noopener" title="محادثة واتساب">
+															(واتساب )
+														</a>
+													}
+												</div>
+											}
+											if m.IP != "" {
+												<div class="stack-xs text-xs text-secondary font-mono" dir="ltr">
+													<span>IP: { m.IP }</span>
+												</div>
+											}
+											if m.UserID != nil && *m.UserID > 0 {
+												<div class="stack-xs text-xs">
+													<a href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", *m.UserID)) } class="badge badge-indigo">
+														مستخدم مسجل #{ fmt.Sprintf("%d", *m.UserID) }
+													</a>
+												</div>
+											}
+											if m.UserAgent != "" {
+												<div class="stack-xs text-xs text-secondary truncate max-w-xs" title={ m.UserAgent } dir="ltr">
+													{ m.UserAgent }
+												</div>
+											}
+										</td>
+										<td>
+											<span class="badge badge-sky font-bold">
+												{ m.Subject }
+											</span>
+										</td>
+										<td>
+											<div class="stack-xs text-sm">
+												{ m.Message }
+											</div>
+										</td>
+										<td>
+											if m.Status == "unread" || m.Status == "" {
+												<span class="badge badge-rose fw-800">غير مقروءة </span>
+											} else if m.Status == "in_progress" {
+												<span class="badge badge-warning fw-800">قيد المتابعة ⏳</span>
+											} else {
+												<span class="badge badge-emerald fw-800">تم الرد / مكتملة </span>
+											}
+										</td>
+										<td class="tabular-nums">
+											<div class="stack-xs text-sm">{ m.CreatedAt.Format("2006-01-02") }</div>
+											<div class="stack-xs text-sm">{ m.CreatedAt.Format("03:04:05 PM") }</div>
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												if m.Email != "" {
+													<a
+														href={ templ.SafeURL(fmt.Sprintf("mailto:%s?subject=%s", m.Email, "رد بخصوص: "+m.Subject)) }
+														class="btn btn-secondary btn-sm"
+														title="إرسال بريد إلكتروني"
+													>
+														@components.IconMail("icon-xs")
+													</a>
+												}
+
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/toggle", m.ID)) } class="m-0 inline">
+													if m.Status == "unread" || m.Status == "" {
+														<button type="submit" class="btn btn-secondary btn-sm text-success" title="تحديد كمقروءة / تم التعامل">
+															تمت المتابعة
+														</button>
+													} else {
+														<button type="submit" class="btn btn-secondary btn-sm text-warning" title="تحديد كغير مقروءة">
+															غير مقروءة
+														</button>
+													}
+												</form>
+
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/delete", m.ID)) } class="m-0 inline">
+													<button
+														type="submit"
+														class="btn btn-secondary btn-sm text-danger"
+														data-confirm="هل أنت متأكد من حذف هذه الرسالة؟"
+														title="حذف الرسالة"
+													>
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     "/admin/messages",
+						})
+					}
+				}
+			</div>
+
+		</div>
+	}
+}

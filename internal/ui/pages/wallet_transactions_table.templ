@@ -1,0 +1,310 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// UnifiedWalletTransaction is a view model that combines ledger entries and deposit/withdrawal requests.
+type UnifiedWalletTransaction struct {
+	IsDepositRequest    bool
+	IsWithdrawalRequest bool
+	DepositID           int64
+	WithdrawalID        int64
+	TypeBadgeClass      string
+	TypeLabel           string
+	StatusBadgeClass    string
+	StatusLabel         string
+	AmountFormatted     string
+	IsPositive          bool
+	BalanceAfter        string
+	Description         string
+	Reference           string
+	AttachmentURL       string
+	CreatedAt           string
+}
+
+func buildUnifiedTransactions(txs []*billing.WalletTransaction, deps []*billing.WalletDeposit, withs []*billing.WalletWithdrawal, langOpt ...string) []UnifiedWalletTransaction {
+	lang := "ar"
+	if len(langOpt) > 0 && langOpt[0] != "" {
+		lang = langOpt[0]
+	}
+	var list []UnifiedWalletTransaction
+
+	// Map of approved withdrawal receipts keyed by withdrawal ID
+	approvedWithReceipts := make(map[int64]string)
+	for _, with := range withs {
+		if with != nil && with.TransferReceiptURL != "" {
+			approvedWithReceipts[with.ID] = with.TransferReceiptURL
+		}
+	}
+
+	// 1. Pending or rejected deposit requests that are not yet ledger transactions
+	for _, dep := range deps {
+		if dep == nil || dep.Status == "approved" {
+			continue
+		}
+
+		statusBadge := "badge-amber"
+		statusLabel := i18n.T(lang, "status.pending")
+		if dep.Status == "rejected" {
+			statusBadge = "badge-rose"
+			statusLabel = i18n.T(lang, "status.rejected")
+		} else if dep.Status == "cancelled" {
+			statusBadge = "badge-slate"
+			statusLabel = i18n.T(lang, "status.cancelled")
+		}
+
+		methodLabel := paymentProviderTitle(dep.PaymentMethod)
+
+		list = append(list, UnifiedWalletTransaction{
+			IsDepositRequest: true,
+			DepositID:        dep.ID,
+			TypeBadgeClass:   "badge-sky",
+			TypeLabel:        i18n.T(lang, "wallet.deposit_title"),
+			StatusBadgeClass: statusBadge,
+			StatusLabel:      statusLabel,
+			AmountFormatted:  "+" + dep.Amount.String() + " " + i18n.T(lang, "common.currency_egp"),
+			IsPositive:       true,
+			BalanceAfter:     "-",
+			Description:      fmt.Sprintf(ternary(lang == "en", "Top-up request via %s (#%d)", "طلب شحن عبر %s (طلب #%d)"), methodLabel, dep.ID),
+			Reference:        dep.ReferenceNumber,
+			AttachmentURL:    dep.AttachmentURL,
+			CreatedAt:        dep.CreatedAt.Format("2006-01-02 03:04 PM"),
+		})
+	}
+
+	// 2. Pending or rejected withdrawal requests that are not yet ledger transactions
+	for _, with := range withs {
+		if with == nil || with.Status == "approved" {
+			continue
+		}
+
+		statusBadge := "badge-amber"
+		statusLabel := i18n.T(lang, "status.pending")
+		if with.Status == "rejected" {
+			statusBadge = "badge-rose"
+			statusLabel = i18n.T(lang, "status.rejected")
+		} else if with.Status == "cancelled" {
+			statusBadge = "badge-slate"
+			statusLabel = i18n.T(lang, "status.cancelled")
+		}
+
+		desc := fmt.Sprintf(ternary(lang == "en", "Withdrawal to: %s (#%d)", "طلب سحب رصيد إلى: %s (طلب #%d)"), with.DestinationDetails, with.ID)
+		if with.RejectionReason != "" && with.Status == "rejected" {
+			desc += fmt.Sprintf(" [%s: %s]", ternary(lang == "en", "Reason", "سبب الرفض"), with.RejectionReason)
+		}
+
+		list = append(list, UnifiedWalletTransaction{
+			IsWithdrawalRequest: true,
+			WithdrawalID:        with.ID,
+			TypeBadgeClass:      "badge-amber",
+			TypeLabel:           i18n.T(lang, "wallet.withdraw_title"),
+			StatusBadgeClass:    statusBadge,
+			StatusLabel:         statusLabel,
+			AmountFormatted:     "-" + with.Amount.String() + " " + i18n.T(lang, "common.currency_egp"),
+			IsPositive:          false,
+			BalanceAfter:        "-",
+			Description:         desc,
+			Reference:           with.PublicID,
+			AttachmentURL:       with.TransferReceiptURL,
+			CreatedAt:           with.CreatedAt.Format("2006-01-02 03:04 PM"),
+		})
+	}
+
+	// 3. Completed ledger transactions
+	for _, tx := range txs {
+		if tx == nil {
+			continue
+		}
+		isPos := (tx.Type == billing.TxDeposit || tx.Type == billing.TxBonus || tx.Type == billing.TxRefund || tx.Type == billing.TxTransferIn)
+		amtStr := tx.Amount.String()
+		if strings.HasPrefix(amtStr, "-") {
+			isPos = false
+		} else if isPos {
+			amtStr = "+" + amtStr
+		} else {
+			amtStr = "-" + amtStr
+		}
+
+		desc := tx.Description
+		if desc == "" {
+			desc = txTypeLabel(tx.Type)
+		}
+
+		typeBadge := txTypeBadgeClass(tx.Type)
+		typeLabel := txTypeLabel(tx.Type)
+
+		if tx.ReferenceType == "subscription_upgrade" {
+			typeBadge = "badge-purple"
+			typeLabel = ternary(lang == "en", "Subscription Upgrade", "ترقية اشتراك")
+		} else if tx.ReferenceType == "subscription_checkout" {
+			typeBadge = "badge-indigo"
+			typeLabel = ternary(lang == "en", "Plan Subscription", "اشتراك باقة")
+		} else if tx.ReferenceType == "subscription_renewal" {
+			typeBadge = "badge-sky"
+			typeLabel = ternary(lang == "en", "Plan Renewal", "تجديد اشتراك")
+		}
+
+		ref := tx.ReferenceType
+		if tx.ReferenceID != nil && *tx.ReferenceID > 0 {
+			switch tx.ReferenceType {
+			case "subscription_upgrade", "subscription_checkout", "subscription_renewal":
+				ref = fmt.Sprintf(ternary(lang == "en", "Subscription #%d", "اشتراك #%d"), *tx.ReferenceID)
+			case "order":
+				ref = fmt.Sprintf(ternary(lang == "en", "Order #%d", "طلب #%d"), *tx.ReferenceID)
+			default:
+				ref = fmt.Sprintf("%s #%d", tx.ReferenceType, *tx.ReferenceID)
+			}
+		} else {
+			switch tx.ReferenceType {
+			case "subscription_upgrade":
+				ref = ternary(lang == "en", "Subscription Upgrade", "ترقية اشتراك")
+			case "subscription_checkout":
+				ref = ternary(lang == "en", "Plan Subscription", "اشتراك باقة")
+			case "subscription_renewal":
+				ref = ternary(lang == "en", "Plan Renewal", "تجديد اشتراك")
+			}
+		}
+
+		var attachmentURL string
+		if tx.ReferenceType == "withdrawal_approval" && tx.ReferenceID != nil {
+			if rURL, ok := approvedWithReceipts[*tx.ReferenceID]; ok {
+				attachmentURL = rURL
+			}
+		}
+
+		list = append(list, UnifiedWalletTransaction{
+			IsDepositRequest: false,
+			TypeBadgeClass:   typeBadge,
+			TypeLabel:        typeLabel,
+			StatusBadgeClass: "badge-emerald",
+			StatusLabel:      i18n.T(lang, "status.completed"),
+			AmountFormatted:  amtStr + " " + i18n.T(lang, "common.currency_egp"),
+			IsPositive:       isPos,
+			BalanceAfter:     tx.BalanceAfter.String() + " " + i18n.T(lang, "common.currency_egp"),
+			Description:      desc,
+			Reference:        ref,
+			AttachmentURL:    attachmentURL,
+			CreatedAt:        tx.CreatedAt.Format("2006-01-02 03:04 PM"),
+		})
+	}
+
+	return list
+}
+
+templ WalletTransactionsTable(txs []*billing.WalletTransaction, deps []*billing.WalletDeposit, withs []*billing.WalletWithdrawal, page, perPage, totalCount int, baseURL string, query url.Values, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		items := buildUnifiedTransactions(txs, deps, withs, lang)
+	}}
+	<div class="glass-panel p-0 mb-6 overflow-hidden border rounded-2xl shadow-xs">
+		if len(items) == 0 {
+			<div class="p-6">
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   i18n.T(lang, "wallet.no_transactions_title"),
+					Message: i18n.T(lang, "wallet.no_transactions_desc"),
+				})
+			</div>
+		} else {
+			<div class="table-responsive">
+				<table class="data-table mb-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "wallet.col_tx_type") }</th>
+							<th>{ i18n.T(lang, "wallet.col_status") }</th>
+							<th>{ i18n.T(lang, "wallet.col_amount") }</th>
+							<th>{ i18n.T(lang, "wallet.col_balance_after") }</th>
+							<th>{ i18n.T(lang, "wallet.col_details") }</th>
+							<th>{ i18n.T(lang, "wallet.col_datetime") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range items {
+							<tr>
+								<!-- Col 1: Type Badge -->
+								<td>
+									<span class={ "badge", item.TypeBadgeClass, "text-xs font-bold" }>
+										{ item.TypeLabel }
+									</span>
+								</td>
+
+								<!-- Col 2: Status Badge -->
+								<td>
+									<span class={ "badge", item.StatusBadgeClass, "text-2xs font-bold" }>
+										{ item.StatusLabel }
+									</span>
+								</td>
+
+								<!-- Col 3: Amount -->
+								<td class="font-black tabular-nums text-sm">
+									if item.IsPositive {
+										<span class="text-emerald text-success">{ item.AmountFormatted }</span>
+									} else {
+										<span class="text-rose text-danger">{ item.AmountFormatted }</span>
+									}
+								</td>
+
+								<!-- Col 4: Balance After -->
+								<td class="tabular-nums text-xs font-bold">
+									if strings.HasPrefix(item.BalanceAfter, "-") {
+										<span class="text-rose text-danger">{ item.BalanceAfter }</span>
+									} else {
+										<span class="text-secondary">{ item.BalanceAfter }</span>
+									}
+								</td>
+
+								<!-- Col 4: Description & Reference & Receipt -->
+								<td>
+									<div class="font-bold text-xs text-primary leading-snug">
+										{ item.Description }
+									</div>
+									<div class="d-flex items-center gap-2 mt-0.5 flex-wrap">
+										if item.Reference != "" {
+											<span class="text-2xs text-muted font-mono">
+												{ fmt.Sprintf(i18n.T(lang, "wallet.ref_prefix"), item.Reference) }
+											</span>
+										}
+										if item.AttachmentURL != "" {
+											<a
+												href={ templ.SafeURL(item.AttachmentURL) }
+												data-preview-file={ item.AttachmentURL }
+												data-title={ i18n.T(lang, "wallet.step4_receipt") }
+												class="text-2xs text-brand font-bold text-decoration-none cursor-pointer"
+											>
+												{ i18n.T(lang, "wallet.preview_receipt") }
+											</a>
+										}
+									</div>
+								</td>
+
+								<!-- Col 5: Timestamp -->
+								<td class="text-secondary text-xs tabular-nums font-medium">
+									{ item.CreatedAt }
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if totalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: page,
+					PageSize:    perPage,
+					TotalCount:  totalCount,
+					BaseURL:     baseURL,
+					QueryValues: query,
+				})
+			}
+		}
+	</div>
+}

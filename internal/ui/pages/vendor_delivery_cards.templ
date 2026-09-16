@@ -1,0 +1,192 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The money card and the contents card.
+//
+// Both read from commerce.OrderShipment.CourierCollection() rather than
+// re-deciding what is owed, so the amount printed on the courier's screen is
+// the amount the ledger will record when the parcel closes.
+
+// DeliveryCollectLabel names the cash line for one parcel.
+templ DeliveryCollectLabel(sh *commerce.OrderShipment, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	switch sh.CourierCollection().Kind {
+		case commerce.CollectShippingOnly:
+			{ i18n.T(lang, "vendor_delivery.collect.lbl_shipping_only") }
+		case commerce.CollectFull:
+			{ i18n.T(lang, "vendor_delivery.collect.lbl_full") }
+		default:
+			{ i18n.T(lang, "vendor_delivery.collect.lbl_none") }
+	}
+}
+
+// VendorDeliveryCollectionCard is the single most consequential thing on the
+// screen: how much cash to take, and why that is the number.
+templ VendorDeliveryCollectionCard(sh *commerce.OrderShipment, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="courier-card">
+		<div class="d-flex items-center gap-2 mb-3 pb-2 border-b text-primary">
+			@components.IconWallet("icon-xs")
+			<h3 class="text-xs font-black m-0">{ i18n.T(lang, "vendor_delivery.collect.title") }</h3>
+		</div>
+
+		switch sh.CourierCollection().Kind {
+			case commerce.CollectShippingOnly:
+				<div class="courier-cash-alert-wallet">
+					<div class="d-flex items-center justify-between mb-2 flex-wrap gap-2">
+						<span class="badge badge-indigo text-xs font-bold gap-1">
+							@components.IconWallet("icon-2xs")
+							<span>{ i18n.T(lang, "vendor_delivery.collect.badge_wallet") }</span>
+						</span>
+						<span class="text-2xs text-muted font-bold">{ i18n.T(lang, "vendor_delivery.collect.badge_meds_paid") }</span>
+					</div>
+					<span class="text-xs font-extrabold text-indigo-900 d-block mb-1">
+						{ i18n.T(lang, "vendor_delivery.collect.lbl_req_shipping") }
+					</span>
+					<div class="text-2xl font-black text-indigo-900 tabular-nums font-mono">
+						@components.MoneyDisplay(components.MoneyDisplayProps{Amount: sh.CourierCollection().Amount})
+					</div>
+					<div class="d-inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-indigo-100 text-indigo-900 text-2xs font-extrabold">
+						<span>{ i18n.T(lang, "vendor_delivery.collect.hint_wallet") }</span>
+					</div>
+				</div>
+			case commerce.CollectFull:
+				<div class="courier-cash-alert-cod">
+					<span class="text-xs font-extrabold text-amber-800 d-block mb-1">
+						{ i18n.T(lang, "vendor_delivery.collect.lbl_req_cod") }
+					</span>
+					<div class="text-2xl font-black text-amber-900 tabular-nums font-mono">
+						@components.MoneyDisplay(components.MoneyDisplayProps{Amount: sh.CourierCollection().Amount})
+					</div>
+					<div class="d-inline-flex items-center gap-1.5 mt-2 px-2.5 py-1 rounded-full bg-amber-100 text-amber-900 text-2xs font-extrabold">
+						<span>{ i18n.T(lang, "vendor_delivery.collect.hint_cod") }</span>
+					</div>
+				</div>
+			default:
+				<div class="courier-cash-alert-prepaid">
+					<div class="text-sm font-black text-emerald-800 mb-1 d-flex items-center justify-center gap-1.5">
+						@components.IconCheckCircle("icon-xs")
+						<span>{ i18n.T(lang, "vendor_delivery.collect.badge_prepaid") }</span>
+					</div>
+					<div class="text-xs text-emerald-700 font-medium">
+						{ i18n.T(lang, "vendor_delivery.collect.hint_prepaid") }
+					</div>
+				</div>
+		}
+	</div>
+}
+
+// VendorDeliveryItemsCard is the checklist the courier ticks against the boxes
+// in their hand before knocking.
+templ VendorDeliveryItemsCard(sh *commerce.OrderShipment, lang string) {
+	<div class="courier-card" x-data={ courierItemsAlpineData(len(sh.Lines)) }>
+		<div class="flex-between items-center mb-3 pb-2 border-b">
+			<div class="d-flex items-center gap-2 text-primary">
+				@components.IconPackage("icon-xs")
+				<h3 class="text-xs font-black m-0">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.items.title"), len(sh.Lines)) }
+				</h3>
+			</div>
+			<span class="badge badge-secondary font-bold text-2xs tabular-nums">
+				{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.items.total_units"), sh.TotalUnitsCount()) }
+			</span>
+		</div>
+
+		if len(sh.Lines) > 3 {
+			<div class="mb-3">
+				<input
+					type="text"
+					x-model="search"
+					@input="page = 1"
+					placeholder={ i18n.T(lang, "vendor_delivery.items.search_ph") }
+					class="form-input text-xs w-full rounded-xl py-2 px-3"
+				/>
+			</div>
+		}
+
+		<div class="d-flex flex-col gap-2">
+			for lineIdx, line := range sh.Lines {
+				<div
+					class="courier-item-row"
+					data-item-name={ strings.ToLower(line.ProductName.Get(i18n.ParseLang(lang)) + " " + line.VariantName.Get(i18n.ParseLang(lang))) }
+					x-show={ fmt.Sprintf("(search === '' || $el.dataset.itemName.includes(search.toLowerCase())) && (pageSize === -1 || (%d >= (page - 1) * pageSize && %d < page * pageSize))", lineIdx, lineIdx) }
+				>
+					<div class="d-flex items-center gap-2.5 flex-1 min-w-0 text-start">
+						<input
+							type="checkbox"
+							class="form-checkbox w-4 h-4 rounded cursor-pointer shrink-0"
+							title={ i18n.T(lang, "vendor_delivery.items.check_title") }
+						/>
+						<div class="min-w-0">
+							<div class="text-xs font-bold text-primary truncate">
+								{ line.ProductName.Get(i18n.ParseLang(lang)) }
+							</div>
+							if line.VariantName.Get(i18n.ParseLang(lang)) != "" {
+								<div class="text-2xs text-muted truncate">
+									{ line.VariantName.Get(i18n.ParseLang(lang)) }
+								</div>
+							}
+						</div>
+					</div>
+					<div class="text-end flex-shrink-0">
+						<span class="badge badge-secondary font-black text-xs tabular-nums">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.items.units_badge"), line.Quantity) }
+						</span>
+					</div>
+				</div>
+			}
+		</div>
+
+		if len(sh.Lines) > 5 {
+			<div class="courier-pagination-bar mt-3 pt-3 border-t text-xs">
+				<div class="d-flex items-center gap-2">
+					<span class="text-secondary text-2xs font-bold">
+						if lang == "en" {
+							Page <span x-text="page" class="tabular-nums font-black"></span> of <span x-text="totalPages" class="tabular-nums font-black"></span>
+						} else {
+							صفحة <span x-text="page" class="tabular-nums font-black"></span> من <span x-text="totalPages" class="tabular-nums font-black"></span>
+						}
+					</span>
+					<label class="d-flex items-center gap-1 text-2xs text-muted">
+						<span>{ i18n.T(lang, "vendor_delivery.items.lbl_show") }</span>
+						<select
+							class="form-select form-select-xs py-0.5 px-1.5 text-2xs font-bold"
+							@change="changePageSize($event.target.value)"
+						>
+							<option value="5">5</option>
+							<option value="10" selected>10</option>
+							<option value="25">25</option>
+							<option value="-1">{ i18n.T(lang, "vendor_delivery.items.opt_all") }</option>
+						</select>
+					</label>
+				</div>
+				<div class="d-flex items-center gap-1">
+					<button type="button" class="btn btn-secondary btn-xs font-bold px-2.5 py-1" :disabled="page <= 1" @click="prevPage()">
+						{ i18n.T(lang, "vendor_delivery.items.btn_prev") }
+					</button>
+					<button type="button" class="btn btn-secondary btn-xs font-bold px-2.5 py-1" :disabled="page >= totalPages" @click="nextPage()">
+						{ i18n.T(lang, "vendor_delivery.items.btn_next") }
+					</button>
+				</div>
+			</div>
+		}
+	</div>
+}

@@ -1,0 +1,153 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+// Backward-compatible individual template pages
+templ AdminOfferOrdersPage(orders []*commerce.Order, lang, dir string) {
+	@layouts.AdminShell("طلبات عروض الأسعار والمشتريات (Offer Orders)", "orders", lang, dir) {
+		<div class="glass-panel mb-0">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">طلبات العروض والمشتريات ({ fmt.Sprintf("%d", len(orders)) })</h2>
+					<p class="subtitle">متابعة اعتمادات عروض الأسعار والتوريد بين الصيدليات والموردين.</p>
+				</div>
+			</div>
+
+			if len(orders) == 0 {
+				@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات عروض", Message: "لم يتم إنشاء طلبات عروض أسعار بعد."})
+			} else {
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>رقم الطلب</th>
+								<th>المنشأة</th>
+								<th>المبلغ الإجمالي</th>
+								<th>الحالة</th>
+								<th>التاريخ</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, o := range orders {
+								<tr>
+									<td class="tabular-nums"><strong>{ o.OrderNumber }</strong></td>
+									<td>
+										if o.CustomerOrgName.Get(i18n.Lang(lang)) != "" {
+											<span class="font-bold text-primary">{ o.CustomerOrgName.Get(i18n.Lang(lang)) }</span>
+										} else if o.OrganizationID != nil {
+											<span>منشأة #{ fmt.Sprintf("%d", *o.OrganizationID) }</span>
+										} else {
+											<span>عميل #{ fmt.Sprintf("%d", o.CustomerID) }</span>
+										}
+									</td>
+									<td class="tabular-nums">{ fmt.Sprintf("%s ج.م", o.TotalAmount.String()) }</td>
+									<td><span class="badge badge-sky">{ string(o.Status) }</span></td>
+									<td class="tabular-nums">{ o.CreatedAt.Format("2006-01-02") }</td>
+									<td class="col-actions">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders/offers/%d", o.ID)) } class="btn btn-secondary btn-sm">عرض</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ AdminOfferOrderDetailPage(o *commerce.Order, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("طلب عروض: %s", o.OrderNumber), "orders", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">طلب { o.OrderNumber }</h2>
+					<p class="subtitle">حالة: { string(o.Status) } | الإجمالي: { fmt.Sprintf("%s ج.م", o.TotalAmount.String()) }</p>
+				</div>
+				<a href="/admin/orders?tab=offers" class="btn btn-secondary btn-sm">العودة للطلبات</a>
+			</div>
+		</div>
+	}
+}
+
+templ AdminEarningsOrderPage(revenue, commission money.Amount, lang, dir string) {
+	@AdminFinance(AdminFinanceData{ActiveTab: "wallets", TotalRevenue: revenue}, lang, dir)
+}
+
+templ AdminEarningsOffersPage(revenue, commission money.Amount, lang, dir string) {
+	@AdminFinance(AdminFinanceData{ActiveTab: "wallets", TotalRevenue: revenue}, lang, dir)
+}
+
+templ AdminInvoicesPage(invoices []*billing.AdminInvoiceView, lang, dir string) {
+	@AdminFinance(AdminFinanceData{ActiveTab: "invoices", Invoices: invoices}, lang, dir)
+}
+
+templ AdminPaymentsPage(payments []*billing.AdminPaymentView, lang, dir string) {
+	@AdminFinance(AdminFinanceData{ActiveTab: "payments", Payments: payments}, lang, dir)
+}
+
+templ AdminWalletsPage(wallets []*billing.AdminWalletView, lang, dir string) {
+	@AdminFinance(AdminFinanceData{ActiveTab: "wallets", Wallets: wallets}, lang, dir)
+}
+
+templ AdminPlansInfoPage(plans []*billing.Plan, lang, dir string) {
+	@AdminPlans(lang, dir, plans)
+}
+
+type AdminPlansSubscriptionsPageData struct {
+	Subscriptions []*billing.Subscription
+	Page          int
+	PerPage       int
+	TotalCount    int
+}
+
+templ AdminPlansSubscriptionsPage(lang, dir string, data AdminPlansSubscriptionsPageData) {
+	@layouts.AdminShell("الاشتراكات وسجلات المشتركين", "plans", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<h1 class="text-2xl font-black text-primary m-0 mb-4">الاشتراكات النشطة</h1>
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>المستخدم</th>
+							<th>الخطة</th>
+							<th>الحالة</th>
+							<th>تاريخ الانتهاء</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, s := range data.Subscriptions {
+							<tr>
+								<td>{ fmt.Sprintf("%d", s.ID) }</td>
+								<td>مستخدم #{ fmt.Sprintf("%d", s.UserID) }</td>
+								<td>خطة #{ fmt.Sprintf("%d", s.PlanID) }</td>
+								<td><span class="badge badge-emerald">{ string(s.Status) }</span></td>
+								<td>{ s.ExpiresAt.Format("2006-01-02") }</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/admin/plans-subscriptions",
+				})
+			}
+		</div>
+		</div>
+	}
+}

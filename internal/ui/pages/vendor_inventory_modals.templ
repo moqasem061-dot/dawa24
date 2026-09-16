@@ -1,0 +1,192 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorInventoryModals renders both the stock adjustment and stock transfer modals as centered backdrops.
+templ VendorInventoryModals(data VendorInventoryData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- Stock Adjustment Modal (True Fixed Centered Overlay) -->
+	<div
+		class="modal-backdrop"
+		x-show="adjustModal"
+		x-cloak
+		x-transition.opacity
+		@keydown.escape.window="adjustModal = false"
+	>
+		<div
+			@click.outside="adjustModal = false"
+			class="glass-panel p-6 max-w-lg w-full"
+		>
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="d-flex items-center gap-2">
+					<div class="user-avatar-badge text-brand">
+						@components.IconRefresh("icon-xs")
+					</div>
+					<h3 class="text-lg font-black text-primary m-0">{ i18n.T(lang, "vendor_inventory.modal_adjust_title") }</h3>
+				</div>
+				<button type="button" @click="adjustModal = false" class="btn btn-secondary btn-icon btn-sm">
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<div class="bg-surface-sunken border rounded-xl p-3.5 mb-4 text-xs stack-xs">
+				<div class="font-extrabold text-primary text-sm" x-text="selectedStock.variantName"></div>
+				<div class="text-secondary mt-1">
+					{ i18n.T(lang, "vendor_inventory.current_wh_stock") } <strong class="tabular-nums text-brand font-black" x-text="selectedStock.currentQty"></strong>
+				</div>
+			</div>
+
+			<form :action="'/vendor/inventory/' + selectedStock.id + '/adjust'" method="POST" class="d-flex flex-col gap-4 m-0">
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_qty") } <span class="text-danger">*</span></label>
+					<input type="number" name="delta" required class="form-input text-center font-bold tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_inventory.fld_delta_ph") } />
+					<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_help") }</span>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_adjust_reason") }</label>
+					<select name="reason" class="form-input text-xs w-full font-bold">
+						<option value="تسوية جرد دوري">{ i18n.T(lang, "vendor_inventory.reason_audit") }</option>
+						<option value="استلام شحنة جديدة من المصنع">{ i18n.T(lang, "vendor_inventory.reason_receipt") }</option>
+						<option value="تالف / كسر / انتهاء صلاحية">{ i18n.T(lang, "vendor_inventory.reason_damage") }</option>
+						<option value="تسوية مبيعات يدوية">{ i18n.T(lang, "vendor_inventory.reason_manual_sale") }</option>
+						<option value="أخرى">{ i18n.T(lang, "vendor_inventory.reason_other") }</option>
+					</select>
+				</div>
+
+				<div class="flex-between items-center gap-3 pt-3 border-t mt-2">
+					<button type="button" class="btn btn-secondary font-bold text-xs" @click="adjustModal = false">{ i18n.T(lang, "common.cancel") }</button>
+					<button type="submit" class="btn btn-primary font-black text-xs px-6 shadow-sm">{ i18n.T(lang, "vendor_inventory.btn_confirm_adjust") }</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Transfer Stock to Another Warehouse Modal -->
+	<div
+		class="modal-backdrop"
+		x-show="transferModal"
+		x-cloak
+		x-transition.opacity
+		@keydown.escape.window="transferModal = false"
+	>
+		<div
+			@click.outside="transferModal = false"
+			class="glass-panel p-6 max-w-lg w-full"
+		>
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="d-flex items-center gap-2">
+					<div class="user-avatar-badge text-brand">
+						@components.IconRefresh("icon-xs")
+					</div>
+					<div>
+						<h3 class="text-base font-black text-primary m-0">{ i18n.T(lang, "vendor_inventory.modal_transfer_title") }</h3>
+						<p class="text-2xs text-secondary m-0 mt-0.5">{ i18n.T(lang, "vendor_inventory.modal_transfer_sub") }</p>
+					</div>
+				</div>
+				<button type="button" @click="transferModal = false" class="btn btn-secondary btn-icon btn-sm">
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<form action="/vendor/inventory/transfer" method="POST" class="d-flex flex-col gap-4 m-0">
+				<input type="hidden" name="stock_id" :value="transferStock.id" />
+				<input type="hidden" name="variant_id" :value="transferStock.variant_id" />
+				<input type="hidden" name="product_id" :value="transferStock.product_id" />
+				<input type="hidden" name="from_warehouse_id" :value="transferStock.from_wh_id" />
+				<input type="hidden" name="redirect_url" value="/vendor/inventory" />
+
+				<!-- Item & Source Warehouse Info Card -->
+				<div class="bg-surface-sunken border rounded-xl p-3.5 text-xs stack-xs">
+					<div class="text-2xs text-muted font-bold">{ i18n.T(lang, "vendor_inventory.selected_item_label") }</div>
+					<div class="font-black text-primary text-sm" x-text="transferStock.name"></div>
+					<div class="flex-between items-center text-xs mt-2 pt-2 border-t text-secondary">
+						<span>{ i18n.T(lang, "vendor_inventory.source_wh_label") } <strong class="text-primary font-bold" x-text="transferStock.from_wh_name"></strong></span>
+						<span>{ i18n.T(lang, "vendor_inventory.th_available_stock") }: <strong class="tabular-nums text-brand font-black" x-text="transferStock.qty"></strong></span>
+					</div>
+				</div>
+
+				<!-- Target Warehouse -->
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.dest_wh_label") } <span class="text-danger">*</span></label>
+					if len(data.Warehouses) > 1 {
+						<select name="to_warehouse_id" class="form-select text-xs w-full font-bold" required>
+							<option value="">{ i18n.T(lang, "vendor_inventory.select_dest_wh_ph") }</option>
+							for _, wh := range data.Warehouses {
+								<option value={ fmt.Sprintf("%d", wh.ID) } x-show={ fmt.Sprintf("transferStock.from_wh_id != %d", wh.ID) }>
+									{ wh.Name } { fmt.Sprintf("(%s)", wh.Code) }
+								</option>
+							}
+						</select>
+					} else {
+						<div class="p-3 rounded-lg bg-amber-subtle text-amber text-xs font-bold d-flex items-center gap-2">
+							@components.IconAlert("icon-xs")
+							<span>{ i18n.T(lang, "vendor_inventory.single_wh_warning") }</span>
+						</div>
+					}
+				</div>
+
+				<!-- Quantity to Transfer -->
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-brand mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_transfer_qty") } <span class="text-danger">*</span></label>
+					<input
+						type="number"
+						name="quantity"
+						min="1"
+						:max="transferStock.qty"
+						required
+						class="form-input text-center font-black tabular-nums text-base w-full"
+						placeholder="0"
+					/>
+					<div class="text-2xs text-muted mt-0.5">
+						{ i18n.T(lang, "vendor_inventory.max_transfer_prefix") } <strong class="tabular-nums" x-text="transferStock.qty"></strong>
+					</div>
+				</div>
+
+				<!-- Notes / Reason -->
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-secondary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_transfer_notes") }</label>
+					<textarea
+						name="notes"
+						rows="2"
+						class="form-input text-xs w-full"
+						placeholder={ i18n.T(lang, "vendor_inventory.transfer_notes_ph") }
+					></textarea>
+				</div>
+
+				<!-- Immediate Receive Option -->
+				<div class="p-2.5 bg-surface-raised rounded-lg border d-flex items-center gap-2.5">
+					<input type="checkbox" name="immediate" id="inv_transfer_imm" value="true" checked class="form-checkbox" />
+					<label for="inv_transfer_imm" class="text-xs font-bold text-secondary cursor-pointer m-0 select-none">
+						{ i18n.T(lang, "vendor_inventory.chk_immediate_receive") }
+					</label>
+				</div>
+
+				<!-- Actions -->
+				<div class="flex-between items-center gap-3 pt-3 border-t mt-2">
+					<button type="button" class="btn btn-secondary font-bold text-xs" @click="transferModal = false">{ i18n.T(lang, "common.cancel") }</button>
+					if len(data.Warehouses) > 1 {
+						<button type="submit" class="btn btn-primary font-black text-xs px-6 shadow-sm gap-1.5" :disabled="transferStock.qty <= 0">
+							@components.IconRefresh("icon-xs")
+							<span>{ i18n.T(lang, "vendor_inventory.btn_confirm_transfer") }</span>
+						</button>
+					} else {
+						<button type="button" disabled class="btn btn-secondary font-bold text-xs opacity-50 cursor-not-allowed">
+							{ i18n.T(lang, "vendor_inventory.btn_transfer_disabled") }
+						</button>
+					}
+				</div>
+			</form>
+		</div>
+	</div>
+}

@@ -1,0 +1,166 @@
+package pages
+
+import (
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func invoicePaymentAction(redirectURL string) string {
+	if strings.HasPrefix(redirectURL, "/admin") {
+		return "/admin/finance/invoices/payments"
+	}
+	if strings.HasPrefix(redirectURL, "/invoices") {
+		return "/invoices/payments/record"
+	}
+	return "/vendor/payments/record"
+}
+
+// InvoicePaymentModal renders a lightweight, streamlined modal for recording invoice payments directly from invoices lists.
+templ InvoicePaymentModal(redirectURL string) {
+	@components.Modal(components.ModalProps{
+		ID:    "record-invoice-payment-modal",
+		Title: "تسجيل دفعة على الفاتورة",
+		Icon:  "credit-card",
+		Size:  "md",
+	}) {
+		<form method="POST" action={ templ.SafeURL(invoicePaymentAction(redirectURL)) } class="d-flex flex-col gap-4 m-0">
+			<input type="hidden" id="modal-pay-invoice-id" name="invoice_id" value=""/>
+			<input type="hidden" name="redirect_to" value={ redirectURL }/>
+
+			<!-- Invoice Info Summary Box -->
+			<div class="glass-panel p-3 bg-slate-50/80 border border-slate-200/80 rounded-xl">
+				<div class="flex-between items-center text-xs mb-1.5">
+					<span class="text-muted font-medium">رقم الفاتورة:</span>
+					<strong id="modal-pay-invoice-num" class="font-mono text-primary font-bold"></strong>
+				</div>
+				<div class="flex-between items-center text-xs">
+					<span class="text-muted font-medium">المبلغ المتبقي المطلوب سداده:</span>
+					<strong class="text-brand font-black text-sm tabular-nums">
+						<span id="modal-pay-remaining"></span> ج.م
+					</strong>
+				</div>
+			</div>
+
+			<!-- Payment Amount -->
+			<div>
+				<label for="modal-pay-amount" class="form-label text-xs font-bold mb-1.5 d-block">
+					مبلغ الدفعة المسددة (ج.م): <span class="text-danger">*</span>
+				</label>
+				<input
+					type="number"
+					id="modal-pay-amount"
+					name="amount"
+					step="0.01"
+					min="0.01"
+					class="form-input w-full text-sm font-black tabular-nums"
+					placeholder="0.00"
+					required
+				/>
+				<span class="text-2xs text-muted mt-1 d-block">يمكنك تسجيل دفعة كاملة أو دفعة جزئية وسيتم تحديث رصيد الفاتورة آلياً.</span>
+			</div>
+
+			<!-- Method & Reference in Grid -->
+			<div class="grid grid-cols-2 gap-3">
+				<div>
+					<label for="modal-pay-method" class="form-label text-xs font-bold mb-1.5 d-block">طريقة التحصيل:</label>
+					<select id="modal-pay-method" name="method" class="form-select w-full text-xs font-bold">
+						<option value="bank_transfer">تحويل بنكي</option>
+						<option value="cash">نقدي</option>
+						<option value="cheque">شيك مصرفي</option>
+						<option value="electronic_wallet">محفظة إلكترونية</option>
+					</select>
+				</div>
+				<div>
+					<label for="modal-pay-ref" class="form-label text-xs font-bold mb-1.5 d-block">رقم الإيصال / المرجع:</label>
+					<input
+						type="text"
+						id="modal-pay-ref"
+						name="reference_number"
+						class="form-input w-full text-xs font-bold"
+						placeholder="مثال: TRX-10294"
+					/>
+				</div>
+			</div>
+
+			<!-- Notes -->
+			<div>
+				<label for="modal-pay-notes" class="form-label text-xs font-bold mb-1.5 d-block">ملاحظات التحصيل:</label>
+				<textarea
+					id="modal-pay-notes"
+					name="notes"
+					rows="2"
+					class="form-input w-full text-xs font-medium"
+					placeholder="أي تفاصيل أو ملاحظات إضافية حول الدفعة..."
+				></textarea>
+			</div>
+
+			<!-- Submit Buttons -->
+			<div class="flex-end gap-2 pt-3 border-t border-slate-200">
+				<button type="button" class="btn btn-secondary btn-sm font-bold" data-on-click="window.closeRecordInvoicePaymentModal()" data-modal-close>إلغاء</button>
+				<button type="submit" class="btn btn-primary btn-sm font-black">تأكيد وتسجيل الدفعة</button>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		window.openRecordInvoicePaymentModal = function(invoiceId, invoiceNumber, remainingAmount) {
+			var idEl = document.getElementById('modal-pay-invoice-id');
+			var numEl = document.getElementById('modal-pay-invoice-num');
+			var remEl = document.getElementById('modal-pay-remaining');
+			var amtEl = document.getElementById('modal-pay-amount');
+			if (idEl) idEl.value = invoiceId;
+			if (numEl) numEl.textContent = invoiceNumber;
+			if (remEl) remEl.textContent = remainingAmount;
+			if (amtEl) {
+				amtEl.value = remainingAmount;
+				amtEl.max = remainingAmount;
+			}
+			var modal = document.getElementById('record-invoice-payment-modal');
+			if (modal) {
+				if (typeof modal.showModal === 'function') {
+					try {
+						if (!modal.open) {
+							modal.showModal();
+						}
+					} catch (e) {
+						modal.setAttribute('open', '');
+					}
+				} else {
+					modal.setAttribute('open', '');
+				}
+			}
+		};
+
+		window.closeRecordInvoicePaymentModal = function() {
+			var modal = document.getElementById('record-invoice-payment-modal');
+			if (modal) {
+				if (typeof modal.close === 'function') {
+					try {
+						if (modal.open) {
+							modal.close();
+						}
+					} catch (e) {
+						modal.removeAttribute('open');
+					}
+				} else {
+					modal.removeAttribute('open');
+				}
+			}
+		};
+
+		function setupPaymentModalEvents() {
+			var modal = document.getElementById('record-invoice-payment-modal');
+			if (modal && !modal._hasPaymentCloseListener) {
+				modal._hasPaymentCloseListener = true;
+				modal.addEventListener('click', function(e) {
+					if (e.target === modal || e.target.closest('.modal-close') || e.target.closest('[data-modal-close]')) {
+						window.closeRecordInvoicePaymentModal();
+					}
+				});
+			}
+		}
+		(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', setupPaymentModalEvents) : setupPaymentModalEvents());
+	</script>
+}

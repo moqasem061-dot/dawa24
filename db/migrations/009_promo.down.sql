@@ -1,0 +1,12 @@
+BEGIN;
+
+DROP TABLE IF EXISTS promo.ad_clicks CASCADE;
+DROP TABLE IF EXISTS promo.ads CASCADE;
+DROP TABLE IF EXISTS promo.offer_sponsorships CASCADE;
+DROP TABLE IF EXISTS promo.offer_packages CASCADE;
+DROP TABLE IF EXISTS promo.offer_products CASCADE;
+DROP TABLE IF EXISTS promo.offers CASCADE;
+
+DROP SCHEMA IF EXISTS promo CASCADE;
+
+COMMIT;

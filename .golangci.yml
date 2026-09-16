@@ -1,0 +1,44 @@
+version: "2"
+
+run:
+  timeout: 5m
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - bodyclose
+    - rowserrcheck
+    - sqlclosecheck
+    - contextcheck
+    - errorlint
+    - noctx
+    - depguard
+
+  settings:
+    depguard:
+      rules:
+        # Architectural boundaries, enforced by the build rather than by review.
+        # See docs/adr/0002-modular-monolith.md.
+        shared-is-a-leaf:
+          files:
+            - "**/internal/shared/**"
+          deny:
+            - pkg: "github.com/muhiya/dawa24-store/internal/platform"
+              desc: "shared/ must not depend on platform/; it is a dependency-free leaf"
+            - pkg: "github.com/muhiya/dawa24-store/internal/modules"
+              desc: "shared/ must not depend on modules/"
+        platform-does-not-know-modules:
+          files:
+            - "**/internal/platform/**"
+          deny:
+            - pkg: "github.com/muhiya/dawa24-store/internal/modules"
+              desc: "platform/ is infrastructure and must not depend on business modules"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports

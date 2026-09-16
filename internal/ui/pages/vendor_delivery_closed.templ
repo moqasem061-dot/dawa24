@@ -1,0 +1,179 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorDeliveryHandoverCard is the PIN form. The confirmation checkbox is
+// rendered only when there is cash to take, because a checkbox that always
+// appears is one people always tick.
+templ VendorDeliveryHandoverCard(sh *commerce.OrderShipment, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div id="handover-pin-section" class="courier-card border-brand">
+		<div class="text-center mb-4">
+			<div class="courier-hero-icon">
+				@components.IconShield("icon-sm")
+			</div>
+			<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.handover.pin_title") }</h3>
+			<p class="text-xs text-secondary m-0 mt-1 font-medium leading-relaxed">
+				{ i18n.T(lang, "vendor_delivery.handover.pin_desc") }
+			</p>
+		</div>
+
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/verify", sh.ID)) }
+			class="m-0 d-flex flex-col gap-4"
+		>
+			<div class="stack-xs text-center">
+				<label class="form-label text-xs font-black text-primary d-block text-center mb-2">
+					{ i18n.T(lang, "vendor_delivery.handover.pin_input_lbl") }
+				</label>
+				<input
+					type="text"
+					name="delivery_code"
+					required
+					maxlength="6"
+					pattern="[0-9]{6}"
+					inputmode="numeric"
+					autocomplete="one-time-code"
+					class="courier-pin-input"
+				/>
+			</div>
+
+			if sh.CourierCollection().Kind != commerce.CollectNothing {
+				<div class="p-3.5 rounded-2xl bg-surface-sunken border text-start">
+					<div class="d-flex items-center justify-between mb-2">
+						<label for="collected_amount_input" class="form-label text-xs font-black text-primary m-0">
+							{ i18n.T(lang, "vendor_delivery.handover.collected_amount_lbl") }
+						</label>
+						<span class="badge badge-emerald text-2xs font-bold tabular-nums">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.handover.required_collection"), sh.CourierCollection().Amount.String()) }
+						</span>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<div class="flex-1 relative">
+							<input
+								type="number"
+								id="collected_amount_input"
+								name="collected_amount"
+								step="0.01"
+								min="0"
+								value={ sh.CourierCollection().Amount.String() }
+								class="form-input text-sm font-bold text-primary w-full rounded-xl tabular-nums"
+								placeholder="0.00"
+							/>
+						</div>
+						<button
+							type="button"
+							class="btn btn-secondary btn-sm text-xs font-bold whitespace-nowrap rounded-xl"
+							data-full-amount={ sh.CourierCollection().Amount.String() }
+							data-on-click="setValue('collected_amount_input', this.dataset.fullAmount)"
+						>
+							{ i18n.T(lang, "vendor_delivery.handover.quick_full_amount") }
+						</button>
+					</div>
+					<p class="text-2xs text-muted m-0 mt-1.5 leading-normal">
+						{ i18n.T(lang, "vendor_delivery.handover.collected_amount_hint") }
+					</p>
+				</div>
+			}
+
+			<div class="stack-2xs text-start">
+				<label class="form-label text-2xs font-bold text-secondary d-block mb-1">
+					{ i18n.T(lang, "vendor_delivery.handover.delivery_notes_lbl") }
+				</label>
+				<input
+					type="text"
+					name="notes"
+					placeholder={ i18n.T(lang, "vendor_delivery.handover.delivery_notes_ph") }
+					class="form-input text-xs w-full rounded-xl"
+				/>
+			</div>
+
+			<button type="submit" class="btn btn-primary w-full py-3 font-black text-sm rounded-xl gap-2 d-flex items-center justify-center">
+				@components.IconCheckCircle("icon-sm")
+				<span>{ i18n.T(lang, "vendor_delivery.handover.btn_confirm_handover") }</span>
+			</button>
+		</form>
+	</div>
+}
+
+// VendorDeliveryClosedCard is what a finished parcel looks like: a receipt, not
+// a form.
+templ VendorDeliveryClosedCard(sh *commerce.OrderShipment, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="courier-card text-center p-6">
+		if sh.Status == commerce.StatusDelivered || sh.Status == commerce.StatusCompleted {
+			<div class="courier-hero-icon">
+				@components.IconCheckCircle("icon-md")
+			</div>
+			<h3 class="text-base font-black text-primary m-0 mb-1">{ i18n.T(lang, "vendor_delivery.handover.closed_success_title") }</h3>
+			<p class="text-xs text-secondary m-0 font-medium">
+				{ i18n.T(lang, "vendor_delivery.handover.closed_success_desc") }
+			</p>
+			if sh.DeliveredAt != nil {
+				<div class="text-2xs text-secondary mt-2 font-mono tabular-nums">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.handover.delivered_at"), sh.DeliveredAt.Format("2006-01-02 03:04 PM")) }
+				</div>
+			}
+			if sh.CollectedAmountMinor > 0 {
+				<div class="text-2xs text-secondary mt-1 font-mono tabular-nums">
+					{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.handover.collected_amount"), fmt.Sprintf("%.2f", float64(sh.CollectedAmountMinor)/100)) }
+				</div>
+			}
+			if sh.DeliveryNotes != "" {
+				<div class="text-2xs text-secondary mt-2">{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.handover.notes_prefix"), sh.DeliveryNotes) }</div>
+			}
+		} else if sh.Status == commerce.StatusFailed {
+			<div class="courier-hero-icon bg-rose-50 text-danger border-danger/20">
+				@components.IconAlert("icon-md")
+			</div>
+			<h3 class="text-base font-black text-danger m-0 mb-1">{ i18n.T(lang, "vendor_delivery.handover.closed_failed_title") }</h3>
+			<p class="text-xs text-secondary m-0 font-medium leading-relaxed max-w-md mx-auto">
+				{ i18n.T(lang, "vendor_delivery.handover.closed_failed_desc") }
+			</p>
+			if sh.DeliveryNotes != "" {
+				<div class="p-3 bg-surface-sunken rounded-xl border mt-3 text-xs text-secondary text-start max-w-md mx-auto">
+					<strong class="text-primary d-block mb-1">{ i18n.T(lang, "vendor_delivery.handover.fail_notes_recorded") }</strong>
+					{ sh.DeliveryNotes }
+				</div>
+			}
+		} else if sh.Status == commerce.StatusReturned {
+			<div class="courier-hero-icon bg-rose-50 text-danger border-danger/20">
+				@components.IconAlert("icon-md")
+			</div>
+			<h3 class="text-base font-black text-danger m-0 mb-1">{ i18n.T(lang, "vendor_delivery.handover.closed_returned_title") }</h3>
+			<p class="text-xs text-secondary m-0 font-medium leading-relaxed max-w-md mx-auto">
+				{ i18n.T(lang, "vendor_delivery.handover.closed_returned_desc") }
+			</p>
+		} else {
+			<div class="mb-2">@components.IconAlert("icon-md")</div>
+			<h3 class="text-base font-black text-primary m-0 mb-1">{ i18n.T(lang, "vendor_delivery.handover.closed_generic_title") }</h3>
+			<p class="text-xs text-secondary m-0 font-medium">
+				{ i18n.T(lang, "vendor_delivery.handover.closed_generic_desc") }
+			</p>
+		}
+
+		<div class="pt-4 mt-4 border-t">
+			<a href="/vendor/delivery" class="btn btn-secondary text-xs font-bold py-2.5 px-5 d-inline-flex items-center gap-2">
+				@components.IconTruck("icon-2xs")
+				<span>{ i18n.T(lang, "vendor_delivery.handover.btn_back_to_parcels") }</span>
+			</a>
+		</div>
+	</div>
+}

@@ -1,0 +1,293 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type OfferDetailPageData struct {
+	Offer          *promo.SpecialOffer
+	Organization   *org.Organization
+	Products       []*promo.SpecialOfferProduct
+	Locations      []*promo.SpecialOfferLocation
+	IsCustomerUser bool
+	IsCovered      bool
+	CoverageReason string
+	CustomerBranch *org.Branch
+}
+
+templ OfferDetail(lang, dir string, data OfferDetailPageData) {
+	@layouts.ShellFor(data.Offer.Title.Get(i18n.ParseLang(lang))+" | تفاصيل العرض الترويجي", "offers", lang, dir, authctx.FromContext(ctx)) {
+		@OfferDetailContent(lang, data)
+	}
+}
+
+templ OfferDetailContent(lang string, data OfferDetailPageData) {
+	<div class="page-container py-6">
+		<!-- Navigation Breadcrumb -->
+		<nav class="d-flex items-center gap-2 text-xs text-muted mb-4 font-bold">
+			{{ actor := authctx.FromContext(ctx) }}
+			if actor.UserID == 0 {
+				<a href="/" class="text-secondary transition-colors">الرئيسية</a>
+			} else if actor.IsVendor() {
+				<a href="/vendor/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+			} else if actor.IsStaff {
+				<a href="/admin/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+			} else {
+				<a href="/customer/dashboard" class="text-secondary transition-colors">لوحة التحكم</a>
+			}
+			<span>/</span>
+			<a href="/offers" class="text-secondary transition-colors">العروض والخصومات</a>
+			<span>/</span>
+			<span class="text-primary font-black">{ data.Offer.Title.Get(i18n.ParseLang(lang)) }</span>
+		</nav>
+
+		<!-- Offer Header Panel -->
+		<div class="glass-panel p-6 mb-6 border rounded-2xl shadow-sm">
+			<div class="flex-between flex-wrap gap-4 items-start">
+				<div class="stack-sm flex-1 min-w-64">
+					<div class="d-flex items-center gap-2 mb-1 flex-wrap">
+						if data.Offer.DiscountPercentage > 0 {
+							<span class="badge badge-emerald font-black text-xs shadow-xs">
+								خصم { fmt.Sprintf("%.0f%%", data.Offer.DiscountPercentage) }
+							</span>
+						} else if data.Offer.DiscountAmount.IsPositive() {
+							<span class="badge badge-emerald font-black text-xs shadow-xs">
+								خصم بقيمة { data.Offer.DiscountAmount.String() } ج.م
+							</span>
+						}
+						<span class="badge badge-sky font-bold text-xs">
+							@components.IconTruck("icon-2xs")
+							<span>توريد دوائي مباشر</span>
+						</span>
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0 tracking-tight">
+						{ data.Offer.Title.Get(i18n.ParseLang(lang)) }
+					</h1>
+					if data.Offer.Description.Get(i18n.ParseLang(lang)) != "" {
+						<p class="text-xs text-secondary mt-2 mb-0 max-w-2xl leading-relaxed font-medium">
+							{ data.Offer.Description.Get(i18n.ParseLang(lang)) }
+						</p>
+					}
+				</div>
+
+				<div class="text-end stack-2xs">
+					if data.Offer.TotalPrice.IsPositive() {
+						<span class="text-xs text-muted d-block font-semibold">إجمالي سعر الحزمة</span>
+						<strong class="text-2xl font-black text-brand tabular-nums">
+							{ data.Offer.TotalPrice.String() } <span class="text-xs font-bold text-secondary">ج.م</span>
+						</strong>
+					} else if data.Offer.MinOrderAmount.IsPositive() {
+						<span class="text-xs text-muted d-block font-semibold">الحد الأدنى للطلب</span>
+						<strong class="text-2xl font-black text-primary tabular-nums">
+							{ data.Offer.MinOrderAmount.String() } <span class="text-xs font-bold text-secondary">ج.م</span>
+						</strong>
+					}
+				</div>
+			</div>
+
+			<!-- Offer Validity & Summary Grid -->
+			<div class="d-grid grid-auto-fit-sm gap-4 bg-surface-sunken p-4 rounded-xl border mt-5 text-xs">
+				<div>
+					<span class="text-muted font-bold d-block mb-1">المورد / المنشأة:</span>
+					<strong class="text-primary text-sm font-extrabold d-block">
+						if data.Offer.OrganizationName != "" {
+							{ data.Offer.OrganizationName }
+						} else {
+							<span>مورد أدوية معتمد</span>
+						}
+					</strong>
+					if data.Offer.BranchName != "" {
+						<span class="text-secondary text-xs mt-0.5 d-block font-medium">مستودع / فرع: { data.Offer.BranchName }</span>
+					}
+				</div>
+
+				<div>
+					<span class="text-muted font-bold d-block mb-1">سريان العرض:</span>
+					<div class="text-primary font-bold tabular-nums">
+						if data.Offer.StartDate != nil {
+							<span>من { format.Date(*data.Offer.StartDate, lang) } </span>
+						}
+						if data.Offer.EndDate != nil {
+							<span>حتى { format.Date(*data.Offer.EndDate, lang) }</span>
+						}
+					</div>
+				</div>
+
+				<div>
+					<span class="text-muted font-bold d-block mb-1">شروط التوريد والشحن:</span>
+					<span class="badge badge-sky text-xs font-bold shadow-2xs">
+						@components.IconTruck("icon-2xs")
+						<span>شحن مجهز ومؤمن</span>
+					</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Coverage Status Notification for Pharmacies -->
+		if data.IsCustomerUser {
+			if data.IsCovered {
+				<div class="alert alert-success d-flex items-center gap-3 p-4 rounded-xl mb-6 shadow-xs border">
+					@components.IconCheckCircle("icon-sm flex-shrink-0")
+					<div>
+						<strong class="text-sm font-black d-block">فرع صيدليتك مشمول في نطاق توصيل هذا العرض</strong>
+						if data.CustomerBranch != nil {
+							<span class="text-xs font-medium text-secondary">
+								الفرع المحدد: { data.CustomerBranch.Name.Get(i18n.Lang(lang)) } — { data.CoverageReason }
+							</span>
+						}
+					</div>
+				</div>
+			} else {
+				<div class="alert alert-warning d-flex items-center gap-3 p-4 rounded-xl mb-6 shadow-xs border">
+					@components.IconAlert("icon-sm flex-shrink-0")
+					<div>
+						<strong class="text-sm font-black d-block">تنبيه: فرع صيدليتك خارج نطاق التغطية الجغرافية لهذا العرض</strong>
+						<span class="text-xs font-medium text-secondary">
+							if data.CustomerBranch != nil {
+								الفرع المحدد: { data.CustomerBranch.Name.Get(i18n.Lang(lang)) } — 
+							}
+							{ data.CoverageReason }
+						</span>
+					</div>
+				</div>
+			}
+		}
+
+		<!-- Direct Add-to-Cart Action Bar -->
+		<div class="p-5 bg-surface-raised border rounded-2xl mb-6 shadow-sm flex-between items-center flex-wrap gap-4">
+			<div class="d-flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-primary-subtle text-primary border d-flex items-center justify-center font-black">
+					@components.IconTag("icon-sm")
+				</div>
+				<div>
+					<h3 class="text-sm font-black text-primary m-0">طلب هذا العرض الترويجي</h3>
+					<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+						إضافة كافة أصناف العرض بأسعار التخفيض المعتمدة مباشرة إلى سلة المشتريات
+					</p>
+				</div>
+			</div>
+
+			<div>
+				if actor, ok := authctx.From(ctx); ok && actor.IsBuyer() {
+					<form action="/cart/add-offer" method="POST" hx-post="/cart/add-offer" hx-swap="none" class="m-0 d-flex items-center gap-3 flex-wrap">
+						<input type="hidden" name="offer_id" value={ fmt.Sprintf("%d", data.Offer.ID) } />
+						<div class="d-flex items-center gap-2">
+							<label for="offer-qty" class="text-xs font-bold text-secondary">الكمية المطلوبة (باقات):</label>
+							<input
+								type="number"
+								id="offer-qty"
+								name="quantity"
+								min="1"
+								max="99"
+								value="1"
+								class="form-input tabular-nums text-center font-bold text-sm w-20 py-2 rounded-xl"
+							/>
+						</div>
+						if !data.IsCovered {
+							<button type="button" disabled class="btn btn-secondary font-bold text-xs px-6 py-2.5 gap-2 cursor-not-allowed opacity-75" title={ data.CoverageReason }>
+								@components.IconAlert("icon-xs text-warning")
+								<span>غير متاح لفرعك (خارج التغطية)</span>
+							</button>
+						} else {
+							<button type="submit" class="btn btn-primary font-black text-sm px-6 py-2.5 gap-2 shadow-sm">
+								@components.IconCart("icon-xs")
+								<span>إضافة العرض إلى السلة والشراء الآن</span>
+							</button>
+						}
+					</form>
+				} else {
+					<a href={ templ.SafeURL(fmt.Sprintf("/auth/login?redirect=/offers/%d", data.Offer.ID)) } class="btn btn-primary font-black text-xs px-6 py-2.5 gap-2 shadow-sm">
+						@components.IconShield("icon-xs")
+						<span>تسجيل الدخول كصيدلية لشراء العرض</span>
+					</a>
+				}
+			</div>
+		</div>
+
+		<!-- Products in Offer Section -->
+		<div class="mb-6">
+			<div class="flex-between items-center mb-3">
+				<h3 class="text-base font-black text-primary m-0 d-flex items-center gap-2">
+					@components.IconPackage("icon-xs text-brand")
+					<span>الأصناف الدوائية المشمولة بالعرض ({ fmt.Sprintf("%d", len(data.Products)) } صنف)</span>
+				</h3>
+				<span class="text-xs text-muted font-medium">محتويات الحزمة الترويجية</span>
+			</div>
+
+			if len(data.Products) == 0 {
+				<div class="p-6 bg-surface-sunken rounded-xl border text-center text-xs text-muted font-medium">
+					العرض يشمل تخفيضات مباشرة على طلبات التوريد من الكتالوج.
+				</div>
+			} else {
+				<div class="table-container m-0 border rounded-2xl overflow-hidden shadow-xs">
+					<table class="data-table m-0 text-xs w-full">
+						<thead>
+							<tr>
+								<th class="py-3 text-start ps-4">اسم الصنف / الدواء</th>
+								<th class="text-center py-3">الكمية بالباقة</th>
+								<th class="text-end py-3">سعر الجمهور الأصلي</th>
+								<th class="text-center py-3">نسبة الخصم</th>
+								<th class="text-end py-3">سعر الصنف بالعرض</th>
+								<th class="text-end py-3 pe-4">الإجمالي الصافي</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, p := range data.Products {
+								<tr>
+									<td class="py-3 ps-4">
+										<strong class="text-primary text-xs font-bold d-block">
+											if p.VariantName != "" {
+												{ p.VariantName }
+											} else {
+												<span>صنف دوائي #{ fmt.Sprintf("%d", p.VariantID) }</span>
+											}
+										</strong>
+									</td>
+									<td class="text-center tabular-nums py-3 font-bold">
+										<span class="badge badge-secondary text-xs font-bold">
+											{ fmt.Sprintf("%d", p.Quantity) } عبوة
+										</span>
+									</td>
+									<td class="text-end tabular-nums font-bold text-xs text-secondary py-3">
+										if p.OriginalPrice.IsPositive() {
+											{ p.OriginalPrice.String() } <span class="text-2xs font-normal">ج.م</span>
+										} else {
+											<span class="text-muted">—</span>
+										}
+									</td>
+									<td class="text-center tabular-nums py-3">
+										if p.DiscountPercentage > 0 {
+											<span class="badge badge-emerald text-xs font-black tabular-nums">
+												{ fmt.Sprintf("%.1f%%", p.DiscountPercentage) }
+											</span>
+										} else {
+											<span class="text-xs text-muted">0%</span>
+										}
+									</td>
+									<td class="text-end tabular-nums font-black text-brand text-xs py-3">
+										{ p.CustomPrice.String() } <span class="text-2xs font-bold text-secondary">ج.م</span>
+									</td>
+									<td class="text-end tabular-nums font-black text-primary text-xs py-3 pe-4">
+										{{
+											lineTotal := money.FromMinor(p.CustomPrice.Minor() * int64(p.Quantity))
+										}}
+										{ lineTotal.String() } <span class="text-2xs font-bold text-secondary">ج.م</span>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	</div>
+}

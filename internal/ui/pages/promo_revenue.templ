@@ -1,0 +1,1398 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// SponsorshipRequestsData holds the vendor's sponsorship packages, purchases,
+// active purchases (with remaining credits), submitted requests, and eligible items.
+type SponsorshipRequestsData struct {
+	Packages        []*promo.OfferPackage
+	Purchases       []*promo.SponsorshipPurchase
+	ActivePurchases []*promo.SponsorshipPurchase
+	Requests        []*promo.SponsorshipRequest
+	OrgID           int64
+	ItemOptions     []VendorOfferItemOption
+	ActiveOffers    []*promo.Offer
+	TotalCredits    int
+	WalletBalance   money.Amount
+	NoticeType      string
+	NoticeMsg       string
+	Page            int
+	PerPage         int
+	TotalCount      int
+}
+
+// AdminOffersPackagesData holds all metrics, packages, requests, and ads for admin management.
+type AdminOffersPackagesData struct {
+	Packages          []*promo.OfferPackage
+	Requests          []*promo.SponsorshipRequest
+	Ads               []*promo.Ad
+	TotalPackages     int
+	ActivePackages    int
+	TotalRequests     int
+	PendingRequests   int
+	ApprovedRequests  int
+	TotalAds          int
+	PendingAds        int
+	ActiveTab         string
+	NoticeType        string
+	NoticeMsg         string
+	ReqPage           int
+	ReqPerPage        int
+	AdsPage           int
+	AdsPerPage        int
+}
+
+func getTierName(tier int) string {
+	switch tier {
+	case 5:
+		return "ماسي (Diamond)"
+	case 4:
+		return "بلاتيني (Platinum)"
+	case 3:
+		return "ذهبي (Gold)"
+	case 2:
+		return "فضي (Silver)"
+	default:
+		return "عادي (Standard)"
+	}
+}
+
+// AdminOffersPackagesHubPage renders the unified sponsorship, promo packages, requests, and ads hub.
+templ AdminOffersPackagesHubPage(lang, dir string, data AdminOffersPackagesData) {
+	@layouts.AdminShell("باقات الرعايات والعروض الترويجية", "offers_packages", lang, dir) {
+		<div
+			x-data={ fmt.Sprintf(`{
+				activeTab: '%s',
+				showAddModal: false,
+				showEditModal: false,
+				showRejectModal: false,
+				rejectActionUrl: '',
+				rejectNotes: '',
+				editPkg: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					desc_ar: '',
+					desc_en: '',
+					price: '',
+					duration_days: 30,
+					credits: 10,
+					max_offers: 20,
+					tier_level: 1,
+					sort_order: 0,
+					badge_color: '#0284c7',
+					is_featured: false,
+					is_active: true
+				},
+				openEdit(pkg) {
+					this.editPkg = {
+						id: pkg.id,
+						name_ar: pkg.name_ar,
+						name_en: pkg.name_en,
+						desc_ar: pkg.desc_ar,
+						desc_en: pkg.desc_en,
+						price: pkg.price,
+						duration_days: pkg.duration_days,
+						credits: pkg.credits,
+						max_offers: pkg.max_offers,
+						tier_level: pkg.tier_level,
+						sort_order: pkg.sort_order,
+						badge_color: pkg.badge_color || '#0284c7',
+						is_featured: pkg.is_featured,
+						is_active: pkg.is_active
+					};
+					this.showEditModal = true;
+				},
+				openReject(actionUrl) {
+					this.rejectActionUrl = actionUrl;
+					this.rejectNotes = '';
+					this.showRejectModal = true;
+				}
+			}`, func() string {
+				if data.ActiveTab != "" {
+					return data.ActiveTab
+				}
+				return "packages"
+			}()) }
+			class="page-container py-6"
+		>
+			<!-- Notice Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-error mb-6 d-flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 shadow-xs">
+						@components.IconAlert("icon-sm text-rose-600 shrink-0")
+						<div class="flex-1 font-semibold text-xs">{ data.NoticeMsg }</div>
+					</div>
+				} else {
+					<div class="alert alert-success mb-6 d-flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-xs">
+						@components.IconCheckCircle("icon-sm text-emerald-600 shrink-0")
+						<div class="flex-1 font-semibold text-xs">{ data.NoticeMsg }</div>
+					</div>
+				}
+			}
+
+			<!-- Hub Header -->
+			<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+				<div class="flex-between items-center flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1.5">
+							<div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+								@components.IconBoxes("icon-md")
+							</div>
+       <div class="stack-sm">
+								<h1 class="text-2xl font-black text-primary m-0">منظومة باقات الرعايات والعروض الترويجية</h1>
+								<p class="text-xs text-secondary m-0 mt-0.5 font-medium">إدارة وتخصيص باقات الرعاية للموردين، مراجعة طلبات التثبيت في الصدارة، ومتابعة الإعلانات</p>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2.5 flex-wrap">
+						<button
+							type="button"
+							class="btn btn-primary btn-sm font-extrabold gap-1.5 shadow-sm"
+							@click="showAddModal = true"
+						>
+							@components.IconPlus("icon-xs")
+							<span>إضافة باقة رعاية جديدة</span>
+						</button>
+						<a href="/admin/ads" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconMegaphone("icon-xs text-brand")
+							<span>مراجعة الإعلانات</span>
+							if data.PendingAds > 0 {
+								<span class="badge badge-rose text-2xs font-mono">{ fmt.Sprintf("%d", data.PendingAds) }</span>
+							}
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Metrics Cards Grid -->
+			<div class="dashboard-stat-grid cols-4 mb-6">
+				<!-- Total Packages -->
+				<div class="stat-card-3d p-4 d-flex items-center gap-3.5">
+					<div class="w-11 h-11 rounded-xl bg-sky-50 text-sky-600 d-flex items-center justify-center border border-sky-200/60 shrink-0">
+						@components.IconBoxes("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="text-2xs text-secondary font-bold uppercase tracking-wider mb-0.5">باقات الرعاية</div>
+						<div class="d-flex items-baseline gap-1.5">
+							<span class="text-xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.TotalPackages) }</span>
+							<span class="text-2xs font-semibold text-emerald-600">({ fmt.Sprintf("%d", data.ActivePackages) } نشطة)</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Pending Requests -->
+				<div class="stat-card-3d p-4 d-flex items-center gap-3.5">
+					<div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 d-flex items-center justify-center border border-amber-200/60 shrink-0">
+						@components.IconShield("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="text-2xs text-secondary font-bold uppercase tracking-wider mb-0.5">طلبات الرعاية</div>
+						<div class="d-flex items-baseline gap-1.5">
+							<span class="text-xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.TotalRequests) }</span>
+							if data.PendingRequests > 0 {
+								<span class="badge badge-amber text-2xs font-extrabold">{ fmt.Sprintf("%d معلق", data.PendingRequests) }</span>
+							} else {
+								<span class="text-2xs font-semibold text-secondary">(الكل معتمد)</span>
+							}
+						</div>
+					</div>
+				</div>
+
+				<!-- Pending Ads -->
+				<div class="stat-card-3d p-4 d-flex items-center gap-3.5">
+					<div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 d-flex items-center justify-center border border-emerald-200/60 shrink-0">
+						@components.IconMegaphone("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="text-2xs text-secondary font-bold uppercase tracking-wider mb-0.5">البنرات والإعلانات</div>
+						<div class="d-flex items-baseline gap-1.5">
+							<span class="text-xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", data.TotalAds) }</span>
+							if data.PendingAds > 0 {
+								<span class="badge badge-rose text-2xs font-extrabold">{ fmt.Sprintf("%d للمراجعة", data.PendingAds) }</span>
+							} else {
+								<span class="text-2xs font-semibold text-emerald-600">(محدثة)</span>
+							}
+						</div>
+					</div>
+				</div>
+
+				<!-- Tier Ranking System -->
+				<div class="stat-card-3d p-4 d-flex items-center gap-3.5">
+					<div class="w-11 h-11 rounded-xl bg-purple-50 text-purple-600 d-flex items-center justify-center border border-purple-200/60 shrink-0">
+						@components.IconSparkles("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="text-2xs text-secondary font-bold uppercase tracking-wider mb-0.5">مستويات الأولوية</div>
+						<div class="d-flex items-baseline gap-1.5">
+							<span class="text-xl font-black text-primary">5 مستويات</span>
+							<span class="text-2xs text-secondary font-medium">(1-5 ترتيب)</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Navigation Tabs Bar -->
+			<div class="d-flex items-center gap-2 mb-6 border-b border-slate-200/80 pb-2">
+				<button
+					type="button"
+					class="btn btn-sm font-bold gap-2 transition-all"
+					:class="activeTab === 'packages' ? 'btn-primary shadow-xs' : 'btn-secondary text-secondary'"
+					@click="activeTab = 'packages'"
+				>
+					@components.IconBoxes("icon-xs")
+					<span>باقات الرعايات المتاحة</span>
+					<span class="badge text-2xs tabular-nums" :class="activeTab === 'packages' ? 'badge-primary' : 'badge-slate'">
+						{ fmt.Sprintf("%d", len(data.Packages)) }
+					</span>
+				</button>
+
+				<button
+					type="button"
+					class="btn btn-sm font-bold gap-2 transition-all"
+					:class="activeTab === 'requests' ? 'btn-primary shadow-xs' : 'btn-secondary text-secondary'"
+					@click="activeTab = 'requests'"
+				>
+					@components.IconShield("icon-xs")
+					<span>مراجعة طلبات الرعاية</span>
+					if data.PendingRequests > 0 {
+						<span class="badge badge-amber text-2xs font-extrabold tabular-nums">
+							{ fmt.Sprintf("%d معلق", data.PendingRequests) }
+						</span>
+					} else {
+						<span class="badge text-2xs tabular-nums" :class="activeTab === 'requests' ? 'badge-primary' : 'badge-slate'">
+							{ fmt.Sprintf("%d", len(data.Requests)) }
+						</span>
+					}
+				</button>
+
+				<button
+					type="button"
+					class="btn btn-sm font-bold gap-2 transition-all"
+					:class="activeTab === 'ads' ? 'btn-primary shadow-xs' : 'btn-secondary text-secondary'"
+					@click="activeTab = 'ads'"
+				>
+					@components.IconMegaphone("icon-xs")
+					<span>مراجعة الإعلانات والبنرات</span>
+					if data.PendingAds > 0 {
+						<span class="badge badge-rose text-2xs font-extrabold tabular-nums">
+							{ fmt.Sprintf("%d للمراجعة", data.PendingAds) }
+						</span>
+					} else {
+						<span class="badge text-2xs tabular-nums" :class="activeTab === 'ads' ? 'badge-primary' : 'badge-slate'">
+							{ fmt.Sprintf("%d", len(data.Ads)) }
+						</span>
+					}
+				</button>
+
+				<a href="/admin/offers-packages/organizations" class="btn btn-sm btn-secondary text-secondary font-bold gap-2">
+					@components.IconBuilding("icon-xs")
+					<span>حسابات المنشآت والباقات</span>
+				</a>
+			</div>
+
+			<!-- TAB 1: Packages Management -->
+			<div x-show="activeTab === 'packages'" class="space-y-6">
+				<!-- Section Header & Actions -->
+				<div class="glass-panel p-4 mb-4 border border-slate-200/80 rounded-xl flex-between items-center flex-wrap gap-3">
+     <div class="stack-sm">
+						<h3 class="text-base font-black text-primary m-0">قائمة باقات الرعاية والعروض الترويجية</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5">الباقات المعروضة للموردين لشراء رصيد تثبيت الأصناف والعروض في صدارة نتائج البحث</p>
+					</div>
+					<button
+						type="button"
+						class="btn btn-primary btn-sm font-bold gap-1.5 shadow-xs"
+						@click="showAddModal = true"
+					>
+						@components.IconPlus("icon-xs")
+						<span>إضافة باقة جديدة</span>
+					</button>
+				</div>
+
+				if len(data.Packages) == 0 {
+					<div class="glass-panel p-10 text-center border border-slate-200/80 rounded-2xl shadow-xs">
+						<div class="w-14 h-14 rounded-full bg-brand-50 text-brand-500 d-flex items-center justify-center mx-auto mb-3 shadow-2xs">
+							@components.IconBoxes("icon-md")
+						</div>
+						<h3 class="text-base font-black text-primary mb-1">لا توجد باقات رعاية مضافة حتى الآن</h3>
+						<p class="text-xs text-secondary max-w-md mx-auto mb-5 leading-relaxed">
+							ابدأ بإضافة باقات الرعاية الترويجية (مثل الباقة الذهبية أو الفضية) ليتمكن الموردون من شرائها وتثبيت عروضهم ومنتجاتهم.
+						</p>
+						<button
+							type="button"
+							class="btn btn-primary btn-sm font-extrabold gap-1.5 shadow-sm"
+							@click="showAddModal = true"
+						>
+							@components.IconPlus("icon-xs")
+							<span>إنشاء أول باقة رعاية</span>
+						</button>
+					</div>
+				} else {
+					<!-- Packages Table -->
+					<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+						<div class="table-container m-0 overflow-x-auto">
+							<table class="data-table m-0 text-xs w-full">
+								<thead>
+									<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+										<th class="py-3 text-start ps-4">الباقة والتصنيف</th>
+										<th class="py-3 text-start">مستوى الأولوية (Tier)</th>
+										<th class="py-3 text-center">السعر والمدة</th>
+										<th class="py-3 text-center">رصيد الرعايات</th>
+										<th class="py-3 text-center">أقصى عروض</th>
+										<th class="py-3 text-center">الترتيب</th>
+										<th class="py-3 text-center">الحالة</th>
+										<th class="col-actions py-3 pe-4">الإجراءات</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-slate-100">
+									for _, pkg := range data.Packages {
+										if pkg != nil {
+											<tr class="transition-colors">
+												<!-- Package Name & Info -->
+												<td class="py-3.5 ps-4">
+													<div class="d-flex items-center gap-3">
+														<div
+															class="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs border border-white"
+															style={ fmt.Sprintf("background-color: %s;", func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }()) }
+														></div>
+              <div class="stack-sm">
+															<div class="d-flex items-center gap-2">
+																<span class="font-black text-primary text-sm">{ pkg.Name.Get(i18n.ParseLang(lang)) }</span>
+																if pkg.IsFeatured {
+																	<span class="badge badge-amber text-2xs font-extrabold shadow-2xs d-inline-flex items-center gap-1">
+																		@components.IconSparkles("icon-2xs")
+																		<span>مميزة</span>
+																	</span>
+																}
+															</div>
+															if pkg.Description.Get(i18n.ParseLang(lang)) != "" {
+																<div class="text-secondary text-2xs font-medium mt-0.5 line-clamp-1 max-w-xs">{ pkg.Description.Get(i18n.ParseLang(lang)) }</div>
+															}
+														</div>
+													</div>
+												</td>
+
+												<!-- Tier Level -->
+												<td class="py-3.5">
+													<span
+														class="badge text-xs font-black shadow-2xs"
+														style={ fmt.Sprintf("background-color: %s15; color: %s; border: 1px solid %s40;", func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }(), func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }(), func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }()) }
+													>
+														{ getTierName(pkg.TierLevel) }
+													</span>
+												</td>
+
+												<!-- Price & Duration -->
+												<td class="py-3.5 text-center">
+													<div class="font-extrabold text-primary text-xs tabular-nums">
+														if pkg.Price.IsZero() {
+															<span class="text-emerald-600 font-black">مجاناً</span>
+														} else {
+															<span>{ fmt.Sprintf("%s ج.م", pkg.Price.String()) }</span>
+														}
+													</div>
+													<div class="text-secondary text-2xs font-medium">{ fmt.Sprintf("%d يوم", pkg.DurationDays) }</div>
+												</td>
+
+												<!-- Credits -->
+												<td class="py-3.5 text-center">
+													<span class="badge badge-sky font-extrabold text-xs tabular-nums shadow-2xs">
+														{ fmt.Sprintf("%d رعاية", pkg.Credits) }
+													</span>
+												</td>
+
+												<!-- Max Offers -->
+												<td class="py-3.5 text-center font-bold text-slate-700 tabular-nums">
+													{ fmt.Sprintf("%d", pkg.MaxOffers) }
+												</td>
+
+												<!-- Sort Order -->
+												<td class="py-3.5 text-center font-mono text-secondary tabular-nums">
+													{ fmt.Sprintf("%d", pkg.SortOrder) }
+												</td>
+
+												<!-- Status -->
+												<td class="py-3.5 text-center">
+													if pkg.IsActive {
+														<span class="badge badge-emerald font-extrabold text-xs">مفعلة</span>
+													} else {
+														<span class="badge badge-slate font-extrabold text-xs text-muted">معطلة</span>
+													}
+												</td>
+
+												<!-- Actions -->
+												<td class="col-actions py-3.5 pe-4">
+													<div class="table-actions">
+														<!-- Edit Button -->
+														<button
+															type="button"
+															class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
+															@click={ fmt.Sprintf(`openEdit({
+																id: %d,
+																name_ar: %q,
+																name_en: %q,
+																desc_ar: %q,
+																desc_en: %q,
+																price: '%s',
+																duration_days: %d,
+																credits: %d,
+																max_offers: %d,
+																tier_level: %d,
+																sort_order: %d,
+																badge_color: %q,
+																is_featured: %t,
+																is_active: %t
+															})`, pkg.ID, pkg.Name.Get(i18n.AR), pkg.Name.Get(i18n.EN), pkg.Description.Get(i18n.AR), pkg.Description.Get(i18n.EN), pkg.Price.String(), pkg.DurationDays, pkg.Credits, pkg.MaxOffers, pkg.TierLevel, pkg.SortOrder, pkg.BadgeColor, pkg.IsFeatured, pkg.IsActive) }
+														>
+															@components.IconEdit("icon-2xs")
+															<span>تعديل</span>
+														</button>
+
+														<!-- Toggle Status Button -->
+														<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers-packages/%d/toggle", pkg.ID)) } class="m-0 d-inline">
+															if pkg.IsActive {
+																<input type="hidden" name="active" value="false"/>
+																<button type="submit" class="btn btn-ghost btn-xs font-bold text-amber-700 gap-1" title="تعطيل الباقة">
+																	@components.IconMinus("icon-2xs")
+																	<span>تعطيل</span>
+																</button>
+															} else {
+																<input type="hidden" name="active" value="true"/>
+																<button type="submit" class="btn btn-ghost btn-xs font-bold text-emerald-700 gap-1" title="تفعيل الباقة">
+																	@components.IconCheck("icon-2xs")
+																	<span>تفعيل</span>
+																</button>
+															}
+														</form>
+													</div>
+												</td>
+											</tr>
+										}
+									}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- TAB 2: Sponsorship Requests Moderation -->
+			<div x-show="activeTab === 'requests'" class="space-y-6">
+				<!-- Section Header -->
+				<div class="glass-panel p-4 mb-4 border border-slate-200/80 rounded-xl flex-between items-center flex-wrap gap-3">
+     <div class="stack-sm">
+						<h3 class="text-base font-black text-primary m-0">طلبات الرعاية والترويج من الموردين</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5">مراجعة واعتماد طلبات الموردين لتثبيت الأصناف والعروض في صدارة الكتالوج</p>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-slate text-xs font-bold tabular-nums">الإجمالي: { fmt.Sprintf("%d", len(data.Requests)) }</span>
+					</div>
+				</div>
+
+				if len(data.Requests) == 0 {
+					<div class="glass-panel p-10 text-center border border-slate-200/80 rounded-2xl shadow-xs">
+						<div class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+							@components.IconShield("icon-md")
+						</div>
+						<h3 class="text-base font-black text-primary mb-1">لا توجد طلبات رعاية حالياً</h3>
+						<p class="text-xs text-secondary max-w-md mx-auto">
+							جميع طلبات الرعاية الترويجية المقدمة من الموردين تمت معالجتها بالكامل.
+						</p>
+					</div>
+				} else {
+					<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+						<div class="table-container m-0 overflow-x-auto">
+							<table class="data-table m-0 text-xs w-full">
+								<thead>
+									<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+										<th class="py-3 text-start ps-4">المورد (#ID)</th>
+										<th class="py-3 text-start">نوع العنصر</th>
+										<th class="py-3 text-start">معرف العنصر</th>
+										<th class="py-3 text-start">الباقة المستخدمة</th>
+										<th class="py-3 text-center">مستوى الأولوية</th>
+										<th class="py-3 text-center">الرصيد المستهلك</th>
+										<th class="py-3 text-center">الحالة</th>
+										<th class="py-3 text-center">تاريخ التقديم</th>
+										<th class="col-actions py-3 pe-4">الإجراءات</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-slate-100">
+									for _, req := range data.Requests {
+										if req != nil {
+											<tr class="transition-colors">
+												<td class="tabular-nums font-black text-primary py-3.5 ps-4">
+													<span class="badge badge-slate text-xs font-mono">{ fmt.Sprintf("#%d", req.OrganizationID) }</span>
+												</td>
+												<td class="py-3.5">
+													if req.ItemType == "product" {
+														<span class="badge badge-sky text-xs font-bold">صنف دوائي</span>
+													} else {
+														<span class="badge badge-emerald text-xs font-bold">عرض ترويجي</span>
+													}
+												</td>
+												<td class="tabular-nums font-mono font-bold text-slate-700 py-3.5">
+													{ fmt.Sprintf("#%d", req.ItemID) }
+												</td>
+												<td class="py-3.5 font-bold text-primary">
+													if req.Package != nil {
+														<span>{ req.Package.Name.Get(i18n.ParseLang(lang)) }</span>
+													} else {
+														<span class="tabular-nums">باقة #{ fmt.Sprintf("%d", req.PackageID) }</span>
+													}
+												</td>
+												<td class="py-3.5 text-center">
+													if req.Package != nil {
+														<span class="badge badge-amber font-black text-xs shadow-2xs">
+															{ getTierName(req.Package.TierLevel) }
+														</span>
+													} else {
+														<span class="text-muted text-xs">—</span>
+													}
+												</td>
+												<td class="py-3.5 text-center font-extrabold text-brand tabular-nums">
+													{ fmt.Sprintf("%d رصيد", req.CreditsUsed) }
+												</td>
+												<td class="py-3.5 text-center">
+													if req.AdminStatus == "pending" {
+														<span class="badge badge-amber font-extrabold text-xs animate-pulse">قيد المراجعة</span>
+													} else if req.AdminStatus == "approved" {
+														<span class="badge badge-emerald font-extrabold text-xs">معتمد</span>
+													} else {
+														<span class="badge badge-rose font-extrabold text-xs">مرفوض</span>
+													}
+												</td>
+												<td class="py-3.5 text-center text-secondary tabular-nums text-2xs">
+													{ req.CreatedAt.Format("2006-01-02 03:04 PM") }
+												</td>
+												<td class="col-actions py-3.5 pe-4">
+													if req.AdminStatus == "pending" {
+														<div class="table-actions">
+															<!-- Approve -->
+															<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers-packages/sponsorships/%d/approve", req.ID)) } class="m-0">
+																<button type="submit" class="btn btn-primary btn-xs font-bold gap-1 shadow-2xs">
+																	@components.IconCheck("icon-2xs")
+																	<span>اعتماد</span>
+																</button>
+															</form>
+
+															<!-- Reject with Modal -->
+															<button
+																type="button"
+																class="btn btn-secondary btn-xs font-bold text-rose-600 gap-1 shadow-2xs"
+																@click={ fmt.Sprintf("openReject('/admin/offers-packages/sponsorships/%d/reject')", req.ID) }
+															>
+																@components.IconClose("icon-2xs")
+																<span>رفض</span>
+															</button>
+														</div>
+													} else {
+														<span class="text-muted text-2xs font-semibold">مكتمل</span>
+													}
+												</td>
+											</tr>
+										}
+									}
+								</tbody>
+							</table>
+						</div>
+						if data.TotalRequests > 0 {
+							@components.B2BPagination(components.PaginationProps{
+								CurrentPage: data.ReqPage,
+								PageSize:    data.ReqPerPage,
+								TotalCount:  data.TotalRequests,
+								BaseURL:     "/admin/offers-packages",
+								QueryValues: map[string][]string{
+									"tab": {"requests"},
+								},
+							})
+						}
+					</div>
+				}
+			</div>
+
+			<!-- TAB 3: Ads & Banners Moderation -->
+			<div x-show="activeTab === 'ads'" class="space-y-6">
+				<!-- Section Header -->
+				<div class="glass-panel p-4 mb-4 border border-slate-200/80 rounded-xl flex-between items-center flex-wrap gap-3">
+     <div class="stack-sm">
+						<h3 class="text-base font-black text-primary m-0">الإعلانات والبنرات الترويجية</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5">مراجعة واعتماد بنرات وإعلانات الموردين المعروضة في المنصة</p>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-slate text-xs font-bold tabular-nums">الإجمالي: { fmt.Sprintf("%d", len(data.Ads)) }</span>
+					</div>
+				</div>
+
+				if len(data.Ads) == 0 {
+					<div class="glass-panel p-10 text-center border border-slate-200/80 rounded-2xl shadow-xs">
+						<div class="w-14 h-14 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+							@components.IconMegaphone("icon-md")
+						</div>
+						<h3 class="text-base font-black text-primary mb-1">لا توجد إعلانات مسجلة</h3>
+						<p class="text-xs text-secondary max-w-md mx-auto">
+							لم يقم الموردون بتقديم أي بنرات إعلانية جديدة حتى الآن.
+						</p>
+					</div>
+				} else {
+					<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden mb-6">
+						<div class="table-container m-0 overflow-x-auto">
+							<table class="data-table m-0 text-xs w-full">
+								<thead>
+									<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+										<th class="py-3 text-start ps-4">الإعلان والوسائط</th>
+										<th class="py-3 text-start">المورد (#ID)</th>
+										<th class="py-3 text-center">النوع والموضع</th>
+										<th class="py-3 text-center tabular-nums">المشاهدات</th>
+										<th class="py-3 text-center tabular-nums">النقرات</th>
+										<th class="py-3 text-center tabular-nums">معدل CTR %</th>
+										<th class="py-3 text-center">الحالة</th>
+										<th class="col-actions py-3 pe-4">الإجراءات</th>
+									</tr>
+								</thead>
+								<tbody class="divide-y divide-slate-100">
+									for _, ad := range data.Ads {
+										if ad != nil {
+											<tr class="transition-colors">
+												<!-- Ad Preview & Title -->
+												<td class="py-3.5 ps-4">
+													<div class="d-flex items-center gap-3">
+														if ad.MediaType == "video" && ad.MediaURL != "" {
+															<div class="w-16 h-10 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 d-flex items-center justify-center">
+																<video src={ ad.MediaURL } autoplay muted loop playsinline class="w-full h-full object-cover"></video>
+															</div>
+														} else if ad.MediaURL != "" {
+															<div class="w-16 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 d-flex items-center justify-center p-0.5">
+																<img src={ ad.MediaURL } alt="Ad" class="w-full h-full object-contain"/>
+															</div>
+														} else {
+															<div class="w-16 h-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 d-flex items-center justify-center text-slate-400">
+																@components.IconImage("icon-xs")
+															</div>
+														}
+														<div class="stack-xs text-start">
+															<div class="font-extrabold text-primary text-sm">{ ad.DisplayTitle(lang) }</div>
+															if ad.DisplayText(lang) != "" {
+																<div class="text-secondary text-2xs font-medium line-clamp-1 max-w-xs">{ ad.DisplayText(lang) }</div>
+															}
+														</div>
+													</div>
+												</td>
+
+												<!-- Organization -->
+												<td class="py-3.5">
+													if ad.OrganizationID != nil {
+														<span class="badge badge-slate font-mono text-xs">{ fmt.Sprintf("#%d", *ad.OrganizationID) }</span>
+													} else {
+														<span class="text-muted text-xs">—</span>
+													}
+												</td>
+
+												<!-- Position & Media Type -->
+												<td class="py-3.5 text-center">
+													<div class="d-flex flex-col items-center gap-1">
+														<span class="badge badge-sky text-2xs font-extrabold">{ PlacementLabel(ad.Position) }</span>
+														if ad.MediaType == "video" {
+															<span class="badge badge-indigo text-2xs font-bold">فيديو MP4</span>
+														} else {
+															<span class="badge badge-slate text-2xs font-bold">صورة</span>
+														}
+													</div>
+												</td>
+
+												<!-- Impressions -->
+												<td class="py-3.5 text-center font-bold text-primary tabular-nums">
+													{ fmt.Sprintf("%d", ad.Impressions) }
+												</td>
+
+												<!-- Clicks -->
+												<td class="py-3.5 text-center font-bold text-brand tabular-nums">
+													{ fmt.Sprintf("%d", ad.Clicks) }
+												</td>
+
+												<!-- CTR -->
+												<td class="py-3.5 text-center font-black text-emerald-600 tabular-nums">
+													{ fmt.Sprintf("%.1f%%", ad.CTR) }
+												</td>
+
+												<!-- Status -->
+												<td class="py-3.5 text-center">
+													<div class="d-flex flex-col items-center gap-1">
+														if ad.AdminStatus == "pending" {
+															<span class="badge badge-amber font-extrabold text-xs animate-pulse">قيد المراجعة</span>
+														} else if ad.AdminStatus == "approved" {
+															<span class="badge badge-emerald font-extrabold text-xs">معتمد</span>
+															if ad.IsActive {
+																<span class="badge badge-emerald text-2xs font-bold">مباشر نشط</span>
+															} else {
+																<span class="badge badge-slate text-2xs font-bold">معطل</span>
+															}
+														} else {
+															<span class="badge badge-rose font-extrabold text-xs">مرفوض</span>
+														}
+														if ad.HasPendingEdit() {
+															<span class="badge badge-amber text-2xs font-black animate-pulse">طلب تعديل معلق</span>
+														}
+													</div>
+												</td>
+
+												<!-- Actions -->
+												<td class="col-actions py-3.5 pe-4">
+													<div class="d-flex items-center gap-1.5 flex-wrap">
+														@AdminAdReviewModal(ad, lang, dir)
+
+														if ad.AdminStatus == "pending" {
+															<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/approve", ad.ID)) } class="m-0">
+																<button type="submit" class="btn btn-primary btn-xs font-bold gap-1 shadow-2xs">
+																	@components.IconCheck("icon-2xs")
+																	<span>اعتماد</span>
+																</button>
+															</form>
+															<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/reject", ad.ID)) } class="m-0">
+																<button type="submit" class="btn btn-secondary btn-xs font-bold text-rose-600 gap-1 shadow-2xs" data-confirm="هل أنت متأكد من رفض هذا الإعلان؟">
+																	@components.IconClose("icon-2xs")
+																	<span>رفض</span>
+																</button>
+															</form>
+														} else {
+															<!-- Direct Toggle Active / Inactive -->
+															<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/toggle", ad.ID)) } class="m-0">
+																if ad.IsActive {
+																	<button type="submit" class="btn btn-secondary btn-xs font-bold text-amber-600 gap-1 shadow-2xs" title="إيقاف ظهور الإعلان مؤقتاً">
+																		@components.IconPause("icon-2xs")
+																		<span>تعطيل</span>
+																	</button>
+																} else {
+																	<button type="submit" class="btn btn-secondary btn-xs font-bold text-emerald-600 gap-1 shadow-2xs" title="تفعيل ظهور الإعلان فوراً">
+																		@components.IconPlay("icon-2xs")
+																		<span>تفعيل</span>
+																	</button>
+																}
+															</form>
+														}
+
+														if ad.HasPendingEdit() {
+															@AdminAdPendingEditModal(ad, lang, dir)
+														}
+													</div>
+												</td>
+											</tr>
+										}
+									}
+								</tbody>
+							</table>
+						</div>
+						if data.TotalAds > 0 {
+							@components.B2BPagination(components.PaginationProps{
+								CurrentPage: data.AdsPage,
+								PageSize:    data.AdsPerPage,
+								TotalCount:  data.TotalAds,
+								BaseURL:     "/admin/offers-packages",
+								QueryValues: map[string][]string{
+									"tab": {"ads"},
+								},
+							})
+						}
+					</div>
+				}
+			</div>
+
+			<!-- ========================================== -->
+			<!-- MODAL: Add New Package                     -->
+			<!-- ========================================== -->
+			@components.Modal(components.ModalProps{
+				ID:         "add-package-modal",
+				AlpineOpen: "showAddModal",
+				Title:      "إنشاء باقة إعلانية وترويجية جديدة",
+				Subtitle:   "تحديد نوع الباقة وقيمتها وعدد مرات الظهور في المنصة",
+				Size:       "lg",
+			}) {
+				<form method="POST" action="/admin/offers-packages/new" class="p-6 space-y-4 m-0">
+      <div class="stack-sm">
+							<!-- Name AR -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">اسم الباقة (عربي) <span class="text-rose-500">*</span></label>
+								<input type="text" name="name_ar" required placeholder="مثال: الباقة الذهبية للرعايات" class="form-input text-xs w-full"/>
+							</div>
+
+							<!-- Name EN -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">اسم الباقة (إنجليزي) <span class="text-rose-500">*</span></label>
+								<input type="text" name="name_en" required placeholder="e.g. Gold Sponsorship Package" class="form-input text-xs w-full text-left" dir="ltr"/>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Desc AR -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الوصف والمميزات (عربي)</label>
+								<textarea name="desc_ar" rows="2" placeholder="تثبيت 10 أصناف في صدارة نتائج البحث..." class="form-input text-xs w-full"></textarea>
+							</div>
+
+							<!-- Desc EN -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الوصف والمميزات (إنجليزي)</label>
+								<textarea name="desc_en" rows="2" placeholder="Pin 10 items in top search results..." class="form-input text-xs w-full text-left" dir="ltr"></textarea>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Price -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">السعر (ج.م) <span class="text-rose-500">*</span></label>
+								<input type="number" step="0.01" min="0" name="price" required placeholder="1500.00" class="form-input text-xs w-full font-mono font-bold"/>
+							</div>
+
+							<!-- Duration -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">المدة (بالأيام) <span class="text-rose-500">*</span></label>
+								<input type="number" min="1" name="duration_days" value="30" required class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Credits -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">رصيد الرعايات المضمن <span class="text-rose-500">*</span></label>
+								<input type="number" min="1" name="credits" value="10" required class="form-input text-xs w-full font-mono font-bold text-brand"/>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Tier Level -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">مستوى الأولوية والترتيب <span class="text-rose-500">*</span></label>
+								<select name="tier_level" required class="form-select text-xs w-full font-bold">
+									<option value="1">مستوى 1 - عادي (Standard)</option>
+									<option value="2">مستوى 2 - فضي (Silver)</option>
+									<option value="3" selected>مستوى 3 - ذهبي (Gold)</option>
+									<option value="4">مستوى 4 - بلاتيني (Platinum)</option>
+									<option value="5">مستوى 5 - ماسي (Diamond)</option>
+								</select>
+							</div>
+
+							<!-- Max Offers -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الحد الأقصى للعروض</label>
+								<input type="number" min="1" name="max_offers" value="20" class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Badge Color -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">لون الشارة</label>
+								<div class="d-flex items-center gap-2">
+									<input type="color" id="new-pkg-badge-color" name="badge_color" value="#0284c7" class="h-9 w-10 p-0 border border-slate-300 rounded cursor-pointer shrink-0"/>
+									<input type="text" name="badge_color_text" value="#0284c7" class="form-input text-xs w-full font-mono text-center" data-on-input="setValue('new-pkg-badge-color', this.value)"/>
+								</div>
+							</div>
+						</div>
+
+						<div class="pt-2 border-t border-slate-100">
+							<!-- Sort Order -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">ترتيب الظهور في القائمة</label>
+								<input type="number" name="sort_order" value="0" class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Checkboxes -->
+							<div class="d-flex items-center gap-6 pt-5">
+								<label class="d-flex items-center gap-2 cursor-pointer select-none">
+									<input type="checkbox" name="is_featured" value="true" class="form-checkbox text-brand rounded"/>
+									<span class="text-xs font-bold text-primary">باقة مميزة</span>
+								</label>
+
+								<label class="d-flex items-center gap-2 cursor-pointer select-none">
+									<input type="checkbox" name="is_active" value="true" checked class="form-checkbox text-emerald-600 rounded"/>
+									<span class="text-xs font-bold text-primary">تفعيل الباقة فوراً</span>
+								</label>
+							</div>
+						</div>
+
+						<!-- Form Footer -->
+						<div class="flex-between items-center pt-4 border-t border-slate-100">
+							<button type="button" class="btn btn-secondary btn-sm font-bold" @click="showAddModal = false">إلغاء</button>
+							<button type="submit" class="btn btn-primary btn-sm font-extrabold gap-1.5 shadow-sm">
+								@components.IconCheck("icon-xs")
+								<span>حفظ وإنشاء الباقة</span>
+							</button>
+						</div>
+					</form>
+			}
+
+			<!-- ========================================== -->
+			<!-- MODAL: Edit Existing Package               -->
+			<!-- ========================================== -->
+			@components.Modal(components.ModalProps{
+				ID:         "edit-package-modal",
+				AlpineOpen: "showEditModal",
+				Title:      "تسجيل دفعة إيراد ترويجي",
+				Subtitle:   "تحديد نوع الباقة وقيمتها وعدد مرات الظهور في المنصة",
+				Size:       "lg",
+			}) {
+				<form method="POST" :action="'/admin/offers-packages/' + editPkg.id + '/edit'" class="p-6 space-y-4 m-0">
+      <div class="stack-sm">
+							<!-- Name AR -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">اسم الباقة (عربي) <span class="text-rose-500">*</span></label>
+								<input type="text" name="name_ar" x-model="editPkg.name_ar" required class="form-input text-xs w-full"/>
+							</div>
+
+							<!-- Name EN -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">اسم الباقة (إنجليزي) <span class="text-rose-500">*</span></label>
+								<input type="text" name="name_en" x-model="editPkg.name_en" required class="form-input text-xs w-full text-left" dir="ltr"/>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Desc AR -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الوصف والمميزات (عربي)</label>
+								<textarea name="desc_ar" x-model="editPkg.desc_ar" rows="2" class="form-input text-xs w-full"></textarea>
+							</div>
+
+							<!-- Desc EN -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الوصف والمميزات (إنجليزي)</label>
+								<textarea name="desc_en" x-model="editPkg.desc_en" rows="2" class="form-input text-xs w-full text-left" dir="ltr"></textarea>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Price -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">السعر (ج.م) <span class="text-rose-500">*</span></label>
+								<input type="number" step="0.01" min="0" name="price" x-model="editPkg.price" required class="form-input text-xs w-full font-mono font-bold"/>
+							</div>
+
+							<!-- Duration -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">المدة (بالأيام) <span class="text-rose-500">*</span></label>
+								<input type="number" min="1" name="duration_days" x-model="editPkg.duration_days" required class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Credits -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">رصيد الرعايات المضمن <span class="text-rose-500">*</span></label>
+								<input type="number" min="1" name="credits" x-model="editPkg.credits" required class="form-input text-xs w-full font-mono font-bold text-brand"/>
+							</div>
+						</div>
+
+      <div class="stack-sm">
+							<!-- Tier Level -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">مستوى الأولوية والترتيب <span class="text-rose-500">*</span></label>
+								<select name="tier_level" x-model="editPkg.tier_level" required class="form-select text-xs w-full font-bold">
+									<option value="1">مستوى 1 - عادي (Standard)</option>
+									<option value="2">مستوى 2 - فضي (Silver)</option>
+									<option value="3">مستوى 3 - ذهبي (Gold)</option>
+									<option value="4">مستوى 4 - بلاتيني (Platinum)</option>
+									<option value="5">مستوى 5 - ماسي (Diamond)</option>
+								</select>
+							</div>
+
+							<!-- Max Offers -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">الحد الأقصى للعروض</label>
+								<input type="number" min="1" name="max_offers" x-model="editPkg.max_offers" class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Badge Color -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">لون الشارة</label>
+								<div class="d-flex items-center gap-2">
+									<input type="color" name="badge_color" x-model="editPkg.badge_color" class="h-9 w-10 p-0 border border-slate-300 rounded cursor-pointer shrink-0"/>
+									<input type="text" x-model="editPkg.badge_color" class="form-input text-xs w-full font-mono text-center"/>
+								</div>
+							</div>
+						</div>
+
+						<div class="pt-2 border-t border-slate-100">
+							<!-- Sort Order -->
+       <div class="stack-sm">
+								<label class="form-label text-xs font-bold text-primary block mb-1">ترتيب الظهور في القائمة</label>
+								<input type="number" name="sort_order" x-model="editPkg.sort_order" class="form-input text-xs w-full font-mono"/>
+							</div>
+
+							<!-- Checkboxes -->
+							<div class="d-flex items-center gap-6 pt-5">
+								<label class="d-flex items-center gap-2 cursor-pointer select-none">
+									<input type="checkbox" name="is_featured" x-model="editPkg.is_featured" value="true" class="form-checkbox text-brand rounded"/>
+									<span class="text-xs font-bold text-primary">باقة مميزة</span>
+								</label>
+
+								<label class="d-flex items-center gap-2 cursor-pointer select-none">
+									<input type="checkbox" name="is_active" x-model="editPkg.is_active" value="true" class="form-checkbox text-emerald-600 rounded"/>
+									<span class="text-xs font-bold text-primary">الباقة مفعلة</span>
+								</label>
+							</div>
+						</div>
+
+						<!-- Form Footer -->
+						<div class="flex-between items-center pt-4 border-t border-slate-100">
+							<button type="button" class="btn btn-secondary btn-sm font-bold" @click="showEditModal = false">إلغاء</button>
+							<button type="submit" class="btn btn-primary btn-sm font-extrabold gap-1.5 shadow-sm">
+								@components.IconCheck("icon-xs")
+								<span>حفظ التعديلات</span>
+							</button>
+						</div>
+					</form>
+			}
+
+			<!-- ========================================== -->
+			<!-- MODAL: Reject Sponsorship Request          -->
+			<!-- ========================================== -->
+			@components.Modal(components.ModalProps{
+				ID:         "reject-package-modal",
+				AlpineOpen: "showRejectModal",
+				Title:      "تسجيل دفعة إيراد ترويجي",
+				Size:       "md",
+			}) {
+				<form method="POST" :action="rejectActionUrl" class="p-6 m-0 space-y-4">
+						<p class="text-xs text-secondary leading-relaxed m-0">
+							سيتم رفض طلب الرعاية وإرجاع الرصيد المستهلك إلى محفظة / رصيد المورد تلقائياً.
+						</p>
+      <div class="stack-sm">
+							<label class="form-label text-xs font-bold text-primary block mb-1">سبب الرفض (اختياري)</label>
+							<textarea name="notes" x-model="rejectNotes" rows="2" placeholder="اكتب سبب الرفض لتوضيحه للمورد..." class="form-input text-xs w-full"></textarea>
+						</div>
+						<div class="flex-between items-center pt-3 border-t border-slate-100">
+							<button type="button" class="btn btn-secondary btn-sm font-bold" @click="showRejectModal = false">إلغاء</button>
+							<button type="submit" class="btn btn-danger btn-sm font-extrabold gap-1 shadow-xs">
+								@components.IconClose("icon-2xs")
+								<span>تأكيد الرفض وإرجاع الرصيد</span>
+							</button>
+						</div>
+					</form>
+			}
+		</div>
+	}
+}
+
+// AdminAdPendingEditModal renders a modal for reviewing vendor-submitted ad edit requests.
+templ AdminAdPendingEditModal(ad *promo.Ad, lang, dir string) {
+	if ad.PendingChanges != nil {
+		<div x-data="{ isOpen: false }" class="d-inline-block">
+			<button
+				type="button"
+				@click="isOpen = true"
+				class="btn btn-primary btn-xs font-black gap-1 shadow-2xs bg-amber-500 hover:bg-amber-600 text-white border-none"
+			>
+				@components.IconEdit("icon-2xs")
+				<span>مراجعة طلب التعديل</span>
+			</button>
+
+			<div
+				x-show="isOpen"
+				x-cloak
+				class="modal-backdrop"
+				@click.self="isOpen = false"
+			>
+				<div
+					class="modal-content max-w-xl w-full mx-4 glass-panel border border-brand/20 rounded-3xl shadow-2xl overflow-hidden overflow-x-hidden text-start"
+					@click.stop
+				>
+					<div class="modal-header p-4 border-b flex-between items-center">
+						<div class="d-flex items-center gap-2.5">
+							<div class="w-8 h-8 rounded-xl bg-amber-500 text-white d-flex items-center justify-center">
+								@components.IconSparkles("icon-xs")
+							</div>
+							<div class="stack-xs text-start">
+								<h3 class="text-sm font-black text-primary m-0">طلب تعديل إعلان من المورد</h3>
+								<span class="text-2xs text-muted">ID: { fmt.Sprintf("%d", ad.ID) } • تاريخ الطلب: { ad.PendingChanges.SubmittedAt.Format("2006-01-02 15:04") }</span>
+							</div>
+						</div>
+						<button type="button" @click="isOpen = false" class="btn btn-ghost btn-icon btn-sm text-muted hover:text-primary">
+							@components.IconClose("icon-xs")
+						</button>
+					</div>
+
+					<div class="modal-body p-5 d-flex flex-col gap-4 max-h-[72vh] overflow-y-auto overflow-x-hidden text-start">
+						<div class="p-3 bg-amber-subtle rounded-2xl border border-amber-500/30 text-xs text-amber-500 font-medium">
+							يستمر الإعلان الحالي بالظهور على المنصة دون انقطاع. عند اعتماد هذا الطلب، سيتم استبدال بيانات الإعلان بالتعديلات الجديدة أدناه فوراً.
+						</div>
+
+						<!-- Comparison: Title -->
+						<div class="stack-xs">
+							<span class="text-2xs text-muted font-bold">العنوان المقترح:</span>
+							<strong class="text-xs text-primary font-black">{ ad.PendingChanges.TitleAr }</strong>
+							if ad.TitleAr != "" && ad.TitleAr != ad.PendingChanges.TitleAr {
+								<span class="text-2xs text-slate-400 line-through">السابق: { ad.TitleAr }</span>
+							}
+						</div>
+
+						<!-- Comparison: Description -->
+						if ad.PendingChanges.AdTextAr != "" {
+							<div class="stack-xs">
+								<span class="text-2xs text-muted font-bold">النص والوصف المقترح:</span>
+								<p class="text-xs text-secondary m-0">{ ad.PendingChanges.AdTextAr }</p>
+							</div>
+						}
+
+						<!-- Comparison: Placement -->
+						if ad.PendingChanges.Position != "" {
+							<div class="stack-xs">
+								<span class="text-2xs text-muted font-bold">موضع الظهور المقترح:</span>
+								<span class="badge badge-sky text-2xs font-extrabold">{ PlacementLabel(ad.PendingChanges.Position) }</span>
+							</div>
+						}
+
+						<!-- Proposed Media Preview -->
+						if ad.PendingChanges.MediaURL != "" {
+							<div class="stack-xs">
+								<span class="text-2xs text-muted font-bold">الوسائط المقترحة:</span>
+								<div class="w-full max-w-md h-56 rounded-2xl border p-1 bg-surface-sunken overflow-hidden relative shadow-inner">
+									if ad.PendingChanges.MediaType == "video" || strings.HasSuffix(strings.ToLower(ad.PendingChanges.MediaURL), ".mp4") || strings.HasSuffix(strings.ToLower(ad.PendingChanges.MediaURL), ".webm") {
+										<video src={ ad.PendingChanges.MediaURL } controls autoplay muted loop playsinline class="w-full h-full object-contain rounded-xl"></video>
+									} else {
+										<img src={ ad.PendingChanges.MediaURL } alt="Proposed Media" class="w-full h-full object-contain" />
+									}
+								</div>
+							</div>
+						}
+					</div>
+
+					<div class="modal-footer p-4 border-t bg-surface-sunken flex-between items-center gap-3">
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/reject-edit", ad.ID)) } class="m-0">
+							<button type="submit" class="btn btn-secondary btn-sm text-rose-600 font-bold gap-1 shadow-2xs" data-confirm="هل أنت متأكد من رفض طلب التعديل؟ سيبقى الإعلان الحالي كما هو.">
+								@components.IconClose("icon-xs")
+								<span>رفض التعديل</span>
+							</button>
+						</form>
+
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/approve-edit", ad.ID)) } class="m-0">
+							<button type="submit" class="btn btn-primary btn-sm font-black px-5 shadow-sm gap-1.5">
+								@components.IconCheck("icon-xs")
+								<span>اعتماد وتطبيق التعديل</span>
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// AdminAdReviewModal renders a comprehensive modal for reviewing all details of an advertisement.
+templ AdminAdReviewModal(ad *promo.Ad, lang, dir string) {
+	<div x-data="{ isOpen: false }" class="d-inline-block">
+		<button
+			type="button"
+			@click="isOpen = true"
+			class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs text-accent hover:text-accent-hover"
+			title="معاينة ومراجعة تفاصيل الإعلان بالكامل"
+		>
+			@components.IconEye("icon-2xs")
+			<span>معاينة وتفاصيل</span>
+		</button>
+
+		<div
+			x-show="isOpen"
+			x-cloak
+			class="modal-backdrop"
+			@click.self="isOpen = false"
+		>
+			<div
+				class="modal-content max-w-2xl w-full mx-4 glass-panel border rounded-3xl shadow-2xl overflow-hidden text-start"
+				@click.stop
+			>
+				<!-- Modal Header -->
+				<div class="modal-header p-4 border-b flex-between items-center bg-surface-sunken">
+					<div class="d-flex items-center gap-2.5">
+						<div class="w-8 h-8 rounded-xl bg-accent-subtle text-accent d-flex items-center justify-center">
+							@components.IconSparkles("icon-xs")
+						</div>
+						<div class="stack-xs text-start">
+							<div class="d-flex items-center gap-2">
+								<h3 class="text-sm font-black text-primary m-0">تفاصيل ومراجعة الإعلان #{ fmt.Sprintf("%d", ad.ID) }</h3>
+								if ad.AdminStatus == "pending" {
+									<span class="badge badge-amber text-2xs font-extrabold animate-pulse">قيد المراجعة</span>
+								} else if ad.AdminStatus == "approved" {
+									<span class="badge badge-emerald text-2xs font-extrabold">معتمد</span>
+								} else {
+									<span class="badge badge-rose text-2xs font-extrabold">مرفوض</span>
+								}
+							</div>
+							<span class="text-2xs text-muted">تاريخ الإنشاء: { ad.CreatedAt.Format("2006-01-02 15:04") }</span>
+						</div>
+					</div>
+					<button type="button" @click="isOpen = false" class="btn btn-ghost btn-icon btn-sm text-slate-400 hover:text-slate-600">
+						@components.IconClose("icon-xs")
+					</button>
+				</div>
+
+				<!-- Modal Body -->
+				<div class="modal-body p-5 d-flex flex-col gap-4 max-h-[70vh] overflow-y-auto text-start">
+					<!-- Media Banner / Video Player -->
+					<div class="w-full rounded-2xl border p-2 bg-surface-sunken overflow-hidden text-center">
+						if ad.MediaType == "video" {
+							<video src={ ad.MediaURL } controls playsinline class="w-full max-h-72 rounded-xl object-contain bg-black"></video>
+						} else if ad.MediaURL != "" {
+							<img src={ ad.MediaURL } alt="Ad Media" class="w-full max-h-72 rounded-xl object-contain bg-white mx-auto" />
+						} else {
+							<div class="p-8 text-center text-muted">
+								@components.IconSparkles("icon-sm mb-2")
+								<p class="text-xs m-0">لا توجد وسائط مرفوعة لهذا الإعلان</p>
+							</div>
+						}
+					</div>
+
+					<!-- Titles & Content -->
+					<div class="glass-panel p-4 mb-0 stack-sm">
+						<div class="stack-xs">
+							<span class="text-2xs text-muted font-bold">عنوان الإعلان:</span>
+							<h4 class="text-sm font-black text-primary m-0">
+								if ad.TitleAr != "" {
+									{ ad.TitleAr }
+								} else {
+									{ ad.Title }
+								}
+							</h4>
+							if ad.TitleEn != "" && ad.TitleEn != ad.TitleAr {
+								<span class="text-2xs text-muted" dir="ltr">{ ad.TitleEn }</span>
+							}
+						</div>
+
+						if ad.AdTextAr != "" || ad.AdTextEn != "" {
+							<div class="stack-xs pt-2 border-t">
+								<span class="text-2xs text-muted font-bold">النص الترويجي والوصف:</span>
+								if ad.AdTextAr != "" {
+									<p class="text-xs text-secondary m-0">{ ad.AdTextAr }</p>
+								}
+								if ad.AdTextEn != "" && ad.AdTextEn != ad.AdTextAr {
+									<p class="text-2xs text-muted m-0" dir="ltr">{ ad.AdTextEn }</p>
+								}
+							</div>
+						}
+					</div>
+
+					<!-- Grid Information: Placement, Supplier, Duration, Engagement -->
+					<div class="d-grid grid-cols-2 gap-3">
+						<!-- Placement & Targeting -->
+						<div class="glass-panel p-3 mb-0 stack-xs">
+							<span class="text-2xs text-muted font-bold">موضع الظهور والمنصة:</span>
+							<div>
+								<span class="badge badge-sky text-2xs font-extrabold">{ PlacementLabel(ad.Position) }</span>
+							</div>
+							if ad.TargetURL != "" {
+								<div class="mt-1 pt-1 border-t text-2xs">
+									<span class="text-muted font-bold">الرابط المستهدف:</span>
+									<a href={ templ.SafeURL(ad.TargetURL) } target="_blank" class="text-accent underline break-all block">
+										{ ad.TargetURL }
+									</a>
+								</div>
+							}
+							if ad.ClickTargetID != nil && *ad.ClickTargetID > 0 {
+								<div class="mt-1 pt-1 border-t text-2xs">
+									<span class="text-muted font-bold">الهدف المرتبط:</span>
+									<span class="font-mono text-primary font-bold">#{ fmt.Sprintf("%d", *ad.ClickTargetID) } ({ string(ad.ClickTargetType) })</span>
+								</div>
+							}
+						</div>
+
+						<!-- Supplier & Dates -->
+						<div class="glass-panel p-3 mb-0 stack-xs">
+							<span class="text-2xs text-muted font-bold">المورد وفترة الظهور:</span>
+							<div class="text-xs font-bold text-primary">
+								if ad.OrganizationID != nil {
+									<span>منشأة #{ fmt.Sprintf("%d", *ad.OrganizationID) }</span>
+								} else {
+									<span>منصة رئيسية (Platform)</span>
+								}
+							</div>
+							<div class="text-2xs text-secondary mt-1 tabular-nums">
+								<div><strong>البدء:</strong> { ad.StartsAt.Format("2006-01-02 15:04") }</div>
+								<div><strong>الانتهاء:</strong> { ad.ExpiresAt.Format("2006-01-02 15:04") }</div>
+							</div>
+						</div>
+
+						<!-- Analytics: Impressions, Clicks, CTR -->
+						<div class="glass-panel p-3 mb-0 col-span-2 stack-xs">
+							<span class="text-2xs text-muted font-bold">إحصائيات التفاعل والأداء الحقيقي:</span>
+							<div class="d-flex items-center gap-4 flex-wrap mt-1">
+								<div class="d-flex items-center gap-1.5">
+									<span class="text-2xs text-muted">المشاهدات:</span>
+									<span class="text-xs font-black text-primary tabular-nums">{ fmt.Sprintf("%d", ad.Impressions) }</span>
+								</div>
+								<div class="d-flex items-center gap-1.5">
+									<span class="text-2xs text-muted">النقرات:</span>
+									<span class="text-xs font-black text-sky-600 tabular-nums">{ fmt.Sprintf("%d", ad.Clicks) }</span>
+								</div>
+								<div class="d-flex items-center gap-1.5">
+									<span class="text-2xs text-muted">معدل التحويل (CTR):</span>
+									<span class="badge badge-emerald text-2xs font-black tabular-nums">{ fmt.Sprintf("%.2f%%", ad.CTR) }</span>
+								</div>
+								<div class="d-flex items-center gap-1.5">
+									<span class="text-2xs text-muted">الحالة النشطة:</span>
+									if ad.IsActive {
+										<span class="badge badge-emerald text-2xs font-bold">مباشر نشط</span>
+									} else {
+										<span class="badge badge-slate text-2xs font-bold">معطل</span>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					if ad.AdminNotes != "" {
+						<div class="p-3 rounded-xl bg-slate-100 text-2xs text-secondary">
+							<strong class="font-bold text-primary block mb-0.5">ملاحظات الإدارة السابقة:</strong>
+							{ ad.AdminNotes }
+						</div>
+					}
+				</div>
+
+				<!-- Modal Footer with Direct Actions -->
+				<div class="modal-footer p-3.5 border-t bg-surface-sunken flex-between items-center flex-wrap gap-2">
+					<button type="button" @click="isOpen = false" class="btn btn-secondary btn-sm font-bold">
+						إغلاق
+					</button>
+
+					<div class="d-flex items-center gap-2">
+						if ad.AdminStatus == "pending" {
+							<!-- Direct Reject with notes -->
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/reject", ad.ID)) } class="m-0 d-flex items-center gap-1">
+								<input type="text" name="notes" placeholder="سبب الرفض (اختياري)..." class="form-input text-2xs py-1 px-2 w-40" />
+								<button type="submit" class="btn btn-secondary btn-sm font-bold text-rose-600 gap-1 shadow-2xs" data-confirm="هل أنت متأكد من رفض هذا الإعلان؟">
+									@components.IconClose("icon-xs")
+									<span>رفض</span>
+								</button>
+							</form>
+
+							<!-- Direct Approve -->
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/approve", ad.ID)) } class="m-0">
+								<button type="submit" class="btn btn-primary btn-sm font-black px-4 shadow-sm gap-1.5">
+									@components.IconCheck("icon-xs")
+									<span>اعتماد وتفعيل الإعلان</span>
+								</button>
+							</form>
+						} else {
+							<!-- Direct Toggle -->
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/toggle", ad.ID)) } class="m-0">
+								if ad.IsActive {
+									<button type="submit" class="btn btn-secondary btn-sm font-bold text-amber-600 gap-1 shadow-2xs">
+										@components.IconPause("icon-xs")
+										<span>تعطيل ظهور الإعلان</span>
+									</button>
+								} else {
+									<button type="submit" class="btn btn-primary btn-sm font-bold gap-1 shadow-2xs">
+										@components.IconPlay("icon-xs")
+										<span>تفعيل ظهور الإعلان</span>
+									</button>
+								}
+							</form>
+						}
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+

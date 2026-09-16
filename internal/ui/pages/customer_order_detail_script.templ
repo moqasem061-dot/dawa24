@@ -1,0 +1,143 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+
+templ CustomerOrderDetailScript() {
+				<script nonce={ layouts.Nonce(ctx) }>
+					window.scrollToEditForm = function() {
+						const el = document.getElementById('order-lines-container');
+						if (el) {
+							el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+						}
+						const firstInput = document.querySelector('.row-qty-input');
+						if (firstInput) {
+							firstInput.focus();
+							firstInput.select();
+						}
+					};
+
+					window.stepRowQty = function(btn, delta) {
+						const tr = btn.closest('.order-table-row');
+						if (!tr) return;
+						const input = tr.querySelector('.row-qty-input');
+						if (!input) return;
+
+						const minVal = parseInt(tr.getAttribute('data-min-qty'), 10) || 1;
+						const maxVal = parseInt(tr.getAttribute('data-max-qty'), 10) || 99999;
+
+						let val = parseInt(input.value, 10) || minVal;
+						val += delta;
+						if (val < minVal) val = minVal;
+						if (val > maxVal) {
+							val = maxVal;
+							alert('الكمية المطلوبة تتجاوز الحد الأقصى المتاح لدى المورد (' + maxVal + ' قطعة).');
+						}
+
+						input.value = val;
+						window.recalcRowTotal(input);
+					};
+
+					window.recalcRowTotal = function(input) {
+						const tr = input.closest('.order-table-row');
+						if (!tr) return;
+
+						const minVal = parseInt(tr.getAttribute('data-min-qty'), 10) || 1;
+						const maxVal = parseInt(tr.getAttribute('data-max-qty'), 10) || 99999;
+
+						let qty = parseInt(input.value, 10);
+						if (isNaN(qty) || qty < minVal) {
+							qty = minVal;
+						}
+						if (qty > maxVal) {
+							qty = maxVal;
+							input.value = maxVal;
+							alert('الكمية المطلوبة تتجاوز الحد الأقصى المتاح لدى المورد (' + maxVal + ' قطعة).');
+						}
+
+						const priceMinor = parseInt(tr.getAttribute('data-unit-price-minor'), 10) || 0;
+						const discMinor = parseInt(tr.getAttribute('data-unit-discount-minor'), 10) || 0;
+
+						const effectivePriceMinor = Math.max(0, priceMinor - discMinor);
+						const lineTotalMinor = effectivePriceMinor * qty;
+
+						const totalDisplay = tr.querySelector('.row-total-display');
+						if (totalDisplay) {
+							totalDisplay.textContent = (lineTotalMinor / 100).toFixed(2) + ' ج.م';
+						}
+
+						window.recalcOrderLiveTotals();
+					};
+
+					window.recalcOrderLiveTotals = function() {
+						const rows = document.querySelectorAll('.order-table-row');
+						let subtotalMinor = 0;
+						let discountMinor = 0;
+
+						rows.forEach(tr => {
+							const delInput = tr.querySelector('.row-deleted-input');
+							if (delInput && delInput.value === "1") return;
+							if (tr.classList.contains('deleted-row')) return;
+
+							const qtyInput = tr.querySelector('.row-qty-input');
+							const priceMinor = parseInt(tr.getAttribute('data-unit-price-minor'), 10) || 0;
+							const discMinor = parseInt(tr.getAttribute('data-unit-discount-minor'), 10) || 0;
+
+							const qty = parseInt(qtyInput ? qtyInput.value : 1, 10) || 0;
+							subtotalMinor += (priceMinor * qty);
+							discountMinor += (discMinor * qty);
+						});
+
+						const taxableMinor = Math.max(0, subtotalMinor - discountMinor);
+						const shippingMinor = parseInt(document.getElementById('order-summary-shipping')?.getAttribute('data-shipping-minor') || '0', 10) || 0;
+						const taxRate = parseFloat(document.getElementById('order-summary-tax')?.getAttribute('data-tax-rate') || '0') || 0;
+
+						const taxMinor = Math.round(taxableMinor * taxRate);
+						const totalMinor = taxableMinor + shippingMinor + taxMinor;
+
+						const subEl = document.getElementById('live-summary-subtotal');
+						if (subEl) subEl.textContent = (subtotalMinor / 100).toFixed(2) + ' ج.م';
+
+						const discEl = document.getElementById('live-summary-discount');
+						if (discEl) discEl.textContent = (discountMinor > 0 ? '-' : '') + (discountMinor / 100).toFixed(2) + ' ج.م';
+
+						const taxEl = document.getElementById('live-summary-tax');
+						if (taxEl) taxEl.textContent = (taxMinor / 100).toFixed(2) + ' ج.م';
+
+						const totalEl = document.getElementById('live-summary-total');
+						if (totalEl) totalEl.textContent = (totalMinor / 100).toFixed(2);
+
+						const barTotalEl = document.getElementById('form-bar-total');
+						if (barTotalEl) barTotalEl.textContent = (totalMinor / 100).toFixed(2) + ' ج.م';
+					};
+
+					window.deleteRowLine = function(btn) {
+						if (!confirm('هل أنت متأكد من رغبتك في حذف هذا الصنف من الطلب؟')) return;
+						const tr = btn.closest('.order-table-row');
+						if (!tr) return;
+						const delInput = tr.querySelector('.row-deleted-input');
+						if (delInput) {
+							delInput.value = '1';
+						}
+						tr.classList.add('deleted-row');
+						tr.style.display = 'none';
+						window.recalcOrderLiveTotals();
+					};
+
+					window.openCancelModal = function() {
+						const dialog = document.getElementById('cancel-order-dialog');
+						if (dialog) {
+							dialog.showModal();
+						}
+					};
+
+					window.closeCancelModal = function() {
+						const dialog = document.getElementById('cancel-order-dialog');
+						if (dialog) {
+							dialog.close();
+						}
+					};
+				</script>
+}

@@ -1,0 +1,1397 @@
+/* ==========================================================================
+   DAWA 24 — NAVIGATION SYSTEM (nav.css)
+
+   One navigation vocabulary, two expressions.
+
+   The platform had four navigation surfaces that looked like four products:
+   a marketing header with pill links and a gradient "join" button, a dashboard
+   bar built from different classes, a user menu with hard-coded #111a2e panels,
+   a notifications panel with its own border radius, and a branch selector with
+   its own rgba() hovers. Dark mode was patched per-component with literal hex,
+   so the brand hue never actually reached the chrome.
+
+   Everything here derives from the tokens in tokens.css. There is no literal
+   colour in this file: change --primary and the whole navigation follows.
+
+   THE MOTIF — the measure rail.
+
+   This is a pharmaceutical supply platform. Its visual language is the
+   dispensing record: hairline rules, graduation ticks, mono indices, and one
+   ink accent used like a stamp rather than a coat of paint. The public bar
+   carries a literal ruler under its links — 1px rail, tick marks between
+   items, and the active item inking a segment of that rail. The dashboard bar
+   drops the ruler (it has no links to measure) and keeps everything else, so
+   the two read as the same instrument at two magnifications.
+
+   Structure:
+     .nav-root         the bar shell; declares the local custom properties
+     .nav-inner        the three-region row: lead / mid / trail
+     .nav-brand        brand lockup
+     .nav-links        the measure rail (public only)
+     .nav-trigger      anything that opens a menu
+     .nav-menu         the ONE popover surface: user, notifications, branch
+     .nav-drawer       the mobile sheet
+
+   Cascade layer: components.
+   ========================================================================== */
+
+@layer components {
+
+  /* ========================================================================
+     1. BAR SHELL
+     ======================================================================== */
+
+  .nav-root {
+    /* Local surface, derived from platform tokens so themes need no overrides.
+       color-mix keeps the bar a hair brighter than the page beneath it without
+       inventing a colour that the token file does not know about. */
+    --nav-h: 4rem;
+    --nav-surface: var(--bg-surface-raised);
+    --nav-rule: var(--border-subtle);
+    --nav-rule-strong: var(--border-card);
+    --nav-ink: var(--text-primary);
+    --nav-ink-muted: var(--text-muted);
+    --nav-ink-accent: var(--primary);
+    --nav-hover: var(--primary-subtle); --nav-hover: color-mix(in oklch, var(--primary) 8%, transparent);
+    --nav-item-radius: var(--radius-md);
+    --nav-gap: var(--space-sm);
+
+    position: sticky;
+    inset-block-start: 0;
+    z-index: var(--z-header);
+    inline-size: 100%;
+    background: var(--nav-surface);
+    border-block-end: 1px solid var(--nav-rule);
+    transition: box-shadow var(--duration-normal) var(--ease-smooth),
+                border-color var(--duration-normal) var(--ease-smooth);
+  }
+
+  /* The observer target app.js inserts above the bar. Zero height: it exists
+     only to stop intersecting the moment the page scrolls. */
+  .nav-scroll-sentinel {
+    block-size: 1px;
+    margin-block-end: -1px;
+  }
+
+  /* Lifted only once the page has moved under it. A bar that is shadowed at
+     rest is shadowed for no reason — the shadow is meant to say "there is
+     content behind me". */
+  .nav-root.is-scrolled {
+    border-block-end-color: var(--nav-rule-strong);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .nav-root--app {
+    --nav-h: 3.5rem;
+    --nav-gap: var(--space-xs);
+  }
+
+  .nav-root--app.is-compact {
+    --nav-h: 3rem;
+  }
+
+  .nav-inner {
+    display: flex;
+    align-items: center;
+    gap: var(--nav-gap);
+    inline-size: 100%;
+    max-inline-size: var(--max-width);
+    min-block-size: var(--nav-h);
+    margin-inline: auto;
+    padding-inline: var(--space-md);
+  }
+
+  .nav-root--app .nav-inner {
+    max-inline-size: none;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-root--public .nav-inner {
+      padding-inline: var(--space-lg);
+    }
+  }
+
+  .nav-lead {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-inline-size: 0;
+    flex: 1 1 auto;
+  }
+
+  .nav-mid {
+    display: none;
+    flex: 0 0 auto;
+  }
+
+  @media (min-width: 1024px) {
+    .nav-mid { display: block; }
+  }
+
+  .nav-trail {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--space-2xs);
+    flex: 1 1 auto;
+    min-inline-size: 0;
+  }
+
+  /* ========================================================================
+     2. BRAND LOCKUP
+     ======================================================================== */
+
+  .nav-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    text-decoration: none;
+    color: var(--nav-ink);
+    border-radius: var(--nav-item-radius);
+    padding-inline: var(--space-2xs);
+    padding-block: var(--space-2xs);
+    min-inline-size: 0;
+  }
+
+  .nav-brand:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  .nav-brand-logo {
+    height: 40px;
+    max-height: 40px;
+    width: auto;
+    max-width: 175px;
+    object-fit: contain;
+    display: block;
+    flex-shrink: 0;
+    transition: transform var(--duration-fast) var(--ease-spring);
+  }
+
+  .nav-brand:hover .nav-brand-logo {
+    transform: scale(1.02);
+  }
+
+  @media (max-width: 640px) {
+    .nav-brand-logo {
+      height: 32px;
+      max-height: 32px;
+      max-width: 135px;
+    }
+  }
+
+  [data-theme="dark"] .nav-brand-logo,
+  [data-theme="dark"] .nav-brand-mark img {
+    filter: drop-shadow(0 0 1px rgba(255, 255, 255, 0.45)) drop-shadow(0 1px 6px rgba(255, 255, 255, 0.15));
+  }
+
+  .nav-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    width: auto;
+    min-width: 40px;
+    max-width: 175px;
+    flex-shrink: 0;
+    padding: 0;
+    overflow: visible;
+    border: none;
+    background: transparent;
+  }
+
+  .nav-brand-mark img {
+    display: block;
+    height: 40px;
+    max-height: 40px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+  }
+
+  .nav-brand-text {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-inline-size: 0;
+  }
+
+  .nav-brand-name {
+    font-size: var(--text-base);
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: var(--nav-ink);
+    white-space: nowrap;
+  }
+
+  /* The lockup is the mark and the name. A tracked Latin descriptor under an
+     Arabic wordmark ("DAWA-24 SUPPLY") was a second name for the same thing in
+     a script the audience does not read the brand in, and it forced the mark
+     off the bar's optical centre to make room. */
+
+  /* ========================================================================
+     3. THE MEASURE RAIL — public links
+     ======================================================================== */
+
+  .nav-links {
+    display: flex;
+    align-items: stretch;
+    gap: 0;
+    border-block-end: 1px solid var(--nav-rule);
+  }
+
+  .nav-link {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    padding-inline: var(--space-md);
+    padding-block: var(--space-2xs) calc(var(--space-xs) + 1px);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    line-height: 1.2;
+    color: var(--text-secondary);
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--duration-fast) var(--ease-smooth);
+  }
+
+  /* The graduation ticks. Every link but the first drops a 6px hairline onto
+     the rail, so the group reads as a scale rather than a row of pills. */
+  .nav-link + .nav-link::before {
+    content: "";
+    position: absolute;
+    inset-inline-start: 0;
+    inset-block-end: 0;
+    inline-size: 1px;
+    block-size: 0.375rem;
+    background: var(--nav-rule);
+  }
+
+  /* The inked segment. This is the active indicator: the rail itself thickens
+     under the current page. */
+  .nav-link::after {
+    content: "";
+    position: absolute;
+    inset-inline: var(--space-sm);
+    inset-block-end: -1px;
+    block-size: 2px;
+    background: var(--nav-ink-accent);
+    transform: scaleX(0);
+    transform-origin: center;
+    transition: transform var(--duration-normal) var(--ease-spring);
+  }
+
+  .nav-link:hover { color: var(--nav-ink); }
+
+  .nav-link:hover::after { transform: scaleX(0.4); }
+
+  .nav-link.is-active {
+    color: var(--nav-ink);
+    font-weight: 600;
+  }
+
+  .nav-link.is-active::after { transform: scaleX(1); }
+
+  .nav-link:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+    border-radius: var(--radius-xs);
+  }
+
+  /* ========================================================================
+     4. DASHBOARD BAR CONTENT
+     ======================================================================== */
+
+  .nav-title {
+    font-size: var(--text-lg);
+    font-weight: 600;
+    line-height: var(--leading-tight);
+    color: var(--nav-ink);
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-inline-size: 0;
+  }
+
+  .nav-root--app.is-compact .nav-title { font-size: var(--text-base); }
+
+  /* A hairline divider between the title and whatever context sits beside it,
+     so the two are legibly separate things and not one long sentence. */
+  .nav-context {
+    display: flex;
+    align-items: center;
+    min-inline-size: 0;
+    padding-inline-start: var(--space-sm);
+    border-inline-start: 1px solid var(--nav-rule);
+  }
+
+  @media (max-width: 1024px) {
+    .nav-context { display: none; }
+  }
+
+  /* ========================================================================
+     5. CONTROLS — buttons and menu triggers
+     ======================================================================== */
+
+  /* One button shape for the whole chrome. Every control in the bar is a
+     .nav-btn; the modifiers only change weight, never geometry. */
+  .nav-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xs);
+    min-block-size: 2.25rem;
+    padding-inline: var(--space-sm);
+    border: 1px solid transparent;
+    border-radius: var(--nav-item-radius);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-smooth),
+                border-color var(--duration-fast) var(--ease-smooth),
+                color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-btn:hover {
+    background: var(--nav-hover);
+    color: var(--nav-ink-accent);
+  }
+
+  .nav-btn:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  .nav-btn--icon {
+    inline-size: 2.25rem;
+    padding-inline: 0;
+    flex-shrink: 0;
+  }
+
+  /* Outlined: the secondary entry point (sign in). */
+  .nav-btn--outline {
+    border-color: var(--nav-rule-strong);
+    color: var(--nav-ink);
+  }
+
+  .nav-btn--outline:hover {
+    border-color: var(--primary-border);
+  }
+
+  /* The stamp. Exactly one solid ink control appears in the bar at a time —
+     that scarcity is what makes it read as the primary action. Square-ish
+     rather than pill, to match the ruled language. */
+  .nav-btn--solid {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: var(--bg-surface-raised);
+    font-weight: 600;
+  }
+
+  .nav-btn--solid:hover {
+    background: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: var(--bg-surface-raised);
+  }
+
+  /* Touch targets grow on the surfaces that are used one-handed at a counter
+     (.impeccable.md, "the counter test"). */
+  @media (max-width: 768px) {
+    .nav-btn { min-block-size: var(--touch-min); }
+    .nav-btn--icon { inline-size: var(--touch-min); }
+  }
+
+  /* The drawer toggle exists only where the sidebar is off-canvas. This has to
+     sit after .nav-btn: the toggle is a .nav-btn, both selectors are a single
+     class, so whichever rule comes last in the file wins the display property.
+     Declared before .nav-btn, "display: none" lost and the toggle appeared on
+     every desktop dashboard beside an already-open sidebar. */
+  .nav-drawer-toggle { display: none; }
+
+  @media (max-width: 1024px) {
+    .nav-drawer-toggle { display: inline-flex; }
+  }
+
+  .nav-mobile-only { display: inline-flex; }
+
+  @media (min-width: 1024px) {
+    .nav-mobile-only { display: none; }
+  }
+
+  .nav-desktop-only { display: none; }
+
+  @media (min-width: 640px) {
+    .nav-desktop-only { display: inline-flex; }
+  }
+
+  /* --- menu trigger ------------------------------------------------------ */
+
+  .nav-pop { position: relative; display: inline-flex; }
+
+  .nav-trigger {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2xs);
+    min-block-size: 2.25rem;
+    padding-inline: var(--space-2xs) var(--space-xs);
+    border: 1px solid transparent;
+    border-radius: var(--nav-item-radius);
+    background: transparent;
+    color: var(--nav-ink);
+    font: inherit;
+    font-size: var(--text-sm);
+    cursor: pointer;
+    max-inline-size: 100%;
+    transition: background-color var(--duration-fast) var(--ease-smooth),
+                border-color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-trigger:hover { background: var(--nav-hover); }
+
+  .nav-trigger:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: 2px;
+  }
+
+  .nav-trigger[aria-expanded="true"] {
+    background: var(--nav-hover);
+    border-color: var(--primary-border);
+  }
+
+  .nav-trigger-chevron {
+    color: var(--nav-ink-muted);
+    flex-shrink: 0;
+    transition: transform var(--duration-normal) var(--ease-spring);
+  }
+
+  .nav-trigger[aria-expanded="true"] .nav-trigger-chevron {
+    transform: rotate(180deg);
+  }
+
+  .nav-avatar {
+    display: grid;
+    place-items: center;
+    inline-size: 1.875rem;
+    block-size: 1.875rem;
+    flex-shrink: 0;
+    border-radius: var(--radius-sm);
+    background: var(--primary-subtle);
+    color: var(--primary);
+    font-size: var(--text-xs);
+    font-weight: 700;
+    line-height: 1;
+    overflow: hidden;
+  }
+
+  .nav-avatar img,
+  .nav-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: inherit;
+    display: block;
+  }
+
+  .nav-trigger-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1px;
+    min-inline-size: 0;
+    line-height: 1.15;
+  }
+
+  .nav-trigger-label {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .nav-trigger-value {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--nav-ink);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-inline-size: 10rem;
+  }
+
+  @media (max-width: 768px) {
+    .nav-trigger { min-block-size: var(--touch-min); }
+    .nav-trigger-text { display: none; }
+  }
+
+  /* --- the unread counter ------------------------------------------------ */
+
+  .nav-count-slot {
+    position: absolute;
+    inset-block-start: -0.25rem;
+    inset-inline-end: -0.25rem;
+    pointer-events: none;
+  }
+
+  .nav-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-inline-size: 1.125rem;
+    block-size: 1.125rem;
+    padding-inline: 0.25rem;
+    border-radius: var(--radius-full);
+    background: var(--danger);
+    color: var(--bg-surface-raised);
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    box-shadow: 0 0 0 2px var(--nav-surface);
+  }
+
+  .nav-count--cart {
+    background: var(--primary, #0284c7);
+  }
+
+  /* ========================================================================
+     6. THE MENU SURFACE
+     One popover for the account menu, the notifications panel and the branch
+     selector. They used to be three surfaces with three radii, three shadows
+     and three dark-mode patches.
+     ======================================================================== */
+
+  .nav-menu {
+    position: absolute;
+    inset-block-start: calc(100% + var(--space-2xs));
+    inset-inline-end: 0;
+    z-index: var(--z-dropdown);
+    display: flex;
+    flex-direction: column;
+    inline-size: 17.5rem;
+    max-inline-size: calc(100vw - var(--space-lg));
+    overflow: hidden;
+    background: var(--bg-surface-raised);
+    border: 1px solid var(--border-card);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .nav-menu--start { inset-inline: 0 auto; }
+
+  .nav-menu--wide { inline-size: 22rem; }
+
+  .nav-menu-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--border-subtle);
+    background: var(--bg-surface-sunken);
+  }
+
+  .nav-menu-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+  }
+
+  .nav-menu-name {
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--text-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-menu-detail {
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    direction: ltr;
+    text-align: start;
+  }
+
+  /* Menu section labels carry translated copy, so they get no tracking under
+     RTL: letter-spacing pulls apart the joins between Arabic letters, which is
+     a rendering fault rather than a style. The tracked, uppercased, monospaced
+     treatment applies only under [dir="ltr"], or to labels whose content is
+     Latin by construction (.nav-brand-tag, .nav-trigger-label). */
+  .nav-menu-eyebrow {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  [dir="ltr"] .nav-menu-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .nav-menu-body {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2xs);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-block-size: min(60vh, 24rem);
+  }
+
+  .nav-menu-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .nav-menu-group + .nav-menu-group {
+    margin-block-start: var(--space-2xs);
+    padding-block-start: var(--space-2xs);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .nav-menu-label {
+    padding: var(--space-2xs) var(--space-sm);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  [dir="ltr"] .nav-menu-label {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  .nav-menu-item {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    inline-size: 100%;
+    min-block-size: 2.25rem;
+    padding: var(--space-2xs) var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: var(--text-secondary);
+    font: inherit;
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-align: start;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-smooth),
+                color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-menu-item > svg { flex-shrink: 0; color: var(--text-muted); }
+
+  .nav-menu-item span {
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .nav-menu-item:hover {
+    background: var(--nav-hover);
+    color: var(--primary);
+  }
+
+  .nav-menu-item:hover > svg { color: var(--primary); }
+
+  .nav-menu-item:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+  }
+
+  /* The one emphasised row: back to the dashboard, or out of it. It carries
+     the accent as a text colour and a tinted ground — not a filled button,
+     which would compete with the stamp in the bar above it. */
+  .nav-menu-item--primary {
+    color: var(--primary);
+    background: var(--primary-subtle);
+    font-weight: 600;
+  }
+
+  .nav-menu-item--primary > svg { color: var(--primary); }
+
+  .nav-menu-item--danger { color: var(--danger); }
+  .nav-menu-item--danger > svg { color: var(--danger); }
+
+  .nav-menu-item--danger:hover {
+    background: var(--danger-subtle);
+    color: var(--danger);
+  }
+
+  .nav-menu-item--danger:hover > svg { color: var(--danger); }
+
+  .nav-menu-item.is-active {
+    color: var(--primary);
+    font-weight: 600;
+  }
+
+  .nav-menu-foot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-md);
+    border-block-start: 1px solid var(--border-subtle);
+    background: var(--bg-surface-sunken);
+  }
+
+  .nav-menu-link {
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--primary);
+    text-decoration: none;
+  }
+
+  .nav-menu-link:hover { text-decoration: underline; }
+
+  .nav-menu-form { margin: 0; }
+
+  /* Sign-out sits alone below a rule. It is a destructive action in a list of
+     navigation, and separating it is cheaper than asking for confirmation. */
+  .nav-menu-exit {
+    padding: var(--space-2xs);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .nav-menu-exit .nav-menu-form { inline-size: 100%; }
+
+  /* --- settings segments (theme, language) ------------------------------- */
+
+  /* Theme and language sit side by side on one row. Stacked, each with its own
+     label above a full-width segmented control, they made the settings tail
+     taller than the whole list of destinations above it — two rarely-used
+     preferences outweighing the menu's actual job. Halved, and the labels are
+     inline with the controls. */
+  .nav-menu-settings {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-block-start: 1px solid var(--border-subtle);
+  }
+
+  .nav-seg {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 2px;
+    padding: 2px;
+    background: var(--bg-surface-sunken);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+  }
+
+  .nav-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2xs);
+    min-block-size: 1.75rem;
+    padding-inline: var(--space-xs);
+    border: none;
+    border-radius: calc(var(--radius-md) - 3px);
+    background: transparent;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--text-xs);
+    font-weight: 500;
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color var(--duration-fast) var(--ease-smooth),
+                color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-seg-btn:hover { color: var(--text-primary); }
+
+  .nav-seg-btn:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+  }
+
+  .nav-seg-btn.is-active,
+  .nav-seg-btn[aria-pressed="true"] {
+    background: var(--bg-surface-raised);
+    color: var(--text-primary);
+    box-shadow: var(--shadow-xs);
+  }
+
+  .nav-seg--flags .nav-seg-btn { min-block-size: 1.75rem; padding-inline: var(--space-sm); }
+
+  .nav-seg--flags .nav-seg-btn svg { inline-size: 1rem; block-size: 1rem; }
+
+  .nav-scrim-mobile {
+    display: none;
+  }
+
+  .nav-menu-close-mobile {
+    display: none;
+  }
+
+  /* --- mobile bottom sheet presentation (phone & tablet portrait) ---------
+     Below the tablet breakpoint (<= 768px), popover menus (account profile,
+     notifications panel, branch selector) convert cleanly into ergonomic bottom
+     sheets with backdrop dimming, iOS safe-area compliance, and 44px+ touch targets. */
+  @media (max-width: 768px) {
+    .nav-scrim-mobile {
+      display: block;
+      position: fixed;
+      inset: 0;
+      /* A dim, not a blur. Blurring a full-screen scrim forces the compositor
+         to re-rasterise everything behind it on every frame of the sheet's
+         entrance, which on the mid-range Android this platform targets is the
+         difference between a sheet that slides and one that jumps. The scrim's
+         job is to say "the page behind is not the thing you are using", and an
+         opacity does that. */
+      background: var(--bg-overlay, rgba(15, 23, 42, 0.55));
+      z-index: calc(var(--z-modal, 500) - 1);
+    }
+
+    .nav-menu-close-mobile {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      inline-size: 2.25rem;
+      block-size: 2.25rem;
+      padding: 0.25rem;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-raised);
+      color: var(--text-muted);
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: color var(--duration-fast) var(--ease-smooth),
+                  background-color var(--duration-fast) var(--ease-smooth);
+    }
+
+    .nav-menu-close-mobile:hover,
+    .nav-menu-close-mobile:focus-visible {
+      background: var(--bg-surface-sunken);
+      color: var(--text-primary);
+    }
+
+    /* The popover becomes a bottom sheet on a phone.
+       Thirteen of these declarations carried !important. The rules being
+       overridden are .nav-menu, .nav-menu--wide and .nav-menu--start three
+       hundred lines above in this same file, at the same specificity — so
+       source order already decided it, and the force was decoration. */
+    .nav-menu,
+    .nav-menu--wide,
+    .nav-menu--start {
+      position: fixed;
+      inset-block: auto 0;
+      inset-inline: 0;
+      inline-size: 100vw;
+      width: 100vw;
+      max-inline-size: 100vw;
+      max-width: 100vw;
+      border-inline: none;
+      border-block-end: none;
+      border-radius: var(--radius-2xl, 1.25rem) var(--radius-2xl, 1.25rem) 0 0;
+      box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25), var(--shadow-2xl);
+      z-index: var(--z-modal, 500);
+      margin: 0;
+      padding-bottom: max(var(--space-md, 1rem), env(safe-area-inset-bottom, 1rem));
+      background: var(--bg-surface-raised);
+      box-sizing: border-box;
+    }
+
+    .nav-menu-body {
+      max-block-size: 52vh;
+      max-block-size: 52dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      padding: var(--space-xs) var(--space-sm);
+    }
+
+    .nav-menu-item {
+      min-block-size: 2.75rem;
+      padding: var(--space-xs) var(--space-md);
+      font-size: var(--text-sm);
+    }
+
+    .nav-menu-head {
+      position: relative;
+      padding-block-start: calc(var(--space-md) + 6px);
+      padding-block-end: var(--space-xs);
+      padding-inline: var(--space-md);
+      min-block-size: 3.25rem;
+    }
+
+    /* Elegant centered grab handle */
+    .nav-menu-head::after {
+      content: "";
+      position: absolute;
+      inset-block-start: var(--space-xs);
+      inset-inline: 0;
+      inline-size: 2.75rem;
+      block-size: 4px;
+      margin-inline: auto;
+      border-radius: var(--radius-full);
+      background: var(--border-card, rgba(148, 163, 184, 0.45));
+    }
+
+    .nav-menu-settings {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-md);
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    .nav-menu-settings .nav-seg {
+      flex: 1 1 auto;
+    }
+
+    .nav-menu-settings .nav-seg-btn {
+      min-block-size: 2.5rem;
+      padding-inline: var(--space-sm);
+    }
+
+    .nav-menu-settings .nav-seg-btn span {
+      display: inline !important;
+      font-size: var(--text-xs);
+      font-weight: 600;
+    }
+
+    .nav-menu-settings .nav-seg--flags {
+      flex: 0 0 auto;
+    }
+
+    .nav-menu-settings .nav-seg--flags .nav-seg-btn {
+      min-block-size: 2.5rem;
+      padding-inline: var(--space-md);
+    }
+
+    .nav-menu-exit {
+      padding: var(--space-xs) var(--space-md);
+    }
+
+    .nav-menu-exit .nav-menu-item--danger {
+      min-block-size: 2.75rem;
+      justify-content: center;
+      font-weight: 600;
+      border-radius: var(--radius-md);
+    }
+
+    .nav-notif-list {
+      max-block-size: 55vh;
+      max-block-size: 55dvh;
+      padding: var(--space-2xs) var(--space-xs);
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+    }
+
+    .nav-notif-item {
+      min-block-size: 3.25rem;
+      padding: var(--space-sm) var(--space-md);
+      gap: var(--space-sm);
+    }
+
+    .nav-notif-title {
+      white-space: normal;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .nav-menu-foot {
+      padding: var(--space-sm) var(--space-md);
+      min-block-size: 3rem;
+    }
+
+    .nav-menu-foot .nav-btn,
+    .nav-menu-foot .nav-menu-link {
+      min-block-size: 2.5rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+  }
+
+  /* ========================================================================
+     7. NOTIFICATIONS PANEL
+     ======================================================================== */
+
+  .nav-notif-list {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2xs);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    max-block-size: min(60vh, 22rem);
+  }
+
+  /* No coloured stripe, no card-in-a-card. Unread is carried by weight, a
+     tinted ground and a single dot — the same way a ledger marks an open line
+     item. */
+  .nav-notif-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: start;
+    gap: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+    color: inherit;
+    text-decoration: none;
+    transition: background-color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-notif-item + .nav-notif-item {
+    border-block-start: 1px solid var(--border-subtle);
+    border-start-start-radius: 0;
+    border-start-end-radius: 0;
+  }
+
+  .nav-notif-item:hover { background: var(--bg-surface-sunken); }
+
+  .nav-notif-item.is-unread { background: var(--primary-subtle); }
+
+  .nav-notif-item:focus-visible {
+    outline: 2px solid var(--border-focus);
+    outline-offset: -2px;
+  }
+
+  .nav-notif-icon {
+    display: grid;
+    place-items: center;
+    inline-size: 1.75rem;
+    block-size: 1.75rem;
+    margin-block-start: 2px;
+    flex-shrink: 0;
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-sm);
+    background: var(--bg-surface);
+    color: var(--text-muted);
+  }
+
+  .nav-notif-item.is-unread .nav-notif-icon {
+    border-color: var(--primary-border);
+    color: var(--primary);
+  }
+
+  .nav-notif-body {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-inline-size: 0;
+  }
+
+  .nav-notif-title {
+    font-size: var(--text-sm);
+    font-weight: 500;
+    color: var(--text-secondary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .nav-notif-item.is-unread .nav-notif-title {
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+
+  .nav-notif-text {
+    font-size: var(--text-xs);
+    line-height: var(--leading-tight);
+    color: var(--text-muted);
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .nav-notif-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-2xs);
+    flex-shrink: 0;
+  }
+
+  .nav-notif-time {
+    font-family: var(--font-mono);
+    font-size: 0.625rem;
+    font-variant-numeric: tabular-nums;
+    color: var(--text-faint);
+    white-space: nowrap;
+  }
+
+  .nav-notif-dot {
+    inline-size: 6px;
+    block-size: 6px;
+    border-radius: var(--radius-full);
+    background: var(--primary);
+  }
+
+  .nav-notif-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+    padding: var(--space-2xl) var(--space-md);
+    text-align: center;
+    color: var(--text-muted);
+  }
+
+  .nav-notif-empty-mark {
+    display: grid;
+    place-items: center;
+    inline-size: 2.5rem;
+    block-size: 2.5rem;
+    border: 1px dashed var(--border-card);
+    border-radius: var(--radius-md);
+    color: var(--text-faint);
+  }
+
+  .nav-notif-empty-text {
+    font-size: var(--text-sm);
+    color: var(--text-muted);
+    max-inline-size: 22ch;
+    line-height: var(--leading-tight);
+  }
+
+  .nav-notif-count {
+    display: inline-flex;
+    align-items: center;
+    padding-inline: var(--space-xs);
+    padding-block: 2px;
+    border-radius: var(--radius-full);
+    background: var(--danger-subtle);
+    color: var(--danger);
+    font-family: var(--font-mono);
+    font-size: var(--text-xs);
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+  }
+
+  /* ========================================================================
+     8. BRANCH SELECTOR
+     Same trigger, same menu, plus a status dot that means something: which
+     branch the catalogue and the delivery estimate are currently computed for.
+     ======================================================================== */
+
+  .nav-branch-dot {
+    inline-size: 7px;
+    block-size: 7px;
+    flex-shrink: 0;
+    border-radius: var(--radius-full);
+    background: var(--border-card);
+  }
+
+  .nav-menu-item.is-active .nav-branch-dot { background: var(--success); }
+
+  .nav-branch-name {
+    flex: 1 1 auto;
+    min-inline-size: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* ========================================================================
+     9. MOBILE DRAWER
+     ======================================================================== */
+
+  .nav-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: var(--z-drawer);
+    background: var(--bg-overlay);
+  }
+
+  .nav-drawer {
+    position: fixed;
+    inset-block: 0;
+    inset-inline-end: 0;
+    z-index: calc(var(--z-drawer) + 1);
+    display: flex;
+    flex-direction: column;
+    inline-size: 20rem;
+    max-inline-size: 86vw;
+    background: var(--bg-surface-raised);
+    border-inline-start: 1px solid var(--border-card);
+    box-shadow: var(--shadow-2xl);
+  }
+
+  .nav-drawer-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border-block-end: 1px solid var(--border-subtle);
+  }
+
+  .nav-drawer-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-lg);
+    padding: var(--space-md);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    flex: 1 1 auto;
+  }
+
+  .nav-drawer-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .nav-drawer-label {
+    padding-inline: var(--space-xs);
+    padding-block-end: var(--space-xs);
+    font-size: var(--text-xs);
+    font-weight: 600;
+    color: var(--text-muted);
+  }
+
+  [dir="ltr"] .nav-drawer-label {
+    font-family: var(--font-mono);
+    font-size: 0.5625rem;
+    font-weight: 500;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+  }
+
+  /* Drawer rows are ruled, not carded. A stack of ten filled rounded boxes is
+     the pattern this replaces; the hairline keeps the list scannable and
+     matches the rail in the bar above. */
+  .nav-drawer-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    min-block-size: var(--touch-min);
+    padding-inline: var(--space-xs);
+    color: var(--text-secondary);
+    font-size: var(--text-sm);
+    font-weight: 500;
+    text-decoration: none;
+    border-block-end: 1px solid var(--border-subtle);
+    transition: color var(--duration-fast) var(--ease-smooth),
+                background-color var(--duration-fast) var(--ease-smooth);
+  }
+
+  .nav-drawer-link > svg { color: var(--text-muted); flex-shrink: 0; }
+
+  .nav-drawer-link:hover,
+  .nav-drawer-link.is-active {
+    color: var(--primary);
+  }
+
+  .nav-drawer-link:hover > svg,
+  .nav-drawer-link.is-active > svg { color: var(--primary); }
+
+  .nav-drawer-foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md);
+    border-block-start: 1px solid var(--border-subtle);
+    background: var(--bg-surface-sunken);
+  }
+
+  .nav-drawer-foot .nav-btn { inline-size: 100%; }
+
+  .nav-drawer-account {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding-block-end: var(--space-xs);
+  }
+
+  /* ========================================================================
+     10. MOTION
+     ======================================================================== */
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-root,
+    .nav-link,
+    .nav-link::after,
+    .nav-btn,
+    .nav-trigger,
+    .nav-trigger-chevron,
+    .nav-menu-item,
+    .nav-seg-btn,
+    .nav-notif-item,
+    .nav-drawer-link {
+      transition-duration: 1ms;
+    }
+  }
+}
+
+/* In-place navigation progress (boost-nav.js toggles html.is-navigating). */
+@layer components {
+  html.is-navigating::before {
+    content: "";
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: 3px;
+    z-index: var(--z-toast);
+    background: var(--primary);
+    transform-origin: 0 50%;
+    animation: nav-progress 1.2s ease-out forwards;
+    pointer-events: none;
+  }
+
+  html[dir="rtl"].is-navigating::before {
+    transform-origin: 100% 50%;
+  }
+
+  html.is-navigating #main-content {
+    opacity: 0.6;
+    transition: opacity 150ms ease-out;
+  }
+
+  #main-content:focus {
+    outline: none;
+  }
+
+  @keyframes nav-progress {
+    from { transform: scaleX(0); }
+    to   { transform: scaleX(0.85); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html.is-navigating::before {
+      animation: none;
+      transform: scaleX(1);
+    }
+  }
+}

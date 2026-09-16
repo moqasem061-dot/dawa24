@@ -1,0 +1,172 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AboutPageData holds editable content for the About Us page.
+//
+// HeroBadge is still read from the CMS by the handler but no longer rendered:
+// the page opens with a filing label, not a pill badge with an icon in it, and
+// the label names the page rather than the company. The field stays on the
+// struct so existing content rows keep resolving.
+type AboutPageData struct {
+	HeroBadge    string
+	HeroTitle    string
+	HeroSubtitle string
+	VisionTitle  string
+	VisionText   string
+	MissionTitle string
+	MissionText  string
+	BannerTitle  string
+	BannerText   string
+}
+
+// AboutPage.
+//
+// It was a hero card with a gradient bar, two icon-and-heading cards, four more
+// icon-and-heading cards, and a gradient call-to-action — five boxes, roughly
+// 600 words, and nothing a reader could point at and remember.
+//
+// It reads as a record now: a masthead, a ruled strip of three facts, three
+// indexed sections down a margin spine, and one closing band. The prose is cut
+// to roughly a third; what survived is the part that says something specific.
+//
+// The pillar claiming certified e-invoicing integration with the Egyptian tax
+// authority has been removed rather than softened. It asserted an accreditation
+// the platform does not hold, and a page whose entire argument is "we verify
+// things" cannot carry a claim it has not verified about itself.
+templ AboutPage(lang, dir string, data AboutPageData) {
+	@layouts.PublicShell("من نحن — منصة التوريد والربط الدوائي", lang, dir) {
+		<article class="mk-page">
+			<header class="mk-masthead">
+				<p class="mk-eyebrow">من نحن</p>
+				<h1 class="mk-title">
+					if data.HeroTitle != "" {
+						{ data.HeroTitle }
+					} else {
+						البنية التحتية الرقمية لتوريد الدواء في مصر
+					}
+				</h1>
+				<p class="mk-lede">
+					if data.HeroSubtitle != "" {
+						{ data.HeroSubtitle }
+					} else {
+						نربط الصيدليات والمستشفيات والمراكز الطبية المرخصة مباشرةً بالمصانع والمخازن المعتمدة — بلا وسطاء، وبسجل موثّق لكل شحنة.
+					}
+				</p>
+				<dl class="mk-record">
+					<div class="mk-record-cell">
+						<dt class="mk-record-key">
+							@components.IconMapPin("")
+							<span>Market</span>
+						</dt>
+						<dd class="mk-record-val">جمهورية مصر العربية</dd>
+					</div>
+					<div class="mk-record-cell">
+						<dt class="mk-record-key">
+							@components.IconUsers("")
+							<span>Parties</span>
+						</dt>
+						<dd class="mk-record-val">صيدليات · مستشفيات · موردون</dd>
+					</div>
+					<div class="mk-record-cell">
+						<dt class="mk-record-key">
+							@components.IconClock("")
+							<span>Support</span>
+						</dt>
+						<dd class="mk-record-val">متاح 24/7</dd>
+					</div>
+				</dl>
+			</header>
+
+			<section class="mk-section">
+				<div class="mk-spine">
+					<span class="mk-index">01</span>
+					<span class="mk-spine-label">الاتجاه</span>
+				</div>
+				<div class="mk-body">
+					<h2 class="mk-heading">
+						if data.VisionTitle != "" {
+							{ data.VisionTitle }
+						} else {
+							رؤيتنا
+						}
+					</h2>
+					<p class="mk-text">
+						if data.VisionText != "" {
+							{ data.VisionText }
+						} else {
+							أن نكون البنية التحتية التي تعتمد عليها سلاسل الإمداد الدوائي في الشرق الأوسط: دواء متوفر، بسعر عادل، وبمصدر يمكن تتبّعه.
+						}
+					</p>
+				</div>
+			</section>
+
+			<section class="mk-section">
+				<div class="mk-spine">
+					<span class="mk-index">02</span>
+					<span class="mk-spine-label">العمل</span>
+				</div>
+				<div class="mk-body">
+					<h2 class="mk-heading">
+						if data.MissionTitle != "" {
+							{ data.MissionTitle }
+						} else {
+							رسالتنا
+						}
+					</h2>
+					<p class="mk-text">
+						if data.MissionText != "" {
+							{ data.MissionText }
+						} else {
+							نستبدل مكالمات التوريد ورسائل واتساب المتفرقة بمنصة واحدة: مقارنة أسعار حيّة، شراء مباشر، وسلسلة تبريد لا تنقطع من المخزن إلى رفّ الصيدلية.
+						}
+					</p>
+				</div>
+			</section>
+
+			<section class="mk-section">
+				<div class="mk-spine">
+					<span class="mk-index">03</span>
+					<span class="mk-spine-label">الضمانات</span>
+				</div>
+				<div class="mk-body">
+					<h2 class="mk-heading">ثلاث ركائز يقوم عليها كل أمر توريد</h2>
+					<dl class="mk-list">
+						<div class="mk-item">
+							<span class="mk-item-mark" aria-hidden="true">
+								@components.IconShield("")
+							</span>
+							<dt class="mk-item-term">توثيق التراخيص</dt>
+							<dd class="mk-item-desc">
+								السجل التجاري وترخيص هيئة الدواء وقيد نقابة الصيادلة تُراجَع قبل تفعيل أي حساب — للطرفين.
+							</dd>
+						</div>
+						<div class="mk-item">
+							<span class="mk-item-mark" aria-hidden="true">
+								@components.IconTruck("")
+							</span>
+							<dt class="mk-item-term">سلسلة تبريد معتمدة</dt>
+							<dd class="mk-item-desc">
+								حاويات مبرّدة ومجسّات حرارية على خط السير، للأنسولين والأمصال وكل ما لا يحتمل انقطاع التبريد.
+							</dd>
+						</div>
+						<div class="mk-item">
+							<span class="mk-item-mark" aria-hidden="true">
+								@components.IconPhone("")
+							</span>
+							<dt class="mk-item-term">دعم صيدلي</dt>
+							<dd class="mk-item-desc">
+								فريق متفرغ للطلبات العاجلة ومتابعة خطوط السير ونواقص السوق، على مدار الساعة.
+							</dd>
+						</div>
+					</dl>
+				</div>
+			</section>
+
+			@components.PublicCTA(data.BannerTitle, data.BannerText, lang)
+		</article>
+	}
+}

@@ -1,0 +1,202 @@
+package layouts
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"context"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// CustomerShell is the authenticated pharmacy portal: sidebar (RTL right),
+// top strip, and main. No navbar, no footer — Rule 1.5. The branch selector
+// lives in the top strip (Phase 3.2): changing it changes what the whole
+// catalogue shows.
+templ CustomerShell(title string, activeNav string, lang string, dir string, perms []string) {
+	if site := GetSiteSettings(ctx); site != nil {
+		@Base(title, lang, dir, "/static/css/customer.css") {
+			<div class="app-shell" hx-boost="true">
+				<!-- Sidebar -->
+				<aside class="sidebar" id="app-sidebar">
+					<div class="sidebar-header">
+						<a href="/customer/dashboard" class="sidebar-brand text-decoration-none">
+							if site.LogoURL != "" {
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src={ site.LogoURL } alt={ site.SiteName } data-img-fallback="hide" />
+							} else {
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src="/static/img/logo.png" alt={ site.SiteName } data-img-fallback="hide" />
+							}
+							if site.LogoDarkURL != "" {
+								<img class="sidebar-logo logo-dark" src={ site.LogoDarkURL } alt={ site.SiteName } data-img-fallback="hide" />
+							}
+							<div class="sidebar-brand-copy">
+								<span class="sidebar-brand-name">{ site.SiteName }</span>
+								<span class="sidebar-brand-subtitle">{ i18n.T(lang, "pharmacy.shell.subtitle") }</span>
+							</div>
+						</a>
+					@SidebarHeaderControls()
+				</div>
+
+				@SidebarNav(rbac.ScopePharmacy, activeNav, lang)
+			</aside>
+
+			<!-- Main Content -->
+			<main class="main-content" id="main-content" data-shell="customer">
+				<!-- Top Bar with Branch Selector -->
+				@components.DashboardTopBar(components.TopBarProps{
+					Title:   title,
+					Lang:    lang,
+					Context: BuyingBranchSelector(ctx, lang),
+					Actions: pharmacyTopBarActions(lang),
+				})
+
+				<div class="page-container">
+					@AuthNoticeBanner(lang)
+					{ children... }
+				</div>
+			</main>
+		</div>
+	}
+	}
+}
+
+// BuyingBranchSelector is an island in the top navbar. It reads the current
+func activeBranchDisplayName(buying authctx.BuyingBranch, lang string) string {
+	if buying.Active != nil {
+		for _, b := range buying.Branches {
+			if b.ID == *buying.Active {
+				return b.Name
+			}
+		}
+	}
+	if len(buying.Branches) > 0 {
+		return buying.Branches[0].Name
+	}
+	return i18n.T(lang, "branch.default_label")
+}
+
+// BuyingBranchSelector reads the caller's available branches and the active
+// branch from the request context (or session), renders a dropdown of their own
+// company's branches, and POSTs to /customer/set-branch on change.
+//
+// It renders for any buying company. It used to ask actor.IsCustomer(), which
+// meant a supplier buying from another distributor had no way to say which of
+// its own warehouses the delivery was for — and the branch is what decides
+// coverage, distance and whether the line can be ordered at all.
+templ BuyingBranchSelector(ctx context.Context, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if actor, ok := authctx.From(ctx); ok && actor.IsBuyer() {
+		{{
+			actionURL := "/customer/set-branch"
+			if actor.DashboardScope() == rbac.ScopeVendor {
+				actionURL = "/vendor/set-branch"
+			}
+		}}
+		if buying, has := authctx.BuyingBranchFrom(ctx); has && len(buying.Branches) > 0 {
+			if buying.IsLocked {
+				<div class="nav-pop" title={ i18n.T(lang, "branch.locked_tooltip") }>
+					<div class="nav-trigger cursor-default opacity-90">
+						@components.IconLock("icon-xs text-amber")
+						<span class="nav-trigger-text">
+							<span class="nav-trigger-label">BRANCH</span>
+							<span class="nav-trigger-value">{ activeBranchDisplayName(buying, lang) }</span>
+						</span>
+					</div>
+				</div>
+			} else {
+				<div class="nav-pop" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+					<button
+						type="button"
+						class="nav-trigger"
+						@click="open = !open"
+						:aria-expanded="open ? 'true' : 'false'"
+						aria-haspopup="menu"
+						title={ i18n.T(lang, "branch.switch_tooltip") }
+					>
+						@components.IconMapPin("icon-xs")
+					<span class="nav-trigger-text">
+						<span class="nav-trigger-label">BRANCH</span>
+						<span class="nav-trigger-value">{ activeBranchDisplayName(buying, lang) }</span>
+					</span>
+					@components.IconChevronDown("icon-2xs nav-trigger-chevron")
+				</button>
+				<div
+					class="nav-scrim-mobile"
+					x-show="open"
+					x-cloak
+					x-transition.opacity.duration.200ms
+					@click="open = false"
+					aria-hidden="true"
+				></div>
+				<div
+					class="nav-menu nav-menu--start"
+					role="menu"
+					x-show="open"
+					x-cloak
+					x-transition.duration.200ms
+				>
+					<div class="nav-menu-head">
+						<span class="nav-menu-eyebrow">{ i18n.T(lang, "branch.select_active") }</span>
+						<button
+							type="button"
+							class="nav-menu-close-mobile"
+							@click="open = false"
+							aria-label={ i18n.T(lang, "branch.close_menu") }
+						>
+							@components.IconClose("icon-xs")
+						</button>
+					</div>
+					<div class="nav-menu-body">
+						<div class="nav-menu-group">
+							for _, b := range buying.Branches {
+								<form method="POST" action={ templ.SafeURL(actionURL) } class="nav-menu-form">
+									<input type="hidden" name="branch_id" value={ fmt.Sprintf("%d", b.ID) } />
+									<input type="hidden" name="redirect_to" value="" x-init="$el.value = window.location.pathname + window.location.search" />
+									<button
+										type="submit"
+										role="menuitem"
+										class={ "nav-menu-item", templ.KV("is-active", buying.Active != nil && *buying.Active == b.ID) }
+									>
+										<span class="nav-branch-dot"></span>
+										<span class="nav-branch-name">{ b.Name }</span>
+										if buying.Active != nil && *buying.Active == b.ID {
+											@components.IconCheck("icon-xs")
+										}
+									</button>
+								</form>
+							}
+						</div>
+					</div>
+				</div>
+			</div>
+			}
+		}
+	}
+}
+
+// pharmacyTopBarActions is the one control the pharmacy bar has that the other
+// two dashboards do not. It goes in the top bar's Actions slot rather than being
+// hand-placed in the header, which is what made this shell drift out of
+// alignment with admin and vendor in the first place.
+templ pharmacyTopBarActions(lang string) {
+	if actor, ok := authctx.From(ctx); ok && (actor.IsOwner || actor.CanAny("pharmacy.cart.use", "vendor.buying.cart.use")) {
+		<div class="nav-pop items-center">
+			<a href="/cart" class="nav-btn nav-btn--icon" title={ i18n.T(lang, "nav.cart") }>
+				@components.IconCart("icon-sm")
+			</a>
+			<span
+				class="nav-count-slot"
+				hx-get="/cart/count-badge"
+				hx-trigger="load, every 60s, cartUpdated from:body"
+				hx-swap="innerHTML"
+				hx-target="this"
+			></span>
+		</div>
+	}
+}

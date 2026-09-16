@@ -1,0 +1,260 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// SmartOrderBranch is a delivery branch offered on the import screen.
+type SmartOrderBranch struct {
+	ID     int64
+	Name   string
+	City   string
+	IsMain bool
+}
+
+// SmartOrderNewData is everything the import screen needs.
+type SmartOrderNewData struct {
+	Branches []SmartOrderBranch
+	Profile  *smartorder.Profile
+	// AIAvailable is false when the Gateway is unreachable, has no adjudication
+	// model configured, or the organisation has no virtual key. The toggle then
+	// renders disabled with a reason rather than enabled-but-broken.
+	AIAvailable         bool
+	AIUnavailableReason string
+
+	// Error is why the previous attempt was refused. Rendered at the top of the
+	// form, because the buyer needs to know what to change before they try the
+	// same thing again.
+	Error string
+}
+
+// SmartOrderNewPage is step 1: upload and configuration.
+templ SmartOrderNewPage(lang, dir string, data SmartOrderNewData) {
+	@layouts.ShellFor(i18n.T(lang, "nav.smart_order"), "purchase-request", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-4xl so-new-order-page">
+			<div class="flex-between items-center mb-4 flex-wrap gap-2">
+				<h1 class="so-page-title m-0">{ i18n.T(lang, "smart_order.new_page_title") }</h1>
+				<a href="/customer/smart-order/history" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+					@components.IconClock("icon-xs")
+					<span>{ i18n.T(lang, "smart_order.history_drafts_btn") }</span>
+				</a>
+			</div>
+			@WizardRail(OrderRail(StepFile))
+			if data.Error != "" {
+				<div class="so-alert so-alert-error">
+					{ data.Error }
+				</div>
+			}
+			<form method="POST" action="/customer/smart-order" enctype="multipart/form-data" class="glass-panel p-6 mb-0 so-new-order-form stack-lg">
+				<!-- 1. File Upload Dropzone Card -->
+				<div class="so-form-field">
+					<label class="so-field-label font-bold text-sm mb-2 text-primary d-flex items-center gap-2">
+						@components.IconUpload("icon-xs text-brand")
+						<span>{ i18n.T(lang, "smart_order.upload_field_label") }</span>
+						<span class="text-danger">*</span>
+					</label>
+					<label class="dropzone p-6 text-center cursor-pointer border-2 border-dashed rounded-2xl transition-all" id="so-dropzone" style="display: block; position: relative;">
+						<input type="file" name="file" accept=".xlsx,.xls,.csv" required class="visually-hidden" id="so-file-input" data-on-change="handleSoFileSelect(this)"/>
+						<div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand d-inline-flex items-center justify-center mb-3 shadow-2xs">
+							@components.IconFileText("icon-md")
+						</div>
+						<div class="dropzone-title font-black text-sm text-primary mb-1" id="so-file-title">{ i18n.T(lang, "smart_order.dropzone_title") }</div>
+						<div class="dropzone-hint text-xs text-secondary" id="so-file-hint">{ i18n.T(lang, "smart_order.dropzone_hint") }</div>
+					</label>
+					<div class="d-flex items-center gap-2 mt-2 flex-wrap">
+						<span class="text-xs text-muted font-bold">{ i18n.T(lang, "smart_order.sample_download_label") }</span>
+						<a href="/customer/smart-order/sample.xlsx" class="btn btn-secondary btn-xs font-bold gap-1 text-brand shadow-2xs">
+							@components.IconFileText("icon-xs")
+							<span>{ i18n.T(lang, "smart_order.sample_excel") }</span>
+						</a>
+						<a href="/customer/smart-order/sample.csv" class="btn btn-ghost btn-xs font-bold gap-1 text-secondary">
+							@components.IconFileText("icon-xs")
+							<span>{ i18n.T(lang, "smart_order.sample_csv") }</span>
+						</a>
+					</div>
+					<script nonce={ layouts.Nonce(ctx) }>
+						function handleSoFileSelect(input) {
+							if (input.files && input.files[0]) {
+								var file = input.files[0];
+								var title = document.getElementById('so-file-title');
+								var hint = document.getElementById('so-file-hint');
+								var dropzone = document.getElementById('so-dropzone');
+								if (title) title.textContent = file.name;
+								var isEn = document.documentElement.lang === 'en';
+								if (hint) hint.textContent = (isEn ? 'Size: ' : 'الحجم: ') + (file.size / (1024 * 1024)).toFixed(2) + (isEn ? ' MB — Ready to upload and process' : ' ميجابايت — جاهز للرفع والمعالجة');
+								if (dropzone) {
+									dropzone.style.borderColor = 'var(--primary, #0284c7)';
+									dropzone.style.backgroundColor = 'var(--primary-subtle, rgba(2, 132, 199, 0.08))';
+								}
+							}
+						}
+					</script>
+				</div>
+
+				<!-- 2. Delivery Branch Card -->
+				<div class="so-form-field">
+					<label class="so-field-label font-bold text-sm mb-2 text-primary d-flex items-center gap-2">
+						@components.IconBuilding("icon-xs text-brand")
+						<span>{ i18n.T(lang, "smart_order.branch_field_label") }</span>
+						<span class="text-danger">*</span>
+					</label>
+					<select name="branch_id" required class="form-select font-bold text-sm">
+						for _, b := range data.Branches {
+							<option value={ fmt.Sprintf("%d", b.ID) } selected?={ b.IsMain }>
+								{ b.Name }
+								if b.City != "" {
+									{ " — " + b.City }
+								}
+							</option>
+						}
+					</select>
+					<p class="so-help-text mt-1 text-xs text-muted">
+						{ i18n.T(lang, "smart_order.branch_help_text") }
+					</p>
+				</div>
+
+				<!-- 3. Supplier Priority Criteria Card -->
+				<div class="so-criteria-fieldset glass-panel p-5 rounded-2xl border border-card shadow-2xs">
+					<div class="d-flex items-center gap-2 mb-2">
+						@components.IconFilter("icon-xs text-brand")
+						<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "smart_order.criteria_title") }</h3>
+					</div>
+					<p class="so-help-text so-criteria-help mb-3 text-xs">
+						{ i18n.T(lang, "smart_order.criteria_help") }
+					</p>
+					<div class="stack-sm mb-4">
+						for i, c := range []struct{ Key, Label, Desc string }{
+							{"followed_suppliers", i18n.T(lang, "smart_order.crit_followed"), i18n.T(lang, "smart_order.crit_followed_desc")},
+							{"highest_discount", i18n.T(lang, "smart_order.crit_discount"), i18n.T(lang, "smart_order.crit_discount_desc")},
+							{"lowest_price", i18n.T(lang, "smart_order.crit_price"), i18n.T(lang, "smart_order.crit_price_desc")},
+						} {
+							<label class="so-criteria-row d-flex items-center justify-between p-3 rounded-xl border border-card bg-surface-raised cursor-pointer transition-all hover:border-primary">
+								<div class="d-flex items-center gap-3">
+									<input type="checkbox" name="criteria" value={ c.Key } checked class="form-checkbox" />
+									<div>
+										<div class="font-bold text-sm text-primary">{ c.Label }</div>
+										<div class="text-2xs text-secondary">{ c.Desc }</div>
+									</div>
+								</div>
+								<div class="d-flex items-center gap-2">
+									<span class="text-2xs text-muted font-bold">{ i18n.T(lang, "smart_order.priority_label") }</span>
+									<input type="number" name={ "priority_" + c.Key } value={ fmt.Sprintf("%d", i+1) } min="1" max="3" class="so-priority-input" />
+								</div>
+							</label>
+						}
+					</div>
+					<div class="so-tolerance-field p-3 rounded-xl bg-surface-sunken border border-subtle">
+						<div class="flex-between items-center flex-wrap gap-2 mb-1">
+							<label class="font-bold text-xs text-primary d-flex items-center gap-1.5">
+								<span>{ i18n.T(lang, "smart_order.tolerance_label") }</span>
+							</label>
+							<input type="number" name="tolerance_pct" value="5" min="0" max="100" step="0.5" class="so-tolerance-input" />
+						</div>
+						<p class="so-help-text so-help-text-small m-0 text-muted">
+							{ i18n.T(lang, "smart_order.tolerance_help") }
+						</p>
+					</div>
+				</div>
+
+				<!-- 4. Default Quantities and Budget Grid -->
+				<div class="so-form-grid">
+					<div class="so-form-field glass-panel p-4 rounded-xl border border-card shadow-2xs">
+						<label class="so-subfield-label font-bold text-xs text-primary mb-1.5 d-flex items-center gap-1">
+							@components.IconPackage("icon-xs text-muted")
+							<span>{ i18n.T(lang, "smart_order.default_qty_label") }</span>
+						</label>
+						<input type="number" name="default_quantity" value={ func() string { if data.Profile != nil && data.Profile.DefaultQuantity > 0 { return fmt.Sprintf("%d", data.Profile.DefaultQuantity) }; return "1" }() } min="1" class="form-control font-bold" />
+						<p class="so-help-text so-help-text-small mt-1.5 text-muted">
+							{ i18n.T(lang, "smart_order.default_qty_help") }
+						</p>
+					</div>
+					<div class="so-form-field glass-panel p-4 rounded-xl border border-card shadow-2xs">
+						<label class="so-subfield-label font-bold text-xs text-primary mb-1.5 d-flex items-center gap-1">
+							@components.IconSearch("icon-xs text-muted")
+							<span>{ i18n.T(lang, "smart_order.min_score_label") }</span>
+						</label>
+						<input type="number" name="min_match_score" value={ func() string { if data.Profile != nil && data.Profile.MinMatchScore > 0 { return fmt.Sprintf("%d", int(data.Profile.MinMatchScore*100)) }; return fmt.Sprint(int(productmatch.DefaultMinStrong*100)) }() } min="25" max="100" class="form-control font-bold" />
+						<p class="so-help-text so-help-text-small mt-1.5 text-muted">
+							{ i18n.T(lang, "smart_order.min_score_help") }
+						</p>
+					</div>
+					<div class="so-form-field glass-panel p-4 rounded-xl border border-card shadow-2xs">
+						<label class="so-subfield-label font-bold text-xs text-primary mb-1.5 d-flex items-center gap-1">
+							@components.IconWallet("icon-xs text-muted")
+							<span>{ i18n.T(lang, "smart_order.max_budget_label") }</span>
+						</label>
+						<input type="text" name="max_budget" inputmode="decimal" placeholder={ i18n.T(lang, "smart_order.max_budget_ph") } class="form-control font-bold" />
+						<p class="so-help-text so-help-text-small mt-1.5 text-muted">
+							{ i18n.T(lang, "smart_order.max_budget_help") }
+						</p>
+					</div>
+					<div class="so-form-field glass-panel p-4 rounded-xl border border-card shadow-2xs">
+						<label class="so-subfield-label font-bold text-xs text-primary mb-1.5 d-flex items-center gap-1">
+							@components.IconGlobe("icon-xs text-brand")
+							<span>{ i18n.T(lang, "smart_order.match_lang_label") }</span>
+						</label>
+						<select name="match_language" class="form-select font-bold text-xs">
+							<option value="ar" selected?={ data.Profile == nil || data.Profile.MatchLanguage == "ar" || data.Profile.MatchLanguage == "" }>
+								{ i18n.T(lang, "smart_order.match_lang_ar") }
+							</option>
+							<option value="en" selected?={ data.Profile != nil && data.Profile.MatchLanguage == "en" }>
+								{ i18n.T(lang, "smart_order.match_lang_en") }
+							</option>
+							<option value="auto" selected?={ data.Profile != nil && data.Profile.MatchLanguage == "auto" }>
+								{ i18n.T(lang, "smart_order.match_lang_auto") }
+							</option>
+						</select>
+						<p class="so-help-text so-help-text-small mt-1.5 text-muted">
+							{ i18n.T(lang, "smart_order.match_lang_help") }
+						</p>
+					</div>
+				</div>
+
+				<!-- 5. Advanced Matching Options & AI Toggle -->
+				<div class="so-options stack-sm">
+					<label class="so-option-row d-flex items-center gap-3 p-3.5 rounded-xl border border-card bg-surface-raised cursor-pointer transition-all hover:border-primary">
+						<input type="checkbox" name="use_saving_products" checked?={ data.Profile != nil && data.Profile.UseSavingProducts } class="form-checkbox" />
+						<div>
+							<div class="font-bold text-sm text-primary">{ i18n.T(lang, "smart_order.use_saving_label") }</div>
+							<div class="text-2xs text-secondary">{ i18n.T(lang, "smart_order.use_saving_desc") }</div>
+						</div>
+					</label>
+					<label class={ "so-option-row d-flex items-center gap-3 p-3.5 rounded-xl border border-card bg-surface-raised transition-all", templ.KV("cursor-pointer hover:border-primary", data.AIAvailable), templ.KV("opacity-60 cursor-not-allowed", !data.AIAvailable) }>
+						<input type="checkbox" name="use_ai_matching" disabled?={ !data.AIAvailable } checked?={ data.AIAvailable && (data.Profile == nil || data.Profile.UseAIMatching) } class="form-checkbox" />
+						<div>
+							<div class="d-flex items-center gap-2">
+								<span class="font-bold text-sm text-primary">{ i18n.T(lang, "smart_order.use_ai_label") }</span>
+								<span class="badge badge-purple text-2xs font-bold">{ i18n.T(lang, "smart_order.ai_badge") }</span>
+							</div>
+							<div class="text-2xs text-secondary">
+								{ i18n.T(lang, "smart_order.use_ai_desc") }
+							</div>
+						</div>
+					</label>
+					if !data.AIAvailable {
+						<div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
+							{ data.AIUnavailableReason }
+						</div>
+					}
+				</div>
+
+				<!-- 6. Submit Button -->
+				<button type="submit" class="btn btn-primary btn-lg so-new-order-submit font-black text-sm gap-2 shadow-sm">
+					<span>{ i18n.T(lang, "smart_order.upload_submit_btn") }</span>
+					if dir == "rtl" {
+						@components.IconArrowLeft("icon-xs")
+					} else {
+						@components.IconArrowRight("icon-xs")
+					}
+				</button>
+			</form>
+		</div>
+	}
+}

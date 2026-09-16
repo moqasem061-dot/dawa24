@@ -1,0 +1,233 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorProductsScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openAddFromCatalogModal() {
+			resetSelectedMasterProduct();
+			const input = document.getElementById('cat-search-input');
+			if (input) input.value = '';
+			const el = document.getElementById('add-from-catalog-modal');
+			if (el && typeof el.showModal === 'function') {
+				el.showModal();
+			}
+		}
+
+		function closeAddFromCatalogModal() {
+			const el = document.getElementById('add-from-catalog-modal');
+			if (el && typeof el.close === 'function') {
+				el.close();
+			}
+		}
+
+		function openAddCustomVariantModal() {
+			const el = document.getElementById('add-custom-variant-modal');
+			if (el && typeof el.showModal === 'function') {
+				el.showModal();
+			}
+		}
+
+		function closeAddCustomVariantModal() {
+			const el = document.getElementById('add-custom-variant-modal');
+			if (el && typeof el.close === 'function') {
+				el.close();
+			}
+		}
+
+		function openEditVariantModal(id) {
+			const row = document.querySelector(`.vendor-variant-row[data-id="${id}"]`);
+			if (!row) return;
+
+			let v;
+			try { v = JSON.parse(row.dataset.variant || '{}'); } catch (e) { return; }
+
+			const form = document.getElementById('edit-variant-form');
+			if (form) form.action = `/vendor/variants/${id}/update`;
+
+			const fields = {
+				'edit-form-name-ar': v.name_ar,
+				'edit-form-name-en': v.name_en,
+				'edit-form-sku': v.sku,
+				'edit-form-barcode': v.barcode,
+				'edit-form-unit': v.unit,
+				'edit-form-price': v.price,
+				'edit-form-discount': v.discount,
+				'edit-form-cost': v.cost_price,
+				'edit-form-cost-discount': (v.cost_discount_percentage && v.cost_discount_percentage !== '0.00') ? v.cost_discount_percentage : '',
+				'edit-form-stock': v.stock_qty,
+				'edit-form-min-qty': v.min_order_qty || 1,
+				'edit-form-quota': v.quota_limit || '',
+				'edit-form-batch': v.batch_number,
+				'edit-form-expiry': v.expiry_date,
+				'edit-form-status': v.status || 'active',
+				'edit-form-negotiable': v.is_negotiable ? 'true' : 'false'
+			};
+			Object.keys(fields).forEach((elID) => {
+				const el = document.getElementById(elID);
+				if (!el) return;
+				const value = fields[elID];
+				el.value = (value === null || value === undefined) ? '' : String(value);
+			});
+
+			const branchSelect = document.getElementById('edit-form-branch');
+			if (branchSelect) {
+				if (v.branch_id && v.branch_id !== '0') {
+					branchSelect.value = String(v.branch_id);
+				}
+				if (!branchSelect.value && branchSelect.options.length > 0) {
+					branchSelect.selectedIndex = 0;
+				}
+			}
+
+			const params = new URLSearchParams(window.location.search);
+			const ctx = {
+				'edit-form-ctx-page': params.get('page'),
+				'edit-form-ctx-limit': params.get('limit'),
+				'edit-form-ctx-q': params.get('q'),
+				'edit-form-ctx-status': params.get('status'),
+				'edit-form-ctx-stock': params.get('stock'),
+				'edit-form-ctx-sort': params.get('sort')
+			};
+			Object.keys(ctx).forEach((elID) => {
+				const el = document.getElementById(elID);
+				if (el) el.value = ctx[elID] || '';
+			});
+
+			const el = document.getElementById('edit-variant-modal');
+			if (el && typeof el.showModal === 'function') {
+				el.showModal();
+			}
+		}
+
+		function closeEditVariantModal() {
+			const el = document.getElementById('edit-variant-modal');
+			if (el && typeof el.close === 'function') {
+				el.close();
+			}
+		}
+
+		var catSearchDebounce = null;
+		function searchMasterCatalogLive(query) {
+			clearTimeout(catSearchDebounce);
+			const dropdown = document.getElementById('cat-search-dropdown');
+			if (!dropdown) return;
+			if (!query || query.trim().length < 2) {
+				dropdown.style.display = 'none';
+				return;
+			}
+
+			catSearchDebounce = setTimeout(() => {
+				fetch('/vendor/catalog/search-json?q=' + encodeURIComponent(query.trim()))
+					.then(r => r.json())
+					.then(items => {
+						if (!items || items.length === 0) {
+							const isEn = document.documentElement.lang === 'en';
+							dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-muted text-xs text-center">' + (isEn ? 'No matching medications found in catalog' : 'لم يتم العثور على أدوية مطابقة بالكتالوج') + '</div>');
+							dropdown.style.display = 'block';
+							return;
+						}
+
+						let html = '';
+						const isEn = document.documentElement.lang === 'en';
+						// Catalogue fields are data: escaped, and the chosen item is
+						// looked up by index rather than spliced into code.
+						const esc = dawaHTML.escape;
+						items.forEach((it, idx) => {
+							const dosage = it.dosage_form ? ('<span class="badge badge-slate text-xs">' + esc(it.dosage_form) + '</span>') : '';
+							const priceBadge = it.price ? ('<span class="badge badge-sky text-xs">' + esc(it.price) + (isEn ? ' EGP' : ' ج.م') + '</span>') : '';
+							const selectLabel = isEn ? 'Select' : 'اختيار';
+							
+							html += '<div class="p-3 border-b cursor-pointer flex-between items-center transition-colors hover-bg-sunken" ' +
+								'data-pick-index="' + idx + '">' +
+								'<div class="stack-sm">' +
+									'<div class="font-extrabold text-primary text-sm">' + esc(isEn && it.name_en ? it.name_en : (it.name_ar || it.name_en)) + '</div>' +
+									'<div class="text-xs text-muted mt-0.5">' + esc(it.scientific_name || '') + '</div>' +
+								'</div>' +
+								'<div class="row-center-sm">' +
+									dosage + priceBadge +
+									'<span class="badge badge-emerald text-xs fw-800">' + selectLabel + '</span>' +
+								'</div>' +
+							'</div>';
+						});
+						dropdown.innerHTML = dawaHTML.sanitize(html);
+						dropdown.onclick = function (e) {
+							const pick = e.target.closest('[data-pick-index]');
+							if (!pick) return;
+							const it = items[parseInt(pick.dataset.pickIndex, 10)];
+							if (!it) return;
+							selectMasterProductForStaging(it.id, it.name_ar || it.name_en || '', it.scientific_name || '',
+								it.dosage_form || '', it.sku || '', it.price || '', it.unit || '');
+						};
+						dropdown.style.display = 'block';
+					})
+					.catch(() => {
+						dropdown.style.display = 'none';
+					});
+			}, 200);
+		}
+
+		function selectMasterProductForStaging(id, name, scientific, dosage, sku, price, unit) {
+			const isEn = document.documentElement.lang === 'en';
+			document.getElementById('cat-select-product-id').value = id;
+			document.getElementById('cat-select-name-ar').value = name;
+			document.getElementById('cat-select-sku').value = sku;
+			document.getElementById('cat-select-unit').value = unit;
+
+			document.getElementById('cat-preview-name').textContent = name;
+			document.getElementById('cat-preview-scientific').textContent = scientific ? ((isEn ? 'Active Ingredient: ' : 'المادة الفعالة: ') + scientific) : '';
+			document.getElementById('cat-preview-dosage').textContent = dosage ? ((isEn ? 'Form: ' : 'الشكل: ') + dosage) : (isEn ? 'Standard Dosage Form' : 'شكل دوائي قياسي');
+			document.getElementById('cat-preview-sku').textContent = sku ? ('SKU: ' + sku) : '';
+			document.getElementById('cat-preview-price').textContent = price ? ((isEn ? 'Catalog Price: ' : 'السعر بالكتالوج: ') + price + (isEn ? ' EGP' : ' ج.م')) : '';
+
+			if (price && price !== '') {
+				document.getElementById('cat-field-price').value = price;
+			}
+
+			document.getElementById('cat-search-dropdown').style.display = 'none';
+			document.getElementById('cat-selected-preview').style.display = 'block';
+			document.getElementById('cat-vendor-fields').style.display = 'flex';
+		}
+
+		function resetSelectedMasterProduct() {
+			document.getElementById('cat-select-product-id').value = '';
+			document.getElementById('cat-select-name-ar').value = '';
+			document.getElementById('cat-select-sku').value = '';
+			document.getElementById('cat-selected-preview').style.display = 'none';
+			document.getElementById('cat-vendor-fields').style.display = 'none';
+		}
+
+		function onAddVariantComboboxChange(e) {
+			if (!e || !e.detail) return;
+			if (e.detail.name === 'product_id' && e.detail.item) {
+				const item = e.detail.item;
+				const nameAr = document.getElementById('add-form-name-ar');
+				if (nameAr && !nameAr.value) {
+					nameAr.value = item.name_ar || item.label || '';
+				}
+				const nameEn = document.getElementById('add-form-name-en');
+				if (nameEn && !nameEn.value && item.name_en) {
+					nameEn.value = item.name_en;
+				}
+				const price = document.getElementById('add-form-price');
+				if (price && (!price.value || price.value === '0.00' || price.value === '0')) {
+					if (item.price) price.value = item.price;
+				}
+				const sku = document.getElementById('add-form-sku');
+				if (sku && !sku.value && item.sku) {
+					sku.value = item.sku;
+				}
+				const barcode = document.getElementById('add-form-barcode');
+				if (barcode && !barcode.value && item.barcode) {
+					barcode.value = item.barcode;
+				}
+				const unit = document.getElementById('add-form-unit');
+				if (unit && !unit.value && item.unit) {
+					unit.value = item.unit;
+				}
+			}
+		}
+	</script>
+}

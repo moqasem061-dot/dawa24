@@ -1,0 +1,181 @@
+package components
+
+import (
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+)
+
+// The account menu.
+//
+// Its contents come from rbac.AccountMenu, which is the same registry the
+// sidebar and the route gates read. Before that, this file hand-wrote eleven
+// links and asked nothing about any of them: a supplier was offered /orders,
+// which is registered inside the customer audience group and answers 404 to
+// every supplier; a warehouse clerk was offered the wallet, the orders list and
+// the followed-suppliers list, all three of which their route gates refuse; and
+// platform staff were offered nothing at all.
+//
+// Hiding a link is not authorization — every route below is independently
+// gated. The point is that the two now agree, because there is one list.
+templ UserMenu(lang string, inDashboard ...bool) {
+	if actor, ok := authctx.From(ctx); ok {
+		{{ isDash := len(inDashboard) > 0 && inDashboard[0] }}
+		{{ groups := rbac.AccountMenu(actor.DashboardScope(), rbac.NewSet(actor.Permissions), actor.IsOrgApproved()) }}
+		<div class="nav-pop" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+			<button
+				type="button"
+				class="nav-trigger"
+				@click="open = !open"
+				:aria-expanded="open ? 'true' : 'false'"
+				aria-haspopup="menu"
+				aria-controls="user-menu-panel"
+			>
+				<span class="nav-avatar" aria-hidden="true">
+					if actor.AvatarURL != "" {
+						<img src={ actor.AvatarURL } alt={ actor.DisplayName() } class="nav-avatar-img" data-img-fallback="next" data-fallback-display="inline-block" />
+						<span style="display: none;">{ Initials(actor.DisplayName()) }</span>
+					} else {
+						<span>{ Initials(actor.DisplayName()) }</span>
+					}
+				</span>
+				<span class="nav-trigger-text">
+					<span class="nav-trigger-label">{ accountEyebrow(actor) }</span>
+					<span class="nav-trigger-value">{ actor.DisplayName() }</span>
+				</span>
+				@IconChevronDown("icon-xs nav-trigger-chevron")
+			</button>
+			<div
+				class="nav-scrim-mobile"
+				x-show="open"
+				x-cloak
+				x-transition.opacity.duration.200ms
+				@click="open = false"
+				aria-hidden="true"
+			></div>
+			<div
+				id="user-menu-panel"
+				class="nav-menu"
+				role="menu"
+				x-show="open"
+				x-cloak
+				x-transition.duration.200ms
+			>
+				<div class="nav-menu-head">
+					<div class="d-flex items-center gap-2.5">
+						<span class="nav-avatar" aria-hidden="true" style="inline-size: 2.25rem; block-size: 2.25rem;">
+							if actor.AvatarURL != "" {
+								<img src={ actor.AvatarURL } alt={ actor.DisplayName() } class="nav-avatar-img" data-img-fallback="next" data-fallback-display="inline-block" />
+								<span style="display: none;">{ Initials(actor.DisplayName()) }</span>
+							} else {
+								<span>{ Initials(actor.DisplayName()) }</span>
+							}
+						</span>
+						<span class="nav-menu-identity">
+							<span class="nav-menu-name">{ actor.DisplayName() }</span>
+							if actor.Email != "" {
+								<span class="nav-menu-detail">{ actor.Email }</span>
+							}
+						</span>
+					</div>
+					<button
+						type="button"
+						class="nav-menu-close-mobile"
+						@click="open = false"
+						aria-label={ i18n.T(lang, "nav.close_menu") }
+					>
+						@IconClose("icon-xs")
+					</button>
+				</div>
+				<div class="nav-menu-body">
+					if isDash {
+						<div class="nav-menu-group">
+							<a href="/" class="nav-menu-item nav-menu-item--primary" role="menuitem">
+								@IconHome("icon-xs")
+								<span>{ i18n.T(lang, "nav.exit_dashboard") }</span>
+							</a>
+						</div>
+					}
+					for gi, group := range groups {
+						<div class="nav-menu-group">
+							if !(gi == 0 && (group.Key == "dashboard" || group.Key == "delivery")) {
+								<span class="nav-menu-label">{ group.Label(lang) }</span>
+							}
+							for _, item := range group.Items {
+								<a
+									href={ templ.SafeURL(item.Href) }
+									class={ "nav-menu-item",
+										templ.KV("nav-menu-item--primary", !isDash && (group.Key == "dashboard" || (gi == 0 && group.Key == "delivery"))) }
+									role="menuitem"
+								>
+									@Icon(item.Icon, "icon-xs")
+									<span>{ item.Label(lang) }</span>
+								</a>
+							}
+						</div>
+					}
+				</div>
+				<div class="nav-menu-settings">
+					<div class="nav-seg" role="group" aria-label={ i18n.T(lang, "common.appearance") }>
+						<button type="button" class="nav-seg-btn" data-set-theme="light" title={ i18n.T(lang, "nav.theme_light") }>
+							@IconSun("icon-xs")
+							<span>{ i18n.T(lang, "nav.theme_light") }</span>
+						</button>
+						<button type="button" class="nav-seg-btn" data-set-theme="dark" title={ i18n.T(lang, "nav.theme_dark") }>
+							@IconMoon("icon-xs")
+							<span>{ i18n.T(lang, "nav.theme_dark") }</span>
+						</button>
+					</div>
+					<div class="nav-seg nav-seg--flags" role="group" aria-label={ i18n.T(lang, "common.language") }>
+						<a href="/lang/ar" class={ "nav-seg-btn", templ.KV("is-active", lang != "en") } hreflang="ar" title="العربية">
+							@IconFlagEG("icon-xs")
+						</a>
+						<a href="/lang/en" class={ "nav-seg-btn", templ.KV("is-active", lang == "en") } hreflang="en" title="English">
+							@IconFlagGB("icon-xs")
+						</a>
+					</div>
+				</div>
+				<div class="nav-menu-exit">
+					<form action="/auth/logout" method="POST" hx-boost="false" class="nav-menu-form">
+						<button type="submit" class="nav-menu-item nav-menu-item--danger" role="menuitem">
+							@IconLogout("icon-xs")
+							<span>{ i18n.T(lang, "auth.logout") }</span>
+						</button>
+					</form>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+// accountEyebrow is the mono descriptor above the name in the trigger. It says
+// which of the three audiences the caller is signed in as, which is the one
+// piece of context that decides what every other control in the bar does.
+func accountEyebrow(actor authctx.Actor) string {
+	switch {
+	case actor.IsStaff:
+		return "ADMIN"
+	case actor.IsVendor():
+		return "SUPPLIER"
+	default:
+		return "PHARMACY"
+	}
+}
+
+// Initials builds the avatar monogram. Exported because the mobile drawer
+// renders the same avatar as the account menu trigger.
+func Initials(name string) string {
+	fields := strings.Fields(name)
+	if len(fields) == 0 {
+		return "?"
+	}
+	first := []rune(fields[0])
+	out := string(first[:1])
+	if len(fields) > 1 {
+		second := []rune(fields[len(fields)-1])
+		out += string(second[:1])
+	}
+	return strings.ToUpper(out)
+}

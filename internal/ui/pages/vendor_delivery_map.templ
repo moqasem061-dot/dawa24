@@ -1,0 +1,73 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+import "fmt"
+
+// Two small pieces of client-side behaviour the parcel screen needs, kept
+// beside it rather than in a global bundle: the item checklist's paging state
+// and the mini-map that shows the pharmacy's exact location.
+
+// courierItemsAlpineData is the checklist's local state. Paging happens in the
+// browser because a courier standing at a door on a weak connection should not
+// wait for a round trip to see the next five items in the box they are holding.
+func courierItemsAlpineData(count int) string {
+	return fmt.Sprintf(`{
+		search: '',
+		page: 1,
+		pageSize: 10,
+		total: %d,
+		get totalPages() {
+			const size = this.pageSize > 0 ? this.pageSize : this.total;
+			return Math.max(1, Math.ceil(this.total / (size || 1)));
+		},
+		nextPage() { if (this.page < this.totalPages) this.page++ },
+		prevPage() { if (this.page > 1) this.page-- },
+		setPage(p) { if (p >= 1 && p <= this.totalPages) this.page = p },
+		changePageSize(s) { this.pageSize = parseInt(s, 10); this.page = 1 }
+	}`, count)
+}
+
+// CourierMiniMapScript renders the branch pin. It degrades to nothing when
+// Leaflet has not loaded: a courier who cannot see the map still has the
+// address, the phone number and the Google Maps link above it.
+templ CourierMiniMapScript() {
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		document.addEventListener('DOMContentLoaded', function() {
+			const el = document.getElementById('courier-branch-map');
+			if (!el) return;
+			const lat = parseFloat(el.getAttribute('data-lat'));
+			const lon = parseFloat(el.getAttribute('data-lon'));
+			const name = el.getAttribute('data-name') || '';
+			const branch = el.getAttribute('data-branch') || '';
+			if (!lat || !lon || isNaN(lat) || isNaN(lon)) return;
+
+			function renderMiniMap() {
+				if (typeof L === 'undefined') return;
+				const canvas = el.querySelector('.courier-map-canvas');
+				if (!canvas) return;
+				try {
+					const miniMap = L.map(canvas, {
+						zoomControl: false,
+						attributionControl: false
+					}).setView([lat, lon], 15);
+					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						maxZoom: 19
+					}).addTo(miniMap);
+					const label = branch ? '<b>' + name + '</b><br><small>' + branch + '</small>' : '<b>' + name + '</b>';
+					L.marker([lat, lon]).addTo(miniMap).bindPopup(label).openPopup();
+				} catch (e) {
+					console.warn('courier mini-map init error:', e);
+				}
+			}
+
+			if (typeof ensureLeaflet === 'function') {
+				ensureLeaflet().then(renderMiniMap).catch(function(err) { console.warn('leaflet error:', err); });
+			} else if (typeof L !== 'undefined') {
+				renderMiniMap();
+			}
+		});
+	</script>
+}

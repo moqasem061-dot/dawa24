@@ -1,0 +1,305 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorDashboardOperations(data VendorDashboardData, lang, dir string) {
+	<!-- Operations Feeds (Dual-Column Layout) -->
+	<div class="vendor-op-grid">
+		
+		<!-- Column 1: Actionable Shipments Stream Table -->
+		<div class="admin-banner d-flex flex-col justify-between m-0">
+			<div>
+				<div class="flex-between pb-2.5 border-b mb-2.5">
+					<div class="stack-sm">
+						<h3 class="text-sm font-bold text-primary m-0 d-flex items-center gap-1.5">
+							<span>@components.IconTruck("icon-sm")</span>
+							<span>{ i18n.T(lang, "vendor_dashboard.op_shipments_title") }</span>
+							if len(data.Shipments) > 0 {
+								<span class="badge badge-amber text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", len(data.Shipments)) }</span>
+							}
+						</h3>
+						<p class="text-2xs text-secondary mt-0.5 m-0">
+							{ i18n.T(lang, "vendor_dashboard.op_shipments_sub") }
+						</p>
+					</div>
+					<a href="/vendor/orders" class="btn btn-secondary btn-xs fw-800 gap-1">
+						<span>{ i18n.T(lang, "vendor_dashboard.op_view_orders") }</span>
+						if dir == "rtl" {
+							@components.IconArrowLeft("icon-xs")
+						} else {
+							@components.IconArrowRight("icon-xs")
+						}
+					</a>
+				</div>
+
+				if len(data.Shipments) == 0 {
+					<div class="p-6 text-center bg-surface-sunken rounded-xl border border-dashed text-xs text-muted">
+						<div class="text-xl mb-1">🎉</div>
+						<strong class="text-primary d-block mb-1">{ i18n.T(lang, "vendor_dashboard.op_no_pending_shipments") }</strong>
+						<span>{ i18n.T(lang, "vendor_dashboard.op_no_pending_shipments_sub") }</span>
+					</div>
+				} else {
+					<div class="border rounded-lg overflow-hidden bg-surface-sunken">
+						<table class="data-table text-xs">
+							<thead>
+								<tr class="bg-surface-raised">
+									<th class="pad-sm">{ i18n.T(lang, "vendor_dashboard.th_shipment_num") }</th>
+									<th class="pad-sm">{ i18n.T(lang, "vendor_dashboard.th_receiving_pharmacy") }</th>
+									<th class="text-center pad-sm">{ i18n.T(lang, "vendor_dashboard.th_items") }</th>
+									<th class="text-end pad-sm">{ i18n.T(lang, "vendor_dashboard.th_amount") }</th>
+									<th class="pad-sm">{ i18n.T(lang, "vendor_dashboard.th_status") }</th>
+									<th class="text-center pad-sm">{ i18n.T(lang, "vendor_dashboard.th_inspect") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for i, s := range data.Shipments {
+									if i < 5 {
+										<tr class="rule-bottom">
+											<td class="tabular-nums fw-800 text-primary pad-sm">
+												#{ s.ShipmentNumber }
+											</td>
+											<td class="pad-sm">
+												<div class="font-bold text-primary truncate max-w-[150px]">
+													if s.CustomerBranchName.Get(i18n.Lang(lang)) != "" {
+														{ s.CustomerBranchName.Get(i18n.Lang(lang)) }
+													} else {
+														<span>{ i18n.T(lang, "vendor_dashboard.default_pharmacy") }</span>
+													}
+												</div>
+												if s.CustomerBranchAddress != "" {
+													<div class="text-2xs text-muted truncate max-w-[130px]">
+														{ s.CustomerBranchAddress }
+													</div>
+												}
+											</td>
+											<td class="text-center tabular-nums pad-sm">
+												<span class="badge badge-secondary text-2xs font-bold">
+													{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.items_unit"), len(s.Lines)) }
+												</span>
+											</td>
+											<td class="tabular-nums fw-900 text-emerald text-end pad-sm">
+												@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: s.TotalAmount })
+											</td>
+											<td class="pad-sm">
+												if s.Status == commerce.StatusPending {
+													<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "vendor_dashboard.status_pending") }</span>
+												} else if s.Status == commerce.StatusConfirmed {
+													<span class="badge badge-sky text-2xs font-bold">{ i18n.T(lang, "vendor_dashboard.status_confirmed") }</span>
+												} else {
+													<span class="badge badge-slate text-2xs font-bold">{ string(s.Status) }</span>
+												}
+											</td>
+											<td class="text-center pad-sm">
+												@components.ModalTrigger(fmt.Sprintf("preview-shipment-%d", s.ID), "btn btn-secondary btn-xs font-bold px-2 py-1 gap-1 text-2xs rounded") {
+													<span>@components.IconEye("icon-xs")</span>
+													<span>{ i18n.T(lang, "vendor_dashboard.btn_inspect") }</span>
+												}
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+			<div class="pt-2 border-t mt-2 flex-between text-2xs text-muted">
+				<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.total_registered_shipments"), data.TotalShipmentsCount) }</span>
+				<a href="/vendor/orders" class="text-brand font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.view_all_pos") }</a>
+			</div>
+		</div>
+
+		<!-- Column 2: Low Stock & Inventory Alerts Table -->
+		<div class="admin-banner d-flex flex-col justify-between m-0">
+			<div>
+				<div class="flex-between pb-2.5 border-b mb-2.5">
+					<div class="stack-sm">
+						<h3 class="text-sm font-bold text-primary m-0 d-flex items-center gap-1.5">
+							<span>@components.IconAlert("icon-sm")</span>
+							<span>{ i18n.T(lang, "vendor_dashboard.op_low_stock_title") }</span>
+							if data.LowStockCount > 0 {
+								<span class="badge badge-danger text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", data.LowStockCount) }</span>
+							}
+						</h3>
+						<p class="text-2xs text-secondary mt-0.5 m-0">
+							{ i18n.T(lang, "vendor_dashboard.op_low_stock_sub") }
+						</p>
+					</div>
+					<a href="/vendor/inventory/alerts" class="btn btn-secondary btn-xs fw-800 gap-1">
+						<span>{ i18n.T(lang, "vendor_dashboard.op_manage_inventory") }</span>
+						if dir == "rtl" {
+							@components.IconArrowLeft("icon-xs")
+						} else {
+							@components.IconArrowRight("icon-xs")
+						}
+					</a>
+				</div>
+
+				if len(data.LowStock) == 0 && data.LowStockCount == 0 {
+					<div class="p-6 text-center bg-success-subtle border rounded-lg">
+						<div class="text-xl mb-1">@components.IconCheckCircle("icon-sm")</div>
+						<div class="font-bold text-xs text-success">{ i18n.T(lang, "vendor_dashboard.op_stock_safe_title") }</div>
+						<div class="text-2xs text-secondary mt-0.5">{ i18n.T(lang, "vendor_dashboard.op_stock_safe_sub") }</div>
+					</div>
+				} else {
+					<div class="border rounded-lg overflow-hidden bg-surface-sunken">
+						<table class="data-table text-xs">
+							<thead>
+								<tr class="bg-surface-raised">
+									<th class="pad-sm">{ i18n.T(lang, "vendor_dashboard.th_item_name") }</th>
+									<th class="text-center pad-sm">{ i18n.T(lang, "vendor_dashboard.th_remaining") }</th>
+									<th class="text-center pad-sm">{ i18n.T(lang, "vendor_dashboard.th_safety_limit") }</th>
+									<th class="text-end pad-sm">{ i18n.T(lang, "vendor_dashboard.th_action") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for i, s := range data.LowStock {
+									if i < 5 {
+										<tr class="rule-bottom">
+											<td class="font-bold text-xs text-primary pad-sm">
+												if name, ok := data.LowStockProductNames[s.ProductID]; ok && name != "" {
+													<div class="truncate max-w-[180px]" title={ name }>{ name }</div>
+												} else {
+													<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.item_prefix"), s.ProductID) }</span>
+												}
+											</td>
+											<td class="text-center tabular-nums text-danger font-black text-xs pad-sm">
+												<span class="badge badge-danger text-2xs font-bold">{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.packs_count"), s.Quantity) }</span>
+											</td>
+											<td class="text-center tabular-nums text-muted text-xs pad-sm">
+												{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.packs_count"), s.MinThreshold) }
+											</td>
+											<td class="text-end pad-sm">
+												if s.WarehouseID > 0 {
+													<a href={ templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d", s.WarehouseID)) } class="btn btn-secondary btn-xs font-bold text-2xs rounded px-2 py-0.5">
+														{ i18n.T(lang, "vendor_dashboard.btn_restock") }
+													</a>
+												} else {
+													<a href="/vendor/warehouses" class="btn btn-secondary btn-xs font-bold text-2xs rounded px-2 py-0.5">
+														{ i18n.T(lang, "vendor_dashboard.btn_restock") }
+													</a>
+												}
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+			<div class="pt-2 border-t mt-2 flex-between text-2xs text-muted">
+				<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.catalog_active_items"), data.ActiveProducts) }</span>
+				<a href="/vendor/inventory/alerts" class="text-brand font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.check_warehouse_stock") }</a>
+			</div>
+		</div>
+
+	</div>
+
+	<!-- Row 2: Active Offers & RFQ Direct Quotes -->
+	<div class="vendor-op-grid">
+		
+		<!-- Active Offers Strip -->
+		<div class="admin-banner d-flex flex-col justify-between m-0">
+			<div>
+				<div class="flex-between pb-2.5 border-b mb-2.5">
+					<div class="stack-sm">
+						<h3 class="text-sm font-bold text-primary m-0 d-flex items-center gap-1.5">
+							<span>@components.IconTag("icon-sm")</span>
+							<span>{ i18n.T(lang, "vendor_dashboard.op_offers_title") }</span>
+						</h3>
+						<p class="text-2xs text-secondary mt-0.5 m-0">
+							{ i18n.T(lang, "vendor_dashboard.op_offers_sub") }
+						</p>
+					</div>
+					<a href="/vendor/offers" class="btn btn-secondary btn-xs fw-800 gap-1">
+						<span>{ i18n.T(lang, "vendor_dashboard.op_manage_offers") }</span>
+						if dir == "rtl" {
+							@components.IconArrowLeft("icon-xs")
+						} else {
+							@components.IconArrowRight("icon-xs")
+						}
+					</a>
+				</div>
+
+				if len(data.Offers) == 0 {
+					<div class="p-6 text-center bg-surface-sunken rounded-lg border border-dashed text-xs text-muted">
+						{ i18n.T(lang, "vendor_dashboard.op_no_offers") }
+					</div>
+				} else {
+					<div class="d-flex flex-col gap-1.5">
+						for i, o := range data.Offers {
+							if i < 4 {
+								<div class="flex-between items-center p-2 rounded-lg bg-surface-sunken border">
+									<div class="stack-sm">
+										<div class="font-bold text-primary text-xs">{ o.Title.Get(i18n.Lang(lang)) }</div>
+										<div class="text-2xs text-muted tabular-nums mt-0.5">{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.op_views_clicks"), o.ViewsCount, o.ClicksCount) }</div>
+									</div>
+									<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "vendor_dashboard.status_active") }</span>
+								</div>
+							}
+						}
+					</div>
+				}
+			</div>
+			<div class="pt-2 border-t mt-2 flex-between text-2xs text-muted">
+				<span>{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.total_promo_offers"), len(data.Offers)) }</span>
+				<a href="/vendor/offers" class="text-brand font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.all_offers_history") }</a>
+			</div>
+		</div>
+
+		<!-- Direct Quotes & Inquiries -->
+		<div class="admin-banner d-flex flex-col justify-between m-0">
+			<div>
+				<div class="flex-between pb-2.5 border-b mb-2.5">
+					<div class="stack-sm">
+						<h3 class="text-sm font-bold text-primary m-0 d-flex items-center gap-1.5">
+							<span>@components.IconUsers("icon-sm")</span>
+							<span>{ i18n.T(lang, "vendor_dashboard.op_quotes_title") }</span>
+						</h3>
+						<p class="text-2xs text-secondary mt-0.5 m-0">
+							{ i18n.T(lang, "vendor_dashboard.op_quotes_sub") }
+						</p>
+					</div>
+					<a href="/vendor/orders" class="btn btn-secondary btn-xs fw-800 gap-1">
+						<span>{ i18n.T(lang, "vendor_dashboard.op_quotes_review_btn") }</span>
+						if dir == "rtl" {
+							@components.IconArrowLeft("icon-xs")
+						} else {
+							@components.IconArrowRight("icon-xs")
+						}
+					</a>
+				</div>
+
+				if data.UnreadQuotes == 0 {
+					<div class="p-6 text-center bg-surface-sunken rounded-lg border border-dashed text-xs text-muted">
+						<div class="text-base mb-1">✉️</div>
+						<div class="font-bold text-xs text-primary">{ i18n.T(lang, "vendor_dashboard.op_no_quotes_title") }</div>
+						<div class="text-2xs text-secondary mt-0.5">{ i18n.T(lang, "vendor_dashboard.op_no_quotes_sub") }</div>
+					</div>
+				} else {
+					<div class="p-3.5 rounded-lg bg-surface-sunken border text-center">
+						<div class="text-2xl font-black text-brand tabular-nums mb-0.5">{ fmt.Sprintf("%d", data.UnreadQuotes) }</div>
+						<div class="text-xs text-secondary font-bold">{ i18n.T(lang, "vendor_dashboard.op_new_quotes_pending") }</div>
+						<div class="mt-3">
+							<a href="/vendor/orders" class="btn btn-primary btn-xs font-bold px-3 py-1.5 rounded-md">
+								<span>{ i18n.T(lang, "vendor_dashboard.op_review_quotes_btn") }</span>
+							</a>
+						</div>
+					</div>
+				}
+			</div>
+			<div class="pt-2 border-t mt-2 flex-between text-2xs text-muted">
+				<span>{ i18n.T(lang, "vendor_dashboard.op_msg_status") }</span>
+				<a href="/vendor/orders" class="text-brand font-bold no-underline">{ i18n.T(lang, "vendor_dashboard.op_orders_board") }</a>
+			</div>
+		</div>
+
+	</div>
+}

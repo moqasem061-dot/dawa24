@@ -1,0 +1,139 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorOrderShipmentActions(sh *commerce.OrderShipment, data VendorOrdersData, lang string) {
+	<!-- Action Controls Toolbar -->
+	<div class="flex-between items-center flex-wrap gap-4 pt-4 border-t">
+		<div class="d-flex items-center gap-2 flex-wrap">
+			if sh.TrackingNumber != "" {
+				<div class="text-xs text-secondary bg-surface-sunken p-2 px-3 rounded-lg border d-flex items-center gap-2">
+					<span>{ i18n.T(lang, "vendor_orders.waybill_number_lbl") }</span>
+					<strong class="tabular-nums text-primary font-black font-mono">{ sh.TrackingNumber }</strong>
+				</div>
+			}
+			if sh.CourierName != "" {
+				<div class="text-xs text-secondary bg-surface-sunken p-2 px-3 rounded-lg border d-flex items-center gap-2">
+					@components.IconTruck("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_orders.assigned_courier_lbl") }</span>
+					<strong class="text-primary font-black">{ sh.CourierName }</strong>
+					if sh.CourierAssignedAt != nil {
+						<span class="tabular-nums font-mono text-muted">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_orders.assigned_since"), sh.CourierAssignedAt.Format("2006-01-02 03:04 PM")) }
+						</span>
+					}
+				</div>
+			}
+		</div>
+
+		<div class="d-flex items-center gap-3 flex-wrap">
+			if sh.Status == commerce.StatusPending {
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+					<input type="hidden" name="status" value="confirmed" />
+					<input type="hidden" name="notes" value="تمت الموافقة على أمر التوريد والتجهيز بالمخزن" />
+					<button
+						type="submit"
+						class="btn btn-secondary font-bold px-4 py-2 gap-2 text-xs"
+					>
+						@components.IconCheck("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.btn_accept_confirm") }</span>
+					</button>
+				</form>
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline" data-confirm={ i18n.T(lang, "vendor_orders.confirm_reject") }>
+					<input type="hidden" name="status" value="cancelled" />
+					<input type="hidden" name="notes" value="تم رفض الطلب أو السعر المقترح من قبل المورد" />
+					<button
+						type="submit"
+						class="btn btn-danger font-bold px-4 py-2 text-xs"
+					>
+						<span>{ i18n.T(lang, "vendor_orders.btn_reject") }</span>
+					</button>
+				</form>
+			} else if sh.Status == commerce.StatusConfirmed {
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-flex items-center gap-2 flex-wrap">
+					<input type="hidden" name="status" value="shipped" />
+					<input
+						type="text"
+						name="tracking"
+						placeholder={ i18n.T(lang, "vendor_orders.ph_waybill") }
+						class="form-input text-xs"
+					/>
+					<button
+						type="submit"
+						class="btn btn-primary font-black px-4 py-2 gap-2 text-xs shadow-xs"
+					>
+						@components.IconTruck("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.btn_dispatch") }</span>
+					</button>
+				</form>
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+					<input type="hidden" name="status" value="delivered" />
+					<input type="hidden" name="notes" value="تم تسليم الشحنة المبردة بالصيدلية وتوثيق الاستلام" />
+					<button
+						type="submit"
+						class="btn btn-secondary font-bold px-4 py-2 gap-2 text-xs"
+					>
+						@components.IconCheckCircle("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.btn_direct_delivery") }</span>
+					</button>
+				</form>
+			} else if sh.Status == commerce.StatusShipped {
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+					<input type="hidden" name="status" value="delivered" />
+					<input type="hidden" name="notes" value="تم تسليم الشحنة المبردة بالصيدلية وتوثيق الاستلام" />
+					<button
+						type="submit"
+						class="btn btn-primary font-black px-4 py-2 gap-2 text-xs"
+					>
+						@components.IconCheckCircle("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.btn_confirm_delivered") }</span>
+					</button>
+				</form>
+			} else if sh.Status == commerce.StatusFailed {
+				<span class="badge badge-rose text-xs font-black p-2 px-3 gap-2">
+					@components.IconAlert("icon-xs")
+					<span>{ i18n.T(lang, "vendor_orders.badge_failed_delivery") }</span>
+				</span>
+			} else if sh.Status == commerce.StatusReturned {
+				<span class="badge badge-rose text-xs font-black p-2 px-3 gap-2">
+					@components.IconAlert("icon-xs")
+					<span>{ i18n.T(lang, "vendor_orders.badge_returned") }</span>
+				</span>
+			} else if sh.Status == commerce.StatusCancelled {
+				<span class="badge badge-rose text-xs font-black p-2 px-3 gap-2">
+					@components.IconX("icon-xs")
+					<span>{ i18n.T(lang, "vendor_orders.badge_cancelled") }</span>
+				</span>
+			} else {
+				<span class="badge badge-emerald text-xs font-black p-2 px-3 gap-2">
+					@components.IconCheckCircle("icon-xs")
+					<span>{ i18n.T(lang, "vendor_orders.badge_delivered") }</span>
+				</span>
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+					<input type="hidden" name="status" value="shipped" />
+					<input type="hidden" name="notes" value="إرجاع الشحنة إلى حالة قيد التسليم وتعديل مسار التوصيل" />
+					<button type="submit" class="btn btn-secondary font-bold px-3 py-1.5 gap-1.5 text-xs text-amber-600">
+						@components.IconRefresh("icon-xs")
+						<span>{ i18n.T(lang, "vendor_orders.btn_revert_in_transit") }</span>
+					</button>
+				</form>
+			}
+			if sh.Status != commerce.StatusPending {
+				@components.InvoiceExportDropdown(components.InvoiceExportDropdownProps{
+					PrintURL: fmt.Sprintf("/orders/%d/invoice/print", sh.OrderID),
+					ExcelURL: fmt.Sprintf("/orders/%d/invoice/excel", sh.OrderID),
+					WordURL:  fmt.Sprintf("/orders/%d/invoice/word", sh.OrderID),
+					Size:     "sm",
+					Align:    "end",
+					Label:    i18n.T(lang, "vendor_orders.export_invoice_btn"),
+				})
+			}
+		</div>
+	</div>
+}

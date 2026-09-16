@@ -1,0 +1,363 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ PaymentMethodBadge(method string) {
+	switch strings.ToLower(strings.TrimSpace(method)) {
+	case "bank_transfer", "bank":
+		<span class="badge badge-sky font-medium">تحويل بنكي</span>
+	case "instapay":
+		<span class="badge badge-violet font-medium">إنستاباي (InstaPay)</span>
+	case "vodafone_cash", "electronic_wallet", "e_wallet", "wallet_pay":
+		<span class="badge badge-rose font-medium">محفظة إلكترونية</span>
+	case "card", "credit_card", "visa", "mastercard", "online":
+		<span class="badge badge-indigo font-medium">بطاقة بنكية</span>
+	case "wallet":
+		<span class="badge badge-brand font-medium">رصيد المحفظة</span>
+	case "cash", "cod", "cash_on_delivery":
+		<span class="badge badge-emerald font-medium">دفع عند الاستلام</span>
+	case "cheque", "check":
+		<span class="badge badge-secondary font-medium">شيك مصرفي</span>
+	case "fawry":
+		<span class="badge badge-amber font-medium">فوري</span>
+	default:
+		if method == "" {
+			<span class="badge badge-secondary font-medium">غير محدد</span>
+		} else {
+			<span class="badge badge-secondary font-medium">{ method }</span>
+		}
+	}
+}
+
+templ AdminFinancePaymentsPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("سجل المدفوعات والتحصيلات", "payments", lang, dir) {
+		<div class="page-container">
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6 screen-only">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconWallet("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجل المدفوعات والتحصيلات الإلكترونية</h1>
+							<p class="text-sm text-secondary m-0 mt-1">تدقيق ومتابعة عمليات التحصيل، بوابات الدفع الإلكتروني، والتحويلات البنكية المعتمدة</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة التقرير</span>
+						</button>
+						<a href="/admin/finance/invoices" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>الفواتير والمطالبات</span>
+						</a>
+						<a href="/admin/finance/wallets" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconLayers("icon-xs")
+							<span>محافظ المنشآت</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Focused Financial KPIs for Payments -->
+			<div class="dashboard-stat-grid mb-6 screen-only">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي المبالغ المحصلة (النظام)</span>
+						<span class="text-success">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-emerald mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalPaid.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d عملية تحصيل مسجلة بالنظام", data.TotalPayments) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">محصل بالصفحة الحالية</span>
+						<span class="text-brand">@components.IconTrendingUp("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", calcPaymentsListTotal(data.Payments).String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d عملية معروضة بالصفحة", len(data.Payments)) }
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">عمليات ناجحة ومكتملة</span>
+						<span class="text-success">@components.IconCheckCircle("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-success mt-2">
+						{ fmt.Sprintf("%d", countPaymentsByStatus(data.Payments, "paid", "completed", "success")) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						عملية تم تأكيد قيدها محاسبياً
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">عمليات قيد المراجعة / معلقة</span>
+						<span class="text-warning">@components.IconClock("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d", countPaymentsByStatus(data.Payments, "pending", "processing")) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						تحتاج مراجعة أو تسوية بنكية
+					</div>
+				</div>
+			</div>
+
+			<!-- Main Payments Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinancePaymentsTab(data, lang, dir)
+			</div>
+		</div>
+	}
+}
+
+templ AdminFinancePaymentsTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<!-- Header / Quick Actions Row -->
+		<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b screen-only">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0 d-flex items-center gap-2">
+					<span>@components.IconWallet("icon-sm")</span>
+					<span>سجل عمليات التحصيل والمدفوعات</span>
+				</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">عرض تفصيلي لجميع عمليات الدفع مع تمييز طرق السداد وحالات التأكيد والفرز الدقيق.</p>
+			</div>
+			<div class="d-flex items-center gap-2">
+				<a href="/admin/finance/payments" class="btn btn-secondary btn-sm font-bold text-xs d-inline-flex items-center gap-1">
+					@components.IconRefresh("icon-xs")
+					<span>تحديث السجل</span>
+				</a>
+			</div>
+		</div>
+
+		<!-- Comprehensive Search & Filter Form -->
+		<div class="p-4 bg-surface-subtle border rounded-lg screen-only">
+			<form method="GET" action="/admin/finance/payments" class="d-flex gap-3 items-center flex-wrap m-0">
+				<input type="hidden" name="tab" value="payments"/>
+				
+				<!-- Search Query -->
+				<div class="flex-1 min-w-64">
+					<input type="text" name="q" value={ data.Query } placeholder="ابحث برقم المعاملة، المرجع، الفاتورة أو اسم العميل..." class="form-input text-sm w-full"/>
+				</div>
+
+				<!-- Payment Method Filter -->
+				<div>
+					<select name="method" class="form-select text-sm w-auto">
+						<option value="">كل طرق الدفع</option>
+						<option value="bank_transfer" selected?={ data.MethodFilter == "bank_transfer" }>تحويل بنكي</option>
+						<option value="instapay" selected?={ data.MethodFilter == "instapay" }>إنستاباي (InstaPay)</option>
+						<option value="electronic_wallet" selected?={ data.MethodFilter == "electronic_wallet" || data.MethodFilter == "vodafone_cash" }>محفظة إلكترونية (فودافون كاش)</option>
+						<option value="card" selected?={ data.MethodFilter == "card" || data.MethodFilter == "credit_card" }>بطاقة بنكية (فيزا / ماستركارد)</option>
+						<option value="wallet" selected?={ data.MethodFilter == "wallet" }>خصم من رصيد المحفظة</option>
+						<option value="cash" selected?={ data.MethodFilter == "cash" || data.MethodFilter == "cod" }>دفع عند الاستلام (نقدي)</option>
+						<option value="cheque" selected?={ data.MethodFilter == "cheque" }>شيك مصرفي</option>
+					</select>
+				</div>
+
+				<!-- Status Filter -->
+				<div>
+					<select name="status" class="form-select text-sm w-auto">
+						<option value="">كل الحالات</option>
+						<option value="paid" selected?={ data.StatusFilter == "paid" || data.StatusFilter == "completed" }>ناجحة (مكتملة)</option>
+						<option value="pending" selected?={ data.StatusFilter == "pending" }>قيد المراجعة</option>
+						<option value="failed" selected?={ data.StatusFilter == "failed" }>فاشلة / ملغاة</option>
+					</select>
+				</div>
+
+				<!-- Organization Filter -->
+				<div>
+					<select name="org_id" class="form-select text-sm w-auto">
+						<option value="">كل المنشآت والشركات</option>
+						for _, o := range data.Organizations {
+							<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+						}
+					</select>
+				</div>
+
+				<!-- Date Range Filters -->
+				<div class="d-flex items-center gap-1">
+					<input type="date" name="date_from" value={ data.DateFrom } class="form-input text-sm" title="من تاريخ"/>
+					<span class="text-muted text-xs">إلى</span>
+					<input type="date" name="date_to" value={ data.DateTo } class="form-input text-sm" title="إلى تاريخ"/>
+				</div>
+
+				<!-- Action Buttons -->
+				<div class="d-flex items-center gap-2">
+					<button type="submit" class="btn btn-primary btn-sm font-bold">تصفية</button>
+					if data.Query != "" || data.StatusFilter != "" || data.MethodFilter != "" || data.DateFrom != "" || data.DateTo != "" || data.SelectedOrgID > 0 {
+						<a href="/admin/finance/payments" class="btn btn-secondary btn-sm text-muted">إعادة تعيين</a>
+					}
+				</div>
+			</form>
+		</div>
+
+		if len(data.Payments) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد عمليات دفع مسجلة", Message: "لم يتم العثور على عمليات تحصيل تطابق معايير البحث والتصفية المحددة."})
+		} else {
+			<!-- Official Printable Report Header (Printed only) -->
+			<div class="print-report-header print-only">
+				<div class="print-brand-row">
+					<div class="d-flex items-center gap-2">
+						<img src="/static/img/logo.png" alt="Dawa24" style="height: 30px;" data-img-fallback="hide"/>
+						<strong style="font-size: 13pt; color: #0f172a;">دوا 24 — Dawa24</strong>
+					</div>
+					<div style="text-align: left;">
+						<h2 style="font-size: 12pt; margin: 0; font-weight: 900; color: #0f172a;">تقرير سجل المدفوعات والتحصيلات الإلكترونية</h2>
+						<span style="font-size: 8pt; color: #64748b;">سجل العمليات المالية والتحصيلات عبر بوابات الدفع الإلكتروني والتحويلات</span>
+					</div>
+				</div>
+				<div class="print-meta-grid">
+					<div class="print-meta-item">
+						<span><strong>تاريخ الطباعة:</strong> { time.Now().Format("2006-01-02 15:04") }</span>
+					</div>
+					<div class="print-meta-item">
+						<span><strong>عدد العمليات:</strong> { fmt.Sprintf("%d", len(data.Payments)) } عملية</span>
+					</div>
+					<div class="print-meta-item">
+						<span><strong>إجمالي المحصل بالتقرير:</strong> { fmt.Sprintf("%s ج.م", calcPaymentsListTotal(data.Payments).String()) }</span>
+					</div>
+					if data.MethodFilter != "" {
+						<div class="print-meta-item">
+							<span><strong>طريقة الدفع:</strong> { formatFinancePaymentMethod(data.MethodFilter) }</span>
+						</div>
+					}
+					if data.StatusFilter != "" {
+						<div class="print-meta-item">
+							<span><strong>الحالة:</strong> { data.StatusFilter }</span>
+						</div>
+					}
+				</div>
+			</div>
+
+			<!-- Data Table -->
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>رقم المعاملة / المرجع</th>
+							<th>المستند المرتبط</th>
+							<th>المستخدم والمنشأة</th>
+							<th>المبلغ المحصل</th>
+							<th>طريقة الدفع</th>
+							<th>الحالة</th>
+							<th>تاريخ وتوقيت الدفع</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, p := range data.Payments {
+							<tr>
+								<!-- Transaction / Reference -->
+								<td class="tabular-nums">
+									if p.TransactionID != "" {
+										<div class="font-bold text-primary font-mono">{ p.TransactionID }</div>
+									} else {
+										<div class="font-bold text-primary font-mono">{ fmt.Sprintf("PAY-%d", p.ID) }</div>
+									}
+									if p.ReferenceNumber != "" {
+										<div class="text-xs text-muted font-mono mt-0.5">مرجع: { p.ReferenceNumber }</div>
+									}
+								</td>
+
+								<!-- Associated Document -->
+								<td class="tabular-nums">
+									if p.OrderNumber != "" {
+										if p.OrderID != nil && *p.OrderID > 0 {
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders/%d", *p.OrderID)) } class="badge badge-secondary no-underline hover:underline d-inline-block">
+												طلب #{ p.OrderNumber }
+											</a>
+										} else {
+											<span class="badge badge-secondary">طلب #{ p.OrderNumber }</span>
+										}
+									}
+									if p.InvoiceNumber != "" {
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/invoices?q=%s", p.InvoiceNumber)) } class="badge badge-sky no-underline hover:underline mt-1 d-inline-block">
+											فاتورة #{ p.InvoiceNumber }
+										</a>
+									}
+									if p.OrderNumber == "" && p.InvoiceNumber == "" {
+										<span class="text-muted text-xs">-</span>
+									}
+								</td>
+
+								<!-- User & Org -->
+								<td>
+									<div class="font-bold text-primary">{ p.UserName }</div>
+									if p.OrganizationName != "" {
+										<div class="text-xs text-secondary mt-0.5">{ p.OrganizationName }</div>
+									}
+								</td>
+
+								<!-- Amount -->
+								<td class="tabular-nums font-black text-emerald text-base">
+									{ fmt.Sprintf("%s ج.م", p.Amount.String()) }
+								</td>
+
+								<!-- Payment Method (Localized Arabic Name & Badge) -->
+								<td>
+									@PaymentMethodBadge(p.Method)
+								</td>
+
+								<!-- Status -->
+								<td>
+									if p.Status == "paid" || p.Status == "completed" || p.Status == "success" {
+										<span class="badge badge-emerald">ناجحة</span>
+									} else if p.Status == "pending" || p.Status == "processing" {
+										<span class="badge badge-amber">قيد المراجعة</span>
+									} else if p.Status == "failed" || p.Status == "rejected" || p.Status == "cancelled" {
+										<span class="badge badge-rose">فاشلة</span>
+									} else {
+										<span class="badge badge-secondary">{ string(p.Status) }</span>
+									}
+								</td>
+
+								<!-- Payment Timestamp -->
+								<td class="tabular-nums text-xs">
+									if p.PaidAt != nil {
+										<div class="text-primary font-medium">{ p.PaidAt.Format("2006-01-02") }</div>
+										<div class="text-muted">{ p.PaidAt.Format("03:04 PM") }</div>
+									} else {
+										<div class="text-primary font-medium">{ p.CreatedAt.Format("2006-01-02") }</div>
+										<div class="text-muted">{ p.CreatedAt.Format("03:04 PM") }</div>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if data.TotalPayments > 0 {
+				<div class="screen-only">
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalPayments,
+						BaseURL:     "/admin/finance/payments",
+						QueryValues: adminPaymentsPaginationQuery(data.Query, data.StatusFilter, data.MethodFilter, data.DateFrom, data.DateTo, data.SelectedOrgID),
+					})
+				</div>
+			}
+		}
+	</div>
+}

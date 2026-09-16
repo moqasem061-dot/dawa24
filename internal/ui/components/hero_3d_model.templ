@@ -1,0 +1,68 @@
+package components
+
+templ Hero3DModel() {
+	<div class="hero-3d-section-wrapper">
+		<div class="hero-3d-card-stage">
+			<!-- Visual Ambient Glow Behind Model -->
+			<div class="hero-3d-ambient-glow" aria-hidden="true"></div>
+
+			<!-- Top Telemetry Header -->
+			<div class="hero-3d-stage-header">
+				<div class="hero-3d-badge-pill">
+					<span class="hero-3d-live-pulse"></span>
+					@IconActivity("icon-xs text-brand")
+					<span>مجسم التوريد الدوائي الذكي — 3D حي</span>
+				</div>
+				<span class="hero-3d-touch-hint hide-desktop">
+					@IconZap("icon-2xs text-amber")
+					<span>المس ودوّر المجسم 360°</span>
+				</span>
+			</div>
+
+			<!-- 3D Canvas Viewport -->
+			<div class="hero-3d-canvas-container" id="hero-3d-container">
+				<canvas
+					id="hero-3d-capsule-canvas"
+					class="hero-3d-canvas"
+					role="img"
+					aria-label="مجسم دوائي ثلاثي الأبعاد تفاعلي يوضح كبسولة دواء وسلاسل التبريد"
+				></canvas>
+			</div>
+
+			<!-- Floating Telemetry Badges (Cold-chain, Quality, Discount) -->
+			<div class="hero-3d-telemetry-strip">
+				<div class="telemetry-item cold-chain">
+					<div class="telemetry-dot cold"></div>
+					<div class="telemetry-texts">
+						<span class="telemetry-label">سلسلة تبريد مجهزة</span>
+						<strong class="telemetry-val">2.4°C — 7.8°C</strong>
+					</div>
+				</div>
+
+				<div class="telemetry-item eda-verified">
+					<div class="telemetry-dot eda"></div>
+					<div class="telemetry-texts">
+						<span class="telemetry-label">اعتماد هيئة الدواء</span>
+						<strong class="telemetry-val">تشغيلة أصلية 100%</strong>
+					</div>
+				</div>
+
+				<div class="telemetry-item direct-supply">
+					<div class="telemetry-dot supply"></div>
+					<div class="telemetry-texts">
+						<span class="telemetry-label">خصم التوريد المباشر</span>
+						<strong class="telemetry-val">أعلى نسبة توفير حية</strong>
+					</div>
+				</div>
+			</div>
+
+			<!-- Bottom Interaction Cue -->
+			<div class="hero-3d-interaction-bar">
+				<div class="interaction-cue">
+					<span class="interaction-icon">↻</span>
+					<span class="interaction-text">اسحب بإصبعك أو بالفأرة لتدوير مجسم الكبسولة وسلسلة التبريد في أي اتجاه</span>
+				</div>
+			</div>
+		</div>
+	</div>
+}

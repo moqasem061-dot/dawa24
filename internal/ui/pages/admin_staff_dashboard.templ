@@ -1,0 +1,206 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminStaffDashboard renders the dedicated informational overview page for admin staff and moderators.
+// It deliberately excludes financial KPIs, platform revenue, and wallet reserves, presenting instead
+// an operational guide, platform architecture explanation, workspace links, and compliance standards.
+templ AdminStaffDashboard(actor authctx.Actor, lang, dir string) {
+	@layouts.AdminShell("مساحة عمل فريق الإدارة والعمليات", "dashboard", lang, dir) {
+		<div class="admin-page-container">
+			<!-- Header Banner -->
+			<div class="admin-banner">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon primary">
+							@components.IconLayers("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>مساحة عمل فريق الإدارة والعمليات</span>
+							</h1>
+							<p class="admin-banner-subtitle">
+								بوابة المتابعة والتشغيل لمنظومة دوا 24 — دليلك الشامل لمهام النظام وإدارة العمليات اليومية
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<div class="admin-status-pill">
+							<span class="admin-status-dot online"></span>
+							<span class="text-secondary">حالة المنظومة:</span>
+							<span class="text-success">جاهزة ومستقرة</span>
+						</div>
+						<div class="admin-status-pill">
+							<span class="badge badge-sky text-2xs font-bold">بوابة الموظفين</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Welcome & Guidelines Card -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="d-flex items-start gap-4">
+					<div class="user-avatar-badge text-2xl shrink-0">
+						@components.IconInfo("icon-md")
+					</div>
+					<div class="stack-sm">
+						<h2 class="text-lg font-black text-primary m-0">مرحباً بك في فريق عمل منصة دوا 24</h2>
+						<p class="text-sm text-secondary m-0 leading-relaxed max-w-4xl">
+							هذه المساحة مخصصة لأعضاء فريق الإدارة والعمليات لتقديم الدعم لشبكة الصيدليات والموردين، 
+							والتحقق من البيانات والمستودعات ومتابعة سير الطلبات والكتالوج وفقاً للصلاحيات الممنوحة لكل دور وظيفي.
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<!-- System Overview Modules Grid -->
+			<div class="mb-6">
+				<div class="flex-between items-center mb-4">
+					<h2 class="text-base font-black text-primary m-0 d-flex items-center gap-2">
+						@components.IconSettings("icon-xs")
+						<span>الدليل التعريفي بأقسام المنظومة</span>
+					</h2>
+					<span class="text-xs text-muted">تعريف بمهام ومحاور العمل الرئيسية</span>
+				</div>
+
+				<div class="d-grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+					<!-- Module 1: Catalog -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-emerald-subtle text-emerald flex-center text-sm">
+									@components.IconPackage("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">إدارة الكتالوج والأدوية</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								تحديث ومراجعة قاعدة بيانات الأصناف الصيدلانية، مطابقة الأسماء التجارية والباركود الدولي، وتنظيم تصنيفات الأدوية والمستلزمات الطبية.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: الكتالوج</span>
+							<a href="/admin/products" class="btn btn-secondary btn-xs font-bold">تصفح الأصناف &larr;</a>
+						</div>
+					</div>
+
+					<!-- Module 2: Temporary Warehouses -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-sky-subtle text-sky flex-center text-sm">
+									@components.IconFileText("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">المستودعات المؤقتة والاستيراد</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								رفع ومعالجة ملفات المخزون وجداول الأسعار الخاصة بالموردين، وضبط مطابقة الأعمدة ومراجعة البيانات قبل اعتمادها في السوق الصيدلي.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: المستودعات</span>
+							<a href="/admin/temporary-warehouses" class="btn btn-secondary btn-xs font-bold">المستودعات المؤقتة &larr;</a>
+						</div>
+					</div>
+
+					<!-- Module 3: Organizations & Partners -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-indigo-subtle text-indigo flex-center text-sm">
+									@components.IconUsers("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">المؤسسات والشركاء</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								متابعة طلبات انضمام الصيدليات والشركات الموردة، تدقيق السجلات التجارية والتراخيص الصحية، وتنشيط حسابات الشركاء الجدد.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: الشركاء</span>
+							<a href="/admin/organizations" class="btn btn-secondary btn-xs font-bold">قائمة المؤسسات &larr;</a>
+						</div>
+					</div>
+
+					<!-- Module 4: Orders & Logistics -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-amber-subtle text-amber flex-center text-sm">
+									@components.IconTruck("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">أوامر التوريد والطلبات</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								متابعة سير الطلبات بين الصيدليات ومستودعات التوزيع، رصد التوصيل وحالات الإلغاء أو المرتجعات، وضمان انسيابية العمليات.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: العمليات</span>
+							<a href="/admin/orders" class="btn btn-secondary btn-xs font-bold">سجل الطلبات &larr;</a>
+						</div>
+					</div>
+
+					<!-- Module 5: Customer Service & Tickets -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-purple-subtle text-purple flex-center text-sm">
+									@components.IconMessageSquare("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">الدعم الفني والرسائل</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								استقبال بلاغات الصيدليات والموردين، حل المعوقات التشغيلية، ومتابعة الشكاوى والاقتراحات الواردة عبر قنوات الاتصال.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: الدعم الفني</span>
+							<a href="/admin/report-issues" class="btn btn-secondary btn-xs font-bold">بلاغات المشاكل &larr;</a>
+						</div>
+					</div>
+
+					<!-- Module 6: System Guidelines -->
+					<div class="glass-panel p-5 d-flex flex-col justify-between">
+						<div class="stack-sm mb-4">
+							<div class="d-flex items-center gap-2.5 mb-1">
+								<div class="w-8 h-8 rounded-lg bg-rose-subtle text-rose flex-center text-sm">
+									@components.IconShield("icon-xs")
+								</div>
+								<h3 class="text-sm font-black text-primary m-0">معايير الأمان والامتثال</h3>
+							</div>
+							<p class="text-xs text-secondary m-0 leading-relaxed">
+								الالتزام الكامل بسرية بيانات المعاملات الصيدلانية، معايير فحص وتدقيق الملفات المرفوعة، وتطبيق ضوابط أمن المعلومات.
+							</p>
+						</div>
+						<div class="border-t pt-3 d-flex items-center justify-between">
+							<span class="text-2xs text-muted">القسم: المعايير</span>
+							<span class="badge badge-emerald text-2xs font-bold">مُفعل تلقائياً</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Operational Best Practices Notice -->
+			<div class="glass-panel p-6 bg-surface-sunken border rounded-xl">
+				<div class="d-flex items-start gap-4">
+					<div class="text-accent text-2xl shrink-0">
+						@components.IconShield("icon-md")
+					</div>
+					<div class="stack-xs text-xs text-secondary">
+						<h3 class="text-sm font-black text-primary m-0">إرشادات وضوابط العمل الأساسية</h3>
+						<ul class="list-disc ps-4 space-y-1 m-0 mt-2 leading-relaxed">
+							<li>يتم تسجيل وتوثيق كافة العمليات التي تجريها في سجلات التدقيق (Audit Logs) لضمان الشفافية ومتابعة الأداء.</li>
+							<li>ملفات الجداول والمستودعات تخضع تلقائياً للفحص الأمني الشامل لمنع أي روابط أو برمجيات خبيثة لحماية قاعدة بيانات المنظومة.</li>
+							<li>في حال حاجتك لرفع صلاحيات حسابك للوصول إلى أقسام إضافية، يرجى التواصل مع إدارة النظام (Super Admin).</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

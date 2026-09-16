@@ -1,0 +1,177 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// SupplierProfileReviewsTab renders the public reviews and vendor replies on the supplier profile page.
+templ SupplierProfileReviewsTab(reviews []*org.Review, overallRating float64, totalCount int, lang, activeTab string) {
+	<div id="tab-content-reviews" class={ "tab-panel", templ.KV("d-none", activeTab != "reviews") }>
+		if len(reviews) == 0 {
+			<div class="glass-panel p-8 text-center border rounded-2xl shadow-xs">
+				<div class="w-12 h-12 rounded-full bg-amber-50 text-amber-600 font-bold d-flex items-center justify-center mx-auto mb-3 border border-amber-200">
+					@components.IconStar("icon-md")
+				</div>
+				<h3 class="text-sm font-extrabold text-primary mb-1">مورد معتمد موثق</h3>
+				<p class="text-xs text-secondary mb-0 max-w-md mx-auto font-medium">
+					لم يتم تسجيل تقييمات مكتوبة بعد. عند استلام طلبيتك القادمة يمكنك إضافة تقييمك للمندوب والخدمة والسرعة من تفاصيل الطلب.
+				</p>
+			</div>
+		} else {
+			{{
+				totRep, totQuality, totSpeed := 0, 0, 0
+				for _, rv := range reviews {
+					if rv.ScoreRep > 0 {
+						totRep += rv.ScoreRep
+					} else {
+						totRep += rv.Rating
+					}
+					if rv.ScoreQuality > 0 {
+						totQuality += rv.ScoreQuality
+					} else {
+						totQuality += rv.Rating
+					}
+					if rv.ScoreSpeed > 0 {
+						totSpeed += rv.ScoreSpeed
+					} else {
+						totSpeed += rv.Rating
+					}
+				}
+				avgRep := float64(totRep) / float64(len(reviews))
+				avgQuality := float64(totQuality) / float64(len(reviews))
+				avgSpeed := float64(totSpeed) / float64(len(reviews))
+			}}
+			<div class="d-flex flex-col gap-4">
+				
+				<!-- Rating Summary Header Card -->
+				<div class="review-summary-card">
+					<div class="review-score-hero">
+						<div class="review-score-badge tabular-nums">
+							{ fmt.Sprintf("%.1f", overallRating) }
+						</div>
+						<div class="stack-2xs">
+							@components.RatingStars(overallRating, 0)
+							<span class="text-xs text-secondary font-bold mt-0.5">
+								مبني على { fmt.Sprintf("%d", totalCount) } تقييم صيدلية معتمد
+							</span>
+						</div>
+					</div>
+
+					<div class="review-criteria-strip">
+						<span class="review-criteria-chip">
+							<span>مندوب التوصيل:</span>
+							<strong class="tabular-nums">{ fmt.Sprintf("%.1f ★", avgRep) }</strong>
+						</span>
+						<span class="review-criteria-chip">
+							<span>جودة الخدمة:</span>
+							<strong class="tabular-nums">{ fmt.Sprintf("%.1f ★", avgQuality) }</strong>
+						</span>
+						<span class="review-criteria-chip">
+							<span>سرعة التوريد:</span>
+							<strong class="tabular-nums">{ fmt.Sprintf("%.1f ★", avgSpeed) }</strong>
+						</span>
+					</div>
+				</div>
+
+				<!-- Reviews List Cards -->
+				for _, rv := range reviews {
+					{{
+						scRep := rv.ScoreRep
+						if scRep <= 0 {
+							scRep = rv.Rating
+						}
+						scQuality := rv.ScoreQuality
+						if scQuality <= 0 {
+							scQuality = rv.Rating
+						}
+						scSpeed := rv.ScoreSpeed
+						if scSpeed <= 0 {
+							scSpeed = rv.Rating
+						}
+					}}
+					<div class="review-card-item">
+						
+						<!-- Reviewer Top Line -->
+						<div class="review-card-header">
+							<div class="d-flex items-center gap-2.5">
+								<div class="w-8 h-8 rounded-full bg-emerald-50 text-emerald-700 font-black d-flex items-center justify-center text-xs border border-emerald-200">
+									@components.IconBuilding("icon-2xs")
+								</div>
+								<div>
+									<div class="d-flex items-center gap-2">
+										<strong class="text-xs font-black text-primary">
+											{ rv.ReviewerOrgName }
+										</strong>
+										<span class="badge badge-emerald text-2xs font-bold gap-1 py-0.5 px-1.5">
+											@components.IconCheck("icon-2xs")
+											<span>صيدلية معتمدة</span>
+										</span>
+									</div>
+									<span class="text-2xs text-muted font-medium d-block mt-0.5">
+										{ format.Date(rv.CreatedAt, lang) }
+									</span>
+								</div>
+							</div>
+
+							<div class="d-flex items-center gap-2">
+								@components.RatingStars(float64(rv.Rating), 0)
+								<span class="badge badge-amber text-2xs font-black tabular-nums">
+									{ fmt.Sprintf("%d/5", rv.Rating) }
+								</span>
+							</div>
+						</div>
+
+						<!-- 3 Criteria Badges -->
+						<div class="review-criteria-strip">
+							<span class="review-criteria-chip">
+								<span>مندوب التوصيل:</span>
+								<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scRep) }</strong>
+							</span>
+							<span class="review-criteria-chip">
+								<span>جودة الأصناف:</span>
+								<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scQuality) }</strong>
+							</span>
+							<span class="review-criteria-chip">
+								<span>سرعة التجهيز:</span>
+								<strong class="tabular-nums">{ fmt.Sprintf("%d ★", scSpeed) }</strong>
+							</span>
+						</div>
+
+						<!-- Pharmacy Review Text -->
+						if rv.ReviewText != "" {
+							<blockquote class="review-quote-body">
+								{ rv.ReviewText }
+							</blockquote>
+						}
+
+						<!-- Vendor Reply Card -->
+						if rv.Response != "" {
+							<div class="p-3.5 bg-brand-subtle border border-brand/20 rounded-xl mt-1">
+								<div class="flex-between items-center mb-1">
+									<div class="d-flex items-center gap-1.5 text-xs font-black text-brand">
+										@components.IconCheck("icon-2xs")
+										<span>رد المورد الرسمي:</span>
+									</div>
+									if rv.ResponseAt != nil {
+										<span class="text-2xs text-muted font-medium">
+											{ format.Date(*rv.ResponseAt, lang) }
+										</span>
+									}
+								</div>
+								<p class="text-xs text-primary m-0 font-medium leading-relaxed">
+									{ rv.Response }
+								</p>
+							</div>
+						}
+
+					</div>
+				}
+
+			</div>
+		}
+	</div>
+}

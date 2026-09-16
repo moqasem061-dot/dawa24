@@ -1,0 +1,220 @@
+package components
+
+import (
+	"fmt"
+	"net/url"
+)
+
+type PaginationProps struct {
+	CurrentPage int
+	PageSize    int
+	TotalCount  int
+	BaseURL     string
+	QueryValues url.Values
+
+	// PageSizeOptions overrides the platform-default row counts for this one
+	// bar. Card-grid screens (catalogue, market discounts) pass {12,24,48,96}
+	// because a table's {10,25,50,100} leaves ragged final rows in a 4-up grid.
+	// Nil means "use the platform default".
+	PageSizeOptions []int
+
+	// AllowShowAll appends an "الكل" choice that maps to limit=-1. Only the
+	// import-review style screens, where the reader is working a finite backlog
+	// to zero, opt in.
+	AllowShowAll bool
+
+	// HXTarget, when set, turns every page link into an htmx partial swap of
+	// that selector instead of a full navigation. Used where re-rendering the
+	// whole page per click is measurably slow (import review).
+	HXTarget string
+
+	// SizeParam is the query key the page-size control writes. Empty means the
+	// platform standard, "limit". The catalogue screen predates that standard
+	// and reads "page_size"; it passes that here rather than being rewritten.
+	SizeParam string
+
+	// PageParam is the query key for the page number. Empty means "page".
+	PageParam string
+}
+
+func sizeParamOf(props PaginationProps) string {
+	if props.SizeParam != "" {
+		return props.SizeParam
+	}
+	return "limit"
+}
+
+func pageParamOf(props PaginationProps) string {
+	if props.PageParam != "" {
+		return props.PageParam
+	}
+	return "page"
+}
+
+func minIntHelper(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func totalPagesHelper(total, pageSize int) int {
+	if pageSize <= 0 {
+		return 1
+	}
+	p := (total + pageSize - 1) / pageSize
+	if p < 1 {
+		return 1
+	}
+	return p
+}
+
+func pageRange(current, total int) []int {
+	if total <= 1 {
+		return []int{1}
+	}
+	start := current - 2
+	if start < 1 {
+		start = 1
+	}
+	end := start + 4
+	if end > total {
+		end = total
+		start = end - 4
+		if start < 1 {
+			start = 1
+		}
+	}
+	var nums []int
+	for i := start; i <= end; i++ {
+		nums = append(nums, i)
+	}
+	return nums
+}
+
+// PageSizeOptions is the row count a reader may choose on any dashboard table.
+// One set platform-wide: a reader who has learned the control on one screen
+// finds the same choices on the next.
+func PageSizeOptions() []int { return []int{10, 25, 50, 100} }
+
+// resolvePageSizeOptions is the per-bar option set: the caller's override when
+// it gave one, the platform default otherwise.
+func resolvePageSizeOptions(props PaginationProps) []int {
+	if len(props.PageSizeOptions) > 0 {
+		return props.PageSizeOptions
+	}
+	return PageSizeOptions()
+}
+
+// buildPageSizeURL changes the page size and returns to the first page, because
+// "show 100 per page" while sitting on page 7 of a 25-row listing lands the
+// reader past the end of the result set.
+func buildPageSizeURL(props PaginationProps, limit int) string {
+	return buildPageURL(props, 1, limit)
+}
+
+func buildPageURL(props PaginationProps, page, limit int) string {
+	sizeKey := sizeParamOf(props)
+	pageKey := pageParamOf(props)
+	vals := url.Values{}
+	if props.QueryValues != nil {
+		for k, v := range props.QueryValues {
+			if k == pageKey || k == "offset" || k == sizeKey || (pageKey != "page" && k == "page") || (sizeKey != "limit" && k == "limit") {
+				continue
+			}
+			for _, val := range v {
+				vals.Add(k, val)
+			}
+		}
+	}
+	vals.Set(pageKey, fmt.Sprintf("%d", page))
+	vals.Set(sizeKey, fmt.Sprintf("%d", limit))
+	return fmt.Sprintf("%s?%s", props.BaseURL, vals.Encode())
+}
+
+// paginationLink is one control button. It is a link when the target page
+// differs from the current one and a disabled span otherwise, so first/prev/
+// next/last and every numbered page share exactly one piece of markup.
+templ paginationLink(props PaginationProps, page int, label, title string, disabled, active bool) {
+	if disabled {
+		<span class="b2b-pagination-btn disabled">{ label }</span>
+	} else if active {
+		<span class="b2b-pagination-btn active">{ label }</span>
+	} else if props.HXTarget != "" {
+		<a
+			href={ templ.SafeURL(buildPageURL(props, page, props.PageSize)) }
+			hx-get={ buildPageURL(props, page, props.PageSize) }
+			hx-target={ props.HXTarget }
+			hx-select={ props.HXTarget }
+			hx-swap="outerHTML"
+			hx-push-url="true"
+			class="b2b-pagination-btn"
+			title={ title }
+		>{ label }</a>
+	} else {
+		<a
+			href={ templ.SafeURL(buildPageURL(props, page, props.PageSize)) }
+			class="b2b-pagination-btn"
+			title={ title }
+		>{ label }</a>
+	}
+}
+
+templ B2BPagination(props PaginationProps) {
+	{{
+		totalP := totalPagesHelper(props.TotalCount, props.PageSize)
+		startItem := (props.CurrentPage-1)*props.PageSize + 1
+		if props.TotalCount == 0 {
+			startItem = 0
+		}
+		endItem := minIntHelper(props.CurrentPage*props.PageSize, props.TotalCount)
+		if props.PageSize <= 0 {
+			// "show all" is in effect: one page, every row.
+			startItem = 1
+			if props.TotalCount == 0 {
+				startItem = 0
+			}
+			endItem = props.TotalCount
+			totalP = 1
+		}
+		pages := pageRange(props.CurrentPage, totalP)
+	}}
+	<div class="b2b-pagination">
+		<div class="b2b-pagination-info">
+			<span>عرض <strong>{ fmt.Sprintf("%d - %d", startItem, endItem) }</strong> من إجمالي <strong>{ fmt.Sprintf("%d", props.TotalCount) }</strong> سجل</span>
+			<label class="page-size">
+				<span class="page-size-label">صفوف</span>
+				<select
+					class="form-select page-size-select"
+					aria-label="عدد الصفوف في الصفحة"
+					data-navigate-on-change
+				>
+					for _, n := range resolvePageSizeOptions(props) {
+						<option
+							value={ buildPageSizeURL(props, n) }
+							selected?={ n == props.PageSize }
+						>{ fmt.Sprintf("%d", n) }</option>
+					}
+					if props.AllowShowAll {
+						<option
+							value={ buildPageSizeURL(props, -1) }
+							selected?={ props.PageSize <= 0 }
+						>الكل</option>
+					}
+				</select>
+			</label>
+		</div>
+
+		<div class="b2b-pagination-controls">
+			@paginationLink(props, 1, "«", "الصفحة الأولى", props.CurrentPage <= 1, false)
+			@paginationLink(props, props.CurrentPage-1, "‹", "السابق", props.CurrentPage <= 1, false)
+
+			for _, p := range pages {
+				@paginationLink(props, p, fmt.Sprintf("%d", p), "", false, p == props.CurrentPage)
+			}
+
+			@paginationLink(props, props.CurrentPage+1, "›", "التالي", props.CurrentPage >= totalP, false)
+			@paginationLink(props, totalP, "»", "الصفحة الأخيرة", props.CurrentPage >= totalP, false)
+		</div>
+	</div>
+}

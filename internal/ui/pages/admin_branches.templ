@@ -1,0 +1,1082 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminBranchesPageData struct {
+	Branches           []*org.Branch
+	Organizations      []*org.Organization
+	OrgNames           map[int64]string
+	OrgTypes           map[int64]string
+	Governorates       []*platformadmin.Governorate
+	Cities             []*platformadmin.City
+	InstitutionalWorks []*org.InstitutionalWork
+	TotalBranches      int
+	FilteredCount      int
+	ActiveBranches     int
+	PharmacyBranches   int
+	VendorWarehouses   int
+	Page               int
+	PerPage            int
+	SearchQuery        string
+	SelectedOrgID      int64
+	StatusFilter       string
+	NoticeType         string
+	NoticeMsg          string
+}
+
+func OrgTypesJSON(orgTypes map[int64]string) string {
+	if orgTypes == nil {
+		return "{}"
+	}
+	m := make(map[string]string, len(orgTypes))
+	for k, v := range orgTypes {
+		m[fmt.Sprintf("%d", k)] = v
+	}
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "{}"
+	}
+	return string(bytes)
+}
+
+func formatAdminBranchJSON(b *org.Branch) string {
+	if b == nil {
+		return "{}"
+	}
+	cityID := int64(0)
+	if b.CityID != nil {
+		cityID = *b.CityID
+	}
+	lat := 30.0444
+	if b.Latitude != nil {
+		lat = *b.Latitude
+	}
+	lon := 31.2357
+	if b.Longitude != nil {
+		lon = *b.Longitude
+	}
+	nameAr := b.Name.Get("ar")
+	nameEn := b.Name.Get("en")
+	if nameAr == "" {
+		nameAr = nameEn
+	}
+	if nameEn == "" {
+		nameEn = nameAr
+	}
+	instWorks := b.InstitutionalWorks
+	if instWorks == nil {
+		instWorks = []string{}
+	}
+	m := map[string]any{
+		"id":                  b.ID,
+		"organization_id":     b.OrganizationID,
+		"name_ar":             nameAr,
+		"name_en":             nameEn,
+		"code":                b.Code,
+		"warehouse_type":      b.WarehouseType,
+		"capacity_sqm":        b.CapacitySQM,
+		"city_id":             cityID,
+		"address":             b.Address,
+		"phone":               b.Phone,
+		"operating_hours":     b.OperatingHours,
+		"google_maps_url":     b.GoogleMapsURL,
+		"has_cold_storage":    b.HasColdStorage,
+		"is_main":             b.IsMain,
+		"status":              b.Status,
+		"latitude":            lat,
+		"longitude":           lon,
+		"institutional_works": instWorks,
+	}
+	bytes, err := json.Marshal(m)
+	if err != nil {
+		return "{}"
+	}
+	return string(bytes)
+}
+
+func formatBranchTypeBadge(warehouseType, orgType string) string {
+	if orgType == "customer" || warehouseType == "pharmacy" || warehouseType == "branch" {
+		return "فرع صيدلية"
+	}
+	switch warehouseType {
+	case "warehouse":
+		return "مخزن رئيسي"
+	case "fast_hub":
+		return "نقطة توزيع سريعة"
+	case "cold_depot":
+		return "مخزن تبريد"
+	case "main":
+		return "مستودع رئيسي"
+	case "sub":
+		return "مستودع فرعي"
+	case "hub":
+		return "نقطة توزيع إقليمية"
+	default:
+		if warehouseType == "" {
+			return "مستودع"
+		}
+		return warehouseType
+	}
+}
+
+func isPharmacyType(warehouseType, orgType string) bool {
+	return orgType == "customer" || warehouseType == "pharmacy" || warehouseType == "branch"
+}
+
+templ AdminBranchesPage(data AdminBranchesPageData, lang, dir string) {
+	@layouts.AdminShell("دليل الفروع ومواقع التخزين", "branches", lang, dir) {
+		<div x-data="adminBranchManager()" x-init="init()" class="admin-page-container">
+			
+			<!-- Notice Feedback Banner -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconAlert("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center justify-between flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 font-bold text-sm">
+							@components.IconCheckCircle("icon-xs")
+							<span>{ data.NoticeMsg }</span>
+						</div>
+					</div>
+				}
+			}
+			
+			<!-- Header Banner -->
+			<div class="admin-banner">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon primary">
+							@components.IconMapPin("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>دليل الفروع ومواقع التخزين والمستودعات</span>
+								<span class="badge badge-sky text-xs font-black tabular-nums">{ fmt.Sprintf("%d فرع ومخزن", data.TotalBranches) }</span>
+							</h1>
+							<p class="admin-banner-subtitle">
+								إدارة ومتابعة كافة نقاط الاستلام والتوريد ومواقع التخزين المركزية للصيدليات والموردين
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="resetToAddMode(); document.getElementById('admin-branch-form').scrollIntoView({behavior:'smooth'});">
+							@components.IconPlus("icon-xs")
+							<span>+ إضافة فرع جديد</span>
+						</button>
+						<a href="/admin/weekly-coverages" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconTruck("icon-xs")
+							<span>جداول التغطية الأسبوعية</span>
+						</a>
+						<a href="/admin/branches" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Stats KPI Strip -->
+				<div class="d-grid gap-3 mt-4 pt-3 border-t grid-auto-fit-xs">
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">إجمالي الفروع والمخازن</div>
+						<div class="text-xl font-black text-primary mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.TotalBranches) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">الفروع النشطة</div>
+						<div class="text-xl font-black text-success mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.ActiveBranches) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">فروع الصيدليات</div>
+						<div class="text-xl font-black text-success mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.PharmacyBranches) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">مستودعات الموردين</div>
+						<div class="text-xl font-black text-purple mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.VendorWarehouses) }</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="admin-filter-bar">
+				<form method="GET" action="/admin/branches" class="flex-between flex-wrap gap-3 m-0 w-full">
+					<div class="d-flex gap-2 items-center flex-wrap flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ data.SearchQuery }
+							placeholder="ابحث باسم الفرع، الكود، العنوان، أو المنشأة..."
+							class="form-input text-sm min-w-64"
+						/>
+						<select name="org_id" class="form-select text-sm w-auto font-bold">
+							<option value="0">كافة المنشآت والشركات</option>
+							for _, o := range data.Organizations {
+								if o != nil {
+									<option value={ fmt.Sprintf("%d", o.ID) } selected?={ o.ID == data.SelectedOrgID }>{ o.LegalName }</option>
+								}
+							}
+						</select>
+						<select name="status" class="form-select text-sm w-auto font-bold">
+							<option value="">كل الحالات</option>
+							<option value="active" selected?={ data.StatusFilter == "active" }>نشط ومفعل</option>
+							<option value="inactive" selected?={ data.StatusFilter == "inactive" }>معطل</option>
+						</select>
+						<button type="submit" class="btn btn-primary btn-sm font-bold">تطبيق الفلتر</button>
+						if data.SearchQuery != "" || data.SelectedOrgID > 0 || data.StatusFilter != "" {
+							<a href="/admin/branches" class="btn btn-secondary btn-sm font-bold">إلغاء الفلتر</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- 2-Column Split: Cards on Right (in RTL), Form on Left (in RTL) -->
+			<div class="cb-split-grid mt-4">
+				<!-- Right Column: Branch Cards List -->
+				<div>
+					<div class="glass-panel p-4 mb-3">
+						<div class="flex-between items-center flex-wrap gap-2">
+							<div class="d-flex items-center gap-2 font-bold text-sm text-primary">
+								@components.IconMapPin("icon-xs")
+								<span>فروع ومخازن المنظومة المعتمدة</span>
+							</div>
+							<span class="badge badge-sky text-xs font-bold tabular-nums">{ fmt.Sprintf("%d فرع ومخزن", data.FilteredCount) }</span>
+						</div>
+					</div>
+
+					if len(data.Branches) == 0 {
+						<div class="p-8 text-center bg-surface rounded-2xl border border-dashed my-4">
+							<div class="text-3xl mb-2 text-muted">@components.IconMapPin("icon-sm")</div>
+							<div class="font-black text-primary">لا توجد فروع أو مخازن مطابقة</div>
+							<div class="text-sm text-secondary mt-1">جرب تغيير معايير البحث أو اختيار منشأة أخرى</div>
+						</div>
+					} else {
+						<div class="d-flex flex-col gap-3">
+							for _, b := range data.Branches {
+								<div class="cb-branch-card transition-all" :class={ fmt.Sprintf("editId === %d && mode === 'edit' ? 'border-brand shadow-md ring-2 ring-brand/40 bg-brand/5' : ''", b.ID) }>
+									<div class="d-flex items-start justify-between gap-3">
+										<div class="stack-sm flex-grow">
+											<div class="d-flex items-center gap-2 flex-wrap mb-1">
+												<strong class="text-sm font-bold text-primary">
+													if b.Name.Get("ar") != "" {
+														{ b.Name.Get("ar") }
+													} else {
+														{ b.Name.Get("en") }
+													}
+												</strong>
+												if b.IsMain {
+													<span class="badge badge-sky text-2xs font-bold">الفرع الرئيسي</span>
+												}
+												if b.Status == "inactive" {
+													<span class="badge badge-rose text-2xs font-bold">معطل</span>
+												} else {
+													<span class="badge badge-emerald text-2xs font-bold">نشط</span>
+												}
+											</div>
+
+											<div class="d-flex items-center gap-2 flex-wrap text-xs">
+												<span class="font-bold text-brand">{ getOrgLegalName(b.OrganizationID, data.OrgNames) }</span>
+												<span class="badge badge-slate text-2xs">{ getOrgTypeBadge(b.OrganizationID, data.OrgTypes) }</span>
+												if b.Code != "" {
+													<span class="badge badge-slate tabular-nums text-2xs font-mono">#{ b.Code }</span>
+												}
+											</div>
+										</div>
+
+										<div class="d-flex items-center gap-1 shrink-0">
+											<!-- تفاصيل الفرع (Branch Details) Button - Preserved! -->
+											<a
+												href={ templ.SafeURL(fmt.Sprintf("/admin/branches/%d", b.ID)) }
+												class="btn btn-secondary btn-xs font-bold gap-1"
+												title="استعراض التفاصيل الكاملة للفرع"
+											>
+												@components.IconExternalLink("icon-xs")
+												<span>تفاصيل الفرع</span>
+											</a>
+
+											<!-- Edit Branch Button (Triggers Edit Mode in Left Panel) -->
+											<button
+												type="button"
+												class="btn btn-primary btn-xs font-bold gap-1"
+												data-edit-branch-btn={ fmt.Sprintf("%d", b.ID) }
+												data-branch-data={ formatAdminBranchJSON(b) }
+												@click="setEditModeFromElement($event.currentTarget || $el)"
+												title="تعديل بيانات الفرع"
+											>
+												@components.IconEdit("icon-xs")
+												<span>تعديل</span>
+											</button>
+
+											<!-- Delete Branch Button (if not main) -->
+											if !b.IsMain {
+												<form
+													method="POST"
+													action={ templ.SafeURL(fmt.Sprintf("/admin/branches/%d/delete", b.ID)) }
+													class="m-0 inline"
+													data-confirm="هل أنت متأكد من حذف هذا الفرع نهائياً؟"
+												>
+													<button type="submit" class="btn btn-ghost btn-xs text-danger" title="حذف الفرع">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											}
+										</div>
+									</div>
+
+									<div class="d-flex flex-col gap-1 text-xs text-secondary mt-2">
+										if b.Address != "" {
+											<div><span class="text-muted">العنوان: </span><strong class="text-primary">{ b.Address }</strong></div>
+										}
+										if b.Phone != "" {
+											<div><span class="text-muted">الهاتف: </span><strong class="tabular-nums text-primary" dir="ltr">{ b.Phone }</strong></div>
+										}
+										if b.OperatingHours != "" {
+											<div><span class="text-muted">ساعات العمل: </span><strong class="tabular-nums">{ b.OperatingHours }</strong></div>
+										}
+									</div>
+
+									<div class="d-flex items-center justify-between flex-wrap gap-2 pt-2 border-t text-xs mt-1">
+										<div class="d-flex items-center gap-1 flex-wrap">
+											if isPharmacyType(b.WarehouseType, data.OrgTypes[b.OrganizationID]) {
+												<span class="badge badge-sky text-2xs font-bold">{ formatBranchTypeBadge(b.WarehouseType, data.OrgTypes[b.OrganizationID]) }</span>
+											} else {
+												<span class="badge badge-purple text-2xs font-bold">{ formatBranchTypeBadge(b.WarehouseType, data.OrgTypes[b.OrganizationID]) }</span>
+											}
+											if b.CapacitySQM > 0 {
+												<span class="badge badge-slate tabular-nums text-2xs">{ fmt.Sprintf("%.0f م²", b.CapacitySQM) }</span>
+											}
+											if b.HasColdStorage {
+												<span class="badge badge-sky text-2xs font-bold">مبرد ❄️</span>
+											}
+										</div>
+										<div>
+											if b.GoogleMapsURL != "" {
+												<a href={ templ.SafeURL(b.GoogleMapsURL) } target="_blank" rel="noopener" class="text-primary font-bold text-xs text-decoration-none">
+													الخريطة ↗
+												</a>
+											} else if b.Latitude != nil && b.Longitude != nil {
+												<a href={ templ.SafeURL(fmt.Sprintf("https://www.google.com/maps?q=%f,%f", *b.Latitude, *b.Longitude)) } target="_blank" rel="noopener" class="text-primary font-bold text-xs text-decoration-none">
+													الخريطة ↗
+												</a>
+											}
+										</div>
+									</div>
+								</div>
+							}
+						</div>
+
+						if data.FilteredCount > 0 {
+							<div class="mt-4">
+								@components.B2BPagination(components.PaginationProps{
+									CurrentPage: data.Page,
+									PageSize:    data.PerPage,
+									TotalCount:  data.FilteredCount,
+									BaseURL:     "/admin/branches",
+									QueryValues: map[string][]string{
+										"q":      {data.SearchQuery},
+										"org_id": {fmt.Sprintf("%d", data.SelectedOrgID)},
+										"status": {data.StatusFilter},
+									},
+								})
+							</div>
+						}
+					}
+				</div>
+
+				<!-- Left Column: Unified Admin Branch Form (Add / Edit Modes) -->
+				@AdminBranchForm(data, lang)
+			</div>
+
+			@AdminBranchScript()
+		</div>
+	}
+}
+
+templ AdminBranchForm(data AdminBranchesPageData, lang string) {
+	<div
+		class="glass-panel p-5 sticky-top"
+		id="admin-branch-form"
+		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'admin-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
+		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+	>
+		<!-- City and Organization coordinates/types lookup for instant UI responsiveness -->
+		<div id="admin-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
+		<div id="admin-branch-govs-coords" class="d-none" data-coords={ GovernoratesCoordinatesJSON(data.Governorates) }></div>
+		<div id="admin-branch-org-types" class="d-none" data-org-types={ OrgTypesJSON(data.OrgTypes) }></div>
+
+		<div class="d-flex items-start justify-between gap-3 pb-3 mb-3 border-b" :class="mode === 'edit' ? 'p-3 rounded-xl bg-amber-500/10 border-amber-500/30' : ''">
+			<div>
+				<div class="d-flex items-center gap-2">
+					<template x-if="mode === 'edit'">
+						<span class="badge badge-amber text-xs font-bold">وضع التعديل</span>
+					</template>
+					<h3 class="text-base font-bold text-primary m-0" x-text="mode === 'edit' ? 'تعديل بيانات الفرع: ' + (form.name_ar || form.name_en || ('#' + editId)) : 'إضافة فرع أو مستودع جديد'"></h3>
+				</div>
+				<p class="text-xs text-secondary m-0 mt-0.5" x-text="mode === 'edit' ? 'تحديث بيانات الموقع، العنوان، وخصائص الفرع الحالية' : 'إضافة فرع أو نقطة استلام أو مستودع لأي منشأة بالمنصة'"></p>
+			</div>
+
+			<!-- Exit Edit Mode Button -->
+			<template x-if="mode === 'edit'">
+				<button
+					type="button"
+					class="btn btn-secondary btn-xs font-bold gap-1"
+					@click="resetToAddMode()"
+					title="إلغاء التعديل والعودة لوضع إضافة فرع جديد"
+				>
+					@components.IconClose("icon-2xs")
+					<span>إلغاء التعديل</span>
+				</button>
+			</template>
+		</div>
+
+		<form
+			class="d-flex flex-col gap-3 m-0"
+			method="POST"
+			:action="formAction"
+			@submit="
+				const cid = form.city_id || $el.querySelector('input[name=city_id]')?.value;
+				if (!form.org_id) { $event.preventDefault(); alert('يرجى اختيار المنشأة'); return; }
+				if (!cid) { $event.preventDefault(); alert('يرجى اختيار المدينة أو المحافظة'); return; }
+				form.city_id = cid;
+				if (isCustomerSelected()) { form.warehouse_type = 'pharmacy'; }
+			"
+		>
+			<!-- Organization Select -->
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					المنشأة التابع لها الفرع <span class="text-danger">*</span>
+				</label>
+				<select
+					name="org_id"
+					x-model="form.org_id"
+					@change="onOrgChange($event.target.value)"
+					required
+					class="form-select font-bold text-xs"
+				>
+					<option value="">— اختر المنشأة —</option>
+					for _, o := range data.Organizations {
+						if o != nil {
+							<option value={ fmt.Sprintf("%d", o.ID) }>
+								{ o.LegalName } ({ getOrgTypeBadge(o.ID, data.OrgTypes) })
+							</option>
+						}
+					}
+				</select>
+			</div>
+
+			<!-- Branch Names (Arabic & English) -->
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						اسم الفرع بالعربية <span class="text-danger">*</span>
+					</label>
+					<input
+						type="text"
+						name="name_ar"
+						x-model="form.name_ar"
+						required
+						:placeholder="isCustomerSelected() ? 'صيدلية الأمل - المعادي' : 'مستودع القاهرة الرئيسي'"
+						class="form-control font-semibold text-xs"
+					/>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						اسم الفرع بالإنجليزية
+					</label>
+					<input
+						type="text"
+						name="name_en"
+						x-model="form.name_en"
+						:placeholder="isCustomerSelected() ? 'Al Amal - Maadi' : 'Main Warehouse - Cairo'"
+						class="form-control font-semibold text-xs"
+						dir="ltr"
+					/>
+				</div>
+			</div>
+
+			<!-- Internal Code -->
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						كود الفرع الداخلي
+					</label>
+					<input type="text" name="code" x-model="form.code" placeholder="BR-01" class="form-control tabular-nums text-xs"/>
+				</div>
+			</div>
+
+			<!-- Vendor Warehouse Controls (Visible ONLY for Vendors) -->
+			<div x-show="isVendorSelected()" x-cloak class="d-grid grid-auto-fit-sm gap-3 p-3 rounded-xl bg-purple-500/10 border border-purple-500/25">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold text-primary">
+						نوع المستودع اللوجستي <span class="text-danger">*</span>
+					</label>
+					<select
+						name="warehouse_type"
+						x-model="form.warehouse_type"
+						:disabled="!isVendorSelected()"
+						class="form-select font-bold text-xs"
+					>
+						<option value="warehouse">مخزن أدوية مركزي (Warehouse)</option>
+						<option value="fast_hub">نقطة توزيع سريعة (Fast Hub)</option>
+						<option value="cold_depot">مخزن تبريد مخصص (Cold Depot)</option>
+						<option value="main">مستودع رئيسي (Main Warehouse)</option>
+						<option value="sub">مستودع فرعي (Sub Depot)</option>
+						<option value="hub">نقطة توزيع إقليمية (Regional Hub)</option>
+					</select>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold text-primary">
+						المساحة التخزينية (م²)
+					</label>
+					<input
+						type="number"
+						step="any"
+						min="0"
+						name="capacity_sqm"
+						x-model="form.capacity_sqm"
+						:disabled="!isVendorSelected()"
+						placeholder="500"
+						class="form-control tabular-nums text-xs font-semibold"
+					/>
+				</div>
+			</div>
+
+			<!-- Customer/Pharmacy Notice & Auto-Branch Assignment (Visible ONLY for Customers) -->
+			<div x-show="isCustomerSelected()" x-cloak class="p-3 rounded-xl bg-sky-500/10 border border-sky-500/25 d-flex items-center gap-2 text-xs text-sky-800 dark:text-sky-300">
+				@components.IconBuilding("icon-xs")
+				<div>
+					<div class="font-bold">نوع المنشأة: فرع صيدلية (Pharmacy Branch)</div>
+					<div class="text-secondary text-2xs mt-0.5">يتم تسجيل الفرع كنقطة استلام وتوريد أدوية تابعة للصيدلية تلقائياً وبشكل موحد.</div>
+				</div>
+				<input type="hidden" name="warehouse_type" value="pharmacy" :disabled="!isCustomerSelected()"/>
+			</div>
+
+			<!-- Governorate & City Comboboxes -->
+			<div class="d-grid grid-cols-2 gap-3">
+				<div class="form-group mb-0">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "governorate_id",
+						Label:       "المحافظة",
+						Placeholder: "اختر المحافظة…",
+						Options:     GovernorateOptions(data.Governorates, lang),
+						Required:    true,
+						EmptyText:   "لم يتم العثور على محافظة بهذا الاسم.",
+						Class:       "w-full",
+					})
+				</div>
+				<div class="form-group mb-0">
+					@components.Combobox(components.ComboboxProps{
+						Name:        "city_id",
+						Label:       "المدينة / الحي",
+						Placeholder: "اختر المدينة التابعة…",
+						Options:     CityOptions(data.Cities, lang),
+						DependsOn:   "governorate_id",
+						Required:    true,
+						EmptyText:   "اختر المحافظة أولاً، أو ابحث باسم آخر.",
+						Class:       "w-full",
+					})
+				</div>
+			</div>
+
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					العنوان التفصيلي <span class="text-danger">*</span>
+				</label>
+				<input type="text" name="address" x-model="form.address" required placeholder="شارع النصر، أمام مستشفى المعادي" class="form-control font-semibold text-xs"/>
+			</div>
+
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						رقم هاتف الفرع
+					</label>
+					<input type="tel" name="phone" x-model="form.phone" placeholder="01012345678" class="form-control tabular-nums text-xs"/>
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">
+						ساعات العمل
+					</label>
+					<input type="text" name="operating_hours" x-model="form.operating_hours" placeholder="9 ص - 11 م" class="form-control font-semibold text-xs"/>
+				</div>
+			</div>
+
+			<!-- Leaflet Map Picker with Auto-Pan -->
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					موقع الفرع على الخريطة (سيتم التحريك تلقائياً عند اختيار المدينة)
+				</label>
+				<div id="admin-branch-map-picker" class="d-flex flex-col gap-2" data-map-picker data-default-lat="30.0444" data-default-lon="31.2357">
+					<div class="map-container map-canvas map-canvas-sm rounded-lg border"></div>
+					<div class="d-flex items-center justify-between text-xs">
+						<span data-map-coords-badge class="tabular-nums font-bold text-primary">30.0444, 31.2357</span>
+						<button type="button" data-map-locate class="btn btn-secondary btn-xs font-bold">موقعي الحالي</button>
+					</div>
+					<input type="hidden" name="latitude" data-map-input="lat" x-model="form.latitude"/>
+					<input type="hidden" name="longitude" data-map-input="lon" x-model="form.longitude"/>
+				</div>
+			</div>
+
+			<div class="form-group mb-0">
+				<label class="form-label text-xs font-bold">
+					رابط خرائط Google (اختياري)
+				</label>
+				<input type="url" name="google_maps_url" x-model="form.google_maps_url" data-map-google-url placeholder="https://maps.google.com/?q=30.0444,31.2357" class="form-control text-xs font-semibold" dir="ltr"/>
+			</div>
+
+			<!-- Section: Institutional Works -->
+			if len(data.InstitutionalWorks) > 0 {
+				<div class="bg-surface-sunken p-3 rounded-xl border d-flex flex-col gap-2">
+					<div class="d-flex items-center justify-between">
+						<label class="text-xs font-black text-primary m-0 d-block">
+							الأعمال المؤسسية المغطاة (Institutional Works)
+						</label>
+						<span class="text-2xs text-muted">اختياري</span>
+					</div>
+
+					<div class="d-grid grid-cols-2 gap-1.5 mt-1">
+						for _, work := range data.InstitutionalWorks {
+							if work != nil {
+								<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded hover:bg-surface transition-colors">
+									<input
+										type="checkbox"
+										name="institutional_works"
+										value={ fmt.Sprintf("%d", work.ID) }
+										x-model="form.institutional_works"
+										class="form-checkbox"
+									/>
+									<span class="truncate">
+										if work.Icon != "" {
+											{ work.Icon } 
+										}
+										if title := work.Title["ar"]; title != "" {
+											{ title }
+										} else {
+											{ work.Title["en"] }
+										}
+									</span>
+								</label>
+							}
+						}
+					</div>
+				</div>
+			}
+
+			<div class="d-flex flex-col gap-2 pt-1">
+				<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold">
+					<input type="checkbox" name="has_cold_storage" value="true" x-model="form.has_cold_storage" class="form-checkbox"/>
+					<span>تتوفر ثلاجة لحفظ وتبريد الأدوية (2-8°C)</span>
+				</label>
+				<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold">
+					<input type="checkbox" name="is_main" value="true" x-model="form.is_main" class="form-checkbox"/>
+					<span>تعيين كفرع رئيسي للمنشأة</span>
+				</label>
+			</div>
+
+			<template x-if="mode === 'edit'">
+				<div class="form-group mb-0 pt-1">
+					<label class="form-label text-xs font-bold">حالة الفرع</label>
+					<select name="status" x-model="form.status" class="form-select font-bold text-xs">
+						<option value="active">نشط ومفعل (Active)</option>
+						<option value="inactive">معطل وموقوف (Inactive)</option>
+					</select>
+				</div>
+			</template>
+
+			<button type="submit" class="btn btn-primary btn-sm font-bold w-full justify-center mt-2">
+				@components.IconCheck("icon-xs")
+				<span x-text="mode === 'edit' ? 'حفظ تعديلات الفرع' : 'حفظ وإضافة الفرع'"></span>
+			</button>
+		</form>
+	</div>
+}
+
+templ AdminBranchScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function adminBranchManager() {
+			return {
+				mode: 'add',
+				editId: 0,
+				formAction: '/admin/branches/new',
+				_settingEditMode: false,
+				orgTypes: {},
+				form: {
+					id: 0,
+					org_id: '',
+					name_ar: '',
+					name_en: '',
+					code: '',
+					warehouse_type: 'pharmacy',
+					capacity_sqm: '',
+					governorate_id: '',
+					city_id: '',
+					address: '',
+					phone: '',
+					operating_hours: '',
+					google_maps_url: '',
+					has_cold_storage: false,
+					is_main: false,
+					status: 'active',
+					latitude: 30.0444,
+					longitude: 31.2357,
+					institutional_works: []
+				},
+				init() {
+					const otEl = document.getElementById('admin-branch-org-types');
+					if (otEl) {
+						try {
+							const raw = otEl.getAttribute('data-org-types') || otEl.textContent || '{}';
+							this.orgTypes = JSON.parse(raw);
+						} catch(e) {
+							console.error('Failed to parse org types:', e);
+							this.orgTypes = {};
+						}
+					}
+					const urlParams = new URLSearchParams(window.location.search);
+					const editParam = urlParams.get('edit');
+					if (editParam) {
+						this.$nextTick(() => {
+							const btn = document.querySelector(`[data-edit-branch-btn="${editParam}"]`);
+							if (btn) {
+								this.setEditModeFromElement(btn);
+							}
+						});
+					}
+				},
+				isVendorSelected() {
+					if (!this.form.org_id) return false;
+					return this.orgTypes[String(this.form.org_id)] === 'vendor';
+				},
+				isCustomerSelected() {
+					if (!this.form.org_id) return false;
+					return this.orgTypes[String(this.form.org_id)] === 'customer';
+				},
+				onOrgChange(orgId) {
+					this.form.org_id = orgId ? String(orgId) : '';
+					if (this.isCustomerSelected()) {
+						this.form.warehouse_type = 'pharmacy';
+						this.form.capacity_sqm = '';
+					} else if (this.isVendorSelected()) {
+						if (!this.form.warehouse_type || this.form.warehouse_type === 'pharmacy' || this.form.warehouse_type === 'branch') {
+							this.form.warehouse_type = 'warehouse';
+						}
+					}
+				},
+				onComboboxChange(detail) {
+					if (!detail || !detail.name) return;
+					if (detail.name === 'governorate_id') {
+						this.onGovChange(detail.value, detail.item);
+					} else if (detail.name === 'city_id') {
+						this.onCityChange(detail.value, detail.item);
+					}
+				},
+				onGovChange(govId, item) {
+					const prevGovId = this.form.governorate_id;
+					this.form.governorate_id = govId ? String(govId) : '';
+					if (!govId || this._settingEditMode) return;
+					if (this.form.city_id && prevGovId === String(govId)) return;
+					let lat = null, lon = null;
+					const coordsEl = document.getElementById('admin-branch-govs-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(govId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+							}
+						} catch(e) {
+							console.error('Failed to parse gov coordinates:', e);
+						}
+					}
+					if (!this.form.city_id && lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('admin-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 11);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				onCityChange(cityId, item) {
+					this.form.city_id = cityId ? String(cityId) : '';
+					if (!cityId || this._settingEditMode) return;
+					let lat = null, lon = null, parentGovId = null;
+					const coordsEl = document.getElementById('admin-branch-cities-coords');
+					if (coordsEl) {
+						try {
+							const raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';
+							const coords = JSON.parse(raw);
+							const pos = coords[String(cityId)];
+							if (pos && (pos[0] || pos[1])) {
+								lat = pos[0];
+								lon = pos[1];
+								if (pos[2]) parentGovId = String(pos[2]);
+							}
+						} catch (e) {
+							console.error('Failed to parse city coordinates:', e);
+						}
+					}
+					if (parentGovId && (!this.form.governorate_id || this.form.governorate_id !== parentGovId)) {
+						this.form.governorate_id = parentGovId;
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', parentGovId);
+						}
+					}
+					if (lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {
+						this.form.latitude = lat;
+						this.form.longitude = lon;
+						const picker = document.getElementById('admin-branch-map-picker');
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 14);
+						}
+						if (typeof window.fetchDetailedAddressFromCoords === 'function') {
+							window.fetchDetailedAddressFromCoords(lat, lon);
+						}
+					}
+				},
+				setEditModeFromElement(btnEl) {
+					if (!btnEl) return;
+					const btn = (btnEl.closest && btnEl.closest('[data-branch-data]')) || btnEl;
+					try {
+						const raw = btn.getAttribute('data-branch-data');
+						if (!raw) return;
+						const b = JSON.parse(raw);
+						this.setEditMode(b);
+					} catch (e) {
+						console.error('Failed to parse branch data for editing:', e);
+					}
+				},
+				setEditMode(b) {
+					if (!b || !b.id) return;
+					this._settingEditMode = true;
+					this.mode = 'edit';
+					this.editId = b.id;
+					this.formAction = '/admin/branches/' + b.id + '/edit';
+					const latVal = (b.latitude !== undefined && b.latitude !== null && b.latitude !== 0) ? Number(b.latitude) : 30.0444;
+					const lonVal = (b.longitude !== undefined && b.longitude !== null && b.longitude !== 0) ? Number(b.longitude) : 31.2357;
+					const targetCityId = (b.city_id && b.city_id !== 0) ? String(b.city_id) : '';
+					let targetGovId = (b.governorate_id && b.governorate_id !== 0) ? String(b.governorate_id) : '';
+					if (!targetGovId && targetCityId) {
+						const coordsEl = document.getElementById('admin-branch-cities-coords');
+						if (coordsEl) {
+							try {
+								const coords = JSON.parse(coordsEl.getAttribute('data-coords') || '{}');
+								const pos = coords[String(targetCityId)];
+								if (pos && pos[2]) targetGovId = String(pos[2]);
+							} catch (e) {}
+						}
+					}
+					const targetOrgId = (b.organization_id && b.organization_id !== 0) ? String(b.organization_id) : '';
+					const targetOrgType = this.orgTypes[targetOrgId] || '';
+					let wType = b.warehouse_type || '';
+					if (targetOrgType === 'customer') {
+						wType = 'pharmacy';
+					} else if (targetOrgType === 'vendor' && (!wType || wType === 'pharmacy' || wType === 'branch')) {
+						wType = 'warehouse';
+					}
+					const capVal = (b.capacity_sqm !== undefined && b.capacity_sqm !== null && b.capacity_sqm !== 0) ? b.capacity_sqm : '';
+					const works = Array.isArray(b.institutional_works) ? b.institutional_works.map(String) : [];
+
+					Object.assign(this.form, {
+						id: b.id,
+						org_id: targetOrgId,
+						name_ar: b.name_ar || b.name_en || '',
+						name_en: b.name_en || b.name_ar || '',
+						code: b.code || '',
+						warehouse_type: wType,
+						capacity_sqm: capVal,
+						governorate_id: targetGovId,
+						city_id: targetCityId,
+						address: b.address || '',
+						phone: b.phone || '',
+						operating_hours: b.operating_hours || '',
+						google_maps_url: b.google_maps_url || '',
+						has_cold_storage: !!b.has_cold_storage,
+						is_main: !!b.is_main,
+						status: b.status || 'active',
+						latitude: latVal,
+						longitude: lonVal,
+						institutional_works: works
+					});
+					const formEl = document.getElementById('admin-branch-form');
+					if (formEl) {
+						formEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+					}
+					this.$nextTick(() => {
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#admin-branch-map-picker', latVal, lonVal, 14);
+						}
+						const syncCb = () => {
+							if (typeof window.dawaComboboxSet === 'function') {
+								if (targetGovId) {
+									window.dawaComboboxSet('governorate_id', targetGovId);
+								}
+								window.dawaComboboxSet('city_id', targetCityId);
+							}
+						};
+						syncCb();
+						setTimeout(syncCb, 50);
+						setTimeout(() => {
+							this._settingEditMode = false;
+						}, 120);
+					});
+				},
+				resetToAddMode() {
+					this.mode = 'add';
+					this.editId = 0;
+					this.formAction = '/admin/branches/new';
+					Object.assign(this.form, {
+						id: 0,
+						org_id: '',
+						name_ar: '',
+						name_en: '',
+						code: '',
+						warehouse_type: 'pharmacy',
+						capacity_sqm: '',
+						governorate_id: '',
+						city_id: '',
+						address: '',
+						phone: '',
+						operating_hours: '',
+						google_maps_url: '',
+						has_cold_storage: false,
+						is_main: false,
+						status: 'active',
+						latitude: 30.0444,
+						longitude: 31.2357,
+						institutional_works: []
+					});
+					this.$nextTick(() => {
+						if (typeof window.dawaComboboxSet === 'function') {
+							window.dawaComboboxSet('governorate_id', '');
+							window.dawaComboboxSet('city_id', '');
+						}
+						if (typeof window.dawaSetMapLocation === 'function') {
+							window.dawaSetMapLocation('#admin-branch-map-picker', 30.0444, 31.2357, 13);
+						}
+					});
+				}
+			};
+		}
+	</script>
+}
+
+// AdminBranchDetailPage renders detail for a single branch.
+templ AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork, reachableBuyers []*org.InstitutionalWork, lang, dir string) {
+	@layouts.AdminShell(fmt.Sprintf("تفاصيل الفرع: %s", b.Name.Get("ar")), "branches", lang, dir) {
+		<div class="admin-page-container">
+			<div class="admin-banner">
+				<div class="admin-banner-inner">
+					<div class="stack-sm">
+						<h1 class="text-xl font-black text-primary m-0">{ b.Name.Get("ar") }</h1>
+						<p class="text-sm text-secondary mt-1 m-0">
+							كود الفرع: <strong class="tabular-nums">{ b.Code }</strong> | منشأة #{ fmt.Sprintf("%d", b.OrganizationID) }
+						</p>
+					</div>
+					<a href="/admin/branches" class="btn btn-secondary btn-sm font-bold">العودة لدليل الفروع ←</a>
+				</div>
+
+				<div class="d-grid gap-4 mt-4 pt-4 border-t grid-auto-fit-sm">
+					<div class="bg-surface-sunken p-4 rounded-xl border">
+						<div class="label-strong">العنوان الجغرافي</div>
+						<div class="font-bold text-primary mt-1">{ b.Address }</div>
+					</div>
+					<div class="bg-surface-sunken p-4 rounded-xl border">
+						<div class="label-strong">هاتف التواصل</div>
+						<div class="font-bold text-primary mt-1 tabular-nums">{ b.Phone }</div>
+					</div>
+					<div class="bg-surface-sunken p-4 rounded-xl border">
+						<div class="label-strong">ساعات العمل والتشغيل</div>
+						<div class="font-bold text-primary mt-1">{ b.OperatingHours }</div>
+					</div>
+				</div>
+
+				<!-- Section: Institutional Works -->
+				<div class="mt-6 pt-4 border-t">
+					<h2 class="text-sm font-black text-primary mb-3">الأعمال والأنشطة المؤسسية للفرع</h2>
+					if len(assignedWorks) == 0 {
+						<div class="alert alert-warning text-xs font-bold p-3 rounded-xl mb-4">
+							⚠️ تنبيه: لا توجد أي أعمال مؤسسية مسندة لهذا الفرع. لن يتمكن الفرع من إتمام عمليات البيع أو الشراء وفق قواعد الحوكمة المؤسسية.
+						</div>
+					} else {
+						<div class="d-flex flex-wrap gap-2 mb-4">
+							for _, work := range assignedWorks {
+								<span class="badge badge-primary text-xs font-bold p-2">
+									if work.Icon != "" {
+										{ work.Icon } 
+									}
+									if title := work.Title["ar"]; title != "" {
+										{ title }
+									} else {
+										{ work.Title["en"] }
+									}
+								</span>
+							}
+						</div>
+					}
+
+					<!-- Reachable Buyer Categories -->
+					if len(reachableBuyers) > 0 {
+						<div class="mt-4">
+							<h3 class="text-xs font-bold text-secondary mb-2">فئات المشترين المؤهلين للاتصال التجاري والتوريد:</h3>
+							<div class="d-flex flex-wrap gap-1.5">
+								for _, rw := range reachableBuyers {
+									<span class="badge badge-slate text-xs font-semibold">
+										if rw.Icon != "" {
+											{ rw.Icon } 
+										}
+										if title := rw.Title["ar"]; title != "" {
+											{ title }
+										} else {
+											{ rw.Title["en"] }
+										}
+									</span>
+								}
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+	}
+}
+
+func getOrgLegalName(orgID int64, orgNames map[int64]string) string {
+	if name, ok := orgNames[orgID]; ok && name != "" {
+		return name
+	}
+	return fmt.Sprintf("منشأة #%d", orgID)
+}
+
+func getOrgTypeBadge(orgID int64, orgTypes map[int64]string) string {
+	if t, ok := orgTypes[orgID]; ok {
+		switch t {
+		case "vendor", "supplier":
+			return "مورد أدوية"
+		case "customer", "pharmacy", "chain_pharmacy":
+			return "صيدلية"
+		case "company":
+			return "شركة"
+		case "agency":
+			return "توكيل"
+		default:
+			return t
+		}
+	}
+	return "منشأة"
+}

@@ -1,0 +1,172 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+func JobSeekerSpecialisationLabel(spec string) string {
+	switch spec {
+	case "pharmacist":
+		return "صيدلي"
+	case "assistant_pharmacist":
+		return "مساعد صيدلي"
+	case "sales_rep":
+		return "مندوب مبيعات"
+	case "accountant":
+		return "محاسب"
+	case "warehouse_keeper":
+		return "أمين مخزن"
+	default:
+		if spec == "" {
+			return "صيدلي"
+		}
+		return spec
+	}
+}
+
+templ AdminApprovalsJobSeekersTab(data *AdminApprovalsData) {
+	<div class="d-flex flex-col gap-5">
+		<!-- Subnav Filters -->
+		<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<a
+					href="/admin/approvals?tab=job_seekers"
+					class={ "btn btn-sm", templ.KV("btn-primary", data.StatusFilter == "" || data.StatusFilter == "all"), templ.KV("btn-secondary", data.StatusFilter != "" && data.StatusFilter != "all") }
+				>
+					الكل
+				</a>
+				<a
+					href="/admin/approvals?tab=job_seekers&status=pending"
+					class={ "btn btn-sm", templ.KV("btn-primary", data.StatusFilter == "pending"), templ.KV("btn-secondary", data.StatusFilter != "pending") }
+				>
+					قيد المراجعة
+				</a>
+				<a
+					href="/admin/approvals?tab=job_seekers&status=active"
+					class={ "btn btn-sm", templ.KV("btn-primary", data.StatusFilter == "active"), templ.KV("btn-secondary", data.StatusFilter != "active") }
+				>
+					معتمد ومفعل
+				</a>
+				<a
+					href="/admin/approvals?tab=job_seekers&status=suspended"
+					class={ "btn btn-sm", templ.KV("btn-primary", data.StatusFilter == "suspended" || data.StatusFilter == "rejected"), templ.KV("btn-secondary", data.StatusFilter != "suspended" && data.StatusFilter != "rejected") }
+				>
+					موقوف / مرفوض
+				</a>
+			</div>
+			<div class="text-xs text-muted">
+				إجمالي الطلبات: { fmt.Sprintf("%d", len(data.JobSeekers)) }
+			</div>
+		</div>
+
+		<!-- Table -->
+		if len(data.JobSeekers) == 0 {
+			<div class="empty-state p-8 text-center border rounded-xl bg-surface-sunken">
+				@components.IconUser("icon-xl text-muted mb-2")
+				<h3 class="font-bold text-sm text-primary mb-1">لا توجد طلبات باحثين عن عمل</h3>
+				<p class="text-xs text-secondary m-0">لم يتم العثور على حسابات باحثين عن عمل مطابقة لفلتر البحث الحالي.</p>
+			</div>
+		} else {
+			<div class="table-container rounded-xl border bg-surface overflow-x-auto">
+				<table class="table w-full text-xs">
+					<thead>
+						<tr class="border-b bg-surface-sunken">
+							<th class="p-3 text-start">الاسم والبيانات</th>
+							<th class="p-3 text-start">التخصص والخبرة</th>
+							<th class="p-3 text-start">الراتب المتوقع</th>
+							<th class="p-3 text-start">الحالة</th>
+							<th class="p-3 text-start">تاريخ التسجيل</th>
+							<th class="p-3 text-end">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range data.JobSeekers {
+							if item.User != nil {
+								<tr class="border-b hover:bg-surface-sunken transition-colors">
+									<td class="p-3">
+										<div class="font-bold text-primary">
+											if item.User.Name.Get("ar") != "" {
+												{ item.User.Name.Get("ar") }
+											} else if item.User.Name.Get("en") != "" {
+												{ item.User.Name.Get("en") }
+											} else {
+												{ item.User.Email }
+											}
+										</div>
+										<div class="text-2xs text-secondary mt-0.5">{ item.User.Email }</div>
+										if item.User.Phone != "" {
+											<div class="text-2xs text-muted mt-0.5">📱 { item.User.Phone }</div>
+										}
+									</td>
+									<td class="p-3">
+										if item.Profile != nil {
+											<div class="font-semibold text-primary">
+												{ JobSeekerSpecialisationLabel(item.Profile.Specialisation) }
+											</div>
+											<div class="text-2xs text-secondary mt-0.5">
+												خبرة { fmt.Sprintf("%d", item.Profile.YearsExperience) } سنوات
+											</div>
+										} else {
+											<span class="text-muted">صيدلي</span>
+										}
+									</td>
+									<td class="p-3">
+										if item.Profile != nil && item.Profile.ExpectedSalary.Minor() > 0 {
+											<span class="font-mono">{ item.Profile.ExpectedSalary.String() } ج.م</span>
+										} else {
+											<span class="text-muted">غير محدد</span>
+										}
+									</td>
+									<td class="p-3">
+										switch item.User.Status {
+											case identity.StatusPending:
+												<span class="badge badge-amber text-2xs font-bold py-0.5 px-2">قيد المراجعة</span>
+											case identity.StatusActive:
+												<span class="badge badge-emerald text-2xs font-bold py-0.5 px-2">معتمد ومفعل</span>
+											case identity.StatusSuspended:
+												<span class="badge badge-rose text-2xs font-bold py-0.5 px-2">موقوف</span>
+											default:
+												<span class="badge badge-slate text-2xs font-bold py-0.5 px-2">{ string(item.User.Status) }</span>
+										}
+									</td>
+									<td class="p-3 text-2xs text-muted">
+										{ item.User.CreatedAt.Format("2006-01-02 15:04") }
+									</td>
+									<td class="p-3 text-end">
+										<div class="d-flex items-center justify-end gap-2">
+											if item.User.Status == identity.StatusPending || item.User.Status == identity.StatusSuspended {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/approvals/job-seekers/%d/approve", item.User.ID)) } class="m-0">
+													<button type="submit" class="btn btn-emerald btn-xs font-bold">
+														@components.IconCheck("icon-xs")
+														<span>اعتماد وتفعيل</span>
+													</button>
+												</form>
+											}
+											if item.User.Status == identity.StatusPending {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/approvals/job-seekers/%d/reject", item.User.ID)) } class="m-0">
+													<button type="submit" class="btn btn-rose btn-xs font-bold">
+														@components.IconX("icon-xs")
+														<span>رفض</span>
+													</button>
+												</form>
+											} else if item.User.Status == identity.StatusActive {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/approvals/job-seekers/%d/reject", item.User.ID)) } class="m-0">
+													<button type="submit" class="btn btn-outline-danger btn-xs font-bold">
+														<span>إيقاف</span>
+													</button>
+												</form>
+											}
+										</div>
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}

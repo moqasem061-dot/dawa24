@@ -1,0 +1,185 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ CustomerOrderSidebar(order *commerce.Order, lang string) {
+	<!-- Left Column: Summary & Metadata -->
+	<div class="d-flex flex-col gap-6">
+		<!-- 1. Financial Summary Card -->
+		<div class="glass-panel p-6 mb-0">
+			<div class="d-flex items-center gap-2 mb-4 pb-3 border-b">
+				<span class="text-xl">@components.IconFileText("icon-sm")</span>
+				<h2 class="text-base font-extrabold text-primary m-0">
+					{ i18n.T(lang, "orders.financial_summary_title") }
+				</h2>
+			</div>
+
+			<div class="d-flex flex-col gap-3 text-xs">
+				<div class="flex-between items-center">
+					<span class="text-secondary">{ i18n.T(lang, "orders.summary_subtotal") }</span>
+					<span id="live-summary-subtotal" class="tabular-nums font-bold text-primary">
+						{ format.Money(orderPublicSubtotal(order), lang) }
+					</span>
+				</div>
+
+				<div class="flex-between items-center text-success">
+					<span>{ i18n.T(lang, "orders.summary_discount") }</span>
+					<span id="live-summary-discount" class="tabular-nums font-bold">
+						{{ disc := orderTotalDiscount(order) }}
+						if disc.IsPositive() {
+							- { format.Money(disc, lang) }
+						} else {
+							0.00
+						}
+					</span>
+				</div>
+
+				<div class="flex-between items-center" id="order-summary-shipping" data-shipping-minor={ fmt.Sprintf("%d", order.ShippingFee.Minor()) }>
+					<span class="text-secondary">{ i18n.T(lang, "orders.summary_shipping") }</span>
+					<span class="tabular-nums font-bold text-primary">
+						if order.ShippingFee.Minor() > 0 {
+							{ format.Money(order.ShippingFee, lang) }
+						} else {
+							<span class="text-emerald font-bold">{ i18n.T(lang, "orders.summary_shipping_free") }</span>
+						}
+					</span>
+				</div>
+
+				if order.TaxAmount.Minor() > 0 {
+					<div class="flex-between items-center" id="order-summary-tax" data-tax-rate={ fmt.Sprintf("%.4f", orderTaxRate(order)) }>
+						<span class="text-secondary">{ i18n.T(lang, "orders.summary_vat") }</span>
+						<span id="live-summary-tax" class="tabular-nums font-bold text-primary">{ format.Money(order.TaxAmount, lang) }</span>
+					</div>
+				}
+
+				<div class="border-t my-1"></div>
+
+				<div class="flex-between items-baseline">
+					<span class="font-extrabold text-primary text-sm">{ i18n.T(lang, "orders.summary_net_due") }</span>
+					<div class="text-2xl font-black text-brand tabular-nums">
+						<span id="live-summary-total">{ format.Money(order.TotalAmount, lang) }</span>
+					</div>
+				</div>
+
+				<!-- Payment method pill -->
+				<div class="mt-2 p-3 rounded-lg bg-surface-sunken border text-xs">
+					<div class="flex-between items-center mb-1">
+						<span class="text-muted">{ i18n.T(lang, "orders.summary_payment_method") }</span>
+						<span class="font-bold text-primary">
+							if order.PaymentMethod == "cod" || order.PaymentMethod == "" {
+								<span>{ i18n.T(lang, "orders.cod") }</span>
+							} else {
+								<span>{ order.PaymentMethod }</span>
+							}
+						</span>
+					</div>
+					<div class="flex-between items-center">
+						<span class="text-muted">{ i18n.T(lang, "orders.summary_payment_status") }</span>
+						if order.PaymentStatus == commerce.PaymentPaid {
+							<span class="text-emerald font-bold">{ i18n.T(lang, "orders.paid_full") }</span>
+						} else if order.PaymentStatus == commerce.PaymentAuthorized && order.PaymentMethod == "wallet" {
+							<span class="text-amber font-bold">معتمد من المحفظة (يُخصم عند تأكيد المورد)</span>
+						} else if order.PaymentStatus == commerce.PaymentRefunded {
+							<span class="text-purple font-bold">مسترجع للمحفظة</span>
+						} else {
+							<span class="text-amber font-bold">{ i18n.T(lang, "orders.payment_due_cod") }</span>
+						}
+					</div>
+				</div>
+
+				<!-- Print invoice button CTA -->
+				<div class="mt-2">
+					if order.Status != commerce.StatusPending {
+						<div class="w-full">
+							@components.InvoiceExportDropdown(components.InvoiceExportDropdownProps{
+								PrintURL: fmt.Sprintf("/orders/%d/invoice/print", order.ID),
+								ExcelURL: fmt.Sprintf("/orders/%d/invoice/excel", order.ID),
+								WordURL:  fmt.Sprintf("/orders/%d/invoice/word", order.ID),
+								Size:     "sm",
+								Align:    "start",
+								Label:    i18n.T(lang, "orders.export_invoice_label"),
+							})
+						</div>
+					} else {
+						<div class="bg-surface-sunken border border-dashed rounded-lg p-3 text-center text-xs text-muted">
+							<span>{ i18n.T(lang, "orders.invoice_available_notice") }</span>
+						</div>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- 2. Pharmacy Receiving Branch Card -->
+		<div class="glass-panel p-6 mb-0">
+			<div class="d-flex items-center gap-2 mb-4 pb-3 border-b">
+				<span class="text-xl">@components.IconBuilding("icon-sm")</span>
+				<h2 class="text-base font-extrabold text-primary m-0">
+					{ i18n.T(lang, "orders.branch_card_title") }
+				</h2>
+			</div>
+
+			<div class="d-flex flex-col gap-3 text-xs">
+				<div class="stack-sm">
+					<div class="text-muted font-bold mb-1">{ i18n.T(lang, "orders.branch_name_label") }</div>
+					<div class="text-primary font-bold">
+						if order.CustomerBranchName.Get(i18n.Lang(lang)) != "" {
+							{ order.CustomerBranchName.Get(i18n.Lang(lang)) }
+						} else {
+							<span>{ i18n.T(lang, "orders.branch_main_fallback") }</span>
+						}
+					</div>
+				</div>
+
+				if order.CustomerManagerName != "" {
+					<div class="stack-sm">
+						<div class="text-muted font-bold mb-1">{ i18n.T(lang, "orders.branch_manager_label") }</div>
+						<div class="text-primary font-bold">{ order.CustomerManagerName }</div>
+					</div>
+				}
+
+				if order.CustomerBranchPhone != "" {
+					<div class="stack-sm">
+						<div class="text-muted font-bold mb-1">{ i18n.T(lang, "orders.branch_phone_label") }</div>
+						<div class="text-primary font-bold tabular-nums font-mono">{ order.CustomerBranchPhone }</div>
+					</div>
+				}
+
+				<div class="stack-sm">
+					<div class="text-muted font-bold mb-1">{ i18n.T(lang, "orders.branch_address_label") }</div>
+					<div class="text-secondary leading-relaxed">
+						if order.CustomerBranchAddress != "" {
+							{ order.CustomerBranchAddress }
+						} else {
+							<span class="text-muted">{ i18n.T(lang, "orders.branch_address_fallback") }</span>
+						}
+					</div>
+				</div>
+
+				if order.Notes != "" {
+					<div class="mt-1 p-3 rounded-lg bg-surface-sunken border">
+						<div class="text-muted font-bold mb-1">{ i18n.T(lang, "orders.branch_notes_label") }</div>
+						<div class="text-primary text-xs">{ order.Notes }</div>
+					</div>
+				}
+			</div>
+		</div>
+
+		<!-- 3. Quality & Cold-Chain Badge Card -->
+		<div class="glass-panel p-4 mb-0 text-xs d-flex flex-col gap-2 border-brand-subtle">
+			<div class="d-flex items-center gap-2 font-black text-brand">
+				<span>❄️</span>
+				<span>{ i18n.T(lang, "orders.cold_chain_card_title") }</span>
+			</div>
+			<p class="m-0 text-secondary leading-relaxed">
+				{ i18n.T(lang, "orders.cold_chain_card_desc") }
+			</p>
+		</div>
+	</div>
+}

@@ -1,0 +1,247 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorSavingTable(lang string, data VendorSavingPageData) {
+	<!-- Floating / Dynamic Bulk Selection Action Bar -->
+	<div
+		x-show="selectedIds.length > 0"
+		x-cloak
+		x-transition
+		class="glass-panel p-3 mb-6 border border-danger-subtle rounded-xl flex-between items-center flex-wrap gap-3 bg-danger-subtle shadow-sm"
+	>
+		<div class="d-flex items-center gap-3">
+			<div class="w-8 h-8 rounded-lg bg-danger text-white flex-center font-black text-sm shadow-xs">
+				@components.IconTrash("icon-xs")
+			</div>
+			<div class="stack-2xs">
+				<div class="d-flex items-center gap-2">
+					<span class="badge badge-danger text-xs font-black tabular-nums py-1 px-2.5">
+						<span x-text="selectedIds.length"></span> { i18n.T(lang, "vendor_saving.bulk_selected_items") }
+					</span>
+					<strong class="text-xs text-primary font-bold">{ i18n.T(lang, "vendor_saving.bulk_prompt") }</strong>
+				</div>
+				<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "vendor_saving.bulk_desc") }</span>
+			</div>
+		</div>
+		<div class="d-flex items-center gap-2">
+			<button type="button" class="btn btn-secondary btn-xs font-bold" @click="clearSelection()">
+				{ i18n.T(lang, "vendor_saving.bulk_cancel") }
+			</button>
+			<form method="POST" action="/vendor/saving-products/bulk-delete" @submit="confirmBulkDelete($event)" class="m-0 d-inline-flex">
+				<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+				<template x-for="id in selectedIds" :key="id">
+					<input type="hidden" name="selected_ids" :value="id" />
+				</template>
+				<button type="submit" class="btn btn-danger btn-xs font-bold gap-1.5 shadow-xs">
+					@components.IconTrash("icon-xs")
+					<span>{ i18n.T(lang, "vendor_saving.bulk_delete_btn") } (<span x-text="selectedIds.length"></span>)</span>
+				</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Main Content Table Card -->
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		<!-- Top Bar: Result Count & Search Input -->
+		<div class="p-4 px-6 border-b flex-between items-center flex-wrap gap-4">
+			<div class="text-sm font-extrabold text-primary">
+				if data.Pagination.TotalCount > 0 {
+					{ fmt.Sprintf(i18n.T(lang, "vendor_saving.showing_items"), len(data.Items), data.Pagination.TotalCount) }
+				} else {
+					{ fmt.Sprintf(i18n.T(lang, "vendor_saving.total_results"), len(data.Items)) }
+				}
+			</div>
+
+			<form method="GET" action="/vendor/saving-products" class="position-relative w-80 max-w-full m-0 d-flex gap-2">
+				if data.FilterStatus != "" && data.FilterStatus != "all" {
+					<input type="hidden" name="filter" value={ data.FilterStatus } />
+				}
+				<input
+					type="text"
+					id="saving-products-search"
+					name="search"
+					value={ data.SearchQuery }
+					placeholder={ i18n.T(lang, "vendor_saving.search_placeholder") }
+					class="form-input text-xs w-full"
+					data-on-input="filterSavingProductsTable(this.value)"
+				/>
+				<button type="submit" class="btn btn-secondary btn-sm px-3" title="Search">
+					@components.IconSearch("icon-xs")
+				</button>
+				if data.SearchQuery != "" {
+					<a href={ templ.SafeURL(fmt.Sprintf("/vendor/saving-products?filter=%s", data.FilterStatus)) } class="btn btn-secondary btn-sm px-2 text-muted" title="Clear">
+						✕
+					</a>
+				}
+			</form>
+		</div>
+
+		<!-- Saving Products Data Table -->
+		if len(data.Items) == 0 {
+			<div class="p-8 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconBuilding("icon-sm")</div>
+				<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(lang, "vendor_saving.empty_title") }</h3>
+				<p class="text-sm text-secondary max-w-md mx-auto">{ i18n.T(lang, "vendor_saving.empty_desc") }</p>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0" id="saving-products-table">
+					<thead>
+						<tr>
+							<th style="width: 44px;" class="text-center">
+								<input
+									type="checkbox"
+									class="form-check-input"
+									@change="toggleSelectAll($el)"
+									:checked="isAllSelected()"
+								/>
+							</th>
+							<th class="w-14 text-center">#</th>
+							<th class="text-start">{ i18n.T(lang, "vendor_saving.th_name") }</th>
+							<th class="text-start">{ i18n.T(lang, "vendor_saving.th_sku") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_saving.th_linked_prod") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_saving.th_offers") }</th>
+							<th class="col-min text-center">{ i18n.T(lang, "vendor_saving.th_qty") }</th>
+							<th class="col-min text-center">{ i18n.T(lang, "vendor_saving.th_price") }</th>
+							<th class="col-min text-end">{ i18n.T(lang, "vendor_saving.th_total") }</th>
+							<th class="col-actions text-center">{ i18n.T(lang, "vendor_saving.th_actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, item := range data.Items {
+							<tr
+								class="saving-row"
+								data-id={ fmt.Sprintf("%d", item.ID) }
+								data-name={ item.NameProduct }
+								data-sku={ item.SKU }
+								data-qty={ fmt.Sprintf("%.2f", item.Quantity) }
+								data-price={ item.Price.String() }
+								data-product-id={ savingProductIDStr(item.ProductID) }
+								data-product-name={ item.LinkedProductName.Get(i18n.Lang(lang)) }
+								:class={ fmt.Sprintf("selectedIds.includes('%d') ? 'bg-primary-subtle' : ''", item.ID) }
+							>
+								<td class="text-center align-middle" style="width: 44px;">
+									<input
+										type="checkbox"
+										class="form-check-input"
+										value={ fmt.Sprintf("%d", item.ID) }
+										x-model="selectedIds"
+									/>
+								</td>
+								<td class="w-14 text-center font-bold text-muted tabular-nums">
+									#{ fmt.Sprintf("%d", item.ID) }
+								</td>
+								<td class="text-start">
+									<strong class="text-primary font-bold">{ item.NameProduct }</strong>
+								</td>
+								<td class="text-start tabular-nums">
+									if item.SKU != "" {
+										<code>{ item.SKU }</code>
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td class="text-center">
+									if item.ProductID != nil && *item.ProductID > 0 {
+										<button
+											type="button"
+											class="badge badge-emerald"
+											data-on-click="openEditModalFromRow" data-args={ components.JSArgs(item.ID) }
+										>
+											<span>@components.IconExternalLink("icon-sm")</span>
+											<span>{ item.LinkedProductName.Get(i18n.Lang(lang)) }</span>
+										</button>
+									} else {
+										<button
+											type="button"
+											class="badge badge-amber"
+											data-on-click="openEditModalFromRow" data-args={ components.JSArgs(item.ID) }
+										>
+											<span>@components.IconAlert("icon-sm")</span>
+											<span>{ i18n.T(lang, "vendor_saving.unlinked_badge") }</span>
+										</button>
+									}
+								</td>
+								<td class="text-center">
+									if item.ProductID != nil && *item.ProductID > 0 {
+										if item.ProvidingOrgsCount > 0 {
+											<button
+												type="button"
+												class="badge badge-indigo"
+												data-on-click="openProvidersModal" data-args={ components.JSArgs(*item.ProductID, item.LinkedProductName.Get(i18n.Lang(lang))) }
+											>
+												<span>@components.IconBuilding("icon-sm")</span>
+												<span>{ fmt.Sprintf(i18n.T(lang, "vendor_saving.orgs_count"), item.ProvidingOrgsCount) }</span>
+											</button>
+										} else {
+											<span class="text-muted text-sm">0</span>
+										}
+									} else {
+										<span class="text-muted text-sm">-</span>
+									}
+								</td>
+								<td class="col-min text-center tabular-nums">
+									if item.Quantity > 0 {
+										<strong class="text-primary">{ fmt.Sprintf("%.0f", item.Quantity) }</strong>
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td class="col-min text-center tabular-nums">
+									if item.Price.IsPositive() {
+										<span>{ item.Price.String() }{ i18n.T(lang, "vendor_saving.currency") }</span>
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td class="col-min text-end tabular-nums">
+									if item.TotalValue.IsPositive() {
+										<strong class="text-primary">{ item.TotalValue.String() }{ i18n.T(lang, "vendor_saving.currency") }</strong>
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+								<td class="col-actions text-center">
+									<div class="table-actions justify-center">
+										if item.ProductID != nil && *item.ProductID > 0 {
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm btn-icon text-accent"
+												data-on-click="openProvidersModal" data-args={ components.JSArgs(*item.ProductID, item.LinkedProductName.Get(i18n.Lang(lang))) }
+											>
+												@components.IconEye("icon-xs")
+											</button>
+										}
+										<button
+											type="button"
+											class="btn btn-secondary btn-sm btn-icon"
+											data-on-click="openEditModalFromRow" data-args={ components.JSArgs(item.ID) }
+										>
+											@components.IconEdit("icon-xs")
+										</button>
+										<button
+											type="button"
+											class="btn btn-secondary btn-sm btn-icon text-danger"
+											data-on-click="confirmDeleteSavingProduct" data-args={ components.JSArgs(item.ID) }
+										>
+											@components.IconTrash("icon-xs")
+										</button>
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if data.Pagination.TotalCount > 0 {
+				@components.B2BPagination(data.Pagination)
+			}
+		}
+	</div>
+}

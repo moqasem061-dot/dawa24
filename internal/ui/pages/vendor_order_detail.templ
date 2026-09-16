@@ -1,0 +1,384 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorOrderDetail(data VendorOrderDetailData) {
+	{{
+		sh := data.Shipment
+		lang := data.Lang
+		dir := data.Dir
+		fin := computeVendorShipmentFinancialSummary(sh)
+	}}
+	@layouts.VendorShell(fmt.Sprintf("أمر توريد #%s", sh.ShipmentNumber), "supply_orders", lang, dir) {
+		<div class="page-container pb-12">
+			<!-- Notice Feedback Banner -->
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-error", data.NoticeType == "error") }
+				>
+					<div class="d-flex items-center gap-2">
+						if data.NoticeType == "error" {
+							@components.IconAlert("icon-xs")
+						} else {
+							@components.IconCheckCircle("icon-xs")
+						}
+						<span class="text-xs font-bold">{ data.NoticeMsg }</span>
+					</div>
+				</div>
+			}
+
+			<!-- Top Nav Breadcrumbs & Actions -->
+			<div class="flex-between items-center flex-wrap gap-4 mb-6">
+				<div class="d-flex items-center gap-2">
+					<a href="/vendor/orders" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+						@components.IconArrowRight("icon-xs")
+						<span>العودة لأوامر التوريد</span>
+					</a>
+					<span class="text-muted text-xs">/</span>
+					<span class="text-xs font-bold text-secondary font-mono">{ sh.ShipmentNumber }</span>
+				</div>
+
+				<div class="d-flex items-center gap-2">
+					if sh.OrderID > 0 {
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/print", sh.OrderID)) }
+							target="_blank"
+							class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-xs"
+						>
+							@components.IconPrinter("icon-xs text-secondary")
+							<span>طباعة الفاتورة</span>
+						</a>
+					}
+					if string(sh.Status) == "pending" {
+						<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+							<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+							<input type="hidden" name="status" value="confirmed" />
+							<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
+							<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1.5 shadow-xs">
+								@components.IconCheckCircle("icon-xs")
+								<span>قبول وتأكيد أمر التوريد</span>
+							</button>
+						</form>
+					}
+					if string(sh.Status) != "cancelled" && string(sh.Status) != "delivered" && string(sh.Status) != "completed" {
+						<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline" data-confirm="هل أنت متأكد من إلغاء أمر التوريد؟">
+							<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+							<input type="hidden" name="status" value="cancelled" />
+							<input type="hidden" name="notes" value="تم إلغاء أمر التوريد من صفحة تفاصيل الطلب" />
+							<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
+							<button type="submit" class="btn btn-danger btn-sm font-bold text-xs gap-1 shadow-xs">
+								@components.IconX("icon-xs")
+								<span>إلغاء أمر التوريد</span>
+							</button>
+						</form>
+					}
+				</div>
+			</div>
+
+			<!-- Customer, Branch and Pharmacy Information Cards -->
+			<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+				<!-- Card 1: Pharmacy Customer Info -->
+				<div class="glass-panel p-5">
+					<div class="d-flex items-center gap-2 mb-3">
+						@components.IconBuilding("icon-xs text-brand")
+						<h3 class="text-xs font-black text-primary m-0">بيانات الصيدلية والمشتري</h3>
+					</div>
+					<div class="stack-xs text-xs">
+						<div>
+							<span class="text-muted d-block text-2xs">اسم الصيدلية:</span>
+							<strong class="text-primary">{ sh.CustomerOrgName.Get(i18n.Lang(lang)) }</strong>
+						</div>
+						if sh.CustomerManagerName != "" {
+							<div>
+								<span class="text-muted d-block text-2xs">الصيدلي المسؤول:</span>
+								<span class="text-secondary">{ sh.CustomerManagerName }</span>
+							</div>
+						}
+						if sh.CustomerBranchPhone != "" {
+							<div>
+								<span class="text-muted d-block text-2xs">رقم الهاتف:</span>
+								<a href={ templ.SafeURL(fmt.Sprintf("tel:%s", sh.CustomerBranchPhone)) } class="text-brand font-mono dir-ltr d-inline-block hover:underline">{ sh.CustomerBranchPhone }</a>
+							</div>
+						}
+					</div>
+				</div>
+
+				<!-- Card 2: Branch & Delivery Address -->
+				<div class="glass-panel p-5">
+					<div class="d-flex items-center gap-2 mb-3">
+						@components.IconMapPin("icon-xs text-emerald")
+						<h3 class="text-xs font-black text-primary m-0">فرع التسليم والعنوان</h3>
+					</div>
+					<div class="stack-xs text-xs">
+						{{ branchName := sh.CustomerBranchName.Get(i18n.Lang(lang)) }}
+						if branchName != "" {
+							<div>
+								<span class="text-muted d-block text-2xs">فرع الصيدلية:</span>
+								<strong class="text-primary">{ branchName }</strong>
+							</div>
+						}
+						if sh.CustomerBranchAddress != "" {
+							<div>
+								<span class="text-muted d-block text-2xs">عنوان التوصيل:</span>
+								<span class="text-secondary">{ sh.CustomerBranchAddress }</span>
+							</div>
+						}
+						if sh.CustomerBranchLatitude != nil && sh.CustomerBranchLongitude != nil {
+							<div class="mt-2">
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("https://www.google.com/maps?q=%f,%f", *sh.CustomerBranchLatitude, *sh.CustomerBranchLongitude)) }
+									target="_blank"
+									class="btn btn-secondary btn-xs font-bold gap-1 text-2xs"
+								>
+									@components.IconExternalLink("icon-3xs text-brand")
+									<span>موقع الصيدلية على الخريطة</span>
+								</a>
+							</div>
+						}
+					</div>
+				</div>
+
+				<!-- Card 3: Financial Summary & Breakdown -->
+				<div class="glass-panel p-5">
+					<div class="d-flex items-center gap-2 mb-3">
+						@components.IconCreditCard("icon-xs text-brand")
+						<h3 class="text-xs font-black text-primary m-0">الحسابات والبيانات المالية</h3>
+					</div>
+					<div class="stack-xs text-xs">
+						<!-- 1. Total Public Price -->
+						<div class="flex-between items-center py-1">
+							<span class="text-secondary text-2xs font-bold">إجمالي سعر الجمهور:</span>
+							<span class="font-bold tabular-nums text-primary text-xs">{ fin.TotalPublicPrice.String() } ج.م</span>
+						</div>
+						<!-- 2. Discount Granted -->
+						<div class="flex-between items-center py-1">
+							<span class="text-secondary text-2xs font-bold">الخصم الممنوح:</span>
+							if fin.TotalDiscount.IsPositive() {
+								<span class="font-bold tabular-nums text-emerald text-xs">− { fin.TotalDiscount.String() } ج.م</span>
+							} else {
+								<span class="text-muted tabular-nums text-xs">0.00 ج.م</span>
+							}
+						</div>
+						<!-- 3. Shipping Fees -->
+						<div class="flex-between items-center py-1">
+							<span class="text-secondary text-2xs font-bold">تكاليف الشحن:</span>
+							if fin.ShippingFee.IsPositive() {
+								<span class="font-bold tabular-nums text-primary text-xs">+ { fin.ShippingFee.String() } ج.م</span>
+							} else {
+								<span class="text-emerald font-bold text-2xs">شحن مجاني</span>
+							}
+						</div>
+						<!-- 4. Net Total Price -->
+						<div class="flex-between items-center pt-2 mt-1 border-t">
+							<span class="text-primary font-black text-xs">السعر الصافي:</span>
+							<strong class="text-brand font-black text-base tabular-nums">{ fin.NetTotal.String() } ج.م</strong>
+						</div>
+						<!-- Payment Method and Status -->
+						<div class="flex-between items-center pt-2 mt-1 border-t text-2xs">
+							<span class="text-muted">طريقة الدفع:</span>
+							<span class="badge badge-slate text-3xs font-bold">
+								if sh.PaymentMethod == "wallet" {
+									محفظة إلكترونية
+								} else if sh.PaymentMethod == "cod" {
+									الدفع عند الاستلام (COD)
+								} else if sh.PaymentMethod != "" {
+									{ sh.PaymentMethod }
+								} else {
+									غير محدد
+								}
+							</span>
+						</div>
+						<div class="flex-between items-center text-2xs">
+							<span class="text-muted">حالة السداد:</span>
+							<span class={ "badge text-3xs font-bold",
+								templ.KV("badge-emerald", string(sh.PaymentStatus) == "paid"),
+								templ.KV("badge-amber", string(sh.PaymentStatus) == "pending" || string(sh.PaymentStatus) == "unpaid"),
+								templ.KV("badge-rose", string(sh.PaymentStatus) == "failed") }
+							>
+								if string(sh.PaymentStatus) != "" {
+									{ string(sh.PaymentStatus) }
+								} else {
+									قيد الانتظار
+								}
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Order State Management Actions Toolbar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4 mb-4 pb-3 border-b">
+					<div class="d-flex items-center gap-2">
+						@components.IconSliders("icon-xs text-brand")
+						<h2 class="text-base font-black text-primary m-0">إجراءات إدارة حالة الطلب والتوريد</h2>
+					</div>
+					<div class="d-flex items-center gap-2">
+						@components.StatusBadge(string(sh.Status), lang)
+					</div>
+				</div>
+
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<span class="text-xs text-muted font-medium">اختر الإجراء المناسب لمتابعة تنفيذ أمر التوريد:</span>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						if string(sh.Status) == "pending" {
+							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.ID) } />
+								<input type="hidden" name="status" value="confirmed" />
+								<input type="hidden" name="notes" value="تمت الموافقة على أمر التوريد والتجهيز بالمخزن" />
+								<button type="submit" class="btn btn-primary font-bold px-4 py-2 gap-2 text-xs">
+									@components.IconCheck("icon-xs")
+									<span>قبول وتأكيد أمر التوريد</span>
+								</button>
+							</form>
+							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.ID) } />
+								<input type="hidden" name="status" value="cancelled" />
+								<input type="hidden" name="notes" value="تم إلغاء أمر التوريد من قبل المورد" />
+								<button type="submit" class="btn btn-danger font-bold px-4 py-2 text-xs">
+									<span>رفض وإلغاء</span>
+								</button>
+							</form>
+						} else if string(sh.Status) == "confirmed" {
+							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.ID) } />
+								<input type="hidden" name="status" value="shipped" />
+								<input type="hidden" name="notes" value="تم شحن وتجهيز الطلب وخروجه للتوصيل" />
+								<button type="submit" class="btn btn-primary font-bold px-4 py-2 gap-2 text-xs">
+									@components.IconTruck("icon-xs")
+									<span>تحديث الحالة إلى جاري الشحن (Shipped)</span>
+								</button>
+							</form>
+						} else if string(sh.Status) == "shipped" {
+							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
+								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.ID) } />
+								<input type="hidden" name="status" value="delivered" />
+								<input type="hidden" name="notes" value="تم تسليم الطلب للصيدلية وتأكيد الاستلام" />
+								<button type="submit" class="btn btn-primary font-bold px-4 py-2 gap-2 text-xs">
+									@components.IconCheckCircle("icon-xs")
+									<span>تأكيد التسليم للصيدلية (Delivered)</span>
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Delivery, Logistics & Courier Assignment Panel -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4 mb-4 pb-3 border-b">
+					<div class="d-flex items-center gap-2">
+						@components.IconTruck("icon-xs text-brand")
+						<h2 class="text-base font-black text-primary m-0">الخدمات اللوجستية والشحن والتوصيل</h2>
+					</div>
+					<div class="d-flex items-center gap-2">
+						if sh.CourierName != "" {
+							<span class="badge badge-emerald text-xs font-bold gap-1 d-flex items-center">
+								@components.IconUser("icon-3xs")
+								<span>المندوب: { sh.CourierName }</span>
+							</span>
+						} else {
+							<span class="badge badge-amber text-xs font-bold">لم يُعيّن مندوب شحن بعد</span>
+						}
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+					<!-- Left: Courier Assign Form -->
+					if string(sh.Status) == "pending" {
+						<div class="p-4 rounded-xl bg-surface-sunken border border-amber-200">
+							<div class="d-flex items-center gap-2 text-amber-600 font-black text-xs mb-1">
+								@components.IconLock("icon-xs")
+								<span>يلزم قبول وتأكيد أمر التوريد أولاً للبدء في الشحن وتعيين المندوب</span>
+							</div>
+							<p class="text-2xs text-muted m-0">
+								يرجى مراجعة تفاصيل الأصناف والكميات بالطلب ثم الضغط على "قبول وتأكيد أمر التوريد" بأعلى الصفحة لفتح إجراءات التوريد وإسناد المناديب.
+							</p>
+						</div>
+					} else if data.CanAssign && string(sh.Status) != "delivered" && string(sh.Status) != "cancelled" {
+						<div class="p-4 rounded-xl bg-surface-sunken border">
+							<h3 class="text-xs font-black text-primary mb-2">إسناد وتعيين مندوب شحن وتوصيل:</h3>
+							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/assign", sh.ID)) } method="POST" class="d-flex items-center gap-2 flex-wrap">
+								<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
+								<select name="courier_user_id" class="form-select form-select-sm flex-1 text-xs" required>
+									<option value="">-- اختر المندوب المسجل --</option>
+									for _, c := range data.Couriers {
+										<option value={ fmt.Sprintf("%d", c.UserID) } selected?={ sh.CourierUserID != nil && *sh.CourierUserID == c.UserID }>
+											{ c.Name } ({ c.Phone })
+										</option>
+									}
+								</select>
+								<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1 flex-shrink-0">
+									@components.IconTruck("icon-xs")
+									<span>تأكيد الإسناد</span>
+								</button>
+								if sh.CourierUserID != nil {
+									<button type="submit" formaction={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/unassign", sh.ID)) } class="btn btn-secondary btn-sm font-bold text-xs flex-shrink-0">
+										إلغاء الإسناد
+									</button>
+								}
+							</form>
+						</div>
+					} else {
+						<div class="stack-xs text-xs">
+							if sh.CourierName != "" {
+								<div>
+									<span class="text-muted d-block text-2xs">مندوب التوصيل:</span>
+									<strong class="text-primary">{ sh.CourierName }</strong>
+								</div>
+								if sh.CourierPhone != "" {
+									<div>
+										<span class="text-muted d-block text-2xs">هاتف المندوب:</span>
+										<a href={ templ.SafeURL(fmt.Sprintf("tel:%s", sh.CourierPhone)) } class="text-brand font-mono dir-ltr d-inline-block hover:underline">{ sh.CourierPhone }</a>
+									</div>
+								}
+							} else {
+								<span class="text-muted">لا يوجد مندوب توصيل مسند لهذا الأمر حالياً.</span>
+							}
+						</div>
+					}
+
+					<!-- Right: Waybill status summary -->
+					<div class="stack-xs text-xs p-4 rounded-xl bg-surface-sunken border">
+						<div class="flex-between items-center">
+							<span class="text-muted text-2xs">رقم تتبع الشحن:</span>
+							if sh.TrackingNumber != "" {
+								<strong class="font-mono text-primary text-xs">{ sh.TrackingNumber }</strong>
+							} else {
+								<strong class="font-mono text-secondary text-xs">{ sh.ShipmentNumber }</strong>
+							}
+						</div>
+						<div class="flex-between items-center">
+							<span class="text-muted text-2xs">تاريخ إنشاء أمر الشحن:</span>
+							<span class="text-secondary tabular-nums font-mono">{ sh.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+						</div>
+						if sh.DeliveredAt != nil {
+							<div class="flex-between items-center">
+								<span class="text-muted text-2xs">تاريخ ووقت التسليم:</span>
+								<strong class="text-emerald tabular-nums font-mono">{ sh.DeliveredAt.Format("2006-01-02 03:04 PM") }</strong>
+							</div>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Comprehensive Line Items Table -->
+			@VendorOrderDetailItemsTable(sh, fin, lang)
+
+			<!-- Status History Timeline Audit Trail -->
+			@VendorOrderDetailTimeline(data.History, lang)
+		</div>
+	}
+}

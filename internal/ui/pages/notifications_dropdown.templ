@@ -1,0 +1,100 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/notifications"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// NotificationsDropdownPanel is the bell dropdown content, returned as an
+// HTMX partial so the header stays light and the list is always fresh.
+//
+// It swaps into the .nav-menu element itself, so it renders the menu's regions
+// directly and no longer carries a panel wrapper of its own. That wrapper was
+// how the notifications panel ended up with a different radius, border and
+// shadow from the account menu sitting two pixels away from it.
+//
+// Unread is carried by weight, a tinted ground and a single dot — a ledger
+// marking an open line item — rather than by a coloured stripe down the side.
+templ NotificationsDropdownPanel(logs []*notifications.NotificationLog, unread int) {
+	<div class="nav-menu-head">
+		<span class="nav-menu-eyebrow">الإشعارات</span>
+		if unread > 0 {
+			<span class="nav-notif-count">{ fmt.Sprintf("%d غير مقروء", unread) }</span>
+		}
+		<button
+			type="button"
+			class="nav-menu-close-mobile"
+			@click="open = false"
+			aria-label="إغلاق نافذة الإشعارات"
+		>
+			@components.IconClose("icon-xs")
+		</button>
+	</div>
+	if len(logs) == 0 {
+		<div class="nav-notif-empty">
+			<div class="nav-notif-empty-mark">
+				@components.IconBell("icon-sm")
+			</div>
+			<p class="nav-notif-empty-text">لا توجد إشعارات جديدة</p>
+		</div>
+	} else {
+		<div class="nav-notif-list">
+			for _, n := range logs {
+				if !n.IsRead {
+					<div
+						hx-post={ fmt.Sprintf("/notifications/%d/read?format=dropdown", n.ID) }
+						hx-target="#notif-dropdown-content"
+						hx-swap="innerHTML"
+						class="nav-notif-item is-unread cursor-pointer"
+						role="button"
+						tabindex="0"
+						title="انقر لتحديده كمقروء"
+					>
+						<span class="nav-notif-icon w-8 h-8 max-w-[32px] max-h-[32px] shrink-0 flex items-center justify-center">
+							@notifIcon(n.Title)
+						</span>
+						<span class="nav-notif-body">
+							<span class="nav-notif-title">{ n.Title }</span>
+							<span class="nav-notif-text">{ n.Body }</span>
+						</span>
+						<span class="nav-notif-meta">
+							<span class="nav-notif-time">{ RelTime(n.CreatedAt) }</span>
+							<span class="nav-notif-dot" title="إشعار غير مقروء - انقر لتحديده كمقروء"></span>
+						</span>
+					</div>
+				} else {
+					<a href="/notifications" class="nav-notif-item">
+						<span class="nav-notif-icon w-8 h-8 max-w-[32px] max-h-[32px] shrink-0 flex items-center justify-center">
+							@notifIcon(n.Title)
+						</span>
+						<span class="nav-notif-body">
+							<span class="nav-notif-title">{ n.Title }</span>
+							<span class="nav-notif-text">{ n.Body }</span>
+						</span>
+						<span class="nav-notif-meta">
+							<span class="nav-notif-time">{ RelTime(n.CreatedAt) }</span>
+						</span>
+					</a>
+				}
+			}
+		</div>
+	}
+	<div class="nav-menu-foot">
+		<a href="/notifications" class="nav-menu-link">عرض كل الإشعارات</a>
+		if unread > 0 {
+			<form method="POST" action="/notifications/read-all" hx-post="/notifications/read-all" hx-target="#notif-dropdown-content" hx-swap="innerHTML" class="nav-menu-form">
+				<button type="submit" class="nav-btn nav-btn--outline">تعليم الكل كمقروء</button>
+			</form>
+		}
+	</div>
+}
+
+// NotificationsUnreadBadge is the tiny polled counter on the bell.
+templ NotificationsUnreadBadge(unread int) {
+	if unread > 0 {
+		<span class="nav-count">
+			{ fmt.Sprintf("%d", unread) }
+		</span>
+	}
+}

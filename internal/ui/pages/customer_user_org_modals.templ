@@ -1,0 +1,265 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerUserOrgAddModal() {
+	@components.Modal(components.ModalProps{
+		ID:    "add-customer-user-org-modal",
+		Title: "إضافة وربط منظمة / مورد جديد",
+		Size:  "md",
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action="/customer/user-organization/new">
+			<div class="form-group m-0 position-relative">
+				<label class="form-label text-xs font-bold" for="customer-uo-vendor-search">
+					المورد أو المنشأة المستهدفة <span class="text-danger">*</span>
+				</label>
+				
+				<input type="hidden" id="customer-selected-vendor-id" name="vendor_org_id" required value="" />
+
+				<div id="customer-selected-vendor-chip" class="uo-user-chip d-none">
+					<div class="d-flex items-center gap-2">
+						<div class="user-avatar-badge">
+							@components.IconBuilding("icon-xs")
+						</div>
+						<div>
+							<strong id="customer-selected-vendor-name" class="text-sm text-primary d-block"></strong>
+							<div id="customer-selected-vendor-details" class="text-2xs text-muted font-mono" dir="ltr"></div>
+						</div>
+					</div>
+					<button type="button" class="btn btn-secondary btn-xs text-danger font-bold" data-on-click="clearCustomerSelectedVendor()">
+						تغيير
+					</button>
+				</div>
+
+				<div id="customer-vendor-search-input-wrapper" class="position-relative">
+					<input
+						type="text"
+						id="customer-uo-vendor-search"
+						placeholder="ابحث باسم المورد، الشركة، أو رقم السجل..."
+						autocomplete="off"
+						class="form-control font-semibold"
+						data-on-input="handleCustomerVendorSearch(this.value)"
+						data-on-focus="handleCustomerVendorSearch(this.value)"
+					/>
+					<div id="customer-vendor-search-spinner" class="spinner-container text-muted d-none">
+						⏳
+					</div>
+				</div>
+
+				<div
+					id="customer-vendor-search-dropdown"
+					class="uo-search-dropdown shadow-md d-none"
+				></div>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="add-uo-number">
+					رقم المنظمة لدى المورد (Organization Number) <span class="text-danger">*</span>
+				</label>
+				<input
+					type="text"
+					id="add-uo-number"
+					name="organization_number"
+					required
+					placeholder="مثال: NUM10001 أو 010645645..."
+					class="form-control font-mono font-bold"
+					dir="ltr"
+				/>
+				<span class="text-2xs text-muted mt-1 d-block">
+					كود حساب الصيدلية أو رقم التعريف المسجل به لدى هذا المورد.
+				</span>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="add-uo-notes">
+					ملاحظات إضافية (اختياري)
+				</label>
+				<textarea
+					id="add-uo-notes"
+					name="notes"
+					rows="2"
+					placeholder="أي تفاصيل أو ملاحظات للمورد..."
+					class="form-control"
+				></textarea>
+			</div>
+
+			<div class="modal-footer pt-3 border-t d-flex items-center justify-between">
+				<button
+					type="button"
+					class="btn btn-secondary font-bold"
+					data-modal-close="add-customer-user-org-modal"
+				>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					حفظ وربط المنظمة
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ CustomerUserOrgEditModal(uo *org.UserOrganization) {
+	@components.Modal(components.ModalProps{
+		ID:    fmt.Sprintf("edit-uo-modal-%d", uo.ID),
+		Title: fmt.Sprintf("تعديل بيانات الربط مع %s", uo.VendorOrgName),
+		Size:  "md",
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/customer/user-organization/%d/edit", uo.ID)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("edit-uo-num-%d", uo.ID) }>
+					رقم المنظمة (Organization Number) <span class="text-danger">*</span>
+				</label>
+				<input
+					type="text"
+					id={ fmt.Sprintf("edit-uo-num-%d", uo.ID) }
+					name="organization_number"
+					value={ uo.OrganizationNumber }
+					required
+					class="form-control font-mono font-bold"
+					dir="ltr"
+				/>
+			</div>
+
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("edit-uo-notes-%d", uo.ID) }>
+					ملاحظات إضافية
+				</label>
+				<textarea
+					id={ fmt.Sprintf("edit-uo-notes-%d", uo.ID) }
+					name="notes"
+					rows="2"
+					class="form-control"
+				>{ uo.Notes }</textarea>
+			</div>
+
+			<div class="modal-footer pt-3 border-t d-flex items-center justify-between">
+				<button
+					type="button"
+					class="btn btn-secondary font-bold"
+					data-modal-close={ fmt.Sprintf("edit-uo-modal-%d", uo.ID) }
+				>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					حفظ التعديلات
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ CustomerUserOrgScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		var customerVendorSearchTimer = null;
+
+		function handleCustomerVendorSearch(val) {
+			clearTimeout(customerVendorSearchTimer);
+			const dropdown = document.getElementById('customer-vendor-search-dropdown');
+			const spinner = document.getElementById('customer-vendor-search-spinner');
+			if (!dropdown) return;
+
+			const query = (val || '').trim();
+			if (!query) {
+				dropdown.classList.add('d-none');
+				dropdown.innerHTML = '';
+				if (spinner) spinner.classList.add('d-none');
+				return;
+			}
+
+			if (spinner) spinner.classList.remove('d-none');
+
+			customerVendorSearchTimer = setTimeout(() => {
+				fetch('/customer/api/vendors/search?q=' + encodeURIComponent(query))
+					.then(res => res.json())
+					.then(vendors => {
+						if (spinner) spinner.classList.add('d-none');
+						if (!vendors || vendors.length === 0) {
+							dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-xs text-muted text-center">لا توجد شركات أو موردين مطابقين</div>');
+							dropdown.classList.remove('d-none');
+							return;
+						}
+
+						// Organisation names are data: escaped, and the choice is
+						// read back from data attributes.
+						const esc = dawaHTML.escape;
+						let html = '';
+						vendors.forEach(v => {
+							html += '<div class="uo-search-item" data-pick-id="' + esc(v.id) + '" data-pick-name="' + esc(v.name || 'مورد') +
+								'" data-pick-legal="' + esc(v.legal_name || '') + '" data-pick-org-num="' + esc(v.organization_number || '') +
+								'" data-pick-tax="' + esc(v.tax_number || '') + '">' +
+								'<div><strong class="text-xs text-primary d-block">' + esc(v.name || '') + '</strong>' +
+								'<div class="text-2xs text-muted font-mono" dir="ltr">' + (v.organization_number ? 'كود: ' + esc(v.organization_number) + ' • ' : '') + (v.tax_number ? 'ب.ض: ' + esc(v.tax_number) : '') + '</div></div>' +
+								'<span class="badge badge-sky text-2xs">#' + esc(v.id) + '</span></div>';
+						});
+						dropdown.innerHTML = dawaHTML.sanitize(html);
+						dropdown.onclick = function (e) {
+							const pick = e.target.closest('[data-pick-id]');
+							if (!pick) return;
+							const d = pick.dataset;
+							selectCustomerVendor(parseInt(d.pickId, 10), d.pickName, d.pickLegal, d.pickOrgNum, d.pickTax);
+						};
+						dropdown.classList.remove('d-none');
+					})
+					.catch(err => {
+						if (spinner) spinner.classList.add('d-none');
+						dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-xs text-danger text-center">حدث خطأ أثناء البحث</div>');
+						dropdown.classList.remove('d-none');
+					});
+			}, 250);
+		}
+
+		function selectCustomerVendor(id, name, legal, orgNum, taxNum) {
+			const hiddenInput = document.getElementById('customer-selected-vendor-id');
+			const chip = document.getElementById('customer-selected-vendor-chip');
+			const chipName = document.getElementById('customer-selected-vendor-name');
+			const chipDetails = document.getElementById('customer-selected-vendor-details');
+			const searchWrapper = document.getElementById('customer-vendor-search-input-wrapper');
+			const dropdown = document.getElementById('customer-vendor-search-dropdown');
+			const searchInput = document.getElementById('customer-uo-vendor-search');
+
+			if (hiddenInput) hiddenInput.value = id;
+			if (chipName) chipName.textContent = name;
+			if (chipDetails) chipDetails.textContent = (orgNum ? 'كود: ' + orgNum + ' • ' : '') + 'ID: #' + id;
+			if (chip) chip.classList.remove('d-none');
+			if (searchWrapper) searchWrapper.classList.add('d-none');
+			if (dropdown) {
+				dropdown.classList.add('d-none');
+				dropdown.innerHTML = '';
+			}
+			if (searchInput) searchInput.value = '';
+		}
+
+		function clearCustomerSelectedVendor() {
+			const hiddenInput = document.getElementById('customer-selected-vendor-id');
+			const chip = document.getElementById('customer-selected-vendor-chip');
+			const searchWrapper = document.getElementById('customer-vendor-search-input-wrapper');
+			const searchInput = document.getElementById('customer-uo-vendor-search');
+
+			if (hiddenInput) hiddenInput.value = '';
+			if (chip) chip.classList.add('d-none');
+			if (searchWrapper) searchWrapper.classList.remove('d-none');
+			if (searchInput) {
+				searchInput.value = '';
+				searchInput.focus();
+			}
+		}
+
+		if (!window.__dawaBound_customer_user_org_modals) {
+			window.__dawaBound_customer_user_org_modals = true;
+			document.addEventListener('click', (e) => {
+				const dropdown = document.getElementById('customer-vendor-search-dropdown');
+				const searchInput = document.getElementById('customer-uo-vendor-search');
+				if (dropdown && !dropdown.contains(e.target) && e.target !== searchInput) {
+					dropdown.classList.add('d-none');
+				}
+			});
+		}
+	</script>
+}

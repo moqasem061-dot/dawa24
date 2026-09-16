@@ -1,0 +1,10 @@
+package pages
+
+import "github.com/muhiya/dawa24-store/internal/ui/layouts"
+
+// The route map's behaviour lives in a static file rather than inline, so it
+// is cached, hashed and served like every other script here. This template is
+// only the tag that pulls it in, on the one page that needs it.
+templ RouteMapScript() {
+	<script defer src={ layouts.Asset("/static/js/delivery-route.js") } data-hard-nav></script>
+}

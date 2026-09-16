@@ -1,0 +1,52 @@
+package layouts
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+)
+
+// ShellFor renders the dashboard frame the caller belongs to.
+//
+// It switches on the resolved scope, not on a string comparison against the
+// organization type. It used to read `actor.OrgType == "vendor"`, and the
+// database holds "supplier" for most supplier rows — a legacy spelling from
+// the Laravel schema. Every such account therefore fell through to the
+// pharmacy branch and got the pharmacy shell, complete with the "بوابة
+// الصيدلية المعتمدة" badge, and then an empty sidebar: the pharmacy navigation
+// renders only items the caller holds a pharmacy permission for, and a
+// supplier holds none.
+//
+// rbac.TenantScopeFor is the one place that folds the legacy spellings, so
+// this branch and the route gates cannot disagree about who a caller is.
+//
+// A caller whose organization is not approved yet — قيد المراجعة, rejected,
+// suspended — and a caller with no session at all get the public marketing
+// shell, not a dashboard frame. They hold no dashboard permissions, so the
+// sidebar would collapse to a single "المستندات" link that then trailed them
+// onto every public page (the catalogue, the supplier directory), and the
+// floating assistant would sit there glowing for an account that cannot use
+// it. The dashboard is a thing you are admitted to, and this is the one place
+// that admission is decided for the frame.
+templ ShellFor(title string, activeNav string, lang string, dir string, actor authctx.Actor) {
+	if actor.IsStaff {
+		@AdminShell(title, activeNav, lang, dir) {
+			{ children... }
+		}
+	} else if actor.IsJobSeeker() {
+		@PublicShell(title, lang, dir) {
+			{ children... }
+		}
+	} else if actor.DashboardScope() == rbac.ScopeVendor || actor.IsVendor() {
+		@VendorShell(title, activeNav, lang, dir) {
+			{ children... }
+		}
+	} else if actor.DashboardScope() == rbac.ScopePharmacy || actor.IsCustomer() || actor.UserID > 0 {
+		@CustomerShell(title, activeNav, lang, dir, actor.Permissions) {
+			{ children... }
+		}
+	} else {
+		@PublicShell(title, lang, dir) {
+			{ children... }
+		}
+	}
+}

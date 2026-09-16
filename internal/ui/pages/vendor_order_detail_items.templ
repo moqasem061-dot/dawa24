@@ -1,0 +1,213 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorOrderDetailItemsTable(sh *commerce.OrderShipment, fin VendorShipmentFinancialSummary, lang string) {
+	<div class="glass-panel p-6 mb-6">
+		<div class="flex-between items-center mb-4">
+			<div class="d-flex items-center gap-2">
+				<h2 class="text-base font-black text-primary m-0 d-flex items-center gap-2">
+					@components.IconPackage("icon-xs text-brand")
+					<span>الأصناف والأدوية المطلوبة للتوريد ({ fmt.Sprintf("%d", len(sh.Lines)) })</span>
+				</h2>
+			</div>
+			<span class="badge badge-sky text-xs font-bold">منتجات طبية معتمدة</span>
+		</div>
+
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>الصنف الدوائي والمواصفات</th>
+						<th>كود الصنف (SKU)</th>
+						<th class="text-center tabular-nums">الكمية المطلوبة</th>
+						<th class="text-center tabular-nums">سعر الجمهور</th>
+						<th class="text-center tabular-nums">نسبة الخصم %</th>
+						<th class="text-center tabular-nums">صافي سعر الوحدة</th>
+						<th class="text-center tabular-nums">سعر التكلفة</th>
+						<th class="text-end tabular-nums">إجمالي الصنف</th>
+						<th class="text-end tabular-nums">الربح التقديري</th>
+					</tr>
+				</thead>
+				<tbody>
+					for idx, line := range sh.Lines {
+						{{
+							unitNet := LineUnitNetPrice(line)
+							linePublic := LinePublicPrice(line)
+							discPct := LineUnitDiscountPercent(line)
+							unitDiscVal := LineUnitDiscountValue(line)
+							unitCost, hasCost := LineUnitCostPrice(line)
+
+							var lineProfit money.Amount
+							if hasCost {
+								lineCost := money.FromMinor(unitCost.Minor() * int64(line.Quantity))
+								lineProfit = money.FromMinor(line.TotalPrice.Minor() - lineCost.Minor())
+								if lineProfit.Minor() < 0 {
+									lineProfit = money.Zero
+								}
+							}
+						}}
+						<tr>
+							<td class="tabular-nums text-muted text-xs font-mono">{ fmt.Sprintf("%d", idx+1) }</td>
+							<td>
+								<div class="d-flex items-center gap-3">
+									<div class="w-10 h-10 rounded-lg bg-surface-sunken border flex-center overflow-hidden flex-shrink-0">
+										@components.IconPackage("icon-xs text-muted")
+									</div>
+									<div class="stack-2xs">
+										<strong class="text-primary text-xs d-block">{ line.ProductName.Get(i18n.Lang(lang)) }</strong>
+										if line.VariantName.Get(i18n.Lang(lang)) != "" {
+											<span class="text-muted text-2xs">{ line.VariantName.Get(i18n.Lang(lang)) }</span>
+										}
+									</div>
+								</div>
+							</td>
+							<td class="font-mono text-xs tabular-nums text-secondary">
+								if line.SKU != "" {
+									{ line.SKU }
+								} else {
+									<span class="text-muted">—</span>
+								}
+							</td>
+							<td class="text-center tabular-nums font-black text-sm">
+								<span class="badge badge-brand text-xs font-black">{ fmt.Sprintf("%d", line.Quantity) }</span>
+							</td>
+							<td class="text-center tabular-nums text-muted text-xs">
+								{ linePublic.String() } ج.م
+							</td>
+							<td class="text-center tabular-nums">
+								if discPct > 0 {
+									<span class="badge badge-emerald text-xs font-bold tabular-nums">{ formatDiscount(discPct) }%</span>
+									if unitDiscVal.IsPositive() {
+										<span class="text-2xs text-muted d-block tabular-nums mt-0.5">({ unitDiscVal.String() } ج.م/وحدة)</span>
+									}
+								} else {
+									<span class="text-muted text-xs">—</span>
+								}
+							</td>
+							<td class="text-center tabular-nums font-bold text-xs text-primary">
+								{ unitNet.String() } ج.م
+							</td>
+							<td class="text-center tabular-nums text-muted text-xs">
+								if hasCost {
+									{ unitCost.String() } ج.م
+								} else {
+									<span class="text-muted">—</span>
+								}
+							</td>
+							<td class="text-end tabular-nums font-black text-primary text-sm">
+								{ line.TotalPrice.String() } ج.م
+							</td>
+							<td class="text-end tabular-nums font-bold text-emerald text-xs">
+								if hasCost {
+									+{ lineProfit.String() } ج.م
+								} else {
+									<span class="text-muted font-normal">—</span>
+								}
+							</td>
+						</tr>
+					}
+				</tbody>
+				<tfoot>
+					{{
+						var totalPacks int
+						for _, l := range sh.Lines {
+							if l != nil {
+								totalPacks += l.Quantity
+							}
+						}
+					}}
+					<!-- Row 1: Quantity and Total Public Price -->
+					<tr class="bg-surface-sunken font-bold text-xs border-t-2">
+						<td colspan="3" class="text-primary font-black">إجمالي الكميات والعبوات:</td>
+						<td class="text-center tabular-nums">
+							<span class="badge badge-secondary text-xs font-black">{ fmt.Sprintf("%d عبوة", totalPacks) }</span>
+						</td>
+						<td colspan="4" class="text-end text-secondary font-bold">إجمالي سعر الجمهور:</td>
+						<td class="text-end tabular-nums text-primary font-bold">
+							{ fin.TotalPublicPrice.String() } ج.م
+						</td>
+						<td class="text-end tabular-nums text-emerald font-bold">
+							if fin.TotalCost.IsPositive() {
+								+{ fin.TotalProfit.String() } ج.م
+							} else {
+								<span class="text-muted font-normal">—</span>
+							}
+						</td>
+					</tr>
+					<!-- Row 2: Discount Granted -->
+					if fin.TotalDiscount.IsPositive() {
+						<tr class="bg-surface-sunken font-bold text-xs">
+							<td colspan="8" class="text-end text-secondary font-bold">الخصم الممنوح:</td>
+							<td class="text-end tabular-nums text-emerald font-bold">
+								− { fin.TotalDiscount.String() } ج.م
+							</td>
+							<td></td>
+						</tr>
+					}
+					<!-- Row 3: Shipping Fees -->
+					if fin.ShippingFee.IsPositive() {
+						<tr class="bg-surface-sunken font-bold text-xs">
+							<td colspan="8" class="text-end text-secondary font-bold">تكاليف الشحن:</td>
+							<td class="text-end tabular-nums text-primary font-bold">
+								+ { fin.ShippingFee.String() } ج.م
+							</td>
+							<td></td>
+						</tr>
+					}
+					<!-- Row 4: Net Total Price -->
+					<tr class="bg-surface-sunken font-black text-sm border-t">
+						<td colspan="8" class="text-end text-primary font-black">السعر الصافي:</td>
+						<td class="text-end tabular-nums text-brand font-black text-base">
+							{ fin.NetTotal.String() } ج.م
+						</td>
+						<td class="text-end tabular-nums text-emerald font-black text-xs">
+							if fin.TotalCost.IsPositive() {
+								ربح: +{ fin.TotalProfit.String() } ج.م
+							} else {
+								<span class="text-muted font-normal">—</span>
+							}
+						</td>
+					</tr>
+				</tfoot>
+			</table>
+		</div>
+	</div>
+}
+
+// VendorOrderDetailTimeline renders the status history audit trail for a shipment.
+templ VendorOrderDetailTimeline(history []*commerce.OrderStatusHistory, lang string) {
+	if len(history) > 0 {
+		<div class="glass-panel p-6 mb-6">
+			<div class="d-flex items-center gap-2 mb-4 pb-3 border-b">
+				@components.IconClock("icon-xs text-brand")
+				<h2 class="text-base font-black text-primary m-0">
+					سجل ومراحل معالجة أمر التوريد (Audit Trail)
+				</h2>
+			</div>
+
+			<div class="stack-sm">
+				for _, h := range history {
+					<div class="p-3 rounded-xl bg-surface-sunken border flex-between items-center flex-wrap gap-2 text-xs">
+						<div class="d-flex items-center gap-2">
+							@components.StatusBadge(h.ToStatus, lang)
+							if h.Notes != "" {
+								<span class="text-secondary font-medium">{ h.Notes }</span>
+							}
+						</div>
+						<span class="text-muted tabular-nums font-mono text-2xs">{ h.CreatedAt.Format("2006-01-02 03:04:05 PM") }</span>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}
+

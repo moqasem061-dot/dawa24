@@ -1,0 +1,274 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminAuditValues struct {
+	Entries       []*platformadmin.AuditEntry
+	TotalCount    int
+	Page          int
+	PerPage       int
+	SelectedActor string
+	ActionFilter  string
+	Severity      string
+}
+
+templ AdminAuditPage(values AdminAuditValues, lang, dir string) {
+	@layouts.AdminShell("سجل العمليات والتدقيق الأمني | Audit Logs", "audit", lang, dir) {
+		<div class="page-container">
+			
+			{{ totalEntries := len(values.Entries) }}
+			<!-- Page Header -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconFileText("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجل العمليات والتدقيق الأمني</h1>
+							<p class="text-sm text-secondary m-0 mt-1">سجل موثق ومتزامن لكافة العمليات الإدارية، التراخيص، تعديلات الأدوية، وحركات الحسابات ({ fmt.Sprintf("%d عملية", totalEntries) })</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/audit" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث السجل</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Strip -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/audit" class="d-flex gap-3 items-center flex-wrap m-0">
+					<div class="flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ values.SelectedActor }
+							placeholder="بحث بالمستخدم، المنظمة، أو الإجراء..."
+							class="form-input text-xs w-full"
+						/>
+					</div>
+
+     <div class="stack-sm">
+						<select name="severity" class="form-select text-xs w-full">
+							<option value="">كافة درجات الأهمية</option>
+							<option value="info" selected?={ values.Severity == "info" }>عادي (Info)</option>
+							<option value="warning" selected?={ values.Severity == "warning" }>متوسط (Warning)</option>
+							<option value="critical" selected?={ values.Severity == "critical" }>حرج (Critical)</option>
+						</select>
+					</div>
+
+     <div class="stack-sm">
+						<select name="action" class="form-select text-xs w-full">
+							<option value="">كافة الأقسام والعمليات</option>
+							<option value="user" selected?={ values.ActionFilter == "user" }>المستخدمين والصلاحيات</option>
+							<option value="org" selected?={ values.ActionFilter == "org" }>المنشآت والتراخيص</option>
+							<option value="catalog" selected?={ values.ActionFilter == "catalog" }>الكتالوج والأدوية</option>
+							<option value="order" selected?={ values.ActionFilter == "order" }>أوامر التوريد</option>
+						</select>
+					</div>
+
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-3">
+						@components.IconSearch("icon-xs")
+						<span>تصفية</span>
+					</button>
+
+					if values.SelectedActor != "" || values.Severity != "" || values.ActionFilter != "" {
+						<a href="/admin/audit" class="btn btn-secondary btn-sm text-xs">
+							إلغاء التصفية
+						</a>
+					}
+				</form>
+			</div>
+
+			<!-- Audit Log Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(values.Entries) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconFileText("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد عمليات مسجلة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم تسجيل أي عمليات تطابق معايير البحث الحالية في سجل النظام.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th class="text-center">المعرف</th>
+									<th>التوقيت</th>
+									<th>المستخدم</th>
+									<th>المنظمة</th>
+									<th>القسم والإجراء</th>
+									<th>العنوان والوصف</th>
+									<th>الأهمية</th>
+									<th>عنوان IP</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, e := range values.Entries {
+									<tr id={ fmt.Sprintf("audit-row-%d", e.ID) }>
+										
+										<!-- 1. المعرف -->
+										<td class="text-center">
+											<span class="tabular-nums">
+												#{ fmt.Sprintf("%d", e.ID) }
+											</span>
+										</td>
+
+										<!-- 2. التوقيت -->
+										<td class="text-start">
+											<div class="tabular-nums">
+												{ e.CreatedAt.Format("2006-01-02") }
+											</div>
+											<div class="tabular-nums">
+												{ e.CreatedAt.Format("03:04:05 PM") }
+											</div>
+										</td>
+
+										<!-- 3. المستخدم -->
+										<td class="text-start">
+											<div class="text-sm font-bold text-primary">
+												{ e.ActorName }
+											</div>
+											if e.ActorEmail != "" {
+												<div class="stack-xs text-sm">
+													{ e.ActorEmail }
+												</div>
+											}
+										</td>
+
+										<!-- 4. المنظمة -->
+										<td class="text-start">
+											<div class="stack-xs text-sm">
+												{ e.OrganizationName }
+											</div>
+										</td>
+
+										<!-- 5. القسم والإجراء -->
+										<td class="text-start">
+           <div class="stack-sm">
+												<span class={ "badge", auditBadgeClass(e.Action) }>
+													{ e.ActionLabelAr }
+												</span>
+												<span>
+													القسم: <strong class="text-secondary">{ e.Module }</strong>
+												</span>
+											</div>
+										</td>
+
+										<!-- 6. العنوان والوصف -->
+										<td class="text-start">
+											<div class="font-bold text-primary text-sm">
+												{ e.Title }
+											</div>
+											<div class="stack-xs text-sm">
+												{ e.Description }
+											</div>
+										</td>
+
+										<!-- 7. الأهمية -->
+										<td class="text-center">
+											<span class={ "badge", severityBadgeClass(e.Severity) }>
+												{ e.Severity }
+											</span>
+										</td>
+
+										<!-- 8. عنوان IP -->
+										<td class="text-start">
+											<div class="tabular-nums">
+												{ e.IPAddress }
+											</div>
+											if e.Route != "" {
+												<div class="stack-xs text-sm">
+													{ e.Route }
+												</div>
+											}
+										</td>
+
+										<!-- 9. الإجراءات -->
+										<td class="col-actions">
+											<button
+												type="button"
+												class="btn btn-secondary btn-sm"
+												hx-get={ fmt.Sprintf("/admin/developers/audit/%d/details", e.ID) }
+												hx-target="#audit-details-modal-body"
+												hx-swap="innerHTML"
+												data-modal-open="audit-details-modal"
+												title="عرض تفاصيل العملية وفروقات البيانات"
+											>
+												@components.IconEye("icon-xs")
+												<span>تفاصيل</span>
+											</button>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					if values.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: values.Page,
+							PageSize:    values.PerPage,
+							TotalCount:  values.TotalCount,
+							BaseURL:     "/admin/audit",
+							QueryValues: url.Values{
+								"q":        {values.SelectedActor},
+								"severity": {values.Severity},
+								"action":   {values.ActionFilter},
+							},
+						})
+					}
+				}
+			</div>
+
+			<!-- Inspection & Details Diff Modal -->
+			@components.Modal(components.ModalProps{
+				ID:    "audit-details-modal",
+				Title: "تفاصيل سجل التدقيق والأمان",
+				Size:  "lg",
+			}) {
+				<div id="audit-details-modal-body">
+					@components.SkeletonText(4)
+				</div>
+			}
+		</div>
+	}
+}
+
+func auditBadgeClass(action string) string {
+	if action == "" {
+		return "badge-sky"
+	}
+	switch action {
+	case "organization.approved", "user.reactivated", "catalog.product.created", "catalog.variant.created", "order.created":
+		return "badge-emerald"
+	case "organization.rejected", "organization.suspended", "user.suspended", "catalog.product.deleted":
+		return "badge-rose"
+	case "user.status_updated", "catalog.product.updated", "order.status_updated", "institutional_work.updated":
+		return "badge-amber"
+	default:
+		return "badge-sky"
+	}
+}
+
+func severityBadgeClass(severity string) string {
+	if severity == "حرج (Critical)" || severity == "critical" {
+		return "badge-rose"
+	}
+	if severity == "متوسط (Warning)" || severity == "warning" {
+		return "badge-amber"
+	}
+	return "badge-slate"
+}

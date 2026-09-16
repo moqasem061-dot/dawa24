@@ -1,0 +1,179 @@
+# Dawa24 — public marketplace pages are indexable; authenticated areas are not.
+#
+# robots.txt is a request, not a control. The paths enforced in code are
+# /catalog and /suppliers (internal/platform/antiscrape); everything else here
+# is ordinary crawler guidance. It exists so that well-behaved crawlers never
+# trip that defence, and so that a crawler which ignores it has demonstrably
+# chosen to.
+#
+# The line drawn here is the same one the code draws: a crawler that sends us a
+# buyer is welcome, a crawler that only takes the price list is not. Search
+# engines and user-triggered AI assistants are the first kind. Model-training
+# collectors and SEO backlink harvesters are the second, and are named
+# individually below.
+
+# Content Signals: AI content usage preferences.
+# https://contentsignals.org, draft-romm-aipref-contentsignals
+#
+# Content-Signal is a group-member directive, so it has to sit inside the
+# User-agent block it applies to, next to Allow/Disallow. It is written on the
+# line directly under "User-agent: *" on purpose: the explanation lives up here
+# instead, because a checker that scans for the directive near its user-agent
+# line should not have to read through a paragraph of comments to find it.
+#
+# ai-input=yes is deliberate and is the whole policy in one line: an assistant
+# may read a page to answer the question a person just asked, because that
+# answer cites us and sends a buyer. It may not keep the data to train on.
+# Declaring ai-input=no while allowing ChatGPT-User and Perplexity-User below
+# would be telling compliant assistants to ignore the pages we just opened to
+# them.
+User-agent: *
+Content-Signal: ai-train=no, search=yes, ai-input=no
+# Dashboards, administration, account screens and the API are not listed: this
+# file is public, so naming them only maps them. They carry
+# "X-Robots-Tag: noindex, nofollow" and require sign-in instead.
+# The catalogue filters multiply one listing into thousands of near-identical
+# URLs. Crawling them wastes budget on our side and is indistinguishable from
+# harvesting. Scoped to /catalog: the same parameter names on other pages are
+# left alone.
+Disallow: /catalog?*page=
+Disallow: /catalog?*page_size=
+Disallow: /catalog?*sort=
+Disallow: /catalog?*min_price=
+Disallow: /catalog?*max_price=
+Disallow: /catalog?*in_stock=
+Disallow: /catalog?*has_discount=
+Allow: /
+Crawl-delay: 5
+
+# --- AI assistants answering a person's question -----------------------------
+# These fetch a page because somebody just asked something, and the answer cites
+# us. They are allowed, and the code allows them too (assistantAgents in
+# internal/platform/antiscrape/classify.go). Listed explicitly so that the
+# blanket training-crawler blocks below are never read as covering them.
+User-agent: ChatGPT-User
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+User-agent: OAI-SearchBot
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+User-agent: Perplexity-User
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+User-agent: Claude-User
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+User-agent: Claude-SearchBot
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+User-agent: DuckAssistBot
+Allow: /
+Content-Signal: ai-train=no, search=yes, ai-input=yes
+
+# --- Model-training collectors and commercial harvesters ---------------------
+# None of them sends a pharmacy to a supplier; all of them take the price list.
+# This is the "Content-Signal: ai-train=no" below, spelled out per agent, and it
+# is enforced in code on /catalog and /suppliers.
+User-agent: AhrefsBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: SemrushBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: MJ12bot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: DotBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: BLEXBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: DataForSeoBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: SerpstatBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: MegaIndex
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: PetalBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Bytespider
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: GPTBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: ClaudeBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: CCBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: PerplexityBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Amazonbot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Diffbot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: omgili
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Google-Extended
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Applebot-Extended
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Meta-ExternalAgent
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Meta-ExternalFetcher
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: FacebookBot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: cohere-ai
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+User-agent: Timpibot
+Disallow: /
+Content-Signal: ai-train=no, search=no, ai-input=no
+
+# Sitemap Location
+Sitemap: https://dawa24-store-u74003.vm.elestio.app/sitemap.xml

@@ -1,0 +1,639 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type CustomerJobsData struct {
+	Jobs              []*VendorJobItem
+	Branches          []*org.Branch
+	TotalCount        int
+	PublishedCount    int
+	ClosedCount       int
+	TotalApplications int
+	Page              int
+	PerPage           int
+	NoticeType        string
+	NoticeMsg         string
+	Permissions       []string
+}
+
+templ CustomerJobs(lang, dir string, data CustomerJobsData) {
+	@layouts.CustomerShell("إدارة التوظيف والوظائف | دوا 24", "jobs", lang, dir, data.Permissions) {
+		<div class="page-container">
+			
+			<!-- Notice Toast -->
+			if data.NoticeMsg != "" {
+				if data.NoticeType == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-2">
+						@components.IconAlert("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center gap-2">
+						@components.IconCheckCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMsg }</span>
+					</div>
+				}
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-5 mb-4 d-flex items-center justify-between flex-wrap gap-4">
+				<div>
+					<div class="d-flex items-center gap-2 mb-1">
+						<div class="user-avatar-badge">
+							@components.IconBriefcase("icon-sm")
+						</div>
+						<h1 class="page-title font-bold text-xl m-0">
+							شواغر ووظائف الصيدلية
+						</h1>
+					</div>
+					<p class="text-xs text-secondary m-0">
+						نشر الشواغر الوظيفية لفروع صيدليتك، استعراض المتقدمين والسير الذاتية، وتعيين الكوادر في الفروع مباشرة.
+					</p>
+				</div>
+				<button type="button" class="btn btn-primary btn-sm font-bold gap-1 px-4" data-on-click="openAddJobModal()">
+					@components.IconPlus("icon-xs")
+					<span>نشر وظيفة جديدة</span>
+				</button>
+			</div>
+
+			<!-- Metric Stats Cards -->
+			<div class="dashboard-stat-grid cols-4 mb-4">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">إجمالي الوظائف</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalCount) }
+					</div>
+					<div class="stat-card-sub">كافة الشواغر المسجلة</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">الوظائف النشطة</div>
+					<div class="stat-card-value text-success tabular-nums">
+						{ fmt.Sprintf("%d", data.PublishedCount) }
+					</div>
+					<div class="stat-card-sub">متاحة لاستقبال التقديمات</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">الوظائف المغلقة</div>
+					<div class="stat-card-value text-muted tabular-nums">
+						{ fmt.Sprintf("%d", data.ClosedCount) }
+					</div>
+					<div class="stat-card-sub">تم الاكتفاء والتعيين</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">إجمالي المتقدمين</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.TotalApplications) }
+					</div>
+					<div class="stat-card-sub">السير الذاتية المستلمة</div>
+				</div>
+			</div>
+
+			<!-- Main Jobs Table Card -->
+			<div class="glass-panel p-0 overflow-hidden mb-4">
+				<div class="p-4 border-b d-flex items-center justify-between">
+					<h3 class="font-bold text-sm text-primary m-0">
+						قائمة الوظائف المنشورة
+					</h3>
+					<span class="badge badge-sky text-2xs font-bold tabular-nums">{ fmt.Sprintf("%d وظائف", data.TotalCount) }</span>
+				</div>
+
+				if len(data.Jobs) == 0 {
+					<div class="p-8 text-center">
+						<div class="mb-2 text-2xl text-muted">@components.IconBriefcase("icon-lg")</div>
+						<h3 class="font-bold text-base text-primary mb-1">لم تقم بنشر أي وظائف حتى الآن</h3>
+						<p class="text-xs text-secondary m-0 max-w-md mx-auto mb-3">
+							يمكنك نشر وظيفة جديدة الآن لاستقبال طلبات الصيادلة ومساعدي الصيادلة وإدارة التعيينات بكل سهولة.
+						</p>
+						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" data-on-click="openAddJobModal()">
+							@components.IconPlus("icon-xs")
+							<span>نشر وظيفتك الأولى الآن</span>
+						</button>
+					</div>
+				} else {
+					<div class="table-responsive">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>المسمى الوظيفي</th>
+									<th>الموقع / الفرع</th>
+									<th>الراتب المقترح</th>
+									<th>المتقدمين</th>
+									<th>الحالة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range data.Jobs {
+									<tr>
+										<td>
+											<div class="font-bold text-sm text-primary">
+												{ item.Job.Title.Get(i18n.ParseLang(lang)) }
+											</div>
+											<div class="text-2xs text-muted tabular-nums">
+												{ item.Job.PublicID }
+											</div>
+										</td>
+										<td>
+											<div class="d-flex items-center gap-1.5 text-xs text-secondary">
+												@components.IconMapPin("icon-xs text-muted")
+												<span>
+													if item.Job.Location != "" {
+														{ item.Job.Location }
+													} else {
+														الفرع الرئيسي
+													}
+												</span>
+											</div>
+										</td>
+										<td>
+											<div class="text-xs font-semibold tabular-nums">
+												if !item.Job.SalaryMin.IsZero() || !item.Job.SalaryMax.IsZero() {
+													@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: item.Job.SalaryMin })
+													if !item.Job.SalaryMax.IsZero() {
+														<span> - </span>
+														@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: item.Job.SalaryMax })
+													}
+												} else {
+													<span class="text-muted">يحدد بالمقابلة</span>
+												}
+											</div>
+										</td>
+										<td class="col-actions">
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold gap-1"
+												data-job-id={ fmt.Sprintf("%d", item.Job.ID) }
+												data-job-title={ item.Job.Title.Get(i18n.ParseLang(lang)) }
+												data-on-click="openApplicantsForJob(this)"
+											>
+												@components.IconUsers("icon-xs")
+												<span class="tabular-nums">{ fmt.Sprintf("%d متقدم", item.ApplicationsCount) }</span>
+											</button>
+										</td>
+										<td>
+											if item.Job.Status == "published" {
+												<span class="badge badge-emerald text-2xs font-bold">
+													منشورة ومتاحة
+												</span>
+											} else {
+												<span class="badge badge-slate text-2xs font-bold">
+													مغلقة
+												</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<!-- Edit Button -->
+												<button
+													type="button"
+													class="btn btn-secondary btn-icon btn-xs"
+													title="تعديل بيانات الوظيفة"
+													data-job-id={ fmt.Sprintf("%d", item.Job.ID) }
+													data-title-ar={ item.Job.Title.Get(i18n.AR) }
+													data-title-en={ item.Job.Title.Get(i18n.EN) }
+													data-location={ item.Job.Location }
+													data-sal-min={ func() string { if item.Job.SalaryMin.IsPositive() { return fmt.Sprintf("%d", item.Job.SalaryMin.Minor()/100) }; return "" }() }
+													data-sal-max={ func() string { if item.Job.SalaryMax.IsPositive() { return fmt.Sprintf("%d", item.Job.SalaryMax.Minor()/100) }; return "" }() }
+													data-status={ item.Job.Status }
+													data-desc={ item.Job.Description }
+													data-reqs={ item.Job.Requirements }
+													data-on-click="openEditJobModalFromBtn(this)"
+												>
+													@components.IconEdit("icon-xs")
+												</button>
+
+												<!-- Toggle Status Form -->
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/jobs/%d/toggle", item.Job.ID)) } class="m-0">
+													<button
+														type="submit"
+														class="btn btn-secondary btn-icon btn-xs"
+														title={ templ.EscapeString("تغيير حالة الوظيفة (نشر / إغلاق)") }
+													>
+														if item.Job.Status == "published" {
+															@components.IconCheck("icon-xs")
+														} else {
+															@components.IconPlus("icon-xs")
+														}
+													</button>
+												</form>
+
+												<!-- Delete Form -->
+												<form method="POST" class="m-0" action={ templ.SafeURL(fmt.Sprintf("/customer/jobs/%d/delete", item.Job.ID)) } data-confirm="هل أنت متأكد من رغبتك في حذف هذا الشاغر الوظيفي نهائياً؟">
+													<button type="submit" class="btn btn-secondary btn-icon btn-xs text-danger" title="حذف الوظيفة">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/customer/jobs",
+						})
+					}
+				}
+			</div>
+		</div>
+
+		@CustomerJobsModals(lang, dir, data)
+		<script nonce={ layouts.Nonce(ctx) }>
+			var currentJobId = 0;
+			var currentJobTitle = '';
+
+			function openAddJobModal() {
+				const el = document.getElementById('add-job-modal');
+				if (el) {
+					if (typeof el.showModal === 'function') el.showModal();
+					else el.setAttribute('open', '');
+				}
+			}
+
+			function closeAddJobModal() {
+				const el = document.getElementById('add-job-modal');
+				if (el) {
+					if (typeof el.close === 'function') el.close();
+					else el.removeAttribute('open');
+				}
+			}
+
+			function openEditJobModalFromBtn(btn) {
+				if (!btn) return;
+				const jobId = btn.getAttribute('data-job-id');
+				const titleAr = btn.getAttribute('data-title-ar') || '';
+				const titleEn = btn.getAttribute('data-title-en') || '';
+				const location = btn.getAttribute('data-location') || '';
+				const salMin = btn.getAttribute('data-sal-min') || '';
+				const salMax = btn.getAttribute('data-sal-max') || '';
+				const status = btn.getAttribute('data-status') || '';
+				const desc = btn.getAttribute('data-desc') || '';
+				const reqs = btn.getAttribute('data-reqs') || '';
+
+				const form = document.getElementById('edit-job-form');
+				if (form) form.action = `/customer/jobs/${jobId}/edit`;
+
+				const titleArInput = document.getElementById('edit-job-title-ar');
+				const titleEnInput = document.getElementById('edit-job-title-en');
+				const locationInput = document.getElementById('edit-job-location');
+				const branchSelect = document.getElementById('edit-job-branch-id');
+				const statusInput = document.getElementById('edit-job-status');
+				const salMinInput = document.getElementById('edit-job-salary-min');
+				const salMaxInput = document.getElementById('edit-job-salary-max');
+				const descInput = document.getElementById('edit-job-description');
+				const reqsInput = document.getElementById('edit-job-requirements');
+
+				if (titleArInput) titleArInput.value = titleAr || '';
+				if (titleEnInput) titleEnInput.value = titleEn || '';
+				if (locationInput) locationInput.value = location || '';
+				if (branchSelect) {
+					let matched = false;
+					if (location) {
+						for (let i = 0; i < branchSelect.options.length; i++) {
+							const opt = branchSelect.options[i];
+							const optText = opt.textContent.trim();
+							const optName = opt.getAttribute('data-branch-name') || '';
+							const optNameAr = opt.getAttribute('data-branch-name-ar') || '';
+							const optNameEn = opt.getAttribute('data-branch-name-en') || '';
+							if (optText.includes(location) || optName === location || optNameAr === location || optNameEn === location) {
+								branchSelect.selectedIndex = i;
+								matched = true;
+								break;
+							}
+						}
+					}
+					if (!matched && branchSelect.options.length > 1) {
+						branchSelect.selectedIndex = 1;
+					}
+				}
+				if (statusInput) statusInput.value = status || 'published';
+				if (salMinInput) salMinInput.value = (salMin && salMin !== '0' && salMin !== '0.00') ? salMin : '';
+				if (salMaxInput) salMaxInput.value = (salMax && salMax !== '0' && salMax !== '0.00') ? salMax : '';
+				if (descInput) descInput.value = desc || '';
+				if (reqsInput) reqsInput.value = reqs || '';
+
+				const modal = document.getElementById('edit-job-modal');
+				if (modal) {
+					if (typeof modal.showModal === 'function') modal.showModal();
+					else modal.setAttribute('open', '');
+				}
+			}
+
+			function closeEditJobModal() {
+				const modal = document.getElementById('edit-job-modal');
+				if (modal) {
+					if (typeof modal.close === 'function') modal.close();
+					else modal.removeAttribute('open');
+				}
+			}
+
+			function escapeHtml(str) {
+				if (!str) return '';
+				return String(str)
+					.replace(/&/g, '&amp;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;');
+			}
+
+			function escapeAttr(str) {
+				if (!str) return '';
+				return String(str)
+					.replace(/&/g, '&amp;')
+					.replace(/"/g, '&quot;')
+					.replace(/'/g, '&#39;')
+					.replace(/</g, '&lt;')
+					.replace(/>/g, '&gt;');
+			}
+
+			function openApplicantsModal() {
+				const el = document.getElementById('job-applicants-modal');
+				if (el) {
+					if (typeof el.showModal === 'function') {
+						if (!el.open) el.showModal();
+					} else {
+						el.setAttribute('open', '');
+					}
+				}
+			}
+
+			function closeApplicantsModal() {
+				const el = document.getElementById('job-applicants-modal');
+				if (el) {
+					if (typeof el.close === 'function') {
+						el.close();
+					} else {
+						el.removeAttribute('open');
+					}
+				}
+			}
+
+			function openApplicantsForJob(btn) {
+				if (!btn) return;
+				const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
+				const jobTitle = btn.getAttribute('data-job-title') || '';
+				viewApplicants(jobId, jobTitle);
+			}
+
+			function openOnboardModal(appId, applicantName, jobTitle) {
+				const jIdEl = document.getElementById('onboard-job-id');
+				if (jIdEl) jIdEl.value = currentJobId;
+				const aIdEl = document.getElementById('onboard-app-id');
+				if (aIdEl) aIdEl.value = appId;
+				const subEl = document.getElementById('onboard-modal-subtitle');
+				if (subEl) subEl.textContent = `المتقدم: ${applicantName} • الوظيفة: ${jobTitle}`;
+				const jtEl = document.getElementById('onboard-job-title');
+				if (jtEl) jtEl.value = jobTitle || '';
+				const modal = document.getElementById('onboard-modal');
+				if (modal) {
+					if (typeof modal.showModal === 'function') {
+						if (!modal.open) modal.showModal();
+					} else {
+						modal.setAttribute('open', '');
+					}
+				}
+			}
+
+			function openOnboardModalFromBtn(btn) {
+				if (!btn) return;
+				const appId = parseInt(btn.getAttribute('data-app-id'), 10);
+				const applicantName = btn.getAttribute('data-applicant-name') || '';
+				const jobTitle = btn.getAttribute('data-job-title') || currentJobTitle;
+				openOnboardModal(appId, applicantName, jobTitle);
+			}
+
+			function closeOnboardModal() {
+				const modal = document.getElementById('onboard-modal');
+				if (modal) {
+					if (typeof modal.close === 'function') {
+						modal.close();
+					} else {
+						modal.removeAttribute('open');
+					}
+				}
+			}
+
+			async function viewApplicants(jobId, jobTitle) {
+				currentJobId = jobId;
+				currentJobTitle = jobTitle;
+				const subEl = document.getElementById('applicants-modal-subtitle');
+				if (subEl) subEl.textContent = `الوظيفة: ${jobTitle}`;
+				const contentEl = document.getElementById('applicants-modal-content');
+				if (contentEl) {
+					contentEl.innerHTML = dawaHTML.sanitize(`
+						<div class="p-8 text-center text-muted d-flex items-center justify-center gap-2">
+							<span>⏳</span>
+							<span>جاري استرجاع طلبات التقديم والسير الذاتية...</span>
+						</div>
+					`);
+					// Buttons in the rendered list are plain markup; their
+					// behaviour is attached here, once, by delegation.
+					contentEl.onclick = onApplicantsClick;
+				}
+				openApplicantsModal();
+
+				try {
+					const res = await fetch(`/customer/jobs/${jobId}/applications`);
+					if (!res.ok) throw new Error('فشل في جلب البيانات');
+					const apps = await res.json();
+
+					if (!apps || apps.length === 0) {
+						if (contentEl) {
+							contentEl.innerHTML = dawaHTML.sanitize(`
+								<div class="p-8 text-center empty-state">
+									<div class="empty-state-icon">✉️</div>
+									<h4 class="font-bold text-base text-primary mb-1">لا يوجد متقدمين حتى الآن</h4>
+									<p class="text-sm text-secondary m-0">
+										لم يقم أي مستخدم بالتقديم على هذه الوظيفة بعد.
+									</p>
+								</div>
+							`);
+						}
+						return;
+					}
+
+					let html = `<div class="applicants-list stack-md">`;
+
+					apps.forEach(app => {
+						const dateStr = app.created_at ? new Date(app.created_at).toLocaleDateString('ar-EG') : '';
+						let cvUrl = app.cv_storage_key || '';
+						if (cvUrl && !cvUrl.startsWith('http') && !cvUrl.startsWith('/')) {
+							cvUrl = '/' + cvUrl;
+						}
+						const cvBtn = cvUrl 
+							? `<a href="${escapeAttr(cvUrl)}" target="_blank" download class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-2xs">
+									<svg class="icon-xs" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+									<span>تحميل CV</span>
+							   </a>`
+							: `<span class="badge badge-slate text-2xs font-medium">لم يُرفق CV</span>`;
+
+						let statusBadge = '';
+						let actionButtons = '';
+
+						if (app.status === 'accepted' || app.status === 'hired') {
+							const branchText = app.branch_name ? ` (${escapeHtml(app.branch_name)})` : '';
+							statusBadge = `<span class="badge badge-emerald text-xs font-bold">تم القبول والتعيين${branchText}</span>`;
+						} else if (app.status === 'rejected') {
+							statusBadge = `<span class="badge badge-slate text-xs font-bold">تم رفض الطلب</span>`;
+						} else {
+							statusBadge = `<span class="badge badge-sky text-xs font-bold">⏳ قيد المراجعة</span>`;
+							actionButtons = `
+								<div class="d-flex items-center gap-2">
+									<button type="button" class="btn btn-primary btn-sm font-bold"
+										data-app-id="${escapeAttr(app.id)}"
+										data-applicant-name="${escapeAttr(app.applicant_name || '')}"
+										data-job-title="${escapeAttr(jobTitle || '')}"
+										data-act="onboard">
+										<span>قبول وتعيين</span>
+									</button>
+									<button type="button" class="btn btn-secondary btn-sm font-bold text-danger"
+										data-job-id="${escapeAttr(jobId)}"
+										data-app-id="${escapeAttr(app.id)}"
+										data-act="reject">
+										<span>رفض</span>
+									</button>
+								</div>
+							`;
+						}
+
+						html += `
+							<div class="p-4 bg-surface-sunken rounded-xl border flex-between items-center flex-wrap gap-4">
+								<div class="stack-xs">
+									<div class="d-flex items-center gap-2 flex-wrap">
+										<strong class="text-sm font-bold text-primary">${escapeHtml(app.applicant_name || 'متقدم')}</strong>
+										${statusBadge}
+									</div>
+									<div class="tabular-nums text-xs text-muted d-flex items-center gap-2 flex-wrap mt-1">
+										<span>${escapeHtml(app.applicant_email || '-')}</span>
+										<span>•</span>
+										<span>${escapeHtml(app.applicant_phone || '-')}</span>
+										<span>•</span>
+										<span>${escapeHtml(dateStr)}</span>
+									</div>
+								</div>
+								<div class="d-flex items-center gap-3">
+									${cvBtn}
+									${actionButtons}
+								</div>
+							</div>
+						`;
+					});
+
+					html += `</div>`;
+					if (contentEl) contentEl.innerHTML = dawaHTML.sanitize(html);
+				} catch (err) {
+					if (contentEl) {
+						contentEl.innerHTML = dawaHTML.sanitize(`
+							<div class="alert alert-danger p-4 text-xs font-bold">
+								حدث خطأ أثناء تحميل المتقدمين: ${escapeHtml(err.message)}
+							</div>
+						`);
+					}
+				}
+			}
+
+			function onApplicantsClick(e) {
+				const btn = e.target.closest('[data-act]');
+				if (!btn || btn.disabled) return;
+				if (btn.dataset.act === 'onboard') openOnboardModalFromBtn(btn);
+				else if (btn.dataset.act === 'reject') rejectApplicantFromBtn(btn);
+			}
+
+			function rejectApplicantFromBtn(btn) {
+				if (!btn) return;
+				const jobId = parseInt(btn.getAttribute('data-job-id'), 10);
+				const appId = parseInt(btn.getAttribute('data-app-id'), 10);
+				rejectApplicant(jobId, appId);
+			}
+
+			async function submitOnboardEmployee(e) {
+				e.preventDefault();
+				const jobId = document.getElementById('onboard-job-id')?.value;
+				const appId = document.getElementById('onboard-app-id')?.value;
+				const branchId = document.getElementById('onboard-branch-id')?.value;
+				const roleKey = document.getElementById('onboard-role-key')?.value;
+				const jobTitle = document.getElementById('onboard-job-title')?.value;
+				const baseSalary = document.getElementById('onboard-base-salary')?.value;
+				const notes = document.getElementById('onboard-notes')?.value;
+
+				const submitBtn = document.getElementById('onboard-submit-btn');
+				if (submitBtn) {
+					submitBtn.disabled = true;
+					submitBtn.innerHTML = dawaHTML.sanitize('<span>جاري التعيين...</span>');
+				}
+
+				try {
+					const res = await fetch(`/customer/jobs/${jobId}/applications/${appId}/accept`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							branch_id: branchId ? parseInt(branchId, 10) : 0,
+							role_key: roleKey,
+							job_title: jobTitle,
+							base_salary: baseSalary,
+							notes: notes
+						})
+					});
+					const data = await res.json();
+					if (!res.ok || data.error) throw new Error(data.error || 'فشلت العملية');
+
+					closeOnboardModal();
+					alert('تم قبول المتقدم وتعيينه كموظف بنجاح وإرسال إشعار رسمي له!');
+					viewApplicants(currentJobId, currentJobTitle);
+				} catch (err) {
+					alert('حدث خطأ: ' + err.message);
+				} finally {
+					if (submitBtn) {
+						submitBtn.disabled = false;
+						submitBtn.innerHTML = dawaHTML.sanitize('<span>تأكيد القبول وتعيين الموظف</span>');
+					}
+				}
+			}
+
+			async function rejectApplicant(jobId, appId) {
+				if (!confirm('هل أنت متأكد من رفض هذا الطلب؟ سيتم إرسال إشعار اعتذار للمتقدم.')) return;
+				try {
+					const res = await fetch(`/customer/jobs/${jobId}/applications/${appId}/reject`, {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ notes: 'تمت المراجعة والاعتذار عن الطلب' })
+					});
+					const data = await res.json();
+					if (!res.ok || data.error) throw new Error(data.error || 'فشلت العملية');
+
+					alert('تم رفض الطلب وإرسال إشعار للمتقدم.');
+					viewApplicants(currentJobId, currentJobTitle);
+				} catch (err) {
+					alert('حدث خطأ: ' + err.message);
+				}
+			}
+
+			window.openApplicantsForJob = openApplicantsForJob;
+			window.viewApplicants = viewApplicants;
+			window.openOnboardModal = openOnboardModal;
+			window.openOnboardModalFromBtn = openOnboardModalFromBtn;
+			window.closeOnboardModal = closeOnboardModal;
+			window.openApplicantsModal = openApplicantsModal;
+			window.closeApplicantsModal = closeApplicantsModal;
+			window.rejectApplicant = rejectApplicant;
+			window.rejectApplicantFromBtn = rejectApplicantFromBtn;
+			window.submitOnboardEmployee = submitOnboardEmployee;
+		</script>
+	}
+}

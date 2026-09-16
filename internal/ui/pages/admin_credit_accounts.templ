@@ -1,0 +1,201 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// حسابات المنشآت والباقات — the demand side of /admin/offers-packages.
+//
+// The hub listed packages, sponsorship requests and ads: three views of what
+// the platform offers. Nothing said which company holds what, so answering
+// "why has this supplier run out of credits?" meant reading
+// promo.sponsorship_purchases by hand. These two screens are that question
+// answered, ending at the same كشف حساب the vendor sees.
+
+// AdminCreditAccountsView is the per-organization list.
+type AdminCreditAccountsView struct {
+	Lang     string
+	Accounts []*promo.CreditAccount
+	Search   string
+	Page     int
+	PerPage  int
+	Total    int
+}
+
+templ AdminCreditAccountsPage(v AdminCreditAccountsView, lang, dir string) {
+	@layouts.AdminShell("حسابات المنشآت والباقات | دوا 24", "offers_packages", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-start flex-wrap gap-4">
+					<div class="stack-2xs">
+						<h1 class="text-2xl font-black text-primary m-0">حسابات المنشآت والباقات</h1>
+						<p class="text-sm text-secondary m-0">
+							رصيد كل منشأة من باقات الرعاية وما استهلكته منه. الرصيد المتبقي يحسب الباقات السارية فقط.
+						</p>
+					</div>
+					<a href="/admin/offers-packages" class="btn btn-secondary font-bold">رجوع للباقات</a>
+				</div>
+			</div>
+
+			<form method="GET" action="/admin/offers-packages/organizations" class="glass-panel p-4 mb-4 d-flex gap-2 items-end flex-wrap">
+				<div class="flex-1 min-w-0">
+					<label class="form-label text-2xs" for="account-search">بحث باسم المنشأة</label>
+					<input id="account-search" type="search" name="q" value={ v.Search } class="form-input" placeholder="اسم تجاري أو قانوني"/>
+				</div>
+				<button type="submit" class="btn btn-primary font-bold gap-1">
+					@components.IconSearch("icon-xs")
+					<span>بحث</span>
+				</button>
+			</form>
+
+			if len(v.Accounts) == 0 {
+				<div class="glass-panel p-8 text-center">
+					<h2 class="text-lg font-black text-primary m-0">لا توجد منشآت اشترت باقات</h2>
+					<p class="text-sm text-secondary m-0 mt-2">ستظهر هنا كل منشأة فور شرائها أول باقة رعاية.</p>
+				</div>
+			} else {
+				<div class="glass-panel p-0 mb-4">
+					<div class="table-container m-0">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>المنشأة</th>
+									<th class="text-center">الباقات</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.total") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.consumed") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.remaining") }</th>
+									<th class="text-center">آخر شراء</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, account := range v.Accounts {
+									@adminCreditAccountRow(account)
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: v.Page,
+					PageSize:    v.PerPage,
+					TotalCount:  v.Total,
+					BaseURL:     "/admin/offers-packages/organizations",
+					QueryValues: creditAccountsQuery(v.Search),
+				})
+			}
+		</div>
+	}
+}
+
+templ adminCreditAccountRow(account *promo.CreditAccount) {
+	<tr>
+		<td class="font-bold">{ creditAccountName(account) }</td>
+		<td class="text-center tabular-nums">
+			{ fmt.Sprintf("%d", account.Purchases) }
+			if account.ActivePurchases > 0 {
+				<span class="badge badge-emerald text-2xs font-bold ms-1">
+					{ fmt.Sprintf("%d سارية", account.ActivePurchases) }
+				</span>
+			}
+		</td>
+		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", account.CreditsTotal) }</td>
+		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", account.CreditsUsed) }</td>
+		<td class="text-center tabular-nums font-black">{ fmt.Sprintf("%d", account.CreditsRemaining) }</td>
+		<td class="text-center text-xs tabular-nums" dir="ltr">{ creditAccountLastPurchase(account) }</td>
+		<td class="text-center">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/offers-packages/organizations/%d", account.OrganizationID)) }
+				class="btn btn-secondary btn-sm font-bold"
+			>الباقات والحركات</a>
+		</td>
+	</tr>
+}
+
+// AdminOrgPackagesView is one company's purchases.
+type AdminOrgPackagesView struct {
+	Lang      string
+	OrgID     int64
+	OrgName   string
+	Purchases []*promo.SponsorshipPurchase
+	Page      int
+	PerPage   int
+	Total     int
+}
+
+templ AdminOrgPackagesPage(v AdminOrgPackagesView, lang, dir string) {
+	@layouts.AdminShell(v.OrgName+" | باقات المنشأة | دوا 24", "offers_packages", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-start flex-wrap gap-4">
+					<div class="stack-2xs">
+						<h1 class="text-2xl font-black text-primary m-0">{ v.OrgName }</h1>
+						<p class="text-sm text-secondary m-0">باقات الرعاية التي اشترتها هذه المنشأة وحركة رصيد كل باقة.</p>
+					</div>
+					<a href="/admin/offers-packages/organizations" class="btn btn-secondary font-bold">رجوع للقائمة</a>
+				</div>
+			</div>
+
+			if len(v.Purchases) == 0 {
+				<div class="glass-panel p-8 text-center">
+					<h2 class="text-lg font-black text-primary m-0">لا توجد باقات لهذه المنشأة</h2>
+				</div>
+			} else {
+				<div class="glass-panel p-0 mb-4">
+					<div class="table-container m-0">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th>الباقة</th>
+									<th class="text-center">الحالة</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.total") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.consumed") }</th>
+									<th class="text-center">{ i18n.T(lang, "promo.credits.remaining") }</th>
+									<th class="text-center">تنتهي في</th>
+									<th></th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, purchase := range v.Purchases {
+									@adminOrgPackageRow(v.Lang, purchase)
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: v.Page,
+					PageSize:    v.PerPage,
+					TotalCount:  v.Total,
+					BaseURL:     fmt.Sprintf("/admin/offers-packages/organizations/%d", v.OrgID),
+				})
+			}
+		</div>
+	}
+}
+
+templ adminOrgPackageRow(lang string, purchase *promo.SponsorshipPurchase) {
+	<tr>
+		<td class="font-bold tabular-nums">{ fmt.Sprintf("#%d", purchase.PackageID) }</td>
+		<td class="text-center">
+			<span class={ "badge text-2xs font-bold", purchaseStatusClass(purchase) }>
+				{ string(purchase.Status) }
+			</span>
+		</td>
+		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", purchase.CreditsTotal) }</td>
+		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", purchase.CreditsUsed) }</td>
+		<td class="text-center tabular-nums font-black">{ fmt.Sprintf("%d", purchase.CreditsRemainingInt()) }</td>
+		<td class="text-center text-xs tabular-nums" dir="ltr">{ purchase.ExpiresAt.Format("2006-01-02") }</td>
+		<td class="text-center">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/offers-packages/purchases/%d/statement", purchase.ID)) }
+				class="btn btn-secondary btn-sm font-bold"
+			>{ i18n.T(lang, "promo.credits.consumption") }</a>
+		</td>
+	</tr>
+}

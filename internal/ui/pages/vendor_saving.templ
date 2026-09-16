@@ -1,0 +1,181 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorSavingProductsPage renders the comprehensive all-in-one saving products workspace.
+templ VendorSavingProductsPage(data VendorSavingPageData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_saving.shell_title"), "saving_products", lang, dir) {
+		<div class="page-container" x-data="vendorSavingManager()">
+			<!-- Notice / Toast Banner -->
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-danger", data.NoticeType == "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBuilding("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_saving.header_title") }
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								{ i18n.T(lang, "vendor_saving.header_desc") }
+							</p>
+						</div>
+					</div>
+
+					<!-- Top Action Buttons -->
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<button
+							type="button"
+							class="btn btn-primary font-bold text-xs px-3 py-2"
+							data-modal-open="saving-product-modal"
+							data-on-click="openCreateModal()"
+						>
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "vendor_saving.btn_new_saving") }</span>
+						</button>
+
+						<a
+							href="/vendor/saving-products/import"
+							class="btn btn-secondary font-bold text-xs px-3 py-2 text-decoration-none"
+						>
+							@components.IconUpload("icon-xs")
+							<span>{ i18n.T(lang, "vendor_saving.btn_import") }</span>
+						</a>
+
+						<a
+							href="/vendor/saving-products/export"
+							class="btn btn-secondary font-bold text-xs px-3 py-2 text-decoration-none"
+							download
+						>
+							@components.IconDownload("icon-xs")
+							<span>{ i18n.T(lang, "vendor_saving.btn_export") }</span>
+						</a>
+
+						if data.Stats != nil && data.Stats.CountAll > 0 {
+							<form
+								method="POST"
+								action="/vendor/saving-products/delete-all"
+								data-confirm={ i18n.T(lang, "vendor_saving.confirm_delete_all") }
+								class="m-0 d-inline"
+							>
+								<button
+									type="submit"
+									class="btn btn-secondary font-bold text-xs px-3 py-2 text-danger"
+									title={ i18n.T(lang, "vendor_saving.btn_delete_all") }
+								>
+									@components.IconTrash("icon-xs")
+									<span>{ i18n.T(lang, "vendor_saving.btn_delete_all") }</span>
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- 4 Status Metric Cards -->
+			<div class="dashboard-stat-grid mb-6">
+				<!-- 1. All Products -->
+				<a
+					href="/vendor/saving-products?filter=all"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "all")) }
+				>
+					<div class="stat-card-label">{ i18n.T(lang, "vendor_saving.stat_all") }</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountAll) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_saving.stat_all_sub") }</span>
+				</a>
+
+				<!-- 2. Linked Products -->
+				<a
+					href="/vendor/saving-products?filter=linked"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "linked")) }
+				>
+					<div class="stat-card-label text-sky">{ i18n.T(lang, "vendor_saving.stat_linked") }</div>
+					<div class="stat-card-value text-sky tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountLinked) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_saving.stat_linked_sub") }</span>
+				</a>
+
+				<!-- 3. Unlinked Products -->
+				<a
+					href="/vendor/saving-products?filter=unlinked"
+					class="stat-card-3d text-decoration-none"
+					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "unlinked")) }
+				>
+					<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_saving.stat_unlinked") }</div>
+					<div class="stat-card-value text-warning tabular-nums">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CountUnlinked) }
+						} else {
+							0
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "vendor_saving.stat_unlinked_sub") }</span>
+				</a>
+
+				<!-- 4. Total Value & Quantity -->
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-emerald">{ i18n.T(lang, "vendor_saving.stat_total_val") }</div>
+					<div class="stat-card-value text-emerald tabular-nums">
+						if data.Stats != nil && data.Stats.TotalValue.IsPositive() {
+							{ data.Stats.TotalValue.String() } <span class="text-xs font-normal">{ i18n.T(lang, "vendor_saving.currency") }</span>
+						} else {
+							0 <span class="text-xs font-normal">{ i18n.T(lang, "vendor_saving.currency") }</span>
+						}
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">
+						if data.Stats != nil && data.Stats.TotalQuantity > 0 {
+							{ fmt.Sprintf(i18n.T(lang, "vendor_saving.stat_total_qty"), data.Stats.TotalQuantity) }
+						} else {
+							{ i18n.T(lang, "vendor_saving.stat_val_sub") }
+						}
+					</span>
+				</div>
+			</div>
+
+			<!-- Main Content Table Card -->
+			@VendorSavingTable(lang, data)
+		</div>
+
+		<!-- Modals -->
+		@VendorSavingProductModal(lang)
+		@VendorSavingImportModal(lang)
+		@VendorSavingProvidersModal(lang)
+
+		<!-- Client Scripts -->
+		@VendorSavingScript()
+		@VendorSavingImportScript()
+		@VendorSavingReviewScript()
+	}
+}

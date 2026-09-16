@@ -1,0 +1,56 @@
+package layouts
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorShell(title string, activeNav string, lang string, dir string) {
+	if site := GetSiteSettings(ctx); site != nil {
+		@Base(title, lang, dir, "/static/css/customer.css", "/static/css/vendor.css") {
+			<div class="app-shell" hx-boost="true">
+				<!-- Sidebar -->
+				<aside class="sidebar" id="app-sidebar">
+					<div class="sidebar-header">
+						<a href="/vendor/dashboard" class="sidebar-brand text-decoration-none">
+							if site.LogoURL != "" {
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src={ site.LogoURL } alt={ site.SiteName } data-img-fallback="hide" />
+							} else {
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src="/static/img/logo.png" alt={ site.SiteName } data-img-fallback="hide" />
+							}
+							if site.LogoDarkURL != "" {
+								<img class="sidebar-logo logo-dark" src={ site.LogoDarkURL } alt={ site.SiteName } data-img-fallback="hide" />
+							}
+							<div class="sidebar-brand-copy">
+								<span class="sidebar-brand-name">{ site.SiteName }</span>
+								<span class="sidebar-brand-subtitle">{ i18n.T(lang, "vendor.shell.subtitle") }</span>
+							</div>
+						</a>
+					@SidebarHeaderControls()
+				</div>
+
+				@SidebarNav(rbac.ScopeVendor, activeNav, lang)
+			</aside>
+
+			<!-- Main Content -->
+			<main class="main-content" id="main-content" data-shell="vendor">
+				@components.DashboardTopBar(components.TopBarProps{
+					Title:   title,
+					Lang:    lang,
+					Compact: true,
+					// Suppliers buy too, and the receiving branch decides what
+					// the catalogue will let them order.
+					Context: BuyingBranchSelector(ctx, lang),
+					Actions: pharmacyTopBarActions(lang),
+				})
+
+				<div class="page-container">
+					@AuthNoticeBanner(lang)
+					{ children... }
+				</div>
+			</main>
+		</div>
+	}
+	}
+}

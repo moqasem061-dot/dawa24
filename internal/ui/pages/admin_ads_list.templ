@@ -1,0 +1,208 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminAdsListPageData struct {
+	Ads        []*promo.Ad
+	Page       int
+	PerPage    int
+	TotalCount int
+}
+
+// AdminAdsListPage renders advertisements table with approval actions.
+templ AdminAdsListPage(lang, dir string, data AdminAdsListPageData) {
+	@layouts.AdminShell("إدارة الإعلانات والبنرات", "ads", lang, dir) {
+		<div class="page-container py-6">
+			<div class="glass-panel p-5 mb-5 border border-slate-200/80 rounded-2xl shadow-sm flex-between items-center flex-wrap gap-4">
+				<div class="stack-sm">
+					<h1 class="text-xl font-black text-primary m-0">الإعلانات والبنرات الترويجية</h1>
+					<p class="text-xs text-secondary m-0 mt-0.5 font-medium">مراجعة واعتماد بنرات الموردين على الصفحة الرئيسية وصفحات الأقسام</p>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href="/admin/ad-plan" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+						@components.IconSettings("icon-xs")
+						<span>خطط ومواضع الإعلانات</span>
+					</a>
+				</div>
+			</div>
+
+			if len(data.Ads) == 0 {
+				<div class="glass-panel p-8 text-center border border-slate-200/80 rounded-2xl shadow-xs">
+					<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+						@components.IconMegaphone("icon-md")
+					</div>
+					<h3 class="text-base font-extrabold text-primary mb-1.5">لا توجد إعلانات قيد المراجعة</h3>
+					<p class="text-xs text-secondary max-w-md mx-auto">
+						لم يتم تقديم بنرات أو إعلانات جديدة من الموردين مؤخراً.
+					</p>
+				</div>
+			} else {
+				<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
+							<thead>
+								<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+									<th class="py-3 text-start ps-4">الإعلان والوسائط</th>
+									<th class="py-3 text-start">المورد (#ID)</th>
+									<th class="py-3 text-center">النوع والموضع</th>
+									<th class="py-3 text-center tabular-nums">المشاهدات</th>
+									<th class="py-3 text-center tabular-nums">النقرات</th>
+									<th class="py-3 text-center tabular-nums">معدل CTR %</th>
+									<th class="py-3 text-center">الحالة</th>
+									<th class="col-actions py-3 pe-4">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-100">
+								for _, ad := range data.Ads {
+									if ad != nil {
+										<tr class="transition-colors">
+											<!-- Ad Preview & Title -->
+											<td class="py-3.5 ps-4">
+												<div class="d-flex items-center gap-3">
+													if (ad.MediaType == "video" || ad.IsVideo()) && ad.MediaURL != "" {
+														<div class="w-16 h-10 rounded-lg overflow-hidden border border-slate-700 bg-slate-900 shrink-0 d-flex items-center justify-center">
+															<video src={ ad.MediaURL } autoplay muted loop playsinline class="w-full h-full object-cover"></video>
+														</div>
+													} else if ad.MediaURL != "" {
+														<div class="w-16 h-10 rounded-lg overflow-hidden border border-slate-200 bg-white shrink-0 d-flex items-center justify-center p-0.5">
+															<img src={ ad.MediaURL } alt="Ad" class="w-full h-full object-contain"/>
+														</div>
+													} else {
+														<div class="w-16 h-10 rounded-lg bg-slate-100 border border-slate-200 shrink-0 d-flex items-center justify-center text-slate-400">
+															@components.IconImage("icon-xs")
+														</div>
+													}
+													<div class="stack-xs text-start">
+														<div class="font-extrabold text-primary text-sm">{ ad.DisplayTitle(lang) }</div>
+														if ad.DisplayText(lang) != "" {
+															<div class="text-secondary text-2xs font-medium line-clamp-1 max-w-xs">{ ad.DisplayText(lang) }</div>
+														}
+													</div>
+												</div>
+											</td>
+
+											<!-- Organization -->
+											<td class="py-3.5">
+												if ad.OrganizationID != nil {
+													<span class="badge badge-slate font-mono text-xs">{ fmt.Sprintf("#%d", *ad.OrganizationID) }</span>
+												} else {
+													<span class="text-muted text-xs">—</span>
+												}
+											</td>
+
+											<!-- Position & Media Type -->
+											<td class="py-3.5 text-center">
+												<div class="d-flex flex-col items-center gap-1">
+													<span class="badge badge-sky text-2xs font-extrabold">{ PlacementLabel(ad.Position) }</span>
+													if ad.MediaType == "video" {
+														<span class="badge badge-indigo text-2xs font-bold">فيديو MP4</span>
+													} else {
+														<span class="badge badge-slate text-2xs font-bold">صورة</span>
+													}
+												</div>
+											</td>
+
+											<!-- Impressions -->
+											<td class="py-3.5 text-center font-bold text-primary tabular-nums">
+												{ fmt.Sprintf("%d", ad.Impressions) }
+											</td>
+
+											<!-- Clicks -->
+											<td class="py-3.5 text-center font-bold text-brand tabular-nums">
+												{ fmt.Sprintf("%d", ad.Clicks) }
+											</td>
+
+											<!-- CTR -->
+											<td class="py-3.5 text-center font-black text-emerald-600 tabular-nums">
+												{ fmt.Sprintf("%.1f%%", ad.CTR) }
+											</td>
+
+											<!-- Status -->
+											<td class="py-3.5 text-center">
+												<div class="d-flex flex-col items-center gap-1">
+													if ad.AdminStatus == "pending" {
+														<span class="badge badge-amber font-extrabold text-xs animate-pulse">قيد المراجعة</span>
+													} else if ad.AdminStatus == "approved" {
+														<span class="badge badge-emerald font-extrabold text-xs">معتمد</span>
+														if !ad.ExpiresAt.IsZero() && ad.ExpiresAt.Before(time.Now()) {
+															<span class="badge badge-slate text-2xs font-bold">منتهي الصلاحية</span>
+														} else if ad.IsActive {
+															<span class="badge badge-emerald text-2xs font-bold">مباشر نشط</span>
+														} else {
+															<span class="badge badge-slate text-2xs font-bold">معطل</span>
+														}
+													} else {
+														<span class="badge badge-rose font-extrabold text-xs">مرفوض</span>
+													}
+													if ad.HasPendingEdit() {
+														<span class="badge badge-amber text-2xs font-black animate-pulse">طلب تعديل معلق</span>
+													}
+												</div>
+											</td>
+
+											<!-- Actions -->
+											<td class="col-actions py-3.5 pe-4">
+												<div class="d-flex items-center gap-1.5 flex-wrap">
+													@AdminAdReviewModal(ad, lang, dir)
+
+													if ad.AdminStatus == "pending" {
+														<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/approve", ad.ID)) } class="m-0">
+															<button type="submit" class="btn btn-primary btn-xs font-bold gap-1 shadow-2xs">
+																@components.IconCheck("icon-2xs")
+																<span>اعتماد</span>
+															</button>
+														</form>
+														<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/reject", ad.ID)) } class="m-0">
+															<button type="submit" class="btn btn-secondary btn-xs font-bold text-rose-600 gap-1 shadow-2xs" data-confirm="هل أنت متأكد من رفض هذا الإعلان؟">
+																@components.IconClose("icon-2xs")
+																<span>رفض</span>
+															</button>
+														</form>
+													} else {
+														<!-- Direct Toggle Active / Inactive -->
+														<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/ads/%d/toggle", ad.ID)) } class="m-0">
+															if ad.IsActive {
+																<button type="submit" class="btn btn-secondary btn-xs font-bold text-amber-600 gap-1 shadow-2xs" title="إيقاف ظهور الإعلان مؤقتاً">
+																	@components.IconPause("icon-2xs")
+																	<span>تعطيل</span>
+																</button>
+															} else {
+																<button type="submit" class="btn btn-secondary btn-xs font-bold text-emerald-600 gap-1 shadow-2xs" title="تفعيل ظهور الإعلان فوراً">
+																	@components.IconPlay("icon-2xs")
+																	<span>تفعيل</span>
+																</button>
+															}
+														</form>
+													}
+
+													if ad.HasPendingEdit() {
+														@AdminAdPendingEditModal(ad, lang, dir)
+													}
+												</div>
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/ads",
+						})
+					}
+				</div>
+			}
+		</div>
+	}
+}

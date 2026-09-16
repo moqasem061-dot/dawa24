@@ -1,0 +1,312 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// The pharmacy team screen.
+//
+// There were two of these, over the same org.members rows. /customer/team
+// listed a name, a job title and a role dropdown; /customer/branches carried a
+// second tab with the branch assignment, the employee code, the status toggle,
+// the search and branch filters, and the add and edit modals. The one people
+// were sent to was the poorer of the two, and neither could do what the other
+// could.
+//
+// This is the branches tab's content, moved here whole, with the branches page
+// reduced to branches. The page header keeps exactly two actions — the Excel
+// import and "add employee" — as the only two ways a member enters the company.
+
+// TenantRoleOption is one of the company's own roles, for the assign dropdown.
+type TenantRoleOption struct {
+	ID      int64
+	Key     string
+	Name    string
+	IsOwner bool
+}
+
+// TenantTeamMember is one employee row.
+type TenantTeamMember struct {
+	ID           int64
+	UserID       int64
+	Name         string
+	Email        string
+	Phone        string
+	JobTitle     string
+	EmployeeCode string
+	BranchID     int64
+	BranchName   string
+	RoleID       int64
+	RoleKey      string
+	RoleName     string
+	IsActive     bool
+	IsManager    bool
+	AvatarURL    string
+	JoinedAt     string
+}
+
+// SearchKey is the haystack the client-side filter matches against.
+func (m TenantTeamMember) SearchKey() string {
+	return strings.ToLower(strings.Join([]string{m.Name, m.Email, m.EmployeeCode, m.JobTitle}, " "))
+}
+
+// TenantTeamView is everything the page renders.
+type TenantTeamView struct {
+	Title         string
+	Members       []TenantTeamMember
+	Roles         []TenantRoleOption
+	Branches      []*BranchOption
+	RolesPath     string
+	ImportPath    string
+	CanCreate     bool
+	CanUpdate     bool
+	CanDelete     bool
+	CanAssign     bool
+	ActionBase    string
+	Notice        string
+	NoticeKind    string
+	FocusBranch   int64
+	CurrentUserID int64
+	Page          int
+	PerPage       int
+	TotalCount    int
+}
+
+templ TenantTeamPage(v TenantTeamView, lang, dir string) {
+	@layouts.ShellFor(i18n.T(lang, "team.title")+" | "+i18n.T(lang, "nav.platform"), "team", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container">
+			@roleNotice(v.NoticeKind, v.Notice)
+			@teamHeader(v, lang)
+			@teamToolbar(v, lang)
+			@teamTable(v, lang)
+			@teamAddModal(v, lang)
+			@teamEditModal(v, lang)
+			@teamScript(v)
+		</div>
+	}
+}
+
+templ teamHeader(v TenantTeamView, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="glass-panel p-6 mb-4">
+		<div class="flex-between items-start flex-wrap gap-4">
+			<div class="stack-sm">
+				<div class="d-flex items-center gap-3 mb-1">
+					<div class="user-avatar-badge text-xl">
+						@components.IconUsers("icon-sm")
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "team.title") }</h1>
+				</div>
+				<p class="text-sm text-secondary m-0">
+					{ fmt.Sprintf(ternary(lang == "en", "%d members in organization. Roles define permissions, branch defines location.", "%d عضو في المنشأة. الدور المسند لكل عضو يحدد ما يراه وما يستطيع تنفيذه، والفرع يحدد أين يعمل."), v.TotalCount) }
+				</p>
+			</div>
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<a href={ templ.SafeURL(v.RolesPath) } class="btn btn-secondary font-bold gap-2">
+					@components.IconShield("icon-xs")
+					<span>{ i18n.T(lang, "team.col_role") }</span>
+				</a>
+				if v.CanCreate {
+					<a href={ templ.SafeURL(v.ImportPath) } class="btn btn-secondary font-bold gap-2">
+						@components.IconUpload("icon-xs")
+						<span>{ i18n.T(lang, "team.import_excel") }</span>
+					</a>
+					<button type="button" class="btn btn-primary font-bold gap-2" data-on-click="openAddEmployeeModal()">
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "team.add_member") }</span>
+					</button>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ teamToolbar(v TenantTeamView, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div class="glass-panel p-4 mb-4">
+		<div class="d-flex items-center gap-3 flex-wrap">
+			<div class="flex-1 min-w-48">
+				<input
+					type="search"
+					id="team-search-input"
+					placeholder={ i18n.T(lang, "team.search_placeholder") }
+					class="form-input w-full"
+					data-on-input="filterTeamRows()"
+					aria-label={ i18n.T(lang, "team.search_placeholder") }
+				/>
+			</div>
+			<select id="team-branch-filter" class="form-select min-w-36" data-on-change="filterTeamRows()" aria-label={ i18n.T(lang, "branches.title") }>
+				<option value="">{ i18n.T(lang, "team.all_branches") }</option>
+				<option value="0">{ i18n.T(lang, "team.unassigned_branch") }</option>
+				for _, b := range v.Branches {
+					<option value={ strconv.FormatInt(b.ID, 10) } selected?={ v.FocusBranch == b.ID }>{ b.Name }</option>
+				}
+			</select>
+			<span id="team-filter-count" class="text-xs text-muted font-bold tabular-nums"></span>
+		</div>
+	</div>
+}
+
+templ teamTable(v TenantTeamView, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if len(v.Members) == 0 {
+		<div class="glass-panel p-8 text-center">
+			<div class="mb-2 text-muted">@components.IconUsers("icon-lg")</div>
+			<h3 class="font-bold text-base text-primary mb-1">{ i18n.T(lang, "team.no_members_title") }</h3>
+			<p class="text-sm text-secondary m-0">
+				{ i18n.T(lang, "team.no_members_desc") }
+			</p>
+		</div>
+	} else {
+		<div class="glass-panel p-0 overflow-hidden mb-4">
+			<div class="table-container m-0 overflow-x-auto">
+				<table class="data-table w-full m-0" id="team-table" data-action-base={ v.ActionBase }>
+					<thead>
+						<tr>
+							<th class="min-w-[220px]">{ i18n.T(lang, "team.col_member") }</th>
+							<th>{ i18n.T(lang, "team.col_branch") }</th>
+							<th>{ i18n.T(lang, "team.col_job_title") }</th>
+							<th>{ i18n.T(lang, "team.col_role") }</th>
+							<th class="text-center">{ i18n.T(lang, "team.col_status") }</th>
+							<th class="col-actions">{ i18n.T(lang, "team.col_actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, m := range v.Members {
+							<tr class="team-row" data-search={ m.SearchKey() } data-branch={ strconv.FormatInt(m.BranchID, 10) } data-member={ teamMemberJSON(m) }>
+								<td>
+									<div class="d-flex items-center gap-3">
+										<div class="user-avatar-badge font-black text-xs overflow-hidden">
+											if m.AvatarURL != "" {
+												<img src={ m.AvatarURL } alt={ m.Name } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="block" />
+												<span style="display: none;">{ components.Initials(m.Name) }</span>
+											} else {
+												<span>{ components.Initials(m.Name) }</span>
+											}
+										</div>
+										<div class="d-flex flex-col gap-0.5">
+											<span class="font-bold text-sm text-primary">{ m.Name }</span>
+											<span class="text-2xs text-muted d-flex items-center gap-2 flex-wrap">
+												<span dir="auto">{ m.Email }</span>
+												if m.EmployeeCode != "" {
+													<span class="badge badge-slate tabular-nums text-2xs">{ m.EmployeeCode }</span>
+												}
+											</span>
+										</div>
+									</div>
+								</td>
+								<td>
+									if m.BranchID > 0 {
+										<div class="d-flex items-center gap-1.5 flex-wrap">
+											<span class="badge badge-primary text-2xs font-bold">{ m.BranchName }</span>
+											if m.IsManager {
+												<span class="badge badge-emerald text-2xs font-bold">{ ternary(lang == "en", "Branch Manager", "مدير الفرع") }</span>
+											}
+										</div>
+									} else {
+										<span class="badge badge-slate text-2xs text-muted">{ i18n.T(lang, "team.unassigned_branch") }</span>
+									}
+								</td>
+								<td class="text-sm">
+									if m.JobTitle != "" {
+										{ m.JobTitle }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+								<td>
+									if v.CanAssign && len(v.Roles) > 0 {
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%d/role", v.ActionBase, m.ID)) } class="m-0">
+											<select class="form-select form-select-sm" name="role_id" data-autosubmit aria-label={ i18n.T(lang, "team.col_role") }>
+												for _, role := range v.Roles {
+													<option value={ strconv.FormatInt(role.ID, 10) } selected?={ role.ID == m.RoleID }>{ role.Name }</option>
+												}
+											</select>
+										</form>
+									} else {
+										<span class="badge badge-slate text-2xs font-bold">{ m.RoleName }</span>
+									}
+								</td>
+								<td class="text-center">
+									if m.IsActive {
+										<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "common.active") }</span>
+									} else {
+										<span class="badge badge-slate text-2xs">{ i18n.T(lang, "common.inactive") }</span>
+									}
+								</td>
+								<td class="col-actions">
+									<div class="table-actions">
+										if v.CanUpdate {
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold gap-1"
+												data-on-click="openEditEmployeeModal(this)"
+												title={ i18n.T(lang, "common.edit") }
+											>
+												@components.IconEdit("icon-xs")
+												<span>{ i18n.T(lang, "common.edit") }</span>
+											</button>
+											if m.UserID != v.CurrentUserID {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%d/status", v.ActionBase, m.ID)) } class="m-0">
+													<button type="submit" class="btn btn-secondary btn-xs" title={ ternary(lang == "en", "Toggle Status", "تبديل حالة التفعيل") }>
+														if m.IsActive {
+															<span class="text-secondary">{ i18n.T(lang, "common.inactive") }</span>
+														} else {
+															<span class="text-success font-bold">{ i18n.T(lang, "common.active") }</span>
+														}
+													</button>
+												</form>
+											}
+										}
+										if v.CanDelete && m.UserID != v.CurrentUserID {
+											<form
+												method="POST"
+												action={ templ.SafeURL(fmt.Sprintf("%s/%d/delete", v.ActionBase, m.ID)) }
+												class="m-0"
+												data-confirm="هل أنت متأكد من حذف الموظف؟"
+											>
+												<button type="submit" class="btn btn-secondary btn-xs text-danger" title={ i18n.T(lang, "common.delete") }>
+													@components.IconTrash("icon-xs")
+												</button>
+											</form>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+		if v.TotalCount > 0 {
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage: v.Page,
+				PageSize:    v.PerPage,
+				TotalCount:  v.TotalCount,
+				BaseURL:     "/customer/team",
+			})
+		}
+	}
+}

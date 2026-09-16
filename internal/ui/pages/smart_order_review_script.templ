@@ -1,0 +1,388 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SmartOrderReviewScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function smartOrderReviewManager(opts = {}) {
+			return {
+				searchQuery: '',
+				selectedVendor: 'all',
+				activeTab: 'all',
+				selectedLines: [],
+				defaultQty: 1,
+				isApplyingDefaultQty: false,
+				totalLines: (opts && opts.totalLines) || 0,
+
+				async applyDefaultQuantity(isAll, publicID) {
+					if (isAll && (!this.totalLines || this.totalLines === 0)) {
+						alert('لا توجد أصناف جاهزة للتوريد لتطبيق الكمية الافتراضية عليها');
+						return;
+					}
+
+					const qty = parseInt(this.defaultQty, 10);
+					if (isNaN(qty) || qty < 1) {
+						alert('يرجى إدخال كمية صحيحة أكبر من صفر');
+						return;
+					}
+
+					let lineIDs = [];
+					if (!isAll) {
+						if (this.selectedLines.length === 0) {
+							alert('يرجى تحديد الأصناف المراد تغيير كمياتها');
+							return;
+						}
+						lineIDs = this.selectedLines;
+					}
+
+					const confirmMsg = isAll
+						? `هل تريد تطبيق الكمية (${qty}) ككمية افتراضية على كافة أصناف الطلب؟`
+						: `هل تريد تطبيق الكمية (${qty}) على (${lineIDs.length}) من الأصناف المحددة؟`;
+
+					if (!confirm(confirmMsg)) return;
+
+					this.isApplyingDefaultQty = true;
+					try {
+						const params = new URLSearchParams();
+						params.set('quantity', String(qty));
+						if (!isAll && lineIDs.length > 0) {
+							lineIDs.forEach(id => params.append('line_ids', id));
+						}
+
+						const resp = await fetch(`/customer/smart-order/${publicID}/default-quantity`, {
+							method: 'POST',
+							headers: {
+								'Accept': 'application/json',
+								'X-Requested-With': 'XMLHttpRequest',
+								'Content-Type': 'application/x-www-form-urlencoded'
+							},
+							body: params
+						});
+
+						const data = await resp.json().catch(() => ({}));
+						if (resp.ok && data.ok) {
+							if (typeof showToast === 'function') {
+								showToast('تم تطبيق الكمية بنجاح لكافة الأصناف', 'success');
+							}
+							if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+						} else {
+							alert(data.error || 'تعذر تطبيق الكمية الافتراضية');
+						}
+					} catch (e) {
+						if (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }
+					} finally {
+						this.isApplyingDefaultQty = false;
+					}
+				},
+
+				toggleGroupSelectAll(el, groupIds) {
+					if (!Array.isArray(groupIds)) return;
+					if (el.checked) {
+						const set = new Set(this.selectedLines);
+						groupIds.forEach(id => set.add(String(id)));
+						this.selectedLines = Array.from(set);
+					} else {
+						const removeSet = new Set(groupIds.map(id => String(id)));
+						this.selectedLines = this.selectedLines.filter(id => !removeSet.has(String(id)));
+					}
+				},
+
+				isGroupAllSelected(groupIds) {
+					if (!Array.isArray(groupIds) || groupIds.length === 0) return false;
+					return groupIds.every(id => this.selectedLines.includes(String(id)));
+				},
+
+				clearSelection() {
+					this.selectedLines = [];
+				},
+
+				matchesRow(el) {
+					if (!this.searchQuery) return true;
+					const q = this.searchQuery.trim().toLowerCase();
+					if (!q) return true;
+					const name = (el.getAttribute('data-name') || '').toLowerCase();
+					const sku = (el.getAttribute('data-sku') || '').toLowerCase();
+					const match = (el.getAttribute('data-match') || '').toLowerCase();
+					return name.includes(q) || sku.includes(q) || match.includes(q);
+				},
+
+				async confirmBulkDelete(e) {
+					e.preventDefault();
+					if (this.selectedLines.length === 0) return;
+					if (!confirm(`هل أنت متأكد من رغبتك في حذف ${this.selectedLines.length} صنف من الطلبية؟`)) {
+						return;
+					}
+					const form = e.target;
+					const formData = new FormData(form);
+					formData.delete('line_ids');
+					this.selectedLines.forEach(id => formData.append('line_ids', id));
+					try {
+						const resp = await fetch(form.action, {
+							method: 'POST',
+							headers: {
+								'Accept': 'application/json',
+								'X-Requested-With': 'XMLHttpRequest'
+							},
+							body: formData
+						});
+						const data = await resp.json().catch(() => ({}));
+						if (resp.ok && data.ok) {
+							const deletedCount = this.selectedLines.length;
+							this.selectedLines.forEach(id => {
+								const row = document.querySelector(`tr[data-line-id="${id}"]`);
+								if (row) row.remove();
+							});
+							this.selectedLines = [];
+							document.querySelectorAll('.so-review-table tbody').forEach(tb => {
+								if (tb.querySelectorAll('tr').length === 0) {
+									const card = tb.closest('.glass-panel');
+									if (card) card.remove();
+								} else {
+									recalcVendorGroupSubtotal(tb);
+								}
+							});
+							if (data.estimated_total) {
+								const totalEl = document.getElementById('so-estimated-total-display');
+								if (totalEl) totalEl.textContent = data.estimated_total;
+							}
+							const countEl = document.getElementById('so-total-lines-count');
+							if (countEl) {
+								const count = parseInt(countEl.textContent, 10);
+								if (!isNaN(count)) countEl.textContent = Math.max(0, count - deletedCount) + ' صنف';
+							}
+						} else {
+							alert(data.error || 'تعذر حذف الأصناف المحددة');
+						}
+					} catch (err) {
+						form.submit();
+					}
+				}
+			};
+		}
+
+		var qtyDebounceTimer = null;
+		function enforceReviewQtyMax(input) {
+			if (!input) return;
+			const max = parseInt(input.getAttribute('max') || input.getAttribute('data-max'), 10);
+			let val = parseInt(input.value, 10);
+			if (!isNaN(max) && max > 0 && !isNaN(val) && val > max) {
+				input.value = max;
+				if (typeof showToast === 'function') {
+					showToast('الحد الأقصى للكمية المتاحة لدى هذا المورد هو ' + max, 'warning');
+				}
+			}
+		}
+
+		async function autoSubmitQtyForm(form) {
+			if (!form) return;
+			const input = form.querySelector('input[name="quantity"]');
+			if (!input) return;
+			enforceReviewQtyMax(input);
+			const orig = input.getAttribute('data-orig');
+			let val = parseInt(input.value, 10);
+			if (isNaN(val) || val < 1) {
+				input.value = orig || 1;
+				return;
+			}
+			const max = parseInt(input.getAttribute('max') || input.getAttribute('data-max'), 10);
+			if (!isNaN(max) && max > 0 && val > max) {
+				val = max;
+				input.value = max;
+			}
+			if (orig !== null && String(val).trim() === String(orig).trim()) {
+				return;
+			}
+			const stepper = form.querySelector('.so-qty-stepper');
+			if (stepper) {
+				stepper.style.opacity = '0.6';
+			}
+			const tr = form.closest('tr');
+			if (tr) {
+				const unitPrice = parseFloat(tr.getAttribute('data-unit-price') || '0');
+				const discountPct = parseFloat(tr.getAttribute('data-discount-pct') || '0');
+				if (unitPrice > 0) {
+					const lineNetEl = tr.querySelector('.so-rev-col-net');
+					if (lineNetEl) {
+						const netPerUnit = unitPrice * (1.0 - (discountPct / 100.0));
+						const lineTotal = netPerUnit * val;
+						const unit = document.createElement('span');
+						unit.className = 'text-2xs font-normal text-muted';
+						unit.textContent = 'ج.م';
+						lineNetEl.replaceChildren(lineTotal.toFixed(2) + ' ', unit);
+					}
+				}
+			}
+
+			try {
+				const formData = new FormData(form);
+				const params = new URLSearchParams(formData);
+				const resp = await fetch(form.action, {
+					method: 'POST',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest',
+						'Content-Type': 'application/x-www-form-urlencoded'
+					},
+					body: params
+				});
+				const data = await resp.json().catch(() => ({}));
+				if (resp.ok && data.ok) {
+					input.setAttribute('data-orig', String(val));
+					if (data.estimated_total) {
+						const totalMetricEl = document.getElementById('so-estimated-total-display');
+						if (totalMetricEl) {
+							totalMetricEl.textContent = data.estimated_total;
+						}
+					}
+					recalcVendorGroupSubtotal(form);
+				} else {
+					input.value = orig || 1;
+					if (data.error && typeof showToast === 'function') {
+						showToast(data.error, 'error');
+					} else if (data.error) {
+						alert(data.error);
+					}
+				}
+			} catch (e) {
+				form.submit();
+				return;
+			} finally {
+				if (stepper) {
+					stepper.style.opacity = '1';
+					stepper.style.pointerEvents = 'auto';
+				}
+			}
+		}
+
+		function recalcVendorGroupSubtotal(contextEl) {
+			if (!contextEl) return;
+			const card = contextEl.closest('.glass-panel');
+			if (!card) return;
+			const badgeValEl = card.querySelector('.group-subtotal-val');
+			if (!badgeValEl) return;
+			let sum = 0;
+			card.querySelectorAll('tbody tr').forEach(r => {
+				const netEl = r.querySelector('.so-rev-col-net');
+				if (netEl) {
+					const num = parseFloat(netEl.textContent.replace(/[^\d.]/g, ''));
+					if (!isNaN(num)) sum += num;
+				}
+			});
+			badgeValEl.textContent = sum.toFixed(2);
+		}
+
+		async function removeReviewLine(btn, e) {
+			if (e) e.preventDefault();
+			if (!confirm('هل تريد حذف هذا الصنف من الطلب؟')) return;
+			const form = btn.closest('form');
+			if (!form) return;
+			const tr = form.closest('tr');
+			if (tr) {
+				tr.style.opacity = '0.4';
+				tr.style.pointerEvents = 'none';
+			}
+			try {
+				const formData = new FormData(form);
+				const resp = await fetch(form.action, {
+					method: 'POST',
+					headers: {
+						'Accept': 'application/json',
+						'X-Requested-With': 'XMLHttpRequest'
+					},
+					body: formData
+				});
+				const data = await resp.json().catch(() => ({}));
+				if (resp.ok && data.ok) {
+					if (tr) {
+						const tbody = tr.closest('tbody');
+						tr.remove();
+						if (tbody && tbody.querySelectorAll('tr').length === 0) {
+							const vendorCard = tbody.closest('.glass-panel');
+							if (vendorCard) vendorCard.remove();
+						} else if (tbody) {
+							recalcVendorGroupSubtotal(tbody);
+						}
+					}
+					if (data.estimated_total) {
+						const totalMetricEl = document.getElementById('so-estimated-total-display');
+						if (totalMetricEl) {
+							totalMetricEl.textContent = data.estimated_total;
+						}
+					}
+					const countEl = document.getElementById('so-total-lines-count');
+					if (countEl) {
+						const current = parseInt(countEl.textContent, 10);
+						if (!isNaN(current) && current > 0) {
+							countEl.textContent = (current - 1) + ' صنف';
+						}
+					}
+				} else {
+					if (tr) {
+						tr.style.opacity = '1';
+						tr.style.pointerEvents = 'auto';
+					}
+					alert(data.error || 'تعذر حذف الصنف');
+				}
+			} catch (err) {
+				form.submit();
+			}
+		}
+
+		function stepReviewQty(btn, delta) {
+			const form = btn.closest('form');
+			if (!form) return;
+			const input = form.querySelector('input[name="quantity"]');
+			if (input) {
+				let val = parseInt(input.value, 10) || 1;
+				val += delta;
+				if (val < 1) val = 1;
+				const max = parseInt(input.getAttribute('max') || input.getAttribute('data-max'), 10);
+				if (!isNaN(max) && max > 0 && val > max) {
+					val = max;
+					if (typeof showToast === 'function') {
+						showToast('الحد الأقصى للكمية المتاحة لدى هذا المورد هو ' + max, 'warning');
+					}
+				}
+				input.value = val;
+				if (qtyDebounceTimer) clearTimeout(qtyDebounceTimer);
+				qtyDebounceTimer = setTimeout(() => {
+					autoSubmitQtyForm(form);
+				}, 300);
+			}
+		}
+
+		function onReviewQtyInput(input) {
+			enforceReviewQtyMax(input);
+			const form = input.closest('form');
+			if (!form) return;
+			if (qtyDebounceTimer) clearTimeout(qtyDebounceTimer);
+			qtyDebounceTimer = setTimeout(() => {
+				autoSubmitQtyForm(form);
+			}, 500);
+		}
+
+		function submitReviewQtyForm(form) {
+			onReviewQtyChange(form.querySelector('input[name=quantity]'));
+		}
+
+		function onReviewQtyKeydown(e, input) {
+			if (e.key !== 'Enter') return;
+			e.preventDefault();
+			onReviewQtyChange(input);
+		}
+
+		function removeReviewLineForm(form, e) {
+			return removeReviewLine(form.querySelector('button'), e);
+		}
+
+		function onReviewQtyChange(input) {
+			enforceReviewQtyMax(input);
+			const form = input.closest('form');
+			if (!form) return;
+			if (qtyDebounceTimer) clearTimeout(qtyDebounceTimer);
+			autoSubmitQtyForm(form);
+		}
+	</script>
+}

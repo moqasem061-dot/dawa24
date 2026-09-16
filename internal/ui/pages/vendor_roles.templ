@@ -1,0 +1,227 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorRoleItem struct {
+	Key         string
+	NameAr      string
+	NameEn      string
+	Description string
+	Permissions []string
+	MemberCount int
+	BadgeColor  string
+}
+
+templ VendorRoles(roles []*org.Role, memberCountMap map[string]int, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_roles.shell_title"), "team", lang, dir) {
+		<div class="page-container max-w-6xl">
+			
+			<!-- Header Action Bar -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconSettings("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_roles.header_title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_roles.header_desc") }
+						</p>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<a href="/vendor/team" class="btn btn-secondary font-bold gap-2">
+							@components.IconUsers("icon-xs")
+							<span>{ i18n.T(lang, "vendor_roles.btn_team") }</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Role Cards Grid -->
+			<div class="d-grid grid-cols-3 gap-4">
+				
+				<!-- Role 1: Owner / Super Admin -->
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+					<div class="stack-sm">
+						<div class="flex-between items-start mb-3">
+							<div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_roles.owner_title") }</h3>
+								<span class="text-xs text-muted">{ i18n.T(lang, "vendor_roles.owner_sub") }</span>
+							</div>
+							<span class="badge badge-emerald font-bold text-xs">{ i18n.T(lang, "vendor_roles.badge_full_perms") }</span>
+						</div>
+						<p class="text-xs text-secondary leading-relaxed mb-4">
+							{ i18n.T(lang, "vendor_roles.owner_desc") }
+						</p>
+						<div class="d-flex flex-col gap-2 text-xs text-primary">
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.owner_perm1") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.owner_perm2") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.owner_perm3") }</span>
+							</div>
+						</div>
+					</div>
+					<div class="border-t pt-3 flex-between items-center text-xs text-muted">
+						<span>{ i18n.T(lang, "vendor_roles.assigned_staff_prefix") }<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d", memberCountMap["org_owner"]) }</strong></span>
+						<span class="text-brand font-bold">{ i18n.T(lang, "vendor_roles.badge_core_system") }</span>
+					</div>
+				</div>
+
+				<!-- Role 2: Branch & Operations Manager -->
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+					<div class="stack-sm">
+						<div class="flex-between items-start mb-3">
+							<div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_roles.manager_title") }</h3>
+								<span class="text-xs text-muted">{ i18n.T(lang, "vendor_roles.manager_sub") }</span>
+							</div>
+							<span class="badge badge-sky font-bold text-xs">{ i18n.T(lang, "vendor_roles.badge_admin") }</span>
+						</div>
+						<p class="text-xs text-secondary leading-relaxed mb-4">
+							{ i18n.T(lang, "vendor_roles.manager_desc") }
+						</p>
+						<div class="d-flex flex-col gap-2 text-xs text-primary">
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.manager_perm1") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.manager_perm2") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.manager_perm3") }</span>
+							</div>
+						</div>
+					</div>
+					<div class="border-t pt-3 flex-between items-center text-xs text-muted">
+						<span>{ i18n.T(lang, "vendor_roles.assigned_staff_prefix") }<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d", memberCountMap["manager"]) }</strong></span>
+						<span class="text-success font-bold">{ i18n.T(lang, "vendor_roles.badge_enabled") }</span>
+					</div>
+				</div>
+
+				<!-- Role 3: Warehouse & Inventory Keeper -->
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+					<div class="stack-sm">
+						<div class="flex-between items-start mb-3">
+							<div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_roles.warehouse_title") }</h3>
+								<span class="text-xs text-muted">{ i18n.T(lang, "vendor_roles.warehouse_sub") }</span>
+							</div>
+							<span class="badge badge-amber font-bold text-xs">{ i18n.T(lang, "vendor_roles.badge_warehouse") }</span>
+						</div>
+						<p class="text-xs text-secondary leading-relaxed mb-4">
+							{ i18n.T(lang, "vendor_roles.warehouse_desc") }
+						</p>
+						<div class="d-flex flex-col gap-2 text-xs text-primary">
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.warehouse_perm1") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.warehouse_perm2") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.warehouse_perm3") }</span>
+							</div>
+						</div>
+					</div>
+					<div class="border-t pt-3 flex-between items-center text-xs text-muted">
+						<span>{ i18n.T(lang, "vendor_roles.assigned_staff_prefix") }<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d", memberCountMap["warehouse"]) }</strong></span>
+						<span class="text-success font-bold">{ i18n.T(lang, "vendor_roles.badge_enabled") }</span>
+					</div>
+				</div>
+
+				<!-- Role 4: Financial Accountant -->
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+					<div class="stack-sm">
+						<div class="flex-between items-start mb-3">
+							<div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_roles.accountant_title") }</h3>
+								<span class="text-xs text-muted">{ i18n.T(lang, "vendor_roles.accountant_sub") }</span>
+							</div>
+							<span class="badge badge-indigo font-bold text-xs">{ i18n.T(lang, "vendor_roles.badge_financial") }</span>
+						</div>
+						<p class="text-xs text-secondary leading-relaxed mb-4">
+							{ i18n.T(lang, "vendor_roles.accountant_desc") }
+						</p>
+						<div class="d-flex flex-col gap-2 text-xs text-primary">
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.accountant_perm1") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.accountant_perm2") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.accountant_perm3") }</span>
+							</div>
+						</div>
+					</div>
+					<div class="border-t pt-3 flex-between items-center text-xs text-muted">
+						<span>{ i18n.T(lang, "vendor_roles.assigned_staff_prefix") }<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d", memberCountMap["accountant"]) }</strong></span>
+						<span class="text-success font-bold">{ i18n.T(lang, "vendor_roles.badge_enabled") }</span>
+					</div>
+				</div>
+
+				<!-- Role 5: Sales Representative -->
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+					<div class="stack-sm">
+						<div class="flex-between items-start mb-3">
+							<div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "vendor_roles.sales_title") }</h3>
+								<span class="text-xs text-muted">{ i18n.T(lang, "vendor_roles.sales_sub") }</span>
+							</div>
+							<span class="badge badge-slate font-bold text-xs">{ i18n.T(lang, "vendor_roles.badge_sales") }</span>
+						</div>
+						<p class="text-xs text-secondary leading-relaxed mb-4">
+							{ i18n.T(lang, "vendor_roles.sales_desc") }
+						</p>
+						<div class="d-flex flex-col gap-2 text-xs text-primary">
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.sales_perm1") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.sales_perm2") }</span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								@components.IconCheck("icon-xs")
+								<span>{ i18n.T(lang, "vendor_roles.sales_perm3") }</span>
+							</div>
+						</div>
+					</div>
+					<div class="border-t pt-3 flex-between items-center text-xs text-muted">
+						<span>{ i18n.T(lang, "vendor_roles.assigned_staff_prefix") }<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d", memberCountMap["employee"]) }</strong></span>
+						<span class="text-success font-bold">{ i18n.T(lang, "vendor_roles.badge_enabled") }</span>
+					</div>
+				</div>
+
+			</div>
+		</div>
+	}
+}

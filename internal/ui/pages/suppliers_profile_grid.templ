@@ -1,0 +1,193 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ SupplierProfileGrid(data SupplierProfileData, lang string) {
+	<!-- Compact Grid View (Hidden by Default) -->
+	<div class="jobs-grid d-none" id="catalog-grid-view">
+		for _, v := range data.Variants {
+			{{
+				availStock := data.GetAvailableStock(v)
+				maxOrderQty := data.GetMaxOrderQty(v)
+				isCovered := data.IsVariantCovered(v)
+				canAdd := data.CanAddToCart(v)
+				minOrderQty := data.GetMinOrderQty(v)
+				effPrice := v.EffectiveSellingPrice()
+			}}
+			<div class="glass-panel hover-lift p-4 d-flex flex-col justify-between gap-3">
+				<div class="d-flex flex-col gap-2">
+					<!-- Top Row: Thumbnail + Dosage Badge -->
+					<div class="d-flex items-center justify-between gap-2">
+						<div class="sp-product-thumb">
+							if img := data.GetProductImage(v); img != "" {
+								<img src={ img } alt={ v.Name.Get(i18n.Lang(lang)) } loading="lazy" />
+							} else {
+								<span>{ dosageFormIcon(data.GetDosageForm(v)) }</span>
+							}
+						</div>
+						<div class="d-flex gap-1 flex-wrap">
+							if form := data.GetDosageForm(v); form != "" {
+								<span class="badge badge-slate text-2xs">{ form }</span>
+							}
+							if v.Unit != "" {
+								<span class="badge badge-secondary text-2xs">{ v.Unit }</span>
+							}
+						</div>
+					</div>
+
+					<h4 class="font-bold text-sm m-0">
+						<a href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", v.ProductID)) } class="text-primary text-decoration-none">
+							if v.Name.Get(i18n.Lang(lang)) != "" {
+								{ v.Name.Get(i18n.Lang(lang)) }
+							} else {
+								{ fmt.Sprintf("تشغيلة رقم #%d", v.ID) }
+							}
+						</a>
+					</h4>
+
+					if sci := data.GetScientificName(v); sci != "" {
+						<div class="text-xs text-muted">{ sci }</div>
+					}
+
+					<!-- Batch & Expiry Tag -->
+					<div class="d-flex flex-col gap-1 text-xs">
+						if v.BatchNumber != "" {
+							<div><span class="text-muted">تشغيلة:</span> <strong class="tabular-nums text-primary">{ v.BatchNumber }</strong></div>
+						}
+						if v.ExpiryDate != nil {
+							<div><span class="text-muted">صلاحية:</span> <strong class="tabular-nums text-emerald">{ v.ExpiryDate.Format("2006-01") }</strong></div>
+						}
+					</div>
+
+					<!-- Stock & Coverage Pills -->
+					<div class="d-flex gap-1 flex-wrap">
+						if availStock > 0 {
+							<span class="badge badge-emerald text-2xs font-bold tabular-nums">
+								متوفر ({ fmt.Sprintf("%d", availStock) })
+							</span>
+						} else {
+							<span class="badge badge-rose text-2xs font-bold">
+								نفد المخزون
+							</span>
+						}
+						if !isCovered {
+							<span class="badge badge-rose text-2xs font-bold" title={ data.GetCoverageReason(v) }>
+								خارج التغطية
+							</span>
+						}
+						if v.IsNegotiable {
+							<span class="badge badge-amber text-2xs font-bold">
+								قابل للتفاوض
+							</span>
+						}
+					</div>
+
+					<!-- Pricing Row -->
+					<div class="d-flex items-center justify-between text-xs pt-1 border-t">
+						<span class="text-muted">سعر التوريد:</span>
+						<div class="tabular-nums font-bold text-sm text-primary">
+							if effPrice.IsPositive() {
+								{ effPrice.String() } <span class="text-xs font-normal text-muted">ج.م</span>
+							} else if v.Price.IsPositive() {
+								{ v.Price.String() } <span class="text-xs font-normal text-muted">ج.م</span>
+							} else {
+								<span class="text-xs text-muted font-normal">حسب الكمية</span>
+							}
+						</div>
+					</div>
+				</div>
+
+				<!-- Action Form -->
+				<div>
+					if canAdd {
+						<form
+							action="/cart/add"
+							method="POST"
+							hx-post="/cart/add"
+							hx-swap="none"
+							x-data="{ added: false, loading: false }"
+							@submit="loading = true"
+							@htmx:after-request="loading = false; added = true; setTimeout(() => added = false, 2500)"
+							class="d-flex items-center gap-2 m-0"
+						>
+							<input type="hidden" name="return_to" value={ fmt.Sprintf("/suppliers/%d", data.Org.ID) } />
+							<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", v.ProductID) } />
+							<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", v.ID) } />
+							<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", data.Org.ID) } />
+							<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", data.Org.ID) } />
+							<input type="hidden" name="offer_price" value={ effPrice.String() } />
+							<input
+								type="number"
+								name="quantity"
+								min={ fmt.Sprintf("%d", minOrderQty) }
+								max={ fmt.Sprintf("%d", maxOrderQty) }
+								value={ fmt.Sprintf("%d", minOrderQty) }
+								class="sp-stepper-input tabular-nums"
+								title={ fmt.Sprintf("الكمية المطلوبة (المتاح بالمخزن: %d)", availStock) }
+							/>
+							<button
+								type="submit"
+								:disabled="loading"
+								class="btn btn-primary btn-sm font-bold"
+							>
+								<span x-show="!loading && !added">@components.IconCart("icon-xs")</span>
+								<span x-show="!loading && !added">+ إضافة</span>
+								<span x-show="loading">⏳...</span>
+								<span x-show="added" class="text-emerald font-bold">تمت!</span>
+							</button>
+						</form>
+					} else {
+						<div class="d-flex flex-col gap-1">
+							if !isCovered {
+								if data.GetCoverageReason(v) != "" {
+									<span class="badge badge-rose text-xs font-bold w-full text-center py-2" title={ data.GetCoverageReason(v) }>
+										{ data.GetCoverageReason(v) }
+									</span>
+								} else {
+									<span class="badge badge-rose text-xs font-bold w-full text-center py-2">
+										خارج نطاق التغطية
+									</span>
+								}
+							} else if availStock <= 0 {
+								<span class="badge badge-slate text-xs font-bold w-full text-center py-2">
+									نفد من المخزون
+								</span>
+							} else {
+								if data.GetCoverageReason(v) != "" {
+									<span class="badge badge-amber text-xs font-bold w-full text-center py-2" title={ data.GetCoverageReason(v) }>
+										{ data.GetCoverageReason(v) }
+									</span>
+								} else {
+									<span class="badge badge-slate text-xs font-bold w-full text-center py-2">
+										غير متاح للطلب
+									</span>
+								}
+							}
+						</div>
+					}
+					if v.IsNegotiable {
+						<button
+							type="button"
+							class="btn btn-secondary btn-xs w-full mt-2 font-bold justify-center text-amber-700 gap-1.5 shadow-2xs border-amber-300"
+							data-variant-id={ fmt.Sprintf("%d", v.ID) }
+							data-product-id={ fmt.Sprintf("%d", v.ProductID) }
+							data-vendor-id={ fmt.Sprintf("%d", data.Org.ID) }
+							data-product-name={ v.Name.Get(i18n.Lang(lang)) }
+							data-current-price={ effPrice.String() }
+							data-min-qty={ fmt.Sprintf("%d", minOrderQty) }
+							data-on-click="openNegotiationModal(this)"
+						>
+							@components.IconTag("icon-2xs")
+							<span>طلب تفاوض على السعر</span>
+						</button>
+					}
+				</div>
+			</div>
+		}
+	</div>
+}

@@ -1,0 +1,147 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+// CustomerOfferOrdersPage renders offer-based orders.
+templ CustomerOfferOrdersPage(orders []*commerce.Order, lang, dir string, page, perPage, totalCount int) {
+	@layouts.ShellFor("طلبات العروض والصفقات", "orders", lang, dir, authctx.FromContext(ctx)) {
+		<div class="glass-panel mb-0">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">طلبات العروض والصفقات الخاصة ({ fmt.Sprintf("%d", totalCount) })</h2>
+					<p class="subtitle">أوامر الشراء المشتملة على عروض ترويجية وباقات خصومات خاصة.</p>
+				</div>
+			</div>
+
+			if len(orders) == 0 {
+				@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات عروض مسجلة", Message: "تصفح قسم العروض واطلب الكميات المطلوبة للاستفادة من أعلى خصم متاح."})
+			} else {
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>رقم الطلب</th>
+								<th>الإجمالي</th>
+								<th>الخصم</th>
+								<th>الحالة</th>
+								<th class="col-actions">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, o := range orders {
+								<tr>
+									<td class="tabular-nums"><strong>{ o.OrderNumber }</strong></td>
+									<td class="tabular-nums">{ fmt.Sprintf("%s ج.م", o.TotalAmount.String()) }</td>
+									<td class="tabular-nums">{ fmt.Sprintf("%s ج.م", o.TotalDiscount.String()) }</td>
+									<td><span class="badge badge-sky">{ string(o.Status) }</span></td>
+									<td class="col-actions">
+										<a href={ templ.SafeURL(fmt.Sprintf("/orders/%d", o.ID)) } class="btn btn-secondary btn-sm">عرض الطلب</a>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     "/orders/offers",
+						})
+					}
+				}
+			</div>
+	}
+}
+
+// CustomerOfferCheckoutPage renders checkout for an offer.
+templ CustomerOfferCheckoutPage(offer *promo.Offer, lang, dir string) {
+	@layouts.ShellFor(fmt.Sprintf("إتمام طلب العرض: %s", offer.Title.Get("ar")), "offers", lang, dir, authctx.FromContext(ctx)) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<div class="header-row">
+    <div class="stack-sm">
+					<h2 class="m-0 text-base font-bold text-primary">إتمام شراء العرض: { offer.Title.Get("ar") }</h2>
+					<p class="subtitle">قيمة الخصم: { offer.DiscountValue.String() }</p>
+				</div>
+				<a href="/offers" class="btn btn-secondary btn-sm">إلغاء والعودة</a>
+			</div>
+
+			<form class="stack-md" method="POST" action="/checkout">
+				<input type="hidden" name="offer_id" value={ fmt.Sprintf("%d", offer.ID) } />
+    <div class="stack-sm">
+					<h3 class="font-bold text-sm m-0">بيانات التسليم والفرع</h3>
+					<div class="stack">
+      <div class="stack-sm">
+							<label class="form-label">فرع الاستلام</label>
+							<select name="branch_id" class="form-input" required>
+								<option value="1">الفرع الرئيسي للصيدلية</option>
+							</select>
+						</div>
+      <div class="stack-sm">
+							<label class="form-label">ملاحظات التوصيل</label>
+							<textarea name="notes" class="form-input" rows="2" placeholder="مواعيد التسليم أو تعليمات الشحن..."></textarea>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex justify-end">
+					<button type="submit" class="btn btn-primary">تأكيد وإرسال أمر الشراء</button>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// CustomerAddOrderPage renders manual order form.
+templ CustomerAddOrderPage(lang, dir string) {
+	@layouts.ShellFor("طلب شراء سريع", "orders", lang, dir, authctx.FromContext(ctx)) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<h2 class="mb-lg text-base font-bold text-primary">إضافة أمر شراء يدوي سريع</h2>
+			@components.EmptyState(components.EmptyStateProps{Title: "الطلب اليدوي", Message: "يمكنك إضافة الأصناف والكميات مباشرة لإرسالها لأقرب مورد معتمد."})
+		</div>
+	}
+}
+
+// GuestOrderTrackingPage renders public tracking screen.
+templ GuestOrderTrackingPage(orderNumber string, order *commerce.Order, lang, dir string) {
+	@layouts.PublicShell("تتبع حالة الطلب والشحنة", lang, dir) {
+		<div class="container">
+			<div class="glass-panel">
+				<h2 class="text-base font-bold text-primary">تتبع شحنات وطلبات دوا 24</h2>
+				<p class="text-sm text-secondary m-0">أدخل رقم الطلب لمعرفة حالة التجهيز والشحن دون الحاجة لتسجيل الدخول.</p>
+
+				<form class="stack-md" method="GET" action="/tracking">
+					<input type="text" name="order_number" value={ orderNumber } placeholder="مثال: ORD-20260819-XXXXXX" class="form-input flex-1" required />
+					<button type="submit" class="btn btn-primary">تتبع الآن</button>
+				</form>
+
+				if orderNumber != "" {
+					if order != nil {
+      <div class="stack-sm">
+							<div class="flex-between mb-md">
+        <div class="stack-sm">
+									<div class="text-sm text-secondary">رقم الطلب</div>
+									<div class="stack-sm"><code>{ order.OrderNumber }</code></div>
+								</div>
+								<span class="badge badge-sky">{ string(order.Status) }</span>
+							</div>
+							<div class="text-sm text-secondary">
+								تاريخ الإنشاء: <span class="tabular-nums">{ order.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+							</div>
+						</div>
+					} else {
+						@components.EmptyState(components.EmptyStateProps{Title: "لم يتم العثور على الطلب", Message: "تأكد من إدخال رقم الطلب بصورة صحيحة."})
+					}
+				}
+			</div>
+		</div>
+	}
+}

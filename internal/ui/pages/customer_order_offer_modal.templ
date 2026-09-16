@@ -1,0 +1,201 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerOrderOfferModal(details *commerce.OrderLineOfferDetails, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "order-offer-modal",
+		Title: "تفاصيل العرض الترويجي",
+		Icon:  "package",
+		Size:  "lg",
+	}) {
+		<div class="d-flex flex-col gap-4 text-start">
+			<!-- Offer Header & Mechanics Banner -->
+			<div class="glass-panel p-4 mb-0 bg-surface-sunken rounded-2xl border border-slate-200/80">
+				<div class="flex-between items-start flex-wrap gap-3 mb-2">
+					<div class="stack-xs">
+						<div class="d-flex items-center gap-2">
+							<h3 class="text-base font-black text-primary m-0">
+								{ details.Title.Get(i18n.ParseLang(lang)) }
+							</h3>
+							if details.VendorName != "" {
+								<span class="badge badge-slate text-2xs font-bold">
+									المورد: { details.VendorName }
+								</span>
+							}
+						</div>
+						<div class="text-xs text-secondary font-medium mt-1">
+							{ details.MechanicsText(lang) }
+						</div>
+					</div>
+					<div class="badge badge-sky text-xs font-bold d-inline-flex items-center gap-1.5 py-1 px-2.5">
+						@components.IconClock("icon-2xs")
+						<span>{ details.ValidityText(lang) }</span>
+					</div>
+				</div>
+
+				if details.Description.Get(i18n.ParseLang(lang)) != "" {
+					<div class="p-2.5 rounded-xl bg-surface border border-slate-200/60 text-xs text-secondary leading-relaxed mt-2">
+						{ details.Description.Get(i18n.ParseLang(lang)) }
+					</div>
+				}
+			</div>
+
+			<!-- Line Financials Reconciliation Card (WO-16) -->
+			<div class="glass-panel p-4 mb-0 rounded-2xl border border-slate-200/80">
+				<div class="flex-between items-center mb-3">
+					<h4 class="text-xs font-black text-primary m-0 d-flex items-center gap-1.5">
+						@components.IconTag("icon-2xs text-brand")
+						<span>البيانات المالية ومطابقة أسعار الصنف بالطلب</span>
+					</h4>
+					<span class="text-2xs text-muted font-mono">Order Line #{ fmt.Sprintf("%d", details.LineID) }</span>
+				</div>
+
+				<div class="dashboard-stat-grid cols-5 gap-3 mb-0">
+					<!-- List / Public Price -->
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-2xs">سعر الجمهور (الأساسي)</div>
+						<div class="text-sm font-black text-primary mt-1 tabular-nums">
+							{ details.ListPrice.String() } <span class="text-2xs font-normal text-muted">ج.م</span>
+						</div>
+					</div>
+
+					<!-- Applied Discount -->
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-2xs">الخصم المطبق للصنف</div>
+						<div class="d-flex items-baseline gap-1 mt-1">
+							<span class="text-sm font-black text-emerald-600 tabular-nums">
+								{ details.DiscountAmount.String() }
+							</span>
+							<span class="text-2xs font-normal text-muted">ج.م</span>
+						</div>
+						if details.EffectiveDiscountPercent() > 0 {
+							<div class="badge badge-emerald text-2xs font-black mt-1 py-0 px-1.5">
+								{ fmt.Sprintf("%.1f%%", details.EffectiveDiscountPercent()) }
+							</div>
+						}
+					</div>
+
+					<!-- Resulting Unit Price -->
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-2xs">سعر الوحدة بعد الخصم</div>
+						<div class="text-sm font-black text-brand mt-1 tabular-nums">
+							{ details.UnitPrice.String() } <span class="text-2xs font-normal text-muted">ج.م</span>
+						</div>
+					</div>
+
+					<!-- Quantity Ordered -->
+					<div class="stat-card-3d p-3">
+						<div class="stat-card-label text-2xs">الكمية المطلوبة</div>
+						<div class="text-sm font-black text-primary mt-1 tabular-nums">
+							{ fmt.Sprintf("%d", details.Quantity) } <span class="text-2xs font-normal text-muted">عبوة</span>
+						</div>
+					</div>
+
+					<!-- Line Total -->
+					<div class="stat-card-3d p-3 bg-brand-50/20 border-brand-200">
+						<div class="stat-card-label text-2xs font-bold text-brand">إجمالي قيمة الصنف</div>
+						<div class="text-base font-black text-brand mt-1 tabular-nums">
+							{ details.TotalPrice.String() } <span class="text-2xs font-normal text-brand">ج.م</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Bundled Items Manifest Table (If Bundle) -->
+			if len(details.Items) > 0 {
+				<div>
+					<div class="flex-between items-center mb-2">
+						<h4 class="text-xs font-black text-primary m-0 d-flex items-center gap-1.5">
+							@components.IconPackage("icon-2xs text-brand")
+							<span>الأصناف والمنتجات المشمولة في الباقة ({ fmt.Sprintf("%d", len(details.Items)) })</span>
+						</h4>
+						<span class="badge badge-emerald text-2xs font-bold">باقة ترويجية مجمعة</span>
+					</div>
+
+					<div class="table-container m-0 border rounded-xl overflow-hidden">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>الصنف المشمول</th>
+									<th class="text-center">الكمية بالباقة</th>
+									<th class="text-end">سعر التوريد</th>
+									<th class="text-center">الخصم الإضافي</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, item := range details.Items {
+									<tr>
+										<td>
+											<div class="font-extrabold text-primary text-xs">
+												{ item.ProductName.Get(i18n.ParseLang(lang)) }
+											</div>
+											if item.VariantName != "" || item.SKU != "" {
+												<div class="text-2xs text-muted mt-0.5">
+													if item.VariantName != "" {
+														<span>{ item.VariantName }</span>
+													}
+													if item.SKU != "" {
+														<span class="font-mono ms-1">SKU: { item.SKU }</span>
+													}
+												</div>
+											}
+										</td>
+										<td class="text-center tabular-nums font-bold text-xs">
+											<span class="p-1 px-2.5 rounded bg-surface border">
+												{ fmt.Sprintf("%d", item.Quantity) }
+											</span>
+										</td>
+										<td class="text-end tabular-nums text-xs text-primary font-bold">
+											if item.CustomPrice.IsPositive() {
+												{ item.CustomPrice.String() } ج.م
+											} else {
+												<span class="text-muted">مشمول بالباقة</span>
+											}
+										</td>
+										<td class="text-center tabular-nums text-xs">
+											if item.CustomDiscountPercent > 0 {
+												<span class="badge badge-emerald text-2xs font-bold">
+													{ fmt.Sprintf("%.1f%%", item.CustomDiscountPercent) }
+												</span>
+											} else {
+												<span class="text-muted">-</span>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				</div>
+			}
+
+			<!-- Modal Footer -->
+			<div class="flex-between items-center pt-3 border-t border-slate-100 mt-1">
+				<span class="text-2xs text-muted">بيانات العرض مطابقة لطلب التوريد</span>
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold px-5"
+					data-modal-close="order-offer-modal"
+				>
+					إغلاق
+				</button>
+			</div>
+		</div>
+	}
+	<script nonce={ layouts.Nonce(ctx) }>
+		(function() {
+			var d = document.getElementById('order-offer-modal');
+			if (d && typeof d.showModal === 'function' && !d.open) {
+				d.showModal();
+			}
+		})();
+	</script>
+}

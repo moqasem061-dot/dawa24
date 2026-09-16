@@ -1,0 +1,242 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type VendorSpecialOffersData struct {
+	Offers       []*promo.SpecialOffer
+	AllOffers    []*promo.SpecialOffer
+	Counts       map[string]int
+	FilterStatus string
+	SearchQuery  string
+
+	Branches     []*org.Branch
+	BranchID     int64
+	DiscountType string
+	DateFrom     string
+	DateTo       string
+
+	Page       int
+	PerPage    int
+	TotalCount int
+}
+
+// VendorOffersQueryValues carries the filter bar into the pager.
+func (d VendorSpecialOffersData) VendorOffersQueryValues() url.Values {
+	v := url.Values{}
+	if d.SearchQuery != "" {
+		v.Set("q", d.SearchQuery)
+	}
+	if d.FilterStatus != "" && d.FilterStatus != "all" {
+		v.Set("status", d.FilterStatus)
+	}
+	if d.BranchID > 0 {
+		v.Set("branch_id", strconv.FormatInt(d.BranchID, 10))
+	}
+	if d.DiscountType != "" {
+		v.Set("discount", d.DiscountType)
+	}
+	if d.DateFrom != "" {
+		v.Set("date_from", d.DateFrom)
+	}
+	if d.DateTo != "" {
+		v.Set("date_to", d.DateTo)
+	}
+	return v
+}
+
+templ VendorSpecialOffersPage(data VendorSpecialOffersData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_offers.shell_title"), "supply_offers", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header Action Bar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconPackage("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_offers.header_title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_offers.header_desc") }
+						</p>
+					</div>
+
+					<div class="d-flex items-center gap-2.5 flex-wrap">
+						<a href="/vendor/offers/new" class="btn btn-primary font-bold text-xs px-4 py-2.5 gap-1.5 shadow-2xs">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "vendor_offers.btn_new_offer") }</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Statistics Summary Cards (Clickable Filter Tabs) -->
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+				<!-- Total Offers -->
+				<a href="/vendor/offers" class="text-decoration-none">
+					<div class={ "glass-panel p-4 mb-0 border-s-4 border-s-accent transition-transform hover:-translate-y-0.5", templ.KV("ring-2 ring-accent", data.FilterStatus == "" || data.FilterStatus == "all") }>
+						<div class="flex-between items-center mb-1">
+							<span class="text-xs font-bold text-muted">{ i18n.T(lang, "vendor_offers.stat_total") }</span>
+							<span class="text-accent">@components.IconPackage("icon-xs")</span>
+						</div>
+						<div class="text-2xl font-black text-primary tabular-nums">
+							{ fmt.Sprintf("%d", len(data.AllOffers)) }
+						</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_offers.stat_total_sub") }</div>
+					</div>
+				</a>
+
+				<!-- Active Offers -->
+				<a href="/vendor/offers?status=active" class="text-decoration-none">
+					<div class={ "glass-panel p-4 mb-0 border-s-4 border-s-success transition-transform hover:-translate-y-0.5", templ.KV("ring-2 ring-success", data.FilterStatus == "active") }>
+						<div class="flex-between items-center mb-1">
+							<span class="text-xs font-bold text-muted">{ i18n.T(lang, "vendor_offers.stat_active") }</span>
+							<span class="text-success">@components.IconCheckCircle("icon-xs")</span>
+						</div>
+						<div class="text-2xl font-black text-emerald tabular-nums">
+							{ fmt.Sprintf("%d", countOffersByStatus(data.AllOffers, "active")) }
+						</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_offers.stat_active_sub") }</div>
+					</div>
+				</a>
+
+				<!-- Pending Review -->
+				<a href="/vendor/offers?status=pending" class="text-decoration-none">
+					<div class={ "glass-panel p-4 mb-0 border-s-4 border-s-warning transition-transform hover:-translate-y-0.5", templ.KV("ring-2 ring-warning", data.FilterStatus == "pending") }>
+						<div class="flex-between items-center mb-1">
+							<span class="text-xs font-bold text-muted">{ i18n.T(lang, "vendor_offers.stat_pending") }</span>
+							<span class="text-warning">@components.IconClock("icon-xs")</span>
+						</div>
+						<div class="text-2xl font-black text-warning tabular-nums">
+							{ fmt.Sprintf("%d", countOffersByAdminStatus(data.AllOffers, "pending")) }
+						</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_offers.stat_pending_sub") }</div>
+					</div>
+				</a>
+
+				<!-- Changes Requested -->
+				<a href="/vendor/offers?status=changes_requested" class="text-decoration-none">
+					<div class={ "glass-panel p-4 mb-0 border-s-4 border-s-amber-500 transition-transform hover:-translate-y-0.5", templ.KV("ring-2 ring-amber-500", data.FilterStatus == "changes_requested") }>
+						<div class="flex-between items-center mb-1">
+							<span class="text-xs font-bold text-muted">{ i18n.T(lang, "vendor_offers.stat_changes") }</span>
+							<span class="text-amber-600">@components.IconEdit("icon-xs")</span>
+						</div>
+						<div class="text-2xl font-black text-amber-600 tabular-nums">
+							{ fmt.Sprintf("%d", countOffersByAdminStatus(data.AllOffers, "changes_requested")) }
+						</div>
+						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_offers.stat_changes_sub") }</div>
+					</div>
+				</a>
+			</div>
+
+			<!-- Filter & Search Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/vendor/offers" class="d-flex items-center gap-3 flex-wrap m-0">
+					<div class="flex-1 min-w-60">
+						<input
+							type="text"
+							name="q"
+							value={ data.SearchQuery }
+							placeholder={ i18n.T(lang, "vendor_offers.search_placeholder") }
+							class="form-input text-xs w-full"
+						/>
+					</div>
+
+					<div class="min-w-48">
+						<select name="status" class="form-select text-xs w-full" data-autosubmit>
+							<option value="">{ i18n.T(lang, "vendor_offers.filter_status_prompt") }</option>
+							<option value="all" selected?={ data.FilterStatus == "all" || data.FilterStatus == "" }>{ i18n.T(lang, "vendor_offers.status_all") }</option>
+							<option value="active" selected?={ data.FilterStatus == "active" }>{ i18n.T(lang, "vendor_offers.status_active") }</option>
+							<option value="pending" selected?={ data.FilterStatus == "pending" }>{ i18n.T(lang, "vendor_offers.status_pending") }</option>
+							<option value="changes_requested" selected?={ data.FilterStatus == "changes_requested" }>{ i18n.T(lang, "vendor_offers.status_changes") }</option>
+							<option value="draft" selected?={ data.FilterStatus == "draft" }>{ i18n.T(lang, "vendor_offers.status_draft") }</option>
+							<option value="rejected" selected?={ data.FilterStatus == "rejected" }>{ i18n.T(lang, "vendor_offers.status_rejected") }</option>
+						</select>
+					</div>
+
+					<div class="min-w-40">
+						<select name="branch_id" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "vendor_offers.filter_all_branches") }</option>
+							for _, b := range data.Branches {
+								<option value={ fmt.Sprintf("%d", b.ID) } selected?={ data.BranchID == b.ID }>
+									{ b.Name.Get(i18n.Lang(lang)) }
+								</option>
+							}
+						</select>
+					</div>
+					<div class="min-w-36">
+						<select name="discount" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "vendor_offers.filter_all_discounts") }</option>
+							<option value="percentage" selected?={ data.DiscountType == "percentage" }>{ i18n.T(lang, "vendor_offers.discount_percentage") }</option>
+							<option value="amount" selected?={ data.DiscountType == "amount" }>{ i18n.T(lang, "vendor_offers.discount_fixed") }</option>
+						</select>
+					</div>
+					<input type="date" name="date_from" value={ data.DateFrom } class="form-input text-xs" title={ i18n.T(lang, "vendor_offers.title_date_from") }/>
+					<input type="date" name="date_to" value={ data.DateTo } class="form-input text-xs" title={ i18n.T(lang, "vendor_offers.title_date_to") }/>
+					<select name="limit" class="form-select text-xs">
+						for _, n := range []int{10, 25, 50, 100} {
+							<option value={ fmt.Sprintf("%d", n) } selected?={ data.PerPage == n }>{ fmt.Sprintf("%d", n) }</option>
+						}
+					</select>
+
+					<button type="submit" class="btn btn-primary btn-sm font-bold gap-1">
+						@components.IconSearch("icon-xs")
+						<span>{ i18n.T(lang, "vendor_offers.btn_filter") }</span>
+					</button>
+
+					if len(data.VendorOffersQueryValues()) > 0 {
+						<a href="/vendor/offers" class="btn btn-secondary btn-sm font-bold">
+							{ i18n.T(lang, "vendor_offers.btn_reset_filter") }
+						</a>
+					}
+				</form>
+			</div>
+
+			<!-- Offers Grid List -->
+			if len(data.Offers) == 0 {
+				<div class="glass-panel p-12 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">
+						{ i18n.T(lang, "vendor_offers.empty_title") }
+					</h3>
+					<p class="text-sm text-secondary max-w-md mx-auto mb-6">
+						{ i18n.T(lang, "vendor_offers.empty_desc") }
+					</p>
+					<a href="/vendor/offers/new" class="btn btn-primary font-bold text-xs gap-1.5 px-4 py-2">
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "vendor_offers.btn_create_first") }</span>
+					</a>
+				</div>
+			} else {
+				<div class="dashboard-grid-3col mb-0 items-stretch">
+					for _, o := range data.Offers {
+						@VendorOfferCard(o, lang, dir)
+					}
+				</div>
+			}
+			if data.TotalCount > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalCount,
+					BaseURL:     "/vendor/offers",
+					QueryValues: data.VendorOffersQueryValues(),
+				})
+			}
+		</div>
+	}
+}

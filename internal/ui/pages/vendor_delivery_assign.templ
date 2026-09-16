@@ -1,0 +1,113 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The assignment control.
+//
+// It is one component used from three screens — أوامر التوريد, the dispatch
+// board, and a parcel's own page — because "hand this to a مندوب" is one
+// action and a second copy of the form is a second place for the ownership
+// rules to be got wrong. returnTo tells the handler which screen to come back
+// to; it is a key, not a URL, so the field cannot become an open redirect.
+
+templ VendorDeliveryAssignForm(sh *commerce.OrderShipment, couriers []DeliveryCourierOption, returnTo string, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	if sh.Status == commerce.StatusPending {
+		<div class="d-flex items-center gap-2 text-xs text-amber-600 font-bold">
+			@components.IconLock("icon-2xs")
+			<span>{ i18n.T(lang, "vendor_delivery.assign.pending_msg") }</span>
+		</div>
+	} else if sh.Status == commerce.StatusCancelled || sh.Status == commerce.StatusReturned || sh.Status == commerce.StatusRefunded {
+		<div class="d-flex items-center gap-2 text-xs text-muted">
+			@components.IconCheckCircle("icon-2xs")
+			<span>{ i18n.T(lang, "vendor_delivery.assign.closed_msg") }</span>
+		</div>
+	} else if len(couriers) == 0 {
+		<div class="d-flex items-center gap-2 text-xs text-secondary flex-wrap">
+			@components.IconInfo("icon-2xs")
+			<span>{ i18n.T(lang, "vendor_delivery.assign.no_couriers_msg") }</span>
+			<a href="/vendor/team" class="font-bold text-decoration-none">
+				{ i18n.T(lang, "vendor_delivery.assign.add_courier_link") }
+			</a>
+		</div>
+	} else {
+		<div class="d-flex items-center gap-2 flex-wrap">
+			<form
+				action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/assign", sh.ID)) }
+				method="POST"
+				class="m-0 d-flex items-center gap-2 flex-wrap"
+			>
+				if returnTo != "" {
+					<input type="hidden" name="return_to" value={ returnTo }/>
+				}
+				<label class="text-xs font-bold text-secondary">
+					if sh.CourierUserID == nil {
+						{ i18n.T(lang, "vendor_delivery.assign.lbl_assign") }
+					} else {
+						{ i18n.T(lang, "vendor_delivery.assign.lbl_change") }
+					}
+				</label>
+				<select name="courier_user_id" required class="form-select text-xs">
+					<option value="">{ i18n.T(lang, "vendor_delivery.assign.select_ph") }</option>
+					for _, c := range couriers {
+						<option
+							value={ fmt.Sprintf("%d", c.UserID) }
+							selected?={ sh.IsAssignedTo(c.UserID) }
+						>
+							{ deliveryCourierLabel(c) }
+						</option>
+					}
+				</select>
+				<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1.5">
+					@components.IconTruck("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_delivery.assign.btn_assign") }</span>
+				</button>
+			</form>
+
+			if sh.CourierUserID != nil {
+				<form
+					action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/unassign", sh.ID)) }
+					method="POST"
+					class="m-0 d-inline"
+				>
+					if returnTo != "" {
+						<input type="hidden" name="return_to" value={ returnTo }/>
+					}
+					<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs">
+						{ i18n.T(lang, "vendor_delivery.assign.btn_unassign") }
+					</button>
+				</form>
+			}
+		</div>
+
+		if sh.CourierName != "" && sh.CourierAssignedAt != nil {
+			<div class="text-2xs text-muted mt-2 tabular-nums font-mono">
+				{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.assign.currently_assigned"), sh.CourierName, sh.CourierAssignedAt.Format("2006-01-02 03:04 PM")) }
+			</div>
+		}
+	}
+}
+
+// deliveryCourierLabel identifies a representative the way a dispatcher picks
+// one: by name, then by whatever distinguishes two people with the same one.
+func deliveryCourierLabel(c DeliveryCourierOption) string {
+	label := c.Name
+	if c.EmployeeCode != "" {
+		label += " (" + c.EmployeeCode + ")"
+	}
+	if c.BranchName != "" {
+		label += " — " + c.BranchName
+	}
+	return label
+}

@@ -1,0 +1,230 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) {
+	<div class="glass-panel p-6 border border-slate-200/80 rounded-2xl shadow-xs">
+		<!-- Section Header & Billing Period Switcher -->
+		<div class="flex-between items-center flex-wrap gap-4 mb-6 pb-4 border-b border-slate-100">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0">
+					باقات وعضويات المنظومة المتاحة
+				</h2>
+				<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+					اختر الباقة المناسبة لحجم أعمالك، مع إمكانية الترقية الفورية والدفع المباشر من المحفظة
+				</p>
+			</div>
+
+			<!-- Billing Switcher -->
+			<div class="d-inline-flex p-1 rounded-xl bg-slate-100/90 border border-slate-200/80 items-center">
+				<button
+					type="button"
+					@click="planBillingPeriod = 'monthly'"
+					class="px-4 py-1.5 rounded-lg text-xs font-black transition-all"
+					:class="planBillingPeriod === 'monthly' ? 'bg-white text-primary shadow-xs' : 'text-secondary'"
+				>
+					شهرياً
+				</button>
+				<button
+					type="button"
+					@click="planBillingPeriod = 'annual'"
+					class="px-4 py-1.5 rounded-lg text-xs font-black transition-all d-flex items-center gap-1.5"
+					:class="planBillingPeriod === 'annual' ? 'bg-white text-primary shadow-xs' : 'text-secondary'"
+				>
+					<span>سنوياً</span>
+					<span class="badge badge-emerald font-extrabold text-2xs py-0.5 px-1.5">وفر شهرين مجاناً</span>
+				</button>
+			</div>
+		</div>
+
+		if len(data.Plans) == 0 {
+			<div class="p-8 text-center text-muted text-xs border border-slate-200/80 rounded-xl bg-surface-sunken">
+				جاري تجهيز بيانات الباقات من النظام...
+			</div>
+		} else {
+			<!-- Horizontal Grid of Pricing Cards -->
+			<div class="dashboard-stat-grid cols-3 gap-6 items-stretch mb-6">
+				for _, p := range data.Plans {
+					{{ isCurrent := data.CurrentPlanID == p.ID || (data.CurrentPlanID <= 0 && p.IsDefault) }}
+					<div
+						class={ "glass-panel p-6 mb-0 d-flex flex-col justify-between rounded-2xl transition-all relative overflow-hidden h-full",
+							templ.KV("border-2 border-brand-500 bg-brand-50/10 shadow-md", isCurrent),
+							templ.KV("border border-slate-200/80 hover:border-slate-300 shadow-xs", !isCurrent) }
+					>
+						<!-- Current Plan Top Ribbon -->
+						if isCurrent {
+							<div class="mb-3">
+								<span class="badge badge-emerald font-black text-xs shadow-2xs gap-1">
+									@components.IconCheck("icon-2xs")
+									<span>باقتك الحالية النشطة</span>
+								</span>
+							</div>
+						}
+
+						<div class="stack-sm">
+							<!-- Plan Title & Badge -->
+							<div class="flex-between items-start mb-2">
+								<div class="stack-sm">
+									<h3 class="text-lg font-black text-primary m-0">
+										{ p.Name.Get("ar") }
+									</h3>
+									<span class="text-2xs text-muted font-mono d-block mt-0.5">
+										{ p.Slug }
+									</span>
+								</div>
+								if p.IsDefault && !isCurrent {
+									<span class="badge badge-slate text-xs font-bold">الباقة الأساسية</span>
+								}
+							</div>
+
+							<!-- Plan Short Description -->
+							<p class="text-xs text-secondary leading-relaxed mb-4 font-medium">
+								{ p.Description.Get("ar") }
+							</p>
+
+							<!-- Price Display with Dynamic Monthly/Annual View -->
+							<div class="p-4 rounded-xl bg-surface-sunken border border-slate-200/80 mb-5">
+								<!-- Monthly Price View -->
+								<div x-show="planBillingPeriod === 'monthly'" class="flex-between items-baseline">
+									<div class="stack-sm">
+										<span class="text-2xl font-black text-brand tabular-nums">
+											@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: p.PriceMonth })
+										</span>
+										<span class="text-xs text-muted ms-1 font-semibold">/ شهر</span>
+									</div>
+									<span class="text-2xs text-secondary font-medium">فوترة شهرية</span>
+								</div>
+
+								<!-- Annual Price View -->
+								<div x-show="planBillingPeriod === 'annual'" class="flex-between items-baseline">
+									<div class="stack-sm">
+										<span class="text-2xl font-black text-emerald-600 tabular-nums">
+											@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: p.PriceYear })
+										</span>
+										<span class="text-xs text-muted ms-1 font-semibold">/ سنة</span>
+									</div>
+									<span class="badge badge-emerald text-2xs font-extrabold">خصم سنوي</span>
+								</div>
+							</div>
+
+							<!-- Core Resource Limits -->
+							<div class="d-flex flex-col gap-2 mb-5 text-xs font-medium bg-slate-50/60 p-3.5 rounded-xl border border-slate-100">
+								<div class="flex-between text-primary">
+									<span class="text-secondary d-flex items-center gap-1.5">
+										@components.IconUsers("icon-2xs text-brand")
+										<span>الجلسات المتزامنة:</span>
+									</span>
+									<strong class="text-primary tabular-nums font-bold">{ fmt.Sprintf("%d جلسات", p.MaxLoginSessions) }</strong>
+								</div>
+								<div class="flex-between text-primary">
+									<span class="text-secondary d-flex items-center gap-1.5">
+										@components.IconShield("icon-2xs text-brand")
+										<span>الأجهزة المصرح بها:</span>
+									</span>
+									<strong class="tabular-nums font-bold text-primary">{ fmt.Sprintf("%d أجهزة", p.MaxDevices) }</strong>
+								</div>
+								<div class="flex-between text-primary">
+									<span class="text-secondary d-flex items-center gap-1.5">
+										@components.IconZap("icon-2xs text-amber-500")
+										<span>بوابة الذكاء الاصطناعي:</span>
+									</span>
+									<code dir="ltr" class="text-2xs font-bold font-mono badge badge-sky">{ p.AIPlanID }</code>
+								</div>
+							</div>
+
+							<!-- Feature Highlights -->
+							<div class="mb-5">
+								<div class="text-2xs font-black text-secondary mb-2.5">الميزات والقدرات المتاحة:</div>
+								<div class="d-flex flex-col gap-2 text-xs font-medium">
+									if orgType == "vendor" || orgType == "supplier" {
+										if p.HasFeature("feature_market_discounts") {
+											<div class="d-flex items-center gap-2 text-emerald-600 font-bold">
+												@components.IconCheck("icon-2xs flex-shrink-0")
+												<span>خصومات السوق ومؤشرات الأسعار التنافسية</span>
+											</div>
+										}
+										if p.HasFeature("feature_compare_tool") {
+											<div class="d-flex items-center gap-2 text-brand font-bold">
+												@components.IconCheck("icon-2xs flex-shrink-0")
+												<span>أداة مقارنة الخصومات وتحليل عروض السوق</span>
+											</div>
+										}
+										<div class="d-flex items-center gap-2 text-secondary">
+											@components.IconCheck("icon-2xs text-emerald-500 flex-shrink-0")
+											<span>استيراد الكتالوج وإدارة المخازن والفروع</span>
+										</div>
+										<div class="d-flex items-center gap-2 text-secondary">
+											@components.IconCheck("icon-2xs text-emerald-500 flex-shrink-0")
+											<span>إدارة عروض التوريد وباقات الرعايات والإعلانات</span>
+										</div>
+									} else {
+										<div class="d-flex items-center gap-2 text-emerald-600 font-bold">
+											@components.IconCheck("icon-2xs flex-shrink-0")
+											<span>الطلب الذكي ومطابقة نواقص الأدوية بالـ AI</span>
+										</div>
+										<div class="d-flex items-center gap-2 text-secondary">
+											@components.IconCheck("icon-2xs text-emerald-500 flex-shrink-0")
+											<span>الاستفادة الفورية من خصومات وعروض الموردين الحصرية</span>
+										</div>
+										<div class="d-flex items-center gap-2 text-secondary">
+											@components.IconCheck("icon-2xs text-emerald-500 flex-shrink-0")
+											<span>إدارة فروع الصيدلية، الشحنات، والفواتير الضريبية</span>
+										</div>
+										<div class="d-flex items-center gap-2 text-secondary">
+											@components.IconCheck("icon-2xs text-emerald-500 flex-shrink-0")
+											<span>متابعة نشاط الموظفين وسجل العمليات الكامل</span>
+										</div>
+									}
+								</div>
+							</div>
+						</div>
+
+						<!-- Action CTA Button / Cooldown State (WO-15) -->
+						<div class="pt-4 border-t border-slate-100">
+							if isCurrent {
+								<div class="p-2.5 px-3 rounded-xl bg-emerald-50/90 border border-emerald-200/90 text-emerald-800 d-flex items-center justify-center gap-1.5 font-bold text-xs text-center shadow-2xs">
+									@components.IconCheckCircle("icon-xs text-emerald-600 flex-shrink-0")
+									<span>باقتك الحالية المفعّلة (تتجدد تلقائياً)</span>
+								</div>
+							} else if data.CooldownActive {
+								<div class="d-flex flex-col gap-2">
+									<button
+										type="button"
+										data-plan-slug={ p.Slug }
+										disabled
+										class="btn btn-secondary w-full justify-center font-bold text-xs gap-1.5 py-2.5 opacity-60 cursor-not-allowed"
+										title={ fmt.Sprintf("فترة التهدئة نشطة حتى %s", data.CooldownUntilText) }
+									>
+										@components.IconLock("icon-xs text-muted")
+										<span>الترقية معطلة مؤقتاً</span>
+									</button>
+									<div class="text-2xs text-center text-amber-900 bg-amber-50/90 border border-amber-200/90 p-2 rounded-lg font-bold">
+										متاح تغيير الباقة بعد انتهاء فترة التهدئة في <strong>{ data.CooldownUntilText }</strong>
+									</div>
+								</div>
+							} else {
+								<button
+									type="button"
+									data-plan-slug={ p.Slug }
+									class="btn btn-primary w-full justify-center font-black text-xs gap-1.5 py-2.5 shadow-xs"
+									@click={ fmt.Sprintf("openCheckout('%s', '%s', %d, %d, %t)", p.Slug, p.Name.Get("ar"), p.PriceMonth.Minor(), p.PriceYear.Minor(), data.CurrentPlanID > 0 && data.CurrentPlanID != p.ID) }
+								>
+									@components.IconSparkles("icon-xs")
+									if data.CurrentPlanID > 0 && data.CurrentPlanID != p.ID {
+										<span>الاشتراك والترقية لهذه الباقة</span>
+									} else {
+										<span>الاشتراك وتفعيل الباقة</span>
+									}
+								</button>
+							}
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+}

@@ -1,0 +1,384 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorJobsAddModal(lang string, branches []*org.Branch) {
+	@components.Modal(components.ModalProps{ID: "add-job-modal", Title: i18n.T(lang, "vendor_jobs.modal_add_title"), Size: "lg"}) {
+		<form method="POST" action="/vendor/jobs" class="stack-lg">
+			<div class="grid-2">
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_title_ar") }
+					</label>
+					<input
+						type="text"
+						name="title_ar"
+						required
+						class="form-input field-height"
+						placeholder={ i18n.T(lang, "vendor_jobs.placeholder_title_ar") }
+					/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_title_en") }
+					</label>
+					<input
+						type="text"
+						name="title_en"
+						class="form-input field-height"
+						placeholder={ i18n.T(lang, "vendor_jobs.placeholder_title_en") }
+						dir="ltr"
+					/>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_branch") }
+				</label>
+				if len(branches) == 0 {
+					<div class="p-3 bg-surface-sunken border border-dashed rounded-lg text-xs text-secondary">
+						<span>{ i18n.T(lang, "vendor_jobs.no_branches_notice") }</span>
+					</div>
+					<input type="hidden" name="location" value="Main Branch" />
+				} else {
+					<select
+						name="branch_id"
+						required
+						class="form-input field-cta"
+					>
+						<option value="">{ i18n.T(lang, "vendor_jobs.branch_select_default") }</option>
+						for _, b := range branches {
+							<option value={ fmt.Sprintf("%d", b.ID) }>
+								{ b.Name.Get(i18n.ParseLang(lang)) }
+								if b.IsMain {
+									{ " " + i18n.T(lang, "vendor_jobs.main_branch_suffix") }
+								}
+							</option>
+						}
+					</select>
+				}
+			</div>
+
+			<div class="grid-2">
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_salary_min") }
+					</label>
+					<input
+						type="number"
+						step="any"
+						min="0"
+						name="salary_min"
+						class="form-input h-11 font-mono rounded-lg"
+						placeholder="5000"
+					/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_salary_max") }
+					</label>
+					<input
+						type="number"
+						step="any"
+						min="0"
+						name="salary_max"
+						class="form-input h-11 font-mono rounded-lg"
+						placeholder="12000"
+					/>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_desc") }
+				</label>
+				<textarea
+					name="description"
+					rows="4"
+					required
+					class="form-input rounded-lg p-3 text-sm"
+					placeholder={ i18n.T(lang, "vendor_jobs.placeholder_desc") }
+				></textarea>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_reqs") }
+				</label>
+				<textarea
+					name="requirements"
+					rows="3"
+					class="form-input rounded-lg p-3 text-sm"
+					placeholder={ i18n.T(lang, "vendor_jobs.placeholder_desc") }
+				></textarea>
+			</div>
+
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeAddJobModal()">
+					{ i18n.T(lang, "vendor_jobs.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					{ i18n.T(lang, "vendor_jobs.btn_post_now") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorJobsEditModal(lang string, branches []*org.Branch) {
+	@components.Modal(components.ModalProps{ID: "edit-job-modal", Title: i18n.T(lang, "vendor_jobs.modal_edit_title"), Size: "lg"}) {
+		<form id="edit-job-form" method="POST" action="" class="stack-lg">
+			<input type="hidden" id="edit-job-id" name="id" value="" />
+
+			<div class="grid-2 bg-surface-sunken p-3.5 border rounded-xl items-center">
+				<div class="stack-sm">
+					<label class="form-label mb-1">
+						{ i18n.T(lang, "vendor_jobs.lbl_cur_status") }
+					</label>
+					<select id="edit-job-status" name="status" class="form-input h-10 font-bold">
+						<option value="published">{ i18n.T(lang, "vendor_jobs.opt_status_published") }</option>
+						<option value="closed">{ i18n.T(lang, "vendor_jobs.opt_status_closed") }</option>
+						<option value="draft">{ i18n.T(lang, "vendor_jobs.opt_status_draft") }</option>
+					</select>
+				</div>
+
+				<div class="flex-between">
+					<div class="stack-sm">
+						<span class="d-block font-extrabold text-sm text-primary">{ i18n.T(lang, "vendor_jobs.lbl_active_switch") }</span>
+						<span class="d-block text-xs text-muted">{ i18n.T(lang, "vendor_jobs.lbl_active_switch_sub") }</span>
+					</div>
+					<input type="checkbox" id="edit-job-is-active" name="is_active" value="true" class="form-check-input" />
+				</div>
+			</div>
+
+			<div class="grid-2">
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_title_ar") }
+					</label>
+					<input
+						type="text"
+						id="edit-job-title-ar"
+						name="title_ar"
+						required
+						class="form-input field-height"
+					/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_title_en") }
+					</label>
+					<input
+						type="text"
+						id="edit-job-title-en"
+						name="title_en"
+						class="form-input field-height"
+						dir="ltr"
+					/>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_branch") }
+				</label>
+				<select id="edit-job-branch-id" name="branch_id" class="form-input h-11 rounded-lg">
+					<option value="">{ i18n.T(lang, "vendor_jobs.branch_select_default") }</option>
+					for _, b := range branches {
+						<option value={ fmt.Sprintf("%d", b.ID) }>
+							{ b.Name.Get(i18n.ParseLang(lang)) }
+							if b.IsMain {
+								{ " " + i18n.T(lang, "vendor_jobs.main_branch_suffix") }
+							}
+						</option>
+					}
+				</select>
+			</div>
+
+			<div class="grid-2">
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_salary_min") }
+					</label>
+					<input
+						type="number"
+						step="any"
+						min="0"
+						id="edit-job-salary-min"
+						name="salary_min"
+						class="form-input h-11 font-mono rounded-lg"
+					/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">
+						{ i18n.T(lang, "vendor_jobs.lbl_salary_max") }
+					</label>
+					<input
+						type="number"
+						step="any"
+						min="0"
+						id="edit-job-salary-max"
+						name="salary_max"
+						class="form-input h-11 font-mono rounded-lg"
+					/>
+				</div>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_desc") }
+				</label>
+				<textarea
+					id="edit-job-description"
+					name="description"
+					rows="4"
+					required
+					class="form-input rounded-lg"
+				></textarea>
+			</div>
+
+			<div class="stack-sm">
+				<label class="form-label">
+					{ i18n.T(lang, "vendor_jobs.lbl_reqs") }
+				</label>
+				<textarea
+					id="edit-job-requirements"
+					name="requirements"
+					rows="3"
+					class="form-input rounded-lg"
+				></textarea>
+			</div>
+
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeEditJobModal()">
+					{ i18n.T(lang, "vendor_jobs.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					@components.IconCheck("icon-xs")
+					<span>{ i18n.T(lang, "vendor_jobs.btn_save_changes") }</span>
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorJobsApplicantsModal(lang string) {
+	@components.Modal(components.ModalProps{ID: "job-applicants-modal", Title: i18n.T(lang, "vendor_jobs.modal_apps_title"), Size: "lg"}) {
+		<div id="applicants-modal-subtitle" class="text-xs text-brand font-bold mb-3">
+			-
+		</div>
+		<div id="applicants-modal-content" class="modal-body p-0"></div>
+	}
+}
+
+templ VendorJobsOnboardModal(lang string, branches []*org.Branch) {
+	@components.Modal(components.ModalProps{ID: "onboard-modal", Title: i18n.T(lang, "vendor_jobs.modal_onboard_title"), Size: "md"}) {
+		<div id="onboard-modal-subtitle" class="text-xs text-secondary mb-3 pb-2 border-b">
+			-
+		</div>
+		<form id="onboard-employee-form" data-on-submit="submitOnboardEmployee(event)" class="d-flex flex-col gap-3 m-0">
+			<input type="hidden" id="onboard-job-id" name="job_id" value="" />
+			<input type="hidden" id="onboard-app-id" name="applicant_id" value="" />
+
+			<!-- Branch Selection -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs">
+					{ i18n.T(lang, "vendor_jobs.lbl_branch") }
+				</label>
+				<select id="onboard-branch-id" name="branch_id" class="form-input font-semibold">
+					if len(branches) == 0 {
+						<option value="">{ i18n.T(lang, "job.main_branch") }</option>
+					} else {
+						for _, b := range branches {
+							<option value={ fmt.Sprintf("%d", b.ID) }>
+								{ b.Name.Get(i18n.ParseLang(lang)) }
+								if b.IsMain {
+									{ " (" + i18n.T(lang, "job.main_branch") + ")" }
+								}
+							</option>
+						}
+					}
+				</select>
+			</div>
+
+			<!-- Role Selection -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs">
+					{ i18n.T(lang, "vendor_jobs.lbl_emp_role") }
+				</label>
+				<select id="onboard-role-key" name="role_key" required class="form-input font-bold">
+					<option value="org_sales_rep">مندوب مبيعات (Sales Rep - عروض وطلبات)</option>
+					<option value="org_pharmacist">صيدلي مسؤول (Pharmacist)</option>
+					<option value="org_accountant">محاسب (Accountant - المالية والفواتير)</option>
+					<option value="org_warehouse">أمين مخزن (Warehouse Keeper - المخزون)</option>
+					<option value="org_manager">مدير فرع (Branch Manager)</option>
+					<option value="org_employee">موظف عام (Employee)</option>
+				</select>
+			</div>
+
+			<!-- Job Title -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs">
+					المسمى الوظيفي المعتمد <span class="text-danger">*</span>
+				</label>
+				<input
+					type="text"
+					id="onboard-job-title"
+					name="job_title"
+					required
+					class="form-input font-semibold"
+					placeholder="مثال: مندوب مبيعات خارجي / صيدلي"
+				/>
+			</div>
+
+			<!-- Salary -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs">
+					الراتب الأساسي (ج.م / شهرياً)
+				</label>
+				<input
+					type="text"
+					id="onboard-base-salary"
+					name="base_salary"
+					class="form-input tabular-nums font-mono"
+					placeholder="مثال: 8000"
+				/>
+			</div>
+
+			<!-- Notes -->
+			<div class="stack-sm">
+				<label class="form-label font-bold text-xs">
+					ملاحظات التعيين (اختياري)
+				</label>
+				<textarea
+					id="onboard-notes"
+					name="notes"
+					rows="2"
+					class="form-input"
+					placeholder="أي ملاحظات إدارية حول التعيين..."
+				></textarea>
+			</div>
+
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeOnboardModal()">
+					{ i18n.T(lang, "vendor_jobs.btn_cancel") }
+				</button>
+				<button type="submit" id="onboard-submit-btn" class="btn btn-primary font-bold px-6">
+					@components.IconCheck("icon-xs")
+					<span>{ i18n.T(lang, "vendor_jobs.btn_confirm_hire") }</span>
+				</button>
+			</div>
+		</form>
+	}
+}

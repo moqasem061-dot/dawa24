@@ -1,0 +1,339 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceTransactionsPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("سجل حركات ومعاملات المحافظ", "transactions", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				refundTargetID: 0,
+				refundAmount: '',
+				refundOrgName: '',
+				refundTargetType: 'transaction',
+				openRefundModal(id, amount, orgName, targetType) {
+					this.refundTargetID = id;
+					this.refundAmount = amount;
+					this.refundOrgName = orgName;
+					this.refundTargetType = targetType || 'transaction';
+					const modal = document.getElementById('finance-refund-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconClock("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">سجل حركات ومعاملات المحافظ التفصيلي</h1>
+							<p class="text-sm text-secondary m-0 mt-1">كشف الحركات المالية المزدوجة (إيداع، سحب، مشتريات، استرداد، تسوية)</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/wallets" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconLayers("icon-xs")
+							<span>محافظ المنشآت</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي حركات المحافظ</span>
+						<span class="text-warning">@components.IconClock("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.TotalTransactions) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						عملية محاسبية مقيدة
+					</div>
+				</div>
+
+				<a href="/admin/finance/wallets" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أرصدة المحافظ المحتجزة</span>
+						<span class="text-indigo">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalHeld.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d محفظة نشطة", data.TotalWallets) }
+					</div>
+				</a>
+
+				<a href="/admin/finance/deposits" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات شحن معلقة</span>
+						<span class="text-warning">@components.IconCreditCard("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingDepositsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						في انتظار مراجعة الإيداع
+					</div>
+				</a>
+
+				<a href="/admin/finance/withdrawals" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">طلبات سحب معلقة</span>
+						<span class="text-danger">@components.IconTrendingUp("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-danger mt-2">
+						{ fmt.Sprintf("%d طلب", data.PendingWithdrawalsCount) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						في انتظار التحويل والصرف
+					</div>
+				</a>
+			</div>
+
+			<!-- Main Transactions Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinanceTransactionsTab(data, lang, dir)
+			</div>
+
+			<!-- Modals -->
+			@AdminFinanceModals(data, lang, dir)
+		</div>
+	}
+}
+
+templ AdminFinanceTransactionsTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0">سجل حركات ومعاملات المحافظ التفصيلي</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">كشف الحركات المالية المزدوجة (إيداع، سحب، مشتريات، استرداد، تسوية).</p>
+			</div>
+			<!-- Actions: Statement Print & Search -->
+			<div class="d-flex items-center gap-2 flex-wrap">
+				if data.SelectedOrgID > 0 {
+					<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance/statement?org_id=%d", data.SelectedOrgID)) } target="_blank" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconFile("icon-xs")
+						<span>طباعة كشف الحساب</span>
+					</a>
+				} else {
+					<button type="button" disabled class="btn btn-secondary btn-sm font-bold gap-1 opacity-50 cursor-not-allowed" title="يرجى اختيار منشأة محددة لطباعة كشف حسابها">
+						@components.IconFile("icon-xs")
+						<span>طباعة كشف الحساب</span>
+					</button>
+				}
+				<form method="GET" action="/admin/finance/transactions" class="d-flex gap-2 items-center flex-wrap m-0">
+					<input type="hidden" name="tab" value="transactions"/>
+					if data.SelectedWalletID > 0 {
+						<input type="hidden" name="wallet_id" value={ fmt.Sprintf("%d", data.SelectedWalletID) }/>
+					}
+					<input type="text" name="q" value={ data.Query } placeholder="ابحث بالوصف أو المنشأة..." class="form-input text-sm min-w-48"/>
+					<select name="type" class="form-select text-sm w-auto">
+						<option value="">كل أنواع الحركات</option>
+						<option value="deposit" selected?={ data.TypeFilter == "deposit" }>إيداع / شحن (Deposit)</option>
+						<option value="withdrawal" selected?={ data.TypeFilter == "withdrawal" }>سحب رصيد (Withdrawal)</option>
+						<option value="purchase" selected?={ data.TypeFilter == "purchase" }>مشتريات توريد (Purchase)</option>
+						<option value="refund" selected?={ data.TypeFilter == "refund" }>استرداد أموال (Refund)</option>
+						<option value="adjustment" selected?={ data.TypeFilter == "adjustment" }>تسوية إدارية (Adjustment)</option>
+						<option value="bonus" selected?={ data.TypeFilter == "bonus" }>مكافأة / بونص (Bonus)</option>
+						<option value="penalty" selected?={ data.TypeFilter == "penalty" }>خصم / غرامة (Penalty)</option>
+					</select>
+					<select name="org_id" class="form-select text-sm w-auto">
+						<option value="">كل المنشآت والشركات</option>
+						for _, o := range data.Organizations {
+							<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+						}
+					</select>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold">تصفية</button>
+					if data.SelectedWalletID > 0 || data.Query != "" || data.TypeFilter != "" || data.SelectedOrgID > 0 {
+						<a href="/admin/finance/transactions" class="btn btn-secondary btn-sm text-muted">إلغاء الفلاتر</a>
+					}
+				</form>
+			</div>
+		</div>
+
+		if data.SelectedOrgID > 0 || data.SelectedWalletID > 0 {
+			<div class="d-flex items-center gap-2 flex-wrap p-2.5 bg-surface-sunken rounded-xl border">
+				<span class="text-xs font-bold text-muted">الفلاتر النشطة:</span>
+				if data.SelectedOrgID > 0 {
+					<span class="badge badge-sky text-xs font-bold d-inline-flex items-center gap-1">
+						<span>المنشأة: #{ fmt.Sprintf("%d", data.SelectedOrgID) }</span>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=transactions%s%s", ternary(data.Query != "", "&q="+url.QueryEscape(data.Query), ""), ternary(data.SelectedWalletID > 0, fmt.Sprintf("&wallet_id=%d", data.SelectedWalletID), ""))) } class="text-muted hover:text-danger">×</a>
+					</span>
+				}
+				if data.SelectedWalletID > 0 {
+					<span class="badge badge-indigo text-xs font-bold d-inline-flex items-center gap-1">
+						<span>المحفظة: WLT-{ fmt.Sprintf("%d", data.SelectedWalletID) }</span>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=transactions%s%s", ternary(data.Query != "", "&q="+url.QueryEscape(data.Query), ""), ternary(data.SelectedOrgID > 0, fmt.Sprintf("&org_id=%d", data.SelectedOrgID), ""))) } class="text-muted hover:text-danger">×</a>
+					</span>
+				}
+				<a href="/admin/finance?tab=transactions" class="btn btn-ghost btn-xs font-bold text-muted">إلغاء الكل</a>
+			</div>
+		}
+
+		if len(data.Transactions) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد معاملات مسجلة", Message: "تظهر جميع قيود الخصم والإيداع والتسويات في هذا السجل فور حدوثها."})
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>رقم الحركة</th>
+							<th>المحفظة والمنشأة</th>
+							<th>نوع الحركة</th>
+							<th>المبلغ</th>
+							<th>الرصيد بعد الحركة</th>
+							<th>المرجع والبيان</th>
+							<th>التاريخ والتوقيت</th>
+							<th class="col-actions">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, tx := range data.Transactions {
+							<tr>
+								<td class="tabular-nums">
+									<span class="font-black font-mono text-primary">{ fmt.Sprintf("#TX-%d", tx.ID) }</span>
+								</td>
+								<td>
+									<div class="font-bold text-primary">
+										if tx.OrganizationName != "" {
+											{ tx.OrganizationName }
+										} else {
+											{ tx.UserName }
+										}
+									</div>
+									<div class="text-xs text-muted font-mono d-flex items-center gap-1 mt-0.5">
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=transactions&wallet_id=%d", tx.WalletID)) } class="text-brand hover:underline font-bold" title="تصفية حركات هذه المحفظة">
+											محفظة WLT-{ fmt.Sprintf("%d", tx.WalletID) }
+										</a>
+										if tx.UserEmail != "" {
+											<span>• { tx.UserEmail }</span>
+										}
+									</div>
+								</td>
+								<td>
+									if tx.Type == "deposit" {
+										<span class="badge badge-emerald">إيداع رصيد</span>
+									} else if tx.Type == "withdrawal" {
+										<span class="badge badge-rose">سحب رصيد</span>
+									} else if tx.Type == "purchase" {
+										<span class="badge badge-amber">مشتريات توريد</span>
+									} else if tx.Type == "refund" {
+										<span class="badge badge-sky">استرداد</span>
+										if tx.ReversesTransactionID != nil {
+											<div class="text-xs text-muted tabular-nums">عكس #{ fmt.Sprintf("TX-%d", *tx.ReversesTransactionID) }</div>
+										}
+									} else if tx.Type == "bonus" {
+										<span class="badge badge-emerald">مكافأة / بونص</span>
+									} else if tx.Type == "penalty" {
+										<span class="badge badge-rose">خصم / غرامة</span>
+									} else {
+										<span class="badge badge-indigo">تسوية إدارية</span>
+									}
+									if tx.IsRefunded {
+										<div class="mt-1">
+											<span class="badge badge-amber text-xs font-bold">تم استردادها</span>
+										</div>
+										if tx.RefundedByName != "" {
+											<div class="text-xs text-muted">بواسطة: { tx.RefundedByName }</div>
+										}
+										if tx.RefundTransactionID != nil {
+											<div class="text-xs text-muted tabular-nums">قيد #{ fmt.Sprintf("TX-%d", *tx.RefundTransactionID) }</div>
+										}
+									}
+								</td>
+								<td class="tabular-nums text-base font-black">
+									if tx.Amount.Minor() >= 0 {
+										<span class="text-success">+{ tx.Amount.String() } ج.م</span>
+									} else {
+										<span class="text-danger">{ tx.Amount.String() } ج.م</span>
+									}
+								</td>
+								<td class="tabular-nums font-black text-primary">
+									{ fmt.Sprintf("%s ج.م", tx.BalanceAfter.String()) }
+								</td>
+								<td>
+									<div class="text-sm text-primary max-w-xs break-words">
+										if tx.Description != "" {
+											{ tx.Description }
+										} else {
+											<span class="text-muted">-</span>
+										}
+									</div>
+									if tx.ReferenceType != "" {
+										<div class="text-xs text-muted mt-0.5">
+											if tx.ReferenceType == "order" && tx.ReferenceID != nil {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders?q=%v", tx.ReferenceID)) } class="text-accent hover:underline font-bold">
+													مرجع أمر توريد #{ fmt.Sprintf("%v", tx.ReferenceID) }
+												</a>
+											} else if tx.ReferenceType == "invoice" && tx.ReferenceID != nil {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=invoices&q=%v", tx.ReferenceID)) } class="text-accent hover:underline font-bold">
+													مرجع فاتورة #{ fmt.Sprintf("%v", tx.ReferenceID) }
+												</a>
+											} else if tx.ReferenceType == "deposit" && tx.ReferenceID != nil {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=deposits&q=%v", tx.ReferenceID)) } class="text-accent hover:underline font-bold">
+													مرجع إيداع #{ fmt.Sprintf("%v", tx.ReferenceID) }
+												</a>
+											} else if tx.ReferenceType == "withdrawal" && tx.ReferenceID != nil {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/finance?tab=withdrawals&q=%v", tx.ReferenceID)) } class="text-accent hover:underline font-bold">
+													مرجع سحب #{ fmt.Sprintf("%v", tx.ReferenceID) }
+												</a>
+											} else {
+												<span>مرجع: { tx.ReferenceType } #{ fmt.Sprintf("%v", tx.ReferenceID) }</span>
+											}
+										</div>
+									}
+								</td>
+								<td class="tabular-nums text-sm text-muted">{ tx.CreatedAt.Format("2006-01-02 03:04:05 PM") }</td>
+								<td class="col-actions nowrap">
+									if tx.Type != "refund" && !tx.IsRefunded {
+										<button
+											type="button"
+											class="btn btn-warning btn-xs font-bold gap-1"
+											@click={ fmt.Sprintf("openRefundModal(%d, '%s', '%s', 'transaction')", tx.ID, tx.Amount.Abs().String(), strings.ReplaceAll(tx.OrganizationName, "'", "\\'")) }
+										>
+											@components.IconRotateCcw("icon-xs")
+											<span>استرداد</span>
+										</button>
+									} else if tx.IsRefunded {
+										<span class="badge badge-amber text-xs">مسترد</span>
+									} else {
+										<span class="text-muted text-xs">-</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			if data.TotalTransactions > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalTransactions,
+					BaseURL:     "/admin/finance/transactions",
+					QueryValues: financePaginationQuery("", data.Query, "", data.TypeFilter, "", data.SelectedWalletID, data.SelectedOrgID),
+				})
+			}
+		}
+	</div>
+}

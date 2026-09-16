@@ -1,0 +1,211 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ PharmacyDashboardSidebar(lang string, data PharmacyDashboardData) {
+				<div class="d-flex flex-col gap-6">
+					
+					<!-- Wallet Widget -->
+					<div class="glass-panel p-5">
+						<div class="d-flex items-center justify-between pb-3 mb-3 border-b">
+							<div class="d-flex items-center gap-2">
+								<div class="user-avatar-badge">
+									@components.IconWallet("icon-xs")
+								</div>
+								<h2 class="text-sm font-bold text-primary m-0">{ i18n.T(lang, "pharmacy.dashboard.wallet_card_title") }</h2>
+							</div>
+							<a href="/wallet" class="btn btn-secondary btn-xs font-bold">
+								{ i18n.T(lang, "pharmacy.dashboard.manage_wallet") }
+							</a>
+						</div>
+
+						<!-- Balance Block -->
+						<div class="p-3.5 bg-surface-sunken rounded-lg border mb-3">
+							<span class="text-2xs font-bold text-secondary">{ i18n.T(lang, "pharmacy.dashboard.available_balance") }</span>
+							<div class="tabular-nums text-2xl font-black text-emerald mt-1 leading-tight">
+								@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.WalletBalance, Large: true })
+							</div>
+							if data.PendingDepositsCount > 0 {
+								<div class="text-2xs font-bold text-amber mt-2 pt-2 border-t border-dashed d-flex items-center justify-between">
+									<span>{ i18n.T(lang, "pharmacy.dashboard.pending_deposits") }</span>
+									<span class="tabular-nums">{ data.PendingDepositsTotal.String() } { i18n.T(lang, "common.currency_egp") } ({ fmt.Sprintf("%d", data.PendingDepositsCount) })</span>
+								</div>
+							}
+						</div>
+
+						<!-- Recent Transactions -->
+						<div class="mb-3">
+							<div class="text-2xs font-bold text-secondary mb-2">
+								{ i18n.T(lang, "pharmacy.dashboard.recent_tx_title") }
+							</div>
+							if len(data.RecentTransactions) == 0 {
+								<div class="text-2xs text-muted py-2 text-center">
+									{ i18n.T(lang, "pharmacy.dashboard.no_tx_title") }
+								</div>
+							} else {
+								<div class="d-flex flex-col gap-1.5">
+									for _, tx := range data.RecentTransactions {
+										<div class="d-flex items-center justify-between text-xs p-2 rounded-lg border bg-surface-sunken">
+											<div class="d-flex flex-col gap-0.5">
+												<div class="font-bold text-xs text-primary">{ FormatTxTypeLabel(tx.Type, lang) }</div>
+												<div class="text-2xs text-muted tabular-nums">{ tx.CreatedAt.Format("2006-01-02 03:04 PM") }</div>
+											</div>
+											<div class={ "tabular-nums font-bold text-xs", txClass(tx.Amount.Minor()) }>
+												if tx.Amount.Minor() > 0 {
+													<span>+{ tx.Amount.String() }</span>
+												} else {
+													<span>{ tx.Amount.String() }</span>
+												}
+												<span class="text-2xs font-normal text-muted"> { i18n.T(lang, "common.currency_egp") }</span>
+											</div>
+										</div>
+									}
+								</div>
+							}
+						</div>
+
+						<a href="/wallet" class="btn btn-primary btn-sm w-full justify-center font-bold gap-1">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "pharmacy.dashboard.top_up_btn") }</span>
+						</a>
+					</div>
+
+					<!-- Branches Widget -->
+					<div class="glass-panel p-5">
+						<div class="d-flex items-center justify-between pb-3 mb-3 border-b">
+							<div class="d-flex items-center gap-2">
+								<div class="user-avatar-badge">
+									@components.IconBuilding("icon-xs")
+								</div>
+								<h2 class="text-sm font-bold text-primary m-0">{ i18n.T(lang, "pharmacy.dashboard.branches_card_title") }</h2>
+							</div>
+							<a href="/customer/branches" class="btn btn-secondary btn-xs font-bold">
+								{ fmt.Sprintf(i18n.T(lang, "pharmacy.dashboard.manage_branches_btn"), data.TotalBranches) }
+							</a>
+						</div>
+
+						if len(data.Branches) == 0 {
+							<div class="text-xs text-secondary text-center py-4">
+								{ i18n.T(lang, "pharmacy.dashboard.no_branches") }
+							</div>
+						} else {
+							<div class="d-flex flex-col gap-2 mb-3">
+								for _, b := range data.Branches {
+									<div class={ "d-flex items-center justify-between p-3 rounded-lg border", branchCardClass(b.ID == data.ActiveBranchID) }>
+										<div class="flex-1">
+											<div class="font-bold text-primary text-xs d-flex items-center gap-1.5 flex-wrap">
+												<span>{ b.Name.Get(i18n.Lang(lang)) }</span>
+												if b.IsMain {
+													<span class="badge badge-sky text-2xs px-1 py-0.5">{ i18n.T(lang, "pharmacy.dashboard.branch_main") }</span>
+												}
+												if b.ID == data.ActiveBranchID {
+													<span class="badge badge-emerald text-2xs px-1 py-0.5">{ i18n.T(lang, "pharmacy.dashboard.branch_active") }</span>
+												}
+											</div>
+											if b.Address != "" {
+												<div class="text-2xs text-secondary mt-1">
+													{ b.Address }
+												</div>
+											}
+										</div>
+									</div>
+								}
+							</div>
+						}
+
+						<a href="/customer/branches" class="btn btn-secondary btn-sm w-full justify-center font-bold">
+							{ i18n.T(lang, "pharmacy.dashboard.add_edit_branches") }
+						</a>
+					</div>
+
+					<!-- AI Gateway Consumption & Quota Widget -->
+					if data.Subscription != nil {
+						<div class="glass-panel p-5">
+							<div class="flex-between mb-4 pb-2 border-b">
+								<div class="inline-row-04">
+									<span class="text-accent">@components.IconSparkles("icon-sm")</span>
+									<span class="text-sm font-extrabold text-primary">{ i18n.T(lang, "pharmacy.dashboard.ai_quota_title") }</span>
+								</div>
+								<span class="badge badge-info text-xs font-extrabold" dir="ltr">
+									if data.Subscription.AIPlanID != "" {
+										{ data.Subscription.AIPlanID }
+									} else {
+										<span>AI Gateway</span>
+									}
+								</span>
+							</div>
+
+       <div class="stack-sm">
+								<div class="flex-between items-baseline mb-1.5">
+									<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "pharmacy.dashboard.ai_monthly_label") }</span>
+									<span class="tabular-nums text-lg font-black text-primary">
+										if data.Subscription.HasAIBudget {
+											{ fmt.Sprintf("%d%%", data.Subscription.AIPercentage()) }
+										} else {
+											{ data.Subscription.AIUsageText() }
+										}
+									</span>
+								</div>
+								if data.Subscription.HasAIBudget {
+									<progress class="progress w-full" value={ fmt.Sprintf("%d", data.Subscription.AIPercentage()) } max="100"></progress>
+								}
+								<div class="flex-between items-center text-xs font-bold text-muted mt-2">
+									<span>{ data.Subscription.AIResetText() }</span>
+									<a href="/customer/ai-logs" class="text-primary font-extrabold">{ i18n.T(lang, "pharmacy.dashboard.ai_logs_link") }</a>
+								</div>
+							</div>
+						</div>
+					}
+
+					<!-- Suggested Offers Widget -->
+					if len(data.Offers) > 0 {
+						<div class="glass-panel p-5">
+							<div class="flex-between mb-4 pb-3 border-b">
+								<div class="inline-row-04">
+									<span class="text-danger">@components.IconMegaphone("icon-sm")</span>
+									<h2 class="text-base font-extrabold text-primary m-0">{ i18n.T(lang, "pharmacy.dashboard.suggested_offers_title") }</h2>
+								</div>
+								<a href="/offers" class="btn btn-secondary btn-xs font-bold text-xs">{ i18n.T(lang, "pharmacy.dashboard.all_offers_link") }</a>
+							</div>
+							<div class="d-flex flex-col gap-2">
+								for _, o := range data.Offers {
+									<div class="flex-between items-center p-3 border rounded-lg bg-surface-sunken">
+          <div class="stack-sm">
+											<div class="font-extrabold text-primary text-xs">{ o.Title.Get(i18n.Lang(lang)) }</div>
+											<div class="text-xs text-secondary mt-1">
+												{ i18n.T(lang, "pharmacy.dashboard.offer_discount") }
+												if pct := o.DiscountPercentage(); pct > 0 {
+													<strong class="tabular-nums text-primary">{ fmt.Sprintf("%.0f%%", pct) }</strong>
+												} else {
+													<strong class="tabular-nums text-primary">{ o.DiscountValue.String() }</strong> { i18n.T(lang, "common.currency_egp") }
+												}
+											</div>
+										</div>
+										<a href={ templ.SafeURL(fmt.Sprintf("/offers/%d", o.ID)) } class="btn btn-secondary btn-xs font-bold">{ i18n.T(lang, "pharmacy.dashboard.offer_details") }</a>
+									</div>
+								}
+							</div>
+						</div>
+					}
+
+				</div>
+
+}
+
+func txClass(minor int64) string {
+	if minor > 0 {
+		return "text-success"
+	}
+	return "text-danger"
+}
+
+func branchCardClass(isActive bool) string {
+	if isActive {
+		return "border-emerald/40 bg-emerald/5"
+	}
+	return "bg-surface-sunken"
+}

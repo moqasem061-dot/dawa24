@@ -1,0 +1,334 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AddCustomVariantForm(data VendorCustomVariantModalData, lang string) {
+	<div id="add-custom-variant-form-container">
+		<form
+			id="add-custom-variant-form"
+			class="stack-md"
+			method="POST"
+			action="/vendor/variants/new"
+			hx-post="/vendor/variants/new"
+			hx-target="#add-custom-variant-form-container"
+			hx-swap="outerHTML"
+			@combobox-change="onAddVariantComboboxChange($event)"
+		>
+			if data.Errors.General != "" {
+				<div class="alert alert-danger font-bold text-sm p-3 mb-2">
+					<span>{ data.Errors.General }</span>
+				</div>
+			}
+
+			<div class="stack-md">
+				<!-- Master Product Combobox -->
+				<div class="stack-sm">
+					@components.Combobox(components.ComboboxProps{
+						Name:          "product_id",
+						Label:         i18n.T(lang, "vendor_products.master_combobox_label"),
+						Placeholder:   i18n.T(lang, "vendor_products.search_drug_ph"),
+						URL:           "/vendor/catalog/search-json?q={q}",
+						Required:      true,
+						SelectedValue: data.Form.ProductIDStr(),
+						SelectedLabel: data.Form.ProductName,
+						Help:          i18n.T(lang, "vendor_products.master_combobox_help"),
+					})
+					if data.Errors.Has("product_id") {
+						<div class="text-danger text-xs font-bold mt-1">{ data.Errors.Get("product_id") }</div>
+					}
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-name-ar">
+							{ i18n.T(lang, "vendor_products.fld_name_ar") } <span class="text-danger">*</span>
+						</label>
+						<input
+							type="text"
+							id="add-form-name-ar"
+							name="name_ar"
+							value={ data.Form.NameAR }
+							required
+							placeholder="مثال: بانادول إكسترا 24 قرص"
+							class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("name_ar")) }
+						/>
+						if data.Errors.Has("name_ar") {
+							<div class="text-danger text-xs font-bold">{ data.Errors.Get("name_ar") }</div>
+						}
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-name-en">
+							{ i18n.T(lang, "vendor_products.fld_name_en") }
+						</label>
+						<input
+							type="text"
+							id="add-form-name-en"
+							name="name_en"
+							value={ data.Form.NameEN }
+							dir="ltr"
+							placeholder="e.g. Panadol Extra 24 Tabs"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-sku">
+							{ i18n.T(lang, "vendor_products.fld_sku") }
+						</label>
+						<input
+							type="text"
+							id="add-form-sku"
+							name="sku"
+							value={ data.Form.SKU }
+							dir="ltr"
+							placeholder="PAN-EXT-24"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-barcode">
+							{ i18n.T(lang, "vendor_products.fld_barcode") }
+						</label>
+						<input
+							type="text"
+							id="add-form-barcode"
+							name="barcode"
+							value={ data.Form.Barcode }
+							dir="ltr"
+							placeholder="6221234567890"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm" for="add-form-unit">
+						{ i18n.T(lang, "vendor_products.fld_unit") }
+					</label>
+					<input
+						type="text"
+						id="add-form-unit"
+						name="unit"
+						value={ data.Form.Unit }
+						placeholder={ i18n.T(lang, "vendor_products.fld_unit_ph") }
+						class="form-input w-full-rounded"
+					/>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-price">
+							{ i18n.T(lang, "vendor_products.fld_public_price") } <span class="text-danger">*</span>
+						</label>
+						<input
+							type="number"
+							step="0.01"
+							id="add-form-price"
+							name="price"
+							value={ data.Form.Price }
+							required
+							placeholder="0.00"
+							class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("price")) }
+						/>
+						if data.Errors.Has("price") {
+							<div class="text-danger text-xs font-bold">{ data.Errors.Get("price") }</div>
+						}
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-discount">
+							{ i18n.T(lang, "vendor_products.fld_discount_pct") }
+						</label>
+						<input
+							type="number"
+							step="0.1"
+							min="0"
+							max="100"
+							id="add-form-discount"
+							name="discount"
+							value={ data.Form.Discount }
+							placeholder="0.0%"
+							class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("discount")) }
+						/>
+						if data.Errors.Has("discount") {
+							<div class="text-danger text-xs font-bold">{ data.Errors.Get("discount") }</div>
+						}
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1" for="add-form-cost">
+							<span>{ i18n.T(lang, "vendor_products.fld_cost_price") }</span>
+							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+						</label>
+						<input
+							type="number"
+							step="0.01"
+							min="0"
+							id="add-form-cost"
+							name="cost_price"
+							value={ data.Form.CostPrice }
+							placeholder="0.00"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1" for="add-form-cost-discount">
+							<span>{ i18n.T(lang, "vendor_products.fld_cost_discount") }</span>
+							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+						</label>
+						<input
+							type="number"
+							step="0.1"
+							min="0"
+							max="100"
+							id="add-form-cost-discount"
+							name="cost_discount_percentage"
+							value={ data.Form.CostDiscountPercentage }
+							placeholder="0.0%"
+							class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("cost_discount_percentage")) }
+						/>
+						if data.Errors.Has("cost_discount_percentage") {
+							<div class="text-danger text-xs font-bold">{ data.Errors.Get("cost_discount_percentage") }</div>
+						}
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-stock">
+							{ i18n.T(lang, "vendor_products.fld_available_stock") }
+						</label>
+						<input
+							type="number"
+							id="add-form-stock"
+							name="stock_qty"
+							value={ data.Form.StockQty }
+							min="0"
+							placeholder="50"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-min-qty">
+							{ i18n.T(lang, "vendor_products.fld_min_order_qty") }
+						</label>
+						<input
+							type="number"
+							id="add-form-min-qty"
+							name="min_order_qty"
+							value={ func() string { if data.Form.MinOrderQty != "" { return data.Form.MinOrderQty }; return "1" }() }
+							min="1"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-batch">
+							{ i18n.T(lang, "vendor_products.fld_batch_num") }
+						</label>
+						<input
+							type="text"
+							id="add-form-batch"
+							name="batch_number"
+							value={ data.Form.BatchNumber }
+							placeholder="B12345"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label font-bold text-primary text-sm" for="add-form-expiry">
+							{ i18n.T(lang, "vendor_products.fld_expiry_date") }
+						</label>
+						<input
+							type="date"
+							id="add-form-expiry"
+							name="expiry_date"
+							value={ data.Form.ExpiryDate }
+							class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("expiry_date")) }
+						/>
+						if data.Errors.Has("expiry_date") {
+							<div class="text-danger text-xs font-bold">{ data.Errors.Get("expiry_date") }</div>
+						}
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm" for="add-form-branch">
+						{ i18n.T(lang, "vendor_products.fld_shipping_warehouse") } <span class="text-danger">*</span>
+					</label>
+					<select
+						name="branch_id"
+						id="add-form-branch"
+						class={ "form-input w-full-rounded", templ.KV("is-invalid", data.Errors.Has("branch_id")) }
+						required
+					>
+						<option value="" disabled selected?={ data.Form.BranchID <= 0 }>{ i18n.T(lang, "vendor_products.select_branch_ph") }</option>
+						for _, b := range data.Branches {
+							<option
+								value={ fmt.Sprintf("%d", b.ID) }
+								selected?={ data.Form.BranchID == b.ID || (data.Form.BranchID <= 0 && b.IsMain) }
+							>
+								{ b.Name }
+								if b.IsMain {
+									<span> { i18n.T(lang, "vendor_products.main_branch_suffix") }</span>
+								}
+							</option>
+						}
+					</select>
+					if data.Errors.Has("branch_id") {
+						<div class="text-danger text-xs font-bold">{ data.Errors.Get("branch_id") }</div>
+					}
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm">
+						{ i18n.T(lang, "vendor_products.fld_quota") }
+					</label>
+					<input
+						type="number"
+						name="quota_limit"
+						value={ data.Form.QuotaLimit }
+						min="1"
+						placeholder={ i18n.T(lang, "vendor_products.fld_quota_ph") }
+						class={ "form-input w-full-rounded tabular-nums", templ.KV("is-invalid", data.Errors.Has("quota_limit")) }
+					/>
+					if data.Errors.Has("quota_limit") {
+						<div class="text-danger text-xs font-bold">{ data.Errors.Get("quota_limit") }</div>
+					}
+					<p class="text-muted text-xs">
+						{ i18n.T(lang, "vendor_products.fld_quota_desc") }
+					</p>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm">
+						{ i18n.T(lang, "vendor_products.fld_is_negotiable") }
+					</label>
+					<select name="is_negotiable" class="form-input w-full-rounded font-bold">
+						<option value="false" selected?={ !data.Form.IsNegotiable }>{ i18n.T(lang, "vendor_products.negotiable_no") }</option>
+						<option value="true" selected?={ data.Form.IsNegotiable }>{ i18n.T(lang, "vendor_products.negotiable_yes") }</option>
+					</select>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeAddCustomVariantModal()">
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					{ i18n.T(lang, "vendor_products.btn_publish_catalog") }
+				</button>
+			</div>
+		</form>
+	</div>
+}

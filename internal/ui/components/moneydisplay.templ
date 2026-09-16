@@ -1,0 +1,41 @@
+package components
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+)
+
+// MoneyDisplayProps renders a monetary amount with thousand-grouping and localized currency.
+type MoneyDisplayProps struct {
+	Amount   money.Amount
+	Currency string
+	Lang     string
+	State    string
+	// Large renders the figure at cart/checkout total size.
+	Large bool
+}
+
+templ MoneyDisplay(props MoneyDisplayProps) {
+	{{
+		lang := props.Lang
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<span style="display:inline-flex; align-items:baseline; gap:0.25rem;">
+		switch props.State {
+			case "loading":
+				<span class="skeleton" style="display:inline-block; height:1.1em; width:4.5rem;"></span>
+			case "error":
+				<span class="money money-negative" aria-label="—">—</span>
+			default:
+				<span
+					class={ "money", templ.KV("money-lg", props.Large),
+						templ.KV("money-negative", props.Amount.Minor() < 0) }
+					style="font-variant-numeric: tabular-nums;"
+				>
+					{ format.Money(props.Amount, lang) }
+				</span>
+		}
+	</span>
+}

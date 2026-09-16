@@ -1,0 +1,425 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// MarketDiscountsPage renders the temporary-warehouse price board.
+//
+// Both card layouts carry the same three decisions, and each replaced something
+// that was actively misleading:
+//
+//   - **No product code.** The uploads carry whatever the sheet's code column
+//     held, and on files mapped before the header detection was corrected that
+//     is a price or a discount. A number presented as an identifier is worse
+//     than no identifier.
+//   - **سعر الجمهور leads, and is not struck through.** It is the figure this
+//     board exists to compare, and it was rendered small, muted and with a
+//     line-through — which says "superseded" about the one number a reader came
+//     for — beside a larger, bolder net price.
+//   - **The net price column is gone.** The discount pill beside the public
+//     price already says what to subtract, and on this data the net price was
+//     frequently just the public price again.
+//
+// The grid card also gains the upload date, which it never showed: on a price
+// board, when a quote was taken is half of what it means.
+//
+// These are markup comments deliberately kept out of the markup — an HTML
+// comment ships to every reader.
+templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, currentView string) {
+	@layouts.ShellFor("خصومات السوق العامة | دوا 24", "market-discounts", lang, dir, actor) {
+		<div
+			class="page-container"
+			x-data={ fmt.Sprintf("{ showMoreFilters: %t, currentView: '%s', setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } }", (filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
+		>
+			<!-- Header: what this page is, and the two numbers that describe it -->
+			<header class="md-header">
+				<div class="md-header-copy">
+					<h1 class="md-title">
+						@components.IconTag("icon-sm")
+						<span>خصومات السوق العامة</span>
+					</h1>
+					<p class="md-subtitle">
+						كشوف أسعار المستودعات المؤقتة التي ترفعها إدارة المنصة — أسعار الجمهور ونسب الخصم كما وردت من السوق.
+					</p>
+				</div>
+
+				<dl class="md-stats">
+					<div class="md-stat">
+						<dt>أصناف مرصودة</dt>
+						<dd class="tabular-nums">{ fmt.Sprintf("%d", result.TotalCount) }</dd>
+					</div>
+					<div class="md-stat">
+						<dt>المستودعات</dt>
+						<dd class="tabular-nums">{ fmt.Sprintf("%d", len(result.AvailableSuppliers)) }</dd>
+					</div>
+					<div class="md-stat is-accent">
+						<dt>أعلى خصم</dt>
+						<dd class="tabular-nums">{ formatDiscount(calculateMaxDiscount(result.Items)) }%</dd>
+					</div>
+				</dl>
+			</header>
+
+			<!-- Controls: one row — search, two selects, actions, view switch -->
+			<div class="filter-bar md-controls">
+				<form method="GET" action="/market-discounts" class="md-controls-form" id="market-filter-form">
+					<input type="hidden" name="view" x-bind:value="currentView"/>
+					<input type="hidden" name="limit" value={ strconv.Itoa(marketDiscountsLimit(filter)) }/>
+
+					<div class="md-controls-row">
+						<input
+							type="search"
+							name="q"
+							value={ filter.Query }
+							class="form-input md-search"
+							placeholder="بحث باسم الصنف أو باسم المستودع..."
+							aria-label="بحث في خصومات السوق"
+						/>
+
+						<select name="supplier" class="form-select md-select" data-autosubmit aria-label="المستودع المؤقت">
+							<option value="">كافة المستودعات ({ fmt.Sprintf("%d", len(result.AvailableSuppliers)) })</option>
+							for _, sup := range result.AvailableSuppliers {
+								<option value={ sup } selected?={ filter.Supplier == sup }>{ sup }</option>
+							}
+						</select>
+
+						<select name="sort" class="form-select md-select" data-autosubmit aria-label="الترتيب">
+							<option value="discount_desc" selected?={ filter.SortBy == "" || filter.SortBy == "discount_desc" }>الأعلى خصماً</option>
+							<option value="discount_asc" selected?={ filter.SortBy == "discount_asc" }>الأقل خصماً</option>
+							<option value="price_asc" selected?={ filter.SortBy == "price_asc" }>الأقل سعراً</option>
+							<option value="price_desc" selected?={ filter.SortBy == "price_desc" }>الأعلى سعراً</option>
+							<option value="newest" selected?={ filter.SortBy == "newest" }>الأحدث إضافة</option>
+							<option value="oldest" selected?={ filter.SortBy == "oldest" }>الأقدم</option>
+						</select>
+
+						<button type="submit" class="btn btn-primary btn-sm font-bold">
+							@components.IconSearch("icon-xs")
+							<span>بحث</span>
+						</button>
+
+						<button
+							type="button"
+							@click="showMoreFilters = !showMoreFilters"
+							class="btn btn-secondary btn-sm font-bold"
+							:class="{ 'active': showMoreFilters }"
+							title="نطاق السعر والخصم"
+							x-bind:aria-expanded="showMoreFilters ? 'true' : 'false'"
+						>
+							<span>نطاق متقدم</span>
+						</button>
+
+						if filter.Query != "" || filter.Supplier != "" || filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil {
+							<a href="/market-discounts" class="btn btn-ghost btn-sm">إلغاء الفلاتر</a>
+						}
+
+						<div class="md-controls-spacer"></div>
+
+						<div class="tabs-nav md-viewswitch" role="group" aria-label="طريقة العرض">
+							<button
+								type="button"
+								@click="setView('list')"
+								class="tab-btn"
+								:class="{ 'active': currentView === 'list' }"
+								x-bind:aria-pressed="currentView === 'list' ? 'true' : 'false'"
+								title="عرض كقائمة"
+							>
+								@components.IconList("icon-xs")
+							</button>
+							<button
+								type="button"
+								@click="setView('grid')"
+								class="tab-btn"
+								:class="{ 'active': currentView === 'grid' }"
+								x-bind:aria-pressed="currentView === 'grid' ? 'true' : 'false'"
+								title="عرض ككروت"
+							>
+								@components.IconGrid("icon-xs")
+							</button>
+						</div>
+					</div>
+
+					<!-- Advanced ranges, collapsed until asked for -->
+					<div x-show="showMoreFilters" x-cloak x-transition.opacity class="md-ranges">
+						<div class="md-range">
+							<span class="md-range-label">نطاق السعر (ج.م)</span>
+							<div class="md-range-pair">
+								<input type="number" step="0.5" name="min_price" value={ formatOptionalFloat(filter.MinPrice) } class="form-input" placeholder="من" aria-label="أقل سعر"/>
+								<span class="md-range-dash">—</span>
+								<input type="number" step="0.5" name="max_price" value={ formatOptionalFloat(filter.MaxPrice) } class="form-input" placeholder="إلى" aria-label="أعلى سعر"/>
+							</div>
+						</div>
+
+						<div class="md-range">
+							<span class="md-range-label">نسبة الخصم (%)</span>
+							<div class="md-range-pair">
+								<input type="number" step="1" name="min_discount" value={ formatOptionalFloat(filter.MinDiscount) } class="form-input" placeholder="من" aria-label="أقل خصم"/>
+								<span class="md-range-dash">—</span>
+								<input type="number" step="1" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder="إلى" aria-label="أعلى خصم"/>
+							</div>
+						</div>
+
+						<button type="submit" class="btn btn-primary btn-sm font-bold md-range-apply">تطبيق النطاق</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- 3. Results Surface -->
+			if len(result.Items) == 0 {
+				<div class="glass-panel p-12 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+					<h3 class="text-lg font-black text-primary mb-2">
+						لم نجد أي خصومات مطابقة
+					</h3>
+					<p class="text-sm text-secondary max-w-md mx-auto mb-6">
+						الصفحة تعرض المستودعات المؤقتة المرفوعة من إدارة المنصة فقط. جرّب كلمات بحث أخرى، أو غيّر المستودع ونطاقات السعر والخصم.
+					</p>
+					<a href="/market-discounts" class="btn btn-primary font-bold text-xs">
+						عرض كافة خصومات السوق
+					</a>
+				</div>
+			} else {
+				<!-- List view -->
+				<div class="market-list" x-show="currentView === 'list'" x-cloak>
+					for _, item := range result.Items {
+						<article class="glass-panel market-list-row">
+							<div class="market-list-identity">
+								<div class="market-list-title-wrap">
+									<h3 class="market-list-title" dir="auto">{ item.ProductName }</h3>
+									<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
+									<span class="market-list-date tabular-nums" title="تاريخ رفع المستودع">
+										{ item.UploadedAt.Format("2006-01-02") }
+									</span>
+								</div>
+							</div>
+
+							<div class="market-money">
+								<div class="market-money-cell is-lead">
+									<span class="market-money-label">سعر الجمهور</span>
+									if item.OriginalPrice.Minor() > 0 {
+										<span class="market-money-was tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
+									} else {
+										<span class="market-money-was is-empty">—</span>
+									}
+								</div>
+
+								if item.DiscountPercent > 0 {
+									<div class="market-money-cell">
+										<span class="market-money-label">الخصم</span>
+										if item.DiscountPercent >= 40 {
+											<span class="market-disc-pill is-hot tabular-nums">{ formatDiscount(item.DiscountPercent) }%</span>
+										} else {
+											<span class="market-disc-pill tabular-nums">{ formatDiscount(item.DiscountPercent) }%</span>
+										}
+									</div>
+								}
+
+								<div class="market-money-cell is-net">
+									<span class="market-money-label">السعر بعد الخصم</span>
+									if item.PriceAfterDiscount.Minor() > 0 {
+										<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.PriceAfterDiscount) } <small>ج.م</small></span>
+									} else if item.OriginalPrice.Minor() > 0 {
+										<span class="market-money-now tabular-nums">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
+									} else {
+										<span class="market-money-now is-empty">—</span>
+									}
+								</div>
+							</div>
+
+							if item.InCatalog && item.MatchedProductID != nil {
+								<div class="market-list-action">
+									@marketRowAction(item)
+								</div>
+							}
+						</article>
+					}
+				</div>
+
+				<!-- Grid view -->
+				<div class="market-grid" x-show="currentView === 'grid'" x-cloak>
+					for _, item := range result.Items {
+						<article class="glass-panel market-card">
+							<header class="market-card-head">
+								<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
+								<span class="market-list-date tabular-nums" title="تاريخ رفع المستودع">
+									{ item.UploadedAt.Format("2006-01-02") }
+								</span>
+							</header>
+
+							<h3 class="market-card-title" dir="auto">{ item.ProductName }</h3>
+
+							<div class="market-card-rail">
+								<div class="market-card-pricing-group">
+									<div class="market-card-price-block">
+										<span class="market-money-label">سعر الجمهور</span>
+										if item.OriginalPrice.Minor() > 0 {
+											<span class="market-money-was tabular-nums text-sm font-bold text-primary">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
+										} else {
+											<span class="market-money-was is-empty text-xs">—</span>
+										}
+									</div>
+									if item.DiscountPercent > 0 {
+										<div class="market-card-price-block">
+											<span class="market-money-label">الخصم</span>
+											if item.DiscountPercent >= 40 {
+												<span class="market-disc-pill is-hot tabular-nums">
+													{ formatDiscount(item.DiscountPercent) }%
+													<small>خصم</small>
+												</span>
+											} else {
+												<span class="market-disc-pill tabular-nums">
+													{ formatDiscount(item.DiscountPercent) }%
+													<small>خصم</small>
+												</span>
+											}
+										</div>
+									}
+									<div class="market-card-price-block">
+										<span class="market-money-label">السعر بعد الخصم</span>
+										if item.PriceAfterDiscount.Minor() > 0 {
+											<span class="market-money-now text-xs tabular-nums font-semibold">{ formatDiscountPrice(item.PriceAfterDiscount) } <small>ج.م</small></span>
+										} else if item.OriginalPrice.Minor() > 0 {
+											<span class="market-money-now text-xs tabular-nums font-semibold">{ formatDiscountPrice(item.OriginalPrice) } <small>ج.م</small></span>
+										} else {
+											<span class="market-money-now is-empty text-xs">—</span>
+										}
+									</div>
+								</div>
+							</div>
+
+							if item.InCatalog && item.MatchedProductID != nil {
+								<footer class="market-card-foot">
+									@marketCardAction(item)
+								</footer>
+							}
+						</article>
+					}
+				</div>
+
+				<!-- Pagination Footer Deck -->
+				if result.TotalCount > 0 {
+					<div class="glass-panel p-4 bg-surface-sunken">
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage:     result.Page,
+							PageSize:        marketDiscountsLimit(filter),
+							TotalCount:      int(result.TotalCount),
+							BaseURL:         "/market-discounts",
+							QueryValues:     marketDiscountsQueryValues(filter, currentView),
+							PageSizeOptions: []int{24, 48, 96},
+						})
+					</div>
+				}
+			}
+		</div>
+	}
+}
+
+// marketRowAction and marketCardAction offer the catalogue only when this line
+// has actually been matched to a product.
+templ marketRowAction(item *compare.MarketDiscountRow) {
+	if item.InCatalog && item.MatchedProductID != nil {
+		<a
+			href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)) }
+			class="btn btn-primary btn-sm font-bold"
+			title="عرض الصنف في الكتالوج"
+		>
+			@components.IconCart("icon-xs")
+			<span>عرض بالكتالوج</span>
+		</a>
+	}
+}
+
+templ marketCardAction(item *compare.MarketDiscountRow) {
+	if item.InCatalog && item.MatchedProductID != nil {
+		<a
+			href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)) }
+			class="btn btn-primary btn-sm font-bold w-full justify-center"
+			title="عرض الصنف في الكتالوج"
+		>
+			@components.IconCart("icon-xs")
+			<span>عرض بالكتالوج</span>
+		</a>
+	}
+}
+
+// marketDiscountsLimit is the page size in effect: the filter's value, or the
+// grid default of 24.
+func marketDiscountsLimit(f compare.MarketDiscountsFilter) int {
+	if f.Limit == 24 || f.Limit == 48 || f.Limit == 96 {
+		return f.Limit
+	}
+	return 24
+}
+
+// marketDiscountsQueryValues carries every filter the screen supports through a
+// page change. components.B2BPagination adds page and limit itself.
+func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) url.Values {
+	q := url.Values{}
+	if f.Query != "" {
+		q.Set("q", f.Query)
+	}
+	if f.Supplier != "" {
+		q.Set("supplier", f.Supplier)
+	}
+	if f.SortBy != "" {
+		q.Set("sort", f.SortBy)
+	}
+	if f.MinPrice != nil {
+		q.Set("min_price", fmt.Sprintf("%.2f", *f.MinPrice))
+	}
+	if f.MaxPrice != nil {
+		q.Set("max_price", fmt.Sprintf("%.2f", *f.MaxPrice))
+	}
+	if f.MinDiscount != nil {
+		q.Set("min_discount", fmt.Sprintf("%.1f", *f.MinDiscount))
+	}
+	if f.MaxDiscount != nil {
+		q.Set("max_discount", fmt.Sprintf("%.1f", *f.MaxDiscount))
+	}
+	if view != "" {
+		q.Set("view", view)
+	}
+	return q
+}
+
+func formatOptionalFloat(val *float64) string {
+	if val == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.1f", *val)
+}
+
+func formatDiscount(pct float64) string {
+	if pct <= 0 {
+		return "0"
+	}
+	if pct == float64(int64(pct)) {
+		return fmt.Sprintf("%d", int64(pct))
+	}
+	s := fmt.Sprintf("%.2f", pct)
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimRight(s, ".")
+	return s
+}
+
+func formatDiscountPrice(m money.Amount) string {
+	return m.String()
+}
+
+func calculateMaxDiscount(items []*compare.MarketDiscountRow) float64 {
+	var max float64
+	for _, item := range items {
+		if item.DiscountPercent > max {
+			max = item.DiscountPercent
+		}
+	}
+	return max
+}

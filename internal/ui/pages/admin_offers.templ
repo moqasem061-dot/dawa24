@@ -1,0 +1,408 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminOffersData struct {
+	Offers        []*promo.SpecialOffer
+	FilterStatus  string
+	Organizations []*org.Organization
+	SelectedOrgID int64
+	Counts        map[string]int
+	Page          int
+	PerPage       int
+	TotalCount    int
+}
+
+func countAdminSpecialOffers(offers []*promo.SpecialOffer, status string) int {
+	count := 0
+	for _, o := range offers {
+		if o == nil {
+			continue
+		}
+		switch status {
+		case "active":
+			if o.AdminStatus == "approved" && o.Status == "active" {
+				count++
+			}
+		case "pending":
+			if o.AdminStatus == "pending" || o.AdminStatus == "" {
+				count++
+			}
+		case "changes_requested":
+			if o.AdminStatus == "changes_requested" {
+				count++
+			}
+		case "rejected":
+			if o.AdminStatus == "rejected" {
+				count++
+			}
+		case "draft", "inactive":
+			if o.Status == "draft" || o.Status == "inactive" {
+				count++
+			}
+		case "coverage":
+			if len(o.Locations) > 0 {
+				count++
+			}
+		}
+	}
+	return count
+}
+
+func adminOffersQuery(d AdminOffersData) url.Values {
+	v := url.Values{}
+	if d.FilterStatus != "" && d.FilterStatus != "all" {
+		v.Set("status", d.FilterStatus)
+	}
+	if d.SelectedOrgID > 0 {
+		v.Set("org_id", strconv.FormatInt(d.SelectedOrgID, 10))
+	}
+	return v
+}
+
+templ AdminOffers(data AdminOffersData, lang, dir string) {
+	@layouts.AdminShell("إدارة العروض وباقات الموردين الخاصة", "offers", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconPackage("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">العروض وباقات الموردين الخاصة</h1>
+							<p class="text-sm text-secondary m-0 mt-1">مراجعة واعتماد عروض وباقات الأدوية المجمعة المقدمة من الموردين، وإدارة التغطية الجغرافية وأسعار الباقات</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Summary Strip -->
+			<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي الباقات والعروض</span>
+						<span class="text-accent">@components.IconShoppingBag("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", len(data.Offers)) }
+					</div>
+				</div>
+
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">العروض المعتمدة والنشطة</span>
+						<span class="text-emerald">@components.IconCheckCircle("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-emerald mt-2">
+						{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "active")) }
+					</div>
+				</div>
+
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">بانتظار المراجعة والاعتماد</span>
+						<span class="text-amber-500">@components.IconClock("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-amber-500 mt-2">
+						{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "pending")) }
+					</div>
+				</div>
+
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">عروض ذات تغطية جغرافية</span>
+						<span class="text-cyan">@components.IconMapPin("icon-xs")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-cyan mt-2">
+						{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "coverage")) }
+					</div>
+				</div>
+			</div>
+
+			<!-- Status Filter Tabs & Vendor Filter -->
+			<div class="glass-panel p-4 mb-6">
+				<div class="flex-between items-center flex-wrap gap-3">
+					<div class="tabs-nav">
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "" || data.FilterStatus == "all") }>
+							<span>كافة العروض</span>
+							<span class="badge badge-slate text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", len(data.Offers)) }</span>
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=pending&org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "pending") }>
+							<span>بانتظار الاعتماد</span>
+							if pendingCount := countAdminSpecialOffers(data.Offers, "pending"); pendingCount > 0 {
+								<span class="badge badge-amber text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", pendingCount) }</span>
+							}
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=changes_requested&org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "changes_requested") }>
+							<span>مطلوب تعديلات</span>
+							if chgCount := countAdminSpecialOffers(data.Offers, "changes_requested"); chgCount > 0 {
+								<span class="badge badge-amber text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", chgCount) }</span>
+							}
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=active&org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "active") }>
+							<span>المعتمدة والنشطة</span>
+							<span class="badge badge-emerald text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "active")) }</span>
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=draft&org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "draft") }>
+							<span>المسودات والمعطلة</span>
+							<span class="badge badge-slate text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "draft")) }</span>
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=rejected&org_id=%d", data.SelectedOrgID)) } class={ "tab-btn", templ.KV("active", data.FilterStatus == "rejected") }>
+							<span>المرفوضة</span>
+							<span class="badge badge-rose text-xs font-bold tabular-nums">{ fmt.Sprintf("%d", countAdminSpecialOffers(data.Offers, "rejected")) }</span>
+						</a>
+					</div>
+					<form method="GET" action="/admin/offers" class="d-flex items-center gap-2 m-0">
+						if data.FilterStatus != "" {
+							<input type="hidden" name="status" value={ data.FilterStatus }/>
+						}
+						<select name="org_id" class="form-select text-xs font-bold w-auto" data-autosubmit>
+							<option value="0">-- كافة الموردين والشركات --</option>
+							for _, o := range data.Organizations {
+								<option value={ strconv.FormatInt(o.ID, 10) } selected?={ data.SelectedOrgID == o.ID }>
+									{ o.LegalName }
+								</option>
+							}
+						</select>
+						if data.SelectedOrgID > 0 {
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/offers?status=%s", data.FilterStatus)) } class="btn btn-ghost btn-xs text-muted font-bold">
+								إلغاء التصفية
+							</a>
+						}
+					</form>
+				</div>
+			</div>
+
+			<!-- Main Offers Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Offers) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconPackage("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد عروض وباقات موردين</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يقم أي مورد بإدراج عروض خاصة حتى الآن.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table data-table-compact table-fixed m-0 w-full text-xs">
+							<thead>
+								<tr>
+									<th class="w-[28%]">العرض / باقة الأدوية</th>
+									<th class="w-[20%]">الشركة الموردة والتغطية</th>
+									<th class="w-[20%]">الأصناف المشمولة</th>
+									<th class="w-[16%]">التسعير والشروط</th>
+									<th class="w-[9%] text-center">الحالة</th>
+									<th class="w-[7%] text-center">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, o := range data.Offers {
+									<tr class="align-middle">
+										<!-- Offer Title & Info -->
+										<td>
+											<div class="d-flex items-center gap-2.5">
+												if o.Image != "" {
+													<img src={ o.Image } alt="Banner" class="w-10 h-10 rounded-xl object-cover border shrink-0 bg-surface-sunken" />
+												} else {
+													<div class="user-avatar-badge text-sm shrink-0 w-10 h-10 rounded-xl">
+														@components.IconPackage("icon-2xs")
+													</div>
+												}
+												<div class="stack-2xs text-start min-w-0 flex-1">
+													<span class="font-bold text-primary text-xs leading-snug truncate d-block" title={ o.Title.Get(i18n.Lang(lang)) }>
+														{ o.Title.Get(i18n.Lang(lang)) }
+													</span>
+													if !o.Description.IsEmpty() {
+														<span class="text-2xs text-secondary truncate d-block" title={ o.Description.Get(i18n.Lang(lang)) }>
+															{ o.Description.Get(i18n.Lang(lang)) }
+														</span>
+													}
+													<div class="text-2xs text-muted tabular-nums">
+														#{ fmt.Sprintf("%d", o.ID) } • { o.CreatedAt.Format("2006-01-02") }
+													</div>
+												</div>
+											</div>
+										</td>
+
+										<!-- Supplier Org, Branch & Coverage -->
+										<td>
+											<div class="font-bold text-primary text-xs truncate" title={ o.OrganizationName }>
+												if o.OrganizationName != "" {
+													{ o.OrganizationName }
+												} else {
+													<span>مورد #{ fmt.Sprintf("%d", o.OrganizationID) }</span>
+												}
+											</div>
+											<div class="text-2xs text-muted mt-0.5 truncate">
+												if o.BranchName != "" {
+													<span class="text-accent font-bold">فرع: { o.BranchName }</span>
+												} else {
+													<span>كافة الفروع</span>
+												}
+											</div>
+											<div class="mt-1">
+												if len(o.Locations) == 0 {
+													<span class="badge badge-slate text-2xs font-bold">تغطية عامة</span>
+												} else {
+													<span class="badge badge-sky text-2xs font-bold d-inline-flex items-center gap-1">
+														@components.IconMapPin("icon-3xs")
+														<span>{ fmt.Sprintf("%d مناطق", len(o.Locations)) }</span>
+													</span>
+												}
+											</div>
+										</td>
+
+										<!-- Bundled Products List -->
+										<td>
+											if len(o.Products) == 0 {
+												<span class="text-2xs text-muted">عرض عام (بدون أصناف)</span>
+											} else {
+												<div class="d-flex flex-col gap-1">
+													<div class="badge badge-indigo text-2xs font-bold w-fit">
+														{ fmt.Sprintf("%d أصناف بالباقة", len(o.Products)) }
+													</div>
+													for idx, p := range o.Products {
+														if idx < 2 {
+															<div class="d-flex items-center gap-1 text-2xs truncate">
+																<span class="badge badge-slate text-2xs tabular-nums px-1 py-0 shrink-0">
+																	{ fmt.Sprintf("%dx", p.Quantity) }
+																</span>
+																<span class="text-primary truncate" title={ p.VariantName }>
+																	if p.VariantName != "" {
+																		{ p.VariantName }
+																	} else {
+																		<span>صنف #{ fmt.Sprintf("%d", p.VariantID) }</span>
+																	}
+																</span>
+															</div>
+														}
+													}
+													if len(o.Products) > 2 {
+														<span class="text-2xs text-accent font-bold">
+															+ { fmt.Sprintf("%d أصناف أخرى", len(o.Products)-2) }
+														</span>
+													}
+												</div>
+											}
+										</td>
+
+										<!-- Pricing, Discount & Min Order -->
+										<td>
+											<div class="tabular-nums font-black text-xs text-primary">
+												{ o.TotalPrice.String() } ج.م
+											</div>
+											<div class="mt-0.5">
+												if o.DiscountPercentage > 0 {
+													<span class="badge badge-emerald font-black text-2xs tabular-nums">
+														خصم { fmt.Sprintf("%.0f%%", o.DiscountPercentage) }
+													</span>
+												} else if !o.DiscountAmount.IsZero() {
+													<span class="badge badge-emerald font-bold text-2xs tabular-nums">
+														خصم { o.DiscountAmount.String() } ج.م
+													</span>
+												}
+											</div>
+											<div class="text-2xs text-muted tabular-nums mt-1 truncate">
+												if !o.MinOrderAmount.IsZero() {
+													<span>حد أدنى: { o.MinOrderAmount.String() } ج.م</span>
+												} else {
+													<span>بدون حد أدنى</span>
+												}
+											</div>
+										</td>
+
+										<!-- Status & Moderation Badges -->
+										<td class="text-center">
+											<div class="d-flex flex-col items-center gap-1">
+												if o.AdminStatus == "approved" {
+													<span class="badge badge-emerald text-2xs font-bold">معتمد</span>
+												} else if o.AdminStatus == "changes_requested" {
+													<span class="badge badge-amber text-2xs font-extrabold">مطلوب تعديلات</span>
+												} else if o.AdminStatus == "rejected" {
+													<span class="badge badge-rose text-2xs font-bold">مرفوض</span>
+												} else {
+													<span class="badge badge-amber text-2xs font-bold animate-pulse">قيد المراجعة</span>
+												}
+
+												if o.Status == "active" {
+													<span class="badge badge-sky text-2xs font-bold">نشط</span>
+												} else if o.Status == "draft" {
+													<span class="badge badge-slate text-2xs font-bold">مسودة</span>
+												} else {
+													<span class="badge badge-slate text-2xs font-bold">معطل</span>
+												}
+											</div>
+										</td>
+
+										<!-- Admin Action Buttons -->
+										<td class="col-actions text-center">
+											<div class="d-flex flex-col items-stretch gap-1">
+												<button
+													type="button"
+													class="btn btn-secondary btn-xs font-bold text-accent gap-1 justify-center shadow-2xs"
+													data-modal-open={ fmt.Sprintf("admin-offer-review-modal-%d", o.ID) }
+													@click={ fmt.Sprintf("$dispatch('open-modal', 'admin-offer-review-modal-%d')", o.ID) }
+													title="مراجعة وتدقيق كامل تفاصيل العرض"
+												>
+													@components.IconEye("icon-2xs")
+													<span>مراجعة</span>
+												</button>
+
+												if o.AdminStatus != "approved" {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/approve", o.ID)) } class="m-0">
+														<button type="submit" class="btn btn-primary btn-xs font-bold w-full justify-center" title="اعتماد ونشر العرض">
+															<span>اعتماد</span>
+														</button>
+													</form>
+												} else if o.Status == "active" {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/status", o.ID)) } class="m-0">
+														<input type="hidden" name="active" value="false" />
+														<button type="submit" class="btn btn-ghost btn-xs text-muted w-full justify-center" title="إيقاف تفعيل العرض مؤقتاً">
+															<span>تعطيل</span>
+														</button>
+													</form>
+												} else {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/offers/%d/status", o.ID)) } class="m-0">
+														<input type="hidden" name="active" value="true" />
+														<button type="submit" class="btn btn-secondary btn-xs font-bold text-emerald w-full justify-center" title="تفعيل العرض">
+															<span>تفعيل</span>
+														</button>
+													</form>
+												}
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Detailed Moderation Modals rendered outside table -->
+					for _, o := range data.Offers {
+						@AdminOfferReviewModal(o, lang, dir)
+					}
+
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/offers",
+							QueryValues: adminOffersQuery(data),
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}

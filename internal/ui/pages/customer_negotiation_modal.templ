@@ -1,0 +1,109 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+import "github.com/muhiya/dawa24-store/internal/ui/components"
+
+templ CustomerNegotiationModal() {
+	@components.Modal(components.ModalProps{
+		ID:    "negotiation-modal",
+		Title: "طلب تفاوض على سعر الصنف",
+		Size:  "md",
+	}) {
+		<form method="POST" action="/customer/negotiate-order" id="negotiation-form" class="stack-md">
+			<input type="hidden" name="variant_id" id="neg-variant-id" />
+			<input type="hidden" name="vendor_org_id" id="neg-vendor-id" />
+			
+			<div class="modal-body stack-md">
+				<div class="bg-surface-sunken p-3.5 rounded-xl border stack-2xs">
+					<div class="text-xs text-muted font-bold">الصنف الدوائي المختار:</div>
+					<div class="text-sm font-black text-primary" id="neg-product-name">-</div>
+					<div class="text-xs text-secondary font-semibold">سعر التوريد الحالي المعلن: <strong id="neg-current-price" class="tabular-nums text-primary font-black">-</strong> ج.م</div>
+				</div>
+
+				<div class="d-grid grid-auto-fit-sm gap-3">
+					<div class="stack-xs">
+						<label class="form-label font-bold text-primary text-xs">السعر المقترح للعبوة (ج.م) <span class="text-danger">*</span></label>
+						<input type="number" step="0.01" min="0.01" name="proposed_price" id="neg-proposed-price" required placeholder="0.00" class="form-input tabular-nums font-black text-sm w-full" />
+					</div>
+					<div class="stack-xs">
+						<label class="form-label font-bold text-primary text-xs">الكمية المطلوبة (عبوة) <span class="text-danger">*</span></label>
+						<input type="number" min="1" name="qty" id="neg-qty" value="1" required class="form-input tabular-nums font-black text-sm w-full" />
+					</div>
+				</div>
+
+				<div class="stack-xs">
+					<label class="form-label font-bold text-primary text-xs">ملاحظات إضافية للمورّد (اختياري)</label>
+					<textarea name="notes" rows="2" placeholder="اكتب أي شروط أو تفاصيل إضافية بخصوص جدول الاستلام أو التوريد..." class="form-input text-xs w-full"></textarea>
+				</div>
+			</div>
+
+			<div class="modal-footer pt-3 border-t flex-between items-center">
+				<button type="button" class="btn btn-secondary font-bold text-xs" data-on-click="closeNegotiationModal()">إلغاء</button>
+				<button type="submit" class="btn btn-primary font-bold text-xs px-4 shadow-sm">إرسال طلب التفاوض للمورّد</button>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openNegotiationModal(target) {
+			let data = target || {};
+			if (target && (target instanceof Element || target.nodeType === 1)) {
+				data = {
+					variant_id: target.getAttribute('data-variant-id') || '',
+					product_id: target.getAttribute('data-product-id') || '',
+					vendor_org_id: target.getAttribute('data-vendor-id') || '',
+					name: target.getAttribute('data-product-name') || '',
+					current_price: target.getAttribute('data-current-price') || '',
+					min_qty: parseInt(target.getAttribute('data-min-qty') || '1', 10)
+				};
+			}
+
+			const vId = document.getElementById('neg-variant-id');
+			const oId = document.getElementById('neg-vendor-id');
+			const name = document.getElementById('neg-product-name');
+			const curPrice = document.getElementById('neg-current-price');
+			const qty = document.getElementById('neg-qty');
+			const propPrice = document.getElementById('neg-proposed-price');
+
+			if (vId) vId.value = data.variant_id || '';
+			if (oId) oId.value = data.vendor_org_id || '';
+			if (name) name.textContent = data.name || 'صنف دوائي';
+			if (curPrice) curPrice.textContent = data.current_price || '0.00';
+			
+			const minQ = (data.min_qty && data.min_qty > 0) ? data.min_qty : 1;
+			if (qty) {
+				qty.value = minQ;
+				qty.min = String(minQ);
+			}
+			if (propPrice) {
+				propPrice.value = '';
+				propPrice.placeholder = data.current_price ? ('مثال: ' + data.current_price) : '0.00';
+			}
+
+			const form = document.getElementById('negotiation-form');
+			if (form) {
+				const textarea = form.querySelector('textarea[name="notes"]');
+				if (textarea) textarea.value = '';
+			}
+
+			const m = document.getElementById('negotiation-modal');
+			if (m && typeof m.showModal === 'function') {
+				m.showModal();
+			}
+		}
+
+		function triggerNegotiationModal(btn) {
+			openNegotiationModal(btn);
+		}
+
+		function closeNegotiationModal() {
+			const m = document.getElementById('negotiation-modal');
+			if (m && typeof m.close === 'function') {
+				m.close();
+			}
+		}
+	</script>
+}

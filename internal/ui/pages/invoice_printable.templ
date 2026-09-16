@@ -1,0 +1,157 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func formatDiscountInt(pct float64) string {
+	if pct <= 0 {
+		return "0%"
+	}
+	return formatDiscount(pct) + "%"
+}
+
+templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) {
+	<!DOCTYPE html>
+	<html lang={ lang } dir={ dir }>
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>{ fmt.Sprintf("فاتورة توريد #%s - دوا 24", data.InvoiceNumber) }</title>
+						<link rel="stylesheet" href="/static/css/invoice_printable.css"/>
+		</head>
+		<body>
+			
+			<!-- Floating Action Toolbar (Hidden in print) -->
+			<div class="no-print-toolbar">
+				<div class="d-flex items-center gap-2">
+					<span style="font-size:1.3rem;">@components.IconFileText("icon-sm")</span>
+     <div class="stack-sm">
+						<strong style="font-size:0.95rem; display:block; color:#0f172a;">
+							فاتورة استلام وتوريد
+						</strong>
+						<span style="font-size:0.75rem; color:#64748b;">
+							رقم الفاتورة: <span class="tabular-nums font-bold">{ data.InvoiceNumber }</span>
+						</span>
+					</div>
+				</div>
+
+				<div class="toolbar-btn-group">
+					<!-- Standard A4 Print -->
+					<button
+						type="button"
+						class="btn-action btn-primary"
+						data-on-click="printA4()"
+						title="طباعة الفاتورة بالحجم القياسي A4"
+					>
+						<span>طباعة الفاتورة (A4)</span>
+					</button>
+
+					<!-- Thermal Print (POS 80mm) -->
+					<button
+						type="button"
+						class="btn-action btn-thermal"
+						data-on-click="printThermal()"
+						title="طباعة إيصال كاشير 80 مم"
+					>
+						<span>طباعة إيصال كاشير (Thermal)</span>
+					</button>
+
+					<!-- Export Excel -->
+					if data.InvoiceID > 0 {
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/invoices/%d/excel", data.InvoiceID)) }
+							download
+							class="btn-action btn-secondary"
+							title="تصدير بيانات الفاتورة إلى ملف Excel"
+						>
+							<span>تصدير Excel (XLSX)</span>
+						</a>
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/invoices/%d/word", data.InvoiceID)) }
+							download
+							class="btn-action btn-secondary"
+							title="تصدير الفاتورة إلى مستند Word"
+						>
+							<span>تصدير Word (DOCX)</span>
+						</a>
+					} else if data.OrderID != nil && *data.OrderID > 0 {
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/excel", *data.OrderID)) }
+							download
+							class="btn-action btn-secondary"
+							title="تصدير بيانات الفاتورة إلى ملف Excel"
+						>
+							<span>تصدير Excel (XLSX)</span>
+						</a>
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/word", *data.OrderID)) }
+							download
+							class="btn-action btn-secondary"
+							title="تصدير الفاتورة إلى مستند Word"
+						>
+							<span>تصدير Word (DOCX)</span>
+						</a>
+					}
+
+					<!-- Close / Back -->
+					<button
+						type="button"
+						class="btn-action btn-secondary"
+						data-on-click="closeWindow()"
+					>
+						<span>إغلاق</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- =========================================================================
+			     VIEW 1: Standard A4 Invoice
+			     ========================================================================= -->
+			@InvoicePrintableA4(data)
+
+			<!-- =========================================================================
+			     VIEW 2: Thermal POS Receipt 80mm
+			     ========================================================================= -->
+			@InvoicePrintableThermal(data)
+
+			<!-- Scripts for Thermal and A4 Printing Modes -->
+			<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+				function printA4() {
+					const thermal = document.getElementById('thermal-invoice-container');
+					const a4 = document.getElementById('a4-invoice-container');
+					if (thermal) thermal.style.display = 'none';
+					if (a4) a4.style.display = 'block';
+					window.print();
+				}
+
+				function printThermal() {
+					const thermal = document.getElementById('thermal-invoice-container');
+					const a4 = document.getElementById('a4-invoice-container');
+					if (a4) a4.style.display = 'none';
+					if (thermal) thermal.style.display = 'block';
+					window.print();
+					// restore after print dialog
+					setTimeout(() => {
+						if (a4) a4.style.display = 'block';
+						if (thermal) thermal.style.display = 'none';
+					}, 1000);
+				}
+
+				// Auto print if requested via query parameter
+				window.addEventListener('DOMContentLoaded', () => {
+					const params = new URLSearchParams(window.location.search);
+					if (params.get('thermal') === '1') {
+						printThermal();
+					} else if (params.get('autoprint') === '1') {
+						printA4();
+					}
+				});
+			</script>
+		</body>
+	</html>
+}

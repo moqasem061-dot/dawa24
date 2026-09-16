@@ -1,0 +1,281 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/hr"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type JobDetailData struct {
+	Job         *hr.JobOffer
+	CompanyName string
+	CompanyLogo string
+	Actor       authctx.Actor
+	IsLoggedIn  bool
+	IsCustomer  bool
+	IsVendor    bool
+	IsAdmin     bool
+	IsJobSeeker bool
+	Submitted   bool
+	UserEmail   string
+	UserName    string
+	UserPhone   string
+}
+
+// JobDetailContent renders the high-craft job detail and application screen.
+templ JobDetailContent(data JobDetailData, lang, dir string) {
+	<div class="jobs-container">
+		<!-- Back Button & Breadcrumbs Navigation -->
+		<div class="d-flex items-center justify-between flex-wrap gap-3">
+			<a href={ templ.SafeURL(func() string { if data.IsCustomer { return "/customer/jobs" }; return "/jobs" }()) } class="btn btn-secondary btn-sm font-bold">
+				@components.IconArrowRight("icon-xs")
+				<span>العودة لكافة الوظائف والفرص</span>
+			</a>
+			
+			<div class="d-flex items-center gap-1.5 text-xs text-muted">
+				<span>كود الشاغر:</span>
+				<span class="badge badge-gray tabular-nums font-bold">REF-JOB-{ fmt.Sprintf("%d", data.Job.ID) }</span>
+			</div>
+		</div>
+
+		<!-- 2-Column Responsive Layout -->
+		<div class="job-detail-layout">
+			<!-- Main Column: Details, Scope & Requirements -->
+			<div class="d-flex flex-col gap-4">
+				<!-- Hero Header Card -->
+				<div class="job-detail-card">
+					<div class="d-flex flex-col gap-2">
+						<div class="d-flex items-center justify-between flex-wrap gap-2">
+							<div class="d-flex items-center gap-2">
+								<span class="badge badge-success-subtle text-xs font-bold">
+									@components.IconCheckCircle("icon-xs")
+									<span>فرصة عمل معتمدة</span>
+								</span>
+								<span class="badge badge-brand text-xs font-bold">دوام كامل</span>
+							</div>
+
+							<span class="tabular-nums text-xs text-muted">
+								تاريخ النشر: { data.Job.CreatedAt.Format("2006-01-02") }
+							</span>
+						</div>
+
+						<h1 class="page-title font-bold text-xl m-0 text-primary">
+							{ data.Job.Title.Get(i18n.ParseLang(lang)) }
+						</h1>
+
+						<div class="d-flex items-center gap-4 flex-wrap mt-1 text-xs text-secondary">
+							<div class="d-flex items-center gap-2">
+								<div class="job-avatar-pill">
+									{ jobInitial(data.CompanyName) }
+								</div>
+								<strong class="text-primary">{ data.CompanyName }</strong>
+							</div>
+
+							if data.Job.Location != "" {
+								<div class="d-flex items-center gap-1">
+									@components.IconLocation("icon-xs")
+									<span>{ data.Job.Location }</span>
+								</div>
+							}
+						</div>
+					</div>
+
+					<!-- Key Specs Matrix -->
+					<div class="job-specs-grid">
+						<div class="job-spec-tile">
+							<span class="job-spec-tile-label">نظام العمل</span>
+							<span class="job-spec-tile-value">دوام كامل (Full-Time)</span>
+						</div>
+						<div class="job-spec-tile">
+							<span class="job-spec-tile-label">الخبرة المطلوبة</span>
+							<span class="job-spec-tile-value">1 - 3 سنوات في المجال</span>
+						</div>
+						<div class="job-spec-tile">
+							<span class="job-spec-tile-label">المؤهل الدراسي</span>
+							<span class="job-spec-tile-value">بكالوريوس صيدلة معتمد</span>
+						</div>
+						<div class="job-spec-tile">
+							<span class="job-spec-tile-label">ترخيص المزاولة</span>
+							<span class="job-spec-tile-value">كارنيه نقابة ساري</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Section: Job Description & Responsibilities -->
+				<div class="job-detail-card">
+					<h3 class="font-bold text-sm m-0 text-primary d-flex items-center gap-2">
+						@components.IconFile("icon-xs")
+						<span>الوصف الوظيفي والمسؤوليات الأساسية</span>
+					</h3>
+					<div class="text-sm text-secondary leading-relaxed">
+						{ data.Job.Description }
+					</div>
+				</div>
+
+				<!-- Section: Qualifications & Requirements -->
+				if data.Job.Requirements != "" {
+					<div class="job-detail-card">
+						<h3 class="font-bold text-sm m-0 text-primary d-flex items-center gap-2">
+							@components.IconCheckCircle("icon-xs")
+							<span>المؤهلات والشروط المطلوبة</span>
+						</h3>
+						<div class="text-sm text-secondary leading-relaxed">
+							{ data.Job.Requirements }
+						</div>
+					</div>
+				}
+
+				<!-- Section: Benefits & Work Environment -->
+				<div class="job-detail-card">
+					<h3 class="font-bold text-sm m-0 text-primary d-flex items-center gap-2">
+						@components.IconSparkles("icon-xs")
+						<span>المزايا وبيئة العمل</span>
+					</h3>
+					<div class="d-grid grid-auto-fit-sm gap-2.5 text-xs text-secondary">
+						<div class="d-flex items-center gap-2 p-2 bg-surface-sunken rounded-lg border">
+							<span class="text-emerald">@components.IconCheck("icon-sm")</span>
+							<span>تأمينات اجتماعية وطبية شاملة</span>
+						</div>
+						<div class="d-flex items-center gap-2 p-2 bg-surface-sunken rounded-lg border">
+							<span class="text-emerald">@components.IconCheck("icon-sm")</span>
+							<span>حوافز شهرية ومكافآت أداء مجزية</span>
+						</div>
+						<div class="d-flex items-center gap-2 p-2 bg-surface-sunken rounded-lg border">
+							<span class="text-emerald">@components.IconCheck("icon-sm")</span>
+							<span>إجازات سنوية ورسمية مدفوعة</span>
+						</div>
+						<div class="d-flex items-center gap-2 p-2 bg-surface-sunken rounded-lg border">
+							<span class="text-emerald">@components.IconCheck("icon-sm")</span>
+							<span>مسار وظيفي وفرص ترقية مستمرة</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Right / Sidebar Column: Application & Compensation -->
+			<div class="d-flex flex-col gap-4">
+				<!-- Salary & Compensation Card -->
+				<div class="job-detail-card">
+					<div class="text-xs text-muted font-bold">
+						الراتب والمخصصات المقترحة:
+					</div>
+					if !data.Job.SalaryMin.IsZero() || !data.Job.SalaryMax.IsZero() {
+						<div class="tabular-nums font-bold text-lg text-primary">
+							@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.Job.SalaryMin })
+							if !data.Job.SalaryMax.IsZero() {
+								<span> - </span>
+								@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.Job.SalaryMax })
+							}
+							<span class="text-xs text-muted font-normal">/ شهرياً</span>
+						</div>
+					} else {
+						<div class="font-bold text-sm text-primary">
+							يحدد بناءً على المقابلة والخبرة
+						</div>
+					}
+				</div>
+
+				<!-- Job Application Box -->
+				<div class="job-detail-card">
+					<h3 class="font-bold text-base m-0 text-primary">
+						التقديم على هذه الفرصة
+					</h3>
+
+					if data.Submitted {
+						<div class="alert alert-success p-4 d-flex flex-col gap-2">
+							<div class="d-flex items-center gap-2 font-bold">
+								@components.IconCheckCircle("icon-md")
+								<strong>تم إرسال طلب التوظيف بنجاح!</strong>
+							</div>
+							<p class="text-xs text-secondary m-0">
+								تم استلام طلبك وإرفاق بياناتك بنجاح. سيقوم مسؤول التوظيف بمراجعة سيرتك الذاتية والتواصل معك في أقرب وقت.
+							</p>
+						</div>
+					} else if !data.IsLoggedIn {
+						<div class="p-4 bg-surface-sunken rounded-xl border text-center d-flex flex-col items-center gap-2">
+							<div class="user-avatar-badge">
+								@components.IconUser("icon-xs")
+							</div>
+							<h4 class="font-bold text-sm m-0 text-primary">
+								التقديم متاح لحسابات (باحث عن عمل)
+							</h4>
+							<p class="text-xs text-secondary m-0">
+								يرجى تسجيل الدخول بحساب باحث عن عمل لإرسال سيرتك الذاتية ومتابعة طلبك.
+							</p>
+							<div class="d-flex flex-col gap-2 w-full mt-2">
+								<a href={ templ.SafeURL(fmt.Sprintf("/auth/login?redirect=/jobs/%d", data.Job.ID)) } class="btn btn-primary btn-sm font-bold w-full">
+									<span>تسجيل الدخول كباحث عن عمل</span>
+								</a>
+								<a href="/auth/register" class="btn btn-secondary btn-sm w-full">
+									<span>إنشاء حساب باحث عن عمل</span>
+								</a>
+							</div>
+						</div>
+					} else if !data.IsJobSeeker {
+						<div class="p-4 bg-surface-sunken rounded-xl border text-center d-flex flex-col items-center gap-2">
+							<div class="text-amber">@components.IconAlert("icon-sm")</div>
+							<h4 class="font-bold text-sm m-0 text-primary">
+								التقديم متاح فقط لحسابات (باحث عن عمل)
+							</h4>
+							<p class="text-xs text-secondary m-0">
+								أنت مسجل حالياً بحساب منشأة. للتقديم على الوظائف الشاغرة كصيدلي أو كادر طبي، يرجى استخدام حساب باحث عن عمل.
+							</p>
+							<a href="/auth/register" class="btn btn-secondary btn-sm w-full mt-2">
+								<span>إنشاء حساب باحث عن عمل جديد</span>
+							</a>
+						</div>
+					} else {
+						<form class="d-flex flex-col gap-3 m-0" method="POST" action={ templ.SafeURL(fmt.Sprintf("/jobs/%d/apply", data.Job.ID)) } enctype="multipart/form-data">
+							<div>
+								<label class="form-label text-xs font-bold mb-1">الاسم الثلاثي / المهني <span class="text-danger">*</span></label>
+								<input type="text" name="applicant_name" required value={ data.UserName } placeholder="د. أحمد محمود" class="form-input input-sm w-full"/>
+							</div>
+
+							<div>
+								<label class="form-label text-xs font-bold mb-1">البريد الإلكتروني <span class="text-danger">*</span></label>
+								<input type="email" name="applicant_email" required value={ data.UserEmail } placeholder="pharmacist@example.com" class="form-input input-sm tabular-nums w-full"/>
+							</div>
+
+							<div>
+								<label class="form-label text-xs font-bold mb-1">رقم الهاتف / الواتساب <span class="text-danger">*</span></label>
+								<input type="tel" name="applicant_phone" required value={ data.UserPhone } placeholder="01012345678" class="form-input input-sm tabular-nums w-full"/>
+							</div>
+
+							<div>
+								<label class="form-label text-xs font-bold mb-1">إرفاق السيرة الذاتية (CV / PDF) <span class="text-danger">*</span></label>
+								<input type="file" name="resume_file" accept=".pdf,.doc,.docx" required class="form-input input-sm w-full"/>
+							</div>
+
+							<div>
+								<label class="form-label text-xs font-bold mb-1">ملاحظات أو نبذة عن الخبرة (اختياري)</label>
+								<textarea name="notes" rows="2" placeholder="أبرز الخبرات والمهارات..." class="form-input input-sm w-full"></textarea>
+							</div>
+
+							<button type="submit" class="btn btn-primary btn-sm fw-800 w-full mt-1">
+								@components.IconCheck("icon-xs")
+								<span>إرسال طلب التوظيف الآن</span>
+							</button>
+						</form>
+					}
+				</div>
+
+				<!-- Safety & Trust Guarantee -->
+				<div class="p-3.5 bg-surface-sunken rounded-xl border text-2xs text-muted leading-relaxed">
+					<strong class="text-primary d-block mb-1">ضمان الأمان والموثوقية:</strong>
+					تضمن منصة دوا 24 التحقق من كافة جهات العمل المنشورة. لا تطلب أي جهة معتمدة أي رسوم مقابل التقديم للوظائف.
+				</div>
+			</div>
+		</div>
+	</div>
+}
+
+// JobDetail renders the vacancy details adapted to the user's dashboard shell.
+templ JobDetail(data JobDetailData, lang string, dir string) {
+	@layouts.ShellFor(data.Job.Title.Get(i18n.ParseLang(lang)), "jobs", lang, dir, data.Actor) {
+		@JobDetailContent(data, lang, dir)
+	}
+}

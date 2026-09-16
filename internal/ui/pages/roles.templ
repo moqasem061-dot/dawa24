@@ -1,0 +1,435 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// One roles screen serves all three dashboards.
+//
+// The permission checkboxes are rendered from rbac.Catalog.Matrix(scope), so
+// the editor cannot offer a permission that does not exist, cannot omit one
+// that does, and cannot offer a permission from another dashboard. The old
+// screens hardcoded their checkbox lists — eleven strings in the admin
+// template, three descriptive cards in the vendor one — which is why they drifted
+// out of step with the routes they were supposed to control.
+
+// RoleRow is one role in the list.
+type RoleRow struct {
+	// ID addresses the role in a URL: a numeric org.roles id for a company
+	// role, a key for a platform one.
+	ID          string
+	Name        string
+	Description string
+	IsSystem    bool
+	IsOwner     bool
+	Badge       string
+	GrantCount  int
+	MemberCount int
+}
+
+// RolesView is everything the list page renders.
+type RolesView struct {
+	Scope      rbac.Scope
+	BasePath   string
+	Title      string
+	Subtitle   string
+	Roles      []RoleRow
+	CanCreate  bool
+	CanEdit    bool
+	CanDelete  bool
+	Notice     string
+	NoticeKind string
+	// Tenant selects the caller's own shell instead of the admin one.
+	Tenant bool
+}
+
+// RoleEditView is the permission matrix for one role.
+type RoleEditView struct {
+	Scope       rbac.Scope
+	BasePath    string
+	ID          string
+	Key         string
+	Name        string
+	NameAr      string
+	NameEn      string
+	Description string
+	IsSystem    bool
+	IsOwner     bool
+	// ShowStaffToggle is set for platform roles, where a role additionally
+	// decides whether its holders reach the admin dashboard at all.
+	ShowStaffToggle bool
+	IsStaff         bool
+	// ReadOnly renders the matrix without inputs: the caller may look at the
+	// role but not change it, or the role is the owner role and nobody may.
+	ReadOnly    bool
+	Granted     rbac.Set
+	Sections    []rbac.Section
+	MemberCount int
+	Tenant      bool
+}
+
+templ RolesPage(v RolesView, lang, dir string) {
+	@roleShell(v.Tenant, v.Title+" | دوا 24", "roles", lang, dir) {
+		<div class="page-container" x-data="{ showCreate: false }">
+			@roleNotice(v.NoticeKind, v.Notice)
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-start flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconShield("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">{ v.Title }</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">{ v.Subtitle }</p>
+					</div>
+					if v.CanCreate {
+						<button type="button" class="btn btn-primary font-bold gap-2" @click="showCreate = !showCreate">
+							@components.IconPlus("icon-xs")
+							<span>دور جديد</span>
+						</button>
+					}
+				</div>
+			</div>
+			if v.CanCreate {
+				@roleCreateForm(v)
+			}
+			@roleList(v)
+		</div>
+	}
+}
+
+templ roleCreateForm(v RolesView) {
+	<div class="glass-panel p-6 mb-4" x-show="showCreate" x-cloak>
+		<h2 class="text-lg font-extrabold text-primary mt-0 mb-4">إنشاء دور جديد</h2>
+		<form method="POST" action={ templ.SafeURL(v.BasePath) } class="d-grid grid-cols-2 gap-4">
+   <div class="stack-sm">
+				<label class="form-label" for="new-role-name-ar">اسم الدور (عربي)</label>
+				<input id="new-role-name-ar" class="form-input" type="text" name="name_ar" required maxlength="80" placeholder="مثال: مسؤول المشتريات"/>
+			</div>
+   <div class="stack-sm">
+				<label class="form-label" for="new-role-name-en">اسم الدور (إنجليزي)</label>
+				<input id="new-role-name-en" class="form-input" type="text" name="name_en" maxlength="80" placeholder="Purchasing Officer"/>
+			</div>
+			<div class="col-span-2">
+				<label class="form-label" for="new-role-description">وصف مختصر</label>
+				<input id="new-role-description" class="form-input" type="text" name="description" maxlength="200" placeholder="ما الذي يفعله حامل هذا الدور؟"/>
+			</div>
+			<div class="col-span-2 d-flex items-center gap-3">
+				<button type="submit" class="btn btn-primary font-bold">إنشاء وتحديد الصلاحيات</button>
+				<span class="text-xs text-muted">يُنشأ الدور بدون صلاحيات، ثم تُحدَّد صلاحياته في الشاشة التالية.</span>
+			</div>
+		</form>
+	</div>
+}
+
+templ roleList(v RolesView) {
+	if len(v.Roles) == 0 {
+		<div class="glass-panel p-6 text-center">
+			<p class="text-sm text-secondary m-0">لا توجد أدوار بعد.</p>
+		</div>
+	} else {
+		<div class="d-grid grid-cols-3 gap-4">
+			for _, role := range v.Roles {
+				<div class="glass-panel p-5 mb-0 d-flex flex-col justify-between gap-4">
+     <div class="stack-sm">
+						<div class="flex-between items-start mb-3 gap-2">
+       <div class="stack-sm">
+								<h3 class="text-base font-extrabold text-primary m-0">{ role.Name }</h3>
+								<span class="text-xs text-muted">{ role.Badge }</span>
+							</div>
+							if role.IsOwner {
+								<span class="badge badge-emerald font-bold text-xs">{ role.Badge }</span>
+							} else if role.IsSystem {
+								<span class="badge font-bold text-xs">أساسي</span>
+							}
+						</div>
+						if role.Description != "" {
+							<p class="text-xs text-secondary leading-relaxed mb-3">{ role.Description }</p>
+						}
+						<div class="d-flex items-center gap-4 text-xs text-secondary">
+							<span class="d-flex items-center gap-1">
+								@components.IconCheck("icon-xs")
+								<span>{ fmt.Sprintf("%d صلاحية", role.GrantCount) }</span>
+							</span>
+							<span class="d-flex items-center gap-1">
+								@components.IconUsers("icon-xs")
+								<span>{ fmt.Sprintf("%d عضو", role.MemberCount) }</span>
+							</span>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<a href={ templ.SafeURL(v.BasePath + "/" + role.ID) } class="btn btn-secondary btn-sm font-bold gap-2">
+							@components.IconEye("icon-xs")
+							if v.CanEdit && !role.IsOwner {
+								<span>تعديل الصلاحيات</span>
+							} else {
+								<span>عرض الصلاحيات</span>
+							}
+						</a>
+						if v.CanDelete && !role.IsSystem && !role.IsOwner {
+							<form
+								method="POST"
+								action={ templ.SafeURL(v.BasePath + "/" + role.ID + "/delete") }
+								class="m-0 inline"
+								data-confirm="سيتم حذف الدور ونقل حامليه إلى دور الموظف. متابعة؟"
+							>
+								<button type="submit" class="btn btn-danger btn-sm font-bold gap-2" title="حذف الدور">
+									@components.IconTrash("icon-xs")
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+templ RoleEditPage(v RoleEditView, lang, dir string) {
+	@roleShell(v.Tenant, v.Name+" | الصلاحيات | دوا 24", "roles", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-4">
+				<div class="flex-between items-start flex-wrap gap-4">
+     <div class="stack-sm">
+						<a href={ templ.SafeURL(v.BasePath) } class="text-xs text-secondary d-inline-flex items-center gap-1 mb-2">
+							@components.IconArrowRight("icon-xs")
+							<span>العودة إلى الأدوار</span>
+						</a>
+						<h1 class="text-2xl font-black text-primary m-0">{ v.Name }</h1>
+						<p class="text-sm text-secondary m-0">
+							{ fmt.Sprintf("المعرّف: %s — يحمله %d عضو", v.Key, v.MemberCount) }
+						</p>
+					</div>
+					if v.IsOwner {
+						<span class="badge badge-emerald font-bold">كامل الصلاحيات — غير قابل للتعديل</span>
+					} else if v.ReadOnly {
+						<span class="badge font-bold">عرض فقط</span>
+					}
+				</div>
+			</div>
+			if v.IsOwner {
+				<div class="glass-panel p-4 mb-4">
+					<p class="text-sm text-secondary m-0">
+						هذا الدور يملك كل صلاحيات هذه اللوحة تلقائياً، بما فيها أي صفحة تُضاف مستقبلاً.
+						لا يمكن تعديله حتى لا يفقد المالك القدرة على إدارة حسابه.
+					</p>
+				</div>
+			}
+			<form class="stack-md" method="POST" action={ templ.SafeURL(v.BasePath + "/" + v.ID) }>
+				@roleIdentityFields(v)
+				@rolePermissionMatrix(v)
+				if !v.ReadOnly {
+					<div class="glass-panel p-4 d-flex items-center gap-3">
+						<button type="submit" class="btn btn-primary font-bold">حفظ الصلاحيات</button>
+						<a href={ templ.SafeURL(v.BasePath) } class="btn btn-secondary">إلغاء</a>
+						<span class="text-xs text-muted">
+							يسري التغيير على حاملي الدور خلال ثوانٍ دون الحاجة لتسجيل خروج.
+						</span>
+					</div>
+				}
+			</form>
+		<script nonce={ layouts.Nonce(ctx) }>
+			(function () {
+				const anchor = document.querySelector('input[name="permissions"]');
+				const form = anchor && anchor.form;
+				if (!form) return;
+
+				const allPerms = () => Array.from(form.querySelectorAll('input[name="permissions"]'));
+				const enabledPerms = () => allPerms().filter(p => !p.disabled);
+				const sectionPerms = (key) => allPerms().filter(p => p.getAttribute('data-section-perm') === key && !p.disabled);
+
+				function reflect(box, list) {
+					if (!box) return;
+					const on = list.length > 0 && list.every(p => p.checked);
+					box.checked = on;
+					box.indeterminate = !on && list.some(p => p.checked);
+				}
+				function syncSection(key) {
+					reflect(form.querySelector('input[data-role="section-toggle"][data-section="' + key + '"]'), sectionPerms(key));
+				}
+				function syncMaster() {
+					reflect(form.querySelector('input[data-role="master-toggle"]'), enabledPerms());
+				}
+				function syncAll() {
+					form.querySelectorAll('input[data-role="section-toggle"]').forEach(b => syncSection(b.getAttribute('data-section')));
+					syncMaster();
+				}
+
+				form.addEventListener('change', function (e) {
+					const t = e.target;
+					if (t.matches && t.matches('input[data-role="master-toggle"]')) {
+						enabledPerms().forEach(p => { p.checked = t.checked; });
+						syncAll();
+					} else if (t.matches && t.matches('input[data-role="section-toggle"]')) {
+						const key = t.getAttribute('data-section');
+						sectionPerms(key).forEach(p => { p.checked = t.checked; });
+						syncSection(key);
+						syncMaster();
+					} else if (t.matches && t.matches('input[name="permissions"]')) {
+						syncSection(t.getAttribute('data-section-perm'));
+						syncMaster();
+					}
+				});
+
+				syncAll();
+			})();
+		</script>
+		</div>
+	}
+}
+
+templ roleIdentityFields(v RoleEditView) {
+	<div class="glass-panel p-6 mb-4 d-grid grid-cols-2 gap-4">
+  <div class="stack-sm">
+			<label class="form-label" for="role-name-ar">اسم الدور (عربي)</label>
+			<input
+				id="role-name-ar"
+				class="form-input"
+				type="text"
+				name="name_ar"
+				value={ v.NameAr }
+				maxlength="80"
+				disabled?={ v.ReadOnly }
+			/>
+		</div>
+  <div class="stack-sm">
+			<label class="form-label" for="role-name-en">اسم الدور (إنجليزي)</label>
+			<input
+				id="role-name-en"
+				class="form-input"
+				type="text"
+				name="name_en"
+				value={ v.NameEn }
+				maxlength="80"
+				disabled?={ v.ReadOnly }
+			/>
+		</div>
+		<div class="col-span-2">
+			<label class="form-label" for="role-description">وصف مختصر</label>
+			<input
+				id="role-description"
+				class="form-input"
+				type="text"
+				name="description"
+				value={ v.Description }
+				maxlength="200"
+				disabled?={ v.ReadOnly }
+			/>
+		</div>
+		if v.ShowStaffToggle {
+			<div class="col-span-2 d-flex items-start gap-3">
+				<input
+					id="role-is-staff"
+					type="checkbox"
+					name="is_staff"
+					value="1"
+					checked?={ v.IsStaff }
+					disabled?={ v.ReadOnly || v.IsSystem }
+				/>
+				<label for="role-is-staff" class="text-sm">
+					<span class="font-bold text-primary">يصل حاملو هذا الدور إلى لوحة الإدارة</span>
+					<span class="d-block text-xs text-muted">
+						بدون هذا الخيار لن تفتح صفحات /admin مهما كانت الصلاحيات المحددة أدناه.
+					</span>
+				</label>
+			</div>
+		}
+	</div>
+}
+
+templ rolePermissionMatrix(v RoleEditView) {
+	if !v.ReadOnly && len(v.Sections) > 0 {
+		<div class="glass-panel p-4 mb-4 d-flex items-center justify-between flex-wrap gap-3">
+			<span class="text-sm font-extrabold text-primary">مصفوفة الصلاحيات — { fmt.Sprintf("%d قسم", len(v.Sections)) }</span>
+			<label class="d-flex items-center gap-2 text-xs font-bold text-secondary cursor-pointer">
+				<input type="checkbox" data-role="master-toggle" class="form-checkbox"/>
+				<span>تحديد كل الصلاحيات في هذه اللوحة</span>
+			</label>
+		</div>
+	}
+	for _, section := range v.Sections {
+		<div class="glass-panel p-5 mb-4">
+			<div class="flex-between items-center mb-4">
+				<h2 class="text-base font-extrabold text-primary m-0">{ section.Group.NameAr }</h2>
+				<div class="d-flex items-center gap-3">
+					if !v.ReadOnly {
+						<label class="d-flex items-center gap-2 text-xs font-bold text-secondary cursor-pointer">
+							<input
+								type="checkbox"
+								data-role="section-toggle"
+								data-section={ section.Group.Key }
+								class="form-checkbox"
+							/>
+							<span>تحديد الكل</span>
+						</label>
+					}
+					<span class="text-xs text-muted">{ fmt.Sprintf("%d صلاحية", len(section.Permissions)) }</span>
+				</div>
+			</div>
+			<div class="d-grid grid-cols-2 gap-3" data-section={ section.Group.Key }>
+				for _, perm := range section.Permissions {
+					@rolePermissionRow(v, perm, section.Group.Key)
+				}
+			</div>
+		</div>
+	}
+}
+
+templ rolePermissionRow(v RoleEditView, perm rbac.Permission, sectionKey string) {
+	<label class="d-flex items-start gap-3 p-2" for={ "perm-" + perm.Key }>
+		<input
+			id={ "perm-" + perm.Key }
+			type="checkbox"
+			name="permissions"
+			value={ perm.Key }
+			checked?={ v.Granted.Has(perm.Key) }
+			disabled?={ v.ReadOnly }
+			data-section-perm={ sectionKey }
+		/>
+		<span class="d-flex flex-col">
+			<span class="text-sm text-primary font-bold">{ perm.NameAr }</span>
+			<span class="text-xs text-muted">
+				if perm.Kind == rbac.KindPage {
+					{ "صفحة — " + perm.Key }
+				} else {
+					{ "إجراء — " + perm.Key }
+				}
+			</span>
+		</span>
+	</label>
+}
+
+templ roleNotice(kind, message string) {
+	if message != "" {
+		if kind == "error" {
+			<div class="glass-panel p-4 mb-4 border-danger">
+				<p class="text-sm m-0 text-danger">{ message }</p>
+			</div>
+		} else {
+			<div class="glass-panel p-4 mb-4">
+				<p class="text-sm m-0 text-primary">{ message }</p>
+			</div>
+		}
+	}
+}
+
+// roleShell picks the caller's own dashboard frame. A company owner editing
+// their roles stays inside their dashboard; a platform administrator stays
+// inside theirs.
+templ roleShell(tenant bool, title, activeNav, lang, dir string) {
+	if tenant {
+		@layouts.ShellFor(title, activeNav, lang, dir, authctx.FromContext(ctx)) {
+			{ children... }
+		}
+	} else {
+		@layouts.AdminShell(title, activeNav, lang, dir) {
+			{ children... }
+		}
+	}
+}

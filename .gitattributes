@@ -1,0 +1,23 @@
+# Normalise to LF in the repository for everything text.
+* text=auto eol=lf
+
+# These MUST be LF everywhere, without exception.
+#
+# Migration files are embedded in the binary and checksummed by the migration
+# runner. If a checkout on Windows converted them to CRLF, the hash would differ
+# from the one recorded when the migration was applied on Linux, and the
+# application would refuse to start with "migration was modified after being
+# applied". Same reasoning for shell scripts, which simply will not execute with
+# CRLF line endings.
+*.sql   text eol=lf
+*.sh    text eol=lf
+Makefile text eol=lf
+Dockerfile text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.go    text eol=lf
+
+# Binary
+*.png binary
+*.jpg binary
+*.woff2 binary

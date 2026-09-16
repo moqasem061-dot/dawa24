@@ -1,0 +1,258 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ CustomerCatalogTable(variants []*SupplierVariantCard, lang string) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden shadow-xs border rounded-2xl">
+		<div class="table-container m-0 overflow-x-auto">
+			<table class="catalog-data-table m-0 w-full">
+				<thead>
+					<tr>
+						<th class="col-product">{ i18n.T(lang, "catalog.th_product") }</th>
+						<th class="col-brand">{ i18n.T(lang, "catalog.th_brand") }</th>
+						<th class="col-supplier">{ i18n.T(lang, "catalog.th_supplier") }</th>
+						<th class="col-stock text-center">{ i18n.T(lang, "catalog.th_stock") }</th>
+						<th class="col-public-price text-start">{ i18n.T(lang, "catalog.th_public_price") }</th>
+						<th class="col-price text-start">{ i18n.T(lang, "catalog.th_supply_price") }</th>
+						<th class="col-discount text-center">{ i18n.T(lang, "catalog.th_discount") }</th>
+						<th class="col-action text-center">{ i18n.T(lang, "catalog.th_actions") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, v := range variants {
+						<tr>
+							<!-- Col 1: Product info, image, dosage, active ingredient -->
+							<td class="col-product">
+								<div class="d-flex items-center gap-2.5">
+									<div class="catalog-thumb-box">
+										if v.ProductImage != "" {
+											<img src={ v.ProductImage } alt={ v.ProductNameAr } class="w-full h-full object-contain p-0.5" loading="lazy" />
+										} else {
+											<span class="text-muted">
+												@components.IconPill("icon-xs")
+											</span>
+										}
+									</div>
+									<div class="stack-2xs min-w-0 flex-1">
+										<a href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", resolveTargetID(v.VariantID, v.ProductID))) } class="text-inherit no-underline block">
+											<div class="font-black text-primary text-xs transition-colors hover-text-brand leading-snug d-flex items-center gap-1.5 flex-wrap">
+												if lang == "en" && v.ProductNameEn != "" {
+													<span>{ v.ProductNameEn }</span>
+												} else if v.ProductNameAr != "" {
+													<span>{ v.ProductNameAr }</span>
+												} else {
+													<span>{ v.ProductNameEn }</span>
+												}
+												if v.IsSponsored {
+													<span class="badge badge-amber text-2xs font-extrabold gap-0.5 py-0 px-1.5 shadow-2xs">
+														<span>★</span>
+														<span>{ i18n.T(lang, "catalog.sponsored") }</span>
+													</span>
+												}
+											</div>
+										</a>
+										<div class="d-flex items-center gap-1.5 flex-wrap">
+											if v.DosageForm != "" {
+												<span class="badge badge-slate text-2xs font-semibold py-0 px-1.5">
+													{ v.DosageForm }
+												</span>
+											}
+											if v.ScientificName != "" {
+												<span class="text-2xs text-muted font-medium">
+													{ v.ScientificName }
+												</span>
+											}
+											if v.IsNegotiable {
+												<span class="badge badge-amber text-2xs font-bold py-0 px-1.5">
+													{ i18n.T(lang, "catalog.negotiable") }
+												</span>
+											}
+										</div>
+										if v.IsSponsored {
+											<div class="mt-0.5">
+												@components.SponsoredBadge(lang)
+											</div>
+										}
+									</div>
+								</div>
+							</td>
+
+							<!-- Col 2: Manufacturer / Brand -->
+							<td class="col-brand">
+								<div class="font-bold text-primary text-xs">
+									if v.BrandName != "" {
+										{ v.BrandName }
+									} else if v.Manufacturer != "" {
+										{ v.Manufacturer }
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</div>
+							</td>
+
+							<!-- Col 3: Supplier & Branch & Distance -->
+							<td class="col-supplier">
+								<div class="d-flex items-center gap-1.5 flex-wrap">
+									<span class="font-extrabold text-primary text-xs">{ v.SupplierName }</span>
+									if v.IsVerified {
+										<span class="badge badge-emerald text-2xs font-bold py-0 px-1">{ i18n.T(lang, "cart.verified_supplier") }</span>
+									}
+								</div>
+								<div class="d-flex items-center gap-1 mt-0.5">
+									if v.BranchName != "" {
+										<span class="text-2xs text-muted font-medium">
+											{ v.BranchName }
+										</span>
+									}
+									if v.DistanceText != "" {
+										<span class="badge badge-sky text-2xs font-mono py-0 px-1">
+											{ v.DistanceText }
+										</span>
+									}
+								</div>
+							</td>
+
+							<!-- Col 4: Stock & Expiry -->
+							<td class="col-stock text-center">
+								if v.AvailableStock > 0 {
+									<span class="badge badge-emerald font-extrabold text-2xs tabular-nums">
+										{ fmt.Sprintf(i18n.T(lang, "catalog.units_count"), v.AvailableStock) }
+									</span>
+								} else {
+									<span class="badge badge-rose font-extrabold text-2xs">
+										{ i18n.T(lang, "catalog.out_of_stock") }
+									</span>
+								}
+								if !v.IsCovered {
+									<div class="mt-1">
+										<span class="badge badge-rose font-bold text-2xs" title={ v.CoverageReason }>
+											{ i18n.T(lang, "catalog.out_of_coverage") }
+										</span>
+									</div>
+								}
+								if v.ExpiryDate != "" {
+									<div class="text-2xs text-muted tabular-nums mt-0.5 font-mono">
+										{ v.ExpiryDate }
+									</div>
+								}
+							</td>
+
+							<!-- Col 5: Public Price (سعر الجمهور) -->
+							<td class="col-public-price">
+								if v.PublicPrice.IsPositive() {
+									<div class="d-flex items-baseline gap-1 font-black text-primary text-sm tabular-nums">
+										<span>{ v.PublicPrice.String() }</span>
+										<span class="text-2xs font-bold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+									</div>
+								} else {
+									<span class="text-xs text-muted font-bold">-</span>
+								}
+							</td>
+
+							<!-- Col 6: Net Supply Price (سعر التوريد الصافي) -->
+							<td class="col-price">
+								<div class="d-flex items-baseline gap-1 font-black text-brand text-sm tabular-nums">
+									<span>{ v.Price.String() }</span>
+									<span class="text-2xs font-bold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+								</div>
+							</td>
+
+							<!-- Col 7: Discount Percentage (نسبة الخصم) -->
+							<td class="col-discount text-center">
+								if v.DiscountPercent > 0 {
+									<span class="badge badge-emerald font-black text-xs tabular-nums py-0.5 px-2 shadow-2xs">
+										-{ formatDiscount(v.DiscountPercent) }%
+									</span>
+								} else {
+									<span class="text-xs text-muted font-bold">-</span>
+								}
+							</td>
+
+							<!-- Col 8: Cart & Favorite Actions -->
+							<td class="col-actions col-action">
+								<div class="table-actions">
+									<!-- Favorite Button -->
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/favorites/%d/toggle", v.ProductID)) } hx-post={ fmt.Sprintf("/favorites/%d/toggle", v.ProductID) } hx-swap="none" class="m-0">
+										<button
+											type="submit"
+											class={ "btn btn-icon btn-xs", templ.KV("btn-secondary text-rose", v.IsFavorite), templ.KV("btn-ghost text-muted", !v.IsFavorite) }
+											data-favorite-product-id={ fmt.Sprintf("%d", v.ProductID) }
+											title={ i18n.T(lang, "catalog.save_favorite") }
+										>
+											if v.IsFavorite {
+												<span class="fav-icon-outline" style="display:none">@components.IconHeart("icon-xs")</span>
+												<span class="fav-icon-filled">@components.IconHeartFilled("icon-xs text-rose")</span>
+											} else {
+												<span class="fav-icon-outline">@components.IconHeart("icon-xs")</span>
+												<span class="fav-icon-filled" style="display:none">@components.IconHeartFilled("icon-xs text-rose")</span>
+											}
+										</button>
+									</form>
+
+									if v.CanAddToCart {
+										<form method="POST" action="/cart/add" hx-post="/cart/add" hx-swap="none" class="d-flex items-center gap-1 m-0">
+											<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", v.VariantID) } />
+											<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", v.ProductID) } />
+											<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", v.SupplierID) } />
+											<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", v.SupplierID) } />
+											<input type="hidden" name="offer_price" value={ v.Price.String() } />
+											<input type="hidden" name="qty" value={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) } />
+											
+											<button type="submit" class="btn btn-primary btn-xs font-bold shadow-2xs gap-1 px-2.5">
+												@components.IconPlus("icon-2xs")
+												<span>{ i18n.T(lang, "catalog.btn_quick_add") }</span>
+											</button>
+										</form>
+										if v.IsNegotiable {
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold text-amber-700 shadow-2xs gap-1 px-2 border-amber-300"
+												data-variant-id={ fmt.Sprintf("%d", v.VariantID) }
+												data-product-id={ fmt.Sprintf("%d", v.ProductID) }
+												data-vendor-id={ fmt.Sprintf("%d", v.SupplierID) }
+												data-product-name={ v.ProductNameAr }
+												data-current-price={ v.Price.String() }
+												data-min-qty={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) }
+												data-on-click="openNegotiationModal(this)"
+												title={ i18n.T(lang, "catalog.btn_negotiate") }
+											>
+												@components.IconTag("icon-2xs")
+												<span>{ i18n.T(lang, "catalog.btn_quick_neg") }</span>
+											</button>
+										}
+									} else {
+										if v.IsNegotiable {
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold text-amber-700 shadow-2xs gap-1 px-2 border-amber-300"
+												data-variant-id={ fmt.Sprintf("%d", v.VariantID) }
+												data-product-id={ fmt.Sprintf("%d", v.ProductID) }
+												data-vendor-id={ fmt.Sprintf("%d", v.SupplierID) }
+												data-product-name={ v.ProductNameAr }
+												data-current-price={ v.Price.String() }
+												data-min-qty={ fmt.Sprintf("%d", max(1, v.MinOrderQty)) }
+												data-on-click="openNegotiationModal(this)"
+												title={ i18n.T(lang, "catalog.btn_negotiate") }
+											>
+												@components.IconTag("icon-2xs")
+												<span>{ i18n.T(lang, "catalog.btn_quick_neg") }</span>
+											</button>
+										}
+										<a href={ templ.SafeURL(fmt.Sprintf("/catalog/%d", resolveTargetID(v.VariantID, v.ProductID))) } class="btn btn-secondary btn-xs font-bold shadow-2xs">
+											{ i18n.T(lang, "catalog.btn_quick_details") }
+										</a>
+									}
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}

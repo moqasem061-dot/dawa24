@@ -1,0 +1,31 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorOffersLocationsPage renders vendor geographic coverage for offers.
+templ VendorOffersLocationsPage(lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_coverage.pharmacy_shell_title"), "offers_locations", lang, dir) {
+		<div class="page-container py-6">
+			<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+				<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_coverage.pharmacy_header_title") }</h1>
+				<p class="text-xs text-secondary m-0 mt-0.5 font-medium">{ i18n.T(lang, "vendor_coverage.pharmacy_header_desc") }</p>
+			</div>
+			<div class="glass-panel p-8 text-center border border-slate-200/80 rounded-2xl shadow-xs">
+				<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+					@components.IconGlobe("icon-md")
+				</div>
+				<h3 class="text-base font-extrabold text-primary mb-1.5">{ i18n.T(lang, "vendor_coverage.pharmacy_header_title") }</h3>
+				<p class="text-xs text-secondary max-w-md mx-auto mb-4">
+					{ i18n.T(lang, "vendor_coverage.pharmacy_header_desc") }
+				</p>
+				<a href="/vendor/coverage" class="btn btn-primary btn-sm font-bold">
+					{ i18n.T(lang, "vendor_coverage.btn_manage_schedule") }
+				</a>
+			</div>
+		</div>
+	}
+}

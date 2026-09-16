@@ -1,0 +1,282 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ adminStaffCreateForm(data AdminUsersPageData) {
+	if len(data.StaffRoles) > 0 {
+		<div
+			x-show="showAddStaff"
+			x-cloak
+			class="admin-banner mb-4"
+		>
+			<h2 class="text-base font-black text-primary mb-1 m-0">إنشاء حساب مشرف جديد</h2>
+			<p class="text-xs text-secondary mb-4 m-0">
+				يحدد الدور المختار الصفحات والإجراءات المتاحة للمشرف داخل لوحة الإدارة. يمكنك تعديل صلاحيات أي دور من صفحة الأدوار.
+			</p>
+			<form method="POST" action="/admin/users/staff" class="d-grid gap-3 grid-auto-fit-sm">
+				<div class="stack-sm">
+					<label class="form-label" for="staff-name-ar">الاسم بالعربية</label>
+					<input id="staff-name-ar" class="form-input" type="text" name="name_ar" required maxlength="120"/>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label" for="staff-name-en">الاسم بالإنجليزية</label>
+					<input id="staff-name-en" class="form-input" type="text" name="name_en" maxlength="120"/>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label" for="staff-email">البريد الإلكتروني</label>
+					<input id="staff-email" class="form-input" type="email" name="email" required autocomplete="off"/>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label" for="staff-phone">رقم الهاتف</label>
+					<input id="staff-phone" class="form-input" type="tel" name="phone" maxlength="20"/>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label" for="staff-password">كلمة مرور مبدئية</label>
+					<input id="staff-password" class="form-input" type="password" name="password" required minlength="8" autocomplete="new-password"/>
+				</div>
+				<div class="stack-sm" x-data="{ role: '', level: 'main' }">
+					<label class="form-label" for="staff-role">الدور الإداري</label>
+					<select id="staff-role" class="form-input font-bold" name="role" required x-model="role">
+						for _, role := range data.StaffRoles {
+							<option value={ role.Key }>{ role.Name }</option>
+						}
+					</select>
+
+					<!-- The hierarchy question, asked only for a موظف whose role is
+					     مشرف: every other staff role reports to the super admin and
+					     has no team of its own. -->
+					<div x-show="role === 'moderator'" x-cloak class="stack-sm mt-3">
+						<label class="form-label">موقع المشرف في التسلسل</label>
+						<label class="form-label d-flex items-center gap-2">
+							<input type="radio" name="moderator_level" value="main" x-model="level" checked/>
+							<span class="text-body">مشرف رئيسي مستقل — يتبع مدير النظام مباشرة، ويمكن تعيين مشرفين تحته</span>
+						</label>
+						<label class="form-label d-flex items-center gap-2">
+							<input type="radio" name="moderator_level" value="sub" x-model="level"/>
+							<span class="text-body">يعمل تحت إدارة مشرف رئيسي</span>
+						</label>
+						<div x-show="level === 'sub'" x-cloak>
+							if len(data.MainModerators) > 0 {
+								<select class="form-input" name="moderator_parent_id">
+									<option value="">— اختر المشرف الرئيسي —</option>
+									for _, m := range data.MainModerators {
+										<option value={ fmt.Sprintf("%d", m.UserID) }>
+											{ m.Name } ({ fmt.Sprintf("%d مشرف تحته", m.Team) })
+										</option>
+									}
+								</select>
+							} else {
+								<p class="text-xs text-warning m-0">
+									لا يوجد مشرف رئيسي مستقل بعد. أنشئ مشرفاً رئيسياً أولاً ثم عيّن المشرفين تحته.
+								</p>
+							}
+						</div>
+					</div>
+				</div>
+				<div class="col-span-full d-flex items-center gap-3">
+					<button type="submit" class="btn btn-primary font-black">إنشاء الحساب</button>
+					<button type="button" class="btn btn-secondary" @click="showAddStaff = false">إلغاء</button>
+					<span class="text-xs text-muted">
+						يُنشأ الحساب مُفعّلاً؛ يُغيّر المشرف كلمة المرور المبدئية عند أول دخول.
+					</span>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+templ adminUserEditModal(data AdminUsersPageData) {
+	<!-- Edit User Modal -->
+	<div
+		x-show="showEditModal"
+		x-cloak
+		class="modal-backdrop fixed inset-0 z-50 d-flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+		@keydown.escape.window="showEditModal = false"
+	>
+		<div
+			class="glass-panel p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl border"
+			@click.away="showEditModal = false"
+		>
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="d-flex items-center gap-2">
+					<div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 d-flex items-center justify-center border">
+						@components.IconEdit("icon-xs")
+					</div>
+					<h3 class="text-base font-black text-primary m-0">تعديل بيانات المستخدم والحساب</h3>
+				</div>
+				<button type="button" class="btn btn-secondary btn-icon btn-sm" @click="showEditModal = false">✕</button>
+			</div>
+
+			<form method="POST" :action="'/admin/users/' + editUser.id + '/edit'" class="d-grid gap-3">
+				<input type="hidden" name="redirect" value="/admin/users" />
+
+				<div class="d-grid grid-2-col gap-3">
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-name-ar">الاسم بالعربية <span class="text-danger">*</span></label>
+						<input id="list-edit-name-ar" class="form-input" type="text" name="name_ar" x-model="editUser.name_ar" required maxlength="120"/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-name-en">الاسم بالإنجليزية</label>
+						<input id="list-edit-name-en" class="form-input" type="text" name="name_en" x-model="editUser.name_en" maxlength="120"/>
+					</div>
+				</div>
+
+				<div class="d-grid grid-2-col gap-3">
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-email">البريد الإلكتروني <span class="text-danger">*</span></label>
+						<input id="list-edit-email" class="form-input" type="email" name="email" x-model="editUser.email" required autocomplete="off"/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-phone">رقم الهاتف</label>
+						<input id="list-edit-phone" class="form-input" type="tel" name="phone" x-model="editUser.phone" maxlength="20"/>
+					</div>
+				</div>
+
+				<div class="d-grid grid-2-col gap-3">
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-national-id">رقم الهوية الوطنية / الإقامة</label>
+						<input id="list-edit-national-id" class="form-input" type="text" name="national_id" x-model="editUser.national_id" maxlength="30" placeholder="10 أرقام"/>
+					</div>
+					<div class="stack-sm">
+						<label class="form-label" for="list-edit-status">حالة الحساب</label>
+						<select id="list-edit-status" class="form-select font-bold" name="status" x-model="editUser.status">
+							<option value="active">نشط ومفعل</option>
+							<option value="suspended">موقوف / معلق</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label" for="list-edit-avatar">رابط الصورة الرمزية (Avatar URL)</label>
+					<input id="list-edit-avatar" class="form-input" type="url" name="avatar_url" x-model="editUser.avatar_url" placeholder="https://..."/>
+				</div>
+
+				<div class="p-3 bg-surface-sunken rounded-xl border mt-2">
+					<div class="text-xs font-black text-primary mb-2">ربط المنشأة والفرع (Organization & Branch)</div>
+					<div class="d-grid gap-3">
+						<div class="stack-sm">
+							<label class="form-label" for="list-edit-org">المنشأة التابع لها</label>
+							<select id="list-edit-org" class="form-select text-xs font-bold" name="org_id" x-model="editUser.org_id">
+								<option value="0">— بدون منشأة (حساب مستقل) —</option>
+								for _, o := range data.Organizations {
+									if o != nil {
+										<option value={ fmt.Sprintf("%d", o.ID) }>
+											{ o.LegalName }
+										</option>
+									}
+								}
+							</select>
+						</div>
+						<div class="d-grid grid-2-col gap-3">
+							<div class="stack-sm">
+								<label class="form-label" for="list-edit-branch">الفرع المخصص</label>
+								<select id="list-edit-branch" class="form-select text-xs font-bold" name="branch_id" x-model="editUser.branch_id">
+									<option value="0">— المركز الرئيسي / كافة الفروع —</option>
+									for _, b := range data.AllBranches {
+										if b != nil {
+											<option value={ fmt.Sprintf("%d", b.ID) }>
+												{ b.Name.Get("ar") }
+											</option>
+										}
+									}
+								</select>
+							</div>
+							<div class="stack-sm">
+								<label class="form-label" for="list-edit-job-title">المسمى الوظيفي</label>
+								<input
+									id="list-edit-job-title"
+									class="form-input text-xs"
+									type="text"
+									name="job_title"
+									x-model="editUser.job_title"
+									placeholder="مثال: مسؤول مبيعات، صيدلي..."
+								/>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-3 mt-4 pt-3 border-t">
+					<button type="submit" class="btn btn-primary font-black">حفظ التعديلات</button>
+					<button type="button" class="btn btn-secondary" @click="showEditModal = false">إلغاء</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}
+
+templ adminUserPasswordModal() {
+	<!-- Set Password Modal -->
+	<div
+		x-show="showPasswordModal"
+		x-cloak
+		class="modal-backdrop fixed inset-0 z-50 d-flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+		@keydown.escape.window="showPasswordModal = false"
+	>
+		<div
+			class="glass-panel p-6 max-w-md w-full rounded-2xl shadow-xl border"
+			@click.away="showPasswordModal = false"
+		>
+			<div class="flex-between items-center mb-4 pb-3 border-b">
+				<div class="d-flex items-center gap-2">
+					<div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 d-flex items-center justify-center border">
+						@components.IconLock("icon-xs")
+					</div>
+					<h3 class="text-base font-black text-primary m-0">تعيين كلمة مرور جديدة</h3>
+				</div>
+				<button type="button" class="btn btn-secondary btn-icon btn-sm" @click="showPasswordModal = false">✕</button>
+			</div>
+
+			<div class="mb-3 text-xs text-secondary">
+				المستخدم: <strong class="text-primary" x-text="passwordUser.name"></strong> (<span class="font-mono" x-text="passwordUser.email"></span>)
+			</div>
+
+			<div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-800 dark:text-amber-300 mb-4">
+				<strong>تنبيه أمني:</strong>
+				سيتم تغيير كلمة المرور فوراً، إنهاء كافة الجلسات النشطة للمستخدم، وإلغاء أي حظر مؤقت ليتمكن من تسجيل الدخول فوراً.
+			</div>
+
+			<form method="POST" :action="'/admin/users/' + passwordUser.id + '/password'" class="d-grid gap-3">
+				<input type="hidden" name="redirect" value="/admin/users" />
+
+				<div class="stack-sm">
+					<label class="form-label" for="list-new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+					<input
+						id="list-new-pass"
+						class="form-input font-mono"
+						type="password"
+						name="password"
+						required
+						minlength="8"
+						autocomplete="new-password"
+						placeholder="••••••••"
+					/>
+					<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً.</span>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label" for="list-confirm-pass">تأكيد كلمة المرور <span class="text-danger">*</span></label>
+					<input
+						id="list-confirm-pass"
+						class="form-input font-mono"
+						type="password"
+						name="confirm_password"
+						required
+						minlength="8"
+						autocomplete="new-password"
+						placeholder="••••••••"
+					/>
+				</div>
+
+				<div class="d-flex items-center gap-3 mt-4 pt-3 border-t">
+					<button type="submit" class="btn btn-primary font-black">تعيين كلمة المرور</button>
+					<button type="button" class="btn btn-secondary" @click="showPasswordModal = false">إلغاء</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}

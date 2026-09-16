@@ -1,0 +1,133 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ CustomerSavingModals(langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- MODAL 1: Create / Edit Saving Product Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "pharmacy-saving-product-modal",
+		Title: i18n.T(lang, "saving.modal_create_title"),
+		Size:  "md",
+	}) {
+		<form method="POST" id="pharmacy-saving-product-form" action="/customer/saving-products" class="d-flex flex-col gap-4 m-0">
+			<input type="hidden" id="pharmacy-form-saving-id" name="id" value=""/>
+			
+			<div class="modal-body d-flex flex-col gap-3">
+				<div class="stack-sm">
+					<label class="form-label text-sm font-bold text-primary">
+						{ i18n.T(lang, "saving.modal_field_name") } <span class="text-danger">*</span>
+					</label>
+					<input
+						type="text"
+						id="pharmacy-form-name-product"
+						name="name_product"
+						required
+						placeholder={ i18n.T(lang, "saving.modal_field_name_ph") }
+						class="form-input w-full-rounded"
+					/>
+				</div>
+
+				<div class="d-grid grid-cols-2 gap-3">
+					<div class="stack-sm">
+						<label class="form-label text-sm font-bold text-primary">
+							{ i18n.T(lang, "saving.modal_field_sku") }
+						</label>
+						<input
+							type="text"
+							id="pharmacy-form-sku"
+							name="sku"
+							placeholder={ i18n.T(lang, "saving.modal_field_sku_ph") }
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label text-sm font-bold text-primary">
+							{ i18n.T(lang, "saving.modal_field_qty") }
+						</label>
+						<input
+							type="number"
+							step="any"
+							id="pharmacy-form-qty"
+							name="qty"
+							placeholder="0"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-sm font-bold text-primary">
+						{ i18n.T(lang, "saving.modal_field_price") }
+					</label>
+					<input
+						type="number"
+						step="0.01"
+						id="pharmacy-form-price"
+						name="price"
+						placeholder="0.00"
+						class="form-input w-full-rounded"
+					/>
+				</div>
+
+				<div class="d-flex flex-col gap-2 p-3 rounded-xl border bg-surface-sunken">
+					<label class="font-extrabold text-sm text-primary">
+						{ i18n.T(lang, "saving.modal_link_section") }
+					</label>
+					
+					<input type="hidden" id="pharmacy-form-product-id" name="product_id" value=""/>
+					
+					<div class="stack-sm d-none" id="pharmacy-selected-product-box">
+						<span id="pharmacy-selected-product-label" class="font-bold text-sm text-primary"></span>
+						<button type="button" class="btn btn-secondary btn-sm font-bold" data-on-click="clearPharmacySelectedProduct()">
+							{ i18n.T(lang, "saving.modal_unlink_btn") }
+						</button>
+					</div>
+
+					<div id="pharmacy-search-product-container" class="relative">
+						<input
+							type="text"
+							id="pharmacy-product-search-input"
+							placeholder={ i18n.T(lang, "saving.modal_search_catalog_ph") }
+							class="form-input w-full"
+							data-on-input="searchPharmacyCatalogProductsLive(this.value)"
+						/>
+						<div class="stack-sm d-none" id="pharmacy-product-search-dropdown"></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closePharmacyCreateModal()">
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					{ i18n.T(lang, "saving.modal_save_btn") }
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- MODAL 2: Providing Organizations & Offers Modal -->
+	@components.Modal(components.ModalProps{
+		ID:       "pharmacy-providers-modal",
+		Title:    i18n.T(lang, "saving.modal_providers_title"),
+		Subtitle: i18n.T(lang, "saving.modal_providers_sub"),
+		Size:     "lg",
+	}) {
+		<div id="pharmacy-providers-modal-content" class="modal-body p-4">
+			<div class="text-center text-muted p-8">
+				{ i18n.T(lang, "saving.modal_providers_loading") }
+			</div>
+		</div>
+	}
+}

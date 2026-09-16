@@ -1,0 +1,364 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminFinanceData contains aggregated financial datasets from the database.
+type AdminFinanceData struct {
+	ActiveTab               string // "wallets", "transactions", "deposits", "withdrawals", "invoices", "payments"
+	Invoices                []*billing.AdminInvoiceView
+	Payments                []*billing.AdminPaymentView
+	Wallets                 []*billing.AdminWalletView
+	Transactions            []*billing.AdminWalletTransactionView
+	Deposits                []*billing.AdminWalletDepositView
+	Withdrawals             []*billing.AdminWalletWithdrawalView
+	TotalInvoices           int
+	TotalPayments           int
+	TotalWallets            int
+	TotalTransactions       int
+	TotalDeposits           int
+	PendingDepositsCount    int
+	TotalWithdrawals        int
+	PendingWithdrawalsCount int
+	TotalRevenue            money.Amount
+	TotalPaid               money.Amount
+	TotalHeld               money.Amount
+	Query                   string
+	StatusFilter            string
+	TypeFilter              string
+	MethodFilter            string
+	DateFrom                string
+	DateTo                  string
+	SortBy                  string
+	SortOrder               string
+	SelectedWalletID        int64
+	Organizations           []*org.Organization
+	SelectedOrgID           int64
+	Page                    int
+	PerPage                 int
+}
+
+func getOrgLabel(o *org.Organization, lang string) string {
+	prefix := ""
+	if o.Type == org.TypeVendor {
+		prefix = "[مورّد] "
+	} else if o.Type == org.TypeCustomer {
+		prefix = "[صيدلية] "
+	}
+	name := o.LegalName
+	if name == "" && !o.TradeName.IsEmpty() {
+		name = o.TradeName.Get(i18n.Lang(lang))
+	}
+	if name == "" {
+		name = fmt.Sprintf("منشأة #%d", o.ID)
+	}
+	return prefix + name
+}
+
+func financePaginationQuery(tab, q, status, itemType, method string, walletID, orgID int64) url.Values {
+	v := url.Values{}
+	if tab != "" {
+		v.Set("tab", tab)
+	}
+	if q != "" {
+		v.Set("q", q)
+	}
+	if status != "" {
+		v.Set("status", status)
+	}
+	if itemType != "" {
+		v.Set("type", itemType)
+	}
+	if method != "" {
+		v.Set("method", method)
+	}
+	if walletID > 0 {
+		v.Set("wallet_id", strconv.FormatInt(walletID, 10))
+	}
+	if orgID > 0 {
+		v.Set("org_id", strconv.FormatInt(orgID, 10))
+	}
+	return v
+}
+
+func formatFinancePaymentMethod(m string) string {
+	switch strings.ToLower(strings.TrimSpace(m)) {
+	case "wallet":
+		return "المحفظة الإلكترونية"
+	case "card", "credit_card", "visa", "mastercard", "online":
+		return "بطاقة بنكية"
+	case "cash", "cod", "cash_on_delivery":
+		return "دفع عند الاستلام (نقدي)"
+	case "bank_transfer", "bank":
+		return "تحويل بنكي"
+	case "instapay":
+		return "إنستاباي (InstaPay)"
+	case "vodafone_cash", "electronic_wallet", "e_wallet", "wallet_pay":
+		return "محفظة إلكترونية"
+	case "cheque", "check":
+		return "شيك مصرفي"
+	case "fawry":
+		return "فوري"
+	default:
+		if m == "" {
+			return "غير محدد"
+		}
+		return m
+	}
+}
+
+func calcInvoicesTotal(items []*billing.AdminInvoiceView) money.Amount {
+	var totalMinor int64
+	for _, it := range items {
+		if it.Status != "cancelled" {
+			totalMinor += it.TotalAmount.Minor()
+		}
+	}
+	return money.FromMinor(totalMinor)
+}
+
+func countInvoicesStatus(items []*billing.AdminInvoiceView, st string) int {
+	cnt := 0
+	for _, it := range items {
+		if string(it.Status) == st {
+			cnt++
+		}
+	}
+	return cnt
+}
+
+// AdminFinance renders the unified financial management hub.
+templ AdminFinance(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("الإدارة المالية والمحافظ والتحصيل", "finance", lang, dir) {
+		<div
+			class="page-container"
+			x-data="{
+				rejectDepositID: 0,
+				rejectDepositAmount: '',
+				rejectUserName: '',
+				approveWithdrawalID: 0,
+				approveWithdrawalAmount: '',
+				approveWithdrawalUserName: '',
+				approveWithdrawalMethod: '',
+				approveWithdrawalDestination: '',
+				rejectWithdrawalID: 0,
+				rejectWithdrawalAmount: '',
+				rejectWithdrawalUserName: '',
+				receiptModalURL: '',
+				refundTargetID: 0,
+				refundAmount: '',
+				refundOrgName: '',
+				refundTargetType: 'transaction',
+				openApproveWithdrawalModal(id, amount, userName, method, destination) {
+					this.approveWithdrawalID = id;
+					this.approveWithdrawalAmount = amount;
+					this.approveWithdrawalUserName = userName;
+					this.approveWithdrawalMethod = method;
+					this.approveWithdrawalDestination = destination;
+					const modal = document.getElementById('finance-approve-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRejectModal(id, amount, userName) {
+					this.rejectDepositID = id;
+					this.rejectDepositAmount = amount;
+					this.rejectUserName = userName;
+					const modal = document.getElementById('finance-reject-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRejectWithdrawalModal(id, amount, userName) {
+					this.rejectWithdrawalID = id;
+					this.rejectWithdrawalAmount = amount;
+					this.rejectWithdrawalUserName = userName;
+					const modal = document.getElementById('finance-reject-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openReceiptModal(url) {
+					this.receiptModalURL = url;
+					const modal = document.getElementById('finance-receipt-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRefundModal(id, amount, orgName, targetType) {
+					this.refundTargetID = id;
+					this.refundAmount = amount;
+					this.refundOrgName = orgName;
+					this.refundTargetType = targetType || 'transaction';
+					const modal = document.getElementById('finance-refund-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconCreditCard("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">المركز المالي والمحافظ والتحصيل</h1>
+							<p class="text-sm text-secondary m-0 mt-1">إدارة ومتابعة فواتير التوريد، تسويات بوابات الدفع، محافظ الصيدليات والموردين، وسجل القيود المحاسبية</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/wallets?tab=wallets" class="btn btn-primary btn-sm font-bold text-xs gap-1">
+							@components.IconWallet("icon-xs")
+							<span>محافظ المنشآت</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar (Audited DB Queries) -->
+			<div class="dashboard-stat-grid mb-6">
+				<a href="/admin/finance/payments?tab=payments" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي التحصيلات والمدفوعات</span>
+						<span class="text-success">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalPaid.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d عملية دفع مسجلة", data.TotalPayments) }
+					</div>
+				</a>
+
+				<a href="/admin/finance/invoices?tab=invoices" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي الفواتير الصادرة</span>
+						<span class="text-brand">@components.IconFile("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalRevenue.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d فاتورة ضريبية", data.TotalInvoices) }
+					</div>
+				</a>
+
+				<a href="/admin/finance/wallets?tab=wallets" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">أرصدة المحافظ المحتجزة</span>
+						<span class="text-indigo">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalHeld.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d محفظة نشطة في النظام", data.TotalWallets) }
+					</div>
+				</a>
+
+				<a href="/admin/finance/transactions?tab=transactions" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">سجل حركات ومعاملات المحافظ</span>
+						<span class="text-warning">@components.IconActivity("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-warning mt-2">
+						{ fmt.Sprintf("%d عملية", data.TotalTransactions) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						{ fmt.Sprintf("%d شحن معلق • %d سحب معلق", data.PendingDepositsCount, data.PendingWithdrawalsCount) }
+					</div>
+				</a>
+			</div>
+
+			<!-- Unified Tabs Navigation (6 tabs in exact requested order) -->
+			<div class="glass-panel p-4 mb-6">
+				<div class="finance-tabs-nav">
+					<a href="/admin/finance/wallets?tab=wallets" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "wallets" || data.ActiveTab == "") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconLayers("icon-xs")
+						</div>
+						<span>محافظ المنشآت والأرصدة</span>
+						<span class="badge badge-emerald text-xs font-bold">{ fmt.Sprintf("%d", data.TotalWallets) }</span>
+					</a>
+					<a href="/admin/finance/transactions?tab=transactions" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "transactions") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconActivity("icon-xs")
+						</div>
+						<span>سجل حركات المحافظ</span>
+						<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalTransactions) }</span>
+					</a>
+					<a href="/admin/finance/deposits?tab=deposits" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "deposits") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconCreditCard("icon-xs")
+						</div>
+						<span>طلبات شحن المحفظة</span>
+						if data.PendingDepositsCount > 0 {
+							<span class="badge badge-amber text-xs font-bold">{ fmt.Sprintf("%d معلق", data.PendingDepositsCount) }</span>
+						} else {
+							<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalDeposits) }</span>
+						}
+					</a>
+					<a href="/admin/finance/withdrawals?tab=withdrawals" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "withdrawals") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconArrowLeft("icon-xs")
+						</div>
+						<span>طلبات سحب الرصيد</span>
+						if data.PendingWithdrawalsCount > 0 {
+							<span class="badge badge-amber text-xs font-bold">{ fmt.Sprintf("%d معلق", data.PendingWithdrawalsCount) }</span>
+						} else {
+							<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalWithdrawals) }</span>
+						}
+					</a>
+					<a href="/admin/finance/invoices?tab=invoices" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "invoices") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconFile("icon-xs")
+						</div>
+						<span>الفواتير والمطالبات</span>
+						<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalInvoices) }</span>
+					</a>
+					<a href="/admin/finance/payments?tab=payments" class={ "finance-tab-pill", templ.KV("is-active", data.ActiveTab == "payments") }>
+						<div class="finance-tab-pill-icon">
+							@components.IconWallet("icon-xs")
+						</div>
+						<span>سجل المدفوعات والتحصيلات</span>
+						<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalPayments) }</span>
+					</a>
+				</div>
+
+				<div class="stack-sm">
+					if data.ActiveTab == "wallets" || data.ActiveTab == "" {
+						@AdminFinanceWalletsTab(data, lang, dir)
+					}
+					if data.ActiveTab == "transactions" {
+						@AdminFinanceTransactionsTab(data, lang, dir)
+					}
+					if data.ActiveTab == "deposits" {
+						@AdminFinanceDepositsTab(data, lang, dir)
+					}
+					if data.ActiveTab == "withdrawals" {
+						@AdminFinanceWithdrawalsTab(data, lang, dir)
+					}
+					if data.ActiveTab == "invoices" {
+						@AdminFinanceInvoicesTab(data, lang, dir)
+					}
+					if data.ActiveTab == "payments" {
+						@AdminFinancePaymentsTab(data, lang, dir)
+					}
+				</div>
+			</div>
+
+			<!-- Modals -->
+			@AdminFinanceModals(data, lang, dir)
+
+		</div>
+	}
+}

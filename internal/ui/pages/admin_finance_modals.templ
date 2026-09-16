@@ -1,0 +1,211 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
+	<!-- WALLET ADJUSTMENT MODAL -->
+	@components.Modal(components.ModalProps{
+		ID:    "walletAdjustModal",
+		Title: "تعديل وشحن رصيد المحفظة",
+		Size:  "md",
+	}) {
+		<form id="walletAdjustForm" method="POST" action="/admin/finance/wallets/0/adjust" class="d-flex flex-col gap-4 m-0 text-start">
+			<input type="hidden" name="_csrf" value=""/>
+			<div class="d-flex flex-col gap-3">
+				<!-- Target Entity Info Banner -->
+				<div class="p-3 rounded-lg bg-surface-sunken border">
+					<div class="text-xs text-muted">المنشأة المستهدفة:</div>
+					<div id="modalTargetName" class="font-bold text-primary text-base mt-0.5">-</div>
+					<div class="text-xs text-secondary mt-0.5">
+						الرصيد الحالي: <span id="modalCurrentBalance" class="font-bold text-success">0.00</span>
+					</div>
+				</div>
+
+				<!-- Action Type -->
+				<div class="stack-sm">
+					<label class="form-label font-bold" for="modalActionType">نوع العملية المحاسبية *</label>
+					<select name="action_type" id="modalActionType" class="form-select w-full" required>
+						<option value="deposit">إيداع رصيد (شحن مباشر / تحويل)</option>
+						<option value="withdrawal">خصم من الرصيد (سحب / تسوية مدينة)</option>
+						<option value="adjustment">تسوية محاسبية يدوية (Adjustment)</option>
+					</select>
+				</div>
+
+				<!-- Amount -->
+				<div class="stack-sm">
+					<label class="form-label font-bold" for="adjust-amount">المبلغ بالجنيه المصري (EGP) *</label>
+					<input id="adjust-amount" type="number" step="0.01" min="0.01" name="amount" class="form-input w-full text-lg font-black tabular-nums" placeholder="0.00" required/>
+				</div>
+
+				<!-- Reason / Notes -->
+				<div class="stack-sm">
+					<label class="form-label font-bold" for="adjust-reason">سبب العملية والملاحظات المحاسبية *</label>
+					<textarea id="adjust-reason" name="reason" rows="2" class="form-input w-full text-sm" placeholder="اكتب سبب الشحن أو الخصم الإداري (إيداع بنكي، تسوية فاتورة، تعويض)..." required></textarea>
+				</div>
+			</div>
+
+			<div class="d-flex justify-end gap-3 mt-2">
+				<button type="button" class="btn btn-secondary flex-1" data-modal-close="walletAdjustModal">إلغاء</button>
+				<button type="submit" class="btn btn-primary font-bold flex-1">تأكيد وقيد المعاملة</button>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openWalletAdjustModal(walletId, orgName, userName, balance, currency) {
+			var modal = document.getElementById('walletAdjustModal');
+			var form = document.getElementById('walletAdjustForm');
+			var targetName = document.getElementById('modalTargetName');
+			var currentBal = document.getElementById('modalCurrentBalance');
+
+			if (form) form.action = '/admin/finance/wallets/' + walletId + '/adjust';
+			if (targetName) targetName.textContent = (orgName && orgName !== '') ? orgName + ' (' + userName + ')' : userName;
+			if (currentBal) currentBal.textContent = balance + ' ' + currency;
+
+			if (modal && typeof modal.showModal === 'function') modal.showModal();
+		}
+	</script>
+
+	<!-- Reject Deposit Request Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "finance-reject-modal",
+		Title: "رفض طلب شحن المحفظة",
+		Size:  "sm",
+	}) {
+		<form :action="'/admin/finance/deposits/' + rejectDepositID + '/reject'" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
+			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<div class="d-flex flex-col gap-3">
+				<div class="bg-danger-subtle border rounded-lg p-3 text-sm text-danger font-semibold">
+					أنت على وشك رفض طلب الإيداع المقدم من <strong x-text="rejectUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="rejectDepositAmount + ' ج.م'"></strong>. لن يتم شحن الرصيد.
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label font-bold" for="rejection_reason_admin">سبب الرفض (سيظهر للمستخدم في صيدليته) *</label>
+					<textarea id="rejection_reason_admin" name="rejection_reason" rows="3" class="form-input w-full" placeholder="مثال: صورة الإيصال غير واضحة / رقم المرجع لا يطابق كشف حساب البنك / لم يصل التحويل بعد..." required></textarea>
+				</div>
+			</div>
+			<div class="d-flex justify-end gap-3 mt-2">
+				<button type="button" class="btn btn-secondary" data-modal-close="finance-reject-modal">إلغاء</button>
+				<button type="submit" class="btn btn-danger font-bold">
+					<span>تأكيد رفض الطلب</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Approve Withdrawal Request Modal with Transfer Receipt Proof Attachment -->
+	@components.Modal(components.ModalProps{
+		ID:    "finance-approve-withdrawal-modal",
+		Title: "اعتماد وصرف طلب السحب وإرفاق إشعار التحويل",
+		Size:  "md",
+	}) {
+		<form :action="'/admin/finance/withdrawals/' + approveWithdrawalID + '/approve'" method="POST" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0 text-start" data-boost-upload>
+			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<div class="d-flex flex-col gap-3">
+				<div class="bg-success-subtle border rounded-lg p-3 text-sm text-success font-semibold">
+					اعتماد طلب السحب المقدم من <strong x-text="approveWithdrawalUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="approveWithdrawalAmount + ' ج.م'"></strong> وخصمه من المحفظة فوراً.
+				</div>
+
+				<div class="p-3 bg-surface-sunken border rounded-lg text-xs space-y-1">
+					<div class="text-secondary">طريقة الاستلام: <span class="font-bold text-primary" x-text="approveWithdrawalMethod"></span></div>
+					<div class="text-secondary">بيانات الحساب / المحفظة: <span class="font-bold text-primary font-mono" x-text="approveWithdrawalDestination"></span></div>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label font-bold text-xs" for="transfer_receipt_file">صورة إشعار التحويل البنكي / الإيصال (اختياري - يظهر للمستخدم كإثبات تحويل)</label>
+					<input id="transfer_receipt_file" type="file" name="transfer_receipt" accept="image/*,.pdf" class="form-input w-full text-xs"/>
+					<div class="text-2xs text-muted mt-1">الامتدادات المدعومة: PNG, JPG, JPEG, WebP, PDF (حتى 10 ميجابايت)</div>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label font-bold text-xs" for="transfer_receipt_url_input">أو رابط إشعار التحويل (URL)</label>
+					<input id="transfer_receipt_url_input" type="url" name="receipt_url" placeholder="https://..." class="form-input w-full text-xs font-mono" dir="ltr"/>
+				</div>
+			</div>
+			<div class="d-flex justify-end gap-3 mt-2">
+				<button type="button" class="btn btn-secondary" data-modal-close="finance-approve-withdrawal-modal">إلغاء</button>
+				<button type="submit" class="btn btn-success font-bold gap-1">
+					@components.IconCheck("icon-xs")
+					<span>تأكيد الاعتماد والصرف</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Reject Withdrawal Request Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "finance-reject-withdrawal-modal",
+		Title: "رفض طلب سحب الرصيد",
+		Size:  "sm",
+	}) {
+		<form :action="'/admin/finance/withdrawals/' + rejectWithdrawalID + '/reject'" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
+			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<div class="d-flex flex-col gap-3">
+				<div class="bg-danger-subtle border rounded-lg p-3 text-sm text-danger font-semibold">
+					أنت على وشك رفض طلب السحب المقدم من <strong x-text="rejectWithdrawalUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="rejectWithdrawalAmount + ' ج.م'"></strong>. لن يتم خصم الرصيد.
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label font-bold" for="rejection_reason_withdrawal">سبب الرفض (سيظهر للمستخدم في حسابه) *</label>
+					<textarea id="rejection_reason_withdrawal" name="rejection_reason" rows="3" class="form-input w-full" placeholder="مثال: بيانات الحساب غير صحيحة / الآيبان غير مطابق للاسم / تعذر إتمام التحويل..." required></textarea>
+				</div>
+			</div>
+			<div class="d-flex justify-end gap-3 mt-2">
+				<button type="button" class="btn btn-secondary" data-modal-close="finance-reject-withdrawal-modal">إلغاء</button>
+				<button type="submit" class="btn btn-danger font-bold">
+					<span>تأكيد رفض طلب السحب</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Receipt Preview Lightbox Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "finance-receipt-modal",
+		Title: "معاينة إشعار التحويل البنكي / الإيصال",
+		Size:  "lg",
+	}) {
+		<div class="d-flex flex-col gap-4">
+			<div class="p-4 bg-surface-sunken rounded-lg flex-center min-h-72">
+				<template x-if="receiptModalURL.toLowerCase().endsWith('.pdf')">
+					<iframe :src="receiptModalURL" class="w-full h-96 rounded-md border-0"></iframe>
+				</template>
+				<template x-if="!receiptModalURL.toLowerCase().endsWith('.pdf')">
+					<img :src="receiptModalURL" alt="إشعار التحويل" class="max-w-full rounded-md shadow-md max-h-96 object-contain" />
+				</template>
+			</div>
+			<div class="flex-between items-center">
+				<a :href="receiptModalURL" target="_blank" download class="btn btn-secondary btn-xs font-bold">فتح بالحجم الكامل ↗</a>
+				<button type="button" class="btn btn-secondary" data-modal-close="finance-receipt-modal">إغلاق</button>
+			</div>
+		</div>
+	}
+
+	<!-- Refund Transaction / Deposit Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "finance-refund-modal",
+		Title: "استرداد حركة مالية إلى المحفظة",
+		Size:  "sm",
+	}) {
+		<form :action="refundTargetType === 'deposit' ? ('/admin/finance/deposits/' + refundTargetID + '/refund') : ('/admin/finance/transactions/' + refundTargetID + '/refund')" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
+			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<div class="d-flex flex-col gap-3">
+				<div class="bg-amber-subtle border rounded-lg p-3 text-sm text-amber-900 font-semibold">
+					أنت على وشك استرداد مبلغ <strong class="tabular-nums" x-text="refundAmount + ' ج.م'"></strong> إلى محفظة <strong x-text="refundOrgName"></strong>.
+					سيتم إنشاء قيد استرداد تعويضي وإعادة الرصيد دون تعديل أو حذف المعاملة الأصلية.
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label font-bold" for="refund_reason_admin">سبب الاسترداد (إلزامي للرقابة المالية) *</label>
+					<textarea id="refund_reason_admin" name="reason" rows="3" class="form-input w-full" placeholder="مثال: إلغاء طلب مكرر / تعويض تسوية بالاتفاق / استرداد إيداع بنكي..." required></textarea>
+				</div>
+			</div>
+			<div class="d-flex justify-end gap-3 mt-2">
+				<button type="button" class="btn btn-secondary" data-modal-close="finance-refund-modal">إلغاء</button>
+				<button type="submit" class="btn btn-warning font-bold">
+					<span>تأكيد الاسترداد والقيد التعويضي</span>
+				</button>
+			</div>
+		</form>
+	}
+}

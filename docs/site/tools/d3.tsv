@@ -1,0 +1,293 @@
+handlers.go	تعريف UIHandler: الكائن اللي بيقدم كل صفحات HTML من قوالب templ، وتسجيل مسارات الإعدادات.
+handler_deps.go	حقن الخدمات اللي UIHandler بيحتاجها زي مولد الأدوار المبدئية.
+render.go	دالة موحدة لعرض قالب templ كرد HTML، بدل 189 نسخة مكررة.
+request_helpers.go	middleware بيحمّل إعدادات الموقع الحية في كل طلب.
+site_context.go	كاش إعدادات الموقع وروابط السوشيال الافتراضية.
+error_message.go	تحويل خطأ الأعمال لجملة يفهمها المستخدم.
+redirect_security.go	التأكد إن التحويل لمسار داخلي آمن وليس لموقع خارجي.
+static.go	ملفات ثابتة وrobots.txt ديناميكي.
+sitemap_handler.go	خريطة الموقع لمحركات البحث.
+visitor.go	تسجيل زائر واحد لكل جلسة في اليوم لتحليلات الإدارة.
+agent_middleware.go	ترويسات Link لاكتشاف الموقع من مساعدات الذكاء الاصطناعي.
+scrape_guard.go	تركيب حماية الكشط على صفحة الكتالوج.
+public_routes.go	تسجيل كل المسارات العامة اللي بتفتح بدون تسجيل دخول.
+public_handlers.go	الصفحة الرئيسية وإعلاناتها المعروضة.
+public_content_handlers.go	صفحة التواصل ورسائلها في الإدارة.
+content_handlers.go	صفحات المحتوى من قاعدة البيانات: من نحن، كيف يعمل.
+auth_handlers.go	صفحات الدخول والتسجيل والتحقق بخطوتين.
+auth_submit_handlers.go	تنفيذ الدخول والخروج والتبديل بين المنشآت.
+auth_landing.go	اختيار أول شاشة المستخدم يقدر يفتحها بعد الدخول.
+auth_geography.go	تحميل المدن المصرية لنموذج التسجيل.
+mfa_handlers.go	صفحة إعدادات التحقق بخطوتين.
+account_handlers.go	تحويل صفحة المحفظة القديمة وإيداع المحفظة.
+settings_handlers.go	صفحة الإعدادات الموحدة بالتبويبات.
+settings_account_handlers.go	حفظ الملف الشخصي وكلمة المرور والتفضيلات.
+settings_payment_handlers.go	حفظ وسائل الدفع من الإعدادات.
+settings_employees_redirect.go	تحويل الرابط القديم لصفحة الموظفين لصفحة الفريق.
+settings_telegram_handlers.go	كارت ربط تيليجرام في الإعدادات: إنشاء الرابط، التأكيد، الإلغاء، كتم الفئات.
+settings_whatsapp_handlers.go	كارت ربط واتساب في الإعدادات بنفس وظائف تيليجرام.
+dashboard_handlers.go	لوحة المورد ولوحة الصيدلية الرئيسيتين.
+customer_routes.go	تسجيل مسارات لوحة الصيدلية /customer بحسب الصلاحيات.
+vendor_routes.go	تسجيل مسارات لوحة المورد /vendor مقسمة بأقسام.
+vendor_routes_promo.go	مسارات العروض والإعلانات للمورد.
+vendor_catalog_routes.go	مسارات كتالوج ومخزون المورد.
+buying_routes.go	سطح الشراء المشترك اللي بتستخدمه الصيدلية والمورد اللي بيشتري.
+buying_context.go	تحديد المنشأة اللي المستخدم بيشتري لها.
+buying_coverage.go	الموردين اللي بيوصلوا لفرع الشراء النهارده.
+buying_offers.go	استعلام عروض المشتري وسبب منعه لو ممنوع.
+branch_selector.go	قائمة اختيار فرع الشراء في رأس لوحة الصيدلية.
+customer_handlers.go	الكتالوج كما يراه فرع الشراء.
+customer_catalog_cards.go	تحويل العروض لكروت متجر.
+customer_product_handlers.go	صفحة تفاصيل المنتج للصيدلية.
+customer_cart_handlers.go	السلة مقسمة حسب المورد مع رسوم التوصيل لكل مورد.
+customer_cart_coverage.go	شارة عدد عناصر السلة وتغطية السلة.
+customer_cart_offer_handlers.go	إضافة عرض كامل للسلة.
+customer_checkout_handlers.go	صفحة الدفع وتنفيذه.
+customer_checkout_core.go	اختيارات المشتري في شاشة الدفع.
+customer_checkout_helpers.go	رفض العروض اللي مينفعش تتباع وقت الدفع.
+customer_checkout_wallet.go	حساب قيمة البضاعة بعد الخصم للدفع من المحفظة.
+customer_offer_availability.go	التأكد إن منتجات العرض ما بتمنعش شراؤه.
+customer_order_handlers.go	قائمة طلبات الصيدلية وتفاصيل الطلب.
+customer_order_edit_handlers.go	إلغاء أو تعديل الطلب قبل الشحن.
+customer_order_negotiate_handlers.go	التفاوض على الطلب.
+customer_order_offer_handlers.go	نافذة تفاصيل العرض داخل بند الطلب.
+customer_order_pricing_helpers.go	مساعدات تسعير بنود الطلب.
+customer_order_review_handlers.go	تقييم المورد بعد الطلب.
+customer_offer_order_handlers.go	طلبات العروض الخاصة بالصيدلية.
+customer_purchase_request_handlers.go	صفحة بداية طلب الشراء.
+customer_branch_handlers.go	تحويل لإضافة فرع في صفحة الفروع الموحدة.
+customer_team_handlers.go	شاشة فريق الصيدلية الموحدة.
+customer_employee_handlers.go	إضافة وتعديل موظفي الصيدلية.
+customer_user_org_handlers.go	بحث الصيدلية عن مورد لربطه.
+customer_notifications_handlers.go	صفحة الإشعارات وتعليمها مقروءة.
+notifications_handlers.go	قائمة الإشعارات المنسدلة من الجرس.
+notifications_dispatch.go	إرسال إشعار داخل التطبيق لمستخدم.
+notifications_events_commerce.go	إشعارات أحداث الطلبات للصيدلية وفرق المورد.
+notifications_events_org.go	إشعارات أحداث المنشآت للإدارة.
+notifications_issues.go	إشعار الإدارة بمشكلة جديدة.
+notifications_withdrawals.go	إشعارات الإيداع والسحب.
+favorites_handlers.go	المنتجات المفضلة.
+messages_handlers.go	صفحة الرسائل بين المشتري والمورد.
+offers_handlers.go	صفحة العروض العامة وتفاصيل العرض.
+offers_env.go	تحميل مسبق دفعة واحدة لبيانات عرض العروض بدل استعلام لكل كارت.
+offers_distance.go	حساب المسافة للعرض فقط.
+offers_ranking.go	ترتيب العروض بشرائح مسافة.
+offers_storefront.go	العروض المعروضة لمنتج.
+ads_enricher.go	إكمال بيانات الإعلانات المعروضة دفعة واحدة.
+promo_tracking_handlers.go	تتبع نقرات الإعلانات.
+promo_revenue_handlers.go	مركز الباقات والإيرادات في الإدارة.
+credit_statement_handlers.go	كشف حساب رصيد باقة.
+suppliers_handlers.go	دليل الموردين وحالة العمل والتغطية.
+supplier_profile_handlers.go	صفحة المورد العامة ومتابعته.
+storefront_handlers.go	إدارة الأقسام المميزة في متجر المورد.
+subscription_handlers.go	صفحة الاشتراك والعضوية.
+tenant_wallet_handlers.go	صفحة المحفظة.
+tenant_payment_methods_handlers.go	وسائل الدفع من صفحة المحفظة.
+payment_method_form.go	التحقق من نموذج وسيلة الدفع.
+tenant_roles_handlers.go	إدارة أدوار المنشأة.
+tenant_sessions_handlers.go	الأجهزة والجلسات النشطة.
+team_view.go	تحميل الأعضاء والأدوار والفروع لشاشة الفريق.
+team_import_handlers.go	استيراد الفريق من ملف.
+team_import_parse.go	قراءة ملف الفريق.
+team_import_validate.go	التحقق من صفوف الفريق ومطابقة الدور بالاسم.
+team_import_commit_handlers.go	حفظ استيراد الفريق.
+organization_profile_handlers.go	صفحة بيانات المنشأة بالأقسام.
+documents_handlers.go	صفحة المستندات.
+document_serve_file_handlers.go	عرض أو تحميل ملف مستند.
+document_serve_helpers.go	توليد شارة مستند رسمي SVG.
+requests_handlers.go	صندوق طلبات المستندات والإجراءات.
+jobs_handlers.go	لوحة الوظائف.
+job_form_handlers.go	نموذج نشر وظيفة.
+job_application_handlers.go	التقديم على وظيفة.
+coverage_handlers.go	شبكة التغطية الأسبوعية للمورد.
+coverage_write_form_handlers.go	إنشاء تغطية لعدة أيام.
+coverage_write_crud_handlers.go	تعديل وحذف التغطية.
+delivery_band_handlers.go	شرائح رسوم التوصيل بالمسافة.
+invoice_handlers.go	قائمة الفواتير.
+invoice_create_handlers.go	إنشاء فاتورة من المورد.
+invoice_print_handlers.go	الفاتورة المطبوعة بالشكل المصري.
+invoice_print_data.go	تجميع بيانات الفاتورة المطبوعة.
+invoice_export_handlers.go	تصدير الفاتورة.
+invoice_excel_gen.go	توليد الفاتورة Excel.
+invoice_word_gen.go	توليد الفاتورة Word.
+upload_file_handlers.go	قراءة رفع ملف استيراد بحدود للحجم والذاكرة.
+upload_formats.go	امتدادات ملفات الجداول المقبولة.
+upload_image_handlers.go	خادم ملفات الرفع وصور المنتجات.
+import_progress_handlers.go	لقطة تقدم أي استيراد كـ JSON.
+import_progress_stream.go	بث تقدم الاستيراد لحظيًا.
+ai_usage_handlers.go	تجهيز هوية المنشأة في بوابة الذكاء الاصطناعي واستهلاكها.
+assistant_actions.go	تنفيذ إجراءات كبسولة بكود لوحة التحكم نفسه.
+assistant_actions_buying.go	إجراءات الشراء: إضافة للسلة والبحث عن العروض.
+assistant_actions_vendor.go	إجراءات المورد زي تعديل المنتج.
+assistant_actions_staff.go	إجراءات موظفي المنصة.
+assistant_promotions.go	العروض الترويجية لفرع الشراء للمساعد.
+org_decision_memory_handlers.go	ذاكرة القرارات للمنشأة.
+platform_hardening_handlers.go	خطط عدد الأجهزة في الإدارة.
+smart_order_handlers.go	رفع ملف الطلب الذكي بحد 64 ميجا.
+smart_order_pages.go	صفحة التقدم في الطلب الذكي.
+smart_order_actions.go	تعديل الكميات والموردين وإنهاء الطلب الذكي.
+smart_order_review_builder.go	صفحة المراجعة مجمعة بالمورد.
+smart_order_branch_gate.go	التحقق من فرع التوصيل قبل البدء.
+smart_order_errors.go	رسائل أخطاء الطلب الذكي المفهومة.
+smart_order_samples.go	تحميل نموذج Excel للطلب الذكي.
+smart_order_stale.go	تقرير البنود اللي اتغيرت يظهر مرة واحدة.
+saving_products_handlers.go	منتجات التوفير ومعاينتها.
+saving_products_delegates.go	صفحة متابعة فروق الأسعار.
+saving_products_actions.go	حذف منتجات التوفير بالجملة.
+saving_products_columns.go	اكتشاف أعمدة ملف منتجات التوفير.
+saving_products_matcher.go	طريقة ربط الصفوف بالكتالوج.
+saving_products_match_choice.go	إعدادات المطابقة لكل تشغيل.
+saving_products_ai.go	تحسين المطابقة بالذكاء الاصطناعي.
+saving_products_ai_plan.go	الصفوف اللي تستحق سؤال الموديل.
+saving_products_sessions.go	جلسات الاستيراد في الذاكرة.
+saving_products_sessions_ops.go	تحديث تقدم الجلسة.
+saving_products_import_handlers.go	صفحة استيراد منتجات التوفير.
+saving_products_import_ajax_handlers.go	مسارات AJAX للاستيراد.
+saving_products_import_direct_handlers.go	الاستيراد المباشر.
+saving_products_import_delegates.go	تحميل نموذج Excel.
+saving_products_import_items_handlers.go	تعديل صفوف المعاينة.
+saving_products_import_run_ops.go	تشغيل الاستيراد في الخلفية.
+saving_products_import_commit.go	حفظ الصفوف المعتمدة.
+compare_handlers.go	صفحة خطط المقارنة.
+compare_upload_handlers.go	رفع ملفات الموردين ونموذج تجريبي.
+compare_upload_preview.go	معاينة عناوين الملف وصفوفه.
+compare_upload_replace.go	الالتزام بعدد ملفات الخطة.
+compare_staging_handlers.go	حالة معالجة الملفات.
+compare_mapping_modal_handlers.go	نافذة ربط الأعمدة.
+compare_mapping_actions_handlers.go	حفظ الربط والانتقال للملف التالي.
+compare_file_handlers.go	تسمية وأرشفة الملفات.
+compare_results_ops_handlers.go	تشغيل المقارنة.
+compare_results_display_handlers.go	عرض نتائج المقارنة بالفلاتر.
+compare_intelligence_handlers.go	لوحة ذكاء السوق.
+compare_benchmark_offers_handlers.go	نافذة الموردين وراء رقم في المقارنة.
+vendor_variant_handlers.go	قائمة منتجات المورد مرقمة.
+vendor_variant_new.go	إضافة منتج جديد للمورد.
+vendor_variant_edit.go	تعديل منتج المورد.
+vendor_catalog_handlers.go	البحث في الكتالوج العام.
+vendor_stock_search.go	بحث المورد في منتجاته.
+vendor_inventory_handlers.go	صفحة المخزون.
+vendor_warehouse_list_handlers.go	مستودعات المورد.
+vendor_warehouse_ops_handlers.go	تعديل المخزون من المستودع.
+vendor_warehouse_clear_handlers.go	مسح مخزون مستودع.
+vendor_order_handlers.go	طلبات المورد وتغيير حالتها.
+vendor_purchase_request_handlers.go	طلبات الشراء الواردة.
+vendor_quota_handlers.go	لوحة حصص الفروع.
+vendor_review_handlers.go	تقييمات المورد.
+vendor_finance_handlers.go	مالية المورد بفلاتر التاريخ.
+vendor_offer_list_handlers.go	قائمة العروض الخاصة.
+vendor_offer_detail_handlers.go	إنشاء وتعديل عرض.
+vendor_offer_form.go	التحقق من نموذج العرض.
+vendor_offer_locations_handlers.go	مناطق تغطية العرض.
+vendor_ads_handlers.go	إعلانات المورد.
+vendor_sponsorship_handlers.go	طلبات الرعاية والباقات.
+vendor_content_handlers.go	سياسات المورد: الإرجاع والدفع والشحن.
+vendor_branch_handlers.go	فروع المورد.
+vendor_team_list_handlers.go	فريق المورد والأدوار.
+vendor_team_crud_handlers.go	إضافة موظف للمورد.
+vendor_user_org_handlers.go	بحث المورد عن صيدلية لربطها.
+vendor_activities_handlers.go	سجل نشاط الموظفين.
+vendor_job_handlers.go	وظائف المورد.
+vendor_institutional_handlers.go	الصيدليات داخل تغطية المورد.
+vendor_delivery_handlers.go	لوحة توزيع الشحنات.
+vendor_delivery_assign_handlers.go	تعيين شحنة لمندوب.
+vendor_delivery_route_handlers.go	مسار المندوب.
+vendor_ingest_upload_handlers.go	رفع ملف كتالوج المورد.
+vendor_ingest_review_handlers.go	تصحيح ربط الأعمدة.
+vendor_ingest_staged_handlers.go	جدول مراجعة الصفوف.
+vendor_ingest_bulk_handlers.go	إجراءات جماعية على الصفوف.
+vendor_ingest_sample_handlers.go	نموذج Excel لكتالوج المورد.
+vendor_ingest_ai_state.go	متى يظهر زر الذكاء الاصطناعي في الاستيراد.
+admin_handlers.go	لوحة الإدارة الرئيسية بأرقام من كاش.
+admin_dashboard_cache.go	حساب أرقام لوحة الإدارة.
+admin_routes_catalog.go	مسارات إدارة الكتالوج والمخزون.
+admin_routes_commerce.go	مسارات إدارة الطلبات.
+admin_routes_identity.go	مسارات إدارة المستخدمين.
+admin_routes_org.go	مسارات إدارة المنشآت.
+admin_routes_platform.go	مسارات إدارة المنصة.
+admin_routes_pagecontrol.go	مسارات التحكم في صفحات النظام.
+admin_pagecontrol_handlers.go	شاشة تفعيل وتعطيل صفحات النظام.
+admin_approvals_list_handlers.go	قائمة الموافقات.
+admin_approvals_action_handlers.go	اعتماد أو رفض منشأة مع السبب.
+admin_approvals_job_seeker_handlers.go	اعتماد الباحثين عن عمل.
+admin_askfor_handlers.go	تحويل لسجل المستندات المطلوبة.
+admin_registration_detail.go	تفاصيل تسجيل منشأة.
+admin_org_list_handlers.go	إدارة المنشآت.
+admin_org_detail_handlers.go	نظرة شاملة على منشأة.
+admin_org_branch_handlers.go	تفاصيل فرع.
+admin_org_changes_handlers.go	طلبات تغيير بيانات المنشآت.
+admin_org_import_handlers.go	مركز الاستيراد نيابة عن منشأة.
+admin_org_import_saving_handlers.go	استيراد منتجات التوفير نيابة عن منشأة.
+admin_org_import_saving_items_handlers.go	تعديل صفوف منتجات التوفير.
+admin_org_import_saving_steps_handlers.go	خطوات ربط الأعمدة.
+admin_org_import_temp_warehouse_handlers.go	رفع المستودعات المؤقتة نيابة عن منشأة.
+admin_org_import_vendor_ingest_handlers.go	استيراد كتالوج مورد نيابة عنه.
+admin_org_import_vendor_ingest_stages.go	مراحل استيراد المورد من الإدارة.
+admin_users_handlers.go	دليل المستخدمين.
+admin_user_directory_handlers.go	إدارة المستخدمين الموحدة.
+admin_users_actions.go	إيقاف وتفعيل المستخدمين.
+admin_roles_handlers.go	أدوار المنصة.
+admin_employee_activities_handlers.go	سجل نشاط الموظفين.
+admin_deletion_requests_handlers.go	طلبات الحذف.
+admin_products_handlers.go	الكتالوج الرئيسي.
+admin_catalog_handlers.go	تفاصيل منتج الكتالوج.
+admin_brands_handlers.go	الماركات والشركات المصنعة.
+admin_reference_handlers.go	التصنيفات.
+admin_import_handlers.go	استيراد الكتالوج الرئيسي.
+admin_import_mapping_handlers.go	خطوة ربط الأعمدة.
+admin_import_forms.go	روابط جلسة الاستيراد.
+admin_import_sample.go	نموذج ملف الاستيراد.
+admin_import_watermark.go	علامة مائية على الصور المستوردة.
+admin_image_import_handlers.go	استيراد صور المنتجات.
+admin_image_import_sessions.go	تحميل الصور وربطها في الخلفية.
+admin_decision_memory_handlers.go	ذاكرة قرارات المطابقة.
+admin_saving_products_handlers.go	منتجات التوفير لكل المستخدمين.
+admin_saving_products_score.go	درجة تشابه منتج توفير.
+admin_warehouse_handlers.go	مستودعات شبكة التوزيع.
+admin_warehouse_admin_actions.go	إجراءات المستودعات مع الحفاظ على الفلاتر.
+admin_temp_warehouse_handlers.go	المستودعات المؤقتة (ملفات المقارنة).
+admin_temp_warehouse_upload_page.go	صفحة رفع المستودعات المؤقتة.
+admin_temp_warehouse_upload.go	رفع 60 لـ 100 ملف دفعة واحدة.
+admin_temp_warehouse_staging.go	معالجة الملفات في الخلفية.
+admin_temp_warehouse_mapping.go	عناوين ومعاينة الملف.
+admin_temp_warehouse_session.go	مراحل جلسة المستودع المؤقت.
+admin_temp_warehouse_runs_handlers.go	تشغيلات المستودعات المؤقتة.
+admin_temp_warehouse_runs_review_handlers.go	مراجعة التشغيل.
+admin_temp_warehouse_bulk_handlers.go	أرشفة وحذف بالجملة.
+admin_my_temp_warehouse_handlers.go	مستودعاتي المرفوعة للمشرف.
+admin_team_temp_warehouse_handlers.go	مستودعات فريق المشرف.
+admin_institutional_handlers.go	هيكل الأعمال المؤسسية.
+admin_weekly_coverage_handlers.go	التغطية الأسبوعية لكل المنشآت.
+admin_geography_handlers.go	المدن والإحداثيات.
+admin_geography_gov_handlers.go	المحافظات.
+admin_commerce_handlers.go	الطلبات عبر كل المنشآت.
+admin_finance_handlers.go	المحافظ والأرصدة.
+admin_finance_actions.go	تسجيل دفع فاتورة.
+admin_finance_plans_handlers.go	دليل خطط الاشتراك.
+admin_finance_refunds_handlers.go	الاسترداد.
+admin_finance_withdrawals_handlers.go	اعتماد السحب.
+admin_finance_statement_handler.go	كشف حساب منشأة للطباعة.
+admin_billing_handlers.go	محرر الخطط والمشتركين.
+admin_subscription_log.go	فلاتر سجل المشتركين.
+admin_payment_methods_handlers.go	قنوات الدفع.
+admin_promo_package_handlers.go	اعتماد الإعلانات والباقات.
+admin_credit_accounts_handlers.go	المنشآت اللي عندها باقات.
+admin_adv_products_handlers.go	رعايات المنتجات.
+admin_adv_product_detail_handlers.go	تفاصيل رعاية منتج.
+admin_reviews_handlers.go	التقييمات.
+admin_ai_logs_handlers.go	سجلات استهلاك الذكاء الاصطناعي.
+admin_chat_handlers.go	محادثات المساعد للتدقيق.
+admin_developers_handlers.go	بوابة المطورين: كونسول SQL، الذكاء الاصطناعي، SEO وغيرها.
+admin_developers_actions_handlers.go	اختبار الاتصال بالبوابة.
+admin_developers_ai_handlers.go	ربط أدوار الذكاء الاصطناعي بالموديلات.
+admin_developers_seo_handlers.go	حفظ إعدادات SEO.
+admin_gateway_credentials.go	رسائل رفض بيانات البوابة.
+admin_settings_handlers.go	إعدادات المنصة العامة.
+admin_branding_handlers.go	بيانات التواصل وروابط السوشيال.
+admin_translations_handlers.go	تعديل الترجمات.
+admin_trash_handlers.go	سلة المحذوفات.
+admin_audit_handlers.go	تحليلات الزوار وسجل التدقيق.
+admin_monitoring_handlers.go	سجلات الأخطاء.
+admin_documents_handlers.go	تحويل لسجل المستندات.
+admin_job_handlers.go	الوظائف.
+admin_job_application_handlers.go	المتقدمين.
+admin_gallery_handlers.go	معرض المكونات للفحص البصري.

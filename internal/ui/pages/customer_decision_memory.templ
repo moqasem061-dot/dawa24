@@ -1,0 +1,323 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type CustomerDecisionMemoryData struct {
+	Decisions          []*catalog.MatchDecisionView
+	Total              int
+	Page               int
+	PerPage            int
+	Search             string
+	IsEnabled          bool
+	IsVendor           bool
+	UsePlatformMemory  bool
+	QueryValues        url.Values
+}
+
+templ CustomerDecisionMemoryPage(lang, dir string, data CustomerDecisionMemoryData) {
+	{{
+		pageTitle := i18n.T(lang, "memory.page_title_customer")
+		if data.IsVendor {
+			pageTitle = i18n.T(lang, "memory.page_title_vendor")
+		}
+	}}
+	if data.IsVendor {
+		@layouts.VendorShell(pageTitle, "decision_memory", lang, dir) {
+			@decisionMemoryContent(lang, dir, data)
+		}
+	} else {
+		@layouts.CustomerShell(pageTitle, "decision_memory", lang, dir, nil) {
+			@decisionMemoryContent(lang, dir, data)
+		}
+	}
+}
+
+templ decisionMemoryContent(lang, dir string, data CustomerDecisionMemoryData) {
+	{{
+		basePath := "/customer/decision-memory"
+		if data.IsVendor {
+			basePath = "/vendor/decision-memory"
+		}
+		titleText := i18n.T(lang, "memory.title_customer")
+		subTitleText := i18n.T(lang, "memory.subtitle_customer")
+		if data.IsVendor {
+			titleText = i18n.T(lang, "memory.title_vendor")
+			subTitleText = i18n.T(lang, "memory.subtitle_vendor")
+		}
+	}}
+
+	<div class="page-container stack-md">
+		<!-- Header Banner -->
+		<div class="glass-panel p-6 mb-0">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3 mb-1 flex-wrap">
+						<div class="user-avatar-badge text-xl">
+							@components.IconSparkles("icon-sm")
+						</div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ titleText }
+						</h1>
+						if data.IsEnabled {
+							<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "memory.status_active") }</span>
+						} else {
+							<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "memory.status_disabled") }</span>
+						}
+					</div>
+					<p class="text-sm text-secondary m-0">
+						{ subTitleText }
+					</p>
+				</div>
+				<div class="d-flex items-center gap-2 flex-wrap">
+					if data.Total > 0 {
+						<button type="button" class="btn btn-secondary btn-sm font-bold text-danger gap-1" data-on-click="confirmClearMyDecisions()" title={ i18n.T(lang, "memory.clear_my_tooltip") }>
+							<span>{ i18n.T(lang, "memory.clear_my_decisions") }</span>
+						</button>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Platform Memory Opt-Out Toggle Banner -->
+		<div class="p-4 rounded-xl border bg-surface-raised flex-between items-center flex-wrap gap-4">
+			<div class="stack-2xs">
+				<div class="d-flex items-center gap-2">
+					<span class="font-extrabold text-sm text-primary">{ i18n.T(lang, "memory.public_toggle_title") }</span>
+					if data.UsePlatformMemory {
+						<span class="badge badge-emerald text-xs">{ i18n.T(lang, "memory.public_active_badge") }</span>
+					} else {
+						<span class="badge badge-slate text-xs">{ i18n.T(lang, "memory.public_disabled_badge") }</span>
+					}
+				</div>
+				<p class="text-xs text-secondary m-0">
+					{ i18n.T(lang, "memory.public_toggle_desc") }
+				</p>
+			</div>
+			<form method="POST" action={ templ.SafeURL(basePath + "/toggle-platform") } class="m-0">
+				if data.UsePlatformMemory {
+					<input type="hidden" name="use_platform_memory" value="false" />
+					<button type="submit" class="btn btn-outline-secondary btn-sm font-bold text-xs" title={ i18n.T(lang, "memory.disable_public_btn") }>
+						{ i18n.T(lang, "memory.disable_public_btn") }
+					</button>
+				} else {
+					<input type="hidden" name="use_platform_memory" value="true" />
+					<button type="submit" class="btn btn-primary btn-sm font-bold text-xs" title={ i18n.T(lang, "memory.enable_public_btn") }>
+						{ i18n.T(lang, "memory.enable_public_btn") }
+					</button>
+				}
+			</form>
+		</div>
+
+		<!-- Stats Grid -->
+		<div class="dashboard-stat-grid cols-3 mb-0">
+			<div class="stat-card-3d">
+				<div class="stat-card-label">{ i18n.T(lang, "memory.stat_total") }</div>
+				<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", data.Total) }</div>
+			</div>
+			<div class="stat-card-3d">
+				<div class="stat-card-label">{ i18n.T(lang, "memory.stat_hits") }</div>
+				<div class="stat-card-value text-brand tabular-nums">
+					{{
+						hitTotal := int64(0)
+						for _, d := range data.Decisions {
+							hitTotal += d.HitCount
+						}
+					}}
+					{ fmt.Sprintf("%d", hitTotal) }
+				</div>
+			</div>
+			<div class="stat-card-3d">
+				<div class="stat-card-label">{ i18n.T(lang, "memory.stat_status") }</div>
+				<div class="text-base font-black mt-1">
+					if data.UsePlatformMemory {
+						<span class="text-success">{ i18n.T(lang, "memory.sharing_active") }</span>
+					} else {
+						<span class="text-muted">{ i18n.T(lang, "memory.org_only") }</span>
+					}
+				</div>
+			</div>
+		</div>
+
+		<!-- Search Bar -->
+		<div class="filter-bar">
+			<form method="GET" action={ templ.SafeURL(basePath) } class="d-flex items-center gap-3 flex-wrap m-0">
+				<div class="flex-1 min-w-260">
+					<input type="text" name="q" value={ data.Search } placeholder={ i18n.T(lang, "memory.search_ph") } class="form-input text-xs w-full" />
+				</div>
+				<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.PerPage) } />
+				<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-4">
+					<span>{ i18n.T(lang, "common.search") }</span>
+				</button>
+				if data.Search != "" {
+					<a href={ templ.SafeURL(basePath) } class="btn btn-secondary btn-sm text-xs">
+						<span>{ i18n.T(lang, "common.cancel") }</span>
+					</a>
+				}
+			</form>
+		</div>
+
+		<!-- Decisions Table -->
+		<div class="glass-panel p-0 mb-0 overflow-hidden">
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th class="text-center">#</th>
+							<th>{ i18n.T(lang, "memory.col_scope") }</th>
+							<th>{ i18n.T(lang, "memory.col_norm_name") }</th>
+							<th>{ i18n.T(lang, "memory.col_approved_product") }</th>
+							<th class="text-center">{ i18n.T(lang, "memory.col_confidence") }</th>
+							<th class="text-center">{ i18n.T(lang, "memory.col_hits") }</th>
+							<th>{ i18n.T(lang, "memory.col_reason") }</th>
+							<th class="text-center">{ i18n.T(lang, "memory.col_last_used") }</th>
+							<th class="col-actions">{ i18n.T(lang, "common.actions") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						if len(data.Decisions) == 0 {
+							<tr>
+								<td colspan="9" class="text-center py-12 text-muted">
+									<div class="text-4xl mb-3">@components.IconSparkles("icon-sm")</div>
+									<div class="font-extrabold text-base text-primary">{ i18n.T(lang, "memory.empty_title") }</div>
+									<div class="text-xs text-secondary mt-1 max-w-md mx-auto">
+										{ i18n.T(lang, "memory.empty_desc") }
+									</div>
+								</td>
+							</tr>
+						}
+						for _, d := range data.Decisions {
+							<tr>
+								<td class="text-center font-bold text-muted text-xs tabular-nums font-mono">
+									{ fmt.Sprintf("%d", d.ID) }
+								</td>
+								<!-- Scope Badge -->
+								<td>
+									if d.IsPlatformInherited {
+										<span class="badge badge-emerald text-xs font-bold" title={ i18n.T(lang, "memory.scope_platform") }>
+											{ i18n.T(lang, "memory.scope_platform") }
+										</span>
+									} else {
+										<span class="badge badge-sky text-xs font-bold" title={ i18n.T(lang, "memory.scope_org") }>
+											{ i18n.T(lang, "memory.scope_org") }
+										</span>
+									}
+								</td>
+								<!-- Raw Norm Name -->
+								<td>
+									<div class="font-extrabold text-xs text-primary">{ d.NormName }</div>
+								</td>
+								<!-- Chosen Product -->
+								<td>
+									if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
+										<div class="font-extrabold text-xs text-brand">
+											if d.ChosenProductName != "" {
+												{ d.ChosenProductName }
+											} else {
+												{ fmt.Sprintf(i18n.T(lang, "memory.catalog_item_prefix"), *d.ChosenProductID) }
+											}
+										</div>
+										<div class="d-flex items-center gap-2 mt-1">
+											<span class="text-xs text-muted font-mono font-bold">#{ fmt.Sprintf("%d", *d.ChosenProductID) }</span>
+											if d.ChosenProductSKU != "" {
+												<span class="badge badge-slate text-xs font-mono">{ fmt.Sprintf(i18n.T(lang, "memory.sku_prefix"), d.ChosenProductSKU) }</span>
+											}
+										</div>
+									} else {
+										<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "memory.no_match") }</span>
+									}
+								</td>
+								<!-- Confidence -->
+								<td class="text-center tabular-nums">
+									if d.Confidence > 0 {
+										<span class="badge badge-emerald text-xs font-bold">{ fmt.Sprintf("%.0f%%", d.Confidence*100) }</span>
+									} else {
+										<span class="text-xs text-muted">0%</span>
+									}
+								</td>
+								<!-- Hit Count -->
+								<td class="text-center tabular-nums font-bold text-xs text-primary">
+									<span class="badge badge-slate text-xs font-bold">{ fmt.Sprintf("%d", d.HitCount) }</span>
+								</td>
+								<!-- Reason -->
+								<td class="text-xs text-secondary">
+									if d.Reason != "" {
+										{ d.Reason }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+								<!-- Last Used At -->
+								<td class="text-center text-xs text-muted tabular-nums">
+									{ d.LastUsedAt.Format("2006-01-02 15:04") }
+								</td>
+								<!-- Actions -->
+								<td class="col-actions">
+									if d.IsPlatformInherited {
+										<span class="text-muted text-2xs italic">{ i18n.T(lang, "memory.readonly") }</span>
+									} else {
+										<div class="d-flex items-center gap-1">
+											<button
+												type="button"
+												class="btn btn-outline-brand btn-xs font-bold"
+												data-id={ fmt.Sprintf("%d", d.ID) }
+												data-norm={ d.NormName }
+												data-base-path={ basePath }
+												data-on-click="orgOpenRelinkModalFromBtn(this)"
+												title={ i18n.T(lang, "memory.relink_tooltip") }
+											>
+												{ i18n.T(lang, "memory.relink_btn") }
+											</button>
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%d/delete", basePath, d.ID)) } @submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "memory.confirm_delete")) } class="m-0">
+												<input type="hidden" name="q" value={ data.Search } />
+												<input type="hidden" name="page" value={ fmt.Sprint(data.Page) } />
+												<input type="hidden" name="limit" value={ fmt.Sprint(data.PerPage) } />
+												<button type="submit" class="btn btn-secondary btn-icon btn-sm text-danger" title={ i18n.T(lang, "memory.delete_tooltip") }>
+													@components.IconX("icon-sm")
+												</button>
+											</form>
+										</div>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage: data.Page,
+				PageSize:    data.PerPage,
+				TotalCount:  data.Total,
+				BaseURL:     basePath,
+				QueryValues: data.QueryValues,
+			})
+		</div>
+
+		@CustomerDecisionRelinkModal(basePath)
+	</div>
+
+	<!-- Clear All Script -->
+	<script nonce={ layouts.Nonce(ctx) } data-decision-memory-base={ basePath } data-confirm-clear={ i18n.T(lang, "memory.confirm_clear") }>
+		function confirmClearMyDecisions() {
+			var holder = document.querySelector('script[data-decision-memory-base]');
+			var msg = holder ? holder.getAttribute('data-confirm-clear') : 'Are you sure?';
+			if (confirm(msg)) {
+				var root = holder ? holder.getAttribute('data-decision-memory-base') : '';
+				if (!root) return;
+				var form = document.createElement('form');
+				form.method = 'POST';
+				form.action = root + '/clear';
+				document.body.appendChild(form);
+				form.submit();
+			}
+		}
+	</script>
+}

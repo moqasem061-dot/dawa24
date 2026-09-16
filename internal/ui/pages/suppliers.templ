@@ -1,0 +1,242 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ SuppliersDirectory(lang, dir string, data SupplierDirectoryData) {
+	@layouts.ShellFor(i18n.T(lang, "suppliers.page_title"), "suppliers", lang, dir, authctx.FromContext(ctx)) {
+		@SuppliersDirectoryContent(lang, dir, data)
+	}
+}
+
+templ SuppliersDirectoryContent(lang, dir string, data SupplierDirectoryData) {
+	<div class="page-container">
+		
+		<!-- Top Banner & Header -->
+		<div class="glass-panel p-6 mb-6 rounded-2xl border shadow-xs">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3 mb-1">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBuilding("icon-sm")
+						</div>
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "suppliers.banner_title") }
+						</h1>
+					</div>
+					<p class="text-sm text-secondary m-0">
+						{ i18n.T(lang, "suppliers.banner_desc") }
+					</p>
+				</div>
+
+				<div class="d-flex items-center gap-2.5 flex-wrap">
+					<span class="badge badge-primary text-xs font-bold tabular-nums px-3 py-1.5">
+						{ fmt.Sprintf(i18n.T(lang, "suppliers.count_badge"), data.TotalCount) }
+					</span>
+					<a href="/suppliers/followed" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+						@components.IconHeart("icon-xs")
+						<span>{ i18n.T(lang, "suppliers.followed_btn") }</span>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Control Toolbar: Search, Filters & View Toggle -->
+		<div class="glass-panel p-4 mb-6 flex-between items-center flex-wrap gap-4 rounded-2xl border shadow-xs">
+			<!-- Search Form -->
+			<form method="GET" action="/suppliers" class="d-flex gap-2 flex-1 m-0">
+				<div class="position-relative flex-1">
+					<input
+						type="text"
+						name="q"
+						value={ data.Query }
+						placeholder={ i18n.T(lang, "suppliers.search_placeholder") }
+						class="form-input text-xs w-full"
+					/>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-3">
+					<span>{ i18n.T(lang, "common.search") }</span>
+				</button>
+				if data.Query != "" {
+					<a href="/suppliers" class="btn btn-secondary btn-sm text-xs">
+						<span>{ i18n.T(lang, "common.cancel") }</span>
+					</a>
+				}
+			</form>
+
+			<!-- View Switcher (List View vs Map View) -->
+			<div class="tabs-nav m-0">
+				<button
+					type="button"
+					id="view-toggle-list"
+					data-on-click="switchSupplierView('list')"
+					class={ "tab-btn", templ.KV("active", data.ActiveTab != "map") }
+				>
+					@components.IconBuilding("icon-xs")
+					<span>{ i18n.T(lang, "suppliers.view_list") }</span>
+				</button>
+				<button
+					type="button"
+					id="view-toggle-map"
+					data-on-click="switchSupplierView('map')"
+					class={ "tab-btn", templ.KV("active", data.ActiveTab == "map") }
+				>
+					@components.IconLocation("icon-xs")
+					<span>{ i18n.T(lang, "suppliers.view_map") }</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- View 1: Responsive Grid Cards View -->
+		<div id="suppliers-list-view" class={ templ.KV("d-none", data.ActiveTab == "map") }>
+			if len(data.Suppliers) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:       i18n.T(lang, "suppliers.empty_search_title"),
+					Message:     i18n.T(lang, "suppliers.empty_search_desc"),
+					ActionLabel: i18n.T(lang, "suppliers.view_all_btn"),
+					ActionURL:   "/suppliers",
+				})
+			} else {
+				<div class="supplier-cards-grid mb-6">
+					for _, s := range data.Suppliers {
+						<div class="glass-panel p-5 rounded-2xl border shadow-xs d-flex flex-col justify-between hover-shadow-md transition-all">
+							<div>
+								<!-- Header Strip: Logo, Name, Verified & Status Badge -->
+								<div class="flex-between items-start mb-3 gap-2">
+									<div class="d-flex items-center gap-2.5 min-w-0">
+										<div class="w-10 h-10 rounded-xl bg-primary-subtle text-primary flex-center flex-shrink-0">
+											@components.IconBuilding("icon-sm")
+										</div>
+										<div class="stack-2xs min-w-0">
+											<h3 class="text-sm font-extrabold text-primary m-0 leading-tight line-clamp-1">
+												<a href={ templ.SafeURL(fmt.Sprintf("/suppliers/%d", s.Org.ID)) } class="text-primary text-decoration-none hover-text-brand">
+													if s.Org.TradeName.Get(i18n.Lang(lang)) != "" {
+														{ s.Org.TradeName.Get(i18n.Lang(lang)) }
+													} else {
+														{ s.Org.LegalName }
+													}
+												</a>
+											</h3>
+											<div class="d-flex items-center gap-1.5 mt-0.5 flex-wrap">
+												<span class="badge badge-sky text-2xs font-bold py-0 px-1">{ OrgTypeLabel(s.Org.Type) }</span>
+												<span class="badge badge-emerald text-2xs font-bold py-0 px-1">{ i18n.T(lang, "suppliers.verified_badge") }</span>
+											</div>
+										</div>
+									</div>
+
+									<!-- Rating pill -->
+									<div class="badge badge-amber text-2xs font-black tabular-nums py-0.5 px-1.5 flex-shrink-0">
+										<span>★</span>
+										<span>{ fmt.Sprintf("%.1f", s.Rating) }</span>
+									</div>
+								</div>
+
+								<!-- Working Hours & Live Open/Closed Status Section -->
+								<div class="p-3 rounded-xl bg-surface-sunken border mb-3 d-flex flex-col gap-1.5 text-xs">
+									<!-- Open / Closed Indicator -->
+									<div class="flex-between items-center flex-wrap gap-1.5">
+										<div class="d-flex items-center gap-1.5">
+											if s.IsOpenNow {
+												<span class="badge badge-emerald text-2xs font-bold py-0 px-1">
+													{ i18n.T(lang, "suppliers.open_now") }
+												</span>
+											} else {
+												<span class="badge badge-slate text-2xs font-bold py-0 px-1">
+													{ i18n.T(lang, "suppliers.closed_now") }
+												</span>
+											}
+											<span class="text-2xs text-secondary font-bold">{ s.StatusNote }</span>
+										</div>
+
+										<span class="badge badge-slate text-2xs py-0 px-1">
+											{ i18n.T(lang, "suppliers.cold_storage") }
+										</span>
+									</div>
+
+									<!-- Working Hours Details -->
+									<div class="d-flex items-center gap-1.5 text-primary text-2xs">
+										<span class="text-muted">{ i18n.T(lang, "suppliers.working_hours_label") }</span>
+										<strong class="tabular-nums font-bold">{ s.WorkingHours }</strong>
+									</div>
+
+									<!-- Coverage Days -->
+									<div class="d-flex items-center gap-1.5 text-secondary text-2xs">
+										<span class="text-muted">{ i18n.T(lang, "suppliers.coverage_days_label") }</span>
+										<span>{ s.CoverageDays }</span>
+									</div>
+
+									<!-- Minimum Order Limit -->
+									<div class="flex-between items-center border-t pt-1.5 mt-0.5 text-2xs">
+										<span class="text-muted">{ i18n.T(lang, "suppliers.min_order_label") }</span>
+										if s.MinOrderPrice.Minor() > 0 {
+											<strong class="tabular-nums font-bold text-primary">{ s.MinOrderPrice.String() } { i18n.T(lang, "common.egp") }</strong>
+										} else {
+											<span class="text-emerald font-bold">{ i18n.T(lang, "suppliers.no_min_order") }</span>
+										}
+									</div>
+								</div>
+							</div>
+
+							<!-- Action Buttons Footer -->
+							<div class="border-t pt-3 d-flex gap-2 items-center">
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/suppliers/%d", s.Org.ID)) }
+									class="btn btn-primary btn-sm flex-1 justify-center font-bold text-xs gap-1 shadow-2xs"
+								>
+									@components.IconPackage("icon-xs")
+									<span>{ i18n.T(lang, "suppliers.view_catalog_btn") }</span>
+								</a>
+								if s.Phone != "" {
+									<a
+										href={ templ.SafeURL("https://wa.me/" + s.Phone) }
+										target="_blank"
+										rel="noopener"
+										class="btn btn-secondary btn-sm btn-icon text-emerald"
+										title={ i18n.T(lang, "suppliers.whatsapp_tooltip") }
+									>
+										@components.IconWhatsApp("icon-xs")
+									</a>
+								}
+							</div>
+						</div>
+					}
+				</div>
+
+				if data.TotalCount > 0 {
+					<div class="glass-panel p-4 mb-6 rounded-2xl border bg-surface-sunken">
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage:     data.Page,
+							PageSize:        data.PageSize,
+							TotalCount:      data.TotalCount,
+							BaseURL:         "/suppliers",
+							QueryValues:     suppliersQueryValues(data),
+							PageSizeOptions: []int{12, 24, 48},
+						})
+					</div>
+				}
+			}
+		</div>
+
+		<!-- View 2: Interactive Map Component -->
+		@SuppliersMap(lang, dir, data)
+
+	</div>
+}
+
+func suppliersQueryValues(data SupplierDirectoryData) url.Values {
+	q := url.Values{}
+	if data.Query != "" {
+		q.Set("q", data.Query)
+	}
+	if data.ActiveTab != "" && data.ActiveTab != "list" {
+		q.Set("view", data.ActiveTab)
+	}
+	return q
+}

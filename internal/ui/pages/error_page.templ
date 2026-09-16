@@ -1,0 +1,21 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ ErrorPage(title, message, retryURL, lang, dir string) {
+	@layouts.Base(title, lang, dir) {
+  <div class="stack-sm">
+			<div class="stack-xs text-sm">
+				@components.ErrorState(components.ErrorStateProps{
+					Title:      title,
+					Message:    message,
+					RetryURL:   retryURL,
+					RetryLabel: "العودة للرئيسية",
+				})
+			</div>
+		</div>
+	}
+}

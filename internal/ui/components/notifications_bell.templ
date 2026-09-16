@@ -1,0 +1,74 @@
+package components
+
+import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+
+// The notifications bell.
+//
+// Both the public header and the dashboard bar render this one component, and
+// it now uses the shared .nav-menu surface rather than the bespoke
+// .notification-panel it used to carry — the account menu, the branch selector
+// and this panel are the same object at three widths.
+//
+// The panel body is fetched on first open rather than with the page: the badge
+// polls a tiny endpoint every 60s, and the list itself is only worth loading if
+// somebody opens it. What renders below is the pre-fetch state, so it has to be
+// a legible empty panel rather than a spinner.
+templ NotificationsBell(lang string) {
+	<div class="nav-pop" x-data="{ open: false }" @click.outside="open = false" @keydown.escape.window="open = false">
+		<button
+			type="button"
+			title={ i18n.T(lang, "notifications.title") }
+			aria-label={ i18n.T(lang, "notifications.title") }
+			:aria-expanded="open ? 'true' : 'false'"
+			@click="open = !open"
+			hx-get="/notifications/dropdown"
+			hx-target="#notif-dropdown-content"
+			hx-trigger="click once"
+			hx-swap="innerHTML"
+			class="nav-btn nav-btn--icon"
+		>
+			@IconBell("icon-sm")
+		</button>
+		<span
+			class="nav-count-slot"
+			hx-get="/notifications/unread-badge"
+			hx-trigger="load, every 60s, notificationRead from:body"
+			hx-swap="innerHTML"
+			hx-target="this"
+		></span>
+		<div
+			class="nav-scrim-mobile"
+			x-show="open"
+			x-cloak
+			x-transition.opacity.duration.200ms
+			@click="open = false"
+			aria-hidden="true"
+		></div>
+		<div
+			class="nav-menu nav-menu--wide"
+			id="notif-dropdown-content"
+			role="menu"
+			x-show="open"
+			x-cloak
+			x-transition.duration.200ms
+		>
+			<div class="nav-menu-head">
+				<span class="nav-menu-eyebrow">{ i18n.T(lang, "notifications.title") }</span>
+				<button
+					type="button"
+					class="nav-menu-close-mobile"
+					@click="open = false"
+					aria-label="إغلاق نافذة الإشعارات"
+				>
+					@IconClose("icon-xs")
+				</button>
+			</div>
+			<div class="nav-notif-empty">
+				<div class="nav-notif-empty-mark">
+					@IconBell("icon-sm")
+				</div>
+				<p class="nav-notif-empty-text">{ i18n.T(lang, "notifications.empty") }</p>
+			</div>
+		</div>
+	</div>
+}

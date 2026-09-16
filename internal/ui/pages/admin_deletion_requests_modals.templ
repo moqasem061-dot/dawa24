@@ -1,0 +1,163 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ orgDeletionModals(req *org.OrganizationDeletionRequest) {
+	<!-- Org Approve Modal -->
+	@components.Modal(components.ModalProps{
+		ID:       fmt.Sprintf("modal-org-approve-%d", req.ID),
+		Title:    "تأكيد الموافقة على حذف المنشأة",
+		Subtitle: fmt.Sprintf("طلب رقم #%d", req.ID),
+		Icon:     "trash",
+		Size:     "md",
+	}) {
+		<div class="alert alert-danger mb-4 text-xs leading-relaxed">
+			<strong>تحذير شديد:</strong> الموافقة على هذا الطلب ستؤدي فوراً إلى:
+			<ul class="list-disc pr-4 mt-1 space-y-1">
+				<li>تغيير حالة المنشأة (<span class="font-bold">{ req.OrgName }</span>) إلى محذوفة نهائياً (deleted) وحجبها من التوفر.</li>
+				<li>تعطيل كافة الفروع التابعة لها ({ fmt.Sprintf("%d فرع", req.BranchesCount) }).</li>
+				<li>إلغاء تفعيل حسابات المنتسبين وإنهاء كافة جلسات الدخول النشطة فوراً.</li>
+				<li>تعطيل كافة المنتجات والعروض الترويجية النشطة للمنشأة.</li>
+			</ul>
+		</div>
+
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests/organizations/%d/approve", req.ID)) } class="m-0">
+			<div class="form-group mb-4">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("org-notes-approve-%d", req.ID) }>
+					ملاحظات الإدارة (اختياري)
+				</label>
+				<textarea
+					id={ fmt.Sprintf("org-notes-approve-%d", req.ID) }
+					name="admin_notes"
+					rows="2"
+					class="form-input text-xs"
+					placeholder="أدخل أي ملاحظات إدارية توثيقية..."
+				></textarea>
+			</div>
+			<div class="d-flex items-center justify-end gap-2">
+				<button type="button" class="btn btn-secondary font-bold" data-modal-close={ fmt.Sprintf("modal-org-approve-%d", req.ID) }>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-danger font-black gap-1">
+					@components.IconTrash("icon-xs")
+					<span>تأكيد الحذف والتعطيل</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Org Reject Modal -->
+	@components.Modal(components.ModalProps{
+		ID:       fmt.Sprintf("modal-org-reject-%d", req.ID),
+		Title:    "رفض طلب حذف المنشأة",
+		Subtitle: "منشأة: " + req.OrgName,
+		Icon:     "x",
+		Size:     "md",
+	}) {
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests/organizations/%d/reject", req.ID)) } class="m-0">
+			<div class="form-group mb-4">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("org-notes-reject-%d", req.ID) }>
+					سبب الرفض وملاحظات الإدارة <span class="text-danger">*</span>
+				</label>
+				<textarea
+					id={ fmt.Sprintf("org-notes-reject-%d", req.ID) }
+					name="admin_notes"
+					rows="3"
+					class="form-input text-xs"
+					placeholder="وضح أسباب رفض طلب الحذف (مثل وجود مستحقات مالية معلقة أو طلبيات قيد التوريد)..."
+					required
+				></textarea>
+			</div>
+			<div class="d-flex items-center justify-end gap-2">
+				<button type="button" class="btn btn-secondary font-bold" data-modal-close={ fmt.Sprintf("modal-org-reject-%d", req.ID) }>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-primary font-black">
+					تأكيد رفض الطلب
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ userDeletionModals(req *identity.AccountDeletionRequest) {
+	<!-- User Approve Modal -->
+	@components.Modal(components.ModalProps{
+		ID:       fmt.Sprintf("modal-user-approve-%d", req.ID),
+		Title:    "تأكيد الموافقة على حذف الحساب",
+		Subtitle: fmt.Sprintf("طلب رقم #%d", req.ID),
+		Icon:     "trash",
+		Size:     "md",
+	}) {
+		<div class="alert alert-danger mb-4 text-xs leading-relaxed">
+			<strong>تحذير:</strong> الموافقة على هذا الطلب ستؤدي فوراً إلى:
+			<ul class="list-disc pr-4 mt-1 space-y-1">
+				<li>تغيير حالة المستخدم (<span class="font-bold">{ req.UserName }</span>) إلى محذوف نهائياً (deleted).</li>
+				<li>إنهاء كافة جلسات تسجيل الدخول النشطة للمستخدم فوراً ومنعه من الدخول.</li>
+			</ul>
+		</div>
+
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests/users/%d/approve", req.ID)) } class="m-0">
+			<div class="form-group mb-4">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("user-notes-approve-%d", req.ID) }>
+					ملاحظات الإدارة (اختياري)
+				</label>
+				<textarea
+					id={ fmt.Sprintf("user-notes-approve-%d", req.ID) }
+					name="admin_notes"
+					rows="2"
+					class="form-input text-xs"
+					placeholder="أدخل أي ملاحظات إدارية توثيقية..."
+				></textarea>
+			</div>
+			<div class="d-flex items-center justify-end gap-2">
+				<button type="button" class="btn btn-secondary font-bold" data-modal-close={ fmt.Sprintf("modal-user-approve-%d", req.ID) }>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-danger font-black gap-1">
+					@components.IconTrash("icon-xs")
+					<span>تأكيد الحذف والتعطيل</span>
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- User Reject Modal -->
+	@components.Modal(components.ModalProps{
+		ID:       fmt.Sprintf("modal-user-reject-%d", req.ID),
+		Title:    "رفض طلب حذف الحساب",
+		Subtitle: "مستخدم: " + req.UserName,
+		Icon:     "x",
+		Size:     "md",
+	}) {
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests/users/%d/reject", req.ID)) } class="m-0">
+			<div class="form-group mb-4">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("user-notes-reject-%d", req.ID) }>
+					سبب الرفض وملاحظات الإدارة <span class="text-danger">*</span>
+				</label>
+				<textarea
+					id={ fmt.Sprintf("user-notes-reject-%d", req.ID) }
+					name="admin_notes"
+					rows="3"
+					class="form-input text-xs"
+					placeholder="وضح أسباب رفض طلب حذف الحساب..."
+					required
+				></textarea>
+			</div>
+			<div class="d-flex items-center justify-end gap-2">
+				<button type="button" class="btn btn-secondary font-bold" data-modal-close={ fmt.Sprintf("modal-user-reject-%d", req.ID) }>
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-primary font-black">
+					تأكيد رفض الطلب
+				</button>
+			</div>
+		</form>
+	}
+}

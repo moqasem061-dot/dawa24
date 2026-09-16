@@ -1,0 +1,341 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// Every organisation's warehouses, from the platform's side.
+//
+// The screen listed them all at once with no filter and no pager, resolved the
+// owning organisation through a five-hundred-row lookup map, and offered no way
+// to act on one: an administrator could see a warehouse and do nothing about
+// it. The client asked for the same create, edit and enable/disable the vendor
+// has, in the admin shell.
+
+// AdminWarehousesData is the listing's view model.
+type AdminWarehousesData struct {
+	Rows   []*inventory.AdminWarehouseRow
+	Owners []inventory.AdminWarehouseOwner
+
+	Total   int
+	Page    int
+	PerPage int
+
+	SearchQuery    string
+	OrganizationID int64
+	ActiveFilter   string // "", "1", "0"
+}
+
+// QueryValues carries the active filters into the pager and the action forms,
+// so an action returns to the page the operator was reading.
+func (d AdminWarehousesData) QueryValues() url.Values {
+	v := url.Values{}
+	if d.SearchQuery != "" {
+		v.Set("q", d.SearchQuery)
+	}
+	if d.OrganizationID > 0 {
+		v.Set("org_id", strconv.FormatInt(d.OrganizationID, 10))
+	}
+	if d.ActiveFilter != "" {
+		v.Set("active", d.ActiveFilter)
+	}
+	return v
+}
+
+templ AdminWarehousesPage(data AdminWarehousesData, lang, dir string) {
+	@layouts.AdminShell(i18n.T(lang, "admin.wh.title"), "warehouses", lang, dir) {
+		<div class="d-flex flex-col gap-6 w-full">
+			<div class="glass-panel mb-0 bg-surface-raised border rounded-2xl p-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-4">
+						<div class="w-12 h-12 rounded-2xl bg-accent-subtle text-accent flex-center text-2xl shrink-0">
+							@components.IconBuilding("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-xl font-black text-primary m-0">{ i18n.T(lang, "admin.wh.title") }</h1>
+							<p class="text-sm text-secondary m-0 mt-1">{ i18n.T(lang, "admin.wh.subtitle") }</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-sky font-bold text-sm px-3.5 py-1.5">
+							{ fmt.Sprintf(i18n.T(lang, "admin.wh.total_badge"), data.Total) }
+						</span>
+						<button type="button" class="btn btn-primary btn-sm font-bold" data-modal-open="admin-warehouse-create-modal">
+							{ i18n.T(lang, "admin.wh.create") }
+						</button>
+					</div>
+				</div>
+				@adminWarehouseFilters(data, lang)
+			</div>
+			<div class="glass-panel mb-0 border rounded-2xl p-0 overflow-hidden bg-surface-raised">
+				if len(data.Rows) == 0 {
+					@components.EmptyState(components.EmptyStateProps{
+						Title:   i18n.T(lang, "admin.wh.empty_title"),
+						Message: i18n.T(lang, "admin.wh.empty_body"),
+					})
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
+							<thead>
+								<tr>
+									<th class="text-start ps-4">{ i18n.T(lang, "admin.wh.col_name") }</th>
+									<th class="text-start">{ i18n.T(lang, "admin.wh.col_owner") }</th>
+									<th class="text-start">{ i18n.T(lang, "admin.wh.col_branch") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.wh.col_items") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.wh.col_qty") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.wh.col_last_movement") }</th>
+									<th class="text-center">{ i18n.T(lang, "admin.wh.col_status") }</th>
+									<th class="text-center pe-4">{ i18n.T(lang, "common.actions") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, row := range data.Rows {
+									@adminWarehouseRow(row, data, lang)
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.Total > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.Total,
+							BaseURL:     "/admin/warehouses",
+							QueryValues: data.QueryValues(),
+						})
+					}
+				}
+			</div>
+			@adminWarehouseCreateModal(data, lang)
+			for _, row := range data.Rows {
+				@adminWarehouseEditModal(row, data, lang)
+			}
+		</div>
+	}
+}
+
+templ adminWarehouseRow(row *inventory.AdminWarehouseRow, data AdminWarehousesData, lang string) {
+	<tr>
+		<td class="ps-4">
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/warehouses/%d", row.ID)) }
+				class="font-extrabold text-primary"
+			>{ row.Name }</a>
+			if row.Code != "" {
+				<div class="text-2xs text-muted" dir="ltr"><code>{ row.Code }</code></div>
+			}
+		</td>
+		<td>
+			<a
+				href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", row.OrganizationID)) }
+				class="font-bold text-primary"
+			>{ row.OrganizationName }</a>
+			if row.OrganizationType != "" {
+				<div><span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "org.type."+row.OrganizationType) }</span></div>
+			}
+		</td>
+		<td>
+			if row.BranchName != "" {
+				{ row.BranchName }
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", row.ItemCount) }</td>
+		<td class="text-center tabular-nums font-bold text-primary">{ fmt.Sprintf("%d", row.TotalQuantity) }</td>
+		<td class="text-center tabular-nums text-secondary">
+			if row.LastMovement != nil {
+				{ row.LastMovement.Format("2006-01-02") }
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td class="text-center">
+			if row.IsActive {
+				<span class="badge badge-emerald font-bold text-2xs">{ i18n.T(lang, "admin.wh.active") }</span>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.wh.inactive") }</span>
+			}
+		</td>
+		<td class="text-center pe-4">
+			<div class="d-flex gap-1 justify-center">
+				<button
+					type="button"
+					class="btn btn-secondary btn-xs font-bold"
+					data-modal-open={ fmt.Sprintf("admin-warehouse-edit-%d", row.ID) }
+				>{ i18n.T(lang, "common.edit") }</button>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/warehouses/%d/toggle?%s", row.ID, data.QueryValues().Encode())) } class="m-0">
+					<input type="hidden" name="active" value={ boolParam(!row.IsActive) }/>
+					if row.IsActive {
+						<button
+							type="submit"
+							class="btn btn-ghost btn-xs text-muted"
+							if row.HoldsStock() {
+								title={ i18n.T(lang, "admin.wh.disable_holds_stock") }
+							}
+						>{ i18n.T(lang, "admin.wh.disable") }</button>
+					} else {
+						<button type="submit" class="btn btn-secondary btn-xs font-bold text-emerald">
+							{ i18n.T(lang, "admin.wh.enable") }
+						</button>
+					}
+				</form>
+			</div>
+		</td>
+	</tr>
+}
+
+templ adminWarehouseFilters(data AdminWarehousesData, lang string) {
+	<form method="GET" action="/admin/warehouses" class="d-flex gap-2 items-end flex-wrap mt-6 pt-4 border-t">
+		<div class="flex-1 min-w-64 stack-xs">
+			<label class="form-label text-2xs">{ i18n.T(lang, "admin.wh.filter_search") }</label>
+			<input
+				type="search"
+				name="q"
+				value={ data.SearchQuery }
+				class="form-input form-input-sm w-full"
+				placeholder={ i18n.T(lang, "admin.wh.filter_search_ph") }
+			/>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-2xs">{ i18n.T(lang, "admin.wh.col_owner") }</label>
+			<select name="org_id" class="form-select form-select-sm">
+				<option value="">{ i18n.T(lang, "common.all") }</option>
+				for _, o := range data.Owners {
+					<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.OrganizationID == o.ID }>
+						{ fmt.Sprintf("%s (%d)", o.Name, o.Count) }
+					</option>
+				}
+			</select>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-2xs">{ i18n.T(lang, "admin.wh.col_status") }</label>
+			<select name="active" class="form-select form-select-sm">
+				<option value="">{ i18n.T(lang, "common.all") }</option>
+				<option value="1" selected?={ data.ActiveFilter == "1" }>{ i18n.T(lang, "admin.wh.active") }</option>
+				<option value="0" selected?={ data.ActiveFilter == "0" }>{ i18n.T(lang, "admin.wh.inactive") }</option>
+			</select>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-2xs">{ i18n.T(lang, "common.rows_per_page") }</label>
+			<select name="limit" class="form-select form-select-sm">
+				for _, n := range []int{10, 25, 50, 100} {
+					<option value={ fmt.Sprintf("%d", n) } selected?={ data.PerPage == n }>{ fmt.Sprintf("%d", n) }</option>
+				}
+			</select>
+		</div>
+		<div class="d-flex gap-2">
+			<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "common.apply_filters") }</button>
+			<a href="/admin/warehouses" class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "common.reset") }</a>
+		</div>
+	</form>
+}
+
+templ adminWarehouseCreateModal(data AdminWarehousesData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "admin-warehouse-create-modal",
+		Title: i18n.T(lang, "admin.wh.create"),
+		Size:  "md",
+	}) {
+		<form method="POST" action={ templ.SafeURL("/admin/warehouses/new?" + data.QueryValues().Encode()) } class="stack-md">
+			<div class="stack-xs">
+				<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.col_owner") } <span class="text-danger">*</span></label>
+				<select name="organization_id" required class="form-select w-full">
+					<option value="">—</option>
+					for _, o := range data.Owners {
+						<option value={ fmt.Sprintf("%d", o.ID) }>{ o.Name }</option>
+					}
+				</select>
+			</div>
+			@adminWarehouseFormFields(nil, lang)
+			<div class="modal-footer">
+				<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "common.save") }</button>
+			</div>
+		</form>
+	}
+}
+
+templ adminWarehouseEditModal(row *inventory.AdminWarehouseRow, data AdminWarehousesData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    fmt.Sprintf("admin-warehouse-edit-%d", row.ID),
+		Title: fmt.Sprintf("%s — %s", i18n.T(lang, "common.edit"), row.Name),
+		Size:  "md",
+	}) {
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/admin/warehouses/%d/edit?%s", row.ID, data.QueryValues().Encode())) }
+			class="stack-md"
+		>
+			@adminWarehouseFormFields(row, lang)
+			<div class="modal-footer">
+				<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "common.save") }</button>
+			</div>
+		</form>
+	}
+}
+
+// adminWarehouseFormFields is shared by create and edit so the two cannot drift
+// into asking for different things.
+templ adminWarehouseFormFields(row *inventory.AdminWarehouseRow, lang string) {
+	<div class="grid-2 gap-3">
+		<div class="stack-xs">
+			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.col_name") } <span class="text-danger">*</span></label>
+			<input type="text" name="name" required value={ warehouseField(row, "name") } class="form-input w-full"/>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_code") }</label>
+			<input type="text" name="code" value={ warehouseField(row, "code") } class="form-input w-full"/>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_phone") }</label>
+			<input type="text" name="phone" value={ warehouseField(row, "phone") } class="form-input w-full"/>
+		</div>
+		<div class="stack-xs">
+			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_address") }</label>
+			<input type="text" name="address" value={ warehouseField(row, "address") } class="form-input w-full"/>
+		</div>
+	</div>
+	<label class="d-flex items-center gap-2 text-xs font-bold">
+		<input
+			type="checkbox"
+			name="is_active"
+			value="1"
+			checked?={ row == nil || row.IsActive }
+			class="form-checkbox"
+		/>
+		<span>{ i18n.T(lang, "admin.wh.active") }</span>
+	</label>
+}
+
+// warehouseField reads one field off a row that may be nil, because the create
+// and edit forms share their body.
+func warehouseField(row *inventory.AdminWarehouseRow, field string) string {
+	if row == nil {
+		return ""
+	}
+	switch field {
+	case "name":
+		return row.Name
+	case "code":
+		return row.Code
+	case "phone":
+		return row.Phone
+	case "address":
+		return row.Address
+	}
+	return ""
+}
+
+func boolParam(v bool) string {
+	if v {
+		return "1"
+	}
+	return "0"
+}

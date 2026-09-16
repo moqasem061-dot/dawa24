@@ -1,0 +1,243 @@
+package pages
+
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// مقارنة قائمتي مع عروض السوق العامة.
+//
+// The screen is a table of the caller's own rows, each carrying how many market
+// offers beat it, match it and lose to it. The counts are the point: an average
+// market discount tells a supplier nothing about whether one outlier or forty
+// houses are undercutting them, and the previous version of this page showed
+// only an average — over a market of a hundred rows.
+templ CompareMarketBenchmarkContent(data MarketBenchmarkPageData) {
+	<div class="page-container">
+		<!-- Admin Target Organization Banner -->
+		if data.IsAdmin {
+			<div class="mb-5 p-4 bg-purple-500/10 border border-purple-500/30 rounded-2xl flex items-center justify-between gap-4 flex-wrap">
+				<div class="d-flex items-center gap-3">
+					<div class="w-10 h-10 rounded-xl bg-purple-600/15 text-purple-700 dark:text-purple-300 d-flex items-center justify-center border border-purple-500/30">
+						@components.IconBuilding("icon-sm")
+					</div>
+					<div>
+						<div class="text-sm font-black text-purple-950 dark:text-purple-100">
+							مقارنة عروض السوق للمنشأة: <span class="underline decoration-purple-500 font-extrabold">{ data.TargetOrgName }</span>
+						</div>
+						<p class="text-2xs text-secondary m-0 mt-0.5 font-medium">
+							مقارنة أسعار كشوف المنشأة مع كافة العروض المتوفرة في السوق المركزي.
+						</p>
+					</div>
+				</div>
+				<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary btn-sm font-bold text-xs gap-1.5 shadow-2xs">
+					@components.IconArrowRight("icon-xs")
+					<span>العودة لمركز ملفات المنشأة</span>
+				</a>
+			</div>
+		}
+
+		@benchmarkHeader(data)
+		@benchmarkControls(data)
+		if data.Failed {
+			<div class="alert alert-danger mb-6">
+				<span class="fw-800">تعذّر تشغيل المقارنة</span>
+				<span class="text-sm">حدث خطأ أثناء قراءة عروض السوق. أعد المحاولة، وإذا تكرر الخطأ راجع سجلات النظام.</span>
+			</div>
+		} else if len(data.Files) == 0 {
+			<div class="glass-panel p-6 mb-6 text-sm text-muted">
+				لا توجد قوائم مرفوعة لهذه المنشأة بعد. ارفع قائمة من <a href={ templ.SafeURL(data.FileCenterURL()) } class="text-accent fw-800">مركز الملفات</a> ثم عد إلى هنا.
+			</div>
+		} else if data.Result == nil {
+			<div class="glass-panel p-6 mb-6 text-sm text-muted">
+				اختر إحدى قوائمك من القائمة أعلاه لبدء المقارنة مع السوق.
+			</div>
+		} else {
+			@benchmarkSummary(data.Result)
+			@benchmarkTabs(data)
+			@benchmarkTable(data)
+			@benchmarkCoverage(data.Result)
+		}
+		<!-- Where the offers modal is swapped in. Empty until a count is clicked. -->
+		<div id="benchmark-offers-modal"></div>
+	</div>
+}
+
+templ benchmarkHeader(data MarketBenchmarkPageData) {
+	<div class="glass-panel p-6 mb-6">
+		<div class="flex-between flex-wrap gap-4">
+			<div class="stack-sm">
+				<div class="d-flex items-center gap-3 mb-1">
+					<div class="user-avatar-badge text-xl">
+						@components.IconChart("icon-sm")
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0">مقارنة قائمتي مع عروض السوق العامة</h1>
+				</div>
+				<p class="text-sm text-secondary m-0">
+					كل صنف في قائمتك مقابل عروض بقية الموردين على المنصة: كم عرضاً أفضل منك، وكم مماثل، وكم أقل.
+				</p>
+			</div>
+			<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary font-bold gap-2">
+				@components.IconArrowLeft("icon-xs")
+				<span>مركز الملفات</span>
+			</a>
+		</div>
+		<div class="tabs-nav mt-4">
+			<a href={ templ.SafeURL(data.SubtabURL("/compare/results")) } class="tab-btn">المقارنة المجمعة بين الموردين</a>
+			<a href={ templ.SafeURL(data.SubtabURL("/compare/head-to-head")) } class="tab-btn">مقارنة مورد بمورد</a>
+			<a href={ templ.SafeURL(data.SubtabURL("/compare/market-benchmark")) } class="tab-btn active">مقارنة مع موردي السوق</a>
+			<a href={ templ.SafeURL(data.SubtabURL("/compare/market-intelligence")) } class="tab-btn">تقرير ذكاء السوق</a>
+		</div>
+	</div>
+}
+
+// benchmarkControls is one row: which list, what to find in it, and how to
+// order it. The five range inputs that used to sit beside those — a six-cell
+// grid of labelled boxes taking half the screen before a single result — are
+// behind a disclosure now, because a range is something you reach for
+// occasionally and a search is something you reach for every time.
+templ benchmarkControls(data MarketBenchmarkPageData) {
+	<div
+		class="filter-bar bench-controls"
+		x-data={ fmt.Sprintf("{ ranges: %t }", data.MinPrice != "" || data.MaxPrice != "" || data.MinDiscount != "" || data.MaxDiscount != "") }
+	>
+		<form method="GET" action="/compare/market-benchmark" class="bench-controls-form">
+			if data.IsAdmin && data.TargetOrgID > 0 {
+				<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
+			}
+			<input type="hidden" name="tab" value={ data.ActiveTab }/>
+			<input type="hidden" name="limit" value={ strconv.Itoa(data.Limit) }/>
+
+			<div class="bench-controls-row">
+				<label class="bench-field">
+					<span class="bench-field-label">قائمتي</span>
+					<select name="file" class="form-select" data-autosubmit>
+						for _, f := range data.Files {
+							<option value={ fmt.Sprintf("%d", f.ID) } selected?={ f.ID == data.FileID }>
+								{ f.SupplierName } ({ fmt.Sprintf("%d صنف", f.RowCount) })
+							</option>
+						}
+					</select>
+				</label>
+
+				<label class="bench-field is-grow">
+					<span class="bench-field-label">بحث</span>
+					<input type="search" name="q" value={ data.Query } placeholder="اسم الصنف أو الكود…" class="form-input"/>
+				</label>
+
+				<label class="bench-field">
+					<span class="bench-field-label">الترتيب</span>
+					<select name="sort" class="form-select" data-autosubmit>
+						<option value="" selected?={ data.Sort == "" || data.Sort == "gap_desc" }>الأكبر فارقاً (فرصة التوفير)</option>
+						<option value="gap_asc" selected?={ data.Sort == "gap_asc" }>الأقل فارقاً</option>
+						<option value="price_asc" selected?={ data.Sort == "price_asc" || data.Sort == "price" }>السعر النهائي (الأقل أولاً)</option>
+						<option value="price_desc" selected?={ data.Sort == "price_desc" }>السعر النهائي (الأعلى أولاً)</option>
+						<option value="discount_desc" selected?={ data.Sort == "discount_desc" || data.Sort == "discount" }>أعلى نسبة خصم</option>
+						<option value="discount_asc" selected?={ data.Sort == "discount_asc" }>أقل نسبة خصم</option>
+						<option value="better_offers_desc" selected?={ data.Sort == "better_offers_desc" }>الأكثر عروض منافسة بالسوق</option>
+						<option value="suppliers_desc" selected?={ data.Sort == "suppliers_desc" }>الأكثر توفراً بالسوق</option>
+						<option value="name_asc" selected?={ data.Sort == "name_asc" }>اسم الصنف (أ - ي)</option>
+					</select>
+				</label>
+
+				<button type="submit" class="btn btn-primary btn-sm font-bold">تطبيق</button>
+				<button type="button" @click="ranges = !ranges" class="btn btn-secondary btn-sm font-bold" :class="{ 'active': ranges }">
+					نطاق متقدم
+				</button>
+				if data.Query != "" || data.MinPrice != "" || data.MaxPrice != "" || data.MinDiscount != "" || data.MaxDiscount != "" {
+					<a href={ templ.SafeURL(data.ClearURL()) } class="btn btn-ghost btn-sm">مسح</a>
+				}
+			</div>
+
+			<div x-show="ranges" x-cloak x-transition.opacity class="bench-ranges">
+				<div class="bench-range">
+					<span class="bench-field-label">السعر النهائي (ج.م)</span>
+					<div class="bench-range-pair">
+						<input type="number" step="0.01" min="0" name="min_price" value={ data.MinPrice } placeholder="من" class="form-input"/>
+						<span class="bench-range-dash">—</span>
+						<input type="number" step="0.01" min="0" name="max_price" value={ data.MaxPrice } placeholder="إلى" class="form-input"/>
+					</div>
+				</div>
+				<div class="bench-range">
+					<span class="bench-field-label">الخصم (%)</span>
+					<div class="bench-range-pair">
+						<input type="number" step="0.1" min="0" name="min_discount" value={ data.MinDiscount } placeholder="من" class="form-input"/>
+						<span class="bench-range-dash">—</span>
+						<input type="number" step="0.1" min="0" name="max_discount" value={ data.MaxDiscount } placeholder="إلى" class="form-input"/>
+					</div>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm font-bold">تطبيق النطاق</button>
+			</div>
+		</form>
+	</div>
+}
+
+templ benchmarkSummary(res *compare.BenchmarkResult) {
+	<div class="dashboard-stat-grid mb-6">
+		<div class="stat-card-3d">
+			<div class="stat-card-label">أصناف قائمتك</div>
+			<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", res.Total) }</div>
+			<span class="text-xs text-secondary mt-1 d-block">{ res.SupplierName }</span>
+		</div>
+		<div class="stat-card-3d">
+			<div class="stat-card-label text-danger">أسعارك أعلى من السوق</div>
+			<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", res.HigherCount) }</div>
+			<span class="text-xs text-secondary mt-1 d-block">فرص توفير لعملائك</span>
+		</div>
+		<div class="stat-card-3d">
+			<div class="stat-card-label text-success">أنت الأفضل بالسوق</div>
+			<div class="stat-card-value text-success tabular-nums">{ fmt.Sprintf("%d", res.BetterCount) }</div>
+			<span class="text-xs text-secondary mt-1 d-block">
+				{ fmt.Sprintf("و%d صنفاً مماثل للسوق", res.EqualCount) }
+			</span>
+		</div>
+		<div class="stat-card-3d">
+			<div class="stat-card-label text-brand">فارقك التنافسي</div>
+			<div class="stat-card-value text-brand tabular-nums">{ res.PotentialBuyerSaving.String() }</div>
+			<span class="text-xs text-secondary mt-1 d-block">
+				{ fmt.Sprintf("متوسط خصمك %.1f%% مقابل %.1f%% للسوق", res.AvgYourDiscount, res.AvgMarketDiscount) }
+			</span>
+		</div>
+	</div>
+}
+
+templ benchmarkTabs(data MarketBenchmarkPageData) {
+	<div class="tabs-nav mb-4">
+		<a href={ templ.SafeURL(benchmarkURL(data, "all", data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, "all") }>
+			الكل ({ fmt.Sprintf("%d", data.Result.Total) })
+		</a>
+		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchHigher, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchHigher) }>
+			أسعارك أعلى من السوق ({ fmt.Sprintf("%d", data.Result.HigherCount) })
+		</a>
+		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchEqual, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchEqual) }>
+			مماثل للسوق ({ fmt.Sprintf("%d", data.Result.EqualCount) })
+		</a>
+		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchBetter, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchBetter) }>
+			خصمك أفضل من السوق ({ fmt.Sprintf("%d", data.Result.BetterCount) })
+		</a>
+		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchExclusive, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchExclusive) }>
+			حصري ({ fmt.Sprintf("%d", data.Result.ExclusiveCount) })
+		</a>
+	</div>
+}
+
+templ CompareMarketBenchmarkPage(lang, dir string, data MarketBenchmarkPageData) {
+	if data.IsAdmin {
+		@layouts.AdminShell("مقارنة مع موردي السوق | Dawa24", "org_imports", lang, dir) {
+			@CompareMarketBenchmarkContent(data)
+		}
+	} else if data.IsCustomer {
+		@layouts.ShellFor("مقارنة مع موردي السوق | Dawa24", "compare", lang, dir, authctx.FromContext(ctx)) {
+			@CompareMarketBenchmarkContent(data)
+		}
+	} else {
+		@layouts.VendorShell("مقارنة مع موردي السوق | Dawa24", "compare", lang, dir) {
+			@CompareMarketBenchmarkContent(data)
+		}
+	}
+}

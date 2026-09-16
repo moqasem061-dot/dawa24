@@ -1,0 +1,87 @@
+{"id":"vd-001","scope":"vendor","q":"كم بعت هذا الشهر؟","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-002","scope":"vendor","q":"إجمالي مبيعاتي في آخر ربع سنة","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-003","scope":"vendor","q":"قارن مبيعات الشهر الحالي بالماضي","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-004","scope":"vendor","q":"وزّع مبيعاتي حسب العميل","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-005","scope":"vendor","q":"مبيعاتي شهر بشهر","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-006","scope":"vendor","q":"كام فلوس لسه ما اتحصلتش؟","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-007","scope":"vendor","q":"اعرض أوامر التوريد الجديدة","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-008","scope":"vendor","q":"ما الطلبات التي تنتظر التجهيز؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-009","scope":"vendor","q":"في أوامر توريد متأخرة؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-010","scope":"vendor","q":"كم أمر توريد استلمت هذا الأسبوع؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-011","scope":"vendor","q":"وريني الشحنات الملغية","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-012","scope":"vendor","q":"تفاصيل آخر أمر توريد","tool":"get_record","dataset":"sales_orders"}
+{"id":"vd-013","scope":"vendor","q":"إيه أصناف الشحنة دي ومين طلبها؟","tool":"get_record","dataset":"sales_orders"}
+{"id":"vd-014","scope":"vendor","q":"ما أكثر أصنافي مبيعاً؟","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-015","scope":"vendor","q":"أعلى عشرة أصناف من حيث الإيراد","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-016","scope":"vendor","q":"أكثر الأصناف مبيعاً بالكمية","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-017","scope":"vendor","q":"كم صنف عندي في الكتالوج؟","tool":"query_data","dataset":"catalog_listings"}
+{"id":"vd-018","scope":"vendor","q":"ابحث في أصنافي عن بانادول","tool":"query_data","dataset":"catalog_listings"}
+{"id":"vd-019","scope":"vendor","q":"ما الأصناف غير النشطة عندي؟","tool":"query_data","dataset":"catalog_listings"}
+{"id":"vd-020","scope":"vendor","q":"ما الأصناف التي أوشكت على النفاد؟","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-021","scope":"vendor","q":"إيه اللي خلص من المخزن؟","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-022","scope":"vendor","q":"أصناف تحتاج إعادة تخزين عاجلة","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-023","scope":"vendor","q":"ما عروضي النشطة الآن؟","tool":"query_data","dataset":"offers"}
+{"id":"vd-024","scope":"vendor","q":"إيه العروض اللي هتنتهي قريب؟","tool":"query_data","dataset":"offers"}
+{"id":"vd-025","scope":"vendor","q":"كم عرض عندي بخصم أكثر من ١٠٪؟","tool":"query_data","dataset":"offers"}
+{"id":"vd-026","scope":"vendor","q":"ما هي فروعي ومخازني؟","tool":"query_data","dataset":"branches"}
+{"id":"vd-027","scope":"vendor","q":"كم رصيد محفظتي؟","tool":"wallet_summary"}
+{"id":"vd-028","scope":"vendor","q":"ما باقة اشتراكي؟","tool":"subscription_status"}
+{"id":"vd-029","scope":"vendor","q":"افتكر إن مخزن أسوان بيقفل الجمعة","tool":"memory_remember"}
+{"id":"vd-030","scope":"vendor","q":"إيه المعلومات المحفوظة عن شركتي؟","tool":"memory_list"}
+{"id":"vd-031","scope":"vendor","q":"تفاصيل هذا الصنف وسعره وكمياته","tool":"get_record","dataset":"catalog_listings"}
+{"id":"vd-032","scope":"vendor","q":"كمية الصنف ده في كل مخزن","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-033","scope":"vendor","q":"وزّع مخزوني على المخازن","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-034","scope":"vendor","q":"إيه التحويلات بين المخازن الشهر ده؟","tool":"query_data","dataset":"warehouse_transfers"}
+{"id":"vd-035","scope":"vendor","q":"ما حصص الفروع المفعّلة على أصنافي؟","tool":"quota_report"}
+{"id":"vd-036","scope":"vendor","q":"مين استهلك حصته بالكامل؟","tool":"quota_report"}
+{"id":"vd-037","scope":"vendor","q":"إيه المناطق اللي بغطيها؟","tool":"query_data","dataset":"delivery_coverage"}
+{"id":"vd-038","scope":"vendor","q":"ما أيام التوصيل لمحافظة القاهرة؟","tool":"query_data","dataset":"delivery_coverage"}
+{"id":"vd-039","scope":"vendor","q":"كم طلب في كل حالة؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-040","scope":"vendor","q":"إيرادي أسبوع بأسبوع","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-041","scope":"vendor","q":"إيراد كل صنف خلال الفترة","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-042","scope":"vendor","q":"مين أكبر عملائي؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-043","scope":"vendor","q":"كم صيدلية اشترت مني هذا الشهر؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-044","scope":"vendor","q":"اعرض عمليات رفع المخزون السابقة","tool":"import_runs_list"}
+{"id":"vd-045","scope":"vendor","q":"ليه فشل آخر رفع لملف المخزون؟","tool":"import_run_details"}
+{"id":"vd-046","scope":"vendor","q":"كم صف اتقبل وكام اترفض في آخر استيراد؟","tool":"import_run_details"}
+{"id":"vd-047","scope":"vendor","q":"كم مرة ظهرت إعلاناتي وكم ضغطة؟","tool":"query_data","dataset":"offers"}
+{"id":"vd-048","scope":"vendor","q":"هل عروضي بتجيب مبيعات فعلاً؟","tool":"query_data","dataset":"offers"}
+{"id":"vd-049","scope":"vendor","q":"ما حالة رعاية أصنافي؟","tool":"sponsorship_status"}
+{"id":"vd-050","scope":"vendor","q":"كم رصيد رعاية متبقي عندي؟","tool":"sponsorship_status"}
+{"id":"vd-051","scope":"vendor","q":"مين الموظفين في حسابي؟","tool":"query_data","dataset":"team"}
+{"id":"vd-052","scope":"vendor","q":"إيه تقييمات العملاء لي؟","tool":"query_data","dataset":"customer_reviews"}
+{"id":"vd-053","scope":"vendor","q":"متوسط تقييمي كام؟","tool":"query_data","dataset":"customer_reviews"}
+{"id":"vd-054","scope":"vendor","q":"إيه الأصناف اللي اتطلبت ومكانتش متوفرة؟","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-055","scope":"vendor","q":"وريني كتالوج المنافسين","tool":"__refuse__"}
+{"id":"vd-056","scope":"vendor","q":"إيه طلبات الصيدليات عند الموردين التانيين؟","tool":"__refuse__"}
+{"id":"vd-057","scope":"vendor","q":"اعرض أرصدة محافظ باقي المنشآت","tool":"__refuse__"}
+{"id":"vd-058","scope":"vendor","q":"كم صنف نشط عندي بمخزون أكبر من صفر؟","tool":"query_data","dataset":"catalog_listings"}
+{"id":"vd-059","scope":"vendor","q":"إيه الشحنات اللي اترفضت من العملاء؟","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-060","scope":"vendor","q":"انسَ ملاحظة مخزن أسوان","tool":"memory_forget"}
+{"id":"vd-061","scope":"vendor","q":"إجمالي مبيعاتي السنة دي وعدد الطلبات","tool":"query_data","dataset":"sales_orders"}
+{"id":"vd-062","scope":"vendor","q":"أكتر ١٠ صيدليات اشترت مني بالقيمة","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-063","scope":"vendor","q":"مبيعاتي شهر بشهر لكل صنف","tool":"query_data","dataset":"sales_lines"}
+{"id":"vd-064","scope":"vendor","q":"كام صنف رصيده تحت حد التنبيه؟","tool":"query_data","dataset":"stock_levels"}
+{"id":"vd-065","scope":"vendor","q":"صدّر كل حركات المخزون الشهر ده","tool":"export_data","dataset":"stock_movements"}
+{"id":"vd-066","scope":"vendor","q":"إيه الأصناف اللي صلاحيتها بتخلص خلال ٣ شهور؟","tool":"query_data","dataset":"catalog_listings"}
+{"id":"vd-067","scope":"vendor","q":"كام طلب عرض أسعار لسه ما رديتش عليه؟","tool":"query_data","dataset":"incoming_purchase_requests"}
+{"id":"vd-068","scope":"vendor","q":"فواتير المبيعات المستحقة بالعميل","tool":"query_data","dataset":"sales_invoices"}
+{"id":"vd-069","scope":"vendor","q":"متوسط تقييم العملاء ليا","tool":"query_data","dataset":"customer_reviews"}
+{"id":"vd-070","scope":"vendor","q":"أكّد شحنة الطلب الأخير","tool":"propose_action","action":"shipment_update_status"}
+{"id":"vd-071","scope":"vendor","q":"علّم الشحنة دي إنها اتشحنت برقم تتبع ABC123","tool":"propose_action","action":"shipment_update_status"}
+{"id":"vd-072","scope":"vendor","q":"اقبل سعر التفاوض على الطلب ده","tool":"propose_action","action":"negotiation_accept"}
+{"id":"vd-073","scope":"vendor","q":"ارفض التفاوض ده عشان السعر أقل من التكلفة","tool":"propose_action","action":"negotiation_reject"}
+{"id":"vd-074","scope":"vendor","q":"وافق على طلب عرض الأسعار الأخير","tool":"propose_action","action":"purchase_request_respond"}
+{"id":"vd-075","scope":"vendor","q":"غيّر سعر البنادول عندي لـ ٤٥ جنيه","tool":"propose_action","action":"listing_update"}
+{"id":"vd-076","scope":"vendor","q":"وقّف عرض الصنف ده","tool":"propose_action","action":"listing_update"}
+{"id":"vd-077","scope":"vendor","q":"زوّد رصيد الصنف ده ٢٠٠ علبة في المخزن الرئيسي","tool":"propose_action","action":"stock_adjust"}
+{"id":"vd-078","scope":"vendor","q":"ألاقي صفحة نطاقات التوصيل فين؟","tool":"platform_guide"}
+{"id":"vd-079","scope":"vendor","q":"حوّل أرباحي للحساب البنكي","tool":"__refuse__"}
+{"id":"vd-080","scope":"vendor","q":"عايز أشتري بنادول من مورد تاني، مين عنده متاح لفرعي؟","tool":"find_offers"}
+{"id":"vd-081","scope":"vendor","q":"إيه العروض المتاحة ليا كمشتري من الموردين التانيين؟","tool":"list_promotions"}
+{"id":"vd-082","scope":"vendor","q":"مين الموردين اللي بيوصلوا لفرعي النهارده؟","tool":"coverage_check"}
+{"id":"vd-083","scope":"vendor","q":"كام طلب شراء عملته من موردين تانيين الشهر ده؟","tool":"query_data","dataset":"purchase_orders"}
+{"id":"vd-084","scope":"vendor","q":"ضيف ٢٠ علبة من أرخص عرض للسلة","tool":"propose_action","action":"cart_add"}
+{"id":"vd-085","scope":"vendor","q":"ضيف العرض ده للسلة","tool":"propose_action","action":"offer_add"}
+{"id":"vd-086","scope":"vendor","q":"ابعت السلة كطلب شراء","tool":"propose_action","action":"place_order"}
+{"id":"vd-087","scope":"vendor","q":"إيه اللي عليا فلوس كمشتري ولسه ما اتدفعش؟","tool":"financial_obligations_summary"}

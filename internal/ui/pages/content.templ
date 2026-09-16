@@ -1,0 +1,133 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// PolicyPage renders a published legal document (Terms, Privacy, Refund)
+// loaded directly from the platform_admin.policies database table.
+templ PolicyPage(lang, dir, title, body, slug, version, lastUpdated string) {
+	@layouts.PublicShell(title+" | دوا 24", lang, dir) {
+		<div class="policy-page-container">
+			
+			<!-- Breadcrumbs -->
+			<div class="sp-breadcrumbs">
+				<a href="/">الرئيسية</a>
+				<span>/</span>
+				<span>السياسات والضوابط القانونية</span>
+				<span>/</span>
+				<span class="text-primary font-bold">{ title }</span>
+			</div>
+
+			<div class="policy-grid">
+				<!-- Sidebar Navigation -->
+				<aside class="policy-nav-sidebar">
+					<span class="text-xs font-bold text-muted mb-1">الوثائق والسياسات المعتمدة</span>
+					<a
+						href="/terms"
+						class={ "policy-nav-link", templ.KV("active", slug == "terms") }
+					>
+						@components.IconFileText("icon-xs")
+						<span>شروط وأحكام الاستخدام</span>
+					</a>
+					<a
+						href="/privacy"
+						class={ "policy-nav-link", templ.KV("active", slug == "privacy") }
+					>
+						@components.IconShield("icon-xs")
+						<span>سياسة الخصوصية وحماية البيانات</span>
+					</a>
+					<a
+						href="/shipping-returns"
+						class={ "policy-nav-link", templ.KV("active", slug == "shipping_return" || slug == "shipping-returns" || slug == "refund") }
+					>
+						@components.IconPackage("icon-xs")
+						<span>سياسة الشحن والاسترجاع والإلغاء</span>
+					</a>
+					<a
+						href="/cookies"
+						class={ "policy-nav-link", templ.KV("active", slug == "cookies") }
+					>
+						@components.IconShield("icon-xs")
+						<span>سياسة ملفات تعريف الارتباط</span>
+					</a>
+					<a
+						href="/payment-policy"
+						class={ "policy-nav-link", templ.KV("active", slug == "payment" || slug == "payment-policy") }
+					>
+						@components.IconCreditCard("icon-xs")
+						<span>سياسة الدفع والتعاملات المالية</span>
+					</a>
+				</aside>
+
+				<!-- Main Policy Content -->
+				<div class="policy-content-card">
+					<!-- Document Header -->
+					<div class="d-flex items-center justify-between flex-wrap gap-3 pb-3 border-b">
+						<div>
+							<h1 class="page-title font-bold text-xl m-0">
+								{ title }
+							</h1>
+							<p class="text-xs text-secondary m-0 mt-1">
+								الوثيقة الرسمية المنظمة للتعاملات وسرية البيانات على منصة دوا 24
+							</p>
+						</div>
+
+						<span class="badge badge-emerald text-xs font-bold">
+							@components.IconCheck("icon-xs")
+							<span>سارية ومعتمدة رسمياً</span>
+						</span>
+					</div>
+
+					<!-- Metadata Badges -->
+					if version != "" || lastUpdated != "" {
+						<div class="policy-meta-bar">
+							if version != "" {
+								<span>إصدار الوثيقة: <strong class="text-primary">{ version }</strong></span>
+							}
+							if version != "" && lastUpdated != "" {
+								<span>•</span>
+							}
+							if lastUpdated != "" {
+								<span>تاريخ آخر تحديث: <strong class="tabular-nums text-primary">{ lastUpdated }</strong></span>
+							}
+						</div>
+					}
+
+					<!-- Document Body Content -->
+					<div class="policy-prose">
+						@RenderPolicyMarkdown(body)
+					</div>
+
+					<!-- Official Compliance Footer Strip -->
+					<div class="p-3 bg-surface-sunken rounded-lg border d-flex items-center justify-between flex-wrap gap-2 text-xs">
+						<div class="d-flex items-center gap-2 text-secondary">
+							@components.IconShield("icon-xs")
+							<span>كافة البنود والتعاملات خاضعة للضوابط واللوائح الصيدلانية والتجارية المصرية السارية.</span>
+						</div>
+						<a href="/contact" class="btn btn-secondary btn-sm">
+							@components.IconHelpCircle("icon-xs")
+							<span>استفسار قانوني</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	}
+}
+
+// CmsPage renders a database-driven content page from its bilingual title and body.
+templ CmsPage(lang, dir, title, body string) {
+	@layouts.PublicShell(title, lang, dir) {
+		<div class="policy-page-container">
+			<div class="policy-content-card">
+				<h1 class="page-title font-bold text-xl m-0 pb-3 border-b">{ title }</h1>
+				<div class="policy-prose mt-3">
+					@RenderPolicyMarkdown(body)
+				</div>
+			</div>
+		</div>
+	}
+}

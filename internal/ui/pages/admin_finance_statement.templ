@@ -1,0 +1,233 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminFinanceStatement(targetOrg *org.Organization, wallet *billing.AdminWalletView, transactions []*billing.AdminWalletTransactionView, lang, dir string) {
+	@layouts.AdminShell("كشف حساب مالي رسمي", "finance", lang, dir) {
+		<style nonce={ layouts.Nonce(ctx) }>
+			@media print {
+				aside, header, nav, .sidebar, .main-topbar, .dashboard-topbar, .no-print, .btn, .auth-notice-banner, .toast-container {
+					display: none !important;
+				}
+				body, html, .app-shell, .main-content, .page-container {
+					background: #ffffff !important;
+					color: #000000 !important;
+					margin: 0 !important;
+					padding: 0 !important;
+					width: 100% !important;
+					max-width: 100% !important;
+					min-height: auto !important;
+				}
+				.print-statement-card {
+					border: none !important;
+					box-shadow: none !important;
+					padding: 0 !important;
+					margin: 0 !important;
+					background: #ffffff !important;
+				}
+				.statement-header {
+					border-bottom: 2px solid #111 !important;
+					padding-bottom: 12px !important;
+					margin-bottom: 16px !important;
+				}
+				.summary-box {
+					border: 1px solid #ccc !important;
+					background: #f8fafc !important;
+					padding: 10px !important;
+					border-radius: 6px !important;
+				}
+				.table-container {
+					overflow: visible !important;
+					box-shadow: none !important;
+					border: none !important;
+					margin-top: 14px !important;
+				}
+				.data-table {
+					width: 100% !important;
+					border-collapse: collapse !important;
+					font-size: 10.5pt !important;
+				}
+				.data-table th, .data-table td {
+					border: 1px solid #cbd5e1 !important;
+					padding: 6px 8px !important;
+					color: #0f172a !important;
+				}
+				.data-table th {
+					background-color: #f1f5f9 !important;
+					font-weight: 700 !important;
+					text-align: right !important;
+				}
+				.data-table tr {
+					page-break-inside: avoid !important;
+				}
+				.badge {
+					border: 1px solid #94a3b8 !important;
+					background: transparent !important;
+					color: #0f172a !important;
+					padding: 1px 4px !important;
+					font-size: 8.5pt !important;
+				}
+				.statement-footer {
+					border-top: 1px solid #cbd5e1 !important;
+					margin-top: 24px !important;
+					padding-top: 8px !important;
+				}
+			}
+		</style>
+		<div class="page-container max-w-5xl mx-auto py-6 space-y-6">
+			<!-- Print & Navigation Toolbar -->
+			<div class="flex-between items-center gap-4 bg-surface border rounded-xl p-4 no-print shadow-sm">
+				<a href="/admin/finance?tab=transactions" class="btn btn-secondary btn-sm font-bold gap-1">
+					@components.IconArrowRight("icon-xs")
+					<span>العودة للمركز المالي</span>
+				</a>
+				<div class="d-flex items-center gap-2">
+					<button type="button" data-on-click="window.print()" class="btn btn-primary btn-sm font-bold gap-1 shadow-sm">
+						@components.IconFile("icon-xs")
+						<span>طباعة كشف الحساب (Print)</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Official Statement Document -->
+			<div class="bg-surface border rounded-2xl p-8 shadow-md print-statement-card">
+				<!-- Header with Branding -->
+				<div class="flex-between items-start border-b pb-6 mb-6 statement-header">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-2">
+							<div class="w-10 h-10 rounded-xl bg-brand flex-center text-white font-black text-xl">D</div>
+							<div>
+								<h1 class="text-2xl font-black text-primary m-0">منصة دوا 24 (Dawa24)</h1>
+								<div class="text-xs text-secondary">المركز المالي والحسابات العامة للمنشآت</div>
+							</div>
+						</div>
+					</div>
+					<div class="text-end stack-sm">
+						<span class="badge badge-emerald font-black text-sm px-3 py-1">كشف حساب مالي معتمد</span>
+						<div class="text-xs text-muted mt-1 tabular-nums">تاريخ الاستخراج: { time.Now().Format("2006-01-02 03:04 PM") }</div>
+					</div>
+				</div>
+
+				<!-- Organization & Wallet Summary Grid -->
+				<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+					<div class="p-4 rounded-xl bg-surface-sunken border stack-sm summary-box">
+						<div class="text-xs text-muted font-bold">بيانات المنشأة</div>
+						<div class="text-lg font-black text-primary">{ targetOrg.LegalName }</div>
+						<div class="text-xs text-secondary">
+							معرف المنشأة: #{ fmt.Sprintf("%d", targetOrg.ID) } • 
+							if targetOrg.Type == org.TypeVendor {
+								<span>نوع النشاط: مورّد معتمد</span>
+							} else {
+								<span>نوع النشاط: صيدلية</span>
+							}
+						</div>
+						if targetOrg.TaxNumber != "" {
+							<div class="text-xs text-muted">الرقم الضريبي: { targetOrg.TaxNumber }</div>
+						}
+					</div>
+
+					<div class="p-4 rounded-xl bg-surface-sunken border stack-sm summary-box">
+						<div class="text-xs text-muted font-bold">ملخص المحفظة الرقمية</div>
+						if wallet != nil {
+							<div class="text-2xl font-black text-success tabular-nums">
+								{ wallet.Balance.String() } <span class="text-sm font-bold text-muted">{ wallet.Currency }</span>
+							</div>
+							<div class="text-xs text-secondary">
+								رقم المحفظة: WLT-{ fmt.Sprintf("%d", wallet.ID) } • إجمالي القيود: { fmt.Sprintf("%d", len(transactions)) } حركة
+							</div>
+						} else {
+							<div class="text-lg font-bold text-muted">لا توجد محفظة مربوطة</div>
+						}
+					</div>
+				</div>
+
+				<!-- Transactions Ledger Table -->
+				<div class="table-container mb-6">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th># الحركة</th>
+								<th>التاريخ</th>
+								<th>نوع القيد</th>
+								<th>البيان والملاحظات</th>
+								<th>المرجع</th>
+								<th>المبلغ</th>
+								<th>الرصيد بعد القيد</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(transactions) == 0 {
+								<tr>
+									<td colspan="7" class="text-center py-8 text-muted">
+										لا توجد أي حركات مالية مسجلة لهذه المنشأة حتى الآن.
+									</td>
+								</tr>
+							}
+							for _, tx := range transactions {
+								<tr>
+									<td class="tabular-nums font-mono font-bold text-xs text-muted">
+										#TX-{ fmt.Sprintf("%d", tx.ID) }
+									</td>
+									<td class="tabular-nums text-xs text-secondary nowrap">
+										{ tx.CreatedAt.Format("2006-01-02 03:04 PM") }
+									</td>
+									<td>
+										if tx.Type == "deposit" {
+											<span class="badge badge-emerald text-xs">إيداع رصيد</span>
+										} else if tx.Type == "withdrawal" {
+											<span class="badge badge-rose text-xs">سحب رصيد</span>
+										} else if tx.Type == "purchase" {
+											<span class="badge badge-amber text-xs">مشتريات توريد</span>
+										} else if tx.Type == "refund" {
+											<span class="badge badge-sky text-xs">استرداد</span>
+										} else {
+											<span class="badge badge-indigo text-xs">تسوية إدارية</span>
+										}
+									</td>
+									<td class="text-sm text-primary">
+										if tx.Description != "" {
+											{ tx.Description }
+										} else {
+											<span class="text-muted">-</span>
+										}
+									</td>
+									<td class="tabular-nums text-xs text-muted">
+										if tx.ReferenceType != "" && tx.ReferenceID != nil {
+											<span>{ tx.ReferenceType } #{ fmt.Sprintf("%v", tx.ReferenceID) }</span>
+										} else {
+											<span>-</span>
+										}
+									</td>
+									<td class="tabular-nums font-black text-sm">
+										if tx.Amount.Minor() >= 0 {
+											<span class="text-success">+{ tx.Amount.String() } ج.م</span>
+										} else {
+											<span class="text-danger">{ tx.Amount.String() } ج.م</span>
+										}
+									</td>
+									<td class="tabular-nums font-bold text-primary text-sm">
+										{ tx.BalanceAfter.String() } ج.م
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Statement Verification Footer -->
+				<div class="border-t pt-4 text-xs text-muted flex-between items-center statement-footer">
+					<div>تم إصدار هذا الكشف آلياً بواسطة نظام الحسابات الموحد لمنصة دوا 24.</div>
+					<div>صفحة 1 من 1</div>
+				</div>
+			</div>
+		</div>
+	}
+}

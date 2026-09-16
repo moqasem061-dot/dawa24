@@ -1,0 +1,35 @@
+package components
+
+// SponsoredBadge is the single disclosure label for a paid placement.
+//
+// It replaced three separate treatments: the product card and the catalogue
+// table each inlined the same amber hex triple — which does not change with the
+// theme, so it stayed pale-yellow-on-brown in dark mode — and the offers grid
+// used a fourth style with a shield icon. The wording differed too: "ممول" in
+// one place, "ممول — رعاية" in another.
+//
+// The tone is deliberately quiet. A sponsored label is a disclosure, not a
+// promotion, and on a product card it sits directly beside a discount badge;
+// the previous amber competed with that and read as another offer.
+templ SponsoredBadge(lang string) {
+	<span class="badge badge-sponsored text-xs" title={ sponsoredTitle(lang) }>
+		{ sponsoredLabel(lang) }
+	</span>
+}
+
+// sponsoredLabel is the visible text.
+func sponsoredLabel(lang string) string {
+	if lang == "en" {
+		return "Sponsored"
+	}
+	return "إعلان ممول"
+}
+
+// sponsoredTitle explains the label on hover, which is what makes it a
+// disclosure rather than decoration.
+func sponsoredTitle(lang string) string {
+	if lang == "en" {
+		return "This placement was paid for by the supplier."
+	}
+	return "هذا الظهور مدفوع من المورد."
+}

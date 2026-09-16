@@ -1,0 +1,283 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminSavingProductLinkModal renders the modal and client-side logic for matching and linking saving products.
+templ AdminSavingProductLinkModal(data AdminSavingProductsData) {
+	@components.Modal(components.ModalProps{
+		ID:    "admin-saving-link-modal",
+		Title: "ربط صنف التوفير بكتالوج المنصة المعتمد",
+		Size:  "lg",
+	}) {
+		<form id="admin-saving-link-form" method="POST" action="">
+			<!-- Preserved context parameters for return URL (B1) -->
+			<input type="hidden" name="page" value={ fmt.Sprintf("%d", data.Pagination.CurrentPage) } />
+			<input type="hidden" name="q" value={ data.SearchQuery } />
+			<input type="hidden" name="filter" value={ data.ActiveFilter } />
+			if data.SelectedOrgID > 0 {
+				<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.SelectedOrgID) } />
+			}
+			if data.SelectedUserID > 0 {
+				<input type="hidden" name="user_id" value={ fmt.Sprintf("%d", data.SelectedUserID) } />
+			}
+			<input type="hidden" id="admin-modal-product-id" name="product_id" value="" />
+
+			<div class="stack-md p-1">
+				<!-- 1. Raw Imported Item Details -->
+				<div class="bg-surface-sunken p-4 rounded-xl border">
+					<div class="text-xs text-muted font-bold mb-1">اسم الصنف بالملف المرفوع (الاسم الأصلي):</div>
+					<div id="admin-modal-raw-name" class="font-extrabold text-base text-primary mb-1"></div>
+					<div id="admin-modal-raw-meta" class="text-xs text-secondary font-mono"></div>
+				</div>
+
+				<!-- 2. Current Link Status & Unlink Option -->
+				<div id="admin-modal-current-link-box" class="p-3 rounded-lg border bg-surface-raised flex-between items-center d-none">
+					<div class="stack-2xs">
+						<span class="text-xs text-muted font-medium">الربط الحالي بالكتالوج:</span>
+						<span id="admin-modal-current-link-name" class="font-bold text-xs text-emerald d-inline-flex items-center gap-1"></span>
+					</div>
+					<button type="button" class="btn btn-ghost btn-xs text-danger font-bold" data-on-click="adminUnlinkSavingProduct()">
+						إلغاء الربط (حذف الارتباط)
+					</button>
+				</div>
+
+				<!-- 3. Top Candidates Section (Suggested Matches with Match Scores) -->
+				<div class="stack-xs">
+					<div class="flex-between items-center">
+						<label class="font-bold text-xs text-primary">
+							أفضل الترشيحات المقترحة مع نسبة التطابق (Top Candidates):
+						</label>
+						<span class="text-2xs text-muted">اختر الصنف المطابق مباشرة أو ابحث بالأسفل</span>
+					</div>
+					<div id="admin-modal-candidates-list" class="stack-xs max-h-48 overflow-y-auto border rounded-lg p-2 bg-surface-raised">
+						<div class="text-center text-muted text-xs p-4">⏳ جاري فحص الكتالوج واقتراح أفضل الترشيحات...</div>
+					</div>
+				</div>
+
+				<!-- 4. Search and Select via Standard Combobox -->
+				<div class="stack-xs">
+					<label class="font-bold text-xs text-primary">
+						البحث في الكتالوج العام المعتمد للمنصة:
+					</label>
+					@components.Combobox(components.ComboboxProps{
+						Name:        "combobox_product_id",
+						Placeholder: "ابحث باسم الدواء، الكود، أو المادة الفعالة...",
+						URL:         "/admin/saving-products/search-products?q={q}",
+						Help:        "اختيار دواء من نتائج البحث يحدد الربط تلقائياً.",
+					})
+				</div>
+
+				<!-- 5. Selected Product Confirmation Indicator -->
+				<div id="admin-modal-selected-box" class="p-3 rounded-lg border bg-surface-sunken flex-between items-center d-none">
+					<div class="stack-2xs">
+						<span class="text-xs text-secondary font-bold">الصنف المختار للربط:</span>
+						<span id="admin-modal-selected-label" class="font-black text-sm text-brand"></span>
+					</div>
+					<button type="button" class="btn btn-ghost btn-xs text-muted font-bold" data-on-click="adminClearSelectedCandidate()">
+						إلغاء الاختيار
+					</button>
+				</div>
+			</div>
+
+			<!-- Modal Footer -->
+			<div class="modal-footer mt-4 pt-3 border-t flex-between items-center">
+				<button type="button" class="btn btn-secondary font-bold text-xs" data-on-click="closeAdminLinkModal()">
+					إلغاء
+				</button>
+				<button type="submit" id="admin-modal-submit-btn" class="btn btn-primary font-bold text-xs px-6">
+					حفظ وتأكيد الربط
+				</button>
+			</div>
+		</form>
+	}
+
+	<!-- Client Modal Controller Script -->
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openAdminLinkModalFromBtn(btn) {
+			if (!btn) return;
+			const id = btn.getAttribute('data-id') || '0';
+			const rawName = btn.getAttribute('data-name') || '';
+			const sku = btn.getAttribute('data-sku') || '';
+			const currentProductID = parseInt(btn.getAttribute('data-product-id') || '0', 10);
+			const currentProductName = btn.getAttribute('data-master-name') || '';
+			const currentProductSKU = btn.getAttribute('data-master-sku') || '';
+			openAdminLinkModal(id, rawName, sku, currentProductID, currentProductName, currentProductSKU);
+		}
+
+		function openAdminLinkModal(id, rawName, sku, currentProductID, currentProductName, currentProductSKU) {
+			const modal = document.getElementById('admin-saving-link-modal');
+			if (!modal) return;
+
+			const form = document.getElementById('admin-saving-link-form');
+			if (form) form.action = '/admin/saving-products/' + id + '/link';
+
+			const rawNameEl = document.getElementById('admin-modal-raw-name');
+			if (rawNameEl) rawNameEl.textContent = rawName || '';
+
+			const rawMetaEl = document.getElementById('admin-modal-raw-meta');
+			if (rawMetaEl) rawMetaEl.textContent = sku ? ('كود الصنف / SKU: ' + sku) : '';
+
+			const currentBox = document.getElementById('admin-modal-current-link-box');
+			const currentNameEl = document.getElementById('admin-modal-current-link-name');
+			if (currentBox && currentNameEl) {
+				if (currentProductID && currentProductID > 0) {
+					currentNameEl.textContent = '✓ ' + (currentProductName || 'صنف معتمد') + (currentProductSKU ? ' (كود: ' + currentProductSKU + ')' : '') + ' [#' + currentProductID + ']';
+					currentBox.classList.remove('d-none');
+				} else {
+					currentBox.classList.add('d-none');
+				}
+			}
+
+			adminClearSelectedCandidate();
+
+			if (currentProductID && currentProductID > 0) {
+				adminSelectCandidate(currentProductID, currentProductName || '', currentProductSKU || '');
+			}
+
+			loadAdminCandidates(rawName || '');
+
+			if (typeof modal.showModal === 'function') {
+				modal.showModal();
+			} else {
+				modal.setAttribute('open', '');
+			}
+		}
+
+		function closeAdminLinkModal() {
+			const modal = document.getElementById('admin-saving-link-modal');
+			if (modal) {
+				if (typeof modal.close === 'function') {
+					modal.close();
+				} else {
+					modal.removeAttribute('open');
+				}
+			}
+		}
+
+		function adminSelectCandidate(id, label, sku) {
+			const idInput = document.getElementById('admin-modal-product-id');
+			if (idInput) idInput.value = id;
+
+			const selectedBox = document.getElementById('admin-modal-selected-box');
+			const selectedLabel = document.getElementById('admin-modal-selected-label');
+			if (selectedBox && selectedLabel) {
+				selectedLabel.textContent = label + (sku ? ' (' + sku + ')' : '') + ' [#' + id + ']';
+				selectedBox.classList.remove('d-none');
+			}
+
+			if (window.dawaComboboxRegistry && window.dawaComboboxRegistry['combobox_product_id']) {
+				window.dawaComboboxRegistry['combobox_product_id'].selected = { id: String(id), label: label };
+				window.dawaComboboxRegistry['combobox_product_id'].query = label;
+			}
+		}
+
+		function adminClearSelectedCandidate() {
+			const idInput = document.getElementById('admin-modal-product-id');
+			if (idInput) idInput.value = '';
+
+			const selectedBox = document.getElementById('admin-modal-selected-box');
+			const selectedLabel = document.getElementById('admin-modal-selected-label');
+			if (selectedBox && selectedLabel) {
+				selectedLabel.textContent = '';
+				selectedBox.classList.add('d-none');
+			}
+
+			if (window.dawaComboboxRegistry && window.dawaComboboxRegistry['combobox_product_id']) {
+				window.dawaComboboxRegistry['combobox_product_id'].clear();
+			}
+		}
+
+		function adminUnlinkSavingProduct() {
+			if (!confirm('هل أنت متأكد من رغبتك في إلغاء ربط هذا الصنف بالكتالوج؟')) return;
+			const idInput = document.getElementById('admin-modal-product-id');
+			if (idInput) idInput.value = '0';
+			const form = document.getElementById('admin-saving-link-form');
+			if (form) {
+				if (typeof form.requestSubmit === 'function') form.requestSubmit();
+				else form.submit();
+			}
+		}
+
+		function loadAdminCandidates(rawName) {
+			const listEl = document.getElementById('admin-modal-candidates-list');
+			if (!listEl) return;
+			listEl.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-4">⏳ جاري فحص الكتالوج واقتراح أفضل الترشيحات...</div>');
+			listEl.onclick = function (e) {
+				const pick = e.target.closest('[data-pick-id]');
+				if (pick) adminSelectCandidate(parseInt(pick.dataset.pickId, 10), pick.dataset.pickLabel, pick.dataset.pickSku);
+			};
+
+			if (!rawName || rawName.trim().length < 2) {
+				listEl.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-3">اسم الصنف قصير جداً لاقتراح ترشيحات تلقائية. ابحث في الكتالوج بالأسفل.</div>');
+				return;
+			}
+
+			fetch('/admin/saving-products/search-products?q=' + encodeURIComponent(rawName.trim()) + '&raw_name=' + encodeURIComponent(rawName.trim()))
+				.then(r => r.json())
+				.then(items => {
+					if (!items || items.length === 0) {
+						listEl.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-3">لم يتم العثور على ترشيحات مباشرة لهذا الاسم. يمكنك البحث بالأسفل.</div>');
+						return;
+					}
+
+					let html = '';
+					items.slice(0, 5).forEach(item => {
+						const score = Math.round((item.score || 0) * 100);
+						let badgeClass = 'badge-emerald';
+						if (score < 70) badgeClass = 'badge-amber';
+						if (score < 50) badgeClass = 'badge-secondary';
+
+						const scoreBadge = '<span class="badge ' + badgeClass + ' text-2xs font-bold">' + escapeSavingHtml(item.badge || (score + '% تطابق')) + '</span>';
+						const skuHint = item.sku ? ('<code class="text-2xs text-muted font-mono">SKU: ' + escapeSavingHtml(item.sku) + '</code>') : '';
+						const dosage = item.dosage_form ? ('<span class="badge badge-slate text-2xs">' + escapeSavingHtml(item.dosage_form) + '</span>') : '';
+						const price = item.price ? ('<span class="text-2xs font-bold text-brand">' + escapeSavingHtml(item.price) + ' ج.م</span>') : '';
+
+
+						html += '<div class="flex-between items-center p-2 rounded hover-bg-surface border cursor-pointer transition-colors" ' +
+							'data-pick-id="' + dawaHTML.escape(item.id) + '" data-pick-label="' + dawaHTML.escape(item.label || '') + '" data-pick-sku="' + dawaHTML.escape(item.sku || '') + '">' +
+							'<div class="stack-2xs">' +
+								'<div class="d-flex items-center gap-2">' +
+									'<strong class="text-xs text-primary">' + escapeSavingHtml(item.label) + '</strong>' +
+									scoreBadge +
+								'</div>' +
+								'<div class="d-flex items-center gap-2 mt-0.5">' +
+									dosage + skuHint + price +
+								'</div>' +
+							'</div>' +
+							'<button type="button" class="btn btn-secondary btn-xs font-bold shrink-0">اختيار</button>' +
+						'</div>';
+					});
+
+					listEl.innerHTML = dawaHTML.sanitize(html);
+				})
+				.catch(err => {
+					listEl.innerHTML = dawaHTML.sanitize('<div class="text-center text-danger text-xs p-3">تعذر تحميل الترشيحات. يرجى استخدام البحث بالأسفل.</div>');
+				});
+		}
+
+		function escapeSavingHtml(text) {
+			if (!text) return '';
+			return String(text)
+				.replace(/&/g, '&amp;')
+				.replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;')
+				.replace(/"/g, '&quot;')
+				.replace(/'/g, '&#039;');
+		}
+
+		// Listen to combobox selection changes
+		if (!window.__dawaBound_admin_saving_products_modal) {
+			window.__dawaBound_admin_saving_products_modal = true;
+			window.addEventListener('combobox-change', function(e) {
+				if (e && e.detail && e.detail.name === 'combobox_product_id' && e.detail.item) {
+					adminSelectCandidate(e.detail.item.id, e.detail.item.label, e.detail.item.sku || '');
+				}
+			});
+		}
+	</script>
+}

@@ -1,0 +1,175 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// VendorEarningsTopProducts renders product profitability and margin comparison table.
+templ VendorEarningsTopProducts(products []*commerce.VendorProductProfit, pagination components.PaginationProps, lang string) {
+	{{
+		totalProducts := len(products)
+		if pagination.TotalCount > 0 {
+			totalProducts = pagination.TotalCount
+		}
+	}}
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		<div class="p-5 border-b flex-between flex-wrap gap-3 items-center">
+			<div class="d-flex items-center gap-2.5">
+				<span class="text-brand">@components.IconPill("icon-sm")</span>
+				<div>
+					<h3 class="text-base font-black text-primary m-0">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.top_products_title"), totalProducts) }
+					</h3>
+					<p class="text-xs text-secondary m-0 mt-0.5">
+						{ i18n.T(lang, "vendor_finance.earnings.top_products_badge") }
+					</p>
+				</div>
+			</div>
+		</div>
+
+		if len(products) == 0 {
+			<div class="p-8 text-center text-muted">
+				<div class="text-3xl mb-2">@components.IconPill("icon-md")</div>
+				<div class="font-bold text-sm text-primary">{ i18n.T(lang, "vendor_finance.earnings.products_empty_title") }</div>
+				<div class="text-xs text-secondary mt-1">{ i18n.T(lang, "vendor_finance.earnings.products_empty_desc") }</div>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor_finance.earnings.th_product_sku") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_qty_sold") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_public_price") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_selling_discount") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_selling_price") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_purchase_discount") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_actual_cost") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_total_revenue") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_total_cost") }</th>
+							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_realized_profit") }</th>
+							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_profit_margin") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, p := range products {
+							<tr>
+								<!-- Product Name & SKU -->
+								<td>
+									<div class="font-extrabold text-primary text-sm">
+										{ p.Name }
+									</div>
+									if p.SKU != "" {
+										<div class="text-2xs text-muted tabular-nums mt-0.5">
+											<code>{ p.SKU }</code>
+										</div>
+									}
+								</td>
+
+								<!-- Quantity Sold -->
+								<td class="text-center tabular-nums font-bold">
+									<span class="badge badge-secondary text-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.pack_units"), money.FormatIntWithCommas(int64(p.QuantitySold))) }</span>
+								</td>
+
+								<!-- Public Price (سعر الجمهور) -->
+								<td class="tabular-nums font-semibold text-secondary text-sm">
+									if p.PublicPrice.IsPositive() {
+										{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.PublicPrice.FormatWithCommas()) }
+									} else {
+										<span class="text-muted">-</span>
+									}
+								</td>
+
+								<!-- Selling Discount % (خصم البيع) -->
+								<td class="text-center tabular-nums">
+									if p.SellingDiscount > 0 {
+										<span class="badge badge-amber text-xs font-bold">
+											{ fmt.Sprintf("%.1f%%", p.SellingDiscount) }
+										</span>
+									} else {
+										<span class="text-muted text-xs">0%</span>
+									}
+								</td>
+
+								<!-- Selling Price (سعر البيع الفعلي) -->
+								<td class="tabular-nums font-bold text-primary text-sm">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.SellingPrice.FormatWithCommas()) }
+								</td>
+
+								<!-- Cost Discount % (خصم التكلفة) -->
+								<td class="text-center tabular-nums">
+									if p.CostDiscountPercentage > 0 {
+										<span class="badge badge-sky text-xs font-bold">
+											{ fmt.Sprintf("%.1f%%", p.CostDiscountPercentage) }
+										</span>
+									} else {
+										<span class="text-muted text-xs">0%</span>
+									}
+								</td>
+
+								<!-- Actual Purchase Cost (سعر التكلفة بعد خصم التكلفة) -->
+								<td class="tabular-nums font-semibold text-secondary text-sm">
+									if p.DiscountedCost.IsPositive() {
+										{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.DiscountedCost.FormatWithCommas()) }
+									} else {
+										<span class="text-muted text-xs">-</span>
+									}
+								</td>
+
+								<!-- Total Revenue (إجمالي الإيراد) -->
+								<td class="tabular-nums font-extrabold text-primary text-sm">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.TotalRevenue.FormatWithCommas()) }
+								</td>
+
+								<!-- Total Cost (إجمالي التكلفة) -->
+								<td class="tabular-nums font-semibold text-danger text-sm">
+									if p.TotalCost.IsPositive() {
+										-{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.TotalCost.FormatWithCommas()) }
+									} else {
+										<span class="text-muted text-xs">0.00</span>
+									}
+								</td>
+
+								<!-- Net Profit (صافي الربح) -->
+								<td class="tabular-nums font-black text-success text-sm">
+									if p.NetProfit.IsPositive() {
+										+{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
+									} else if p.NetProfit.Minor() < 0 {
+										{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
+									} else {
+										<span class="text-muted text-xs">0.00</span>
+									}
+								</td>
+
+								<!-- Margin % (هامش الربح) -->
+								<td class="text-center">
+									if p.ProfitMargin > 0 {
+										<span class="badge badge-emerald text-xs font-black tabular-nums">
+											{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
+										</span>
+									} else if p.ProfitMargin < 0 {
+										<span class="badge badge-rose text-xs font-black tabular-nums">
+											{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
+										</span>
+									} else {
+										<span class="badge badge-slate text-xs font-bold tabular-nums">0.0%</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+			if pagination.TotalCount > 0 {
+				<div class="p-4 border-t bg-surface-sunken">
+					@components.B2BPagination(pagination)
+				</div>
+			}
+		}
+	</div>
+}

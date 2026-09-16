@@ -1,0 +1,114 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ MFAVerifyPage(lang, dir, email, errorMsg, redirectURL string) {
+	@layouts.Base("التحقق بخطوتين (MFA)", lang, dir) {
+		<div class="auth-page-wrapper">
+			<div class="auth-card glass-panel" x-data="{ useRecovery: false }">
+				<div class="auth-header">
+					<div class="auth-brand-logo">
+						<div class="w-12 h-12 rounded-2xl bg-sky-500/10 text-accent d-flex items-center justify-center border border-sky-500/20 shadow-xs">
+							@components.IconShield("icon-md")
+						</div>
+					</div>
+					<h1 class="auth-title">التحقق بخطوتين (MFA)</h1>
+					<p class="auth-subtitle">حسابك محمي بالمصادقة الثنائية لحماية البيانات الحساسة</p>
+					if email != "" {
+						<div class="mt-2">
+							<span class="badge badge-slate text-xs font-semibold tabular-nums">{ email }</span>
+						</div>
+					}
+				</div>
+
+				if errorMsg != "" {
+					<div class="alert alert-danger mb-5 d-flex items-center gap-3">
+						<div class="alert-icon flex-shrink-0">@components.IconAlert("icon-xs")</div>
+						<div class="alert-message text-sm font-semibold">{ errorMsg }</div>
+					</div>
+				}
+
+				<form class="d-flex flex-col gap-4" method="POST" action="/auth/mfa-verify">
+					<input type="hidden" name="redirect" value={ redirectURL } />
+
+					<!-- Standard TOTP Code Input -->
+					<div class="form-group mb-0" x-show="!useRecovery">
+						<label class="form-label font-semibold text-xs text-center d-block mb-2" for="mfa-code">
+							رمز التحقق من تطبيق Google Authenticator (6 أرقام)
+						</label>
+						<input
+							type="text"
+							id="mfa-code"
+							name="code"
+							inputmode="numeric"
+							pattern="[0-9]*"
+							maxlength="6"
+							autocomplete="one-time-code"
+							autofocus
+							class="form-input auth-totp-input"
+							placeholder="••••••"
+						/>
+						<p class="text-2xs text-muted text-center mt-2 m-0">
+							يتغير الرمز تلقائياً كل 30 ثانية في تطبيق المصادقة على هاتفك
+						</p>
+					</div>
+
+					<!-- Recovery Code Input -->
+					<div class="form-group mb-0" x-show="useRecovery">
+						<label class="form-label font-semibold text-xs text-center d-block mb-2" for="mfa-recovery-code">
+							رمز الاسترداد الاحتياطي (Backup Code)
+						</label>
+						<input
+							type="text"
+							id="mfa-recovery-code"
+							name="recovery_code"
+							maxlength="12"
+							autocomplete="off"
+							class="form-input text-center font-mono uppercase tabular-nums font-bold"
+							placeholder="XXXX-XXXX"
+						/>
+						<p class="text-2xs text-muted text-center mt-2 m-0">
+							أدخل أحد رموز الاسترداد المكونة من 8 خانات التي حفظتها عند إعداد الحساب
+						</p>
+					</div>
+
+					<button type="submit" class="btn btn-primary btn-lg w-100 font-bold mt-2">
+						@components.IconCheck("icon-xs")
+						<span>تأكيد تسجيل الدخول</span>
+					</button>
+
+					<!-- Recovery Code Toggle -->
+					<div class="text-center mt-2">
+						<button
+							type="button"
+							class="btn btn-link btn-xs font-semibold text-accent text-decoration-none"
+							x-show="!useRecovery"
+							@click="useRecovery = true; $nextTick(() => document.getElementById('mfa-recovery-code')?.focus())"
+						>
+							لا يمكنك الوصول لتطبيق Google Authenticator؟ استخدم رمز الاسترداد
+						</button>
+						<button
+							type="button"
+							class="btn btn-link btn-xs font-semibold text-secondary text-decoration-none"
+							x-show="useRecovery"
+							@click="useRecovery = false; $nextTick(() => document.getElementById('mfa-code')?.focus())"
+						>
+							العودة لإدخال رمز تطبيق Google Authenticator
+						</button>
+					</div>
+				</form>
+
+				<div class="auth-footer">
+					<a href="/auth/login" class="text-xs font-semibold text-secondary text-decoration-none d-flex items-center justify-center gap-1.5">
+						@components.IconArrowRight("icon-xs")
+						<span>إلغاء والعودة لصفحة تسجيل الدخول</span>
+					</a>
+				</div>
+			</div>
+		</div>
+	}
+}
+

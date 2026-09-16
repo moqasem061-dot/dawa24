@@ -1,0 +1,501 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AIConsumptionLogsPage renders the full AI request logs screen for either Customer or Vendor.
+templ AIConsumptionLogsPage(data AIConsumptionLogsPageData, lang, dir string) {
+	if data.IsVendor {
+		@layouts.VendorShell("سجل استهلاك الذكاء الاصطناعي", "ai_logs", lang, dir) {
+			@aiConsumptionLogsBody(data, lang, dir)
+		}
+	} else {
+		@layouts.CustomerShell("سجل استهلاك الذكاء الاصطناعي", "ai_logs", lang, dir, nil) {
+			@aiConsumptionLogsBody(data, lang, dir)
+		}
+	}
+}
+
+templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
+	<div class="page-container">
+		
+		<!-- Header Banner -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-xl">
+						@components.IconSparkles("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							سجل استهلاك وعمليات الذكاء الاصطناعي
+						</h1>
+						<p class="text-sm text-secondary m-0 mt-1">
+							متابعة استدعاءات بوابات الذكاء الاصطناعي، وتتبع استهلاك الحصة ومعدل التوكنز للعمليات التشغيلية
+						</p>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-3 flex-wrap">
+					<div class="d-inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs">
+						<span class="text-secondary font-bold">معرّف البوابة:</span>
+						<code dir="ltr" class="font-bold text-brand font-mono">{ data.AIUserID }</code>
+					</div>
+					<a href={ templ.SafeURL(func() string { if data.IsVendor { return "/vendor/subscription" }; return "/customer/subscription" }()) } class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+						@components.IconSparkles("icon-xs")
+						<span>إدارة الباقة والاشتراك</span>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Executive Quota & Metric Cards Strip -->
+		<div class="dashboard-stat-grid mb-6">
+			
+			<!-- Card 1: Quota Usage Percentage & Progress -->
+			<div class="stat-card-3d">
+				<div class="flex-between items-center">
+					<span class="text-xs font-bold text-muted">استهلاك الحصة الشهرية</span>
+					<span class="badge badge-sky text-xs font-bold" dir="ltr">{ data.AIPlanID }</span>
+				</div>
+				
+				<div class="tabular-nums text-2xl font-black text-brand mt-2">
+					{ data.QuotaText() }
+				</div>
+
+				if data.HasBudget {
+     <div class="stack-sm">
+						<div class="stack-sm" style={ fmt.Sprintf("height:100%%; width:%d%%; border-radius:4px; background:linear-gradient(90deg, var(--brand-primary, #0ea5e9), #8b5cf6); transition:width 0.4s ease;", data.UsagePercentage) }></div>
+					</div>
+				}
+
+				<div class="flex-between items-center text-xs text-muted mt-2 pt-2 border-t">
+					if data.HasBudget {
+						<span>متبقي: <strong class="text-success">{ fmt.Sprintf("%d%%", 100-data.UsagePercentage) }</strong></span>
+					} else {
+						<span class="text-muted">لم تنشر البوابة سقفاً لهذه الباقة</span>
+					}
+					<span>التجديد: <strong class="text-primary">{ data.ResetCountdown() }</strong></span>
+				</div>
+			</div>
+
+			<!-- Card 2: Total AI Requests -->
+			<div class="stat-card-3d">
+				<div class="flex-between items-center">
+					<span class="text-xs font-bold text-muted">إجمالي الاستدعاءات</span>
+					<span class="text-brand">@components.IconZap("icon-sm")</span>
+				</div>
+				<div class="tabular-nums text-2xl font-black text-primary mt-2">
+					{ fmt.Sprintf("%d", data.TotalRequests) } <span class="text-xs text-muted font-normal">طلب</span>
+				</div>
+				<div class="text-xs text-muted mt-2 pt-2 border-t">
+					العمليات التشغيلية التراكمية المسجلة
+				</div>
+			</div>
+
+			<!-- Card 3: Processed Tokens (In / Out) -->
+			<div class="stat-card-3d">
+				<div class="flex-between items-center">
+					<span class="text-xs font-bold text-muted">إجمالي التوكنز المعالجة</span>
+					<span class="text-purple">🔮</span>
+				</div>
+				<div class="tabular-nums text-2xl font-black text-purple mt-2">
+					{ fmt.Sprintf("%d", data.TotalTokens) }
+				</div>
+				<div class="text-xs text-muted mt-2 pt-2 border-t">
+					استهلاك الرموز للعمليات التشغيلية
+				</div>
+			</div>
+		</div>
+
+		<!-- Quick Filter Tabs Strip -->
+		<div class="d-flex items-center gap-2 mb-4 overflow-x-auto pb-2" style="scrollbar-width: thin;">
+			if data.IsVendor {
+				<a
+					href="/vendor/ai-logs"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == ""), templ.KV("btn-secondary", data.FilterFeature != "") }
+				>
+					<span>الكل</span>
+					<span class="badge badge-sky text-2xs">{ fmt.Sprintf("%d", data.TotalRequests) }</span>
+				</a>
+				<a
+					href="/vendor/ai-logs?feature=variant_match"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "variant_match"), templ.KV("btn-secondary", data.FilterFeature != "variant_match") }
+				>
+					<span>@components.IconSparkles("icon-xs")</span>
+					<span>مطابقة الكتالوج والأصناف</span>
+					if data.FeatureCount("variant_match") > 0 {
+						<span class="badge badge-purple text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("variant_match")) }</span>
+					}
+				</a>
+				<a
+					href="/vendor/ai-logs?feature=savings_import"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "savings_import"), templ.KV("btn-secondary", data.FilterFeature != "savings_import") }
+				>
+					<span>📥</span>
+					<span>استيراد منتجات التوفير</span>
+					if data.FeatureCount("savings_import") > 0 {
+						<span class="badge badge-emerald text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("savings_import")) }</span>
+					}
+				</a>
+				<a
+					href="/vendor/ai-logs?feature=compare_match"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "compare_match"), templ.KV("btn-secondary", data.FilterFeature != "compare_match") }
+				>
+					<span>⚖️</span>
+					<span>مقارنة الخصومات والعروض</span>
+					if data.FeatureCount("compare_match") > 0 {
+						<span class="badge badge-amber text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("compare_match")) }</span>
+					}
+				</a>
+				<a
+					href="/vendor/ai-logs?feature=column_detect"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "column_detect"), templ.KV("btn-secondary", data.FilterFeature != "column_detect") }
+				>
+					<span>📋</span>
+					<span>التعرف على الأعمدة</span>
+					if data.FeatureCount("column_detect") > 0 {
+						<span class="badge badge-sky text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("column_detect")) }</span>
+					}
+				</a>
+				<a
+					href="/vendor/ai-logs?feature=assistant"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "assistant"), templ.KV("btn-secondary", data.FilterFeature != "assistant") }
+				>
+					<span>💬</span>
+					<span>المساعد الآلي</span>
+					if data.FeatureCount("assistant") > 0 {
+						<span class="badge badge-purple text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("assistant")) }</span>
+					}
+				</a>
+			} else {
+				<a
+					href="/customer/ai-logs"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == ""), templ.KV("btn-secondary", data.FilterFeature != "") }
+				>
+					<span>الكل</span>
+					<span class="badge badge-sky text-2xs">{ fmt.Sprintf("%d", data.TotalRequests) }</span>
+				</a>
+				<a
+					href="/customer/ai-logs?feature=smart_order"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "smart_order"), templ.KV("btn-secondary", data.FilterFeature != "smart_order") }
+				>
+					<span>⚡</span>
+					<span>الطلب الذكي</span>
+					if data.FeatureCount("smart_order") > 0 {
+						<span class="badge badge-sky text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("smart_order")) }</span>
+					}
+				</a>
+				<a
+					href="/customer/ai-logs?feature=compare_match"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "compare_match"), templ.KV("btn-secondary", data.FilterFeature != "compare_match") }
+				>
+					<span>⚖️</span>
+					<span>مقارنة الخصومات والعروض</span>
+					if data.FeatureCount("compare_match") > 0 {
+						<span class="badge badge-amber text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("compare_match")) }</span>
+					}
+				</a>
+				<a
+					href="/customer/ai-logs?feature=savings_import"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "savings_import" || data.FilterFeature == "savings"), templ.KV("btn-secondary", data.FilterFeature != "savings_import" && data.FilterFeature != "savings") }
+				>
+					<span>🏷️</span>
+					<span>منتجات وبدائل التوفير</span>
+					if (data.FeatureCount("savings_import") + data.FeatureCount("savings")) > 0 {
+						<span class="badge badge-emerald text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("savings_import")+data.FeatureCount("savings")) }</span>
+					}
+				</a>
+				<a
+					href="/customer/ai-logs?feature=assistant"
+					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "assistant"), templ.KV("btn-secondary", data.FilterFeature != "assistant") }
+				>
+					<span>💬</span>
+					<span>المساعد الصيدلاني</span>
+					if data.FeatureCount("assistant") > 0 {
+						<span class="badge badge-purple text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("assistant")) }</span>
+					}
+				</a>
+			}
+		</div>
+
+		<!-- Main Search, Filter Toolbar & Table Card -->
+		<div class="glass-panel p-0 mb-6 overflow-hidden">
+			<!-- Instant Filter & Search Bar -->
+			<div class="p-4 border-b flex-between items-center gap-3 flex-wrap">
+				<!-- Search Input -->
+				<div class="flex-1 min-w-[200px]">
+					<input
+						type="text"
+						id="ai-logs-search"
+						placeholder="ابحث بكود الطلب أو موضع الاستخدام... (اضغط Enter للبحث الشامل)"
+						value={ data.FilterSearch }
+						class="form-input text-xs w-full"
+						data-on-input="filterAILogs()"
+					/>
+				</div>
+
+				<!-- Feature Filter -->
+				<select id="ai-logs-feature-filter" class="form-input text-xs" data-on-change="applyAIServerFilter('feature', this.value)">
+					<option value="" selected?={ data.FilterFeature == "" }>كافة مواضع الاستخدام</option>
+					if data.IsCustomer {
+						<option value="smart_order" selected?={ data.FilterFeature == "smart_order" }>الطلب الذكي (Smart Ordering)</option>
+						<option value="compare_match" selected?={ data.FilterFeature == "compare_match" }>مقارنة الخصومات وعروض الموردين</option>
+						<option value="savings_import" selected?={ data.FilterFeature == "savings_import" || data.FilterFeature == "savings" }>استيراد وبدائل التوفير (Savings Products)</option>
+						<option value="assistant" selected?={ data.FilterFeature == "assistant" }>المساعد الصيدلاني (AI Assistant)</option>
+						<option value="voice_ocr" selected?={ data.FilterFeature == "voice_ocr" }>الأوامر الصوتية والروشتات</option>
+					} else {
+						<option value="variant_match" selected?={ data.FilterFeature == "variant_match" }>استيراد ومطابقة الكتالوج والأصناف</option>
+						<option value="savings_import" selected?={ data.FilterFeature == "savings_import" }>استيراد منتجات التوفير</option>
+						<option value="compare_match" selected?={ data.FilterFeature == "compare_match" }>مقارنة الخصومات وعروض السوق</option>
+						<option value="column_detect" selected?={ data.FilterFeature == "column_detect" }>التعرف على أعمدة الكتالوج</option>
+						<option value="assistant" selected?={ data.FilterFeature == "assistant" }>المساعد الآلي للموردين</option>
+					}
+				</select>
+
+				<!-- Status Filter -->
+				<select id="ai-logs-status-filter" class="form-input text-xs" data-on-change="applyAIServerFilter('status', this.value)">
+					<option value="" selected?={ data.FilterStatus == "" }>كافة الحالات</option>
+					<option value="success" selected?={ data.FilterStatus == "success" }>ناجح</option>
+					<option value="cached" selected?={ data.FilterStatus == "cached" }>ذاكرة سريعة</option>
+					<option value="completed" selected?={ data.FilterStatus == "completed" }>مكتمل</option>
+					<option value="failed" selected?={ data.FilterStatus == "failed" }>غير مكتمل</option>
+				</select>
+
+				if data.FilterFeature != "" || data.FilterStatus != "" || data.FilterSearch != "" {
+					<a
+						href={ templ.SafeURL(func() string { if data.IsVendor { return "/vendor/ai-logs" }; return "/customer/ai-logs" }()) }
+						class="btn btn-secondary btn-sm text-xs font-bold gap-1"
+						title="إعادة تعيين الفلاتر"
+					>
+						<span>✕</span>
+						<span>إلغاء الفلتر</span>
+					</a>
+				}
+			</div>
+
+			<!-- AI Logs Data Table -->
+			if len(data.Logs) == 0 {
+				<div class="p-8 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconSparkles("icon-sm")</div>
+					if data.FilterFeature != "" || data.FilterStatus != "" || data.FilterSearch != "" {
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد سجلات تطابق شروط الفلتر المحددة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto mb-4">
+							جرّب اختيار موضع استخدام آخر، أو إزالة الفلاتر لعرض كافة عمليات استهلاك الذكاء الاصطناعي.
+						</p>
+						<a
+							href={ templ.SafeURL(func() string { if data.IsVendor { return "/vendor/ai-logs" }; return "/customer/ai-logs" }()) }
+							class="btn btn-primary btn-sm text-xs font-bold"
+						>
+							عرض كافة السجلات
+						</a>
+					} else {
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد سجلات استهلاك مسجلة حالياً</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">
+							if data.IsCustomer {
+								سيتم تسجيل استدعاءات الذكاء الاصطناعي واستهلاك التوكنز تلقائياً عند استخدام خدمات الطلب الذكي، مقارنة الخصومات، المساعد الصيدلاني، أو مطابقة البدائل.
+							} else {
+								سيتم تسجيل استدعاءات الذكاء الاصطناعي واستهلاك التوكنز تلقائياً عند استيراد كتالوجات المورد، مطابقة الأصناف، مقارنة الخصومات، أو معالجة البدائل.
+							}
+						</p>
+					}
+				</div>
+			} else {
+				<div class="table-container m-0">
+					<table class="data-table m-0" id="ai-logs-table">
+						<thead>
+							<tr>
+								<th>الطلب والتوقيت</th>
+								<th>موضع الاستخدام والخاصية</th>
+								<th>محرك المعالجة والطبقة</th>
+								<th>التوكنز (In / Out)</th>
+								<th>زمن الاستجابة</th>
+								<th class="text-center">الحالة</th>
+							</tr>
+						</thead>
+						<tbody>
+						for _, log := range data.Logs {
+							if log != nil {
+								<tr
+									class="ai-log-row"
+									data-log-id={ strings.ToLower(log.ID) }
+									data-log-feature={ strings.ToLower(log.FeatureKey + " " + log.FeatureName + " " + log.SourceContext) }
+									data-log-model={ strings.ToLower(log.ModelAlias) }
+									data-log-status={ log.Status }
+								>
+									<!-- Request ID & Timestamp -->
+									<td>
+										<div class="stack-sm">
+											<code dir="ltr" class="font-bold text-xs">{ log.ID }</code>
+											<span class="tabular-nums text-xs text-muted">{ log.TimeFormatted }</span>
+										</div>
+									</td>
+
+									<!-- Feature Name & Context -->
+									<td>
+										<div class="d-flex items-center gap-2">
+											if log.FeatureKey == "variant_match" || log.FeatureKey == "catalog_import" {
+												<span class="badge badge-purple text-xs font-bold whitespace-nowrap" title="استيراد ومعالجة الكتالوج ومطابقة الأصناف">
+													@components.IconSparkles("icon-xs")
+													<span>استيراد</span>
+												</span>
+											} else if log.FeatureKey == "savings_import" || log.FeatureKey == "savings" {
+												<span class="badge badge-emerald text-xs font-bold whitespace-nowrap" title="منتجات وبدائل التوفير">
+													<span>🏷️</span>
+													<span>توفير</span>
+												</span>
+											} else if log.FeatureKey == "compare_match" {
+												<span class="badge badge-amber text-xs font-bold whitespace-nowrap" title="مقارنة الخصومات وأسعار الموردين">
+													<span>⚖️</span>
+													<span>مقارنة</span>
+												</span>
+											} else if log.FeatureKey == "smart_order" {
+												<span class="badge badge-sky text-xs font-bold whitespace-nowrap" title="الطلب الذكي">
+													<span>⚡</span>
+													<span>طلب ذكي</span>
+												</span>
+											} else if log.FeatureKey == "column_detect" {
+												<span class="badge badge-sky text-xs font-bold whitespace-nowrap" title="التعرف على أعمدة الكتالوج">
+													<span>📋</span>
+													<span>أعمدة</span>
+												</span>
+											} else {
+												<span class="badge badge-secondary text-xs font-bold whitespace-nowrap" title="المساعد الآلي">
+													<span>💬</span>
+													<span>مساعد</span>
+												</span>
+											}
+											<div class="stack-sm">
+												<strong class="text-sm text-primary">{ log.FeatureName }</strong>
+												if log.SourceContext != "" {
+													<span class="text-xs text-muted d-flex items-center gap-1">
+														@components.IconMapPin("icon-xs")
+														<span>{ log.SourceContext }</span>
+													</span>
+												}
+											</div>
+										</div>
+									</td>
+
+									<!-- Model & Tier -->
+									<td>
+										<div class="inline-row-04">
+											<span class="text-xs font-bold text-primary">محرك دوا 24 الذكي</span>
+											if log.ModelTier == "quality" {
+												<span class="badge badge-purple text-xs font-bold">فائقة الدقة (Quality)</span>
+											} else if log.ModelTier == "fast" {
+												<span class="badge badge-sky text-xs font-bold">معالجة سريعة (Fast)</span>
+											} else {
+												<span class="badge badge-secondary text-xs font-bold">قياسي</span>
+											}
+										</div>
+									</td>
+
+									<!-- Tokens (Clean In / Out format - No '0 tokens' badge) -->
+									<td>
+										<div class="tabular-nums" dir="ltr">
+											In: { fmt.Sprintf("%d", log.InputTokens) } · Out: { fmt.Sprintf("%d", log.OutputTokens) }
+										</div>
+									</td>
+
+									<!-- Latency -->
+									<td>
+										<span class="tabular-nums text-xs">
+											{ log.DurationText() }
+										</span>
+									</td>
+
+									<!-- Status Badge -->
+									<td>
+										if log.Status == "success" || log.Status == "completed" {
+											<span class="badge badge-emerald text-xs font-bold">
+												@components.IconCheckCircle("icon-xs")
+												<span>{ log.StatusLabel }</span>
+											</span>
+										} else if log.Status == "cached" {
+											<span class="badge badge-sky text-xs font-bold">
+												@components.IconZap("icon-xs")
+												<span>ذاكرة سريعة</span>
+											</span>
+										} else {
+											<span class="badge badge-amber text-xs font-bold">
+												<span>{ log.StatusLabel }</span>
+											</span>
+										}
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+					</table>
+				</div>
+				if data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     func() string { if data.IsVendor { return "/vendor/ai-logs" }; return "/customer/ai-logs" }(),
+						QueryValues: data.QueryParams(),
+					})
+				}
+			}
+		</div>
+	</div>
+
+	<!-- Filtering Script -->
+	<script nonce={ layouts.Nonce(ctx) }>
+		function applyAIServerFilter(param, value) {
+			const url = new URL(window.location.href);
+			if (value) {
+				url.searchParams.set(param, value);
+			} else {
+				url.searchParams.delete(param);
+			}
+			url.searchParams.delete('page');
+			if (window.dawaNavigate) { window.dawaNavigate(url.toString()); } else { window.location.href = url.toString(); }
+		}
+
+		function filterAILogs() {
+			const q = (document.getElementById('ai-logs-search')?.value || '').toLowerCase().trim();
+			const feature = (document.getElementById('ai-logs-feature-filter')?.value || '').toLowerCase().trim();
+			const status = (document.getElementById('ai-logs-status-filter')?.value || '').toLowerCase().trim();
+			const rows = document.querySelectorAll('#ai-logs-table tbody .ai-log-row');
+
+			rows.forEach(row => {
+				const id = row.getAttribute('data-log-id') || '';
+				const f = row.getAttribute('data-log-feature') || '';
+				const m = row.getAttribute('data-log-model') || '';
+				const s = row.getAttribute('data-log-status') || '';
+
+				const matchesQ = !q || id.includes(q) || f.includes(q) || m.includes(q);
+				const matchesFeature = !feature || f.includes(feature);
+				const matchesStatus = !status || s.includes(status);
+
+				if (matchesQ && matchesFeature && matchesStatus) {
+					row.style.display = '';
+				} else {
+					row.style.display = 'none';
+				}
+			});
+		}
+
+		// The search box is replaced on every in-place visit, so bind to the
+		// element itself (once per element), not once per page lifetime.
+		function bindAILogsSearch() {
+			var searchInput = document.getElementById('ai-logs-search');
+			if (!searchInput || searchInput.__dawaBound) return;
+			searchInput.__dawaBound = true;
+			searchInput.addEventListener('keydown', function(e) {
+				if (e.key === 'Enter') {
+					applyAIServerFilter('q', this.value.trim());
+				}
+			});
+		}
+		(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', bindAILogsSearch) : bindAILogsSearch());
+	</script>
+}

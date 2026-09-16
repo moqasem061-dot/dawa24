@@ -1,0 +1,61 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ Onboarding() {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	@layouts.PublicShell("انضمام الشركاء والموردين | Partner Onboarding", "ar", "rtl") {
+		<div class="glass-panel">
+			<div class="stack-sm">
+				<a href="/">
+					if site.LogoURL != "" {
+						<img src={ site.LogoURL } alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
+					} else {
+						<img src="/static/img/logo.png" alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
+					}
+				</a>
+				<h1 class="page-title font-bold text-xl m-0">انضمام شريك توريد أو صيدلية</h1>
+				<p class="text-sm text-secondary m-0">سجل بيانات مؤسستك للانضمام إلى شبكة التوزيع الدوائي الموحدة</p>
+			</div>
+
+			<form action="/onboarding" method="POST" class="stack-lg">
+				<div class="form-group mb-0">
+					<label class="form-label">الاسم التجاري للمؤسسة / الصيدلية *</label>
+					<input type="text" name="tradeName" placeholder="مثال: صيدلية الأمل الحديثة" required class="form-input" />
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label">الاسم القانوني المسجل بالسجل التجاري *</label>
+					<input type="text" name="legalName" placeholder="مثال: شركة الأمل لتجارة وتوزيع الأدوية ذ.م.م" required class="form-input" />
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group mb-0">
+						<label class="form-label">رقم البطاقة الضريبية *</label>
+						<input type="text" name="taxId" placeholder="123-456-789" required class="form-input tabular-nums" />
+					</div>
+					<div class="form-group mb-0">
+						<label class="form-label">رقم السجل التجاري *</label>
+						<input type="text" name="crNumber" placeholder="987654" required class="form-input tabular-nums" />
+					</div>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label">نوع الحساب</label>
+					<select name="type" class="form-select">
+						<option value="customer">صيدلية مرخصة</option>
+						<option value="vendor">موزع / مورد أدوية معتمد</option>
+					</select>
+				</div>
+
+				<button type="submit" class="btn btn-primary">
+					@components.IconCheck("icon-sm")
+					<span>تقديم طلب الاعتماد والتسجيل</span>
+				</button>
+			</form>
+		</div>
+	}
+}

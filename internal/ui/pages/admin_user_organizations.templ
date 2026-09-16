@@ -1,0 +1,159 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminUserOrgData struct {
+	UserOrgs   []*org.UserOrganization
+	ActiveTab  string
+	TotalCount int
+	Page       int
+	PerPage    int
+}
+
+templ AdminUserOrganizationsPage(lang, dir string, data *AdminUserOrgData) {
+	@layouts.AdminShell("إدارة مستخدمي المنظمات | لوحة الإدارة", "user_organization", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBuilding("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								مستخدمو المنظمات (User Organizations Directory)
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								سجل ربط الصيدليات والمستخدمين بالموردين والشركات وأرقام المنظمات المعتمدة
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Filter Tabs -->
+				if data != nil {
+					<div class="tabs-nav mt-6">
+						<a
+							href="/admin/user-organization?status=all"
+							class={ "tab-btn", templ.KV("active", data.ActiveTab == "" || data.ActiveTab == "all") }
+						>
+							<span>الكل ({ fmt.Sprintf("%d", data.TotalCount) })</span>
+						</a>
+						<a
+							href="/admin/user-organization?status=pending"
+							class={ "tab-btn", templ.KV("active", data.ActiveTab == "pending") }
+						>
+							<span>قيد الانتظار</span>
+						</a>
+						<a
+							href="/admin/user-organization?status=approved"
+							class={ "tab-btn", templ.KV("active", data.ActiveTab == "approved") }
+						>
+							<span>معتمد (Approval )</span>
+						</a>
+						<a
+							href="/admin/user-organization?status=rejected"
+							class={ "tab-btn", templ.KV("active", data.ActiveTab == "rejected") }
+						>
+							<span>مرفوض </span>
+						</a>
+					</div>
+				}
+			</div>
+
+			<!-- Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if data == nil || len(data.UserOrgs) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconBuilding("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد سجلات</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على سجلات ربط منظمات في النظام.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>المستخدم / الصيدلية</th>
+									<th>المورد المستهدف</th>
+									<th>رقم المنظمة (Org Number)</th>
+									<th class="text-center">الحالة</th>
+									<th>تاريخ الإنشاء</th>
+									<th>ملاحظات</th>
+								</tr>
+							</thead>
+						<tbody>
+							for _, uo := range data.UserOrgs {
+								if uo != nil {
+									<tr>
+										<td class="tabular-nums">#{ fmt.Sprintf("%d", uo.ID) }</td>
+										<td>
+											<strong class="text-primary">{ uo.UserName }</strong>
+											<div class="meta-muted" dir="ltr">{ uo.UserEmail }</div>
+											if uo.CustomerOrgName != "" {
+												<div class="stack-xs text-sm">{ uo.CustomerOrgName }</div>
+											}
+										</td>
+										<td>
+											<strong class="text-body">{ uo.VendorOrgName }</strong>
+											<div class="meta-muted">معرف: #{ fmt.Sprintf("%d", uo.VendorOrgID) }</div>
+										</td>
+										<td>
+											<span class="badge badge-sky text-xs fw-800 tabular-nums" dir="ltr">
+												{ uo.OrganizationNumber }
+											</span>
+										</td>
+										<td>
+											switch uo.Status {
+												case org.UserOrgStatusApproved:
+													<span class="badge badge-emerald text-xs fw-800">Approval </span>
+												case org.UserOrgStatusRejected:
+													<span class="badge badge-rose text-xs fw-800">مرفوض </span>
+												default:
+													<span class="badge badge-amber text-xs fw-800">قيد الانتظار</span>
+											}
+										</td>
+										<td>
+											<span class="tabular-nums">
+												{ format.Date(uo.CreatedAt, "ar") }
+											</span>
+										</td>
+										<td>
+											if uo.Notes != "" {
+												<span>{ uo.Notes }</span>
+											} else {
+												<span class="text-muted">-</span>
+											}
+										</td>
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
+				</div>
+				if data != nil && data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     "/admin/user-organization",
+						QueryValues: map[string][]string{
+							"status": {data.ActiveTab},
+						},
+					})
+				}
+			}
+			</div>
+		</div>
+	}
+}

@@ -1,0 +1,318 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AdminCitiesSidebar(data AdminCitiesData) {
+	<div class="d-flex flex-col gap-6">
+		<!-- Card 1: Add New City with Interactive Map & Smart Governorate Pan -->
+		<div id="new-city-card" class="glass-panel p-5 mb-0">
+			<div class="d-flex items-center gap-2 pb-3 mb-4 border-b">
+				<div class="user-avatar-badge text-base">
+					@components.IconBuilding("icon-sm")
+				</div>
+				<div>
+					<h3 class="text-sm font-black text-primary m-0">
+						إضافة مدينة / حي فرعي
+					</h3>
+					<div class="text-xs text-secondary mt-0.5">إدراج منطقة جديدة تحت محافظة معتمدة وتحديدها على الخريطة</div>
+				</div>
+			</div>
+
+			<form method="POST" action="/admin/cities/new" class="d-flex flex-col gap-3 m-0">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1">
+						المحافظة التابعة <span class="text-danger">*</span> <span class="text-secondary font-normal">(اختيار المحافظة ينقلك إليها تلقائياً على الخريطة)</span>
+					</label>
+					<select name="governorate_id" required class="form-input text-xs w-full font-bold" data-gov-selector>
+						<option value="" data-lat="30.0444" data-lng="31.2357">-- اختر المحافظة --</option>
+						for _, g := range data.Governorates {
+							if data.SelectedGovernorateID == g.ID {
+								<option 
+									value={ fmt.Sprintf("%d", g.ID) } 
+									data-lat={ fmt.Sprintf("%.6f", g.Latitude) } 
+									data-lng={ fmt.Sprintf("%.6f", g.Longitude) }
+									selected
+								>
+									{ g.Name["ar"] } ({ g.Name["en"] })
+								</option>
+							} else {
+								<option 
+									value={ fmt.Sprintf("%d", g.ID) } 
+									data-lat={ fmt.Sprintf("%.6f", g.Latitude) } 
+									data-lng={ fmt.Sprintf("%.6f", g.Longitude) }
+								>
+									{ g.Name["ar"] } ({ g.Name["en"] })
+								</option>
+							}
+						}
+					</select>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1">
+						اسم المدينة / الحي بالعربية <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="name_ar" required placeholder="مثال: المنصورة الجديدة" class="form-input text-xs w-full"/>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1">
+						اسم المدينة / الحي بالإنجليزية
+					</label>
+					<input type="text" name="name_en" placeholder="New Mansoura" class="form-input text-xs w-full"/>
+				</div>
+
+				<!-- Map Picker for Add City -->
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1 d-block">
+						تحديد الموقع الجغرافي على الخريطة <span class="text-secondary font-normal">(اضغط على الخريطة لتثبيت الإحداثيات)</span>
+					</label>
+					<div
+						id="city-map-picker"
+						data-map-picker
+						data-default-lat="30.0444"
+						data-default-lon="31.2357"
+						data-default-radius="3000"
+						class="rounded-xl overflow-hidden border bg-surface-sunken position-relative shadow-xs mb-2"
+					>
+						<div class="map-container map-canvas h-48 w-full relative z-1"></div>
+						<div class="flex-between p-2 bg-surface-raised border-t text-xs flex-wrap gap-2">
+							<div class="d-flex items-center gap-1.5">
+								<span class="text-secondary font-bold">الإحداثيات:</span>
+								<span data-map-coords-badge class="tabular-nums font-black text-primary">30.0444, 31.2357</span>
+							</div>
+							<button type="button" data-map-locate class="btn btn-secondary btn-xs font-bold gap-1">
+								<span>موقعي الحالي</span>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex gap-2">
+					<div class="flex-1">
+						<label class="form-label text-xs font-bold mb-1">خط العرض (Lat)</label>
+						<input type="number" step="any" name="city_lat" data-map-input="lat" placeholder="30.0444" class="form-input text-xs w-full font-mono"/>
+					</div>
+					<div class="flex-1">
+						<label class="form-label text-xs font-bold mb-1">خط الطول (Lon)</label>
+						<input type="number" step="any" name="city_lon" data-map-input="lon" placeholder="31.2357" class="form-input text-xs w-full font-mono"/>
+					</div>
+				</div>
+
+				<div class="form-group mb-0">
+					<div class="flex-between items-center mb-1">
+						<label class="form-label text-xs font-bold mb-0">
+							نطاق التغطية الجغرافي (بالمتر)
+						</label>
+						<span id="city-radius-preview" class="text-xs font-black text-brand tabular-nums">3.0 كم</span>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<input
+							type="number"
+							id="new-city-radius-input"
+							name="coverage_radius_meters"
+							data-map-input="radius"
+							value="3000"
+							min="500"
+							max="50000"
+							step="500"
+							placeholder="3000"
+							class="form-input text-xs w-full font-mono font-bold"
+							data-on-input="dawaPreviewRadius(this, 'city-radius-preview', 'city-map-picker')"
+						/>
+						<span class="text-xs text-muted font-bold whitespace-nowrap">متر</span>
+					</div>
+					<div class="d-flex flex-wrap gap-1.5 mt-2">
+						<span class="text-2xs text-muted font-medium ml-1">خيارات سريعة:</span>
+						<button type="button" data-on-click="setValue('new-city-radius-input', 1500)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">1.5 كم</button>
+						<button type="button" data-on-click="setValue('new-city-radius-input', 3000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">3 كم (افتراضي)</button>
+						<button type="button" data-on-click="setValue('new-city-radius-input', 5000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">5 كم</button>
+						<button type="button" data-on-click="setValue('new-city-radius-input', 10000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">10 كم</button>
+					</div>
+				</div>
+
+				<div class="d-flex gap-4 p-3 bg-surface-sunken border rounded-lg">
+					<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold text-primary">
+						<input type="checkbox" name="is_capital" value="true" class="form-checkbox"/>
+						<span>عاصمة / مركز رئيسي</span>
+					</label>
+				</div>
+
+				<button type="submit" class="btn btn-primary btn-sm font-black text-xs w-full mt-2">
+					@components.IconPlus("icon-xs")
+					<span>حفظ وإضافة المدينة</span>
+				</button>
+			</form>
+		</div>
+
+		<!-- Card 2: Quick Add Main Governorate -->
+		<div class="glass-panel p-5 mb-0">
+			<div class="d-flex items-center gap-2 pb-3 mb-4 border-b">
+				<div class="user-avatar-badge text-base">
+					@components.IconBank("icon-sm")
+				</div>
+				<div>
+					<h3 class="text-sm font-black text-primary m-0">
+						إضافة محافظة مصرية رئيسية
+					</h3>
+					<div class="text-xs text-secondary mt-0.5">تسجيل محافظة جديدة بالجمهورية وتحديد مركزها الجغرافي</div>
+				</div>
+			</div>
+
+			<form method="POST" action="/admin/governorates/new" class="d-flex flex-col gap-3 m-0">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1">
+						اسم المحافظة بالعربية <span class="text-danger">*</span>
+					</label>
+					<input type="text" name="gov_name_ar" required placeholder="مثال: أسوان" class="form-input text-xs w-full"/>
+				</div>
+
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1">
+						اسم المحافظة بالإنجليزية
+					</label>
+					<input type="text" name="gov_name_en" placeholder="Aswan" class="form-input text-xs w-full"/>
+				</div>
+
+				<!-- Map Picker for Add Gov -->
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold mb-1 d-block">
+						مركز المحافظة على الخريطة <span class="text-secondary font-normal">(اضغط لتحديد مركز المحافظة)</span>
+					</label>
+					<div
+						id="gov-map-picker"
+						data-map-picker
+						data-default-lat="30.0444"
+						data-default-lon="31.2357"
+						data-default-radius="25000"
+						class="rounded-xl overflow-hidden border bg-surface-sunken position-relative shadow-xs mb-2"
+					>
+						<div class="map-container map-canvas h-44 w-full relative z-1"></div>
+						<div class="flex-between p-2 bg-surface-raised border-t text-xs flex-wrap gap-2">
+							<div class="d-flex items-center gap-1.5">
+								<span class="text-secondary font-bold">الإحداثيات:</span>
+								<span data-map-coords-badge class="tabular-nums font-black text-primary">30.0444, 31.2357</span>
+							</div>
+							<button type="button" data-map-locate class="btn btn-secondary btn-xs font-bold gap-1">
+								<span>موقعي</span>
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="d-flex gap-2">
+					<div class="flex-1">
+						<label class="form-label text-xs font-bold mb-1">خط العرض (Lat)</label>
+						<input type="number" step="any" name="gov_lat" data-map-input="lat" placeholder="30.0444" class="form-input text-xs w-full font-mono"/>
+					</div>
+					<div class="flex-1">
+						<label class="form-label text-xs font-bold mb-1">خط الطول (Lon)</label>
+						<input type="number" step="any" name="gov_lon" data-map-input="lon" placeholder="31.2357" class="form-input text-xs w-full font-mono"/>
+					</div>
+				</div>
+
+				<div class="form-group mb-0">
+					<div class="flex-between items-center mb-1">
+						<label class="form-label text-xs font-bold mb-0">
+							نطاق التغطية للمحافظة (بالمتر)
+						</label>
+						<span id="gov-radius-preview" class="text-xs font-black text-brand tabular-nums">25.0 كم</span>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<input
+							type="number"
+							id="new-gov-radius-input"
+							name="gov_coverage_radius_meters"
+							data-map-input="radius"
+							value="25000"
+							min="5000"
+							max="100000"
+							step="1000"
+							placeholder="25000"
+							class="form-input text-xs w-full font-mono font-bold"
+							data-on-input="dawaPreviewRadius(this, 'gov-radius-preview', 'gov-map-picker')"
+						/>
+						<span class="text-xs text-muted font-bold whitespace-nowrap">متر</span>
+					</div>
+					<div class="d-flex flex-wrap gap-1.5 mt-2">
+						<span class="text-2xs text-muted font-medium ml-1">خيارات سريعة:</span>
+						<button type="button" data-on-click="setValue('new-gov-radius-input', 15000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">15 كم</button>
+						<button type="button" data-on-click="setValue('new-gov-radius-input', 25000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">25 كم (افتراضي)</button>
+						<button type="button" data-on-click="setValue('new-gov-radius-input', 35000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">35 كم</button>
+						<button type="button" data-on-click="setValue('new-gov-radius-input', 50000)" class="badge badge-sky cursor-pointer hover:opacity-80 text-2xs">50 كم</button>
+					</div>
+				</div>
+
+				<div class="d-flex gap-4 p-3 bg-surface-sunken border rounded-lg">
+					<label class="d-flex items-center gap-2 cursor-pointer text-xs font-bold text-primary">
+						<input type="checkbox" name="is_active" value="true" checked class="form-checkbox"/>
+						<span>مفعلة ومعتمدة بالجمهورية</span>
+					</label>
+				</div>
+
+				<button type="submit" class="btn btn-secondary btn-sm font-black text-xs w-full mt-2">
+					@components.IconPlus("icon-xs")
+					<span>حفظ وإضافة المحافظة</span>
+				</button>
+			</form>
+		</div>
+
+		<!-- Card 3: Governorates Quick Navigator -->
+		<div class="glass-panel p-5 mb-0">
+			<div class="d-flex items-center gap-2 pb-3 mb-3 border-b">
+				<div class="user-avatar-badge text-base">
+					@components.IconLayers("icon-sm")
+				</div>
+				<div>
+					<h3 class="text-sm font-black text-primary m-0">
+						المحافظات المسجلة ({ fmt.Sprintf("%d", len(data.Governorates)) })
+					</h3>
+					<div class="text-xs text-secondary mt-0.5">انقر على أي محافظة للفلترة السريعة وتعديل بياناتها</div>
+				</div>
+			</div>
+
+			<div class="d-flex flex-col gap-2 max-h-96 overflow-y-auto pe-1">
+				for _, g := range data.Governorates {
+					<div class="p-2.5 bg-surface-sunken border rounded-lg flex-between items-center gap-2 text-xs">
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/admin/cities?gov_id=%d", g.ID)) }
+							class="font-black text-primary text-decoration-none d-flex items-center gap-1.5 flex-1"
+						>
+							<span>{ g.Name["ar"] }</span>
+							<span class="text-muted font-normal">({ g.Name["en"] })</span>
+						</a>
+
+						<div class="d-flex items-center gap-1.5">
+							<span class="badge badge-sky tabular-nums text-xs font-bold">
+								{ fmt.Sprintf("%d مدينة", g.CityCount) }
+							</span>
+							<span class="badge badge-slate tabular-nums text-xs font-bold" title="نطاق تغطية المحافظة">
+								{ fmt.Sprintf("%.0f كم", g.CoverageRadiusKM()) }
+							</span>
+
+							<button
+								type="button"
+								class="btn btn-secondary btn-xs py-0.5 px-1.5"
+								@click={ fmt.Sprintf("openGovEdit(%d, %q, %q, %f, %f, %d, %t)",
+									g.ID,
+									g.Name["ar"],
+									g.Name["en"],
+									g.Latitude,
+									g.Longitude,
+									g.NormalizedRadius(),
+									g.IsActive,
+								) }
+								title="تعديل المحافظة"
+							>
+								@components.IconEdit("icon-2xs")
+							</button>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+}

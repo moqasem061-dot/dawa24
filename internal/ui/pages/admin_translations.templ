@@ -1,0 +1,307 @@
+package pages
+
+import (
+	"fmt"
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminTranslationsData struct {
+	Translations []*platformadmin.Translation
+	Stats        *platformadmin.TranslationStats
+	Namespaces   []string
+	SelectedNS   string
+	Query        string
+	CustomFilter string
+	Pagination   components.PaginationProps
+}
+
+templ AdminTranslations(data AdminTranslationsData, lang string, dir string) {
+	@layouts.AdminShell("اللغات وإدارة الترجمة والتدويل (i18n)", "translations", lang, dir) {
+		<div class="page-container">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-0">
+				<div class="flex-between items-center flex-wrap gap-4">
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconGlobe("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "admin.translations_title") }
+							</h1>
+							<span class="badge badge-sky text-xs font-bold font-mono">i18n Engine</span>
+						</div>
+						<p class="text-sm text-secondary m-0 mt-1 max-w-2xl">
+							{ i18n.T(lang, "admin.translations_sub") }
+						</p>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<form method="POST" action="/admin/translations/sync" class="m-0">
+							<button type="submit" class="btn btn-secondary font-bold gap-2" title="مزامنة وتحديث كافة المفاتيح الافتراضية من الكود إلى قاعدة البيانات">
+								@components.IconRefresh("icon-xs")
+								<span>{ i18n.T(lang, "admin.translations_sync") }</span>
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+
+			<!-- Stats Row -->
+			<div class="dashboard-stat-grid mb-0">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">
+						{ i18n.T(lang, "admin.translations_total_keys") }
+					</div>
+					<div class="stat-card-value text-primary tabular-nums mt-1">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.TotalKeys) }
+						} else {
+							0
+						}
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">
+						{ i18n.T(lang, "admin.translations_custom_overrides") }
+					</div>
+					<div class="stat-card-value text-brand tabular-nums mt-1">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.CustomOverrides) }
+						} else {
+							0
+						}
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">
+						{ i18n.T(lang, "admin.translations_namespaces") }
+					</div>
+					<div class="stat-card-value text-primary tabular-nums mt-1">
+						if data.Stats != nil {
+							{ fmt.Sprintf("%d", data.Stats.TotalNamespaces) }
+						} else {
+							0
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Search & Filter Controls -->
+			<div class="filter-bar">
+				<form method="GET" action="/admin/translations" class="d-flex flex-wrap gap-3 items-center m-0">
+					<div class="flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ data.Query }
+							placeholder={ i18n.T(lang, "common.search_placeholder") }
+							class="form-input text-xs w-full"
+						/>
+					</div>
+
+     <div class="stack-sm">
+						<select name="ns" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "admin.translations_all_namespaces") }</option>
+							for _, ns := range data.Namespaces {
+								<option value={ ns } selected?={ data.SelectedNS == ns }>{ ns }</option>
+							}
+						</select>
+					</div>
+
+     <div class="stack-sm">
+						<select name="custom" class="form-select text-xs w-full">
+							<option value="">{ i18n.T(lang, "common.all") }</option>
+							<option value="true" selected?={ data.CustomFilter == "true" }>{ i18n.T(lang, "admin.translations_custom_badge") }</option>
+							<option value="false" selected?={ data.CustomFilter == "false" }>{ i18n.T(lang, "admin.translations_default_badge") }</option>
+						</select>
+					</div>
+
+					<button type="submit" class="btn btn-primary font-bold px-4">
+						@components.IconSearch("icon-xs")
+						<span>{ i18n.T(lang, "common.filter") }</span>
+					</button>
+					if data.Query != "" || data.SelectedNS != "" || data.CustomFilter != "" {
+						<a href="/admin/translations" class="btn btn-ghost font-bold text-xs" title="إعادة تعيين الفلاتر">
+							<span>{ i18n.T(lang, "common.cancel") }</span>
+						</a>
+					}
+				</form>
+			</div>
+
+			<!-- Translations Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>
+									{ i18n.T(lang, "admin.translations_key_col") }
+								</th>
+								<th>
+									{ i18n.T(lang, "admin.translations_ns_col") }
+								</th>
+								<th>
+									{ i18n.T(lang, "admin.translations_ar_col") }
+								</th>
+								<th>
+									{ i18n.T(lang, "admin.translations_en_col") }
+								</th>
+								<th class="text-center">
+									{ i18n.T(lang, "admin.translations_type_col") }
+								</th>
+								<th class="text-end">
+									{ i18n.T(lang, "common.actions") }
+								</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(data.Translations) == 0 {
+								<tr>
+									<td colspan="6" class="p-8 text-center text-muted">
+										<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+										<div class="font-extrabold text-base text-primary">
+											{ i18n.T(lang, "common.no_results") }
+										</div>
+									</td>
+								</tr>
+							}
+							for _, tr := range data.Translations {
+								<tr class="border-b">
+									<td class="font-mono text-xs font-bold text-primary">
+										{ tr.Key }
+									</td>
+									<td>
+										<span class="badge badge-slate text-xs font-bold">
+											{ tr.Namespace }
+										</span>
+									</td>
+									<td class="text-sm text-primary leading-relaxed" dir="rtl">
+										{ tr.TextAR }
+									</td>
+									<td class="text-sm text-secondary leading-relaxed" dir="ltr">
+										{ tr.TextEN }
+									</td>
+									<td class="text-center">
+										if tr.IsCustom {
+											<span class="badge badge-emerald text-xs font-bold">
+												{ i18n.T(lang, "admin.translations_custom_badge") }
+											</span>
+										} else {
+											<span class="badge badge-slate text-xs font-bold">
+												{ i18n.T(lang, "admin.translations_default_badge") }
+											</span>
+										}
+									</td>
+									<td class="col-actions">
+										<div class="table-actions">
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold"
+												data-on-click="showEditModal" data-args={ components.JSArgs(tr.Key, tr.Namespace, tr.TextAR, tr.TextEN, tr.Description) }
+												title="تعديل الترجمة"
+											>
+												@components.IconEdit("icon-xxs")
+												<span>{ i18n.T(lang, "common.edit") }</span>
+											</button>
+											if tr.IsCustom {
+												<form method="POST" action="/admin/translations/reset" class="m-0 d-inline" data-confirm="هل أنت متأكد من استعادة الترجمة الافتراضية؟">
+													<input type="hidden" name="key" value={ tr.Key } />
+													<button type="submit" class="btn btn-icon btn-xs text-danger" title="استعادة القيمة الافتراضية">
+														@components.IconRefresh("icon-xxs")
+													</button>
+												</form>
+											}
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+
+				<!-- Pagination Footer -->
+				<div class="p-4 border-t d-flex justify-center">
+					@components.B2BPagination(data.Pagination)
+				</div>
+			</div>
+		</div>
+
+		<!-- Edit Translation Modal -->
+		<div id="edit-translation-modal" class="modal-backdrop" style="display: none;" data-on-click="onlySelf(); closeEditModal()">
+			<div class="glass-panel p-6" data-on-click="event.stopPropagation();">
+				<div class="flex-between items-center pb-3 border-b mb-4">
+					<h3 class="text-lg font-black text-primary m-0">
+						{ i18n.T(lang, "admin.translations_edit_modal") }
+					</h3>
+					<button type="button" class="btn btn-icon btn-xs" data-on-click="closeEditModal()">
+						@components.IconX("icon-xs")
+					</button>
+				</div>
+				<form method="POST" action="/admin/translations" class="d-flex flex-col gap-4 m-0">
+     <div class="stack-sm">
+						<label class="form-label">
+							{ i18n.T(lang, "admin.translations_key_col") }
+						</label>
+						<input type="text" id="modal-key" name="key" readonly class="form-input font-mono font-bold bg-surface-sunken" />
+					</div>
+
+     <div class="stack-sm">
+						<label class="form-label">
+							{ i18n.T(lang, "admin.translations_ar_col") }
+						</label>
+						<textarea id="modal-text-ar" name="text_ar" rows="3" class="form-input" dir="rtl" required></textarea>
+					</div>
+
+     <div class="stack-sm">
+						<label class="form-label">
+							{ i18n.T(lang, "admin.translations_en_col") }
+						</label>
+						<textarea id="modal-text-en" name="text_en" rows="3" class="form-input" dir="ltr" required></textarea>
+					</div>
+
+     <div class="stack-sm">
+						<label class="form-label">
+							الوصف أو ملاحظات الاستخدام
+						</label>
+						<input type="text" id="modal-desc" name="description" class="form-input" />
+					</div>
+
+					<div class="flex-between items-center border-t pt-4 mt-2">
+						<button type="button" class="btn btn-secondary font-bold" data-on-click="closeEditModal()">
+							{ i18n.T(lang, "common.cancel") }
+						</button>
+						<button type="submit" class="btn btn-primary font-extrabold px-6">
+							{ i18n.T(lang, "common.save_changes") }
+						</button>
+					</div>
+				</form>
+			</div>
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			function showEditModal(key, ns, ar, en, desc) {
+				document.getElementById('modal-key').value = key;
+				document.getElementById('modal-text-ar').value = ar;
+				document.getElementById('modal-text-en').value = en;
+				document.getElementById('modal-desc').value = desc || '';
+				var m = document.getElementById('edit-translation-modal');
+				if (m) m.style.display = 'flex';
+			}
+			function closeEditModal() {
+				var m = document.getElementById('edit-translation-modal');
+				if (m) m.style.display = 'none';
+			}
+			if (!window.__dawaBound_admin_translations) {
+				window.__dawaBound_admin_translations = true;
+				document.addEventListener('keydown', function(e) {
+					if (e.key === 'Escape') closeEditModal();
+				});
+			}
+		</script>
+	}
+}

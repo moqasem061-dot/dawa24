@@ -1,0 +1,92 @@
+package components
+
+// Icon dispatches a sidebar icon by name.
+//
+// The navigation registry in internal/platform/rbac names icons as strings
+// because it is a plain Go package with no view layer: it declares what the
+// sidebar contains, and this maps that declaration onto the icon components.
+//
+// An unknown name renders a neutral glyph rather than failing. A typo in a
+// registry entry should cost the right picture, not the page.
+templ Icon(name string, class string) {
+	switch name {
+		case "home":
+			@IconHome(class)
+		case "chart":
+			@IconChart(class)
+		case "bar-chart":
+			@IconBarChart(class)
+		case "bell":
+			@IconBell(class)
+		case "grid":
+			@IconGrid(class)
+		case "shield":
+			@IconShield(class)
+		case "building":
+			@IconBuilding(class)
+		case "users":
+			@IconUsers(class)
+		case "user":
+			@IconUser(class)
+		case "map-pin":
+			@IconMapPin(class)
+		case "location":
+			@IconLocation(class)
+		case "settings":
+			@IconSettings(class)
+		case "layers":
+			@IconLayers(class)
+		case "file":
+			@IconFile(class)
+		case "folder":
+			@IconFolder(class)
+		case "folder-open":
+			@IconFolderOpen(class)
+		case "globe":
+			@IconGlobe(class)
+		case "package":
+			@IconPackage(class)
+		case "upload":
+			@IconUpload(class)
+		case "image":
+			@IconImage(class)
+		case "tag":
+			@IconTag(class)
+		case "zap":
+			@IconZap(class)
+		case "truck":
+			@IconTruck(class)
+		case "wallet":
+			@IconWallet(class)
+		case "credit-card":
+			@IconCreditCard(class)
+		case "sparkles":
+			@IconSparkles(class)
+		case "megaphone":
+			@IconMegaphone(class)
+		case "message-square":
+			@IconMessageSquare(class)
+		case "inbox":
+			@IconInbox(class)
+		case "briefcase":
+			@IconBriefcase(class)
+		case "trash":
+			@IconTrash(class)
+		case "terminal":
+			@IconTerminal(class)
+		case "clock":
+			@IconClock(class)
+		case "trending-up":
+			@IconTrendingUp(class)
+		case "cart":
+			@IconCart(class)
+		case "heart":
+			@IconHeart(class)
+		case "heart-filled":
+			@IconHeartFilled(class)
+		case "alert-circle":
+			@IconAlertCircle(class)
+		default:
+			@IconLayers(class)
+	}
+}

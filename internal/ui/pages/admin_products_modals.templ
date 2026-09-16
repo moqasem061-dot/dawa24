@@ -1,0 +1,248 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ AdminProductCreateModal(categories []*catalog.Category, brands []*catalog.Brand) {
+	<!-- Master Product Creation Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "product-create-modal",
+		Title: "إضافة صنف دوائي جديد إلى الكتالوج المعتمد",
+		Size:  "lg",
+	}) {
+		<form action="/admin/products/new" method="POST" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0" data-boost-upload>
+			<div class="modal-body d-flex flex-col gap-4">
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">اسم الدواء / المستحضر (عربي) *</label>
+						<input type="text" name="name_ar" required class="form-input" placeholder="مثال: بنادول إكسترا 500 مجم" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">اسم الدواء (إنجليزي) *</label>
+						<input type="text" name="name_en" required class="form-input" dir="ltr" placeholder="Panadol Extra 500mg" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الاسم العلمي (Scientific Name) *</label>
+						<input type="text" name="generic_name" required class="form-input" placeholder="Paracetamol + Caffeine" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">المادة الفعالة والتركيز *</label>
+						<input type="text" name="active_ingredient" required class="form-input" placeholder="باراسيتامول 500 مجم + كافيين 65 مجم" />
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الشكل الصيدلي (Dosage Form) *</label>
+						<select name="dosage_form" required class="form-select">
+							<option value="أقراص">أقراص (Tablets)</option>
+							<option value="كبسولات">كبسولات (Capsules)</option>
+							<option value="شراب">شراب (Syrup / Suspension)</option>
+							<option value="حقن">أمبولات وحقن (Injections)</option>
+							<option value="مرهم / كريم">مرهم / كريم (Ointment / Cream)</option>
+							<option value="نقط">نقط (Drops)</option>
+							<option value="فوار">أكياس فوار (Sachets)</option>
+							<option value="مستلزمات طبية">مستلزمات طبية (Medical Supplies)</option>
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">رقم التسجيل بهيئة الدواء (EDA)</label>
+						<input type="text" name="eda_reg_number" class="form-input tabular-nums" placeholder="EDA-10293" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">فئة المنتج (Category) *</label>
+						<select name="category_id" required class="form-select font-bold">
+							<option value="" disabled selected>-- اختر فئة المنتج من الدليل --</option>
+							for _, cat := range categories {
+								<option value={ fmt.Sprintf("%d", cat.ID) }>
+									{ getCategoryDisplayLabel(cat, categories) }
+								</option>
+							}
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">الشركة المصنعة من الدليل المعتمد (Brand)</label>
+						<select name="brand_id" class="form-select">
+							<option value="">-- اختر من الشركات المصنعة المعتمدة --</option>
+							for _, b := range brands {
+								<option value={ fmt.Sprintf("%d", b.ID) }>
+									{ b.Name.Get("ar") }
+									if b.Name.Get("en") != "" {
+										({ b.Name.Get("en") })
+									}
+								</option>
+							}
+						</select>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">أو كتابة اسم الشركة المصنعة يدوياً</label>
+						<input type="text" name="manufacturer" class="form-input" placeholder="Eva Pharma" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">صورة الصنف (رفع ملف)</label>
+						<input type="file" name="product_image" accept=".png,.jpg,.jpeg,.webp" class="form-input" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">أو رابط الصورة (URL)</label>
+						<input type="text" name="image_url" class="form-input" dir="ltr" placeholder="https://..." />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">الوصف ودواعي الاستعمال (عربي)</label>
+						<textarea name="description_ar" rows="2" class="form-input" placeholder="دواعي الاستعمال والجرعات المقترحة..."></textarea>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" data-on-click="closeDialog('product-create-modal')" class="btn btn-secondary">إلغاء</button>
+				<button type="submit" class="btn btn-primary fw-800">
+					@components.IconCheck("icon-xs")
+					<span>حفظ وإدراج الصنف في الكتالوج</span>
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ AdminProductEditModal(categories []*catalog.Category, brands []*catalog.Brand) {
+	<!-- Master Product Edit Modal -->
+	@components.Modal(components.ModalProps{
+		ID:    "product-edit-modal",
+		Title: "تعديل بيانات الصنف الدوائي المعتمد",
+		Size:  "lg",
+	}) {
+		<form :action="'/admin/products/' + editData.id + '/edit'" method="POST" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0" data-boost-upload>
+			<div class="modal-body d-flex flex-col gap-4">
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">اسم الدواء / المستحضر (عربي) *</label>
+						<input type="text" name="name_ar" x-model="editData.name_ar" required class="form-input" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">اسم الدواء (إنجليزي) *</label>
+						<input type="text" name="name_en" x-model="editData.name_en" required class="form-input" dir="ltr" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الاسم العلمي (Scientific Name) *</label>
+						<input type="text" name="generic_name" x-model="editData.generic_name" required class="form-input" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">المادة الفعالة والتركيز *</label>
+						<input type="text" name="active_ingredient" x-model="editData.active_ingredient" required class="form-input" />
+					</div>
+				</div>
+
+				<div class="grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الشكل الصيدلي (Dosage Form) *</label>
+						<select name="dosage_form" x-model="editData.dosage_form" required class="form-select">
+							<option value="أقراص">أقراص (Tablets)</option>
+							<option value="كبسولات">كبسولات (Capsules)</option>
+							<option value="شراب">شراب (Syrup / Suspension)</option>
+							<option value="حقن">أمبولات وحقن (Injections)</option>
+							<option value="مرهم / كريم">مرهم / كريم (Ointment / Cream)</option>
+							<option value="نقط">نقط (Drops)</option>
+							<option value="فوار">أكياس فوار (Sachets)</option>
+							<option value="مستلزمات طبية">مستلزمات طبية (Medical Supplies)</option>
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">رقم التسجيل بهيئة الدواء (EDA)</label>
+						<input type="text" name="eda_reg_number" x-model="editData.eda_reg_number" class="form-input tabular-nums" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">فئة المنتج (Category) *</label>
+						<select name="category_id" x-model="editData.category_id" required class="form-select font-bold">
+							<option value="0" disabled>-- اختر فئة المنتج --</option>
+							for _, cat := range categories {
+								<option value={ fmt.Sprintf("%d", cat.ID) }>
+									{ getCategoryDisplayLabel(cat, categories) }
+								</option>
+							}
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">الشركة المصنعة من الدليل المعتمد (Brand)</label>
+						<select name="brand_id" x-model="editData.brand_id" class="form-select">
+							<option value="0">-- اختر من الشركات المصنعة المعتمدة --</option>
+							for _, b := range brands {
+								<option value={ fmt.Sprintf("%d", b.ID) }>
+									{ b.Name.Get("ar") }
+									if b.Name.Get("en") != "" {
+										({ b.Name.Get("en") })
+									}
+								</option>
+							}
+						</select>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">أو تعديل اسم الشركة المصنعة يدوياً</label>
+						<input type="text" name="manufacturer" x-model="editData.manufacturer" class="form-input" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">تغيير الصورة</label>
+						<input type="file" name="product_image" accept=".png,.jpg,.jpeg,.webp" class="form-input" />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">أو رابط الصورة (URL)</label>
+						<input type="text" name="image_url" x-model="editData.image" class="form-input" dir="ltr" />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">الوصف ودواعي الاستعمال (عربي)</label>
+						<textarea name="description_ar" x-model="editData.description_ar" rows="2" class="form-input"></textarea>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الوصف (إنجليزي)</label>
+						<textarea name="description_en" x-model="editData.description_en" rows="2" class="form-input" dir="ltr"></textarea>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">حالة الصنف</label>
+						<select name="status" x-model="editData.status" class="form-select">
+							<option value="active">نشط ومعتمد (Active)</option>
+							<option value="inactive">موقوف (Inactive)</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" data-on-click="closeDialog('product-edit-modal')" class="btn btn-secondary">إلغاء</button>
+				<button type="submit" class="btn btn-primary fw-800">
+					@components.IconCheck("icon-xs")
+					<span>حفظ التعديلات وتحديث الصنف</span>
+				</button>
+			</div>
+		</form>
+	}
+}

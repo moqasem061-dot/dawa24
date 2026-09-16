@@ -1,0 +1,238 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/attachments"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+)
+
+// One registration, in full, for the administrator deciding on it.
+//
+// The modal this replaces showed eight fields and, on the rows that actually
+// reach the approvals queue, eight blank values: it read legal_name and
+// trade_name and never fell back to `name`, which is the column registration
+// populates. An administrator was asked to approve a company from a screen that
+// told them nothing, and had no way to tell a missing field from a broken modal.
+//
+// Everything here already existed in the database. This is a rendering gap, not
+// a data gap, with two rules: every field falls back before it gives up, and a
+// field that is genuinely empty renders an explicit dash rather than nothing.
+
+// AdminOrgRegistrationDetail is everything the reviewer needs in one place.
+type AdminOrgRegistrationDetail struct {
+	Org       *org.Organization
+	Owner     *AdminRegistrationOwner
+	Branches  []*org.Branch
+	Works     map[int64][]*org.InstitutionalWork
+	Documents []*attachments.Document
+	PlanName  string
+}
+
+// AdminRegistrationOwner is the person who registered the company.
+type AdminRegistrationOwner struct {
+	ID    int64
+	Name  string
+	Email string
+	Phone string
+}
+
+templ AdminOrgRegistrationFragment(d AdminOrgRegistrationDetail, lang string) {
+	if d.Org == nil {
+		<p class="text-xs text-secondary p-4 text-center m-0">{ i18n.T(lang, "admin.reg.not_found") }</p>
+	} else {
+		<div class="d-flex flex-col gap-5 text-start">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<span class="badge badge-sky text-2xs">{ i18n.TKey(lang, "org.type."+string(d.Org.Type)) }</span>
+				@registrationStatusBadge(string(d.Org.Status), lang)
+				<span class="text-2xs text-muted tabular-nums" dir="ltr">{ d.Org.CreatedAt.Format("2006-01-02 15:04") }</span>
+				<span class="text-2xs text-muted" dir="ltr"><code>#{ fmt.Sprintf("%d", d.Org.ID) }</code></span>
+			</div>
+			<section class="stack-xs">
+				<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.reg.section_identity") }</h4>
+				<div class="d-grid grid-2 gap-3 bg-surface-sunken p-4 rounded-2xl border">
+					@registrationField(i18n.T(lang, "admin.reg.legal_name"), registrationName(d.Org), false)
+					@registrationField(i18n.T(lang, "admin.reg.trade_name_ar"), d.Org.TradeName.Get(i18n.AR), false)
+					@registrationField(i18n.T(lang, "admin.reg.trade_name_en"), d.Org.TradeName.Get(i18n.EN), true)
+					@registrationField(i18n.T(lang, "admin.reg.commercial_register"), d.Org.CommercialRegister, true)
+					@registrationField(i18n.T(lang, "admin.reg.tax_number"), d.Org.TaxNumber, true)
+					@registrationField(i18n.T(lang, "admin.reg.pharmacist_license"), d.Org.PharmacistLicense, true)
+				</div>
+			</section>
+			<section class="stack-xs">
+				<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.reg.section_contact") }</h4>
+				<div class="d-grid grid-2 gap-3 bg-surface-sunken p-4 rounded-2xl border">
+					@registrationField(i18n.T(lang, "admin.reg.email"), d.Org.Email, true)
+					@registrationField(i18n.T(lang, "admin.reg.phone"), d.Org.Phone, true)
+					@registrationField(i18n.T(lang, "admin.reg.address"), d.Org.Address, false)
+					if d.PlanName != "" {
+						@registrationField(i18n.T(lang, "admin.reg.plan"), d.PlanName, false)
+					}
+				</div>
+			</section>
+			if d.Owner != nil {
+				<section class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.reg.section_owner") }</h4>
+					<div class="d-grid grid-2 gap-3 bg-surface-sunken p-4 rounded-2xl border">
+						@registrationField(i18n.T(lang, "admin.reg.owner_name"), d.Owner.Name, false)
+						@registrationField(i18n.T(lang, "admin.reg.owner_email"), d.Owner.Email, true)
+						@registrationField(i18n.T(lang, "admin.reg.owner_phone"), d.Owner.Phone, true)
+						<div class="stack-xs">
+							<span class="text-2xs text-muted font-bold">{ i18n.T(lang, "admin.reg.owner_profile") }</span>
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", d.Owner.ID)) }
+								target="_blank"
+								rel="noopener"
+								class="text-xs font-bold text-primary"
+							>{ i18n.T(lang, "admin.reg.open_profile") }</a>
+						</div>
+					</div>
+				</section>
+			}
+			<section class="stack-xs">
+				<h4 class="text-xs font-black text-primary m-0">
+					{ fmt.Sprintf(i18n.T(lang, "admin.reg.section_branches"), len(d.Branches)) }
+				</h4>
+				if len(d.Branches) == 0 {
+					// A company with no branch cannot be served or serve anyone:
+					// CheckAvailability refuses every purchase without one. It is
+					// worth saying so here rather than showing an empty section.
+					<p class="text-2xs text-warning m-0">{ i18n.T(lang, "admin.reg.no_branches") }</p>
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
+							<thead>
+								<tr>
+									<th class="text-start ps-3">{ i18n.T(lang, "admin.reg.branch") }</th>
+									<th class="text-start">{ i18n.T(lang, "admin.reg.branch_address") }</th>
+									<th class="text-start pe-3">{ i18n.T(lang, "admin.reg.branch_works") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, b := range d.Branches {
+									<tr>
+										<td class="ps-3 font-bold text-primary">
+											{ b.Name.Get(i18n.Lang(lang)) }
+											if b.IsMain {
+												<span class="badge badge-brand text-2xs ms-1">{ i18n.T(lang, "admin.reg.main_branch") }</span>
+											}
+										</td>
+										<td>{ orDash(b.Address) }</td>
+										<td class="pe-3">
+											if len(d.Works[b.ID]) == 0 {
+												<span class="badge badge-rose text-2xs">{ i18n.T(lang, "admin.reg.no_works") }</span>
+											} else {
+												for _, wk := range d.Works[b.ID] {
+													<span class="badge badge-slate text-2xs">{ wk.Title.Get(i18n.Lang(lang)) }</span>
+												}
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</section>
+			<section class="stack-xs">
+				<h4 class="text-xs font-black text-primary m-0">
+					{ fmt.Sprintf(i18n.T(lang, "admin.reg.section_documents"), len(d.Documents)) }
+				</h4>
+				if len(d.Documents) == 0 {
+					<p class="text-2xs text-warning m-0">{ i18n.T(lang, "admin.reg.no_documents") }</p>
+				} else {
+					<div class="d-flex flex-col gap-1">
+						for _, doc := range d.Documents {
+							<div class="d-flex items-center gap-2 justify-between border rounded-xl p-2">
+								<div class="stack-xs">
+									<span class="text-xs font-bold text-primary">{ orDash(doc.Title) }</span>
+									<span class="text-2xs text-muted">{ i18n.TKey(lang, "admin.reg.doctype_"+string(doc.DocumentType)) }</span>
+								</div>
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/admin/documents/%d/view", doc.ID)) }
+									target="_blank"
+									rel="noopener"
+									class="btn btn-secondary btn-xs font-bold"
+								>{ i18n.T(lang, "admin.reg.view_document") }</a>
+							</div>
+						}
+					</div>
+				}
+			</section>
+			if d.Org.VerificationNotes != "" || d.Org.RejectionReason != "" {
+				<section class="stack-xs">
+					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.reg.section_trail") }</h4>
+					<div class="bg-surface-sunken p-4 rounded-2xl border stack-xs">
+						if d.Org.VerificationNotes != "" {
+							@registrationField(i18n.T(lang, "admin.reg.notes"), d.Org.VerificationNotes, false)
+						}
+						if d.Org.RejectionReason != "" {
+							@registrationField(i18n.T(lang, "admin.reg.rejection"), d.Org.RejectionReason, false)
+						}
+					</div>
+				</section>
+			}
+		</div>
+	}
+}
+
+templ registrationField(label, value string, ltr bool) {
+	<div class="stack-xs">
+		<span class="text-2xs text-muted font-bold">{ label }</span>
+		if value == "" {
+			// An explicit dash, so a reviewer can tell an unfilled field from a
+			// modal that failed to render. Blank space could be either.
+			<span class="text-xs text-muted">—</span>
+		} else if ltr {
+			<span class="text-xs font-bold text-primary" dir="ltr">{ value }</span>
+		} else {
+			<span class="text-xs font-bold text-primary">{ value }</span>
+		}
+	</div>
+}
+
+templ registrationStatusBadge(status, lang string) {
+	switch status {
+		case "approved":
+			<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "admin.reg.status_approved") }</span>
+		case "rejected":
+			<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "admin.reg.status_rejected") }</span>
+		case "suspended":
+			<span class="badge badge-slate text-2xs font-bold">{ i18n.T(lang, "admin.reg.status_suspended") }</span>
+		default:
+			<span class="badge badge-sky text-2xs font-bold">{ i18n.T(lang, "admin.reg.status_pending") }</span>
+	}
+}
+
+// registrationName falls back through every column that can carry the company's
+// name.
+//
+// legal_name is the one the old modal read and the one registration most often
+// leaves empty, so it rendered a blank heading for exactly the rows that reach
+// the approvals queue.
+func registrationName(o *org.Organization) string {
+	if o == nil {
+		return ""
+	}
+	if o.LegalName != "" {
+		return o.LegalName
+	}
+	if name := o.Name.Get(i18n.AR); name != "" {
+		return name
+	}
+	if name := o.Name.Get(i18n.EN); name != "" {
+		return name
+	}
+	if name := o.TradeName.Get(i18n.AR); name != "" {
+		return name
+	}
+	return o.TradeName.Get(i18n.EN)
+}
+
+func orDash(v string) string {
+	if v == "" {
+		return "—"
+	}
+	return v
+}

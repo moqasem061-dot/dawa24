@@ -1,0 +1,149 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The ordered stop list.
+
+func routeStopTitle(stop commerce.RouteStop, lang string) string {
+	l := i18n.ParseLang(lang)
+	name := stop.PharmacyName.Get(l)
+	branch := stop.BranchName.Get(l)
+	if branch != "" && branch != name {
+		return name + " — " + branch
+	}
+	return name
+}
+
+templ VendorDeliveryRouteStops(data VendorDeliveryRouteData, lang string) {
+	<section class="route-stops glass-panel">
+		<div class="route-stops-head">
+			<h2 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.route.stops_list_head") }</h2>
+			if data.Route.HasOrigin {
+				<span class="text-2xs text-muted">{ i18n.T(lang, "vendor_delivery.route.stops_list_sorted") }</span>
+			} else {
+				<span class="text-2xs text-warning">{ i18n.T(lang, "vendor_delivery.route.stops_list_unsorted") }</span>
+			}
+		</div>
+
+		if data.Route.HasOrigin {
+			<div class="route-origin-row">
+				<span class="route-seq route-seq-origin">
+					@components.IconLocation("icon-3xs")
+				</span>
+				<div class="min-w-0">
+					<div class="text-xs font-black text-primary">{ routeOriginLabel(data, lang) }</div>
+					<div class="text-2xs text-muted">{ i18n.T(lang, "vendor_delivery.route.origin_stop_desc") }</div>
+				</div>
+			</div>
+		}
+
+		<ol class="route-stop-list">
+			for _, stop := range data.Route.Stops {
+				@routeStopRow(stop, lang)
+			}
+		</ol>
+	</section>
+}
+
+templ routeStopRow(stop commerce.RouteStop, lang string) {
+	<li class={ "route-stop", templ.KV("is-late", stop.IsOverdue()) }>
+		<details class="route-stop-details">
+			<summary class="route-stop-summary">
+				<span class={ "route-seq", templ.KV("is-late", stop.IsOverdue()) }>{ fmt.Sprintf("%d", stop.Seq) }</span>
+				<span class="route-stop-body min-w-0">
+					<span class="route-stop-name">{ routeStopTitle(stop, lang) }</span>
+					if stop.Address != "" {
+						<span class="route-stop-address">{ stop.Address }</span>
+					}
+					<span class="route-stop-meta">
+						<span class="tabular-nums">{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.route.stop_dist_prev"), km(stop.LegMeters)) }</span>
+						<span class="tabular-nums">{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.route.stop_parcels_count"), len(stop.Shipments)) }</span>
+						<span class="route-stop-money">
+							@components.MoneyDisplay(components.MoneyDisplayProps{Amount: stop.Collect})
+						</span>
+						if stop.IsOverdue() {
+							<span class="badge badge-rose text-2xs font-black">{ i18n.T(lang, "vendor_delivery.route.next_stop_overdue") }</span>
+						}
+					</span>
+				</span>
+				<span class="route-stop-chevron">
+					@components.IconChevronDown("icon-3xs")
+				</span>
+			</summary>
+
+			<div class="route-stop-expand">
+				<div class="route-stop-actions">
+					<a
+						href={ templ.SafeURL(StopMapsURL(stop)) }
+						target="_blank"
+						rel="noopener"
+						class="btn btn-secondary btn-sm font-bold text-2xs gap-1.5 route-action"
+					>
+						@components.IconLocation("icon-3xs")
+						<span>{ i18n.T(lang, "vendor_delivery.card.btn_directions") }</span>
+					</a>
+					if stop.Phone != "" {
+						<a
+							href={ templ.SafeURL("tel:" + stop.Phone) }
+							class="btn btn-secondary btn-sm font-bold text-2xs gap-1.5 route-action"
+						>
+							@components.IconPhone("icon-3xs")
+							<span>{ stop.Phone }</span>
+						</a>
+					}
+				</div>
+				<ul class="route-parcel-list">
+					for _, sh := range stop.Shipments {
+						<li class="route-parcel">
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d", sh.ID)) }
+								class="route-parcel-link text-decoration-none"
+							>
+								<span class="route-parcel-id font-mono tabular-nums">{ sh.ShipmentNumber }</span>
+								<span class="route-parcel-meta tabular-nums">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.card.items_units_count"), len(sh.Lines), sh.TotalUnitsCount()) }
+								</span>
+								@DeliveryStatusBadge(sh.Status, lang)
+							</a>
+						</li>
+					}
+				</ul>
+			</div>
+		</details>
+	</li>
+}
+
+// routeUnlocatable lists the parcels the plan could not place.
+templ routeUnlocatable(shipments []*commerce.OrderShipment, lang string) {
+	<section class="route-unlocated glass-panel">
+		<div class="d-flex items-center gap-2 mb-2">
+			@components.IconAlertCircle("icon-xs")
+			<h2 class="text-sm font-black text-primary m-0">
+				{ fmt.Sprintf(i18n.T(lang, "vendor_delivery.route.unlocated_title"), len(shipments)) }
+			</h2>
+		</div>
+		<p class="text-2xs text-secondary mb-3">
+			{ i18n.T(lang, "vendor_delivery.route.unlocated_desc") }
+		</p>
+		<ul class="route-parcel-list">
+			for _, sh := range shipments {
+				<li class="route-parcel">
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d", sh.ID)) }
+						class="route-parcel-link text-decoration-none"
+					>
+						<span class="route-parcel-id font-mono tabular-nums">{ sh.ShipmentNumber }</span>
+						<span class="route-parcel-meta">{ sh.CustomerOrgName.Get(i18n.ParseLang(lang)) }</span>
+						@DeliveryStatusBadge(sh.Status, lang)
+					</a>
+				</li>
+			}
+		</ul>
+	</section>
+}

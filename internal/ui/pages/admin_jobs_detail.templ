@@ -1,0 +1,323 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/hr"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminJobDetailData struct {
+	Job          *hr.JobOffer
+	CompanyName  string
+	CompanyType  string
+	Applications []*hr.JobApplication
+	NoticeType   string
+	NoticeMsg    string
+}
+
+templ AdminJobDetail(lang, dir string, data AdminJobDetailData) {
+	@layouts.AdminShell("تفاصيل الوظيفة الشاغرة", "jobs", lang, dir) {
+		<div class="page-container">
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-danger", data.NoticeType == "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Top Back Navigation & Action Bar -->
+			<div class="flex-between items-center flex-wrap gap-4 mb-6">
+				<a href="/admin/jobs" class="btn btn-secondary btn-sm font-bold">
+					@components.IconArrowRight("icon-xs")
+					<span>العودة لقائمة الوظائف</span>
+				</a>
+				<div class="d-flex items-center gap-2">
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/jobs/%d/toggle", data.Job.ID)) } class="m-0 d-inline">
+						if data.Job.Status == "published" {
+							<button type="submit" class="btn btn-secondary btn-sm font-bold">
+								إغلاق الوظيفة
+							</button>
+						} else {
+							<button type="submit" class="btn btn-secondary btn-sm font-bold text-success">
+								تفعيل ونشر الوظيفة
+							</button>
+						}
+					</form>
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/jobs/%d/delete", data.Job.ID)) } class="m-0 d-inline" data-confirm="هل أنت متأكد من حذف هذه الوظيفة؟">
+						<button type="submit" class="btn btn-danger btn-sm font-bold">
+							@components.IconTrash("icon-xs")
+							<span>حذف</span>
+						</button>
+					</form>
+				</div>
+			</div>
+
+			<!-- Job Overview Card -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-start flex-wrap gap-4 border-b pb-4 mb-4">
+					<div>
+						<div class="d-flex items-center gap-3">
+							<h1 class="text-xl font-black text-primary m-0">{ data.Job.Title.Get(i18n.Lang(lang)) }</h1>
+							if data.Job.Status == "published" {
+								<span class="badge badge-emerald text-xs font-bold">معلن ونشط</span>
+							} else {
+								<span class="badge badge-slate text-xs font-bold">مغلق</span>
+							}
+						</div>
+						<div class="text-xs text-muted mt-1">معرف الإعلان: #{ fmt.Sprintf("%d", data.Job.ID) } &bull; تاريخ النشر: { data.Job.CreatedAt.Format("2006-01-02 15:04") }</div>
+					</div>
+					<div class="text-right">
+						<div class="text-xs text-secondary">الجهة المعلنة:</div>
+						<div class="font-bold text-brand text-sm">{ data.CompanyName }</div>
+						<span class="badge badge-slate text-xs mt-0.5">{ orgTypeAr(data.CompanyType) }</span>
+					</div>
+				</div>
+
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+					<div class="p-3 rounded-lg border bg-subtle">
+						<div class="text-xs text-secondary mb-1">الموقع والمحافظة</div>
+						<div class="font-bold text-primary text-sm">{ data.Job.Location }</div>
+					</div>
+					<div class="p-3 rounded-lg border bg-subtle">
+						<div class="text-xs text-secondary mb-1">الراتب المتوقع</div>
+						<div class="font-bold text-success text-sm">
+							if !data.Job.SalaryMin.IsZero() {
+								@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.Job.SalaryMin })
+								if !data.Job.SalaryMax.IsZero() {
+									<span> - </span>
+									@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: data.Job.SalaryMax })
+								}
+							} else {
+								<span class="text-muted">يحدد بالمقابلة</span>
+							}
+						</div>
+					</div>
+					<div class="p-3 rounded-lg border bg-subtle">
+						<div class="text-xs text-secondary mb-1">إجمالي المتقدمين</div>
+						<div class="font-bold text-primary text-sm tabular-nums">{ fmt.Sprintf("%d طلب", len(data.Applications)) }</div>
+					</div>
+				</div>
+
+				if data.Job.Description != "" {
+					<div class="mb-4">
+						<h3 class="text-sm font-bold text-primary mb-2">الوصف الوظيفي</h3>
+						<p class="text-sm text-secondary leading-relaxed bg-subtle p-4 rounded-lg border m-0 whitespace-pre-wrap">{ data.Job.Description }</p>
+					</div>
+				}
+
+				if data.Job.Requirements != "" {
+					<div class="mb-2">
+						<h3 class="text-sm font-bold text-primary mb-2">الشروط والمتطلبات</h3>
+						<p class="text-sm text-secondary leading-relaxed bg-subtle p-4 rounded-lg border m-0 whitespace-pre-wrap">{ data.Job.Requirements }</p>
+					</div>
+				}
+			</div>
+
+			<!-- Applications Section -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				<div class="p-4 px-6 border-b flex-between items-center">
+					<h2 class="text-base font-extrabold text-primary m-0 d-flex items-center gap-2">
+						<span>طلبات التقديم المستلمة</span>
+						<span class="badge badge-slate text-xs">{ fmt.Sprintf("%d متقدم", len(data.Applications)) }</span>
+					</h2>
+				</div>
+
+				if len(data.Applications) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconUsers("icon-sm")</div>
+						<h3 class="text-base font-black text-primary mb-2">لا توجد طلبات تقديم مسجلة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتقدم أي مرشح أو باحث عن عمل لهذه الوظيفة حتى الآن.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>اسم المتقدم</th>
+									<th>بيانات الاتصال</th>
+									<th>السيرة الذاتية</th>
+									<th>تاريخ التقديم</th>
+									<th class="text-center">الحالة</th>
+									<th>ملاحظات / الدور</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, app := range data.Applications {
+									<tr>
+										<td>
+											<div class="font-extrabold text-primary text-xs">{ app.ApplicantName }</div>
+											<div class="text-xs text-muted">#{ fmt.Sprintf("%d", app.ID) }</div>
+										</td>
+										<td>
+											<div class="text-xs text-primary">{ app.ApplicantPhone }</div>
+											<div class="text-xs text-secondary">{ app.ApplicantEmail }</div>
+										</td>
+										<td>
+											if app.CVStorageKey != "" {
+												<a href={ templ.SafeURL(app.CVStorageKey) } target="_blank" class="btn btn-secondary btn-xs font-bold">
+													@components.IconDownload("icon-xs")
+													<span>تحميل CV</span>
+												</a>
+											} else {
+												<span class="text-muted text-xs">غير مرفق</span>
+											}
+										</td>
+										<td class="text-xs text-secondary tabular-nums">
+											{ app.CreatedAt.Format("2006-01-02") }
+										</td>
+										<td class="text-center">
+											if app.Status == "accepted" {
+												<span class="badge badge-emerald text-xs font-bold">مقبول</span>
+											} else if app.Status == "rejected" {
+												<span class="badge badge-rose text-xs font-bold">مرفوض</span>
+											} else {
+												<span class="badge badge-amber text-xs font-bold">قيد المراجعة</span>
+											}
+										</td>
+										<td>
+											if app.AssignedRoleKey != "" {
+												<div class="text-xs font-bold text-brand">{ app.AssignedRoleKey }</div>
+											}
+											if app.Notes != "" {
+												<div class="text-xs text-muted truncate max-w-xs">{ app.Notes }</div>
+											}
+										</td>
+										<td class="col-actions">
+											if app.Status != "accepted" && app.Status != "rejected" {
+												<div class="table-actions">
+													<button
+														type="button"
+														class="btn btn-primary btn-xs font-bold px-3 py-1"
+														data-job-id={ fmt.Sprintf("%d", data.Job.ID) }
+														data-app-id={ fmt.Sprintf("%d", app.ID) }
+														data-app-name={ app.ApplicantName }
+														data-on-click="openAdminAcceptModal(this)"
+													>
+														قبول وتعيين
+													</button>
+													<button
+														type="button"
+														class="btn btn-danger btn-xs font-bold px-2 py-1"
+														data-job-id={ fmt.Sprintf("%d", data.Job.ID) }
+														data-app-id={ fmt.Sprintf("%d", app.ID) }
+														data-app-name={ app.ApplicantName }
+														data-on-click="openAdminRejectModal(this)"
+													>
+														رفض
+													</button>
+												</div>
+											} else {
+												<span class="text-xs text-muted font-bold">مكتمل</span>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+
+			<!-- Modals for Accept & Reject Applicant -->
+			@AdminJobApplicationModals()
+		</div>
+	}
+}
+
+templ AdminJobApplicationModals() {
+	<!-- Accept Applicant Modal -->
+	<div id="admin-accept-modal" class="modal-backdrop" style="display:none;">
+		<div class="modal-card max-w-lg">
+			<div class="modal-header">
+				<h3 class="modal-title font-black text-lg text-primary">قبول وتعيين المتقدم</h3>
+				<button type="button" class="btn-close" data-on-click="closeAdminAcceptModal()">&times;</button>
+			</div>
+			<form id="admin-accept-form" method="POST" action="" class="space-y-4 p-4 m-0">
+				<div>
+					<p class="text-sm text-secondary mb-3">سيتم اعتماد وقبول المتقدم <strong id="admin-accept-applicant-name" class="text-primary"></strong> وتعيينه في المنشأة.</p>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">المسمى الوظيفي المعتمد</label>
+					<input type="text" name="job_title" class="form-input text-sm" placeholder="مثال: صيدلي أول / مندوب مبيعات"/>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">الدور والصلاحية</label>
+					<select name="role_key" class="form-select text-sm">
+						<option value="org_employee">موظف بالمنشأة (Employee)</option>
+						<option value="org_pharmacist">صيدلي (Pharmacist)</option>
+						<option value="org_sales_rep">مندوب مبيعات (Sales Rep)</option>
+						<option value="org_accountant">محاسب (Accountant)</option>
+					</select>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">الراتب الأساسي (ج.م)</label>
+					<input type="number" step="any" name="base_salary" class="form-input text-sm" placeholder="0.00"/>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">ملاحظات التعيين</label>
+					<textarea name="notes" rows="2" class="form-textarea text-sm" placeholder="أي ملاحظات إدارية حول التعيين..."></textarea>
+				</div>
+				<div class="d-flex justify-end gap-2 pt-3 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" data-on-click="closeAdminAcceptModal()">إلغاء</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold">تأكيد القبول والتعيين</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Reject Applicant Modal -->
+	<div id="admin-reject-modal" class="modal-backdrop" style="display:none;">
+		<div class="modal-card max-w-md">
+			<div class="modal-header">
+				<h3 class="modal-title font-black text-lg text-danger">رفض طلب التوظيف</h3>
+				<button type="button" class="btn-close" data-on-click="closeAdminRejectModal()">&times;</button>
+			</div>
+			<form id="admin-reject-form" method="POST" action="" class="space-y-4 p-4 m-0">
+				<div>
+					<p class="text-sm text-secondary mb-3">هل أنت متأكد من رغبتك في رفض طلب المرشح <strong id="admin-reject-applicant-name" class="text-primary"></strong>؟</p>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">أسباب أو ملاحظات الرفض</label>
+					<textarea name="notes" rows="3" class="form-textarea text-sm" placeholder="سبب الرفض إن وجد..."></textarea>
+				</div>
+				<div class="d-flex justify-end gap-2 pt-3 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" data-on-click="closeAdminRejectModal()">إلغاء</button>
+					<button type="submit" class="btn btn-danger btn-sm font-bold">تأكيد الرفض</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openAdminAcceptModal(btn) {
+			var jobId = btn.getAttribute('data-job-id');
+			var appId = btn.getAttribute('data-app-id');
+			var appName = btn.getAttribute('data-app-name');
+			document.getElementById('admin-accept-form').action = '/admin/jobs/' + jobId + '/applications/' + appId + '/accept';
+			document.getElementById('admin-accept-applicant-name').innerText = appName || '';
+			document.getElementById('admin-accept-modal').style.display = 'flex';
+		}
+		function closeAdminAcceptModal() {
+			document.getElementById('admin-accept-modal').style.display = 'none';
+		}
+		function openAdminRejectModal(btn) {
+			var jobId = btn.getAttribute('data-job-id');
+			var appId = btn.getAttribute('data-app-id');
+			var appName = btn.getAttribute('data-app-name');
+			document.getElementById('admin-reject-form').action = '/admin/jobs/' + jobId + '/applications/' + appId + '/reject';
+			document.getElementById('admin-reject-applicant-name').innerText = appName || '';
+			document.getElementById('admin-reject-modal').style.display = 'flex';
+		}
+		function closeAdminRejectModal() {
+			document.getElementById('admin-reject-modal').style.display = 'none';
+		}
+	</script>
+}

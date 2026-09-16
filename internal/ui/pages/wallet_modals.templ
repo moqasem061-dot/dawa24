@@ -1,0 +1,13 @@
+package pages
+
+templ WalletModals(data WalletViewData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	@WalletModalDeposit(data, lang)
+	@WalletModalWithdraw(data, lang)
+	@WalletModalPaymentMethod(data, lang)
+}

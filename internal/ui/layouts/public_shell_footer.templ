@@ -1,0 +1,319 @@
+package layouts
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/features"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ publicMobileNav(site *platformadmin.SiteSettings, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<div
+		class="nav-scrim"
+		x-show="mobileNav"
+		x-cloak
+		x-transition:enter="ease-out duration-200"
+		x-transition:enter-start="opacity-0"
+		x-transition:enter-end="opacity-100"
+		x-transition:leave="ease-in duration-150"
+		x-transition:leave-start="opacity-100"
+		x-transition:leave-end="opacity-0"
+		@click="mobileNav = false"
+	></div>
+
+	<div
+		class="nav-drawer"
+		x-show="mobileNav"
+		x-cloak
+		x-transition:enter="transform transition ease-in-out duration-300"
+		x-transition:enter-start="translate-x-full"
+		x-transition:enter-end="translate-x-0"
+		x-transition:leave="transform transition ease-in-out duration-200"
+		x-transition:leave-start="translate-x-0"
+		x-transition:leave-end="translate-x-full"
+	>
+		<div class="nav-drawer-head">
+			<a href="/" class="nav-brand text-decoration-none d-flex items-center gap-2" @click="mobileNav = false">
+				if site.LogoURL != "" {
+					<img src={ site.LogoURL } alt={ site.SiteName } class={ "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } style="max-height: 32px;" data-img-fallback="hide" />
+				}
+				if site.LogoDarkURL != "" {
+					<img src={ site.LogoDarkURL } alt={ site.SiteName } class="nav-brand-logo logo-dark" style="max-height: 32px;" data-img-fallback="hide" />
+				}
+				<span class="nav-brand-text">
+					<span class="nav-brand-name">{ site.SiteName }</span>
+				</span>
+			</a>
+			<button
+				type="button"
+				@click="mobileNav = false"
+				class="nav-btn nav-btn--icon"
+				aria-label={ i18n.T(lang, "nav.close_menu") }
+			>
+				@components.IconX("icon-sm")
+			</button>
+		</div>
+
+		<div class="nav-drawer-body">
+			if actor, ok := authctx.From(ctx); ok {
+				<nav class="nav-drawer-section" aria-label={ i18n.T(lang, "nav.account_links") }>
+					<span class="nav-drawer-label">{ i18n.T(lang, "nav.my_account") }</span>
+					if actor.IsCustomer() && actor.IsOrgApproved() {
+						<a href="/customer/dashboard" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconHome("icon-sm")
+							<span>{ i18n.T(lang, "nav.pharmacy_dashboard") }</span>
+						</a>
+						<a href="/catalog" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconPill("icon-sm")
+							<span>{ i18n.T(lang, "nav.catalog_unified") }</span>
+						</a>
+						if features.Enabled(ctx, "offers.enabled") {
+							<a href="/offers" class="nav-drawer-link" @click="mobileNav = false">
+								@components.IconPercent("icon-sm")
+								<span>{ i18n.T(lang, "nav.vendor_offers") }</span>
+							</a>
+						}
+						<a href="/suppliers" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconBuilding("icon-sm")
+							<span>{ i18n.T(lang, "nav.suppliers_dir") }</span>
+						</a>
+						<a href="/cart" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconCart("icon-sm")
+							<span>{ i18n.T(lang, "nav.cart") }</span>
+						</a>
+					} else if actor.IsVendor() && actor.IsOrgApproved() {
+						if actor.Can("vendor.dashboard.view") {
+							<a href="/vendor/dashboard" class="nav-drawer-link" @click="mobileNav = false">
+								@components.IconHome("icon-sm")
+								<span>{ i18n.T(lang, "nav.vendor_dashboard") }</span>
+							</a>
+						}
+						if actor.Can("vendor.delivery.view") {
+							<a href="/vendor/delivery" class="nav-drawer-link" @click="mobileNav = false">
+								@components.IconTruck("icon-sm")
+								<span>{ i18n.T(lang, "nav.vendor_delivery") }</span>
+							</a>
+						}
+						if actor.Can("vendor.product.view") {
+							<a href="/vendor/products" class="nav-drawer-link" @click="mobileNav = false">
+								@components.IconPackage("icon-sm")
+								<span>{ i18n.T(lang, "nav.vendor_products") }</span>
+							</a>
+						}
+					} else if actor.IsStaff {
+						<a href="/admin/dashboard" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconChart("icon-sm")
+							<span>{ i18n.T(lang, "nav.admin_dashboard") }</span>
+						</a>
+					} else {
+						<a href="/documents" class="nav-drawer-link" @click="mobileNav = false">
+							@components.IconFile("icon-sm")
+							<span>{ i18n.T(lang, "nav.documents") }</span>
+						</a>
+					}
+				</nav>
+			}
+
+			<nav class="nav-drawer-section" aria-label={ i18n.T(lang, "nav.main_nav") }>
+				<span class="nav-drawer-label">{ i18n.T(lang, "nav.platform") }</span>
+				@drawerLink("/how-it-works", i18n.T(lang, "nav.how_it_works")) {
+					@components.IconZap("icon-sm")
+				}
+				@drawerLink("/about", i18n.T(lang, "nav.about")) {
+					@components.IconBuilding("icon-sm")
+				}
+				@drawerLink("/contact", i18n.T(lang, "nav.contact")) {
+					@components.IconPhone("icon-sm")
+				}
+				if features.Enabled(ctx, "jobs.enabled") {
+					@drawerLink("/jobs", i18n.T(lang, "nav.jobs")) {
+						@components.IconBriefcase("icon-sm")
+					}
+				}
+				@drawerLink("/faq", i18n.T(lang, "nav.faq")) {
+					@components.IconFileText("icon-sm")
+				}
+			</nav>
+		</div>
+
+		if actor, ok := authctx.From(ctx); ok {
+			<div class="nav-drawer-foot">
+				<div class="nav-drawer-account">
+					<span class="nav-avatar" aria-hidden="true">{ components.Initials(actor.DisplayName()) }</span>
+					<span class="nav-menu-identity">
+						<span class="nav-menu-name">{ actor.DisplayName() }</span>
+						if actor.Email != "" {
+							<span class="nav-menu-detail">{ actor.Email }</span>
+						}
+					</span>
+				</div>
+				<form action="/auth/logout" method="POST" class="nav-menu-form">
+					<button type="submit" class="nav-btn nav-btn--outline">
+						@components.IconLogout("icon-xs")
+						<span>{ i18n.T(lang, "auth.logout") }</span>
+					</button>
+				</form>
+			</div>
+		} else {
+			<div class="nav-drawer-foot">
+				<a href="/auth/login" class="nav-btn nav-btn--outline" @click="mobileNav = false">
+					@components.IconUser("icon-xs")
+					<span>{ i18n.T(lang, "nav.login") }</span>
+				</a>
+				<a href="/auth/register" class="nav-btn nav-btn--solid" @click="mobileNav = false">
+					<span>{ i18n.T(lang, "nav.register") }</span>
+				</a>
+			</div>
+		}
+	</div>
+}
+
+// drawerLink is the ruled row used by the mobile sheet. It takes its icon as
+// children so the caller keeps naming the icon it wants without this template
+// growing a switch over icon names.
+templ drawerLink(href string, label string) {
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "nav-drawer-link", templ.KV("is-active", IsCurrentPath(ctx, href)) }
+		@click="mobileNav = false"
+		if IsCurrentPath(ctx, href) {
+			aria-current="page"
+		}
+	>
+		{ children... }
+		<span>{ label }</span>
+	</a>
+}
+
+templ publicFooter(site *platformadmin.SiteSettings, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<footer class="site-footer" hx-boost="true">
+		<div class="footer-content">
+			<!-- Brand & Bio -->
+			<div class="stack-sm">
+				<div class="footer-brand">
+					if site.LogoURL != "" {
+						<img src={ site.LogoURL } alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+					} else {
+						<img src="/static/img/logo.png" alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+					}
+					if site.LogoDarkURL != "" {
+						<img src={ site.LogoDarkURL } alt={ site.SiteName } class="footer-logo logo-dark" data-img-fallback="hide" />
+					}
+					<div class="stack-sm">
+						<div class="footer-brand-name">
+							{ site.SiteName }
+						</div>
+						<div class="footer-brand-subtitle">
+							{ i18n.T(lang, "footer.brand_subtitle") }
+						</div>
+					</div>
+				</div>
+				<p class="footer-description">
+					{ i18n.T(lang, "footer.description") }
+				</p>
+				<div class="footer-social-links">
+					if site.SocialLinks["facebook"] != "" {
+						<a href={ templ.SafeURL(site.SocialLinks["facebook"]) } target="_blank" rel="noopener" class="footer-social-btn" title="Facebook">
+							@components.IconFacebook("icon-xs")
+						</a>
+					}
+					if site.SocialLinks["twitter"] != "" {
+						<a href={ templ.SafeURL(site.SocialLinks["twitter"]) } target="_blank" rel="noopener" class="footer-social-btn" title="Twitter (X)">
+							@components.IconTwitter("icon-xs")
+						</a>
+					}
+					if site.SocialLinks["linkedin"] != "" {
+						<a href={ templ.SafeURL(site.SocialLinks["linkedin"]) } target="_blank" rel="noopener" class="footer-social-btn" title="LinkedIn">
+							@components.IconLinkedIn("icon-xs")
+						</a>
+					}
+					if site.SocialLinks["whatsapp"] != "" {
+						<a href={ templ.SafeURL("https://wa.me/" + site.SocialLinks["whatsapp"]) } target="_blank" rel="noopener" class="footer-social-btn" title="WhatsApp">
+							@components.IconWhatsApp("icon-xs")
+						</a>
+					}
+					if site.SocialLinks["instagram"] != "" {
+						<a href={ templ.SafeURL(site.SocialLinks["instagram"]) } target="_blank" rel="noopener" class="footer-social-btn" title="Instagram">
+							@components.IconInstagram("icon-xs")
+						</a>
+					}
+					if site.SocialLinks["tiktok"] != "" {
+						<a href={ templ.SafeURL(site.SocialLinks["tiktok"]) } target="_blank" rel="noopener" class="footer-social-btn" title="TikTok">
+							@components.IconTikTok("icon-xs")
+						</a>
+					}
+				</div>
+			</div>
+
+			<!-- Quick Links -->
+			<div class="stack-sm">
+				<h4 class="footer-heading">
+					{ i18n.T(lang, "footer.links_title") }
+				</h4>
+				<ul class="footer-link-list">
+					<li><a href="/about">{ i18n.T(lang, "footer.about_link") }</a></li>
+					<li><a href="/how-it-works">{ i18n.T(lang, "footer.how_it_works") }</a></li>
+					if features.Enabled(ctx, "jobs.enabled") {
+						<li><a href="/jobs">{ i18n.T(lang, "footer.jobs") }</a></li>
+					}
+					<li><a href="/faq">{ i18n.T(lang, "footer.faq") }</a></li>
+					<li><a href="/contact">{ i18n.T(lang, "footer.contact_support") }</a></li>
+					if _, ok := authctx.From(ctx); !ok {
+						<li><a href="/auth/register">{ i18n.T(lang, "footer.join") }</a></li>
+					}
+				</ul>
+			</div>
+
+			<!-- Contact & Support -->
+			<div class="stack-sm">
+				<h4 class="footer-heading">
+					{ i18n.T(lang, "footer.support_heading") }
+				</h4>
+				<ul class="footer-link-list footer-contact-list">
+					<li class="row-center-sm">
+						@components.IconMail("icon-sm")
+						<a href={ templ.SafeURL("mailto:" + site.SupportEmail) } class="contact-link">{ site.SupportEmail }</a>
+					</li>
+					<li class="row-center-sm">
+						@components.IconPhone("icon-sm")
+						<a href={ templ.SafeURL("tel:" + site.Phone) } class="tabular-nums contact-link">{ site.Phone }</a>
+					</li>
+					if site.Address != "" {
+						<li class="footer-address">
+							@components.IconBuilding("icon-sm")
+							<span>{ site.Address }</span>
+						</li>
+					}
+				</ul>
+			</div>
+		</div>
+
+		<div class="footer-bottom">
+			<div class="footer-copyright-group">
+				<p class="footer-copyright-text">{ fmt.Sprintf(i18n.T(lang, "footer.copyright"), site.SiteName) }</p>
+			</div>
+			<div class="footer-legal-links">
+				<a href="/privacy">{ i18n.T(lang, "footer.privacy") }</a>
+				<a href="/terms">{ i18n.T(lang, "footer.terms") }</a>
+				<a href="/shipping-returns">{ i18n.T(lang, "footer.shipping_returns") }</a>
+				<a href="/cookies">{ i18n.T(lang, "footer.cookies") }</a>
+				<a href="/payment-policy">{ i18n.T(lang, "footer.payment_policy") }</a>
+			</div>
+		</div>
+	</footer>
+}

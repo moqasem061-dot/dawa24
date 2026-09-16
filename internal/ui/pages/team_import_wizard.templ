@@ -1,0 +1,635 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// TeamRail builds the 4-step wizard rail for bulk employee import.
+func TeamRail(currentStep int) []WizardStep {
+	return []WizardStep{
+		{Number: 1, Title: "اختيار الملف", Icon: "1", Active: currentStep == 1, Done: currentStep > 1},
+		{Number: 2, Title: "تحديد الأعمدة ومطابقة الأدوار", Icon: "2", Active: currentStep == 2, Done: currentStep > 2},
+		{Number: 3, Title: "مراجعة الموظفين", Icon: "3", Active: currentStep == 3, Done: currentStep > 3},
+		{Number: 4, Title: "اكتمال الإضافة", Icon: "4", Active: currentStep == 4, Done: false},
+	}
+}
+
+// TeamImportPage renders the unified bulk employee import wizard.
+templ TeamImportPage(view TeamImportView, lang, dir string) {
+	if view.Audience == "vendor" {
+		@layouts.VendorShell("استيراد فريق العمل والموظفين | دوا 24", "team", lang, dir) {
+			@teamImportContent(view)
+		}
+	} else {
+		@layouts.CustomerShell("استيراد فريق العمل والموظفين | دوا 24", "team", lang, dir, nil) {
+			@teamImportContent(view)
+		}
+	}
+}
+
+templ teamImportContent(view TeamImportView) {
+	<div class="page-container">
+		<!-- Header Action Banner -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge text-2xl">
+						@components.IconUsers("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">استيراد فريق العمل والموظفين من ملف Excel</h1>
+						<p class="text-sm text-secondary m-0 mt-1">
+							ارفع كشف الموظفين، وحدد ربط الأعمدة، وطابق أدوار وصلاحيات العمل بسهولة وسرعة قبل الإضافة النهائية
+						</p>
+					</div>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href={ templ.SafeURL(view.BaseURL) } class="btn btn-secondary btn-sm font-bold text-xs gap-1.5">
+						@components.IconUsers("icon-xs")
+						<span>العودة لفريق العمل</span>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Wizard Progress Rail -->
+		<div class="wizard">
+			@WizardRail(TeamRail(view.WizardStep()))
+
+			<!-- Notice Banner -->
+			if view.NoticeMsg != "" {
+				if view.NoticeType == "error" {
+					<div class="alert alert-error mb-6 d-flex items-center gap-3 p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-800 shadow-xs">
+						@components.IconAlert("icon-sm text-rose-600 shrink-0")
+						<div class="flex-1 font-semibold text-xs">{ view.NoticeMsg }</div>
+					</div>
+				} else {
+					<div class="alert alert-success mb-6 d-flex items-center gap-3 p-4 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 shadow-xs">
+						@components.IconCheckCircle("icon-sm text-emerald-600 shrink-0")
+						<div class="flex-1 font-semibold text-xs">{ view.NoticeMsg }</div>
+					</div>
+				}
+			}
+
+			if view.Fatal != "" {
+				<div class="glass-panel p-6 mb-6 text-center">
+					<div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 d-flex items-center justify-center mx-auto mb-3">
+						@components.IconAlert("icon-md")
+					</div>
+					<h2 class="text-lg font-black text-rose-700 m-0 mb-1">تعذر إكمال عملية الاستيراد</h2>
+					<p class="text-xs text-secondary m-0 mb-4">{ view.Fatal }</p>
+					<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-primary btn-sm font-bold">بدء استيراد جديد</a>
+				</div>
+			} else if view.Session == nil || view.Session.Phase == "" || view.Session.Phase == TeamPhaseUpload {
+				@teamUploadStage(view)
+				if len(view.Sessions) > 0 {
+					@teamSessionsHistoryCard(view)
+				}
+			} else {
+				switch view.Session.Phase {
+					case TeamPhaseMapping:
+						@teamMappingStage(view)
+					case TeamPhaseReview:
+						@teamReviewStage(view)
+					case TeamPhaseCompleted:
+						@teamCompletedStage(view)
+					default:
+						@teamUploadStage(view)
+				}
+			}
+		</div>
+	</div>
+}
+
+// Stage 1: Upload File
+templ teamUploadStage(view TeamImportView) {
+	<div class="glass-panel p-6 mb-6">
+		<div class="mb-4">
+			<h2 class="text-lg font-black text-primary m-0">1. اختر أو اسحب ملف الموظفين</h2>
+			<p class="text-xs text-secondary m-0 mt-1">
+				ارفع ملف يحتوي على بيانات الموظفين (الاسم، البريد الإلكتروني، رقم الهاتف، الدور أو الوظيفة، الفرع/المخزن) بصيغة Excel (.xlsx, .xls) أو CSV.
+			</p>
+		</div>
+
+		<form class="stack-md" method="POST" action={ templ.SafeURL(view.ImportURL + "/upload") } enctype="multipart/form-data" hx-boost="false">
+			<label class="dropzone p-8 text-center d-flex flex-col items-center justify-center border-2 border-dashed border-slate-300 rounded-2xl cursor-pointer transition-all mb-4" id="team-dropzone">
+				<input type="file" name="file" accept=".xlsx,.xls,.csv" required class="visually-hidden" data-on-change="handleTeamFileSelect(this)" />
+				<div class="w-14 h-14 rounded-2xl bg-brand-50 text-brand-600 d-flex items-center justify-center mb-3">
+					@components.IconUpload("icon-lg")
+				</div>
+				<div class="text-sm font-black text-primary mb-1" id="dropzone-title">اضغط لاختيار الملف أو اسحبه وأفلته هنا</div>
+				<div class="text-2xs text-secondary font-medium" id="dropzone-hint">الصيغ المدعومة: Excel (.xlsx, .xls) و CSV — الحجم الأقصى: 30 ميجابايت</div>
+			</label>
+
+			<div class="flex-between items-center flex-wrap gap-3">
+				<div class="d-flex items-center gap-2">
+					<span class="text-xs text-secondary font-bold">نموذج استرشادي جاهز:</span>
+					<a href={ templ.SafeURL(view.ImportURL + "/sample.xlsx") } class="btn btn-secondary btn-xs font-bold gap-1 text-brand">
+						@components.IconDownload("icon-2xs")
+						<span>تحميل قالب Excel للموظفين (.xlsx)</span>
+					</a>
+				</div>
+				<button type="submit" class="btn btn-primary btn-sm font-black gap-2 px-5">
+					<span>متابعة وقراءة الملف ←</span>
+				</button>
+			</div>
+		</form>
+	</div>
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		function handleTeamFileSelect(input) {
+			if (input.files && input.files[0]) {
+				var file = input.files[0];
+				var title = document.getElementById('dropzone-title');
+				var hint = document.getElementById('dropzone-hint');
+				if (title) title.textContent = '' + file.name;
+				if (hint) hint.textContent = 'الحجم: ' + (file.size / (1024 * 1024)).toFixed(2) + ' ميجابايت — جاهز للرفع';
+			}
+		}
+	</script>
+}
+
+// Previous Sessions
+templ teamSessionsHistoryCard(view TeamImportView) {
+	<div class="glass-panel p-0 mb-6 overflow-hidden">
+		<div class="p-4 border-b flex-between items-center">
+   <div class="stack-sm">
+				<h3 class="text-sm font-black text-primary m-0">سجل جلسات الاستيراد</h3>
+				<p class="text-xs text-secondary m-0 mt-0.5">يمكنك استئناف الجلسات الجارية أو حذف الجلسات المؤقتة</p>
+			</div>
+		</div>
+
+		<div class="table-container m-0">
+			<table class="data-table m-0">
+				<thead>
+					<tr>
+						<th>اسم الملف</th>
+						<th>تاريخ الرفع</th>
+						<th class="text-center">عدد الصفوف</th>
+						<th class="text-center">المرحلة</th>
+						<th class="col-actions">الإجراءات</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, sess := range view.Sessions {
+						<tr>
+							<td class="font-bold text-xs">
+								<div class="d-flex items-center gap-2">
+									@components.IconFileText("icon-xs text-brand")
+									<span>{ sess.Filename }</span>
+								</div>
+							</td>
+							<td class="text-xs text-secondary tabular-nums">
+								{ sess.CreatedAt.Format("2006-01-02 03:04 PM") }
+							</td>
+							<td class="text-center font-bold text-xs tabular-nums">
+								{ fmt.Sprint(sess.TotalRows) }
+							</td>
+							<td class="text-center">
+								if sess.Phase == TeamPhaseCompleted {
+									<span class="badge badge-emerald text-2xs">مكتمل</span>
+								} else if sess.Phase == TeamPhaseReview {
+									<span class="badge badge-sky text-2xs">مراجعة البيانات</span>
+								} else {
+									<span class="badge badge-amber text-2xs">تحديد الأعمدة</span>
+								}
+							</td>
+							<td class="col-actions">
+								<div class="table-actions">
+									if sess.Phase != TeamPhaseCompleted {
+										<a href={ templ.SafeURL(fmt.Sprintf("%s/%s", view.ImportURL, sess.ID)) } class="btn btn-primary btn-xs font-bold">
+											استكمال الجلسة ←
+										</a>
+									}
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/cancel", view.ImportURL, sess.ID)) }
+										data-confirm="هل أنت متأكد من حذف هذه الجلسة والبيانات المؤقتة؟" class="d-inline m-0">
+										<button type="submit" class="btn btn-ghost btn-xs text-rose-600">
+											حذف
+										</button>
+									</form>
+								</div>
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+
+// Stage 2: Mapping Columns & Role Matching
+templ teamMappingStage(view TeamImportView) {
+	{{ sess := view.Session }}
+	<div class="glass-panel p-6 mb-6">
+		<div class="flex-between items-center flex-wrap gap-3 mb-6 pb-4 border-b">
+   <div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0">2. ربط الأعمدة وتعيين أدوار الموظفين</h2>
+				<p class="text-xs text-secondary m-0 mt-1">الملف: <strong>{ sess.Filename }</strong> ({ fmt.Sprint(sess.TotalRows) } صف تم التعرف عليها)</p>
+			</div>
+			<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/cancel", view.ImportURL, sess.ID)) }
+				data-confirm="هل تريد إلغاء هذه الجلسة؟" class="m-0">
+				<button type="submit" class="btn btn-ghost btn-xs text-rose-600">إلغاء الجلسة</button>
+			</form>
+		</div>
+
+		@components.ImportFilePreview(sess.Filename, sess.Headers, sess.SampleRows)
+
+		<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/map", view.ImportURL, sess.ID)) } class="stack-lg">
+			<!-- Column Mapping Section -->
+			<div class="mb-6">
+				<div class="d-flex items-center gap-2 mb-3">
+					<div class="w-6 h-6 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center font-bold text-xs">أ</div>
+					<h3 class="text-sm font-black text-primary m-0">ربط أعمدة ملف الـ Excel بالبيانات</h3>
+				</div>
+
+				<div class="d-grid grid-auto-fit-sm gap-4 p-4 rounded-xl bg-surface-sunken border border-slate-200/80">
+					<!-- Name Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود اسم الموظف بالكامل <span class="text-danger">*</span></label>
+						<select name="col_name" class="form-select text-xs font-medium" required>
+							<option value="-1">-- اختر العمود --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.NameCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Email Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود البريد الإلكتروني <span class="text-danger">*</span></label>
+						<select name="col_email" class="form-select text-xs font-medium" required>
+							<option value="-1">-- اختر العمود --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.EmailCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Phone Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود رقم الهاتف (اختياري)</label>
+						<select name="col_phone" class="form-select text-xs font-medium">
+							<option value="-1">-- غير متوفر في الملف --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.PhoneCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Role Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود الدور / الصلاحية (اختياري)</label>
+						<select name="col_role" class="form-select text-xs font-medium">
+							<option value="-1">-- غير متوفر (استخدم الدور الافتراضي) --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.RoleCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Job Title Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود المسمى الوظيفي (اختياري)</label>
+						<select name="col_job_title" class="form-select text-xs font-medium">
+							<option value="-1">-- مثل الدور أو فارغ --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.JobTitleCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Branch Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود الفرع / المخزن (اختياري)</label>
+						<select name="col_branch" class="form-select text-xs font-medium">
+							<option value="-1">-- غير محدد بالملف --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.BranchCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+
+					<!-- Code Column -->
+     <div class="stack-sm">
+						<label class="form-label text-xs font-bold">عمود كود الموظف (اختياري)</label>
+						<select name="col_code" class="form-select text-xs font-medium">
+							<option value="-1">-- توليد تلقائي (EMP-xxx) --</option>
+							for i, h := range sess.Headers {
+								<option value={ fmt.Sprint(i) } selected?={ i == sess.DetectedCols.CodeCol }>{ fmt.Sprintf("%d. %s", i+1, h) }</option>
+							}
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- Role Matching Section -->
+			<div class="mb-6">
+				<div class="d-flex items-center gap-2 mb-3">
+					<div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 d-flex items-center justify-center font-bold text-xs">ب</div>
+     <div class="stack-sm">
+						<h3 class="text-sm font-black text-primary m-0">مطابقة الأدوار المكتوبة في ملف الـ Excel بأدوار المنصة</h3>
+						<p class="text-2xs text-secondary m-0 mt-0.5">يقوم النظام بمطابقة الأدوار المذكورة بالاسم في الإكسيل تلقائياً بأدوار منشأتك، ويمكنك مراجعة وتعديل أي دور أدناه:</p>
+					</div>
+				</div>
+
+				if len(sess.ExcelRoles) > 0 {
+					<div class="p-4 rounded-xl bg-surface-sunken border border-slate-200/80 mb-4">
+						<div class="d-grid grid-auto-fit-sm gap-4">
+							for _, er := range sess.ExcelRoles {
+								<div class="p-3 bg-surface-raised rounded-xl border border-slate-200 shadow-2xs">
+									<div class="flex-between items-center mb-2">
+										<div class="d-flex items-center gap-2">
+											<span class="font-extrabold text-xs text-primary">"{ er.RawName }"</span>
+											<span class="badge badge-slate text-2xs font-mono">{ fmt.Sprintf("%d موظف", er.RowCount) }</span>
+										</div>
+										if er.IsAutoMatched {
+											<span class="badge badge-emerald text-2xs font-bold">مطابقة ذكية</span>
+										} else {
+											<span class="badge badge-amber text-2xs font-bold">تحديد يدوي</span>
+										}
+									</div>
+         <div class="stack-sm">
+										<label class="form-label text-2xs text-secondary mb-1">تعيين الدور بالمنصة:</label>
+										<select name={ "role_map_" + er.RawName } class="form-select text-xs font-bold">
+											for _, cr := range sess.CompanyRoles {
+												<option value={ fmt.Sprint(cr.ID) } selected?={ cr.ID == er.MatchedRoleID }>
+													{ cr.Name }
+												</option>
+											}
+										</select>
+									</div>
+								</div>
+							}
+						</div>
+					</div>
+				}
+
+				<!-- Default Role Selector -->
+				<div class="p-4 rounded-xl bg-brand-50/40 border border-brand-200/60 d-flex items-center justify-between flex-wrap gap-3">
+     <div class="stack-sm">
+						<div class="text-xs font-black text-brand-900">الدور الافتراضي (لأي صفوف لا تحتوي على دور أو مجهولة):</div>
+						<div class="text-2xs text-brand-700 mt-0.5">سيتم إسناد هذا الدور لأي موظف لا يحتوي على قيمة محددة في عمود الأدوار</div>
+					</div>
+					<div class="min-w-[220px]">
+						<select name="default_role_id" class="form-select text-xs font-black text-brand-900 border-brand-300">
+							for _, cr := range sess.CompanyRoles {
+								<option value={ fmt.Sprint(cr.ID) } selected?={ cr.ID == sess.DefaultRoleID }>
+									{ cr.Name }
+								</option>
+							}
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<!-- Action Buttons -->
+			<div class="flex-between items-center pt-4 border-t flex-wrap gap-3">
+				<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-secondary btn-sm font-bold">
+					← العودة للرفع
+				</a>
+				<button type="submit" class="btn btn-primary btn-sm font-black gap-2 px-6">
+					<span>متابعة لمراجعة الموظفين ←</span>
+				</button>
+			</div>
+		</form>
+	</div>
+}
+
+// Stage 3: Review & Preview
+templ teamReviewStage(view TeamImportView) {
+	{{ sess := view.Session }}
+	{{
+		validCount := 0
+		invalidCount := 0
+		existingCount := 0
+		for _, r := range sess.Rows {
+			if r.IsValid {
+				validCount++
+			} else {
+				invalidCount++
+			}
+			if r.IsExistingUser {
+				existingCount++
+			}
+		}
+	}}
+	<div class="page-container" x-data="{
+		filterTab: 'all',
+		searchQ: '',
+		matches(r) {
+			const q = this.searchQ.toLowerCase().trim();
+			const matchSearch = !q || (r.name && r.name.toLowerCase().includes(q)) || (r.email && r.email.toLowerCase().includes(q)) || (r.phone && r.phone.includes(q)) || (r.role && r.role.toLowerCase().includes(q));
+			if (!matchSearch) return false;
+			if (this.filterTab === 'valid') return r.valid;
+			if (this.filterTab === 'issues') return !r.valid;
+			return true;
+		}
+	}">
+		<!-- Review Header -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+    <div class="stack-sm">
+					<h2 class="text-lg font-black text-primary m-0">3. مراجعة وتأكيد بيانات الموظفين</h2>
+					<p class="text-xs text-secondary m-0 mt-1">
+						تحقق من صحة البريد الإلكتروني والأدوار المسندة لكل موظف قبل التأكيد النهائي
+					</p>
+				</div>
+				<div class="d-flex items-center gap-2">
+					<a href={ templ.SafeURL(fmt.Sprintf("%s/%s", view.ImportURL, sess.ID)) } class="btn btn-secondary btn-xs font-bold gap-1">
+						<span>تعديل ربط الأعمدة</span>
+					</a>
+				</div>
+			</div>
+		</div>
+
+		<!-- Metrics Cards -->
+		<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+			<!-- Total Staff -->
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-xl d-flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-sky-50 text-sky-600 d-flex items-center justify-center shrink-0">
+					@components.IconUsers("icon-sm")
+				</div>
+    <div class="stack-sm">
+					<div class="text-2xs text-secondary font-bold">إجمالي الموظفين بالملف</div>
+					<div class="text-lg font-black text-primary tabular-nums">{ fmt.Sprint(len(sess.Rows)) }</div>
+				</div>
+			</div>
+
+			<!-- Valid & Ready -->
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-xl d-flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 d-flex items-center justify-center shrink-0">
+					@components.IconCheckCircle("icon-sm")
+				</div>
+    <div class="stack-sm">
+					<div class="text-2xs text-secondary font-bold">جاهز للإضافة والتفعيل</div>
+					<div class="text-lg font-black text-emerald-600 tabular-nums">{ fmt.Sprint(validCount) }</div>
+				</div>
+			</div>
+
+			<!-- Issues -->
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-xl d-flex items-center gap-3">
+				<div class="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 d-flex items-center justify-center shrink-0">
+					@components.IconAlert("icon-sm")
+				</div>
+    <div class="stack-sm">
+					<div class="text-2xs text-secondary font-bold">صفوف بها ملاحظات / تحذيرات</div>
+					<div class="text-lg font-black text-rose-600 tabular-nums">{ fmt.Sprint(invalidCount) }</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Review Table Panel -->
+		<div class="glass-panel p-0 mb-6 overflow-hidden">
+			<!-- Table Toolbar -->
+			<div class="p-4 border-b flex-between items-center flex-wrap gap-3">
+				<div class="d-flex items-center gap-2">
+					<button type="button" @click="filterTab = 'all'" :class="{ 'btn-primary': filterTab === 'all', 'btn-secondary': !== 'all' }" class="btn btn-xs font-bold">
+						كافة الصفوف ({ fmt.Sprint(len(sess.Rows)) })
+					</button>
+					<button type="button" @click="filterTab = 'valid'" :class="{ 'btn-primary': filterTab === 'valid', 'btn-secondary': !== 'valid' }" class="btn btn-xs font-bold">
+						الجاهزة فقط ({ fmt.Sprint(validCount) })
+					</button>
+					if invalidCount > 0 {
+						<button type="button" @click="filterTab = 'issues'" :class="{ 'btn-primary': filterTab === 'issues', 'btn-secondary': !== 'issues' }" class="btn btn-xs font-bold text-rose-600">
+							المستبعدة ({ fmt.Sprint(invalidCount) })
+						</button>
+					}
+				</div>
+				<div class="w-64">
+					<input type="search" x-model="searchQ" placeholder="بحث بالاسم أو البريد أو الدور..." class="form-input input-xs w-full"/>
+				</div>
+			</div>
+
+			<!-- Table Content -->
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th class="w-12 text-center">#</th>
+							<th>اسم الموظف</th>
+							<th>البريد الإلكتروني للدخول</th>
+							<th>رقم الهاتف</th>
+							<th>المسمى الوظيفي</th>
+							<th>الدور والصلاحيات المعينة</th>
+							<th>الفرع</th>
+							<th class="text-center">الحالة والتحقق</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, r := range sess.Rows {
+							<tr x-show={ fmt.Sprintf("matches({ name: %q, email: %q, phone: %q, role: %q, valid: %t })", r.RawName, r.Email, r.Phone, r.AssignedRoleName, r.IsValid) }>
+								<td class="text-center font-mono text-2xs text-secondary tabular-nums">
+									{ fmt.Sprint(r.Index) }
+								</td>
+								<td class="font-bold text-xs text-primary">
+									<div class="d-flex items-center gap-2">
+										<div class="w-6 h-6 rounded-full bg-brand-50 text-brand-600 d-flex items-center justify-center font-black text-2xs shrink-0">
+											{ string([]rune(r.RawName)[0:1]) }
+										</div>
+										<span>{ r.RawName }</span>
+									</div>
+								</td>
+								<td class="font-mono text-xs text-slate-700">
+									{ r.Email }
+								</td>
+								<td class="font-mono text-xs text-secondary tabular-nums">
+									if r.Phone != "" {
+										{ r.Phone }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+								<td class="text-xs text-secondary font-medium">
+									{ r.JobTitle }
+								</td>
+								<td>
+									<span class="badge badge-sky text-xs font-bold shadow-2xs">
+										{ r.AssignedRoleName }
+									</span>
+								</td>
+								<td class="text-xs text-secondary">
+									if r.AssignedBranchName != "" {
+										<span class="badge badge-slate text-2xs">{ r.AssignedBranchName }</span>
+									} else if r.RawBranch != "" {
+										<span class="text-2xs text-muted">{ r.RawBranch }</span>
+									} else {
+										<span class="text-muted text-2xs">—</span>
+									}
+								</td>
+								<td class="text-center">
+									if r.IsValid {
+										<span class="badge badge-emerald text-2xs font-extrabold">جاهز للإضافة</span>
+									} else {
+										<span class="badge badge-rose text-2xs font-bold" title={ r.ValidationError }>
+											{ r.ValidationError }
+										</span>
+									}
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<!-- Commit Form Action Bar -->
+		<div class="glass-panel p-6 d-flex items-center justify-between flex-wrap gap-4">
+   <div class="stack-sm">
+				<div class="text-xs font-black text-primary">سيتم إضافة <span class="text-emerald-600 font-black">{ fmt.Sprint(validCount) } موظف</span> إلى المنشأة</div>
+				<div class="text-2xs text-secondary mt-0.5">سيتم إنشاء حسابات مستخدمين جديدة وتعيين كلمة مرور افتراضية وإرسال الصلاحيات المحددة فوراً.</div>
+			</div>
+			<div class="d-flex items-center gap-3">
+				<a href={ templ.SafeURL(fmt.Sprintf("%s/%s", view.ImportURL, sess.ID)) } class="btn btn-secondary btn-sm font-bold">
+					← تعديل الربط
+				</a>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/commit", view.ImportURL, sess.ID)) } class="m-0">
+					<button type="submit" class="btn btn-primary btn-sm font-black gap-2 px-6" disabled?={ validCount == 0 }>
+						@components.IconCheck("icon-xs")
+						<span>تأكيد وإضافة الموظفين الآن ({ fmt.Sprint(validCount) })</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+// Stage 4: Completed Stage
+templ teamCompletedStage(view TeamImportView) {
+	{{ sess := view.Session }}
+	<div class="glass-panel p-8 text-center max-w-xl mx-auto my-8">
+		<div class="w-16 h-16 rounded-3xl bg-emerald-100 text-emerald-600 d-flex items-center justify-center mx-auto mb-4 shadow-sm">
+			@components.IconCheckCircle("icon-lg")
+		</div>
+		<h2 class="text-2xl font-black text-primary m-0 mb-2">تم استيراد الموظفين بنجاح!</h2>
+		<p class="text-xs text-secondary m-0 mb-6">
+			تمت معالجة وتفعيل حسابات الموظفين وربطهم بالأدوار والصلاحيات المحددة في المنشأة.
+		</p>
+
+		<div class="p-4 rounded-2xl bg-surface-sunken border border-slate-200/80 d-grid grid-cols-3 gap-4 mb-6">
+   <div class="stack-sm">
+				<div class="text-2xs text-secondary font-bold mb-0.5">تمت إضافتهم</div>
+				<div class="text-xl font-black text-emerald-600 tabular-nums">{ fmt.Sprint(sess.ImportedCount) }</div>
+			</div>
+   <div class="stack-sm">
+				<div class="text-2xs text-secondary font-bold mb-0.5">تم تجاوزهم</div>
+				<div class="text-xl font-black text-amber-600 tabular-nums">{ fmt.Sprint(sess.SkippedCount) }</div>
+			</div>
+   <div class="stack-sm">
+				<div class="text-2xs text-secondary font-bold mb-0.5">فشل إضافتهم</div>
+				<div class="text-xl font-black text-rose-600 tabular-nums">{ fmt.Sprint(sess.FailedCount) }</div>
+			</div>
+		</div>
+
+		<div class="d-flex items-center justify-center gap-3">
+			<a href={ templ.SafeURL(view.BaseURL) } class="btn btn-primary btn-sm font-black px-6">
+				<span>الانتقال لصفحة فريق العمل ←</span>
+			</a>
+			<a href={ templ.SafeURL(view.ImportURL) } class="btn btn-secondary btn-sm font-bold">
+				<span>استيراد ملف آخر</span>
+			</a>
+		</div>
+	</div>
+}

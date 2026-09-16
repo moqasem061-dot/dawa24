@@ -1,0 +1,166 @@
+package layouts
+
+import (
+	"context"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The sidebar, rendered from the permission registry.
+//
+// Every one of the three shells used to hand-write its own list of links. The
+// admin one guarded each link with an inline permission string — six of which
+// named permissions that did not exist, so those links were invisible to
+// everyone except super_admin. The vendor and pharmacy shells guarded nothing
+// at all: every member of a company saw the wallet, the team page and the role
+// editor whether or not they could use them.
+//
+// Now all three read internal/platform/rbac, which is the same declaration the
+// route gates are written against. A link the caller can see leads somewhere
+// they can go, and a page they cannot open has no link — not because someone
+// remembered to keep the two in step, but because there is only one list.
+
+// SidebarNav renders the caller's visible navigation for a dashboard.
+templ SidebarNav(scope rbac.Scope, activeNav string, lang string) {
+	<nav class="sidebar-nav" aria-label="Main Navigation">
+		for _, section := range visibleNav(ctx, scope) {
+			<div class="sidebar-group">
+				<div class="sidebar-section-header">
+					<span>{ section.Label(lang) }</span>
+				</div>
+				for _, item := range section.Items {
+					<a
+						href={ templ.SafeURL(item.Href) }
+						class={ "sidebar-link", templ.KV("active", item.Active(activeNav)) }
+						if item.Active(activeNav) {
+							aria-current="page"
+						}
+					>
+						@components.Icon(item.Icon, "icon-sm")
+						<span>{ item.Label(lang) }</span>
+					</a>
+				}
+			</div>
+		}
+	</nav>
+}
+
+// visibleNav filters the declared navigation down to what the caller holds.
+//
+// This is presentation, not enforcement. The gate on the route is what stops a
+// caller reaching a page; hiding the link only stops them being offered a door
+// that will not open. Both read the same registry, so they agree.
+func visibleNav(ctx context.Context, scope rbac.Scope) []rbac.NavSection {
+	actor, ok := authctx.From(ctx)
+	if !ok {
+		return nil
+	}
+	if scope == "" {
+		scope = actor.Scope
+	}
+	if scope == "" {
+		return nil
+	}
+	allSections := rbac.VisibleNav(scope, rbac.NewSet(actor.Permissions))
+	// For users who are logged in but not approved by the admin,
+	// show only documents ("المستندات والتراخيص") and notifications ("مركز الإشعارات").
+	if !actor.IsStaff && !actor.IsOrgApproved() {
+		var unapprovedSections []rbac.NavSection
+		for _, s := range allSections {
+			var keptItems []rbac.NavItem
+			for _, item := range s.Items {
+				// An account-settings item is about the caller, not the
+				// company, so it survives the pending-approval filter: a member
+				// whose company is still under review must still be able to
+				// change their own password and revoke a session on a lost
+				// device. Its route sits in the pre-approval tier for the same
+				// reason.
+				if item.AlwaysVisible || item.Key == "documents" || item.Key == "notifications" || strings.Contains(item.Href, "document") || strings.Contains(item.Href, "notification") {
+					keptItems = append(keptItems, item)
+				}
+			}
+			if len(keptItems) > 0 {
+				s.Items = keptItems
+				unapprovedSections = append(unapprovedSections, s)
+			}
+		}
+		if len(unapprovedSections) == 0 {
+			docHref := "/customer/documents"
+			if actor.IsVendor() {
+				docHref = "/vendor/documents"
+			}
+			unapprovedSections = []rbac.NavSection{
+				{
+					Key:    "documents_group",
+					NameAr: "المستندات والتنبيهات",
+					NameEn: "Documents & Alerts",
+					Items: []rbac.NavItem{
+						{
+							Key:    "documents",
+							Href:   docHref,
+							Icon:   "file",
+							NameAr: "المستندات والتراخيص",
+							NameEn: "Documents & Licenses",
+						},
+						{
+							Key:    "notifications",
+							Href:   "/notifications",
+							Icon:   "bell",
+							NameAr: "مركز الإشعارات",
+							NameEn: "Notifications Center",
+						},
+						{
+							Key:           "account_settings",
+							Href:          "/settings",
+							Icon:          "settings",
+							NameAr:        "اعدادات الحساب",
+							NameEn:        "Account settings",
+							AlwaysVisible: true,
+						},
+					},
+				},
+			}
+		}
+		return unapprovedSections
+	}
+	return allSections
+}
+
+// CanSee reports whether the caller holds a permission. Pages use it to hide
+// an action button whose route would refuse them anyway.
+func CanSee(ctx context.Context, permission string) bool {
+	actor, ok := authctx.From(ctx)
+	if !ok {
+		return false
+	}
+	return actor.Can(permission)
+}
+
+// SidebarHeaderControls is the pair of buttons in the sidebar's top corner.
+//
+// The three shells each hand-wrote the collapse button, which is why only one
+// of them was ever fixed when the drawer behaviour changed. There is one copy
+// now, and it renders both controls: collapse for the desktop column, close
+// for the mobile drawer. Which of the two is visible is decided by the
+// stylesheet at the same breakpoint the drawer itself appears at, so the
+// viewport can change without a navigation and the right control is there.
+templ SidebarHeaderControls() {
+	<div class="sidebar-header-controls">
+		<button type="button" class="sidebar-toggle" data-sidebar-toggle title="طي/توسيع القائمة">
+			@components.IconSidebarToggle("icon-xs")
+		</button>
+		<button
+			type="button"
+			class="sidebar-close"
+			data-drawer-close
+			aria-controls="app-sidebar"
+			title="إغلاق القائمة"
+			aria-label="إغلاق القائمة"
+		>
+			@components.IconClose("icon-xs")
+		</button>
+	</div>
+}

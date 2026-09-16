@@ -1,0 +1,273 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
+)
+
+templ AdminAdvProductsTable(data AdminAdvProductsData, lang, dir string) {
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		<div class="p-4 border-b d-flex items-center justify-between">
+			<h3 class="font-bold text-sm text-primary m-0 d-flex items-center gap-2">
+				@components.IconPackage("icon-xs text-primary")
+				<span>سجل رعاية وتثبيت المنتجات</span>
+			</h3>
+			<span class="badge badge-sky text-2xs font-bold tabular-nums">
+				{ fmt.Sprintf("%d منتج معروض", len(data.Rows)) }
+			</span>
+		</div>
+
+		if len(data.Rows) == 0 {
+			<div class="p-12 text-center empty-state-glass">
+				<div class="text-4xl mb-3">@components.IconSparkles("icon-sm")</div>
+				<h3 class="text-base font-bold text-primary mb-1">لا توجد منتجات مروجة في هذا القسم</h3>
+				<p class="text-xs text-secondary m-0 max-w-md mx-auto mb-4">
+					يمكن للموردين ترويج منتجاتهم عبر باقات الرعاية أو يمكنك إضافة وتثبيت رعاية لمنتج يدوياً الآن
+				</p>
+				<button
+					type="button"
+					class="btn btn-primary btn-sm font-bold gap-1.5"
+					@click="addModalOpen = true"
+				>
+					@components.IconPlus("icon-xs")
+					<span>+ إضافة وتثبيت رعاية لمنتج الآن</span>
+				</button>
+			</div>
+		} else {
+			<div class="table-container m-0">
+				<table class="data-table m-0 text-xs w-full">
+					<thead>
+						<tr>
+							<th class="w-16"># المعرف</th>
+							<th>المنتج المروّج</th>
+							<th>المورد / المنشأة</th>
+							<th>باقة الرعاية والمستوى</th>
+							<th>الرصيد والتكلفة</th>
+							<th>نافذة التثبيت</th>
+							<th class="text-center">الحالة</th>
+							<th class="text-center">الأداء</th>
+							<th class="col-actions">الإجراءات</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, row := range data.Rows {
+							<tr>
+								<!-- ID -->
+								<td class="font-mono text-2xs text-muted tabular-nums">
+									<a href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products/%d", row.ID)) } class="text-accent hover:underline font-bold">
+										#{ fmt.Sprintf("%d", row.ID) }
+									</a>
+								</td>
+
+								<!-- Product Column -->
+								<td>
+									<div class="d-flex items-center gap-3">
+										<div class="w-10 h-10 rounded-lg bg-surface-sunken border d-flex items-center justify-center shrink-0 overflow-hidden">
+											if row.ProductImage != "" {
+												@components.ProductImage(imageurl.Thumb(row.ProductImage, row.ProductName.Get(i18n.ParseLang(lang)), "w-full h-full object-cover"))
+											} else {
+												@components.IconPackage("icon-xs text-muted")
+											}
+										</div>
+										<div class="stack-xs text-start">
+											<div class="font-bold text-sm text-primary">
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products/%d", row.ID)) } class="hover:text-accent">
+													if row.ProductName.Get(i18n.ParseLang(lang)) != "" {
+														{ row.ProductName.Get(i18n.ParseLang(lang)) }
+													} else {
+														<span>منتج رقم #{ fmt.Sprintf("%d", row.ProductID) }</span>
+													}
+												</a>
+											</div>
+											<div class="d-flex items-center gap-1.5 text-2xs text-muted tabular-nums">
+												if row.ProductSKU != "" {
+													<span class="font-mono font-semibold">كود: { row.ProductSKU }</span>
+													<span>•</span>
+												}
+												if row.PublicID != "" {
+													<span class="font-mono">طلب: { row.PublicID }</span>
+												} else {
+													<span>عنصر #{ fmt.Sprintf("%d", row.ItemID) }</span>
+												}
+											</div>
+										</div>
+									</div>
+								</td>
+
+								<!-- Vendor Column -->
+								<td>
+									<div class="font-bold text-xs text-primary">
+										if row.OrganizationName.Get(i18n.ParseLang(lang)) != "" {
+											{ row.OrganizationName.Get(i18n.ParseLang(lang)) }
+										} else {
+											<span>منشأة #{ fmt.Sprintf("%d", row.OrganizationID) }</span>
+										}
+									</div>
+									<div class="text-2xs text-muted font-mono mt-0.5">
+										if row.OrganizationType != "" {
+											<span>نوع: { row.OrganizationType }</span>
+											<span> • </span>
+										}
+										<span>ID: #{ fmt.Sprintf("%d", row.OrganizationID) }</span>
+									</div>
+								</td>
+
+								<!-- Package & Tier Column -->
+								<td>
+									<div class="d-flex items-center gap-1.5 flex-wrap">
+										<strong class="text-xs text-primary">
+											if row.PackageName.Get(i18n.ParseLang(lang)) != "" {
+												{ row.PackageName.Get(i18n.ParseLang(lang)) }
+											} else {
+												<span>باقة #{ fmt.Sprintf("%d", row.PackageID) }</span>
+											}
+										</strong>
+										<span class={ "badge text-2xs font-bold", advTierBadgeClass(row.TierLevel) }>
+											{ advTierName(row.TierLevel) }
+										</span>
+									</div>
+									<div class="text-2xs text-muted mt-0.5">
+										<span>المستوى: { fmt.Sprintf("%d", row.TierLevel) }</span>
+										if row.PurchaseID != nil && *row.PurchaseID > 0 {
+											<span> • </span>
+											<span>شراء #{ fmt.Sprintf("%d", *row.PurchaseID) }</span>
+										}
+									</div>
+								</td>
+
+								<!-- Credits / Cost Column -->
+								<td>
+									<div class="font-bold text-xs text-primary tabular-nums">
+										{ fmt.Sprintf("%d", row.CreditsUsed) }
+										if row.CreditsTotal > 0 {
+											<span> / { fmt.Sprintf("%d", row.CreditsTotal) }</span>
+										}
+										<span> رصيد</span>
+									</div>
+									if row.Amount.IsPositive() {
+										<div class="text-2xs text-muted tabular-nums">
+											{ row.Amount.String() } ج.م
+										</div>
+									}
+								</td>
+
+								<!-- Timing Column -->
+								<td>
+									<div class="text-xs font-semibold text-primary tabular-nums">
+										if row.StartsAt != nil {
+											{ format.Date(*row.StartsAt, lang) }
+										} else {
+											<span>—</span>
+										}
+										<span> - </span>
+										if row.ExpiresAt != nil {
+											{ format.Date(*row.ExpiresAt, lang) }
+										} else {
+											<span>—</span>
+										}
+									</div>
+									<div class="text-2xs mt-0.5 font-bold">
+										if row.Live(time.Now()) {
+											<span class="text-emerald tabular-nums">● { advDaysRemaining(row.ExpiresAt) }</span>
+										} else if row.AdminStatus == "pending" {
+											<span class="text-amber">⏳ قيد المراجعة</span>
+										} else if row.Expired(time.Now()) {
+											<span class="text-muted">منتهية الصلاحية</span>
+										} else if row.AdminStatus == "rejected" {
+											<span class="text-danger">مرفوضة</span>
+										}
+									</div>
+								</td>
+
+								<!-- Status Column -->
+								<td class="text-center">
+									if row.Live(time.Now()) {
+										<span class="badge badge-emerald text-2xs font-bold">نشط ومعتمد</span>
+									} else if row.AdminStatus == "pending" {
+										<span class="badge badge-amber text-2xs font-bold">بانتظار الموافقة</span>
+									} else if row.Expired(time.Now()) {
+										<span class="badge badge-slate text-2xs font-bold">منتهي</span>
+									} else if row.AdminStatus == "rejected" {
+										<span class="badge badge-rose text-2xs font-bold">مرفوض</span>
+									} else {
+										<span class="badge badge-slate text-2xs font-bold">{ row.Status }</span>
+									}
+								</td>
+
+								<!-- Performance Column -->
+								<td class="text-center tabular-nums">
+									<div class="text-xs font-bold text-primary">
+										{ fmt.Sprintf("%d", row.Impressions) } <span class="text-2xs font-normal text-muted">مشاهدة</span>
+									</div>
+									<div class="text-2xs text-secondary mt-0.5">
+										{ fmt.Sprintf("%d", row.Clicks) } نقر
+										if row.Impressions > 0 {
+											<span class="text-accent font-semibold"> ({ fmt.Sprintf("%.1f%%", row.ClickRate()) })</span>
+										}
+									</div>
+								</td>
+
+								<!-- Actions Column -->
+								<td class="col-actions">
+									<div class="d-flex items-center gap-1.5 justify-end">
+										<!-- Detail View Link -->
+										<a
+											href={ templ.SafeURL(fmt.Sprintf("/admin/adv-products/%d", row.ID)) }
+											class="btn btn-secondary btn-xs font-bold gap-1"
+											title="عرض كافة التفاصيل وسجل التدقيق"
+										>
+											@components.IconEye("icon-2xs")
+											<span>التفاصيل</span>
+										</a>
+
+										<!-- Approve Button for Pending -->
+										if row.AdminStatus == "pending" {
+											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/adv-products/%d/approve", row.ID)) } class="m-0 d-inline">
+												<button
+													type="submit"
+													class="btn btn-success btn-xs font-bold gap-1 text-white shadow-2xs"
+													title="موافقة واعتماد التثبيت فوراً"
+												>
+													@components.IconCheck("icon-2xs")
+													<span>موافقة</span>
+												</button>
+											</form>
+										}
+
+										<!-- Reject Button -->
+										if row.AdminStatus == "pending" {
+											<button
+												type="button"
+												class="btn btn-danger btn-xs font-bold gap-1 text-white shadow-2xs"
+												title="رفض طلب الرعاية"
+												@click={ fmt.Sprintf("rejectId = %d; rejectAction = '/admin/adv-products/%d/reject'; rejectModalOpen = true", row.ID, row.ID) }
+											>
+												@components.IconClose("icon-2xs")
+												<span>رفض</span>
+											</button>
+										} else if row.Live(time.Now()) {
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold text-rose-600 gap-1"
+												title="إلغاء وتجميد الرعاية"
+												@click={ fmt.Sprintf("rejectId = %d; rejectAction = '/admin/adv-products/%d/reject'; rejectModalOpen = true", row.ID, row.ID) }
+											>
+												@components.IconClose("icon-2xs")
+												<span>إلغاء</span>
+											</button>
+										}
+									</div>
+								</td>
+							</tr>
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}

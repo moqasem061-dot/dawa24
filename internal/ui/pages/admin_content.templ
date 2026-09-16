@@ -1,0 +1,480 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func getContentBlockPreviewURL(key string) string {
+	switch {
+	case strings.HasPrefix(key, "about"):
+		return "/about"
+	case strings.HasPrefix(key, "faq"):
+		return "/faq"
+	case key == "how-it-works":
+		return "/how-it-works"
+	case strings.HasPrefix(key, "home") || strings.HasPrefix(key, "highlight"):
+		return "/"
+	default:
+		return ""
+	}
+}
+
+func getPositionBadgeLabel(pos string) string {
+	switch pos {
+	case "page":
+		return "صفحة عامة"
+	case "section":
+		return "قسم مميز"
+	case "banner":
+		return "بانر ترويجي"
+	case "footer":
+		return "تذييل الموقع"
+	case "header":
+		return "ترويسة الموقع"
+	default:
+		return pos
+	}
+}
+
+templ AdminContent(lang, dir string, blocks []*platformadmin.ContentBlock, page, perPage, totalCount int) {
+	@layouts.AdminShell("محتوى الصفحات والأقسام", "content", lang, dir) {
+		<div class="page-container" x-data="{ activeTab: 'all', searchQuery: '' }">
+			
+			<!-- Header Card -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconFile("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">
+								محتوى الصفحات والأقسام الترويجية ({ fmt.Sprintf("%d", totalCount) })
+							</h1>
+							<p class="text-sm text-secondary m-0 mt-1">
+								التحكم الكامل في نصوص الصفحات الثابتة (من نحن، الأسئلة الشائعة، كيف يعمل)، والأقسام المميزة والبانرات الإعلانية في المنصة
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button
+							type="button"
+							class="btn btn-primary font-bold text-xs px-3 py-2"
+							data-modal-open="create-content-modal"
+						>
+							@components.IconPlus("icon-xs")
+							<span>إضافة كتلة / قسم جديد +</span>
+						</button>
+					</div>
+				</div>
+
+				<!-- Navigation Tabs and Search -->
+				<div class="flex-between items-center gap-4 flex-wrap mt-6 pt-4 border-t">
+					<!-- Tabs -->
+					<div class="tabs-nav">
+						<button
+							type="button"
+							class="tab-btn"
+							:class="{ 'active': activeTab === 'all' }"
+							@click="activeTab = 'all'"
+						>
+							الكل ({ fmt.Sprintf("%d", len(blocks)) })
+						</button>
+						<button
+							type="button"
+							class="tab-btn"
+							:class="{ 'active': activeTab === 'page' }"
+							@click="activeTab = 'page'"
+						>
+							صفحات المنصة العامة (Pages)
+						</button>
+						<button
+							type="button"
+							class="tab-btn"
+							:class="{ 'active': activeTab === 'section' }"
+							@click="activeTab = 'section'"
+						>
+							الأقسام المميزة والبانرات (Sections & Banners)
+						</button>
+						<button
+							type="button"
+							class="tab-btn"
+							:class="{ 'active': activeTab === 'custom' }"
+							@click="activeTab = 'custom'"
+						>
+							أخرى ومخصصة
+						</button>
+					</div>
+
+					<!-- Search Box -->
+     <div class="stack-sm">
+						<input
+							type="text"
+							x-model="searchQuery"
+							class="form-input text-xs w-full"
+							placeholder="بحث بالمفتاح أو العنوان..."
+						/>
+					</div>
+				</div>
+			</div>
+
+			<!-- Content Blocks Table Card -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(blocks) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconFile("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد كتل محتوى مسجلة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم إنشاء أي كتل محتوى أو أقسام بعد. اضغط على إضافة كتلة جديدة للبدء.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>#</th>
+									<th>المفتاح التعريفي (Key)</th>
+									<th>العنوان</th>
+									<th>الموضع / التصنيف</th>
+									<th>مقتطف المحتوى</th>
+									<th>الترتيب</th>
+									<th>الحالة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, b := range blocks {
+									{{ previewURL := getContentBlockPreviewURL(b.Key) }}
+									<tr
+										id={ fmt.Sprintf("content-row-%d", b.ID) }
+										x-show={ fmt.Sprintf("(activeTab === 'all' || (activeTab === 'page' && '%s' === 'page') || (activeTab === 'section' && ('%s' === 'section' || '%s' === 'banner')) || (activeTab === 'custom' && '%s' !== 'page' && '%s' !== 'section' && '%s' !== 'banner')) && ('%s'.toLowerCase().includes(searchQuery.toLowerCase()) || '%s'.toLowerCase().includes(searchQuery.toLowerCase()))", b.Position, b.Position, b.Position, b.Position, b.Position, b.Position, b.Key, b.Title.Get("ar")) }
+									>
+										<td class="tabular-nums">
+											#{ fmt.Sprintf("%d", b.ID) }
+										</td>
+										<td>
+											<div class="row-center-sm">
+												<code dir="ltr">
+													{ b.Key }
+												</code>
+											</div>
+										</td>
+										<td>
+											<div class="fw-800 text-primary text-base">
+												if b.Title.Get("ar") != "" {
+													{ b.Title.Get("ar") }
+												} else {
+													<span>(بدون عنوان عربي)</span>
+												}
+											</div>
+											if b.Title.Get("en") != "" {
+												<div class="stack-sm" dir="ltr">
+													{ b.Title.Get("en") }
+												</div>
+											}
+										</td>
+										<td>
+											if b.Position == "page" {
+												<span class="badge badge-sky font-bold">
+													{ getPositionBadgeLabel(b.Position) }
+												</span>
+											} else if b.Position == "section" || b.Position == "banner" {
+												<span class="badge badge-indigo font-bold">
+													{ getPositionBadgeLabel(b.Position) }
+												</span>
+											} else {
+												<span class="badge badge-slate font-bold">
+													{ getPositionBadgeLabel(b.Position) }
+												</span>
+											}
+										</td>
+										<td>
+											if b.Body.Get("ar") != "" {
+												<div class="stack-xs text-sm">
+													{ b.Body.Get("ar") }
+												</div>
+											} else if b.Body.Get("en") != "" {
+												<div class="stack-sm" dir="ltr">
+													{ b.Body.Get("en") }
+												</div>
+											} else {
+												<span>-</span>
+											}
+										</td>
+										<td>
+											<span class="tabular-nums">
+												{ fmt.Sprintf("%d", b.SortOrder) }
+											</span>
+										</td>
+										<td>
+											if b.IsActive {
+												<span class="badge badge-emerald">نشط ومفعل</span>
+											} else {
+												<span class="badge badge-rose">معطل</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												if previewURL != "" {
+													<a
+														href={ templ.SafeURL(previewURL) }
+														target="_blank"
+														rel="noopener"
+														class="btn btn-secondary btn-sm"
+														title="معاينة الصفحة العامة"
+													
+													>
+														<span>معاينة ↗</span>
+													</a>
+												}
+
+												<button
+													type="button"
+													class="btn btn-secondary btn-sm"
+													data-modal-open={ fmt.Sprintf("edit-content-modal-%d", b.ID) }
+												>
+													@components.IconEdit("icon-xs")
+													<span>تعديل</span>
+												</button>
+
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/content/%d/toggle", b.ID)) } class="m-0 inline">
+													if b.IsActive {
+														<button type="submit" class="btn btn-secondary btn-sm text-warning" title="تعطيل الكتلة">
+															تعطيل
+														</button>
+													} else {
+														<button type="submit" class="btn btn-secondary btn-sm text-success" title="تفعيل الكتلة">
+															تفعيل
+														</button>
+													}
+												</form>
+
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/content/%d/delete", b.ID)) } class="m-0 inline">
+													<button
+														type="submit"
+														class="btn btn-secondary btn-sm text-danger"
+														data-confirm="هل أنت متأكد من حذف كتلة المحتوى هذه؟"
+														title="حذف الكتلة"
+													>
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+
+												<!-- Edit Content Block Modal -->
+												@components.Modal(components.ModalProps{
+													ID:    fmt.Sprintf("edit-content-modal-%d", b.ID),
+													Title: fmt.Sprintf("تعديل محتوى: %s", b.Key),
+													Size:  "lg",
+												}) {
+													<form class="stack-md" method="POST" action="/admin/content">
+														<input type="hidden" name="id" value={ fmt.Sprintf("%d", b.ID) } />
+														
+														<div class="form-grid-2">
+															<div class="form-group m-0">
+																<label class="form-label">المفتاح التعريفي (Key) *</label>
+																<input type="text" name="key" value={ b.Key } required class="form-input" dir="ltr" />
+															</div>
+															<div class="form-group m-0">
+																<label class="form-label">الموضع والتصنيف (Position) *</label>
+																<select name="position" class="form-select">
+																	<option value="page" selected?={ b.Position == "page" }>صفحة عامة (Page)</option>
+																	<option value="section" selected?={ b.Position == "section" }>قسم مميز (Section)</option>
+																	<option value="banner" selected?={ b.Position == "banner" }>بانر إعلاني / ترويجي (Banner)</option>
+																	<option value="footer" selected?={ b.Position == "footer" }>تذييل الموقع (Footer)</option>
+																	<option value="header" selected?={ b.Position == "header" }>ترويسة الموقع (Header)</option>
+																</select>
+															</div>
+														</div>
+
+														<div class="form-grid-2">
+															<div class="form-group m-0">
+																<label class="form-label">العنوان (عربي)</label>
+																<input type="text" name="title_ar" value={ b.Title.Get("ar") } class="form-input" placeholder="عنوان القسم أو الصفحة..." />
+															</div>
+															<div class="form-group m-0">
+																<label class="form-label">العنوان (إنجليزي)</label>
+																<input type="text" name="title_en" value={ b.Title.Get("en") } class="form-input" dir="ltr" placeholder="Title in English..." />
+															</div>
+														</div>
+
+														<div class="form-grid-2">
+															<div class="form-group m-0">
+																<label class="form-label">نص المحتوى (عربي)</label>
+																<textarea name="body_ar" rows="6" class="form-input" placeholder="نص المحتوى أو الفقرة بالعربية...">{ b.Body.Get("ar") }</textarea>
+															</div>
+															<div class="form-group m-0">
+																<label class="form-label">نص المحتوى (إنجليزي)</label>
+																<textarea name="body_en" rows="6" class="form-input" dir="ltr" placeholder="Content text in English...">{ b.Body.Get("en") }</textarea>
+															</div>
+														</div>
+
+														<div class="form-grid-2">
+															<div class="form-group m-0">
+																<label class="form-label">ترتيب العرض</label>
+																<input type="number" name="sort_order" value={ fmt.Sprintf("%d", b.SortOrder) } class="form-input" min="0" />
+															</div>
+															<div class="form-group m-0">
+																<label class="form-label">الحالة *</label>
+																<select name="is_active" class="form-select">
+																	<option value="true" selected?={ b.IsActive }>نشط ومفعل (Active)</option>
+																	<option value="false" selected?={ !b.IsActive }>معطل (Inactive)</option>
+																</select>
+															</div>
+														</div>
+
+														<div class="modal-footer-standard">
+															<button
+																type="button"
+																class="btn btn-secondary"
+																data-modal-close={ fmt.Sprintf("edit-content-modal-%d", b.ID) }
+															>
+																إلغاء
+															</button>
+															<button type="submit" class="btn btn-primary fw-800">
+																@components.IconCheck("icon-xs")
+																<span>حفظ التعديلات</span>
+															</button>
+														</div>
+													</form>
+												}
+
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if totalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: page,
+							PageSize:    perPage,
+							TotalCount:  totalCount,
+							BaseURL:     "/admin/content",
+						})
+					}
+				}
+			</div>
+
+		</div>
+
+		<!-- Create Content Block Modal -->
+		@components.Modal(components.ModalProps{
+			ID:    "create-content-modal",
+			Title: "إضافة كتلة محتوى / قسم جديد",
+			Size:  "lg",
+		}) {
+			<form class="stack-md" method="POST" action="/admin/content" x-data="{ selectedPreset: '', customKey: '' }">
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">اختيار مفتاح شائع أو كتابة مخصص *</label>
+						<select
+							class="form-select"
+							x-model="selectedPreset"
+							@change="if (selectedPreset !== 'custom' && selectedPreset !== '') { customKey = selectedPreset }"
+						>
+							<option value="">-- اختر من الكتل والصفحات الجاهزة --</option>
+							<optgroup label="صفحات المنصة العامة">
+								<option value="about">about — من نحن (العنوان والنبذة)</option>
+								<option value="about-vision">about-vision — رؤيتنا</option>
+								<option value="about-mission">about-mission — رسالتنا</option>
+								<option value="faq">faq — الأسئلة الشائعة</option>
+								<option value="how-it-works">how-it-works — كيف يعمل</option>
+							</optgroup>
+							<optgroup label="الأقسام المميزة والبانرات">
+								<option value="home-hero">home-hero — واجهة الصفحة الرئيسية</option>
+								<option value="home-features">home-features — مميزات وخدمات المنصة</option>
+								<option value="home-banner">home-banner — بانر ترويجي</option>
+								<option value="highlight-coldchain">highlight-coldchain — سلسلة التبريد</option>
+								<option value="highlight-fastdelivery">highlight-fastdelivery — التوصيل السريع</option>
+								<option value="highlight-einvoice">highlight-einvoice — الفاتورة الإلكترونية</option>
+							</optgroup>
+							<option value="custom">مفتاح مخصص آخر...</option>
+						</select>
+					</div>
+
+					<div class="form-group m-0">
+						<label class="form-label">المفتاح التعريفي (Key) *</label>
+						<input
+							type="text"
+							name="key"
+							x-model="customKey"
+							required
+							class="form-input"
+							placeholder="about, home-hero..."
+							dir="ltr"
+						
+						/>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">الموضع والتصنيف (Position) *</label>
+						<select name="position" class="form-select">
+							<option value="page" selected>صفحة عامة (Page)</option>
+							<option value="section">قسم مميز (Section)</option>
+							<option value="banner">بانر إعلاني / ترويجي (Banner)</option>
+							<option value="footer">تذييل الموقع (Footer)</option>
+							<option value="header">ترويسة الموقع (Header)</option>
+						</select>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">الحالة *</label>
+						<select name="is_active" class="form-select">
+							<option value="true" selected>نشط ومفعل (Active)</option>
+							<option value="false">معطل (Inactive)</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">العنوان (عربي)</label>
+						<input type="text" name="title_ar" class="form-input" placeholder="عنوان القسم أو الصفحة..." />
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">العنوان (إنجليزي)</label>
+						<input type="text" name="title_en" class="form-input" dir="ltr" placeholder="Title in English..." />
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group m-0">
+						<label class="form-label">نص المحتوى (عربي)</label>
+						<textarea name="body_ar" rows="6" class="form-input" placeholder="نص المحتوى أو الفقرة بالعربية..."></textarea>
+					</div>
+					<div class="form-group m-0">
+						<label class="form-label">نص المحتوى (إنجليزي)</label>
+						<textarea name="body_en" rows="6" class="form-input" dir="ltr" placeholder="Content text in English..."></textarea>
+					</div>
+				</div>
+
+				<div class="form-group m-0">
+					<label class="form-label">ترتيب العرض</label>
+					<input type="number" name="sort_order" value="0" class="form-input" min="0" />
+				</div>
+
+				<div class="modal-footer-standard">
+					<button
+						type="button"
+						class="btn btn-secondary"
+						data-modal-close="create-content-modal"
+					>
+						إلغاء
+					</button>
+					<button type="submit" class="btn btn-primary fw-800">
+						@components.IconCheck("icon-xs")
+						<span>إنشاء وحفظ الكتلة</span>
+					</button>
+				</div>
+			</form>
+		}
+
+	}
+}

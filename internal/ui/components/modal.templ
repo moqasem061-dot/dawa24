@@ -1,0 +1,234 @@
+package components
+
+import (
+	"fmt"
+)
+
+// ModalProps configures a dialog.
+//
+// Built on the native <dialog> element rather than a div with a z-index: the
+// browser then handles the top layer, focus trapping, the backdrop and Escape
+// to close, none of which the previous hand-rolled version did.
+type ModalProps struct {
+	ID         string
+	Title      string
+	Subtitle   string
+	Icon       string
+	// State renders the body as a placeholder while its content loads, for a
+	// modal whose contents arrive over HTMX after it opens.
+	State      string
+	// Size is "" (default/md), "sm", "lg", "xl", or "full".
+	Size       string
+	// Open renders the dialog in an open state by default.
+	Open       bool
+	// AlpineOpen binds dialog visibility to an Alpine expression (e.g. "isOpen").
+	AlpineOpen  string
+	// AlpineClose handles dialog close event in Alpine (e.g. "isOpen = false").
+	AlpineClose string
+	Class       string
+}
+
+templ Modal(props ModalProps) {
+	<dialog
+		id={ props.ID }
+		if props.Class != "" {
+			class={ "modal " + props.Class }
+		} else {
+			class="modal"
+		}
+		aria-labelledby={ props.ID + "-title" }
+		if props.Open {
+			open
+		}
+		if props.AlpineOpen != "" {
+			:open={ props.AlpineOpen }
+			x-cloak
+		}
+		if props.AlpineClose != "" {
+			x-on:close={ props.AlpineClose }
+		}
+		if props.AlpineClose == "" && props.AlpineOpen != "" {
+			x-on:close={ fmt.Sprintf("%s = false", props.AlpineOpen) }
+		}
+	>
+		<div
+			class={ "modal-box",
+				templ.KV("modal-sm", props.Size == "sm"),
+				templ.KV("modal-lg", props.Size == "lg"),
+				templ.KV("modal-xl", props.Size == "xl"),
+				templ.KV("modal-full", props.Size == "full"),
+				templ.KV("modal-md", props.Size == "" || props.Size == "md") }
+		>
+			<div class="modal-header">
+				<div class="d-flex items-center gap-2">
+					if props.Icon != "" {
+						<span class="text-primary">@Icon(props.Icon, "icon-sm")</span>
+					}
+     <div class="stack-sm">
+						<h3 class="modal-title" id={ props.ID + "-title" }>{ props.Title }</h3>
+						if props.Subtitle != "" {
+							<p class="text-xs text-muted mt-0.5 m-0">{ props.Subtitle }</p>
+						}
+					</div>
+				</div>
+				<form class="stack-md" method="dialog">
+					<button type="button" class="modal-close" aria-label="إغلاق">
+						@IconClose("icon-sm")
+					</button>
+				</form>
+			</div>
+			<div class="modal-body">
+				switch props.State {
+					case "error":
+						@ErrorState(ErrorStateProps{})
+					default:
+						{ children... }
+				}
+			</div>
+		</div>
+	</dialog>
+}
+
+// ConfirmModalProps describes a destructive-action confirmation.
+type ConfirmModalProps struct {
+	ID           string
+	Title        string
+	Message      string
+	ConfirmURL   string
+	ConfirmVerb  string // "delete", "post" — the HTMX verb to use
+	ConfirmText  string
+	CancelText   string
+	// RequireMatch is the exact string the operator must type to enable confirm (e.g. record name or "حذف").
+	RequireMatch string
+	// Danger styles the confirm button as destructive.
+	Danger       bool
+	// Target is the HTMX target to swap on success.
+	Target       string
+	// Swap defaults to innerHTML.
+	Swap         string
+}
+
+templ ConfirmModal(props ConfirmModalProps) {
+	<dialog id={ props.ID } class="modal" aria-labelledby={ props.ID + "-title" }>
+		<div class="modal-box modal-md">
+			<div class="modal-header">
+				<div class="d-flex items-center gap-2">
+					if props.Danger {
+						<div class="badge badge-danger p-1">
+							@IconAlertCircle("icon-xs")
+						</div>
+					}
+					<h3 class="modal-title" id={ props.ID + "-title" }>{ props.Title }</h3>
+				</div>
+				<form class="stack-md" method="dialog">
+					<button type="button" class="modal-close" aria-label="إغلاق">
+						@IconClose("icon-sm")
+					</button>
+				</form>
+			</div>
+			<div class="modal-body stack-md">
+				<p class="text-sm text-secondary m-0">{ props.Message }</p>
+				if props.RequireMatch != "" {
+					<div class="stack-xs mt-2" x-data={ fmt.Sprintf("{ typedVal: '', targetVal: '%s' }", props.RequireMatch) }>
+						<label class="form-label text-xs font-bold text-danger">
+							لتأكيد العملية، يرجى كتابة <code class="px-1 font-mono font-bold">{ props.RequireMatch }</code> في الحقل أدناه:
+						</label>
+						<input
+							type="text"
+							class="form-input text-sm w-full font-mono"
+							x-model="typedVal"
+							placeholder={ props.RequireMatch }
+							autocomplete="off"
+						/>
+						<div class="modal-footer mt-4">
+							<form class="stack-md" method="dialog">
+								<button type="submit" class="btn btn-secondary font-bold">
+									if props.CancelText != "" {
+										{ props.CancelText }
+									} else {
+										إلغاء
+									}
+								</button>
+							</form>
+							<button
+								type="button"
+								class={ "btn font-bold", templ.KV("btn-danger", props.Danger), templ.KV("btn-primary", !props.Danger) }
+								:disabled={ fmt.Sprintf("typedVal !== '%s'", props.RequireMatch) }
+								if props.ConfirmVerb == "delete" {
+									hx-delete={ props.ConfirmURL }
+								} else {
+									hx-post={ props.ConfirmURL }
+								}
+								if props.Target != "" {
+									hx-target={ props.Target }
+								}
+								if props.Swap != "" {
+									hx-swap={ props.Swap }
+								} else {
+									hx-swap="innerHTML"
+								}
+								data-modal-close
+							>
+								if props.ConfirmText != "" {
+									{ props.ConfirmText }
+								} else {
+									تأكيد
+								}
+							</button>
+						</div>
+					</div>
+				} else {
+					<div class="modal-footer mt-4">
+						<form class="stack-md" method="dialog">
+							<button type="submit" class="btn btn-secondary font-bold">
+								if props.CancelText != "" {
+									{ props.CancelText }
+								} else {
+									إلغاء
+								}
+							</button>
+						</form>
+						<button
+							type="button"
+							class={ "btn font-bold", templ.KV("btn-danger", props.Danger), templ.KV("btn-primary", !props.Danger) }
+							if props.ConfirmVerb == "delete" {
+								hx-delete={ props.ConfirmURL }
+							} else {
+								hx-post={ props.ConfirmURL }
+							}
+							if props.Target != "" {
+								hx-target={ props.Target }
+							}
+							if props.Swap != "" {
+								hx-swap={ props.Swap }
+							} else {
+								hx-swap="innerHTML"
+							}
+							data-modal-close
+						>
+							if props.ConfirmText != "" {
+								{ props.ConfirmText }
+							} else {
+								تأكيد
+							}
+						</button>
+					</div>
+				}
+			</div>
+		</div>
+	</dialog>
+}
+
+// ModalTrigger is the button that opens a dialog by id.
+templ ModalTrigger(dialogID, class string) {
+	<button
+		type="button"
+		class={ class }
+		data-modal-open={ dialogID }
+		data-dialog-target={ dialogID }
+	>
+		{ children... }
+	</button>
+}
+
+

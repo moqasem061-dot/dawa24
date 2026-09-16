@@ -1,0 +1,157 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// CustomerDecisionRelinkModal renders the modal for pharmacy/vendor organizations to relink their own decisions.
+templ CustomerDecisionRelinkModal(basePath string) {
+	@components.Modal(components.ModalProps{
+		ID:    "org-decision-relink-modal",
+		Title: "ربط / تصحيح مطابقة الصنف بالكتالوج",
+		Size:  "md",
+	}) {
+		<form id="org-decision-relink-form" method="POST" action="">
+			<input type="hidden" id="org-decision-product-id" name="product_id" value="" />
+
+			<div class="stack-md p-2">
+				<div class="bg-surface-sunken p-3 rounded-lg border">
+					<div class="text-2xs text-muted font-bold mb-1">اسم الصنف الوارد بقائمتك:</div>
+					<div id="org-decision-norm-name" class="font-bold text-sm text-primary"></div>
+				</div>
+
+				<!-- Search Input -->
+				<div class="stack-xs">
+					<label class="font-bold text-xs text-primary" for="org-decision-search-input">
+						البحث عن الدواء في الكتالوج:
+					</label>
+					<div class="d-flex gap-2">
+						<input
+							type="text"
+							id="org-decision-search-input"
+							class="form-input flex-1 text-xs"
+							placeholder="اكتب اسم الدواء للبحث..."
+							autocomplete="off"
+						/>
+						<button type="button" class="btn btn-secondary btn-sm text-xs" data-on-click="orgDecisionSearch()">
+							بحث
+						</button>
+					</div>
+				</div>
+
+				<!-- Results List -->
+				<div id="org-decision-results-list" class="stack-xs max-h-48 overflow-y-auto border rounded-lg p-2 bg-surface-raised">
+					<div class="text-center text-muted text-xs p-3">ابحث عن دواء لاختيار الصنف المطابق</div>
+				</div>
+
+				<!-- Selected Item -->
+				<div id="org-decision-selected-card" class="p-2 border border-primary bg-primary-subtle rounded-lg d-none">
+					<div class="text-2xs text-muted font-bold">الصنف المختار:</div>
+					<div id="org-decision-selected-name" class="font-bold text-xs text-primary"></div>
+				</div>
+
+				<div class="d-flex justify-end gap-2 pt-2 border-t">
+					<button type="button" class="btn btn-secondary btn-sm text-xs" data-on-click="orgCloseDecisionModal()">
+						إلغاء
+					</button>
+					<button type="submit" id="org-decision-submit-btn" class="btn btn-primary btn-sm text-xs font-bold" disabled>
+						تأكيد الربط
+					</button>
+				</div>
+			</div>
+		</form>
+	}
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		var orgActiveBasePath = '';
+
+		function orgOpenRelinkModalFromBtn(btn) {
+			var id = parseInt(btn.getAttribute('data-id'), 10);
+			var norm = btn.getAttribute('data-norm') || '';
+			var basePath = btn.getAttribute('data-base-path') || '';
+			orgOpenRelinkModal(id, norm, basePath);
+		}
+
+		function orgOpenRelinkModal(id, normName, basePath) {
+			orgActiveBasePath = basePath || '';
+			var form = document.getElementById('org-decision-relink-form');
+			if (form) form.action = basePath + '/' + id + '/relink';
+
+			var nameEl = document.getElementById('org-decision-norm-name');
+			if (nameEl) nameEl.textContent = normName || '';
+
+			var searchInput = document.getElementById('org-decision-search-input');
+			if (searchInput) searchInput.value = normName || '';
+
+			document.getElementById('org-decision-product-id').value = '';
+			document.getElementById('org-decision-selected-card').classList.add('d-none');
+			document.getElementById('org-decision-submit-btn').disabled = true;
+
+			var modal = document.getElementById('org-decision-relink-modal');
+			if (modal && typeof modal.showModal === 'function') {
+				modal.showModal();
+			}
+			if (normName) orgDecisionSearch();
+		}
+
+		function orgCloseDecisionModal() {
+			var modal = document.getElementById('org-decision-relink-modal');
+			if (modal && typeof modal.close === 'function') modal.close();
+		}
+
+		function orgSelectProduct(id, name) {
+			document.getElementById('org-decision-product-id').value = id;
+			var card = document.getElementById('org-decision-selected-card');
+			var nameEl = document.getElementById('org-decision-selected-name');
+			if (nameEl) nameEl.textContent = name;
+			if (card) card.classList.remove('d-none');
+			document.getElementById('org-decision-submit-btn').disabled = false;
+		}
+
+		function escapeHtml(str) {
+			return (str || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+		}
+
+		function orgDecisionSearch() {
+			var input = document.getElementById('org-decision-search-input');
+			var query = input ? input.value.trim() : '';
+			var list = document.getElementById('org-decision-results-list');
+			if (!list) return;
+
+			list.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-3">⏳ جاري البحث...</div>');
+			list.onclick = function (e) {
+				var pick = e.target.closest('[data-pick-id]');
+				if (pick) orgSelectProduct(parseInt(pick.dataset.pickId, 10), pick.dataset.pickName);
+			};
+			var searchUrl = (orgActiveBasePath && orgActiveBasePath.indexOf('/vendor') !== -1)
+				? '/vendor/saving-products/search-products'
+				: '/customer/saving-products/search-products';
+			fetch(searchUrl + '?q=' + encodeURIComponent(query))
+				.then(function(res) { return res.json(); })
+				.then(function(items) {
+					if (!items || items.length === 0) {
+						list.innerHTML = dawaHTML.sanitize('<div class="text-center text-muted text-xs p-3">لم يتم العثور على أدوية</div>');
+						return;
+					}
+					var html = '';
+					for (var i = 0; i < items.length; i++) {
+						var it = items[i];
+						var dispName = it.name || it.label || it.name_ar || it.name_en || '';
+						if (!dispName) continue;
+						html += '<div class="p-2 border rounded bg-surface hover-bg-sunken flex-between items-center gap-2 cursor-pointer" data-pick-id="' + dawaHTML.escape(it.id) + '" data-pick-name="' + dawaHTML.escape(dispName) + '">';
+						html += '<div class="font-bold text-xs text-primary">' + escapeHtml(dispName) + '</div>';
+						html += '<button type="button" class="btn btn-outline-brand btn-xs font-bold">اختيار</button>';
+						html += '</div>';
+					}
+					if (!html) {
+						html = '<div class="text-center text-muted text-xs p-3">لم يتم العثور على أدوية</div>';
+					}
+					list.innerHTML = dawaHTML.sanitize(html);
+				})
+				.catch(function() {
+					list.innerHTML = dawaHTML.sanitize('<div class="text-center text-danger text-xs p-3">حدث خطأ في البحث</div>');
+				});
+		}
+	</script>
+}

@@ -1,0 +1,156 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminJobsModals(lang string, orgs []*AdminJobOrgOption) {
+	<!-- Add Job Modal -->
+	<div id="admin-add-job-modal" class="modal-backdrop" style="display:none;">
+		<div class="modal-card max-w-2xl">
+			<div class="modal-header">
+				<h3 class="modal-title font-black text-lg text-primary">نشر إعلان وظيفي جديد</h3>
+				<button type="button" class="btn-close" data-on-click="closeAdminAddJobModal()">&times;</button>
+			</div>
+			<form method="POST" action="/admin/jobs/new" class="space-y-4 p-4 m-0">
+				<div>
+					<label class="form-label text-xs font-bold mb-1">المنشأة التابعة للوظيفة *</label>
+					<select name="organization_id" class="form-select text-sm" required>
+						<option value="">اختر المنشأة أو الشركة المعلنة...</option>
+						for _, o := range orgs {
+							<option value={ fmt.Sprintf("%d", o.ID) }>{ o.Name }</option>
+						}
+					</select>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">المسمى الوظيفي (بالعربية) *</label>
+						<input type="text" name="title_ar" class="form-input text-sm" required placeholder="مثال: مدير صيدلية / محاسب"/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">المسمى الوظيفي (بالإنجليزية)</label>
+						<input type="text" name="title_en" class="form-input text-sm" placeholder="e.g. Pharmacy Manager"/>
+					</div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الموقع والمحافظة *</label>
+						<input type="text" name="location" class="form-input text-sm" required placeholder="مثال: القاهرة - مدينة نصر"/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحالة</label>
+						<select name="status" class="form-select text-sm">
+							<option value="published" selected>معلن ونشط (Published)</option>
+							<option value="closed">مغلق (Closed)</option>
+						</select>
+					</div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحد الأدنى للراتب (ج.م)</label>
+						<input type="number" step="any" name="salary_min" class="form-input text-sm" placeholder="0.00"/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحد الأقصى للراتب (ج.م)</label>
+						<input type="number" step="any" name="salary_max" class="form-input text-sm" placeholder="0.00"/>
+					</div>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">الوصف الوظيفي والمهام</label>
+					<textarea name="description" rows="3" class="form-textarea text-sm" placeholder="اكتب تفاصيل ومسؤوليات الوظيفة..."></textarea>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">المؤهلات والشروط المطلوبة</label>
+					<textarea name="requirements" rows="3" class="form-textarea text-sm" placeholder="المؤهل العلمي، سنوات الخبرة، المهارات المطلوبة..."></textarea>
+				</div>
+				<div class="d-flex justify-end gap-2 pt-3 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" data-on-click="closeAdminAddJobModal()">إلغاء</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold">نشر الإعلان الآن</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<!-- Edit Job Modal -->
+	<div id="admin-edit-job-modal" class="modal-backdrop" style="display:none;">
+		<div class="modal-card max-w-2xl">
+			<div class="modal-header">
+				<h3 class="modal-title font-black text-lg text-primary">تعديل بيانات الإعلان الوظيفي</h3>
+				<button type="button" class="btn-close" data-on-click="closeAdminEditJobModal()">&times;</button>
+			</div>
+			<form id="admin-edit-job-form" method="POST" action="" class="space-y-4 p-4 m-0">
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">المسمى الوظيفي (بالعربية) *</label>
+						<input type="text" id="admin-edit-title-ar" name="title_ar" class="form-input text-sm" required/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">المسمى الوظيفي (بالإنجليزية)</label>
+						<input type="text" id="admin-edit-title-en" name="title_en" class="form-input text-sm"/>
+					</div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الموقع والمحافظة *</label>
+						<input type="text" id="admin-edit-location" name="location" class="form-input text-sm" required/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحالة</label>
+						<select id="admin-edit-status" name="status" class="form-select text-sm">
+							<option value="published">معلن ونشط</option>
+							<option value="closed">مغلق</option>
+						</select>
+					</div>
+				</div>
+				<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحد الأدنى للراتب (ج.م)</label>
+						<input type="number" step="any" id="admin-edit-sal-min" name="salary_min" class="form-input text-sm"/>
+					</div>
+					<div>
+						<label class="form-label text-xs font-bold mb-1">الحد الأقصى للراتب (ج.م)</label>
+						<input type="number" step="any" id="admin-edit-sal-max" name="salary_max" class="form-input text-sm"/>
+					</div>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">الوصف الوظيفي</label>
+					<textarea id="admin-edit-desc" name="description" rows="3" class="form-textarea text-sm"></textarea>
+				</div>
+				<div>
+					<label class="form-label text-xs font-bold mb-1">المؤهلات والشروط</label>
+					<textarea id="admin-edit-reqs" name="requirements" rows="3" class="form-textarea text-sm"></textarea>
+				</div>
+				<div class="d-flex justify-end gap-2 pt-3 border-t">
+					<button type="button" class="btn btn-secondary btn-sm" data-on-click="closeAdminEditJobModal()">إلغاء</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold">حفظ التعديلات</button>
+				</div>
+			</form>
+		</div>
+	</div>
+
+	<script nonce={ layouts.Nonce(ctx) }>
+		function openAdminAddJobModal() {
+			document.getElementById('admin-add-job-modal').style.display = 'flex';
+		}
+		function closeAdminAddJobModal() {
+			document.getElementById('admin-add-job-modal').style.display = 'none';
+		}
+		function openAdminEditJobModalFromBtn(btn) {
+			var jobId = btn.getAttribute('data-job-id');
+			document.getElementById('admin-edit-job-form').action = '/admin/jobs/' + jobId + '/edit';
+			document.getElementById('admin-edit-title-ar').value = btn.getAttribute('data-title-ar') || '';
+			document.getElementById('admin-edit-title-en').value = btn.getAttribute('data-title-en') || '';
+			document.getElementById('admin-edit-location').value = btn.getAttribute('data-location') || '';
+			document.getElementById('admin-edit-status').value = btn.getAttribute('data-status') || 'published';
+			document.getElementById('admin-edit-sal-min').value = btn.getAttribute('data-sal-min') || '';
+			document.getElementById('admin-edit-sal-max').value = btn.getAttribute('data-sal-max') || '';
+			document.getElementById('admin-edit-desc').value = btn.getAttribute('data-desc') || '';
+			document.getElementById('admin-edit-reqs').value = btn.getAttribute('data-reqs') || '';
+			document.getElementById('admin-edit-job-modal').style.display = 'flex';
+		}
+		function closeAdminEditJobModal() {
+			document.getElementById('admin-edit-job-modal').style.display = 'none';
+		}
+	</script>
+}

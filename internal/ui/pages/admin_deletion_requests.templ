@@ -1,0 +1,327 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminDeletionRequestsView holds view data for the unified deletion requests queue.
+type AdminDeletionRequestsView struct {
+	Lang              string
+	Tab               string // "organizations" or "users"
+	Status            string // "pending", "approved", "rejected", "cancelled", ""
+	SearchQuery       string
+	Page              int
+	PerPage           int
+	Total             int
+	OrgPendingCount   int
+	OrgApprovedCount  int
+	OrgRejectedCount  int
+	UserPendingCount  int
+	UserApprovedCount int
+	UserRejectedCount int
+	OrgRequests       []*org.OrganizationDeletionRequest
+	UserRequests      []*identity.AccountDeletionRequest
+	CanDecide         bool
+	NoticeKind        string
+	Notice            string
+}
+
+func deletionQuery(tab, status string) url.Values {
+	q := url.Values{}
+	if tab != "" {
+		q.Set("tab", tab)
+	}
+	if status != "" {
+		q.Set("status", status)
+	}
+	return q
+}
+
+templ AdminDeletionRequestsPage(v AdminDeletionRequestsView, lang, dir string) {
+	@layouts.AdminShell("طلبات الحذف والتعطيل | دوا 24", "deletion_requests", lang, dir) {
+		<div class="admin-page-container">
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<!-- Header Banner -->
+			<div class="admin-banner mb-6">
+				<div class="admin-banner-inner flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon red">
+							@components.IconTrash("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>طلبات الحذف والتعطيل</span>
+								if v.OrgPendingCount+v.UserPendingCount > 0 {
+									<span class="badge badge-amber text-xs font-black tabular-nums">
+										{ fmt.Sprintf("%d معلق", v.OrgPendingCount+v.UserPendingCount) }
+									</span>
+								}
+							</h1>
+							<p class="admin-banner-subtitle">
+								مراجعة واعتماد طلبات حذف المنشآت وحسابات المستخدمين وتطبيق الحالة النهائية (deleted)
+							</p>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<a href="/admin/organizations" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconBuilding("icon-xs")
+							<span>دليل المنشآت</span>
+						</a>
+						<a href="/admin/users" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconUsers("icon-xs")
+							<span>دليل المستخدمين</span>
+						</a>
+						<a href={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests?tab=%s&status=%s", v.Tab, v.Status)) } class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Stats KPI Strip -->
+				<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+					<div class="stat-card glass-panel p-4 rounded-xl border border-amber/20 bg-amber/5">
+						<div class="text-xs text-muted font-bold">طلبات قيد المراجعة</div>
+						<div class="text-2xl font-black text-amber mt-1 tabular-nums">
+							if v.Tab == "users" {
+								{ fmt.Sprintf("%d", v.UserPendingCount) }
+							} else {
+								{ fmt.Sprintf("%d", v.OrgPendingCount) }
+							}
+						</div>
+						<div class="text-2xs text-secondary mt-1">تتطلب تدقيق واتخاذ قرار الإدارة</div>
+					</div>
+					<div class="stat-card glass-panel p-4 rounded-xl border border-danger/20 bg-danger/5">
+						<div class="text-xs text-muted font-bold">تم اعتماد حذفها وتعطيلها</div>
+						<div class="text-2xl font-black text-danger mt-1 tabular-nums">
+							if v.Tab == "users" {
+								{ fmt.Sprintf("%d", v.UserApprovedCount) }
+							} else {
+								{ fmt.Sprintf("%d", v.OrgApprovedCount) }
+							}
+						</div>
+						<div class="text-2xs text-secondary mt-1">حالة نهائية (deleted) مع الاحتفاظ بالسجلات</div>
+					</div>
+					<div class="stat-card glass-panel p-4 rounded-xl border border-slate-700/20 bg-surface-sunken">
+						<div class="text-xs text-muted font-bold">طلبات تم رفضها</div>
+						<div class="text-2xl font-black text-muted mt-1 tabular-nums">
+							if v.Tab == "users" {
+								{ fmt.Sprintf("%d", v.UserRejectedCount) }
+							} else {
+								{ fmt.Sprintf("%d", v.OrgRejectedCount) }
+							}
+						</div>
+						<div class="text-2xs text-secondary mt-1">تم رفض طلب الحذف مع إبداء السبب</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Main Nav Tabs: المنشآت / المستخدمين -->
+			<div class="border-b border-border mb-6">
+				<div class="d-flex items-center gap-4">
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests?tab=organizations&status=%s", v.Status)) }
+						class={ "tab-btn py-3 px-4 font-black text-sm d-flex items-center gap-2 border-b-2 transition-all",
+							templ.KV("border-brand text-brand", v.Tab != "users"),
+							templ.KV("border-transparent text-secondary hover:text-primary", v.Tab == "users") }
+					>
+						@components.IconBuilding("icon-xs")
+						<span>المنشآت</span>
+						if v.OrgPendingCount > 0 {
+							<span class="badge badge-amber text-2xs font-bold tabular-nums">{ fmt.Sprintf("%d", v.OrgPendingCount) }</span>
+						}
+					</a>
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/deletion-requests?tab=users&status=%s", v.Status)) }
+						class={ "tab-btn py-3 px-4 font-black text-sm d-flex items-center gap-2 border-b-2 transition-all",
+							templ.KV("border-brand text-brand", v.Tab == "users"),
+							templ.KV("border-transparent text-secondary hover:text-primary", v.Tab != "users") }
+					>
+						@components.IconUsers("icon-xs")
+						<span>المستخدمين</span>
+						if v.UserPendingCount > 0 {
+							<span class="badge badge-amber text-2xs font-bold tabular-nums">{ fmt.Sprintf("%d", v.UserPendingCount) }</span>
+						}
+					</a>
+				</div>
+			</div>
+
+			<!-- Status Filter Tabs -->
+			<div class="glass-panel p-3 mb-6 d-flex gap-2 flex-wrap items-center">
+				@deletionFilterTab(v.Tab, v.Status, "pending", "⏳ قيد المراجعة")
+				@deletionFilterTab(v.Tab, v.Status, "approved", "✅ تمت الموافقة والحذف")
+				@deletionFilterTab(v.Tab, v.Status, "rejected", "❌ مرفوضة")
+				if v.Tab != "users" {
+					@deletionFilterTab(v.Tab, v.Status, "cancelled", "🚫 ملغاة من المالك")
+				}
+				@deletionFilterTab(v.Tab, v.Status, "", "الكل")
+			</div>
+
+			<!-- Tab Content -->
+			if v.Tab == "users" {
+				@renderUserDeletionsTable(v)
+			} else {
+				@renderOrgDeletionsTable(v)
+			}
+		</div>
+	}
+}
+
+templ deletionFilterTab(tab, currentStatus, targetStatus, label string) {
+	{{
+		active := currentStatus == targetStatus
+		q := deletionQuery(tab, targetStatus)
+		href := "/admin/deletion-requests?" + q.Encode()
+	}}
+	<a
+		href={ templ.SafeURL(href) }
+		class={ "btn btn-xs rounded-full font-bold",
+			templ.KV("btn-primary", active),
+			templ.KV("btn-secondary", !active) }
+	>
+		<span>{ label }</span>
+	</a>
+}
+
+templ renderOrgDeletionsTable(v AdminDeletionRequestsView) {
+	<div class="glass-panel p-0 overflow-hidden mb-6">
+		if len(v.OrgRequests) == 0 {
+			<div class="empty-state p-12 text-center">
+				<div class="empty-icon text-4xl mb-3 text-muted">@components.IconTrash("icon-lg")</div>
+				<h3 class="text-base font-bold text-primary mb-1">لا توجد طلبات حذف منشآت</h3>
+				<p class="text-xs text-secondary">لم يتم العثور على أي طلبات تطابق معايير التصفية الحالية.</p>
+			</div>
+		} else {
+			<div class="table-container">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th class="nowrap">#</th>
+							<th>المنشأة</th>
+							<th>النوع</th>
+							<th>مقدم الطلب</th>
+							<th>السبب</th>
+							<th class="text-center">الفروع</th>
+							<th class="text-center">الحالة</th>
+							<th class="nowrap">تاريخ الطلب</th>
+							<th>قرار الإدارة</th>
+							if v.CanDecide {
+								<th class="text-center nowrap">الإجراءات</th>
+							}
+						</tr>
+					</thead>
+					<tbody>
+						for _, req := range v.OrgRequests {
+							@renderOrgDeletionRow(req, v)
+						}
+					</tbody>
+				</table>
+			</div>
+			if v.Total > v.PerPage {
+				<div class="p-4 border-t border-border">
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: v.Page,
+						PageSize:    v.PerPage,
+						TotalCount:  v.Total,
+						BaseURL:     fmt.Sprintf("/admin/deletion-requests?tab=organizations&status=%s", v.Status),
+					})
+				</div>
+			}
+		}
+	</div>
+}
+
+templ renderOrgDeletionRow(req *org.OrganizationDeletionRequest, v AdminDeletionRequestsView) {
+	<tr>
+		<td class="tabular-nums font-bold text-xs text-muted">#{ fmt.Sprintf("%d", req.ID) }</td>
+		<td>
+			<div class="font-bold text-xs text-primary">{ req.OrgName }</div>
+			<div class="text-2xs text-muted">
+				if req.CommercialReg != "" {
+					<span>س.ت: { req.CommercialReg }</span>
+				}
+				if req.TaxNumber != "" {
+					<span class="mr-2">الرقم الضريبي: { req.TaxNumber }</span>
+				}
+			</div>
+		</td>
+		<td>
+			if req.OrgType == "vendor" {
+				<span class="badge badge-brand text-2xs font-bold">مورّد</span>
+			} else {
+				<span class="badge badge-cyan text-2xs font-bold">صيدلية</span>
+			}
+		</td>
+		<td>
+			<div class="font-bold text-xs">{ req.RequesterName }</div>
+			<div class="text-2xs text-muted tabular-nums">{ req.RequesterPhone } { req.RequesterEmail }</div>
+		</td>
+		<td>
+			<div class="text-xs text-secondary max-w-xs break-words" title={ req.Reason }>
+				if req.Reason != "" {
+					{ req.Reason }
+				} else {
+					<span class="text-muted">— لم يُذكر سبب —</span>
+				}
+			</div>
+		</td>
+		<td class="text-center font-bold text-xs tabular-nums">{ fmt.Sprintf("%d", req.BranchesCount) }</td>
+		<td class="text-center">
+			switch req.Status {
+				case org.OrgDeletionStatusPending:
+					<span class="badge badge-amber text-2xs font-bold">⏳ قيد المراجعة</span>
+				case org.OrgDeletionStatusApproved:
+					<span class="badge badge-danger text-2xs font-bold">✅ محذوفة ومعطلة</span>
+				case org.OrgDeletionStatusRejected:
+					<span class="badge badge-slate text-2xs font-bold">❌ مرفوض</span>
+				case org.OrgDeletionStatusCancelled:
+					<span class="badge badge-muted text-2xs font-bold">🚫 ملغى</span>
+				default:
+					<span class="badge badge-secondary text-2xs">{ string(req.Status) }</span>
+			}
+		</td>
+		<td class="nowrap text-2xs tabular-nums text-secondary">
+			{ req.CreatedAt.Format("2006-01-02 15:04") }
+		</td>
+		<td class="text-xs">
+			if req.ReviewedAt != nil {
+				<div class="text-2xs">
+					<div>بواسطة: <span class="font-bold text-primary">{ req.ReviewerName }</span></div>
+					<div class="text-muted tabular-nums">{ req.ReviewedAt.Format("2006-01-02 15:04") }</div>
+					if req.AdminNotes != "" {
+						<div class="text-secondary bg-surface-sunken p-1 rounded text-2xs mt-1 border">{ req.AdminNotes }</div>
+					}
+				</div>
+			} else {
+				<span class="text-xs text-muted">— بانتظار القرار —</span>
+			}
+		</td>
+		if v.CanDecide {
+			<td class="nowrap text-center">
+				if req.Status == org.OrgDeletionStatusPending {
+					<div class="d-flex items-center justify-center gap-2">
+						<button type="button" class="btn btn-danger btn-xs font-bold" data-modal-open={ fmt.Sprintf("modal-org-approve-%d", req.ID) }>
+							@components.IconTrash("icon-xs")
+							<span>حذف</span>
+						</button>
+						<button type="button" class="btn btn-secondary btn-xs font-bold" data-modal-open={ fmt.Sprintf("modal-org-reject-%d", req.ID) }>
+							@components.IconX("icon-xs")
+							<span>رفض</span>
+						</button>
+					</div>
+					@orgDeletionModals(req)
+				} else {
+					<span class="text-xs text-muted">—</span>
+				}
+			</td>
+		}
+	</tr>
+}
+

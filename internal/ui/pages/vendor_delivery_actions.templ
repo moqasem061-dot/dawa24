@@ -1,0 +1,285 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// What the representative does next.
+//
+// The two halves are deliberately different in kind. Moving a parcel forward —
+// picked up, on the way — is a claim the courier makes about themselves, so it
+// is one button. Closing it is a claim about the pharmacy, so it needs the
+// pharmacy's own six-digit code; the courier cannot mark a parcel delivered by
+// asserting it.
+
+templ VendorDeliveryActions(data VendorDeliveryDetailData, lang string) {
+	if data.Shipment.IsClosed() {
+		@VendorDeliveryClosedCard(data.Shipment, lang)
+	} else if !data.CanUpdate {
+		<div class="courier-card text-center p-6">
+			<div class="mb-2">@components.IconInfo("icon-sm")</div>
+			<h3 class="text-sm font-black text-primary m-0 mb-1">{ i18n.T(lang, "vendor_delivery.actions.not_assigned_title") }</h3>
+			<p class="text-xs text-secondary m-0 font-medium">
+				if data.CanAssign {
+					{ i18n.T(lang, "vendor_delivery.actions.not_assigned_can_assign") }
+				} else {
+					{ i18n.T(lang, "vendor_delivery.actions.not_assigned_courier_only") }
+				}
+			</p>
+		</div>
+	} else {
+		@VendorDeliveryPipelineCard(data.Shipment, lang)
+	}
+}
+
+func deliveryPipelineStepIndex(status commerce.OrderStatus) int {
+	switch status {
+	case commerce.StatusPending, commerce.StatusProcessing, commerce.StatusConfirmed:
+		return 1
+	case commerce.StatusShipped:
+		return 2
+	case commerce.StatusInTransit:
+		return 3
+	case commerce.StatusOutForDelivery:
+		return 4
+	default:
+		return 5
+	}
+}
+
+// VendorDeliveryPipelineCard renders the step progress timeline and ONLY the single
+// active forward action for the current state, plus the delivery failure modal.
+templ VendorDeliveryPipelineCard(sh *commerce.OrderShipment, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		currentStep := deliveryPipelineStepIndex(sh.Status)
+	}}
+	<div x-data="{ showFailModal: false }" class="stack-md">
+		<!-- Step Timeline Indicator -->
+		<div class="courier-card p-4">
+			<div class="d-flex items-center gap-2 mb-3 pb-2 border-b text-primary">
+				@components.IconTruck("icon-xs")
+				<h3 class="text-xs font-black m-0">{ i18n.T(lang, "vendor_delivery.actions.timeline_title") }</h3>
+			</div>
+
+			<div class="grid grid-cols-4 gap-1.5 text-center text-2xs font-bold">
+				<!-- Step 1 -->
+				<div class={ "p-2 rounded-xl border flex flex-col items-center gap-1", templ.KV("bg-emerald-50 border-emerald-300 text-emerald-700", currentStep > 1), templ.KV("bg-brand/10 border-brand text-brand font-black", currentStep == 1), templ.KV("bg-surface-sunken text-muted border-slate-200", currentStep < 1) }>
+					<span class={ "w-5 h-5 rounded-full flex items-center justify-center text-2xs font-bold border", templ.KV("bg-emerald-600 text-white border-emerald-600", currentStep > 1), templ.KV("bg-brand text-white border-brand", currentStep == 1), templ.KV("bg-slate-200 text-slate-500 border-slate-300", currentStep < 1) }>
+						if currentStep > 1 {
+							✓
+						} else {
+							1
+						}
+					</span>
+					<span>{ i18n.T(lang, "vendor_delivery.actions.step1_name") }</span>
+				</div>
+
+				<!-- Step 2 -->
+				<div class={ "p-2 rounded-xl border flex flex-col items-center gap-1", templ.KV("bg-emerald-50 border-emerald-300 text-emerald-700", currentStep > 2), templ.KV("bg-brand/10 border-brand text-brand font-black", currentStep == 2), templ.KV("bg-surface-sunken text-muted border-slate-200", currentStep < 2) }>
+					<span class={ "w-5 h-5 rounded-full flex items-center justify-center text-2xs font-bold border", templ.KV("bg-emerald-600 text-white border-emerald-600", currentStep > 2), templ.KV("bg-brand text-white border-brand", currentStep == 2), templ.KV("bg-slate-200 text-slate-500 border-slate-300", currentStep < 2) }>
+						if currentStep > 2 {
+							✓
+						} else {
+							2
+						}
+					</span>
+					<span>{ i18n.T(lang, "vendor_delivery.actions.step2_name") }</span>
+				</div>
+
+				<!-- Step 3 -->
+				<div class={ "p-2 rounded-xl border flex flex-col items-center gap-1", templ.KV("bg-emerald-50 border-emerald-300 text-emerald-700", currentStep > 3), templ.KV("bg-brand/10 border-brand text-brand font-black", currentStep == 3), templ.KV("bg-surface-sunken text-muted border-slate-200", currentStep < 3) }>
+					<span class={ "w-5 h-5 rounded-full flex items-center justify-center text-2xs font-bold border", templ.KV("bg-emerald-600 text-white border-emerald-600", currentStep > 3), templ.KV("bg-brand text-white border-brand", currentStep == 3), templ.KV("bg-slate-200 text-slate-500 border-slate-300", currentStep < 3) }>
+						if currentStep > 3 {
+							✓
+						} else {
+							3
+						}
+					</span>
+					<span>{ i18n.T(lang, "vendor_delivery.actions.step3_name") }</span>
+				</div>
+
+				<!-- Step 4 -->
+				<div class={ "p-2 rounded-xl border flex flex-col items-center gap-1", templ.KV("bg-emerald-50 border-emerald-300 text-emerald-700", currentStep > 4), templ.KV("bg-brand/10 border-brand text-brand font-black", currentStep == 4), templ.KV("bg-surface-sunken text-muted border-slate-200", currentStep < 4) }>
+					<span class={ "w-5 h-5 rounded-full flex items-center justify-center text-2xs font-bold border", templ.KV("bg-emerald-600 text-white border-emerald-600", currentStep > 4), templ.KV("bg-brand text-white border-brand", currentStep == 4), templ.KV("bg-slate-200 text-slate-500 border-slate-300", currentStep < 4) }>
+						if currentStep > 4 {
+							✓
+						} else {
+							4
+						}
+					</span>
+					<span>{ i18n.T(lang, "vendor_delivery.actions.step4_name") }</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Step Action Execution Card -->
+		if currentStep == 1 {
+			<div class="courier-card p-5 border-brand">
+				<div class="d-flex items-center gap-3 mb-3">
+					<div class="courier-hero-icon bg-blue-50 text-brand border-brand/20">
+						@components.IconPackage("icon-md")
+					</div>
+					<div>
+						<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.actions.step1_title") }</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+							{ i18n.T(lang, "vendor_delivery.actions.step1_desc") }
+						</p>
+					</div>
+				</div>
+
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/status", sh.ID)) } method="POST" class="m-0 mt-4">
+					<input type="hidden" name="status" value={ string(commerce.StatusShipped) }/>
+					<input type="hidden" name="notes" value="استلم المندوب الطرد من المخزن وبدأ رحلة التوصيل"/>
+					<button type="submit" class="btn btn-primary w-full py-3 font-black text-sm rounded-xl gap-2 d-flex items-center justify-center shadow-sm">
+						@components.IconCheckCircle("icon-sm")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step1_btn") }</span>
+					</button>
+				</form>
+
+				<div class="mt-3 pt-3 border-t text-center">
+					<button type="button" @click="showFailModal = true" class="btn btn-ghost text-danger btn-xs font-bold gap-1">
+						@components.IconAlert("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step1_fail_btn") }</span>
+					</button>
+				</div>
+			</div>
+		} else if currentStep == 2 {
+			<div class="courier-card p-5 border-sky-400">
+				<div class="d-flex items-center gap-3 mb-3">
+					<div class="courier-hero-icon bg-sky-50 text-sky-600 border-sky-500/20">
+						@components.IconTruck("icon-md")
+					</div>
+					<div>
+						<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.actions.step2_title") }</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+							{ i18n.T(lang, "vendor_delivery.actions.step2_desc") }
+						</p>
+					</div>
+				</div>
+
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/status", sh.ID)) } method="POST" class="m-0 mt-4">
+					<input type="hidden" name="status" value={ string(commerce.StatusInTransit) }/>
+					<input type="hidden" name="notes" value="الطرد في الطريق إلى الصيدلية"/>
+					<button type="submit" class="btn btn-primary w-full py-3 font-black text-sm rounded-xl gap-2 d-flex items-center justify-center shadow-sm">
+						@components.IconTruck("icon-sm")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step2_btn") }</span>
+					</button>
+				</form>
+
+				<div class="mt-3 pt-3 border-t text-center">
+					<button type="button" @click="showFailModal = true" class="btn btn-ghost text-danger btn-xs font-bold gap-1">
+						@components.IconAlert("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step2_fail_btn") }</span>
+					</button>
+				</div>
+			</div>
+		} else if currentStep == 3 {
+			<div class="courier-card p-5 border-amber-400">
+				<div class="d-flex items-center gap-3 mb-3">
+					<div class="courier-hero-icon bg-amber-50 text-amber-600 border-amber-500/20">
+						@components.IconMapPin("icon-md")
+					</div>
+					<div>
+						<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_delivery.actions.step3_title") }</h3>
+						<p class="text-xs text-secondary m-0 mt-0.5 font-medium">
+							{ i18n.T(lang, "vendor_delivery.actions.step3_desc") }
+						</p>
+					</div>
+				</div>
+
+				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/status", sh.ID)) } method="POST" class="m-0 mt-4">
+					<input type="hidden" name="status" value={ string(commerce.StatusOutForDelivery) }/>
+					<input type="hidden" name="notes" value="وصل المندوب إلى مقر الصيدلية وبانتظار كود الاستلام"/>
+					<button type="submit" class="btn btn-primary w-full py-3 font-black text-sm rounded-xl gap-2 d-flex items-center justify-center shadow-sm">
+						@components.IconMapPin("icon-sm")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step3_btn") }</span>
+					</button>
+				</form>
+
+				<div class="mt-3 pt-3 border-t text-center">
+					<button type="button" data-modal-open="delivery-fail-modal" @click="showFailModal = true" class="btn btn-ghost text-danger btn-xs font-bold gap-1">
+						@components.IconAlert("icon-2xs")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.step3_fail_btn") }</span>
+					</button>
+				</div>
+			</div>
+		} else if currentStep == 4 {
+			<!-- Handover PIN Verification -->
+			@VendorDeliveryHandoverCard(sh, lang)
+
+			<div class="courier-card p-3 text-center">
+				<button type="button" data-modal-open="delivery-fail-modal" @click="showFailModal = true" class="btn btn-ghost text-danger btn-xs font-bold gap-1">
+					@components.IconAlert("icon-2xs")
+					<span>{ i18n.T(lang, "vendor_delivery.actions.step4_fail_btn") }</span>
+				</button>
+			</div>
+		}
+
+		<!-- Failure Reason Modal -->
+		@components.Modal(components.ModalProps{
+			ID:          "delivery-fail-modal",
+			Title:       i18n.T(lang, "vendor_delivery.actions.fail_modal_title"),
+			Subtitle:    i18n.T(lang, "vendor_delivery.actions.fail_modal_subtitle"),
+			Icon:        "alert",
+			Size:        "sm",
+			AlpineClose: "showFailModal = false",
+		}) {
+			<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/status", sh.ID)) } method="POST" class="m-0 stack-sm">
+				<input type="hidden" name="status" value={ string(commerce.StatusFailed) }/>
+
+				<div>
+					<label class="form-label text-xs font-black text-primary d-block mb-1.5">
+						{ i18n.T(lang, "vendor_delivery.actions.fail_reason_lbl") } <span class="text-danger">*</span>:
+					</label>
+					<select name="failure_reason" required class="form-select text-xs w-full rounded-xl">
+						<option value="" disabled selected>{ i18n.T(lang, "vendor_delivery.actions.fail_reason_ph") }</option>
+						<option value="الصيدلية مغلقة">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_closed") }</option>
+						<option value="رفض الاستلام من قبل الصيدلي أو المسؤول">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_rejected") }</option>
+						<option value="العنوان خاطئ أو تعذر الوصول للموقع">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_bad_address") }</option>
+						<option value="عدم الرد على الهاتف بعد عدة محاولات">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_no_answer") }</option>
+						<option value="مبلغ التحصيل غير متوفر بالفرع">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_no_cash") }</option>
+						<option value="تلف أو مشكلة في محتويات الطرد">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_damaged") }</option>
+						<option value="طلب إلغاء من قبل الصيدلية">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_cancelled") }</option>
+						<option value="سبب آخر">{ i18n.T(lang, "vendor_delivery.actions.fail_reason_other") }</option>
+					</select>
+				</div>
+
+				<div>
+					<label class="form-label text-xs font-black text-primary d-block mb-1.5">
+						{ i18n.T(lang, "vendor_delivery.actions.fail_notes_lbl") } <span class="text-danger">*</span>:
+					</label>
+					<textarea
+						name="notes"
+						required
+						minlength="5"
+						rows="3"
+						placeholder={ i18n.T(lang, "vendor_delivery.actions.fail_notes_ph") }
+						class="form-input text-xs w-full rounded-xl"
+					></textarea>
+				</div>
+
+				<p class="text-2xs text-muted m-0 leading-relaxed bg-surface-sunken p-2.5 rounded-xl border">
+					{ i18n.T(lang, "vendor_delivery.actions.fail_alert_warning") }
+				</p>
+
+				<div class="d-flex items-center gap-2 justify-end pt-2">
+					<button type="button" class="btn btn-secondary btn-sm font-bold" data-modal-close>
+						{ i18n.T(lang, "common.cancel") }
+					</button>
+					<button type="submit" class="btn btn-danger btn-sm font-black gap-1">
+						@components.IconAlert("icon-xs")
+						<span>{ i18n.T(lang, "vendor_delivery.actions.fail_confirm_btn") }</span>
+					</button>
+				</div>
+			</form>
+		}
+	</div>
+}

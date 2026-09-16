@@ -1,0 +1,155 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ SupplierProfileTabs(data SupplierProfileData, lang string) {
+	<!-- 5. Tab 2: About & Highlights -->
+	if len(data.Sections) > 0 {
+		<div id="tab-content-sections" class={ "tab-panel", templ.KV("d-none", data.ActiveTab != "sections") }>
+			<div class="jobs-grid">
+				for _, s := range data.Sections {
+					if s.IsActive {
+						<div class="glass-panel hover-lift p-4 d-flex flex-col justify-between gap-3">
+							<div class="d-flex items-center gap-3">
+								<div class="sp-sec-icon-badge">
+									{ sectionTypeIcon(s.SectionType) }
+								</div>
+								<h3 class="font-bold text-sm m-0">
+									{ s.Title.Get(i18n.Lang(lang)) }
+								</h3>
+							</div>
+							<div class="text-xs text-secondary leading-relaxed">
+								{ s.Description.Get(i18n.Lang(lang)) }
+							</div>
+							<button
+								type="button"
+								class="btn btn-secondary btn-sm font-bold"
+								data-modal-open={ fmt.Sprintf("supplier-sec-modal-%d", s.ID) }
+							>
+								<span>{ i18n.T(lang, "supplier_profile.view_full_details") }</span>
+							</button>
+						</div>
+					}
+				}
+			</div>
+		</div>
+	}
+
+	<!-- 6. Tab 3: Supply Policies -->
+	<div id="tab-content-policies" class={ "tab-panel", templ.KV("d-none", data.ActiveTab != "policies") }>
+		if len(data.Policies) == 0 {
+			<div class="glass-panel p-8 text-center border rounded-2xl shadow-xs">
+				<div class="w-12 h-12 rounded-full bg-primary-subtle text-primary d-flex items-center justify-center mx-auto mb-3 border">
+					@components.IconShield("icon-md")
+				</div>
+				<h3 class="font-extrabold text-sm text-primary mb-1">
+					{ i18n.T(lang, "supplier_profile.standard_policies_title") }
+				</h3>
+				<p class="text-xs text-secondary m-0 max-w-lg mx-auto leading-relaxed font-medium">
+					{ i18n.T(lang, "supplier_profile.standard_policies_desc") }
+				</p>
+			</div>
+		} else {
+			<div class="grid-2 gap-4">
+				for _, pol := range data.Policies {
+					<div class="glass-panel p-5 border rounded-2xl shadow-xs d-flex flex-col gap-2.5">
+						<div class="d-flex items-center gap-2.5 pb-2.5 border-b">
+							<div class="w-8 h-8 rounded-lg bg-primary-subtle text-brand d-flex items-center justify-center border border-brand/20">
+								switch pol.PolicyType {
+									case "shipping":
+										@components.IconTruck("icon-xs")
+									case "returns":
+										@components.IconRotateCcw("icon-xs")
+									case "terms":
+										@components.IconCreditCard("icon-xs")
+									default:
+										@components.IconShield("icon-xs")
+								}
+							</div>
+							<h4 class="font-extrabold text-sm text-primary m-0">
+								{ pol.Title }
+							</h4>
+						</div>
+						<p class="text-xs text-secondary m-0 leading-relaxed font-medium">
+							{ pol.Content }
+						</p>
+					</div>
+				}
+			</div>
+		}
+	</div>
+
+	<!-- 7. Tab 4: Branches & Warehouses -->
+	<div id="tab-content-branches" class={ "tab-panel", templ.KV("d-none", data.ActiveTab != "branches") }>
+		if len(data.Branches) == 0 {
+			<div class="glass-panel p-6 text-center">
+				@components.IconBuilding("icon-lg")
+				<h3 class="font-bold text-sm m-0">{ i18n.T(lang, "supplier_profile.main_warehouse") }</h3>
+				<p class="text-sm text-muted m-0">{ i18n.T(lang, "supplier_profile.main_warehouse_desc") }</p>
+			</div>
+		} else {
+			<div class="jobs-grid">
+				for _, b := range data.Branches {
+					<div class="glass-panel p-4 d-flex flex-col justify-between gap-3">
+						<div class="d-flex items-center justify-between gap-2 border-b pb-2">
+							<div class="d-flex items-center gap-2">
+								<div class="text-primary">
+									@components.IconBuilding("icon-sm")
+								</div>
+								<div>
+									<h4 class="font-bold text-sm m-0">
+										{ b.Name.Get(i18n.Lang(lang)) }
+									</h4>
+									if b.IsMain {
+										<span class="badge badge-primary text-2xs">{ i18n.T(lang, "supplier_profile.main_warehouse") }</span>
+									}
+								</div>
+							</div>
+							if b.HasColdStorage {
+								<span class="badge badge-sky text-2xs">{ i18n.T(lang, "suppliers.cold_storage") }</span>
+							}
+						</div>
+
+						<div class="d-flex flex-col gap-1 text-xs">
+							if b.Address != "" {
+								<div><span class="text-muted">{ i18n.T(lang, "common.address") }:</span> <strong>{ b.Address }</strong></div>
+							}
+							if b.OperatingHours != "" {
+								<div><span class="text-muted">{ i18n.T(lang, "suppliers.working_hours_label") }</span> <strong class="tabular-nums">{ b.OperatingHours }</strong></div>
+							}
+							if b.Phone != "" {
+								<div><span class="text-muted">{ i18n.T(lang, "common.phone") }:</span> <strong class="tabular-nums">{ b.Phone }</strong></div>
+							}
+							if b.ManagerName != "" {
+								<div><span class="text-muted">{ i18n.T(lang, "branches.manager_label") }</span> <strong>{ b.ManagerName }</strong></div>
+							}
+						</div>
+					</div>
+				}
+			</div>
+		}
+	</div>
+
+	<!-- Featured Section Modals -->
+	for _, s := range data.Sections {
+		@components.Modal(components.ModalProps{
+			ID:    fmt.Sprintf("supplier-sec-modal-%d", s.ID),
+			Title: s.Title.Get(i18n.Lang(lang)),
+			Size:  "md",
+		}) {
+			<div class="p-4 text-base leading-relaxed bg-surface-sunken rounded-xl border max-h-55vh overflow-y-auto">
+				{ s.Description.Get(i18n.Lang(lang)) }
+			</div>
+			<div class="modal-footer mt-4">
+				<form class="stack-md" method="dialog">
+					<button type="submit" class="btn btn-secondary font-bold">{ i18n.T(lang, "common.cancel") }</button>
+				</form>
+			</div>
+		}
+	}
+}

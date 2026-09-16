@@ -1,0 +1,318 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminOrganizationsPageData struct {
+	Organizations   []*org.Organization
+	TotalOrgs       int
+	TotalPharmacies int
+	TotalVendors    int
+	PendingCount    int
+	ApprovedCount   int
+	BranchCounts    map[int64]int
+	UserCounts      map[int64]int
+	SearchQuery     string
+	TypeFilter      string
+	StatusFilter    string
+	Page            int
+	PerPage         int
+	TotalCount      int
+}
+
+type AdminEnterpriseHubData struct {
+	Organizations      []*org.Organization
+	Branches           []*org.Branch
+	ActiveTab          string
+	CurrentType        string
+	OrgNames           map[int64]string
+	OrgTypes           map[int64]string
+	BranchCounts       map[int64]int
+	UserCounts         map[int64]int
+	TotalOrgsCount     int
+	TotalBranchesCount int
+	TotalUsersCount    int
+}
+
+templ AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) {
+	@layouts.AdminShell("إدارة المنشآت والمؤسسات الطبية", "organizations", lang, dir) {
+		<div class="admin-page-container" x-data="adminOrgManager()">
+			
+			<!-- Header Banner & Quick Actions -->
+			<div class="admin-banner">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon purple">
+							@components.IconBuilding("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>إدارة المنشآت والمؤسسات المعتمدة</span>
+								<span class="badge badge-purple text-xs font-black tabular-nums">{ fmt.Sprintf("%d منشأة", data.TotalOrgs) }</span>
+							</h1>
+							<p class="admin-banner-subtitle">
+								الدليل الشامل لإدارة وتدقيق واعتماد شبكة الصيدليات ومستودعات وموردي الأدوية
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<a href="/admin/approvals" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconShield("icon-xs")
+							<span>مركز فحص التراخيص</span>
+							if data.PendingCount > 0 {
+								<span class="badge badge-amber text-xs tabular-nums">{ fmt.Sprintf("%d", data.PendingCount) }</span>
+							}
+						</a>
+						<a href="/admin/deletion-requests?tab=organizations" class="btn btn-secondary btn-sm font-bold gap-1 text-danger">
+							@components.IconTrash("icon-xs")
+							<span>طلبات حذف المنشآت</span>
+						</a>
+						<a href="/admin/organizations" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Stats KPI Strip -->
+				<div class="d-grid gap-3 mt-4 pt-3 border-t grid-auto-fit-xs">
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">إجمالي المنشآت</div>
+						<div class="text-xl font-black text-primary mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.TotalOrgs) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">الصيدليات المعتمدة</div>
+						<div class="text-xl font-black text-success mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.TotalPharmacies) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">الموردون وشركات الأدوية</div>
+						<div class="text-xl font-black text-purple mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.TotalVendors) }</div>
+					</div>
+					<div class="bg-surface-sunken p-3 rounded-xl border">
+						<div class="label-strong">بانتظار الاعتماد</div>
+						<div class="text-xl font-black text-warning mt-0.5 tabular-nums">{ fmt.Sprintf("%d", data.PendingCount) }</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="admin-filter-bar">
+				<form method="GET" action="/admin/organizations" class="flex-between flex-wrap gap-3 m-0 w-full">
+					<div class="d-flex gap-2 items-center flex-wrap flex-1">
+						<input
+							type="text"
+							name="q"
+							value={ data.SearchQuery }
+							placeholder="ابحث بالاسم، السجل التجاري، الرقم الضريبي، أو الترخيص..."
+							class="form-input text-sm min-w-64"
+						/>
+						<select name="type" class="form-select text-sm w-auto font-bold">
+							<option value="">كل أنواع المنشآت</option>
+							<option value="customer" selected?={ data.TypeFilter == "customer" }>صيدليات ومراكز طبية</option>
+							<option value="vendor" selected?={ data.TypeFilter == "vendor" }>موردون ومخازن أدوية</option>
+						</select>
+						<select name="status" class="form-select text-sm w-auto font-bold">
+							<option value="">كل حالات الاعتماد</option>
+							<option value="approved" selected?={ data.StatusFilter == "approved" }>معتمدة ومفعلة (Approved)</option>
+							<option value="pending" selected?={ data.StatusFilter == "pending" }>⏳ قيد المراجعة (Pending)</option>
+							<option value="rejected" selected?={ data.StatusFilter == "rejected" }>مرفوضة (Rejected)</option>
+						</select>
+						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+							تصفية
+						</button>
+						if data.SearchQuery != "" || data.TypeFilter != "" || data.StatusFilter != "" {
+							<a href="/admin/organizations" class="btn btn-secondary btn-sm text-muted">إلغاء</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Organizations Table -->
+			if len(data.Organizations) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   "لا توجد منشآت مطابقة",
+					Message: "لم يتم العثور على أي منشآت أو شركات تطابق معايير البحث والفلترة المحددة.",
+				})
+			} else {
+				<div class="table-container admin-table-wrapper">
+					<table class="data-table data-table-responsive">
+						<thead>
+							<tr>
+								<th class="nowrap"># المعرف</th>
+								<th>المنشأة والاسم التجاري</th>
+								<th class="nowrap">نوع النشاط</th>
+								<th>السجل والضريبة والترخيص</th>
+								<th class="nowrap">الفروع</th>
+								<th class="nowrap">تاريخ الانضمام</th>
+								<th class="nowrap">حالة الاعتماد</th>
+								<th class="col-actions nowrap min-w-36">الإجراءات</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, o := range data.Organizations {
+								<tr class="align-middle">
+									<td class="tabular-nums font-black text-primary nowrap">
+										#{ fmt.Sprintf("ORG-%d", o.ID) }
+									</td>
+									<td>
+										<div class="d-flex items-center gap-2">
+											<div class="w-9 h-9 rounded-lg bg-surface-sunken border flex-center font-black text-primary text-sm">
+												if len(o.LegalName) > 0 {
+													{ string([]rune(o.LegalName)[0]) }
+												} else {
+													O
+												}
+											</div>
+           <div class="stack-sm">
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", o.ID)) } class="font-bold text-sm text-primary no-underline">
+													{ o.LegalName }
+												</a>
+												if o.TradeName["ar"] != "" && o.TradeName["ar"] != o.LegalName {
+													<div class="text-xs text-secondary mt-0.5">{ o.TradeName["ar"] }</div>
+												}
+											</div>
+										</div>
+									</td>
+									<td>
+										if string(o.Type) == "vendor" {
+											<span class="badge badge-purple text-xs font-black">مورد أدوية</span>
+										} else {
+											<span class="badge badge-emerald text-xs font-black">صيدلية</span>
+										}
+									</td>
+									<td>
+										<div class="text-xs d-flex flex-col gap-1 tabular-nums text-muted">
+											if o.CommercialRegister != "" {
+												<div class="stack-sm"><strong class="text-secondary font-bold">سجل:</strong> { o.CommercialRegister }</div>
+											}
+											if o.TaxNumber != "" {
+												<div class="stack-sm"><strong class="text-secondary font-bold">ضريبة:</strong> { o.TaxNumber }</div>
+											}
+											if o.PharmacistLicense != "" {
+												<div class="stack-sm"><strong class="text-secondary font-bold">ترخيص:</strong> { o.PharmacistLicense }</div>
+											}
+										</div>
+									</td>
+									<td>
+										<a href={ templ.SafeURL(fmt.Sprintf("/admin/branches?org_id=%d", o.ID)) } class="badge badge-sky text-xs font-black no-underline" title="استعراض فروع هذه المنشأة">
+											{ fmt.Sprintf("%d فرع", data.BranchCounts[o.ID]) }
+										</a>
+									</td>
+									<td class="tabular-nums text-xs text-muted nowrap">
+										{ o.CreatedAt.Format("2006-01-02") }
+									</td>
+									<td>
+										if string(o.Status) == "approved" {
+											<span class="badge badge-emerald text-xs font-black">معتمد ومفعل</span>
+										} else if string(o.Status) == "pending" {
+											<span class="badge badge-amber text-xs font-black">⏳ قيد التدقيق</span>
+										} else if string(o.Status) == "rejected" {
+											<span class="badge badge-danger text-xs font-black">مرفوض</span>
+										} else {
+											<span class="badge badge-slate text-xs font-black">{ string(o.Status) }</span>
+										}
+									</td>
+									<td class="col-actions nowrap">
+										<div class="table-actions">
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/branches?org_id=%d", o.ID)) } class="btn btn-secondary btn-xs font-bold gap-1" title="عرض فروع ومستودعات هذه المنشأة">
+												@components.IconBuilding("icon-xs")
+												<span>الفروع</span>
+												if count, ok := data.BranchCounts[o.ID]; ok && count > 0 {
+													<span class="badge badge-slate text-2xs tabular-nums">{ fmt.Sprintf("%d", count) }</span>
+												}
+											</a>
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/users?org_id=%d", o.ID)) } class="btn btn-secondary btn-xs font-bold gap-1" title="عرض مستخدمي هذه المنشأة في إدارة الحسابات">
+												@components.IconUsers("icon-xs")
+												<span>المستخدمين</span>
+												if count, ok := data.UserCounts[o.ID]; ok && count > 0 {
+													<span class="badge badge-slate text-2xs tabular-nums">{ fmt.Sprintf("%d", count) }</span>
+												}
+											</a>
+											if string(o.Status) == "approved" {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d/suspend", o.ID)) } class="m-0 inline" data-confirm="هل أنت متأكد من تعليق هذه المنشأة وإيقاف نشاطها؟">
+													<button type="submit" class="btn btn-danger btn-xs font-bold gap-1" title="تعليق المنشأة">
+														@components.IconPause("icon-xs")
+														<span>تعليق</span>
+													</button>
+												</form>
+											} else if string(o.Status) == "suspended" {
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d/approve", o.ID)) } class="m-0 inline" data-confirm="هل أنت متأكد من إعادة تنشيط وتفعيل هذه المنشأة؟">
+													<button type="submit" class="btn btn-primary btn-xs font-bold gap-1" title="إعادة تنشيط المنشأة">
+														@components.IconCheck("icon-xs")
+														<span>تنشيط</span>
+													</button>
+												</form>
+											}
+											<button
+												type="button"
+												class="btn btn-secondary btn-xs font-bold gap-1 text-primary"
+												title="تعديل بيانات المنشأة بالكامل"
+												@click={ fmt.Sprintf("openEdit(%s, '')", formatAdminOrgJSON(o)) }
+											>
+												@components.IconEdit("icon-xs")
+												<span>تعديل</span>
+											</button>
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", o.ID)) } class="btn btn-secondary btn-xs font-black">
+												<span>الملف الشامل ↗</span>
+											</a>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+
+				if data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     "/admin/organizations",
+						QueryValues: AdminOrganizationsQuery(data),
+					})
+				}
+			}
+
+			@AdminOrgEditModal()
+			@AdminOrgScript()
+		</div>
+	}
+}
+
+templ AdminOrganizations(data AdminEnterpriseHubData, lang, dir string) {
+	@AdminOrganizationsPage(AdminOrganizationsPageData{
+		Organizations:   data.Organizations,
+		TotalOrgs:       data.TotalOrgsCount,
+		TotalPharmacies: data.TotalOrgsCount,
+		TotalVendors:    0,
+		PendingCount:    0,
+		ApprovedCount:   data.TotalOrgsCount,
+		BranchCounts:    data.BranchCounts,
+		UserCounts:      data.UserCounts,
+		SearchQuery:     "",
+		TypeFilter:      data.CurrentType,
+		StatusFilter:    "",
+	}, lang, dir)
+}
+
+func AdminOrganizationsQuery(data AdminOrganizationsPageData) url.Values {
+	v := url.Values{}
+	if data.SearchQuery != "" {
+		v.Set("q", data.SearchQuery)
+	}
+	if data.TypeFilter != "" && data.TypeFilter != "all" {
+		v.Set("type", data.TypeFilter)
+	}
+	if data.StatusFilter != "" && data.StatusFilter != "all" {
+		v.Set("status", data.StatusFilter)
+	}
+	return v
+}

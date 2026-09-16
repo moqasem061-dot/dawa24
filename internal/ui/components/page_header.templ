@@ -1,0 +1,40 @@
+package components
+
+import "fmt"
+
+type PageHeaderProps struct {
+	Title      string
+	Subtitle   string
+	Count      *int
+	CountLabel string
+}
+
+templ PageHeader(props PageHeaderProps) {
+	<div class="b2b-page-header">
+		<div class="b2b-page-header-info">
+   <div class="stack-sm">
+				<h1 class="b2b-page-header-title">
+					<span>{ props.Title }</span>
+					if props.Count != nil {
+						<span class="badge badge-sky badge-pill font-bold">
+							if props.CountLabel != "" {
+								{ fmt.Sprintf("%d %s", *props.Count, props.CountLabel) }
+							} else {
+								{ fmt.Sprintf("%d", *props.Count) }
+							}
+						</span>
+					}
+				</h1>
+				if props.Subtitle != "" {
+					<p class="b2b-page-header-subtitle">
+						{ props.Subtitle }
+					</p>
+				}
+			</div>
+		</div>
+
+		<div class="b2b-page-header-actions">
+			{ children... }
+		</div>
+	</div>
+}

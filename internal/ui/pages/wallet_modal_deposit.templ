@@ -1,0 +1,275 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
+	{{
+		lang := "ar"
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+	}}
+	<!-- Deposit Modal -->
+	<div
+		class="modal-backdrop"
+		x-show="isDepositModalOpen"
+		x-cloak
+		x-transition.opacity
+		@keydown.escape.window="isDepositModalOpen = false"
+	>
+		<div
+			class="modal-container deposit-modal-container"
+			@click.away="isDepositModalOpen = false"
+		>
+			<div class="modal-header">
+				<h3 class="modal-title font-black d-flex items-center gap-2">
+					@components.IconPlus("icon-xs")
+					<span>{ i18n.T(lang, "wallet.deposit_title") }</span>
+				</h3>
+				<button type="button" class="btn btn-icon btn-ghost btn-sm" @click="isDepositModalOpen = false">
+					@components.IconClose("icon-xs")
+				</button>
+			</div>
+
+			<form
+				action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/wallet/deposit", "/customer/wallet/deposit")) }
+				method="POST"
+				enctype="multipart/form-data"
+				class="deposit-modal-form d-flex flex-col m-0"
+				data-boost-upload
+			>
+				<input type="hidden" name="payment_method" :value="selectedPlatform ? selectedPlatform.id : 'bank_transfer'" />
+				<input type="hidden" name="sender_account" :value="senderAccount" />
+
+				<div class="deposit-modal-body">
+					<!-- Alert Info -->
+					<div class="alert alert-info text-2xs mb-3 py-2 px-3 d-flex items-center gap-2">
+						@components.IconInfo("icon-xs flex-shrink-0")
+						<span>{ i18n.T(lang, "wallet.deposit_info_alert") }</span>
+					</div>
+
+					<!-- Step 1: Platform Payment Channel -->
+					<div class="form-group mb-2.5">
+						<label class="form-label text-2xs font-bold text-primary mb-1">{ i18n.T(lang, "wallet.step1_platform") }</label>
+						<select
+							name="platform_method_id"
+							x-model="selectedPlatformId"
+							@change="onPlatformChange()"
+							required
+							class="form-select form-select-sm font-bold w-full"
+						>
+							if len(data.PlatformPaymentMethods) > 0 {
+								for _, ppm := range data.PlatformPaymentMethods {
+									if ppm.IsDepositEnabled && ppm.IsActive {
+										<option value={ ppm.ID }>
+											if lang == "en" && ppm.Name.Get(i18n.EN) != "" {
+												{ ppm.Name.Get(i18n.EN) }
+											} else {
+												{ ppm.Name.Get(i18n.AR) }
+											}
+										</option>
+									}
+								}
+							}
+						</select>
+					</div>
+
+					<!-- Visual Platform Destination Details Card -->
+					<template x-if="selectedPlatform">
+						<div class="p-3 mb-3 bg-surface-sunken border rounded-xl">
+							<div class="d-flex items-center justify-between mb-2 pb-1.5 border-b border-subtle">
+								<div class="d-flex items-center gap-1.5">
+									<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+									<span class="text-xs font-black text-brand" x-text="selectedPlatform.name"></span>
+								</div>
+								<span class="badge badge-sky text-2xs font-bold" x-text="selectedPlatform.provider_type"></span>
+							</div>
+							<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+								<template x-if="selectedPlatform.account_name">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle">
+										<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.account_holder") }:</span>
+										<span class="font-bold text-primary text-xs" x-text="selectedPlatform.account_name"></span>
+									</div>
+								</template>
+								<template x-if="selectedPlatform.bank_name">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle">
+										<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.bank_name") }:</span>
+										<span class="font-bold text-primary text-xs" x-text="selectedPlatform.bank_name"></span>
+									</div>
+								</template>
+								<template x-if="selectedPlatform.account_number">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center">
+										<div>
+											<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.account_number") }:</span>
+											<span class="font-mono font-bold text-primary select-all text-xs" dir="ltr" x-text="selectedPlatform.account_number"></span>
+										</div>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
+											@click="navigator.clipboard.writeText(selectedPlatform.account_number); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											title="Copy"
+										>
+											@components.IconCopy("icon-2xs")
+											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+										</button>
+									</div>
+								</template>
+								<template x-if="selectedPlatform.iban">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center">
+										<div class="overflow-hidden">
+											<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.iban") }:</span>
+											<span class="font-mono font-bold text-primary select-all text-xs truncate d-block" dir="ltr" x-text="selectedPlatform.iban"></span>
+										</div>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2 flex-shrink-0"
+											@click="navigator.clipboard.writeText(selectedPlatform.iban); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											title="Copy"
+										>
+											@components.IconCopy("icon-2xs")
+											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+										</button>
+									</div>
+								</template>
+								<template x-if="selectedPlatform.instapay_handle">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center">
+										<div>
+											<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.instapay_label") }:</span>
+											<span class="font-mono font-black text-brand select-all text-xs" dir="ltr" x-text="selectedPlatform.instapay_handle"></span>
+										</div>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
+											@click="navigator.clipboard.writeText(selectedPlatform.instapay_handle); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											title="Copy"
+										>
+											@components.IconCopy("icon-2xs")
+											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+										</button>
+									</div>
+								</template>
+								<template x-if="selectedPlatform.phone_number">
+									<div class="p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center">
+										<div>
+											<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.wallet_phone") }:</span>
+											<span class="font-mono font-bold text-primary select-all text-xs" dir="ltr" x-text="selectedPlatform.phone_number"></span>
+										</div>
+										<button
+											type="button"
+											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
+											@click="navigator.clipboard.writeText(selectedPlatform.phone_number); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											title="Copy"
+										>
+											@components.IconCopy("icon-2xs")
+											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+										</button>
+									</div>
+								</template>
+							</div>
+							<template x-if="selectedPlatform.description">
+								<div class="text-2xs text-secondary mt-2 pt-1.5 border-t border-subtle" x-text="selectedPlatform.description"></div>
+							</template>
+						</div>
+					</template>
+
+					<!-- Step 2: Sender Payment Details -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5">
+						<div>
+							<div class="flex-between items-center mb-1">
+								<label class="form-label text-2xs font-bold m-0 text-primary">{ i18n.T(lang, "wallet.step2_sender") }</label>
+								<button
+									type="button"
+									class="btn-link text-2xs font-bold text-brand"
+									@click="isDepositModalOpen = false; isAddPaymentModalOpen = true; paymentEditID = 0"
+								>
+									{ i18n.T(lang, "wallet.add_method_btn") }
+								</button>
+							</div>
+							<select
+								id="deposit-sender-select"
+								x-ref="senderSelect"
+								name="sender_payment_method_id"
+								x-model="selectedSenderPMID"
+								@change="onSenderMethodChange()"
+								class="form-select form-select-sm w-full"
+							>
+								<option value="manual">-- Manual / Other --</option>
+							</select>
+						</div>
+						<div>
+							<label class="form-label text-2xs font-bold mb-1 text-primary">{ i18n.T(lang, "wallet.step2_account") }</label>
+							<input
+								type="text"
+								x-model="senderAccount"
+								required
+								class="form-input form-input-sm w-full font-mono"
+								placeholder="010... / EG..."
+							/>
+						</div>
+					</div>
+
+					<!-- Step 3: Transfer Amount & Reference -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5">
+						<div>
+							<label class="form-label text-2xs font-bold mb-1 text-primary">{ i18n.T(lang, "wallet.step3_amount") }</label>
+							<input
+								type="number"
+								name="amount"
+								step="0.01"
+								min="1"
+								required
+								class="form-input form-input-sm font-bold w-full tabular-nums"
+								placeholder="5000"
+							/>
+						</div>
+						<div>
+							<label class="form-label text-2xs font-bold mb-1 text-primary">{ i18n.T(lang, "wallet.step3_ref") }</label>
+							<input
+								type="text"
+								name="reference_number"
+								required
+								class="form-input form-input-sm font-mono w-full"
+								placeholder="TXN-984321"
+							/>
+						</div>
+					</div>
+
+					<!-- Step 4: Receipt & Notes -->
+					<div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-1">
+						<div>
+							<label class="form-label text-2xs font-bold mb-1 text-primary">{ i18n.T(lang, "wallet.step4_receipt") }</label>
+							<input
+								type="file"
+								name="receipt"
+								accept="image/*,application/pdf"
+								class="form-input form-input-sm w-full text-2xs"
+							/>
+						</div>
+						<div>
+							<label class="form-label text-2xs font-bold mb-1 text-primary">{ i18n.T(lang, "wallet.step4_notes") }</label>
+							<input
+								type="text"
+								name="notes"
+								class="form-input form-input-sm w-full"
+								placeholder="..."
+							/>
+						</div>
+					</div>
+				</div>
+
+				<div class="modal-footer deposit-modal-footer flex-between items-center py-2.5 px-4 bg-surface-raised border-t">
+					<button type="button" class="btn btn-secondary btn-sm font-bold" @click="isDepositModalOpen = false">
+						{ i18n.T(lang, "common.cancel") }
+					</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold gap-1.5 shadow-sm">
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(lang, "wallet.confirm_deposit_btn") }</span>
+					</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}

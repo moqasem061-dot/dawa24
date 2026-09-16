@@ -1,0 +1,170 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorAdsPage(lang, dir string, data VendorAdsData) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_ads.shell_title"), "ads", lang, dir) {
+		<!-- Header & Action Bar -->
+		<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3">
+					<div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+						@components.IconMegaphone("icon-md")
+					</div>
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_ads.header_title") }</h1>
+						<p class="text-xs text-secondary m-0 mt-0.5 font-medium">{ i18n.T(lang, "vendor_ads.header_desc") }</p>
+					</div>
+				</div>
+
+				<div class="d-flex items-center gap-2.5">
+					@VendorAdsWizardModal(data, lang, dir)
+				</div>
+			</div>
+		</div>
+
+		<!-- Notice Banner (if any) -->
+		if data.NoticeMsg != "" {
+			<div class={ "p-4 mb-6 rounded-2xl border d-flex items-center gap-3", templ.KV("bg-emerald-50 text-emerald-800 border-emerald-200", data.NoticeType == "success"), templ.KV("bg-rose-50 text-rose-800 border-rose-200", data.NoticeType == "error") }>
+				if data.NoticeType == "success" {
+					@components.IconCheckCircle("icon-sm text-emerald-600 flex-shrink-0")
+				} else {
+					@components.IconAlert("icon-sm text-rose-600 flex-shrink-0")
+				}
+				<span class="text-xs font-bold">{ data.NoticeMsg }</span>
+			</div>
+		}
+
+		<!-- KPIs Summary Cards -->
+		<div class="d-grid grid-auto-fit-sm gap-4 mb-6">
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-2xl shadow-xs">
+				<span class="text-2xs text-muted font-bold d-block mb-1">{ i18n.T(lang, "vendor_ads.stat_total_campaigns") }</span>
+				<div class="text-2xl font-black text-primary tabular-nums">{ fmt.Sprintf("%d", len(data.Ads)) }</div>
+			</div>
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-2xl shadow-xs">
+				<span class="text-2xs text-muted font-bold d-block mb-1">{ i18n.T(lang, "vendor_ads.stat_active_ads") }</span>
+				<div class="text-2xl font-black text-emerald-600 tabular-nums">
+					{ fmt.Sprintf("%d", func() int { count := 0; for _, a := range data.Ads { if a != nil && a.AdminStatus == "approved" { count++ } }; return count }()) }
+				</div>
+			</div>
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-2xl shadow-xs">
+				<span class="text-2xs text-muted font-bold d-block mb-1">{ i18n.T(lang, "vendor_sponsorship.status_pending") }</span>
+				<div class="text-2xl font-black text-sky-600 tabular-nums">
+					{ fmt.Sprintf("%d", func() int { count := 0; for _, a := range data.Ads { if a != nil && a.AdminStatus == "pending" { count++ } }; return count }()) }
+				</div>
+			</div>
+			<div class="glass-panel p-4 border border-slate-200/80 rounded-2xl shadow-xs">
+				<span class="text-2xs text-muted font-bold d-block mb-1">{ i18n.T(lang, "vendor_packages.lbl_credits") }</span>
+				<div class="text-2xl font-black text-brand tabular-nums">{ fmt.Sprintf("%d", data.TotalCredits) }</div>
+			</div>
+		</div>
+
+		<!-- Ads List with Statistics Table -->
+		<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+			<div class="p-4 border-b border-slate-100 flex-between items-center bg-slate-50/60">
+				<div class="d-flex items-center gap-2">
+					@components.IconChart("icon-xs text-brand")
+					<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_ads.table_title") }</h3>
+				</div>
+				<span class="badge badge-slate text-xs font-bold tabular-nums">{ fmt.Sprintf(i18n.T(lang, "vendor_sponsorship.total_count"), data.TotalCount) }</span>
+			</div>
+
+			if len(data.Ads) > 0 {
+				<div class="table-container m-0 overflow-x-auto">
+					<table class="data-table m-0 text-xs w-full">
+						<thead>
+							<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+								<th class="py-3.5 text-start ps-4">{ i18n.T(lang, "vendor_ads.th_ad_name") }</th>
+								<th class="text-start py-3.5">{ i18n.T(lang, "vendor_ads.th_placement") }</th>
+								<th class="text-center py-3.5">{ i18n.T(lang, "vendor_ads.th_period") }</th>
+								<th class="text-center tabular-nums py-3.5">{ i18n.T(lang, "vendor_ads.th_impressions") }</th>
+								<th class="text-center tabular-nums py-3.5">{ i18n.T(lang, "vendor_ads.th_clicks") }</th>
+								<th class="text-center tabular-nums py-3.5">{ i18n.T(lang, "vendor_ads.th_ctr") }</th>
+								<th class="text-center py-3.5">{ i18n.T(lang, "vendor_ads.th_status") }</th>
+								<th class="col-actions py-3.5 pe-4">{ i18n.T(lang, "vendor_ads.th_actions") }</th>
+							</tr>
+						</thead>
+						<tbody class="divide-y divide-slate-100">
+							for _, ad := range data.Ads {
+								if ad != nil {
+									<tr class="transition-colors">
+										<td class="py-3 ps-4">
+											<div class="d-flex items-center gap-3">
+												if ad.MediaURL != "" && !ad.IsVideo() && ad.MediaType != "video" {
+													<img src={ ad.MediaURL } alt="Ad Thumb" class="w-10 h-10 rounded-lg object-cover border border-slate-200" />
+												} else if ad.IsVideo() || ad.MediaType == "video" {
+													<div class="w-10 h-10 rounded-lg bg-slate-900 text-white d-flex items-center justify-center text-2xs font-bold">MP4</div>
+												} else {
+													<div class="w-10 h-10 rounded-lg bg-slate-100 text-slate-400 d-flex items-center justify-center">
+														@components.IconImage("icon-xs")
+													</div>
+												}
+												<div class="stack-sm">
+													<strong class="font-extrabold text-primary d-block">{ ad.DisplayTitle(lang) }</strong>
+													if ad.DisplayText(lang) != "" {
+														<span class="text-2xs text-muted max-w-xs text-truncate d-block">{ ad.DisplayText(lang) }</span>
+													}
+												</div>
+											</div>
+										</td>
+										<td class="py-3">
+											<span class="badge badge-sky text-2xs font-extrabold">
+												{ PlacementLabelLang(ad.Position, lang) }
+											</span>
+										</td>
+										<td class="text-center py-3">
+											if ad.IsVideo() || ad.MediaType == "video" {
+												<span class="badge badge-indigo text-2xs font-bold">Video</span>
+											} else {
+												<span class="badge badge-slate text-2xs font-bold">Image</span>
+											}
+										</td>
+										<td class="text-center tabular-nums font-bold text-primary py-3">{ fmt.Sprintf("%d", ad.Impressions) }</td>
+										<td class="text-center tabular-nums font-bold text-brand py-3">{ fmt.Sprintf("%d", ad.Clicks) }</td>
+										<td class="text-center tabular-nums font-black text-emerald-600 py-3">{ fmt.Sprintf("%.1f%%", ad.CTR) }</td>
+										<td class="text-center py-3">
+											if ad.AdminStatus == "pending" {
+												<span class="badge badge-sky font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_pending") }</span>
+											} else if ad.AdminStatus == "approved" {
+												<span class="badge badge-emerald font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_approved") }</span>
+											} else {
+												<span class="badge badge-rose font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_rejected") }</span>
+											}
+										</td>
+										<td class="col-actions py-3 pe-4">
+											@VendorAdEditModal(ad, lang, dir)
+										</td>
+									</tr>
+								}
+							}
+						</tbody>
+					</table>
+				</div>
+				if data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     "/vendor/ads",
+					})
+				}
+			} else {
+				<div class="p-12 text-center">
+					<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+						@components.IconMegaphone("icon-md")
+					</div>
+					<h3 class="text-sm font-extrabold text-primary mb-1">{ i18n.T(lang, "vendor_ads.empty_title") }</h3>
+					<p class="text-xs text-muted max-w-sm mx-auto mb-4">
+						{ i18n.T(lang, "vendor_ads.empty_desc") }
+					</p>
+				</div>
+			}
+		</div>
+	}
+}

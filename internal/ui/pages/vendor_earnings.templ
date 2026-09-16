@@ -1,0 +1,460 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorEarningsOrderPage renders unified financial and net profit report for the vendor.
+templ VendorEarningsOrderPage(data VendorEarningsOrderPageData) {
+	{{
+		summary := data.Summary
+		lang := data.Lang
+		dir := data.Dir
+	}}
+	@layouts.VendorShell(i18n.T(lang, "vendor_finance.earnings.shell_title"), "earnings_order", lang, dir) {
+		<div class="page-container">
+			
+			<!-- Header & Period Filter Toolbar -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between flex-wrap gap-4 items-center">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconWallet("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "vendor_finance.earnings.header_title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(lang, "vendor_finance.earnings.header_desc") }
+						</p>
+					</div>
+
+					<!-- Period Filter Tabs -->
+					<div class="d-flex items-center gap-1 p-1 bg-surface-sunken rounded-xl border">
+						<a
+							href={ templ.SafeURL(vendorEarningsPeriodURL("month", data.CustomerOrgID)) }
+							class={ "btn btn-sm font-bold text-xs rounded-lg text-decoration-none", templ.KV("btn-primary", summary.Period == "month" || (summary.Period == "" && data.DateFrom == "" && data.DateTo == "")), templ.KV("btn-secondary", summary.Period != "month" && (summary.Period != "" || data.DateFrom != "" || data.DateTo != "")) }
+						>
+							{ i18n.T(lang, "vendor_finance.period.this_month") }
+						</a>
+						<a
+							href={ templ.SafeURL(vendorEarningsPeriodURL("last_month", data.CustomerOrgID)) }
+							class={ "btn btn-sm font-bold text-xs rounded-lg text-decoration-none", templ.KV("btn-primary", summary.Period == "last_month"), templ.KV("btn-secondary", summary.Period != "last_month") }
+						>
+							{ i18n.T(lang, "vendor_finance.period.last_month") }
+						</a>
+						<a
+							href={ templ.SafeURL(vendorEarningsPeriodURL("year", data.CustomerOrgID)) }
+							class={ "btn btn-sm font-bold text-xs rounded-lg text-decoration-none", templ.KV("btn-primary", summary.Period == "year"), templ.KV("btn-secondary", summary.Period != "year") }
+						>
+							{ i18n.T(lang, "vendor_finance.period.this_year") }
+						</a>
+						<a
+							href={ templ.SafeURL(vendorEarningsPeriodURL("all", data.CustomerOrgID)) }
+							class={ "btn btn-sm font-bold text-xs rounded-lg text-decoration-none", templ.KV("btn-primary", summary.Period == "all"), templ.KV("btn-secondary", summary.Period != "all") }
+						>
+							{ i18n.T(lang, "vendor_finance.period.all_time") }
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Toolbar Card (Date Range & Facility/Customer Org) -->
+			<div class="glass-panel p-5 mb-6">
+				<div class="d-flex items-center gap-2 mb-3">
+					<span class="text-primary">@components.IconFilter("icon-xs")</span>
+					<h3 class="text-sm font-extrabold text-primary m-0">
+						{ i18n.T(lang, "vendor_finance.earnings.filter_title") }
+					</h3>
+				</div>
+				<form method="GET" action="/vendor/earnings/order" class="d-flex flex-wrap gap-4 items-end">
+					<input type="hidden" name="period" value={ summary.Period } />
+					
+					<!-- Customer Organization / Facility Filter -->
+					<div class="flex-1" style="min-width: 240px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
+							@components.IconBuilding("icon-2xs")
+							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_facility") }</span>
+						</label>
+						<select name="customer_org_id" class="form-select text-sm font-semibold w-100">
+							<option value="">{ i18n.T(lang, "vendor_finance.earnings.all_facilities") }</option>
+							for _, org := range data.CustomerOrgs {
+								<option value={ fmt.Sprint(org.ID) } selected?={ data.CustomerOrgID == org.ID }>
+									{ org.Name }
+									if org.Code != "" {
+										{ " (" + org.Code + ")" }
+									}
+								</option>
+							}
+						</select>
+					</div>
+
+					<!-- Date From Filter -->
+					<div style="min-width: 170px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
+							@components.IconCalendar("icon-2xs")
+							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_date_from") }</span>
+						</label>
+						<input
+							type="date"
+							name="from"
+							value={ data.DateFrom }
+							class="form-input text-sm tabular-nums w-100"
+						/>
+					</div>
+
+					<!-- Date To Filter -->
+					<div style="min-width: 170px;">
+						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
+							@components.IconCalendar("icon-2xs")
+							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_date_to") }</span>
+						</label>
+						<input
+							type="date"
+							name="to"
+							value={ data.DateTo }
+							class="form-input text-sm tabular-nums w-100"
+						/>
+					</div>
+
+					<!-- Filter Action Buttons -->
+					<div class="d-flex items-center gap-2">
+						<button type="submit" class="btn btn-primary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconFilter("icon-xs")
+							<span>{ i18n.T(lang, "vendor_finance.earnings.btn_apply") }</span>
+						</button>
+						if data.DateFrom != "" || data.DateTo != "" || data.CustomerOrgID > 0 {
+							<a href="/vendor/earnings/order" class="btn btn-secondary btn-sm font-bold gap-1 text-decoration-none">
+								@components.IconRefresh("icon-xs")
+								<span>{ i18n.T(lang, "vendor_finance.earnings.btn_reset") }</span>
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- 4 Executive Financial KPI Cards -->
+			<div class="dashboard-stat-grid cols-4 mb-5">
+				<!-- 1. Gross Retail Value (سعر الجمهور قبل الخصم) - Dedicated Card -->
+				<div class="stat-card-3d">
+					<div class="stat-card-top">
+						<div class="stat-card-title">{ i18n.T(lang, "vendor_finance.earnings.kpi_gross_sales_title") }</div>
+						<div class="stat-card-icon-wrapper">
+							@components.IconShoppingBag("icon-sm")
+						</div>
+					</div>
+					<div class="stat-card-value text-primary mt-1 tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.GrossSales.FormatWithCommas()) }
+					</div>
+					<div class="stat-card-footer">
+						if summary.TotalDiscounts.IsPositive() {
+							<span class="badge badge-amber text-2xs font-bold tabular-nums" title={ i18n.T(lang, "vendor_finance.earnings.kpi_discounts") }>
+								-{ summary.TotalDiscounts.FormatWithCommas() } { i18n.T(lang, "common.egp") } { i18n.T(lang, "vendor_finance.earnings.badge_discounts") }
+							</span>
+						} else {
+							<span class="text-secondary text-xs">{ i18n.T(lang, "vendor_finance.earnings.kpi_gross_sales_desc") }</span>
+						}
+					</div>
+				</div>
+
+				<!-- 2. Realized Net Revenue (صافي مبيعاتك المحققة) -->
+				<div class="stat-card-3d">
+					<div class="stat-card-top">
+						<div class="stat-card-title">{ i18n.T(lang, "vendor_finance.earnings.kpi_net_sales") }</div>
+						<div class="stat-card-icon-wrapper">
+							@components.IconChart("icon-sm")
+						</div>
+					</div>
+					<div class="stat-card-value text-primary mt-1 tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.NetSales.FormatWithCommas()) }
+					</div>
+					<div class="stat-card-footer">
+						<span class="text-secondary text-xs">{ i18n.T(lang, "vendor_finance.earnings.kpi_net_sales_desc") }</span>
+					</div>
+				</div>
+
+				<!-- 3. Cost of Goods Sold (COGS) -->
+				<div class="stat-card-3d">
+					<div class="stat-card-top">
+						<div class="stat-card-title">{ i18n.T(lang, "vendor_finance.earnings.kpi_cogs") }</div>
+						<div class="stat-card-icon-wrapper rose">
+							@components.IconPackage("icon-sm")
+						</div>
+					</div>
+					<div class="stat-card-value text-danger mt-1 tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.COGS.FormatWithCommas()) }
+					</div>
+					<div class="stat-card-footer">
+						<span class="text-secondary text-xs">{ i18n.T(lang, "vendor_finance.earnings.kpi_cogs_desc") }</span>
+					</div>
+				</div>
+
+				<!-- 4. Realized Net Profit (صافي الربح) -->
+				<div class="stat-card-3d">
+					<div class="stat-card-top">
+						<div class="stat-card-title">{ i18n.T(lang, "vendor_finance.earnings.kpi_net_profit") }</div>
+						<div class="stat-card-icon-wrapper emerald">
+							@components.IconWallet("icon-sm")
+						</div>
+					</div>
+					<div class="stat-card-value text-success mt-1 tabular-nums">
+						if summary.NetProfit.IsPositive() {
+							+{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.NetProfit.FormatWithCommas()) }
+						} else if summary.NetProfit.Minor() < 0 {
+							{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.NetProfit.FormatWithCommas()) }
+						} else {
+							{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), "0.00") }
+						}
+					</div>
+					<div class="stat-card-footer">
+						<span class="text-secondary text-xs">{ i18n.T(lang, "vendor_finance.earnings.th_margin") }:</span>
+						if summary.ProfitMargin > 0 {
+							<span class="badge badge-emerald text-xs font-black tabular-nums">
+								{ fmt.Sprintf("%.1f%%", summary.ProfitMargin) }
+							</span>
+						} else if summary.ProfitMargin < 0 {
+							<span class="badge badge-rose text-xs font-black tabular-nums">
+								{ fmt.Sprintf("%.1f%%", summary.ProfitMargin) }
+							</span>
+						} else {
+							<span class="badge badge-slate text-xs font-bold tabular-nums">0.0%</span>
+						}
+					</div>
+				</div>
+			</div>
+
+			<!-- Executive Status & Formula Strip -->
+			<div class="glass-panel p-4 mb-6 flex-between flex-wrap gap-4 items-center">
+				<div class="d-flex items-center gap-4 flex-wrap">
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-emerald text-xs font-bold tabular-nums">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.delivered_count_sub"), summary.DeliveredOrdersCount) }
+						</span>
+					</div>
+					<div class="d-flex items-center gap-2">
+						<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "vendor_finance.earnings.kpi_wallet_balance") }:</span>
+						<span class="font-extrabold text-sm text-primary tabular-nums">
+							{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), summary.WalletBalance.FormatWithCommas()) }
+						</span>
+					</div>
+					if summary.PendingOrdersCount > 0 {
+						<div class="d-flex items-center gap-2">
+							<span class="badge badge-amber text-xs font-bold tabular-nums">
+								{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.pending_orders_sub"), summary.PendingOrdersCount) }
+							</span>
+						</div>
+					}
+				</div>
+
+				<!-- Formula Explainer -->
+				<div class="d-flex items-center gap-2 text-2xs text-secondary font-medium">
+					<span class="badge badge-slate text-2xs font-bold">{ i18n.T(lang, "vendor_finance.earnings.formula_title") }</span>
+					<span class="tabular-nums font-semibold">{ i18n.T(lang, "vendor_finance.earnings.formula_simple") }</span>
+				</div>
+			</div>
+
+			<!-- Tabbed Views for Clean Information Hierarchy -->
+			<div x-data="{ activeTab: (new URLSearchParams(window.location.search)).has('page_products') ? 'products' : 'orders' }">
+				<!-- Tab Navigation Bar -->
+				<div class="d-flex items-center gap-2 mb-4 border-b border-slate-200/80 pb-2">
+					<button
+						type="button"
+						class="btn btn-sm font-bold gap-2 transition-all"
+						:class="activeTab === 'orders' ? 'btn-primary shadow-xs' : 'btn-secondary text-secondary'"
+						@click="activeTab = 'orders'"
+					>
+						@components.IconPackage("icon-xs")
+						<span>{ i18n.T(lang, "vendor_finance.earnings.tab_orders") }</span>
+						<span class="badge text-2xs tabular-nums" :class="activeTab === 'orders' ? 'badge-primary' : 'badge-slate'">
+							{ fmt.Sprintf("%d", data.OrdersPagination.TotalCount) }
+						</span>
+					</button>
+
+					<button
+						type="button"
+						class="btn btn-sm font-bold gap-2 transition-all"
+						:class="activeTab === 'products' ? 'btn-primary shadow-xs' : 'btn-secondary text-secondary'"
+						@click="activeTab = 'products'"
+					>
+						@components.IconPill("icon-xs")
+						<span>{ i18n.T(lang, "vendor_finance.earnings.tab_products") }</span>
+						<span class="badge text-2xs tabular-nums" :class="activeTab === 'products' ? 'badge-primary' : 'badge-slate'">
+							{ fmt.Sprintf("%d", data.ProductsPagination.TotalCount) }
+						</span>
+					</button>
+				</div>
+
+				<!-- Tab 1: Delivered Orders Financial Breakdown -->
+				<div x-show="activeTab === 'orders'" x-cloak class="stack-lg">
+					<div class="glass-panel p-0 overflow-hidden mb-6">
+						<div class="p-5 border-b flex-between flex-wrap gap-3 items-center">
+							<div class="d-flex items-center gap-2">
+								<span class="text-brand">@components.IconPackage("icon-xs")</span>
+								<h3 class="text-lg font-black text-primary m-0">
+									{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.orders_title"), data.OrdersPagination.TotalCount) }
+								</h3>
+							</div>
+							<span class="badge badge-emerald text-xs font-bold">
+								{ i18n.T(lang, "vendor_finance.earnings.orders_badge") }
+							</span>
+						</div>
+
+						if len(summary.Shipments) == 0 {
+							<div class="p-8 text-center text-muted">
+								<div class="text-3xl mb-2">@components.IconInbox("icon-md")</div>
+								<div class="font-bold text-sm text-primary">{ i18n.T(lang, "vendor_finance.earnings.orders_empty_title") }</div>
+								<div class="text-xs text-secondary mt-1">{ i18n.T(lang, "vendor_finance.earnings.orders_empty_desc") }</div>
+								if summary.Period != "all" {
+									<div class="mt-4">
+										<a href="/vendor/earnings/order?period=all" class="btn btn-secondary btn-sm font-bold text-decoration-none">
+											{ i18n.T(lang, "vendor_finance.earnings.btn_all_time") }
+										</a>
+									</div>
+								}
+							</div>
+						} else {
+							<div class="table-container m-0">
+								<table class="data-table m-0">
+									<thead>
+										<tr>
+											<th>{ i18n.T(lang, "vendor_finance.earnings.th_order_shipment") }</th>
+											<th>{ i18n.T(lang, "vendor_finance.earnings.th_delivered_at") }</th>
+											<th>{ i18n.T(lang, "vendor_finance.earnings.th_customer") }</th>
+											<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_items_count") }</th>
+											<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_gross_sales") }</th>
+											<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_net_sales") }</th>
+											<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_cogs") }</th>
+											<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_net_profit") }</th>
+											<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_margin") }</th>
+											<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_settlement") }</th>
+										</tr>
+									</thead>
+									<tbody>
+										for _, s := range data.PagedShipments {
+											<tr>
+												<td>
+													<div class="font-extrabold text-primary text-sm tabular-nums">
+														{ s.ShipmentNumber }
+													</div>
+													<div class="text-2xs text-muted tabular-nums mt-0.5">
+														{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.order_prefix"), s.OrderNumber) }
+													</div>
+												</td>
+												<td class="tabular-nums text-xs font-semibold text-secondary whitespace-nowrap">
+													{ s.DeliveredAt.Format("2006-01-02 03:04 PM") }
+												</td>
+												<td>
+													<span class="font-bold text-sm text-primary">{ s.CustomerOrgName }</span>
+												</td>
+												<td class="text-center">
+													<span class="badge badge-secondary text-xs tabular-nums font-bold">
+														{ fmt.Sprintf(i18n.T(lang, "vendor_finance.earnings.items_badge"), s.LineItemsCount) }
+													</span>
+												</td>
+												<td class="tabular-nums font-semibold text-secondary text-sm">
+													{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.GrossSales.FormatWithCommas()) }
+												</td>
+												<td class="tabular-nums font-extrabold text-primary text-sm">
+													{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.NetSales.FormatWithCommas()) }
+												</td>
+												<td class="tabular-nums font-semibold text-danger text-sm">
+													if s.COGS.IsPositive() {
+														-{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.COGS.FormatWithCommas()) }
+													} else {
+														<span class="text-muted text-xs">{ i18n.T(lang, "vendor_finance.earnings.no_cogs") }</span>
+													}
+												</td>
+												<td class="tabular-nums font-black text-success text-sm">
+													if s.NetProfit.IsPositive() {
+														+{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.NetProfit.FormatWithCommas()) }
+													} else if s.NetProfit.Minor() < 0 {
+														{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), s.NetProfit.FormatWithCommas()) }
+													} else {
+														<span class="text-muted text-xs">0.00</span>
+													}
+												</td>
+												<td class="text-center">
+													if s.ProfitMargin > 0 {
+														<span class="badge badge-emerald text-xs font-black tabular-nums">
+															{ fmt.Sprintf("%.1f%%", s.ProfitMargin) }
+														</span>
+													} else if s.ProfitMargin < 0 {
+														<span class="badge badge-rose text-xs font-black tabular-nums">
+															{ fmt.Sprintf("%.1f%%", s.ProfitMargin) }
+														</span>
+													} else {
+														<span class="badge badge-slate text-xs font-bold tabular-nums">0.0%</span>
+													}
+												</td>
+												<td class="text-center">
+													if s.PaymentStatus == "paid" {
+														<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "vendor_finance.earnings.status_settled") }</span>
+													} else if s.PaymentStatus == "partially_paid" {
+														<span class="badge badge-sky text-xs font-bold">{ i18n.T(lang, "vendor_finance.earnings.status_partially_paid") }</span>
+													} else {
+														<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "vendor_finance.earnings.status_pending_settlement") }</span>
+													}
+												</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+							if data.OrdersPagination.TotalCount > 0 {
+								<div class="p-4 border-t bg-surface-sunken">
+									@components.B2BPagination(data.OrdersPagination)
+								</div>
+							}
+						}
+					</div>
+				</div>
+
+				<!-- Tab 2: Product Margin & Profitability Table -->
+				<div x-show="activeTab === 'products'" x-cloak class="stack-lg">
+					@VendorEarningsTopProducts(data.PagedProducts, data.ProductsPagination, lang)
+				</div>
+			</div>
+
+		</div>
+	}
+}
+
+// VendorEarningsOffersPage renders offers revenue report.
+templ VendorEarningsOffersPage(revenue money.Amount, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_finance.offers_earnings.shell_title"), "earnings_offers", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="d-flex items-center gap-3 mb-1">
+					<div class="user-avatar-badge text-xl">
+						@components.IconTag("icon-sm")
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0">
+						{ i18n.T(lang, "vendor_finance.offers_earnings.header_title") }
+					</h1>
+				</div>
+				<p class="text-sm text-secondary m-0">
+					{ i18n.T(lang, "vendor_finance.offers_earnings.header_desc") }
+				</p>
+			</div>
+
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="stat-card-label text-success">{ i18n.T(lang, "vendor_finance.offers_earnings.kpi_total") }</div>
+					<div class="stat-card-value text-success tabular-nums">
+						{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), revenue.FormatWithCommas()) }
+					</div>
+					<span class="text-xs text-secondary mt-1 d-block">
+						{ i18n.T(lang, "vendor_finance.offers_earnings.kpi_total_sub") }
+					</span>
+				</div>
+			</div>
+		</div>
+	}
+}

@@ -1,0 +1,249 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type TenantSessionsViewData struct {
+	Sessions         []*identity.Session
+	CurrentToken     string
+	CurrentUserID    int64
+	IsSuperAdmin     bool
+	MaxLoginSessions int
+	MaxDevices       int
+	PlanName         string
+	IsVendor         bool
+	NoticeType       string
+	NoticeMessage    string
+}
+
+templ TenantSessionsPage(lang, dir string, data TenantSessionsViewData) {
+	if data.IsVendor {
+		@layouts.VendorShell("الأجهزة والجلسات النشطة", "sessions", lang, dir) {
+			@tenantSessionsContent(lang, dir, data)
+		}
+	} else {
+		@layouts.CustomerShell("الأجهزة والجلسات النشطة", "sessions", lang, dir, nil) {
+			@tenantSessionsContent(lang, dir, data)
+		}
+	}
+}
+
+templ tenantSessionsContent(lang, dir string, data TenantSessionsViewData) {
+	<div class="page-container">
+		
+		<!-- Compact Page Header -->
+		<div class="d-flex items-center justify-between flex-wrap gap-4 mb-4">
+			<div>
+				<h1 class="page-title font-bold text-xl m-0 d-flex items-center gap-2">
+					<span class="text-primary">@components.IconShield("icon-sm")</span>
+					<span>الأجهزة والجلسات النشطة</span>
+				</h1>
+				<p class="text-xs text-secondary m-0 mt-1">
+					إدارة الأجهزة المتصلة بحساب المنشأة وسعة الجلسات المتزامنة ({ data.PlanName })
+				</p>
+			</div>
+
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<a
+					href={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa", "/customer/mfa")) }
+					class="btn btn-secondary btn-sm font-bold rounded-lg"
+				>
+					<span>@components.IconShield("icon-xs")</span>
+					<span>المصادقة الثنائية (MFA)</span>
+				</a>
+				if data.IsVendor {
+					<a href="/vendor/subscription" class="btn btn-primary btn-sm font-bold rounded-lg">
+						@components.IconSparkles("icon-xs")
+						<span>ترقية الباقة</span>
+					</a>
+				} else {
+					<a href="/customer/subscription" class="btn btn-primary btn-sm font-bold rounded-lg">
+						@components.IconSparkles("icon-xs")
+						<span>ترقية الباقة</span>
+					</a>
+				}
+			</div>
+		</div>
+
+		<!-- Flash Notices -->
+		if data.NoticeMessage != "" {
+			if data.NoticeType == "error" {
+				<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">
+					@components.IconAlert("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			} else {
+				<div class="alert alert-success mb-4 p-4 d-flex items-center gap-3">
+					@components.IconCheckCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			}
+		}
+
+		<!-- Compact Metrics Bar -->
+		<div class="glass-panel p-4 mb-4 shadow-xs">
+			<div class="dashboard-stat-grid cols-4">
+				<div class="stat-card-3d">
+					<div class="stat-card-label">الجلسات المتصلة</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", len(data.Sessions)) } <span class="text-xs font-normal text-muted">/ { fmt.Sprintf("%d", data.MaxLoginSessions) } مسموحة</span>
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">حالة السعة</div>
+					<div class="mt-1">
+						if len(data.Sessions) >= data.MaxLoginSessions {
+							<span class="badge badge-amber font-bold text-xs">الحد الأقصى مستنفد</span>
+						} else {
+							<span class="badge badge-emerald font-bold text-xs">سعة متاحة</span>
+						}
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">حد الأجهزة المعتمدة</div>
+					<div class="stat-card-value text-primary tabular-nums">
+						{ fmt.Sprintf("%d", data.MaxDevices) } <span class="text-xs font-normal text-muted">أجهزة</span>
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="stat-card-label">باقة المنشأة</div>
+					<div class="font-bold text-sm text-primary mt-1">
+						{ data.PlanName }
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Active Sessions List -->
+		<div class="glass-panel p-5 mb-4 shadow-xs">
+			<div class="d-flex items-center justify-between flex-wrap gap-3 pb-3 mb-3 border-b">
+				<h2 class="font-bold text-base text-primary m-0">
+					الأجهزة المتصلة حالياً ({ fmt.Sprintf("%d", len(data.Sessions)) })
+				</h2>
+
+				if len(data.Sessions) > 1 {
+					<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/sessions/revoke-all", "/customer/sessions/revoke-all")) } method="POST" class="m-0" data-confirm="إنهاء كافة الجلسات الأخرى والإبقاء على هذا الجهاز فقط؟">
+						<input type="hidden" name="current_token" value={ data.CurrentToken } />
+						<button type="submit" class="btn btn-outline-danger btn-xs font-bold gap-1">
+							@components.IconLogout("icon-xs")
+							<span>إنهاء الجلسات الأخرى</span>
+						</button>
+					</form>
+				}
+			</div>
+
+			if len(data.Sessions) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   "لا توجد جلسات نشطة",
+					Message: "لم يتم العثور على أي جلسات متصلة حالياً.",
+				})
+			} else {
+				<div class="d-flex flex-col gap-3">
+					for _, sess := range data.Sessions {
+						<div class={ "d-flex items-center justify-between flex-wrap gap-3 p-4 rounded-xl border", templ.KV("bg-primary-subtle border-primary shadow-xs", sess.Token == data.CurrentToken), templ.KV("bg-surface-sunken border", sess.Token != data.CurrentToken) }>
+							<div class="d-flex items-center gap-3">
+								<div class="w-10 h-10 rounded-lg bg-surface-raised border d-flex items-center justify-center text-primary flex-shrink-0 shadow-xs">
+									if sess.Icon != "" {
+										{ sess.Icon }
+									} else {
+										@components.IconMonitor("icon-sm")
+									}
+								</div>
+								<div>
+									<div class="d-flex items-center gap-2 flex-wrap">
+										<strong class="text-sm font-bold text-primary">
+											if sess.DeviceName != "" {
+												{ sess.DeviceName }
+											} else {
+												جهاز غير محدد
+											}
+										</strong>
+										if sess.Token == data.CurrentToken {
+											<span class="badge badge-emerald text-2xs font-bold">
+												جهازك الحالي
+											</span>
+										}
+									</div>
+									<div class="tabular-nums text-2xs text-muted d-flex items-center gap-1.5 flex-wrap mt-0.5">
+										<span>{ sess.Email }</span>
+										if sess.IP != "" {
+											<span>• { sess.IP }</span>
+										}
+										<span>• { sess.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+									</div>
+								</div>
+							</div>
+
+							<div class="d-flex items-center gap-2">
+								if sess.Token == data.CurrentToken {
+									<form action="/auth/logout" method="POST" class="m-0">
+										<button type="submit" class="btn btn-secondary btn-xs font-bold">
+											<span>تسجيل الخروج</span>
+										</button>
+									</form>
+								} else if sess.UserID == data.CurrentUserID || data.IsSuperAdmin {
+									<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/sessions/revoke", "/customer/sessions/revoke")) } method="POST" class="m-0" data-confirm="إنهاء جلسة هذا الجهاز؟">
+										<input type="hidden" name="token" value={ sess.Token } />
+										<button type="submit" class="btn btn-outline-danger btn-xs font-bold">
+											<span>إنهاء الجلسة</span>
+										</button>
+									</form>
+								} else {
+									<span class="badge badge-slate text-2xs font-medium">
+										مستخدم آخر
+									</span>
+								}
+							</div>
+						</div>
+					}
+				</div>
+			}
+		</div>
+
+		<!-- Password Security Form -->
+		<div class="glass-panel p-5 shadow-xs">
+			<div class="mb-3 pb-2 border-b">
+				<h2 class="font-bold text-base text-primary m-0">
+					تحديث كلمة المرور
+				</h2>
+				<p class="text-xs text-secondary m-0 mt-1">
+					تغيير كلمة المرور الخاصة بحسابك ينهي الجلسات الأخرى فوراً
+				</p>
+			</div>
+
+			<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/password", "/customer/password")) } method="POST" class="d-flex flex-col gap-3 max-w-lg">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold" for="sess-current-password">كلمة المرور الحالية</label>
+					<input type="password" id="sess-current-password" name="current_password" required class="form-input form-input-sm font-semibold" placeholder="••••••••" />
+				</div>
+
+				<div class="d-grid grid-auto-fit-sm gap-3">
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold" for="sess-new-password">كلمة المرور الجديدة</label>
+						<input type="password" id="sess-new-password" name="new_password" required minlength="8" class="form-input form-input-sm font-semibold" placeholder="8 أحرف كحد أدنى" />
+					</div>
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold" for="sess-confirm-password">تأكيد كلمة المرور</label>
+						<input type="password" id="sess-confirm-password" name="confirm_password" required minlength="8" class="form-input form-input-sm font-semibold" placeholder="••••••••" />
+					</div>
+				</div>
+
+				<div class="pt-1">
+					<button type="submit" class="btn btn-primary btn-sm font-bold px-6">
+						@components.IconCheck("icon-xs")
+						<span>حفظ كلمة المرور الجديدة</span>
+					</button>
+				</div>
+			</form>
+		</div>
+
+	</div>
+}

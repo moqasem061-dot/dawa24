@@ -1,0 +1,325 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ VendorSavingProductModal(lang string) {
+	@components.Modal(components.ModalProps{ID: "saving-product-modal", Title: i18n.T(lang, "vendor_saving.modal_add_title"), Size: "md"}) {
+		<form method="POST" id="saving-product-form" action="/vendor/saving-products" class="d-flex flex-col gap-4 m-0">
+			<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+			<input type="hidden" id="form-saving-id" name="id" value="" />
+
+			<div class="stack-md">
+				<div class="stack-sm">
+					<label class="form-label text-sm font-bold text-primary">
+						{ i18n.T(lang, "vendor_saving.lbl_prod_name") }
+					</label>
+					<input
+						type="text"
+						id="form-name-product"
+						name="name_product"
+						required
+						placeholder={ i18n.T(lang, "vendor_saving.placeholder_prod_name") }
+						class="form-input w-full-rounded"
+					/>
+				</div>
+
+				<div class="grid-2">
+					<div class="stack-sm">
+						<label class="form-label text-sm font-bold text-primary">
+							{ i18n.T(lang, "vendor_saving.lbl_sku") }
+						</label>
+						<input
+							type="text"
+							id="form-sku"
+							name="sku"
+							placeholder={ i18n.T(lang, "vendor_saving.placeholder_sku") }
+							class="form-input w-full-rounded"
+						/>
+					</div>
+
+					<div class="stack-sm">
+						<label class="form-label text-sm font-bold text-primary">
+							{ i18n.T(lang, "vendor_saving.lbl_qty") }
+						</label>
+						<input
+							type="number"
+							step="any"
+							id="form-qty"
+							name="qty"
+							placeholder="0"
+							class="form-input w-full-rounded"
+						/>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label text-sm font-bold text-primary">
+						{ i18n.T(lang, "vendor_saving.lbl_price") }
+					</label>
+					<input
+						type="number"
+						step="0.01"
+						id="form-price"
+						name="price"
+						placeholder="0.00"
+						class="form-input w-full-rounded"
+					/>
+				</div>
+
+				<div class="bg-surface-sunken p-4 rounded-2xl border d-flex flex-col gap-2">
+					<label class="font-extrabold text-primary text-sm">
+						{ i18n.T(lang, "vendor_saving.lbl_link_catalog") }
+					</label>
+					<input type="hidden" id="form-product-id" name="product_id" value="" />
+
+					<div id="selected-product-box" class="d-none flex-between items-center bg-surface-raised p-2.5 rounded-lg border">
+						<span id="selected-product-label" class="font-extrabold text-accent text-sm"></span>
+						<button type="button" class="btn btn-secondary btn-sm text-xs text-danger font-bold" data-on-click="clearSelectedProduct()">
+							{ i18n.T(lang, "vendor_saving.btn_unlink") }
+						</button>
+					</div>
+
+					<div id="search-product-container" class="relative">
+						<input
+							type="text"
+							id="product-search-input"
+							placeholder={ i18n.T(lang, "vendor_saving.placeholder_search_catalog") }
+							class="form-input w-full rounded-lg text-sm"
+							data-on-input="searchCatalogProductsLive(this.value)"
+						/>
+						<div id="product-search-dropdown" class="d-none absolute top-full start-0 end-0 z-50 max-h-48 overflow-y-auto bg-surface-raised border rounded-lg shadow-xl mt-1"></div>
+					</div>
+				</div>
+			</div>
+
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary font-bold" data-on-click="closeCreateModal()">
+					{ i18n.T(lang, "vendor_jobs.btn_cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary font-bold px-6">
+					{ i18n.T(lang, "vendor_saving.btn_save_data") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+templ VendorSavingImportModal(lang string) {
+	@components.Modal(components.ModalProps{ID: "saving-import-modal", Title: i18n.T(lang, "vendor_saving.modal_import_title"), Size: "xl"}) {
+		<p id="vendor-import-modal-subtitle" class="text-xs text-muted mb-4">
+			الخطوة 1 من 3: اختيار الملف وتعيين الأعمدة
+		</p>
+
+		<div class="stack-lg">
+			<!-- STEP 1: Upload & Configuration -->
+			<div id="vendor-import-step-config" class="stack-lg">
+				<div class="stack-sm" id="import-dropzone" data-on-click="clickElement('import-file-input')">
+					<div class="stack-sm">@components.IconBarChart("icon-sm")</div>
+					<strong>انقر هنا لاختيار الملف أو اسحبه هنا</strong>
+					<p class="text-sm text-muted m-0">يدعم ملفات Excel (.xlsx, .xls) وكشوف CSV (.csv) بحد أقصى 32 ميجابايت</p>
+					<div class="stack-sm" id="import-filename-preview"></div>
+					<input
+						type="file"
+						id="import-file-input"
+						name="file"
+						accept=".xlsx,.xls,.csv"
+						required
+						data-on-change="handleImportFileSelect(this)"
+					/>
+				</div>
+
+				<div class="stack-sm" id="vendor-import-columns-panel">
+					<div class="stack-sm">
+						<div class="row-center-sm">
+							<span>@components.IconSettings("icon-sm")</span>
+							<span>تحديد وتعيين أعمدة الملف:</span>
+						</div>
+						<span class="badge badge-emerald font-size-10">تم التحديد الذكي تلقائياً</span>
+					</div>
+
+					<div class="stack-sm" id="vendor-import-columns-loading">
+						⏳ جاري قراءة أعمدة الملف وتحليل البيانات...
+					</div>
+
+					<div id="vendor-import-columns-grid" class="grid-halves">
+						<div class="stack-sm">
+							<label class="form-label">عمود اسم الصنف / المنتج <span class="text-danger">*</span></label>
+							<select name="col_name" id="vendor-col-name" class="form-input">
+								<option value="">تلقائي (التعرف الذكي)</option>
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label">عمود كود الصنف / SKU / الباركود</label>
+							<select name="col_sku" id="vendor-col-sku" class="form-input">
+								<option value="">تلقائي (التعرف الذكي)</option>
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label">عمود الكمية المطلوبة</label>
+							<select name="col_qty" id="vendor-col-qty" class="form-input">
+								<option value="">تلقائي (التعرف الذكي)</option>
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<label class="form-label">عمود السعر المستهدف (ج.م)</label>
+							<select name="col_price" id="vendor-col-price" class="form-input">
+								<option value="">تلقائي (التعرف الذكي)</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="stack-sm" id="vendor-import-preview-table-container"></div>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">مطابقة الذكاء الاصطناعي</label>
+					<label class="form-label">
+						<input type="checkbox" name="use_ai" value="1" checked />
+						<span class="text-body">تفعيل مطابقة الذكاء الاصطناعي للأصناف الصعبة</span>
+					</label>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">أقل نسبة مطابقة تُعتمد تلقائياً (%)</label>
+					<input type="number" name="min_match_score" min="25" max="100" value={ fmt.Sprint(int(productmatch.DefaultMinStrong*100)) } class="form-input"/>
+				</div>
+
+				<div class="stack-sm">
+					<label class="form-label">المطابقة بالمعرّفات (اختياري)</label>
+					<label class="form-label">
+						<input type="checkbox" name="match_by_barcode" value="1"/>
+						<span class="text-body">عمود الكود يحمل باركود GTIN</span>
+					</label>
+					<label class="form-label">
+						<input type="checkbox" name="match_by_code" value="1"/>
+						<span class="text-body">المطابقة بعمود كود الصنف</span>
+					</label>
+					<label class="form-label">
+						<input type="checkbox" name="code_is_catalog_code" value="1"/>
+						<span class="text-body">عمود الكود يحمل أكواد دوا 24 نفسها</span>
+					</label>
+				</div>
+
+				<div class="stack-sm">
+					ℹ️ <strong>معالجة آمنة في الخلفية:</strong> لن يتم حفظ أو تعديل أي صنف في قاعدة البيانات مباشرة؛ ستظهر لك نتائج المطابقة كاملة في الخطوة التالية لمراجعتها والموافقة عليها.
+				</div>
+			</div>
+
+			<!-- STEP 2: Real-time Background Progress -->
+			<div class="stack-sm" id="vendor-import-step-progress">
+				<div class="stack-sm">@components.IconZap("icon-sm")</div>
+				<h4 class="font-bold" id="vendor-progress-phase">
+					جاري قراءة وفك تشفير ملف الإكسيل...
+				</h4>
+				<p class="text-sm text-secondary m-0" id="vendor-progress-sub">
+					تتم المعالجة والمطابقة الصيدلانية في الخلفية دون تجميد المتصفح
+				</p>
+
+				<div class="wiz-progress">
+					<div class="wiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+						<div class="wiz-progress-fill" id="vendor-progress-bar"></div>
+					</div>
+					<div class="wiz-progress-meta">
+						<span id="vendor-progress-counter" class="tabular-nums"></span>
+						<span id="vendor-progress-percent" class="wiz-progress-percent">0%</span>
+					</div>
+				</div>
+			</div>
+
+			<!-- STEP 3: Staged Review & Confirmation -->
+			<div id="vendor-import-step-review" class="stack-md">
+				<div class="stack-sm">
+					<div class="stack-sm">
+						<div class="stack-sm">إجمالي الأصناف بالملف</div>
+						<div class="stack-sm" id="vendor-review-total-count">0</div>
+					</div>
+					<div class="stack-sm">
+						<div class="stack-sm">تم ربطها بالكتالوج</div>
+						<div class="stack-sm" id="vendor-review-matched-count">0</div>
+					</div>
+					<div class="stack-sm">
+						<div class="stack-sm">أصناف غير مرتبطة / جديدة</div>
+						<div class="stack-sm" id="vendor-review-unlinked-count">0</div>
+					</div>
+					<div class="stack-sm">
+						<div class="stack-sm">إجمالي الكمية المطلوبة</div>
+						<div class="stack-sm" id="vendor-review-total-qty">0</div>
+					</div>
+				</div>
+
+				<div class="stack-sm">
+					<div class="row-center-sm">
+						<button type="button" class="btn btn-sm btn-ghost" id="vendor-tab-all" data-on-click="filterVendorReviewTable('all')">الكل (<span id="vendor-badge-all">0</span>)</button>
+						<button type="button" class="btn btn-sm btn-ghost" id="vendor-tab-matched" data-on-click="filterVendorReviewTable('matched')">المتطابق فقط (<span id="vendor-badge-matched">0</span>)</button>
+						<button type="button" class="btn btn-sm btn-ghost" id="vendor-tab-unlinked" data-on-click="filterVendorReviewTable('unlinked')">غير المرتبط (<span id="vendor-badge-unlinked">0</span>)</button>
+					</div>
+					<input type="text" id="vendor-review-search" class="form-input" placeholder="بحث سريع في المسودة..." data-on-input="searchVendorReviewTable(this.value)" />
+				</div>
+
+				<div class="table-container m-0">
+					<table class="data-table m-0">
+						<thead>
+							<tr>
+								<th>
+									<input type="checkbox" id="vendor-select-all" checked data-on-change="toggleAllVendorStagedRows(this.checked)" />
+								</th>
+								<th>اسم الصنف في الملف</th>
+								<th>كود SKU</th>
+								<th>الصنف المطابق بالكتالوج العام</th>
+								<th class="text-center">حالة المطابقة</th>
+								<th class="text-center">الكمية</th>
+								<th class="text-end">السعر المستهدف</th>
+							</tr>
+						</thead>
+						<tbody id="vendor-review-table-body"></tbody>
+					</table>
+				</div>
+
+				<div class="stack-sm">
+					<span>لم يتم حفظ أي صنف في قاعدة البيانات بعد. اضغط "تأكيد الاستيراد والحفظ" لاعتماد البيانات.</span>
+					<span>الأصناف المحددة: <strong id="vendor-selected-count">0</strong></span>
+				</div>
+			</div>
+
+			<!-- Fixed Sticky Footer -->
+			<div class="stack-sm" id="vendor-import-footer">
+				<div class="stack-sm" id="vendor-footer-left">
+					<button type="button" id="vendor-cancel-btn" class="btn btn-secondary" data-on-click="handleVendorImportCancelClick()">
+						إلغاء
+					</button>
+				</div>
+				<div id="vendor-footer-right" class="row-center-sm">
+					<button type="button" id="vendor-back-btn" class="btn btn-secondary" data-on-click="backToVendorImportConfig()">
+						← الرجوع لضبط الأعمدة
+					</button>
+					<button type="button" id="vendor-start-btn" class="btn btn-primary" data-on-click="startVendorAsyncImport()">
+						بدء المعالجة ومطابقة الذكاء الاصطناعي
+					</button>
+					<button type="button" id="vendor-commit-btn" class="btn btn-primary" data-on-click="commitVendorStagedImport()">
+						تأكيد الاستيراد والحفظ النهائي في قائمة المنتجات
+					</button>
+				</div>
+			</div>
+		</div>
+	}
+}
+
+templ VendorSavingProvidersModal(lang string) {
+	@components.Modal(components.ModalProps{ID: "providers-modal", Title: i18n.T(lang, "vendor_saving.modal_providers_title"), Size: "lg"}) {
+		<p id="providers-modal-subtitle" class="text-xs text-muted mb-3"></p>
+		<div id="providers-modal-content" class="p-2">
+			<div class="text-center text-muted p-8">
+				⏳ جاري استرجاع عروض الشركات والموردين المتاحين...
+			</div>
+		</div>
+	}
+}

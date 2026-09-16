@@ -1,0 +1,321 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ CustomerCheckout(cart *commerce.Cart, branches []*CheckoutBranchItem, wallet *billing.Wallet, paymentMethods []*billing.PlatformPaymentMethod, lang, dir string) {
+	@layouts.ShellFor(fmt.Sprintf("%s | B2B Checkout", i18n.T(lang, "checkout.title")), "checkout", lang, dir, authctx.FromContext(ctx)) {
+		<div class="page-container max-w-6xl">
+			
+			<!-- Header -->
+			<div class="page-header-block mb-6 border-b pb-4">
+				<div class="d-flex items-center gap-3">
+					<div class="user-avatar-badge">
+						@components.IconPackage("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "checkout.title") }
+						</h1>
+						<p class="text-sm text-muted m-0 mt-1">
+							{ i18n.T(lang, "checkout.subtitle") }
+						</p>
+					</div>
+				</div>
+			</div>
+
+			if cart == nil || len(cart.Items) == 0 {
+				<div class="empty-state-glass p-8 text-center">
+					<div class="empty-state-icon-wrapper mx-auto mb-4">
+						@components.IconCart("icon-sm")
+					</div>
+					<h3 class="text-xl font-black text-primary mb-2">
+						{ i18n.T(lang, "cart.empty_title") }
+					</h3>
+					<p class="text-sm text-muted max-w-md mx-auto mb-6">
+						{ i18n.T(lang, "cart.empty_subtitle") }
+					</p>
+					<a href="/catalog" class="btn btn-primary font-bold">
+						@components.IconSearch("icon-xs")
+						<span>{ i18n.T(lang, "cart.browse_catalog") }</span>
+					</a>
+				</div>
+			} else {
+				<!-- Stepper Progress Bar -->
+				<div class="mb-6">
+					@components.Stepper(components.StepperProps{
+						Steps: []components.StepperStep{
+							{ ID: "address", Label: i18n.T(lang, "checkout.step_branch") },
+							{ ID: "shipping", Label: i18n.T(lang, "checkout.step_shipping") },
+							{ ID: "payment", Label: i18n.T(lang, "checkout.step_payment") },
+							{ ID: "review", Label: i18n.T(lang, "checkout.step_review") },
+						},
+						Current: 2,
+					})
+				</div>
+
+				<form class="stack-md" action="/checkout" method="POST">
+					<div class="checkout-grid">
+						
+						<!-- Left Column: Address, Payment, Notes -->
+						<div class="d-flex flex-col gap-6">
+							
+							<!-- 1. Pharmacy Delivery Branches Card -->
+							<div class="checkout-step-card">
+								<div class="flex-between mb-4 flex-wrap gap-3">
+									<div class="d-flex items-center gap-3">
+										<div class="user-avatar-badge">
+											@components.IconBuilding("icon-xs")
+										</div>
+										<div class="stack-sm">
+											<h2 class="text-lg font-extrabold text-primary m-0">
+												{ i18n.T(lang, "checkout.branch_step_title") }
+											</h2>
+											<span class="text-xs text-muted">{ i18n.T(lang, "checkout.branch_step_sub") }</span>
+										</div>
+									</div>
+
+									if buying, has := authctx.BuyingBranchFrom(ctx); !has || !buying.IsLocked {
+										<a href={ templ.SafeURL(func() string {
+											if actor := authctx.FromContext(ctx); actor.IsVendor() {
+												return "/vendor/branches"
+											}
+											return "/customer/branches"
+										}()) } class="btn btn-secondary btn-sm font-bold gap-1">
+											@components.IconPlus("icon-xs")
+											<span>{ i18n.T(lang, "checkout.manage_branches") }</span>
+										</a>
+									} else {
+										<span class="badge badge-amber text-xs font-bold gap-1">
+											@components.IconLock("icon-2xs")
+											<span>{ i18n.T(lang, "checkout.branch_locked") }</span>
+										</span>
+									}
+								</div>
+
+								@CheckoutBranchList(branches, lang)
+							</div>
+
+							<!-- 2. Payment Terms & Methods Card -->
+							<div class="checkout-step-card">
+								<div class="d-flex items-center gap-3 mb-4">
+									<div class="user-avatar-badge">
+										@components.IconShield("icon-xs")
+									</div>
+									<h2 class="text-lg font-extrabold text-primary m-0">
+										{ i18n.T(lang, "checkout.payment_step_title") }
+									</h2>
+								</div>
+
+								<div class="d-flex flex-col gap-3" x-data={ fmt.Sprintf("{ selectedMethod: %q }", func() string {
+									if wallet != nil && (cart == nil || wallet.AvailableBalance.Minor() >= CartTotal(cart).Minor()) {
+										return "wallet"
+									}
+									return "cod"
+								}()) }>
+									<!-- Organization Wallet Payment -->
+									if wallet != nil {
+										{{ hasFunds := cart == nil || wallet.AvailableBalance.Minor() >= CartTotal(cart).Minor() }}
+										<label
+											class={ "checkout-branch-item", templ.KV("opacity-75 bg-surface-raised cursor-not-allowed", !hasFunds) }
+											:class="{ 'border-brand bg-surface-sunken': selectedMethod === 'wallet' }"
+										>
+											<input
+												type="radio"
+												name="payment_method"
+												value="wallet"
+												checked?={ hasFunds }
+												disabled?={ !hasFunds }
+												@change="selectedMethod = 'wallet'"
+												class="form-radio mt-1 text-brand"
+											/>
+											<div class="flex-1">
+												<div class="flex-between mb-1 flex-wrap gap-2">
+													<div class="d-flex items-center gap-2">
+														@components.IconWallet("icon-xs text-brand")
+														<div class="font-extrabold text-base text-primary">
+															{ fmt.Sprintf(i18n.T(lang, "checkout.wallet_title"), format.Money(wallet.AvailableBalance, lang)) }
+														</div>
+													</div>
+													if hasFunds {
+														<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "checkout.wallet_sufficient") }</span>
+													} else {
+														<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "checkout.wallet_insufficient") }</span>
+													}
+												</div>
+												<div class="text-xs text-secondary leading-relaxed">
+													{ i18n.T(lang, "checkout.wallet_desc") }
+												</div>
+												if !hasFunds {
+													<div class="mt-2 text-2xs text-danger font-bold d-flex items-center gap-1">
+														<span>{ i18n.T(lang, "checkout.wallet_alert") }</span>
+														<a href={ templ.SafeURL(func() string {
+															if actor := authctx.FromContext(ctx); actor.IsVendor() {
+																return "/vendor/wallet"
+															}
+															return "/customer/wallet"
+														}()) } target="_blank" class="text-brand underline font-extrabold">{ i18n.T(lang, "checkout.wallet_topup") }</a>
+													</div>
+												}
+											</div>
+										</label>
+									}
+
+									<!-- Cash on Delivery (COD) -->
+									<label
+										class="checkout-branch-item"
+										:class="{ 'border-brand bg-surface-sunken': selectedMethod === 'cod' }"
+									>
+										<input
+											type="radio"
+											name="payment_method"
+											value="cod"
+											checked?={ wallet == nil || (cart != nil && wallet.AvailableBalance.Minor() < CartTotal(cart).Minor()) }
+											@change="selectedMethod = 'cod'"
+											class="form-radio mt-1"
+										/>
+										<div class="flex-1">
+											<div class="flex-between mb-1 flex-wrap gap-2">
+												<div class="font-extrabold text-base text-primary">
+													{ i18n.T(lang, "checkout.cod_title") }
+												</div>
+												<span class="badge badge-sky text-xs font-bold">{ i18n.T(lang, "checkout.cod_badge") }</span>
+											</div>
+											<div class="text-xs text-secondary leading-relaxed">
+												{ i18n.T(lang, "checkout.cod_desc") }
+											</div>
+										</div>
+									</label>
+
+									<!-- Other Active Platform Payment Methods (InstaPay, Bank Transfer, Cards) -->
+									for _, pm := range paymentMethods {
+										if pm != nil && pm.ID != "wallet" && pm.ID != "cod" && pm.ProviderType != "cash" && pm.ProviderType != "wallet" {
+											<label
+												class="checkout-branch-item"
+												:class={ fmt.Sprintf("{ 'border-brand bg-surface-sunken': selectedMethod === %q }", pm.ID) }
+											>
+												<input
+													type="radio"
+													name="payment_method"
+													value={ pm.ID }
+													@change={ fmt.Sprintf("selectedMethod = %q", pm.ID) }
+													class="form-radio mt-1 text-brand"
+												/>
+												<div class="flex-1">
+													<div class="flex-between mb-1 flex-wrap gap-2">
+														<div class="font-extrabold text-base text-primary">
+															{ pm.Name.Get(i18n.Lang(lang)) }
+														</div>
+														<span class="badge badge-sky text-xs font-bold">{ pm.ProviderType }</span>
+													</div>
+													if pm.Description.Get(i18n.Lang(lang)) != "" {
+														<div class="text-xs text-secondary leading-relaxed">
+															{ pm.Description.Get(i18n.Lang(lang)) }
+														</div>
+													}
+												</div>
+											</label>
+										}
+									}
+								</div>
+							</div>
+
+							<!-- 3. Cold-Chain & Delivery Notes -->
+							<div class="checkout-step-card">
+								<div class="d-flex items-center gap-3 mb-3">
+									<div class="user-avatar-badge">
+										@components.IconTruck("icon-xs")
+									</div>
+									<h2 class="text-lg font-extrabold text-primary m-0">
+										{ i18n.T(lang, "checkout.notes_step_title") }
+									</h2>
+								</div>
+								<textarea
+									name="notes"
+									rows="3"
+									placeholder={ i18n.T(lang, "checkout.notes_placeholder") }
+									class="form-textarea w-full"
+								></textarea>
+							</div>
+						</div>
+
+						<!-- Right Column: Order Summary & Confirm Button -->
+						<div class="d-flex flex-col gap-4">
+							<div class="checkout-summary-card">
+								<h3 class="text-lg font-extrabold text-primary m-0 mb-3 border-b pb-3">
+									{ i18n.T(lang, "checkout.summary_title") }
+								</h3>
+
+								<!-- Line items summary -->
+								<div class="d-flex flex-col gap-2 mb-4 max-h-56 overflow-y-auto pe-1">
+									for _, it := range cart.Items {
+										<div class="flex-between text-xs">
+											<span class="text-secondary text-truncate max-w-180">
+												{ it.ProductName.Get(i18n.Lang(lang)) }
+												<span class="text-muted tabular-nums"> (×{ fmt.Sprintf("%d", it.Quantity) })</span>
+											</span>
+											<strong class="tabular-nums text-primary font-bold">{ format.Money(CartItemTotal(it), lang) }</strong>
+										</div>
+									}
+								</div>
+
+								<div class="border-t pt-3 d-flex flex-col gap-2 text-xs">
+									<div class="flex-between text-secondary">
+										<span>{ i18n.T(lang, "checkout.total_items_label") }</span>
+										<span class="tabular-nums font-bold text-primary">{ fmt.Sprintf(i18n.T(lang, "checkout.items_count"), len(cart.Items)) }</span>
+									</div>
+
+									<div class="flex-between text-secondary">
+										<span>{ i18n.T(lang, "checkout.cold_chain_label") }</span>
+										<span class="badge badge-emerald text-xs">{ i18n.T(lang, "checkout.cold_chain_free") }</span>
+									</div>
+								</div>
+
+								<div class="border-t pt-3 mt-3 flex-between items-baseline">
+									<span class="font-extrabold text-sm text-primary">{ i18n.T(lang, "cart.grand_total") }</span>
+									<div class="text-2xl font-black text-brand tabular-nums">
+										{ format.Money(CartTotal(cart), lang) }
+									</div>
+								</div>
+
+								{{ hasAvailableBranch := HasAvailableCheckoutBranch(branches) }}
+								<div class="mt-4">
+									<button
+										type="submit"
+										disabled?={ !hasAvailableBranch }
+										class={
+											"btn btn-primary btn-lg w-full font-extrabold flex-center gap-2",
+											templ.KV("opacity-50 cursor-not-allowed pointer-events-none", !hasAvailableBranch),
+										}
+									>
+										@components.IconCheck("icon-sm")
+										<span>{ i18n.T(lang, "checkout.confirm_btn") }</span>
+									</button>
+									if !hasAvailableBranch && len(branches) > 0 {
+										<p class="text-xs text-amber-500 text-center mt-2 font-bold m-0">
+											{ i18n.T(lang, "checkout.no_available_branch_warning") }
+										</p>
+									}
+								</div>
+							</div>
+
+							<!-- Security Badge -->
+							<div class="glass-panel p-3 d-flex items-center gap-3 text-xs text-muted">
+								<div class="text-brand text-lg">@components.IconShield("icon-sm")</div>
+								<div class="stack-xs text-sm">{ i18n.T(lang, "checkout.escrow_badge") }</div>
+							</div>
+						</div>
+					</div>
+				</form>
+			}
+		</div>
+	}
+}

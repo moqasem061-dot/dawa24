@@ -1,0 +1,396 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminMatchDecisionsData struct {
+	Decisions     []*catalog.MatchDecisionView
+	Total         int
+	Page          int
+	PerPage       int
+	Search        string
+	IsEnabled     bool
+	OrgID         string
+	UserID        string
+	Scope         string
+	Source        string
+	MinConfidence string
+	MaxConfidence string
+	OnlyUnlinked  bool
+	CreatedFrom   string
+	CreatedTo     string
+	UsedFrom      string
+	UsedTo        string
+	MinHitCount   string
+	PromptVersion string
+	QueryValues   url.Values
+}
+
+templ AdminMatchDecisionsPage(lang, dir string, data AdminMatchDecisionsData) {
+	@layouts.AdminShell("ذاكرة قرارات المطابقة (AI & Matching Decisions)", "match_decisions", lang, dir) {
+		{{
+			exportURL := "/admin/match-decisions/export"
+			if len(data.QueryValues) > 0 {
+				exportURL += "?" + data.QueryValues.Encode()
+			}
+			returnURL := "/admin/match-decisions"
+			if len(data.QueryValues) > 0 {
+				returnURL += "?" + data.QueryValues.Encode()
+			}
+		}}
+		<div class="stack-lg">
+			<!-- Header Banner -->
+			<div class="page-header d-flex justify-between items-center flex-wrap gap-4 mb-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3">
+						<h1 class="page-title text-xl font-bold m-0">
+							ذاكرة قرارات مطابقة الذكاء الاصطناعي (Decision Memories)
+						</h1>
+						if data.IsEnabled {
+							<span class="badge badge-emerald">النظام مفعّل ونشط</span>
+						} else {
+							<span class="badge badge-rose">النظام معطّل بالكامل</span>
+						}
+					</div>
+					<p class="text-sm text-secondary m-0">
+						إدارة وتحكم مركزي في ذاكرة القرارات، ترقية القرارات المعتمدة للمنصة العامة، وتصحيح المطابقات.
+					</p>
+				</div>
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<a href={ templ.SafeURL(exportURL) } class="btn btn-outline-success btn-sm font-bold gap-1" title="تصدير النتائج المفلترة إلى ملف Excel">
+						<span>📊 تصدير XLSX</span>
+					</a>
+					<!-- Global Toggle Button -->
+					<form method="POST" action="/admin/match-decisions/toggle-state" class="m-0">
+						if data.IsEnabled {
+							<input type="hidden" name="enabled" value="false" />
+							<button type="submit" class="btn btn-outline-warning btn-sm font-bold" data-confirm="هل أنت متأكد من رغبتك في إيقاف نظام ذاكرة القرارات مؤقتاً؟">
+								⏸️ إيقاف النظام
+							</button>
+						} else {
+							<input type="hidden" name="enabled" value="true" />
+							<button type="submit" class="btn btn-primary btn-sm font-bold">
+								▶️ تشغيل النظام
+							</button>
+						}
+					</form>
+					if data.Total > 0 {
+						<button type="button" class="btn btn-outline-danger btn-sm font-bold" data-on-click="confirmClearAllDecisions()">
+							مسح الذاكرة بالكامل
+						</button>
+					}
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-4">
+				<form method="GET" action="/admin/match-decisions" class="stack-sm m-0">
+					<div class="d-flex items-center gap-3 flex-wrap">
+						<div class="flex-1 min-w-48">
+							<input type="text" name="q" value={ data.Search } placeholder="بحث بنص الصنف، اسم الدواء بالكتالوج، أو الكود..." class="form-input text-sm" />
+						</div>
+						<div class="w-36">
+							<select name="scope" class="form-select text-sm">
+								<option value="">كل النطاقات</option>
+								<option value="platform" selected?={ data.Scope == "platform" }>عام للمنصة</option>
+								<option value="org" selected?={ data.Scope == "org" }>خاص بالمنشأة</option>
+							</select>
+						</div>
+						<div class="w-36">
+							<select name="source" class="form-select text-sm">
+								<option value="">كل المصادر</option>
+								<option value="ai" selected?={ data.Source == "ai" }>ذكاء اصطناعي</option>
+								<option value="manual" selected?={ data.Source == "manual" }>يدوي</option>
+								<option value="admin" selected?={ data.Source == "admin" }>إدارة</option>
+								<option value="import" selected?={ data.Source == "import" }>استيراد</option>
+							</select>
+						</div>
+						<div class="w-28">
+							<input type="number" name="org_id" value={ data.OrgID } placeholder="رقم المنشأة" class="form-input text-sm" />
+						</div>
+						<div class="d-flex items-center gap-2">
+							<label class="d-flex items-center gap-1 text-xs cursor-pointer">
+								<input type="checkbox" name="unlinked" value="true" checked?={ data.OnlyUnlinked } />
+								<span>أصناف معلقة (غير مربوطة)</span>
+							</label>
+						</div>
+						<button type="submit" class="btn btn-primary btn-sm font-bold">تصفية</button>
+						<a href="/admin/match-decisions" class="btn btn-secondary btn-sm">إعادة تعيين</a>
+					</div>
+					<!-- Collapsible Advanced Filters -->
+					<details class="text-xs text-secondary mt-1">
+						<summary class="cursor-pointer font-bold select-none">فلاتر متقدمة إضافية (نسبة التطابق، التواريخ، عدد مرات الاستخدام)</summary>
+						<div class="d-flex items-center gap-3 flex-wrap pt-2">
+							<div class="w-28">
+								<input type="text" name="min_confidence" value={ data.MinConfidence } placeholder="أدنى تطابق (0.8)" class="form-input text-xs" />
+							</div>
+							<div class="w-28">
+								<input type="text" name="max_confidence" value={ data.MaxConfidence } placeholder="أعلى تطابق (1.0)" class="form-input text-xs" />
+							</div>
+							<div class="w-28">
+								<input type="number" name="min_hits" value={ data.MinHitCount } placeholder="أدنى استخدام" class="form-input text-xs" />
+							</div>
+							<div class="d-flex items-center gap-1">
+								<span class="text-2xs">الإنشاء من:</span>
+								<input type="date" name="created_from" value={ data.CreatedFrom } class="form-input text-xs" />
+								<span class="text-2xs">إلى:</span>
+								<input type="date" name="created_to" value={ data.CreatedTo } class="form-input text-xs" />
+							</div>
+							<div class="d-flex items-center gap-1">
+								<span class="text-2xs">الاستخدام من:</span>
+								<input type="date" name="used_from" value={ data.UsedFrom } class="form-input text-xs" />
+								<span class="text-2xs">إلى:</span>
+								<input type="date" name="used_to" value={ data.UsedTo } class="form-input text-xs" />
+							</div>
+						</div>
+					</details>
+				</form>
+			</div>
+
+			<!-- Main Table & Bulk Actions Form -->
+			<form id="admin-decisions-bulk-form" method="POST" action="/admin/match-decisions/bulk">
+				<input type="hidden" name="return_url" value={ returnURL } />
+				<input type="hidden" id="admin-bulk-action" name="action" value="" />
+
+				<div class="glass-panel p-0">
+					<!-- Bulk Actions Bar -->
+					<div class="p-3 bg-surface-sunken border-b d-flex justify-between items-center flex-wrap gap-2">
+						<div class="d-flex items-center gap-2 text-xs">
+							<span class="font-bold">إجمالي القرارات:</span>
+							<span class="badge badge-slate tabular-nums">{ fmt.Sprintf("%d", data.Total) }</span>
+							<span id="selected-count" class="text-muted mr-2">(المحدد: 0)</span>
+						</div>
+						<div class="d-flex items-center gap-2">
+							<button type="button" class="btn btn-outline-secondary btn-xs font-bold" data-on-click="submitBulkDecisionAction('promote')">
+								ترقية المحدد للمنصة 🌐
+							</button>
+							<button type="button" class="btn btn-outline-danger btn-xs font-bold" data-on-click="submitBulkDecisionAction('delete')">
+								حذف المحدد 🗑️
+							</button>
+						</div>
+					</div>
+
+					<div class="table-responsive">
+						<table class="data-table">
+							<thead>
+								<tr>
+									<th class="w-8 text-center">
+										<input type="checkbox" id="select-all-decisions" data-on-change="toggleSelectAllDecisions(this)" />
+									</th>
+									<th>#</th>
+									<th>النطاق والمنشأة</th>
+									<th>النص الوارد والصنف المعتمد بالكتالوج</th>
+									<th>نسبة التطابق</th>
+									<th>الاستخدامات</th>
+									<th>المصدر</th>
+									<th>آخر استخدام</th>
+									<th class="col-actions">إجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								if len(data.Decisions) == 0 {
+									<tr>
+										<td colspan="9" class="p-8 text-center">
+											<div class="empty-state d-flex flex-column items-center justify-center p-6">
+												<div class="empty-state-icon text-muted mb-2">@components.IconSparkles("icon-md")</div>
+												<div class="empty-state-title font-bold text-base mb-1">لا توجد قرارات مطابقة مطابقة للفلاتر</div>
+												<div class="text-xs text-secondary">جرب تغيير معايير البحث أو تصفية القرارات أعلاه.</div>
+											</div>
+										</td>
+									</tr>
+								}
+								for _, d := range data.Decisions {
+									<tr class="rule-bottom">
+										<!-- Checkbox -->
+										<td class="text-center">
+											<input type="checkbox" name="ids" value={ fmt.Sprintf("%d", d.ID) } class="decision-chk" data-on-change="updateSelectedDecisionCount()" />
+										</td>
+										<!-- ID -->
+										<td class="tabular-nums font-mono text-xs">{ fmt.Sprintf("%d", d.ID) }</td>
+										<!-- Scope & Org -->
+										<td>
+											<div class="stack-2xs">
+												if d.Scope == "platform" {
+													<span class="badge badge-emerald text-xs font-bold">منصة عامة 🌐</span>
+												} else {
+													<span class="badge badge-sky text-xs font-bold">منشأة خاصة 🏢</span>
+												}
+												if d.OrganizationName != "" {
+													<div class="text-xs text-secondary font-medium">{ d.OrganizationName }</div>
+												} else if d.OrganizationID != nil && *d.OrganizationID > 0 {
+													<div class="text-2xs text-muted">منشأة #{ fmt.Sprintf("%d", *d.OrganizationID) }</div>
+												}
+											</div>
+										</td>
+										<!-- Raw Name beside Chosen Product -->
+										<td>
+											<div class="stack-xs">
+												<div class="d-flex items-center gap-2">
+													<span class="text-2xs text-muted font-bold">الوارد:</span>
+													<span class="font-extrabold text-sm text-primary">{ d.NormName }</span>
+												</div>
+												<div class="d-flex items-center gap-2">
+													<span class="text-2xs text-muted font-bold">المعتمد:</span>
+													if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
+														<span class="font-bold text-xs text-brand">
+															if d.ChosenProductName != "" {
+																{ d.ChosenProductName }
+															} else {
+																صنف #{ fmt.Sprintf("%d", *d.ChosenProductID) }
+															}
+														</span>
+														if d.ChosenProductSKU != "" {
+															<span class="badge badge-slate text-2xs font-mono">كود: { d.ChosenProductSKU }</span>
+														}
+													} else {
+														<span class="badge badge-rose text-xs">معلق بلا ربط (NULL)</span>
+													}
+												</div>
+												if d.Reason != "" {
+													<div class="text-2xs text-secondary italic">{ d.Reason }</div>
+												}
+											</div>
+										</td>
+										<!-- Confidence Bar & Score -->
+										<td class="tabular-nums">
+											<div class="stack-2xs min-w-20">
+												<div class="d-flex justify-between items-center text-xs font-bold">
+													<span>{ fmt.Sprintf("%.0f%%", d.Confidence * 100) }</span>
+												</div>
+												<div class="w-full bg-surface-sunken rounded-full h-1.5 overflow-hidden border">
+													<div class={ "h-full rounded-full", templ.KV("bg-emerald-500", d.Confidence >= 0.85), templ.KV("bg-amber-500", d.Confidence >= 0.6 && d.Confidence < 0.85), templ.KV("bg-rose-500", d.Confidence < 0.6) } style={ fmt.Sprintf("width: %.0f%%;", d.Confidence * 100) }></div>
+												</div>
+											</div>
+										</td>
+										<!-- Hit Count -->
+										<td class="tabular-nums text-center font-bold text-xs">
+											<span class="badge badge-slate">{ fmt.Sprintf("%d", d.HitCount) }</span>
+										</td>
+										<!-- Source -->
+										<td>
+											<span class="badge badge-slate text-2xs">
+												switch d.Source {
+												case "admin":
+													إدارة المنصة
+												case "manual":
+													تحديد يدوي
+												case "import":
+													استيراد
+												default:
+													ذكاء اصطناعي
+												}
+											</span>
+										</td>
+										<!-- Last Used At -->
+										<td class="tabular-nums text-2xs text-secondary">{ d.LastUsedAt.Format("2006-01-02 15:04") }</td>
+										<!-- Actions -->
+										<td class="col-actions">
+											<div class="d-flex items-center gap-1">
+												{{
+													prodIDVal := int64(0)
+													if d.ChosenProductID != nil {
+														prodIDVal = *d.ChosenProductID
+													}
+												}}
+												<!-- Re-link Modal Button -->
+												<button
+													type="button"
+													class="btn btn-outline-brand btn-xs font-bold"
+													data-id={ fmt.Sprintf("%d", d.ID) }
+													data-norm={ d.NormName }
+													data-prod-id={ fmt.Sprintf("%d", prodIDVal) }
+													data-prod-name={ d.ChosenProductName }
+													data-prod-sku={ d.ChosenProductSKU }
+													data-prompt-ver={ d.PromptVersion }
+													data-on-click="adminOpenRelinkModalFromBtn(this)"
+													title="ربط أو تغيير الصنف بالكتالوج"
+												>
+													ربط
+												</button>
+												<!-- Promote / Demote -->
+												if d.Scope == "org" {
+													<button type="submit" form={ fmt.Sprintf("promote-form-%d", d.ID) } class="btn btn-outline-success btn-xs" title="ترقية إلى المنصة العامة">
+														ترقية
+													</button>
+												} else {
+													<button type="submit" form={ fmt.Sprintf("demote-form-%d", d.ID) } class="btn btn-outline-secondary btn-xs" title="تخصيص للمنشأة فقط">
+														تخصيص
+													</button>
+												}
+												<!-- Delete -->
+												<button type="submit" form={ fmt.Sprintf("delete-form-%d", d.ID) } class="btn btn-outline-danger btn-xs" title="حذف القرار">
+													@components.IconTrash("icon-xs")
+												</button>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.Total,
+						BaseURL:     "/admin/match-decisions",
+						QueryValues: data.QueryValues,
+					})
+				</div>
+			</form>
+
+			<!-- Hidden per-row action forms -->
+			for _, d := range data.Decisions {
+				if d.Scope == "org" {
+					<form id={ fmt.Sprintf("promote-form-%d", d.ID) } method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/match-decisions/%d/promote", d.ID)) } class="d-none">
+						<input type="hidden" name="return_url" value={ returnURL } />
+					</form>
+				} else {
+					<form id={ fmt.Sprintf("demote-form-%d", d.ID) } method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/match-decisions/%d/demote", d.ID)) } class="d-none">
+						<input type="hidden" name="return_url" value={ returnURL } />
+					</form>
+				}
+				<form id={ fmt.Sprintf("delete-form-%d", d.ID) } method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/match-decisions/%d/delete", d.ID)) } data-confirm="هل أنت متأكد من حذف هذا القرار؟" class="d-none">
+					<input type="hidden" name="return_url" value={ returnURL } />
+				</form>
+			}
+
+			@AdminMatchDecisionRelinkModal(returnURL)
+		</div>
+
+		<script nonce={ layouts.Nonce(ctx) }>
+			function confirmClearAllDecisions() {
+				if (confirm("تحذير: هل أنت متأكد من مسح كافة قرارات المطابقة المخزنة بالكامل؟ هذا الإجراء سيجعل النظام يعيد تقييم الأصناف من البداية.")) {
+					var form = document.createElement('form');
+					form.method = 'POST'; form.action = '/admin/match-decisions/clear';
+					document.body.appendChild(form); form.submit();
+				}
+			}
+			function toggleSelectAllDecisions(master) {
+				var chks = document.querySelectorAll('.decision-chk');
+				for (var i = 0; i < chks.length; i++) chks[i].checked = master.checked;
+				updateSelectedDecisionCount();
+			}
+			function updateSelectedDecisionCount() {
+				var checked = document.querySelectorAll('.decision-chk:checked').length;
+				var el = document.getElementById('selected-count');
+				if (el) el.textContent = '(المحدد: ' + checked + ')';
+			}
+			function submitBulkDecisionAction(action) {
+				var checked = document.querySelectorAll('.decision-chk:checked').length;
+				if (checked === 0) { alert('يرجى تحديد قرار واحد على الأقل لتنفيذ الإجراء المجمع.'); return; }
+				var msg = (action === 'promote') ? 'هل أنت متأكد من ترقية ' + checked + ' قرارات إلى المنصة العامة؟' : 'هل أنت متأكد من حذف ' + checked + ' قرارات من الذاكرة؟';
+				if (confirm(msg)) {
+					document.getElementById('admin-bulk-action').value = action;
+					document.getElementById('admin-decisions-bulk-form').submit();
+				}
+			}
+		</script>
+	}
+}

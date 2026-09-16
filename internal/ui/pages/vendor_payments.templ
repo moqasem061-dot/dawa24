@@ -1,0 +1,389 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// VendorPaymentsPage renders payments history for the vendor.
+templ VendorPaymentsPage(data VendorPaymentsPageData) {
+	@layouts.VendorShell(i18n.T(data.Lang, "vendor_finance.payments.shell_title"), "vendor_payments", data.Lang, data.Dir) {
+		<div class="page-container">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between flex-wrap gap-4 items-center">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-3 mb-1">
+							<div class="user-avatar-badge text-xl">
+								@components.IconCreditCard("icon-sm")
+							</div>
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(data.Lang, "vendor_finance.payments.header_title") }
+							</h1>
+						</div>
+						<p class="text-sm text-secondary m-0">
+							{ i18n.T(data.Lang, "vendor_finance.payments.header_desc") }
+						</p>
+					</div>
+					<button
+						type="button"
+						data-on-click="openRecordPaymentModal()"
+						class="btn btn-primary btn-sm font-bold flex-center gap-2"
+					>
+						@components.IconPlus("icon-xs")
+						<span>{ i18n.T(data.Lang, "vendor_finance.payments.btn_record") }</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- KPI Cards -->
+			<div class="dashboard-stat-grid cols-4 mb-6">
+				<!-- Total Count -->
+				<div class="stat-card-3d">
+					<div class="flex-between items-center mb-2">
+						<span class="stat-card-label font-bold text-xs">{ i18n.T(data.Lang, "vendor_finance.payments.kpi_total_count") }</span>
+						<div class="w-8 h-8 rounded-lg bg-brand-subtle text-brand flex-center">
+							@components.IconLayers("icon-xs")
+						</div>
+					</div>
+					<div class="stat-card-value font-black tabular-nums text-xl text-primary">
+						{ fmt.Sprintf("%d", data.Stats.TotalCount) }
+					</div>
+					<div class="stat-card-sub text-2xs text-muted font-bold mt-1">
+						{ i18n.T(data.Lang, "vendor_finance.payments.kpi_total_count_sub") }
+					</div>
+				</div>
+
+				<!-- Total Amount -->
+				<div class="stat-card-3d">
+					<div class="flex-between items-center mb-2">
+						<span class="stat-card-label font-bold text-xs">{ i18n.T(data.Lang, "vendor_finance.payments.kpi_total_amount") }</span>
+						<div class="w-8 h-8 rounded-lg bg-emerald-subtle text-emerald flex-center">
+							@components.IconWallet("icon-xs")
+						</div>
+					</div>
+					<div class="stat-card-value font-black tabular-nums text-xl text-emerald">
+						{ fmt.Sprintf(i18n.T(data.Lang, "vendor_finance.payments.currency_egp"), data.Stats.TotalAmount.String()) }
+					</div>
+					<div class="stat-card-sub text-2xs text-muted font-bold mt-1">
+						{ i18n.T(data.Lang, "vendor_finance.payments.kpi_total_amount_sub") }
+					</div>
+				</div>
+
+				<!-- Today Amount -->
+				<div class="stat-card-3d">
+					<div class="flex-between items-center mb-2">
+						<span class="stat-card-label font-bold text-xs">{ i18n.T(data.Lang, "vendor_finance.payments.kpi_today_amount") }</span>
+						<div class="w-8 h-8 rounded-lg bg-blue-subtle text-blue flex-center">
+							@components.IconClock("icon-xs")
+						</div>
+					</div>
+					<div class="stat-card-value font-black tabular-nums text-xl text-primary">
+						{ fmt.Sprintf(i18n.T(data.Lang, "vendor_finance.payments.currency_egp"), data.Stats.TodayAmount.String()) }
+					</div>
+					<div class="stat-card-sub text-2xs text-muted font-bold mt-1">
+						{ i18n.T(data.Lang, "vendor_finance.payments.kpi_today_amount_sub") }
+					</div>
+				</div>
+
+				<!-- Month Amount -->
+				<div class="stat-card-3d">
+					<div class="flex-between items-center mb-2">
+						<span class="stat-card-label font-bold text-xs">{ i18n.T(data.Lang, "vendor_finance.payments.kpi_month_amount") }</span>
+						<div class="w-8 h-8 rounded-lg bg-purple-subtle text-purple flex-center">
+							@components.IconTrendingUp("icon-xs")
+						</div>
+					</div>
+					<div class="stat-card-value font-black tabular-nums text-xl text-primary">
+						{ fmt.Sprintf(i18n.T(data.Lang, "vendor_finance.payments.currency_egp"), data.Stats.MonthAmount.String()) }
+					</div>
+					<div class="stat-card-sub text-2xs text-muted font-bold mt-1">
+						{ i18n.T(data.Lang, "vendor_finance.payments.kpi_month_amount_sub") }
+					</div>
+				</div>
+			</div>
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/vendor/payments" class="filter-form d-flex items-center gap-3 flex-wrap m-0">
+					<div class="flex-1 min-w-44">
+						<input
+							type="text"
+							name="q"
+							value={ data.Search }
+							placeholder={ i18n.T(data.Lang, "vendor_finance.payments.search_placeholder") }
+							class="form-input w-full text-xs font-bold"
+						/>
+					</div>
+
+					<!-- Customer / Organization Search Input with Interactive Autocomplete Dropdown -->
+					<div
+						class="flex-1 min-w-48 relative"
+						x-data={ fmt.Sprintf(`{
+							query: %q,
+							open: false,
+							items: %s,
+							get filtered() {
+								if (!this.query) return this.items;
+								const q = this.query.toLowerCase().trim();
+								return this.items.filter(i => (i.name && i.name.toLowerCase().includes(q)) || (i.code && i.code.toLowerCase().includes(q)));
+							},
+							select(name) {
+								this.query = name;
+								this.open = false;
+							}
+						}`, data.Customer, customerOrgsToJSON(data.CustomerOrgs)) }
+						@click.outside="open = false"
+					>
+						<div class="relative">
+							<input
+								type="text"
+								name="customer"
+								list="vendor-customer-orgs-list"
+								value={ data.Customer }
+								x-model="query"
+								@focus="open = true"
+								@input="open = true"
+								@keydown.escape="open = false"
+								placeholder={ i18n.T(data.Lang, "vendor_finance.payments.customer_filter_ph") }
+								class="form-input w-full text-xs font-bold"
+								autocomplete="off"
+							/>
+							<button
+								type="button"
+								x-show="query"
+								x-cloak
+								@click="query = ''; open = false;"
+								class="btn-reset absolute top-1/2 -translate-y-1/2 end-2 text-muted hover:text-primary text-xs cursor-pointer"
+								title="مسح"
+							>
+								✕
+							</button>
+						</div>
+
+						<datalist id="vendor-customer-orgs-list">
+							for _, c := range data.CustomerOrgs {
+								if c != nil {
+									<option value={ c.Name }>
+										if c.Code != "" {
+											{ fmt.Sprintf("%s (%s)", c.Name, c.Code) }
+										} else {
+											{ c.Name }
+										}
+									</option>
+								}
+							}
+						</datalist>
+
+						<!-- Autocomplete Dropdown list -->
+						<div
+							x-show="open && filtered.length > 0"
+							x-cloak
+							class="absolute z-50 start-0 end-0 mt-1 max-h-60 overflow-y-auto bg-surface border rounded-xl shadow-xl py-1 text-xs"
+							style="min-width: 240px;"
+						>
+							<template x-for="item in filtered" :key="item.id">
+								<button
+									type="button"
+									@click="select(item.name)"
+									class="w-full text-start px-3 py-2 hover:bg-surface-raised flex items-center justify-between gap-2 border-0 bg-transparent cursor-pointer transition-colors"
+								>
+									<span class="font-bold text-primary truncate" x-text="item.name"></span>
+									<span x-show="item.code" class="badge badge-secondary text-2xs tabular-nums" x-text="item.code"></span>
+								</button>
+							</template>
+						</div>
+					</div>
+
+					<div class="w-44">
+						<select name="method" class="form-select w-full text-xs font-bold">
+							<option value="">{ i18n.T(data.Lang, "vendor_finance.payments.all_methods") }</option>
+							<option value="bank_transfer" selected?={ data.Method == "bank_transfer" }>{ i18n.T(data.Lang, "vendor_finance.method.bank_transfer") }</option>
+							<option value="cash" selected?={ data.Method == "cash" }>{ i18n.T(data.Lang, "vendor_finance.method.cash") }</option>
+							<option value="cheque" selected?={ data.Method == "cheque" }>{ i18n.T(data.Lang, "vendor_finance.method.cheque") }</option>
+							<option value="electronic_wallet" selected?={ data.Method == "electronic_wallet" }>{ i18n.T(data.Lang, "vendor_finance.method.electronic_wallet") }</option>
+						</select>
+					</div>
+
+					<div class="w-40">
+						<select name="status" class="form-select w-full text-xs font-bold">
+							<option value="">{ i18n.T(data.Lang, "vendor_finance.payments.all_statuses") }</option>
+							<option value="paid" selected?={ data.Status == "paid" || data.Status == "completed" }>{ i18n.T(data.Lang, "vendor_finance.payments.status_paid_completed") }</option>
+							<option value="pending" selected?={ data.Status == "pending" }>{ i18n.T(data.Lang, "vendor_finance.payments.status_pending") }</option>
+							<option value="failed" selected?={ data.Status == "failed" }>{ i18n.T(data.Lang, "vendor_finance.payments.status_failed") }</option>
+						</select>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<label class="text-xs text-muted font-bold whitespace-nowrap" for="pay-from">{ i18n.T(data.Lang, "vendor_finance.payments.from_date") }</label>
+						<input
+							type="date"
+							id="pay-from"
+							name="from"
+							value={ data.DateFrom }
+							class="form-input text-xs font-bold"
+						/>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<label class="text-xs text-muted font-bold whitespace-nowrap" for="pay-to">{ i18n.T(data.Lang, "vendor_finance.payments.to_date") }</label>
+						<input
+							type="date"
+							id="pay-to"
+							name="to"
+							value={ data.DateTo }
+							class="form-input text-xs font-bold"
+						/>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+							{ i18n.T(data.Lang, "vendor_finance.payments.btn_apply") }
+						</button>
+						if data.Search != "" || data.Customer != "" || data.Method != "" || data.Status != "" || data.DateFrom != "" || data.DateTo != "" {
+							<a href="/vendor/payments" class="btn btn-ghost btn-sm font-bold text-muted">
+								{ i18n.T(data.Lang, "vendor_finance.payments.btn_reset") }
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Payments Table -->
+			if len(data.Payments) == 0 {
+				<div class="glass-panel p-10 text-center empty-state-glass">
+					<div class="text-4xl mb-3">@components.IconCreditCard("icon-sm text-muted")</div>
+					<h3 class="text-lg font-black text-primary mb-2">{ i18n.T(data.Lang, "vendor_finance.payments.empty_title") }</h3>
+					<p class="text-sm text-secondary mb-4">{ i18n.T(data.Lang, "vendor_finance.payments.empty_desc") }</p>
+					<button
+						type="button"
+						data-on-click="openRecordPaymentModal()"
+						class="btn btn-primary btn-sm font-bold"
+					>
+						{ i18n.T(data.Lang, "vendor_finance.payments.btn_record_now") }
+					</button>
+				</div>
+			} else {
+				<div class="glass-panel p-0 mb-6 overflow-hidden">
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_ref") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_invoice") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_customer") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_amount") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_method") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_status") }</th>
+									<th>{ i18n.T(data.Lang, "vendor_finance.payments.th_date") }</th>
+									<th class="text-center">{ i18n.T(data.Lang, "vendor_finance.payments.th_actions") }</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, p := range data.Payments {
+									<tr class="cursor-pointer" data-on-click="handlePaymentRowClick" data-args={ components.JSArgs(p.InvoiceNumber) }>
+										<!-- Col 1: Transaction / Ref -->
+										<td class="tabular-nums font-bold">
+											<div class="d-flex flex-col">
+												if p.ReferenceNumber != "" {
+													<strong class="text-primary text-xs">{ p.ReferenceNumber }</strong>
+												} else if p.TransactionID != "" {
+													<strong class="text-primary text-xs">{ p.TransactionID }</strong>
+												} else {
+													<strong class="text-primary text-xs">{ fmt.Sprintf("PAY-%d", p.ID) }</strong>
+												}
+												if p.Notes != "" {
+													<span class="text-3xs text-muted truncate max-w-xs">{ p.Notes }</span>
+												}
+											</div>
+										</td>
+
+										<!-- Col 2: Related Invoice -->
+										<td>
+											if p.InvoiceNumber != "" {
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/vendor/invoices?q=%s", p.InvoiceNumber)) }
+													class="badge badge-brand text-xs font-black d-inline-flex items-center gap-1 hover:underline"
+													data-on-click="event.stopPropagation()"
+													title={ i18n.T(data.Lang, "vendor_finance.payments.tooltip_open_invoice") }
+												>
+													@components.IconFileText("icon-3xs")
+													<span>{ p.InvoiceNumber }</span>
+												</a>
+											} else {
+												<span class="text-muted text-xs">—</span>
+											}
+										</td>
+
+										<!-- Col 3: Customer -->
+										<td>
+											<span class="text-xs font-bold text-primary">{ p.CustomerName }</span>
+										</td>
+
+										<!-- Col 4: Amount -->
+										<td class="tabular-nums font-black text-emerald text-sm">
+											{ fmt.Sprintf(i18n.T(data.Lang, "vendor_finance.payments.currency_egp"), p.Amount.String()) }
+										</td>
+
+										<!-- Col 5: Method -->
+										<td>
+											<span class="badge badge-slate text-xs font-bold">
+												{ vendorPaymentMethodLabel(p.Method, data.Lang) }
+											</span>
+										</td>
+
+										<!-- Col 6: Status -->
+										<td>
+											{{ label, badgeClass := vendorPaymentStatusBadge(p.Status, data.Lang) }}
+											<span class={ "badge", badgeClass, "text-2xs font-black" }>
+												{ label }
+											</span>
+										</td>
+
+										<!-- Col 7: Date -->
+										<td class="tabular-nums text-xs text-secondary font-medium">
+											if p.PaidAt != nil {
+												{ p.PaidAt.Format("2006-01-02 03:04 PM") }
+											} else {
+												{ p.CreatedAt.Format("2006-01-02 03:04 PM") }
+											}
+										</td>
+
+										<!-- Col 8: Action -->
+										<td class="text-center" data-on-click="event.stopPropagation()">
+											if p.InvoiceNumber != "" {
+												<a
+													href={ templ.SafeURL(fmt.Sprintf("/vendor/invoices?q=%s", p.InvoiceNumber)) }
+													class="btn btn-secondary btn-icon btn-xs text-brand"
+													title={ i18n.T(data.Lang, "vendor_finance.payments.tooltip_view_invoice") }
+												>
+													@components.IconExternalLink("icon-2xs")
+												</a>
+											}
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/vendor/payments",
+							QueryValues: vendorPaymentsQueryValues(data),
+						})
+					}
+				</div>
+			}
+		</div>
+
+		@VendorRecordPaymentModal(data.Invoices, data.Lang)
+		@VendorPaymentsScript()
+	}
+}

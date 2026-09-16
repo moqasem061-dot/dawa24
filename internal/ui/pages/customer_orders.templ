@@ -1,0 +1,291 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type CustomerOrdersData struct {
+	Orders     []*commerce.Order
+	Page       int
+	PerPage    int
+	TotalCount int
+}
+
+templ CustomerOrders(data CustomerOrdersData, lang, dir string, isPartial bool) {
+	if isPartial {
+		@CustomerOrdersList(data.Orders, lang, dir)
+	} else {
+		@layouts.ShellFor(i18n.T(lang, "orders.page_title"), "orders", lang, dir, authctx.FromContext(ctx)) {
+			{{
+				ordersCount := data.TotalCount
+				activeCount := 0
+				completedCount := 0
+				cancelledCount := 0
+				for _, o := range data.Orders {
+					if o.Status == commerce.StatusDelivered || o.Status == commerce.StatusCompleted {
+						completedCount++
+					} else if o.Status == commerce.StatusCancelled || o.Status == commerce.StatusRefunded || o.Status == commerce.StatusFailed {
+						cancelledCount++
+					} else {
+						activeCount++
+					}
+				}
+			}}
+			<div class="page-container">
+				<!-- Header Section -->
+				<div class="page-header-block mb-6">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-2 mb-1">
+							<h1 class="text-2xl font-black text-primary m-0">
+								{ i18n.T(lang, "orders.heading") }
+							</h1>
+							<span class="badge badge-primary text-xs tabular-nums font-bold">
+								{ fmt.Sprintf(i18n.T(lang, "orders.count_badge"), ordersCount) }
+							</span>
+						</div>
+						<p class="text-sm text-muted m-0">
+							{ i18n.T(lang, "orders.subtitle") }
+						</p>
+					</div>
+
+					<div class="page-actions-group">
+						<a href="/catalog" class="btn btn-primary font-bold gap-2 px-4">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "orders.btn_new") }</span>
+						</a>
+					</div>
+				</div>
+
+				<!-- Filter tabs and search share one row. -->
+				<div class="filter-bar">
+					<div class="tabs-nav is-inline">
+						<button
+							type="button"
+							class="tab-btn active"
+							data-on-click="filterOrders('all', this)"
+						>
+							<span>{ fmt.Sprintf(i18n.T(lang, "orders.tab_all"), ordersCount) }</span>
+						</button>
+						<button
+							type="button"
+							class="tab-btn"
+							data-on-click="filterOrders('active', this)"
+						>
+							<span>{ fmt.Sprintf(i18n.T(lang, "orders.tab_active"), activeCount) }</span>
+						</button>
+						<button
+							type="button"
+							class="tab-btn"
+							data-on-click="filterOrders('completed', this)"
+						>
+							<span>{ fmt.Sprintf(i18n.T(lang, "orders.tab_completed"), completedCount) }</span>
+						</button>
+						if cancelledCount > 0 {
+							<button
+								type="button"
+								class="tab-btn"
+								data-on-click="filterOrders('cancelled', this)"
+							>
+								<span>{ fmt.Sprintf(i18n.T(lang, "orders.tab_cancelled"), cancelledCount) }</span>
+							</button>
+						}
+					</div>
+
+					<!-- Search input -->
+					<div class="position-relative min-w-0">
+						<input
+							type="text"
+							id="order-search-input"
+							placeholder={ i18n.T(lang, "orders.search_placeholder") }
+							data-on-keyup="searchOrders(this.value)"
+							class="form-input form-input-sm ps-6"
+						/>
+					</div>
+				</div>
+
+				<!-- Orders List Container -->
+				<div class="stack-sm" id="orders-list">
+					@CustomerOrdersList(data.Orders, lang, dir)
+				</div>
+
+				if data.TotalCount > 0 {
+					@components.B2BPagination(components.PaginationProps{
+						CurrentPage: data.Page,
+						PageSize:    data.PerPage,
+						TotalCount:  data.TotalCount,
+						BaseURL:     "/orders",
+					})
+				}
+			</div>
+
+			<script nonce={ layouts.Nonce(ctx) }>
+				function filterOrders(status, btn) {
+					document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+					btn.classList.add('active');
+
+					const items = document.querySelectorAll('.order-card-item');
+					items.forEach(item => {
+						const s = item.getAttribute('data-status-category');
+						if (status === 'all' || s === status) {
+							item.style.display = 'flex';
+						} else {
+							item.style.display = 'none';
+						}
+					});
+				}
+
+				function searchOrders(q) {
+					const query = (q || '').trim().toLowerCase();
+					const items = document.querySelectorAll('.order-card-item');
+					items.forEach(item => {
+						const num = (item.getAttribute('data-order-num') || '').toLowerCase();
+						if (!query || num.includes(query)) {
+							item.style.display = 'flex';
+						} else {
+							item.style.display = 'none';
+						}
+					});
+				}
+			</script>
+		}
+	}
+}
+
+templ CustomerOrdersList(orders []*commerce.Order, lang string, dirOpt ...string) {
+	{{
+		dir := "rtl"
+		if len(dirOpt) > 0 && dirOpt[0] != "" {
+			dir = dirOpt[0]
+		}
+	}}
+	if len(orders) == 0 {
+		@components.EmptyState(components.EmptyStateProps{
+			Title:       i18n.T(lang, "orders.empty_title"),
+			Message:     i18n.T(lang, "orders.empty_message"),
+			ActionLabel: i18n.T(lang, "orders.empty_action"),
+			ActionURL:   "/catalog",
+		})
+	} else {
+		<div class="d-flex flex-col gap-3">
+			for _, o := range orders {
+				{{
+					statusCategory := "active"
+					if o.Status == commerce.StatusDelivered || o.Status == commerce.StatusCompleted {
+						statusCategory = "completed"
+					} else if o.Status == commerce.StatusCancelled || o.Status == commerce.StatusRefunded || o.Status == commerce.StatusFailed {
+						statusCategory = "cancelled"
+					}
+
+					itemsCount := len(o.Lines)
+					shipmentsCount := len(o.Shipments)
+					if shipmentsCount == 0 {
+						shipmentsCount = 1
+					}
+				}}
+				<div
+					class="order-card-glass order-card-item"
+					data-status-category={ statusCategory }
+					data-order-num={ o.OrderNumber }
+				>
+					<!-- Left info -->
+					<div class="d-flex flex-col gap-2 flex-1 min-w-0">
+						<div class="d-flex items-center gap-3 flex-wrap">
+							<a href={ templ.SafeURL(fmt.Sprintf("/orders/%d", o.ID)) } class="order-card-num">
+								#{ o.OrderNumber }
+							</a>
+							@components.StatusBadge(string(o.Status), lang)
+							if o.PaymentStatus == commerce.PaymentPaid {
+								<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "orders.paid") }</span>
+							} else if o.PaymentStatus == commerce.PaymentAuthorized && o.PaymentMethod == "wallet" {
+								<span class="badge badge-amber text-xs font-bold">معتمد من المحفظة</span>
+							} else if o.PaymentStatus == commerce.PaymentRefunded {
+								<span class="badge badge-purple text-xs font-bold">مسترجع</span>
+							} else {
+								<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "orders.cod") }</span>
+							}
+							if o.IsNegotiation {
+								if o.NegotiationStatus == "pending" {
+									<span class="badge badge-amber text-xs font-bold gap-1">
+										@components.IconTag("icon-2xs")
+										<span>{ i18n.T(lang, "orders.negotiation_pending") }</span>
+									</span>
+								} else if o.NegotiationStatus == "accepted" {
+									<span class="badge badge-emerald text-xs font-bold gap-1">
+										@components.IconCheck("icon-2xs")
+										<span>{ i18n.T(lang, "orders.negotiation_accepted") }</span>
+									</span>
+								} else if o.NegotiationStatus == "rejected" {
+									<span class="badge badge-rose text-xs font-bold gap-1">
+										@components.IconX("icon-2xs")
+										<span>{ i18n.T(lang, "orders.negotiation_rejected") }</span>
+									</span>
+								}
+							}
+						</div>
+
+						<div class="order-card-meta">
+							<span class="d-flex items-center gap-1">
+								<span>@components.IconClock("icon-sm")</span>
+								<span class="tabular-nums">{ o.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+							</span>
+							if o.CustomerBranchName.Get(i18n.Lang(lang)) != "" {
+								<span class="d-flex items-center gap-1">
+									@components.IconLocation("icon-xs")
+									<span>{ o.CustomerBranchName.Get(i18n.Lang(lang)) }</span>
+								</span>
+							}
+							<span class="d-flex items-center gap-1">
+								@components.IconPackage("icon-xs")
+								<span>{ fmt.Sprintf(i18n.T(lang, "orders.items_and_shipments"), itemsCount, shipmentsCount) }</span>
+							</span>
+						</div>
+					</div>
+
+					<!-- Right finance & actions -->
+					<div class="d-flex items-center gap-6 flex-wrap">
+						<div class="text-end">
+							<div class="order-card-total-title">{ i18n.T(lang, "orders.total_amount_title") }</div>
+							<div class="order-card-total-val">
+								{ format.Money(o.TotalAmount, lang) }
+							</div>
+						</div>
+
+						<div class="d-flex items-center gap-2">
+							if o.Status != commerce.StatusPending {
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/print", o.ID)) }
+									target="_blank"
+									class="btn btn-secondary btn-sm font-bold gap-1"
+									title={ i18n.T(lang, "orders.print_invoice") }
+								>
+									@components.IconPrinter("icon-xs")
+									<span>{ i18n.T(lang, "orders.print_invoice") }</span>
+								</a>
+							}
+							<a
+								href={ templ.SafeURL(fmt.Sprintf("/orders/%d", o.ID)) }
+								class="btn btn-primary btn-sm font-bold gap-1"
+							>
+								<span>{ i18n.T(lang, "orders.order_details") }</span>
+								if dir == "rtl" {
+									@components.IconArrowLeft("icon-xs")
+								} else {
+									@components.IconArrowRight("icon-xs")
+								}
+							</a>
+						</div>
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+

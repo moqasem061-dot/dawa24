@@ -1,0 +1,531 @@
+package pages
+
+import (
+	"fmt"
+
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// RegisterPage is the three-step signup form.
+//
+// The two location controls used to be plain <select> elements with different
+// vocabularies: a city dropdown of 351 real rows for job seekers, and, inside
+// the map picker, a governorate dropdown of 27 hard-coded name/coordinate pairs
+// with no database ids at all — so the map wrote a city id by matching names as
+// strings. Both are now the same searchable combobox over the same rows, and
+// the city list follows the governorate.
+templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformadmin.City, governorates []*platformadmin.Governorate) {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	{{ govOptions := GovernorateOptions(governorates, lang) }}
+	{{ cityOptions := CityOptions(cities, lang) }}
+	@layouts.Base("إنشاء حساب جديد", lang, dir) {
+		<div class="auth-page-wrapper">
+			<div class="auth-card-wide glass-panel">
+				<!-- Brand Header -->
+				<div class="auth-header">
+					<a href="/" class="auth-brand-logo">
+						if site.LogoURL != "" {
+							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						} else {
+							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						}
+						if site.LogoDarkURL != "" {
+							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+						}
+					</a>
+					<h1 class="auth-title">إنشاء حساب منشأة جديد</h1>
+					<p class="auth-subtitle">انضم لمنظومة التوريد الدوائي المعتمدة — { site.SiteName }</p>
+				</div>
+
+				<!-- 3-Step Onboarding Progress Indicator -->
+				<div class="auth-stepper">
+					<div id="step-indicator-1" class="onboard-step active">
+						<span class="step-num">1</span>
+						<span>نوع المنشأة</span>
+					</div>
+					<div id="step-indicator-2" class="onboard-step">
+						<span class="step-num">2</span>
+						<span>المنشأة والموقع</span>
+					</div>
+					<div id="step-indicator-3" class="onboard-step">
+						<span class="step-num">3</span>
+						<span>بيانات الحساب</span>
+					</div>
+				</div>
+
+				if form.Error != "" {
+					<div class="alert alert-danger mb-5 d-flex items-center gap-3">
+						<div class="alert-icon flex-shrink-0">@components.IconAlert("icon-xs")</div>
+						<div class="alert-message text-sm font-semibold">{ form.Error }</div>
+					</div>
+				}
+
+				<form id="registration-onboarding-form" method="POST" action="/auth/register" enctype="multipart/form-data" class="d-flex flex-col gap-6">
+					{{
+						selectedType := form.AccountType
+						if selectedType != "vendor" && selectedType != "job_seeker" {
+							selectedType = "customer"
+						}
+					}}
+					<input type="hidden" name="account_type" id="reg-account-type-input" value={ selectedType } />
+					<!-- Geographic coordinates lookup for instant map synchronization -->
+					<div id="reg-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(cities) }></div>
+					<div id="reg-govs-coords" class="d-none" data-coords={ GovernoratesCoordinatesJSON(governorates) }></div>
+
+					<!-- ================= STEP 1: Select Account Type ================= -->
+					<section id="reg-step-1" class="form-step active">
+						<h2 class="text-sm font-bold text-primary m-0">
+							يرجى تحديد نوع حساب المنشأة للبدء:
+						</h2>
+
+						<div class="d-flex flex-col gap-3" role="radiogroup" aria-label="نوع الحساب">
+							<!-- Option 1: Customer / Pharmacy / Medical Facility -->
+							<div
+								class={ "type-card", templ.KV("active selected", selectedType == "customer") }
+								data-account-type="customer"
+								tabindex="0"
+								role="radio"
+								aria-checked={ fmt.Sprintf("%t", selectedType == "customer") }
+								data-on-click="dawaSelectAccountType('customer')"
+							>
+								<input
+									type="radio"
+									name="account_type_choice"
+									value="customer"
+									class="sr-only"
+									checked?={ selectedType == "customer" }
+									tabindex="-1"
+									aria-hidden="true"
+									data-on-change="dawaSelectAccountType('customer')"
+								/>
+								<div class="type-icon">
+									@components.IconPill("icon-sm")
+								</div>
+								<div class="flex-1">
+									<div class="type-name font-bold text-sm text-primary">صيدلية / منشأة طبية مرخصة</div>
+									<div class="text-xs text-secondary mt-0.5">
+										شراء وتوريد الأدوية والمستلزمات الصيدلانية مباشرة للصيدليات الفردية والسلاسل والمراكز الطبية.
+									</div>
+								</div>
+								<div class="type-check" aria-hidden="true">
+									@components.IconCheck("icon-xs")
+								</div>
+							</div>
+
+							<!-- Option 2: Vendor / Supplier / Pharma Company -->
+							<div
+								class={ "type-card", templ.KV("active selected", selectedType == "vendor") }
+								data-account-type="vendor"
+								tabindex="0"
+								role="radio"
+								aria-checked={ fmt.Sprintf("%t", selectedType == "vendor") }
+								data-on-click="dawaSelectAccountType('vendor')"
+							>
+								<input
+									type="radio"
+									name="account_type_choice"
+									value="vendor"
+									class="sr-only"
+									checked?={ selectedType == "vendor" }
+									tabindex="-1"
+									aria-hidden="true"
+									data-on-change="dawaSelectAccountType('vendor')"
+								/>
+								<div class="type-icon">
+									@components.IconBuilding("icon-sm")
+								</div>
+								<div class="flex-1">
+									<div class="type-name font-bold text-sm text-primary">مورّد / شركة ومخزن أدوية</div>
+									<div class="text-xs text-secondary mt-0.5">
+										توريد وبيع الأصناف الدوائية والمستلزمات الطبية للصيدليات والمستشفيات المسجلة.
+									</div>
+								</div>
+								<div class="type-check" aria-hidden="true">
+									@components.IconCheck("icon-xs")
+								</div>
+							</div>
+
+							<!-- Option 3: Job Seeker / Medical & Pharma Professional -->
+							<div
+								class={ "type-card", templ.KV("active selected", selectedType == "job_seeker") }
+								data-account-type="job_seeker"
+								tabindex="0"
+								role="radio"
+								aria-checked={ fmt.Sprintf("%t", selectedType == "job_seeker") }
+								data-on-click="dawaSelectAccountType('job_seeker')"
+							>
+								<input
+									type="radio"
+									name="account_type_choice"
+									value="job_seeker"
+									class="sr-only"
+									checked?={ selectedType == "job_seeker" }
+									tabindex="-1"
+									aria-hidden="true"
+									data-on-change="dawaSelectAccountType('job_seeker')"
+								/>
+								<div class="type-icon">
+									@components.IconUser("icon-sm")
+								</div>
+								<div class="flex-1">
+									<div class="type-name font-bold text-sm text-primary">باحث عن عمل / كادر طبي وصيدلاني</div>
+									<div class="text-xs text-secondary mt-0.5">
+										للصيادلة ومساعدي الصيادلة ومسؤولي المبيعات للتقديم على الشواغر الوظيفية والانضمام لمنظومة العمل.
+									</div>
+								</div>
+								<div class="type-check" aria-hidden="true">
+									@components.IconCheck("icon-xs")
+								</div>
+							</div>
+						</div>
+
+						<button type="button" id="reg-goto-step-2" class="btn btn-primary btn-lg font-bold w-100 mt-2">
+							<span>المتابعة إلى الخطوة التالية</span>
+							@components.IconArrowLeft("icon-xs")
+						</button>
+					</section>
+
+					<!-- ================= STEP 2: Facility / Seeker Profile & Location ================= -->
+					<section id="reg-step-2" class="form-step">
+						<div class="d-flex items-center justify-between gap-3 pb-3 border-b">
+							<span id="reg-selected-badge" class="badge badge-sky font-bold">نوع الحساب: صيدلية / منشأة طبية مرخصة</span>
+							<button type="button" id="reg-back-to-step-1" class="btn btn-secondary btn-sm font-bold">
+								@components.IconArrowRight("icon-xs")
+								<span>تغيير النوع</span>
+							</button>
+						</div>
+
+						<!-- JOB SEEKER ONLY FIELDS -->
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="job_seeker">
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-specialisation">التخصص المهني *</label>
+								<select id="reg-specialisation" name="specialisation" class="form-input form-select">
+									<option value="pharmacist">صيدلي / دكتور صيدلي (Pharmacist)</option>
+									<option value="assistant_pharmacist">مساعد صيدلي (Assistant Pharmacist)</option>
+									<option value="branch_manager">مدير فرع صيدلية (Branch Manager)</option>
+									<option value="sales_rep">مندوب مبيعات وتسويق دوائي (Medical Rep)</option>
+									<option value="warehouse_keeper">أمين مخزن أدوية (Warehouse Keeper)</option>
+									<option value="accountant">محاسب صيدليات (Accountant)</option>
+								</select>
+							</div>
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-years-exp">سنوات الخبرة *</label>
+								<input type="number" id="reg-years-exp" name="years_experience" min="0" max="40" class="form-input tabular-nums" placeholder="مثال: 3" value={ form.YearsExperience } />
+							</div>
+						</div>
+
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="job_seeker">
+							@components.Combobox(components.ComboboxProps{
+								Name:          "governorate_id",
+								Label:         "المحافظة المفضلة للعمل",
+								Placeholder:   "اكتب اسم المحافظة…",
+								Options:       govOptions,
+								Required:      true,
+								SelectedValue: form.GovernorateID,
+								SelectedLabel: SelectedGeoLabel(govOptions, form.GovernorateID),
+							})
+							@components.Combobox(components.ComboboxProps{
+								Name:          "city_id",
+								Label:         "المدينة",
+								Placeholder:   "اكتب اسم المدينة…",
+								Options:       cityOptions,
+								DependsOn:     "governorate_id",
+								Required:      true,
+								SelectedValue: form.CityID,
+								SelectedLabel: SelectedGeoLabel(cityOptions, form.CityID),
+								EmptyText:     "اختر المحافظة أولاً، أو جرّب اسماً آخر.",
+							})
+						</div>
+
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="job_seeker">
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-expected-salary">الراتب المتوقع (ج.م / اختياري)</label>
+								<input type="text" id="reg-expected-salary" name="expected_salary" class="form-input tabular-nums" placeholder="مثال: 9000" value={ form.ExpectedSalary } />
+							</div>
+						</div>
+
+						<div class="form-group mb-0" data-type-visibility="job_seeker">
+							<label class="form-label font-semibold text-xs d-flex justify-between" for="reg-cv-file">
+								<span>إرفاق السيرة الذاتية (CV / اختياري)</span>
+								<span class="text-xs text-muted">PDF, DOC, DOCX حتى 10 ميجابايت</span>
+							</label>
+							<input type="file" id="reg-cv-file" name="cv_file" accept=".pdf,.doc,.docx" class="form-input" />
+						</div>
+
+						<div class="form-group mb-0" data-type-visibility="job_seeker">
+							<label class="form-label font-semibold text-xs" for="reg-bio">نبذة مهنية وموجز الخبرات</label>
+							<textarea id="reg-bio" name="bio" rows="3" class="form-input" placeholder="اكتب نبذة مختصرة عن مؤهلاتك وخبراتك السابقة وأهم المهارات...">{ form.Bio }</textarea>
+						</div>
+
+						<!-- BUSINESS ONLY FIELDS (Vendor & Customer) -->
+						<div class="form-group mb-0" data-type-visibility="vendor customer">
+							<label class="form-label font-semibold text-xs" for="reg-legal-name">الاسم القانوني للمنشأة (مطابق للسجل التجاري) *</label>
+							<input type="text" id="reg-legal-name" name="legal_name" class="form-input" placeholder="صيدلية الأمل الحديثة ش.م.م" value={ form.LegalName } />
+						</div>
+
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="vendor customer">
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-trade-ar">الاسم التجاري (عربي) *</label>
+								<input type="text" id="reg-trade-ar" name="trade_name_ar" class="form-input" value={ form.TradeNameAr } placeholder="صيدلية الأمل" />
+							</div>
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-trade-en">الاسم التجاري (إنجليزي)</label>
+								<input type="text" id="reg-trade-en" name="trade_name_en" class="form-input" dir="ltr" value={ form.TradeNameEn } placeholder="Al Amal Pharmacy" />
+							</div>
+						</div>
+
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="vendor customer">
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-cr">رقم السجل التجاري *</label>
+								<input type="text" id="reg-cr" name="commercial_register" class="form-input tabular-nums" value={ form.CommercialRegister } placeholder="CR-94819" />
+							</div>
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-tax">الرقم الضريبي (الفاتورة الإلكترونية)</label>
+								<input type="text" id="reg-tax" name="tax_number" class="form-input tabular-nums" value={ form.TaxNumber } placeholder="984-210-941" />
+							</div>
+						</div>
+
+						<div class="form-group mb-0" data-type-visibility="customer">
+							<label class="form-label font-semibold text-xs" for="reg-license">رقم ترخيص المؤسسة الصيدلية (نقابة الصيادلة / هيئة الدواء)</label>
+							<input type="text" id="reg-license" name="pharmacist_license" class="form-input tabular-nums" value={ form.PharmacistLicense } placeholder="EDA-LIC-2024-884" />
+						</div>
+
+						<!-- Official Operating License / CR File Attachment -->
+						<div class="form-group mb-0" data-type-visibility="vendor customer">
+							<label class="form-label font-semibold text-xs d-flex justify-between" for="reg-license-file">
+								<span>إرفاق صورة الترخيص / السجل التجاري الرسمي</span>
+								<span class="text-xs text-muted">PDF, PNG, JPG حتى 20 ميجابايت</span>
+							</label>
+							<input type="file" id="reg-license-file" name="license_file" accept=".pdf,.png,.jpg,.jpeg" class="form-input" />
+							<p class="text-2xs text-secondary mt-1 m-0">
+								يتم مراجعة الملف واعتماد ترخيص المنشأة من إدارة المنصة خلال 24 ساعة للبدء في عمليات التوريد والشراء.
+							</p>
+						</div>
+
+						<!-- The branch's governorate and city.
+
+						     Business accounts used to have no picker at all: the
+						     city was whatever the map's own <select> matched by
+						     proximity, written into a hidden branch_city_id. The
+						     map still does that, but through these controls, so
+						     what was chosen is visible and can be corrected. -->
+						<div class="d-grid grid-auto-fit-sm gap-4" data-type-visibility="vendor customer">
+							@components.Combobox(components.ComboboxProps{
+								Name:          "branch_governorate_id",
+								Label:         "محافظة الفرع الرئيسي",
+								Placeholder:   "اكتب اسم المحافظة…",
+								Options:       govOptions,
+								Required:      true,
+								SelectedValue: form.GovernorateID,
+								SelectedLabel: SelectedGeoLabel(govOptions, form.GovernorateID),
+							})
+							@components.Combobox(components.ComboboxProps{
+								Name:          "branch_city_id",
+								Label:         "مدينة الفرع الرئيسي",
+								Placeholder:   "اكتب اسم المدينة…",
+								Options:       cityOptions,
+								DependsOn:     "branch_governorate_id",
+								Required:      true,
+								SelectedValue: form.CityID,
+								SelectedLabel: SelectedGeoLabel(cityOptions, form.CityID),
+								EmptyText:     "اختر المحافظة أولاً، أو جرّب اسماً آخر.",
+								Help:          "يُملأ تلقائياً عند تحديد موقعك على الخريطة، ويمكنك تعديله.",
+							})
+						</div>
+
+						<!-- Interactive Map with GPS Location & Live Reverse Geocoding -->
+						<div class="form-group mb-0" data-type-visibility="vendor customer">
+							@components.MapPicker(components.MapPickerProps{
+								NamePrefix: "branch",
+								Label:      "تحديد الموقع الجغرافي والإحداثيات للفرع الرئيسي (GPS) *",
+								Cities:     cities,
+							})
+						</div>
+
+						<div class="form-group mb-0" data-type-visibility="vendor customer">
+							<label class="form-label font-semibold text-xs d-flex justify-between" for="reg-address">
+								<span>العنوان التفصيلي للمقر / الصيدلية *</span>
+								<span id="reg-address-hint" class="text-2xs text-muted">يُملأ تلقائياً عند تحديد الموقع على الخريطة</span>
+							</label>
+							<input type="text" id="reg-address" name="address" class="form-input" placeholder="اسم الشارع، رقم العقار، الحي، بجوار..." value={ form.Address } />
+						</div>
+
+						<div class="d-flex items-center gap-3 pt-2">
+							<button type="button" id="reg-step-2-back" class="btn btn-secondary font-bold">
+								@components.IconArrowRight("icon-xs")
+								<span>السابق</span>
+							</button>
+							<button type="button" id="reg-goto-step-3" class="btn btn-primary font-bold flex-1">
+								<span>المتابعة لبيانات الحساب</span>
+								@components.IconArrowLeft("icon-xs")
+							</button>
+						</div>
+					</section>
+
+					<!-- ================= STEP 3: Account Credentials & Security ================= -->
+					<section id="reg-step-3" class="form-step">
+						<div class="d-flex items-center justify-between gap-3 pb-3 border-b">
+							<span class="badge badge-teal font-bold">الخطوة الأخيرة: بيانات تسجيل الدخول والأمان</span>
+							<button type="button" id="reg-step-3-back" class="btn btn-secondary btn-sm font-bold">
+								@components.IconArrowRight("icon-xs")
+								<span>بيانات المنشأة</span>
+							</button>
+						</div>
+
+						<div class="form-group mb-0">
+							<label class="form-label font-semibold text-xs" for="reg-name">اسم المسؤول / الصيدلي المسؤول *</label>
+							<input type="text" id="reg-name" name="name" class="form-input" placeholder="د. أحمد محمود" value={ form.Name } />
+						</div>
+
+						<div class="d-grid grid-auto-fit-sm gap-4">
+							<div class="form-group mb-0">
+								<label class="form-label font-semibold text-xs" for="reg-email">البريد الإلكتروني الرسمي *</label>
+								<input type="email" id="reg-email" name="email" class="form-input tabular-nums" placeholder="pharmacy@dawa24.eg" value={ form.Email } />
+							</div>
+							<div class="form-group mb-0">
+								<div class="d-flex items-center justify-between mb-1">
+									<label class="form-label font-semibold text-xs m-0" for="reg-phone">رقم الهاتف / الواتساب *</label>
+									<span class="text-2xs text-secondary d-flex items-center gap-1">
+										<svg class="icon-2xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="m22 2-7 20-4-9-9-4Z"></path>
+											<path d="M22 2 11 13"></path>
+										</svg>
+										<span>تأكيد Telegram مطلوب</span>
+									</span>
+								</div>
+								<div class="input-group">
+									<input
+										type="tel"
+										id="reg-phone"
+										name="phone"
+										class="form-input tabular-nums"
+										placeholder="01012345678"
+										value={ form.Phone }
+										if form.PhoneVerified {
+											readonly="readonly"
+										}
+									/>
+									<button
+										type="button"
+										id="tg-send-otp-btn"
+										class="btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3"
+										if form.PhoneVerified {
+											style="display:none;"
+										}
+									>
+										<svg class="icon-xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="m22 2-7 20-4-9-9-4Z"></path>
+											<path d="M22 2 11 13"></path>
+										</svg>
+										<span id="tg-send-btn-text">{ i18n.T(lang, "auth.telegram.send_otp") }</span>
+									</button>
+								</div>
+								<input type="hidden" id="verified-phone-token" name="verified_phone_token" value={ form.VerifiedPhoneToken } />
+
+								<!-- Verified Phone Badge -->
+								<div
+									id="tg-verified-badge"
+									class="badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5"
+									if !form.PhoneVerified {
+										style="display:none;"
+									}
+								>
+									@components.IconCheck("icon-xs")
+									<span>{ i18n.T(lang, "auth.telegram.verified") }</span>
+									<button type="button" id="tg-change-phone-btn" class="btn-link text-2xs underline text-secondary mr-2" style="background:none;border:none;cursor:pointer;padding:0;">
+										{ i18n.T(lang, "auth.telegram.change_phone") }
+									</button>
+								</div>
+
+								<!-- Telegram OTP Drawer -->
+								<div id="tg-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle" style="display:none;">
+									<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
+										<span id="tg-otp-hint" class="font-medium">{ i18n.T(lang, "auth.telegram.enter_code") }</span>
+										<span id="tg-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+									</div>
+									<div class="d-flex items-center gap-2">
+										<input type="text" id="tg-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5" style="max-width: 140px; letter-spacing: 0.25em;" placeholder="••••••" />
+										<button type="button" id="tg-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
+											{ i18n.T(lang, "auth.telegram.verify_code") }
+										</button>
+										<button type="button" id="tg-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted" style="display:none;">
+											{ i18n.T(lang, "auth.telegram.resend_otp") }
+										</button>
+									</div>
+									<div id="tg-otp-feedback" class="text-2xs font-medium mt-1.5" style="display:none;"></div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Password Field with Modern Live Strength Meter -->
+						<div class="form-group mb-0">
+							<div class="d-flex items-center justify-between mb-1">
+								<label class="form-label font-semibold text-xs m-0" for="reg-password">كلمة المرور *</label>
+								<span id="pass-strength-label" class="text-2xs font-semibold text-secondary">أدخل كلمة المرور</span>
+							</div>
+							<div class="pwd-input-wrap">
+								<input type="password" id="reg-password" name="password" class="form-input" placeholder="••••••••" />
+								<button type="button" id="reg-toggle-pwd" class="pwd-toggle-btn" title="إظهار / إخفاء كلمة المرور">
+									@components.IconEye("icon-xs")
+								</button>
+							</div>
+
+							<!-- Strength Progress Bars -->
+							<div id="pwd-strength-bars" class="pwd-strength-bars d-flex gap-1 mt-1.5">
+								<div class="strength-bar-seg"></div>
+								<div class="strength-bar-seg"></div>
+								<div class="strength-bar-seg"></div>
+								<div class="strength-bar-seg"></div>
+							</div>
+
+							<!-- Real-Time Password Checklist -->
+							<div id="pwd-checklist" class="pwd-checklist d-flex flex-col gap-1 mt-2 text-2xs text-secondary">
+								<div id="rule-length" class="pwd-checklist-item">
+									<span class="rule-icon text-muted">●</span> 8 أحرف على الأقل
+								</div>
+								<div id="rule-casing" class="pwd-checklist-item">
+									<span class="rule-icon text-muted">●</span> حرف كبير (A-Z) وصغير (a-z)
+								</div>
+								<div id="rule-number" class="pwd-checklist-item">
+									<span class="rule-icon text-muted">●</span> رقم واحد على الأقل (0-9)
+								</div>
+								<div id="rule-special" class="pwd-checklist-item">
+									<span class="rule-icon text-muted">●</span> رمز خاص (@, $, !, %, *, #)
+								</div>
+							</div>
+						</div>
+
+						<div class="d-flex items-center gap-3 pt-2">
+							<button type="button" id="reg-step-3-back-btn" class="btn btn-secondary font-bold">
+								@components.IconArrowRight("icon-xs")
+								<span>السابق</span>
+							</button>
+							<button type="submit" id="reg-submit-btn" class="btn btn-primary btn-lg font-bold flex-1">
+								@components.IconCheck("icon-xs")
+								<span>إنشاء الحساب وبدء التفعيل</span>
+							</button>
+						</div>
+
+						<div class="auth-legal-terms">
+							<span>بتسجيلك في المنصة، أنت توافق على</span>
+							<a href="/terms" target="_blank">شروط وأحكام المنصة</a>
+							<span>و</span>
+							<a href="/privacy" target="_blank">سياسة الخصوصية</a>
+						</div>
+					</section>
+				</form>
+
+				<div class="auth-footer">
+					<span>لديك حساب بالفعل؟</span>
+					<a href="/auth/login" class="font-bold text-accent text-decoration-none ms-1">تسجيل الدخول</a>
+				</div>
+			</div>
+		</div>
+		<script defer src={ layouts.Asset("/static/js/registration.js") }></script>
+	}
+}
+
+

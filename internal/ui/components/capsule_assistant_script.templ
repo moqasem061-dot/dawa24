@@ -1,0 +1,1115 @@
+package components
+
+import (
+	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+)
+
+// The drawer's client.
+//
+// Two things here are load-bearing and were the cause of the "the answer stops
+// when I resize or minimise the window" report.
+//
+// First, streaming is EventSource, not fetch+getReader. The old client parsed
+// SSE by hand and reset the current event name on every network chunk, so
+// whenever a chunk boundary landed between "event: delta" and its "data:" line
+// — which is exactly what changes when the renderer's paint cadence changes on
+// a resize, a minimise, or a background tab — the token was silently dropped.
+// EventSource parses frames properly, reconnects on its own, and replays from
+// Last-Event-ID.
+//
+// Second, asking and reading are separate requests. POST /turns starts the work
+// server-side and returns an id; the stream is a GET that can be opened,
+// closed, and reopened. Closing the drawer no longer discards an answer that
+// has already been paid for.
+
+templ CapsuleAssistantScript() {
+	<script nonce={ httpx.Nonce(ctx) }>
+		function capsuleAssistantManager() {
+			return {
+				// --- shell state
+				isOpen: false,
+				agentLabel: '',
+				connection: 'unknown',
+				readOnlyNote: true,
+
+				// --- composer
+				inputQuery: '',
+				attachedFiles: [],
+				isDragging: false,
+				dragCounter: 0,
+				maxAttachments: 5,
+				maxAttachmentBytes: 10 * 1024 * 1024,
+				// The picker filters to what the server actually accepts, so
+				// the common rejections never happen at all.
+				attachAccept: 'image/png,image/jpeg,image/webp,image/gif,application/pdf,text/plain,text/csv,' +
+					'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,' +
+					'application/vnd.openxmlformats-officedocument.wordprocessingml.document,' +
+					'audio/*,video/mp4,video/webm',
+
+				// --- conversation
+				messages: [],
+				conversationID: 0,
+				expiresAt: null,
+
+				// --- turn in flight
+				isStreaming: false,
+				turnID: null,
+				eventSource: null,
+				watchdog: null,
+				sawEvent: false,
+				lastArm: 0,
+				statusMessage: '',
+				activeTool: '',
+
+				// --- usage meter
+				contextWindow: 0,
+				usedTokens: 0,
+
+				// --- voice
+				isRecordingVoice: false,
+				recordingSeconds: 0,
+				recordingTimer: null,
+				noticeTimer: null,
+				mediaStream: null,
+				mediaRecorder: null,
+				audioChunks: [],
+
+				// --- memory drawer
+				showMemoryDrawer: false,
+				memories: [],
+				isLoadingMemories: false,
+				searchMemoryQuery: '',
+				newMemoryContent: '',
+				newMemoryCategory: 'general',
+				isSavingMemory: false,
+
+				// --- history drawer
+				showSessionsDrawer: false,
+				pastConversations: [],
+				isLoadingPastSessions: false,
+				searchPastQuery: '',
+
+				autoScrollEnabled: true,
+
+				init() {
+					window.addEventListener('open-capsule-assistant', () => this.openAssistant());
+					// A turn keeps running server-side, but the EventSource does
+					// not survive a page unload. Close it cleanly so the browser
+					// does not hold a dead connection open.
+					window.addEventListener('beforeunload', () => this.closeStream());
+					this.loadSession();
+				},
+
+				async loadSession() {
+					try {
+						const resp = await fetch('/api/v1/assistant/session');
+						if (!resp.ok) return;
+						const data = await resp.json();
+						this.connection = data.status || 'unknown';
+						this.agentLabel = (data.agent && data.agent.label) || '';
+						this.contextWindow = data.context_window || 0;
+					} catch (e) {
+						this.connection = 'degraded';
+					}
+				},
+
+				// ---------------------------------------------------------------
+				// Drawer
+				// ---------------------------------------------------------------
+
+				openAssistant() {
+					this.isOpen = true;
+					this.autoScrollEnabled = true;
+					this.$nextTick(() => {
+						const c = document.getElementById('capsule-messages-container');
+						if (c && !c._capsuleScrollBound) {
+							c._capsuleScrollBound = true;
+							c.addEventListener('scroll', () => {
+								const dist = c.scrollHeight - c.scrollTop - c.clientHeight;
+								this.autoScrollEnabled = dist < 80;
+							});
+						}
+						this.scrollToBottom(true);
+						if (this.$refs.chatTextarea) this.$refs.chatTextarea.focus();
+					});
+				},
+
+				// Closing the drawer does NOT stop the answer. The turn is owned
+				// by the server; reopening reattaches to it.
+				closeAssistant() {
+					this.isOpen = false;
+					this.isDragging = false;
+					this.dragCounter = 0;
+				},
+
+				toggleAssistant() {
+					this.isOpen ? this.closeAssistant() : this.openAssistant();
+				},
+
+				usagePercent() {
+					if (!this.contextWindow || !this.usedTokens) return 0;
+					return Math.min(100, Math.round((this.usedTokens / this.contextWindow) * 100));
+				},
+
+				usageTooltip() {
+					const pct = this.usagePercent();
+					const used = this.usedTokens ? Number(this.usedTokens).toLocaleString('ar-EG') : '0';
+					const max = this.contextWindow ? Number(this.contextWindow).toLocaleString('ar-EG') : '١٢٨,٠٠٠';
+					return `سياق المحادثة: استهلاك ${used} من أصل ${max} توكن (${pct}%) - المستشار الصيدلي الذكي`;
+				},
+
+				retentionNote() {
+					if (!this.expiresAt) return 'تُحذف المحادثات تلقائياً بعد ٦ أشهر من إنشائها.';
+					try {
+						const d = new Date(this.expiresAt);
+						return 'تُحذف هذه المحادثة تلقائياً في ' +
+							d.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+					} catch (e) {
+						return 'تُحذف المحادثات تلقائياً بعد ٦ أشهر من إنشائها.';
+					}
+				},
+
+				// ---------------------------------------------------------------
+				// History
+				// ---------------------------------------------------------------
+
+				filteredPastConversations() {
+					const q = (this.searchPastQuery || '').trim().toLowerCase();
+					if (!q) return this.pastConversations;
+					return this.pastConversations.filter(c => (c.title || '').toLowerCase().includes(q));
+				},
+
+				toggleSessionsDrawer() {
+					this.showSessionsDrawer = !this.showSessionsDrawer;
+					if (this.showSessionsDrawer) {
+						this.showMemoryDrawer = false;
+						this.fetchConversations();
+					}
+				},
+
+				// ---------------------------------------------------------------
+				// Organization Memory (ChatGPT & Claude Style)
+				// ---------------------------------------------------------------
+
+				toggleMemoryDrawer() {
+					this.showMemoryDrawer = !this.showMemoryDrawer;
+					if (this.showMemoryDrawer) {
+						this.showSessionsDrawer = false;
+						this.fetchMemories();
+					}
+				},
+
+				async fetchMemories() {
+					this.isLoadingMemories = true;
+					try {
+						const resp = await fetch('/api/v1/assistant/memories');
+						if (resp.ok) {
+							const data = await resp.json();
+							this.memories = data.memories || [];
+						}
+					} catch (e) {
+						/* silent */
+					} finally {
+						this.isLoadingMemories = false;
+					}
+				},
+
+				filteredMemories() {
+					const q = (this.searchMemoryQuery || '').trim().toLowerCase();
+					if (!q) return this.memories;
+					return this.memories.filter(m => (m.content || '').toLowerCase().includes(q) || (m.category || '').toLowerCase().includes(q));
+				},
+
+				async addMemory() {
+					const content = (this.newMemoryContent || '').trim();
+					if (!content || this.isSavingMemory) return;
+					this.isSavingMemory = true;
+					try {
+						const resp = await fetch('/api/v1/assistant/memories', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								content: content,
+								category: this.newMemoryCategory || 'general'
+							})
+						});
+						if (resp.ok) {
+							const data = await resp.json();
+							if (data.memory) {
+								this.memories.unshift(data.memory);
+							}
+							this.newMemoryContent = '';
+						}
+					} catch (e) {
+						/* silent */
+					} finally {
+						this.isSavingMemory = false;
+					}
+				},
+
+				async deleteMemory(id) {
+					if (!confirm('هل أنت متأكد من حذف هذه المعلومة من ذاكرة المنشأة؟')) return;
+					try {
+						const resp = await fetch('/api/v1/assistant/memories/' + id, { method: 'DELETE' });
+						if (resp.ok) {
+							this.memories = this.memories.filter(m => m.id !== id);
+						}
+					} catch (e) {}
+				},
+
+				memoryCategoryLabel(cat) {
+					switch (cat) {
+						case 'business_profile': return 'ملف المنشأة';
+						case 'procurement': return 'المشتريات والتوريد';
+						case 'financial': return 'المالية والسداد';
+						case 'logistics': return 'اللوجستيات ومواعيد الاستلام';
+						case 'preferences': return 'تفضيلات التعامل';
+						case 'contacts': return 'جهات الاتصال';
+						default: return 'عام';
+					}
+				},
+
+				memorySourceLabel(src) {
+					switch (src) {
+						case 'ai_extracted': return 'استنتاج آلي';
+						case 'user_explicit': return 'طلب مباشر';
+						case 'admin_manual': return 'يدوي';
+						default: return 'نظام';
+					}
+				},
+
+				async fetchConversations() {
+					this.isLoadingPastSessions = true;
+					try {
+						const resp = await fetch('/api/v1/assistant/conversations');
+						if (resp.ok) {
+							const data = await resp.json();
+							this.pastConversations = data.conversations || [];
+						}
+					} catch (e) {
+						/* the list is a convenience; a failure is not worth an alert */
+					} finally {
+						this.isLoadingPastSessions = false;
+					}
+				},
+
+				startNewConversation() {
+					this.closeStream();
+					this.conversationID = 0;
+					this.expiresAt = null;
+					this.messages = [];
+					this.attachedFiles = [];
+					this.inputQuery = '';
+					this.usedTokens = 0;
+					this.showSessionsDrawer = false;
+					this.isStreaming = false;
+					if (this.$refs.chatTextarea) {
+						this.$refs.chatTextarea.style.height = '24px';
+						this.$refs.chatTextarea.focus();
+					}
+				},
+
+				async loadSessionThread(convID) {
+					this.closeStream();
+					this.isLoadingPastSessions = true;
+					try {
+						const resp = await fetch('/api/v1/assistant/conversations/' + convID);
+						if (!resp.ok) return;
+						const data = await resp.json();
+
+						this.conversationID = convID;
+						this.expiresAt = data.conversation ? data.conversation.expires_at : null;
+						this.messages = (data.messages || [])
+							.filter(m => m.role === 'user' || m.role === 'assistant')
+							.map(m => ({
+								isUser: m.role === 'user',
+								text: m.content,
+								attachments: m.attachments || [],
+								entities: m.entities || [],
+								isStreaming: false
+							}));
+						this.showSessionsDrawer = false;
+						this.scrollToBottom(true);
+
+						// An answer may still be being written from before this
+						// page was loaded. Rejoin it rather than showing a
+						// thread that looks finished and is not.
+						if (data.running_turn) {
+							this.messages.push({ isUser: false, text: '', entities: [], isStreaming: true });
+							this.attachStream(data.running_turn.turn_id);
+						}
+					} finally {
+						this.isLoadingPastSessions = false;
+					}
+				},
+
+				async deleteSession(convID) {
+					if (!confirm('هل أنت متأكد من حذف هذه المحادثة من سجلك؟')) return;
+					try {
+						const resp = await fetch('/api/v1/assistant/conversations/' + convID, { method: 'DELETE' });
+						if (resp.ok) {
+							this.pastConversations = this.pastConversations.filter(c => c.id !== convID);
+							if (this.conversationID === convID) this.startNewConversation();
+						}
+					} catch (e) { /* nothing useful to say */ }
+				},
+
+				formatDate(isoStr) {
+					if (!isoStr) return '';
+					try {
+						return new Date(isoStr).toLocaleDateString('ar-EG', {
+							month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true
+						});
+					} catch (e) { return isoStr; }
+				},
+
+				askChip(text) {
+					this.inputQuery = text;
+					this.sendMessage();
+				},
+
+				copyText(text, btnEl) {
+					if (!text) return;
+					navigator.clipboard.writeText(text).then(() => {
+						if (!btnEl) return;
+						const def = btnEl.querySelector('.copy-icon-default');
+						const ok = btnEl.querySelector('.copy-icon-success');
+						if (!def || !ok) return;
+						def.style.display = 'none';
+						ok.style.display = 'inline-flex';
+						setTimeout(() => {
+							def.style.display = 'inline-flex';
+							ok.style.display = 'none';
+						}, 1800);
+					});
+				},
+
+				// ---------------------------------------------------------------
+				// Attachments
+				// ---------------------------------------------------------------
+
+				onDragEnter(e) {
+					if (!this.isOpen) return;
+					if (e.dataTransfer && e.dataTransfer.types && e.dataTransfer.types.includes('Files')) {
+						this.dragCounter++;
+						this.isDragging = true;
+					}
+				},
+
+				onDragLeave() {
+					if (!this.isOpen) return;
+					this.dragCounter--;
+					if (this.dragCounter <= 0) { this.dragCounter = 0; this.isDragging = false; }
+				},
+
+				onDrop(e) {
+					if (!this.isOpen) return;
+					this.dragCounter = 0;
+					this.isDragging = false;
+					this.addFiles(Array.from(e.dataTransfer?.files || []));
+				},
+
+				handleFileSelect(e) {
+					this.addFiles(Array.from(e.target.files || []));
+					e.target.value = '';
+				},
+
+				// A screenshot pasted straight into the composer is how people
+				// actually share an error message or a price list, and it was
+				// the one route into this feature the drawer did not offer.
+				handlePaste(e) {
+					const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+					const files = items
+						.filter(it => it.kind === 'file')
+						.map(it => it.getAsFile())
+						.filter(Boolean);
+					if (!files.length) return;
+					e.preventDefault();
+					this.addFiles(files);
+				},
+
+				// Refused before it is uploaded, in the same words the server
+				// would use. Ten megabytes of a wrongly-typed file is a round
+				// trip nobody needs, and "it failed" after a long upload reads
+				// as the assistant being broken.
+				rejectionFor(file) {
+					if (file.size > this.maxAttachmentBytes) {
+						return 'حجم الملف أكبر من الحد المسموح (١٠ ميجابايت): ' + file.name;
+					}
+					const name = (file.name || '').toLowerCase();
+					if (/\.(heic|heif)$/.test(name)) {
+						return 'صيغة HEIC غير مدعومة. من إعدادات الكاميرا اختر «الأكثر توافقاً» أو أرسل الصورة بصيغة JPEG.';
+					}
+					if (/\.(exe|dll|bat|cmd|sh|zip|rar|7z|msi|js|vbs|iso)$/.test(name)) {
+						return 'نوع الملف غير مدعوم: ' + file.name;
+					}
+					return '';
+				},
+
+				addFiles(files) {
+					for (const file of files) {
+						if (this.attachedFiles.length >= this.maxAttachments) {
+							this.showComposerNotice('الحد الأقصى ' + this.maxAttachments + ' مرفقات لكل رسالة.');
+							break;
+						}
+						const rejection = this.rejectionFor(file);
+						if (rejection) { this.showComposerNotice(rejection); continue; }
+
+						const isImg = (file.type || '').startsWith('image/');
+						let previewUrl = '';
+						if (isImg) { try { previewUrl = URL.createObjectURL(file); } catch (e) {} }
+						const item = {
+							id: 'att-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8),
+							name: file.name, size: file.size, type: file.type,
+							isImage: isImg, previewUrl,
+							reference: '', uploading: true, error: '', raw: file
+						};
+						this.attachedFiles.push(item);
+						this.uploadAttachment(item.id, file);
+					}
+				},
+
+				async uploadAttachment(itemId, rawFile) {
+					const find = () => this.attachedFiles.find(f => f.id === itemId);
+					const started = find();
+					if (started) { started.uploading = true; started.error = ''; }
+					try {
+						const form = new FormData();
+						form.append('file', rawFile);
+						const resp = await fetch('/api/v1/assistant/attachments', { method: 'POST', body: form });
+						const target = find();
+						if (!target) return;
+						if (!resp.ok) {
+							const err = await resp.json().catch(() => ({}));
+							// The server names the cause — an unsupported type,
+							// a HEIC photograph, storage that is unreachable —
+							// and every one of those needs a different action
+							// from the user. Show its sentence, never a generic
+							// one of our own.
+							target.error = err.message || 'تعذّر رفع الملف.';
+							target.retryable = err.retryable !== false;
+							return;
+						}
+						const data = await resp.json();
+						const first = (data.attachments || [])[0];
+						if (first) {
+							target.reference = first.reference;
+							target.serverMime = first.mime_type;
+							if (first.preview_url) target.serverPreview = first.preview_url;
+						} else {
+							target.error = 'استجابة غير متوقعة من الخادم.';
+							target.retryable = true;
+						}
+					} catch (e) {
+						const target = find();
+						if (target) { target.error = 'تعذّر الاتصال بالخادم.'; target.retryable = true; }
+					} finally {
+						const target = find();
+						if (target) target.uploading = false;
+					}
+				},
+
+				retryAttachment(idx) {
+					const f = this.attachedFiles[idx];
+					if (!f || !f.raw) return;
+					this.uploadAttachment(f.id, f.raw);
+				},
+
+				removeAttachment(idx) {
+					const f = this.attachedFiles[idx];
+					if (f && f.previewUrl) URL.revokeObjectURL(f.previewUrl);
+					this.attachedFiles.splice(idx, 1);
+				},
+
+				formatBytes(bytes) {
+					if (!bytes) return '0 B';
+					const k = 1024, sizes = ['B', 'KB', 'MB'];
+					const i = Math.floor(Math.log(bytes) / Math.log(k));
+					return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+				},
+
+				// ---------------------------------------------------------------
+				// Voice
+				// ---------------------------------------------------------------
+
+				// The container the recorder actually produces.
+				//
+				// Chrome gives webm/opus, Safari gives mp4/aac, and neither
+				// accepts the other's name. The blob used to be hardcoded to
+				// audio/webm regardless, so a Safari recording reached the
+				// Gateway as an mp4 wearing a webm label and the transcription
+				// model refused it. Ask the browser instead of assuming.
+				pickRecorderMime() {
+					if (typeof MediaRecorder === 'undefined') return '';
+					const candidates = [
+						'audio/webm;codecs=opus',
+						'audio/webm',
+						'audio/ogg;codecs=opus',
+						'audio/mp4',
+					];
+					for (const c of candidates) {
+						try { if (MediaRecorder.isTypeSupported(c)) return c; } catch (e) {}
+					}
+					return '';
+				},
+
+				voiceFilenameFor(mime) {
+					const base = (mime || '').split(';')[0].trim();
+					switch (base) {
+						case 'audio/mp4': return 'voice.mp4';
+						case 'audio/ogg': return 'voice.ogg';
+						case 'audio/mpeg': return 'voice.mp3';
+						case 'audio/wav':
+						case 'audio/x-wav': return 'voice.wav';
+						default: return 'voice.webm';
+					}
+				},
+
+				// One place that writes the composer notice, so no caller has to
+				// remember to clear it again.
+				showComposerNotice(message, ms) {
+					this.statusMessage = message;
+					if (this.noticeTimer) { clearTimeout(this.noticeTimer); this.noticeTimer = null; }
+					this.noticeTimer = setTimeout(() => {
+						if (!this.isStreaming) this.statusMessage = '';
+						this.noticeTimer = null;
+					}, ms || 8000);
+				},
+
+				async startVoiceRecord() {
+					if (this.isRecordingVoice) return;
+					this.statusMessage = '';
+
+					// navigator.mediaDevices is undefined outside a secure
+					// context, so on plain HTTP the old code threw a TypeError
+					// that read as "the microphone was refused" — which sent
+					// people to a browser permission screen that had nothing to
+					// do with it. Name the real cause instead.
+					if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+						this.showComposerNotice(window.isSecureContext === false
+							? 'التسجيل الصوتي يتطلب اتصالاً آمناً (HTTPS).'
+							: 'المتصفح لا يدعم التسجيل الصوتي.');
+						return;
+					}
+					if (typeof MediaRecorder === 'undefined') {
+						this.showComposerNotice('المتصفح لا يدعم التسجيل الصوتي.');
+						return;
+					}
+
+					try {
+						const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+						this.mediaStream = stream;
+						this.audioChunks = [];
+						const mime = this.pickRecorderMime();
+						this.mediaRecorder = mime
+							? new MediaRecorder(stream, { mimeType: mime })
+							: new MediaRecorder(stream);
+						this.mediaRecorder.ondataavailable = (e) => {
+							if (e.data && e.data.size > 0) this.audioChunks.push(e.data);
+						};
+						this.mediaRecorder.start();
+						this.isRecordingVoice = true;
+						this.recordingSeconds = 0;
+						this.recordingTimer = setInterval(() => { this.recordingSeconds++; }, 1000);
+					} catch (e) {
+						this.cancelVoiceRecord();
+						const name = (e && e.name) || '';
+						if (name === 'NotAllowedError' || name === 'SecurityError') {
+							this.showComposerNotice('تم رفض الوصول إلى الميكروفون. اسمح به من إعدادات المتصفح ثم أعد المحاولة.');
+						} else if (name === 'NotFoundError' || name === 'DevicesNotFoundError') {
+							this.showComposerNotice('لا يوجد ميكروفون متاح على هذا الجهاز.');
+						} else if (name === 'NotReadableError') {
+							this.showComposerNotice('الميكروفون مشغول بتطبيق آخر.');
+						} else {
+							this.showComposerNotice('تعذّر فتح الميكروفون. اسمح بالوصول من إعدادات المتصفح.');
+						}
+					}
+				},
+
+				stopRecorderTracks() {
+					if (this.recordingTimer) { clearInterval(this.recordingTimer); this.recordingTimer = null; }
+					this.recordingSeconds = 0;
+					if (this.mediaStream) {
+						try { this.mediaStream.getTracks().forEach(t => t.stop()); } catch (e) {}
+						this.mediaStream = null;
+					}
+				},
+
+				cancelVoiceRecord() {
+					this.isRecordingVoice = false;
+					if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+						try { this.mediaRecorder.stop(); } catch (e) {}
+					}
+					this.stopRecorderTracks();
+					this.audioChunks = [];
+				},
+
+				async finishVoiceRecord() {
+					if (!this.mediaRecorder || this.mediaRecorder.state === 'inactive') {
+						this.cancelVoiceRecord();
+						return;
+					}
+					const recordedMime = (this.mediaRecorder.mimeType || 'audio/webm').split(';')[0].trim();
+					this.mediaRecorder.onstop = async () => {
+						const blob = new Blob(this.audioChunks, { type: recordedMime });
+						this.audioChunks = [];
+						this.stopRecorderTracks();
+						if (blob.size === 0) {
+							this.showComposerNotice('لم يُسجَّل أي صوت. حاول مرة أخرى.');
+							return;
+						}
+						this.statusMessage = 'جاري تحويل الصوت إلى نص...';
+						try {
+							const form = new FormData();
+							form.append('file', blob, this.voiceFilenameFor(recordedMime));
+							const resp = await fetch('/api/v1/assistant/transcribe', { method: 'POST', body: form });
+							const data = await resp.json().catch(() => ({}));
+							if (resp.ok && data.text && data.text.trim()) {
+								this.inputQuery = (this.inputQuery ? this.inputQuery + ' ' : '') + data.text.trim();
+								this.$nextTick(() => {
+									this.autoResizeTextarea();
+									if (this.$refs.chatTextarea) this.$refs.chatTextarea.focus();
+								});
+							} else if (resp.ok) {
+								this.showComposerNotice('لم يُتعرَّف على أي كلام في التسجيل.');
+								return;
+							} else {
+								// The server sends an Arabic sentence naming the
+								// cause. Show that, never a raw failure.
+								this.showComposerNotice(data.message || 'تعذّر تفريغ التسجيل الصوتي.');
+								return;
+							}
+						} catch (e) {
+							this.showComposerNotice('تعذّر الاتصال بخدمة التفريغ الصوتي.');
+							return;
+						}
+						this.statusMessage = '';
+					};
+					this.isRecordingVoice = false;
+					try { this.mediaRecorder.stop(); } catch (e) { this.cancelVoiceRecord(); }
+				},
+
+				formatDuration(secs) {
+					const m = Math.floor(secs / 60), s = secs % 60;
+					return (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+				},
+
+				// ---------------------------------------------------------------
+				// Composer
+				// ---------------------------------------------------------------
+
+				handleKeydown(e) {
+					if (e.key !== 'Enter') return;
+					if (e.shiftKey) { this.$nextTick(() => this.autoResizeTextarea()); return; }
+					e.preventDefault();
+					this.sendMessage();
+				},
+
+				autoResizeTextarea() {
+					const el = this.$refs.chatTextarea;
+					if (!el) return;
+					el.style.height = '24px';
+					el.style.height = Math.min(Math.max(el.scrollHeight, 24), 110) + 'px';
+				},
+
+				async sendMessage() {
+					const q = this.inputQuery.trim();
+					if (this.isStreaming || (!q && this.attachedFiles.length === 0)) return;
+
+					if (this.attachedFiles.some(f => f.uploading)) {
+						this.statusMessage = 'جاري رفع المرفقات...';
+						let waited = 0;
+						while (this.attachedFiles.some(f => f.uploading) && waited < 40) {
+							await new Promise(r => setTimeout(r, 250));
+							waited++;
+						}
+						this.statusMessage = '';
+					}
+
+					// A file with no reference never reached the server, so the
+					// model will never see it.
+					//
+					// This used to filter those out and send the question
+					// anyway. The attachment still appeared in the transcript
+					// beside the question, so the turn looked to the user like
+					// it had been sent with the file — and the answer that came
+					// back was about the text alone. Every "the assistant
+					// ignores my attachments" report is this: the upload was
+					// still running when Enter was pressed, or it had failed,
+					// and nothing said so.
+					const missing = this.attachedFiles.filter(f => !f.reference);
+					if (missing.length > 0) {
+						const names = missing.map(f => f.name).join('، ');
+						if (missing.some(f => f.uploading)) {
+							this.showComposerNotice('لم يكتمل رفع المرفقات بعد: ' + names + '. انتظر لحظة ثم أعد الإرسال.');
+						} else {
+							this.showComposerNotice('تعذّر رفع هذه المرفقات: ' + names + '. أزلها أو أعد إرفاقها ثم أعد الإرسال.');
+						}
+						return;
+					}
+
+					const references = this.attachedFiles.map(f => f.reference);
+					const sent = [...this.attachedFiles];
+
+					this.messages.push({
+						isUser: true,
+						text: q || ('مرفق: ' + sent.map(f => f.name).join('، ')),
+						attachments: sent
+					});
+					this.messages.push({ isUser: false, text: '', entities: [], isStreaming: true });
+
+					this.inputQuery = '';
+					this.attachedFiles = [];
+					if (this.$refs.chatTextarea) this.$refs.chatTextarea.style.height = '24px';
+					this.isStreaming = true;
+					this.statusMessage = '';
+					this.activeTool = '';
+					this.autoScrollEnabled = true;
+					this.scrollToBottom(true);
+
+					try {
+						const resp = await fetch('/api/v1/assistant/turns', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' },
+							body: JSON.stringify({
+								text: q,
+								conversation_id: this.conversationID,
+								attachments: references
+							})
+						});
+						const data = await resp.json().catch(() => ({}));
+						if (!resp.ok) {
+							this.finishWithError(data.message || 'تعذّر بدء المحادثة.');
+							return;
+						}
+						this.conversationID = data.conversation_id || this.conversationID;
+						this.expiresAt = data.expires_at || this.expiresAt;
+						this.attachStream(data.turn_id);
+					} catch (e) {
+						this.finishWithError('تعذّر الاتصال بالخادم.');
+					}
+				},
+
+				// ---------------------------------------------------------------
+				// Streaming
+				// ---------------------------------------------------------------
+
+				// attachStream opens the answer stream, and guarantees an ending.
+				//
+				// Three things go wrong with Server-Sent Events in the field and
+				// all three used to leave an empty bubble on screen forever:
+				//
+				//   1. the turn produces no delta at all (it spent its budget
+				//      reasoning), so "done" arrived with nothing to show;
+				//   2. something between us and the browser buffers or blocks the
+				//      stream, so nothing arrives at all;
+				//   3. EventSource gets a non-200 and closes without retrying.
+				//
+				// So: "done" now carries the finished answer, and a watchdog polls
+				// the turn over plain JSON whenever the stream goes quiet. The
+				// answer always lands, whatever the network does with the stream.
+				attachStream(turnID) {
+					if (!turnID) { this.finishWithError('لم يبدأ الرد.'); return; }
+					this.closeStream();
+					this.turnID = turnID;
+					this.isStreaming = true;
+					this.sawEvent = false;
+					this.lastArm = Date.now();
+
+					const target = this.messages[this.messages.length - 1];
+					const es = new EventSource('/api/v1/assistant/turns/' + turnID + '/stream');
+					this.eventSource = es;
+
+					const mark = () => {
+						this.sawEvent = true;
+						// Throttled: re-arming on every streamed token would be
+						// thousands of timer churns for one answer.
+						const now = Date.now();
+						if (now - this.lastArm > 2000) {
+							this.lastArm = now;
+							this.armWatchdog(turnID, target);
+						}
+					};
+
+					es.addEventListener('delta', (ev) => {
+						const d = this.parse(ev);
+						if (!d || !d.text) return;
+						mark();
+						this.statusMessage = '';
+						this.activeTool = '';
+						target.text += d.text;
+						this.scrollToBottom();
+					});
+
+					es.addEventListener('reasoning', (ev) => {
+						const d = this.parse(ev);
+						if (!d || !d.text) return;
+						mark();
+						target.reasoning = (target.reasoning || '') + d.text;
+					});
+
+					es.addEventListener('status', (ev) => {
+						const d = this.parse(ev);
+						if (!d) return;
+						mark();
+						if (d.stage === 'tool') {
+							this.activeTool = d.tool || '';
+							this.statusMessage = d.state === 'running'
+								? 'جاري قراءة بياناتك...'
+								: (String(d.state || '').startsWith('denied')
+									? 'بيانات خارج نطاق صلاحياتك'
+									: 'تم استخراج البيانات');
+						}
+						this.scrollToBottom();
+					});
+
+					es.addEventListener('entities', (ev) => {
+						const d = this.parse(ev);
+						if (!d || !d.entities) return;
+						mark();
+						target.entities = d.entities;
+					});
+
+					es.addEventListener('usage', (ev) => {
+						const d = this.parse(ev);
+						if (!d) return;
+						mark();
+						this.usedTokens = (d.input_tokens || 0) + (d.output_tokens || 0);
+					});
+
+					es.addEventListener('done', (ev) => {
+						const d = this.parse(ev) || {};
+						// The answer is repeated here on purpose: if every delta
+						// was lost, or there never were any, this is what the
+						// reader sees.
+						if (!target.text && d.answer) target.text = d.answer;
+						if (d.conversation_id) this.conversationID = d.conversation_id;
+						this.settle(target);
+					});
+
+					es.addEventListener('error', (ev) => {
+						const d = this.parse(ev);
+						if (d && (d.message || d.answer)) {
+							if (!target.text && d.answer) target.text = d.answer;
+							if (!target.text) target.error = d.message;
+							this.settle(target);
+							return;
+						}
+						// A transport failure. EventSource retries on its own for a
+						// dropped connection, but not for a non-200 — and either
+						// way the turn is still running on the server, so the
+						// watchdog collects the answer over JSON.
+						this.statusMessage = 'جاري إنهاء الرد...';
+						this.armWatchdog(turnID, target, true);
+					});
+
+					this.armWatchdog(turnID, target);
+				},
+
+				// armWatchdog restarts the "has the stream gone quiet?" timer.
+				//
+				// Every event pushes it back, so a healthy stream never polls. If
+				// nothing arrives for twelve seconds — or the connection failed —
+				// it falls back to reading the turn directly.
+				armWatchdog(turnID, target, immediate = false) {
+					clearTimeout(this.watchdog);
+					this.watchdog = setTimeout(() => {
+						this.pollTurn(turnID, target);
+					}, immediate ? 400 : 12000);
+				},
+
+				// pollTurn reads the turn over plain JSON until it finishes.
+				async pollTurn(turnID, target, attempt = 0) {
+					if (this.turnID !== turnID) return;      // superseded
+					if (attempt > 90) { this.settle(target); return; }
+
+					try {
+						const resp = await fetch('/api/v1/assistant/turns/' + turnID);
+						if (resp.ok) {
+							const d = await resp.json();
+							if (d.status && d.status !== 'running') {
+								if (d.answer) target.text = d.answer;
+								else if (d.error) target.error = d.error.message;
+								if (d.entities && d.entities.length) target.entities = d.entities;
+								if (d.conversation_id) this.conversationID = d.conversation_id;
+								this.settle(target);
+								return;
+							}
+							// Still running: show progress if the stream is silent.
+							if (d.answer && d.answer.length > target.text.length) {
+								target.text = d.answer;
+								this.scrollToBottom();
+							}
+						} else if (resp.status === 404) {
+							this.finishWithError('انتهت صلاحية هذا الرد.');
+							return;
+						}
+					} catch (e) {
+						/* offline; keep trying while the drawer is open */
+					}
+
+					this.watchdog = setTimeout(
+						() => this.pollTurn(turnID, target, attempt + 1), 1500);
+				},
+
+				// settle ends the turn cleanly, whichever path got us here.
+				settle(target) {
+					if (target) {
+						target.isStreaming = false;
+						if (!target.text && !target.error) {
+							target.error = 'لم يصل رد من المساعد. حاول مرة أخرى.';
+						}
+					}
+					this.finishStream();
+					this.fetchConversations();
+				},
+
+				parse(ev) {
+					try { return JSON.parse(ev.data); } catch (e) { return null; }
+				},
+
+				closeStream() {
+					clearTimeout(this.watchdog);
+					this.watchdog = null;
+					if (this.eventSource) {
+						try { this.eventSource.close(); } catch (e) {}
+						this.eventSource = null;
+					}
+				},
+
+				finishStream() {
+					this.closeStream();
+					this.isStreaming = false;
+					this.statusMessage = '';
+					this.activeTool = '';
+					this.turnID = null;
+					this.scrollToBottom();
+				},
+
+				finishWithError(message) {
+					const target = this.messages[this.messages.length - 1];
+					if (target && !target.isUser) {
+						target.isStreaming = false;
+						if (message) target.error = message;
+					}
+					this.finishStream();
+				},
+
+				retryLastTurn() {
+					if (this.messages.length < 2) return;
+					const lastUser = this.messages[this.messages.length - 2];
+					if (!lastUser || !lastUser.isUser) return;
+					const text = lastUser.text;
+					const atts = lastUser.attachments || [];
+					this.messages.splice(this.messages.length - 2, 2);
+					this.inputQuery = text;
+					this.attachedFiles = atts;
+					this.submitQuery();
+				},
+
+				// cancelStream stops generation server-side too, so an abandoned
+				// answer stops costing money.
+				async cancelStream() {
+					const id = this.turnID;
+					const target = this.messages[this.messages.length - 1];
+					if (target && !target.isUser) target.isStreaming = false;
+					this.finishStream();
+					if (!id) return;
+					try { await fetch('/api/v1/assistant/turns/' + id, { method: 'DELETE' }); } catch (e) {}
+				},
+
+				scrollToBottom(force = false) {
+					this.$nextTick(() => {
+						const c = document.getElementById('capsule-messages-container');
+						if (c && (this.autoScrollEnabled || force)) c.scrollTop = c.scrollHeight;
+					});
+				},
+
+				// The answer's records travel with the message, so a
+				// conversation reopened from history keeps its links.
+				renderMarkdown(raw, entities) { return capsuleMarkdown(raw, entities); },
+
+				// Every attachment the server kept can be fetched back by its
+				// handle. Previews used to be blob: URLs minted in this tab,
+				// which is why a reloaded conversation showed a paperclip where
+				// the photograph had been.
+				attachmentPreview(file) {
+					if (!file) return '';
+					if (file.previewUrl) return file.previewUrl;
+					if (file.preview_url) return file.preview_url;
+					const ref = file.handle || file.reference;
+					const mime = file.mime_type || file.type || '';
+					if (!ref || !mime.startsWith('image/')) return '';
+					return '/api/v1/assistant/attachments/' + ref;
+				},
+
+				attachmentName(file) {
+					return (file && (file.name || file.filename)) || 'ملف';
+				},
+
+				// Proposals render as confirmation cards, everything else as a
+				// reference chip.
+				proposalsOf(msg) {
+					return (msg.entities || []).filter(e => e && e.kind === 'action' && e.proposal);
+				},
+				recordsOf(msg) {
+					return (msg.entities || []).filter(e => e && e.kind !== 'action');
+				},
+
+				proposalStatusLabel(p) {
+					switch (p && p.status) {
+						case 'pending': return 'بانتظار تأكيدك';
+						case 'executing': return 'جارٍ التنفيذ';
+						case 'executed': return 'تم التنفيذ';
+						case 'cancelled': return 'أُلغي';
+						case 'expired': return 'انتهت صلاحيته';
+						case 'stale': return 'تغيّرت البيانات';
+						case 'failed': return 'لم يُنفَّذ';
+						default: return '';
+					}
+				},
+
+				// decideProposal confirms or cancels. Only the proposal id goes
+				// to the server; what runs, and whether it may, is decided there.
+				async decideProposal(ref, decision) {
+					if (!ref || !ref.proposal || ref.busy) return;
+					ref.busy = true;
+					try {
+						const resp = await fetch('/api/v1/assistant/actions/' + encodeURIComponent(ref.proposal.id) + '/' + decision, {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' }
+						});
+						const data = await resp.json().catch(() => ({}));
+						if (data.proposal) {
+							ref.proposal = data.proposal;
+						} else if (!resp.ok) {
+							ref.proposal = Object.assign({}, ref.proposal, { status: 'failed' });
+						}
+						ref.resultMessage = data.message || (resp.ok ? '' : 'تعذّر إتمام الطلب.');
+					} catch (e) {
+						ref.resultMessage = 'تعذّر الاتصال بالخادم.';
+					} finally {
+						ref.busy = false;
+					}
+				},
+
+				// The chip says what kind of record it is before it says which
+				// one: "طلب شراء PO-1042" is readable at a glance in a strip of
+				// eight, where eight bare numbers are not.
+				entityKindLabel(kind) {
+					switch (kind) {
+						case 'order': return 'طلب شراء';
+						case 'shipment': return 'شحنة';
+						case 'product': return 'صنف';
+						case 'offer': return 'عرض';
+						case 'organization': return 'منشأة';
+						case 'branch': return 'فرع';
+						case 'export': return 'ملف';
+						default: return 'سجل';
+					}
+				}
+			};
+		}
+	</script>
+	@capsuleMarkdownScript()
+}

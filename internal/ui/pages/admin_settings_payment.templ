@@ -1,0 +1,276 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ adminSettingsPaymentTab(paymentMethods []*billing.PlatformPaymentMethod) {
+	<div x-show="activeTab === 'payment_methods'" x-cloak class="d-flex flex-col gap-6">
+		<div class="glass-panel p-6 mb-0">
+			<div class="flex-between items-center pb-3 mb-4 border-b flex-wrap gap-3">
+				<div>
+					<h3 class="text-base font-black text-primary m-0">
+						حسابات وقنوات الدفع المعتمدة بالمنصة
+					</h3>
+					<p class="text-xs text-secondary m-0 mt-1">
+						إدارة الحسابات البنكية الرسمية، معرفات إنستاباي (IPA)، ومحافظ الكاش المتاحة للإيداع وسداد الفواتير
+					</p>
+				</div>
+
+				<button
+					type="button"
+					class="btn btn-primary btn-sm font-black text-xs gap-1.5"
+					@click="openNewMethodModal()"
+				>
+					@components.IconPlus("icon-xs")
+					<span>إضافة وسيلة دفع جديدة</span>
+				</button>
+			</div>
+
+			<!-- Payment Methods Cards Grid -->
+			<div class="d-grid grid-auto-fit-md gap-4">
+				for _, pm := range paymentMethods {
+					<div class="payment-method-card">
+						<div>
+							<div class="flex-between items-center mb-2">
+								<strong class="text-sm font-black text-primary">{ pm.Name.Get("ar") }</strong>
+								if pm.IsActive {
+									<span class="badge badge-emerald text-2xs font-bold">مفعلة</span>
+								} else {
+									<span class="badge badge-slate text-2xs">معطلة</span>
+								}
+							</div>
+
+							<div class="payment-method-badge-row mb-3">
+								<span class="badge badge-sky text-2xs font-mono">{ pm.ProviderType }</span>
+								if pm.IsDepositEnabled {
+									<span class="badge badge-emerald text-2xs">شحن المحفظة</span>
+								}
+								if pm.IsCheckoutEnabled {
+									<span class="badge badge-emerald text-2xs font-bold">سداد الطلبات (مفعل)</span>
+								} else {
+									<span class="badge badge-rose text-2xs font-bold">سداد الطلبات (معطل)</span>
+								}
+							</div>
+
+							if pm.ProviderType == "bank" {
+								<div class="p-3 bg-surface-sunken border rounded-lg text-xs d-flex flex-col gap-1 text-secondary">
+									<div><strong>البنك:</strong> { pm.BankName }</div>
+									<div><strong>اسم الحساب:</strong> { pm.AccountName }</div>
+									<div class="font-mono"><strong>رقم الحساب:</strong> { pm.AccountNumber }</div>
+									if pm.IBAN != "" {
+										<div class="font-mono text-2xs"><strong>IBAN:</strong> { pm.IBAN }</div>
+									}
+								</div>
+							} else if pm.ProviderType == "instapay" {
+								<div class="p-3 bg-surface-sunken border rounded-lg text-xs d-flex flex-col gap-1 text-secondary">
+									<div><strong>إنستاباي (IPA):</strong> <code class="font-mono font-bold text-brand">{ pm.InstaPayHandle }</code></div>
+									if pm.PhoneNumber != "" {
+										<div><strong>الهاتف:</strong> { pm.PhoneNumber }</div>
+									}
+								</div>
+							} else if pm.ProviderType == "wallet" {
+								<div class="p-3 bg-surface-sunken border rounded-lg text-xs d-flex flex-col gap-1 text-secondary">
+									<div><strong>رقم المحفظة / الحساب:</strong> <code class="font-mono font-bold text-brand">{ pm.PhoneNumber }</code></div>
+									<div class="text-2xs text-muted">خصم مباشر من رصيد المحفظة المؤسسية</div>
+								</div>
+							} else if pm.ProviderType == "cash" {
+								<div class="p-3 bg-surface-sunken border rounded-lg text-xs d-flex flex-col gap-1 text-secondary">
+									<div><strong>التحصيل:</strong> نقداً عند تسليم الشحنة بواسطة المندوب</div>
+								</div>
+							}
+						</div>
+
+						<div class="d-flex items-center justify-between pt-3 border-t gap-2 flex-wrap">
+							<button
+								type="button"
+								class="btn btn-secondary btn-xs font-bold text-xs"
+								@click={ fmt.Sprintf("openEditMethodModal({ id: %q, name_ar: %q, name_en: %q, provider_type: %q, bank_name: %q, account_name: %q, account_number: %q, iban: %q, swift_code: %q, branch_name: %q, instapay_handle: %q, phone_number: %q, description_ar: %q, is_active: %t, is_deposit_enabled: %t, is_checkout_enabled: %t, display_order: %d })",
+									pm.ID,
+									pm.Name.Get("ar"),
+									pm.Name.Get("en"),
+									pm.ProviderType,
+									pm.BankName,
+									pm.AccountName,
+									pm.AccountNumber,
+									pm.IBAN,
+									pm.SwiftCode,
+									pm.BranchName,
+									pm.InstaPayHandle,
+									pm.PhoneNumber,
+									pm.Description.Get("ar"),
+									pm.IsActive,
+									pm.IsDepositEnabled,
+									pm.IsCheckoutEnabled,
+									pm.DisplayOrder,
+								) }
+							>
+								@components.IconEdit("icon-2xs")
+								<span>تعديل</span>
+							</button>
+
+							<div class="d-flex items-center gap-1.5 ms-auto">
+								<form method="POST" action="/admin/settings/payment-methods/toggle-checkout" class="m-0">
+									<input type="hidden" name="id" value={ pm.ID }/>
+									<input type="hidden" name="enabled" value={ fmt.Sprintf("%t", !pm.IsCheckoutEnabled) }/>
+									<button
+										type="submit"
+										class={ "btn btn-xs text-xs font-bold", templ.KV("btn-outline-primary", pm.IsCheckoutEnabled), templ.KV("btn-secondary text-muted", !pm.IsCheckoutEnabled) }
+										title="تفعيل أو إيقاف وسيلة الدفع عند طلب الشراء (Checkout)"
+									>
+										if pm.IsCheckoutEnabled {
+											<span>إيقاف عند الشراء</span>
+										} else {
+											<span>تفعيل عند الشراء</span>
+										}
+									</button>
+								</form>
+
+								<form method="POST" action="/admin/settings/payment-methods/toggle" class="m-0">
+									<input type="hidden" name="id" value={ pm.ID }/>
+									<input type="hidden" name="enabled" value={ fmt.Sprintf("%t", !pm.IsActive) }/>
+									<button type="submit" class="btn btn-secondary btn-xs text-xs">
+										if pm.IsActive {
+											<span>تعطيل</span>
+										} else {
+											<span>تفعيل</span>
+										}
+									</button>
+								</form>
+							</div>
+						</div>
+					</div>
+				}
+			</div>
+		</div>
+	</div>
+}
+
+templ adminSettingsPaymentModal() {
+	@components.Modal(components.ModalProps{
+		ID:       "payment-method-modal",
+		Title:    "وسيلة الدفع",
+		Subtitle: "ضبط الحسابات والقنوات المعتمدة لسداد المستحقات وشحن المحفظة",
+		Icon:     "wallet",
+		Size:     "lg",
+	}) {
+		<form action="/admin/settings/payment-methods" method="POST" class="modal-body d-flex flex-col gap-4 m-0">
+				<div class="form-grid-2">
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold">المعرف الفريد (ID) *</label>
+						<input type="text" name="id" x-model="methodForm.id" :readonly="isEditingMethod" class="form-input text-xs tabular-nums" dir="ltr" placeholder="instapay, cib_bank" required/>
+					</div>
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold">نوع وسيلة الدفع *</label>
+						<select name="provider_type" x-model="methodForm.provider_type" class="form-select text-xs font-bold">
+							<option value="bank">تحويل وحساب بنكي رسمي (Bank Account / IBAN)</option>
+							<option value="instapay">إنستاباي (InstaPay IPN)</option>
+							<option value="wallet">محفظة هاتف محمول (Mobile Wallet)</option>
+							<option value="card">بطاقات دفع إلكتروني (Cards / Meeza)</option>
+							<option value="cash">دفع نقدي عند الاستلام (Cash on Delivery)</option>
+						</select>
+					</div>
+				</div>
+
+				<div class="form-grid-2">
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold">الاسم بالعربية *</label>
+						<input type="text" name="name_ar" x-model="methodForm.name_ar" class="form-input text-xs" placeholder="البنك التجاري الدولي CIB" required/>
+					</div>
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold">الاسم بالإنجليزية *</label>
+						<input type="text" name="name_en" x-model="methodForm.name_en" class="form-input text-xs" placeholder="Commercial International Bank" required/>
+					</div>
+				</div>
+
+				<!-- Bank Fields -->
+				<div x-show="methodForm.provider_type === 'bank'" class="d-flex flex-col gap-3 border rounded-xl p-4 bg-surface-sunken">
+					<strong class="text-xs text-brand font-black">بيانات الحساب البنكي:</strong>
+					<div class="form-grid-2">
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">اسم البنك</label>
+							<input type="text" name="bank_name" x-model="methodForm.bank_name" class="form-input text-xs" placeholder="البنك التجاري الدولي CIB"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">اسم صاحب الحساب</label>
+							<input type="text" name="account_name" x-model="methodForm.account_name" class="form-input text-xs" placeholder="شركة دوا 24 للتجارة"/>
+						</div>
+					</div>
+					<div class="form-grid-2">
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">رقم الحساب البنكي</label>
+							<input type="text" name="account_number" x-model="methodForm.account_number" class="form-input text-xs font-mono" dir="ltr" placeholder="100048291048"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">الفرع</label>
+							<input type="text" name="branch_name" x-model="methodForm.branch_name" class="form-input text-xs" placeholder="الفرع الرئيسي"/>
+						</div>
+					</div>
+					<div class="form-grid-2">
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">الآيبان الدولي (IBAN)</label>
+							<input type="text" name="iban" x-model="methodForm.iban" class="form-input text-xs font-mono" dir="ltr" placeholder="EG3800100004829104800000000000"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">رمز السويفت (SWIFT)</label>
+							<input type="text" name="swift_code" x-model="methodForm.swift_code" class="form-input text-xs font-mono" dir="ltr" placeholder="CIBEEGCX"/>
+						</div>
+					</div>
+				</div>
+
+				<!-- InstaPay / Wallet Fields -->
+				<div x-show="methodForm.provider_type === 'instapay' || methodForm.provider_type === 'wallet'" x-cloak class="d-flex flex-col gap-3 border rounded-xl p-4 bg-surface-sunken">
+					<strong class="text-xs text-brand font-black">بيانات الدفع اللحظي والمحافظ:</strong>
+					<div class="form-grid-2">
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">معرف إنستاباي اللحظي (IPA)</label>
+							<input type="text" name="instapay_handle" x-model="methodForm.instapay_handle" class="form-input text-xs font-mono" dir="ltr" placeholder="dawa24@instapay"/>
+						</div>
+						<div class="form-group mb-0">
+							<label class="form-label text-xs">رقم الهاتف المرتبط بالمحفظة</label>
+							<input type="tel" name="phone_number" x-model="methodForm.phone_number" class="form-input text-xs font-mono" dir="ltr" placeholder="01065397000"/>
+						</div>
+					</div>
+				</div>
+
+				<!-- Description -->
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold">تعليمات وتفاصيل الدفع (عربي)</label>
+					<textarea name="description_ar" x-model="methodForm.description_ar" rows="2" class="form-input text-xs" placeholder="تعليمات تظهر للمستخدم عند اختيار وسيلة الدفع هذه..."></textarea>
+				</div>
+
+				<!-- Checkboxes & Order -->
+				<div class="d-grid grid-auto-fit-sm gap-3 bg-surface-sunken p-3 rounded-xl border">
+					<label class="d-flex items-center gap-2 cursor-pointer">
+						<input type="checkbox" name="is_active" value="1" x-model="methodForm.is_active" class="form-checkbox"/>
+						<span class="font-bold text-xs">مفعلة بالمنصة</span>
+					</label>
+					<label class="d-flex items-center gap-2 cursor-pointer">
+						<input type="checkbox" name="is_deposit_enabled" value="1" x-model="methodForm.is_deposit_enabled" class="form-checkbox"/>
+						<span class="font-bold text-xs">متاحة لشحن المحفظة</span>
+					</label>
+					<label class="d-flex items-center gap-2 cursor-pointer">
+						<input type="checkbox" name="is_checkout_enabled" value="1" x-model="methodForm.is_checkout_enabled" class="form-checkbox"/>
+						<span class="font-bold text-xs">متاحة لسداد الطلبات</span>
+					</label>
+					<div class="form-group mb-0">
+						<label class="form-label text-xs">ترتيب العرض</label>
+						<input type="number" name="display_order" x-model="methodForm.display_order" class="form-input text-xs tabular-nums" min="0"/>
+					</div>
+				</div>
+
+			<div class="modal-footer">
+				<button type="button" data-on-click="closeDialog('payment-method-modal')" class="btn btn-secondary">
+					إلغاء
+				</button>
+				<button type="submit" class="btn btn-primary">
+					@components.IconCheck("icon-xs")
+					<span x-text="isEditingMethod ? 'حفظ التعديلات' : 'إضافة وسيلة الدفع'"></span>
+				</button>
+			</div>
+		</form>
+	}
+}

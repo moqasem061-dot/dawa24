@@ -1,0 +1,157 @@
+package pages
+
+import (
+	"fmt"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ VendorSponsorshipRequestsPage(lang, dir string, data SponsorshipRequestsData) {
+	@layouts.VendorShell(i18n.T(lang, "vendor_sponsorship.shell_title"), "sponsorship_requests", lang, dir) {
+		<div class="page-container py-6">
+			<!-- Header Banner -->
+			<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="stack-sm">
+						<div class="d-flex items-center gap-2.5 mb-1.5">
+							<div class="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 d-flex items-center justify-center border border-brand-200/60 shadow-2xs">
+								@components.IconShield("icon-sm")
+							</div>
+							<div class="stack-sm">
+								<h1 class="text-2xl font-black text-primary m-0">{ i18n.T(lang, "vendor_sponsorship.header_title") }</h1>
+								<p class="text-xs text-secondary m-0 mt-0.5 font-medium">{ i18n.T(lang, "vendor_sponsorship.header_desc") }</p>
+							</div>
+						</div>
+					</div>
+					<div class="d-flex items-center gap-3">
+						<div class="stat-card-3d p-3 px-4 border border-slate-200/80 rounded-xl bg-surface-sunken">
+							<div class="stat-card-label text-xs font-bold text-muted">{ i18n.T(lang, "vendor_packages.lbl_credits") }</div>
+							<div class="text-lg font-black text-brand tabular-nums mt-0.5">
+								{ fmt.Sprintf("%d", data.TotalCredits) }
+							</div>
+						</div>
+						<a href="/vendor/offers-packages" class="btn btn-secondary btn-sm font-bold gap-1.5 shadow-xs">
+							@components.IconBoxes("icon-xs")
+							<span>{ i18n.T(lang, "vendor_packages.header_title") }</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Notice Banner -->
+			if data.NoticeMsg != "" {
+				<div class={ "p-4 mb-6 rounded-2xl border d-flex items-center gap-3", templ.KV("bg-emerald-50 text-emerald-800 border-emerald-200", data.NoticeType == "success"), templ.KV("bg-rose-50 text-rose-800 border-rose-200", data.NoticeType == "error") }>
+					if data.NoticeType == "success" {
+						@components.IconCheckCircle("icon-sm text-emerald-600 flex-shrink-0")
+					} else {
+						@components.IconAlert("icon-sm text-rose-600 flex-shrink-0")
+					}
+					<span class="text-xs font-bold">{ data.NoticeMsg }</span>
+				</div>
+			}
+
+			<!-- New Sponsorship Form Component -->
+			@VendorSponsorshipForm(data, lang)
+
+			<!-- Requests List Table Panel -->
+			<div class="glass-panel p-0 border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+				<div class="p-4 border-b border-slate-100 flex-between items-center">
+					<div class="d-flex items-center gap-2">
+						@components.IconShield("icon-xs text-brand")
+						<h3 class="text-sm font-black text-primary m-0">{ i18n.T(lang, "vendor_sponsorship.table_title") }</h3>
+					</div>
+					<span class="badge badge-slate text-xs font-bold tabular-nums">{ fmt.Sprintf(i18n.T(lang, "vendor_sponsorship.total_count"), data.TotalCount) }</span>
+				</div>
+
+				if len(data.Requests) == 0 {
+					<div class="p-8 text-center">
+						<p class="text-xs text-muted m-0 font-medium">{ i18n.T(lang, "vendor_sponsorship.empty_requests") }</p>
+					</div>
+				} else {
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
+							<thead>
+								<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+									<th class="py-3 text-start ps-4">{ i18n.T(lang, "vendor_sponsorship.th_item_type") }</th>
+									<th class="py-3 text-start">{ i18n.T(lang, "vendor_sponsorship.th_item_id") }</th>
+									<th class="py-3 text-start">{ i18n.T(lang, "vendor_sponsorship.th_package") }</th>
+									<th class="text-center py-3">{ i18n.T(lang, "vendor_sponsorship.th_review_status") }</th>
+									<th class="text-center py-3">{ i18n.T(lang, "vendor_sponsorship.th_reviewed_at") }</th>
+									<th class="text-center py-3">{ i18n.T(lang, "vendor_sponsorship.th_expires_at") }</th>
+									<th class="col-actions py-3 pe-4">{ i18n.T(lang, "common.actions") }</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-slate-100">
+								for _, req := range data.Requests {
+									if req != nil {
+										<tr class="transition-colors">
+											<td class="py-3 ps-4">
+												if req.ItemType == "product" {
+													<span class="badge badge-sky text-xs font-semibold">{ i18n.T(lang, "vendor_sponsorship.type_product") }</span>
+												} else {
+													<span class="badge badge-emerald text-xs font-semibold">{ i18n.T(lang, "vendor_sponsorship.type_offer") }</span>
+												}
+											</td>
+											<td class="tabular-nums font-mono py-3 font-bold">{ fmt.Sprintf("#%d", req.ItemID) }</td>
+											<td class="tabular-nums font-bold py-3">
+												if req.Package != nil && req.Package.Name.Get(i18n.Lang(lang)) != "" {
+													<span>{ req.Package.Name.Get(i18n.Lang(lang)) }</span>
+												} else {
+													<span>#{ fmt.Sprintf("%d", req.PackageID) }</span>
+												}
+											</td>
+											<td class="text-center py-3">
+												if req.Status == "expired" || (!req.ExpiresAt.IsZero() && req.ExpiresAt.Before(time.Now())) {
+													<span class="badge badge-slate font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_expired") }</span>
+												} else if req.Status == "cancelled" {
+													<span class="badge badge-slate font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_cancelled") }</span>
+												} else if req.AdminStatus == "pending" {
+													<span class="badge badge-sky font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_pending") }</span>
+												} else if req.AdminStatus == "approved" {
+													<span class="badge badge-emerald font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_approved") }</span>
+												} else if req.AdminStatus == "rejected" {
+													<span class="badge badge-rose font-extrabold text-xs">{ i18n.T(lang, "vendor_sponsorship.status_rejected") }</span>
+												}
+											</td>
+											<td class="text-center py-3">
+												if req.ReviewedAt != nil {
+													<span class="text-xs tabular-nums text-secondary font-semibold">{ req.ReviewedAt.Format("2006-01-02") }</span>
+												} else {
+													<span class="text-muted text-xs">—</span>
+												}
+											</td>
+											<td class="text-center text-xs tabular-nums text-secondary font-semibold py-3">{ req.ExpiresAt.Format("2006-01-02") }</td>
+											<td class="col-actions py-3 pe-4">
+												if req.AdminStatus == "pending" {
+													<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/sponsorship-requests/%d/cancel", req.ID)) } class="m-0 d-inline-block">
+														<button type="submit" class="btn btn-secondary btn-xs font-bold text-rose-600 shadow-2xs gap-1" data-confirm={ i18n.T(lang, "vendor_sponsorship.cancel_confirm") }>
+															@components.IconClose("icon-2xs")
+															<span>{ i18n.T(lang, "common.cancel") }</span>
+														</button>
+													</form>
+												} else {
+													<span class="text-muted text-xs font-medium">—</span>
+												}
+											</td>
+										</tr>
+									}
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/vendor/sponsorship-requests",
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}

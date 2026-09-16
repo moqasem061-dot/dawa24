@@ -1,0 +1,380 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strconv"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+func adminInvoicesSortURL(currentSort, currentOrder, col, q, status, dateFrom, dateTo string, orgID int64) string {
+	nextOrder := "asc"
+	if currentSort == col && currentOrder == "asc" {
+		nextOrder = "desc"
+	}
+	v := url.Values{}
+	if q != "" {
+		v.Set("q", q)
+	}
+	if status != "" {
+		v.Set("status", status)
+	}
+	if dateFrom != "" {
+		v.Set("date_from", dateFrom)
+	}
+	if dateTo != "" {
+		v.Set("date_to", dateTo)
+	}
+	if orgID > 0 {
+		v.Set("org_id", strconv.FormatInt(orgID, 10))
+	}
+	v.Set("sort", col)
+	v.Set("order", nextOrder)
+	return "/admin/finance/invoices?" + v.Encode()
+}
+
+func adminInvoicesFilterURL(status, q, dateFrom, dateTo, sortBy, sortOrder string, orgID int64) string {
+	v := url.Values{}
+	if status != "" {
+		v.Set("status", status)
+	}
+	if q != "" {
+		v.Set("q", q)
+	}
+	if dateFrom != "" {
+		v.Set("date_from", dateFrom)
+	}
+	if dateTo != "" {
+		v.Set("date_to", dateTo)
+	}
+	if sortBy != "" {
+		v.Set("sort", sortBy)
+	}
+	if sortOrder != "" {
+		v.Set("order", sortOrder)
+	}
+	if orgID > 0 {
+		v.Set("org_id", strconv.FormatInt(orgID, 10))
+	}
+	enc := v.Encode()
+	if enc == "" {
+		return "/admin/finance/invoices"
+	}
+	return "/admin/finance/invoices?" + enc
+}
+
+func adminInvoicesPaginationQuery(q, status, dateFrom, dateTo, sortBy, sortOrder string, orgID int64) url.Values {
+	v := url.Values{}
+	if q != "" {
+		v.Set("q", q)
+	}
+	if status != "" {
+		v.Set("status", status)
+	}
+	if dateFrom != "" {
+		v.Set("date_from", dateFrom)
+	}
+	if dateTo != "" {
+		v.Set("date_to", dateTo)
+	}
+	if sortBy != "" {
+		v.Set("sort", sortBy)
+	}
+	if sortOrder != "" {
+		v.Set("order", sortOrder)
+	}
+	if orgID > 0 {
+		v.Set("org_id", strconv.FormatInt(orgID, 10))
+	}
+	return v
+}
+
+func calcInvoicesPaidTotal(items []*billing.AdminInvoiceView) money.Amount {
+	var totalMinor int64
+	for _, it := range items {
+		if it.Status != "cancelled" {
+			totalMinor += it.PaidAmount.Minor()
+		}
+	}
+	return money.FromMinor(totalMinor)
+}
+
+func calcInvoicesRemainingTotal(items []*billing.AdminInvoiceView) money.Amount {
+	var totalMinor int64
+	for _, it := range items {
+		if it.Status != "cancelled" {
+			totalMinor += it.RemainingAmount.Minor()
+		}
+	}
+	return money.FromMinor(totalMinor)
+}
+
+func invoicePaymentPercent(paid, total money.Amount) int {
+	if total.Minor() <= 0 {
+		return 0
+	}
+	p := int((paid.Minor() * 100) / total.Minor())
+	if p > 100 {
+		return 100
+	}
+	return p
+}
+
+templ AdminFinanceInvoicesPage(data AdminFinanceData, lang, dir string) {
+	@layouts.AdminShell("الفواتير والمطالبات الضريبية", "invoices", lang, dir) {
+		<div class="page-container">
+			<!-- Header Title & Quick Export Row -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconFile("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">الفواتير والمطالبات الضريبية</h1>
+							<p class="text-sm text-secondary m-0 mt-1">سجل الفواتير الضريبية وتدقيق المبالغ المحصلة والمتبقية وأوامر التوريد والاشتراكات</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2">
+						<button type="button" data-on-click="window.print()" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconFile("icon-xs")
+							<span>طباعة تقرير</span>
+						</button>
+						<a href="/admin/finance/payments" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+							@components.IconWallet("icon-xs")
+							<span>سجل المدفوعات</span>
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Live Financial KPIs Bar -->
+			<div class="dashboard-stat-grid mb-6">
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي الفواتير المسجلة</span>
+						<span class="text-brand">@components.IconFile("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%d", data.TotalInvoices) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						فاتورة صادرة بالنظام
+					</div>
+				</div>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">إجمالي قيمة الفواتير</span>
+						<span class="text-indigo">@components.IconLayers("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-primary mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalRevenue.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						إجمالي المطالبات بالنظام
+					</div>
+				</div>
+
+				<a href="/admin/finance/payments" class="stat-card-3d no-underline">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">المبالغ المحصلة بالكامل</span>
+						<span class="text-success">@components.IconWallet("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-emerald mt-2">
+						{ fmt.Sprintf("%s ج.م", data.TotalPaid.String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						سداد ناجح ومؤكد
+					</div>
+				</a>
+
+				<div class="stat-card-3d">
+					<div class="flex-between items-center">
+						<span class="text-xs font-bold text-muted">المستحقات المتبقية</span>
+						<span class="text-amber">@components.IconClock("icon-sm")</span>
+					</div>
+					<div class="tabular-nums text-2xl font-black text-rose mt-2">
+						{ fmt.Sprintf("%s ج.م", calcInvoicesRemainingTotal(data.Invoices).String()) }
+					</div>
+					<div class="text-xs text-muted mt-1">
+						متبقي بالصفحة الحالية
+					</div>
+				</div>
+			</div>
+
+			<!-- Main Invoices Table Content -->
+			<div class="glass-panel p-6 mb-6">
+				@AdminFinanceInvoicesTab(data, lang, dir)
+			</div>
+		</div>
+	}
+}
+
+templ AdminFinanceInvoicesTab(data AdminFinanceData, lang, dir string) {
+	<div class="tab-panel active space-y-4">
+		<div class="flex-between items-center flex-wrap gap-3 pb-3 border-b">
+			<div class="stack-sm">
+				<h2 class="text-lg font-black text-primary m-0 d-flex items-center gap-2">
+					<span>@components.IconFile("icon-sm")</span>
+					<span>سجل الفواتير والمطالبات الضريبية</span>
+				</h2>
+				<p class="text-xs text-secondary mt-1 mb-0">عرض تفصيلي للمبالغ المسددة بالكامل والمتبقية ومؤشرات التحصيل وإمكانية الفرز حسب أي عمود.</p>
+			</div>
+			<div class="d-flex items-center gap-2">
+				<a href="/admin/finance/invoices" class="btn btn-secondary btn-sm font-bold text-xs d-inline-flex items-center gap-1">
+					@components.IconRefresh("icon-xs")
+					<span>تحديث السجل</span>
+				</a>
+			</div>
+		</div>
+
+		<!-- Invoices Mini KPI Summary Grid -->
+		<div class="finance-mini-stat-grid">
+			<div class="finance-mini-stat-card">
+				<div class="finance-mini-stat-label">إجمالي الفواتير بالصفحة</div>
+				<div class="finance-mini-stat-val text-primary">
+					{ fmt.Sprintf("%d", len(data.Invoices)) }
+				</div>
+				<div class="text-xs text-muted mt-1">من أصل { fmt.Sprintf("%d", data.TotalInvoices) }</div>
+			</div>
+			<div class="finance-mini-stat-card">
+				<div class="finance-mini-stat-label">قيمة الفواتير بالصفحة</div>
+				<div class="finance-mini-stat-val text-brand">
+					{ fmt.Sprintf("%s ج.م", calcInvoicesTotal(data.Invoices).String()) }
+				</div>
+				<div class="text-xs text-muted mt-1">إجمالي المبالغ المستحقة</div>
+			</div>
+			<div class="finance-mini-stat-card">
+				<div class="finance-mini-stat-label">المحصل بالصفحة</div>
+				<div class="finance-mini-stat-val text-success">
+					{ fmt.Sprintf("%s ج.م", calcInvoicesPaidTotal(data.Invoices).String()) }
+				</div>
+				<div class="text-xs text-muted mt-1">{ fmt.Sprintf("%d فاتورة مدفوعة", countInvoicesStatus(data.Invoices, "paid")) }</div>
+			</div>
+			<div class="finance-mini-stat-card">
+				<div class="finance-mini-stat-label">المتبقي للتحصيل بالصفحة</div>
+				<div class="finance-mini-stat-val text-rose">
+					{ fmt.Sprintf("%s ج.م", calcInvoicesRemainingTotal(data.Invoices).String()) }
+				</div>
+				<div class="text-xs text-muted mt-1">بانتظار السداد</div>
+			</div>
+		</div>
+
+		<!-- Quick Status Filter Pills & Search Form -->
+		<div class="admin-filter-bar flex-col gap-3 items-stretch">
+			<div class="flex-between items-center flex-wrap gap-2">
+				<div class="finance-status-filters">
+					<span class="text-xs font-bold text-muted me-1">الحالة:</span>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "") }>
+						<span>الكل</span>
+						<span class="badge badge-secondary text-xs">{ fmt.Sprintf("%d", data.TotalInvoices) }</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("paid", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "paid") }>
+						@components.IconCheck("icon-xxs text-emerald")
+						<span>مدفوعة بالكامل</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("partially_paid", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "partially_paid") }>
+						@components.IconClock("icon-xxs text-amber")
+						<span>مسددة جزئياً</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("issued", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "issued") }>
+						@components.IconClock("icon-xxs text-sky")
+						<span>صادرة (غير مدفوعة)</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("overdue", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "overdue") }>
+						@components.IconAlertCircle("icon-xxs text-amber")
+						<span>متأخرة</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("draft", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "draft") }>
+						<span>مسودة</span>
+					</a>
+					<a href={ templ.SafeURL(adminInvoicesFilterURL("cancelled", data.Query, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID)) } class={ "finance-filter-pill", templ.KV("is-active", data.StatusFilter == "cancelled") }>
+						@components.IconX("icon-xxs text-rose")
+						<span>ملغاة</span>
+					</a>
+				</div>
+			</div>
+
+			<!-- Search & Filter Controls -->
+			<form method="GET" action="/admin/finance/invoices" class="d-flex gap-2 items-center flex-wrap m-0 pt-2 border-t">
+				<input type="hidden" name="sort" value={ data.SortBy }/>
+				<input type="hidden" name="order" value={ data.SortOrder }/>
+				<div class="d-flex items-center gap-2 flex-1 min-w-48">
+					<input type="text" name="q" value={ data.Query } placeholder="ابحث برقم الفاتورة، أو المورّد، أو الصيدلية، أو رقم الطلب..." class="form-input text-xs w-full"/>
+				</div>
+				<div class="d-flex items-center gap-1 text-xs">
+					<label class="text-muted font-bold whitespace-nowrap">من:</label>
+					<input type="date" name="date_from" value={ data.DateFrom } class="form-input text-xs w-auto"/>
+				</div>
+				<div class="d-flex items-center gap-1 text-xs">
+					<label class="text-muted font-bold whitespace-nowrap">إلى:</label>
+					<input type="date" name="date_to" value={ data.DateTo } class="form-input text-xs w-auto"/>
+				</div>
+				<select name="status" class="form-select text-xs w-auto">
+					<option value="">كل الحالات</option>
+					<option value="paid" selected?={ data.StatusFilter == "paid" }>مدفوعة بالكامل</option>
+					<option value="partially_paid" selected?={ data.StatusFilter == "partially_paid" }>مسددة جزئياً</option>
+					<option value="issued" selected?={ data.StatusFilter == "issued" }>صادرة (غير مدفوعة)</option>
+					<option value="draft" selected?={ data.StatusFilter == "draft" }>مسودة</option>
+					<option value="overdue" selected?={ data.StatusFilter == "overdue" }>متأخرة</option>
+					<option value="cancelled" selected?={ data.StatusFilter == "cancelled" }>ملغاة</option>
+				</select>
+				<select name="org_id" class="form-select text-xs w-auto">
+					<option value="">كل المنشآت والشركات</option>
+					for _, o := range data.Organizations {
+						<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ getOrgLabel(o, lang) }</option>
+					}
+				</select>
+				<button type="submit" class="btn btn-primary btn-xs font-bold">تصفية</button>
+				if data.Query != "" || data.StatusFilter != "" || data.DateFrom != "" || data.DateTo != "" || data.SelectedOrgID > 0 || data.SortBy != "" {
+					<a href="/admin/finance/invoices" class="btn btn-secondary btn-xs text-muted">إلغاء الفلاتر</a>
+				}
+			</form>
+		</div>
+
+		if len(data.Invoices) == 0 {
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد فواتير مطابقة", Message: "تظهر الفواتير الضريبية تلقائياً لأوامر التوريد والاشتراكات عند إصدارها."})
+		} else {
+			<!-- Official Printable Report Header (Printed only) -->
+			<div class="print-report-header print-only">
+				<div class="print-brand-row">
+					<div class="d-flex items-center gap-2">
+						<img src="/static/img/logo.png" alt="Dawa24" style="height: 30px;" data-img-fallback="hide"/>
+						<strong style="font-size: 13pt; color: #0f172a;">دوا 24 — Dawa24</strong>
+					</div>
+					<div style="text-align: left;">
+						<h2 style="font-size: 12pt; margin: 0; font-weight: 900; color: #0f172a;">تقرير سجل الفواتير والمطالبات الضريبية</h2>
+						<span style="font-size: 8pt; color: #64748b;">كشف الفواتير وأوامر التوريد والمبالغ المسددة والمتبقية</span>
+					</div>
+				</div>
+				<div class="print-meta-row">
+					<span>تاريخ الطباعة: { time.Now().Format("2006-01-02 15:04") }</span>
+					<span>عدد الفواتير المطبوعة: { fmt.Sprintf("%d", len(data.Invoices)) } فاتورة</span>
+					<span>إجمالي المبالغ: { fmt.Sprintf("%s ج.م", data.TotalRevenue.String()) }</span>
+				</div>
+			</div>
+
+			@AdminInvoicesTable(data, lang, dir)
+
+			if data.TotalInvoices > 0 {
+				@components.B2BPagination(components.PaginationProps{
+					CurrentPage: data.Page,
+					PageSize:    data.PerPage,
+					TotalCount:  data.TotalInvoices,
+					BaseURL:     "/admin/finance/invoices",
+					QueryValues: adminInvoicesPaginationQuery(data.Query, data.StatusFilter, data.DateFrom, data.DateTo, data.SortBy, data.SortOrder, data.SelectedOrgID),
+				})
+			}
+		}
+
+		@InvoicePaymentModal("/admin/finance/invoices")
+	</div>
+}
+

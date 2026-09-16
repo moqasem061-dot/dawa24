@@ -1,0 +1,322 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type MFASettingsViewData struct {
+	Status        *identity.MFAStatus
+	SetupData     *identity.MFASetupData
+	IsVendor      bool
+	NoticeType    string
+	NoticeMessage string
+	RecoveryCodes []string
+}
+
+templ MFASettingsPage(lang, dir string, data MFASettingsViewData) {
+	if data.IsVendor {
+		@layouts.VendorShell("المصادقة الثنائية (MFA)", "mfa", lang, dir) {
+			@mfaSettingsContent(lang, dir, data)
+		}
+	} else {
+		@layouts.CustomerShell("المصادقة الثنائية (MFA)", "mfa", lang, dir, nil) {
+			@mfaSettingsContent(lang, dir, data)
+		}
+	}
+}
+
+templ mfaSettingsContent(lang, dir string, data MFASettingsViewData) {
+	<div class="page-container">
+		
+		<!-- Header with Navigation Tabs -->
+		<div class="page-header flex-between flex-wrap gap-4 mb-6">
+			<div class="stack-xs">
+				<h1 class="page-title font-bold text-xl m-0 d-flex items-center gap-2">
+					<span class="text-primary">@components.IconShield("icon-sm")</span>
+					<span>المصادقة الثنائية (Google Authenticator)</span>
+				</h1>
+				<p class="text-sm text-secondary m-0">
+					حماية حسابك الشخصي بطبقة أمان إضافية لمنع الوصول غير المصرح به
+				</p>
+			</div>
+
+			<!-- Sub-nav pills -->
+			<div class="d-flex items-center gap-2">
+				<a
+					href={ templ.SafeURL(ternary(data.IsVendor, "/vendor/sessions", "/customer/sessions")) }
+					class="btn btn-secondary btn-sm font-bold rounded-lg"
+				>
+					@components.IconShield("icon-xs")
+					<span>الأجهزة والجلسات</span>
+				</a>
+				<a
+					href={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa", "/customer/mfa")) }
+					class="btn btn-primary btn-sm font-bold rounded-lg"
+				>
+					<span>@components.IconShield("icon-xs")</span>
+					<span>المصادقة الثنائية</span>
+				</a>
+			</div>
+		</div>
+
+		<!-- Flash Notices -->
+		if data.NoticeMessage != "" {
+			if data.NoticeType == "error" {
+				<div class="alert alert-danger mb-6 p-4 d-flex items-center gap-3">
+					@components.IconAlert("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			} else {
+				<div class="alert alert-success mb-6 p-4 d-flex items-center gap-3">
+					@components.IconCheckCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			}
+		}
+
+		<!-- Just Activated Recovery Codes Modal / Banner -->
+		if len(data.RecoveryCodes) > 0 {
+			<div class="glass-panel p-6 mb-6 border-emerald bg-surface-raised shadow-sm">
+				<div class="d-flex items-start gap-4 mb-4">
+					<span class="text-2xl">🎉</span>
+					<div class="stack-xs">
+						<h3 class="font-bold text-base text-primary m-0">
+							تم تفعيل المصادقة الثنائية بنجاح!
+						</h3>
+						<p class="text-sm text-secondary m-0">
+							هام جداً: احفظ رموز الاسترداد الاحتياطية أدناه في مكان آمن. ستتيح لك تسجيل الدخول إذا فقدت الوصول لهاتفك.
+						</p>
+					</div>
+				</div>
+
+				<div class="d-grid grid-auto-fit-sm gap-3 bg-surface-sunken p-4 rounded-xl border mb-4">
+					for _, code := range data.RecoveryCodes {
+						<div class="p-2.5 bg-surface-raised border rounded-lg font-mono text-center font-bold text-sm tabular-nums text-primary shadow-xs select-all">
+							{ code }
+						</div>
+					}
+				</div>
+
+				<div class="flex-between flex-wrap gap-3 pt-3 border-t">
+					<span class="text-xs text-muted">
+						كل رمز يمكن استخدامه لمرة واحدة فقط كبديل لرمز Google Authenticator.
+					</span>
+					<a href={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa", "/customer/mfa")) } class="btn btn-emerald btn-sm font-bold rounded-lg px-4">
+						@components.IconCheck("icon-xs")
+						<span>فهمت، تم حفظ الرموز بأمان</span>
+					</a>
+				</div>
+			</div>
+		}
+
+		<!-- State 1: MFA is Currently ENABLED -->
+		if data.Status != nil && data.Status.Enabled {
+			<div class="stack-lg">
+				<!-- Active Status Card -->
+				<div class="glass-panel p-6">
+					<div class="d-flex items-start gap-4 mb-6">
+						<div class="w-12 h-12 rounded-xl bg-emerald-subtle flex-center text-emerald flex-shrink-0">
+							@components.IconShield("icon-md")
+						</div>
+						<div class="stack-xs">
+							<div class="d-flex items-center gap-2 flex-wrap">
+								<h2 class="font-bold text-lg m-0">
+									المصادقة الثنائية مفعلة بحسابك
+								</h2>
+								<span class="badge badge-emerald font-bold text-xs">نشط ومؤمن</span>
+							</div>
+							<p class="text-sm text-secondary m-0">
+								Google Authenticator (TOTP)
+								if data.Status.ConfirmedAt != nil {
+									<span> • مفعل منذ { data.Status.ConfirmedAt.Format("2006-01-02 03:04 PM") }</span>
+								}
+							</p>
+						</div>
+					</div>
+
+					<div class="d-grid grid-auto-fit-sm gap-4 pt-4 border-t">
+						<div class="stat-card-3d stat-card-compact">
+							<div class="stat-card-label">طريقة المصادقة</div>
+							<div class="text-sm font-bold text-primary">
+								تطبيق Google Authenticator
+							</div>
+						</div>
+
+						<div class="stat-card-3d stat-card-compact">
+							<div class="stat-card-label">رموز الاسترداد الاحتياطية</div>
+							<div class="text-sm font-bold text-primary tabular-nums">
+								{ fmt.Sprintf("%d", data.Status.RecoveryCodesCount) } رموز متبقية
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Regenerate Recovery Codes Card -->
+				<div class="glass-panel p-5" x-data="{ openRegen: false }">
+					<div class="flex-between flex-wrap gap-3">
+						<div class="stack-xs">
+							<h3 class="font-bold text-base text-primary m-0">
+								إعادة توليد رموز الاسترداد الاحتياطية
+							</h3>
+							<p class="text-sm text-secondary m-0">
+								توليد 8 رموز استرداد جديدة وإلغاء الرموز السابقة
+							</p>
+						</div>
+						<button type="button" class="btn btn-secondary btn-sm font-bold" @click="openRegen = !openRegen">
+							<span>توليد رموز جديدة</span>
+						</button>
+					</div>
+
+					<div class="stack-md mt-4 pt-4 border-t" x-show="openRegen" x-cloak>
+						<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa/regenerate-codes", "/customer/mfa/regenerate-codes")) } method="POST" class="stack-sm max-w-md">
+							<div class="form-group mb-3">
+								<label class="form-label text-xs font-bold">كلمة المرور الحالية للتأكيد</label>
+								<input type="password" name="password" required class="form-input form-input-sm" placeholder="••••••••" />
+							</div>
+							<button type="submit" class="btn btn-primary btn-sm font-bold">
+								@components.IconCheck("icon-xs")
+								<span>تأكيد وتوليد 8 رموز جديدة</span>
+							</button>
+						</form>
+					</div>
+				</div>
+
+				<!-- Disable MFA Card -->
+				<div class="glass-panel p-5" x-data="{ openDisable: false }">
+					<div class="flex-between flex-wrap gap-3">
+						<div class="stack-xs">
+							<h3 class="font-bold text-base text-danger m-0">
+								تعطيل المصادقة الثنائية (MFA)
+							</h3>
+							<p class="text-sm text-secondary m-0">
+								سيؤدي تعطيل MFA إلى خفض مستوى أمان حسابك وجعل الدخول بكلمة المرور فقط
+							</p>
+						</div>
+						<button type="button" class="btn btn-outline-danger btn-sm font-bold" @click="openDisable = !openDisable">
+							<span>تعطيل المصادقة</span>
+						</button>
+					</div>
+
+					<div class="stack-md mt-4 pt-4 border-t" x-show="openDisable" x-cloak>
+						<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa/disable", "/customer/mfa/disable")) } method="POST" class="stack-sm max-w-md" data-confirm="هل أنت متأكد من رغبتك في تعطيل المصادقة الثنائية لحسابك؟">
+							<div class="form-group mb-3">
+								<label class="form-label text-xs font-bold text-danger">أدخل كلمة المرور الحالية لتأكيد التعطيل</label>
+								<input type="password" name="password" required class="form-input form-input-sm" placeholder="••••••••" />
+							</div>
+							<button type="submit" class="btn btn-danger btn-sm font-bold">
+								<span>تأكيد تعطيل المصادقة الثنائية</span>
+							</button>
+						</form>
+					</div>
+				</div>
+			</div>
+		} else {
+			<!-- State 2: MFA is DISABLED - Setup Wizard -->
+			<div class="glass-panel p-6">
+				
+				<!-- Setup Intro -->
+				<div class="d-flex items-start gap-4 mb-6">
+					<div class="w-12 h-12 rounded-xl bg-primary-subtle text-primary flex-center flex-shrink-0">
+						@components.IconShield("icon-md")
+					</div>
+					<div class="stack-xs">
+						<h2 class="font-bold text-lg m-0">
+							تفعيل التحقق بخطوتين عبر Google Authenticator
+						</h2>
+						<p class="text-sm text-secondary m-0">
+							خطوات بسيطة لتأمين حسابك ضد أي اختراق عبر تطبيق المصادقة على هاتفك
+						</p>
+					</div>
+				</div>
+
+				if data.SetupData == nil {
+					<!-- Start Setup Button -->
+					<div class="p-6 bg-surface-sunken border rounded-2xl">
+						<div class="stack-md max-w-xl">
+							<h3 class="font-bold text-base text-primary m-0">
+								كيف تعمل المصادقة الثنائية؟
+							</h3>
+							<p class="text-sm text-secondary leading-relaxed m-0">
+								عند تسجيل الدخول في المرات القادمة، سيُطلب منك إدخال رمز مؤقت من 6 أرقام يظهر على تطبيق Google Authenticator في هاتفك بالإضافة إلى كلمة المرور الخاصة بك.
+							</p>
+							<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa/setup", "/customer/mfa/setup")) } method="POST" class="m-0 pt-2">
+								<button type="submit" class="btn btn-primary font-bold px-6 py-2.5">
+									@components.IconShield("icon-xs")
+									<span>بدء إعداد المصادقة الثنائية</span>
+								</button>
+							</form>
+						</div>
+					</div>
+				} else {
+					<!-- Setup Wizard Active (QR Code & Verification Form) -->
+					<div class="p-6 bg-surface-sunken border rounded-2xl">
+						
+						<!-- Step 1 & 2 Grid -->
+						<div class="d-grid grid-auto-fit-sm gap-8 items-start">
+							
+							<!-- Step 1: QR Code -->
+							<div class="glass-panel p-5 bg-surface-raised border shadow-xs">
+								<div class="badge badge-primary font-bold text-xs mb-3">الخطوة 1: امسح رمز الـ QR</div>
+								<h4 class="font-bold text-sm text-primary m-0 mb-3">
+									افتح Google Authenticator وامسح الرمز:
+								</h4>
+
+								<div class="p-4 bg-surface-sunken border rounded-xl flex-center w-fit mx-auto my-3">
+									<img src={ data.SetupData.QRCodeDataURI } alt="MFA QR Code" class="w-44 h-44 object-contain" />
+								</div>
+
+								<div class="p-3 bg-surface-sunken border rounded-lg text-center mt-3">
+									<div class="text-xs text-muted font-bold">أو أدخل المفتاح السري يدويًا في التطبيق:</div>
+									<div class="font-mono font-bold text-sm text-primary tracking-wider tabular-nums mt-1 select-all" dir="ltr">
+										{ data.SetupData.Secret }
+									</div>
+								</div>
+							</div>
+
+							<!-- Step 2: Confirm Code Form -->
+							<div class="glass-panel p-5 bg-surface-raised border shadow-xs">
+								<div class="badge badge-emerald font-bold text-xs mb-3">الخطوة 2: أدخل رمز التحقق</div>
+								<h4 class="font-bold text-sm text-primary m-0 mb-2">
+									أدخل الرمز المكون من 6 أرقام لتأكيد التفعيل:
+								</h4>
+								<p class="text-sm text-secondary leading-relaxed m-0 mb-4">
+									يظهر الرمز المكون من 6 أرقام داخل تطبيق Google Authenticator تحت اسم <strong>Dawa24</strong>.
+								</p>
+
+								<form action={ templ.SafeURL(ternary(data.IsVendor, "/vendor/mfa/confirm", "/customer/mfa/confirm")) } method="POST" class="stack-md">
+									<div class="form-group mb-0">
+										<input
+											type="text"
+											name="code"
+											inputmode="numeric"
+											pattern="[0-9]*"
+											maxlength="6"
+											required
+											autocomplete="one-time-code"
+											class="form-input text-center tabular-nums font-mono text-xl tracking-widest h-12"
+											placeholder="000000"
+											dir="ltr"
+										/>
+									</div>
+
+									<button type="submit" class="btn btn-emerald font-bold py-3 w-full justify-center">
+										@components.IconCheck("icon-xs")
+										<span>تأكيد وتفعيل المصادقة الثنائية</span>
+									</button>
+								</form>
+							</div>
+
+						</div>
+
+					</div>
+				}
+
+			</div>
+		}
+
+	</div>
+}

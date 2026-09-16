@@ -1,0 +1,231 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/hr"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminJobOrgOption struct {
+	ID   int64
+	Name string
+}
+
+type AdminJobView struct {
+	Job               *hr.JobOffer
+	CompanyName       string
+	CompanyType       string
+	ApplicationsCount int
+}
+
+type AdminJobsData struct {
+	Jobs           []*AdminJobView
+	Organizations  []*AdminJobOrgOption
+	SelectedOrgID  int64
+	SelectedStatus string
+	SearchQuery    string
+	Page           int
+	PerPage        int
+	TotalCount     int
+	NoticeType     string
+	NoticeMsg      string
+}
+
+func queryValuesForJobs(data AdminJobsData) url.Values {
+	qv := url.Values{}
+	if data.SelectedOrgID > 0 {
+		qv.Set("org_id", fmt.Sprintf("%d", data.SelectedOrgID))
+	}
+	if data.SelectedStatus != "" {
+		qv.Set("status", data.SelectedStatus)
+	}
+	if data.SearchQuery != "" {
+		qv.Set("q", data.SearchQuery)
+	}
+	return qv
+}
+
+templ AdminJobs(lang, dir string, data AdminJobsData) {
+	@layouts.AdminShell("إدارة فرص التوظيف وإعلانات العمل", "jobs", lang, dir) {
+		<div class="page-container">
+			if data.NoticeMsg != "" {
+				<div
+					class={ "alert mb-4",
+						templ.KV("alert-success", data.NoticeType != "error"),
+						templ.KV("alert-danger", data.NoticeType == "error") }
+					role="alert"
+				>
+					{ data.NoticeMsg }
+				</div>
+			}
+
+			<!-- Top Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="user-avatar-badge text-xl">
+							@components.IconBriefcase("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">فرص التوظيف والوظائف المنشورة</h1>
+							<p class="text-sm text-secondary m-0 mt-1">متابعة إعلانات التوظيف والوظائف الشاغرة الصادرة من الصيدليات والشركات الموردة (إجمالي: { fmt.Sprintf("%d", data.TotalCount) })</p>
+						</div>
+					</div>
+					<button type="button" class="btn btn-primary font-bold px-4 py-2" data-on-click="openAdminAddJobModal()">
+						@components.IconPlus("icon-xs")
+						<span>نشر وظيفة جديدة</span>
+					</button>
+				</div>
+			</div>
+
+			<!-- Search & Filter Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/admin/jobs" class="d-flex gap-2 items-center flex-wrap m-0">
+					<input
+						type="text"
+						name="q"
+						value={ data.SearchQuery }
+						placeholder="ابحث بالمسمى الوظيفي أو الموقع..."
+						class="form-input text-sm min-w-64"
+					/>
+					<select name="org_id" class="form-select text-sm w-auto">
+						<option value="">كل المنشآت والشركات</option>
+						for _, o := range data.Organizations {
+							<option value={ fmt.Sprintf("%d", o.ID) } selected?={ data.SelectedOrgID == o.ID }>{ o.Name }</option>
+						}
+					</select>
+					<select name="status" class="form-select text-sm w-auto">
+						<option value="">كل الحالات</option>
+						<option value="published" selected?={ data.SelectedStatus == "published" }>منشورة ونشطة</option>
+						<option value="closed" selected?={ data.SelectedStatus == "closed" }>مغلقة</option>
+					</select>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold">تصفية</button>
+					if data.SearchQuery != "" || data.SelectedOrgID > 0 || data.SelectedStatus != "" {
+						<a href="/admin/jobs" class="btn btn-secondary btn-sm text-muted">إلغاء التصفية</a>
+					}
+				</form>
+			</div>
+
+			<!-- Main Jobs Table -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Jobs) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconBriefcase("icon-sm")</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا توجد فرص توظيف مطابقة</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على أي شواغر وظيفية تطابق معايير البحث المحددة.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>المسمى الوظيفي</th>
+									<th>الجهة المعلنة</th>
+									<th>الموقع والمحافظة</th>
+									<th>الراتب / المكافأة</th>
+									<th>تاريخ النشر</th>
+									<th class="text-center">الحالة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, j := range data.Jobs {
+									<tr>
+										<td>
+											<div class="font-extrabold text-primary text-xs">{ j.Job.Title.Get(i18n.Lang(lang)) }</div>
+											<div class="text-xs text-muted mt-0.5">معرف الإعلان: #{ fmt.Sprintf("%d", j.Job.ID) }</div>
+										</td>
+										<td>
+											<div class="font-bold text-brand text-xs">{ j.CompanyName }</div>
+											<span class="badge badge-slate text-xs mt-0.5">{ orgTypeAr(j.CompanyType) }</span>
+										</td>
+										<td>
+											<div class="text-xs text-primary font-bold">{ j.Job.Location }</div>
+										</td>
+										<td>
+											if !j.Job.SalaryMin.IsZero() {
+												<div class="tabular-nums font-bold text-success text-xs">
+													@components.MoneyDisplay(components.MoneyDisplayProps{ Amount: j.Job.SalaryMin })
+												</div>
+											} else {
+												<span class="text-muted text-xs">يحدد بالمقابلة</span>
+											}
+										</td>
+										<td class="text-xs text-secondary tabular-nums">
+											{ j.Job.CreatedAt.Format("2006-01-02") }
+										</td>
+										<td class="text-center">
+											if j.Job.Status == "published" {
+												<span class="badge badge-emerald text-xs font-bold">معلن ونشط</span>
+											} else {
+												<span class="badge badge-slate text-xs">مغلق</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/jobs/%d", j.Job.ID)) } class="btn btn-secondary btn-sm font-bold text-xs" title="استعراض التفاصيل والطلبات">
+													@components.IconUsers("icon-xs")
+													<span>{ fmt.Sprintf("الطلبات (%d)", j.ApplicationsCount) }</span>
+												</a>
+												<button
+													type="button"
+													class="btn btn-secondary btn-sm font-bold text-xs px-2"
+													data-job-id={ fmt.Sprintf("%d", j.Job.ID) }
+													data-title-ar={ j.Job.Title.Get(i18n.AR) }
+													data-title-en={ j.Job.Title.Get(i18n.EN) }
+													data-location={ j.Job.Location }
+													data-sal-min={ formatSalaryForInput(j.Job.SalaryMin) }
+													data-sal-max={ formatSalaryForInput(j.Job.SalaryMax) }
+													data-status={ j.Job.Status }
+													data-desc={ j.Job.Description }
+													data-reqs={ j.Job.Requirements }
+													data-on-click="openAdminEditJobModalFromBtn(this)"
+													title="تعديل بيانات الوظيفة"
+												>
+													@components.IconEdit("icon-xs")
+													<span>تعديل</span>
+												</button>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/jobs/%d/toggle", j.Job.ID)) } class="m-0 d-inline">
+													if j.Job.Status == "published" {
+														<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold" title="إغلاق استقبال الطلبات">
+															إغلاق
+														</button>
+													} else {
+														<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold text-success" title="إعادة فتح الوظيفة">
+															تفعيل
+														</button>
+													}
+												</form>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/jobs/%d/delete", j.Job.ID)) } class="m-0 d-inline" data-confirm="هل أنت متأكد من رغبتك في حذف هذا الإعلان الوظيفي نهائياً؟">
+													<button type="submit" class="btn btn-danger btn-sm text-xs font-bold px-2" title="حذف الوظيفة">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/jobs",
+							QueryValues: queryValuesForJobs(data),
+						})
+					}
+				}
+			</div>
+
+			<!-- Modals for Add & Edit Job -->
+			@AdminJobsModals(lang, data.Organizations)
+		</div>
+	}
+}

@@ -1,0 +1,301 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// The subscriber log.
+//
+// It listed billing.subscriptions verbatim: the buyer was "منشأة #186", the
+// plan was found by scanning every plan for a matching id once per row, and
+// there was no way to ask a question of it — no organisation search, no plan,
+// no status, no cycle, no dates. An operator answering "which pharmacies are
+// on the annual plan and which lapse this month" read ids and looked each one
+// up by hand.
+//
+// The row now carries the join, so this template only renders. The filter bar
+// is a plain GET form: its values come back in the query string, the pager
+// carries them forward, and a bookmarked URL is the same question tomorrow.
+
+templ AdminSubscriptionsPanel(data AdminPlansData, lang, dir string) {
+	@adminSubscriptionFilters(data, lang)
+	if len(data.SubRows) == 0 {
+		<div class="p-8 text-center empty-state-glass">
+			<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+				@components.IconTag("icon-md")
+			</div>
+			<h3 class="text-base font-black text-primary mb-1.5">{ i18n.T(lang, "admin.subs.empty_title") }</h3>
+			<p class="text-xs text-secondary max-w-md mx-auto">{ i18n.T(lang, "admin.subs.empty_body") }</p>
+		</div>
+	} else {
+		<div class="table-container m-0 overflow-x-auto">
+			<table class="data-table m-0 text-xs w-full">
+				<thead>
+					<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+						<th class="py-3 text-start ps-4">{ i18n.T(lang, "admin.subs.col_ref") }</th>
+						<th class="py-3 text-start">{ i18n.T(lang, "admin.subs.col_buyer") }</th>
+						<th class="py-3 text-start">{ i18n.T(lang, "admin.subs.col_plan") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_amount") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_status") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_cycle") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_renew") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_starts") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_expires") }</th>
+						<th class="text-center py-3">{ i18n.T(lang, "admin.subs.col_remaining") }</th>
+						<th class="text-center py-3 pe-4">{ i18n.T(lang, "common.actions") }</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, s := range data.SubRows {
+						@adminSubscriptionRow(s, data, lang)
+					}
+				</tbody>
+			</table>
+		</div>
+		if data.SubTotalCount > 0 {
+			@components.B2BPagination(components.PaginationProps{
+				CurrentPage: data.SubPage,
+				PageSize:    data.SubPerPage,
+				TotalCount:  data.SubTotalCount,
+				BaseURL:     "/admin/plans",
+				QueryValues: data.SubFilters.QueryValues(),
+			})
+		}
+		@components.Modal(components.ModalProps{
+			ID:    "subscription-history-modal",
+			Title: i18n.T(lang, "admin.subs.history_title"),
+			Size:  "lg",
+		}) {
+			<div id="subscription-history-body">
+				@components.SkeletonText(4)
+			</div>
+		}
+	}
+}
+
+templ adminSubscriptionRow(s *billing.AdminSubscriptionRow, data AdminPlansData, lang string) {
+	<tr class="transition-colors">
+		<td class="tabular-nums font-bold text-primary py-3 ps-4">{ fmt.Sprintf("SUB-%d", s.ID) }</td>
+		<td class="py-3">
+			<div class="stack-xs">
+				if s.OrganizationID != nil && *s.OrganizationID > 0 {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", *s.OrganizationID)) }
+						target="_blank"
+						rel="noopener"
+						class="font-extrabold text-primary"
+					>{ s.DisplayOrganizationName(lang) }</a>
+					if s.OrganizationType != "" {
+						<span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "org.type."+s.OrganizationType) }</span>
+					}
+				} else {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", s.UserID)) }
+						target="_blank"
+						rel="noopener"
+						class="font-extrabold text-primary"
+					>{ s.DisplayOrganizationName(lang) }</a>
+					<span class="badge badge-secondary text-2xs">{ i18n.T(lang, "admin.subs.personal") }</span>
+				}
+			</div>
+		</td>
+		<td class="py-3">
+			<div class="font-extrabold text-primary">{ s.PlanName.Get(i18n.Lang(lang)) }</div>
+			if s.PlanSlug != "" {
+				<span class="text-2xs text-muted" dir="ltr"><code>{ s.PlanSlug }</code></span>
+			}
+		</td>
+		<td class="text-center py-3 tabular-nums">
+			if s.PlanIsFree {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.subs.free") }</span>
+			} else {
+				@components.MoneyDisplay(components.MoneyDisplayProps{Amount: s.AmountPaid})
+			}
+		</td>
+		<td class="text-center py-3">
+			if s.Expired(data.Now) {
+				<span class="badge badge-rose font-extrabold text-2xs">{ i18n.T(lang, "admin.subs.status_expired") }</span>
+			} else if s.Status == "active" {
+				<span class="badge badge-emerald font-extrabold text-2xs">{ i18n.T(lang, "admin.subs.status_active") }</span>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "admin.subs.status_"+string(s.Status)) }</span>
+			}
+		</td>
+		<td class="text-center py-3">
+			if s.BillingCycle == "annual" {
+				<span class="badge badge-sky font-bold text-2xs">{ i18n.T(lang, "admin.subs.cycle_annual") }</span>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "admin.subs.cycle_monthly") }</span>
+			}
+		</td>
+		<td class="text-center py-3">
+			if s.AutoRenew {
+				<span class="badge badge-emerald text-2xs">{ i18n.T(lang, "common.yes") }</span>
+			} else {
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "common.no") }</span>
+			}
+		</td>
+		<td class="text-center tabular-nums text-secondary font-medium py-3">{ s.StartsAt.Format("2006-01-02") }</td>
+		<td class="text-center tabular-nums text-secondary font-medium py-3">{ s.ExpiresAt.Format("2006-01-02") }</td>
+		<td class="text-center tabular-nums py-3">
+			if s.Expired(data.Now) {
+				<span class="text-danger font-bold">0</span>
+			} else {
+				<span class="font-bold text-primary">{ fmt.Sprintf("%d", s.DaysRemaining(data.Now)) }</span>
+			}
+		</td>
+		<td class="text-center py-3 pe-4">
+			<button
+				type="button"
+				class="btn btn-secondary btn-xs font-bold"
+				hx-get={ fmt.Sprintf("/admin/plans/subscriptions/%d/history", s.ID) }
+				hx-target="#subscription-history-body"
+				hx-swap="innerHTML"
+				data-modal-open="subscription-history-modal"
+			>
+				{ i18n.T(lang, "admin.subs.history_action") }
+				if s.HistoryRows > 0 {
+					<span class="badge badge-slate text-2xs ms-1">{ fmt.Sprintf("%d", s.HistoryRows) }</span>
+				}
+			</button>
+		</td>
+	</tr>
+}
+
+// The filter bar is a GET form so its state lives in the URL. A POST here would
+// make page two of a filtered list unreachable and a bookmark meaningless.
+templ adminSubscriptionFilters(data AdminPlansData, lang string) {
+	<form method="GET" action="/admin/plans" class="glass-panel p-3 mb-3">
+		<input type="hidden" name="tab" value="subscriptions"/>
+		<div class="grid-4 gap-2">
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_org") }</label>
+				<input
+					type="search"
+					name="org_q"
+					value={ data.SubFilters.OrganizationQuery }
+					placeholder={ i18n.T(lang, "admin.subs.filter_org_ph") }
+					class="form-input form-input-sm w-full"
+				/>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.col_plan") }</label>
+				<select name="plan_id" class="form-select form-select-sm w-full">
+					<option value="">{ i18n.T(lang, "common.all") }</option>
+					for _, p := range data.Plans {
+						<option value={ fmt.Sprintf("%d", p.ID) } selected?={ data.SubFilters.PlanID == p.ID }>
+							{ p.Name.Get(i18n.Lang(lang)) }
+						</option>
+					}
+				</select>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.col_status") }</label>
+				<select name="status" class="form-select form-select-sm w-full">
+					<option value="">{ i18n.T(lang, "common.all") }</option>
+					for _, st := range []string{"active", "trialing", "past_due", "cancelled", "expired"} {
+						<option value={ st } selected?={ data.SubFilters.Status == st }>
+							{ i18n.TKey(lang, "admin.subs.status_"+st) }
+						</option>
+					}
+				</select>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.col_cycle") }</label>
+				<select name="cycle" class="form-select form-select-sm w-full">
+					<option value="">{ i18n.T(lang, "common.all") }</option>
+					<option value="monthly" selected?={ data.SubFilters.BillingCycle == "monthly" }>{ i18n.T(lang, "admin.subs.cycle_monthly") }</option>
+					<option value="annual" selected?={ data.SubFilters.BillingCycle == "annual" }>{ i18n.T(lang, "admin.subs.cycle_annual") }</option>
+				</select>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.col_renew") }</label>
+				<select name="auto_renew" class="form-select form-select-sm w-full">
+					<option value="">{ i18n.T(lang, "common.all") }</option>
+					<option value="1" selected?={ data.SubFilters.AutoRenew == "1" }>{ i18n.T(lang, "common.yes") }</option>
+					<option value="0" selected?={ data.SubFilters.AutoRenew == "0" }>{ i18n.T(lang, "common.no") }</option>
+				</select>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_expiring") }</label>
+				<select name="expiring_days" class="form-select form-select-sm w-full">
+					<option value="">{ i18n.T(lang, "common.all") }</option>
+					for _, d := range []int{7, 30, 90} {
+						<option value={ fmt.Sprintf("%d", d) } selected?={ data.SubFilters.ExpiringWithinDays == d }>
+							{ fmt.Sprintf(i18n.T(lang, "admin.subs.filter_expiring_days"), d) }
+						</option>
+					}
+				</select>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_starts_from") }</label>
+				<input type="date" name="starts_from" value={ data.SubFilters.StartsFrom } class="form-input form-input-sm w-full"/>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_starts_to") }</label>
+				<input type="date" name="starts_to" value={ data.SubFilters.StartsTo } class="form-input form-input-sm w-full"/>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_expires_from") }</label>
+				<input type="date" name="expires_from" value={ data.SubFilters.ExpiresFrom } class="form-input form-input-sm w-full"/>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "admin.subs.filter_expires_to") }</label>
+				<input type="date" name="expires_to" value={ data.SubFilters.ExpiresTo } class="form-input form-input-sm w-full"/>
+			</div>
+			<div class="stack-xs">
+				<label class="form-label text-2xs">{ i18n.T(lang, "common.rows_per_page") }</label>
+				<select name="limit" class="form-select form-select-sm w-full">
+					for _, n := range []int{10, 25, 50, 100} {
+						<option value={ fmt.Sprintf("%d", n) } selected?={ data.SubPerPage == n }>{ fmt.Sprintf("%d", n) }</option>
+					}
+				</select>
+			</div>
+			<div class="stack-xs justify-end">
+				<div class="d-flex gap-2">
+					<button type="submit" class="btn btn-primary btn-sm font-bold flex-1">{ i18n.T(lang, "common.apply_filters") }</button>
+					<a href="/admin/plans?tab=subscriptions" class="btn btn-secondary btn-sm font-bold">{ i18n.T(lang, "common.reset") }</a>
+				</div>
+			</div>
+		</div>
+	</form>
+}
+
+// AdminSubscriptionHistoryFragment is the modal body, loaded over HTMX so a page
+// of 100 rows does not carry 100 trails it will never show.
+templ AdminSubscriptionHistoryFragment(rows []*billing.SubscriptionHistoryRow, lang string) {
+	if len(rows) == 0 {
+		<p class="text-xs text-secondary p-4 text-center m-0">{ i18n.T(lang, "admin.subs.history_empty") }</p>
+	} else {
+		<div class="table-container m-0 overflow-x-auto">
+			<table class="data-table m-0 text-xs w-full">
+				<thead>
+					<tr class="bg-slate-50/80 border-b border-slate-200/70 text-slate-700 font-bold">
+						<th class="py-2 text-start ps-3">{ i18n.T(lang, "admin.subs.col_date") }</th>
+						<th class="py-2 text-start">{ i18n.T(lang, "admin.subs.col_action") }</th>
+						<th class="py-2 text-start">{ i18n.T(lang, "admin.subs.col_plan") }</th>
+						<th class="py-2 text-center">{ i18n.T(lang, "admin.subs.col_amount") }</th>
+						<th class="py-2 text-start pe-3">{ i18n.T(lang, "admin.subs.col_details") }</th>
+					</tr>
+				</thead>
+				<tbody class="divide-y divide-slate-100">
+					for _, h := range rows {
+						<tr>
+							<td class="py-2 ps-3 tabular-nums text-secondary">{ h.CreatedAt.Format("2006-01-02 15:04") }</td>
+							<td class="py-2"><span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "admin.subs.action_"+h.Action) }</span></td>
+							<td class="py-2 font-bold text-primary">{ h.PlanName.Get(i18n.Lang(lang)) }</td>
+							<td class="py-2 text-center tabular-nums">
+								@components.MoneyDisplay(components.MoneyDisplayProps{Amount: h.Amount})
+							</td>
+							<td class="py-2 pe-3 text-secondary">{ h.Details }</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	}
+}

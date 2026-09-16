@@ -1,0 +1,843 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+
+
+// AdminFullUserPage renders the categorized user list.
+templ AdminFullUserPage(users []*identity.User, activeFilter string, lang, dir string) {
+	@layouts.AdminShell("إدارة ودليل المستخدمين الشامل", "users", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-center flex-wrap gap-4">
+					<div class="d-flex items-center gap-3">
+						<div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 d-flex items-center justify-center border border-indigo-200/60 shadow-2xs">
+							@components.IconUsers("icon-sm")
+						</div>
+      <div class="stack-sm">
+							<h1 class="text-2xl font-black text-primary m-0">دليل المستخدمين والحسابات ({ fmt.Sprintf("%d", len(users)) })</h1>
+							<p class="text-sm text-secondary m-0 mt-1">متابعة حسابات العملاء، مسؤولي الصيدليات، والمشرفين عبر المنصة</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Filter Tabs -->
+				<div class="tabs-nav mt-6">
+					<a href="/admin/users" class={ "tab-btn", templ.KV("active", activeFilter == "all") }>كافة المستخدمين</a>
+					<a href="/admin/users?type=customer" class={ "tab-btn", templ.KV("active", activeFilter == "customers") }>الصيدليات والعملاء</a>
+					<a href="/admin/users?type=vendor" class={ "tab-btn", templ.KV("active", activeFilter == "vendors") }>الموردون والشركات</a>
+					<a href="/admin/users?type=staff" class={ "tab-btn", templ.KV("active", activeFilter == "staff") }>المشرفون والإداريون</a>
+				</div>
+			</div>
+
+			<div class="glass-panel p-0 mb-6 overflow-hidden border border-slate-200/80 rounded-2xl shadow-xs">
+				if len(users) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="w-12 h-12 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-3">
+							@components.IconUsers("icon-md")
+						</div>
+						<h3 class="text-lg font-black text-primary mb-2">لا يوجد مستخدمون</h3>
+						<p class="text-sm text-secondary max-w-md mx-auto">لم يتم العثور على مستخدمين مسجلين في هذا القسم.</p>
+					</div>
+				} else {
+					<div class="table-container m-0">
+						<table class="data-table m-0">
+							<thead>
+								<tr>
+									<th>الاسم</th>
+									<th>البريد الإلكتروني</th>
+									<th>الهاتف</th>
+									<th>الدور</th>
+									<th class="text-center">الحالة</th>
+									<th class="col-actions">الإجراءات</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, u := range users {
+									<tr>
+										<td>
+											<div class="d-flex items-center gap-2">
+												<div class="w-7 h-7 rounded-lg border overflow-hidden flex-shrink-0 bg-surface-sunken d-flex items-center justify-center font-bold text-2xs">
+													if u.AvatarURL != "" {
+														<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="flex" />
+														<span style="display:none;" class="w-full h-full d-flex items-center justify-center font-bold">{ userInitials(u) }</span>
+													} else {
+														<span class="w-full h-full d-flex items-center justify-center font-bold">{ userInitials(u) }</span>
+													}
+												</div>
+												<strong class="text-primary text-xs">{ userDisplayName(u) }</strong>
+											</div>
+										</td>
+										<td class="tabular-nums text-xs font-mono">{ u.Email }</td>
+										<td class="tabular-nums text-xs">{ u.Phone }</td>
+										<td><span class="badge badge-secondary text-xs font-bold">{ u.Role }</span></td>
+										<td class="text-center">
+											if u.Status == identity.StatusActive {
+												<span class="badge badge-emerald text-xs font-bold">نشط</span>
+											} else {
+												<span class="badge badge-rose text-xs font-bold">معطل</span>
+											}
+										</td>
+										<td class="col-actions">
+											<a href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", u.ID)) } class="btn btn-secondary btn-sm font-bold text-xs">عرض الملف</a>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+				}
+			</div>
+		</div>
+	}
+}
+
+// AdminUserDetailPage renders a detailed view of a user.
+// AdminUserRoleOption is one assignable platform role.
+type AdminUserRoleOption struct {
+	Key      string
+	Name     string
+	IsStaff  bool
+	Selected bool
+}
+
+// AdminMemberDetailView displays one organization membership detail with branch and title.
+type AdminMemberDetailView struct {
+	OrganizationID   int64
+	OrganizationName string
+	OrgType          string
+	OrgStatus        string
+	RoleKey          string
+	JobTitle         string
+	BranchID         *int64
+	BranchName       string
+	IsActive         bool
+}
+
+// AdminEffectivePermItem represents one permission and whether the user effectively holds it.
+type AdminEffectivePermItem struct {
+	Key    string
+	NameAr string
+	NameEn string
+	Kind   string
+	Held   bool
+	Source string
+}
+
+// AdminEffectivePermGroup groups effective permissions by functional module.
+type AdminEffectivePermGroup struct {
+	Key         string
+	NameAr      string
+	NameEn      string
+	HeldCount   int
+	TotalCount  int
+	Permissions []AdminEffectivePermItem
+}
+
+// AdminUserDetailView carries the account and what may be done to it.
+type AdminUserDetailView struct {
+	User                *identity.User
+	NationalID          string
+	// Roles is empty when the viewer may not assign roles; the form is then
+	// not rendered at all, which matches what the route would answer.
+	Roles []AdminUserRoleOption
+	// SelfEdit marks the viewer looking at their own account. Assigning your
+	// own role is refused by the handler, so the form says why rather than
+	// offering a control that always fails.
+	SelfEdit bool
+	// IsModerator says the account holds the مشرف role, which is the only role
+	// the hierarchy applies to.
+	IsModerator bool
+	// ModeratorParentID is whose team they are on, or nil for a top-level
+	// (main) moderator.
+	ModeratorParentID *int64
+	// SubordinateCount is how many moderators report to this one. A moderator
+	// who leads a team cannot be moved under somebody else without their team
+	// being moved first, and the form says so rather than failing on submit.
+	SubordinateCount int
+	// MainModerators are the top-level moderators this one may be placed under.
+	MainModerators []AdminModeratorOption
+	// CanAssignModerator gates the form on identity.moderator.assign.
+	CanAssignModerator bool
+	CanAssignRole      bool
+	CanEditUser        bool
+	CanSetPassword     bool
+	Organizations      []*org.Organization
+	Branches           []*org.Branch
+	Memberships        []*identity.UserOrgMembership
+	MemberDetails      []AdminMemberDetailView
+	PrimaryMember      *AdminMemberDetailView
+	EffectivePermGroups []AdminEffectivePermGroup
+	TotalPermsCount    int
+	TotalHeldCount     int
+	Notice             string
+	NoticeKind         string
+}
+
+templ AdminUserDetailPage(v AdminUserDetailView, lang, dir string) {
+	{{ u := v.User }}
+	@layouts.AdminShell(fmt.Sprintf("ملف المستخدم: %s", userDisplayName(u)), "users", lang, dir) {
+		<div
+			class="page-container max-w-5xl mx-auto"
+			x-data="{
+				activeTab: 'profile',
+				showEditModal: false,
+				showPasswordModal: false,
+				permSearch: '',
+				permGroup: 'all',
+				heldOnly: false,
+				matchesPerm(nameAr, nameEn, key, held, groupKey) {
+					if (this.permGroup !== 'all' && this.permGroup !== groupKey) return false;
+					if (this.heldOnly && !held) return false;
+					const q = (this.permSearch || '').toLowerCase().trim();
+					if (!q) return true;
+					return nameAr.toLowerCase().includes(q) || nameEn.toLowerCase().includes(q) || key.toLowerCase().includes(q);
+				}
+			}"
+		>
+			@roleNotice(v.NoticeKind, v.Notice)
+
+			<!-- Top Back Navigation -->
+			<div class="mb-4">
+				<a href="/admin/users" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
+					@components.IconArrowLeft("icon-xs")
+					<span>العودة لدليل المستخدمين</span>
+				</a>
+			</div>
+
+			<!-- User Header Banner -->
+			<div class="glass-panel p-6 mb-6">
+				<div class="flex-between items-start flex-wrap gap-4">
+					<div class="d-flex items-center gap-4">
+						<div class="w-16 h-16 rounded-2xl bg-surface-sunken text-primary border d-flex items-center justify-center font-black text-xl overflow-hidden flex-shrink-0 shadow-xs">
+							if u.AvatarURL != "" {
+								<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="flex" />
+								<span style="display: none;" class="w-full h-full d-flex items-center justify-center font-black">
+									{ userInitials(u) }
+								</span>
+							} else {
+								<span class="w-full h-full d-flex items-center justify-center font-black">
+									{ userInitials(u) }
+								</span>
+							}
+						</div>
+						<div class="stack-sm">
+							<div class="d-flex items-center gap-2 flex-wrap">
+								<h1 class="text-xl font-black text-primary m-0">{ userDisplayName(u) }</h1>
+								<span class={ "badge text-xs font-bold", roleBadgeClass(u.Role) }>{ roleDisplayAr(u.Role) }</span>
+								if u.Status == identity.StatusActive {
+									<span class="badge badge-emerald text-xs font-bold">نشط ومفعل</span>
+								} else if u.Status == identity.StatusSuspended {
+									<span class="badge badge-rose text-xs font-bold">موقوف / معلق</span>
+								} else {
+									<span class="badge badge-amber text-xs font-bold">قيد المراجعة</span>
+								}
+								<span class="badge badge-indigo text-xs font-black tabular-nums">{ fmt.Sprintf("%d صلاحية مفعلة", v.TotalHeldCount) }</span>
+							</div>
+							<div class="text-xs text-secondary mt-1 d-flex items-center gap-3 flex-wrap">
+								<span class="tabular-nums font-mono text-muted">#{ fmt.Sprintf("USR-%d", u.ID) }</span>
+								<span>|</span>
+								<span class="tabular-nums font-mono" dir="ltr">{ u.Email }</span>
+								if u.Phone != "" {
+									<span>|</span>
+									<span class="tabular-nums">{ u.Phone }</span>
+								}
+							</div>
+						</div>
+					</div>
+
+					<!-- Header Actions Strip -->
+					<div class="d-flex items-center gap-2 flex-wrap">
+						if v.CanEditUser {
+							<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="showEditModal = true">
+								@components.IconEdit("icon-xs")
+								<span>تعديل البيانات</span>
+							</button>
+						}
+						if v.CanSetPassword {
+							<button type="button" class="btn btn-secondary btn-sm font-bold gap-1" @click="showPasswordModal = true">
+								@components.IconLock("icon-xs")
+								<span>تعيين كلمة مرور</span>
+							</button>
+						}
+						if !v.SelfEdit {
+							if u.Status == identity.StatusActive {
+								<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/suspend", u.ID)) } class="m-0" data-confirm="هل أنت متأكد من تعليق هذا الحساب وإنهاء كافة جلساته النشطة؟">
+									<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+									<button type="submit" class="btn btn-secondary btn-sm font-bold text-danger gap-1">
+										@components.IconMinus("icon-xs")
+										<span>تعليق الحساب</span>
+									</button>
+								</form>
+							} else {
+								<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/reactivate", u.ID)) } class="m-0">
+									<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+									<button type="submit" class="btn btn-primary btn-sm font-bold gap-1">
+										@components.IconCheck("icon-xs")
+										<span>إعادة التفعيل</span>
+									</button>
+								</form>
+							}
+							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/reset-mfa", u.ID)) } class="m-0" data-confirm="هل أنت متأكد من إعادة ضبط التحقق الثنائي MFA لهذا المستخدم؟">
+								<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+								<button type="submit" class="btn btn-secondary btn-sm font-bold gap-1" title="إعادة ضبط MFA">
+									@components.IconRefresh("icon-xs")
+									<span>إعادة ضبط MFA</span>
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+
+				<!-- Tabs Bar -->
+				<div class="tabs-nav mt-6">
+					<button type="button" class="tab-btn" :class="activeTab === 'profile' ? 'active' : ''" @click="activeTab = 'profile'">
+						@components.IconUser("icon-xs")
+						<span>المعلومات الشخصية والعضوية</span>
+					</button>
+					<button type="button" class="tab-btn d-flex items-center gap-1.5" :class="activeTab === 'permissions' ? 'active' : ''" @click="activeTab = 'permissions'">
+						@components.IconShield("icon-xs")
+						<span>الصلاحيات الفعلية</span>
+						<span class="badge badge-brand text-2xs font-black tabular-nums">{ fmt.Sprintf("%d/%d", v.TotalHeldCount, v.TotalPermsCount) }</span>
+					</button>
+					if len(v.Roles) > 0 || (v.IsModerator && v.CanAssignModerator) {
+						<button type="button" class="tab-btn" :class="activeTab === 'role_management' ? 'active' : ''" @click="activeTab = 'role_management'">
+							@components.IconSettings("icon-xs")
+							<span>الدور والتسلسل الإداري</span>
+						</button>
+					}
+				</div>
+			</div>
+
+			<!-- TAB 1: Profile & Memberships -->
+			<div x-show="activeTab === 'profile'" class="d-grid gap-6 grid-2-col">
+				<!-- User Info Card -->
+				<div class="glass-panel p-6">
+					<h3 class="text-base font-extrabold text-primary mt-0 mb-4 pb-2 border-b d-flex items-center gap-2">
+						@components.IconUser("icon-xs")
+						<span>البيانات الشخصية والحساب</span>
+					</h3>
+					<div class="d-grid gap-3">
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">الاسم بالعربية:</span>
+							<span class="text-xs font-black text-primary">{ u.Name.Get("ar") }</span>
+						</div>
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">الاسم بالإنجليزية:</span>
+							<span class="text-xs font-black text-primary">{ u.Name.Get("en") }</span>
+						</div>
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">البريد الإلكتروني:</span>
+							<span class="text-xs font-mono font-bold text-primary tabular-nums" dir="ltr">{ u.Email }</span>
+						</div>
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">رقم الهاتف:</span>
+							<span class="text-xs font-bold text-primary tabular-nums">{ u.Phone }</span>
+						</div>
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">رقم الهوية الوطنية / الإقامة:</span>
+							if v.NationalID != "" {
+								<span class="text-xs font-mono font-bold text-primary tabular-nums">{ v.NationalID }</span>
+							} else {
+								<span class="text-xs text-muted">غير مسجل</span>
+							}
+						</div>
+						<div class="d-flex justify-between items-center py-1.5 border-b">
+							<span class="text-xs text-secondary font-bold">تاريخ التسجيل:</span>
+							<span class="text-xs font-bold text-muted tabular-nums">{ u.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+						</div>
+						<div class="d-flex justify-between items-center py-1.5">
+							<span class="text-xs text-secondary font-bold">آخر تحديث:</span>
+							<span class="text-xs font-bold text-muted tabular-nums">{ u.UpdatedAt.Format("2006-01-02 03:04 PM") }</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Organization Membership Card -->
+				<div class="glass-panel p-6">
+					<h3 class="text-base font-extrabold text-primary mt-0 mb-4 pb-2 border-b d-flex items-center gap-2">
+						@components.IconBuilding("icon-xs")
+						<span>عضويات المنشآت والفروع</span>
+					</h3>
+					if len(v.MemberDetails) == 0 {
+						<div class="p-6 text-center empty-state-glass">
+							<div class="w-10 h-10 rounded-full bg-slate-100 text-slate-400 d-flex items-center justify-center mx-auto mb-2">
+								@components.IconBuilding("icon-xs")
+							</div>
+							<p class="text-xs text-secondary m-0">لا توجد منشأة تجارية مرتبطة بهذا الحساب (حساب فردي أو مشرف منصة مستقل).</p>
+						</div>
+					} else {
+						<div class="d-flex flex-col gap-3">
+							for _, mem := range v.MemberDetails {
+								<div class="bg-surface-sunken p-4 rounded-xl border">
+									<div class="flex-between items-center mb-2">
+										<strong class="text-primary text-sm font-black">{ mem.OrganizationName }</strong>
+										if mem.IsActive {
+											<span class="badge badge-emerald text-2xs font-bold">نشط</span>
+										} else {
+											<span class="badge badge-rose text-2xs font-bold">معطل</span>
+										}
+									</div>
+									<div class="d-grid gap-1.5 text-xs">
+										<div class="d-flex justify-between">
+											<span class="text-muted font-medium">نوع المنشأة:</span>
+											<span class="font-bold text-primary">{ mem.OrgType }</span>
+										</div>
+										<div class="d-flex justify-between">
+											<span class="text-muted font-medium">الدور الوظيفي:</span>
+											<span class="badge badge-secondary text-2xs font-bold">{ mem.RoleKey }</span>
+										</div>
+										if mem.JobTitle != "" {
+											<div class="d-flex justify-between">
+												<span class="text-muted font-medium">المسمى الوظيفي:</span>
+												<span class="font-bold text-primary">{ mem.JobTitle }</span>
+											</div>
+										}
+										if mem.BranchName != "" {
+											<div class="d-flex justify-between">
+												<span class="text-muted font-medium">الفرع المخصص:</span>
+												<span class="font-bold text-primary">{ mem.BranchName }</span>
+											</div>
+										} else {
+											<div class="d-flex justify-between">
+												<span class="text-muted font-medium">الفرع:</span>
+												<span class="font-bold text-muted">كافة الفروع / المركز الرئيسي</span>
+											</div>
+										}
+									</div>
+								</div>
+							}
+						</div>
+					}
+				</div>
+			</div>
+
+			<!-- TAB 2: Effective Permissions Breakdown -->
+			<div x-show="activeTab === 'permissions'" class="d-flex flex-col gap-5">
+				<!-- Search and Filter Bar -->
+				<div class="glass-panel p-4 mb-0">
+					<div class="flex-between items-center flex-wrap gap-3">
+						<div class="d-flex items-center gap-3 flex-1 flex-wrap">
+							<input
+								type="text"
+								x-model="permSearch"
+								placeholder="ابحث باسم الصلاحية أو الرمز (مثل: catalog.product.view)..."
+								class="form-input text-xs min-w-64"
+							/>
+							<select x-model="permGroup" class="form-select text-xs font-bold w-auto">
+								<option value="all">كافة الوحدات البرمجية (Modules)</option>
+								for _, g := range v.EffectivePermGroups {
+									<option value={ g.Key }>{ g.NameAr } ({ fmt.Sprintf("%d/%d", g.HeldCount, g.TotalCount) })</option>
+								}
+							</select>
+							<label class="form-label d-flex items-center gap-2 m-0 cursor-pointer">
+								<input type="checkbox" x-model="heldOnly" class="form-checkbox text-primary"/>
+								<span class="text-xs font-bold text-primary">الممنوحة فقط</span>
+							</label>
+						</div>
+						<div class="text-xs font-bold text-secondary">
+							{ fmt.Sprintf("تم منح %d من إجمالي %d صلاحية مسجلة في النظام", v.TotalHeldCount, v.TotalPermsCount) }
+						</div>
+					</div>
+				</div>
+
+				<!-- Permissions by Group -->
+				<div class="d-flex flex-col gap-4">
+					for _, g := range v.EffectivePermGroups {
+						<div
+							class="glass-panel p-0 border rounded-2xl overflow-hidden shadow-xs"
+							x-show={ fmt.Sprintf("permGroup === 'all' || permGroup === %q", g.Key) }
+						>
+							<div class="p-3 px-5 bg-surface-raised border-b flex-between items-center">
+								<div class="d-flex items-center gap-2">
+									<strong class="text-sm font-black text-primary">{ g.NameAr }</strong>
+									<span class="text-xs text-muted font-mono">({ g.NameEn })</span>
+								</div>
+								<div class="d-flex items-center gap-2">
+									<span class="badge badge-brand text-xs font-black tabular-nums">
+										{ fmt.Sprintf("%d / %d ممنوحة", g.HeldCount, g.TotalCount) }
+									</span>
+								</div>
+							</div>
+							<div class="table-container m-0">
+								<table class="data-table m-0 text-xs w-full">
+									<thead>
+										<tr class="bg-surface-sunken font-bold border-b text-muted">
+											<th class="py-2.5 ps-4 text-start">الصلاحية</th>
+											<th class="py-2.5 text-start font-mono">الرمز التقني</th>
+											<th class="py-2.5 text-center">النوع</th>
+											<th class="py-2.5 text-center">الحالة</th>
+											<th class="py-2.5 pe-4 text-end">مصدر المنح</th>
+										</tr>
+									</thead>
+									<tbody>
+										for _, p := range g.Permissions {
+											<tr
+												x-show={ fmt.Sprintf("matchesPerm(%q, %q, %q, %t, %q)", p.NameAr, p.NameEn, p.Key, p.Held, g.Key) }
+											>
+												<td class="py-2.5 ps-4 font-bold text-primary">
+													{ p.NameAr }
+												</td>
+												<td class="py-2.5 font-mono text-2xs text-secondary" dir="ltr">
+													{ p.Key }
+												</td>
+												<td class="py-2.5 text-center">
+													if p.Kind == "page" {
+														<span class="badge badge-sky text-2xs font-bold">صفحة</span>
+													} else {
+														<span class="badge badge-slate text-2xs font-bold">إجراء</span>
+													}
+												</td>
+												<td class="py-2.5 text-center">
+													if p.Held {
+														<span class="badge badge-emerald text-2xs font-black d-inline-flex items-center gap-1">
+															@components.IconCheck("icon-2xs")
+															<span>ممنوحة</span>
+														</span>
+													} else {
+														<span class="badge badge-slate text-2xs font-medium text-muted">غير ممنوحة</span>
+													}
+												</td>
+												<td class="py-2.5 pe-4 text-end">
+													if p.Held && p.Source != "" {
+														<span class="badge badge-indigo text-2xs font-bold">{ p.Source }</span>
+													} else {
+														<span class="text-2xs text-muted">—</span>
+													}
+												</td>
+											</tr>
+										}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					}
+				</div>
+			</div>
+
+			<!-- TAB 3: Role & Hierarchy -->
+			<div x-show="activeTab === 'role_management'" class="d-flex flex-col gap-6">
+				@adminUserRoleForm(v)
+				@adminModeratorHierarchyForm(v)
+			</div>
+
+			<!-- Edit User Modal -->
+			if v.CanEditUser {
+				{{ jobTitleVal := "" }}
+				if v.PrimaryMember != nil {
+					{{ jobTitleVal = v.PrimaryMember.JobTitle }}
+				}
+				<div
+					x-show="showEditModal"
+					x-cloak
+					class="modal-backdrop fixed inset-0 z-50 d-flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+					@keydown.escape.window="showEditModal = false"
+				>
+					<div
+						class="glass-panel p-6 max-w-xl w-full max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl border"
+						@click.away="showEditModal = false"
+					>
+						<div class="flex-between items-center mb-4 pb-3 border-b">
+							<div class="d-flex items-center gap-2">
+								<div class="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 d-flex items-center justify-center border">
+									@components.IconEdit("icon-xs")
+								</div>
+								<h3 class="text-base font-black text-primary m-0">تعديل بيانات المستخدم والحساب</h3>
+							</div>
+							<button type="button" class="btn btn-secondary btn-icon btn-sm" @click="showEditModal = false">✕</button>
+						</div>
+
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/edit", u.ID)) } class="d-grid gap-3">
+							<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+
+							<div class="d-grid grid-2-col gap-3">
+								<div class="stack-sm">
+									<label class="form-label" for="edit-name-ar">الاسم بالعربية <span class="text-danger">*</span></label>
+									<input id="edit-name-ar" class="form-input" type="text" name="name_ar" value={ u.Name.Get("ar") } required maxlength="120"/>
+								</div>
+								<div class="stack-sm">
+									<label class="form-label" for="edit-name-en">الاسم بالإنجليزية</label>
+									<input id="edit-name-en" class="form-input" type="text" name="name_en" value={ u.Name.Get("en") } maxlength="120"/>
+								</div>
+							</div>
+
+							<div class="d-grid grid-2-col gap-3">
+								<div class="stack-sm">
+									<label class="form-label" for="edit-email">البريد الإلكتروني <span class="text-danger">*</span></label>
+									<input id="edit-email" class="form-input" type="email" name="email" value={ u.Email } required autocomplete="off"/>
+								</div>
+								<div class="stack-sm">
+									<label class="form-label" for="edit-phone">رقم الهاتف</label>
+									<input id="edit-phone" class="form-input" type="tel" name="phone" value={ u.Phone } maxlength="20"/>
+								</div>
+							</div>
+
+							<div class="d-grid grid-2-col gap-3">
+								<div class="stack-sm">
+									<label class="form-label" for="edit-national-id">رقم الهوية الوطنية / الإقامة</label>
+									<input id="edit-national-id" class="form-input" type="text" name="national_id" value={ v.NationalID } maxlength="30" placeholder="10 أرقام"/>
+								</div>
+								<div class="stack-sm">
+									<label class="form-label" for="edit-status">حالة الحساب</label>
+									<select id="edit-status" class="form-select font-bold" name="status">
+										<option value="active" selected?={ u.Status == identity.StatusActive }>نشط ومفعل</option>
+										<option value="suspended" selected?={ u.Status == identity.StatusSuspended }>موقوف / معلق</option>
+									</select>
+								</div>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label" for="edit-avatar">رابط الصورة الرمزية (Avatar URL)</label>
+								<input id="edit-avatar" class="form-input" type="url" name="avatar_url" value={ u.AvatarURL } placeholder="https://..."/>
+							</div>
+
+							<div class="p-3 bg-surface-sunken rounded-xl border mt-2">
+								<div class="text-xs font-black text-primary mb-2">ربط المنشأة والفرع (Organization & Branch)</div>
+								<div class="d-grid gap-3">
+									<div class="stack-sm">
+										<label class="form-label" for="edit-org">المنشأة التابع لها</label>
+										<select id="edit-org" class="form-select text-xs font-bold" name="org_id">
+											<option value="">— بدون منشأة (حساب مستقل) —</option>
+											for _, o := range v.Organizations {
+												if o != nil {
+													<option
+														value={ fmt.Sprintf("%d", o.ID) }
+														selected?={ v.PrimaryMember != nil && v.PrimaryMember.OrganizationID == o.ID }
+													>
+														{ o.LegalName }
+													</option>
+												}
+											}
+										</select>
+									</div>
+									<div class="d-grid grid-2-col gap-3">
+										<div class="stack-sm">
+											<label class="form-label" for="edit-branch">الفرع المخصص</label>
+											<select id="edit-branch" class="form-select text-xs font-bold" name="branch_id">
+												<option value="">— المركز الرئيسي / كافة الفروع —</option>
+												for _, b := range v.Branches {
+													if b != nil {
+														<option
+															value={ fmt.Sprintf("%d", b.ID) }
+															selected?={ v.PrimaryMember != nil && v.PrimaryMember.BranchID != nil && *v.PrimaryMember.BranchID == b.ID }
+														>
+															{ b.Name.Get("ar") }
+														</option>
+													}
+												}
+											</select>
+										</div>
+										<div class="stack-sm">
+											<label class="form-label" for="edit-job-title">المسمى الوظيفي</label>
+											<input
+												id="edit-job-title"
+												class="form-input text-xs"
+												type="text"
+												name="job_title"
+												value={ jobTitleVal }
+												placeholder="مثال: مسؤول مبيعات، صيدلي..."
+											/>
+										</div>
+									</div>
+								</div>
+							</div>
+
+							<div class="d-flex items-center gap-3 mt-4 pt-3 border-t">
+								<button type="submit" class="btn btn-primary font-black">حفظ التعديلات</button>
+								<button type="button" class="btn btn-secondary" @click="showEditModal = false">إلغاء</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			}
+
+			<!-- Set Password Modal -->
+			if v.CanSetPassword {
+				<div
+					x-show="showPasswordModal"
+					x-cloak
+					class="modal-backdrop fixed inset-0 z-50 d-flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs"
+					@keydown.escape.window="showPasswordModal = false"
+				>
+					<div
+						class="glass-panel p-6 max-w-md w-full rounded-2xl shadow-xl border"
+						@click.away="showPasswordModal = false"
+					>
+						<div class="flex-between items-center mb-4 pb-3 border-b">
+							<div class="d-flex items-center gap-2">
+								<div class="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 d-flex items-center justify-center border">
+									@components.IconLock("icon-xs")
+								</div>
+								<h3 class="text-base font-black text-primary m-0">تعيين كلمة مرور جديدة</h3>
+							</div>
+							<button type="button" class="btn btn-secondary btn-icon btn-sm" @click="showPasswordModal = false">✕</button>
+						</div>
+
+						<div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-800 dark:text-amber-300 mb-4">
+							<strong>تنبيه أمني:</strong>
+							سيتم تغيير كلمة المرور فوراً، إنهاء كافة الجلسات النشطة للمستخدم، وإلغاء أي حظر مؤقت بسبب محاولات الدخول الفاشلة ليتمكن من تسجيل الدخول فوراً.
+						</div>
+
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/password", u.ID)) } class="d-grid gap-3">
+							<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+
+							<div class="stack-sm">
+								<label class="form-label" for="new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+								<input
+									id="new-pass"
+									class="form-input font-mono"
+									type="password"
+									name="password"
+									required
+									minlength="8"
+									autocomplete="new-password"
+									placeholder="••••••••"
+								/>
+								<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً.</span>
+							</div>
+
+							<div class="stack-sm">
+								<label class="form-label" for="confirm-pass">تأكيد كلمة المرور <span class="text-danger">*</span></label>
+								<input
+									id="confirm-pass"
+									class="form-input font-mono"
+									type="password"
+									name="confirm_password"
+									required
+									minlength="8"
+									autocomplete="new-password"
+									placeholder="••••••••"
+								/>
+							</div>
+
+							<div class="d-flex items-center gap-3 mt-4 pt-3 border-t">
+								<button type="submit" class="btn btn-primary font-black">تعيين كلمة المرور</button>
+								<button type="button" class="btn btn-secondary" @click="showPasswordModal = false">إلغاء</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			}
+
+		</div>
+	}
+}
+
+// adminUserRoleForm assigns the account a platform role.
+//
+// Changing a role ends every session the account holds, because permissions
+// are resolved per request from the role: leaving the old sessions open would
+// let the user keep acting under authority that was just taken away until
+// their cookie happened to expire.
+templ adminUserRoleForm(v AdminUserDetailView) {
+	if len(v.Roles) > 0 {
+		<div class="glass-panel p-6">
+			<h3 class="text-base font-extrabold text-primary mt-0 mb-1">الدور على مستوى المنصة</h3>
+			<p class="text-xs text-secondary mb-4">
+				يحدد الدور ما يراه هذا الحساب داخل لوحة الإدارة. صلاحياته داخل منشأته تأتي من عضويته وليس من هنا.
+			</p>
+			if v.SelfEdit {
+				<p class="text-sm text-secondary m-0">
+					لا يمكنك تغيير دور حسابك بنفسك؛ يقوم بذلك مشرف آخر.
+				</p>
+			} else {
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/role", v.User.ID)) } class="d-flex items-center gap-3">
+					<select name="role" class="form-input">
+						for _, role := range v.Roles {
+							<option value={ role.Key } selected?={ role.Selected }>
+								if role.IsStaff {
+									{ role.Name + " — لوحة الإدارة" }
+								} else {
+									{ role.Name }
+								}
+							</option>
+						}
+					</select>
+					<button type="submit" class="btn btn-primary font-bold">حفظ الدور</button>
+					<span class="text-xs text-muted">سيتم إنهاء جلسات المستخدم الحالية فوراً.</span>
+				</form>
+			}
+		</div>
+	}
+}
+
+// adminModeratorHierarchyForm places a moderator in the hierarchy.
+//
+// It is a separate form from the role form on purpose: changing who a moderator
+// reports to changes who can read the temporary warehouses they upload, which
+// is an access-control decision with its own permission and its own audit
+// entry. Bundling it into "save role" would hide that.
+templ adminModeratorHierarchyForm(v AdminUserDetailView) {
+	if v.IsModerator && v.CanAssignModerator {
+		<div class="glass-panel p-6">
+			<h3 class="text-base font-extrabold text-primary mt-0 mb-1">موقع المشرف في التسلسل</h3>
+			<p class="text-xs text-secondary mb-4">
+				المشرف الرئيسي المستقل يتبع مدير النظام مباشرة ويرى مستودعات المشرفين المعيّنين تحته.
+				المشرف التابع يرى مستودعاته وحده.
+			</p>
+			if v.SubordinateCount > 0 {
+				<p class="text-sm text-secondary m-0 mb-3">
+					{ fmt.Sprintf("يدير هذا المشرف %d مشرفاً. لنقله تحت إدارة مشرف آخر، انقل من يتبعونه أولاً.", v.SubordinateCount) }
+				</p>
+			}
+			<form
+				method="POST"
+				action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/moderator-parent", v.User.ID)) }
+				class="stack-sm"
+				x-data={ "{ level: '" + moderatorLevelOf(v) + "' }" }
+			>
+				<label class="form-label d-flex items-center gap-2">
+					<input type="radio" name="moderator_level" value="main" x-model="level"/>
+					<span class="text-body">مشرف رئيسي مستقل</span>
+				</label>
+				<label class="form-label d-flex items-center gap-2">
+					<input
+						type="radio"
+						name="moderator_level"
+						value="sub"
+						x-model="level"
+						disabled?={ v.SubordinateCount > 0 || len(v.MainModerators) == 0 }
+					/>
+					<span class="text-body">يعمل تحت إدارة مشرف رئيسي</span>
+				</label>
+				<div x-show="level === 'sub'" x-cloak>
+					if len(v.MainModerators) > 0 {
+						<select name="moderator_parent_id" class="form-input">
+							<option value="">— اختر المشرف الرئيسي —</option>
+							for _, m := range v.MainModerators {
+								<option
+									value={ fmt.Sprintf("%d", m.UserID) }
+									selected?={ v.ModeratorParentID != nil && *v.ModeratorParentID == m.UserID }
+								>
+									{ m.Name } ({ fmt.Sprintf("%d مشرف تحته", m.Team) })
+								</option>
+							}
+						</select>
+					} else {
+						<p class="text-xs text-warning m-0">لا يوجد مشرف رئيسي مستقل آخر لتعيينه.</p>
+					}
+				</div>
+				<div class="d-flex items-center gap-3 mt-2">
+					<button type="submit" class="btn btn-primary font-bold">حفظ التبعية</button>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+// moderatorLevelOf is the radio group's initial selection.
+func moderatorLevelOf(v AdminUserDetailView) string {
+	if v.ModeratorParentID != nil {
+		return "sub"
+	}
+	return "main"
+}
+
+

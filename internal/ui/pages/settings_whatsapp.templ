@@ -1,0 +1,169 @@
+package pages
+
+import (
+	"strconv"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/muhiya/dawa24-store/internal/modules/whatsapp"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// WhatsAppSettingsData is the state of the WhatsApp card on the settings page.
+type WhatsAppSettingsData struct {
+	Enabled bool
+	// Link is the user's pending or confirmed link, nil when none.
+	Link *whatsapp.Link
+	// DeepLink is set right after a code was issued, until it is used.
+	DeepLink  string
+	ExpiresAt time.Time
+	Notice    string
+	// NoticeKind is "success" or "danger".
+	NoticeKind string
+}
+
+// whatsappNumber shows a wa_id as the international number it is.
+func whatsappNumber(l *whatsapp.Link) string {
+	if l == nil {
+		return ""
+	}
+	return "+" + l.WAID
+}
+
+func whatsappPollURL(expires time.Time) string {
+	return "/settings/whatsapp?until=" + strconv.FormatInt(expires.Unix(), 10)
+}
+
+templ WhatsAppSettingsCard(data WhatsAppSettingsData, lang string) {
+	<div id="whatsapp-settings" class="max-w-2xl d-flex flex-col gap-5 text-start">
+		<div class="stack-sm">
+			<h3 class="text-lg font-extrabold text-primary m-0">{ i18n.T(lang, "settings.wa_title") }</h3>
+			<p class="text-sm text-muted m-0">{ i18n.T(lang, "settings.wa_desc") }</p>
+		</div>
+
+		if data.Notice != "" {
+			<div class={ "alert", "alert-" + data.NoticeKind } role="status">{ data.Notice }</div>
+		}
+
+		if !data.Enabled {
+			<div class="alert alert-info">{ i18n.T(lang, "settings.wa_disabled") }</div>
+		} else if data.Link != nil && data.Link.Status == whatsapp.LinkPending {
+			@whatsappPendingPanel(data.Link, lang)
+		} else if data.Link != nil {
+			@whatsappLinkedPanel(data.Link, lang)
+		} else if data.DeepLink != "" {
+			@whatsappCodePanel(data, lang)
+		} else {
+			<div class="p-4 border rounded-lg bg-surface-sunken d-flex flex-col gap-3">
+				<ol class="text-sm text-muted m-0">
+					<li>{ i18n.T(lang, "settings.wa_step1") }</li>
+					<li>{ i18n.T(lang, "settings.wa_step2") }</li>
+				</ol>
+				<div>
+					<button type="button" class="btn btn-primary font-black" hx-post="/settings/whatsapp/link" hx-target="#whatsapp-settings" hx-swap="outerHTML">
+						@components.IconWhatsApp("icon-xs")
+						<span>{ i18n.T(lang, "settings.wa_connect") }</span>
+					</button>
+				</div>
+			</div>
+		}
+	</div>
+}
+
+// whatsappCodePanel shows a fresh link and waits for it to be opened. The
+// poll carries X-Dawa-Background so it does not count as the user being
+// active, and stops by itself once the code has expired.
+templ whatsappCodePanel(data WhatsAppSettingsData, lang string) {
+	<div
+		class="p-4 border rounded-lg bg-surface-sunken d-flex flex-col gap-3"
+		hx-get={ whatsappPollURL(data.ExpiresAt) }
+		hx-trigger="every 4s"
+		hx-target="#whatsapp-settings"
+		hx-swap="outerHTML"
+		hx-headers='{"X-Dawa-Background": "1"}'
+	>
+		<ol class="text-sm text-muted m-0">
+			<li>{ i18n.T(lang, "settings.wa_step1") }</li>
+			<li>{ i18n.T(lang, "settings.wa_step2") }</li>
+		</ol>
+		<div class="row-center flex-wrap gap-3">
+			<a href={ templ.SafeURL(data.DeepLink) } target="_blank" rel="noopener noreferrer" class="btn btn-primary font-black">
+				@components.IconExternalLink("icon-xs")
+				<span>{ i18n.T(lang, "settings.wa_open") }</span>
+			</a>
+			<span class="text-sm text-muted">{ i18n.T(lang, "settings.wa_waiting") }</span>
+		</div>
+		<p class="text-sm text-muted m-0">{ i18n.T(lang, "settings.tg_code_expires") }</p>
+	</div>
+}
+
+templ whatsappPendingPanel(link *whatsapp.Link, lang string) {
+	<div class="p-4 border rounded-lg bg-surface-sunken d-flex flex-col gap-3">
+		<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.wa_pending_title") }</div>
+		<p class="text-sm text-muted m-0">{ i18n.T(lang, "settings.wa_pending_desc") }</p>
+		<div class="p-4 border rounded-lg stack-sm">
+			<div class="font-bold text-primary tabular-nums" dir="ltr">{ whatsappNumber(link) }</div>
+			if link.DisplayName != "" {
+				<div class="text-sm text-muted">{ link.DisplayName }</div>
+			}
+		</div>
+		<form class="row-center flex-wrap gap-3 m-0" hx-post="/settings/whatsapp/confirm" hx-target="#whatsapp-settings" hx-swap="outerHTML">
+			<input type="hidden" name="link" value={ link.PublicID }/>
+			<button type="submit" class="btn btn-primary font-black">
+				@components.IconCheck("icon-xs")
+				<span>{ i18n.T(lang, "settings.tg_confirm") }</span>
+			</button>
+			<button type="button" class="btn btn-outline-danger font-bold" hx-post="/settings/whatsapp/unlink" hx-target="#whatsapp-settings" hx-swap="outerHTML">
+				@components.IconX("icon-xs")
+				<span>{ i18n.T(lang, "settings.tg_reject") }</span>
+			</button>
+		</form>
+	</div>
+}
+
+templ whatsappLinkedPanel(link *whatsapp.Link, lang string) {
+	<div class="p-4 border rounded-lg bg-surface-sunken d-flex flex-col gap-3">
+		<div class="flex-between items-center flex-wrap gap-3">
+			<div class="stack-sm">
+				<div class="row-center gap-3">
+					@components.IconCheckCircle("icon-sm")
+					<span class="font-extrabold text-primary">{ i18n.T(lang, "settings.wa_linked_title") }</span>
+				</div>
+				<div class="text-sm text-muted" dir="ltr">{ whatsappNumber(link) }</div>
+			</div>
+			<button
+				type="button"
+				class="btn btn-outline-danger btn-sm font-bold"
+				hx-post="/settings/whatsapp/unlink"
+				hx-target="#whatsapp-settings"
+				hx-swap="outerHTML"
+				hx-confirm={ i18n.T(lang, "settings.wa_unlink_confirm") }
+			>
+				<span>{ i18n.T(lang, "settings.tg_unlink") }</span>
+			</button>
+		</div>
+		if link.Status == whatsapp.LinkBlocked {
+			<div class="alert alert-warning">{ i18n.T(lang, "settings.wa_blocked") }</div>
+		}
+	</div>
+
+	<form class="d-flex flex-col gap-3 m-0" hx-post="/settings/whatsapp/notify" hx-target="#whatsapp-settings" hx-swap="outerHTML">
+		<div class="stack-sm">
+			<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.wa_notify_title") }</div>
+			<div class="text-sm text-muted">{ i18n.T(lang, "settings.tg_notify_desc") }</div>
+		</div>
+		for _, c := range chatbridge.Categories {
+			<label class="flex-between items-center p-4 border rounded-lg bg-surface-sunken">
+				<span class="font-bold text-primary">{ i18n.TKey(lang, telegramCategoryKey(c)) }</span>
+				<input type="checkbox" name="on" value={ string(c) } class="form-checkbox" checked?={ !link.Muted(c) }/>
+			</label>
+		}
+		<div>
+			<button type="submit" class="btn btn-primary font-black">
+				@components.IconCheck("icon-xs")
+				<span>{ i18n.T(lang, "settings.tg_save") }</span>
+			</button>
+		</div>
+	</form>
+}

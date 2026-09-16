@@ -1,0 +1,310 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*catalog.Brand, categories []*catalog.Category, dosageForms []string, totalCount, currentPage, pageSize int, searchQuery, statusFilter, dosageFilter, manufacturerFilter, currentSort string, brandFilterVal, catFilterVal int64) {
+	@layouts.AdminShell("دليل الأدوية والأصناف الأساسية", "products", lang, dir) {
+		<div
+			class="stack-lg"
+			x-data="{
+				searchQuery: '',
+				dosageFilter: 'all',
+				statusFilter: 'all',
+				editData: {
+					id: 0,
+					name_ar: '',
+					name_en: '',
+					generic_name: '',
+					active_ingredient: '',
+					dosage_form: 'أقراص',
+					brand_id: 0,
+					category_id: 0,
+					manufacturer: '',
+					eda_reg_number: '',
+					price: '0.00',
+					image: '',
+					description_ar: '',
+					description_en: '',
+					status: 'active'
+				},
+				openEdit(id, nameAr, nameEn, genericName, activeIng, dosageForm, brandId, categoryId, manufacturer, edaReg, price, image, descAr, descEn, status) {
+					this.editData = {
+						id: id,
+						name_ar: nameAr || '',
+						name_en: nameEn || '',
+						generic_name: genericName || '',
+						active_ingredient: activeIng || '',
+						dosage_form: dosageForm || 'أقراص',
+						brand_id: brandId || 0,
+						category_id: categoryId || 0,
+						manufacturer: manufacturer || '',
+						eda_reg_number: edaReg || '',
+						price: price || '0.00',
+						image: image || '',
+						description_ar: descAr || '',
+						description_en: descEn || '',
+						status: status || 'active'
+					};
+					const modal = document.getElementById('product-edit-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			}"
+		>
+			{{
+				totalCountVal := totalCount
+			}}
+			<!-- Header Action Bar -->
+			@components.PageHeader(components.PageHeaderProps{
+				Title:      "دليل الأصناف الدوائية المعتمدة",
+				Subtitle:   "إدارة الكتالوج الرسمي الموحد للأدوية والمستحضرات المعتمدة من هيئة الدواء المصرية (EDA)",
+				Count:      &totalCountVal,
+				CountLabel: "صنف معتمد",
+			}) {
+				<a href="/admin/products/import" class="btn btn-secondary font-semibold gap-2">
+					@components.IconUpload("icon-xs")
+					<span>استيراد ملف الكتالوج (Excel / CSV)</span>
+				</a>
+				<button
+					type="button"
+					class="btn btn-primary font-bold gap-2"
+					data-on-click="openDialog('product-create-modal')"
+				>
+					@components.IconPlus("icon-xs")
+					<span>إضافة صنف دوائي جديد +</span>
+				</button>
+				if totalCount > 0 {
+					<form
+						method="POST"
+						action="/admin/products/delete-all"
+						class="d-inline m-0"
+						data-confirm="تحذير نهائي فائق الأهمية: هل أنت متأكد من حذف جميع أصناف الكتالوج المركزي الأساسي بالكامل؟ لا يمكن التراجع عن هذا الإجراء."
+					>
+						<button type="submit" class="btn btn-ghost text-danger font-bold gap-2">
+							<span>حذف جميع أصناف الكتالوج</span>
+						</button>
+					</form>
+				}
+			}
+
+			<!-- Table & Search Card -->
+			<div class="glass-panel p-4 mb-0">
+				<!-- Search & Filter Controls (Server-Side Full Database Search) -->
+				<form
+					method="GET"
+					action="/admin/products"
+					class="b2b-filter-bar mb-3"
+				>
+					<div class="b2b-filter-grid">
+						<div class="search-input-group w-full">
+							<span class="search-icon">
+								@components.IconSearch("icon-sm")
+							</span>
+							<input
+								type="text"
+								name="q"
+								class="form-input search-input"
+								placeholder="البحث بالاسم العربي، التجاري، العلمي، أو رقم التسجيل EDA..."
+								value={ searchQuery }
+							/>
+						</div>
+
+						<div class="stack-sm">
+							<select name="dosage" class="form-select" data-autosubmit>
+								<option value="all" selected?={ dosageFilter == "" || dosageFilter == "all" }>كل الأشكال الصيدلية</option>
+								for _, df := range dosageForms {
+									<option value={ df } selected?={ dosageFilter == df }>{ df }</option>
+								}
+							</select>
+						</div>
+
+						<div class="stack-sm">
+							<select name="category_id" class="form-select" data-autosubmit>
+								<option value="0" selected?={ catFilterVal == 0 }>كل التصنيفات والأقسام</option>
+								for _, c := range categories {
+									<option value={ fmt.Sprintf("%d", c.ID) } selected?={ catFilterVal == c.ID }>
+										{ getCategoryDisplayLabel(c, categories) }
+									</option>
+								}
+							</select>
+						</div>
+
+						<div
+							class="position-relative w-full"
+							x-data={ fmt.Sprintf(`{
+								open: false,
+								search: %q,
+								selectBrand(name) {
+									this.search = name;
+									this.open = false;
+									$nextTick(() => { $el.closest('form').submit(); });
+								},
+								clear() {
+									this.search = '';
+									this.open = false;
+									$nextTick(() => { $el.closest('form').submit(); });
+								}
+							}`, manufacturerFilter) }
+							@click.outside="open = false"
+						>
+							<div class="search-input-group w-full">
+								<span class="search-icon">
+									@components.IconBuilding("icon-xs")
+								</span>
+								<input
+									type="text"
+									name="manufacturer"
+									x-model="search"
+									@focus="open = true"
+									@input="open = true"
+									class="form-input search-input"
+									placeholder="اختر أو ابحث عن الشركة المصنعة..."
+									autocomplete="off"
+								/>
+								<button
+									type="button"
+									x-show="search.length > 0"
+									@click="clear()"
+									class="btn btn-ghost btn-xs text-muted"
+									style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.15rem;"
+									title="مسح اختيار الشركة"
+								>
+									✕
+								</button>
+							</div>
+
+							<!-- Dropdown Results Menu -->
+							<div
+								x-show="open"
+								x-transition.opacity.duration.150ms
+								class="search-dropdown-menu"
+								style="display: none;"
+							>
+								<div
+									@click="clear()"
+									class="search-dropdown-item font-bold text-muted"
+								>
+									<span>كل الشركات المصنعة</span>
+									<span class="badge badge-neutral text-3xs">الكل</span>
+								</div>
+								for _, b := range brands {
+									{{
+										bAr := b.Name.Get("ar")
+										bEn := b.Name.Get("en")
+										displayName := bAr
+										if displayName == "" {
+											displayName = bEn
+										}
+									}}
+									if displayName != "" {
+										<div
+											x-show={ fmt.Sprintf("!search || %q.toLowerCase().includes(search.toLowerCase()) || %q.toLowerCase().includes(search.toLowerCase())", bAr, bEn) }
+											@click={ fmt.Sprintf("selectBrand(%q)", displayName) }
+											class="search-dropdown-item"
+										>
+											<span class="font-bold text-primary">{ displayName }</span>
+											if bEn != "" && bEn != displayName {
+												<span class="text-3xs text-muted font-mono" dir="ltr">{ bEn }</span>
+											}
+										</div>
+									}
+								}
+							</div>
+						</div>
+
+						<div class="stack-sm">
+							<select name="status" class="form-select" data-autosubmit>
+								<option value="all" selected?={ statusFilter == "" || statusFilter == "all" }>كل الحالات</option>
+								<option value="active" selected?={ statusFilter == "active" }>نشط ومعتمد (Active)</option>
+								<option value="inactive" selected?={ statusFilter == "inactive" }>موقوف (Inactive)</option>
+							</select>
+						</div>
+
+						<input type="hidden" name="limit" value={ fmt.Sprintf("%d", pageSize) }/>
+						if currentSort != "" {
+							<input type="hidden" name="sort" value={ currentSort }/>
+						}
+
+						<div class="d-flex items-center gap-2">
+							<button type="submit" class="btn btn-primary btn-sm font-extrabold px-4">
+								@components.IconSearch("icon-xs")
+								<span>بحث شامل</span>
+							</button>
+							if searchQuery != "" || (statusFilter != "" && statusFilter != "all") || (dosageFilter != "" && dosageFilter != "all") || manufacturerFilter != "" || catFilterVal > 0 || currentSort != "" {
+								<a href="/admin/products" class="btn btn-ghost btn-sm font-bold" title="إعادة تعيين الفلاتر">
+									إلغاء الفلاتر
+								</a>
+							}
+						</div>
+					</div>
+				</form>
+
+				<!-- Table Status & Page Size Controls -->
+				if totalCount > 0 {
+					<div class="d-flex flex-wrap items-center justify-between gap-3 p-3 bg-surface-sunken rounded-xl border mb-3">
+						<div class="d-flex items-center gap-2">
+							<span class="badge badge-sky text-xs font-bold tabular-nums">
+								{ fmt.Sprintf("صفحة %d من %d", currentPage, totalPagesHelper(totalCount, pageSize)) }
+							</span>
+							<span class="text-xs text-muted">
+								{ fmt.Sprintf("عرض %d - %d من إجمالي %d صنف معتمد", (currentPage-1)*pageSize+1, minIntHelper(currentPage*pageSize, totalCount), totalCount) }
+							</span>
+						</div>
+						
+						<!-- Rows per page selector -->
+						<div class="d-flex items-center gap-2 text-xs text-muted">
+							<span>الأصناف في الصفحة:</span>
+							<select
+								class="form-select input-sm py-1 px-2 text-xs"
+								aria-label="عدد الأصناف في الصفحة"
+								data-navigate-on-change
+							>
+								for _, n := range []int{10, 25, 50, 100} {
+									<option
+										value={ buildAdminProductsPageURL(1, n, searchQuery, statusFilter, dosageFilter, manufacturerFilter, currentSort, brandFilterVal, catFilterVal) }
+										selected?={ n == pageSize }
+									>
+										{ fmt.Sprintf("%d صنف", n) }
+									</option>
+								}
+							</select>
+						</div>
+					</div>
+				}
+
+				<!-- Master Products Table Component -->
+				if len(products) == 0 {
+					@components.EmptyState(components.EmptyStateProps{
+						Title:   "لا توجد أصناف دوائية مسجلة",
+						Message: "لم يتم تسجيل أدوية في الكتالوج الأساسي بعد أو لا توجد نتائج مطابقة لمعايير البحث. ابدأ بإضافة صنف أو استيراد ملف الكتالوج.",
+					})
+				} else {
+					@AdminProductsTable(products, brands, categories, lang, currentSort, searchQuery, statusFilter, dosageFilter, manufacturerFilter, catFilterVal, pageSize)
+
+					<!-- Bottom Full B2B Pagination -->
+					if totalCount > 0 {
+						<div class="mt-4 pt-3 border-t">
+							@components.B2BPagination(components.PaginationProps{
+								CurrentPage: currentPage,
+								PageSize:    pageSize,
+								TotalCount:  totalCount,
+								BaseURL:     "/admin/products",
+								QueryValues: adminProductsQuery(searchQuery, statusFilter, dosageFilter, manufacturerFilter, currentSort, brandFilterVal, catFilterVal),
+							})
+						</div>
+					}
+				}
+			</div>
+
+			<!-- Modals (Create & Edit) -->
+			@AdminProductCreateModal(categories, brands)
+			@AdminProductEditModal(categories, brands)
+
+		</div>
+	}
+}

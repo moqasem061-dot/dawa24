@@ -1,0 +1,257 @@
+package pages
+
+import (
+	"fmt"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/modules/notifications"
+	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// Notifications renders the complete unified notifications center inside the actor's dashboard shell.
+templ Notifications(logs []*notifications.NotificationLog, unreadCount int, lang, dir string, isPartial bool) {
+	if isPartial {
+		@NotificationsList(logs)
+	} else {
+		@layouts.ShellFor("مركز الإشعارات والتنبيهات | دوا 24", "notifications", lang, dir, authctx.FromContext(ctx)) {
+			@NotificationsContent(logs, unreadCount, lang)
+		}
+	}
+}
+
+templ NotificationsContent(logs []*notifications.NotificationLog, unreadCount int, lang string) {
+	<div
+		class="page-container max-w-4xl"
+		x-data="{ tab: 'all' }"
+	>
+		<!-- 1. Header Banner -->
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3.5">
+					<div class="user-avatar-badge">
+						@components.IconBell("icon-sm")
+					</div>
+     <div class="stack-sm">
+						<div class="d-flex items-center gap-2.5 mb-1">
+							<h1 class="text-2xl font-black text-primary m-0">
+								مركز الإشعارات والتنبيهات
+							</h1>
+							if unreadCount > 0 {
+								<span class="badge badge-rose font-black text-xs tabular-nums">
+									{ fmt.Sprintf("%d غير مقروء", unreadCount) }
+								</span>
+							} else {
+								<span class="badge badge-emerald font-bold text-xs">
+									جميع الإشعارات مقروءة
+								</span>
+							}
+						</div>
+						<p class="text-xs text-secondary m-0">
+							متابعة فورية لكافة طلبات الشراء، أوامر التوريد، تحديثات الأسعار والمخزون، وتنبيهات الحساب.
+						</p>
+					</div>
+				</div>
+
+				<!-- Header Actions: Mark All Read & Badge -->
+				<div class="d-flex items-center gap-2 flex-wrap">
+					if unreadCount > 0 {
+						<form action="/notifications/read-all" method="POST" class="m-0">
+							<button
+								type="submit"
+								class="btn btn-secondary btn-sm font-bold text-xs gap-1.5"
+								title="تعليم كافة التنبيهات كمقروءة"
+							>
+								@components.IconCheck("icon-xs")
+								<span>تحديد الكل كمقروء</span>
+							</button>
+						</form>
+					}
+				</div>
+			</div>
+
+			<!-- 2. Subtabs Navigation for Filter: All / Unread / Read -->
+			<div class="tabs-nav mt-4">
+				<button
+					type="button"
+					@click="tab = 'all'"
+					class="tab-btn"
+					:class="{ 'active': tab === 'all' }"
+				>
+					<span>كافة الإشعارات</span>
+					<span class="badge badge-secondary text-2xs font-bold tabular-nums ms-1.5">{ fmt.Sprintf("%d", len(logs)) }</span>
+				</button>
+
+				<button
+					type="button"
+					@click="tab = 'unread'"
+					class="tab-btn"
+					:class="{ 'active': tab === 'unread' }"
+				>
+					<span>غير المقروءة فقط</span>
+					if unreadCount > 0 {
+						<span class="badge badge-rose text-2xs font-bold tabular-nums ms-1.5">{ fmt.Sprintf("%d", unreadCount) }</span>
+					} else {
+						<span class="badge badge-secondary text-2xs font-bold tabular-nums ms-1.5">0</span>
+					}
+				</button>
+
+				<button
+					type="button"
+					@click="tab = 'read'"
+					class="tab-btn"
+					:class="{ 'active': tab === 'read' }"
+				>
+					<span>المقروءة سابقاً</span>
+					<span class="badge badge-secondary text-2xs font-bold tabular-nums ms-1.5">{ fmt.Sprintf("%d", len(logs) - unreadCount) }</span>
+				</button>
+			</div>
+		</div>
+
+		<!-- 3. Notifications List Area -->
+		<div class="stack-sm" id="notifications-list">
+			@NotificationsList(logs)
+		</div>
+	</div>
+}
+
+templ NotificationsList(logs []*notifications.NotificationLog) {
+	if len(logs) == 0 {
+		<div class="glass-panel p-12 text-center empty-state-glass">
+			<div class="text-4xl mb-3">@components.IconBell("icon-sm")</div>
+			<h3 class="text-lg font-black text-primary mb-2">
+				لا توجد إشعارات حالياً
+			</h3>
+			<p class="text-sm text-secondary max-w-md mx-auto mb-0">
+				أنت على اطلاع دائم بجميع الطلبات وتحديثات الأسعار والمخزون، وسنوافيك بأحدث التنبيهات هنا فور ورودها.
+			</p>
+		</div>
+	} else {
+		<div class="d-flex flex-col gap-3">
+			for _, l := range logs {
+				<div
+					x-show={ notifFilterExpr(l.IsRead) }
+					x-cloak
+					class={ "glass-panel p-4 flex-between items-start flex-wrap gap-4 transition-all", templ.KV("notif-unread-card", !l.IsRead), templ.KV("notif-read-card", l.IsRead) }
+				>
+					<!-- Icon & Main Details -->
+					<div class="d-flex items-start gap-3.5 flex-1">
+						<!-- Icon Badge -->
+						<div class={ "user-avatar-badge rounded-xl flex-shrink-0 p-2.5", notifBadgeClass(l.Title, l.IsRead) }>
+							@notifIcon(l.Title)
+						</div>
+
+						<div class="flex-1">
+							<div class="d-flex items-center gap-2 mb-1 flex-wrap">
+								if !l.IsRead {
+									<span class="notif-pulse-dot" title="إشعار غير مقروء"></span>
+								}
+								<h4 class={ "text-sm m-0 leading-snug", templ.KV("font-black text-primary", !l.IsRead), templ.KV("font-bold text-secondary", l.IsRead) }>
+									{ l.Title }
+								</h4>
+								if !l.IsRead {
+									<span class="badge badge-sky text-2xs font-bold py-0.5 px-2">جديد</span>
+								}
+							</div>
+
+							<p class={ "text-xs m-0 leading-relaxed mb-2", templ.KV("text-secondary font-medium", !l.IsRead), templ.KV("text-muted", l.IsRead) }>
+								{ l.Body }
+							</p>
+
+							<!-- Timestamp & Status -->
+							<div class="d-flex items-center gap-3 text-2xs text-muted tabular-nums">
+								<span class="d-flex items-center gap-1">
+									@components.IconClock("icon-2xs")
+									<span>{ l.CreatedAt.Format("2006-01-02 03:04 PM") }</span>
+								</span>
+								if l.IsRead {
+									<span class="text-muted d-flex items-center gap-1">
+										تمت القراءة
+									</span>
+								}
+							</div>
+						</div>
+					</div>
+
+					<!-- Action Buttons -->
+					<div class="d-flex items-center gap-2 justify-end">
+						if !l.IsRead {
+							<form action={ templ.SafeURL(fmt.Sprintf("/notifications/%d/read", l.ID)) } method="POST" class="m-0">
+								<button
+									type="submit"
+									class="btn btn-secondary btn-sm font-bold text-xs px-3 gap-1"
+									title="تحديد كمقروء"
+								>
+									@components.IconCheck("icon-xs")
+									<span>تحديد كمقروء</span>
+								</button>
+							</form>
+						}
+					</div>
+				</div>
+			}
+		</div>
+	}
+}
+
+func notifFilterExpr(isRead bool) string {
+	if isRead {
+		return "tab === 'all' || tab === 'read'"
+	}
+	return "tab === 'all' || tab === 'unread'"
+}
+
+func notifBadgeClass(title string, isRead bool) string {
+	if isRead {
+		return "bg-surface-sunken text-muted border border-slate-200"
+	}
+	t := strings.ToLower(title)
+	switch {
+	case strings.Contains(t, "موافقة") || strings.Contains(t, "اعتماد") || strings.Contains(t, "تفعيل") || strings.Contains(t, "توثيق") || strings.Contains(t, "approved") || strings.Contains(t, "verified"):
+		return "bg-emerald-500/15 text-emerald-700 border border-emerald-500/30"
+	case strings.Contains(t, "رفض") || strings.Contains(t, "إلغاء") || strings.Contains(t, "rejected") || strings.Contains(t, "cancelled"):
+		return "bg-rose-500/15 text-rose-700 border border-rose-500/30"
+	case strings.Contains(t, "شحن") || strings.Contains(t, "توصيل") || strings.Contains(t, "استلام") || strings.Contains(t, "مندوب") || strings.Contains(t, "delivery") || strings.Contains(t, "courier"):
+		return "bg-sky-500/15 text-sky-700 border border-sky-500/30"
+	case strings.Contains(t, "طلب") || strings.Contains(t, "order"):
+		return "bg-emerald-500/15 text-emerald-600 border border-emerald-500/30"
+	case strings.Contains(t, "تسعير") || strings.Contains(t, "تفاوض") || strings.Contains(t, "quote") || strings.Contains(t, "rfq"):
+		return "bg-indigo-500/15 text-indigo-700 border border-indigo-500/30"
+	case strings.Contains(t, "محفظة") || strings.Contains(t, "رصيد") || strings.Contains(t, "إيداع") || strings.Contains(t, "سداد") || strings.Contains(t, "wallet") || strings.Contains(t, "deposit"):
+		return "bg-teal-500/15 text-teal-700 border border-teal-500/30"
+	case strings.Contains(t, "عرض") || strings.Contains(t, "رعاية") || strings.Contains(t, "إعلان") || strings.Contains(t, "sponsor") || strings.Contains(t, "offer") || strings.Contains(t, "ad"):
+		return "bg-amber-500/15 text-amber-700 border border-amber-500/30"
+	case strings.Contains(t, "مرحباً") || strings.Contains(t, "تسجيل") || strings.Contains(t, "حساب") || strings.Contains(t, "welcome") || strings.Contains(t, "register"):
+		return "bg-blue-500/15 text-blue-700 border border-blue-500/30"
+	case strings.Contains(t, "أمان") || strings.Contains(t, "دخول") || strings.Contains(t, "security"):
+		return "bg-purple-500/15 text-purple-700 border border-purple-500/30"
+	default:
+		return "bg-brand/15 text-brand border border-brand/30"
+	}
+}
+
+templ notifIcon(title string) {
+	switch {
+		case strings.Contains(title, "موافقة") || strings.Contains(title, "اعتماد") || strings.Contains(title, "تفعيل") || strings.Contains(title, "توثيق") || strings.Contains(title, "approved") || strings.Contains(title, "verified"):
+			@components.IconCheckCircle("icon-xs text-emerald-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "رفض") || strings.Contains(title, "إلغاء") || strings.Contains(title, "rejected") || strings.Contains(title, "cancelled"):
+			@components.IconAlertCircle("icon-xs text-rose-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "شحن") || strings.Contains(title, "توصيل") || strings.Contains(title, "استلام") || strings.Contains(title, "مندوب") || strings.Contains(title, "delivery") || strings.Contains(title, "courier"):
+			@components.IconTruck("icon-xs text-sky-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "تسعير") || strings.Contains(title, "تفاوض") || strings.Contains(title, "quote") || strings.Contains(title, "rfq"):
+			@components.IconTag("icon-xs text-indigo-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "طلب") || strings.Contains(title, "order"):
+			@components.IconPackage("icon-xs text-emerald-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "عرض") || strings.Contains(title, "رعاية") || strings.Contains(title, "إعلان") || strings.Contains(title, "sponsor") || strings.Contains(title, "offer"):
+			@components.IconSparkles("icon-xs text-amber-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "محفظة") || strings.Contains(title, "رصيد") || strings.Contains(title, "إيداع") || strings.Contains(title, "سداد") || strings.Contains(title, "wallet"):
+			@components.IconWallet("icon-xs text-teal-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "مرحباً") || strings.Contains(title, "تسجيل") || strings.Contains(title, "welcome") || strings.Contains(title, "register"):
+			@components.IconUser("icon-xs text-blue-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		case strings.Contains(title, "أمان") || strings.Contains(title, "دخول") || strings.Contains(title, "security"):
+			@components.IconShield("icon-xs text-purple-600 w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+		default:
+			@components.IconBell("icon-xs w-5 h-5 max-w-[20px] max-h-[20px] shrink-0")
+	}
+}

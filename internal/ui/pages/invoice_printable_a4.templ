@@ -1,0 +1,261 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+templ InvoicePrintableA4(data billing.PrintableInvoiceData) {
+	{{ site := layouts.GetSiteSettings(ctx) }}
+	<div class="invoice-paper-a4" id="a4-invoice-container">
+		
+		<!-- Header Block -->
+		<div class="invoice-header">
+			
+			<!-- 1. Right Column: Vendor Identity (Supplier) -->
+			<div class="header-vendor">
+				if data.Vendor.LogoURL != "" {
+					<img
+						src={ data.Vendor.LogoURL }
+						alt={ data.Vendor.DisplayName }
+						class="header-logo"
+						data-img-fallback="hide"
+					/>
+				}
+				<div class="vendor-name-title">
+					{ data.Vendor.DisplayName }
+				</div>
+				if data.Vendor.TaxNumber != "" || data.Vendor.CommercialRegister != "" {
+					<div class="stack-sm font-size-10 text-muted mt-2px">
+						if data.Vendor.TaxNumber != "" {
+							<span>ب.ض: <strong class="tabular-nums">{ data.Vendor.TaxNumber }</strong></span>
+						}
+						if data.Vendor.CommercialRegister != "" {
+							<span class="m-inline-start-2">س.ت: <strong class="tabular-nums">{ data.Vendor.CommercialRegister }</strong></span>
+						}
+					</div>
+				}
+			</div>
+
+			<!-- 2. Center Column: Official Dawa24 Platform Branding & Document Type -->
+			<div class="header-center">
+				if site.LogoURL != "" {
+					<img
+						src={ site.LogoURL }
+						alt={ site.SiteName }
+						class="dawa-brand-logo"
+						data-img-fallback="hide"
+					/>
+				} else {
+					<img
+						src="/static/img/logo.png"
+						alt={ site.SiteName }
+						class="dawa-brand-logo"
+						data-img-fallback="hide"
+					/>
+				}
+				<div class="stack-sm font-size-10 font-bold text-secondary mt-2px">
+					منصة الربط والتوزيع الدوائي المعتمدة
+				</div>
+				<div class="stack-sm invoice-type-badge">
+					فاتورة استلام وتوريد
+				</div>
+			</div>
+
+			<!-- 3. Left Column: Invoice Meta Details -->
+			<div class="header-meta text-left dir-ltr">
+				<div class="stack-sm font-size-11 text-slate mb-1">
+					<span class="dir-rtl d-inline-block font-size-10 text-muted m-right-1">رقم الفاتورة:</span>
+					<strong class="tabular-nums text-dark font-size-12">{ data.InvoiceNumber }</strong>
+				</div>
+				if data.OrderNumber != "" {
+					<div class="stack-sm font-size-10 text-slate mb-1">
+						<span class="dir-rtl d-inline-block font-size-10 text-muted m-right-1">أمر الشراء:</span>
+						<strong class="tabular-nums">#{ data.OrderNumber }</strong>
+					</div>
+				}
+				<div class="stack-sm font-size-10 text-slate mb-1">
+					<span class="dir-rtl d-inline-block font-size-10 text-muted m-right-1">تاريخ الإصدار:</span>
+					<span class="tabular-nums">{ data.IssueDate.Format("2006-01-02 03:04 PM") }</span>
+				</div>
+				<div class="stack-sm font-size-10 text-slate">
+					<span class="dir-rtl d-inline-block font-size-10 text-muted m-right-1">طريقة السداد:</span>
+					if data.PaymentMethod == "cash" || data.PaymentMethod == "cash_on_delivery" || data.PaymentMethod == "cod" {
+						<span class="font-bold">نقداً عند الاستلام</span>
+					} else if data.PaymentMethod == "wallet" {
+						<span class="font-bold">المحفظة الإلكترونية</span>
+					} else {
+						<span class="font-bold">آجل / حساب ائتماني</span>
+					}
+				</div>
+			</div>
+
+		</div>
+
+		<!-- Parties Info Box (Clean 2-Column Grid) -->
+		<div class="parties-grid">
+			
+			<!-- Vendor Details (Right in RTL) -->
+			<div class="party-column">
+				<h4 class="font-semibold text-sm m-0">بيانات المورد (البائع / المصدر)</h4>
+				<div class="party-info-row">الاسم التجاري: <strong>{ data.Vendor.DisplayName }</strong></div>
+				if data.Vendor.TaxNumber != "" {
+					<div class="party-info-row">البطاقة الضريبية: <strong class="tabular-nums">{ data.Vendor.TaxNumber }</strong></div>
+				}
+				if data.Vendor.CommercialRegister != "" {
+					<div class="party-info-row">السجل التجاري: <strong class="tabular-nums">{ data.Vendor.CommercialRegister }</strong></div>
+				}
+				if data.Vendor.Address != "" {
+					<div class="party-info-row">العنوان: { data.Vendor.Address }</div>
+				}
+				if data.Vendor.Phone != "" {
+					<div class="party-info-row">الهاتف: <span class="tabular-nums" dir="ltr">{ data.Vendor.Phone }</span></div>
+				}
+			</div>
+
+			<!-- Customer / Pharmacy Details (Left in RTL) -->
+			<div class="party-column">
+				<h4 class="font-semibold text-sm m-0">بيانات الصيدلية (المشتري / المستلم)</h4>
+				<div class="party-info-row">اسم الصيدلية: <strong>{ data.Customer.DisplayName }</strong></div>
+				if data.Customer.TaxNumber != "" {
+					<div class="party-info-row">البطاقة الضريبية: <strong class="tabular-nums">{ data.Customer.TaxNumber }</strong></div>
+				}
+				if data.Customer.CommercialRegister != "" {
+					<div class="party-info-row">السجل التجاري: <strong class="tabular-nums">{ data.Customer.CommercialRegister }</strong></div>
+				}
+				if data.Customer.OrganizationNumber != "" {
+					<div class="party-info-row">رقم المنظمة لدى المورد: <strong class="tabular-nums font-mono text-brand font-size-11">{ data.Customer.OrganizationNumber }</strong></div>
+				}
+				if data.Customer.PharmacistLicense != "" {
+					<div class="party-info-row">ترخيص الصيدلية: <strong class="tabular-nums">{ data.Customer.PharmacistLicense }</strong></div>
+				}
+				if data.Customer.Address != "" {
+					<div class="party-info-row">عنوان الاستلام: { data.Customer.Address }</div>
+				}
+				if data.Customer.Phone != "" {
+					<div class="party-info-row">الهاتف: <span class="tabular-nums" dir="ltr">{ data.Customer.Phone }</span></div>
+				}
+			</div>
+
+		</div>
+
+		<!-- Items Table: Sequence includes Code -> Item -> Batch -> Expiry -> Qty -> Public Price -> Discount % -> Total -->
+		<table class="invoice-table">
+			<thead>
+				<tr>
+					<th class="col-w-30 text-center">#</th>
+					<th class="col-w-75 text-center">الكود</th>
+					<th>اسم الصنف</th>
+					<th class="col-w-75 text-center">رقم التشغيلة</th>
+					<th class="col-w-80 text-center">تاريخ الصلاحية</th>
+					<th class="col-w-50 text-center">الكمية</th>
+					<th class="col-w-85 text-center">سعر الجمهور للقطعة</th>
+					<th class="col-w-60 text-center">الخصم</th>
+					<th class="col-w-85 text-center">الإجمالي</th>
+				</tr>
+			</thead>
+			<tbody>
+				if len(data.Lines) == 0 {
+					<tr>
+						<td colspan="9" class="text-center p-6 text-muted">
+							لا توجد أصناف مسجلة في الفاتورة.
+						</td>
+					</tr>
+				}
+				for idx, line := range data.Lines {
+					<tr>
+						<td class="text-center text-muted tabular-nums">{ fmt.Sprintf("%d", idx+1) }</td>
+						<td class="text-center font-mono tabular-nums font-size-11">
+							if line.SKU != "" {
+								{ line.SKU }
+							} else {
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td>
+							<strong class="text-primary">{ line.ItemName }</strong>
+						</td>
+						<td class="text-center font-mono font-size-11">
+							if line.BatchNumber != "" {
+								<span class="badge-batch">{ line.BatchNumber }</span>
+							} else {
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td class="text-center font-mono tabular-nums font-size-11">
+							if line.ExpiryDate != "" {
+								{ line.ExpiryDate }
+							} else {
+								<span class="text-muted">-</span>
+							}
+						</td>
+						<td class="tabular-nums text-center font-bold">{ fmt.Sprintf("%d", line.Quantity) }</td>
+						<td class="tabular-nums text-center">{ line.UnitPrice.String() } ج.م</td>
+						<td class="tabular-nums text-center font-bold text-primary">
+							{ formatDiscountInt(line.DiscountPercent) }
+						</td>
+						<td class="tabular-nums text-center font-bold text-primary">
+							{ line.TotalPrice.String() } ج.م
+						</td>
+					</tr>
+				}
+			</tbody>
+		</table>
+
+		<!-- Bottom Section: Signatures (Right) & Financial Totals (Left) -->
+		<div class="invoice-bottom-grid">
+			
+			<!-- Signatures Box -->
+			<div class="signatures-box">
+				<div class="sig-col">
+					<strong class="d-block text-primary mb-1">تسليم المورد (المندوب):</strong>
+					<div class="stack-sm font-size-10 text-muted">الاسم: .......................................</div>
+					<div class="sig-line"></div>
+					<div class="stack-sm font-size-10 text-muted mt-2px">التوقيع والتاريخ</div>
+				</div>
+				<div class="sig-col">
+					<strong class="d-block text-primary mb-1">استلام الصيدلية (المشتري):</strong>
+					<div class="stack-sm font-size-10 text-muted">الاسم: .......................................</div>
+					<div class="sig-line"></div>
+					<div class="stack-sm font-size-10 text-muted mt-2px">الختم / التوقيع</div>
+				</div>
+			</div>
+
+			<!-- Financial Totals -->
+			<div class="stack-sm">
+				<table class="totals-table">
+					<tr>
+						<td class="text-muted">إجمالي سعر الجمهور:</td>
+						<td class="tabular-nums text-left">{ data.Subtotal.String() } ج.م</td>
+					</tr>
+					if data.TotalDiscount.IsPositive() {
+						<tr>
+							<td class="text-primary">إجمالي الخصم التجاري:</td>
+							<td class="tabular-nums text-left font-bold">
+								-{ data.TotalDiscount.String() } ج.م
+							</td>
+						</tr>
+					}
+					<tr class="grand-total">
+						<td>الصافي المستحق سداده:</td>
+						<td class="tabular-nums text-left text-brand">{ data.TotalAmount.String() } ج.م</td>
+					</tr>
+				</table>
+				if data.Notes != "" {
+					<div class="stack-sm font-size-10 text-slate mt-1">
+						<strong>ملاحظات:</strong> { data.Notes }
+					</div>
+				}
+			</div>
+
+		</div>
+
+		<!-- Exact Required Disclaimer Statement (Bottom of A4) -->
+		<div class="legal-disclaimer-box">
+			Dawa24 منصة وسيطة ولا تتحمل أي مسؤولية عن البيع أو التسليم أو الاستلام أو التحصيل أو السداد بين العميل والمورد، وتظل المسؤولية كاملة على أطراف المعاملة، كلٌ حسب التزامه القانوني والتعاقدي.
+		</div>
+
+	</div>
+}

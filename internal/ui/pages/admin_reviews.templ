@@ -1,0 +1,311 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/format"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+type AdminReviewsPageData struct {
+	Reviews      []*org.Review
+	Stats        *org.AdminReviewStats
+	SearchQuery  string
+	RatingFilter string
+	StatusFilter string
+	Page         int
+	PerPage      int
+	TotalCount   int
+}
+
+templ AdminReviewsPage(data AdminReviewsPageData, lang, dir string) {
+	@layouts.AdminShell("تقييمات ومراجعات الموردين", "reviews", lang, dir) {
+		<div class="admin-page-container">
+			
+			<!-- Header Banner -->
+			<div class="admin-banner">
+				<div class="admin-banner-inner">
+					<div class="d-flex items-center gap-3">
+						<div class="admin-banner-icon amber">
+							@components.IconStar("icon-sm")
+						</div>
+						<div class="stack-sm">
+							<h1 class="admin-banner-title">
+								<span>تقييمات ومراجعات الموردين</span>
+								if data.Stats != nil {
+									<span class="badge badge-amber text-xs font-black tabular-nums">{ fmt.Sprintf("%d تقييم", data.Stats.TotalReviews) }</span>
+								}
+							</h1>
+							<p class="admin-banner-subtitle">
+								متابعة وتدقيق تقييمات الصيدليات للموردين وجودة التوريد، ومراقبة مؤشرات الأداء والخدمة
+							</p>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- KPI Summary Stats -->
+			if data.Stats != nil {
+				<div class="dashboard-stat-grid cols-4 mb-6">
+					<div class="glass-panel p-4 text-center d-flex flex-col justify-between hover-lift">
+						<div>
+							<div class="d-flex items-center justify-between gap-2 mb-2">
+								<span class="text-xs font-bold text-muted">إجمالي التقييمات</span>
+								<span class="badge badge-sky text-2xs font-bold">@components.IconBuilding("icon-xs")</span>
+							</div>
+							<div class="text-3xl font-black text-primary tabular-nums tracking-tight mb-2">
+								{ fmt.Sprintf("%d", data.Stats.TotalReviews) }
+							</div>
+						</div>
+						<div class="d-flex items-center justify-center gap-1.5 pt-2 border-t text-2xs">
+							<span class="badge badge-emerald text-2xs font-bold">{ fmt.Sprintf("%d معتمد", data.Stats.ApprovedCount) }</span>
+							<span class="text-muted">•</span>
+							<span class="badge badge-amber text-2xs font-bold">{ fmt.Sprintf("%d قيد التدقيق", data.Stats.PendingCount) }</span>
+						</div>
+					</div>
+
+					<div class="glass-panel p-4 text-center d-flex flex-col justify-between hover-lift">
+						<div>
+							<div class="d-flex items-center justify-between gap-2 mb-2">
+								<span class="text-xs font-bold text-muted">متوسط التقييم العام</span>
+								<span class="badge badge-amber text-2xs font-bold">★</span>
+							</div>
+							<div class="text-3xl font-black text-amber tabular-nums d-flex items-center justify-center gap-1.5 mb-1">
+								<span>★</span>
+								<span>{ fmt.Sprintf("%.1f", data.Stats.AverageRating) }</span>
+								<span class="text-xs text-muted font-normal">/ 5.0</span>
+							</div>
+						</div>
+						<div class="d-flex justify-center items-center pt-2 border-t">
+							@components.RatingStars(data.Stats.AverageRating, 0)
+						</div>
+					</div>
+
+					<div class="glass-panel p-4 text-center d-flex flex-col justify-between hover-lift">
+						<div>
+							<div class="d-flex items-center justify-between gap-2 mb-2">
+								<span class="text-xs font-bold text-muted">معايير الأداء والخدمة</span>
+								<span class="badge badge-slate text-2xs font-bold">مؤشرات</span>
+							</div>
+							<div class="d-grid grid-cols-2 gap-2 mt-1">
+								<div class="bg-surface-sunken p-2 rounded-lg text-center">
+									<div class="text-2xs text-muted mb-0.5">المندوب</div>
+									<div class="font-black text-primary text-sm tabular-nums">{ fmt.Sprintf("%.1f", data.Stats.AvgScoreRep) }/5</div>
+								</div>
+								<div class="bg-surface-sunken p-2 rounded-lg text-center">
+									<div class="text-2xs text-muted mb-0.5">الخدمة</div>
+									<div class="font-black text-primary text-sm tabular-nums">{ fmt.Sprintf("%.1f", data.Stats.AvgScoreQual) }/5</div>
+								</div>
+							</div>
+						</div>
+						<div class="text-2xs text-muted pt-2 border-t">
+							تقييم المندوب وجودة الخدمة
+						</div>
+					</div>
+
+					<div class="glass-panel p-4 text-center d-flex flex-col justify-between hover-lift">
+						<div>
+							<div class="d-flex items-center justify-between gap-2 mb-2">
+								<span class="text-xs font-bold text-muted">سرعة التوريد والتسليم</span>
+								<span class="badge badge-emerald text-2xs font-bold">⚡</span>
+							</div>
+							<div class="text-3xl font-black text-emerald tabular-nums mb-1">
+								{ fmt.Sprintf("%.1f", data.Stats.AvgScoreSpeed) }
+								<span class="text-xs text-muted font-normal">/ 5.0</span>
+							</div>
+						</div>
+						<div class="text-2xs text-muted pt-2 border-t d-flex items-center justify-center gap-1">
+							<span class="badge badge-emerald text-2xs font-bold">الالتزام بالمواعيد</span>
+						</div>
+					</div>
+				</div>
+			}
+
+			<!-- Filter Bar -->
+			<div class="glass-panel p-4 mb-6">
+				<form method="GET" action="/admin/reviews" class="d-flex flex-wrap gap-3 items-center justify-between">
+					<div class="d-flex flex-wrap gap-3 items-center flex-grow">
+						<div class="relative flex-grow max-w-md">
+							<input
+								type="text"
+								name="q"
+								value={ data.SearchQuery }
+								placeholder="بحث بنص التقييم، اسم المورد، الصيدلية، رقم الطلب..."
+								class="form-input w-full pr-9 text-sm"
+							/>
+							<span class="absolute top-2.5 right-3 text-secondary pointer-events-none">
+								@components.IconSearch("icon-xs")
+							</span>
+						</div>
+
+						<select name="rating" class="form-select text-sm w-auto">
+							<option value="" selected?={ data.RatingFilter == "" }>كل التقييمات</option>
+							<option value="5" selected?={ data.RatingFilter == "5" }>5 نجوم ★★★★★</option>
+							<option value="4" selected?={ data.RatingFilter == "4" }>4 نجوم ★★★★☆</option>
+							<option value="3" selected?={ data.RatingFilter == "3" }>3 نجوم ★★★☆☆</option>
+							<option value="2" selected?={ data.RatingFilter == "2" }>نجمتان ★★☆☆☆</option>
+							<option value="1" selected?={ data.RatingFilter == "1" }>نجمة واحدة ★☆☆☆☆</option>
+						</select>
+
+						<select name="status" class="form-select text-sm w-auto">
+							<option value="" selected?={ data.StatusFilter == "" }>كل الحالات</option>
+							<option value="approved" selected?={ data.StatusFilter == "approved" }>معتمد ومطابق</option>
+							<option value="pending" selected?={ data.StatusFilter == "pending" }>قيد المراجعة</option>
+						</select>
+
+						<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1">
+							@components.IconFilter("icon-xs")
+							<span>تصفية</span>
+						</button>
+
+						if data.SearchQuery != "" || data.RatingFilter != "" || data.StatusFilter != "" {
+							<a href="/admin/reviews" class="btn btn-secondary btn-sm text-xs">
+								إعادة تعيين
+							</a>
+						}
+					</div>
+				</form>
+			</div>
+
+			<!-- Reviews Table & Cards -->
+			<div class="glass-panel p-0 mb-6 overflow-hidden">
+				if len(data.Reviews) == 0 {
+					<div class="p-8 text-center empty-state-glass">
+						<div class="text-4xl mb-3">@components.IconStar("icon-sm")</div>
+						<h3 class="font-bold text-base mb-1">لا توجد تقييمات مطابقة</h3>
+						<p class="text-xs text-secondary mb-0">لم يتم العثور على أية مراجعات أو تقييمات بناءً على معايير البحث الحالية</p>
+					</div>
+				} else {
+					<div class="table-container">
+						<table class="data-table table-compact">
+							<thead>
+								<tr>
+									<th>المورد المُقيَّم</th>
+									<th>الصيدلية المُقيِّمة</th>
+									<th>الطلب والتاريخ</th>
+									<th>التقييم والمعايير</th>
+									<th>نص التقييم والملاحظات</th>
+									<th>الحالة</th>
+									<th class="col-actions">إجراءات الإدارة</th>
+								</tr>
+							</thead>
+							<tbody>
+								for _, rv := range data.Reviews {
+									<tr>
+										<td>
+											<div class="d-flex items-center gap-2">
+												<div class="user-avatar-badge bg-purple-50 text-purple-700 font-black rounded-lg p-2 text-xs">
+													@components.IconBuilding("icon-xs")
+												</div>
+												<div class="stack-xs">
+													<span class="font-bold text-sm text-primary">{ rv.VendorOrgName }</span>
+													<span class="badge badge-purple text-2xs font-semibold w-max">مورد معتمد</span>
+												</div>
+											</div>
+										</td>
+										<td>
+											<div class="stack-xs">
+												<span class="font-bold text-sm text-primary">{ rv.ReviewerOrgName }</span>
+												<span class="badge badge-emerald text-2xs font-semibold w-max">صيدلية</span>
+											</div>
+										</td>
+										<td class="tabular-nums text-xs">
+											if rv.OrderNumber != "" {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/orders?q=%s", url.QueryEscape(rv.OrderNumber))) } class="font-mono text-primary hover:underline block font-bold">
+													#{ rv.OrderNumber }
+												</a>
+											} else {
+												<span class="text-muted">—</span>
+											}
+											<div class="text-secondary text-2xs mt-0.5">{ format.Date(rv.CreatedAt, "ar") }</div>
+										</td>
+										<td>
+											<div class="stack-xs">
+												<div class="d-flex items-center gap-1.5">
+													@components.RatingStars(float64(rv.Rating), 0)
+													<span class="badge badge-amber text-2xs font-black tabular-nums">{ fmt.Sprintf("%d/5", rv.Rating) }</span>
+												</div>
+												<div class="d-flex flex-wrap gap-1 mt-1">
+													if rv.ScoreRep > 0 {
+														<span class="badge badge-neutral text-2xs py-0 px-1">مندوب: { fmt.Sprintf("%d", rv.ScoreRep) }</span>
+													}
+													if rv.ScoreQuality > 0 {
+														<span class="badge badge-neutral text-2xs py-0 px-1">خدمة: { fmt.Sprintf("%d", rv.ScoreQuality) }</span>
+													}
+													if rv.ScoreSpeed > 0 {
+														<span class="badge badge-neutral text-2xs py-0 px-1">سرعة: { fmt.Sprintf("%d", rv.ScoreSpeed) }</span>
+													}
+												</div>
+											</div>
+										</td>
+										<td class="max-w-xs">
+											<div class="text-xs text-primary font-medium line-clamp-3">
+												if rv.ReviewText != "" {
+													{ rv.ReviewText }
+												} else {
+													<span class="text-muted italic">بدون تعليق نصي</span>
+												}
+											</div>
+											if rv.Response != "" {
+												<div class="mt-2 p-2 bg-surface-sunken rounded border text-2xs text-secondary">
+													<span class="font-bold text-primary">رد المورد: </span>
+													<span>{ rv.Response }</span>
+												</div>
+											}
+										</td>
+										<td>
+											if rv.IsApproved {
+												<span class="badge badge-emerald text-xs font-bold">معتمد ومطابق</span>
+											} else {
+												<span class="badge badge-amber text-xs font-bold">قيد المراجعة</span>
+											}
+										</td>
+										<td class="col-actions">
+											<div class="table-actions">
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/reviews/%d/status", rv.ID)) } class="inline">
+													if rv.IsApproved {
+														<input type="hidden" name="approved" value="false"/>
+														<button type="submit" class="btn btn-secondary btn-sm font-bold text-xs" title="إخفاء التقييم">
+															تعليق
+														</button>
+													} else {
+														<input type="hidden" name="approved" value="true"/>
+														<button type="submit" class="btn btn-primary btn-sm font-bold text-xs" title="اعتماد التقييم">
+															اعتماد
+														</button>
+													}
+												</form>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/reviews/%d/delete", rv.ID)) } class="inline" data-confirm="هل أنت متأكد من حذف هذا التقييم نهائياً؟">
+													<button type="submit" class="btn btn-danger btn-sm font-bold text-xs" title="حذف التقييم">
+														@components.IconTrash("icon-xs")
+													</button>
+												</form>
+											</div>
+										</td>
+									</tr>
+								}
+							</tbody>
+						</table>
+					</div>
+
+					if data.TotalCount > 0 {
+						@components.B2BPagination(components.PaginationProps{
+							CurrentPage: data.Page,
+							PageSize:    data.PerPage,
+							TotalCount:  data.TotalCount,
+							BaseURL:     "/admin/reviews",
+							QueryValues: map[string][]string{
+								"q":      {data.SearchQuery},
+								"rating": {data.RatingFilter},
+								"status": {data.StatusFilter},
+							},
+						})
+					}
+				}
+			</div>
+		</div>
+	}
+}

@@ -1,0 +1,380 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// Stages four to five: confirmation, the running import, and the results.
+
+// --- stage 4: confirmation -------------------------------------------------
+
+templ importConfirmStage(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	@importFileSummary(view, lang)
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.confirm.title") }</h2>
+		<p class="wiz-sub">{ i18n.T(lang, "vendor_ingest.confirm.subtitle") }</p>
+		<div class="wiz-map">
+			@importSummaryItem(i18n.T(lang, "vendor_ingest.confirm.lbl_warehouse"), importWarehouseName(view))
+			@importSummaryItem(i18n.T(lang, "vendor_ingest.confirm.lbl_mode"), view.Session.Settings.Mode.LabelLang(lang))
+			@importSummaryItem(i18n.T(lang, "vendor_ingest.confirm.lbl_stock"), ImportStockModeLabel(view.Session.Settings.StockMode, lang))
+			@importSummaryItem(i18n.T(lang, "vendor_ingest.confirm.lbl_unmatched"), i18n.T(lang, "vendor_ingest.confirm.val_unmatched"))
+			@importSummaryItem(i18n.T(lang, "vendor_ingest.confirm.lbl_total_rows"), fmt.Sprint(view.Session.Source.TotalRows))
+		</div>
+	</div>
+	if view.Session.Mapping != nil {
+		<div class="glass-panel p-6">
+			<h3 class="wiz-head">{ i18n.T(lang, "vendor_ingest.confirm.columns_read_head") }</h3>
+			<div class="table-container">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor_ingest.confirm.th_col_in_file") }</th>
+							<th>{ i18n.T(lang, "vendor_ingest.confirm.th_read_as") }</th>
+							<th>{ i18n.T(lang, "vendor_ingest.confirm.th_source") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, col := range view.Session.Mapping.Columns {
+							if col.Field != "" {
+								<tr>
+									<td class="font-bold">{ col.Header }</td>
+									<td>{ col.Label }</td>
+									<td>
+										<span class={ "badge", ConfidenceTone(col.Confidence), "text-xs" }>
+											if col.Source == productmatch.SourceManual {
+												{ i18n.T(lang, "vendor_ingest.confirm.src_manual") }
+											} else if col.Source == productmatch.SourceCompleted {
+												{ i18n.T(lang, "vendor_ingest.confirm.src_completed") }
+											} else {
+												{ i18n.T(lang, "vendor_ingest.confirm.src_auto") } · { PercentText(col.Score) }
+											}
+										</span>
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
+	<div class="glass-panel p-6 mb-0">
+		<div class="wiz-actions">
+			<span class="wiz-actions-note">
+				if view.Session.Settings.Mode.Destructive() {
+					{ i18n.T(lang, "vendor_ingest.confirm.note_destructive") }
+				} else {
+					{ i18n.T(lang, "vendor_ingest.confirm.note_safe") }
+				}
+			</span>
+			<div class="row-center">
+				<form class="stack-md" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "back")) }>
+					<button type="submit" class="btn btn-ghost">{ i18n.T(lang, "vendor_ingest.confirm.btn_edit_mapping") }</button>
+				</form>
+				<form class="stack-md" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "confirm")) } hx-boost="false"
+					if view.Session.Settings.Mode.Destructive() {
+						@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "vendor_ingest.confirm.confirm_destructive")) }
+					}
+				>
+					<button type="submit" class="btn btn-primary">{ i18n.T(lang, "vendor_ingest.confirm.btn_start") }</button>
+				</form>
+			</div>
+		</div>
+	</div>
+}
+
+templ importSummaryItem(label, value string) {
+	<div class="wiz-map-item">
+		<span class="wiz-map-label">{ label }</span>
+		<span class="wiz-map-hint">{ value }</span>
+	</div>
+}
+
+// --- stage 5: processing ---------------------------------------------------
+
+templ importProcessingStage(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<div class="glass-panel p-6" id="import-progress-card" data-import={ view.Session.PublicID } data-stream={ view.SessionPath(view.Session.PublicID, "stream") } data-progress={ view.SessionPath(view.Session.PublicID, "progress") }>
+		<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.results.processing_title") }</h2>
+		<p class="wiz-sub" id="import-progress-note">{ view.Session.ProgressNote }</p>
+		<div class="wiz-progress">
+			<div class="wiz-progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100">
+				<div
+					class="wiz-progress-fill"
+					id="import-progress-bar"
+					style={ templ.SafeCSS(fmt.Sprintf("width:%d%%", view.Session.ProgressPercent)) }
+				></div>
+			</div>
+			<div class="wiz-progress-meta">
+				<span id="import-progress-count" class="tabular-nums"></span>
+				<span id="import-progress-percent" class="wiz-progress-percent">
+					{ fmt.Sprintf("%d%%", view.Session.ProgressPercent) }
+				</span>
+			</div>
+		</div>
+		<p class="text-xs text-muted mt-2">
+			{ i18n.T(lang, "vendor_ingest.results.close_page_note") }
+		</p>
+	</div>
+	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
+		(function () {
+			function startProgress() {
+				const card = document.getElementById('import-progress-card');
+				if (!card) return;
+				if (typeof window.ImportProgress !== 'function') {
+					console.error('import-progress.js did not load; the progress bar cannot update');
+					return;
+				}
+				const bar = new window.ImportProgress({
+					fill:    document.getElementById('import-progress-bar'),
+					label:   document.getElementById('import-progress-note'),
+					percent: document.getElementById('import-progress-percent'),
+					count:   document.getElementById('import-progress-count'),
+					onDone:  function () { setTimeout(function () { window.location.reload(); }, 500); },
+				});
+				bar.follow(card.dataset.stream || ('/vendor/ingest/' + card.dataset.import + '/stream'),
+					card.dataset.progress || ('/vendor/ingest/' + card.dataset.import + '/progress'), 1500);
+			}
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', startProgress);
+			} else {
+				startProgress();
+			}
+		})();
+	</script>
+}
+
+// --- stage 6: results ------------------------------------------------------
+
+templ importResultsStage(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<div class="glass-panel p-6">
+		<h2 class="wiz-head">
+			if view.Session.Phase == ingest.PhaseFailed {
+				{ i18n.T(lang, "vendor_ingest.results.title_failed") }
+			} else if view.Session.Phase == ingest.PhaseCancelled {
+				{ i18n.T(lang, "vendor_ingest.results.title_cancelled") }
+			} else {
+				{ i18n.T(lang, "vendor_ingest.results.title_completed") }
+			}
+		</h2>
+		if view.Session.ErrorMessage != "" {
+			<p class={ "wiz-sub",
+				templ.KV("text-danger", importResultIsFailure(view)),
+				templ.KV("text-secondary", !importResultIsFailure(view)) }>
+				{ view.Session.ErrorMessage }
+			</p>
+		}
+		<div class="wiz-stats">
+			@importStat(i18n.T(lang, "vendor_ingest.results.stat_inserted"), fmt.Sprint(view.Session.InsertedRows))
+			@importStat(i18n.T(lang, "vendor_ingest.results.stat_updated"), fmt.Sprint(view.Session.UpdatedRows))
+			if view.Session.SkippedRows > 0 {
+				@importStat(i18n.T(lang, "vendor_ingest.results.stat_skipped"), fmt.Sprint(view.Session.SkippedRows))
+			}
+			if view.Session.ErrorRows > 0 {
+				@importStat(i18n.T(lang, "vendor_ingest.results.stat_errors"), fmt.Sprint(view.Session.ErrorRows))
+			}
+			@importStat(i18n.T(lang, "vendor_ingest.results.stat_total_rows"), fmt.Sprint(view.Session.TotalRows))
+		</div>
+		<p class="text-xs text-muted mt-2">
+			{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.results.summary_msg"),
+				view.Session.InsertedRows, view.Session.UpdatedRows, importWarehouseName(view),
+				ImportStockModeLabel(view.Session.Settings.StockMode, lang)) }
+			if view.Session.SkippedRows > 0 {
+				{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.results.skipped_msg"), view.Session.SkippedRows) }
+			}
+		</p>
+		<p class="text-xs text-muted mt-1">
+			if view.Session.InsertedRows > 0 && !view.Session.Settings.PublishImmediately {
+				{ i18n.T(lang, "vendor_ingest.results.draft_note") }
+			} else if view.Session.InsertedRows > 0 {
+				{ i18n.T(lang, "vendor_ingest.results.published_note") }
+			}
+			if view.Session.UpdatedRows > 0 {
+				<span>{ i18n.T(lang, "vendor_ingest.results.existing_status_note") }</span>
+			}
+		</p>
+		<div class="row-center mt-3">
+			if view.IsAdmin() {
+				<a href="/admin/organizations/import?tab=vendor" class="btn btn-primary btn-sm">{ i18n.T(lang, "vendor_ingest.results.btn_admin_orgs") }</a>
+				<a href={ templ.SafeURL(view.BaseIngestPath()) } class="btn btn-secondary btn-sm">{ i18n.T(lang, "vendor_ingest.results.btn_new_import") }</a>
+			} else {
+				<a href="/vendor/products" class="btn btn-primary btn-sm">{ i18n.T(lang, "vendor_ingest.results.btn_vendor_products") }</a>
+				<a href="/vendor/ingest" class="btn btn-secondary btn-sm">{ i18n.T(lang, "vendor_ingest.results.btn_new_import") }</a>
+			}
+		</div>
+	</div>
+	if len(view.Session.Findings) > 0 {
+		<div class="glass-panel p-6">
+			<h3 class="wiz-head">{ i18n.T(lang, "vendor_ingest.results.findings_head") }</h3>
+			<div class="table-container">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "vendor_ingest.results.th_row") }</th>
+							<th>{ i18n.T(lang, "vendor_ingest.results.th_field") }</th>
+							<th>{ i18n.T(lang, "vendor_ingest.results.th_value") }</th>
+							<th>{ i18n.T(lang, "vendor_ingest.results.th_finding_note") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for i, f := range view.Session.Findings {
+							if i < 100 {
+								<tr>
+									<td>{ fmt.Sprint(f.Row) }</td>
+									<td class="text-xs">{ f.Column }</td>
+									<td class="text-xs text-muted">{ f.Value }</td>
+									<td>
+										<span class={ "badge", SeverityTone(f.Severity), "text-xs" }>
+											if f.Severity == productmatch.SeverityError {
+												{ i18n.T(lang, "vendor_ingest.mapping.severity_error") }
+											} else if f.Severity == productmatch.SeverityWarning {
+												{ i18n.T(lang, "vendor_ingest.mapping.severity_warning") }
+											} else {
+												{ i18n.T(lang, "vendor_ingest.mapping.severity_info") }
+											}
+										</span>
+										<span class="text-sm">{ f.Message }</span>
+									</td>
+								</tr>
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	}
+	if len(view.Rows) > 0 {
+		@importRowsTable(view, lang)
+	}
+}
+
+templ importRowsTable(view VendorImportView, langOpt ...string) {
+	{{
+		lang := view.Lang
+		if len(langOpt) > 0 && langOpt[0] != "" {
+			lang = langOpt[0]
+		}
+		if lang == "" {
+			lang = "ar"
+		}
+	}}
+	<div class="glass-panel p-6">
+		<div class="stack-sm">
+			<h3 class="wiz-head m-0">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.results.rows_history_title"), view.RowTotal) }</h3>
+			<div class="row-center-sm">
+				@importRowFilter(view, "", i18n.T(lang, "vendor_ingest.results.filter_all"))
+				@importRowFilter(view, ingest.OutcomeInserted, i18n.T(lang, "vendor_ingest.results.filter_inserted"))
+				@importRowFilter(view, ingest.OutcomeUpdated, i18n.T(lang, "vendor_ingest.results.filter_updated"))
+				@importRowFilter(view, ingest.OutcomeSkipped, i18n.T(lang, "vendor_ingest.results.filter_skipped"))
+				@importRowFilter(view, ingest.OutcomeError, i18n.T(lang, "vendor_ingest.results.filter_errors"))
+			</div>
+		</div>
+		<div class="table-container">
+			<table class="data-table">
+				<thead>
+					<tr>
+						<th>#</th>
+						<th>{ i18n.T(lang, "vendor_ingest.results.th_source_name") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.results.th_matched_name") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_ingest.results.th_outcome") }</th>
+						<th class="text-center">{ i18n.T(lang, "vendor_ingest.results.th_match_degree") }</th>
+						<th>{ i18n.T(lang, "vendor_ingest.results.th_ai_notes") }</th>
+					</tr>
+				</thead>
+				<tbody>
+					for _, row := range view.Rows {
+						<tr class="rule-bottom">
+							<td class="text-center tabular-nums font-bold text-muted">{ fmt.Sprint(row.SourceRow) }</td>
+							<td>
+								<div class="font-bold text-primary text-09">{ row.DisplayName }</div>
+								if row.SourceCode != "" {
+									<div class="text-xs text-muted">
+										{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.results.source_code_prefix"), row.SourceCode) }
+									</div>
+								}
+							</td>
+							<td>
+								if row.MatchedCatalogName() != "" {
+									<div class="font-bold">
+										{ row.MatchedCatalogName() }
+									</div>
+									if row.MatchedCatalogSKU() != "" {
+										<div class="text-xs text-muted">
+											{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.results.catalog_code_prefix"), row.MatchedCatalogSKU()) }
+										</div>
+									}
+								} else if row.MatchLevel == "none" || row.Outcome == ingest.OutcomeInserted {
+									<span class="badge badge-amber text-xs">
+										{ i18n.T(lang, "vendor_ingest.results.new_unregistered") }
+									</span>
+								} else {
+									<span class="text-xs text-muted">—</span>
+								}
+							</td>
+							<td class="text-center">
+								<span class={ "badge", OutcomeTone(row.Outcome), "text-xs" }>
+									{ OutcomeLabel(row.Outcome, lang) }
+								</span>
+							</td>
+							<td class="text-center text-xs">
+								<div class="stack-sm">
+									<span class={ "badge", MatchLevelBadgeClass(row.MatchLevel), "text-xs" }>
+										{ matchLevelText(row.MatchLevel, lang) }
+									</span>
+								</div>
+								if row.MatchScore > 0 {
+									<div class="text-muted tabular-nums font-bold">
+										{ PercentText(row.MatchScore) }
+									</div>
+								}
+							</td>
+							<td class="text-xs">
+								{ row.Message }
+							</td>
+						</tr>
+					}
+				</tbody>
+			</table>
+		</div>
+	</div>
+}
+
+templ importRowFilter(view VendorImportView, outcome, label string) {
+	<a
+		class={ "wiz-chip", templ.KV("is-on", view.Filter.Outcome == outcome) }
+		href={ templ.SafeURL(importRowsURL(view.Session.PublicID, outcome)) }
+	>
+		{ label }
+	</a>
+}
