@@ -41,6 +41,7 @@ Usage:
   cli migrate-status    Show applied and pending migrations
   cli migrate-data      Run legacy MariaDB to PostgreSQL ETL pipeline
   cli seed              Seed default platform reference data
+  cli create-admin [email] [pwd] Create or update platform super_admin account
   cli seed-users        Create development sign-in accounts (non-prod only)
   cli reset-db          Wipe all rows and reset DB to clean zero state (admin only)
   cli reindex           Rebuild catalog.product_index read model from master tables
@@ -126,6 +127,16 @@ func run() error {
 		}
 		log.Info("migrations up to date", "total", len(migrations),
 			"companies_seeded", seeded, "roles_added", added, "companies_repaired", repaired)
+
+		// Seed baseline reference data (currencies, Egyptian cities, default settings)
+		if err := runSeed(ctx, db, log); err != nil {
+			log.WarnContext(ctx, "baseline reference seeding note", "error", err)
+		}
+
+		// Ensure platform super_admin account exists
+		if err := ensureAdminAccount(ctx, db, log); err != nil {
+			return fmt.Errorf("ensure admin account: %w", err)
+		}
 		return nil
 
 	case "migrate-status":
@@ -172,6 +183,21 @@ func run() error {
 
 	case "seed":
 		return runSeed(ctx, db, log)
+
+	case "create-admin":
+		email := "admin@dawa24.net"
+		password := "Admin!Dawa24!2026"
+		if len(os.Args) >= 3 && os.Args[2] != "" {
+			email = os.Args[2]
+		}
+		if len(os.Args) >= 4 && os.Args[3] != "" {
+			password = os.Args[3]
+		}
+		if err := createOrUpdateAdmin(ctx, db, log, email, password, "Platform Super Admin", "مدير النظام العام"); err != nil {
+			return err
+		}
+		fmt.Printf("\nSuper Admin account ready:\n  Email:    %s\n  Password: %s\n  Role:     super_admin\n\n", email, password)
+		return nil
 
 	case "seed-users":
 		// A known password on a live platform is a back door, not a convenience.
