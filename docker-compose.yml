@@ -57,7 +57,7 @@ services:
       - "443:443"
       - "443:443/udp" # HTTP/3 QUIC
     environment:
-      APP_DOMAIN: ${APP_DOMAIN:-:80}
+      APP_DOMAIN: ${APP_DOMAIN:-localhost}
       ACME_EMAIL: ${ACME_EMAIL:-admin@dawa24.net}
     volumes:
       - ./deploy/hostinger/Caddyfile:/etc/caddy/Caddyfile:ro
