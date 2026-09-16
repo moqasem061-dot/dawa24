@@ -591,7 +591,7 @@ func SmartOrderReviewGroups(data SmartOrderReviewData, lang string) templ.Compon
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" onsubmit=\"event.preventDefault(); onReviewQtyChange(this.querySelector('input[name=quantity]'));\"><input type=\"hidden\" name=\"page\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "\" data-on-submit=\"event.preventDefault(); submitReviewQtyForm(this)\"><input type=\"hidden\" name=\"page\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -695,7 +695,7 @@ func SmartOrderReviewGroups(data SmartOrderReviewData, lang string) templ.Compon
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" step=\"1\" class=\"so-qty-input\" data-on-input=\"onReviewQtyInput(this)\" data-on-change=\"onReviewQtyChange(this)\" onkeydown=\"if(event.key==='Enter'){event.preventDefault();onReviewQtyChange(this);}\" title=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 57, "\" step=\"1\" class=\"so-qty-input\" data-on-input=\"onReviewQtyInput(this)\" data-on-change=\"onReviewQtyChange(this)\" data-on-keydown=\"onReviewQtyKeydown(event, this)\" title=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -993,7 +993,7 @@ func SmartOrderReviewGroups(data SmartOrderReviewData, lang string) templ.Compon
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" onsubmit=\"removeReviewLine(this.querySelector('button'), event);\"><input type=\"hidden\" name=\"page\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "\" data-on-submit=\"removeReviewLineForm(this, event)\"><input type=\"hidden\" name=\"page\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

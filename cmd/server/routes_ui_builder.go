@@ -43,6 +43,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/antiscrape"
 	"github.com/muhiya/dawa24-store/internal/platform/config"
 	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/muhiya/dawa24-store/internal/platform/mailer"
 	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
@@ -224,6 +225,7 @@ func buildUIHandler(
 		Token: cfg.Telegram.GatewayToken,
 		Log:   log,
 	}))
+	uiHandler.SetMailer(mailer.New(cfg.SMTP, log))
 
 	// Every employee of a منشأة spends against that منشأة's own Gateway key.
 	//

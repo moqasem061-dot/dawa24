@@ -24,9 +24,11 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
 	"github.com/muhiya/dawa24-store/internal/platform/gateway"
 	"github.com/muhiya/dawa24-store/internal/platform/importrun"
+	"github.com/muhiya/dawa24-store/internal/platform/mailer"
 	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
 	"github.com/muhiya/dawa24-store/internal/platform/progress"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/muhiya/dawa24-store/internal/platform/safe"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
 	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
@@ -208,8 +210,37 @@ func (h *UIHandler) SetTelegramGatewayClient(c telegramgateway.Client) {
 	h.tgGatewayClient = c
 }
 
-// SetSessionSecret sets the session secret used for signing verified phone tokens.
+// SetSessionSecret sets the session secret used for signing verified tokens.
 func (h *UIHandler) SetSessionSecret(s string) {
 	h.sessionSecret = s
+}
+
+// safeGo executes a background task with panic recovery and structured error logging.
+func (h *UIHandler) safeGo(name string, fn func()) {
+	safe.Go(h.log, name, fn)
+}
+
+// SetMailer wires the transactional mailer service and initializes the email OTP engine.
+func (h *UIHandler) SetMailer(m mailer.Mailer) {
+	h.mailer = m
+	if h.emailOTP == nil {
+		h.emailOTP = mailer.NewOTPEngine()
+	}
+}
+
+// Mailer returns the configured mailer or a mock fallback when nil.
+func (h *UIHandler) Mailer() mailer.Mailer {
+	if h.mailer != nil {
+		return h.mailer
+	}
+	return mailer.NewMockMailer(h.log)
+}
+
+// EmailOTP returns the configured email OTP engine.
+func (h *UIHandler) EmailOTP() *mailer.OTPEngine {
+	if h.emailOTP == nil {
+		h.emailOTP = mailer.NewOTPEngine()
+	}
+	return h.emailOTP
 }
 

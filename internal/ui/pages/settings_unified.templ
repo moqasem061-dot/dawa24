@@ -31,6 +31,7 @@ type UnifiedSettingsData struct {
 	OrgSettingsURL         string
 	PendingAccountDeletion *identity.AccountDeletionRequest
 	PendingOrgDeletion     *org.OrganizationDeletionRequest
+	Preferences            *identity.UserPreferences
 	TelegramEnabled        bool
 	WhatsAppEnabled        bool
 }
@@ -347,7 +348,14 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 							<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.pref_email") }</div>
 							<div class="text-sm text-muted">{ i18n.T(lang, "settings.pref_email_desc") }</div>
 						</div>
-						<input type="checkbox" name="notif_email" checked class="form-checkbox" />
+						<input
+							type="checkbox"
+							name="notif_email"
+							if data.Preferences == nil || data.Preferences.NotificationChannels["email"] {
+								checked="checked"
+							}
+							class="form-checkbox"
+						/>
 					</div>
 
 					<div class="flex-between items-center p-4 border rounded-lg bg-surface-sunken">
@@ -355,7 +363,14 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 							<div class="font-extrabold text-primary">{ i18n.T(lang, "settings.pref_promos") }</div>
 							<div class="text-sm text-muted">{ i18n.T(lang, "settings.pref_promos_desc") }</div>
 						</div>
-						<input type="checkbox" name="notif_promos" checked class="form-checkbox" />
+						<input
+							type="checkbox"
+							name="notif_promos"
+							if data.Preferences == nil || data.Preferences.NotificationTopics["offers"] {
+								checked="checked"
+							}
+							class="form-checkbox"
+						/>
 					</div>
 
 					<div class="mt-3">

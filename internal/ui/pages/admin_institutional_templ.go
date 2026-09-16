@@ -862,7 +862,7 @@ func AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWor
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</div></div><!-- Modal Actions --><div class=\"modal-footer\"><button type=\"button\" onclick=\"document.getElementById('institutional-modal').close()\" class=\"btn btn-secondary font-bold px-6\">إلغاء</button> <button type=\"submit\" class=\"btn btn-primary font-bold px-8 gap-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</div></div><!-- Modal Actions --><div class=\"modal-footer\"><button type=\"button\" data-on-click=\"closeDialog('institutional-modal')\" class=\"btn btn-secondary font-bold px-6\">إلغاء</button> <button type=\"submit\" class=\"btn btn-primary font-bold px-8 gap-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

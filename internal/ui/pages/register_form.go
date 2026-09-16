@@ -34,6 +34,8 @@ type RegisterFormData struct {
 	CVStorageKey       string
 	VerifiedPhoneToken string
 	PhoneVerified      bool
+	VerifiedEmailToken string
+	EmailVerified      bool
 	Error              string
 }
 

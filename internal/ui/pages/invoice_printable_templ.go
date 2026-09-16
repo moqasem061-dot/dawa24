@@ -171,7 +171,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<!-- Close / Back --><button type=\"button\" class=\"btn-action btn-secondary\" onclick=\"window.close(); if(!window.closed) window.history.back();\"><span>إغلاق</span></button></div></div><!-- =========================================================================\n\t\t\t     VIEW 1: Standard A4 Invoice\n\t\t\t     ========================================================================= -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<!-- Close / Back --><button type=\"button\" class=\"btn-action btn-secondary\" data-on-click=\"closeWindow()\"><span>إغلاق</span></button></div></div><!-- =========================================================================\n\t\t\t     VIEW 1: Standard A4 Invoice\n\t\t\t     ========================================================================= -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

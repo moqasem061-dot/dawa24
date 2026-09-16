@@ -382,8 +382,71 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 
 						<div class="d-grid grid-auto-fit-sm gap-4">
 							<div class="form-group mb-0">
-								<label class="form-label font-semibold text-xs" for="reg-email">البريد الإلكتروني الرسمي *</label>
-								<input type="email" id="reg-email" name="email" class="form-input tabular-nums" placeholder="pharmacy@dawa24.eg" value={ form.Email } />
+								<div class="d-flex items-center justify-between mb-1">
+									<label class="form-label font-semibold text-xs m-0" for="reg-email">البريد الإلكتروني الرسمي *</label>
+									<span class="text-2xs text-secondary d-flex items-center gap-1">
+										@components.IconMail("icon-2xs text-brand")
+										<span>تأكيد البريد مطلوب</span>
+									</span>
+								</div>
+								<div class="input-group">
+									<input
+										type="email"
+										id="reg-email"
+										name="email"
+										class="form-input tabular-nums"
+										placeholder="pharmacy@dawa24.eg"
+										value={ form.Email }
+										if form.EmailVerified {
+											readonly="readonly"
+										}
+									/>
+									<button
+										type="button"
+										id="email-send-otp-btn"
+										class="btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3"
+										if form.EmailVerified {
+											style="display:none;"
+										}
+									>
+										@components.IconMail("icon-xs text-brand")
+										<span id="email-send-btn-text">{ i18n.T(lang, "auth.email.send_otp") }</span>
+									</button>
+								</div>
+								<input type="hidden" id="verified-email-token" name="verified_email_token" value={ form.VerifiedEmailToken } />
+
+								<!-- Verified Email Badge -->
+								<div
+									id="email-verified-badge"
+									class="badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5"
+									if !form.EmailVerified {
+										style="display:none;"
+									}
+								>
+									@components.IconCheck("icon-xs")
+									<span>{ i18n.T(lang, "auth.email.verified") }</span>
+									<button type="button" id="email-change-btn" class="btn-link text-2xs underline text-secondary mr-2" style="background:none;border:none;cursor:pointer;padding:0;">
+										{ i18n.T(lang, "auth.email.change_email") }
+									</button>
+								</div>
+
+								<!-- Email OTP Drawer -->
+								<div id="email-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle" style="display:none;">
+									<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
+										<span id="email-otp-hint" class="font-medium">{ i18n.T(lang, "auth.email.enter_code") }</span>
+										<span id="email-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+									</div>
+									<div class="d-flex items-center gap-2">
+										<input type="text" id="email-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5" style="max-width: 140px; letter-spacing: 0.25em;" placeholder="••••••" />
+										<button type="button" id="email-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
+											{ i18n.T(lang, "auth.email.verify_code") }
+										</button>
+										<button type="button" id="email-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted" style="display:none;">
+											{ i18n.T(lang, "auth.email.resend_otp") }
+										</button>
+									</div>
+									<div id="email-otp-feedback" class="text-2xs font-medium mt-1.5" style="display:none;"></div>
+								</div>
 							</div>
 							<div class="form-group mb-0">
 								<div class="d-flex items-center justify-between mb-1">

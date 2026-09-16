@@ -7,10 +7,12 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/mailer"
 	"github.com/muhiya/dawa24-store/internal/ui"
 )
 
@@ -103,6 +105,11 @@ func setupTestRouter() http.Handler {
 func TestPublicAndAuthPageRoutes(t *testing.T) {
 	router := newTestRouter(nil)
 
+	validResetTok, err := mailer.SignPasswordResetToken("test@example.com", "dawa24-verification-fallback-secret-2024", 15*time.Minute)
+	if err != nil {
+		t.Fatalf("sign password reset token: %v", err)
+	}
+
 	routes := []struct {
 		method string
 		path   string
@@ -117,7 +124,7 @@ func TestPublicAndAuthPageRoutes(t *testing.T) {
 		{"GET", "/auth/login"},
 		{"GET", "/auth/register"},
 		{"GET", "/auth/forgot"},
-		{"GET", "/auth/reset?token=test-reset-tok"},
+		{"GET", "/auth/reset?token=" + validResetTok},
 		{"GET", "/jobs"},
 	}
 

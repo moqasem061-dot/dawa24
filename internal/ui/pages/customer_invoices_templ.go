@@ -62,7 +62,7 @@ func InvoicesPage(lang, dir string, data InvoicesData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 			if data.IsVendor && !authctx.FromContext(ctx).IsCustomer() {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button type=\"button\" onclick=\"document.getElementById('vendor-create-invoice-modal').showModal()\" class=\"btn btn-primary btn-sm font-bold gap-1\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<button type=\"button\" data-on-click=\"openDialog('vendor-create-invoice-modal')\" class=\"btn btn-primary btn-sm font-bold gap-1\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

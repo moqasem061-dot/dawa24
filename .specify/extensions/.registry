@@ -1,0 +1,28 @@
+{
+  "schema_version": "1.0",
+  "extensions": {
+    "security-review": {
+      "version": "2.0.0",
+      "source": "local",
+      "manifest_hash": "sha256:5b7d812cb62bc4a35ce68b5aec7c297487c92b086bd9a18beccdf3538abc3b6f",
+      "enabled": true,
+      "priority": 10,
+      "registered_commands": {
+        "agy": [
+          "speckit.security-review.audit",
+          "speckit.security-review.staged",
+          "speckit.security-review.branch",
+          "speckit.security-review.plan",
+          "speckit.security-review.tasks",
+          "speckit.security-review.followup",
+          "speckit.security-review.apply",
+          "speckit.security-review.export",
+          "speckit.security-review.verify",
+          "speckit.security-review.init"
+        ]
+      },
+      "registered_skills": [],
+      "installed_at": "2026-09-16T14:17:53.366257+00:00"
+    }
+  }
+}

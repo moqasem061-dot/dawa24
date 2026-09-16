@@ -45,6 +45,7 @@ type Config struct {
 	Telegram  Telegram
 	WhatsApp  WhatsApp
 	Marketing Marketing
+	SMTP      SMTP
 }
 
 // AntiScrape governs the guard on the signed-out pages that publish
@@ -257,6 +258,7 @@ func load(cliOnly bool) (*Config, error) {
 	cfg.Telegram = loadTelegram(fail)
 	cfg.WhatsApp = loadWhatsApp(fail)
 	cfg.Marketing = loadMarketing(fail)
+	cfg.SMTP = loadSMTP()
 
 	// --- Required everywhere ---
 	if cfg.Database.URL == "" {

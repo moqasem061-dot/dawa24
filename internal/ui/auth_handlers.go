@@ -49,7 +49,12 @@ func (h *UIHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		errorMsg = errorKey
 	}
 
-	h.renderPage(ctx, w, "render login page", pages.LoginPage(lang, dir, errorMsg))
+	var successMsg string
+	if r.URL.Query().Get("notice") == "password_reset_success" {
+		successMsg = i18n.T(lang, "auth.reset.success")
+	}
+
+	h.renderPage(ctx, w, "render login page", pages.LoginPage(lang, dir, errorMsg, successMsg))
 }
 
 func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
@@ -84,17 +89,6 @@ func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderPage(ctx, w, "render register page", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
-}
-
-func (h *UIHandler) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	h.renderPage(ctx, w, "render forgot password page", pages.PasswordReset())
-}
-
-func (h *UIHandler) ResetPasswordPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	token := r.URL.Query().Get("token")
-	h.renderPage(ctx, w, "render reset password page", pages.PasswordResetConfirm(token))
 }
 
 func (h *UIHandler) OnboardingPage(w http.ResponseWriter, r *http.Request) {

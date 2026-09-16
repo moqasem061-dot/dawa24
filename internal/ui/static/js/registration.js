@@ -478,6 +478,191 @@
     });
   }
 
+  // --- Email OTP Verification ---
+  const sendEmailBtn = document.getElementById('email-send-otp-btn');
+  const sendEmailBtnText = document.getElementById('email-send-btn-text');
+  const regEmailInput = document.getElementById('reg-email');
+  const emailOtpBox = document.getElementById('email-otp-box');
+  const emailOtpCode = document.getElementById('email-otp-code');
+  const emailVerifyBtn = document.getElementById('email-verify-btn');
+  const emailResendBtn = document.getElementById('email-resend-btn');
+  const emailCooldownTimer = document.getElementById('email-cooldown-timer');
+  const emailFeedback = document.getElementById('email-otp-feedback');
+  const emailVerifiedBadge = document.getElementById('email-verified-badge');
+  const emailChangeBtn = document.getElementById('email-change-btn');
+  const verifiedEmailTokenInput = document.getElementById('verified-email-token');
+
+  let emailCooldownInterval = null;
+
+  function showEmailFeedback(msg, isError) {
+    if (!emailFeedback) return;
+    emailFeedback.style.display = 'block';
+    emailFeedback.style.color = isError ? '#ef4444' : '#10b981';
+    emailFeedback.textContent = msg;
+  }
+
+  function clearEmailFeedback() {
+    if (emailFeedback) {
+      emailFeedback.style.display = 'none';
+      emailFeedback.textContent = '';
+    }
+  }
+
+  function startEmailCooldown(seconds) {
+    clearInterval(emailCooldownInterval);
+    let remaining = seconds;
+    if (emailCooldownTimer) emailCooldownTimer.textContent = `(إعادة الإرسال خلال ${remaining}ث)`;
+    if (emailResendBtn) emailResendBtn.style.display = 'none';
+    if (sendEmailBtn) sendEmailBtn.disabled = true;
+
+    emailCooldownInterval = setInterval(() => {
+      remaining--;
+      if (remaining <= 0) {
+        clearInterval(emailCooldownInterval);
+        if (emailCooldownTimer) emailCooldownTimer.textContent = '';
+        if (emailResendBtn) emailResendBtn.style.display = 'inline-block';
+        if (sendEmailBtn) sendEmailBtn.disabled = false;
+      } else {
+        if (emailCooldownTimer) emailCooldownTimer.textContent = `(إعادة الإرسال خلال ${remaining}ث)`;
+      }
+    }, 1000);
+  }
+
+  async function sendEmailOTP() {
+    if (!regEmailInput) return;
+    const email = regEmailInput.value.trim();
+    if (!email || !email.includes('@') || !email.includes('.')) {
+      regEmailInput.focus();
+      showEmailFeedback('يرجى إدخال بريد إلكتروني صحيح أولاً', true);
+      return;
+    }
+
+    clearEmailFeedback();
+    if (sendEmailBtn) {
+      sendEmailBtn.disabled = true;
+      if (sendEmailBtnText) sendEmailBtnText.textContent = '⏳ جارٍ الإرسال...';
+    }
+
+    try {
+      const resp = await fetch('/auth/email/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'email=' + encodeURIComponent(email)
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.ok) {
+        if (emailOtpBox) emailOtpBox.style.display = 'block';
+        if (data.mock_code && emailOtpCode) {
+          emailOtpCode.value = data.mock_code;
+          showEmailFeedback(`تم إرسال الرمز بنجاح! (وضع تجريبي: الرمز ${data.mock_code})`, false);
+        } else {
+          showEmailFeedback('تم إرسال رمز التأكيد إلى بريدك الإلكتروني بنجاح', false);
+        }
+        startEmailCooldown(data.cooldown || 60);
+        if (emailOtpCode) emailOtpCode.focus();
+      } else {
+        showEmailFeedback(data.message || 'تعذر إرسال الرمز، يرجى المحاولة بعد قليل', true);
+        if (data.cooldown) {
+          startEmailCooldown(data.cooldown);
+        } else if (sendEmailBtn) {
+          sendEmailBtn.disabled = false;
+        }
+      }
+    } catch (err) {
+      showEmailFeedback('فشل الاتصال بالخادم، يرجى التحقق من اتصال الإنترنت', true);
+      if (sendEmailBtn) sendEmailBtn.disabled = false;
+    } finally {
+      if (sendEmailBtnText) sendEmailBtnText.textContent = 'تأكيد البريد';
+    }
+  }
+
+  async function verifyEmailOTP() {
+    if (!regEmailInput || !emailOtpCode) return;
+    const email = regEmailInput.value.trim();
+    const code = emailOtpCode.value.trim();
+
+    if (!code || code.length < 4) {
+      emailOtpCode.focus();
+      showEmailFeedback('يرجى إدخال رمز التأكيد المكون من 6 أرقام', true);
+      return;
+    }
+
+    clearEmailFeedback();
+    if (emailVerifyBtn) {
+      emailVerifyBtn.disabled = true;
+      emailVerifyBtn.textContent = '⏳ تحقق...';
+    }
+
+    try {
+      const resp = await fetch('/auth/email/verify-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'email=' + encodeURIComponent(email) + '&code=' + encodeURIComponent(code)
+      });
+      const data = await resp.json();
+
+      if (resp.ok && data.ok && data.token) {
+        if (verifiedEmailTokenInput) verifiedEmailTokenInput.value = data.token;
+        if (regEmailInput) {
+          regEmailInput.setAttribute('readonly', 'readonly');
+          if (data.email) regEmailInput.value = data.email;
+        }
+        if (sendEmailBtn) sendEmailBtn.style.display = 'none';
+        if (emailOtpBox) emailOtpBox.style.display = 'none';
+        if (emailVerifiedBadge) emailVerifiedBadge.style.display = 'inline-flex';
+        clearInterval(emailCooldownInterval);
+      } else {
+        showEmailFeedback(data.message || 'رمز التأكيد غير صحيح، حاول مجدداً', true);
+        emailOtpCode.focus();
+        emailOtpCode.select();
+      }
+    } catch (err) {
+      showEmailFeedback('حدث خطأ أثناء التحقق، يرجى المحاولة ثانية', true);
+    } finally {
+      if (emailVerifyBtn) {
+        emailVerifyBtn.disabled = false;
+        emailVerifyBtn.textContent = 'تأكيد الرمز';
+      }
+    }
+  }
+
+  function changeEmail() {
+    if (verifiedEmailTokenInput) verifiedEmailTokenInput.value = '';
+    if (regEmailInput) {
+      regEmailInput.removeAttribute('readonly');
+      regEmailInput.focus();
+    }
+    if (emailVerifiedBadge) emailVerifiedBadge.style.display = 'none';
+    if (emailOtpBox) emailOtpBox.style.display = 'none';
+    if (sendEmailBtn) {
+      sendEmailBtn.style.display = 'inline-flex';
+      sendEmailBtn.disabled = false;
+    }
+    clearEmailFeedback();
+    clearInterval(emailCooldownInterval);
+    if (emailCooldownTimer) emailCooldownTimer.textContent = '';
+  }
+
+  if (sendEmailBtn) sendEmailBtn.addEventListener('click', sendEmailOTP);
+  if (emailResendBtn) emailResendBtn.addEventListener('click', sendEmailOTP);
+  if (emailVerifyBtn) emailVerifyBtn.addEventListener('click', verifyEmailOTP);
+  if (emailChangeBtn) emailChangeBtn.addEventListener('click', changeEmail);
+
+  if (emailOtpCode) {
+    emailOtpCode.addEventListener('input', () => {
+      if (emailOtpCode.value.trim().length === 6) {
+        verifyEmailOTP();
+      }
+    });
+    emailOtpCode.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        verifyEmailOTP();
+      }
+    });
+  }
+
   // Form Submit Interceptor
   if (form) {
     form.addEventListener('submit', (e) => {
@@ -485,7 +670,8 @@
       const email = document.getElementById('reg-email');
       const phone = document.getElementById('reg-phone');
       const password = document.getElementById('reg-password');
-      const token = document.getElementById('verified-phone-token');
+      const phoneToken = document.getElementById('verified-phone-token');
+      const emailToken = document.getElementById('verified-email-token');
 
       if (name && !name.value.trim()) {
         e.preventDefault();
@@ -497,12 +683,24 @@
         email.focus();
         return;
       }
+      if (!emailToken || !emailToken.value.trim()) {
+        e.preventDefault();
+        showEmailFeedback('يرجى تأكيد البريد الإلكتروني عبر رمز التحقق أولاً للمتابعة', true);
+        if (sendEmailBtn && sendEmailBtn.style.display !== 'none') {
+          sendEmailBtn.focus();
+        } else if (emailOtpCode && emailOtpBox && emailOtpBox.style.display !== 'none') {
+          emailOtpCode.focus();
+        } else if (email) {
+          email.focus();
+        }
+        return;
+      }
       if (phone && !phone.value.trim()) {
         e.preventDefault();
         phone.focus();
         return;
       }
-      if (!token || !token.value.trim()) {
+      if (!phoneToken || !phoneToken.value.trim()) {
         e.preventDefault();
         showTgFeedback('يرجى تأكيد رقم الهاتف عبر رمز تيليجرام أولاً للمتابعة', true);
         if (sendTgBtn && sendTgBtn.style.display !== 'none') {

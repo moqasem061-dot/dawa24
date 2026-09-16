@@ -119,9 +119,9 @@ func TestInvoicePaymentModalAndTableIntegration(t *testing.T) {
 
 	tableHTML := sbTable.String()
 
-	// Must contain openRecordInvoicePaymentModal with valid JS arguments without premature quote close
-	if !strings.Contains(tableHTML, "openRecordInvoicePaymentModal(205") {
-		t.Errorf("expected table to contain openRecordInvoicePaymentModal(205, ...), got:\n%s", tableHTML)
+	// Must contain openRecordInvoicePaymentModal with invoice ID 205 without premature quote close
+	if !strings.Contains(tableHTML, "openRecordInvoicePaymentModal") || !strings.Contains(tableHTML, "205") {
+		t.Errorf("expected table to contain openRecordInvoicePaymentModal and ID 205, got:\n%s", tableHTML)
 	}
 	if strings.Contains(tableHTML, `onclick="openRecordInvoicePaymentModal(205, "`) {
 		t.Errorf("fatal: table has premature quote close inside onclick attribute!")

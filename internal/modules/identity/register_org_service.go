@@ -17,6 +17,7 @@ type RegisterOrganizationInput struct {
 	NameEn          string
 	Phone           string
 	PhoneVerifiedAt *time.Time
+	EmailVerifiedAt *time.Time
 	Language        i18n.Lang
 	Timezone        string
 	Org             RegisterOrgInput
@@ -57,15 +58,16 @@ func (s *Service) RegisterOrganization(ctx context.Context, input RegisterOrgani
 	}
 
 	user := &User{
-		Email:        cleanEmail,
-		PasswordHash: hash,
-		Name:         i18n.New(input.NameAr, input.NameEn),
-		Role:         "user",
-		Status:       StatusActive,
-		Language:     lang,
+		Email:           cleanEmail,
+		PasswordHash:    hash,
+		Name:            i18n.New(input.NameAr, input.NameEn),
+		Role:            "user",
+		Status:          StatusActive,
+		Language:        lang,
 		Timezone:        tz,
 		Phone:           input.Phone,
 		PhoneVerifiedAt: input.PhoneVerifiedAt,
+		EmailVerifiedAt: input.EmailVerifiedAt,
 	}
 
 	result, err := s.repo.RegisterOrganization(ctx, user, input.Org)

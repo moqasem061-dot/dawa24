@@ -388,7 +388,7 @@ func CompareFileMappingModal(file *compare.CompareFile, headers []string, previe
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" onclick=\"handleSetupSkip(parseInt(this.dataset.fileId,10), this.dataset.queue, parseInt(this.dataset.step,10), parseInt(this.dataset.total,10))\" class=\"btn btn-secondary btn-sm text-danger\" title=\"تخطي هذا الملف والانتقال للتالي\">تخطي هذا الملف</button> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" data-on-click=\"handleSetupSkip(this.dataset.fileId, this.dataset.queue, this.dataset.step, this.dataset.total)\" class=\"btn btn-secondary btn-sm text-danger\" title=\"تخطي هذا الملف والانتقال للتالي\">تخطي هذا الملف</button> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

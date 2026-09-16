@@ -529,7 +529,7 @@ func VendorDeliveryDetailPage(data VendorDeliveryDetailData, lang, dir string) t
 							return templ_7745c5c3_Err
 						}
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<button type=\"button\" class=\"btn btn-primary flex-1 py-2.5 font-black text-xs d-flex items-center justify-center gap-1.5\" onclick=\"var pin = document.getElementById('handover-pin-section') || document.getElementById('progress-status-section'); if(pin){ pin.scrollIntoView({behavior: 'smooth'}); var input = pin.querySelector('.courier-pin-input'); if(input) input.focus(); }\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "<button type=\"button\" class=\"btn btn-primary flex-1 py-2.5 font-black text-xs d-flex items-center justify-center gap-1.5\" data-on-click=\"focusSection('handover-pin-section', 'progress-status-section', '.courier-pin-input')\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

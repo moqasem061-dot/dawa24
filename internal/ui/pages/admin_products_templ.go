@@ -78,7 +78,7 @@ func AdminProducts(lang, dir string, products []*catalog.Product, brands []*cata
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>استيراد ملف الكتالوج (Excel / CSV)</span></a> <button type=\"button\" class=\"btn btn-primary font-bold gap-2\" onclick=\"document.getElementById('product-create-modal').showModal()\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>استيراد ملف الكتالوج (Excel / CSV)</span></a> <button type=\"button\" class=\"btn btn-primary font-bold gap-2\" data-on-click=\"openDialog('product-create-modal')\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

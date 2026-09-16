@@ -51,6 +51,14 @@ func (m *mockIdentityDeletionRepo) GetPendingAccountDeletionRequest(_ context.Co
 	return nil, nil
 }
 
+func (m *mockIdentityDeletionRepo) GetPreferences(_ context.Context, _ int64) (*identity.UserPreferences, error) {
+	return &identity.UserPreferences{}, nil
+}
+
+func (m *mockIdentityDeletionRepo) SavePreferences(_ context.Context, _ int64, _ *identity.UserPreferences) error {
+	return nil
+}
+
 func TestEmployeeCannotRequestAccountDeletion(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	idSvc := identity.NewService(&mockIdentityDeletionRepo{}, nil, logger)

@@ -54,6 +54,28 @@ func (h *UIHandler) dispatchInAppBranchNotification(ctx context.Context, userID 
 	if err != nil {
 		h.log.WarnContext(ctx, "failed to dispatch in-app notification", "user_id", userID, "error", err)
 	}
+
+	// Deliver email notification asynchronously if user preferences enable email channel
+	if h.mailer != nil && userID > 0 && h.idSvc != nil {
+		h.safeGo("email-notification-dispatch", func() {
+			bgCtx := database.AsSystem(context.Background())
+			prefs, pErr := h.idSvc.GetPreferences(bgCtx, userID)
+			if pErr != nil || prefs == nil || !prefs.NotificationChannels["email"] {
+				return
+			}
+			u, uErr := h.idSvc.AdminGetUser(bgCtx, userID)
+			if uErr != nil || u == nil || u.Email == "" {
+				return
+			}
+			userName := u.Name.Get(i18n.AR)
+			if userName == "" {
+				userName = u.Name.Get(i18n.EN)
+			}
+			if sendErr := h.mailer.SendNotification(bgCtx, u.Email, userName, title, body, ""); sendErr != nil {
+				h.log.Warn("failed to send notification email", "user_id", userID, "email", u.Email, "error", sendErr)
+			}
+		})
+	}
 }
 
 // dispatchOrgNotification sends an in-app notification to authorized active members of an organization.

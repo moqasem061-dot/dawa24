@@ -161,7 +161,7 @@ func VendorDeliveryHandoverCard(sh *commerce.OrderShipment, langOpt ...string) t
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" onclick=\"var el = document.getElementById('collected_amount_input'); if (el) { el.value = this.getAttribute('data-full-amount'); }\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" data-on-click=\"setValue('collected_amount_input', this.dataset.fullAmount)\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

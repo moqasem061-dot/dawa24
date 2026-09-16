@@ -35,7 +35,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/progress"
 	"github.com/muhiya/dawa24-store/internal/platform/queue"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
+	"github.com/muhiya/dawa24-store/internal/platform/mailer"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
 	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
@@ -146,6 +146,10 @@ type UIHandler struct {
 
 	// docScanEnqueue hands document security scan jobs to the background worker.
 	docScanEnqueue DocScanEnqueueFunc
+
+	// mailer delivers transactional emails, and emailOTP handles verification codes.
+	mailer   mailer.Mailer
+	emailOTP *mailer.OTPEngine
 }
 
 // NotificationEnqueueFunc hands an asynchronous notification delivery job to the background worker.
@@ -385,10 +389,3 @@ func (h *UIHandler) RegisterApprovedSharedRoutes(r chi.Router) {
 	r.Post("/messages/{id}/send", h.MessagesSendSubmit)
 	r.Post("/requests", h.RequestCreateSubmit)
 }
-
-// safeGo executes a background task with panic recovery and structured error logging,
-// preventing unhandled panics from crashing the web server process.
-func (h *UIHandler) safeGo(name string, fn func()) {
-	safe.Go(h.log, name, fn)
-}
-

@@ -426,7 +426,7 @@ func VendorInvoiceCreateModal(data InvoicesData, langOpt ...string) templ.Compon
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" class=\"form-control text-xs\"></textarea></div></div><div class=\"modal-footer flex-between\"><button type=\"button\" onclick=\"document.getElementById('vendor-create-invoice-modal').close()\" class=\"btn btn-ghost btn-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" class=\"form-control text-xs\"></textarea></div></div><div class=\"modal-footer flex-between\"><button type=\"button\" data-on-click=\"closeDialog('vendor-create-invoice-modal')\" class=\"btn btn-ghost btn-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

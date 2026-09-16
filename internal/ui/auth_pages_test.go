@@ -15,7 +15,7 @@ func TestAuthLoginPage_Render(t *testing.T) {
 	ctx := context.Background()
 
 	var buf bytes.Buffer
-	comp := pages.LoginPage("ar", "rtl", "")
+	comp := pages.LoginPage("ar", "rtl", "", "")
 	if err := comp.Render(ctx, &buf); err != nil {
 		t.Fatalf("LoginPage.Render failed: %v", err)
 	}

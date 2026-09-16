@@ -239,7 +239,7 @@ func VendorSavingImportModal(lang string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<p id=\"vendor-import-modal-subtitle\" class=\"text-xs text-muted mb-4\">الخطوة 1 من 3: اختيار الملف وتعيين الأعمدة</p><div class=\"stack-lg\"><!-- STEP 1: Upload & Configuration --><div id=\"vendor-import-step-config\" class=\"stack-lg\"><div class=\"stack-sm\" id=\"import-dropzone\" onclick=\"document.getElementById('import-file-input').click()\"><div class=\"stack-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<p id=\"vendor-import-modal-subtitle\" class=\"text-xs text-muted mb-4\">الخطوة 1 من 3: اختيار الملف وتعيين الأعمدة</p><div class=\"stack-lg\"><!-- STEP 1: Upload & Configuration --><div id=\"vendor-import-step-config\" class=\"stack-lg\"><div class=\"stack-sm\" id=\"import-dropzone\" data-on-click=\"clickElement('import-file-input')\"><div class=\"stack-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

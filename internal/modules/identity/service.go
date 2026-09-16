@@ -71,6 +71,7 @@ type RegisterInput struct {
 	Timezone string    `json:"timezone,omitempty"`
 	Phone           string     `json:"phone,omitempty"`
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at,omitempty"`
+	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
 }
 
 // LoginInput captures authentication parameters.
@@ -131,6 +132,7 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 		Timezone:        tz,
 		Phone:           input.Phone,
 		PhoneVerifiedAt: input.PhoneVerifiedAt,
+		EmailVerifiedAt: input.EmailVerifiedAt,
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
@@ -325,6 +327,43 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassw
 	return nil
 }
 
+// ResetPassword resets a user's password directly after OTP verification.
+func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) error {
+	cleanEmail := NormalizeEmail(email)
+	if cleanEmail == "" {
+		return apperr.Validation("email.invalid", "A valid email address is required.", nil)
+	}
+	user, err := s.repo.GetUserByEmail(ctx, cleanEmail)
+	if err != nil {
+		return err
+	}
+	if len(newPassword) < 8 {
+		return apperr.Validation("auth.weak_password", i18n.TDefault("w4_mod.8_183"), nil)
+	}
+	hash, err := HashPassword(newPassword)
+	if err != nil {
+		return err
+	}
+	user.PasswordHash = hash
+	user.UpdatedAt = time.Now().UTC()
+	if err := s.repo.UpdateUser(ctx, user); err != nil {
+		return err
+	}
+	maxSessions := 10
+	_ = s.repo.UpsertSecurity(ctx, &UserSecurity{
+		UserID:              user.ID,
+		LoginAttempts:       0,
+		LastPasswordChange:  &user.UpdatedAt,
+		PasswordChangeCount: 1,
+		MaxLoginSessions:    &maxSessions,
+	})
+	if s.sessionStore != nil {
+		_ = s.sessionStore.DeleteAllForUser(ctx, user.ID)
+	}
+	s.log.InfoContext(ctx, "user password reset successfully", "user_id", user.ID)
+	return nil
+}
+
 // Logout terminates a session.
 func (s *Service) Logout(ctx context.Context, token string) error {
 
@@ -354,4 +393,3 @@ func (s *Service) ListOrgSessions(ctx context.Context, orgID int64) ([]*Session,
 func (s *Service) DefaultOrgInfoForUser(ctx context.Context, userID int64) (int64, string, string, error) {
 	return s.repo.DefaultOrgInfoForUser(ctx, userID)
 }
-

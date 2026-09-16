@@ -208,16 +208,22 @@ func (h *UIHandler) SettingsPreferencesSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	notifEmail := r.PostFormValue("notif_email") == "on" || r.PostFormValue("ch_email") == "on"
+	notifPromos := r.PostFormValue("notif_promos") == "on" || r.PostFormValue("ch_offers") == "on"
 	p := &identity.UserPreferences{
 		UserID: actor.UserID,
 		Theme:  r.PostFormValue("theme"),
 		NotificationChannels: map[string]bool{
-			"email": r.PostFormValue("ch_email") == "on",
+			"email": notifEmail,
 			"sms":   r.PostFormValue("ch_sms") == "on",
 			"push":  r.PostFormValue("ch_push") == "on",
 		},
-		NotificationTopics: map[string]bool{"offers": true, "blog": false, "newsletter": true},
-		MarketingConsent:   r.PostFormValue("marketing_consent") == "on",
+		NotificationTopics: map[string]bool{
+			"offers":     notifPromos,
+			"blog":       false,
+			"newsletter": notifPromos,
+		},
+		MarketingConsent: r.PostFormValue("marketing_consent") == "on",
 	}
 	if p.Theme == "" {
 		p.Theme = "light"

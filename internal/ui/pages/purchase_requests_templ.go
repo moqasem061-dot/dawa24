@@ -60,7 +60,7 @@ func CustomerPurchaseRequestWizardPage(lang, dir string, step int, option string
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"stack-sm\"><h1 class=\"text-2xl font-black text-primary m-0\">طلبات الشراء والتوريد</h1><p class=\"text-sm text-secondary m-0 mt-1\">اختر الطريقة المناسبة للبدء: استعراض دليل الموردين المعتمدين وفروعهم، أو البحث المباشر في كتالوج الأصناف، أو تجهيز طلب ذكي من ملف.</p></div></div></div></div></div><!-- 3 Direct Options Grid --><div class=\"dashboard-grid-3col mb-0\"><!-- Option 1: By Supplier --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer\" onclick=\"window.location='/suppliers'\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"stack-sm\"><h1 class=\"text-2xl font-black text-primary m-0\">طلبات الشراء والتوريد</h1><p class=\"text-sm text-secondary m-0 mt-1\">اختر الطريقة المناسبة للبدء: استعراض دليل الموردين المعتمدين وفروعهم، أو البحث المباشر في كتالوج الأصناف، أو تجهيز طلب ذكي من ملف.</p></div></div></div></div></div><!-- 3 Direct Options Grid --><div class=\"dashboard-grid-3col mb-0\"><!-- Option 1: By Supplier --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer\" data-on-click=\"navigate('/suppliers')\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -76,7 +76,7 @@ func CustomerPurchaseRequestWizardPage(lang, dir string, step int, option string
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</a></div><!-- Option 2: By Products --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer\" onclick=\"window.location='/catalog'\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</a></div><!-- Option 2: By Products --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer\" data-on-click=\"navigate('/catalog')\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -92,7 +92,7 @@ func CustomerPurchaseRequestWizardPage(lang, dir string, step int, option string
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</a></div><!-- Option 3: Smart Ordering --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer border-brand\" onclick=\"window.location='/customer/smart-order/new'\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</a></div><!-- Option 3: Smart Ordering --><div class=\"glass-panel p-6 mb-0 text-center d-flex flex-col justify-between cursor-pointer border-brand\" data-on-click=\"navigate('/customer/smart-order/new')\"><div class=\"stack-sm\"><div class=\"user-avatar-badge text-2xl mx-auto mb-4\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

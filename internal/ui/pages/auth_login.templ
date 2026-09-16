@@ -5,7 +5,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
 
-templ LoginPage(lang, dir, errorMsg string) {
+templ LoginPage(lang, dir, errorMsg, successMsg string) {
 	{{ site := layouts.GetSiteSettings(ctx) }}
 	@layouts.Base("تسجيل الدخول", lang, dir) {
 		<div class="auth-page-wrapper">
@@ -24,6 +24,13 @@ templ LoginPage(lang, dir, errorMsg string) {
 					<h1 class="auth-title">منصة { site.SiteName }</h1>
 					<p class="auth-subtitle">تسجيل الدخول إلى حسابك الصيدلي أو التجاري</p>
 				</div>
+
+				if successMsg != "" {
+					<div class="alert alert-success mb-5 d-flex items-center gap-3">
+						<div class="alert-icon flex-shrink-0">@components.IconCheck("icon-xs")</div>
+						<div class="alert-message text-sm font-semibold">{ successMsg }</div>
+					</div>
+				}
 
 				if errorMsg != "" {
 					<div class="alert alert-danger mb-5 d-flex items-center gap-3">

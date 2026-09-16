@@ -122,6 +122,11 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var prefs *identity.UserPreferences
+	if h.idSvc != nil {
+		prefs, _ = h.idSvc.GetPreferences(ctx, actor.UserID)
+	}
+
 	data := pages.UnifiedSettingsData{
 		User:                   user,
 		Wallet:                 wallet,
@@ -139,6 +144,7 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 		OrgLegalName:           orgLegalName,
 		PendingAccountDeletion: pendingAccountDel,
 		PendingOrgDeletion:     pendingOrgDel,
+		Preferences:            prefs,
 		TelegramEnabled:        h.telegramEnabled(),
 		WhatsAppEnabled:        h.whatsappEnabled(),
 	}

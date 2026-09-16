@@ -28,14 +28,14 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			INSERT INTO identity.users (
-				email, password_hash, name, role, status, language, timezone, phone, phone_verified_at
+				email, password_hash, name, role, status, language, timezone, phone, phone_verified_at, email_verified_at
 			) VALUES (
 				-- name is NOT NULL DEFAULT '{"ar":"","en":""}', so the schema already
 				-- treats an empty name as acceptable. An empty i18n.Text marshals to
 				-- NULL, though, which violates the constraint instead of taking the
 				-- default. Registration validates the name; this keeps any other
 				-- caller from turning a missing one into a 500.
-				$1, $2, COALESCE($3, '{"ar":"","en":""}'::jsonb), $4, $5, $6, $7, $8, $9
+				$1, $2, COALESCE($3, '{"ar":"","en":""}'::jsonb), $4, $5, $6, $7, $8, $9, $10
 			) RETURNING id, public_id, created_at, updated_at;
 		`
 		err := tx.QueryRow(txCtx, query,
@@ -48,6 +48,7 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 			u.Timezone,
 			u.Phone,
 			u.PhoneVerifiedAt,
+			u.EmailVerifiedAt,
 		).Scan(&u.ID, &u.PublicID, &u.CreatedAt, &u.UpdatedAt)
 
 		if err != nil {

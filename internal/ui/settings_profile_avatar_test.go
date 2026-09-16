@@ -63,7 +63,8 @@ func TestSettingsProfileAvatarUpload(t *testing.T) {
 		if err != nil {
 			t.Fatalf("failed to create form file: %v", err)
 		}
-		_, _ = part.Write([]byte("fake-png-data"))
+		validPNG := append([]byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}, []byte("IHDR....IDAT....IEND")...)
+		_, _ = part.Write(validPNG)
 		_ = writer.Close()
 
 		req := httptest.NewRequest("POST", "/settings/profile", body)
