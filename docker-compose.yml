@@ -9,7 +9,7 @@
 services:
   migrate:
     build:
-      context: .
+      context: ${BUILD_CONTEXT:-https://github.com/moqasem061-dot/dawa24.git#main}
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-prod}
@@ -30,7 +30,7 @@ services:
 
   server:
     build:
-      context: .
+      context: ${BUILD_CONTEXT:-https://github.com/moqasem061-dot/dawa24.git#main}
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-prod}
@@ -83,7 +83,7 @@ services:
 
   worker:
     build:
-      context: .
+      context: ${BUILD_CONTEXT:-https://github.com/moqasem061-dot/dawa24.git#main}
       dockerfile: Dockerfile
       args:
         VERSION: ${VERSION:-prod}
