@@ -315,5 +315,7 @@ templ CustomerSavingScript() {
 				row.classList.toggle('d-none', !match);
 			});
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('customerSavingManager', customerSavingManager);
 	</script>
 }

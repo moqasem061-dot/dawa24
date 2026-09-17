@@ -282,7 +282,7 @@ templ compareToolContent(view CompareToolView) {
 				if view.IsAdmin() {
 					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", view.TargetOrgID) } />
 				}
-				<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+				<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 				<!-- Drag and drop box with Multi-File support -->
 				<div
 					id="drop-zone-box"

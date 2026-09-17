@@ -67,7 +67,7 @@ templ AdminFullUserPage(users []*identity.User, activeFilter string, lang, dir s
 												<div class="w-7 h-7 rounded-lg border overflow-hidden flex-shrink-0 bg-surface-sunken d-flex items-center justify-center font-bold text-2xs">
 													if u.AvatarURL != "" {
 														<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="flex" />
-														<span style="display:none;" class="w-full h-full d-flex items-center justify-center font-bold">{ userInitials(u) }</span>
+														<span class="w-full h-full d-flex items-center justify-center font-bold s-hidden-init">{ userInitials(u) }</span>
 													} else {
 														<span class="w-full h-full d-flex items-center justify-center font-bold">{ userInitials(u) }</span>
 													}
@@ -184,23 +184,29 @@ type AdminUserDetailView struct {
 templ AdminUserDetailPage(v AdminUserDetailView, lang, dir string) {
 	{{ u := v.User }}
 	@layouts.AdminShell(fmt.Sprintf("ملف المستخدم: %s", userDisplayName(u)), "users", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFullUserState', function () {
+				return {
+					activeTab: 'profile',
+					showEditModal: false,
+					showPasswordModal: false,
+					permSearch: '',
+					permGroup: 'all',
+					heldOnly: false,
+					matchesPerm(nameAr, nameEn, key, held, groupKey) {
+						if (this.permGroup !== 'all' && this.permGroup !== groupKey) return false;
+						if (this.heldOnly && !held) return false;
+						const q = (this.permSearch || '').toLowerCase().trim();
+						if (!q) return true;
+						return nameAr.toLowerCase().includes(q) || nameEn.toLowerCase().includes(q) || key.toLowerCase().includes(q);
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container max-w-5xl mx-auto"
-			x-data="{
-				activeTab: 'profile',
-				showEditModal: false,
-				showPasswordModal: false,
-				permSearch: '',
-				permGroup: 'all',
-				heldOnly: false,
-				matchesPerm(nameAr, nameEn, key, held, groupKey) {
-					if (this.permGroup !== 'all' && this.permGroup !== groupKey) return false;
-					if (this.heldOnly && !held) return false;
-					const q = (this.permSearch || '').toLowerCase().trim();
-					if (!q) return true;
-					return nameAr.toLowerCase().includes(q) || nameEn.toLowerCase().includes(q) || key.toLowerCase().includes(q);
-				}
-			}"
+			x-data="adminFullUserState"
 		>
 			@roleNotice(v.NoticeKind, v.Notice)
 
@@ -219,7 +225,7 @@ templ AdminUserDetailPage(v AdminUserDetailView, lang, dir string) {
 						<div class="w-16 h-16 rounded-2xl bg-surface-sunken text-primary border d-flex items-center justify-center font-black text-xl overflow-hidden flex-shrink-0 shadow-xs">
 							if u.AvatarURL != "" {
 								<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="flex" />
-								<span style="display: none;" class="w-full h-full d-flex items-center justify-center font-black">
+								<span class="w-full h-full d-flex items-center justify-center font-black s-hidden-init">
 									{ userInitials(u) }
 								</span>
 							} else {

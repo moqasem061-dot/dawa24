@@ -25,16 +25,22 @@ type AdminOrgImportPageData struct {
 
 templ AdminOrgImportPage(data AdminOrgImportPageData, lang, dir string) {
 	@layouts.AdminShell("استيراد المنتجات لمنظمات", "org_imports", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminOrgImportState', function () {
+				return {
+					warehouseModal: false,
+					selectedOrg: { id: 0, name: '', type: '' },
+					openWarehouse(id, name, type) {
+						this.selectedOrg = { id: id, name: name, type: type };
+						this.warehouseModal = true;
+					}
+				};
+			});
+		</script>
 		<div
 			class="admin-page-container"
-			x-data="{
-				warehouseModal: false,
-				selectedOrg: { id: 0, name: '', type: '' },
-				openWarehouse(id, name, type) {
-					this.selectedOrg = { id: id, name: name, type: type };
-					this.warehouseModal = true;
-				}
-			}"
+			x-data="adminOrgImportState"
 		>
 			<!-- Header Banner -->
 			<div class="admin-banner">
@@ -254,7 +260,6 @@ templ AdminOrgImportPage(data AdminOrgImportPageData, lang, dir string) {
 				class="modal-backdrop"
 				x-show="warehouseModal"
 				x-cloak
-				style="display: none;"
 			>
 				<div class="modal-dialog max-w-lg" @click.away="warehouseModal = false">
 					<div class="modal-header flex-between items-center pb-3 border-b">

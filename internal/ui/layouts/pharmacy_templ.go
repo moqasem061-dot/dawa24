@@ -461,7 +461,7 @@ func BuyingBranchSelector(ctx context.Context, langOpt ...string) templ.Componen
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"> <input type=\"hidden\" name=\"redirect_to\" value=\"\" x-init=\"$el.value = window.location.pathname + window.location.search\"> ")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\"> <input type=\"hidden\" name=\"redirect_to\" value=\"\" :value=\"$here\"> ")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}

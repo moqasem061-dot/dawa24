@@ -50,23 +50,29 @@ type AdminModeratorOption struct {
 
 templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 	@layouts.AdminShell("إدارة المستخدمين والحسابات", "users", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminUsersState', function () {
+				return {
+					showAddStaff: false,
+					showEditModal: false,
+					showPasswordModal: false,
+					editUser: { id: 0, name_ar: '', name_en: '', email: '', phone: '', avatar_url: '', national_id: '', status: 'active', org_id: '0', branch_id: '0', job_title: '' },
+					passwordUser: { id: 0, name: '', email: '' },
+					openEdit(u) {
+						this.editUser = u;
+						this.showEditModal = true;
+					},
+					openPassword(u) {
+						this.passwordUser = u;
+						this.showPasswordModal = true;
+					}
+				};
+			});
+		</script>
 		<div
 			class="admin-page-container"
-			x-data="{
-				showAddStaff: false,
-				showEditModal: false,
-				showPasswordModal: false,
-				editUser: { id: 0, name_ar: '', name_en: '', email: '', phone: '', avatar_url: '', national_id: '', status: 'active', org_id: '0', branch_id: '0', job_title: '' },
-				passwordUser: { id: 0, name: '', email: '' },
-				openEdit(u) {
-					this.editUser = u;
-					this.showEditModal = true;
-				},
-				openPassword(u) {
-					this.passwordUser = u;
-					this.showPasswordModal = true;
-				}
-			}"
+			x-data="adminUsersState"
 		>
 			<!-- Prominent Notice Banner (e.g. MFA re-activation, updates) -->
 			if data.Notice != "" {
@@ -225,7 +231,7 @@ templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 												<div class="w-8 h-8 rounded-lg bg-surface-sunken text-primary border d-flex items-center justify-center font-black text-xs overflow-hidden flex-shrink-0">
 													if u.AvatarURL != "" {
 														<img src={ u.AvatarURL } alt={ userDisplayName(u) } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="block" />
-														<span style="display: none;">
+														<span class="s-hidden-init">
 															{ userInitials(u) }
 														</span>
 													} else {

@@ -6,6 +6,66 @@ import (
 )
 
 templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
+	// dawaFinanceModalState is the state every finance page shares: these
+	// modals are rendered on all of them and read these fields.
+	<script nonce={ layouts.Nonce(ctx) }>
+		function dawaFinanceModalState() {
+			return {
+				rejectDepositID: 0,
+				rejectDepositAmount: '',
+				rejectUserName: '',
+				approveWithdrawalID: 0,
+				approveWithdrawalAmount: '',
+				approveWithdrawalUserName: '',
+				approveWithdrawalMethod: '',
+				approveWithdrawalDestination: '',
+				rejectWithdrawalID: 0,
+				rejectWithdrawalAmount: '',
+				rejectWithdrawalUserName: '',
+				receiptModalURL: '',
+				refundTargetID: 0,
+				refundAmount: '',
+				refundOrgName: '',
+				refundTargetType: 'transaction',
+				openApproveWithdrawalModal(id, amount, userName, method, destination) {
+					this.approveWithdrawalID = id;
+					this.approveWithdrawalAmount = amount;
+					this.approveWithdrawalUserName = userName;
+					this.approveWithdrawalMethod = method;
+					this.approveWithdrawalDestination = destination;
+					const modal = document.getElementById('finance-approve-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRejectModal(id, amount, userName) {
+					this.rejectDepositID = id;
+					this.rejectDepositAmount = amount;
+					this.rejectUserName = userName;
+					const modal = document.getElementById('finance-reject-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRejectWithdrawalModal(id, amount, userName) {
+					this.rejectWithdrawalID = id;
+					this.rejectWithdrawalAmount = amount;
+					this.rejectWithdrawalUserName = userName;
+					const modal = document.getElementById('finance-reject-withdrawal-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openReceiptModal(url) {
+					this.receiptModalURL = url;
+					const modal = document.getElementById('finance-receipt-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				},
+				openRefundModal(id, amount, orgName, targetType) {
+					this.refundTargetID = id;
+					this.refundAmount = amount;
+					this.refundOrgName = orgName;
+					this.refundTargetType = targetType || 'transaction';
+					const modal = document.getElementById('finance-refund-modal');
+					if (modal && typeof modal.showModal === 'function') modal.showModal();
+				}
+			};
+		}
+	</script>
 	<!-- WALLET ADJUSTMENT MODAL -->
 	@components.Modal(components.ModalProps{
 		ID:    "walletAdjustModal",
@@ -76,7 +136,7 @@ templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
 		Size:  "sm",
 	}) {
 		<form :action="'/admin/finance/deposits/' + rejectDepositID + '/reject'" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
-			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 			<div class="d-flex flex-col gap-3">
 				<div class="bg-danger-subtle border rounded-lg p-3 text-sm text-danger font-semibold">
 					أنت على وشك رفض طلب الإيداع المقدم من <strong x-text="rejectUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="rejectDepositAmount + ' ج.م'"></strong>. لن يتم شحن الرصيد.
@@ -102,7 +162,7 @@ templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
 		Size:  "md",
 	}) {
 		<form :action="'/admin/finance/withdrawals/' + approveWithdrawalID + '/approve'" method="POST" enctype="multipart/form-data" class="d-flex flex-col gap-4 m-0 text-start" data-boost-upload>
-			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 			<div class="d-flex flex-col gap-3">
 				<div class="bg-success-subtle border rounded-lg p-3 text-sm text-success font-semibold">
 					اعتماد طلب السحب المقدم من <strong x-text="approveWithdrawalUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="approveWithdrawalAmount + ' ج.م'"></strong> وخصمه من المحفظة فوراً.
@@ -141,7 +201,7 @@ templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
 		Size:  "sm",
 	}) {
 		<form :action="'/admin/finance/withdrawals/' + rejectWithdrawalID + '/reject'" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
-			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 			<div class="d-flex flex-col gap-3">
 				<div class="bg-danger-subtle border rounded-lg p-3 text-sm text-danger font-semibold">
 					أنت على وشك رفض طلب السحب المقدم من <strong x-text="rejectWithdrawalUserName"></strong> بمبلغ <strong class="tabular-nums" x-text="rejectWithdrawalAmount + ' ج.م'"></strong>. لن يتم خصم الرصيد.
@@ -189,7 +249,7 @@ templ AdminFinanceModals(data AdminFinanceData, lang, dir string) {
 		Size:  "sm",
 	}) {
 		<form :action="refundTargetType === 'deposit' ? ('/admin/finance/deposits/' + refundTargetID + '/refund') : ('/admin/finance/transactions/' + refundTargetID + '/refund')" method="POST" class="d-flex flex-col gap-4 m-0 text-start">
-			<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+			<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 			<div class="d-flex flex-col gap-3">
 				<div class="bg-amber-subtle border rounded-lg p-3 text-sm text-amber-900 font-semibold">
 					أنت على وشك استرداد مبلغ <strong class="tabular-nums" x-text="refundAmount + ' ج.م'"></strong> إلى محفظة <strong x-text="refundOrgName"></strong>.

@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
 	"fmt"
 	"strconv"
 
@@ -109,55 +110,61 @@ templ AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWa
 // AdminTempWarehouseRunProgressPage renders live SSE tracking for a run.
 templ AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir string) {
 	@layouts.AdminShell("حالة معالجة الجلسة", "inventory", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminTempWarehousesRunsReviewData', function (a0, a1, a2, a3) {
+				return {
+					runId: a0,
+					percent: a1,
+					phase: a2,
+					done: a3,
+					error: '',
+					init() {
+						if (this.done) return;
+						let src = new EventSource('/api/progress/' + this.runId);
+						src.onmessage = (e) => {
+							try {
+								let d = JSON.parse(e.data);
+								if (d.percent !== undefined) this.percent = d.percent;
+								if (d.phase) this.phase = d.phase;
+								if (d.done || this.percent >= 100 || this.phase === 'done') {
+									this.done = true;
+									this.percent = 100;
+									src.close();
+								}
+							} catch(err) {}
+						};
+						src.onerror = () => {
+							setInterval(() => {
+								if (this.done) return;
+								fetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })
+									.then(r => r.json())
+									.then(data => {
+										if (data.percent !== undefined) this.percent = data.percent;
+										if (data.phase) this.phase = data.phase;
+										if (data.done || this.percent >= 100) {
+											this.done = true;
+											this.percent = 100;
+										}
+									}).catch(() => {});
+							}, 2000);
+						};
+					}
+				};
+			});
+		</script>
 		<div class="max-w-2xl mx-auto pb-12"
-			x-data={ fmt.Sprintf(`{
-				runId: %d,
-				percent: %d,
-				phase: '%s',
-				done: %t,
-				error: '',
-				init() {
-					if (this.done) return;
-					let src = new EventSource('/api/progress/' + this.runId);
-					src.onmessage = (e) => {
-						try {
-							let d = JSON.parse(e.data);
-							if (d.percent !== undefined) this.percent = d.percent;
-							if (d.phase) this.phase = d.phase;
-							if (d.done || this.percent >= 100 || this.phase === 'done') {
-								this.done = true;
-								this.percent = 100;
-								src.close();
-							}
-						} catch(err) {}
-					};
-					src.onerror = () => {
-						setInterval(() => {
-							if (this.done) return;
-							fetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })
-								.then(r => r.json())
-								.then(data => {
-									if (data.percent !== undefined) this.percent = data.percent;
-									if (data.phase) this.phase = data.phase;
-									if (data.done || this.percent >= 100) {
-										this.done = true;
-										this.percent = 100;
-									}
-								}).catch(() => {});
-						}, 2000);
-					};
-				}
-			}`, run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100) }
+			x-data={ components.AlpineCall("adminTempWarehousesRunsReviewData", run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100) }
 		>
 			<div class="glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center">
 				<div class="w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4">
 					<span x-show="!done" class="animate-spin">⚙️</span>
-					<span x-show="done" style="display:none;">🎉</span>
+					<span x-show="done" x-cloak>🎉</span>
 				</div>
 
 				<h1 class="text-2xl font-black text-surface-fg mb-1">
 					<span x-show="!done">جاري معالجة دفعة المستودعات</span>
-					<span x-show="done" style="display:none;">تم اكتمال المعالجة بنجاح!</span>
+					<span x-show="done" x-cloak>تم اكتمال المعالجة بنجاح!</span>
 				</h1>
 				<p class="text-xs text-secondary mb-6">
 					دفعة: { run.Filename } ({ fmt.Sprintf("%d", run.TotalFiles) } ملفات)
@@ -167,7 +174,7 @@ templ AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir str
 				<div class="w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5">
 					<div
 						class="bg-accent h-full rounded-full transition-all duration-300"
-						:style="'width: ' + percent + '%;'"
+						:style="{ width: percent + '%' }"
 					></div>
 				</div>
 				<div class="d-flex items-center justify-between text-xs font-mono text-secondary mb-8">

@@ -19,7 +19,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 					</p>
 				</div>
 			</div>
-			<div x-show="mode === 'edit'" style="display: none;">
+			<div x-show="mode === 'edit'" x-cloak>
 				<button type="button" @click="resetToAddMode()" class="btn btn-secondary btn-xs font-bold gap-1">
 					<span>إلغاء التعديل</span>
 				</button>
@@ -160,14 +160,14 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 				<div class="d-grid grid-auto-fit-sm gap-2 max-h-56 overflow-y-auto p-2.5 bg-surface rounded-lg border">
 					<template x-for="c in filteredCities" :key="c.id">
 						<label
-							:class="selectedCities.includes(String(c.id)) ? 'badge-primary' : 'bg-surface-sunken'"
+							:class="selectedCities.includes($str(c.id)) ? 'badge-primary' : 'bg-surface-sunken'"
 							class="p-2.5 rounded-lg border d-flex items-center gap-2 cursor-pointer transition select-none"
 						>
 							<input
 								type="checkbox"
 								name="city_ids"
 								:value="c.id"
-								:checked="selectedCities.includes(String(c.id))"
+								:checked="selectedCities.includes($str(c.id))"
 								@change="toggleCity(c.id)"
 								class="w-4 h-4 cursor-pointer"
 							/>
@@ -186,7 +186,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 			</div>
 
 			<!-- Single City Selector for Edit Mode -->
-			<div x-show="mode === 'edit'" style="display: none;" class="bg-surface-sunken p-4 rounded-xl border">
+			<div x-show="mode === 'edit'" class="bg-surface-sunken p-4 rounded-xl border" x-cloak>
 				<label class="form-label text-xs font-bold mb-1.5 d-block text-primary">
 					المدينة المحددة للتعديل
 				</label>
@@ -228,7 +228,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 				<button type="submit" class="btn btn-primary font-extrabold text-xs py-2.5 px-5 shadow-xs flex-1">
 					<span x-text="mode === 'edit' ? 'حفظ تعديلات نطاق التغطية' : 'حفظ وإضافة نطاقات التغطية للعرض'"></span>
 				</button>
-				<div x-show="mode === 'edit'" style="display: none;">
+				<div x-show="mode === 'edit'" x-cloak>
 					<button type="button" @click="resetToAddMode()" class="btn btn-secondary font-bold text-xs py-2.5 px-4">
 						إلغاء
 					</button>

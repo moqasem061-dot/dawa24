@@ -8,137 +8,143 @@ import (
 // AdminTempWarehouseUploadPage renders a dedicated standalone upload page for temporary warehouses.
 templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir string) {
 	@layouts.AdminShell(tempWarehousesShellTitle(data)+" - رفع ملفات جديدة", tempWarehousesNavKey(data), lang, dir) {
-		<div
-			x-data="{
-				selectedFiles: [],
-				fileHeaders: [],
-				detectedCode: 0,
-				detectedName: 1,
-				detectedPrice: 2,
-				detectedDiscount: 3,
-				isUploading: false,
-				uploadProgress: 0,
-				uploadStatus: '',
-				onFileChange(e) {
-					const files = Array.from(e.target.files || []);
-					this.selectedFiles = files.map(f => ({
-						file: f,
-						name: f.name,
-						size: f.size,
-						supplier: this.cleanName(f.name)
-					}));
-					if (files.length === 1) {
-						this.parseHeaders(files[0]);
-					}
-				},
-				removeFile(idx) {
-					this.selectedFiles.splice(idx, 1);
-				},
-				formatSize(bytes) {
-					if (!bytes) return '0 B';
-					const k = 1024;
-					const sizes = ['B', 'KB', 'MB', 'GB'];
-					const i = Math.floor(Math.log(bytes) / Math.log(k));
-					return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
-				},
-				cleanName(filename) {
-					if (!filename) return '';
-					return filename.replace(/\.[^/.]+$/, '').replace(/[_\-]/g, ' ').trim();
-				},
-				parseHeaders(file) {
-					if (!file) return;
-					if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
-						const reader = new FileReader();
-						reader.onload = (e) => {
-							const text = e.target.result;
-							const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
-							if (lines.length > 0) {
-								this.fileHeaders = lines[0].split(',').map(h => h.trim().replace(/^['\x22]|['\x22]$/g, ''));
-								this.guessColumns();
-							}
-						};
-						reader.readAsText(file);
-					} else {
-						this.fileHeaders = ['كود الصنف (SKU)', 'اسم المنتج / الصنف', 'سعر الجمهور', 'نسبة الخصم %', 'الكمية'];
-						this.detectedCode = 0;
-						this.detectedName = 1;
-						this.detectedPrice = 2;
-						this.detectedDiscount = 3;
-					}
-				},
-				guessColumns() {
-					this.fileHeaders.forEach((h, idx) => {
-						const norm = h.toLowerCase().replace(/[\s_\-]/g, '');
-						if (norm.includes('كود') || norm.includes('code') || norm.includes('sku') || norm.includes('باركود')) {
-							this.detectedCode = idx;
-						} else if (norm.includes('اسم') || norm.includes('name') || norm.includes('صنف') || norm.includes('منتج')) {
-							this.detectedName = idx;
-						} else if (norm.includes('سعر') || norm.includes('price') || norm.includes('جمهور')) {
-							this.detectedPrice = idx;
-						} else if (norm.includes('خصم') || norm.includes('discount') || norm.includes('%')) {
-							this.detectedDiscount = idx;
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminTempWarehousesUploadState', function () {
+				return {
+					selectedFiles: [],
+					fileHeaders: [],
+					detectedCode: 0,
+					detectedName: 1,
+					detectedPrice: 2,
+					detectedDiscount: 3,
+					isUploading: false,
+					uploadProgress: 0,
+					uploadStatus: '',
+					onFileChange(e) {
+						const files = Array.from(e.target.files || []);
+						this.selectedFiles = files.map(f => ({
+							file: f,
+							name: f.name,
+							size: f.size,
+							supplier: this.cleanName(f.name)
+						}));
+						if (files.length === 1) {
+							this.parseHeaders(files[0]);
 						}
-					});
-				},
-				async submitUpload(form) {
-					if (this.selectedFiles.length === 0) {
-						alert('يرجى اختيار ملف أو أكثر أولاً');
-						return;
-					}
-					this.isUploading = true;
-					this.uploadProgress = 20;
-					this.uploadStatus = 'جاري رفع الملفات إلى الخادم...';
-
-					const formData = new FormData();
-					if (this.selectedFiles.length === 1) {
-						const singleSupp = this.selectedFiles[0].supplier || (form.supplier_name ? form.supplier_name.value : '');
-						formData.append('supplier_name', singleSupp);
-						formData.append('col_code', this.detectedCode);
-						formData.append('col_name', this.detectedName);
-						formData.append('col_price', this.detectedPrice);
-						formData.append('col_discount', this.detectedDiscount);
-					} else if (form.supplier_name && form.supplier_name.value) {
-						formData.append('supplier_name', form.supplier_name.value);
-					}
-
-					for (let i = 0; i < this.selectedFiles.length; i++) {
-						const item = this.selectedFiles[i];
-						formData.append('files', item.file);
-						if (item.supplier && item.supplier.trim()) {
-							formData.append('supplier_name_' + i, item.supplier.trim());
-							formData.append('supplier_names', item.supplier.trim());
-						}
-					}
-
-					try {
-						this.uploadProgress = 50;
-						this.uploadStatus = 'جاري معالجة واستخراج أصناف المستودع...';
-						const response = await fetch(form.action, {
-							method: 'POST',
-							body: formData,
-							headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
-						});
-
-						this.uploadProgress = 85;
-						let result = null;
-						try { result = await response.json(); } catch(e) {}
-
-						if (response.ok && result && result.success) {
-							this.uploadProgress = 100;
-							this.uploadStatus = 'تم رفع ومعالجة المستودع بنجاح!';
-							setTimeout(() => {
-								window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
-							}, 1200);
+					},
+					removeFile(idx) {
+						this.selectedFiles.splice(idx, 1);
+					},
+					formatSize(bytes) {
+						if (!bytes) return '0 B';
+						const k = 1024;
+						const sizes = ['B', 'KB', 'MB', 'GB'];
+						const i = Math.floor(Math.log(bytes) / Math.log(k));
+						return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+					},
+					cleanName(filename) {
+						if (!filename) return '';
+						return filename.replace(/\.[^/.]+$/, '').replace(/[_\-]/g, ' ').trim();
+					},
+					parseHeaders(file) {
+						if (!file) return;
+						if (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {
+							const reader = new FileReader();
+							reader.onload = (e) => {
+								const text = e.target.result;
+								const lines = text.split(/\r?\n/).filter(l => l.trim().length > 0);
+								if (lines.length > 0) {
+									this.fileHeaders = lines[0].split(',').map(h => h.trim().replace(/^['\x22]|['\x22]$/g, ''));
+									this.guessColumns();
+								}
+							};
+							reader.readAsText(file);
 						} else {
-							this.uploadProgress = 100;
+							this.fileHeaders = ['كود الصنف (SKU)', 'اسم المنتج / الصنف', 'سعر الجمهور', 'نسبة الخصم %', 'الكمية'];
+							this.detectedCode = 0;
+							this.detectedName = 1;
+							this.detectedPrice = 2;
+							this.detectedDiscount = 3;
+						}
+					},
+					guessColumns() {
+						this.fileHeaders.forEach((h, idx) => {
+							const norm = h.toLowerCase().replace(/[\s_\-]/g, '');
+							if (norm.includes('كود') || norm.includes('code') || norm.includes('sku') || norm.includes('باركود')) {
+								this.detectedCode = idx;
+							} else if (norm.includes('اسم') || norm.includes('name') || norm.includes('صنف') || norm.includes('منتج')) {
+								this.detectedName = idx;
+							} else if (norm.includes('سعر') || norm.includes('price') || norm.includes('جمهور')) {
+								this.detectedPrice = idx;
+							} else if (norm.includes('خصم') || norm.includes('discount') || norm.includes('%')) {
+								this.detectedDiscount = idx;
+							}
+						});
+					},
+					async submitUpload(form) {
+						if (this.selectedFiles.length === 0) {
+							alert('يرجى اختيار ملف أو أكثر أولاً');
+							return;
+						}
+						this.isUploading = true;
+						this.uploadProgress = 20;
+						this.uploadStatus = 'جاري رفع الملفات إلى الخادم...';
+
+						const formData = new FormData();
+						if (this.selectedFiles.length === 1) {
+							const singleSupp = this.selectedFiles[0].supplier || (form.supplier_name ? form.supplier_name.value : '');
+							formData.append('supplier_name', singleSupp);
+							formData.append('col_code', this.detectedCode);
+							formData.append('col_name', this.detectedName);
+							formData.append('col_price', this.detectedPrice);
+							formData.append('col_discount', this.detectedDiscount);
+						} else if (form.supplier_name && form.supplier_name.value) {
+							formData.append('supplier_name', form.supplier_name.value);
+						}
+
+						for (let i = 0; i < this.selectedFiles.length; i++) {
+							const item = this.selectedFiles[i];
+							formData.append('files', item.file);
+							if (item.supplier && item.supplier.trim()) {
+								formData.append('supplier_name_' + i, item.supplier.trim());
+								formData.append('supplier_names', item.supplier.trim());
+							}
+						}
+
+						try {
+							this.uploadProgress = 50;
+							this.uploadStatus = 'جاري معالجة واستخراج أصناف المستودع...';
+							const response = await fetch(form.action, {
+								method: 'POST',
+								body: formData,
+								headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+							});
+
+							this.uploadProgress = 85;
+							let result = null;
+							try { result = await response.json(); } catch(e) {}
+
+							if (response.ok && result && result.success) {
+								this.uploadProgress = 100;
+								this.uploadStatus = 'تم رفع ومعالجة المستودع بنجاح!';
+								setTimeout(() => {
+									window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
+								}, 1200);
+							} else {
+								this.uploadProgress = 100;
+								window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
+							}
+						} catch(err) {
+							console.error('Upload error:', err);
 							window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
 						}
-					} catch(err) {
-						console.error('Upload error:', err);
-						window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
 					}
-				}
-			}"
+				};
+			});
+		</script>
+		<div
+			x-data="adminTempWarehousesUploadState"
 			class="page-container max-w-4xl mx-auto py-6"
 			dir={ dir }
 		>
@@ -244,7 +250,7 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 							class="form-input text-xs"
 							placeholder="مثال: مستودع الأمل، شركة النور للأدوية..."
 							:value="selectedFiles.length === 1 ? selectedFiles[0].supplier : ''"
-							@input="if (selectedFiles.length === 1) selectedFiles[0].supplier = $event.target.value"
+							@input="selectedFiles.length === 1 && (selectedFiles[0].supplier = $event.target.value)"
 						/>
 					</div>
 					<div class="form-group mb-0" x-show="selectedFiles.length > 1">
@@ -315,7 +321,7 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 							<span class="tabular-nums" x-text="uploadProgress + '%'"></span>
 						</div>
 						<div class="w-full bg-surface-sunken rounded-full h-2.5 overflow-hidden border">
-							<div class="bg-accent h-2.5 rounded-full transition-all duration-300" :style="'width: ' + uploadProgress + '%'"></div>
+							<div class="bg-accent h-2.5 rounded-full transition-all duration-300" :style="{ width: uploadProgress + '%' }"></div>
 						</div>
 					</div>
 

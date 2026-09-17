@@ -11,43 +11,17 @@ import (
 
 templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWorks []*org.InstitutionalWork, unassignedBranches []*org.BranchWithoutWorks) {
 	@layouts.AdminShell("الهيكل المؤسسي والأنشطة | Institutional Structure", "institutional", lang, dir) {
-		<div
-			class="page-container"
-			x-data="{
-				searchQuery: '',
-				statusFilter: 'all',
-				isModalOpen: false,
-				isEdit: false,
-				form: {
-					id: 0,
-					title_ar: '',
-					title_en: '',
-					description_ar: '',
-					description_en: '',
-					icon: 'building',
-					pricing_type: 'free',
-					view_type: 1,
-					parent_id: 0,
-					is_active: true,
-					connections: []
-				},
-				availableIcons: [
-					{ id: 'building', label: 'مبنى / مؤسسة' },
-					{ id: 'pill', label: 'صيدلية / دواء' },
-					{ id: 'truck', label: 'مخزن / توزيع' },
-					{ id: 'package', label: 'مصنع / إنتاج' },
-					{ id: 'shield', label: 'خدمات / أمان' },
-					{ id: 'briefcase', label: 'شركة مساهمة' },
-					{ id: 'cart', label: 'تجزئة / منفذ بيع' },
-					{ id: 'tag', label: 'شركة ناشئة' },
-					{ id: 'users', label: 'تعاونيات' },
-					{ id: 'file', label: 'مكتب علمي' },
-					{ id: 'plus', label: 'رعاية صحية' },
-					{ id: 'bell', label: 'إشعارات وخدمات' }
-				],
-				openNewModal() {
-					this.isEdit = false;
-					this.form = {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminInstitutionalState', function () {
+				return {
+					// The template cannot call page globals under the CSP build.
+					getIconEmoji(id) { return getIconEmoji(id); },
+					searchQuery: '',
+					statusFilter: 'all',
+					isModalOpen: false,
+					isEdit: false,
+					form: {
 						id: 0,
 						title_ar: '',
 						title_en: '',
@@ -59,40 +33,74 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 						parent_id: 0,
 						is_active: true,
 						connections: []
-					};
-					const modal = document.getElementById('institutional-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openEditModal(item) {
-					this.isEdit = true;
-					this.form = {
-						id: item.id,
-						title_ar: item.title_ar || '',
-						title_en: item.title_en || '',
-						description_ar: item.description_ar || '',
-						description_en: item.description_en || '',
-						icon: item.icon || 'building',
-						pricing_type: item.pricing_type || 'free',
-						view_type: item.view_type || 1,
-						parent_id: item.parent_id || 0,
-						is_active: item.is_active,
-						connections: item.connections ? JSON.parse(JSON.stringify(item.connections)) : []
-					};
-					const modal = document.getElementById('institutional-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				toggleConnection(targetId) {
-					const idx = this.form.connections.indexOf(targetId);
-					if (idx > -1) {
-						this.form.connections.splice(idx, 1);
-					} else {
-						this.form.connections.push(targetId);
+					},
+					availableIcons: [
+						{ id: 'building', label: 'مبنى / مؤسسة' },
+						{ id: 'pill', label: 'صيدلية / دواء' },
+						{ id: 'truck', label: 'مخزن / توزيع' },
+						{ id: 'package', label: 'مصنع / إنتاج' },
+						{ id: 'shield', label: 'خدمات / أمان' },
+						{ id: 'briefcase', label: 'شركة مساهمة' },
+						{ id: 'cart', label: 'تجزئة / منفذ بيع' },
+						{ id: 'tag', label: 'شركة ناشئة' },
+						{ id: 'users', label: 'تعاونيات' },
+						{ id: 'file', label: 'مكتب علمي' },
+						{ id: 'plus', label: 'رعاية صحية' },
+						{ id: 'bell', label: 'إشعارات وخدمات' }
+					],
+					openNewModal() {
+						this.isEdit = false;
+						this.form = {
+							id: 0,
+							title_ar: '',
+							title_en: '',
+							description_ar: '',
+							description_en: '',
+							icon: 'building',
+							pricing_type: 'free',
+							view_type: 1,
+							parent_id: 0,
+							is_active: true,
+							connections: []
+						};
+						const modal = document.getElementById('institutional-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openEditModal(item) {
+						this.isEdit = true;
+						this.form = {
+							id: item.id,
+							title_ar: item.title_ar || '',
+							title_en: item.title_en || '',
+							description_ar: item.description_ar || '',
+							description_en: item.description_en || '',
+							icon: item.icon || 'building',
+							pricing_type: item.pricing_type || 'free',
+							view_type: item.view_type || 1,
+							parent_id: item.parent_id || 0,
+							is_active: item.is_active,
+							connections: item.connections ? JSON.parse(JSON.stringify(item.connections)) : []
+						};
+						const modal = document.getElementById('institutional-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					toggleConnection(targetId) {
+						const idx = this.form.connections.indexOf(targetId);
+						if (idx > -1) {
+							this.form.connections.splice(idx, 1);
+						} else {
+							this.form.connections.push(targetId);
+						}
+					},
+					isConnectionSelected(targetId) {
+						return this.form.connections.includes(targetId);
 					}
-				},
-				isConnectionSelected(targetId) {
-					return this.form.connections.includes(targetId);
-				}
-			}"
+				};
+			});
+		</script>
+		<div
+			class="page-container"
+			x-data="adminInstitutionalState"
 		>
 			
 			<!-- Top Header & Metrics Bar -->
@@ -285,7 +293,7 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 											<div class="row-center">
 												<!-- Level Indent Spacer -->
 												if item.Level > 0 {
-													<div class="stack-sm" style={ fmt.Sprintf("width:%dpx; display:flex; justify-content:flex-end; color:var(--accent); font-weight:900;", item.Level*20) }>
+													<div class="stack-sm s-indent-marker" data-width-px={ fmt.Sprint(item.Level * 20) }>
 														↳
 													</div>
 												}

@@ -548,7 +548,7 @@ func AdminFinancePaymentsTab(data AdminFinanceData, lang, dir string) templ.Comp
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<!-- Official Printable Report Header (Printed only) --> <div class=\"print-report-header print-only\"><div class=\"print-brand-row\"><div class=\"d-flex items-center gap-2\"><img src=\"/static/img/logo.png\" alt=\"Dawa24\" style=\"height: 30px;\" data-img-fallback=\"hide\"> <strong style=\"font-size: 13pt; color: #0f172a;\">دوا 24 — Dawa24</strong></div><div style=\"text-align: left;\"><h2 style=\"font-size: 12pt; margin: 0; font-weight: 900; color: #0f172a;\">تقرير سجل المدفوعات والتحصيلات الإلكترونية</h2><span style=\"font-size: 8pt; color: #64748b;\">سجل العمليات المالية والتحصيلات عبر بوابات الدفع الإلكتروني والتحويلات</span></div></div><div class=\"print-meta-grid\"><div class=\"print-meta-item\"><span><strong>تاريخ الطباعة:</strong> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "<!-- Official Printable Report Header (Printed only) --> <div class=\"print-report-header print-only\"><div class=\"print-brand-row\"><div class=\"d-flex items-center gap-2\"><img class=\"s-h-30\" src=\"/static/img/logo.png\" alt=\"Dawa24\" data-img-fallback=\"hide\"> <strong class=\"s-print-brand\">دوا 24 — Dawa24</strong></div><div class=\"s-text-left\"><h2 class=\"s-print-title\">تقرير سجل المدفوعات والتحصيلات الإلكترونية</h2><span class=\"s-print-meta\">سجل العمليات المالية والتحصيلات عبر بوابات الدفع الإلكتروني والتحويلات</span></div></div><div class=\"print-meta-grid\"><div class=\"print-meta-item\"><span><strong>تاريخ الطباعة:</strong> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

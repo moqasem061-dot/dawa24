@@ -9,10 +9,9 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
-
-import "fmt"
 
 // Two small pieces of client-side behaviour the parcel screen needs, kept
 // beside it rather than in a global bundle: the item checklist's paging state
@@ -22,20 +21,9 @@ import "fmt"
 // browser because a courier standing at a door on a weak connection should not
 // wait for a round trip to see the next five items in the box they are holding.
 func courierItemsAlpineData(count int) string {
-	return fmt.Sprintf(`{
-		search: '',
-		page: 1,
-		pageSize: 10,
-		total: %d,
-		get totalPages() {
-			const size = this.pageSize > 0 ? this.pageSize : this.total;
-			return Math.max(1, Math.ceil(this.total / (size || 1)));
-		},
-		nextPage() { if (this.page < this.totalPages) this.page++ },
-		prevPage() { if (this.page > 1) this.page-- },
-		setPage(p) { if (p >= 1 && p <= this.totalPages) this.page = p },
-		changePageSize(s) { this.pageSize = parseInt(s, 10); this.page = 1 }
-	}`, count)
+	// dawaLinePager lives in static/js/components.js; the courier list also
+	// filters by a search term.
+	return components.AlpineCall("dawaLinePager", count, 10)
 }
 
 // CourierMiniMapScript renders the branch pin. It degrades to nothing when
@@ -69,7 +57,7 @@ func CourierMiniMapScript() templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_delivery_map.templ`, Line: 37, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_delivery_map.templ`, Line: 25, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {

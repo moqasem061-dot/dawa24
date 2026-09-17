@@ -79,8 +79,8 @@ templ capsuleDrawerBody() {
 					@IconUpload("icon-md")
 				</div>
 				<div>
-					<div class="font-extrabold text-sm mb-1" x-text="window.dawaT ? window.dawaT('capsule.drop_files', 'أفلت الملفات هنا للإرفاق') : 'أفلت الملفات هنا للإرفاق'">أفلت الملفات هنا للإرفاق</div>
-					<div class="text-xs opacity-90" x-text="window.dawaT ? window.dawaT('capsule.drop_files_sub', 'يدعم الصور، الروشتات، وملفات PDF الدوائية') : 'يدعم الصور، الروشتات، وملفات PDF الدوائية'">يدعم الصور، الروشتات، وملفات PDF الدوائية</div>
+					<div class="font-extrabold text-sm mb-1" x-text="$t('capsule.drop_files', 'أفلت الملفات هنا للإرفاق')">أفلت الملفات هنا للإرفاق</div>
+					<div class="text-xs opacity-90" x-text="$t('capsule.drop_files_sub', 'يدعم الصور، الروشتات، وملفات PDF الدوائية')">يدعم الصور، الروشتات، وملفات PDF الدوائية</div>
 				</div>
 			</div>
 
@@ -92,10 +92,10 @@ templ capsuleDrawerBody() {
 					</div>
 					<div>
 						<div class="font-black text-xs text-primary d-flex items-center gap-1.5">
-							<span x-text="window.dawaT ? window.dawaT('capsule.title', 'دكتور كبسولة') : 'دكتور كبسولة'">دكتور كبسولة</span>
+							<span x-text="$t('capsule.title', 'دكتور كبسولة')">دكتور كبسولة</span>
 							<span class="w-1.5 h-1.5 rounded-full shadow-xs" :class="connection === 'connected' ? 'bg-emerald' : (connection === 'degraded' ? 'bg-amber' : 'bg-muted')" :title="connection === 'connected' ? 'متصل' : (connection === 'degraded' ? 'الخدمة غير مستقرة' : 'الخدمة غير مفعّلة')"></span>
 						</div>
-						<div class="text-2xs text-muted leading-tight" x-text="agentLabel || (window.dawaT ? window.dawaT('capsule.subtitle', 'المساعد التحليلي الذكي') : 'المساعد التحليلي الذكي')"></div>
+						<div class="text-2xs text-muted leading-tight" x-text="agentLabel || $t('capsule.subtitle', 'المساعد التحليلي الذكي')"></div>
 					</div>
 				</div>
 
@@ -106,7 +106,7 @@ templ capsuleDrawerBody() {
 						type="button"
 						@click="startNewConversation()"
 						class="capsule-hdr-icon-btn"
-						:title="window.dawaT ? window.dawaT('capsule.new_chat', 'محادثة جديدة') : 'محادثة جديدة'"
+						:title="$t('capsule.new_chat', 'محادثة جديدة')"
 					>
 						@IconPlus("icon-xs")
 					</button>
@@ -117,7 +117,7 @@ templ capsuleDrawerBody() {
 						@click="toggleMemoryDrawer()"
 						class="capsule-hdr-icon-btn"
 						:class="{ 'active': showMemoryDrawer }"
-						:title="window.dawaT ? window.dawaT('capsule.memory_title', 'ذاكرة المنشأة') : 'ذاكرة المنشأة'"
+						:title="$t('capsule.memory_title', 'ذاكرة المنشأة')"
 					>
 						@IconDatabase("icon-xs")
 					</button>
@@ -128,7 +128,7 @@ templ capsuleDrawerBody() {
 						@click="toggleSessionsDrawer()"
 						class="capsule-hdr-icon-btn"
 						:class="{ 'active': showSessionsDrawer }"
-						:title="window.dawaT ? window.dawaT('capsule.history_title', 'سجل المحادثات') : 'سجل المحادثات'"
+						:title="$t('capsule.history_title', 'سجل المحادثات')"
 					>
 						@IconClock("icon-xs")
 					</button>
@@ -138,7 +138,7 @@ templ capsuleDrawerBody() {
 						type="button"
 						@click="closeAssistant()"
 						class="capsule-hdr-icon-btn"
-						:title="window.dawaT ? window.dawaT('common.close', 'إغلاق النافذة') : 'إغلاق النافذة'"
+						:title="$t('common.close', 'إغلاق النافذة')"
 					>
 						@IconClose("icon-xs")
 					</button>
@@ -184,7 +184,7 @@ templ capsuleDrawerBody() {
 							>
 								@IconRefresh("icon-2xs")
 							</button>
-							<button type="button" @click="removeAttachment(i)" class="capsule-thumb-delete" :title="window.dawaT ? window.dawaT('common.delete', 'حذف') : 'حذف'">
+							<button type="button" @click="removeAttachment(i)" class="capsule-thumb-delete" :title="$t('common.delete', 'حذف')">
 								@IconClose("icon-2xs")
 							</button>
 						</div>
@@ -198,8 +198,8 @@ templ capsuleDrawerBody() {
 						<span class="text-xs font-bold text-primary" x-text="'جاري الاستماع... ' + formatDuration(recordingSeconds)"></span>
 					</div>
 					<div class="d-flex gap-1.5">
-						<button type="button" @click="cancelVoiceRecord()" class="btn btn-secondary btn-xs py-1 px-2.5" x-text="window.dawaT ? window.dawaT('common.cancel', 'إلغاء') : 'إلغاء'">إلغاء</button>
-						<button type="button" @click="finishVoiceRecord()" class="btn btn-primary btn-xs py-1 px-2.5 font-bold" x-text="window.dawaT ? window.dawaT('common.finish', 'إنهاء') : 'إنهاء'">إنهاء</button>
+						<button type="button" @click="cancelVoiceRecord()" class="btn btn-secondary btn-xs py-1 px-2.5" x-text="$t('common.cancel', 'إلغاء')">إلغاء</button>
+						<button type="button" @click="finishVoiceRecord()" class="btn btn-primary btn-xs py-1 px-2.5 font-bold" x-text="$t('common.finish', 'إنهاء')">إنهاء</button>
 					</div>
 				</div>
 
@@ -214,7 +214,7 @@ templ capsuleDrawerBody() {
 							type="button"
 							@click="$refs.fileInput.click()"
 							class="capsule-tool-btn"
-							:title="window.dawaT ? window.dawaT('capsule.attach_file', 'إرفاق ملف أو روشتة') : 'إرفاق ملف أو روشتة'"
+							:title="$t('capsule.attach_file', 'إرفاق ملف أو روشتة')"
 							:disabled="isStreaming"
 						>
 							@IconPaperclip("icon-xs")
@@ -225,7 +225,7 @@ templ capsuleDrawerBody() {
 							type="button"
 							@click="startVoiceRecord()"
 							class="capsule-tool-btn"
-							:title="window.dawaT ? window.dawaT('capsule.voice_input', 'تسجيل صوتي') : 'تسجيل صوتي'"
+							:title="$t('capsule.voice_input', 'تسجيل صوتي')"
 							:disabled="isStreaming"
 						>
 							@IconMicrophone("icon-xs")
@@ -238,7 +238,7 @@ templ capsuleDrawerBody() {
 							@keydown="handleKeydown($event)"
 							@paste="handlePaste($event)"
 							@input="autoResizeTextarea()"
-							:placeholder="window.dawaT ? window.dawaT('capsule.ask_placeholder', 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...') : 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...'"
+							:placeholder="$t('capsule.ask_placeholder', 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...')"
 							rows="1"
 							class="capsule-textarea"
 							:disabled="isStreaming"
@@ -252,7 +252,7 @@ templ capsuleDrawerBody() {
 								class="capsule-send-btn"
 								:class="{ 'active': inputQuery.trim().length > 0 || attachedFiles.length }"
 								:disabled="!inputQuery.trim() && attachedFiles.length === 0"
-								:title="window.dawaT ? window.dawaT('capsule.send_tooltip', 'إرسال (Enter)') : 'إرسال (Enter)'"
+								:title="$t('capsule.send_tooltip', 'إرسال (Enter)')"
 							>
 								@IconSend("icon-xs")
 							</button>
@@ -263,7 +263,7 @@ templ capsuleDrawerBody() {
 								type="button"
 								@click="cancelStream()"
 								class="capsule-stop-btn"
-								:title="window.dawaT ? window.dawaT('capsule.stop_tooltip', 'إيقاف التوليد') : 'إيقاف التوليد'"
+								:title="$t('capsule.stop_tooltip', 'إيقاف التوليد')"
 							>
 								@IconClose("icon-xs")
 							</button>
@@ -283,11 +283,11 @@ templ capsuleDrawerBody() {
 							</svg>
 							<span class="capsule-usage-text tabular-nums" x-text="usagePercent() + '%'"></span>
 						</div>
-						<span class="text-2xs text-muted font-medium" x-text="usedTokens ? (usedTokens.toLocaleString() + ' / ' + (contextWindow || 128000).toLocaleString() + ' توكن') : (window.dawaT ? window.dawaT('capsule.context_ready', 'السياق جاهز') : 'السياق جاهز')"></span>
+						<span class="text-2xs text-muted font-medium" x-text="usedTokens ? (usedTokens.toLocaleString() + ' / ' + (contextWindow || 128000).toLocaleString() + ' توكن') : $t('capsule.context_ready', 'السياق جاهز')"></span>
 					</div>
 					<div class="d-flex items-center gap-1 text-2xs text-muted" :title="retentionNote()">
 						@IconClock("icon-2xs")
-						<span x-text="window.dawaT ? window.dawaT('capsule.auto_save', 'الحفظ التلقائي') : 'الحفظ التلقائي'">الحفظ التلقائي</span>
+						<span x-text="$t('capsule.auto_save', 'الحفظ التلقائي')">الحفظ التلقائي</span>
 					</div>
 				</div>
 

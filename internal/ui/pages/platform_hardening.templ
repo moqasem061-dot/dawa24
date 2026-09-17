@@ -221,7 +221,7 @@ templ CustomerReportIssuePage(lang, dir string, userIssues []*workflow.ReportIss
 										<td>
 											<span class="badge badge-slate text-xs">{ IssueTypeLabel(issue.IssueType) }</span>
 										</td>
-										<td class="text-xs text-primary" style="max-width: 260px; word-break: break-word;">
+										<td class="text-xs text-primary s-cell-wrap-260">
 											{ issue.Description }
 											if issue.OrderID != nil && *issue.OrderID > 0 {
 												<div class="mt-1 text-2xs text-secondary">
@@ -250,7 +250,7 @@ templ CustomerReportIssuePage(lang, dir string, userIssues []*workflow.ReportIss
 										<td class="text-xs text-secondary tabular-nums whitespace-nowrap">
 											{ FormatDateTime(issue.CreatedAt) }
 										</td>
-										<td class="text-xs" style="max-width: 220px; word-break: break-word;">
+										<td class="text-xs s-cell-wrap-220">
 											if issue.ResponseNotes != "" {
 												<div class="p-2 rounded bg-surface border text-primary">
 													<div class="text-2xs text-muted mb-0.5 font-bold">رد الإدارة:</div>
@@ -440,7 +440,7 @@ templ AdminReportIssuesPage(lang, dir string, data AdminReportIssuesData) {
 												<span class="badge badge-slate text-2xs">متوسط</span>
 											}
 										</td>
-										<td class="text-xs text-primary" style="max-width: 250px; word-break: break-word;">
+										<td class="text-xs text-primary s-cell-wrap-250">
 											<div class="line-clamp-2">{ item.Description }</div>
 											if item.OrderID != nil && *item.OrderID > 0 {
 												<div class="mt-1 text-2xs text-secondary">

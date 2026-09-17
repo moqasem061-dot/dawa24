@@ -148,7 +148,7 @@ templ FAQPage(lang, dir, customTitle, customSubtitle string) {
 							</span>
 							@components.IconChevronDown("icon-sm mk-qa-chevron")
 						</button>
-						<div class="mk-qa-body" x-show="open" x-cloak x-collapse>
+						<div class="mk-qa-body" x-show="open" x-cloak x-transition.opacity>
 							{ item.Answer }
 						</div>
 					</div>

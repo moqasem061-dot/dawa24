@@ -68,7 +68,7 @@ templ adsWizardSteps(lang string) {
 			<span class="wiz-steps-name" x-text="stepNames[step - 1]"></span>
 		</div>
 		<div class="wiz-steps-rail" aria-hidden="true">
-			<span class="wiz-steps-fill" :style="'inline-size: ' + Math.round((step / totalSteps) * 100) + '%'"></span>
+			<span class="wiz-steps-fill" :style="{ inlineSize: $round((step / totalSteps) * 100) + '%' }"></span>
 		</div>
 		<ol class="wiz-steps-list">
 			<template x-for="(name, i) in stepNames" :key="i">
@@ -254,7 +254,7 @@ templ adsWizardStepReview(lang string) {
 					<strong
 						class="text-base font-black tabular-nums"
 						:class="totalCredits >= creditCost ? 'text-success' : 'text-danger'"
-						x-text="Math.max(0, totalCredits - creditCost)"
+						x-text="$max(0, totalCredits - creditCost)"
 					></strong>
 				</div>
 			</div>

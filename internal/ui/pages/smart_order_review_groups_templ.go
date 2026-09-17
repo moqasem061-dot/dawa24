@@ -37,7 +37,7 @@ func SmartOrderReviewGroups(data SmartOrderReviewData, lang string) templ.Compon
 		}
 		ctx = templ.ClearChildren(ctx)
 		if len(data.AllGroups) == 0 {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"glass-panel p-8 text-center border border-subtle rounded-2xl bg-surface-raised/40 mb-6\" x-show=\"activeTab === 'all'\"><div class=\"user-avatar-badge text-2xl mx-auto mb-3 bg-secondary-subtle text-secondary\" style=\"width: 54px; height: 54px;\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"glass-panel p-8 text-center border border-subtle rounded-2xl bg-surface-raised/40 mb-6\" x-show=\"activeTab === 'all'\"><div class=\"user-avatar-badge text-2xl mx-auto mb-3 bg-secondary-subtle text-secondary s-size-54\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

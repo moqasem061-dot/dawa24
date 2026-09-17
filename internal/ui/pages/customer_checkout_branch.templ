@@ -50,7 +50,9 @@ templ CheckoutBranchList(branches []*CheckoutBranchItem, lang string) {
 						checked?={ isChecked }
 						disabled?={ !b.IsAvailable }
 						class={ "form-radio mt-1", templ.KV("cursor-not-allowed opacity-40", !b.IsAvailable) }
-						@change={ fmt.Sprintf("fetch('/customer/set-branch', { method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'}, body: 'branch_id=%d' })", b.Branch.ID) }
+						hx-post="/customer/set-branch"
+						hx-trigger="change"
+						hx-swap="none"
 					/>
 					<div class="flex-1">
 						<div class="flex-between mb-1 flex-wrap gap-2">

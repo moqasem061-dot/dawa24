@@ -248,52 +248,58 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 
 			<!-- 1b. Hero Sponsored Ads Showcase (if any) -->
 			if len(stats.Ads) > 0 {
+				<script nonce={ templ.GetNonce(ctx) }>
+					// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+					dawaData('customerHomeData', function (a0) {
+						return {
+							currentSlide: 0,
+							totalSlides: a0,
+							timer: null,
+							startAutoplay() {
+								if (this.totalSlides <= 1) return;
+								if (document.hidden) return;
+								this.stopAutoplay();
+								this.timer = setInterval(() => {
+									this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+								}, 5500);
+							},
+							bindVisibility() {
+								this._onVis = () => document.hidden ? this.stopAutoplay() : this.startAutoplay();
+								document.addEventListener('visibilitychange', this._onVis);
+								if ('IntersectionObserver' in window) {
+									this._io = new IntersectionObserver((entries) => {
+										entries.forEach((e) => e.isIntersecting ? this.startAutoplay() : this.stopAutoplay());
+									}, { threshold: 0 });
+									this._io.observe(this.$el);
+								}
+							},
+							teardown() {
+								this.stopAutoplay();
+								if (this._onVis) document.removeEventListener('visibilitychange', this._onVis);
+								if (this._io) this._io.disconnect();
+							},
+							stopAutoplay() {
+								if (this.timer) {
+									clearInterval(this.timer);
+									this.timer = null;
+								}
+							},
+							next() {
+								this.currentSlide = (this.currentSlide + 1) % this.totalSlides;
+							},
+							prev() {
+								this.currentSlide = (this.currentSlide - 1 + this.totalSlides) % this.totalSlides;
+							},
+							goTo(i) {
+								this.currentSlide = i;
+							}
+						};
+					});
+				</script>
 				<div
 					class="hero-ad-showcase-container"
-					x-data={ fmt.Sprintf(`{
-						currentSlide: 0,
-						totalSlides: %d,
-						timer: null,
-						startAutoplay() {
-							if (this.totalSlides <= 1) return;
-							if (document.hidden) return;
-							this.stopAutoplay();
-							this.timer = setInterval(() => {
-								this.currentSlide = (this.currentSlide + 1) %% this.totalSlides;
-							}, 5500);
-						},
-						bindVisibility() {
-							this._onVis = () => document.hidden ? this.stopAutoplay() : this.startAutoplay();
-							document.addEventListener('visibilitychange', this._onVis);
-							if ('IntersectionObserver' in window) {
-								this._io = new IntersectionObserver((entries) => {
-									entries.forEach((e) => e.isIntersecting ? this.startAutoplay() : this.stopAutoplay());
-								}, { threshold: 0 });
-								this._io.observe(this.$el);
-							}
-						},
-						teardown() {
-							this.stopAutoplay();
-							if (this._onVis) document.removeEventListener('visibilitychange', this._onVis);
-							if (this._io) this._io.disconnect();
-						},
-						stopAutoplay() {
-							if (this.timer) {
-								clearInterval(this.timer);
-								this.timer = null;
-							}
-						},
-						next() {
-							this.currentSlide = (this.currentSlide + 1) %% this.totalSlides;
-						},
-						prev() {
-							this.currentSlide = (this.currentSlide - 1 + this.totalSlides) %% this.totalSlides;
-						},
-						goTo(i) {
-							this.currentSlide = i;
-						}
-					}`, len(stats.Ads)) }
-					x-init="startAutoplay(); bindVisibility()"
+					x-data={ components.AlpineCall("customerHomeData", len(stats.Ads)) }
+					x-init="[startAutoplay(), bindVisibility()]"
 					@mouseenter="stopAutoplay()"
 					@mouseleave="startAutoplay()"
 					x-on:beforeunload.window="teardown()"
@@ -647,7 +653,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 		<!-- 5. جاهز للانطلاق؟: High-Contrast Dark CTA Banner -->
 		<section class="landing-cta-banner-card">
 			<div class="landing-cta-glow-circle"></div>
-			<div class="landing-hero-pill-badge mb-4" style="background: rgba(14, 165, 233, 0.2); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;">
+			<div class="landing-hero-pill-badge mb-4 s-chip-sky">
 				@components.IconRocket("icon-xs")
 				<span>انطلاقة جديدة لتجارتك</span>
 			</div>
@@ -660,7 +666,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 					@components.IconRocket("icon-sm")
 					<span>ابدأ الآن مجاناً</span>
 				</a>
-				<a href="/auth/login" class="btn btn-secondary btn-lg font-bold" style="border-radius: 9999px; padding-inline: 2.25rem;">
+				<a href="/auth/login" class="btn btn-secondary btn-lg font-bold s-btn-pill-wide">
 					<span>تسجيل الدخول</span>
 				</a>
 			</div>

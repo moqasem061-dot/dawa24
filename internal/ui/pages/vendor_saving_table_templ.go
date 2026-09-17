@@ -96,7 +96,7 @@ func VendorSavingTable(lang string, data VendorSavingPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</button><form method=\"POST\" action=\"/vendor/saving-products/bulk-delete\" @submit=\"confirmBulkDelete($event)\" class=\"m-0 d-inline-flex\"><input type=\"hidden\" name=\"_csrf\" value=\"\" x-init=\"$el.value = getCsrfToken()\"><template x-for=\"id in selectedIds\" :key=\"id\"><input type=\"hidden\" name=\"selected_ids\" :value=\"id\"></template><button type=\"submit\" class=\"btn btn-danger btn-xs font-bold gap-1.5 shadow-xs\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</button><form method=\"POST\" action=\"/vendor/saving-products/bulk-delete\" @submit=\"confirmBulkDelete($event)\" class=\"m-0 d-inline-flex\"><input type=\"hidden\" name=\"_csrf\" value=\"\" :value=\"$csrf()\"><template x-for=\"id in selectedIds\" :key=\"id\"><input type=\"hidden\" name=\"selected_ids\" :value=\"id\"></template><button type=\"submit\" class=\"btn btn-danger btn-xs font-bold gap-1.5 shadow-xs\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -266,7 +266,7 @@ func VendorSavingTable(lang string, data VendorSavingPageData) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"table-container m-0\"><table class=\"data-table m-0\" id=\"saving-products-table\"><thead><tr><th style=\"width: 44px;\" class=\"text-center\"><input type=\"checkbox\" class=\"form-check-input\" @change=\"toggleSelectAll($el)\" :checked=\"isAllSelected()\"></th><th class=\"w-14 text-center\">#</th><th class=\"text-start\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"table-container m-0\"><table class=\"data-table m-0\" id=\"saving-products-table\"><thead><tr><th class=\"text-center s-w-44\"><input type=\"checkbox\" class=\"form-check-input\" @change=\"toggleSelectAll($el)\" :checked=\"isAllSelected()\"></th><th class=\"w-14 text-center\">#</th><th class=\"text-start\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -479,7 +479,7 @@ func VendorSavingTable(lang string, data VendorSavingPageData) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"><td class=\"text-center align-middle\" style=\"width: 44px;\"><input type=\"checkbox\" class=\"form-check-input\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\"><td class=\"text-center align-middle s-w-44\"><input type=\"checkbox\" class=\"form-check-input\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

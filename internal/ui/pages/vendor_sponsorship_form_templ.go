@@ -37,87 +37,30 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-xs\" x-data=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script nonce=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf(`{
-			availableProducts: %s,
-			availableOffers: %s,
-			itemType: 'product',
-			selectedItems: [],
-			selectedPackageID: '%s',
-			searchQuery: '',
-			showDropdown: false,
-			packagesCredits: %s,
-			hasPackages: %t,
-			lang: %q,
-
-			get currentAvailableList() {
-				if (this.itemType === 'product') {
-					if (!this.searchQuery.trim()) return this.availableProducts.slice(0, 15);
-					const q = this.searchQuery.toLowerCase();
-					return this.availableProducts.filter(p => 
-						(p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
-						(p.name_en && p.name_en.toLowerCase().includes(q)) ||
-						(p.sku && p.sku.toLowerCase().includes(q))
-					).slice(0, 15);
-				} else {
-					if (!this.searchQuery.trim()) return this.availableOffers.slice(0, 15);
-					const q = this.searchQuery.toLowerCase();
-					return this.availableOffers.filter(o => 
-						o.title && o.title.toLowerCase().includes(q)
-					).slice(0, 15);
-				}
-			},
-
-			get selectedPkgCredits() {
-				return this.packagesCredits[this.selectedPackageID] || 0;
-			},
-
-			addItem(item) {
-				const id = item.variant_id || item.id;
-				if (this.selectedItems.some(i => i.id === id)) return;
-				if (this.selectedItems.length >= this.selectedPkgCredits) return;
-				const title = this.lang === 'en' ? (item.name_en || item.title || item.name_ar || ('#' + id)) : (item.name_ar || item.title || item.name_en || ('#' + id));
-				this.selectedItems.push({
-					id: id,
-					title: title,
-					sku: item.sku || '',
-					stock: item.available_stock || 0
-				});
-				this.searchQuery = '';
-				this.showDropdown = false;
-			},
-
-			removeItem(id) {
-				this.selectedItems = this.selectedItems.filter(i => i.id !== id);
-			},
-
-			onTypeChange() {
-				this.selectedItems = [];
-				this.searchQuery = '';
-			},
-
-			get canSubmit() {
-				return this.hasPackages
-					&& this.selectedItems.length > 0
-					&& this.selectedItems.length <= this.selectedPkgCredits;
-			},
-
-			get blockedReason() {
-				if (!this.hasPackages) return %q;
-				if (this.selectedItems.length === 0) return %q;
-				if (this.selectedItems.length > this.selectedPkgCredits) return %q;
-				return '';
-			}
-		}`, InStockItemsToJSON(data.ItemOptions), ActiveOffersToJSON(data.ActiveOffers), func() string {
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 12, Col: 36}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\tdawaData('vendorSponsorshipFormData', function (a0, a1, a2, a3, a4, a5, a6, a7, a8) {\n\t\t\treturn {\n\t\t\t\t// A nil Go slice arrives as null.\n\t\t\t\tavailableProducts: a0 || [],\n\t\t\t\tavailableOffers: a1 || [],\n\t\t\t\titemType: 'product',\n\t\t\t\tselectedItems: [],\n\t\t\t\tselectedPackageID: a2,\n\t\t\t\tsearchQuery: '',\n\t\t\t\tshowDropdown: false,\n\t\t\t\tpackagesCredits: a3 || {},\n\t\t\t\thasPackages: a4,\n\t\t\t\tlang: a5,\n\n\t\t\t\tget currentAvailableList() {\n\t\t\t\t\tif (this.itemType === 'product') {\n\t\t\t\t\t\tif (!this.searchQuery.trim()) return this.availableProducts.slice(0, 15);\n\t\t\t\t\t\tconst q = this.searchQuery.toLowerCase();\n\t\t\t\t\t\treturn this.availableProducts.filter(p =>\n\t\t\t\t\t\t\t(p.name_ar && p.name_ar.toLowerCase().includes(q)) ||\n\t\t\t\t\t\t\t(p.name_en && p.name_en.toLowerCase().includes(q)) ||\n\t\t\t\t\t\t\t(p.sku && p.sku.toLowerCase().includes(q))\n\t\t\t\t\t\t).slice(0, 15);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tif (!this.searchQuery.trim()) return this.availableOffers.slice(0, 15);\n\t\t\t\t\t\tconst q = this.searchQuery.toLowerCase();\n\t\t\t\t\t\treturn this.availableOffers.filter(o =>\n\t\t\t\t\t\t\to.title && o.title.toLowerCase().includes(q)\n\t\t\t\t\t\t).slice(0, 15);\n\t\t\t\t\t}\n\t\t\t\t},\n\n\t\t\t\tget selectedPkgCredits() {\n\t\t\t\t\treturn this.packagesCredits[this.selectedPackageID] || 0;\n\t\t\t\t},\n\n\t\t\t\taddItem(item) {\n\t\t\t\t\tconst id = item.variant_id || item.id;\n\t\t\t\t\tif (this.selectedItems.some(i => i.id === id)) return;\n\t\t\t\t\tif (this.selectedItems.length >= this.selectedPkgCredits) return;\n\t\t\t\t\tconst title = this.lang === 'en' ? (item.name_en || item.title || item.name_ar || ('#' + id)) : (item.name_ar || item.title || item.name_en || ('#' + id));\n\t\t\t\t\tthis.selectedItems.push({\n\t\t\t\t\t\tid: id,\n\t\t\t\t\t\ttitle: title,\n\t\t\t\t\t\tsku: item.sku || '',\n\t\t\t\t\t\tstock: item.available_stock || 0\n\t\t\t\t\t});\n\t\t\t\t\tthis.searchQuery = '';\n\t\t\t\t\tthis.showDropdown = false;\n\t\t\t\t},\n\n\t\t\t\tremoveItem(id) {\n\t\t\t\t\tthis.selectedItems = this.selectedItems.filter(i => i.id !== id);\n\t\t\t\t},\n\n\t\t\t\tonTypeChange() {\n\t\t\t\t\tthis.selectedItems = [];\n\t\t\t\t\tthis.searchQuery = '';\n\t\t\t\t},\n\n\t\t\t\tget canSubmit() {\n\t\t\t\t\treturn this.hasPackages\n\t\t\t\t\t\t&& this.selectedItems.length > 0\n\t\t\t\t\t\t&& this.selectedItems.length <= this.selectedPkgCredits;\n\t\t\t\t},\n\n\t\t\t\tget blockedReason() {\n\t\t\t\t\tif (!this.hasPackages) return a6;\n\t\t\t\t\tif (this.selectedItems.length === 0) return a7;\n\t\t\t\t\tif (this.selectedItems.length > this.selectedPkgCredits) return a8;\n\t\t\t\t\treturn '';\n\t\t\t\t}\n\t\t\t};\n\t\t});\n\t</script><div class=\"glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-xs\" x-data=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.AlpineCall("vendorSponsorshipFormData", json.RawMessage(InStockItemsToJSON(data.ItemOptions)), json.RawMessage(ActiveOffersToJSON(data.ActiveOffers)), func() string {
 			if len(data.ActivePurchases) > 0 {
 				return fmt.Sprintf("%d", data.ActivePurchases[0].PackageID)
 			}
 			return ""
-		}(), func() string {
+		}(), json.RawMessage(func() string {
 			m := make(map[string]int)
 			for _, p := range data.ActivePurchases {
 				if p != nil {
@@ -126,15 +69,15 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 			}
 			b, _ := json.Marshal(m)
 			return string(b)
-		}(), len(data.ActivePurchases) > 0, lang, i18n.T(lang, "vendor_sponsorship.block_no_package"), i18n.T(lang, "vendor_sponsorship.block_no_items"), i18n.T(lang, "vendor_sponsorship.block_exceed_credits")))
+		}()), len(data.ActivePurchases) > 0, lang, i18n.T(lang, "vendor_sponsorship.block_no_package"), i18n.T(lang, "vendor_sponsorship.block_no_items"), i18n.T(lang, "vendor_sponsorship.block_exceed_credits")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 93, Col: 204}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 100, Col: 205}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><div class=\"d-flex items-center gap-2 mb-4 pb-3 border-b border-slate-100\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\"><div class=\"d-flex items-center gap-2 mb-4 pb-3 border-b border-slate-100\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -142,156 +85,156 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<h3 class=\"text-sm font-black text-primary m-0\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.form_title"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 97, Col: 98}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</h3></div><form method=\"POST\" action=\"/vendor/sponsorship-requests/new\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"d-grid grid-auto-fit-sm gap-4\"><div class=\"stack-sm\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<h3 class=\"text-sm font-black text-primary m-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_item_type"))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.form_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 103, Col: 127}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 104, Col: 98}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</label> <select name=\"item_type\" x-model=\"itemType\" @change=\"onTypeChange()\" class=\"form-input text-xs font-semibold\"><option value=\"product\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</h3></div><form method=\"POST\" action=\"/vendor/sponsorship-requests/new\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"d-grid grid-auto-fit-sm gap-4\"><div class=\"stack-sm\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_product"))
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_item_type"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 105, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 110, Col: 127}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</option> <option value=\"offer\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</label> <select name=\"item_type\" x-model=\"itemType\" @change=\"onTypeChange()\" class=\"form-input text-xs font-semibold\"><option value=\"product\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_offer"))
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_product"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 106, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 112, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</option></select></div><div class=\"stack-sm\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</option> <option value=\"offer\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_pkg_select"))
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_offer"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 111, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 113, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</label> <select name=\"package_id\" x-model=\"selectedPackageID\" class=\"form-input text-xs font-semibold\" required>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</option></select></div><div class=\"stack-sm\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var8 string
+		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_pkg_select"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 118, Col: 128}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</label> <select name=\"package_id\" x-model=\"selectedPackageID\" class=\"form-input text-xs font-semibold\" required>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if len(data.ActivePurchases) > 0 {
 			for _, p := range data.ActivePurchases {
 				if p != nil {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<option value=\"")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					var templ_7745c5c3_Var8 string
-					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", p.PackageID))
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 116, Col: 55}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<option value=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(i18n.T(lang, "vendor_sponsorship.pkg_opt_format"), p.PackageID, p.CreditsRemaining, p.CreditsTotal))
+					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", p.PackageID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 117, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 123, Col: 55}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</option>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					var templ_7745c5c3_Var10 string
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(i18n.T(lang, "vendor_sponsorship.pkg_opt_format"), p.PackageID, p.CreditsRemaining, p.CreditsTotal))
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 124, Col: 123}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</option>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<option value=\"\" disabled selected>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<option value=\"\" disabled selected>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.pkg_no_credits"))
+			var templ_7745c5c3_Var11 string
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.pkg_no_credits"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 122, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 129, Col: 93}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</option>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</option>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</select></div></div><!-- Dynamic Multi-Select Search Dropdown --><div class=\"position-relative\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\"><span x-text=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var11 string
-		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.lbl_search_products"), i18n.T(lang, "vendor_sponsorship.lbl_search_offers")))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 131, Col: 177}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\"></span></label><div class=\"position-relative\"><input type=\"text\" x-model=\"searchQuery\" @focus=\"showDropdown = true\" @input=\"showDropdown = true\" :placeholder=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</select></div></div><!-- Dynamic Multi-Select Search Dropdown --><div class=\"position-relative\"><label class=\"form-label text-xs font-bold text-primary mb-1.5 d-block\"><span x-text=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var12 string
-		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.placeholder_search_prod"), i18n.T(lang, "vendor_sponsorship.placeholder_search_offer")))
+		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.lbl_search_products"), i18n.T(lang, "vendor_sponsorship.lbl_search_offers")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 140, Col: 189}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 138, Col: 177}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"form-input text-xs font-semibold w-full ps-9\" autocomplete=\"off\"> <span class=\"position-absolute start-3 top-half translate-middle-y text-muted pointer-events-none\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\"></span></label><div class=\"position-relative\"><input type=\"text\" x-model=\"searchQuery\" @focus=\"showDropdown = true\" @input=\"showDropdown = true\" :placeholder=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var13 string
+		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.placeholder_search_prod"), i18n.T(lang, "vendor_sponsorship.placeholder_search_offer")))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 147, Col: 189}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"form-input text-xs font-semibold w-full ps-9\" autocomplete=\"off\"> <span class=\"position-absolute start-3 top-half translate-middle-y text-muted pointer-events-none\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -299,7 +242,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span></div><!-- Autocomplete Results Dropdown --><div x-show=\"showDropdown\" @click.outside=\"showDropdown = false\" class=\"position-absolute z-50 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 mt-1.5 max-h-60 overflow-y-auto\" x-cloak><template x-for=\"item in currentAvailableList\" :key=\"item.variant_id || item.id\"><div @click=\"addItem(item)\" class=\"p-2.5 rounded-xl cursor-pointer d-flex items-center justify-between gap-3 border-b border-slate-100 last:border-b-0 transition-colors\"><div class=\"d-flex items-center gap-2.5\"><div class=\"w-8 h-8 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center\"><template x-if=\"itemType === 'product'\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div><!-- Autocomplete Results Dropdown --><div x-show=\"showDropdown\" @click.outside=\"showDropdown = false\" class=\"position-absolute z-50 w-full bg-white border border-slate-200 rounded-2xl shadow-2xl p-2 mt-1.5 max-h-60 overflow-y-auto\" x-cloak><template x-for=\"item in currentAvailableList\" :key=\"item.variant_id || item.id\"><div @click=\"addItem(item)\" class=\"p-2.5 rounded-xl cursor-pointer d-flex items-center justify-between gap-3 border-b border-slate-100 last:border-b-0 transition-colors\"><div class=\"d-flex items-center gap-2.5\"><div class=\"w-8 h-8 rounded-lg bg-brand-50 text-brand-600 d-flex items-center justify-center\"><template x-if=\"itemType === 'product'\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -307,7 +250,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</template><template x-if=\"itemType === 'offer'\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</template><template x-if=\"itemType === 'offer'\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -315,7 +258,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</template></div><div class=\"stack-sm\"><strong class=\"text-xs font-bold text-primary d-block\" x-text=\"lang === 'en' ? (item.name_en || item.title || item.name_ar) : (item.name_ar || item.title || item.name_en)\"></strong><div class=\"text-2xs text-muted font-mono\" x-show=\"item.sku\" x-text=\"'SKU: ' + item.sku\"></div></div></div><div class=\"text-end\"><template x-if=\"itemType === 'product'\"><span class=\"badge badge-emerald text-2xs font-extrabold tabular-nums\" x-text=\"item.available_stock + ' ' + (lang === 'en' ? 'in stock' : 'عبوة متوفرة')\"></span></template><button type=\"button\" class=\"btn btn-secondary btn-2xs font-bold gap-1 mt-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</template></div><div class=\"stack-sm\"><strong class=\"text-xs font-bold text-primary d-block\" x-text=\"lang === 'en' ? (item.name_en || item.title || item.name_ar) : (item.name_ar || item.title || item.name_en)\"></strong><div class=\"text-2xs text-muted font-mono\" x-show=\"item.sku\" x-text=\"'SKU: ' + item.sku\"></div></div></div><div class=\"text-end\"><template x-if=\"itemType === 'product'\"><span class=\"badge badge-emerald text-2xs font-extrabold tabular-nums\" x-text=\"item.available_stock + ' ' + (lang === 'en' ? 'in stock' : 'عبوة متوفرة')\"></span></template><button type=\"button\" class=\"btn btn-secondary btn-2xs font-bold gap-1 mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -323,33 +266,33 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var13 string
-		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.btn_add_item"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 181, Col: 64}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</span></button></div></div></template><div x-show=\"currentAvailableList.length === 0\" class=\"p-4 text-center text-xs text-muted\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.no_matching_items"))
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.btn_add_item"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 187, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 188, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div></div></div><!-- Selected Items Chips Display --><div class=\"p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl\"><div class=\"flex-between items-center mb-2.5 pb-2 border-b border-slate-200/60\"><div class=\"d-flex items-center gap-2\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</span></button></div></div></template><div x-show=\"currentAvailableList.length === 0\" class=\"p-4 text-center text-xs text-muted\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.no_matching_items"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 194, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></div></div><!-- Selected Items Chips Display --><div class=\"p-4 bg-slate-50/80 border border-slate-200/80 rounded-2xl\"><div class=\"flex-between items-center mb-2.5 pb-2 border-b border-slate-200/60\"><div class=\"d-flex items-center gap-2\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -357,59 +300,59 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span class=\"text-xs font-black text-primary\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.selected_items_title"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 197, Col: 109}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</span></div><div class=\"text-xs text-secondary font-bold\"><span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<span class=\"text-xs font-black text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.cost_prefix"))
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.selected_items_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 200, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 204, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span> <strong class=\"text-brand tabular-nums font-black\" x-text=\"selectedItems.length + ' ' + (lang === 'en' ? 'Credits (1 per item)' : 'رصيد (1 لكل عنصر)')\"></strong></div></div><div class=\"d-flex items-center gap-2 flex-wrap min-h-8\"><template x-if=\"selectedItems.length === 0\"><span class=\"text-xs text-muted font-medium\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</span></div><div class=\"text-xs text-secondary font-bold\"><span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.empty_selected_items"))
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.cost_prefix"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 207, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 207, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span></template><template x-for=\"it in selectedItems\" :key=\"it.id\"><div class=\"badge badge-sky font-bold text-xs gap-1.5 p-1.5 ps-2.5 rounded-xl border border-sky-300/60 d-flex items-center shadow-2xs\"><span x-text=\"it.title\"></span> <button type=\"button\" @click=\"removeItem(it.id)\" class=\"w-4 h-4 rounded-full bg-sky-200 text-sky-800 d-flex items-center justify-center text-2xs cursor-pointer border-0\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span> <strong class=\"text-brand tabular-nums font-black\" x-text=\"selectedItems.length + ' ' + (lang === 'en' ? 'Credits (1 per item)' : 'رصيد (1 لكل عنصر)')\"></strong></div></div><div class=\"d-flex items-center gap-2 flex-wrap min-h-8\"><template x-if=\"selectedItems.length === 0\"><span class=\"text-xs text-muted font-medium\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "vendor_team.btn_delete"))
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.empty_selected_items"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 216, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 214, Col: 108}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "\">&times;</button></div></template></div><!-- Hidden Inputs for Submission --><template x-for=\"it in selectedItems\" :key=\"it.id\"><input type=\"hidden\" name=\"item_ids\" :value=\"it.id\"></template></div><!-- Credits Calculation & Warning --><div class=\"p-4 bg-surface-sunken rounded-2xl border border-slate-200 d-flex items-center justify-between gap-4 flex-wrap text-xs\"><div class=\"d-flex items-center gap-2 text-secondary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</span></template><template x-for=\"it in selectedItems\" :key=\"it.id\"><div class=\"badge badge-sky font-bold text-xs gap-1.5 p-1.5 ps-2.5 rounded-xl border border-sky-300/60 d-flex items-center shadow-2xs\"><span x-text=\"it.title\"></span> <button type=\"button\" @click=\"removeItem(it.id)\" class=\"w-4 h-4 rounded-full bg-sky-200 text-sky-800 d-flex items-center justify-center text-2xs cursor-pointer border-0\" title=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var19 string
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "vendor_team.btn_delete"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 223, Col: 54}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\">&times;</button></div></template></div><!-- Hidden Inputs for Submission --><template x-for=\"it in selectedItems\" :key=\"it.id\"><input type=\"hidden\" name=\"item_ids\" :value=\"it.id\"></template></div><!-- Credits Calculation & Warning --><div class=\"p-4 bg-surface-sunken rounded-2xl border border-slate-200 d-flex items-center justify-between gap-4 flex-wrap text-xs\"><div class=\"d-flex items-center gap-2 text-secondary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -417,59 +360,59 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.credit_rule_notice"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 234, Col: 66}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</span></div><div class=\"d-flex items-center gap-3 tabular-nums font-bold\"><span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_avail_credits"))
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.credit_rule_notice"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 237, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 241, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<strong class=\"text-primary\" x-text=\"selectedPkgCredits\"></strong></span> <span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</span></div><div class=\"d-flex items-center gap-3 tabular-nums font-bold\"><span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_req_credits"))
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_avail_credits"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 238, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 244, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<strong class=\"text-amber-600\" x-text=\"selectedItems.length\"></strong></span> <span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<strong class=\"text-primary\" x-text=\"selectedPkgCredits\"></strong></span> <span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_rem_credits"))
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_req_credits"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 239, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 245, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<strong :class=\"selectedPkgCredits - selectedItems.length >= 0 ? 'text-emerald-600' : 'text-rose-600'\" x-text=\"selectedPkgCredits - selectedItems.length\"></strong></span></div></div><div class=\"pt-2\"><button type=\"submit\" class=\"btn btn-primary btn-sm font-black px-8 shadow-sm gap-2\" :disabled=\"!canSubmit\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<strong class=\"text-amber-600\" x-text=\"selectedItems.length\"></strong></span> <span>")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_rem_credits"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 246, Col: 63}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<strong :class=\"selectedPkgCredits - selectedItems.length >= 0 ? 'text-emerald-600' : 'text-rose-600'\" x-text=\"selectedPkgCredits - selectedItems.length\"></strong></span></div></div><div class=\"pt-2\"><button type=\"submit\" class=\"btn btn-primary btn-sm font-black px-8 shadow-sm gap-2\" :disabled=\"!canSubmit\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -477,20 +420,20 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span x-text=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<span x-text=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("canSubmit ? (lang === 'en' ? ('Submit ' + selectedItems.length + ' Requests (Deduct ' + selectedItems.length + ' credits)') : ('إرسال ' + selectedItems.length + ' طلب رعاية للمراجعة (خصم ' + selectedItems.length + ' رصيد)')) : %q", i18n.T(lang, "vendor_sponsorship.btn_submit_req")))
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("canSubmit ? (lang === 'en' ? ('Submit ' + selectedItems.length + ' Requests (Deduct ' + selectedItems.length + ' credits)') : ('إرسال ' + selectedItems.length + ' طلب رعاية للمراجعة (خصم ' + selectedItems.length + ' رصيد)')) : %q", i18n.T(lang, "vendor_sponsorship.btn_submit_req")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 250, Col: 343}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 257, Col: 343}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var23)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\"></span></button><p class=\"text-2xs text-danger font-bold mt-2 m-0\" x-show=\"blockedReason\" x-cloak x-text=\"blockedReason\"></p></div></form></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\"></span></button><p class=\"text-2xs text-danger font-bold mt-2 m-0\" x-show=\"blockedReason\" x-cloak x-text=\"blockedReason\"></p></div></form></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

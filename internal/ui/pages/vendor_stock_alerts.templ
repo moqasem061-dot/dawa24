@@ -450,7 +450,7 @@ templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
 									<button
 										type="button"
 										class="btn btn-primary btn-xs font-bold gap-1"
-										@click={ fmt.Sprintf("selectedStock = { id: %d, variantName: %q, currentQty: %d }; adjustModal = true;", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.Quantity) }
+										@click={ fmt.Sprintf("[selectedStock = { id: %d, variantName: %q, currentQty: %d }, adjustModal = true]", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.Quantity) }
 										title={ i18n.T(lang, "vendor_stock_alerts.btn_adjust_title") }
 									>
 										<span>{ i18n.T(lang, "vendor_stock_alerts.btn_restock") }</span>
@@ -458,7 +458,7 @@ templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
 									<button
 										type="button"
 										class="btn btn-secondary btn-xs font-bold gap-1"
-										@click={ fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, from_wh_id: %d, from_wh_name: %q, qty: %d }; transferModal = true;", s.ID, s.ProductVariantID, s.ProductID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.WarehouseID, resolveWarehouseName(s.WarehouseID, data.Warehouses, lang), s.Quantity) }
+										@click={ fmt.Sprintf("[transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, from_wh_id: %d, from_wh_name: %q, qty: %d }, transferModal = true]", s.ID, s.ProductVariantID, s.ProductID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.WarehouseID, resolveWarehouseName(s.WarehouseID, data.Warehouses, lang), s.Quantity) }
 										title={ i18n.T(lang, "vendor_inventory.btn_transfer_title") }
 									>
 										@components.IconRefresh("icon-xs")

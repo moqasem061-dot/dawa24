@@ -281,7 +281,7 @@ templ adminImageProcessingStage(view AdminProductImagesImportView) {
 
 		<div class="wiz-progress">
 			<div class="wiz-progress-track">
-				<div class="wiz-progress-fill" id="progress-bar-fill" style={ fmt.Sprintf("width:%d%%", view.Session.Progress) }></div>
+				<div class="wiz-progress-fill" id="progress-bar-fill" data-pct={ fmt.Sprint(view.Session.Progress) }></div>
 			</div>
 			<div class="wiz-progress-meta">
 				<span id="progress-percent-label">{ fmt.Sprintf("%d%%", view.Session.Progress) }</span>

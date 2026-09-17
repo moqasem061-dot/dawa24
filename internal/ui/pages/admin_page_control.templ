@@ -464,6 +464,8 @@ templ pageControlScript() {
 				}
 			};
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('adminPageControlManager', adminPageControlManager);
 	</script>
 }
 

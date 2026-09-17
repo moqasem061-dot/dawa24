@@ -262,6 +262,7 @@
 	}
 
 	window.dawaCombobox = dawaCombobox;
+	window.dawaData('dawaCombobox', dawaCombobox);
 
 	/* Setting a combobox from outside it.
 	 *

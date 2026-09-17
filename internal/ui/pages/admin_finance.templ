@@ -141,62 +141,15 @@ func countInvoicesStatus(items []*billing.AdminInvoiceView, st string) int {
 // AdminFinance renders the unified financial management hub.
 templ AdminFinance(data AdminFinanceData, lang, dir string) {
 	@layouts.AdminShell("الإدارة المالية والمحافظ والتحصيل", "finance", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFinanceState', function () {
+				return dawaFinanceModalState();
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				rejectDepositID: 0,
-				rejectDepositAmount: '',
-				rejectUserName: '',
-				approveWithdrawalID: 0,
-				approveWithdrawalAmount: '',
-				approveWithdrawalUserName: '',
-				approveWithdrawalMethod: '',
-				approveWithdrawalDestination: '',
-				rejectWithdrawalID: 0,
-				rejectWithdrawalAmount: '',
-				rejectWithdrawalUserName: '',
-				receiptModalURL: '',
-				refundTargetID: 0,
-				refundAmount: '',
-				refundOrgName: '',
-				refundTargetType: 'transaction',
-				openApproveWithdrawalModal(id, amount, userName, method, destination) {
-					this.approveWithdrawalID = id;
-					this.approveWithdrawalAmount = amount;
-					this.approveWithdrawalUserName = userName;
-					this.approveWithdrawalMethod = method;
-					this.approveWithdrawalDestination = destination;
-					const modal = document.getElementById('finance-approve-withdrawal-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openRejectModal(id, amount, userName) {
-					this.rejectDepositID = id;
-					this.rejectDepositAmount = amount;
-					this.rejectUserName = userName;
-					const modal = document.getElementById('finance-reject-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openRejectWithdrawalModal(id, amount, userName) {
-					this.rejectWithdrawalID = id;
-					this.rejectWithdrawalAmount = amount;
-					this.rejectWithdrawalUserName = userName;
-					const modal = document.getElementById('finance-reject-withdrawal-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openReceiptModal(url) {
-					this.receiptModalURL = url;
-					const modal = document.getElementById('finance-receipt-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openRefundModal(id, amount, orgName, targetType) {
-					this.refundTargetID = id;
-					this.refundAmount = amount;
-					this.refundOrgName = orgName;
-					this.refundTargetType = targetType || 'transaction';
-					const modal = document.getElementById('finance-refund-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminFinanceState"
 		>
 			<!-- Header Title & Quick Export Row -->
 			<div class="glass-panel p-6 mb-6">

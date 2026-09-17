@@ -70,7 +70,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, ")</span> <span x-show=\"totalFilteredCount !== allCoverages.length\" class=\"text-xs text-muted font-normal\" x-text=\"(window.__DAWA_LANG__ === 'en' ? 'out of ' : 'من أصل ') + allCoverages.length\"></span></h2><p class=\"text-xs text-muted mt-1 m-0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, ")</span> <span x-show=\"totalFilteredCount !== allCoverages.length\" class=\"text-xs text-muted font-normal\" x-text=\"($lang === 'en' ? 'out of ' : 'من أصل ') + allCoverages.length\"></span></h2><p class=\"text-xs text-muted mt-1 m-0\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,7 +101,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</label> <select x-model=\"filterBranch\" @change=\"currentPage = 1; updateQueryParams()\" class=\"form-control text-xs font-bold w-40\"><option value=\"all\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</label> <select x-model=\"filterBranch\" @change=\"[currentPage = 1, updateQueryParams()]\" class=\"form-control text-xs font-bold w-40\"><option value=\"all\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -178,7 +178,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</label> <select x-model=\"filterDay\" @change=\"currentPage = 1; updateQueryParams()\" class=\"form-control text-xs font-bold w-36\"><option value=\"all\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</label> <select x-model=\"filterDay\" @change=\"[currentPage = 1, updateQueryParams()]\" class=\"form-control text-xs font-bold w-36\"><option value=\"all\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -295,7 +295,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"form-control text-xs w-48\"></div><!-- Reset Filters Button --><button type=\"button\" x-show=\"filterBranch !== 'all' || filterDay !== 'all' || searchQuery !== ''\" @click=\"filterBranch = 'all'; filterDay = 'all'; searchQuery = ''; currentPage = 1; updateQueryParams()\" class=\"btn btn-xs btn-secondary font-bold\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"form-control text-xs w-48\"></div><!-- Reset Filters Button --><button type=\"button\" x-show=\"filterBranch !== 'all' || filterDay !== 'all' || searchQuery !== ''\" @click=\"[filterBranch = 'all', filterDay = 'all', searchQuery = '', currentPage = 1, updateQueryParams()]\" class=\"btn btn-xs btn-secondary font-bold\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -560,7 +560,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span> <button type=\"button\" @click=\"filterBranch = 'all'; filterDay = 'all'; searchQuery = ''; currentPage = 1; updateQueryParams()\" class=\"btn btn-xs btn-secondary mt-1 font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 49, "</span> <button type=\"button\" @click=\"[filterBranch = 'all', filterDay = 'all', searchQuery = '', currentPage = 1, updateQueryParams()]\" class=\"btn btn-xs btn-secondary mt-1 font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -641,7 +641,7 @@ func VendorCoverageTable(data VendorCoverageData, lang string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</button><form method=\"POST\" :action=\"'/vendor/coverage/' + c.id + '/delete'\" :onsubmit=\"'return confirm(\\'' + (window.__DAWA_LANG__ === 'en' ? 'Are you sure you want to delete this coverage zone?' : 'هل أنت متأكد من حذف نطاق التغطية هذا؟') + '\\');'\" class=\"d-inline\"><input type=\"hidden\" name=\"gorilla.csrf.Token\" value=\"\"> <input type=\"hidden\" name=\"id\" :value=\"c.id\"> <input type=\"hidden\" name=\"return_branch\" :value=\"filterBranch\"> <button type=\"submit\" class=\"btn btn-2xs btn-danger\" title=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 56, "</button><form method=\"POST\" :action=\"'/vendor/coverage/' + c.id + '/delete'\" :onsubmit=\"'return confirm(\\'' + ($lang === 'en' ? 'Are you sure you want to delete this coverage zone?' : 'هل أنت متأكد من حذف نطاق التغطية هذا؟') + '\\');'\" class=\"d-inline\"><input type=\"hidden\" name=\"gorilla.csrf.Token\" value=\"\"> <input type=\"hidden\" name=\"id\" :value=\"c.id\"> <input type=\"hidden\" name=\"return_branch\" :value=\"filterBranch\"> <button type=\"submit\" class=\"btn btn-2xs btn-danger\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

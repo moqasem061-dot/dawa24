@@ -306,7 +306,7 @@ func VendorCoverageEditModal(data VendorCoverageData, lang string) templ.Compone
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</label><div class=\"d-flex items-center gap-2\"><span class=\"badge badge-primary text-xs\" x-text=\"((editCov.distance_meters || 3000) / 1000).toFixed(1) + (window.__DAWA_LANG__ === 'en' ? ' km from city center' : ' كم من مركز المدينة')\"></span> <span class=\"text-xs text-muted\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</label><div class=\"d-flex items-center gap-2\"><span class=\"badge badge-primary text-xs\" x-text=\"((editCov.distance_meters || 3000) / 1000).toFixed(1) + ($lang === 'en' ? ' km from city center' : ' كم من مركز المدينة')\"></span> <span class=\"text-xs text-muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

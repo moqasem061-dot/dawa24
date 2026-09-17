@@ -1110,6 +1110,8 @@ templ CapsuleAssistantScript() {
 				}
 			};
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('capsuleAssistantManager', capsuleAssistantManager);
 	</script>
 	@capsuleMarkdownScript()
 }

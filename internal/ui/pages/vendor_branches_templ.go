@@ -83,7 +83,7 @@ func VendorBranchesPage(data VendorBranchesData, lang, dir string) templ.Compone
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div><div class=\"stack-sm\"><button type=\"button\" class=\"btn btn-primary font-bold text-xs px-4 py-2 gap-2\" @click=\"resetToAddMode(); document.getElementById('branch-form-panel').scrollIntoView({behavior:'smooth'});\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</p></div></div><div class=\"stack-sm\"><button type=\"button\" class=\"btn btn-primary font-bold text-xs px-4 py-2 gap-2\" @click=\"[resetToAddMode(), $scrollToId('branch-form-panel')]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

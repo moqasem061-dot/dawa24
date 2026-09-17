@@ -11,40 +11,46 @@ import (
 
 templ AdminFinanceWithdrawalsPage(data AdminFinanceData, lang, dir string) {
 	@layouts.AdminShell("طلبات سحب الرصيد", "withdrawals", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFinanceWithdrawalsState', function () {
+				return Object.assign(dawaFinanceModalState(), {
+					rejectWithdrawalID: 0,
+					rejectWithdrawalAmount: '',
+					rejectWithdrawalUserName: '',
+					approveWithdrawalID: 0,
+					approveWithdrawalAmount: '',
+					approveWithdrawalUserName: '',
+					approveWithdrawalMethod: '',
+					approveWithdrawalDestination: '',
+					receiptModalURL: '',
+					openApproveWithdrawalModal(id, amount, userName, method, destination) {
+						this.approveWithdrawalID = id;
+						this.approveWithdrawalAmount = amount;
+						this.approveWithdrawalUserName = userName;
+						this.approveWithdrawalMethod = method;
+						this.approveWithdrawalDestination = destination;
+						const modal = document.getElementById('finance-approve-withdrawal-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openRejectWithdrawalModal(id, amount, userName) {
+						this.rejectWithdrawalID = id;
+						this.rejectWithdrawalAmount = amount;
+						this.rejectWithdrawalUserName = userName;
+						const modal = document.getElementById('finance-reject-withdrawal-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openReceiptModal(url) {
+						this.receiptModalURL = url;
+						const modal = document.getElementById('finance-receipt-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				});
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				rejectWithdrawalID: 0,
-				rejectWithdrawalAmount: '',
-				rejectWithdrawalUserName: '',
-				approveWithdrawalID: 0,
-				approveWithdrawalAmount: '',
-				approveWithdrawalUserName: '',
-				approveWithdrawalMethod: '',
-				approveWithdrawalDestination: '',
-				receiptModalURL: '',
-				openApproveWithdrawalModal(id, amount, userName, method, destination) {
-					this.approveWithdrawalID = id;
-					this.approveWithdrawalAmount = amount;
-					this.approveWithdrawalUserName = userName;
-					this.approveWithdrawalMethod = method;
-					this.approveWithdrawalDestination = destination;
-					const modal = document.getElementById('finance-approve-withdrawal-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openRejectWithdrawalModal(id, amount, userName) {
-					this.rejectWithdrawalID = id;
-					this.rejectWithdrawalAmount = amount;
-					this.rejectWithdrawalUserName = userName;
-					const modal = document.getElementById('finance-reject-withdrawal-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openReceiptModal(url) {
-					this.receiptModalURL = url;
-					const modal = document.getElementById('finance-receipt-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminFinanceWithdrawalsState"
 		>
 			<!-- Header Title & Quick Export Row -->
 			<div class="glass-panel p-6 mb-6">

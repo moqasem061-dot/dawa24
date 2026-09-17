@@ -159,7 +159,7 @@ func SmartOrderNewPage(lang, dir string, data SmartOrderNewData) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span> <span class=\"text-danger\">*</span></label> <label class=\"dropzone p-6 text-center cursor-pointer border-2 border-dashed rounded-2xl transition-all\" id=\"so-dropzone\" style=\"display: block; position: relative;\"><input type=\"file\" name=\"file\" accept=\".xlsx,.xls,.csv\" required class=\"visually-hidden\" id=\"so-file-input\" data-on-change=\"handleSoFileSelect(this)\"><div class=\"w-12 h-12 rounded-2xl bg-brand-50 text-brand d-inline-flex items-center justify-center mb-3 shadow-2xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span> <span class=\"text-danger\">*</span></label> <label class=\"dropzone p-6 text-center cursor-pointer border-2 border-dashed rounded-2xl transition-all s-block-relative\" id=\"so-dropzone\"><input type=\"file\" name=\"file\" accept=\".xlsx,.xls,.csv\" required class=\"visually-hidden\" id=\"so-file-input\" data-on-change=\"handleSoFileSelect(this)\"><div class=\"w-12 h-12 rounded-2xl bg-brand-50 text-brand d-inline-flex items-center justify-center mb-3 shadow-2xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

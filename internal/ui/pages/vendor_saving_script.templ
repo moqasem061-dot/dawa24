@@ -330,5 +330,7 @@ templ VendorSavingScript() {
 		window.openProvidersModal = openProvidersModal;
 		window.closeProvidersModal = closeProvidersModal;
 		window.filterSavingProductsTable = filterSavingProductsTable;
+		// The CSP build of Alpine only sees registered components.
+		dawaData('vendorSavingManager', vendorSavingManager);
 	</script>
 }

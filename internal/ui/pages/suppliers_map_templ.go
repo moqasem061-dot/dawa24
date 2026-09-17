@@ -306,7 +306,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				}
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div></div><!-- Map Container --><div class=\"glass-panel p-0 overflow-hidden map-container-frame\"><div id=\"suppliers-leaflet-map\" style=\"width: 100%; height: 600px; min-height: 480px;\"></div></div></div></div><!-- Hidden data carrier for map pins --><div id=\"suppliers-map-data\" class=\"d-none\" data-pins=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</div></div><!-- Map Container --><div class=\"glass-panel p-0 overflow-hidden map-container-frame\"><div class=\"s-suppliers-map\" id=\"suppliers-leaflet-map\"></div></div></div></div><!-- Hidden data carrier for map pins --><div id=\"suppliers-map-data\" class=\"d-none\" data-pins=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -16,13 +16,13 @@ templ CapsuleAssistantOverlays() {
 		<div class="p-3 border-b flex-between items-center bg-surface-raised">
 			<div class="d-flex items-center gap-1.5 font-extrabold text-xs text-primary">
 				@IconClock("icon-xs")
-				<span x-text="window.dawaT ? window.dawaT('capsule.history_title', 'المحادثات السابقة') : 'المحادثات السابقة'">المحادثات السابقة</span>
+				<span x-text="$t('capsule.history_title', 'المحادثات السابقة')">المحادثات السابقة</span>
 			</div>
 			<button
 				type="button"
 				@click="showSessionsDrawer = false"
 				class="capsule-hdr-icon-btn"
-				:title="window.dawaT ? window.dawaT('common.close', 'إغلاق') : 'إغلاق'"
+				:title="$t('common.close', 'إغلاق')"
 			>
 				@IconClose("icon-xs")
 			</button>
@@ -36,7 +36,7 @@ templ CapsuleAssistantOverlays() {
 				class="btn btn-primary btn-sm w-full font-extrabold justify-center gap-1.5 shadow-xs"
 			>
 				@IconPlus("icon-xs")
-				<span x-text="window.dawaT ? window.dawaT('capsule.new_chat', 'بدء محادثة جديدة الآن') : 'بدء محادثة جديدة الآن'">بدء محادثة جديدة الآن</span>
+				<span x-text="$t('capsule.new_chat', 'بدء محادثة جديدة الآن')">بدء محادثة جديدة الآن</span>
 			</button>
 
 			<!-- Search Filter -->
@@ -44,7 +44,7 @@ templ CapsuleAssistantOverlays() {
 				<input
 					type="text"
 					x-model="searchPastQuery"
-					:placeholder="window.dawaT ? window.dawaT('common.search', 'بحث في المحادثات...') : 'بحث في المحادثات...'"
+					:placeholder="$t('common.search', 'بحث في المحادثات...')"
 					class="form-input text-xs w-full pe-7"
 				/>
 				<div class="absolute inset-y-0 end-2 flex-center text-muted pointer-events-none">
@@ -59,7 +59,7 @@ templ CapsuleAssistantOverlays() {
 			<template x-if="isLoadingPastSessions">
 				<div class="d-flex flex-col items-center justify-center py-8 gap-2 text-muted text-xs">
 					<div class="capsule-spinner"></div>
-					<span x-text="window.dawaT ? window.dawaT('common.loading', 'جاري جلب المحادثات السابقة...') : 'جاري جلب المحادثات السابقة...'">جاري جلب المحادثات السابقة...</span>
+					<span x-text="$t('common.loading', 'جاري جلب المحادثات السابقة...')">جاري جلب المحادثات السابقة...</span>
 				</div>
 			</template>
 
@@ -69,7 +69,7 @@ templ CapsuleAssistantOverlays() {
 					<div class="w-9 h-9 rounded-full bg-surface-sunken flex-center text-muted">
 						@IconClock("icon-sm")
 					</div>
-					<div class="text-xs font-bold text-primary" x-text="window.dawaT ? window.dawaT('common.empty', 'لا توجد محادثات سابقة') : 'لا توجد محادثات سابقة'">لا توجد محادثات سابقة</div>
+					<div class="text-xs font-bold text-primary" x-text="$t('common.empty', 'لا توجد محادثات سابقة')">لا توجد محادثات سابقة</div>
 					<div class="text-2xs max-w-xs">أي استفسار تطرحه يتم حفظه هنا تلقائياً لترجع له في أي وقت.</div>
 				</div>
 			</template>
@@ -83,9 +83,9 @@ templ CapsuleAssistantOverlays() {
 				>
 					<div class="flex-1 text-truncate">
 						<div class="d-flex items-center gap-1.5 mb-0.5">
-							<span class="text-xs font-bold text-primary text-truncate" x-text="conv.title || (window.dawaT ? window.dawaT('capsule.past_chat', 'محادثة سابقة') : 'محادثة سابقة')"></span>
+							<span class="text-xs font-bold text-primary text-truncate" x-text="conv.title || $t('capsule.past_chat', 'محادثة سابقة')"></span>
 							<template x-if="conversationID === conv.id">
-								<span class="badge badge-primary text-2xs font-bold" x-text="window.dawaT ? window.dawaT('common.active', 'نشطة') : 'نشطة'">نشطة</span>
+								<span class="badge badge-primary text-2xs font-bold" x-text="$t('common.active', 'نشطة')">نشطة</span>
 							</template>
 						</div>
 						<div class="text-2xs text-muted font-mono" x-text="formatDate(conv.updated_at)"></div>
@@ -94,7 +94,7 @@ templ CapsuleAssistantOverlays() {
 						type="button"
 						@click.stop="deleteSession(conv.id)"
 						class="capsule-hdr-icon-btn text-danger hover:text-danger"
-						:title="window.dawaT ? window.dawaT('common.delete', 'حذف المحادثة') : 'حذف المحادثة'"
+						:title="$t('common.delete', 'حذف المحادثة')"
 					>
 						@IconTrash("icon-2xs")
 					</button>
@@ -118,14 +118,14 @@ templ CapsuleAssistantOverlays() {
 		<div class="p-3 border-b flex-between items-center bg-surface-raised">
 			<div class="d-flex items-center gap-1.5 font-extrabold text-xs text-primary">
 				@IconDatabase("icon-xs")
-				<span x-text="window.dawaT ? window.dawaT('capsule.memory_title', 'ذاكرة المنشأة الذكية') : 'ذاكرة المنشأة الذكية'">ذاكرة المنشأة الذكية</span>
+				<span x-text="$t('capsule.memory_title', 'ذاكرة المنشأة الذكية')">ذاكرة المنشأة الذكية</span>
 				<span class="badge badge-2xs badge-primary ms-1" x-text="memories.length"></span>
 			</div>
 			<button
 				type="button"
 				@click="showMemoryDrawer = false"
 				class="capsule-hdr-icon-btn"
-				:title="window.dawaT ? window.dawaT('common.close', 'إغلاق الذاكرة') : 'إغلاق الذاكرة'"
+				:title="$t('common.close', 'إغلاق الذاكرة')"
 			>
 				@IconClose("icon-xs")
 			</button>
@@ -146,7 +146,7 @@ templ CapsuleAssistantOverlays() {
 					rows="2"
 					placeholder="أضف قاعدة أو تفضيل يدوي للمنشأة..."
 					class="form-input text-xs w-full resize-none"
-					@keydown.enter.prevent="if (!$event.shiftKey) addMemory()"
+					@keydown.enter.prevent="!$event.shiftKey && addMemory()"
 				></textarea>
 				<div class="d-flex items-center justify-between gap-2">
 					<select x-model="newMemoryCategory" class="form-select text-2xs py-1 px-2 flex-1">
@@ -167,7 +167,7 @@ templ CapsuleAssistantOverlays() {
 						<template x-if="isSavingMemory">
 							<span class="capsule-spinner w-3 h-3"></span>
 						</template>
-						<span x-text="window.dawaT ? window.dawaT('common.save', 'حفظ بالذاكرة') : 'حفظ بالذاكرة'">حفظ بالذاكرة</span>
+						<span x-text="$t('common.save', 'حفظ بالذاكرة')">حفظ بالذاكرة</span>
 					</button>
 				</div>
 			</div>
@@ -177,7 +177,7 @@ templ CapsuleAssistantOverlays() {
 				<input
 					type="text"
 					x-model="searchMemoryQuery"
-					:placeholder="window.dawaT ? window.dawaT('common.search', 'بحث في الذاكرة...') : 'بحث في الذاكرة...'"
+					:placeholder="$t('common.search', 'بحث في الذاكرة...')"
 					class="form-input text-xs w-full pe-7"
 				/>
 				<div class="absolute inset-y-0 end-2 flex-center text-muted pointer-events-none">
@@ -192,7 +192,7 @@ templ CapsuleAssistantOverlays() {
 			<template x-if="isLoadingMemories">
 				<div class="d-flex flex-col items-center justify-center py-8 gap-2 text-muted text-xs">
 					<div class="capsule-spinner"></div>
-					<span x-text="window.dawaT ? window.dawaT('common.loading', 'جاري جلب ذاكرة المنشأة...') : 'جاري جلب ذاكرة المنشأة...'">جاري جلب ذاكرة المنشأة...</span>
+					<span x-text="$t('common.loading', 'جاري جلب ذاكرة المنشأة...')">جاري جلب ذاكرة المنشأة...</span>
 				</div>
 			</template>
 
@@ -202,8 +202,8 @@ templ CapsuleAssistantOverlays() {
 					<div class="text-muted opacity-50 mb-1">
 						@IconDatabase("icon-lg")
 					</div>
-					<div class="font-extrabold text-xs text-primary" x-text="window.dawaT ? window.dawaT('capsule.memory_empty', 'الذاكرة فارغة حالياً') : 'الذاكرة فارغة حالياً'">الذاكرة فارغة حالياً</div>
-					<div class="text-2xs text-muted max-w-xs leading-relaxed" x-text="window.dawaT ? window.dawaT('capsule.memory_empty_sub', 'ستظهر هنا القواعد والتفضيلات التي يستنتجها المساعد أو التي تضيفها أنت يدوياً.') : 'ستظهر هنا القواعد والتفضيلات التي يستنتجها المساعد أو التي تضيفها أنت يدوياً.'">
+					<div class="font-extrabold text-xs text-primary" x-text="$t('capsule.memory_empty', 'الذاكرة فارغة حالياً')">الذاكرة فارغة حالياً</div>
+					<div class="text-2xs text-muted max-w-xs leading-relaxed" x-text="$t('capsule.memory_empty_sub', 'ستظهر هنا القواعد والتفضيلات التي يستنتجها المساعد أو التي تضيفها أنت يدوياً.')">
 						ستظهر هنا القواعد والتفضيلات التي يستنتجها المساعد أو التي تضيفها أنت يدوياً.
 					</div>
 				</div>
@@ -221,7 +221,7 @@ templ CapsuleAssistantOverlays() {
 							type="button"
 							@click.stop="deleteMemory(mem.id)"
 							class="capsule-hdr-icon-btn text-danger hover:text-danger p-1"
-							:title="window.dawaT ? window.dawaT('common.delete', 'حذف المعلومة من الذاكرة') : 'حذف المعلومة من الذاكرة'"
+							:title="$t('common.delete', 'حذف المعلومة من الذاكرة')"
 						>
 							@IconTrash("icon-2xs")
 						</button>

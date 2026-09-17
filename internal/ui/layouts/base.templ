@@ -66,10 +66,10 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			<meta name="twitter:description" content={ seo.OGDescription }/>
 			<meta name="twitter:image" content={ seo.OGImage }/>
 			<!-- Structured Data JSON-LD -->
-			if seo.JSONLD != "" {
-				<script type="application/ld+json">
-					@templ.Raw(seo.JSONLD)
-				</script>
+			// templ does not interpolate inside <script>; this used to publish the
+			// literal text "@templ.Raw(seo.JSONLD)" as the page's structured data.
+			if ld, ok := jsonLD(seo.JSONLD); ok {
+				@templ.JSONScript("", ld).WithType("application/ld+json")
 			}
 			// htmx reads this when it initialises. allowEval off: no hx-on, no
 			// trigger filters, no js: values -- the policy has no 'unsafe-eval'.
@@ -169,6 +169,8 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			// data-autosubmit); page scripts register Alpine components through
 			// its dawaData helper, so it loads before Alpine.
 			<script defer src={ Asset("/static/js/actions.js") }></script>
+			// Shared Alpine components (dawaData), registered before Alpine starts.
+			<script defer src={ Asset("/static/js/components.js") }></script>
 			// The CSP build interprets directive expressions without eval. See
 			// scripts/alpine-csp/check.cjs for the subset it understands.
 			<script defer src={ Asset("/static/vendor/alpine-csp-3.17.3.min.js") }></script>

@@ -5,9 +5,7 @@ templ AdminDevelopersSEOEditModal() {
 	<div
 		x-show="modalOpen"
 		class="fixed inset-0 z-50 d-flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
-		style="display:none;"
-		x-data="{ previewLang: 'ar' }"
-	>
+		x-data="{ previewLang: 'ar' }" x-cloak>
 		<div
 			class="glass-panel max-w-5xl w-full rounded-3xl border border-default bg-surface-raised shadow-2xl d-flex flex-col max-h-[90vh] overflow-hidden"
 			@click.outside="modalOpen = false"
@@ -169,7 +167,7 @@ templ AdminDevelopersSEOEditModal() {
 								</div>
 
 								<!-- English Preview -->
-								<div x-show="previewLang === 'en'" style="display:none;" class="font-sans text-start" dir="ltr">
+								<div x-show="previewLang === 'en'" class="font-sans text-start" dir="ltr" x-cloak>
 									<div class="text-2xs text-emerald-700 dark:text-emerald-400 font-mono truncate" x-text="'https://dawa24.com' + (editForm.route_pattern || '/')"></div>
 									<div class="text-sm text-blue-600 dark:text-blue-400 hover:underline font-bold mt-0.5 leading-snug cursor-pointer line-clamp-1" x-text="editForm.title_en || editForm.title_ar || 'Page Title in English'"></div>
 									<div class="text-xs text-secondary mt-1 leading-relaxed line-clamp-2" x-text="editForm.meta_desc_en || editForm.meta_desc_ar || 'Page description summary as displayed on English search engine results...'"></div>

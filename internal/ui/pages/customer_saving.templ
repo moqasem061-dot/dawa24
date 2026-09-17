@@ -86,7 +86,7 @@ templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) 
 							<form class="stack-md"
 								method="POST"
 								action="/customer/saving-products/delete-all"
-								@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "saving.delete_all_confirm")) }
+								data-confirm={ i18n.T(lang, "saving.delete_all_confirm") }
 							>
 								<button
 									type="submit"
@@ -106,8 +106,7 @@ templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) 
 			<div class="dashboard-stat-grid mb-6">
 				<a
 					href="/customer/saving-products?filter=all"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "all")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "all") }
 				>
 					<div class="stat-card-label">{ i18n.T(lang, "saving.stat_all") }</div>
 					<div class="stat-card-value text-primary tabular-nums">
@@ -122,8 +121,7 @@ templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) 
 
 				<a
 					href="/customer/saving-products?filter=linked"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "linked")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "linked") }
 				>
 					<div class="stat-card-label text-sky">{ i18n.T(lang, "saving.stat_linked") }</div>
 					<div class="stat-card-value text-sky tabular-nums">
@@ -138,8 +136,7 @@ templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) 
 
 				<a
 					href="/customer/saving-products?filter=unlinked"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "unlinked")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "unlinked") }
 				>
 					<div class="stat-card-label text-warning">{ i18n.T(lang, "saving.stat_unlinked") }</div>
 					<div class="stat-card-value text-warning tabular-nums">
@@ -231,7 +228,7 @@ templ CustomerSavingProductsPage(data CustomerSavingPageData, lang, dir string) 
 						{ i18n.T(lang, "saving.deselect") }
 					</button>
 					<form method="POST" action="/customer/saving-products/bulk-delete" @submit="confirmBulkDelete($event)" class="m-0 d-inline-flex">
-						<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+						<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 						<template x-for="id in selectedIds" :key="id">
 							<input type="hidden" name="selected_ids" :value="id" />
 						</template>

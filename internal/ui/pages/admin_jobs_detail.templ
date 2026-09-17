@@ -234,7 +234,7 @@ templ AdminJobDetail(lang, dir string, data AdminJobDetailData) {
 
 templ AdminJobApplicationModals() {
 	<!-- Accept Applicant Modal -->
-	<div id="admin-accept-modal" class="modal-backdrop" style="display:none;">
+	<div id="admin-accept-modal" class="modal-backdrop s-hidden-init">
 		<div class="modal-card max-w-lg">
 			<div class="modal-header">
 				<h3 class="modal-title font-black text-lg text-primary">قبول وتعيين المتقدم</h3>
@@ -274,7 +274,7 @@ templ AdminJobApplicationModals() {
 	</div>
 
 	<!-- Reject Applicant Modal -->
-	<div id="admin-reject-modal" class="modal-backdrop" style="display:none;">
+	<div id="admin-reject-modal" class="modal-backdrop s-hidden-init">
 		<div class="modal-card max-w-md">
 			<div class="modal-header">
 				<h3 class="modal-title font-black text-lg text-danger">رفض طلب التوظيف</h3>

@@ -416,18 +416,24 @@ templ teamReviewStage(view TeamImportView) {
 			}
 		}
 	}}
-	<div class="page-container" x-data="{
-		filterTab: 'all',
-		searchQ: '',
-		matches(r) {
-			const q = this.searchQ.toLowerCase().trim();
-			const matchSearch = !q || (r.name && r.name.toLowerCase().includes(q)) || (r.email && r.email.toLowerCase().includes(q)) || (r.phone && r.phone.includes(q)) || (r.role && r.role.toLowerCase().includes(q));
-			if (!matchSearch) return false;
-			if (this.filterTab === 'valid') return r.valid;
-			if (this.filterTab === 'issues') return !r.valid;
-			return true;
-		}
-	}">
+	<script nonce={ templ.GetNonce(ctx) }>
+		// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+		dawaData('teamImportWizardState', function () {
+			return {
+				filterTab: 'all',
+				searchQ: '',
+				matches(r) {
+					const q = this.searchQ.toLowerCase().trim();
+					const matchSearch = !q || (r.name && r.name.toLowerCase().includes(q)) || (r.email && r.email.toLowerCase().includes(q)) || (r.phone && r.phone.includes(q)) || (r.role && r.role.toLowerCase().includes(q));
+					if (!matchSearch) return false;
+					if (this.filterTab === 'valid') return r.valid;
+					if (this.filterTab === 'issues') return !r.valid;
+					return true;
+				}
+			};
+		});
+	</script>
+	<div class="page-container" x-data="teamImportWizardState">
 		<!-- Review Header -->
 		<div class="glass-panel p-6 mb-6">
 			<div class="flex-between items-center flex-wrap gap-4">
@@ -486,14 +492,14 @@ templ teamReviewStage(view TeamImportView) {
 			<!-- Table Toolbar -->
 			<div class="p-4 border-b flex-between items-center flex-wrap gap-3">
 				<div class="d-flex items-center gap-2">
-					<button type="button" @click="filterTab = 'all'" :class="{ 'btn-primary': filterTab === 'all', 'btn-secondary': !== 'all' }" class="btn btn-xs font-bold">
+					<button type="button" @click="filterTab = 'all'" :class="{ 'btn-primary': filterTab === 'all', 'btn-secondary': filterTab !== 'all' }" class="btn btn-xs font-bold">
 						كافة الصفوف ({ fmt.Sprint(len(sess.Rows)) })
 					</button>
-					<button type="button" @click="filterTab = 'valid'" :class="{ 'btn-primary': filterTab === 'valid', 'btn-secondary': !== 'valid' }" class="btn btn-xs font-bold">
+					<button type="button" @click="filterTab = 'valid'" :class="{ 'btn-primary': filterTab === 'valid', 'btn-secondary': filterTab !== 'valid' }" class="btn btn-xs font-bold">
 						الجاهزة فقط ({ fmt.Sprint(validCount) })
 					</button>
 					if invalidCount > 0 {
-						<button type="button" @click="filterTab = 'issues'" :class="{ 'btn-primary': filterTab === 'issues', 'btn-secondary': !== 'issues' }" class="btn btn-xs font-bold text-rose-600">
+						<button type="button" @click="filterTab = 'issues'" :class="{ 'btn-primary': filterTab === 'issues', 'btn-secondary': filterTab !== 'issues' }" class="btn btn-xs font-bold text-rose-600">
 							المستبعدة ({ fmt.Sprint(invalidCount) })
 						</button>
 					}

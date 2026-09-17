@@ -231,7 +231,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		}
 		ctx = templ.ClearChildren(ctx)
 		if data.IsAdmin {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"alert alert-info d-flex items-center justify-between gap-4 mb-4\" style=\"background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 12px 16px;\"><div class=\"d-flex items-center gap-3\"><span class=\"badge badge-brand\">وضع الإدارة العامة</span> <span class=\"text-sm font-bold\">أنت تعرض تقرير ذكاء السوق بالنيابة عن منظمة: <span class=\"text-brand mr-1 font-black\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"alert alert-info d-flex items-center justify-between gap-4 mb-4 s-callout-sky\"><div class=\"d-flex items-center gap-3\"><span class=\"badge badge-brand\">وضع الإدارة العامة</span> <span class=\"text-sm font-bold\">أنت تعرض تقرير ذكاء السوق بالنيابة عن منظمة: <span class=\"text-brand mr-1 font-black\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

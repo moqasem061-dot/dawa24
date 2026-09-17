@@ -122,7 +122,7 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 			<!-- ========================================== -->
 			<!-- TAB 5: SEO & AI Discoverability            -->
 			<!-- ========================================== -->
-			<div x-show="activeTab === 'seo'" style="display:none;" x-cloak>
+			<div x-show="activeTab === 'seo'" x-cloak>
 				if values.SEO != nil {
 					@AdminDevelopersSEOTab(values.SEO, lang, dir)
 				}
@@ -312,6 +312,12 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 			// adminAuditManager is gone for the same reason adminErrorsManager was:
 			// it parsed templ-escaped JSON that never parsed. The diff is loaded
 			// from /admin/developers/audit/{id}/details.
+			// The CSP build of Alpine only sees registered components.
+			dawaData('adminSQLManager', adminSQLManager);
+			// The CSP build of Alpine only sees registered components.
+			dawaData('adminAIManager', adminAIManager);
+			// The CSP build of Alpine only sees registered components.
+			dawaData('adminDevelopersManager', adminDevelopersManager);
 		</script>
 		</div>
 	}

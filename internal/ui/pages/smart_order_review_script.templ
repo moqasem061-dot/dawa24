@@ -384,5 +384,7 @@ templ SmartOrderReviewScript() {
 			if (qtyDebounceTimer) clearTimeout(qtyDebounceTimer);
 			autoSubmitQtyForm(form);
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('smartOrderReviewManager', smartOrderReviewManager);
 	</script>
 }

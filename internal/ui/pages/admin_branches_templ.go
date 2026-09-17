@@ -252,7 +252,7 @@ func AdminBranchesPage(data AdminBranchesPageData, lang, dir string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span></h1><p class=\"admin-banner-subtitle\">إدارة ومتابعة كافة نقاط الاستلام والتوريد ومواقع التخزين المركزية للصيدليات والموردين</p></div></div><div class=\"d-flex items-center gap-2 flex-wrap\"><button type=\"button\" class=\"btn btn-primary btn-sm font-bold gap-1\" @click=\"resetToAddMode(); document.getElementById('admin-branch-form').scrollIntoView({behavior:'smooth'});\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span></h1><p class=\"admin-banner-subtitle\">إدارة ومتابعة كافة نقاط الاستلام والتوريد ومواقع التخزين المركزية للصيدليات والموردين</p></div></div><div class=\"d-flex items-center gap-2 flex-wrap\"><button type=\"button\" class=\"btn btn-primary btn-sm font-bold gap-1\" @click=\"[resetToAddMode(), $scrollToId('admin-branch-form')]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -910,7 +910,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 			templ_7745c5c3_Var32 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<div class=\"glass-panel p-5 sticky-top\" id=\"admin-branch-form\" @dawa-coords-change.window=\"if ($event.detail && ($event.detail.targetId === 'admin-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }\" @combobox-change.window=\"if ($event.detail) { onComboboxChange($event.detail); }\"><!-- City and Organization coordinates/types lookup for instant UI responsiveness --><div id=\"admin-branch-cities-coords\" class=\"d-none\" data-coords=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "<div class=\"glass-panel p-5 sticky-top\" id=\"admin-branch-form\" @dawa-coords-change.window=\"$event.detail && ($event.detail.targetId === 'admin-branch-map-picker' || !$event.detail.targetId) && [form.latitude = $event.detail.lat, form.longitude = $event.detail.lon]\" @combobox-change.window=\"$event.detail && onComboboxChange($event.detail)\"><!-- City and Organization coordinates/types lookup for instant UI responsiveness --><div id=\"admin-branch-cities-coords\" class=\"d-none\" data-coords=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -957,7 +957,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<span>إلغاء التعديل</span></button></template></div><form class=\"d-flex flex-col gap-3 m-0\" method=\"POST\" :action=\"formAction\" @submit=\"\r\n\t\t\t\tconst cid = form.city_id || $el.querySelector('input[name=city_id]')?.value;\r\n\t\t\t\tif (!form.org_id) { $event.preventDefault(); alert('يرجى اختيار المنشأة'); return; }\r\n\t\t\t\tif (!cid) { $event.preventDefault(); alert('يرجى اختيار المدينة أو المحافظة'); return; }\r\n\t\t\t\tform.city_id = cid;\r\n\t\t\t\tif (isCustomerSelected()) { form.warehouse_type = 'pharmacy'; }\r\n\t\t\t\"><!-- Organization Select --><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">المنشأة التابع لها الفرع <span class=\"text-danger\">*</span></label> <select name=\"org_id\" x-model=\"form.org_id\" @change=\"onOrgChange($event.target.value)\" required class=\"form-select font-bold text-xs\"><option value=\"\">— اختر المنشأة —</option> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "<span>إلغاء التعديل</span></button></template></div><form class=\"d-flex flex-col gap-3 m-0\" method=\"POST\" :action=\"formAction\" @submit=\"validateSubmit($event)\"><!-- Organization Select --><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">المنشأة التابع لها الفرع <span class=\"text-danger\">*</span></label> <select name=\"org_id\" x-model=\"form.org_id\" @change=\"onOrgChange($event.target.value)\" required class=\"form-select font-bold text-xs\"><option value=\"\">— اختر المنشأة —</option> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -970,7 +970,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", o.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 470, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 464, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 				if templ_7745c5c3_Err != nil {
@@ -983,7 +983,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 				var templ_7745c5c3_Var37 string
 				templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(o.LegalName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 471, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 465, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 				if templ_7745c5c3_Err != nil {
@@ -996,7 +996,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(getOrgTypeBadge(o.ID, data.OrgTypes))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 471, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 465, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -1067,7 +1067,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 					var templ_7745c5c3_Var39 string
 					templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", work.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 654, Col: 44}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 648, Col: 44}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 					if templ_7745c5c3_Err != nil {
@@ -1081,7 +1081,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 						var templ_7745c5c3_Var40 string
 						templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(work.Icon)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 660, Col: 22}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 654, Col: 22}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 						if templ_7745c5c3_Err != nil {
@@ -1096,7 +1096,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 						var templ_7745c5c3_Var41 string
 						templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 663, Col: 18}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 657, Col: 18}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 						if templ_7745c5c3_Err != nil {
@@ -1106,7 +1106,7 @@ func AdminBranchForm(data AdminBranchesPageData, lang string) templ.Component {
 						var templ_7745c5c3_Var42 string
 						templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(work.Title["en"])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 665, Col: 29}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 659, Col: 29}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 						if templ_7745c5c3_Err != nil {
@@ -1168,13 +1168,13 @@ func AdminBranchScript() templ.Component {
 		var templ_7745c5c3_Var44 string
 		templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 705, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 699, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var44)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "\">\r\n\t\tfunction adminBranchManager() {\r\n\t\t\treturn {\r\n\t\t\t\tmode: 'add',\r\n\t\t\t\teditId: 0,\r\n\t\t\t\tformAction: '/admin/branches/new',\r\n\t\t\t\t_settingEditMode: false,\r\n\t\t\t\torgTypes: {},\r\n\t\t\t\tform: {\r\n\t\t\t\t\tid: 0,\r\n\t\t\t\t\torg_id: '',\r\n\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\tname_en: '',\r\n\t\t\t\t\tcode: '',\r\n\t\t\t\t\twarehouse_type: 'pharmacy',\r\n\t\t\t\t\tcapacity_sqm: '',\r\n\t\t\t\t\tgovernorate_id: '',\r\n\t\t\t\t\tcity_id: '',\r\n\t\t\t\t\taddress: '',\r\n\t\t\t\t\tphone: '',\r\n\t\t\t\t\toperating_hours: '',\r\n\t\t\t\t\tgoogle_maps_url: '',\r\n\t\t\t\t\thas_cold_storage: false,\r\n\t\t\t\t\tis_main: false,\r\n\t\t\t\t\tstatus: 'active',\r\n\t\t\t\t\tlatitude: 30.0444,\r\n\t\t\t\t\tlongitude: 31.2357,\r\n\t\t\t\t\tinstitutional_works: []\r\n\t\t\t\t},\r\n\t\t\t\tinit() {\r\n\t\t\t\t\tconst otEl = document.getElementById('admin-branch-org-types');\r\n\t\t\t\t\tif (otEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = otEl.getAttribute('data-org-types') || otEl.textContent || '{}';\r\n\t\t\t\t\t\t\tthis.orgTypes = JSON.parse(raw);\r\n\t\t\t\t\t\t} catch(e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse org types:', e);\r\n\t\t\t\t\t\t\tthis.orgTypes = {};\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\r\n\t\t\t\t\tconst editParam = urlParams.get('edit');\r\n\t\t\t\t\tif (editParam) {\r\n\t\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\t\tconst btn = document.querySelector(`[data-edit-branch-btn=\"${editParam}\"]`);\r\n\t\t\t\t\t\t\tif (btn) {\r\n\t\t\t\t\t\t\t\tthis.setEditModeFromElement(btn);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tisVendorSelected() {\r\n\t\t\t\t\tif (!this.form.org_id) return false;\r\n\t\t\t\t\treturn this.orgTypes[String(this.form.org_id)] === 'vendor';\r\n\t\t\t\t},\r\n\t\t\t\tisCustomerSelected() {\r\n\t\t\t\t\tif (!this.form.org_id) return false;\r\n\t\t\t\t\treturn this.orgTypes[String(this.form.org_id)] === 'customer';\r\n\t\t\t\t},\r\n\t\t\t\tonOrgChange(orgId) {\r\n\t\t\t\t\tthis.form.org_id = orgId ? String(orgId) : '';\r\n\t\t\t\t\tif (this.isCustomerSelected()) {\r\n\t\t\t\t\t\tthis.form.warehouse_type = 'pharmacy';\r\n\t\t\t\t\t\tthis.form.capacity_sqm = '';\r\n\t\t\t\t\t} else if (this.isVendorSelected()) {\r\n\t\t\t\t\t\tif (!this.form.warehouse_type || this.form.warehouse_type === 'pharmacy' || this.form.warehouse_type === 'branch') {\r\n\t\t\t\t\t\t\tthis.form.warehouse_type = 'warehouse';\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonComboboxChange(detail) {\r\n\t\t\t\t\tif (!detail || !detail.name) return;\r\n\t\t\t\t\tif (detail.name === 'governorate_id') {\r\n\t\t\t\t\t\tthis.onGovChange(detail.value, detail.item);\r\n\t\t\t\t\t} else if (detail.name === 'city_id') {\r\n\t\t\t\t\t\tthis.onCityChange(detail.value, detail.item);\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonGovChange(govId, item) {\r\n\t\t\t\t\tconst prevGovId = this.form.governorate_id;\r\n\t\t\t\t\tthis.form.governorate_id = govId ? String(govId) : '';\r\n\t\t\t\t\tif (!govId || this._settingEditMode) return;\r\n\t\t\t\t\tif (this.form.city_id && prevGovId === String(govId)) return;\r\n\t\t\t\t\tlet lat = null, lon = null;\r\n\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-govs-coords');\r\n\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';\r\n\t\t\t\t\t\t\tconst coords = JSON.parse(raw);\r\n\t\t\t\t\t\t\tconst pos = coords[String(govId)];\r\n\t\t\t\t\t\t\tif (pos && (pos[0] || pos[1])) {\r\n\t\t\t\t\t\t\t\tlat = pos[0];\r\n\t\t\t\t\t\t\t\tlon = pos[1];\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t} catch(e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse gov coordinates:', e);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (!this.form.city_id && lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {\r\n\t\t\t\t\t\tthis.form.latitude = lat;\r\n\t\t\t\t\t\tthis.form.longitude = lon;\r\n\t\t\t\t\t\tconst picker = document.getElementById('admin-branch-map-picker');\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 11);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.fetchDetailedAddressFromCoords === 'function') {\r\n\t\t\t\t\t\t\twindow.fetchDetailedAddressFromCoords(lat, lon);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonCityChange(cityId, item) {\r\n\t\t\t\t\tthis.form.city_id = cityId ? String(cityId) : '';\r\n\t\t\t\t\tif (!cityId || this._settingEditMode) return;\r\n\t\t\t\t\tlet lat = null, lon = null, parentGovId = null;\r\n\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-cities-coords');\r\n\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';\r\n\t\t\t\t\t\t\tconst coords = JSON.parse(raw);\r\n\t\t\t\t\t\t\tconst pos = coords[String(cityId)];\r\n\t\t\t\t\t\t\tif (pos && (pos[0] || pos[1])) {\r\n\t\t\t\t\t\t\t\tlat = pos[0];\r\n\t\t\t\t\t\t\t\tlon = pos[1];\r\n\t\t\t\t\t\t\t\tif (pos[2]) parentGovId = String(pos[2]);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t} catch (e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse city coordinates:', e);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (parentGovId && (!this.form.governorate_id || this.form.governorate_id !== parentGovId)) {\r\n\t\t\t\t\t\tthis.form.governorate_id = parentGovId;\r\n\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', parentGovId);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {\r\n\t\t\t\t\t\tthis.form.latitude = lat;\r\n\t\t\t\t\t\tthis.form.longitude = lon;\r\n\t\t\t\t\t\tconst picker = document.getElementById('admin-branch-map-picker');\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 14);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.fetchDetailedAddressFromCoords === 'function') {\r\n\t\t\t\t\t\t\twindow.fetchDetailedAddressFromCoords(lat, lon);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tsetEditModeFromElement(btnEl) {\r\n\t\t\t\t\tif (!btnEl) return;\r\n\t\t\t\t\tconst btn = (btnEl.closest && btnEl.closest('[data-branch-data]')) || btnEl;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst raw = btn.getAttribute('data-branch-data');\r\n\t\t\t\t\t\tif (!raw) return;\r\n\t\t\t\t\t\tconst b = JSON.parse(raw);\r\n\t\t\t\t\t\tthis.setEditMode(b);\r\n\t\t\t\t\t} catch (e) {\r\n\t\t\t\t\t\tconsole.error('Failed to parse branch data for editing:', e);\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tsetEditMode(b) {\r\n\t\t\t\t\tif (!b || !b.id) return;\r\n\t\t\t\t\tthis._settingEditMode = true;\r\n\t\t\t\t\tthis.mode = 'edit';\r\n\t\t\t\t\tthis.editId = b.id;\r\n\t\t\t\t\tthis.formAction = '/admin/branches/' + b.id + '/edit';\r\n\t\t\t\t\tconst latVal = (b.latitude !== undefined && b.latitude !== null && b.latitude !== 0) ? Number(b.latitude) : 30.0444;\r\n\t\t\t\t\tconst lonVal = (b.longitude !== undefined && b.longitude !== null && b.longitude !== 0) ? Number(b.longitude) : 31.2357;\r\n\t\t\t\t\tconst targetCityId = (b.city_id && b.city_id !== 0) ? String(b.city_id) : '';\r\n\t\t\t\t\tlet targetGovId = (b.governorate_id && b.governorate_id !== 0) ? String(b.governorate_id) : '';\r\n\t\t\t\t\tif (!targetGovId && targetCityId) {\r\n\t\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-cities-coords');\r\n\t\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\t\tconst coords = JSON.parse(coordsEl.getAttribute('data-coords') || '{}');\r\n\t\t\t\t\t\t\t\tconst pos = coords[String(targetCityId)];\r\n\t\t\t\t\t\t\t\tif (pos && pos[2]) targetGovId = String(pos[2]);\r\n\t\t\t\t\t\t\t} catch (e) {}\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst targetOrgId = (b.organization_id && b.organization_id !== 0) ? String(b.organization_id) : '';\r\n\t\t\t\t\tconst targetOrgType = this.orgTypes[targetOrgId] || '';\r\n\t\t\t\t\tlet wType = b.warehouse_type || '';\r\n\t\t\t\t\tif (targetOrgType === 'customer') {\r\n\t\t\t\t\t\twType = 'pharmacy';\r\n\t\t\t\t\t} else if (targetOrgType === 'vendor' && (!wType || wType === 'pharmacy' || wType === 'branch')) {\r\n\t\t\t\t\t\twType = 'warehouse';\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst capVal = (b.capacity_sqm !== undefined && b.capacity_sqm !== null && b.capacity_sqm !== 0) ? b.capacity_sqm : '';\r\n\t\t\t\t\tconst works = Array.isArray(b.institutional_works) ? b.institutional_works.map(String) : [];\r\n\r\n\t\t\t\t\tObject.assign(this.form, {\r\n\t\t\t\t\t\tid: b.id,\r\n\t\t\t\t\t\torg_id: targetOrgId,\r\n\t\t\t\t\t\tname_ar: b.name_ar || b.name_en || '',\r\n\t\t\t\t\t\tname_en: b.name_en || b.name_ar || '',\r\n\t\t\t\t\t\tcode: b.code || '',\r\n\t\t\t\t\t\twarehouse_type: wType,\r\n\t\t\t\t\t\tcapacity_sqm: capVal,\r\n\t\t\t\t\t\tgovernorate_id: targetGovId,\r\n\t\t\t\t\t\tcity_id: targetCityId,\r\n\t\t\t\t\t\taddress: b.address || '',\r\n\t\t\t\t\t\tphone: b.phone || '',\r\n\t\t\t\t\t\toperating_hours: b.operating_hours || '',\r\n\t\t\t\t\t\tgoogle_maps_url: b.google_maps_url || '',\r\n\t\t\t\t\t\thas_cold_storage: !!b.has_cold_storage,\r\n\t\t\t\t\t\tis_main: !!b.is_main,\r\n\t\t\t\t\t\tstatus: b.status || 'active',\r\n\t\t\t\t\t\tlatitude: latVal,\r\n\t\t\t\t\t\tlongitude: lonVal,\r\n\t\t\t\t\t\tinstitutional_works: works\r\n\t\t\t\t\t});\r\n\t\t\t\t\tconst formEl = document.getElementById('admin-branch-form');\r\n\t\t\t\t\tif (formEl) {\r\n\t\t\t\t\t\tformEl.scrollIntoView({ behavior: 'smooth', block: 'start' });\r\n\t\t\t\t\t}\r\n\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation('#admin-branch-map-picker', latVal, lonVal, 14);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tconst syncCb = () => {\r\n\t\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\t\tif (targetGovId) {\r\n\t\t\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', targetGovId);\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t\twindow.dawaComboboxSet('city_id', targetCityId);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t\tsyncCb();\r\n\t\t\t\t\t\tsetTimeout(syncCb, 50);\r\n\t\t\t\t\t\tsetTimeout(() => {\r\n\t\t\t\t\t\t\tthis._settingEditMode = false;\r\n\t\t\t\t\t\t}, 120);\r\n\t\t\t\t\t});\r\n\t\t\t\t},\r\n\t\t\t\tresetToAddMode() {\r\n\t\t\t\t\tthis.mode = 'add';\r\n\t\t\t\t\tthis.editId = 0;\r\n\t\t\t\t\tthis.formAction = '/admin/branches/new';\r\n\t\t\t\t\tObject.assign(this.form, {\r\n\t\t\t\t\t\tid: 0,\r\n\t\t\t\t\t\torg_id: '',\r\n\t\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\t\tname_en: '',\r\n\t\t\t\t\t\tcode: '',\r\n\t\t\t\t\t\twarehouse_type: 'pharmacy',\r\n\t\t\t\t\t\tcapacity_sqm: '',\r\n\t\t\t\t\t\tgovernorate_id: '',\r\n\t\t\t\t\t\tcity_id: '',\r\n\t\t\t\t\t\taddress: '',\r\n\t\t\t\t\t\tphone: '',\r\n\t\t\t\t\t\toperating_hours: '',\r\n\t\t\t\t\t\tgoogle_maps_url: '',\r\n\t\t\t\t\t\thas_cold_storage: false,\r\n\t\t\t\t\t\tis_main: false,\r\n\t\t\t\t\t\tstatus: 'active',\r\n\t\t\t\t\t\tlatitude: 30.0444,\r\n\t\t\t\t\t\tlongitude: 31.2357,\r\n\t\t\t\t\t\tinstitutional_works: []\r\n\t\t\t\t\t});\r\n\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', '');\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('city_id', '');\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation('#admin-branch-map-picker', 30.0444, 31.2357, 13);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t}\r\n\t\t\t};\r\n\t\t}\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "\">\r\n\t\tfunction adminBranchManager() {\r\n\t\t\treturn {\r\n\t\t\t\t// Runs on the form's submit event: refuses an incomplete branch and\r\n\t\t\t\t// fills the derived fields.\r\n\t\t\t\tvalidateSubmit(e) {\r\n\t\t\t\t\tconst hidden = e.target.querySelector('input[name=city_id]');\r\n\t\t\t\t\tconst cid = this.form.city_id || (hidden ? hidden.value : '');\r\n\t\t\t\t\tif (!this.form.org_id) { e.preventDefault(); alert('يرجى اختيار المنشأة'); return; }\r\n\t\t\t\t\tif (!cid) { e.preventDefault(); alert('يرجى اختيار المدينة أو المحافظة'); return; }\r\n\t\t\t\t\tthis.form.city_id = cid;\r\n\t\t\t\t\tif (this.isCustomerSelected()) { this.form.warehouse_type = 'pharmacy'; }\r\n\t\t\t\t},\r\n\t\t\t\tmode: 'add',\r\n\t\t\t\teditId: 0,\r\n\t\t\t\tformAction: '/admin/branches/new',\r\n\t\t\t\t_settingEditMode: false,\r\n\t\t\t\torgTypes: {},\r\n\t\t\t\tform: {\r\n\t\t\t\t\tid: 0,\r\n\t\t\t\t\torg_id: '',\r\n\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\tname_en: '',\r\n\t\t\t\t\tcode: '',\r\n\t\t\t\t\twarehouse_type: 'pharmacy',\r\n\t\t\t\t\tcapacity_sqm: '',\r\n\t\t\t\t\tgovernorate_id: '',\r\n\t\t\t\t\tcity_id: '',\r\n\t\t\t\t\taddress: '',\r\n\t\t\t\t\tphone: '',\r\n\t\t\t\t\toperating_hours: '',\r\n\t\t\t\t\tgoogle_maps_url: '',\r\n\t\t\t\t\thas_cold_storage: false,\r\n\t\t\t\t\tis_main: false,\r\n\t\t\t\t\tstatus: 'active',\r\n\t\t\t\t\tlatitude: 30.0444,\r\n\t\t\t\t\tlongitude: 31.2357,\r\n\t\t\t\t\tinstitutional_works: []\r\n\t\t\t\t},\r\n\t\t\t\tinit() {\r\n\t\t\t\t\tconst otEl = document.getElementById('admin-branch-org-types');\r\n\t\t\t\t\tif (otEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = otEl.getAttribute('data-org-types') || otEl.textContent || '{}';\r\n\t\t\t\t\t\t\tthis.orgTypes = JSON.parse(raw);\r\n\t\t\t\t\t\t} catch(e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse org types:', e);\r\n\t\t\t\t\t\t\tthis.orgTypes = {};\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\r\n\t\t\t\t\tconst editParam = urlParams.get('edit');\r\n\t\t\t\t\tif (editParam) {\r\n\t\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\t\tconst btn = document.querySelector(`[data-edit-branch-btn=\"${editParam}\"]`);\r\n\t\t\t\t\t\t\tif (btn) {\r\n\t\t\t\t\t\t\t\tthis.setEditModeFromElement(btn);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t});\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tisVendorSelected() {\r\n\t\t\t\t\tif (!this.form.org_id) return false;\r\n\t\t\t\t\treturn this.orgTypes[String(this.form.org_id)] === 'vendor';\r\n\t\t\t\t},\r\n\t\t\t\tisCustomerSelected() {\r\n\t\t\t\t\tif (!this.form.org_id) return false;\r\n\t\t\t\t\treturn this.orgTypes[String(this.form.org_id)] === 'customer';\r\n\t\t\t\t},\r\n\t\t\t\tonOrgChange(orgId) {\r\n\t\t\t\t\tthis.form.org_id = orgId ? String(orgId) : '';\r\n\t\t\t\t\tif (this.isCustomerSelected()) {\r\n\t\t\t\t\t\tthis.form.warehouse_type = 'pharmacy';\r\n\t\t\t\t\t\tthis.form.capacity_sqm = '';\r\n\t\t\t\t\t} else if (this.isVendorSelected()) {\r\n\t\t\t\t\t\tif (!this.form.warehouse_type || this.form.warehouse_type === 'pharmacy' || this.form.warehouse_type === 'branch') {\r\n\t\t\t\t\t\t\tthis.form.warehouse_type = 'warehouse';\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonComboboxChange(detail) {\r\n\t\t\t\t\tif (!detail || !detail.name) return;\r\n\t\t\t\t\tif (detail.name === 'governorate_id') {\r\n\t\t\t\t\t\tthis.onGovChange(detail.value, detail.item);\r\n\t\t\t\t\t} else if (detail.name === 'city_id') {\r\n\t\t\t\t\t\tthis.onCityChange(detail.value, detail.item);\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonGovChange(govId, item) {\r\n\t\t\t\t\tconst prevGovId = this.form.governorate_id;\r\n\t\t\t\t\tthis.form.governorate_id = govId ? String(govId) : '';\r\n\t\t\t\t\tif (!govId || this._settingEditMode) return;\r\n\t\t\t\t\tif (this.form.city_id && prevGovId === String(govId)) return;\r\n\t\t\t\t\tlet lat = null, lon = null;\r\n\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-govs-coords');\r\n\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';\r\n\t\t\t\t\t\t\tconst coords = JSON.parse(raw);\r\n\t\t\t\t\t\t\tconst pos = coords[String(govId)];\r\n\t\t\t\t\t\t\tif (pos && (pos[0] || pos[1])) {\r\n\t\t\t\t\t\t\t\tlat = pos[0];\r\n\t\t\t\t\t\t\t\tlon = pos[1];\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t} catch(e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse gov coordinates:', e);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (!this.form.city_id && lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {\r\n\t\t\t\t\t\tthis.form.latitude = lat;\r\n\t\t\t\t\t\tthis.form.longitude = lon;\r\n\t\t\t\t\t\tconst picker = document.getElementById('admin-branch-map-picker');\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 11);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.fetchDetailedAddressFromCoords === 'function') {\r\n\t\t\t\t\t\t\twindow.fetchDetailedAddressFromCoords(lat, lon);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tonCityChange(cityId, item) {\r\n\t\t\t\t\tthis.form.city_id = cityId ? String(cityId) : '';\r\n\t\t\t\t\tif (!cityId || this._settingEditMode) return;\r\n\t\t\t\t\tlet lat = null, lon = null, parentGovId = null;\r\n\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-cities-coords');\r\n\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\tconst raw = coordsEl.getAttribute('data-coords') || coordsEl.textContent || '{}';\r\n\t\t\t\t\t\t\tconst coords = JSON.parse(raw);\r\n\t\t\t\t\t\t\tconst pos = coords[String(cityId)];\r\n\t\t\t\t\t\t\tif (pos && (pos[0] || pos[1])) {\r\n\t\t\t\t\t\t\t\tlat = pos[0];\r\n\t\t\t\t\t\t\t\tlon = pos[1];\r\n\t\t\t\t\t\t\t\tif (pos[2]) parentGovId = String(pos[2]);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t} catch (e) {\r\n\t\t\t\t\t\t\tconsole.error('Failed to parse city coordinates:', e);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (parentGovId && (!this.form.governorate_id || this.form.governorate_id !== parentGovId)) {\r\n\t\t\t\t\t\tthis.form.governorate_id = parentGovId;\r\n\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', parentGovId);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tif (lat !== null && lon !== null && (lat !== 0 || lon !== 0)) {\r\n\t\t\t\t\t\tthis.form.latitude = lat;\r\n\t\t\t\t\t\tthis.form.longitude = lon;\r\n\t\t\t\t\t\tconst picker = document.getElementById('admin-branch-map-picker');\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation(picker || '#admin-branch-map-picker', lat, lon, 14);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.fetchDetailedAddressFromCoords === 'function') {\r\n\t\t\t\t\t\t\twindow.fetchDetailedAddressFromCoords(lat, lon);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tsetEditModeFromElement(btnEl) {\r\n\t\t\t\t\tif (!btnEl) return;\r\n\t\t\t\t\tconst btn = (btnEl.closest && btnEl.closest('[data-branch-data]')) || btnEl;\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tconst raw = btn.getAttribute('data-branch-data');\r\n\t\t\t\t\t\tif (!raw) return;\r\n\t\t\t\t\t\tconst b = JSON.parse(raw);\r\n\t\t\t\t\t\tthis.setEditMode(b);\r\n\t\t\t\t\t} catch (e) {\r\n\t\t\t\t\t\tconsole.error('Failed to parse branch data for editing:', e);\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tsetEditMode(b) {\r\n\t\t\t\t\tif (!b || !b.id) return;\r\n\t\t\t\t\tthis._settingEditMode = true;\r\n\t\t\t\t\tthis.mode = 'edit';\r\n\t\t\t\t\tthis.editId = b.id;\r\n\t\t\t\t\tthis.formAction = '/admin/branches/' + b.id + '/edit';\r\n\t\t\t\t\tconst latVal = (b.latitude !== undefined && b.latitude !== null && b.latitude !== 0) ? Number(b.latitude) : 30.0444;\r\n\t\t\t\t\tconst lonVal = (b.longitude !== undefined && b.longitude !== null && b.longitude !== 0) ? Number(b.longitude) : 31.2357;\r\n\t\t\t\t\tconst targetCityId = (b.city_id && b.city_id !== 0) ? String(b.city_id) : '';\r\n\t\t\t\t\tlet targetGovId = (b.governorate_id && b.governorate_id !== 0) ? String(b.governorate_id) : '';\r\n\t\t\t\t\tif (!targetGovId && targetCityId) {\r\n\t\t\t\t\t\tconst coordsEl = document.getElementById('admin-branch-cities-coords');\r\n\t\t\t\t\t\tif (coordsEl) {\r\n\t\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\t\tconst coords = JSON.parse(coordsEl.getAttribute('data-coords') || '{}');\r\n\t\t\t\t\t\t\t\tconst pos = coords[String(targetCityId)];\r\n\t\t\t\t\t\t\t\tif (pos && pos[2]) targetGovId = String(pos[2]);\r\n\t\t\t\t\t\t\t} catch (e) {}\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst targetOrgId = (b.organization_id && b.organization_id !== 0) ? String(b.organization_id) : '';\r\n\t\t\t\t\tconst targetOrgType = this.orgTypes[targetOrgId] || '';\r\n\t\t\t\t\tlet wType = b.warehouse_type || '';\r\n\t\t\t\t\tif (targetOrgType === 'customer') {\r\n\t\t\t\t\t\twType = 'pharmacy';\r\n\t\t\t\t\t} else if (targetOrgType === 'vendor' && (!wType || wType === 'pharmacy' || wType === 'branch')) {\r\n\t\t\t\t\t\twType = 'warehouse';\r\n\t\t\t\t\t}\r\n\t\t\t\t\tconst capVal = (b.capacity_sqm !== undefined && b.capacity_sqm !== null && b.capacity_sqm !== 0) ? b.capacity_sqm : '';\r\n\t\t\t\t\tconst works = Array.isArray(b.institutional_works) ? b.institutional_works.map(String) : [];\r\n\r\n\t\t\t\t\tObject.assign(this.form, {\r\n\t\t\t\t\t\tid: b.id,\r\n\t\t\t\t\t\torg_id: targetOrgId,\r\n\t\t\t\t\t\tname_ar: b.name_ar || b.name_en || '',\r\n\t\t\t\t\t\tname_en: b.name_en || b.name_ar || '',\r\n\t\t\t\t\t\tcode: b.code || '',\r\n\t\t\t\t\t\twarehouse_type: wType,\r\n\t\t\t\t\t\tcapacity_sqm: capVal,\r\n\t\t\t\t\t\tgovernorate_id: targetGovId,\r\n\t\t\t\t\t\tcity_id: targetCityId,\r\n\t\t\t\t\t\taddress: b.address || '',\r\n\t\t\t\t\t\tphone: b.phone || '',\r\n\t\t\t\t\t\toperating_hours: b.operating_hours || '',\r\n\t\t\t\t\t\tgoogle_maps_url: b.google_maps_url || '',\r\n\t\t\t\t\t\thas_cold_storage: !!b.has_cold_storage,\r\n\t\t\t\t\t\tis_main: !!b.is_main,\r\n\t\t\t\t\t\tstatus: b.status || 'active',\r\n\t\t\t\t\t\tlatitude: latVal,\r\n\t\t\t\t\t\tlongitude: lonVal,\r\n\t\t\t\t\t\tinstitutional_works: works\r\n\t\t\t\t\t});\r\n\t\t\t\t\tconst formEl = document.getElementById('admin-branch-form');\r\n\t\t\t\t\tif (formEl) {\r\n\t\t\t\t\t\tformEl.scrollIntoView({ behavior: 'smooth', block: 'start' });\r\n\t\t\t\t\t}\r\n\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation('#admin-branch-map-picker', latVal, lonVal, 14);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tconst syncCb = () => {\r\n\t\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\t\tif (targetGovId) {\r\n\t\t\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', targetGovId);\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t\twindow.dawaComboboxSet('city_id', targetCityId);\r\n\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t\tsyncCb();\r\n\t\t\t\t\t\tsetTimeout(syncCb, 50);\r\n\t\t\t\t\t\tsetTimeout(() => {\r\n\t\t\t\t\t\t\tthis._settingEditMode = false;\r\n\t\t\t\t\t\t}, 120);\r\n\t\t\t\t\t});\r\n\t\t\t\t},\r\n\t\t\t\tresetToAddMode() {\r\n\t\t\t\t\tthis.mode = 'add';\r\n\t\t\t\t\tthis.editId = 0;\r\n\t\t\t\t\tthis.formAction = '/admin/branches/new';\r\n\t\t\t\t\tObject.assign(this.form, {\r\n\t\t\t\t\t\tid: 0,\r\n\t\t\t\t\t\torg_id: '',\r\n\t\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\t\tname_en: '',\r\n\t\t\t\t\t\tcode: '',\r\n\t\t\t\t\t\twarehouse_type: 'pharmacy',\r\n\t\t\t\t\t\tcapacity_sqm: '',\r\n\t\t\t\t\t\tgovernorate_id: '',\r\n\t\t\t\t\t\tcity_id: '',\r\n\t\t\t\t\t\taddress: '',\r\n\t\t\t\t\t\tphone: '',\r\n\t\t\t\t\t\toperating_hours: '',\r\n\t\t\t\t\t\tgoogle_maps_url: '',\r\n\t\t\t\t\t\thas_cold_storage: false,\r\n\t\t\t\t\t\tis_main: false,\r\n\t\t\t\t\t\tstatus: 'active',\r\n\t\t\t\t\t\tlatitude: 30.0444,\r\n\t\t\t\t\t\tlongitude: 31.2357,\r\n\t\t\t\t\t\tinstitutional_works: []\r\n\t\t\t\t\t});\r\n\t\t\t\t\tthis.$nextTick(() => {\r\n\t\t\t\t\t\tif (typeof window.dawaComboboxSet === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('governorate_id', '');\r\n\t\t\t\t\t\t\twindow.dawaComboboxSet('city_id', '');\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t\tif (typeof window.dawaSetMapLocation === 'function') {\r\n\t\t\t\t\t\t\twindow.dawaSetMapLocation('#admin-branch-map-picker', 30.0444, 31.2357, 13);\r\n\t\t\t\t\t\t}\r\n\t\t\t\t\t});\r\n\t\t\t\t}\r\n\t\t\t};\r\n\t\t}\r\n\t\t// The CSP build of Alpine only sees registered components.\r\n\t\tdawaData('adminBranchManager', adminBranchManager);\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1223,7 +1223,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var47 string
 			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(b.Name.Get("ar"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 986, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 992, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
 			if templ_7745c5c3_Err != nil {
@@ -1236,7 +1236,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(b.Code)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 988, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 994, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -1249,7 +1249,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var49 string
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", b.OrganizationID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 988, Col: 126}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 994, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -1262,7 +1262,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var50 string
 			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(b.Address)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 997, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1003, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
@@ -1275,7 +1275,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var51 string
 			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(b.Phone)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1001, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1007, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
@@ -1288,7 +1288,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 			var templ_7745c5c3_Var52 string
 			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(b.OperatingHours)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1005, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1011, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 			if templ_7745c5c3_Err != nil {
@@ -1317,7 +1317,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var53 string
 						templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(work.Icon)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1021, Col: 21}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1027, Col: 21}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 						if templ_7745c5c3_Err != nil {
@@ -1332,7 +1332,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var54 string
 						templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1024, Col: 17}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1030, Col: 17}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 						if templ_7745c5c3_Err != nil {
@@ -1342,7 +1342,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var55 string
 						templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(work.Title["en"])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1026, Col: 28}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1032, Col: 28}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 						if templ_7745c5c3_Err != nil {
@@ -1377,7 +1377,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var56 string
 						templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(rw.Icon)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1041, Col: 20}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1047, Col: 20}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 						if templ_7745c5c3_Err != nil {
@@ -1392,7 +1392,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var57 string
 						templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1044, Col: 18}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1050, Col: 18}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 						if templ_7745c5c3_Err != nil {
@@ -1402,7 +1402,7 @@ func AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWork
 						var templ_7745c5c3_Var58 string
 						templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(rw.Title["en"])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1046, Col: 27}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_branches.templ`, Line: 1052, Col: 27}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 						if templ_7745c5c3_Err != nil {

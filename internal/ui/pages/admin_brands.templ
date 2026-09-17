@@ -39,46 +39,52 @@ func buildAdminBrandsPageURL(page, limit int, q, status string) string {
 // AdminBrandsPage renders the pharmaceutical brands / manufacturers management console.
 templ AdminBrandsPage(brands []BrandViewItem, totalCount, currentPage, pageSize int, searchQuery, statusFilter, lang, dir string) {
 	@layouts.AdminShell("دليل الشركات المصنعة والماركات", "brands", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminBrandsState', function () {
+				return {
+					isCreateModalOpen: false,
+					isEditModalOpen: false,
+					isProductsModalOpen: false,
+					selectedBrand: { id: 0, name_ar: '', name_en: '', count: 0 },
+					editData: {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						description_ar: '',
+						description_en: '',
+						image: '',
+						status: 'active'
+					},
+					openEdit(id, nameAr, nameEn, descAr, descEn, img, status) {
+						this.editData = {
+							id: id,
+							name_ar: nameAr || '',
+							name_en: nameEn || '',
+							description_ar: descAr || '',
+							description_en: descEn || '',
+							image: img || '',
+							status: status || 'active'
+						};
+						const modal = document.getElementById('brand-edit-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openProductsModal(id, nameAr, nameEn, count) {
+						this.selectedBrand = {
+							id: id,
+							name_ar: nameAr || '',
+							name_en: nameEn || '',
+							count: count || 0
+						};
+						const modal = document.getElementById('brand-products-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				isCreateModalOpen: false,
-				isEditModalOpen: false,
-				isProductsModalOpen: false,
-				selectedBrand: { id: 0, name_ar: '', name_en: '', count: 0 },
-				editData: {
-					id: 0,
-					name_ar: '',
-					name_en: '',
-					description_ar: '',
-					description_en: '',
-					image: '',
-					status: 'active'
-				},
-				openEdit(id, nameAr, nameEn, descAr, descEn, img, status) {
-					this.editData = {
-						id: id,
-						name_ar: nameAr || '',
-						name_en: nameEn || '',
-						description_ar: descAr || '',
-						description_en: descEn || '',
-						image: img || '',
-						status: status || 'active'
-					};
-					const modal = document.getElementById('brand-edit-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openProductsModal(id, nameAr, nameEn, count) {
-					this.selectedBrand = {
-						id: id,
-						name_ar: nameAr || '',
-						name_en: nameEn || '',
-						count: count || 0
-					};
-					const modal = document.getElementById('brand-products-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminBrandsState"
 		>
 			<!-- Page Header -->
 			<div class="glass-panel p-6 mb-6">
@@ -94,7 +100,7 @@ templ AdminBrandsPage(brands []BrandViewItem, totalCount, currentPage, pageSize 
 					</div>
 
 					<div class="d-flex items-center gap-2">
-						<button type="button" @click="document.getElementById('brand-create-modal').showModal()" class="btn btn-primary font-bold text-xs px-3 py-2">
+						<button type="button" data-modal-open="brand-create-modal" class="btn btn-primary font-bold text-xs px-3 py-2">
 							@components.IconPlus("icon-xs")
 							<span>إضافة شركة مصنعة جديدة +</span>
 						</button>

@@ -50,313 +50,326 @@ func AdminDevelopersSEOTab(seo *AdminDevelopersSEOValues, lang, dir string) temp
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"{\n\t\t\tseoSubTab: 'routes',\n\t\t\tmodalOpen: false,\n\t\t\teditForm: {\n\t\t\t\tid: 0,\n\t\t\t\troute_pattern: '',\n\t\t\t\ttitle_ar: '',\n\t\t\t\ttitle_en: '',\n\t\t\t\tmeta_desc_ar: '',\n\t\t\t\tmeta_desc_en: '',\n\t\t\t\tcanonical_url: '',\n\t\t\t\trobots_directives: 'index, follow',\n\t\t\t\tog_title: '',\n\t\t\t\tog_desc: '',\n\t\t\t\tog_image: '/static/img/og-default.jpg',\n\t\t\t\ttwitter_card: 'summary_large_image',\n\t\t\t\tkeywords: '',\n\t\t\t\tis_public: true\n\t\t\t},\n\t\t\topenEdit(p) {\n\t\t\t\tthis.editForm = {\n\t\t\t\t\tid: p.id,\n\t\t\t\t\troute_pattern: p.route_pattern,\n\t\t\t\t\ttitle_ar: p.title_ar,\n\t\t\t\t\ttitle_en: p.title_en,\n\t\t\t\t\tmeta_desc_ar: p.meta_desc_ar,\n\t\t\t\t\tmeta_desc_en: p.meta_desc_en,\n\t\t\t\t\tcanonical_url: p.canonical_url,\n\t\t\t\t\trobots_directives: p.robots_directives || 'index, follow',\n\t\t\t\t\tog_title: p.og_title,\n\t\t\t\t\tog_desc: p.og_desc,\n\t\t\t\t\tog_image: p.og_image || '/static/img/og-default.jpg',\n\t\t\t\t\ttwitter_card: p.twitter_card || 'summary_large_image',\n\t\t\t\t\tkeywords: (p.keywords || []).join(', '),\n\t\t\t\t\tis_public: p.is_public\n\t\t\t\t};\n\t\t\t\tthis.modalOpen = true;\n\t\t\t}\n\t\t}\"><!-- Notice if present -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script nonce=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 25, Col: 36}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\tdawaData('adminDevelopersSeoState', function () {\n\t\t\treturn {\n\t\t\t\tseoSubTab: 'routes',\n\t\t\t\tmodalOpen: false,\n\t\t\t\teditForm: {\n\t\t\t\t\tid: 0,\n\t\t\t\t\troute_pattern: '',\n\t\t\t\t\ttitle_ar: '',\n\t\t\t\t\ttitle_en: '',\n\t\t\t\t\tmeta_desc_ar: '',\n\t\t\t\t\tmeta_desc_en: '',\n\t\t\t\t\tcanonical_url: '',\n\t\t\t\t\trobots_directives: 'index, follow',\n\t\t\t\t\tog_title: '',\n\t\t\t\t\tog_desc: '',\n\t\t\t\t\tog_image: '/static/img/og-default.jpg',\n\t\t\t\t\ttwitter_card: 'summary_large_image',\n\t\t\t\t\tkeywords: '',\n\t\t\t\t\tis_public: true\n\t\t\t\t},\n\t\t\t\topenEdit(p) {\n\t\t\t\t\tthis.editForm = {\n\t\t\t\t\t\tid: p.id,\n\t\t\t\t\t\troute_pattern: p.route_pattern,\n\t\t\t\t\t\ttitle_ar: p.title_ar,\n\t\t\t\t\t\ttitle_en: p.title_en,\n\t\t\t\t\t\tmeta_desc_ar: p.meta_desc_ar,\n\t\t\t\t\t\tmeta_desc_en: p.meta_desc_en,\n\t\t\t\t\t\tcanonical_url: p.canonical_url,\n\t\t\t\t\t\trobots_directives: p.robots_directives || 'index, follow',\n\t\t\t\t\t\tog_title: p.og_title,\n\t\t\t\t\t\tog_desc: p.og_desc,\n\t\t\t\t\t\tog_image: p.og_image || '/static/img/og-default.jpg',\n\t\t\t\t\t\ttwitter_card: p.twitter_card || 'summary_large_image',\n\t\t\t\t\t\tkeywords: (p.keywords || []).join(', '),\n\t\t\t\t\t\tis_public: p.is_public\n\t\t\t\t\t};\n\t\t\t\t\tthis.modalOpen = true;\n\t\t\t\t}\n\t\t\t};\n\t\t});\n\t</script><div x-data=\"adminDevelopersSeoState\"><!-- Notice if present -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if seo.NoticeMsg != "" {
-			var templ_7745c5c3_Var2 = []any{"alert rounded-2xl mb-6 font-bold",
+			var templ_7745c5c3_Var3 = []any{"alert rounded-2xl mb-6 font-bold",
 				templ.KV("alert-success", seo.NoticeType == "success"),
 				templ.KV("alert-danger", seo.NoticeType == "error")}
-			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
+			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var3...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div class=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var2).String())
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 1, Col: 0}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(seo.NoticeMsg)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var3).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 72, Col: 19}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 1, Col: 0}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div>")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var5 string
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(seo.NoticeMsg)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 78, Col: 19}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!-- Subtabs Bar --><div class=\"d-flex items-center justify-between border-b border-default pb-3 mb-6\"><div class=\"d-flex items-center gap-2\"><button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'routes' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'routes'\">صفحات ومسارات النظام (")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", seo.TotalPages))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 85, Col: 80}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, ")</button> <button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'robots' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'robots'\">ملف الروبوتات (Robots.txt)</button> <button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'audit' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'audit'\">تدقيق الجودة ومحركات البحث</button></div><div class=\"d-flex items-center gap-2\"><a href=\"/sitemap.xml\" target=\"_blank\" class=\"btn btn-outline btn-xs rounded-xl font-bold\">عرض Sitemap.xml ↗</a> <a href=\"/llms.txt\" target=\"_blank\" class=\"btn btn-outline btn-xs rounded-xl font-bold\">عرض LLMs.txt ↗</a></div></div><!-- SECTION 1: Routes & SEO Metadata Table --><div x-show=\"seoSubTab === 'routes'\"><!-- Search & Filter --><form method=\"GET\" action=\"/admin/developers\" class=\"d-flex flex-wrap items-center gap-3 mb-4\"><input type=\"hidden\" name=\"tab\" value=\"seo\"><div class=\"flex-grow max-w-md\"><input type=\"text\" name=\"seo_q\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<!-- Subtabs Bar --><div class=\"d-flex items-center justify-between border-b border-default pb-3 mb-6\"><div class=\"d-flex items-center gap-2\"><button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'routes' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'routes'\">صفحات ومسارات النظام (")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(seo.SearchQuery)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", seo.TotalPages))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 123, Col: 29}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 91, Col: 80}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" placeholder=\"بحث بالمسار أو العنوان...\" class=\"form-control text-xs rounded-xl w-full border-default\"></div><button type=\"submit\" class=\"btn btn-accent btn-sm rounded-xl font-bold px-4\">بحث</button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, ")</button> <button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'robots' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'robots'\">ملف الروبوتات (Robots.txt)</button> <button type=\"button\" class=\"btn btn-sm rounded-xl font-bold px-4 py-2\" :class=\"seoSubTab === 'audit' ? 'btn-accent' : 'btn-ghost'\" @click=\"seoSubTab = 'audit'\">تدقيق الجودة ومحركات البحث</button></div><div class=\"d-flex items-center gap-2\"><a href=\"/sitemap.xml\" target=\"_blank\" class=\"btn btn-outline btn-xs rounded-xl font-bold\">عرض Sitemap.xml ↗</a> <a href=\"/llms.txt\" target=\"_blank\" class=\"btn btn-outline btn-xs rounded-xl font-bold\">عرض LLMs.txt ↗</a></div></div><!-- SECTION 1: Routes & SEO Metadata Table --><div x-show=\"seoSubTab === 'routes'\"><!-- Search & Filter --><form method=\"GET\" action=\"/admin/developers\" class=\"d-flex flex-wrap items-center gap-3 mb-4\"><input type=\"hidden\" name=\"tab\" value=\"seo\"><div class=\"flex-grow max-w-md\"><input type=\"text\" name=\"seo_q\" value=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(seo.SearchQuery)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 129, Col: 29}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" placeholder=\"بحث بالمسار أو العنوان...\" class=\"form-control text-xs rounded-xl w-full border-default\"></div><button type=\"submit\" class=\"btn btn-accent btn-sm rounded-xl font-bold px-4\">بحث</button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		if seo.SearchQuery != "" {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<a href=\"/admin/developers?tab=seo\" class=\"btn btn-ghost btn-sm rounded-xl text-xs\">إلغاء الفلتر</a>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<a href=\"/admin/developers?tab=seo\" class=\"btn btn-ghost btn-sm rounded-xl text-xs\">إلغاء الفلتر</a>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</form><!-- Routes Table --><div class=\"glass-panel p-0 rounded-2xl border border-default bg-surface-raised shadow-xs overflow-hidden\"><div class=\"table-responsive\"><table class=\"table table-hover text-xs w-full text-start\"><thead class=\"bg-surface border-b border-default font-bold text-secondary\"><tr><th class=\"p-3\">المسار (Route Pattern)</th><th class=\"p-3\">العنوان (Title)</th><th class=\"p-3\">الوصف (Meta Description)</th><th class=\"p-3 text-center\">الروبوتات</th><th class=\"p-3 text-center\">عام</th><th class=\"p-3 text-end\">إجراء</th></tr></thead> <tbody class=\"divide-y divide-default\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</form><!-- Routes Table --><div class=\"glass-panel p-0 rounded-2xl border border-default bg-surface-raised shadow-xs overflow-hidden\"><div class=\"table-responsive\"><table class=\"table table-hover text-xs w-full text-start\"><thead class=\"bg-surface border-b border-default font-bold text-secondary\"><tr><th class=\"p-3\">المسار (Route Pattern)</th><th class=\"p-3\">العنوان (Title)</th><th class=\"p-3\">الوصف (Meta Description)</th><th class=\"p-3 text-center\">الروبوتات</th><th class=\"p-3 text-center\">عام</th><th class=\"p-3 text-end\">إجراء</th></tr></thead> <tbody class=\"divide-y divide-default\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		for _, p := range seo.Pages {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<tr><td class=\"p-3 font-mono font-bold text-accent\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<tr><td class=\"p-3 font-mono font-bold text-accent\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(p.RoutePattern)
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.RoutePattern)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 155, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 161, Col: 73}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"p-3 font-bold text-surface-fg\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</td><td class=\"p-3 font-bold text-surface-fg\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if p.TitleAR != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleAR)
+				var templ_7745c5c3_Var9 string
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleAR)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 158, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 164, Col: 27}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if p.TitleEN != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"text-2xs text-secondary font-sans font-normal\" dir=\"ltr\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"text-2xs text-secondary font-sans font-normal\" dir=\"ltr\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var9 string
-					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleEN)
+					var templ_7745c5c3_Var10 string
+					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleEN)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 160, Col: 92}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 166, Col: 92}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			} else if p.TitleEN != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span class=\"font-sans\" dir=\"ltr\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span class=\"font-sans\" dir=\"ltr\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleEN)
+				var templ_7745c5c3_Var11 string
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(p.TitleEN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 163, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 169, Col: 56}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"text-secondary italic\">غير محدد</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"text-secondary italic\">غير محدد</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</td><td class=\"p-3 text-secondary truncate max-w-[240px]\" title=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</td><td class=\"p-3 text-secondary truncate max-w-[240px]\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.MetaDescAR)
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.MetaDescAR)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 168, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 174, Col: 83}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if p.MetaDescAR != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "<div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var12 string
-				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescAR)
+				var templ_7745c5c3_Var13 string
+				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescAR)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 170, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 176, Col: 30}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				if p.MetaDescEN != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<div class=\"text-2xs text-secondary/70 font-sans truncate\" dir=\"ltr\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<div class=\"text-2xs text-secondary/70 font-sans truncate\" dir=\"ltr\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var13 string
-					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescEN)
+					var templ_7745c5c3_Var14 string
+					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescEN)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 172, Col: 95}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 178, Col: 95}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 				}
 			} else if p.MetaDescEN != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<span class=\"font-sans text-2xs\" dir=\"ltr\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span class=\"font-sans text-2xs\" dir=\"ltr\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				var templ_7745c5c3_Var14 string
-				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescEN)
+				var templ_7745c5c3_Var15 string
+				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(p.MetaDescEN)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 175, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 181, Col: 68}
 				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<span class=\"text-secondary/60\">بدون وصف</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<span class=\"text-secondary/60\">بدون وصف</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</td><td class=\"p-3 text-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</td><td class=\"p-3 text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if strings.Contains(p.RobotsDirectives, "noindex") {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<span class=\"badge badge-warning text-xs px-2 py-0.5 rounded-full\">noindex</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"badge badge-warning text-xs px-2 py-0.5 rounded-full\">noindex</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "<span class=\"badge badge-success text-xs px-2 py-0.5 rounded-full\">index</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span class=\"badge badge-success text-xs px-2 py-0.5 rounded-full\">index</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</td><td class=\"p-3 text-center\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</td><td class=\"p-3 text-center\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if p.IsPublic {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span class=\"text-emerald-500 font-bold\">✓</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"text-emerald-500 font-bold\">✓</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "<span class=\"text-secondary\">—</span>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "<span class=\"text-secondary\">—</span>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</td><td class=\"p-3 text-end\"><button type=\"button\" class=\"btn btn-outline btn-xs rounded-xl font-bold\" @click=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</td><td class=\"p-3 text-end\"><button type=\"button\" class=\"btn btn-outline btn-xs rounded-xl font-bold\" @click=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openEdit({id: %d, route_pattern: '%s', title_ar: '%s', title_en: '%s', meta_desc_ar: '%s', meta_desc_en: '%s', canonical_url: '%s', robots_directives: '%s', og_title: '%s', og_desc: '%s', og_image: '%s', twitter_card: '%s', keywords: %s, is_public: %t})",
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openEdit({id: %d, route_pattern: '%s', title_ar: '%s', title_en: '%s', meta_desc_ar: '%s', meta_desc_en: '%s', canonical_url: '%s', robots_directives: '%s', og_title: '%s', og_desc: '%s', og_image: '%s', twitter_card: '%s', keywords: %s, is_public: %t})",
 				p.ID, p.RoutePattern, templ.EscapeString(p.TitleAR), templ.EscapeString(p.TitleEN),
 				templ.EscapeString(p.MetaDescAR), templ.EscapeString(p.MetaDescEN),
 				p.CanonicalURL, p.RobotsDirectives, templ.EscapeString(p.OGTitle),
 				templ.EscapeString(p.OGDesc), p.OGImage, p.TwitterCard,
 				jsonArray(p.Keywords), p.IsPublic))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 203, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 209, Col: 46}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "\">تعديل والمعاينة</button></td></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "\">تعديل والمعاينة</button></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "</tbody></table></div></div></div><!-- SECTION 2: Robots.txt Editor --><div x-show=\"seoSubTab === 'robots'\" style=\"display:none;\"><div class=\"glass-panel p-6 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"border-b border-default pb-4 mb-4\"><h3 class=\"text-base font-bold text-surface-fg\">تعديل ملف توجيه الروبوتات (robots.txt)</h3><p class=\"text-xs text-secondary mt-1\">يتحكم في سلوك محركات البحث والذكاء الاصطناعي مع الحفاظ على سياسة حماية بيانات الأسعار ومنع كاشطات التدريب.</p></div><form method=\"POST\" action=\"/admin/developers/seo/robots\"><div class=\"mb-4\"><textarea name=\"robots_txt\" rows=\"16\" class=\"form-control font-mono text-xs rounded-xl border-default bg-surface p-3 leading-relaxed\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</tbody></table></div></div></div><!-- SECTION 2: Robots.txt Editor --><div x-show=\"seoSubTab === 'robots'\" x-cloak><div class=\"glass-panel p-6 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"border-b border-default pb-4 mb-4\"><h3 class=\"text-base font-bold text-surface-fg\">تعديل ملف توجيه الروبوتات (robots.txt)</h3><p class=\"text-xs text-secondary mt-1\">يتحكم في سلوك محركات البحث والذكاء الاصطناعي مع الحفاظ على سياسة حماية بيانات الأسعار ومنع كاشطات التدريب.</p></div><form method=\"POST\" action=\"/admin/developers/seo/robots\"><div class=\"mb-4\"><textarea name=\"robots_txt\" rows=\"16\" class=\"form-control font-mono text-xs rounded-xl border-default bg-surface p-3 leading-relaxed\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(seo.RobotsTxt)
+		var templ_7745c5c3_Var17 string
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(seo.RobotsTxt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 231, Col: 22}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_seo.templ`, Line: 237, Col: 22}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "</textarea></div><div class=\"d-flex items-center justify-between\"><span class=\"text-xs text-secondary\">يتم تحديث التوجيهات فوراً على الرابط <code>/robots.txt</code>.</span> <button type=\"submit\" class=\"btn btn-accent btn-sm rounded-xl font-bold px-6\">حفظ التغييرات</button></div></form></div></div><!-- SECTION 3: Quality & Discoverability Audit --><div x-show=\"seoSubTab === 'audit'\" style=\"display:none;\"><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6\"><!-- Card 1: Arabic Language & RTL --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">اللغة والاتجاه (Language & Direction)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">سليم 100%</span></div><div class=\"text-base font-black text-surface-fg\">lang=\"ar\" & dir=\"rtl\"</div><p class=\"text-xs text-secondary mt-1\">مضبوط في غلاف العرض العام لكافة الصفحات لدعم الفهرسة العربية الصحيحة.</p></div><!-- Card 2: Canonical URL Consistency --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">الروابط الأساسية (Canonicals)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">معتمد</span></div><div class=\"text-base font-black text-surface-fg\">تجنب تكرار المحتوى</div><p class=\"text-xs text-secondary mt-1\">ربط مسارات التصفية والفهرسة بالروابط الأصلية لتفادي ازدواجية النتائج.</p></div><!-- Card 3: Image Alt Coverage --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">النصوص البديلة للصور (Alt Tags)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">98%</span></div><div class=\"text-base font-black text-surface-fg\">تغطية صور المنتجات</div><p class=\"text-xs text-secondary mt-1\">توليد نصوص alt تلقائية للأدوية والموردين لتعزيز الظهور في بحث الصور.</p></div><!-- Card 4: Heading Hierarchy --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">هيكلية العناوين (Headings)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">H1 → H2 → H3</span></div><div class=\"text-base font-black text-surface-fg\">تسلسل دلالي قياسي</div><p class=\"text-xs text-secondary mt-1\">عنوان رئيسي H1 وحيد لكل صفحة مع تسلسل متوافق مع معايير W3C.</p></div><!-- Card 5: Core Web Vitals --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">مؤشرات الأداء (Core Web Vitals)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">96/100</span></div><div class=\"text-base font-black text-surface-fg\">LCP: 1.2s | FID: 15ms</div><p class=\"text-xs text-secondary mt-1\">مفحوص عبر .lighthouserc.json مع تخفيف زمن الاستجابة على الشبكات المحلية.</p></div></div></div><!-- MODAL: Edit SEO Row with Live Google & Social Preview -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</textarea></div><div class=\"d-flex items-center justify-between\"><span class=\"text-xs text-secondary\">يتم تحديث التوجيهات فوراً على الرابط <code>/robots.txt</code>.</span> <button type=\"submit\" class=\"btn btn-accent btn-sm rounded-xl font-bold px-6\">حفظ التغييرات</button></div></form></div></div><!-- SECTION 3: Quality & Discoverability Audit --><div x-show=\"seoSubTab === 'audit'\" x-cloak><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6\"><!-- Card 1: Arabic Language & RTL --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">اللغة والاتجاه (Language & Direction)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">سليم 100%</span></div><div class=\"text-base font-black text-surface-fg\">lang=\"ar\" & dir=\"rtl\"</div><p class=\"text-xs text-secondary mt-1\">مضبوط في غلاف العرض العام لكافة الصفحات لدعم الفهرسة العربية الصحيحة.</p></div><!-- Card 2: Canonical URL Consistency --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">الروابط الأساسية (Canonicals)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">معتمد</span></div><div class=\"text-base font-black text-surface-fg\">تجنب تكرار المحتوى</div><p class=\"text-xs text-secondary mt-1\">ربط مسارات التصفية والفهرسة بالروابط الأصلية لتفادي ازدواجية النتائج.</p></div><!-- Card 3: Image Alt Coverage --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">النصوص البديلة للصور (Alt Tags)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">98%</span></div><div class=\"text-base font-black text-surface-fg\">تغطية صور المنتجات</div><p class=\"text-xs text-secondary mt-1\">توليد نصوص alt تلقائية للأدوية والموردين لتعزيز الظهور في بحث الصور.</p></div><!-- Card 4: Heading Hierarchy --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">هيكلية العناوين (Headings)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">H1 → H2 → H3</span></div><div class=\"text-base font-black text-surface-fg\">تسلسل دلالي قياسي</div><p class=\"text-xs text-secondary mt-1\">عنوان رئيسي H1 وحيد لكل صفحة مع تسلسل متوافق مع معايير W3C.</p></div><!-- Card 5: Core Web Vitals --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs\"><div class=\"d-flex items-center justify-between mb-2\"><span class=\"text-xs font-bold text-secondary\">مؤشرات الأداء (Core Web Vitals)</span> <span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">96/100</span></div><div class=\"text-base font-black text-surface-fg\">LCP: 1.2s | FID: 15ms</div><p class=\"text-xs text-secondary mt-1\">مفحوص عبر .lighthouserc.json مع تخفيف زمن الاستجابة على الشبكات المحلية.</p></div></div></div><!-- MODAL: Edit SEO Row with Live Google & Social Preview -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -364,7 +377,7 @@ func AdminDevelopersSEOTab(seo *AdminDevelopersSEOValues, lang, dir string) temp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

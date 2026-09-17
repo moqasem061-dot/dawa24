@@ -11,7 +11,7 @@ import (
 templ VendorSavingProductModal(lang string) {
 	@components.Modal(components.ModalProps{ID: "saving-product-modal", Title: i18n.T(lang, "vendor_saving.modal_add_title"), Size: "md"}) {
 		<form method="POST" id="saving-product-form" action="/vendor/saving-products" class="d-flex flex-col gap-4 m-0">
-			<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+			<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 			<input type="hidden" id="form-saving-id" name="id" value="" />
 
 			<div class="stack-md">

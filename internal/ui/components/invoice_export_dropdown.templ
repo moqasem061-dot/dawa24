@@ -4,8 +4,6 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 )
 
-import "fmt"
-
 type InvoiceExportDropdownProps struct {
 	PrintURL string
 	ExcelURL string
@@ -43,14 +41,12 @@ templ InvoiceExportDropdown(props InvoiceExportDropdownProps) {
 			x-show="open"
 			class={ "absolute z-50 mt-1.5 w-56 rounded-2xl border border-default bg-surface-raised shadow-xl p-1.5 text-xs text-start",
 				templ.KV("start-0", props.Align == "start"),
-				templ.KV("end-0", props.Align == "" || props.Align == "end") }
-			style="display:none;"
-		>
+				templ.KV("end-0", props.Align == "" || props.Align == "end") } x-cloak>
 			<!-- 1. Print / PDF (Via Hidden Iframe without leaving page) -->
 			<button
 				type="button"
 				class="w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start"
-				@click={ fmt.Sprintf("open = false; if (window.printInvoiceDirectly) { window.printInvoiceDirectly('%s'); } else { window.open('%s', '_blank'); }", props.PrintURL, props.PrintURL) }
+				@click={ "[open = false, " + AlpineCall("$printInvoice", props.PrintURL) + "]" }
 			>
 				<span class="text-accent">🖨️</span>
 				<div class="d-flex flex-col text-start">

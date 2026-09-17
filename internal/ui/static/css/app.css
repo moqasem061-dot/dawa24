@@ -71,3 +71,102 @@ svg {
   aspect-ratio: 1 / 1;
   object-fit: contain;
 }
+
+/* ==========================================================================
+   Former inline styles
+
+   The Content-Security-Policy sets style-src-attr none, so style="" in
+   markup is never applied. What templates used to write inline lives here.
+   An inline style outranked every stylesheet; :not(#\#) gives each rule an
+   id-level specificity so these keep winning over component rules, as the
+   attributes did. Values that change per record are set through the CSSOM
+   instead (data-pct, data-height, ... in static/js/actions.js).
+   ========================================================================== */
+
+/* Hidden until a page script shows it (element.style.display = ...). Not
+   !important, so the script-set inline value wins. */
+.s-hidden-init:not(#\#) { display: none; }
+
+/* Former dynamic inline styles: the fixed part lives here, the per-record
+   value arrives through data-pct / data-width-px / data-height / data-bg /
+   data-tint (actions.js). */
+.s-map-canvas:not(#\#) { width: 100%; border-radius: var(--radius-lg); border: 1px solid var(--border); position: relative; z-index: 1; min-height: 200px; background: var(--surface-sunken); }
+.s-mini-fill:not(#\#) { height: 100%; border-radius: 99px; background: #3b82f6; }
+.s-mini-fill-done:not(#\#) { background: #10b981; }
+.s-indent-marker:not(#\#) { display: flex; justify-content: flex-end; color: var(--accent); font-weight: 900; }
+.s-usage-fill:not(#\#) { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--brand-primary, #0ea5e9), #8b5cf6); transition: width 0.4s ease; }
+.s-filter-card-on:not(#\#) { border-color: var(--accent); }
+.s-filter-card-off:not(#\#) { border-color: var(--border); }
+
+.s-block-relative:not(#\#) { display: block; position: relative; }
+.s-btn-bare:not(#\#) { background:none; border:none; cursor:pointer; padding:0; }
+.s-btn-pill-wide:not(#\#) { border-radius: 9999px; padding-inline: 2.25rem; }
+.s-callout-sky:not(#\#) { background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.3); border-radius: 12px; padding: 12px 16px; }
+.s-cell-wrap-220:not(#\#) { max-width: 220px; word-break: break-word; }
+.s-cell-wrap-250:not(#\#) { max-width: 250px; word-break: break-word; }
+.s-cell-wrap-260:not(#\#) { max-width: 260px; word-break: break-word; }
+.s-chip-sky:not(#\#) { background: rgba(14, 165, 233, 0.2); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8; }
+.s-coverage-map:not(#\#) { min-height: 380px; height: 380px; width: 100%; border-radius: 8px; }
+.s-error-state:not(#\#) { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:2.5rem 1.5rem; text-align:center; border:1px solid var(--danger-border); border-radius:var(--radius-xl); background:var(--danger-light); margin:1.5rem 0; }
+.s-error-state-btn:not(#\#) { padding:0.55rem 1.25rem; font-size:0.875rem; }
+.s-error-state-icon:not(#\#) { width:48px; height:48px; border-radius:var(--radius-lg); background:#fee2e2; color:var(--danger); display:flex; align-items:center; justify-content:center; margin-bottom:1rem; }
+.s-error-state-message:not(#\#) { font-size:0.9rem; color:#b91c1c; margin-bottom:1.25rem; max-width:440px; line-height:1.6; }
+.s-error-state-title:not(#\#) { font-size:1.15rem; font-weight:800; color:#991b1b; margin-bottom:0.35rem; }
+.s-favicon-preview:not(#\#) { width: 56px; height: 56px; border-color: #e2e8f0; }
+.s-filter-field:not(#\#) { min-width: 130px; flex: 1 1 130px; }
+.s-flex-none:not(#\#) { flex: 0 0 auto; }
+.s-h-30:not(#\#) { height: 30px; }
+.s-h-64:not(#\#) { height: 64px; }
+.s-input-clear-btn:not(#\#) { position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.15rem; }
+.s-input-icon-btn:not(#\#) { left: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; }
+.s-invoice-logo:not(#\#) { font-size:1.3rem; }
+.s-invoice-meta:not(#\#) { font-size:0.75rem; color:#64748b; }
+.s-invoice-name:not(#\#) { font-size:0.95rem; display:block; color:#0f172a; }
+.s-line-through:not(#\#) { text-decoration: line-through; }
+.s-logo-preview-dark:not(#\#) { background-color: #0f172a; min-height: 120px; border-color: #334155; }
+.s-logo-preview-img:not(#\#) { max-height: 56px; max-width: 220px; }
+.s-logo-preview-light:not(#\#) { background-color: #ffffff; min-height: 120px; border-color: #e2e8f0; }
+.s-logo-preview-sm:not(#\#) { max-height: 48px; max-width: 180px; }
+.s-map-picker:not(#\#) { border:1px solid var(--border); border-radius:var(--radius-xl); padding:var(--space-4); background:var(--surface-raised); display:flex; flex-direction:column; gap:var(--space-3); }
+.s-map-picker-actions:not(#\#) { display:flex; align-items:center; gap:var(--space-2); flex-wrap:wrap; }
+.s-map-picker-address:not(#\#) { font-size:var(--text-xs); color:var(--text-muted); margin-top:2px; }
+.s-map-picker-btn:not(#\#) { padding:0.25rem 0.6rem; font-size:11px; gap:4px; }
+.s-map-picker-coords:not(#\#) { font-size:11px; font-variant-numeric:tabular-nums; }
+.s-map-picker-fields:not(#\#) { display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:var(--space-3); margin-top:var(--space-1); }
+.s-map-picker-head:not(#\#) { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:var(--space-2); }
+.s-map-picker-input:not(#\#) { width:100%; font-size:var(--text-xs); }
+.s-map-picker-label:not(#\#) { color:var(--text-secondary); margin-bottom:4px; display:block; }
+.s-map-picker-link:not(#\#) { padding:0.25rem 0.6rem; font-size:11px; gap:4px; text-decoration:none; }
+.s-map-picker-row:not(#\#) { display:flex; align-items:center; gap:var(--space-2); }
+.s-map-picker-title:not(#\#) { color:var(--accent); font-weight:700; font-size:var(--text-sm); }
+.s-max-h-32:not(#\#) { max-height: 32px; }
+.s-max-w-170:not(#\#) { max-width: 170px; }
+.s-max-w-480:not(#\#) { max-width: 480px; }
+.s-min-w-170:not(#\#) { min-width: 170px; }
+.s-min-w-180:not(#\#) { min-width: 180px; }
+.s-min-w-200:not(#\#) { min-width: 200px; }
+.s-min-w-220:not(#\#) { min-width: 220px; }
+.s-min-w-240:not(#\#) { min-width: 240px; }
+.s-mini-track:not(#\#) { height: 6px; min-width: 50px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden; }
+.s-money:not(#\#) { display:inline-flex; align-items:baseline; gap:0.25rem; }
+.s-money-skeleton:not(#\#) { display:inline-block; height:1.1em; width:4.5rem; }
+.s-otp-input:not(#\#) { max-width: 140px; letter-spacing: 0.25em; }
+.s-print-brand:not(#\#) { font-size: 13pt; color: #0f172a; }
+.s-print-meta:not(#\#) { font-size: 8pt; color: #64748b; }
+.s-print-title:not(#\#) { font-size: 12pt; margin: 0; font-weight: 900; color: #0f172a; }
+.s-qty-compact:not(#\#) { width: 70px; padding: 4px 8px; }
+.s-scrollbar-thin:not(#\#) { scrollbar-width: thin; }
+.s-size-2-25:not(#\#) { inline-size: 2.25rem; block-size: 2.25rem; }
+.s-size-32:not(#\#) { width: 32px; height: 32px; }
+.s-size-54:not(#\#) { width: 54px; height: 54px; }
+.s-span-all:not(#\#) { grid-column: 1 / -1; }
+.s-suppliers-map:not(#\#) { width: 100%; height: 600px; min-height: 480px; }
+.s-tabular:not(#\#) { font-variant-numeric: tabular-nums; }
+.s-text-left:not(#\#) { text-align: left; }
+.s-w-120:not(#\#) { width: 120px; }
+.s-w-44:not(#\#) { width: 44px; }
+.s-w-65pct:not(#\#) { width:65%; }
+.s-w-80:not(#\#) { width: 80px; }
+.s-w-82:not(#\#) { width: 82px; }
+.s-w-90:not(#\#) { width: 90px; }
+.s-z-top:not(#\#) { z-index: 9999; }

@@ -152,7 +152,7 @@ templ AdminTempWarehousesModals(data *AdminTempWarehousesData) {
 				<div class="wiz-progress-track mb-3">
 					<div
 						class="wiz-progress-fill"
-						:style="'width: ' + uploadProgress + '%'"
+						:style="{ width: uploadProgress + '%' }"
 					></div>
 				</div>
 				<div class="d-flex justify-between items-center text-xs text-muted font-bold tabular-nums">
@@ -252,7 +252,7 @@ templ AdminTempWarehousesModals(data *AdminTempWarehousesData) {
 							type="text"
 							name="supplier_name"
 							class="form-input h-10 rounded-lg text-sm"
-							:value="cleanName(selectedFiles[0]?.name)"
+							:value="cleanName(selectedFiles.length ? selectedFiles[0].name : '')"
 							placeholder="مثال: مستودع الأمل، شركة النور..."
 						/>
 					</div>
@@ -327,12 +327,12 @@ templ AdminTempWarehousesModals(data *AdminTempWarehousesData) {
 			<div class="mb-5">
 				<div class="flex-between items-center text-xs text-muted font-bold mb-1.5">
 					<span>إنجاز مراجعة الملفات المرفوعة</span>
-					<span class="tabular-nums" x-text="Math.round((mappingStep / mappingTotal) * 100) + '%'"></span>
+					<span class="tabular-nums" x-text="$round((mappingStep / mappingTotal) * 100) + '%'"></span>
 				</div>
 				<div class="wiz-progress-track">
 					<div
 						class="wiz-progress-fill"
-						:style="'width: ' + ((mappingStep / mappingTotal) * 100) + '%'"
+						:style="{ width: ((mappingStep / mappingTotal) * 100) + '%' }"
 					></div>
 				</div>
 			</div>

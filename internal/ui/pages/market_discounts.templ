@@ -37,9 +37,15 @@ import (
 // comment ships to every reader.
 templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.MarketDiscountsResult, filter compare.MarketDiscountsFilter, currentView string) {
 	@layouts.ShellFor("خصومات السوق العامة | دوا 24", "market-discounts", lang, dir, actor) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('marketDiscountsData', function (a0, a1) {
+				return { showMoreFilters: a0, currentView: a1, setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } };
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data={ fmt.Sprintf("{ showMoreFilters: %t, currentView: '%s', setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } }", (filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
+			x-data={ components.AlpineCall("marketDiscountsData", (filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
 		>
 			<!-- Header: what this page is, and the two numbers that describe it -->
 			<header class="md-header">

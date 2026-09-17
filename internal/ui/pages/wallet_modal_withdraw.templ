@@ -94,7 +94,7 @@ templ WalletModalWithdraw(data WalletViewData, langOpt ...string) {
 							<button
 								type="button"
 								class="btn btn-primary btn-xs font-bold"
-								@click="isWithdrawModalOpen = false; openPaymentAdd()"
+								@click="[isWithdrawModalOpen = false, openPaymentAdd()]"
 							>
 								{ i18n.T(lang, "wallet.add_method_now") }
 							</button>
@@ -108,7 +108,7 @@ templ WalletModalWithdraw(data WalletViewData, langOpt ...string) {
 						<button
 							type="button"
 							class="btn-link text-2xs font-bold text-brand"
-							@click="isWithdrawModalOpen = false; openPaymentAdd()"
+							@click="[isWithdrawModalOpen = false, openPaymentAdd()]"
 						>
 							{ i18n.T(lang, "wallet.add_method_new") }
 						</button>

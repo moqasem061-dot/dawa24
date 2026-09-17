@@ -39,11 +39,17 @@ type UnifiedSettingsData struct {
 templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 	@layouts.ShellFor(i18n.T(lang, "settings.unified_title"), "settings", lang, dir, authctx.FromContext(ctx)) {
 
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('settingsUnifiedState', function () {
+				return {
+					activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
+				};
+			});
+		</script>
 		<div
 			class="w-full mb-16"
-			x-data="{
-				activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
-			}"
+			x-data="settingsUnifiedState"
 		>
 			<!-- Page Header -->
 			<div class="flex-between items-center flex-wrap gap-4 mb-8">
@@ -77,7 +83,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					type="button"
 					class="tab-btn"
 					:class="{ 'active': activeTab === 'profile' }"
-					@click="activeTab = 'profile'; history.replaceState(null, null, '#profile')"
+					@click="[activeTab = 'profile', $setHash('profile')]"
 					data-tab-target="profile"
 				>
 					@components.IconUser("icon-xs")
@@ -88,7 +94,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					type="button"
 					class="tab-btn"
 					:class="{ 'active': activeTab === 'preferences' }"
-					@click="activeTab = 'preferences'; history.replaceState(null, null, '#preferences')"
+					@click="[activeTab = 'preferences', $setHash('preferences')]"
 					data-tab-target="preferences"
 				>
 					@components.IconBell("icon-xs")
@@ -100,7 +106,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': activeTab === 'telegram' }"
-						@click="activeTab = 'telegram'; history.replaceState(null, null, '#telegram')"
+						@click="[activeTab = 'telegram', $setHash('telegram')]"
 						data-tab-target="telegram"
 					>
 						@components.IconSend("icon-xs")
@@ -113,7 +119,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': activeTab === 'whatsapp' }"
-						@click="activeTab = 'whatsapp'; history.replaceState(null, null, '#whatsapp')"
+						@click="[activeTab = 'whatsapp', $setHash('whatsapp')]"
 						data-tab-target="whatsapp"
 					>
 						@components.IconWhatsApp("icon-xs")
@@ -172,15 +178,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 										name="avatar_file" 
 										accept="image/png,image/jpeg,image/jpg,image/webp" 
 										class="hidden" 
-										@change="
-											const file = $event.target.files[0];
-											if (file) {
-												removeAvatar = false;
-												const reader = new FileReader();
-												reader.onload = (e) => { avatarPreview = e.target.result };
-												reader.readAsDataURL(file);
-											}
-										"
+										@change="$event.target.files[0] && [removeAvatar = false, avatarPreview = $objectURL($event.target.files[0])]"
 									/>
 								</label>
 								
@@ -189,7 +187,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 										type="button" 
 										class="btn btn-ghost btn-sm font-bold text-danger m-0 gap-1" 
 										x-show="!removeAvatar"
-										@click="removeAvatar = true; avatarPreview = ''; const el = document.getElementById('user-avatar-file'); if(el) el.value = '';"
+										@click="[removeAvatar = true, avatarPreview = '', $clearInput('user-avatar-file')]"
 									>
 										@components.IconTrash("icon-xs")
 										<span>{ i18n.T(lang, "settings.avatar_delete") }</span>

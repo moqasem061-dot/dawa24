@@ -51,7 +51,7 @@ migrate-status: ## List migrations and show how many are pending
 # pipeline, so failures are found before a push rather than after one.
 
 .PHONY: check
-check: fmt-check vet lint test check-provider-isolation check-prompt-version check-file-size check-inline-styles check-error-swallow check-no-cdn check-file-size-count check-hardcoded-arabic check-emoji check-unused-components check-important check-backdrop-filter check-transition-all check-breakpoints check-physical-properties check-topbar-impls check-modal-legacy check-modal-handwritten check-css-layered check-deadcode check-undefined-classes ## Run every gate
+check: fmt-check vet lint test check-provider-isolation check-prompt-version check-file-size check-inline-styles check-error-swallow check-no-cdn check-file-size-count check-hardcoded-arabic check-emoji check-unused-components check-important check-backdrop-filter check-transition-all check-breakpoints check-physical-properties check-topbar-impls check-modal-legacy check-modal-handwritten check-css-layered check-deadcode check-undefined-classes check-alpine-csp ## Run every gate
 
 .PHONY: check-error-swallow
 check-error-swallow: ## Fail if a service error is silently discarded
@@ -309,6 +309,10 @@ check-modal-handwritten: ## Fail if raw <dialog in pages exceeds ratchet ceiling
 .PHONY: check-css-layered
 check-css-layered: ## Fail if a stylesheet ships outside the @layer cascade
 	@fail=0; for f in internal/ui/static/css/*.css; do case "$$(basename $$f)" in app.css|invoice_printable.css) continue;; esac; if ! grep -q '@layer' "$$f"; then echo "  unlayered: $$f"; fail=1; fi; done; if [ "$$fail" = "1" ]; then echo "FAIL: a stylesheet outside @layer beats every layered rule. app.css (hide/show primitives) and invoice_printable.css (a standalone print document) are the two deliberate exceptions."; exit 1; fi; echo "  ok: every stylesheet is layered"
+
+.PHONY: check-alpine-csp
+check-alpine-csp: ## Fail if an Alpine expression is outside what the @alpinejs/csp build can run
+	@node scripts/alpine-csp/check.cjs
 
 .PHONY: check-deadcode
 check-deadcode: ## Fail if unreachable exported code grows past the ceiling

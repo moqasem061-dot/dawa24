@@ -34,7 +34,7 @@ templ VendorSavingTable(lang string, data VendorSavingPageData) {
 				{ i18n.T(lang, "vendor_saving.bulk_cancel") }
 			</button>
 			<form method="POST" action="/vendor/saving-products/bulk-delete" @submit="confirmBulkDelete($event)" class="m-0 d-inline-flex">
-				<input type="hidden" name="_csrf" value="" x-init="$el.value = getCsrfToken()" />
+				<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 				<template x-for="id in selectedIds" :key="id">
 					<input type="hidden" name="selected_ids" :value="id" />
 				</template>
@@ -94,7 +94,7 @@ templ VendorSavingTable(lang string, data VendorSavingPageData) {
 				<table class="data-table m-0" id="saving-products-table">
 					<thead>
 						<tr>
-							<th style="width: 44px;" class="text-center">
+							<th class="text-center s-w-44">
 								<input
 									type="checkbox"
 									class="form-check-input"
@@ -126,7 +126,7 @@ templ VendorSavingTable(lang string, data VendorSavingPageData) {
 								data-product-name={ item.LinkedProductName.Get(i18n.Lang(lang)) }
 								:class={ fmt.Sprintf("selectedIds.includes('%d') ? 'bg-primary-subtle' : ''", item.ID) }
 							>
-								<td class="text-center align-middle" style="width: 44px;">
+								<td class="text-center align-middle s-w-44">
 									<input
 										type="checkbox"
 										class="form-check-input"

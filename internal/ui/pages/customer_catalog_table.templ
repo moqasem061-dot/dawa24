@@ -185,11 +185,11 @@ templ CustomerCatalogTable(variants []*SupplierVariantCard, lang string) {
 											title={ i18n.T(lang, "catalog.save_favorite") }
 										>
 											if v.IsFavorite {
-												<span class="fav-icon-outline" style="display:none">@components.IconHeart("icon-xs")</span>
+												<span class="fav-icon-outline s-hidden-init">@components.IconHeart("icon-xs")</span>
 												<span class="fav-icon-filled">@components.IconHeartFilled("icon-xs text-rose")</span>
 											} else {
 												<span class="fav-icon-outline">@components.IconHeart("icon-xs")</span>
-												<span class="fav-icon-filled" style="display:none">@components.IconHeartFilled("icon-xs text-rose")</span>
+												<span class="fav-icon-filled s-hidden-init">@components.IconHeartFilled("icon-xs text-rose")</span>
 											}
 										</button>
 									</form>

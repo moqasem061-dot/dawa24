@@ -48,7 +48,7 @@ templ Modal(props ModalProps) {
 			x-on:close={ props.AlpineClose }
 		}
 		if props.AlpineClose == "" && props.AlpineOpen != "" {
-			x-on:close={ fmt.Sprintf("%s = false", props.AlpineOpen) }
+			x-on:close={ props.AlpineOpen + " = false" }
 		}
 	>
 		<div

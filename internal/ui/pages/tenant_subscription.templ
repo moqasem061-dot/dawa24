@@ -20,53 +20,69 @@ templ TenantSubscriptionPage(data TenantSubscriptionPageData, orgType string, la
 }
 
 templ tenantSubscriptionBody(data TenantSubscriptionPageData, orgType string, lang string, dir string) {
+	<script nonce={ templ.GetNonce(ctx) }>
+		// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+		dawaData('tenantSubscriptionState', function () {
+			return {
+				isCheckoutOpen: false,
+				isConfirmOpen: false,
+				selectedPlanSlug: '',
+				selectedPlanName: '',
+				selectedPlanMonthMinor: 0,
+				selectedPlanYearMinor: 0,
+				planBillingPeriod: 'monthly',
+				autoRenew: true,
+				walletBalanceMinor: 0,
+				isUpgrade: false,
+				// initFromServer takes the wallet balance and honours ?upgrade=slug
+				// by opening that plan's checkout.
+				initFromServer(balanceMinor) {
+					this.walletBalanceMinor = balanceMinor;
+					const upSlug = new URLSearchParams(window.location.search).get('upgrade');
+					if (!upSlug) return;
+					const btn = Array.from(document.querySelectorAll('[data-plan-slug]'))
+						.find((b) => b.getAttribute('data-plan-slug') === upSlug);
+					if (btn && !btn.disabled) btn.click();
+				},
+				openCheckout(slug, name, monthMinor, yearMinor, isUp) {
+					this.selectedPlanSlug = slug;
+					this.selectedPlanName = name;
+					this.selectedPlanMonthMinor = Number(monthMinor) || 0;
+					this.selectedPlanYearMinor = Number(yearMinor) || 0;
+					this.isUpgrade = Boolean(isUp);
+					this.autoRenew = true;
+					this.isCheckoutOpen = true;
+					this.isConfirmOpen = false;
+				},
+				openConfirm() {
+					if (!this.hasSufficientBalance && this.currentCostMinor > 0) return;
+					this.isCheckoutOpen = false;
+					this.isConfirmOpen = true;
+				},
+				backToCheckout() {
+					this.isConfirmOpen = false;
+					this.isCheckoutOpen = true;
+				},
+				get currentCostMinor() {
+					return this.planBillingPeriod === 'annual' ? this.selectedPlanYearMinor : this.selectedPlanMonthMinor;
+				},
+				get currentCostFormatted() {
+					return (this.currentCostMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+				},
+				get hasSufficientBalance() {
+					return this.walletBalanceMinor >= this.currentCostMinor;
+				},
+				get remainingBalanceFormatted() {
+					const rem = (this.walletBalanceMinor - this.currentCostMinor) / 100;
+					return rem.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
+				}
+			};
+		});
+	</script>
 	<div
 		class="d-flex flex-col gap-6 w-full"
-		x-data="{
-			isCheckoutOpen: false,
-			isConfirmOpen: false,
-			selectedPlanSlug: '',
-			selectedPlanName: '',
-			selectedPlanMonthMinor: 0,
-			selectedPlanYearMinor: 0,
-			planBillingPeriod: 'monthly',
-			autoRenew: true,
-			walletBalanceMinor: 0,
-			isUpgrade: false,
-			openCheckout(slug, name, monthMinor, yearMinor, isUp) {
-				this.selectedPlanSlug = slug;
-				this.selectedPlanName = name;
-				this.selectedPlanMonthMinor = Number(monthMinor) || 0;
-				this.selectedPlanYearMinor = Number(yearMinor) || 0;
-				this.isUpgrade = Boolean(isUp);
-				this.autoRenew = true;
-				this.isCheckoutOpen = true;
-				this.isConfirmOpen = false;
-			},
-			openConfirm() {
-				if (!this.hasSufficientBalance && this.currentCostMinor > 0) return;
-				this.isCheckoutOpen = false;
-				this.isConfirmOpen = true;
-			},
-			backToCheckout() {
-				this.isConfirmOpen = false;
-				this.isCheckoutOpen = true;
-			},
-			get currentCostMinor() {
-				return this.planBillingPeriod === 'annual' ? this.selectedPlanYearMinor : this.selectedPlanMonthMinor;
-			},
-			get currentCostFormatted() {
-				return (this.currentCostMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
-			},
-			get hasSufficientBalance() {
-				return this.walletBalanceMinor >= this.currentCostMinor;
-			},
-			get remainingBalanceFormatted() {
-				const rem = (this.walletBalanceMinor - this.currentCostMinor) / 100;
-				return rem.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ج.م';
-			}
-		}"
-		x-init={ fmt.Sprintf("walletBalanceMinor = %d; const upSlug = new URLSearchParams(window.location.search).get('upgrade'); if (upSlug) { const btn = document.querySelector('[data-plan-slug=\"' + upSlug + '\"]'); if (btn && !btn.disabled) btn.click(); }", data.WalletBalance.Minor()) }
+		x-data="tenantSubscriptionState"
+		x-init={ components.AlpineCall("initFromServer", data.WalletBalance.Minor()) }
 	>
 		<!-- Toast Notices -->
 		if data.NoticeMsg != "" {
@@ -313,7 +329,7 @@ templ tenantSubscriptionBody(data TenantSubscriptionPageData, orgType string, la
 										</div>
 									</div>
 									<div class="progress-bar-container">
-										<div class="progress-bar-fill" style={ fmt.Sprintf("width:%d%%;", data.Subscription.AIPercentage()) }></div>
+										<div class="progress-bar-fill" data-pct={ fmt.Sprint(data.Subscription.AIPercentage()) }></div>
 									</div>
 									<div class="flex-between text-xs text-muted mt-1">
 										<span>المتبقي: <strong class="text-success tabular-nums">{ fmt.Sprintf("%d%%", 100-data.Subscription.AIPercentage()) }</strong></span>

@@ -8,7 +8,7 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "fmt"
+import "github.com/muhiya/dawa24-store/internal/ui/components"
 
 func ShipmentLinesPagination(totalCount int) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -42,18 +42,8 @@ func ShipmentLinesPagination(totalCount int) templ.Component {
 }
 
 func shipmentPaginationAlpineData(count int) string {
-	return fmt.Sprintf(`{
-		page: 1,
-		pageSize: 25,
-		total: %d,
-		get totalPages() { return Math.ceil(this.total / (this.pageSize > 0 ? this.pageSize : this.total)) || 1 },
-		get startIdx() { return this.pageSize === -1 ? 1 : (this.page - 1) * this.pageSize + 1 },
-		get endIdx() { return this.pageSize === -1 ? this.total : Math.min(this.page * this.pageSize, this.total) },
-		nextPage() { if (this.page < this.totalPages) this.page++ },
-		prevPage() { if (this.page > 1) this.page-- },
-		setPage(p) { if (p >= 1 && p <= this.totalPages) this.page = p },
-		changePageSize(s) { this.pageSize = parseInt(s, 10); this.page = 1 }
-	}`, count)
+	// dawaLinePager lives in static/js/components.js.
+	return components.AlpineCall("dawaLinePager", count, 25)
 }
 
 var _ = templruntime.GeneratedTemplate

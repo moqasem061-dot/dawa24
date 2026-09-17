@@ -12,8 +12,6 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 )
 
-import "fmt"
-
 type InvoiceExportDropdownProps struct {
 	PrintURL string
 	ExcelURL string
@@ -85,7 +83,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(props.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 35, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 33, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -125,14 +123,14 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" style=\"display:none;\"><!-- 1. Print / PDF (Via Hidden Iframe without leaving page) --><button type=\"button\" class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" x-cloak><!-- 1. Print / PDF (Via Hidden Iframe without leaving page) --><button type=\"button\" class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("open = false; if (window.printInvoiceDirectly) { window.printInvoiceDirectly('%s'); } else { window.open('%s', '_blank'); }", props.PrintURL, props.PrintURL))
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue("[open = false, " + AlpineCall("$printInvoice", props.PrintURL) + "]")
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 53, Col: 183}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 49, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -145,7 +143,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var8 templ.SafeURL
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(props.ExcelURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 64, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 60, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -158,7 +156,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var9 templ.SafeURL
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(props.WordURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 78, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 74, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -171,7 +169,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(httpx.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 91, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 87, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {

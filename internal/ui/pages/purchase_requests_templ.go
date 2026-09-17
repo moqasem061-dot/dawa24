@@ -696,7 +696,7 @@ func VendorPurchaseRequestsPage(lang, dir string, requests []*commerce.PurchaseR
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}
-							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" class=\"m-0 d-inline flex items-center gap-2\"><input type=\"hidden\" name=\"return_to\" value=\"/vendor/purchase-requests\"> <input type=\"text\" name=\"reason\" placeholder=\"سبب الرفض (اختياري)...\" class=\"form-input text-xs py-1 px-2\" style=\"max-width: 170px;\"> <button type=\"submit\" class=\"btn btn-rose btn-sm font-bold text-xs gap-1\" data-confirm=\"هل أنت متأكد من رفض طلب التفاوض؟\">")
+							templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "\" class=\"m-0 d-inline flex items-center gap-2\"><input type=\"hidden\" name=\"return_to\" value=\"/vendor/purchase-requests\"> <input type=\"text\" name=\"reason\" placeholder=\"سبب الرفض (اختياري)...\" class=\"form-input text-xs py-1 px-2 s-max-w-170\"> <button type=\"submit\" class=\"btn btn-rose btn-sm font-bold text-xs gap-1\" data-confirm=\"هل أنت متأكد من رفض طلب التفاوض؟\">")
 							if templ_7745c5c3_Err != nil {
 								return templ_7745c5c3_Err
 							}

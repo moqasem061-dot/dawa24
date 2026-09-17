@@ -108,4 +108,5 @@
 	}
 
 	window.dawaAdsWizard = dawaAdsWizard;
+	window.dawaData('dawaAdsWizard', dawaAdsWizard);
 })();

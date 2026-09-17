@@ -178,7 +178,7 @@ templ VendorWarehouseStockTable(data VendorWarehouseDetailData, langOpt ...strin
 								<button
 									type="button"
 									class="btn btn-secondary btn-sm font-black text-xs px-2.5 gap-1"
-									@click={ fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, qty: %d }; transferModal = true;", s.StockID, s.ProductVariantID, s.ProductID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.Quantity) }
+									@click={ fmt.Sprintf("[transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, qty: %d }, transferModal = true]", s.StockID, s.ProductVariantID, s.ProductID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.Quantity) }
 									title={ i18n.T(lang, "vendor_inventory.btn_transfer_title") }
 								>
 									@components.IconRefresh("icon-2xs")
@@ -187,7 +187,7 @@ templ VendorWarehouseStockTable(data VendorWarehouseDetailData, langOpt ...strin
 								<button
 									type="button"
 									class="btn btn-secondary btn-sm font-black text-xs px-2.5"
-									@click={ fmt.Sprintf("adjustStock = { id: %d, name: %q, batch: %q, qty: %d, min: %d }; adjustModal = true;", s.StockID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.BatchNumber, s.Quantity, s.MinThreshold) }
+									@click={ fmt.Sprintf("[adjustStock = { id: %d, name: %q, batch: %q, qty: %d, min: %d }, adjustModal = true]", s.StockID, func() string { if s.ProductName != "" { return s.ProductName }; return s.VariantName }(), s.BatchNumber, s.Quantity, s.MinThreshold) }
 									title={ i18n.T(lang, "vendor_inventory.btn_adjust_stock") }
 								>
 									<span>{ i18n.T(lang, "common.edit") }</span>

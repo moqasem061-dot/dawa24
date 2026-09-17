@@ -276,7 +276,7 @@ func CustomerBranches(data CustomerBranchesData, lang string, dir string, perms 
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span></a> <button type=\"button\" class=\"btn btn-primary btn-sm font-bold gap-1\" @click=\"resetToAddMode(); document.getElementById('new-branch-form').scrollIntoView({behavior:'smooth'});\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span></a> <button type=\"button\" class=\"btn btn-primary btn-sm font-bold gap-1\" @click=\"[resetToAddMode(), $scrollToId('new-branch-form')]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

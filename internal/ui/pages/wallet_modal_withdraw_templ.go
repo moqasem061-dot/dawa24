@@ -309,7 +309,7 @@ func WalletModalWithdraw(data WalletViewData, langOpt ...string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><button type=\"button\" class=\"btn btn-primary btn-xs font-bold\" @click=\"isWithdrawModalOpen = false; openPaymentAdd()\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</p><button type=\"button\" class=\"btn btn-primary btn-xs font-bold\" @click=\"[isWithdrawModalOpen = false, openPaymentAdd()]\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -340,7 +340,7 @@ func WalletModalWithdraw(data WalletViewData, langOpt ...string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, " *</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"isWithdrawModalOpen = false; openPaymentAdd()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, " *</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"[isWithdrawModalOpen = false, openPaymentAdd()]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

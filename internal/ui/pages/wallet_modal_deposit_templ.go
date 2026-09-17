@@ -205,7 +205,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.account_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"navigator.clipboard.writeText(selectedPlatform.account_number); if (typeof showToast === 'function') showToast('Copied', 'success')\" title=\"Copy\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.account_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"$copy(selectedPlatform.account_number)\" title=\"Copy\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -213,7 +213,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span x-text=\"window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.iban\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div class=\"overflow-hidden\"><span class=\"text-2xs text-muted d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.iban\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div class=\"overflow-hidden\"><span class=\"text-2xs text-muted d-block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -226,7 +226,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs truncate d-block\" dir=\"ltr\" x-text=\"selectedPlatform.iban\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2 flex-shrink-0\" @click=\"navigator.clipboard.writeText(selectedPlatform.iban); if (typeof showToast === 'function') showToast('Copied', 'success')\" title=\"Copy\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs truncate d-block\" dir=\"ltr\" x-text=\"selectedPlatform.iban\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2 flex-shrink-0\" @click=\"$copy(selectedPlatform.iban)\" title=\"Copy\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -234,7 +234,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span x-text=\"window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.instapay_handle\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.instapay_handle\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -247,7 +247,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, ":</span> <span class=\"font-mono font-black text-brand select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.instapay_handle\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"navigator.clipboard.writeText(selectedPlatform.instapay_handle); if (typeof showToast === 'function') showToast('Copied', 'success')\" title=\"Copy\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, ":</span> <span class=\"font-mono font-black text-brand select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.instapay_handle\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"$copy(selectedPlatform.instapay_handle)\" title=\"Copy\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -255,7 +255,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span x-text=\"window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.phone_number\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.phone_number\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -268,7 +268,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.phone_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"navigator.clipboard.writeText(selectedPlatform.phone_number); if (typeof showToast === 'function') showToast('Copied', 'success')\" title=\"Copy\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.phone_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"$copy(selectedPlatform.phone_number)\" title=\"Copy\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -276,7 +276,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span x-text=\"window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'\">نسخ</span></button></div></template></div><template x-if=\"selectedPlatform.description\"><div class=\"text-2xs text-secondary mt-2 pt-1.5 border-t border-subtle\" x-text=\"selectedPlatform.description\"></div></template></div></template><!-- Step 2: Sender Payment Details --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><div class=\"flex-between items-center mb-1\"><label class=\"form-label text-2xs font-bold m-0 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template></div><template x-if=\"selectedPlatform.description\"><div class=\"text-2xs text-secondary mt-2 pt-1.5 border-t border-subtle\" x-text=\"selectedPlatform.description\"></div></template></div></template><!-- Step 2: Sender Payment Details --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><div class=\"flex-between items-center mb-1\"><label class=\"form-label text-2xs font-bold m-0 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -289,7 +289,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"isDepositModalOpen = false; isAddPaymentModalOpen = true; paymentEditID = 0\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"[isDepositModalOpen = false, isAddPaymentModalOpen = true, paymentEditID = 0]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

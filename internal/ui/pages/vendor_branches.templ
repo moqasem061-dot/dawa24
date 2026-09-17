@@ -33,7 +33,7 @@ templ VendorBranchesPage(data VendorBranchesData, lang, dir string) {
 						<button
 							type="button"
 							class="btn btn-primary font-bold text-xs px-4 py-2 gap-2"
-							@click="resetToAddMode(); document.getElementById('branch-form-panel').scrollIntoView({behavior:'smooth'});"
+							@click="[resetToAddMode(), $scrollToId('branch-form-panel')]"
 						>
 							@components.IconPlus("icon-xs")
 							<span>{ i18n.T(lang, "vendor_branches.btn_new_branch") }</span>

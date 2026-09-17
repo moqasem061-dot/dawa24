@@ -8,6 +8,13 @@ templ VendorBranchesScript() {
 	<script nonce={ layouts.Nonce(ctx) }>
 		function vendorBranchManager() {
 			return {
+				// Runs on the form's submit event: a branch needs a city.
+				validateSubmit(e) {
+					if (this.form.city_id) return;
+					e.preventDefault();
+					const msg = e.target.dataset.emptyCity;
+					if (window.showToast) window.showToast(msg, 'warning'); else alert(msg);
+				},
 				mode: 'add',
 				editId: 0,
 				formAction: '/vendor/branches/new',
@@ -259,5 +266,7 @@ templ VendorBranchesScript() {
 				card.classList.toggle('d-none', !match);
 			});
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('vendorBranchManager', vendorBranchManager);
 	</script>
 }

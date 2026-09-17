@@ -46,7 +46,7 @@ func WalletModalPaymentMethod(data WalletViewData, langOpt ...string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span x-text=\"paymentEditID ? (window.dawaT ? window.dawaT('wallet.edit_method_title', 'تعديل وسيلة الدفع') : 'تعديل وسيلة الدفع') : (window.dawaT ? window.dawaT('wallet.add_method_title', 'إضافة وسيلة دفع وحساب معتمد') : 'إضافة وسيلة دفع وحساب معتمد')\"></span></h3><button type=\"button\" class=\"btn btn-icon btn-ghost btn-sm\" @click=\"isAddPaymentModalOpen = false\" aria-label=\"Close\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span x-text=\"paymentEditID ? $t('wallet.edit_method_title', 'تعديل وسيلة الدفع') : $t('wallet.add_method_title', 'إضافة وسيلة دفع وحساب معتمد')\"></span></h3><button type=\"button\" class=\"btn btn-icon btn-ghost btn-sm\" @click=\"isAddPaymentModalOpen = false\" aria-label=\"Close\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -132,7 +132,7 @@ func WalletModalPaymentMethod(data WalletViewData, langOpt ...string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</label> <input id=\"pm-holder\" type=\"text\" name=\"account_holder\" x-model=\"paymentForm.account_holder\" class=\"form-input form-input-sm\" :placeholder=\"window.dawaT ? window.dawaT('wallet.account_holder_ph', 'الاسم المطابق للسجل التجاري') : 'الاسم المطابق للسجل التجاري'\"></div><div x-show=\"paymentType === 'bank'\" class=\"stack-sm\"><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-bank\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</label> <input id=\"pm-holder\" type=\"text\" name=\"account_holder\" x-model=\"paymentForm.account_holder\" class=\"form-input form-input-sm\" :placeholder=\"$t('wallet.account_holder_ph', 'الاسم المطابق للسجل التجاري')\"></div><div x-show=\"paymentType === 'bank'\" class=\"stack-sm\"><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-bank\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -145,7 +145,7 @@ func WalletModalPaymentMethod(data WalletViewData, langOpt ...string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</label> <input id=\"pm-bank\" type=\"text\" name=\"bank_name\" x-model=\"paymentForm.bank_name\" class=\"form-input form-input-sm\" :placeholder=\"window.dawaT ? window.dawaT('wallet.bank_name_ph', 'مثال: البنك التجاري الدولي CIB') : 'مثال: البنك التجاري الدولي CIB'\"></div><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-iban\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</label> <input id=\"pm-bank\" type=\"text\" name=\"bank_name\" x-model=\"paymentForm.bank_name\" class=\"form-input form-input-sm\" :placeholder=\"$t('wallet.bank_name_ph', 'مثال: البنك التجاري الدولي CIB')\"></div><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-iban\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -249,7 +249,7 @@ func WalletModalPaymentMethod(data WalletViewData, langOpt ...string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</label> <input id=\"pm-card-brand\" type=\"text\" name=\"card_brand\" x-model=\"paymentForm.card_brand\" class=\"form-input form-input-sm\" placeholder=\"Visa / Mastercard\"></div><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-card-number\"><span x-text=\"paymentEditID ? (window.dawaT ? window.dawaT('wallet.card_number_full', 'رقم البطاقة (أدخله كاملاً لتحديثه)') : 'رقم البطاقة (أدخله كاملاً لتحديثه)') : (window.dawaT ? window.dawaT('wallet.card_number_new', 'رقم البطاقة (16 رقم) *') : 'رقم البطاقة (16 رقم) *')\"></span></label> <input id=\"pm-card-number\" type=\"text\" name=\"card_number\" class=\"form-input form-input-sm tabular-nums\" placeholder=\"4111 2222 3333 4444\" dir=\"ltr\" autocomplete=\"off\"><p class=\"text-2xs text-muted m-0 mt-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</label> <input id=\"pm-card-brand\" type=\"text\" name=\"card_brand\" x-model=\"paymentForm.card_brand\" class=\"form-input form-input-sm\" placeholder=\"Visa / Mastercard\"></div><div class=\"form-group mb-2\"><label class=\"form-label text-xs\" for=\"pm-card-number\"><span x-text=\"paymentEditID ? $t('wallet.card_number_full', 'رقم البطاقة (أدخله كاملاً لتحديثه)') : $t('wallet.card_number_new', 'رقم البطاقة (16 رقم) *')\"></span></label> <input id=\"pm-card-number\" type=\"text\" name=\"card_number\" class=\"form-input form-input-sm tabular-nums\" placeholder=\"4111 2222 3333 4444\" dir=\"ltr\" autocomplete=\"off\"><p class=\"text-2xs text-muted m-0 mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -288,7 +288,7 @@ func WalletModalPaymentMethod(data WalletViewData, langOpt ...string) templ.Comp
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-bold\"><span x-text=\"paymentEditID ? (window.dawaT ? window.dawaT('common.save_changes', 'حفظ التعديلات') : 'حفظ التعديلات') : (window.dawaT ? window.dawaT('wallet.save_method_btn', 'حفظ وسيلة الدفع') : 'حفظ وسيلة الدفع')\"></span></button></div></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-bold\"><span x-text=\"paymentEditID ? $t('common.save_changes', 'حفظ التعديلات') : $t('wallet.save_method_btn', 'حفظ وسيلة الدفع')\"></span></button></div></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

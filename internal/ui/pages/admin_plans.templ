@@ -792,6 +792,8 @@ templ AdminPlansHub(data AdminPlansData, lang, dir string) {
 					}
 				}
 			}
+			// The CSP build of Alpine only sees registered components.
+			dawaData('adminPlansManager', adminPlansManager);
 		</script>
 	}
 }

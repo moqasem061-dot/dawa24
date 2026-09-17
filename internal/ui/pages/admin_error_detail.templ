@@ -61,7 +61,7 @@ templ AdminErrorDetailFragment(e *platformadmin.ErrorLog, lang string) {
 			if e.StackTrace != "" {
 				<div class="stack-xs">
 					<h4 class="text-xs font-black text-primary m-0">{ i18n.T(lang, "admin.err.stack") }</h4>
-					<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0" style="max-height:22rem" dir="ltr">{ e.StackTrace }</pre>
+					<pre class="text-2xs bg-surface-sunken border rounded-xl p-3 overflow-x-auto m-0 s-max-h-22rem" dir="ltr">{ e.StackTrace }</pre>
 				</div>
 			} else {
 				<p class="text-2xs text-muted m-0">{ i18n.T(lang, "admin.err.no_stack") }</p>

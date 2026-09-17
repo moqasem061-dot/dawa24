@@ -6,6 +6,12 @@
 (function () {
   'use strict';
 
+  // isShown reads the rendered state: elements start hidden by a class
+  // (.s-hidden-init), not an inline style, so style.display alone is ''.
+  function isShown(el) {
+    return window.getComputedStyle(el).display !== 'none';
+  }
+
   function selectAccountType(type) {
     if (!type) type = 'customer';
     if (type === 'supplier') type = 'vendor';
@@ -686,9 +692,9 @@
       if (!emailToken || !emailToken.value.trim()) {
         e.preventDefault();
         showEmailFeedback('يرجى تأكيد البريد الإلكتروني عبر رمز التحقق أولاً للمتابعة', true);
-        if (sendEmailBtn && sendEmailBtn.style.display !== 'none') {
+        if (sendEmailBtn && isShown(sendEmailBtn)) {
           sendEmailBtn.focus();
-        } else if (emailOtpCode && emailOtpBox && emailOtpBox.style.display !== 'none') {
+        } else if (emailOtpCode && emailOtpBox && isShown(emailOtpBox)) {
           emailOtpCode.focus();
         } else if (email) {
           email.focus();
@@ -703,9 +709,9 @@
       if (!phoneToken || !phoneToken.value.trim()) {
         e.preventDefault();
         showTgFeedback('يرجى تأكيد رقم الهاتف عبر رمز تيليجرام أولاً للمتابعة', true);
-        if (sendTgBtn && sendTgBtn.style.display !== 'none') {
+        if (sendTgBtn && isShown(sendTgBtn)) {
           sendTgBtn.focus();
-        } else if (tgOtpCode && tgOtpBox && tgOtpBox.style.display !== 'none') {
+        } else if (tgOtpCode && tgOtpBox && isShown(tgOtpBox)) {
           tgOtpCode.focus();
         } else if (phone) {
           phone.focus();

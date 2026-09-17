@@ -10,27 +10,33 @@ import (
 
 templ VendorOffersPackagesPageWithData(lang, dir string, data SponsorshipRequestsData) {
 	@layouts.VendorShell(i18n.T(lang, "vendor_packages.shell_title"), "offers_packages", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('vendorPackagesData', function (a0, a1) {
+				return {
+					lang: a0,
+					showPurchaseModal: false,
+					walletBalanceMinor: a1,
+					selectedPkg: { id: 0, name: '', price: '', priceMinor: 0, duration: 0, credits: 0, tier: 0 },
+					get selectedPkgPriceMinor() {
+						return Number(this.selectedPkg.priceMinor) || 0;
+					},
+					get selectedPkgPriceFormatted() {
+						return (this.selectedPkgPriceMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (this.lang === 'en' ? 'EGP' : 'ج.م');
+					},
+					get hasSufficientBalance() {
+						return this.walletBalanceMinor >= this.selectedPkgPriceMinor;
+					},
+					get remainingBalanceFormatted() {
+						const rem = (this.walletBalanceMinor - this.selectedPkgPriceMinor) / 100;
+						return rem.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (this.lang === 'en' ? 'EGP' : 'ج.م');
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container py-6"
-			x-data={ fmt.Sprintf(`{
-				lang: %q,
-				showPurchaseModal: false,
-				walletBalanceMinor: %d,
-				selectedPkg: { id: 0, name: '', price: '', priceMinor: 0, duration: 0, credits: 0, tier: 0 },
-				get selectedPkgPriceMinor() {
-					return Number(this.selectedPkg.priceMinor) || 0;
-				},
-				get selectedPkgPriceFormatted() {
-					return (this.selectedPkgPriceMinor / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (this.lang === 'en' ? 'EGP' : 'ج.م');
-				},
-				get hasSufficientBalance() {
-					return this.walletBalanceMinor >= this.selectedPkgPriceMinor;
-				},
-				get remainingBalanceFormatted() {
-					const rem = (this.walletBalanceMinor - this.selectedPkgPriceMinor) / 100;
-					return rem.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ' + (this.lang === 'en' ? 'EGP' : 'ج.م');
-				}
-			}`, lang, data.WalletBalance.Minor()) }
+			x-data={ components.AlpineCall("vendorPackagesData", lang, data.WalletBalance.Minor()) }
 		>
 			<!-- Header -->
 			<div class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-sm">
@@ -115,7 +121,7 @@ templ VendorOffersPackagesPageWithData(lang, dir string, data SponsorshipRequest
 								<button
 									type="button"
 									class="btn btn-primary btn-sm w-full font-black justify-center gap-1.5 shadow-sm"
-									@click={ fmt.Sprintf("showPurchaseModal = true; selectedPkg = { id: %d, name: %q, price: %q, priceMinor: %d, duration: %d, credits: %d, tier: %d };", pkg.ID, pkg.Name.Get(i18n.Lang(lang)), pkg.Price.String(), pkg.Price.Minor(), pkg.DurationDays, pkg.Credits, pkg.TierLevel) }
+									@click={ fmt.Sprintf("[showPurchaseModal = true, selectedPkg = { id: %d, name: %q, price: %q, priceMinor: %d, duration: %d, credits: %d, tier: %d }]", pkg.ID, pkg.Name.Get(i18n.Lang(lang)), pkg.Price.String(), pkg.Price.Minor(), pkg.DurationDays, pkg.Credits, pkg.TierLevel) }
 								>
 									@components.IconCreditCard("icon-xs")
 									<span>{ i18n.T(lang, "vendor_packages.btn_buy_package") }</span>

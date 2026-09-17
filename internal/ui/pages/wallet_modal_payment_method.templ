@@ -18,7 +18,7 @@ templ WalletModalPaymentMethod(data WalletViewData, langOpt ...string) {
 			<div class="modal-header">
 				<h3 class="modal-title font-black d-flex items-center gap-2">
 					@components.IconCreditCard("icon-xs")
-					<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('wallet.edit_method_title', 'تعديل وسيلة الدفع') : 'تعديل وسيلة الدفع') : (window.dawaT ? window.dawaT('wallet.add_method_title', 'إضافة وسيلة دفع وحساب معتمد') : 'إضافة وسيلة دفع وحساب معتمد')"></span>
+					<span x-text="paymentEditID ? $t('wallet.edit_method_title', 'تعديل وسيلة الدفع') : $t('wallet.add_method_title', 'إضافة وسيلة دفع وحساب معتمد')"></span>
 				</h3>
 				<button type="button" class="btn btn-icon btn-ghost btn-sm" @click="isAddPaymentModalOpen = false" aria-label="Close">
 					@components.IconClose("icon-xs")
@@ -39,13 +39,13 @@ templ WalletModalPaymentMethod(data WalletViewData, langOpt ...string) {
 
 					<div class="form-group mb-2">
 						<label class="form-label text-xs" for="pm-holder">{ i18n.T(lang, "wallet.account_holder") }</label>
-						<input id="pm-holder" type="text" name="account_holder" x-model="paymentForm.account_holder" class="form-input form-input-sm" :placeholder="window.dawaT ? window.dawaT('wallet.account_holder_ph', 'الاسم المطابق للسجل التجاري') : 'الاسم المطابق للسجل التجاري'"/>
+						<input id="pm-holder" type="text" name="account_holder" x-model="paymentForm.account_holder" class="form-input form-input-sm" :placeholder="$t('wallet.account_holder_ph', 'الاسم المطابق للسجل التجاري')"/>
 					</div>
 
 					<div x-show="paymentType === 'bank'" class="stack-sm">
 						<div class="form-group mb-2">
 							<label class="form-label text-xs" for="pm-bank">{ i18n.T(lang, "wallet.bank_name") }</label>
-							<input id="pm-bank" type="text" name="bank_name" x-model="paymentForm.bank_name" class="form-input form-input-sm" :placeholder="window.dawaT ? window.dawaT('wallet.bank_name_ph', 'مثال: البنك التجاري الدولي CIB') : 'مثال: البنك التجاري الدولي CIB'"/>
+							<input id="pm-bank" type="text" name="bank_name" x-model="paymentForm.bank_name" class="form-input form-input-sm" :placeholder="$t('wallet.bank_name_ph', 'مثال: البنك التجاري الدولي CIB')"/>
 						</div>
 						<div class="form-group mb-2">
 							<label class="form-label text-xs" for="pm-iban">{ i18n.T(lang, "wallet.iban") }</label>
@@ -89,7 +89,7 @@ templ WalletModalPaymentMethod(data WalletViewData, langOpt ...string) {
 						</div>
 						<div class="form-group mb-2">
 							<label class="form-label text-xs" for="pm-card-number">
-								<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('wallet.card_number_full', 'رقم البطاقة (أدخله كاملاً لتحديثه)') : 'رقم البطاقة (أدخله كاملاً لتحديثه)') : (window.dawaT ? window.dawaT('wallet.card_number_new', 'رقم البطاقة (16 رقم) *') : 'رقم البطاقة (16 رقم) *')"></span>
+								<span x-text="paymentEditID ? $t('wallet.card_number_full', 'رقم البطاقة (أدخله كاملاً لتحديثه)') : $t('wallet.card_number_new', 'رقم البطاقة (16 رقم) *')"></span>
 							</label>
 							<input id="pm-card-number" type="text" name="card_number" class="form-input form-input-sm tabular-nums" placeholder="4111 2222 3333 4444" dir="ltr" autocomplete="off"/>
 							<p class="text-2xs text-muted m-0 mt-1">
@@ -108,7 +108,7 @@ templ WalletModalPaymentMethod(data WalletViewData, langOpt ...string) {
 				<div class="modal-footer">
 					<button type="button" class="btn btn-secondary btn-sm" @click="isAddPaymentModalOpen = false">{ i18n.T(lang, "common.cancel") }</button>
 					<button type="submit" class="btn btn-primary btn-sm font-bold">
-						<span x-text="paymentEditID ? (window.dawaT ? window.dawaT('common.save_changes', 'حفظ التعديلات') : 'حفظ التعديلات') : (window.dawaT ? window.dawaT('wallet.save_method_btn', 'حفظ وسيلة الدفع') : 'حفظ وسيلة الدفع')"></span>
+						<span x-text="paymentEditID ? $t('common.save_changes', 'حفظ التعديلات') : $t('wallet.save_method_btn', 'حفظ وسيلة الدفع')"></span>
 					</button>
 				</div>
 			</form>

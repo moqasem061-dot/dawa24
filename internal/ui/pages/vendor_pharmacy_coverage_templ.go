@@ -261,7 +261,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div></div><!-- Horizontal Filter Bar Card --><div class=\"glass-panel p-5 mb-6 border border-slate-200/80 rounded-2xl shadow-xs\"><form method=\"GET\" action=\"/vendor/pharmacy-coverage\" class=\"d-flex items-end gap-3 flex-wrap m-0\"><!-- Search Input --><div class=\"flex-1\" style=\"min-width: 220px;\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</span></div></div><!-- Horizontal Filter Bar Card --><div class=\"glass-panel p-5 mb-6 border border-slate-200/80 rounded-2xl shadow-xs\"><form method=\"GET\" action=\"/vendor/pharmacy-coverage\" class=\"d-flex items-end gap-3 flex-wrap m-0\"><!-- Search Input --><div class=\"flex-1 s-min-w-220\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -300,7 +300,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"></div></div><!-- Entity Type Selector --><div style=\"min-width: 130px; flex: 1 1 130px;\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"></div></div><!-- Entity Type Selector --><div class=\"s-filter-field\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -382,7 +382,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</option></select></div><!-- Delivery Day Selector --><div style=\"min-width: 130px; flex: 1 1 130px;\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</option></select></div><!-- Delivery Day Selector --><div class=\"s-filter-field\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -501,7 +501,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, ">السبت</option></select></div><!-- Distribution Branch Selector --><div style=\"min-width: 130px; flex: 1 1 130px;\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 50, ">السبت</option></select></div><!-- Distribution Branch Selector --><div class=\"s-filter-field\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -573,7 +573,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</select></div><!-- City Selector --><div style=\"min-width: 130px; flex: 1 1 130px;\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 58, "</select></div><!-- City Selector --><div class=\"s-filter-field\"><label class=\"form-label text-xs font-bold text-secondary mb-1.5 d-block\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -645,7 +645,7 @@ func VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir strin
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</select></div><!-- Action Buttons --><div class=\"d-flex items-center gap-2\" style=\"flex: 0 0 auto;\"><button type=\"submit\" class=\"btn btn-primary text-xs font-bold px-4 gap-1.5 shadow-xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 66, "</select></div><!-- Action Buttons --><div class=\"d-flex items-center gap-2 s-flex-none\"><button type=\"submit\" class=\"btn btn-primary text-xs font-bold px-4 gap-1.5 shadow-xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

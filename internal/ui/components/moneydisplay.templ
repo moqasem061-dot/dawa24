@@ -22,17 +22,16 @@ templ MoneyDisplay(props MoneyDisplayProps) {
 			lang = "ar"
 		}
 	}}
-	<span style="display:inline-flex; align-items:baseline; gap:0.25rem;">
+	<span class="s-money">
 		switch props.State {
 			case "loading":
-				<span class="skeleton" style="display:inline-block; height:1.1em; width:4.5rem;"></span>
+				<span class="skeleton s-money-skeleton"></span>
 			case "error":
 				<span class="money money-negative" aria-label="—">—</span>
 			default:
 				<span
-					class={ "money", templ.KV("money-lg", props.Large),
+					class={ "s-tabular", "money", templ.KV("money-lg", props.Large),
 						templ.KV("money-negative", props.Amount.Minor() < 0) }
-					style="font-variant-numeric: tabular-nums;"
 				>
 					{ format.Money(props.Amount, lang) }
 				</span>

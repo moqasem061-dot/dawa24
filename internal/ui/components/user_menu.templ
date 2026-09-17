@@ -36,7 +36,7 @@ templ UserMenu(lang string, inDashboard ...bool) {
 				<span class="nav-avatar" aria-hidden="true">
 					if actor.AvatarURL != "" {
 						<img src={ actor.AvatarURL } alt={ actor.DisplayName() } class="nav-avatar-img" data-img-fallback="next" data-fallback-display="inline-block" />
-						<span style="display: none;">{ Initials(actor.DisplayName()) }</span>
+						<span class="s-hidden-init">{ Initials(actor.DisplayName()) }</span>
 					} else {
 						<span>{ Initials(actor.DisplayName()) }</span>
 					}
@@ -65,10 +65,10 @@ templ UserMenu(lang string, inDashboard ...bool) {
 			>
 				<div class="nav-menu-head">
 					<div class="d-flex items-center gap-2.5">
-						<span class="nav-avatar" aria-hidden="true" style="inline-size: 2.25rem; block-size: 2.25rem;">
+						<span class="nav-avatar s-size-2-25" aria-hidden="true">
 							if actor.AvatarURL != "" {
 								<img src={ actor.AvatarURL } alt={ actor.DisplayName() } class="nav-avatar-img" data-img-fallback="next" data-fallback-display="inline-block" />
-								<span style="display: none;">{ Initials(actor.DisplayName()) }</span>
+								<span class="s-hidden-init">{ Initials(actor.DisplayName()) }</span>
 							} else {
 								<span>{ Initials(actor.DisplayName()) }</span>
 							}

@@ -28,7 +28,7 @@ templ AuthNoticeBanner(langOpt ...string) {
 			<div
 				class="modal-dialog modal-md bg-surface p-0 rounded-2xl shadow-2xl border border-slate-200 overflow-hidden"
 				@click.outside="showModal = false"
-				x-init="if (window.history.replaceState && new URLSearchParams(window.location.search).has('auth_notice')) { const u = new URL(window.location); u.searchParams.delete('auth_notice'); window.history.replaceState({}, '', u.pathname + (u.search ? u.search : '') + u.hash); }"
+				x-init="$dropQuery('auth_notice')"
 			>
 				<!-- Modal Header -->
 				<div class="modal-header flex-between items-center p-4 border-b border-slate-100 bg-slate-50/50">

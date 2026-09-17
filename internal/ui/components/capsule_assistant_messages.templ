@@ -12,7 +12,7 @@ templ CapsuleAssistantMessages() {
 				<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
 			</div>
 			<div class="d-flex flex-col items-center text-center w-full">
-				<h4 class="m-0 mb-1 text-sm font-extrabold text-primary text-center" x-text="agentLabel || (window.dawaT ? window.dawaT('capsule.title', 'دكتور كبسولة') : 'دكتور كبسولة')"></h4>
+				<h4 class="m-0 mb-1 text-sm font-extrabold text-primary text-center" x-text="agentLabel || $t('capsule.title', 'دكتور كبسولة')"></h4>
 				<p class="m-0 text-xs text-secondary leading-relaxed max-w-xs text-center">
 					اسأل عن أي شيء في بيانات منشأتك: الطلبات، الإنفاق، الأسعار، المخزون، الفواتير.
 					أقرأ ما تملك صلاحيته فقط، وأجهّز الإجراءات لتؤكدها أنت قبل تنفيذها.
@@ -99,7 +99,7 @@ templ CapsuleAssistantMessages() {
 								>
 									<span class="d-flex items-center gap-1.5">
 										@IconSparkles("icon-2xs text-primary")
-										<span x-text="window.dawaT ? window.dawaT('capsule.clinical_reasoning', 'التحليل الصيدلي للاستفسار') : 'التحليل الصيدلي للاستفسار'">التحليل الصيدلي للاستفسار</span>
+										<span x-text="$t('capsule.clinical_reasoning', 'التحليل الصيدلي للاستفسار')">التحليل الصيدلي للاستفسار</span>
 									</span>
 									<span x-text="open ? '▲ إخفاء' : '▼ إظهار'" class="text-2xs text-muted"></span>
 								</button>
@@ -153,7 +153,7 @@ templ CapsuleAssistantMessages() {
 							<div class="capsule-refs" data-capsule-no-link>
 								<div class="capsule-refs-label">
 									@IconExternalLink("icon-2xs")
-									<span x-text="window.dawaT ? window.dawaT('capsule.related_records', 'السجلات المرتبطة') : 'السجلات المرتبطة'">السجلات المرتبطة</span>
+									<span x-text="$t('capsule.related_records', 'السجلات المرتبطة')">السجلات المرتبطة</span>
 								</div>
 								<div class="capsule-refs-list">
 									<template x-for="ref in recordsOf(msg)" :key="ref.kind + ':' + ref.id">
@@ -183,7 +183,7 @@ templ CapsuleAssistantMessages() {
 									type="button"
 									@click="retryLastTurn()"
 									class="btn btn-outline-danger btn-xs font-bold whitespace-nowrap"
-									x-text="window.dawaT ? window.dawaT('capsule.retry', 'إعادة المحاولة') : 'إعادة المحاولة'"
+									x-text="$t('capsule.retry', 'إعادة المحاولة')"
 								>
 									إعادة المحاولة
 								</button>
@@ -196,7 +196,7 @@ templ CapsuleAssistantMessages() {
 								type="button"
 								@click="copyText(msg.text, $el)"
 								class="capsule-hdr-icon-btn"
-								:title="window.dawaT ? window.dawaT('capsule.copy_answer', 'نسخ الإجابة') : 'نسخ الإجابة'"
+								:title="$t('capsule.copy_answer', 'نسخ الإجابة')"
 							>
 								<span class="copy-icon-default">
 									@IconCopy("icon-xs")
@@ -218,7 +218,7 @@ templ CapsuleAssistantMessages() {
 				<div class="capsule-breathing-icon">
 					<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
 				</div>
-				<span class="capsule-thinking-label" x-text="statusMessage || (window.dawaT ? window.dawaT('capsule.thinking', 'دكتور كبسولة يفكر ويحلل البيانات...') : 'دكتور كبسولة يفكر ويحلل البيانات...')"></span>
+				<span class="capsule-thinking-label" x-text="statusMessage || $t('capsule.thinking', 'دكتور كبسولة يفكر ويحلل البيانات...')"></span>
 			</div>
 		</div>
 

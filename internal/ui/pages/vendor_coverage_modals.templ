@@ -65,7 +65,7 @@ templ VendorCoverageEditModal(data VendorCoverageData, lang string) {
 			<div class="stack-sm">
 				<label class="d-block text-xs font-bold mb-1 text-primary">{ i18n.T(lang, "vendor_coverage.modals.approved_radius") }</label>
 				<div class="d-flex items-center gap-2">
-					<span class="badge badge-primary text-xs" x-text="((editCov.distance_meters || 3000) / 1000).toFixed(1) + (window.__DAWA_LANG__ === 'en' ? ' km from city center' : ' كم من مركز المدينة')"></span>
+					<span class="badge badge-primary text-xs" x-text="((editCov.distance_meters || 3000) / 1000).toFixed(1) + ($lang === 'en' ? ' km from city center' : ' كم من مركز المدينة')"></span>
 					<span class="text-xs text-muted">{ i18n.T(lang, "vendor_coverage.modals.radius_auto_hint") }</span>
 				</div>
 			</div>

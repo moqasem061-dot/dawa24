@@ -87,7 +87,7 @@ templ importConfirmStage(view VendorImportView, langOpt ...string) {
 				</form>
 				<form class="stack-md" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "confirm")) } hx-boost="false"
 					if view.Session.Settings.Mode.Destructive() {
-						@submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "vendor_ingest.confirm.confirm_destructive")) }
+						data-confirm={ i18n.T(lang, "vendor_ingest.confirm.confirm_destructive") }
 					}
 				>
 					<button type="submit" class="btn btn-primary">{ i18n.T(lang, "vendor_ingest.confirm.btn_start") }</button>
@@ -124,7 +124,7 @@ templ importProcessingStage(view VendorImportView, langOpt ...string) {
 				<div
 					class="wiz-progress-fill"
 					id="import-progress-bar"
-					style={ templ.SafeCSS(fmt.Sprintf("width:%d%%", view.Session.ProgressPercent)) }
+					data-pct={ fmt.Sprint(view.Session.ProgressPercent) }
 				></div>
 			</div>
 			<div class="wiz-progress-meta">

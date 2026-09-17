@@ -83,7 +83,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</title><link rel=\"stylesheet\" href=\"/static/css/invoice_printable.css\"></head><body><!-- Floating Action Toolbar (Hidden in print) --><div class=\"no-print-toolbar\"><div class=\"d-flex items-center gap-2\"><span style=\"font-size:1.3rem;\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</title><link rel=\"stylesheet\" href=\"/static/css/invoice_printable.css\"></head><body><!-- Floating Action Toolbar (Hidden in print) --><div class=\"no-print-toolbar\"><div class=\"d-flex items-center gap-2\"><span class=\"s-invoice-logo\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -91,7 +91,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span><div class=\"stack-sm\"><strong style=\"font-size:0.95rem; display:block; color:#0f172a;\">فاتورة استلام وتوريد</strong> <span style=\"font-size:0.75rem; color:#64748b;\">رقم الفاتورة: <span class=\"tabular-nums font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</span><div class=\"stack-sm\"><strong class=\"s-invoice-name\">فاتورة استلام وتوريد</strong> <span class=\"s-invoice-meta\">رقم الفاتورة: <span class=\"tabular-nums font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

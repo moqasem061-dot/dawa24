@@ -12,8 +12,8 @@ templ VendorBranchesForm(data VendorBranchesData, lang string) {
 	<div
 		id="branch-form-panel"
 		class="glass-panel p-6 d-flex flex-col gap-4 sticky top-6"
-		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'vendor-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
-		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+		@dawa-coords-change.window="$event.detail && ($event.detail.targetId === 'vendor-branch-map-picker' || !$event.detail.targetId) && [form.latitude = $event.detail.lat, form.longitude = $event.detail.lon]"
+		@combobox-change.window="$event.detail && onComboboxChange($event.detail)"
 	>
 		<!-- City & Governorate coordinates lookup for instant map auto-pan -->
 		<div id="vendor-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
@@ -52,7 +52,8 @@ templ VendorBranchesForm(data VendorBranchesData, lang string) {
 			method="POST"
 			:action="formAction"
 			class="d-flex flex-col gap-3 m-0"
-			@submit={ fmt.Sprintf("if (!form.city_id) { $event.preventDefault(); if (window.showToast) { window.showToast(%q, 'warning'); } else { alert(%q); } }", i18n.T(lang, "vendor_branches.empty_city"), i18n.T(lang, "vendor_branches.empty_city")) }
+			data-empty-city={ i18n.T(lang, "vendor_branches.empty_city") }
+			@submit="validateSubmit($event)"
 		>
 			<!-- Section 1: Names & Code -->
 			<div class="d-grid grid-cols-2 gap-3">

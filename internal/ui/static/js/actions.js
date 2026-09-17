@@ -39,7 +39,41 @@
     'dragleave', 'drop', 'paste', 'mouseover', 'mouseout', 'mouseenter', 'mouseleave',
     'load', 'error', 'scroll', 'toggle', 'close', 'contextmenu'];
   var ATTRS = EVENTS.map(function (e) { return 'data-on-' + e; });
-  var SELECTOR = ATTRS.map(function (a) { return '[' + a + ']'; }).join(',') + ',[data-stop-click]';
+  // Per-record geometry and colour. style="" is refused by the policy
+  // (style-src-attr 'none'), so the server writes the value into a typed
+  // attribute and it is applied here through the CSSOM, after validation:
+  //   data-pct="42"          width: 42%   (clamped to 0..100)
+  //   data-width-px="40"     width: 40px
+  //   data-height="320px"    height (px, rem, em, vh or %)
+  //   data-bg="#0284c7"      background-color (hex only)
+  //   data-tint="#0284c7"    tinted badge: faint background, coloured text/border
+  var STYLE_ATTRS = ['data-pct', 'data-width-px', 'data-height', 'data-bg', 'data-tint'];
+  var HEX = /^#[0-9a-f]{3}(?:[0-9a-f]{3})?$/i;
+  var LENGTH = /^\d+(?:\.\d+)?(?:px|rem|em|vh|%)$/;
+  var SELECTOR = ATTRS.concat(STYLE_ATTRS).map(function (a) { return '[' + a + ']'; }).join(',') + ',[data-stop-click]';
+
+  function applyStyle(el) {
+    var v;
+    if ((v = el.getAttribute('data-pct')) !== null) {
+      var pct = Math.max(0, Math.min(100, parseFloat(v) || 0));
+      el.style.width = pct + '%';
+    }
+    if ((v = el.getAttribute('data-width-px')) !== null && /^\d+$/.test(v)) {
+      el.style.width = v + 'px';
+    }
+    if ((v = el.getAttribute('data-height')) !== null && LENGTH.test(v)) {
+      el.style.height = v;
+    }
+    if ((v = el.getAttribute('data-bg')) !== null && HEX.test(v)) {
+      el.style.backgroundColor = v;
+    }
+    if ((v = el.getAttribute('data-tint')) !== null && HEX.test(v)) {
+      var full = v.length === 4 ? '#' + v[1] + v[1] + v[2] + v[2] + v[3] + v[3] : v;
+      el.style.backgroundColor = full + '15';
+      el.style.color = full;
+      el.style.border = '1px solid ' + full + '40';
+    }
+  }
 
   var BUILTINS = {
     print: function () { window.print(); },
@@ -261,6 +295,7 @@
   function stopClick(evt) { evt.stopPropagation(); }
 
   function bind(el) {
+    applyStyle(el);
     var done = bound.get(el);
     if (!done) { done = {}; bound.set(el, done); }
     for (var i = 0; i < EVENTS.length; i++) {
@@ -296,7 +331,7 @@
     childList: true,
     subtree: true,
     attributes: true,
-    attributeFilter: ATTRS.concat(['data-stop-click'])
+    attributeFilter: ATTRS.concat(STYLE_ATTRS, ['data-stop-click'])
   });
   bindTree(document.documentElement);
 
@@ -343,7 +378,127 @@
   // x-html. The value always goes through the sanitiser in security.js, so
   // it can carry formatting but never behaviour.
   document.addEventListener('alpine:init', function () {
-    window.Alpine.directive('safe-html', function (el, directive, utils) {
+    var A = window.Alpine;
+
+    // Magics: what templates used to reach for through window, Math, JSON
+    // and friends, which the CSP build refuses to resolve in an expression.
+    //   $t('key', 'fallback')   translated string
+    //   $lang                   'ar' | 'en'
+    //   $str(v) / $json(v)      String(v) / pretty JSON.stringify(v)
+    //   $round/$min/$max(...)   Math.round / Math.min / Math.max
+    //   $pct(part, whole)       whole-number percentage, 0 when whole is 0
+    //   $csrf()                 the CSRF token (app.js)
+    //   $copy(text)             clipboard + toast
+    //   $setHash('tab')         replace the URL hash without a history entry
+    //   $query('name')          a query-string parameter ('' when absent)
+    //   $urlHash                location.hash without '#'
+    //   $objectURL(file)        blob: preview URL for a chosen file
+    //   $focusId('id')          focus an element after the next render
+    //   $scrollToId('id')       smooth-scroll an element into view
+    //   $resetLater('key', value, ms)  set a component property after a delay
+    A.magic('t', function () {
+      return function (key, fallback) {
+        return typeof window.dawaT === 'function' ? window.dawaT(key, fallback) : fallback;
+      };
+    });
+    A.magic('lang', function () {
+      return window.__DAWA_LANG__ || document.documentElement.lang || 'ar';
+    });
+    A.magic('str', function () { return function (v) { return v == null ? '' : String(v); }; });
+    A.magic('json', function () {
+      return function (v) {
+        try { return JSON.stringify(v, null, 2); } catch (_) { return ''; }
+      };
+    });
+    A.magic('round', function () { return function (v) { return Math.round(Number(v) || 0); }; });
+    A.magic('min', function () { return function () { return Math.min.apply(null, arguments); }; });
+    A.magic('max', function () { return function () { return Math.max.apply(null, arguments); }; });
+    A.magic('pct', function () {
+      return function (part, whole) {
+        whole = Number(whole) || 0;
+        return whole ? Math.round((Number(part) || 0) / whole * 100) : 0;
+      };
+    });
+    A.magic('csrf', function () {
+      return function () {
+        return typeof window.getCsrfToken === 'function' ? window.getCsrfToken() : '';
+      };
+    });
+    A.magic('copy', function () {
+      return function (text) {
+        var done = function () {
+          if (typeof window.showToast === 'function') {
+            var msg = typeof window.dawaT === 'function' ? window.dawaT('common.copied', 'تم النسخ') : 'تم النسخ';
+            window.showToast(msg, 'success');
+          }
+        };
+        if (navigator.clipboard && text != null) navigator.clipboard.writeText(String(text)).then(done);
+      };
+    });
+    A.magic('setHash', function () {
+      return function (hash) {
+        window.history.replaceState(null, '', '#' + String(hash).replace(/^#/, ''));
+      };
+    });
+    A.magic('query', function () {
+      return function (name) {
+        return new URLSearchParams(window.location.search).get(name) || '';
+      };
+    });
+    A.magic('urlHash', function () { return window.location.hash.replace(/^#/, ''); });
+    // $here: path + query of the current page. $dropQuery('p'): remove a
+    // one-shot query parameter from the address bar.
+    A.magic('here', function () { return window.location.pathname + window.location.search; });
+    A.magic('dropQuery', function () {
+      return function (name) {
+        var u = new URL(window.location.href);
+        if (!u.searchParams.has(name)) return;
+        u.searchParams.delete(name);
+        window.history.replaceState(window.history.state, '', u.pathname + u.search + u.hash);
+      };
+    });
+    // $printInvoice(url): print through the hidden iframe when the page has
+    // one (printInvoiceDirectly), else open the printable page.
+    A.magic('printInvoice', function () {
+      return function (url) {
+        var u = new URL(String(url), window.location.href);
+        if (u.origin !== window.location.origin) return;
+        if (typeof window.printInvoiceDirectly === 'function') window.printInvoiceDirectly(u.href);
+        else window.open(u.href, '_blank', 'noopener');
+      };
+    });
+    // $clearInput('id'): reset a file or text input by id.
+    A.magic('clearInput', function () {
+      return function (id) {
+        var el = document.getElementById(id);
+        if (el) el.value = '';
+      };
+    });
+    A.magic('objectURL', function () {
+      return function (file) { return file ? URL.createObjectURL(file) : ''; };
+    });
+    A.magic('focusId', function () {
+      return function (id) {
+        A.nextTick(function () {
+          var el = document.getElementById(id);
+          if (el) el.focus();
+        });
+      };
+    });
+    A.magic('scrollToId', function () {
+      return function (id) {
+        var el = document.getElementById(id);
+        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      };
+    });
+    A.magic('resetLater', function (el) {
+      return function (key, value, ms) {
+        var data = A.$data(el);
+        setTimeout(function () { data[key] = value; }, ms);
+      };
+    });
+
+    A.directive('safe-html', function (el, directive, utils) {
       var read = utils.evaluateLater(directive.expression);
       utils.effect(function () {
         read(function (v) {

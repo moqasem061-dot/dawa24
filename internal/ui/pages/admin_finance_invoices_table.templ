@@ -175,10 +175,10 @@ templ AdminInvoicesTable(data AdminFinanceData, lang, dir string) {
 						<td class="tabular-nums text-xs">
 							{{ pct := invoicePaymentPercent(inv.PaidAmount, inv.TotalAmount) }}
 							<div class="d-flex items-center gap-2">
-								<div class="progress-bar-bg flex-1" style="height: 6px; min-width: 50px; background: rgba(0,0,0,0.06); border-radius: 99px; overflow: hidden;">
+								<div class="progress-bar-bg flex-1 s-mini-track">
 									<div
-										class="progress-bar-fill"
-										style={ fmt.Sprintf("width: %d%%; height: 100%%; border-radius: 99px; background: %s;", pct, map[bool]string{true: "#10b981", false: "#3b82f6"}[pct >= 100]) }
+										class={ "progress-bar-fill s-mini-fill", templ.KV("s-mini-fill-done", pct >= 100) }
+										data-pct={ fmt.Sprint(pct) }
 									></div>
 								</div>
 								<span class="font-bold text-3xs">{ fmt.Sprintf("%d%%", pct) }</span>

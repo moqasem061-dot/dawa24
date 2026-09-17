@@ -152,7 +152,7 @@ templ savingReviewStage(view SavingImportView) {
 	</div>
 
 	<!-- Centered Modal for Linking Saving Product to Master Catalog -->
-	<div id="saving-catalog-match-modal" class="modal-backdrop d-none" style="display: none !important;" aria-hidden="true">
+	<div id="saving-catalog-match-modal" class="modal-backdrop d-none" aria-hidden="true">
 		<div class="glass-panel p-6 saving-match-dialog">
 			<div class="flex-between items-center pb-3 border-b mb-3">
     <div class="stack-sm">
@@ -480,7 +480,7 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 		<td class="saving-review-col-price text-center align-middle">
 			<form method="POST" action={ templ.SafeURL(actionBase + "/update" + querySuffix) } class="saving-inline-form justify-center">
 				<input type="number" step="0.01" min="0" name="price" value={ row.Price.String() }
-					class="saving-num-field tabular-nums text-xs font-bold" style="width: 82px;" />
+					class="saving-num-field tabular-nums text-xs font-bold s-w-82" />
 				<button type="submit" class="btn btn-ghost btn-xs p-1 shrink-0 text-emerald" title="حفظ السعر">
 					@components.IconCheck("icon-sm")
 				</button>

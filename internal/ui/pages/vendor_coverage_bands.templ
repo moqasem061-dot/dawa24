@@ -71,7 +71,7 @@ templ VendorCoverageBands(data VendorCoverageData, lang string) {
 									<span class="badge badge-primary font-bold">
 										{ band.Fee.String() + " " + i18n.T(lang, "common.currency_egp") }
 									</span>
-									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery-bands/%d/delete", band.ID)) } @submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "vendor_coverage.bands.confirm_delete")) } class="d-inline">
+									<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery-bands/%d/delete", band.ID)) } data-confirm={ i18n.T(lang, "vendor_coverage.bands.confirm_delete") } class="d-inline">
 										<input type="hidden" name="gorilla.csrf.Token" value=""/>
 										<button type="submit" class="btn btn-2xs btn-danger" title={ i18n.T(lang, "vendor_coverage.bands.btn_delete_title") }>@components.IconTrash("icon-sm")</button>
 									</form>

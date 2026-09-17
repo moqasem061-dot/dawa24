@@ -17,3 +17,20 @@ func JSArgs(args ...any) string {
 	}
 	return string(b)
 }
+
+// AlpineCall renders an x-data or directive value that calls a registered
+// Alpine component (dawaData) or component method with JSON arguments:
+//
+//	x-data={ components.AlpineCall("dawaLinePager", len(lines)) }
+//	@click={ components.AlpineCall("openEdit", item.ID, item.Name) }
+//
+// The @alpinejs/csp parser reads JSON literals, and JSON keeps every value
+// data; fmt.Sprintf("f('%s')", name) let a quote in name rewrite the call.
+// A json.RawMessage argument is passed through as an object literal.
+func AlpineCall(name string, args ...any) string {
+	b, err := json.Marshal(args)
+	if err != nil {
+		return name + "()"
+	}
+	return name + "(" + string(b[1:len(b)-1]) + ")"
+}

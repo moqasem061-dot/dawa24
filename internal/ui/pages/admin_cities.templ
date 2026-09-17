@@ -26,102 +26,108 @@ type AdminCitiesData struct {
 
 templ AdminCities(data AdminCitiesData, lang string, dir string, isHTMX bool) {
 	@layouts.AdminShell("إدارة المحافظات والمدن الجغرافية", "cities", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminCitiesState', function () {
+				return {
+					isEditOpen: false,
+					isGovEditOpen: false,
+					editForm: {
+						id: 0,
+						gov_id: '',
+						name_ar: '',
+						name_en: '',
+						lat: '',
+						lon: '',
+						radius: 3000,
+						is_capital: false,
+						is_active: true,
+						map_link: '#'
+					},
+					govEditForm: {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						lat: '',
+						lon: '',
+						radius: 25000,
+						is_active: true
+					},
+					openEdit(id, govId, nameAr, nameEn, lat, lon, radius, isCapital, isActive) {
+						const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
+						const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
+						const radVal = (radius && radius > 0) ? Number(radius) : 3000;
+						this.editForm = {
+							id: id,
+							gov_id: govId > 0 ? String(govId) : '',
+							name_ar: nameAr || '',
+							name_en: nameEn || '',
+							lat: (lat && lat !== 0) ? String(lat) : '',
+							lon: (lon && lon !== 0) ? String(lon) : '',
+							radius: radVal,
+							is_capital: !!isCapital,
+							is_active: !!isActive,
+							map_link: (lat && lon) ? 'https://www.google.com/maps?q=' + lat + ',' + lon : '#'
+						};
+						this.isEditOpen = true;
+						this.$nextTick(() => {
+							if (window.dawaSetMapLocation) {
+								window.dawaSetMapLocation('#edit-city-map-picker', latVal, lonVal, null, radVal);
+							}
+						});
+					},
+					closeEdit() {
+						this.isEditOpen = false;
+					},
+					openGovEdit(id, nameAr, nameEn, lat, lon, radius, isActive) {
+						const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
+						const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
+						const radVal = (radius && radius > 0) ? Number(radius) : 25000;
+						this.govEditForm = {
+							id: id,
+							name_ar: nameAr || '',
+							name_en: nameEn || '',
+							lat: (lat && lat !== 0) ? String(lat) : '',
+							lon: (lon && lon !== 0) ? String(lon) : '',
+							radius: radVal,
+							is_active: !!isActive
+						};
+						this.isGovEditOpen = true;
+						this.$nextTick(() => {
+							if (window.dawaSetMapLocation) {
+								window.dawaSetMapLocation('#edit-gov-map-picker', latVal, lonVal, null, radVal);
+							}
+						});
+					},
+					closeGovEdit() {
+						this.isGovEditOpen = false;
+					},
+					setCityRadius(rad) {
+						const r = Number(rad);
+						if (isNaN(r) || r <= 0) return;
+						this.editForm.radius = r;
+						const picker = document.querySelector('#edit-city-map-picker');
+						if (picker && picker._leaflet_circle) {
+							picker._leaflet_circle.setRadius(r);
+							if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
+						}
+					},
+					setGovRadius(rad) {
+						const r = Number(rad);
+						if (isNaN(r) || r <= 0) return;
+						this.govEditForm.radius = r;
+						const picker = document.querySelector('#edit-gov-map-picker');
+						if (picker && picker._leaflet_circle) {
+							picker._leaflet_circle.setRadius(r);
+							if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
+						}
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				isEditOpen: false,
-				isGovEditOpen: false,
-				editForm: {
-					id: 0,
-					gov_id: '',
-					name_ar: '',
-					name_en: '',
-					lat: '',
-					lon: '',
-					radius: 3000,
-					is_capital: false,
-					is_active: true,
-					map_link: '#'
-				},
-				govEditForm: {
-					id: 0,
-					name_ar: '',
-					name_en: '',
-					lat: '',
-					lon: '',
-					radius: 25000,
-					is_active: true
-				},
-				openEdit(id, govId, nameAr, nameEn, lat, lon, radius, isCapital, isActive) {
-					const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
-					const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
-					const radVal = (radius && radius > 0) ? Number(radius) : 3000;
-					this.editForm = {
-						id: id,
-						gov_id: govId > 0 ? String(govId) : '',
-						name_ar: nameAr || '',
-						name_en: nameEn || '',
-						lat: (lat && lat !== 0) ? String(lat) : '',
-						lon: (lon && lon !== 0) ? String(lon) : '',
-						radius: radVal,
-						is_capital: !!isCapital,
-						is_active: !!isActive,
-						map_link: (lat && lon) ? 'https://www.google.com/maps?q=' + lat + ',' + lon : '#'
-					};
-					this.isEditOpen = true;
-					this.$nextTick(() => {
-						if (window.dawaSetMapLocation) {
-							window.dawaSetMapLocation('#edit-city-map-picker', latVal, lonVal, null, radVal);
-						}
-					});
-				},
-				closeEdit() {
-					this.isEditOpen = false;
-				},
-				openGovEdit(id, nameAr, nameEn, lat, lon, radius, isActive) {
-					const latVal = (lat && lat !== 0) ? Number(lat) : 30.0444;
-					const lonVal = (lon && lon !== 0) ? Number(lon) : 31.2357;
-					const radVal = (radius && radius > 0) ? Number(radius) : 25000;
-					this.govEditForm = {
-						id: id,
-						name_ar: nameAr || '',
-						name_en: nameEn || '',
-						lat: (lat && lat !== 0) ? String(lat) : '',
-						lon: (lon && lon !== 0) ? String(lon) : '',
-						radius: radVal,
-						is_active: !!isActive
-					};
-					this.isGovEditOpen = true;
-					this.$nextTick(() => {
-						if (window.dawaSetMapLocation) {
-							window.dawaSetMapLocation('#edit-gov-map-picker', latVal, lonVal, null, radVal);
-						}
-					});
-				},
-				closeGovEdit() {
-					this.isGovEditOpen = false;
-				},
-				setCityRadius(rad) {
-					const r = Number(rad);
-					if (isNaN(r) || r <= 0) return;
-					this.editForm.radius = r;
-					const picker = document.querySelector('#edit-city-map-picker');
-					if (picker && picker._leaflet_circle) {
-						picker._leaflet_circle.setRadius(r);
-						if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
-					}
-				},
-				setGovRadius(rad) {
-					const r = Number(rad);
-					if (isNaN(r) || r <= 0) return;
-					this.govEditForm.radius = r;
-					const picker = document.querySelector('#edit-gov-map-picker');
-					if (picker && picker._leaflet_circle) {
-						picker._leaflet_circle.setRadius(r);
-						if (picker._leaflet_map) picker._leaflet_map.fitBounds(picker._leaflet_circle.getBounds(), { padding: [25, 25], maxZoom: 15 });
-					}
-				}
-			}"
+			x-data="adminCitiesState"
 		>
 			<!-- Page Header -->
 			<div class="page-header flex-between items-start flex-wrap gap-4 pb-4 mb-6 border-b">

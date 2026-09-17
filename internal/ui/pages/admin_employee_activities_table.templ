@@ -135,7 +135,7 @@ templ AdminEmployeeActivitiesTable(data AdminEmployeeActivitiesData) {
 									<button
 										type="button"
 										class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
-										@click={ fmt.Sprintf("selected = %s; isDetailsOpen = true; document.getElementById('user-audit-details-modal')?.showModal();", func() string { s, _ := templ.JSONString(e); return s }()) }
+										@click={ fmt.Sprintf("[selected = %s, isDetailsOpen = true, $dispatch('open-modal', 'user-audit-details-modal')]", func() string { s, _ := templ.JSONString(e); return s }()) }
 									>
 										@components.IconEye("icon-2xs")
 										<span>تفاصيل</span>
@@ -225,11 +225,11 @@ templ AdminEmployeeActivitiesModal() {
 				<div class="d-grid grid-auto-fit-sm gap-3">
 					<div class="p-3 bg-rose-50/40 rounded-xl border border-rose-100">
 						<div class="text-2xs font-extrabold text-rose-800 mb-1.5">البيانات السابقة (Before):</div>
-						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-rose-200 overflow-x-auto text-slate-700" x-text="JSON.stringify(selected.before || {}, null, 2)"></pre>
+						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-rose-200 overflow-x-auto text-slate-700" x-text="$json(selected.before || {})"></pre>
 					</div>
 					<div class="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100">
 						<div class="text-2xs font-extrabold text-emerald-800 mb-1.5">البيانات بعد التعديل (After):</div>
-						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-emerald-200 overflow-x-auto text-slate-700" x-text="JSON.stringify(selected.after || {}, null, 2)"></pre>
+						<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-emerald-200 overflow-x-auto text-slate-700" x-text="$json(selected.after || {})"></pre>
 					</div>
 				</div>
 			</div>

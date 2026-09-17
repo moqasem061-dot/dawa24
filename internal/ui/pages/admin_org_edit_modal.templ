@@ -75,7 +75,7 @@ templ AdminOrgEditModal() {
 
 			<!-- Edit Form with Scrollable Body and Sticky Footer -->
 			<form :action="'/admin/organizations/' + form.id + '/edit'" method="POST" class="d-flex flex-col flex-1 min-h-0 m-0 overflow-hidden">
-				<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+				<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 				<input type="hidden" name="redirect_to" x-model="form.redirect_to"/>
 
 				<!-- Scrollable Body -->
@@ -387,5 +387,7 @@ templ AdminOrgScript() {
 				}
 			};
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('adminOrgManager', adminOrgManager);
 	</script>
 }

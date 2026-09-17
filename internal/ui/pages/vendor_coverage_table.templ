@@ -16,7 +16,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 					<span>@components.IconFileText("icon-sm")</span>
 					<span>{ i18n.T(lang, "vendor_coverage.table.title") }</span>
 					<span class="tabular-nums text-brand" x-text="'(' + totalFilteredCount + ')'">({ fmt.Sprintf("%d", len(data.Coverages)) })</span>
-					<span x-show="totalFilteredCount !== allCoverages.length" class="text-xs text-muted font-normal" x-text="(window.__DAWA_LANG__ === 'en' ? 'out of ' : 'من أصل ') + allCoverages.length"></span>
+					<span x-show="totalFilteredCount !== allCoverages.length" class="text-xs text-muted font-normal" x-text="($lang === 'en' ? 'out of ' : 'من أصل ') + allCoverages.length"></span>
 				</h2>
 				<p class="text-xs text-muted mt-1 m-0">
 					{ i18n.T(lang, "vendor_coverage.table.desc") }
@@ -29,7 +29,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 				if len(data.Branches) > 0 {
 					<div class="d-flex items-center gap-1.5 text-xs">
 						<label class="text-muted font-bold whitespace-nowrap">{ i18n.T(lang, "vendor_coverage.table.filter_branch") }</label>
-						<select x-model="filterBranch" @change="currentPage = 1; updateQueryParams()" class="form-control text-xs font-bold w-40">
+						<select x-model="filterBranch" @change="[currentPage = 1, updateQueryParams()]" class="form-control text-xs font-bold w-40">
 							<option value="all">{ i18n.T(lang, "vendor_coverage.table.all_branches") }</option>
 							for _, b := range data.Branches {
 								<option value={ fmt.Sprintf("%d", b.ID) }>
@@ -46,7 +46,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 				<!-- Filter Day -->
 				<div class="d-flex items-center gap-1.5 text-xs">
 					<label class="text-muted font-bold whitespace-nowrap">{ i18n.T(lang, "vendor_coverage.table.filter_day") }</label>
-					<select x-model="filterDay" @change="currentPage = 1; updateQueryParams()" class="form-control text-xs font-bold w-36">
+					<select x-model="filterDay" @change="[currentPage = 1, updateQueryParams()]" class="form-control text-xs font-bold w-36">
 						<option value="all">{ i18n.T(lang, "vendor_coverage.table.all_days") }</option>
 						<option value="6">{ i18n.T(lang, "vendor_coverage.builder.day_sat") }</option>
 						<option value="0">{ i18n.T(lang, "vendor_coverage.builder.day_sun") }</option>
@@ -67,7 +67,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 				<button
 					type="button"
 					x-show="filterBranch !== 'all' || filterDay !== 'all' || searchQuery !== ''"
-					@click="filterBranch = 'all'; filterDay = 'all'; searchQuery = ''; currentPage = 1; updateQueryParams()"
+					@click="[filterBranch = 'all', filterDay = 'all', searchQuery = '', currentPage = 1, updateQueryParams()]"
 					class="btn btn-xs btn-secondary font-bold"
 					title={ i18n.T(lang, "vendor_coverage.table.reset_filters") }
 				>
@@ -118,7 +118,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 									<span class="text-2xl">@components.IconSearch("icon-md")</span>
 									<span class="font-bold text-sm">{ i18n.T(lang, "vendor_coverage.table.no_match_title") }</span>
 									<span class="text-xs text-secondary">{ i18n.T(lang, "vendor_coverage.table.no_match_desc") }</span>
-									<button type="button" @click="filterBranch = 'all'; filterDay = 'all'; searchQuery = ''; currentPage = 1; updateQueryParams()" class="btn btn-xs btn-secondary mt-1 font-bold">
+									<button type="button" @click="[filterBranch = 'all', filterDay = 'all', searchQuery = '', currentPage = 1, updateQueryParams()]" class="btn btn-xs btn-secondary mt-1 font-bold">
 										{ i18n.T(lang, "vendor_coverage.table.reset_filters") }
 									</button>
 								</div>
@@ -201,7 +201,7 @@ templ VendorCoverageTable(data VendorCoverageData, lang string) {
 											@components.IconEdit("icon-sm")
 										</button>
 
-										<form method="POST" :action="'/vendor/coverage/' + c.id + '/delete'" :onsubmit="'return confirm(\'' + (window.__DAWA_LANG__ === 'en' ? 'Are you sure you want to delete this coverage zone?' : 'هل أنت متأكد من حذف نطاق التغطية هذا؟') + '\');'" class="d-inline">
+										<form method="POST" :action="'/vendor/coverage/' + c.id + '/delete'" :onsubmit="'return confirm(\'' + ($lang === 'en' ? 'Are you sure you want to delete this coverage zone?' : 'هل أنت متأكد من حذف نطاق التغطية هذا؟') + '\');'" class="d-inline">
 											<input type="hidden" name="gorilla.csrf.Token" value=""/>
 											<input type="hidden" name="id" :value="c.id"/>
 											<input type="hidden" name="return_branch" :value="filterBranch"/>

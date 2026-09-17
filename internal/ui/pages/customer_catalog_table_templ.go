@@ -738,7 +738,7 @@ func CustomerCatalogTable(variants []*SupplierVariantCard, lang string) templ.Co
 				return templ_7745c5c3_Err
 			}
 			if v.IsFavorite {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<span class=\"fav-icon-outline\" style=\"display:none\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "<span class=\"fav-icon-outline s-hidden-init\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -767,7 +767,7 @@ func CustomerCatalogTable(variants []*SupplierVariantCard, lang string) templ.Co
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</span> <span class=\"fav-icon-filled\" style=\"display:none\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</span> <span class=\"fav-icon-filled s-hidden-init\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

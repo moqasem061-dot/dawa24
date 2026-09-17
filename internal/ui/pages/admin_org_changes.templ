@@ -234,7 +234,7 @@ templ adminOrgChangeCard(v AdminOrgChangesView, row AdminOrgChangeRow) {
 							<tr>
 								<td class="font-bold text-secondary">{ organizationFieldLabel(v.Lang, key) }</td>
 								<td class="bg-danger-subtle font-mono text-break">
-									<span class="text-danger" style="text-decoration: line-through;">
+									<span class="text-danger s-line-through">
 										{ orgFieldOrDash(row.Request.Previous[key]) }
 									</span>
 								</td>

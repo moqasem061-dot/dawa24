@@ -19,52 +19,58 @@ func imageRowsJSON(rows []*AdminImageImportRow) string {
 }
 
 templ adminImageCompletedStage(view AdminProductImagesImportView) {
+	<script nonce={ templ.GetNonce(ctx) }>
+		// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+		dawaData('adminProductImagesCompletedState', function () {
+			return {
+				rows: [],
+				searchQuery: '',
+				statusFilter: 'all',
+				perPage: 25,
+				currentPage: 1,
+				init() {
+					try {
+						var el = document.getElementById('admin-image-rows-json');
+						if (el && el.textContent) {
+							this.rows = JSON.parse(el.textContent);
+						}
+					} catch (e) {
+						console.error('Failed to parse image import rows', e);
+					}
+				},
+				filteredRows() {
+					var q = this.searchQuery.trim().toLowerCase();
+					var status = this.statusFilter;
+					return this.rows.filter(function(r) {
+						if (status !== 'all') {
+							if (status === 'failed' && (r.status === 'success' || r.status === 'not_found')) return false;
+							if (status !== 'failed' && r.status !== status) return false;
+						}
+						if (!q) return true;
+						return (r.sku && r.sku.toLowerCase().indexOf(q) !== -1) ||
+							(r.product_name && r.product_name.toLowerCase().indexOf(q) !== -1) ||
+							(r.image_url && r.image_url.toLowerCase().indexOf(q) !== -1);
+					});
+				},
+				totalPages() {
+					var count = this.filteredRows().length;
+					return Math.max(1, Math.ceil(count / this.perPage));
+				},
+				pagedRows() {
+					var list = this.filteredRows();
+					var start = (this.currentPage - 1) * this.perPage;
+					return list.slice(start, start + this.perPage);
+				},
+				setPage(p) {
+					if (p >= 1 && p <= this.totalPages()) {
+						this.currentPage = p;
+					}
+				}
+			};
+		});
+	</script>
 	<div
-		x-data="{
-			rows: [],
-			searchQuery: '',
-			statusFilter: 'all',
-			perPage: 25,
-			currentPage: 1,
-			init() {
-				try {
-					var el = document.getElementById('admin-image-rows-json');
-					if (el && el.textContent) {
-						this.rows = JSON.parse(el.textContent);
-					}
-				} catch (e) {
-					console.error('Failed to parse image import rows', e);
-				}
-			},
-			filteredRows() {
-				var q = this.searchQuery.trim().toLowerCase();
-				var status = this.statusFilter;
-				return this.rows.filter(function(r) {
-					if (status !== 'all') {
-						if (status === 'failed' && (r.status === 'success' || r.status === 'not_found')) return false;
-						if (status !== 'failed' && r.status !== status) return false;
-					}
-					if (!q) return true;
-					return (r.sku && r.sku.toLowerCase().indexOf(q) !== -1) ||
-						(r.product_name && r.product_name.toLowerCase().indexOf(q) !== -1) ||
-						(r.image_url && r.image_url.toLowerCase().indexOf(q) !== -1);
-				});
-			},
-			totalPages() {
-				var count = this.filteredRows().length;
-				return Math.max(1, Math.ceil(count / this.perPage));
-			},
-			pagedRows() {
-				var list = this.filteredRows();
-				var start = (this.currentPage - 1) * this.perPage;
-				return list.slice(start, start + this.perPage);
-			},
-			setPage(p) {
-				if (p >= 1 && p <= this.totalPages()) {
-					this.currentPage = p;
-				}
-			}
-		}"
+		x-data="adminProductImagesCompletedState"
 	>
 		<!-- Stats Grid -->
 		<div class="dashboard-stat-grid cols-4 mb-6">
@@ -223,7 +229,7 @@ templ adminImageCompletedStage(view AdminProductImagesImportView) {
 					<span>عرض </span>
 					<strong class="text-surface-fg" x-text="filteredRows().length === 0 ? 0 : ((currentPage - 1) * perPage + 1)"></strong>
 					<span> إلى </span>
-					<strong class="text-surface-fg" x-text="Math.min(currentPage * perPage, filteredRows().length)"></strong>
+					<strong class="text-surface-fg" x-text="$min(currentPage * perPage, filteredRows().length)"></strong>
 					<span> من إجمالي </span>
 					<strong class="text-surface-fg" x-text="filteredRows().length"></strong>
 					<span> صنفاً</span>
@@ -262,8 +268,8 @@ templ adminImageCompletedStage(view AdminProductImagesImportView) {
 		</div>
 
 		<!-- Hidden JSON Payload -->
-		<script id="admin-image-rows-json" type="application/json">
-			{ templ.Raw(imageRowsJSON(view.Session.Rows)) }
-		</script>
+		// templ does not interpolate inside <script>: the rows used to arrive as
+		// the literal text of this expression, so the table was always empty.
+		@templ.JSONScript("admin-image-rows-json", json.RawMessage(imageRowsJSON(view.Session.Rows)))
 	</div>
 }

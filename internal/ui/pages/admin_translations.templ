@@ -232,7 +232,7 @@ templ AdminTranslations(data AdminTranslationsData, lang string, dir string) {
 		</div>
 
 		<!-- Edit Translation Modal -->
-		<div id="edit-translation-modal" class="modal-backdrop" style="display: none;" data-on-click="onlySelf(); closeEditModal()">
+		<div id="edit-translation-modal" class="modal-backdrop s-hidden-init" data-on-click="onlySelf(); closeEditModal()">
 			<div class="glass-panel p-6" data-on-click="event.stopPropagation();">
 				<div class="flex-between items-center pb-3 border-b mb-4">
 					<h3 class="text-lg font-black text-primary m-0">

@@ -80,7 +80,20 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"settings-page d-flex flex-col gap-6\" x-data=\"{\r\n\t\t\t\tactiveTab: 'features',\r\n\t\t\t\tisMethodModalOpen: false,\r\n\t\t\t\tisEditingMethod: false,\r\n\t\t\t\tmethodForm: {\r\n\t\t\t\t\tid: '',\r\n\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\tname_en: '',\r\n\t\t\t\t\tprovider_type: 'bank',\r\n\t\t\t\t\tdescription_ar: '',\r\n\t\t\t\t\tdescription_en: '',\r\n\t\t\t\t\taccount_name: '',\r\n\t\t\t\t\tbank_name: '',\r\n\t\t\t\t\taccount_number: '',\r\n\t\t\t\t\tiban: '',\r\n\t\t\t\t\tswift_code: '',\r\n\t\t\t\t\tbranch_name: '',\r\n\t\t\t\t\tinstapay_handle: '',\r\n\t\t\t\t\tphone_number: '',\r\n\t\t\t\t\tis_active: true,\r\n\t\t\t\t\tis_deposit_enabled: true,\r\n\t\t\t\t\tis_checkout_enabled: true,\r\n\t\t\t\t\tdisplay_order: 1\r\n\t\t\t\t},\r\n\t\t\t\tinit() {\r\n\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\r\n\t\t\t\t\tlet tab = urlParams.get('tab') || localStorage.getItem('dawa24-admin-tab') || 'features';\r\n\t\t\t\t\tif (tab !== 'features' && tab !== 'site' && tab !== 'policies' && tab !== 'payment_methods') {\r\n\t\t\t\t\t\ttab = 'features';\r\n\t\t\t\t\t}\r\n\t\t\t\t\tthis.activeTab = tab;\r\n\t\t\t\t},\r\n\t\t\t\tsetTab(tab) {\r\n\t\t\t\t\tthis.activeTab = tab;\r\n\t\t\t\t\tlocalStorage.setItem('dawa24-admin-tab', tab);\r\n\t\t\t\t\tconst u = new URL(window.location);\r\n\t\t\t\t\tu.searchParams.set('tab', tab);\r\n\t\t\t\t\twindow.history.replaceState({}, '', u);\r\n\t\t\t\t},\r\n\t\t\t\topenNewMethodModal() {\r\n\t\t\t\t\tthis.isEditingMethod = false;\r\n\t\t\t\t\tthis.methodForm = {\r\n\t\t\t\t\t\tid: '',\r\n\t\t\t\t\t\tname_ar: '',\r\n\t\t\t\t\t\tname_en: '',\r\n\t\t\t\t\t\tprovider_type: 'bank',\r\n\t\t\t\t\t\tdescription_ar: '',\r\n\t\t\t\t\t\tdescription_en: '',\r\n\t\t\t\t\t\taccount_name: '',\r\n\t\t\t\t\t\tbank_name: '',\r\n\t\t\t\t\t\taccount_number: '',\r\n\t\t\t\t\t\tiban: '',\r\n\t\t\t\t\t\tswift_code: '',\r\n\t\t\t\t\t\tbranch_name: '',\r\n\t\t\t\t\t\tinstapay_handle: '',\r\n\t\t\t\t\t\tphone_number: '',\r\n\t\t\t\t\t\tis_active: true,\r\n\t\t\t\t\t\tis_deposit_enabled: true,\r\n\t\t\t\t\t\tis_checkout_enabled: true,\r\n\t\t\t\t\t\tdisplay_order: 1\r\n\t\t\t\t\t};\r\n\t\t\t\t\tconst modal = document.getElementById('payment-method-modal');\r\n\t\t\t\t\tif (modal && typeof modal.showModal === 'function') modal.showModal();\r\n\t\t\t\t},\r\n\t\t\t\topenEditMethodModal(pm) {\r\n\t\t\t\t\tthis.isEditingMethod = true;\r\n\t\t\t\t\tthis.methodForm = {\r\n\t\t\t\t\t\tid: pm.id || '',\r\n\t\t\t\t\t\tname_ar: pm.name_ar || '',\r\n\t\t\t\t\t\tname_en: pm.name_en || '',\r\n\t\t\t\t\t\tprovider_type: pm.provider_type || 'bank',\r\n\t\t\t\t\t\tdescription_ar: pm.description_ar || '',\r\n\t\t\t\t\t\tdescription_en: pm.description_en || '',\r\n\t\t\t\t\t\taccount_name: pm.account_name || '',\r\n\t\t\t\t\t\tbank_name: pm.bank_name || '',\r\n\t\t\t\t\t\taccount_number: pm.account_number || '',\r\n\t\t\t\t\t\tiban: pm.iban || '',\r\n\t\t\t\t\t\tswift_code: pm.swift_code || '',\r\n\t\t\t\t\t\tbranch_name: pm.branch_name || '',\r\n\t\t\t\t\t\tinstapay_handle: pm.instapay_handle || '',\r\n\t\t\t\t\t\tphone_number: pm.phone_number || '',\r\n\t\t\t\t\t\tis_active: pm.is_active,\r\n\t\t\t\t\t\tis_deposit_enabled: pm.is_deposit_enabled,\r\n\t\t\t\t\t\tis_checkout_enabled: pm.is_checkout_enabled,\r\n\t\t\t\t\t\tdisplay_order: pm.display_order || 1\r\n\t\t\t\t\t};\r\n\t\t\t\t\tconst modal = document.getElementById('payment-method-modal');\r\n\t\t\t\t\tif (modal && typeof modal.showModal === 'function') modal.showModal();\r\n\t\t\t\t}\r\n\t\t\t}\"><!-- Header --><div class=\"glass-panel p-6 mb-2\"><div class=\"d-flex items-center gap-3\"><div class=\"user-avatar-badge text-xl\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script nonce=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 44, Col: 37}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\t\tdawaData('adminSettingsState', function () {\n\t\t\t\treturn {\n\t\t\t\t\tactiveTab: 'features',\n\t\t\t\t\tisMethodModalOpen: false,\n\t\t\t\t\tisEditingMethod: false,\n\t\t\t\t\tmethodForm: {\n\t\t\t\t\t\tid: '',\n\t\t\t\t\t\tname_ar: '',\n\t\t\t\t\t\tname_en: '',\n\t\t\t\t\t\tprovider_type: 'bank',\n\t\t\t\t\t\tdescription_ar: '',\n\t\t\t\t\t\tdescription_en: '',\n\t\t\t\t\t\taccount_name: '',\n\t\t\t\t\t\tbank_name: '',\n\t\t\t\t\t\taccount_number: '',\n\t\t\t\t\t\tiban: '',\n\t\t\t\t\t\tswift_code: '',\n\t\t\t\t\t\tbranch_name: '',\n\t\t\t\t\t\tinstapay_handle: '',\n\t\t\t\t\t\tphone_number: '',\n\t\t\t\t\t\tis_active: true,\n\t\t\t\t\t\tis_deposit_enabled: true,\n\t\t\t\t\t\tis_checkout_enabled: true,\n\t\t\t\t\t\tdisplay_order: 1\n\t\t\t\t\t},\n\t\t\t\t\tinit() {\n\t\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\n\t\t\t\t\t\tlet tab = urlParams.get('tab') || localStorage.getItem('dawa24-admin-tab') || 'features';\n\t\t\t\t\t\tif (tab !== 'features' && tab !== 'site' && tab !== 'policies' && tab !== 'payment_methods') {\n\t\t\t\t\t\t\ttab = 'features';\n\t\t\t\t\t\t}\n\t\t\t\t\t\tthis.activeTab = tab;\n\t\t\t\t\t},\n\t\t\t\t\tsetTab(tab) {\n\t\t\t\t\t\tthis.activeTab = tab;\n\t\t\t\t\t\tlocalStorage.setItem('dawa24-admin-tab', tab);\n\t\t\t\t\t\tconst u = new URL(window.location);\n\t\t\t\t\t\tu.searchParams.set('tab', tab);\n\t\t\t\t\t\twindow.history.replaceState({}, '', u);\n\t\t\t\t\t},\n\t\t\t\t\topenNewMethodModal() {\n\t\t\t\t\t\tthis.isEditingMethod = false;\n\t\t\t\t\t\tthis.methodForm = {\n\t\t\t\t\t\t\tid: '',\n\t\t\t\t\t\t\tname_ar: '',\n\t\t\t\t\t\t\tname_en: '',\n\t\t\t\t\t\t\tprovider_type: 'bank',\n\t\t\t\t\t\t\tdescription_ar: '',\n\t\t\t\t\t\t\tdescription_en: '',\n\t\t\t\t\t\t\taccount_name: '',\n\t\t\t\t\t\t\tbank_name: '',\n\t\t\t\t\t\t\taccount_number: '',\n\t\t\t\t\t\t\tiban: '',\n\t\t\t\t\t\t\tswift_code: '',\n\t\t\t\t\t\t\tbranch_name: '',\n\t\t\t\t\t\t\tinstapay_handle: '',\n\t\t\t\t\t\t\tphone_number: '',\n\t\t\t\t\t\t\tis_active: true,\n\t\t\t\t\t\t\tis_deposit_enabled: true,\n\t\t\t\t\t\t\tis_checkout_enabled: true,\n\t\t\t\t\t\t\tdisplay_order: 1\n\t\t\t\t\t\t};\n\t\t\t\t\t\tconst modal = document.getElementById('payment-method-modal');\n\t\t\t\t\t\tif (modal && typeof modal.showModal === 'function') modal.showModal();\n\t\t\t\t\t},\n\t\t\t\t\topenEditMethodModal(pm) {\n\t\t\t\t\t\tthis.isEditingMethod = true;\n\t\t\t\t\t\tthis.methodForm = {\n\t\t\t\t\t\t\tid: pm.id || '',\n\t\t\t\t\t\t\tname_ar: pm.name_ar || '',\n\t\t\t\t\t\t\tname_en: pm.name_en || '',\n\t\t\t\t\t\t\tprovider_type: pm.provider_type || 'bank',\n\t\t\t\t\t\t\tdescription_ar: pm.description_ar || '',\n\t\t\t\t\t\t\tdescription_en: pm.description_en || '',\n\t\t\t\t\t\t\taccount_name: pm.account_name || '',\n\t\t\t\t\t\t\tbank_name: pm.bank_name || '',\n\t\t\t\t\t\t\taccount_number: pm.account_number || '',\n\t\t\t\t\t\t\tiban: pm.iban || '',\n\t\t\t\t\t\t\tswift_code: pm.swift_code || '',\n\t\t\t\t\t\t\tbranch_name: pm.branch_name || '',\n\t\t\t\t\t\t\tinstapay_handle: pm.instapay_handle || '',\n\t\t\t\t\t\t\tphone_number: pm.phone_number || '',\n\t\t\t\t\t\t\tis_active: pm.is_active,\n\t\t\t\t\t\t\tis_deposit_enabled: pm.is_deposit_enabled,\n\t\t\t\t\t\t\tis_checkout_enabled: pm.is_checkout_enabled,\n\t\t\t\t\t\t\tdisplay_order: pm.display_order || 1\n\t\t\t\t\t\t};\n\t\t\t\t\t\tconst modal = document.getElementById('payment-method-modal');\n\t\t\t\t\t\tif (modal && typeof modal.showModal === 'function') modal.showModal();\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"settings-page d-flex flex-col gap-6\" x-data=\"adminSettingsState\"><!-- Header --><div class=\"glass-panel p-6 mb-2\"><div class=\"d-flex items-center gap-3\"><div class=\"user-avatar-badge text-xl\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -88,7 +101,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div><h1 class=\"text-2xl font-black text-primary m-0\">إعدادات المنصة والمنظومة</h1><p class=\"text-sm text-secondary m-0 mt-1\">إدارة الهوية البصرية، بيانات التواصل، السياسات، الإعدادات المالية، وقنوات الدفع المعتمدة</p></div></div></div><!-- Main Persistent Tabs Bar --><div class=\"tabs-nav\"><button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'features' ? 'active' : ''\" @click=\"setTab('features')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div><div><h1 class=\"text-2xl font-black text-primary m-0\">إعدادات المنصة والمنظومة</h1><p class=\"text-sm text-secondary m-0 mt-1\">إدارة الهوية البصرية، بيانات التواصل، السياسات، الإعدادات المالية، وقنوات الدفع المعتمدة</p></div></div></div><!-- Main Persistent Tabs Bar --><div class=\"tabs-nav\"><button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'features' ? 'active' : ''\" @click=\"setTab('features')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -96,7 +109,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span>1. الإعدادات المالية والمنظومة</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'site' ? 'active' : ''\" @click=\"setTab('site')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>1. الإعدادات المالية والمنظومة</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'site' ? 'active' : ''\" @click=\"setTab('site')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -104,7 +117,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>2. إعدادات الموقع والهوية</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'policies' ? 'active' : ''\" @click=\"setTab('policies')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span>2. إعدادات الموقع والهوية</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'policies' ? 'active' : ''\" @click=\"setTab('policies')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -112,7 +125,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span>3. السياسات والشروط القانونية</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'payment_methods' ? 'active' : ''\" @click=\"setTab('payment_methods')\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span>3. السياسات والشروط القانونية</span></button> <button type=\"button\" class=\"tab-btn\" :class=\"activeTab === 'payment_methods' ? 'active' : ''\" @click=\"setTab('payment_methods')\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -120,7 +133,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span>4. طرق وقنوات الدفع المعتمدة</span></button></div><!-- ========================================== --><!-- TAB 1: Financial & Platform Config         --><!-- ========================================== --><div x-show=\"activeTab === 'features'\" x-cloak class=\"d-flex flex-col gap-6\"><!-- Financial & General Config --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center gap-2 pb-3 mb-4 border-b\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span>4. طرق وقنوات الدفع المعتمدة</span></button></div><!-- ========================================== --><!-- TAB 1: Financial & Platform Config         --><!-- ========================================== --><div x-show=\"activeTab === 'features'\" x-cloak class=\"d-flex flex-col gap-6\"><!-- Financial & General Config --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center gap-2 pb-3 mb-4 border-b\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -128,46 +141,46 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<h3 class=\"text-base font-black text-primary m-0\">الإعدادات المالية والمنظومة</h3></div><form action=\"/admin/settings\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">العملة الافتراضية للمعاملات</label> <input type=\"text\" value=\"EGP (الجنيه المصري)\" disabled class=\"form-input text-xs\"></div><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">اللغات المعتمدة في النظام</label> <input type=\"text\" value=\"العربية (الرئيسية)، English\" disabled class=\"form-input text-xs\"></div></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">بريد إشعارات الدعم الفني *</label> <input type=\"email\" name=\"support_email\" value=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var3 string
-			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.SupportEmail)
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 227, Col: 76}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" required class=\"form-input text-xs font-mono\" dir=\"ltr\"></div><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">نسبة عمولة المنصة الافتراضية (%) *</label> <input type=\"number\" name=\"commission_rate\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<h3 class=\"text-base font-black text-primary m-0\">الإعدادات المالية والمنظومة</h3></div><form action=\"/admin/settings\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">العملة الافتراضية للمعاملات</label> <input type=\"text\" value=\"EGP (الجنيه المصري)\" disabled class=\"form-input text-xs\"></div><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">اللغات المعتمدة في النظام</label> <input type=\"text\" value=\"العربية (الرئيسية)، English\" disabled class=\"form-input text-xs\"></div></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">بريد إشعارات الدعم الفني *</label> <input type=\"email\" name=\"support_email\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.CommissionRate)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.SupportEmail)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 231, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 233, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" step=\"0.1\" min=\"0\" max=\"100\" required class=\"form-input text-xs tabular-nums\"></div></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة عدم النشاط لتسجيل الخروج التلقائي (بالدقائق) *</label> <input type=\"number\" name=\"session_idle_timeout_minutes\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" required class=\"form-input text-xs font-mono\" dir=\"ltr\"></div><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">نسبة عمولة المنصة الافتراضية (%) *</label> <input type=\"number\" name=\"commission_rate\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.SessionIdleTimeoutMinutes)
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.CommissionRate)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 241, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 237, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" min=\"1\" max=\"1440\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">المدة بالدقائق قبل إنهاء الجلسة وتسجيل خروج المستخدم تلقائياً عند عدم وجود نشاط (الافتراضي: 30 دقيقة).</span></div></div><div><button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" step=\"0.1\" min=\"0\" max=\"100\" required class=\"form-input text-xs tabular-nums\"></div></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة عدم النشاط لتسجيل الخروج التلقائي (بالدقائق) *</label> <input type=\"number\" name=\"session_idle_timeout_minutes\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var6 string
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(values.SessionIdleTimeoutMinutes)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 247, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" min=\"1\" max=\"1440\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">المدة بالدقائق قبل إنهاء الجلسة وتسجيل خروج المستخدم تلقائياً عند عدم وجود نشاط (الافتراضي: 30 دقيقة).</span></div></div><div><button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -175,7 +188,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span>حفظ إعدادات المنصة</span></button></div></form></div><!-- Temp Warehouse & Compare Files Lifecycle & Retention Card --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span>حفظ إعدادات المنصة</span></button></div></form></div><!-- Temp Warehouse & Compare Files Lifecycle & Retention Card --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -183,7 +196,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div><h3 class=\"text-base font-black text-primary m-0\">دورة حياة وأرشفة المستودعات المؤقتة وملفات المقارنة</h3><p class=\"text-xs text-secondary m-0 mt-0.5\">التحكم الكامل في مدد الأرشفة التلقائية وحذف سجلات ملفات المقارنة والمستودعات لتوفير مساحة التخزين وموارد الخادم</p></div></div><form action=\"/admin/settings/temp-warehouses/run-lifecycle\" method=\"POST\" class=\"m-0\" data-confirm=\"هل تريد بدء فحص وتشغيل دورة أرشفة وحذف المستودعات المؤقتة فوراً؟\"><button type=\"submit\" class=\"btn btn-secondary btn-sm font-bold text-xs d-flex items-center gap-1.5\" title=\"تشغيل دورة الفحص يدوياً وتطبيق مدد الأرشفة والحذف فوراً\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div><h3 class=\"text-base font-black text-primary m-0\">دورة حياة وأرشفة المستودعات المؤقتة وملفات المقارنة</h3><p class=\"text-xs text-secondary m-0 mt-0.5\">التحكم الكامل في مدد الأرشفة التلقائية وحذف سجلات ملفات المقارنة والمستودعات لتوفير مساحة التخزين وموارد الخادم</p></div></div><form action=\"/admin/settings/temp-warehouses/run-lifecycle\" method=\"POST\" class=\"m-0\" data-confirm=\"هل تريد بدء فحص وتشغيل دورة أرشفة وحذف المستودعات المؤقتة فوراً؟\"><button type=\"submit\" class=\"btn btn-secondary btn-sm font-bold text-xs d-flex items-center gap-1.5\" title=\"تشغيل دورة الفحص يدوياً وتطبيق مدد الأرشفة والحذف فوراً\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -191,7 +204,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span>تشغيل الفحص والتنظيف الآن</span></button></form></div><form action=\"/admin/settings/temp-warehouses/lifecycle\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><!-- Auto Archive Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span>تشغيل الفحص والتنظيف الآن</span></button></form></div><form action=\"/admin/settings/temp-warehouses/lifecycle\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><!-- Auto Archive Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -199,30 +212,30 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span class=\"font-bold text-xs text-primary\">الأرشفة التلقائية للمستودعات وملفات المقارنة</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_archive_enabled\" value=\"true\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"font-bold text-xs text-primary\">الأرشفة التلقائية للمستودعات وملفات المقارنة</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_archive_enabled\" value=\"true\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoArchiveEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الأرشفة</span></label></div><p class=\"text-2xs text-secondary m-0\">نقل المستودعات المؤقتة وملفات المقارنة الجاهزة إلى حالة \"مؤرشفة\" بعد انقضاء هذه المدة من وقت رفعها وإضافتها.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الأرشفة بعد الإضافة (بالساعات) *</label> <input type=\"number\" name=\"auto_archive_hours\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الأرشفة</span></label></div><p class=\"text-2xs text-secondary m-0\">نقل المستودعات المؤقتة وملفات المقارنة الجاهزة إلى حالة \"مؤرشفة\" بعد انقضاء هذه المدة من وقت رفعها وإضافتها.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الأرشفة بعد الإضافة (بالساعات) *</label> <input type=\"number\" name=\"auto_archive_hours\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhArchiveHours(values.TempWarehouseLifecycle)))
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhArchiveHours(values.TempWarehouseLifecycle)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 313, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 319, Col: 86}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" min=\"1\" max=\"87600\" required class=\"form-input text-xs tabular-nums\" placeholder=\"720\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة شائعة: 24 ساعة (يوم واحد)، 48 ساعة (يومان)، 168 ساعة (أسبوع)، 720 ساعة (30 يوماً).</span></div></div><!-- Auto Delete Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" min=\"1\" max=\"87600\" required class=\"form-input text-xs tabular-nums\" placeholder=\"720\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة شائعة: 24 ساعة (يوم واحد)، 48 ساعة (يومان)، 168 ساعة (أسبوع)، 720 ساعة (30 يوماً).</span></div></div><!-- Auto Delete Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -230,30 +243,30 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"font-bold text-xs text-primary\">الحذف والتفريغ النهائي لبيانات المستودع</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_delete_enabled\" value=\"true\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"font-bold text-xs text-primary\">الحذف والتفريغ النهائي لبيانات المستودع</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_delete_enabled\" value=\"true\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoDeleteEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الحذف النهائي</span></label></div><p class=\"text-2xs text-secondary m-0\">حذف سجلات ومواد المستودع بالكامل من قاعدة البيانات وتفريغ الملفات من التخزين بعد مرور هذه المدة من وقت الأرشفة.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الحذف النهائي بعد الأرشفة (بالأيام) *</label> <input type=\"number\" name=\"auto_delete_days\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الحذف النهائي</span></label></div><p class=\"text-2xs text-secondary m-0\">حذف سجلات ومواد المستودع بالكامل من قاعدة البيانات وتفريغ الملفات من التخزين بعد مرور هذه المدة من وقت الأرشفة.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الحذف النهائي بعد الأرشفة (بالأيام) *</label> <input type=\"number\" name=\"auto_delete_days\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhDeleteDays(values.TempWarehouseLifecycle)))
+			var templ_7745c5c3_Var8 string
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhDeleteDays(values.TempWarehouseLifecycle)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 352, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 358, Col: 84}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" min=\"1\" max=\"3650\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة: 7 أيام، 14 يوماً، 30 يوماً (شهر)، 60 يوماً. هذه العملية تمسح المواد نهائياً لتحرير الموارد وتوفير مساحة السيرفر.</span></div></div></div><div class=\"d-flex items-center justify-between pt-3 border-t flex-wrap gap-2\"><span class=\"text-2xs text-secondary\">💡 يتم تشغيل فحص دورة الحياة تلقائياً في الخلفية كل ساعة بنظام دفعات مباشر ومحسن في قاعدة البيانات.</span> <button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" min=\"1\" max=\"3650\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة: 7 أيام، 14 يوماً، 30 يوماً (شهر)، 60 يوماً. هذه العملية تمسح المواد نهائياً لتحرير الموارد وتوفير مساحة السيرفر.</span></div></div></div><div class=\"d-flex items-center justify-between pt-3 border-t flex-wrap gap-2\"><span class=\"text-2xs text-secondary\">💡 يتم تشغيل فحص دورة الحياة تلقائياً في الخلفية كل ساعة بنظام دفعات مباشر ومحسن في قاعدة البيانات.</span> <button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -261,7 +274,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span>حفظ إعدادات دورة الحياة</span></button></div></form></div></div><!-- ========================================== --><!-- TAB 2: Site Branding & Metadata            --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span>حفظ إعدادات دورة الحياة</span></button></div></form></div></div><!-- ========================================== --><!-- TAB 2: Site Branding & Metadata            --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -269,7 +282,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<!-- ========================================== --><!-- TAB 3: Legal Policies & Documents          --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<!-- ========================================== --><!-- TAB 3: Legal Policies & Documents          --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -277,7 +290,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<!-- ========================================== --><!-- TAB 4: Payment Methods & Gateways          --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<!-- ========================================== --><!-- TAB 4: Payment Methods & Gateways          --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -285,7 +298,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<!-- Dialog for Adding/Editing Payment Method -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<!-- Dialog for Adding/Editing Payment Method -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -293,7 +306,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

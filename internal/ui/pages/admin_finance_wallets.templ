@@ -9,20 +9,26 @@ import (
 
 templ AdminFinanceWalletsPage(data AdminFinanceData, lang, dir string) {
 	@layouts.AdminShell("محافظ المنشآت والأرصدة", "wallets", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFinanceWalletsState', function () {
+				return Object.assign(dawaFinanceModalState(), {
+					adjustWalletID: 0,
+					adjustWalletOrgName: '',
+					adjustCurrentBalance: '',
+					openAdjustModal(id, orgName, balance) {
+						this.adjustWalletID = id;
+						this.adjustWalletOrgName = orgName;
+						this.adjustCurrentBalance = balance;
+						const modal = document.getElementById('walletAdjustModal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				});
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				adjustWalletID: 0,
-				adjustWalletOrgName: '',
-				adjustCurrentBalance: '',
-				openAdjustModal(id, orgName, balance) {
-					this.adjustWalletID = id;
-					this.adjustWalletOrgName = orgName;
-					this.adjustCurrentBalance = balance;
-					const modal = document.getElementById('walletAdjustModal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminFinanceWalletsState"
 		>
 			<!-- Header Title & Quick Export Row -->
 			<div class="glass-panel p-6 mb-6">

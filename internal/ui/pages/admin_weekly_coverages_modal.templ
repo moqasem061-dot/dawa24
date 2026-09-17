@@ -8,8 +8,7 @@ templ AdminWeeklyCoverageMapModal() {
 	<div
 		x-show="mapModalOpen"
 		x-cloak
-		class="modal-backdrop"
-		style="z-index: 9999;"
+		class="modal-backdrop s-z-top"
 		@click.self="mapModalOpen = false"
 		@keydown.escape.window="mapModalOpen = false"
 	>
@@ -22,7 +21,7 @@ templ AdminWeeklyCoverageMapModal() {
 				<button type="button" class="btn btn-ghost btn-xs" @click="mapModalOpen = false">✕</button>
 			</div>
 			<div class="p-3 bg-surface">
-				<div id="weekly-cov-map" style="min-height: 380px; height: 380px; width: 100%; border-radius: 8px;" class="border"></div>
+				<div id="weekly-cov-map" class="border s-coverage-map"></div>
 			</div>
 			<div class="p-3 border-t bg-surface-raised flex-between items-center text-xs">
 				<span class="text-muted">الدائرة الزرقاء تمثل النطاق الجغرافي الفعلي المتاح لخدمة الطلبات والتوصيل الأسبوعي.</span>
@@ -124,13 +123,8 @@ templ AdminWeeklyCoverageMapModal() {
 			};
 		}
 		window.dawaWeeklyCoverageModal = dawaWeeklyCoverageModal;
-		if (!window.__dawaBound_admin_weekly_coverages_modal) {
-			window.__dawaBound_admin_weekly_coverages_modal = true;
-			document.addEventListener('alpine:init', () => {
-				if (window.Alpine && typeof window.Alpine.data === 'function') {
-					window.Alpine.data('dawaWeeklyCoverageModal', dawaWeeklyCoverageModal);
-				}
-			});
-		}
+		// Registers now when Alpine is running (an in-place visit), or on
+		// alpine:init during a full page load.
+		dawaData('dawaWeeklyCoverageModal', dawaWeeklyCoverageModal);
 	</script>
 }

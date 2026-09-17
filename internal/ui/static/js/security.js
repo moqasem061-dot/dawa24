@@ -378,7 +378,7 @@
     var next = img.nextElementSibling;
     if (mode === 'next' && next) {
       next.hidden = false;
-      next.classList.remove('d-none', 'hidden');
+      next.classList.remove('d-none', 'hidden', 's-hidden-init');
       next.style.display = img.getAttribute('data-fallback-display') || '';
     }
   }, true);

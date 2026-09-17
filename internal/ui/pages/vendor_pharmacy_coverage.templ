@@ -66,7 +66,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 			<div class="glass-panel p-5 mb-6 border border-slate-200/80 rounded-2xl shadow-xs">
 				<form method="GET" action="/vendor/pharmacy-coverage" class="d-flex items-end gap-3 flex-wrap m-0">
 					<!-- Search Input -->
-					<div class="flex-1" style="min-width: 220px;">
+					<div class="flex-1 s-min-w-220">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_search") }</label>
 						<div class="position-relative">
 							<input type="text" name="q" value={ data.SearchQuery } class="form-input text-xs w-full" placeholder={ i18n.T(lang, "vendor_coverage.placeholder_search") } />
@@ -74,7 +74,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 					</div>
 
 					<!-- Entity Type Selector -->
-					<div style="min-width: 130px; flex: 1 1 130px;">
+					<div class="s-filter-field">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_type") }</label>
 						<select name="type" class="form-select text-xs w-full">
 							<option value="" selected?={ data.FilterType == "" }>{ i18n.T(lang, "vendor_coverage.all_types") }</option>
@@ -84,7 +84,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 					</div>
 
 					<!-- Delivery Day Selector -->
-					<div style="min-width: 130px; flex: 1 1 130px;">
+					<div class="s-filter-field">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_day") }</label>
 						<select name="day" class="form-select text-xs w-full">
 							<option value="">{ i18n.T(lang, "vendor_coverage.all_days") }</option>
@@ -100,7 +100,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 					</div>
 
 					<!-- Distribution Branch Selector -->
-					<div style="min-width: 130px; flex: 1 1 130px;">
+					<div class="s-filter-field">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_branch") }</label>
 						<select name="branch" class="form-select text-xs w-full">
 							<option value="">{ i18n.T(lang, "vendor_coverage.all_branches") }</option>
@@ -111,7 +111,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 					</div>
 
 					<!-- City Selector -->
-					<div style="min-width: 130px; flex: 1 1 130px;">
+					<div class="s-filter-field">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-block">{ i18n.T(lang, "vendor_coverage.lbl_city") }</label>
 						<select name="city" class="form-select text-xs w-full">
 							<option value="">{ i18n.T(lang, "vendor_coverage.all_cities") }</option>
@@ -122,7 +122,7 @@ templ VendorPharmacyCoveragePage(data VendorPharmacyCoverageData, lang, dir stri
 					</div>
 
 					<!-- Action Buttons -->
-					<div class="d-flex items-center gap-2" style="flex: 0 0 auto;">
+					<div class="d-flex items-center gap-2 s-flex-none">
 						<button type="submit" class="btn btn-primary text-xs font-bold px-4 gap-1.5 shadow-xs">
 							@components.IconSearch("icon-xs")
 							<span>{ i18n.T(lang, "vendor_coverage.btn_filter") }</span>

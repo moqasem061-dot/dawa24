@@ -63,26 +63,13 @@ func sectionTypeIcon(t string) string {
 
 templ VendorStorefront(lang, dir string, sections []*promo.HighlightSection) {
 	@layouts.VendorShell("الأقسام المميزة وواجهة المتجر", "storefront", lang, dir) {
-		<div
-			class="page-container"
-		
-			x-data="{
-				isModalOpen: false,
-				modalMode: 'add',
-				currentSection: {
-					id: 0,
-					title_ar: '',
-					title_en: '',
-					description_ar: '',
-					description_en: '',
-					display_order: 0,
-					color: '#0284c7',
-					is_active: true,
-					show_in_header: true
-				},
-				openAddModal() {
-					this.modalMode = 'add';
-					this.currentSection = {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('storefrontState', function () {
+				return {
+					isModalOpen: false,
+					modalMode: 'add',
+					currentSection: {
 						id: 0,
 						title_ar: '',
 						title_en: '',
@@ -92,10 +79,29 @@ templ VendorStorefront(lang, dir string, sections []*promo.HighlightSection) {
 						color: '#0284c7',
 						is_active: true,
 						show_in_header: true
-					};
-					this.isModalOpen = true;
-				}
-			}"
+					},
+					openAddModal() {
+						this.modalMode = 'add';
+						this.currentSection = {
+							id: 0,
+							title_ar: '',
+							title_en: '',
+							description_ar: '',
+							description_en: '',
+							display_order: 0,
+							color: '#0284c7',
+							is_active: true,
+							show_in_header: true
+						};
+						this.isModalOpen = true;
+					}
+				};
+			});
+		</script>
+		<div
+			class="page-container"
+		
+			x-data="storefrontState"
 		>
 			
 			<!-- Header Card -->
@@ -179,7 +185,7 @@ templ VendorStorefront(lang, dir string, sections []*promo.HighlightSection) {
 										<button
 											type="button"
 											class="btn btn-secondary btn-sm font-bold text-xs gap-1"
-											@click={ fmt.Sprintf("modalMode = 'edit'; currentSection = { id: %d, title_ar: %q, title_en: %q, description_ar: %q, description_en: %q, display_order: %d, color: %q, is_active: %t, show_in_header: %t }; isModalOpen = true;", s.ID, s.Title.Get(i18n.AR), s.Title.Get(i18n.EN), s.Description.Get(i18n.AR), s.Description.Get(i18n.EN), s.DisplayOrder, s.Color, s.IsActive, s.ShowInHeader) }
+											@click={ fmt.Sprintf("[modalMode = 'edit', currentSection = { id: %d, title_ar: %q, title_en: %q, description_ar: %q, description_en: %q, display_order: %d, color: %q, is_active: %t, show_in_header: %t }, isModalOpen = true]", s.ID, s.Title.Get(i18n.AR), s.Title.Get(i18n.EN), s.Description.Get(i18n.AR), s.Description.Get(i18n.EN), s.DisplayOrder, s.Color, s.IsActive, s.ShowInHeader) }
 										>
 											@components.IconEdit("icon-xs")
 											<span>تعديل</span>

@@ -2,10 +2,12 @@ package layouts
 
 import (
 	"context"
+	"encoding/json"
+	"strings"
 
+	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
 )
 
 type siteSettingsKey struct{}
@@ -131,6 +133,14 @@ func Nonce(ctx context.Context) string {
 	return httpx.Nonce(ctx)
 }
 
-
 // htmxConfig is the <meta name="htmx-config"> payload. See base.templ.
 const htmxConfig = `{"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0}`
+
+// jsonLD returns a page's structured data for templ.JSONScript, or false when
+// there is none or it is not valid JSON (which would fail the whole render).
+func jsonLD(s string) (json.RawMessage, bool) {
+	if strings.TrimSpace(s) == "" || !json.Valid([]byte(s)) {
+		return nil, false
+	}
+	return json.RawMessage(s), true
+}

@@ -123,7 +123,7 @@ func CustomerSavingTable(data CustomerSavingPageData, lang string) templ.Compone
 				return templ_7745c5c3_Err
 			}
 		} else {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"table-container m-0\"><table class=\"data-table m-0\"><thead><tr><th style=\"width: 44px;\" class=\"text-center\"><input type=\"checkbox\" class=\"form-check-input\" title=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<div class=\"table-container m-0\"><table class=\"data-table m-0\"><thead><tr><th class=\"text-center s-w-44\"><input type=\"checkbox\" class=\"form-check-input\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -323,7 +323,7 @@ func CustomerSavingTable(data CustomerSavingPageData, lang string) templ.Compone
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"><!-- Selection Checkbox --><td class=\"text-center align-middle\" style=\"width: 44px;\"><input type=\"checkbox\" class=\"form-check-input\" value=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"><!-- Selection Checkbox --><td class=\"text-center align-middle s-w-44\"><input type=\"checkbox\" class=\"form-check-input\" value=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -120,22 +121,28 @@ templ VendorPaymentsPage(data VendorPaymentsPageData) {
 					</div>
 
 					<!-- Customer / Organization Search Input with Interactive Autocomplete Dropdown -->
+					<script nonce={ templ.GetNonce(ctx) }>
+						// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+						dawaData('vendorPaymentsData', function (a0, a1) {
+							return {
+								query: a0,
+								open: false,
+								items: a1 || [],
+								get filtered() {
+									if (!this.query) return this.items;
+									const q = this.query.toLowerCase().trim();
+									return this.items.filter(i => (i.name && i.name.toLowerCase().includes(q)) || (i.code && i.code.toLowerCase().includes(q)));
+								},
+								select(name) {
+									this.query = name;
+									this.open = false;
+								}
+							};
+						});
+					</script>
 					<div
 						class="flex-1 min-w-48 relative"
-						x-data={ fmt.Sprintf(`{
-							query: %q,
-							open: false,
-							items: %s,
-							get filtered() {
-								if (!this.query) return this.items;
-								const q = this.query.toLowerCase().trim();
-								return this.items.filter(i => (i.name && i.name.toLowerCase().includes(q)) || (i.code && i.code.toLowerCase().includes(q)));
-							},
-							select(name) {
-								this.query = name;
-								this.open = false;
-							}
-						}`, data.Customer, customerOrgsToJSON(data.CustomerOrgs)) }
+						x-data={ components.AlpineCall("vendorPaymentsData", data.Customer, json.RawMessage(customerOrgsToJSON(data.CustomerOrgs))) }
 						@click.outside="open = false"
 					>
 						<div class="relative">
@@ -156,7 +163,7 @@ templ VendorPaymentsPage(data VendorPaymentsPageData) {
 								type="button"
 								x-show="query"
 								x-cloak
-								@click="query = ''; open = false;"
+								@click="[query = '', open = false]"
 								class="btn-reset absolute top-1/2 -translate-y-1/2 end-2 text-muted hover:text-primary text-xs cursor-pointer"
 								title="مسح"
 							>
@@ -182,8 +189,7 @@ templ VendorPaymentsPage(data VendorPaymentsPageData) {
 						<div
 							x-show="open && filtered.length > 0"
 							x-cloak
-							class="absolute z-50 start-0 end-0 mt-1 max-h-60 overflow-y-auto bg-surface border rounded-xl shadow-xl py-1 text-xs"
-							style="min-width: 240px;"
+							class="absolute z-50 start-0 end-0 mt-1 max-h-60 overflow-y-auto bg-surface border rounded-xl shadow-xl py-1 text-xs s-min-w-240"
 						>
 							<template x-for="item in filtered" :key="item.id">
 								<button

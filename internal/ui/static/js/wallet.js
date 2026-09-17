@@ -255,12 +255,5 @@
 
 	window.dawaWallet = dawaWallet;
 
-	if (window.Alpine) {
-		Alpine.data('dawaWallet', dawaWallet);
-	}
-	document.addEventListener('alpine:init', function () {
-		if (window.Alpine) {
-			Alpine.data('dawaWallet', dawaWallet);
-		}
-	});
+	window.dawaData('dawaWallet', dawaWallet);
 })();

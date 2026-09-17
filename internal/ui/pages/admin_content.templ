@@ -376,7 +376,7 @@ templ AdminContent(lang, dir string, blocks []*platformadmin.ContentBlock, page,
 						<select
 							class="form-select"
 							x-model="selectedPreset"
-							@change="if (selectedPreset !== 'custom' && selectedPreset !== '') { customKey = selectedPreset }"
+							@change="selectedPreset !== 'custom' && selectedPreset !== '' && (customKey = selectedPreset)"
 						>
 							<option value="">-- اختر من الكتل والصفحات الجاهزة --</option>
 							<optgroup label="صفحات المنصة العامة">

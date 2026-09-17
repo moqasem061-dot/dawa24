@@ -49,7 +49,7 @@ func VendorSavingProductModal(lang string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"POST\" id=\"saving-product-form\" action=\"/vendor/saving-products\" class=\"d-flex flex-col gap-4 m-0\"><input type=\"hidden\" name=\"_csrf\" value=\"\" x-init=\"$el.value = getCsrfToken()\"> <input type=\"hidden\" id=\"form-saving-id\" name=\"id\" value=\"\"><div class=\"stack-md\"><div class=\"stack-sm\"><label class=\"form-label text-sm font-bold text-primary\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<form method=\"POST\" id=\"saving-product-form\" action=\"/vendor/saving-products\" class=\"d-flex flex-col gap-4 m-0\"><input type=\"hidden\" name=\"_csrf\" value=\"\" :value=\"$csrf()\"> <input type=\"hidden\" id=\"form-saving-id\" name=\"id\" value=\"\"><div class=\"stack-md\"><div class=\"stack-sm\"><label class=\"form-label text-sm font-bold text-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

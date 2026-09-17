@@ -46,7 +46,7 @@ func buildTestRouter(log *slog.Logger) http.Handler {
 	r.Use(httpx.RequestID)
 	r.Use(httpx.Recover(log))
 	r.Use(httpx.Logger(log))
-	r.Use(httpx.SecurityHeaders)
+	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{}))
 	r.Use(httpx.Locale)
 
 	// Liveness

@@ -92,7 +92,7 @@ templ VendorTeamTable(data VendorTeamData, lang string) {
 										<div class="user-avatar-badge font-black text-xs overflow-hidden">
 											if m.AvatarURL != "" {
 												<img src={ m.AvatarURL } alt={ m.Name } class="w-full h-full object-cover" data-img-fallback="next" data-fallback-display="block" />
-												<span style="display: none;">{ getInitials(m.Name) }</span>
+												<span class="s-hidden-init">{ getInitials(m.Name) }</span>
 											} else {
 												<span>{ getInitials(m.Name) }</span>
 											}

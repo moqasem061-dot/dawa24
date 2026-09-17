@@ -157,7 +157,7 @@ templ BuyingBranchSelector(ctx context.Context, langOpt ...string) {
 							for _, b := range buying.Branches {
 								<form method="POST" action={ templ.SafeURL(actionURL) } class="nav-menu-form">
 									<input type="hidden" name="branch_id" value={ fmt.Sprintf("%d", b.ID) } />
-									<input type="hidden" name="redirect_to" value="" x-init="$el.value = window.location.pathname + window.location.search" />
+									<input type="hidden" name="redirect_to" value="" :value="$here" />
 									<button
 										type="submit"
 										role="menuitem"

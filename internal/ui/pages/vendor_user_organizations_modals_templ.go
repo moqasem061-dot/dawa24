@@ -62,7 +62,7 @@ func VendorUserOrgAddModal(lang string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</label> <input type=\"hidden\" id=\"vendor-selected-user-id\" name=\"user_id\" required value=\"\"><div class=\"uo-user-chip\" id=\"vendor-selected-user-chip\" style=\"display: none;\"><div class=\"d-flex items-center gap-2\"><span class=\"text-primary\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</label> <input type=\"hidden\" id=\"vendor-selected-user-id\" name=\"user_id\" required value=\"\"><div class=\"uo-user-chip s-hidden-init\" id=\"vendor-selected-user-chip\"><div class=\"d-flex items-center gap-2\"><span class=\"text-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -96,7 +96,7 @@ func VendorUserOrgAddModal(lang string) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" autocomplete=\"off\" class=\"form-control font-bold\" data-on-input=\"handleVendorUserSearch(this.value)\" data-on-focus=\"handleVendorUserSearch(this.value)\"><div class=\"position-absolute inset-inline-end-3 top-50 translate-middle-y\" id=\"vendor-search-spinner\" style=\"display: none;\">⏳</div></div><div class=\"uo-search-dropdown\" id=\"vendor-user-search-dropdown\" style=\"display: none;\"></div></div><div class=\"form-group m-0\"><label class=\"form-label text-xs font-bold\" for=\"vendor-uo-number\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" autocomplete=\"off\" class=\"form-control font-bold\" data-on-input=\"handleVendorUserSearch(this.value)\" data-on-focus=\"handleVendorUserSearch(this.value)\"><div class=\"position-absolute inset-inline-end-3 top-50 translate-middle-y s-hidden-init\" id=\"vendor-search-spinner\">⏳</div></div><div class=\"uo-search-dropdown s-hidden-init\" id=\"vendor-user-search-dropdown\"></div></div><div class=\"form-group m-0\"><label class=\"form-label text-xs font-bold\" for=\"vendor-uo-number\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -136,7 +136,7 @@ templ VendorWarehousesPage(warehouses []*inventory.Warehouse, branches []*org.Br
 												<button
 													type="button"
 													class="btn btn-secondary btn-sm font-bold text-xs"
-													@click={ fmt.Sprintf("editWh = { id: %d, name: %q, code: %q, address: %q, phone: %q, branch_id: %d, is_active: %t }; editModal = true;", w.ID, w.Name, w.Code, w.Address, w.Phone, func() int64 { if w.BranchID != nil { return *w.BranchID }; return 0 }(), w.IsActive) }
+													@click={ fmt.Sprintf("[editWh = { id: %d, name: %q, code: %q, address: %q, phone: %q, branch_id: %d, is_active: %t }, editModal = true]", w.ID, w.Name, w.Code, w.Address, w.Phone, func() int64 { if w.BranchID != nil { return *w.BranchID }; return 0 }(), w.IsActive) }
 												>
 													{ i18n.T(lang, "common.edit") }
 												</button>

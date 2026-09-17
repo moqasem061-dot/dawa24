@@ -48,7 +48,7 @@ func publicMobileNav(site *platformadmin.SiteSettings, langOpt ...string) templ.
 			return templ_7745c5c3_Err
 		}
 		if site.LogoURL != "" {
-			var templ_7745c5c3_Var2 = []any{"nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "")}
+			var templ_7745c5c3_Var2 = []any{"s-max-h-32", "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "")}
 			templ_7745c5c3_Err = templ.RenderCSSItems(ctx, templ_7745c5c3_Buffer, templ_7745c5c3_Var2...)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
@@ -92,7 +92,7 @@ func publicMobileNav(site *platformadmin.SiteSettings, langOpt ...string) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" style=\"max-height: 32px;\" data-img-fallback=\"hide\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" data-img-fallback=\"hide\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -124,7 +124,7 @@ func publicMobileNav(site *platformadmin.SiteSettings, langOpt ...string) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"nav-brand-logo logo-dark\" style=\"max-height: 32px;\" data-img-fallback=\"hide\"> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"nav-brand-logo logo-dark s-max-h-32\" data-img-fallback=\"hide\"> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

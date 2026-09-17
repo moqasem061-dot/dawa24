@@ -17,11 +17,12 @@ type VendorSavingPageData struct {
 	Pagination   components.PaginationProps
 }
 
-func savingFilterBorder(current, target string) string {
+// savingFilterClass marks the filter card that matches the active filter.
+func savingFilterClass(current, target string) string {
 	if current == target || ((current == "" || current == "all") && target == "all") {
-		return "var(--accent)"
+		return "s-filter-card-on"
 	}
-	return "var(--border)"
+	return "s-filter-card-off"
 }
 
 func savingProductIDStr(pid *int64) string {

@@ -112,7 +112,7 @@ templ SupplierProfileGrid(data SupplierProfileData, lang string) {
 							hx-swap="none"
 							x-data="{ added: false, loading: false }"
 							@submit="loading = true"
-							@htmx:after-request="loading = false; added = true; setTimeout(() => added = false, 2500)"
+							@htmx:after-request="[loading = false, added = true, $resetLater('added', false, 2500)]"
 							class="d-flex items-center gap-2 m-0"
 						>
 							<input type="hidden" name="return_to" value={ fmt.Sprintf("/suppliers/%d", data.Org.ID) } />

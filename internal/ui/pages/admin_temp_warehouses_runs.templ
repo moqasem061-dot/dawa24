@@ -93,7 +93,7 @@ templ AdminTempWarehouseActiveSessionCard(run *TempWarehouseRunView, base string
 		</div>
 		if run.Percent > 0 {
 			<div class="w-full bg-amber-200 dark:bg-amber-900/60 rounded-full h-1.5 mt-4 overflow-hidden">
-				<div class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" style={ fmt.Sprintf("width: %d%%;", run.Percent) }></div>
+				<div class="bg-amber-500 h-1.5 rounded-full transition-all duration-300" data-pct={ fmt.Sprint(run.Percent) }></div>
 			</div>
 		}
 	</div>
@@ -102,39 +102,45 @@ templ AdminTempWarehouseActiveSessionCard(run *TempWarehouseRunView, base string
 // AdminTempWarehouseRunMappingPage renders the full-page column mapping wizard.
 templ AdminTempWarehouseRunMappingPage(run *TempWarehouseRunView, curFile *TempWarehouseMappingFileView, files []*TempWarehouseMappingFileView, lang, dir string) {
 	@layouts.AdminShell("تحديد وتعيين أعمدة المستودع", "inventory", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminTempWarehousesRunsState', function () {
+				return {
+					autosaving: false,
+					autosaved: false,
+					saveError: '',
+					autosave() {
+						this.autosaving = true;
+						this.autosaved = false;
+						this.saveError = '';
+						let form = this.$refs.mappingForm;
+						let data = new FormData(form);
+						data.append('is_autosave', '1');
+						fetch(form.action, {
+							method: 'POST',
+							body: data,
+							headers: { 'Accept': 'application/json' }
+						})
+						.then(r => r.json())
+						.then(res => {
+							this.autosaving = false;
+							if (res.success) {
+								this.autosaved = true;
+								setTimeout(() => { this.autosaved = false; }, 3000);
+							} else {
+								this.saveError = res.error || 'فشل الحفظ التلقائي';
+							}
+						})
+						.catch(e => {
+							this.autosaving = false;
+							this.saveError = 'خطأ في الاتصال';
+						});
+					}
+				};
+			});
+		</script>
 		<div class="max-w-6xl mx-auto pb-12"
-			x-data="{
-				autosaving: false,
-				autosaved: false,
-				saveError: '',
-				autosave() {
-					this.autosaving = true;
-					this.autosaved = false;
-					this.saveError = '';
-					let form = this.$refs.mappingForm;
-					let data = new FormData(form);
-					data.append('is_autosave', '1');
-					fetch(form.action, {
-						method: 'POST',
-						body: data,
-						headers: { 'Accept': 'application/json' }
-					})
-					.then(r => r.json())
-					.then(res => {
-						this.autosaving = false;
-						if (res.success) {
-							this.autosaved = true;
-							setTimeout(() => { this.autosaved = false; }, 3000);
-						} else {
-							this.saveError = res.error || 'فشل الحفظ التلقائي';
-						}
-					})
-					.catch(e => {
-						this.autosaving = false;
-						this.saveError = 'خطأ في الاتصال';
-					});
-				}
-			}"
+			x-data="adminTempWarehousesRunsState"
 		>
 			<!-- Wizard Header & Breadcrumbs -->
 			<div class="d-flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-6">
@@ -147,13 +153,13 @@ templ AdminTempWarehouseRunMappingPage(run *TempWarehouseRunView, curFile *TempW
 					<p class="text-xs text-secondary mt-1">تحديد أعمدة الكود، الاسم، السعر، والخصم لملفات الدفعة. يُحفظ عملك تلقائياً دون فقدان.</p>
 				</div>
 				<div class="d-flex items-center gap-3">
-					<div class="text-xs font-bold" x-show="autosaving" style="display:none;">
+					<div class="text-xs font-bold" x-show="autosaving" x-cloak>
 						<span class="text-amber-500 animate-pulse">⏳ جاري الحفظ التلقائي...</span>
 					</div>
-					<div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" x-show="autosaved" style="display:none;">
+					<div class="text-xs font-bold text-emerald-600 dark:text-emerald-400" x-show="autosaved" x-cloak>
 						✓ تم حفظ التعيين تلقائياً
 					</div>
-					<div class="text-xs font-bold text-danger" x-show="saveError" x-text="saveError" style="display:none;"></div>
+					<div class="text-xs font-bold text-danger" x-show="saveError" x-text="saveError" x-cloak></div>
 					<a href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/review", run.BaseURL, run.ID)) } class="btn btn-outline btn-sm rounded-xl font-bold">
 						مراجعة الدفعة ({ fmt.Sprintf("%d", len(files)) } ملفات)
 					</a>

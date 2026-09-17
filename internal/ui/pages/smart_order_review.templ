@@ -134,7 +134,7 @@ templ SmartOrderReviewPage(lang, dir string, data SmartOrderReviewData) {
 
 			<!-- Filters & Search Toolbar -->
 			<div class="glass-panel p-4 mb-4 border border-subtle rounded-xl flex-between items-center flex-wrap gap-3">
-				<div class="d-flex items-center gap-2 flex-grow min-w-0" style="max-width: 480px;">
+				<div class="d-flex items-center gap-2 flex-grow min-w-0 s-max-w-480">
 					<div class="position-relative w-100">
 						<span class="position-absolute end-3 top-50 translate-middle-y text-muted pointer-events-none">
 							@components.IconSearch("icon-xs")
@@ -152,7 +152,7 @@ templ SmartOrderReviewPage(lang, dir string, data SmartOrderReviewData) {
 					if len(data.AllGroups) > 1 {
 						<div class="d-flex items-center gap-2">
 							<label class="text-xs text-secondary font-bold whitespace-nowrap">{ i18n.T(lang, "smart_order.filter_by_vendor") }</label>
-							<select class="form-select text-xs font-bold" x-model="selectedVendor" style="min-width: 180px;">
+							<select class="form-select text-xs font-bold s-min-w-180" x-model="selectedVendor">
 								<option value="all">{ fmt.Sprintf(i18n.T(lang, "smart_order.all_vendors"), len(data.AllGroups)) }</option>
 								for _, ag := range data.AllGroups {
 									<option value={ ag.VendorName }>{ ag.VendorName } ({ fmt.Sprintf("%d", ag.TotalCount) })</option>
@@ -202,8 +202,7 @@ templ SmartOrderReviewPage(lang, dir string, data SmartOrderReviewData) {
 							type="number"
 							min="1"
 							max="9999"
-							class="form-input text-xs font-bold tabular-nums text-center"
-							style="width: 70px; padding: 4px 8px;"
+							class="form-input text-xs font-bold tabular-nums text-center s-qty-compact"
 							x-model.number="defaultQty"
 							disabled?={ data.TotalLines == 0 }
 						/>
@@ -299,7 +298,7 @@ templ SmartOrderReviewPage(lang, dir string, data SmartOrderReviewData) {
 						@components.IconArrowRight("icon-xs")
 						<span>{ i18n.T(lang, "smart_order.back_to_results") }</span>
 					</a>
-					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/finalize", data.Run.PublicID)) } @submit={ fmt.Sprintf("if (!confirm(%q)) { $event.preventDefault(); }", i18n.T(lang, "smart_order.confirm_dispatch_dialog")) } class="m-0">
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/finalize", data.Run.PublicID)) } data-confirm={ i18n.T(lang, "smart_order.confirm_dispatch_dialog") } class="m-0">
 						<button
 							type="submit"
 							class="btn btn-primary font-bold px-6 py-2.5 shadow-md gap-2"

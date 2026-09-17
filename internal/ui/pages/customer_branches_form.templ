@@ -12,8 +12,8 @@ templ CustomerBranchesForm(data CustomerBranchesData, lang string) {
 	<div
 		class="glass-panel p-5"
 		id="new-branch-form"
-		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'customer-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
-		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+		@dawa-coords-change.window="$event.detail && ($event.detail.targetId === 'customer-branch-map-picker' || !$event.detail.targetId) && [form.latitude = $event.detail.lat, form.longitude = $event.detail.lon]"
+		@combobox-change.window="$event.detail && onComboboxChange($event.detail)"
 	>
 		<!-- City and Governorate coordinates lookup for instant map auto-pan -->
 		<div id="customer-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
@@ -38,7 +38,7 @@ templ CustomerBranchesForm(data CustomerBranchesData, lang string) {
 			</template>
 		</div>
 
-		<form class="d-flex flex-col gap-3 m-0" method="POST" :action="formAction" @submit="if (!form.city_id) { $event.preventDefault(); if (window.showToast) { window.showToast('يرجى اختيار المدينة والمحافظة من القائمة', 'warning'); } else { alert('يرجى اختيار المدينة والمحافظة من القائمة'); } }">
+		<form class="d-flex flex-col gap-3 m-0" method="POST" :action="formAction" @submit="validateSubmit($event)">
 			<div class="d-grid grid-auto-fit-sm gap-3">
 				<div class="form-group mb-0">
 					<label class="form-label text-xs font-bold">
@@ -179,6 +179,13 @@ templ CustomerBranchesScript() {
 	<script nonce={ layouts.Nonce(ctx) }>
 		function customerBranchManager() {
 			return {
+				// Runs on the form's submit event: a branch needs a city.
+				validateSubmit(e) {
+					if (this.form.city_id) return;
+					e.preventDefault();
+					const msg = 'يرجى اختيار المدينة والمحافظة من القائمة';
+					if (window.showToast) window.showToast(msg, 'warning'); else alert(msg);
+				},
 				mode: 'add',
 				editId: 0,
 				formAction: '/customer/branches/new',
@@ -436,5 +443,7 @@ templ CustomerBranchesScript() {
 				}
 			});
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('customerBranchManager', customerBranchManager);
 	</script>
 }

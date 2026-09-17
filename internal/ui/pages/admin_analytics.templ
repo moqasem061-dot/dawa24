@@ -101,7 +101,7 @@ templ AdminAnalytics(lang, dir string, a *platformadmin.VisitorAnalytics) {
 										<span class="tabular-nums text-brand">{ fmt.Sprintf("%d زيارة", count) }</span>
 									</div>
 									<div class="w-full h-2 rounded-full overflow-hidden bg-surface-sunken border">
-										<div class="h-full bg-brand rounded-full" style={ fmt.Sprintf("width: %d%%", calcPercent(count, a.Total)) }></div>
+										<div class="h-full bg-brand rounded-full" data-pct={ fmt.Sprint(calcPercent(count, a.Total)) }></div>
 									</div>
 								</div>
 							}

@@ -86,7 +86,7 @@ templ MFAVerifyPage(lang, dir, email, errorMsg, redirectURL string) {
 							type="button"
 							class="btn btn-link btn-xs font-semibold text-accent text-decoration-none"
 							x-show="!useRecovery"
-							@click="useRecovery = true; $nextTick(() => document.getElementById('mfa-recovery-code')?.focus())"
+							@click="[useRecovery = true, $focusId('mfa-recovery-code')]"
 						>
 							لا يمكنك الوصول لتطبيق Google Authenticator؟ استخدم رمز الاسترداد
 						</button>
@@ -94,7 +94,7 @@ templ MFAVerifyPage(lang, dir, email, errorMsg, redirectURL string) {
 							type="button"
 							class="btn btn-link btn-xs font-semibold text-secondary text-decoration-none"
 							x-show="useRecovery"
-							@click="useRecovery = false; $nextTick(() => document.getElementById('mfa-code')?.focus())"
+							@click="[useRecovery = false, $focusId('mfa-code')]"
 						>
 							العودة لإدخال رمز تطبيق Google Authenticator
 						</button>

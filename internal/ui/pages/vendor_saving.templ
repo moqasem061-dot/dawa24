@@ -96,8 +96,7 @@ templ VendorSavingProductsPage(data VendorSavingPageData, lang, dir string) {
 				<!-- 1. All Products -->
 				<a
 					href="/vendor/saving-products?filter=all"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "all")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "all") }
 				>
 					<div class="stat-card-label">{ i18n.T(lang, "vendor_saving.stat_all") }</div>
 					<div class="stat-card-value text-primary tabular-nums">
@@ -113,8 +112,7 @@ templ VendorSavingProductsPage(data VendorSavingPageData, lang, dir string) {
 				<!-- 2. Linked Products -->
 				<a
 					href="/vendor/saving-products?filter=linked"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "linked")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "linked") }
 				>
 					<div class="stat-card-label text-sky">{ i18n.T(lang, "vendor_saving.stat_linked") }</div>
 					<div class="stat-card-value text-sky tabular-nums">
@@ -130,8 +128,7 @@ templ VendorSavingProductsPage(data VendorSavingPageData, lang, dir string) {
 				<!-- 3. Unlinked Products -->
 				<a
 					href="/vendor/saving-products?filter=unlinked"
-					class="stat-card-3d text-decoration-none"
-					style={ fmt.Sprintf("border-color: %s;", savingFilterBorder(data.FilterStatus, "unlinked")) }
+					class={ "stat-card-3d text-decoration-none", savingFilterClass(data.FilterStatus, "unlinked") }
 				>
 					<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_saving.stat_unlinked") }</div>
 					<div class="stat-card-value text-warning tabular-nums">

@@ -9,79 +9,86 @@ import (
 )
 
 templ VendorSponsorshipForm(data SponsorshipRequestsData, lang string) {
+	<script nonce={ templ.GetNonce(ctx) }>
+		// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+		dawaData('vendorSponsorshipFormData', function (a0, a1, a2, a3, a4, a5, a6, a7, a8) {
+			return {
+				// A nil Go slice arrives as null.
+				availableProducts: a0 || [],
+				availableOffers: a1 || [],
+				itemType: 'product',
+				selectedItems: [],
+				selectedPackageID: a2,
+				searchQuery: '',
+				showDropdown: false,
+				packagesCredits: a3 || {},
+				hasPackages: a4,
+				lang: a5,
+
+				get currentAvailableList() {
+					if (this.itemType === 'product') {
+						if (!this.searchQuery.trim()) return this.availableProducts.slice(0, 15);
+						const q = this.searchQuery.toLowerCase();
+						return this.availableProducts.filter(p =>
+							(p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
+							(p.name_en && p.name_en.toLowerCase().includes(q)) ||
+							(p.sku && p.sku.toLowerCase().includes(q))
+						).slice(0, 15);
+					} else {
+						if (!this.searchQuery.trim()) return this.availableOffers.slice(0, 15);
+						const q = this.searchQuery.toLowerCase();
+						return this.availableOffers.filter(o =>
+							o.title && o.title.toLowerCase().includes(q)
+						).slice(0, 15);
+					}
+				},
+
+				get selectedPkgCredits() {
+					return this.packagesCredits[this.selectedPackageID] || 0;
+				},
+
+				addItem(item) {
+					const id = item.variant_id || item.id;
+					if (this.selectedItems.some(i => i.id === id)) return;
+					if (this.selectedItems.length >= this.selectedPkgCredits) return;
+					const title = this.lang === 'en' ? (item.name_en || item.title || item.name_ar || ('#' + id)) : (item.name_ar || item.title || item.name_en || ('#' + id));
+					this.selectedItems.push({
+						id: id,
+						title: title,
+						sku: item.sku || '',
+						stock: item.available_stock || 0
+					});
+					this.searchQuery = '';
+					this.showDropdown = false;
+				},
+
+				removeItem(id) {
+					this.selectedItems = this.selectedItems.filter(i => i.id !== id);
+				},
+
+				onTypeChange() {
+					this.selectedItems = [];
+					this.searchQuery = '';
+				},
+
+				get canSubmit() {
+					return this.hasPackages
+						&& this.selectedItems.length > 0
+						&& this.selectedItems.length <= this.selectedPkgCredits;
+				},
+
+				get blockedReason() {
+					if (!this.hasPackages) return a6;
+					if (this.selectedItems.length === 0) return a7;
+					if (this.selectedItems.length > this.selectedPkgCredits) return a8;
+					return '';
+				}
+			};
+		});
+	</script>
 	<div
 		class="glass-panel p-6 mb-6 border border-slate-200/80 rounded-2xl shadow-xs"
-		x-data={ fmt.Sprintf(`{
-			availableProducts: %s,
-			availableOffers: %s,
-			itemType: 'product',
-			selectedItems: [],
-			selectedPackageID: '%s',
-			searchQuery: '',
-			showDropdown: false,
-			packagesCredits: %s,
-			hasPackages: %t,
-			lang: %q,
-
-			get currentAvailableList() {
-				if (this.itemType === 'product') {
-					if (!this.searchQuery.trim()) return this.availableProducts.slice(0, 15);
-					const q = this.searchQuery.toLowerCase();
-					return this.availableProducts.filter(p => 
-						(p.name_ar && p.name_ar.toLowerCase().includes(q)) ||
-						(p.name_en && p.name_en.toLowerCase().includes(q)) ||
-						(p.sku && p.sku.toLowerCase().includes(q))
-					).slice(0, 15);
-				} else {
-					if (!this.searchQuery.trim()) return this.availableOffers.slice(0, 15);
-					const q = this.searchQuery.toLowerCase();
-					return this.availableOffers.filter(o => 
-						o.title && o.title.toLowerCase().includes(q)
-					).slice(0, 15);
-				}
-			},
-
-			get selectedPkgCredits() {
-				return this.packagesCredits[this.selectedPackageID] || 0;
-			},
-
-			addItem(item) {
-				const id = item.variant_id || item.id;
-				if (this.selectedItems.some(i => i.id === id)) return;
-				if (this.selectedItems.length >= this.selectedPkgCredits) return;
-				const title = this.lang === 'en' ? (item.name_en || item.title || item.name_ar || ('#' + id)) : (item.name_ar || item.title || item.name_en || ('#' + id));
-				this.selectedItems.push({
-					id: id,
-					title: title,
-					sku: item.sku || '',
-					stock: item.available_stock || 0
-				});
-				this.searchQuery = '';
-				this.showDropdown = false;
-			},
-
-			removeItem(id) {
-				this.selectedItems = this.selectedItems.filter(i => i.id !== id);
-			},
-
-			onTypeChange() {
-				this.selectedItems = [];
-				this.searchQuery = '';
-			},
-
-			get canSubmit() {
-				return this.hasPackages
-					&& this.selectedItems.length > 0
-					&& this.selectedItems.length <= this.selectedPkgCredits;
-			},
-
-			get blockedReason() {
-				if (!this.hasPackages) return %q;
-				if (this.selectedItems.length === 0) return %q;
-				if (this.selectedItems.length > this.selectedPkgCredits) return %q;
-				return '';
-			}
-		}`, InStockItemsToJSON(data.ItemOptions), ActiveOffersToJSON(data.ActiveOffers), func() string { if len(data.ActivePurchases) > 0 { return fmt.Sprintf("%d", data.ActivePurchases[0].PackageID) }; return "" }(), func() string {
+		x-data={ components.AlpineCall("vendorSponsorshipFormData", json.RawMessage(InStockItemsToJSON(data.ItemOptions)), json.RawMessage(ActiveOffersToJSON(data.ActiveOffers)), func() string { if len(data.ActivePurchases) > 0 { return fmt.Sprintf("%d", data.ActivePurchases[0].PackageID) }; return "" }(), json.RawMessage(func() string {
 			m := make(map[string]int)
 			for _, p := range data.ActivePurchases {
 				if p != nil {
@@ -90,7 +97,7 @@ templ VendorSponsorshipForm(data SponsorshipRequestsData, lang string) {
 			}
 			b, _ := json.Marshal(m)
 			return string(b)
-		}(), len(data.ActivePurchases) > 0, lang, i18n.T(lang, "vendor_sponsorship.block_no_package"), i18n.T(lang, "vendor_sponsorship.block_no_items"), i18n.T(lang, "vendor_sponsorship.block_exceed_credits")) }
+		}()), len(data.ActivePurchases) > 0, lang, i18n.T(lang, "vendor_sponsorship.block_no_package"), i18n.T(lang, "vendor_sponsorship.block_no_items"), i18n.T(lang, "vendor_sponsorship.block_exceed_credits")) }
 	>
 		<div class="d-flex items-center gap-2 mb-4 pb-3 border-b border-slate-100">
 			@components.IconPlus("icon-xs text-brand")

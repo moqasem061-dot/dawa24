@@ -78,7 +78,7 @@ templ VendorEarningsOrderPage(data VendorEarningsOrderPageData) {
 					<input type="hidden" name="period" value={ summary.Period } />
 					
 					<!-- Customer Organization / Facility Filter -->
-					<div class="flex-1" style="min-width: 240px;">
+					<div class="flex-1 s-min-w-240">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
 							@components.IconBuilding("icon-2xs")
 							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_facility") }</span>
@@ -97,7 +97,7 @@ templ VendorEarningsOrderPage(data VendorEarningsOrderPageData) {
 					</div>
 
 					<!-- Date From Filter -->
-					<div style="min-width: 170px;">
+					<div class="s-min-w-170">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
 							@components.IconCalendar("icon-2xs")
 							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_date_from") }</span>
@@ -111,7 +111,7 @@ templ VendorEarningsOrderPage(data VendorEarningsOrderPageData) {
 					</div>
 
 					<!-- Date To Filter -->
-					<div style="min-width: 170px;">
+					<div class="s-min-w-170">
 						<label class="form-label text-xs font-bold text-secondary mb-1.5 d-flex items-center gap-1.5">
 							@components.IconCalendar("icon-2xs")
 							<span>{ i18n.T(lang, "vendor_finance.earnings.filter_date_to") }</span>
@@ -261,7 +261,13 @@ templ VendorEarningsOrderPage(data VendorEarningsOrderPageData) {
 			</div>
 
 			<!-- Tabbed Views for Clean Information Hierarchy -->
-			<div x-data="{ activeTab: (new URLSearchParams(window.location.search)).has('page_products') ? 'products' : 'orders' }">
+			<script nonce={ templ.GetNonce(ctx) }>
+				// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+				dawaData('vendorEarningsState', function () {
+					return { activeTab: (new URLSearchParams(window.location.search)).has('page_products') ? 'products' : 'orders' };
+				});
+			</script>
+			<div x-data="vendorEarningsState">
 				<!-- Tab Navigation Bar -->
 				<div class="d-flex items-center gap-2 mb-4 border-b border-slate-200/80 pb-2">
 					<button

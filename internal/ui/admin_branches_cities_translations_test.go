@@ -50,9 +50,10 @@ func TestAdminTranslations_ModalInitiallyHidden(t *testing.T) {
 
 	html := buf.String()
 
-	// Modal must have style="display: none;" so it does not open automatically on page load
-	if !strings.Contains(html, `id="edit-translation-modal" class="modal-backdrop" style="display: none;"`) {
-		t.Errorf("edit-translation-modal must have style=\"display: none;\" to prevent auto-opening on page load")
+	// The modal starts hidden so it does not open on page load. A class, not
+	// style="display: none;": the policy refuses style attributes.
+	if !strings.Contains(html, `id="edit-translation-modal" class="modal-backdrop s-hidden-init"`) {
+		t.Errorf("edit-translation-modal must carry s-hidden-init to prevent auto-opening on page load")
 	}
 
 	// Must contain close handler
@@ -218,9 +219,13 @@ func TestAdminBranches_CoordsValidJSONAndEditMode(t *testing.T) {
 		t.Fatalf("expected branch edit button with %s", btnTag)
 	}
 
-	// 4. Form submit validation must check both form.city_id and input
-	if !strings.Contains(html, "const cid = form.city_id") {
-		t.Errorf("expected form @submit to check cid fallback")
+	// 4. Form submit validation (form.city_id, then the hidden input) runs in
+	// the component's validateSubmit method.
+	if !strings.Contains(html, `@submit="validateSubmit($event)"`) {
+		t.Errorf("expected form @submit to call validateSubmit")
+	}
+	if !strings.Contains(html, "this.form.city_id || (hidden ? hidden.value : '')") {
+		t.Errorf("expected validateSubmit to fall back to the hidden city input")
 	}
 }
 

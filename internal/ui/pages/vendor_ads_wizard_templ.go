@@ -233,7 +233,7 @@ func adsWizardSteps(lang string) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"wiz-steps-name\" x-text=\"stepNames[step - 1]\"></span></div><div class=\"wiz-steps-rail\" aria-hidden=\"true\"><span class=\"wiz-steps-fill\" :style=\"'inline-size: ' + Math.round((step / totalSteps) * 100) + '%'\"></span></div><ol class=\"wiz-steps-list\"><template x-for=\"(name, i) in stepNames\" :key=\"i\"><li class=\"wiz-step\" :class=\"{ 'is-current': step === i + 1, 'is-done': step > i + 1 }\" :aria-current=\"step === i + 1 ? 'step' : null\"><span class=\"wiz-step-num tabular-nums\" x-text=\"i + 1\"></span> <span class=\"wiz-step-name\" x-text=\"name\"></span></li></template></ol></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"wiz-steps-name\" x-text=\"stepNames[step - 1]\"></span></div><div class=\"wiz-steps-rail\" aria-hidden=\"true\"><span class=\"wiz-steps-fill\" :style=\"{ inlineSize: $round((step / totalSteps) * 100) + '%' }\"></span></div><ol class=\"wiz-steps-list\"><template x-for=\"(name, i) in stepNames\" :key=\"i\"><li class=\"wiz-step\" :class=\"{ 'is-current': step === i + 1, 'is-done': step > i + 1 }\" :aria-current=\"step === i + 1 ? 'step' : null\"><span class=\"wiz-step-num tabular-nums\" x-text=\"i + 1\"></span> <span class=\"wiz-step-name\" x-text=\"name\"></span></li></template></ol></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -794,7 +794,7 @@ func adsWizardStepReview(lang string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span> <strong class=\"text-base font-black tabular-nums\" :class=\"totalCredits >= creditCost ? 'text-success' : 'text-danger'\" x-text=\"Math.max(0, totalCredits - creditCost)\"></strong></div></div></div><template x-if=\"totalCredits < creditCost\"><div class=\"alert alert-warning d-flex items-center justify-between gap-3 flex-wrap m-0\"><span class=\"text-xs font-bold\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</span> <strong class=\"text-base font-black tabular-nums\" :class=\"totalCredits >= creditCost ? 'text-success' : 'text-danger'\" x-text=\"$max(0, totalCredits - creditCost)\"></strong></div></div></div><template x-if=\"totalCredits < creditCost\"><div class=\"alert alert-warning d-flex items-center justify-between gap-3 flex-wrap m-0\"><span class=\"text-xs font-bold\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

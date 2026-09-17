@@ -243,6 +243,8 @@ templ OfferLocationsScript(offerID int64) {
 				}
 			};
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('offerLocationsManager', offerLocationsManager);
 	</script>
 }
 

@@ -11,38 +11,44 @@ import (
 
 templ AdminFinanceDepositsPage(data AdminFinanceData, lang, dir string) {
 	@layouts.AdminShell("طلبات شحن المحفظة", "deposits", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFinanceDepositsState', function () {
+				return Object.assign(dawaFinanceModalState(), {
+					rejectDepositID: 0,
+					rejectDepositAmount: '',
+					rejectUserName: '',
+					receiptModalURL: '',
+					refundTargetID: 0,
+					refundAmount: '',
+					refundOrgName: '',
+					refundTargetType: 'deposit',
+					openRejectModal(id, amount, userName) {
+						this.rejectDepositID = id;
+						this.rejectDepositAmount = amount;
+						this.rejectUserName = userName;
+						const modal = document.getElementById('finance-reject-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openReceiptModal(url) {
+						this.receiptModalURL = url;
+						const modal = document.getElementById('finance-receipt-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openRefundModal(id, amount, orgName, targetType) {
+						this.refundTargetID = id;
+						this.refundAmount = amount;
+						this.refundOrgName = orgName;
+						this.refundTargetType = targetType || 'deposit';
+						const modal = document.getElementById('finance-refund-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				});
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				rejectDepositID: 0,
-				rejectDepositAmount: '',
-				rejectUserName: '',
-				receiptModalURL: '',
-				refundTargetID: 0,
-				refundAmount: '',
-				refundOrgName: '',
-				refundTargetType: 'deposit',
-				openRejectModal(id, amount, userName) {
-					this.rejectDepositID = id;
-					this.rejectDepositAmount = amount;
-					this.rejectUserName = userName;
-					const modal = document.getElementById('finance-reject-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openReceiptModal(url) {
-					this.receiptModalURL = url;
-					const modal = document.getElementById('finance-receipt-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openRefundModal(id, amount, orgName, targetType) {
-					this.refundTargetID = id;
-					this.refundAmount = amount;
-					this.refundOrgName = orgName;
-					this.refundTargetType = targetType || 'deposit';
-					const modal = document.getElementById('finance-refund-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminFinanceDepositsState"
 		>
 			<!-- Header Title & Quick Export Row -->
 			<div class="glass-panel p-6 mb-6">
@@ -310,7 +316,7 @@ templ AdminFinanceDepositsTab(data AdminFinanceData, lang, dir string) {
 									if d.Status == billing.DepositPending {
 										<div class="table-actions">
 											<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/finance/deposits/%d/approve", d.ID)) } class="m-0" data-confirm="هل أنت متأكد من رغبتك في اعتماد هذا الإيداع وإضافته للرصيد الآن؟">
-												<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
+												<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 												<button
 													type="submit"
 													class="btn btn-success btn-xs font-bold gap-1"

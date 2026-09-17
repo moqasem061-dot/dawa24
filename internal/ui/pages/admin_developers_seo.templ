@@ -22,46 +22,52 @@ type AdminDevelopersSEOValues struct {
 
 // AdminDevelopersSEOTab renders the comprehensive SEO, keywords, and AI-discoverability tab.
 templ AdminDevelopersSEOTab(seo *AdminDevelopersSEOValues, lang, dir string) {
+	<script nonce={ templ.GetNonce(ctx) }>
+		// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+		dawaData('adminDevelopersSeoState', function () {
+			return {
+				seoSubTab: 'routes',
+				modalOpen: false,
+				editForm: {
+					id: 0,
+					route_pattern: '',
+					title_ar: '',
+					title_en: '',
+					meta_desc_ar: '',
+					meta_desc_en: '',
+					canonical_url: '',
+					robots_directives: 'index, follow',
+					og_title: '',
+					og_desc: '',
+					og_image: '/static/img/og-default.jpg',
+					twitter_card: 'summary_large_image',
+					keywords: '',
+					is_public: true
+				},
+				openEdit(p) {
+					this.editForm = {
+						id: p.id,
+						route_pattern: p.route_pattern,
+						title_ar: p.title_ar,
+						title_en: p.title_en,
+						meta_desc_ar: p.meta_desc_ar,
+						meta_desc_en: p.meta_desc_en,
+						canonical_url: p.canonical_url,
+						robots_directives: p.robots_directives || 'index, follow',
+						og_title: p.og_title,
+						og_desc: p.og_desc,
+						og_image: p.og_image || '/static/img/og-default.jpg',
+						twitter_card: p.twitter_card || 'summary_large_image',
+						keywords: (p.keywords || []).join(', '),
+						is_public: p.is_public
+					};
+					this.modalOpen = true;
+				}
+			};
+		});
+	</script>
 	<div
-		x-data="{
-			seoSubTab: 'routes',
-			modalOpen: false,
-			editForm: {
-				id: 0,
-				route_pattern: '',
-				title_ar: '',
-				title_en: '',
-				meta_desc_ar: '',
-				meta_desc_en: '',
-				canonical_url: '',
-				robots_directives: 'index, follow',
-				og_title: '',
-				og_desc: '',
-				og_image: '/static/img/og-default.jpg',
-				twitter_card: 'summary_large_image',
-				keywords: '',
-				is_public: true
-			},
-			openEdit(p) {
-				this.editForm = {
-					id: p.id,
-					route_pattern: p.route_pattern,
-					title_ar: p.title_ar,
-					title_en: p.title_en,
-					meta_desc_ar: p.meta_desc_ar,
-					meta_desc_en: p.meta_desc_en,
-					canonical_url: p.canonical_url,
-					robots_directives: p.robots_directives || 'index, follow',
-					og_title: p.og_title,
-					og_desc: p.og_desc,
-					og_image: p.og_image || '/static/img/og-default.jpg',
-					twitter_card: p.twitter_card || 'summary_large_image',
-					keywords: (p.keywords || []).join(', '),
-					is_public: p.is_public
-				};
-				this.modalOpen = true;
-			}
-		}"
+		x-data="adminDevelopersSeoState"
 	>
 		<!-- Notice if present -->
 		if seo.NoticeMsg != "" {
@@ -214,7 +220,7 @@ templ AdminDevelopersSEOTab(seo *AdminDevelopersSEOValues, lang, dir string) {
 		</div>
 
 		<!-- SECTION 2: Robots.txt Editor -->
-		<div x-show="seoSubTab === 'robots'" style="display:none;">
+		<div x-show="seoSubTab === 'robots'" x-cloak>
 			<div class="glass-panel p-6 rounded-2xl border border-default bg-surface-raised shadow-xs">
 				<div class="border-b border-default pb-4 mb-4">
 					<h3 class="text-base font-bold text-surface-fg">تعديل ملف توجيه الروبوتات (robots.txt)</h3>
@@ -241,7 +247,7 @@ templ AdminDevelopersSEOTab(seo *AdminDevelopersSEOValues, lang, dir string) {
 		</div>
 
 		<!-- SECTION 3: Quality & Discoverability Audit -->
-		<div x-show="seoSubTab === 'audit'" style="display:none;">
+		<div x-show="seoSubTab === 'audit'" x-cloak>
 			<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 				<!-- Card 1: Arabic Language & RTL -->
 				<div class="glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs">

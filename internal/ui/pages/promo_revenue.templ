@@ -69,55 +69,61 @@ func getTierName(tier int) string {
 // AdminOffersPackagesHubPage renders the unified sponsorship, promo packages, requests, and ads hub.
 templ AdminOffersPackagesHubPage(lang, dir string, data AdminOffersPackagesData) {
 	@layouts.AdminShell("باقات الرعايات والعروض الترويجية", "offers_packages", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('promoRevenueData', function (a0) {
+				return {
+					activeTab: a0,
+					showAddModal: false,
+					showEditModal: false,
+					showRejectModal: false,
+					rejectActionUrl: '',
+					rejectNotes: '',
+					editPkg: {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						desc_ar: '',
+						desc_en: '',
+						price: '',
+						duration_days: 30,
+						credits: 10,
+						max_offers: 20,
+						tier_level: 1,
+						sort_order: 0,
+						badge_color: '#0284c7',
+						is_featured: false,
+						is_active: true
+					},
+					openEdit(pkg) {
+						this.editPkg = {
+							id: pkg.id,
+							name_ar: pkg.name_ar,
+							name_en: pkg.name_en,
+							desc_ar: pkg.desc_ar,
+							desc_en: pkg.desc_en,
+							price: pkg.price,
+							duration_days: pkg.duration_days,
+							credits: pkg.credits,
+							max_offers: pkg.max_offers,
+							tier_level: pkg.tier_level,
+							sort_order: pkg.sort_order,
+							badge_color: pkg.badge_color || '#0284c7',
+							is_featured: pkg.is_featured,
+							is_active: pkg.is_active
+						};
+						this.showEditModal = true;
+					},
+					openReject(actionUrl) {
+						this.rejectActionUrl = actionUrl;
+						this.rejectNotes = '';
+						this.showRejectModal = true;
+					}
+				};
+			});
+		</script>
 		<div
-			x-data={ fmt.Sprintf(`{
-				activeTab: '%s',
-				showAddModal: false,
-				showEditModal: false,
-				showRejectModal: false,
-				rejectActionUrl: '',
-				rejectNotes: '',
-				editPkg: {
-					id: 0,
-					name_ar: '',
-					name_en: '',
-					desc_ar: '',
-					desc_en: '',
-					price: '',
-					duration_days: 30,
-					credits: 10,
-					max_offers: 20,
-					tier_level: 1,
-					sort_order: 0,
-					badge_color: '#0284c7',
-					is_featured: false,
-					is_active: true
-				},
-				openEdit(pkg) {
-					this.editPkg = {
-						id: pkg.id,
-						name_ar: pkg.name_ar,
-						name_en: pkg.name_en,
-						desc_ar: pkg.desc_ar,
-						desc_en: pkg.desc_en,
-						price: pkg.price,
-						duration_days: pkg.duration_days,
-						credits: pkg.credits,
-						max_offers: pkg.max_offers,
-						tier_level: pkg.tier_level,
-						sort_order: pkg.sort_order,
-						badge_color: pkg.badge_color || '#0284c7',
-						is_featured: pkg.is_featured,
-						is_active: pkg.is_active
-					};
-					this.showEditModal = true;
-				},
-				openReject(actionUrl) {
-					this.rejectActionUrl = actionUrl;
-					this.rejectNotes = '';
-					this.showRejectModal = true;
-				}
-			}`, func() string {
+			x-data={ components.AlpineCall("promoRevenueData", func() string {
 				if data.ActiveTab != "" {
 					return data.ActiveTab
 				}
@@ -362,7 +368,7 @@ templ AdminOffersPackagesHubPage(lang, dir string, data AdminOffersPackagesData)
 													<div class="d-flex items-center gap-3">
 														<div
 															class="w-3.5 h-3.5 rounded-full shrink-0 shadow-2xs border border-white"
-															style={ fmt.Sprintf("background-color: %s;", func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }()) }
+															data-bg={ promoBadgeColor(pkg.BadgeColor) }
 														></div>
               <div class="stack-sm">
 															<div class="d-flex items-center gap-2">
@@ -385,7 +391,7 @@ templ AdminOffersPackagesHubPage(lang, dir string, data AdminOffersPackagesData)
 												<td class="py-3.5">
 													<span
 														class="badge text-xs font-black shadow-2xs"
-														style={ fmt.Sprintf("background-color: %s15; color: %s; border: 1px solid %s40;", func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }(), func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }(), func() string { if pkg.BadgeColor != "" { return pkg.BadgeColor }; return "#0284c7" }()) }
+														data-tint={ promoBadgeColor(pkg.BadgeColor) }
 													>
 														{ getTierName(pkg.TierLevel) }
 													</span>

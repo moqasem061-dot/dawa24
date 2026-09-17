@@ -124,7 +124,7 @@ templ AdminDevelopersSQLTab(values AdminDevelopersValues, lang string) {
 									<template x-for="(row, rIdx) in queryResult.rows" :key="'row_' + rIdx">
 										<tr>
 											<template x-for="(cell, cIdx) in row" :key="'cell_' + rIdx + '_' + cIdx">
-												<td class="whitespace-nowrap px-3 py-2 max-w-sm truncate" :title="String(cell)" x-text="cell"></td>
+												<td class="whitespace-nowrap px-3 py-2 max-w-sm truncate" :title="$str(cell)" x-text="cell"></td>
 											</template>
 										</tr>
 									</template>

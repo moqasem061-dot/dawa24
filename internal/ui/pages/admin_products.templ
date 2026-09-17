@@ -10,51 +10,57 @@ import (
 
 templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*catalog.Brand, categories []*catalog.Category, dosageForms []string, totalCount, currentPage, pageSize int, searchQuery, statusFilter, dosageFilter, manufacturerFilter, currentSort string, brandFilterVal, catFilterVal int64) {
 	@layouts.AdminShell("دليل الأدوية والأصناف الأساسية", "products", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminProductsState', function () {
+				return {
+					searchQuery: '',
+					dosageFilter: 'all',
+					statusFilter: 'all',
+					editData: {
+						id: 0,
+						name_ar: '',
+						name_en: '',
+						generic_name: '',
+						active_ingredient: '',
+						dosage_form: 'أقراص',
+						brand_id: 0,
+						category_id: 0,
+						manufacturer: '',
+						eda_reg_number: '',
+						price: '0.00',
+						image: '',
+						description_ar: '',
+						description_en: '',
+						status: 'active'
+					},
+					openEdit(id, nameAr, nameEn, genericName, activeIng, dosageForm, brandId, categoryId, manufacturer, edaReg, price, image, descAr, descEn, status) {
+						this.editData = {
+							id: id,
+							name_ar: nameAr || '',
+							name_en: nameEn || '',
+							generic_name: genericName || '',
+							active_ingredient: activeIng || '',
+							dosage_form: dosageForm || 'أقراص',
+							brand_id: brandId || 0,
+							category_id: categoryId || 0,
+							manufacturer: manufacturer || '',
+							eda_reg_number: edaReg || '',
+							price: price || '0.00',
+							image: image || '',
+							description_ar: descAr || '',
+							description_en: descEn || '',
+							status: status || 'active'
+						};
+						const modal = document.getElementById('product-edit-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				};
+			});
+		</script>
 		<div
 			class="stack-lg"
-			x-data="{
-				searchQuery: '',
-				dosageFilter: 'all',
-				statusFilter: 'all',
-				editData: {
-					id: 0,
-					name_ar: '',
-					name_en: '',
-					generic_name: '',
-					active_ingredient: '',
-					dosage_form: 'أقراص',
-					brand_id: 0,
-					category_id: 0,
-					manufacturer: '',
-					eda_reg_number: '',
-					price: '0.00',
-					image: '',
-					description_ar: '',
-					description_en: '',
-					status: 'active'
-				},
-				openEdit(id, nameAr, nameEn, genericName, activeIng, dosageForm, brandId, categoryId, manufacturer, edaReg, price, image, descAr, descEn, status) {
-					this.editData = {
-						id: id,
-						name_ar: nameAr || '',
-						name_en: nameEn || '',
-						generic_name: genericName || '',
-						active_ingredient: activeIng || '',
-						dosage_form: dosageForm || 'أقراص',
-						brand_id: brandId || 0,
-						category_id: categoryId || 0,
-						manufacturer: manufacturer || '',
-						eda_reg_number: edaReg || '',
-						price: price || '0.00',
-						image: image || '',
-						description_ar: descAr || '',
-						description_en: descEn || '',
-						status: status || 'active'
-					};
-					const modal = document.getElementById('product-edit-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminProductsState"
 		>
 			{{
 				totalCountVal := totalCount
@@ -134,22 +140,28 @@ templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*cat
 							</select>
 						</div>
 
+						<script nonce={ templ.GetNonce(ctx) }>
+							// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+							dawaData('adminProductsData', function (a0) {
+								return {
+									open: false,
+									search: a0,
+									selectBrand(name) {
+										this.search = name;
+										this.open = false;
+										this.$nextTick(() => { this.$el.closest('form').submit(); });
+									},
+									clear() {
+										this.search = '';
+										this.open = false;
+										this.$nextTick(() => { this.$el.closest('form').submit(); });
+									}
+								};
+							});
+						</script>
 						<div
 							class="position-relative w-full"
-							x-data={ fmt.Sprintf(`{
-								open: false,
-								search: %q,
-								selectBrand(name) {
-									this.search = name;
-									this.open = false;
-									$nextTick(() => { $el.closest('form').submit(); });
-								},
-								clear() {
-									this.search = '';
-									this.open = false;
-									$nextTick(() => { $el.closest('form').submit(); });
-								}
-							}`, manufacturerFilter) }
+							x-data={ components.AlpineCall("adminProductsData", manufacturerFilter) }
 							@click.outside="open = false"
 						>
 							<div class="search-input-group w-full">
@@ -170,8 +182,7 @@ templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*cat
 									type="button"
 									x-show="search.length > 0"
 									@click="clear()"
-									class="btn btn-ghost btn-xs text-muted"
-									style="position: absolute; left: 0.5rem; top: 50%; transform: translateY(-50%); padding: 0.15rem;"
+									class="btn btn-ghost btn-xs text-muted s-input-clear-btn"
 									title="مسح اختيار الشركة"
 								>
 									✕
@@ -182,9 +193,7 @@ templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*cat
 							<div
 								x-show="open"
 								x-transition.opacity.duration.150ms
-								class="search-dropdown-menu"
-								style="display: none;"
-							>
+								class="search-dropdown-menu" x-cloak>
 								<div
 									@click="clear()"
 									class="search-dropdown-item font-bold text-muted"

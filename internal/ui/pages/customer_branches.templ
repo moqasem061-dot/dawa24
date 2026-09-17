@@ -165,7 +165,7 @@ templ CustomerBranches(data CustomerBranchesData, lang string, dir string, perms
 							@components.IconUsers("icon-xs")
 							<span>{ i18n.T(lang, "nav.team") }</span>
 						</a>
-						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="resetToAddMode(); document.getElementById('new-branch-form').scrollIntoView({behavior:'smooth'});">
+						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="[resetToAddMode(), $scrollToId('new-branch-form')]">
 							@components.IconPlus("icon-xs")
 							<span>{ i18n.T(lang, "branches.add_new") }</span>
 						</button>

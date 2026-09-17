@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -21,7 +22,7 @@ templ importMappingStage(view VendorImportView, lang string) {
 		<form class="stack-md" method="POST" action={ templ.SafeURL(view.SessionPath(view.Session.PublicID, "mapping")) } hx-boost="false">
 			
 			<!-- System fields, each mapped to a column of the uploaded file -->
-			<div class="glass-panel p-6" x-data={ "{cols: " + view.FileColumnsJSON() + ", sample(i){const c=this.cols.find(c=>String(c.index)===String(i)); return c && c.preview ? c.preview.join(' · ') : '';}}" }>
+			<div class="glass-panel p-6" x-data={ components.AlpineCall("dawaColumnPreview", json.RawMessage(view.FileColumnsJSON())) }>
 				<h2 class="wiz-head">{ i18n.T(lang, "vendor_ingest.mapping.title") }</h2>
 				<p class="wiz-sub">
 					{ i18n.T(lang, "vendor_ingest.mapping.desc") }

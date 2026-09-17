@@ -47,72 +47,85 @@ func adminImageCompletedStage(view AdminProductImagesImportView) templ.Component
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div x-data=\"{\n\t\t\trows: [],\n\t\t\tsearchQuery: '',\n\t\t\tstatusFilter: 'all',\n\t\t\tperPage: 25,\n\t\t\tcurrentPage: 1,\n\t\t\tinit() {\n\t\t\t\ttry {\n\t\t\t\t\tvar el = document.getElementById('admin-image-rows-json');\n\t\t\t\t\tif (el && el.textContent) {\n\t\t\t\t\t\tthis.rows = JSON.parse(el.textContent);\n\t\t\t\t\t}\n\t\t\t\t} catch (e) {\n\t\t\t\t\tconsole.error('Failed to parse image import rows', e);\n\t\t\t\t}\n\t\t\t},\n\t\t\tfilteredRows() {\n\t\t\t\tvar q = this.searchQuery.trim().toLowerCase();\n\t\t\t\tvar status = this.statusFilter;\n\t\t\t\treturn this.rows.filter(function(r) {\n\t\t\t\t\tif (status !== 'all') {\n\t\t\t\t\t\tif (status === 'failed' && (r.status === 'success' || r.status === 'not_found')) return false;\n\t\t\t\t\t\tif (status !== 'failed' && r.status !== status) return false;\n\t\t\t\t\t}\n\t\t\t\t\tif (!q) return true;\n\t\t\t\t\treturn (r.sku && r.sku.toLowerCase().indexOf(q) !== -1) ||\n\t\t\t\t\t\t(r.product_name && r.product_name.toLowerCase().indexOf(q) !== -1) ||\n\t\t\t\t\t\t(r.image_url && r.image_url.toLowerCase().indexOf(q) !== -1);\n\t\t\t\t});\n\t\t\t},\n\t\t\ttotalPages() {\n\t\t\t\tvar count = this.filteredRows().length;\n\t\t\t\treturn Math.max(1, Math.ceil(count / this.perPage));\n\t\t\t},\n\t\t\tpagedRows() {\n\t\t\t\tvar list = this.filteredRows();\n\t\t\t\tvar start = (this.currentPage - 1) * this.perPage;\n\t\t\t\treturn list.slice(start, start + this.perPage);\n\t\t\t},\n\t\t\tsetPage(p) {\n\t\t\t\tif (p >= 1 && p <= this.totalPages()) {\n\t\t\t\t\tthis.currentPage = p;\n\t\t\t\t}\n\t\t\t}\n\t\t}\"><!-- Stats Grid --><div class=\"dashboard-stat-grid cols-4 mb-6\"><div class=\"stat-card-3d\"><div class=\"stat-card-label\">إجمالي الصفوف المفحوصة</div><div class=\"stat-card-value tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<script nonce=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
-		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.TotalRows))
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 73, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 22, Col: 36}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">تم تنزيلها وربطها</div><div class=\"stat-card-value text-success tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\tdawaData('adminProductImagesCompletedState', function () {\n\t\t\treturn {\n\t\t\t\trows: [],\n\t\t\t\tsearchQuery: '',\n\t\t\t\tstatusFilter: 'all',\n\t\t\t\tperPage: 25,\n\t\t\t\tcurrentPage: 1,\n\t\t\t\tinit() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tvar el = document.getElementById('admin-image-rows-json');\n\t\t\t\t\t\tif (el && el.textContent) {\n\t\t\t\t\t\t\tthis.rows = JSON.parse(el.textContent);\n\t\t\t\t\t\t}\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\tconsole.error('Failed to parse image import rows', e);\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\tfilteredRows() {\n\t\t\t\t\tvar q = this.searchQuery.trim().toLowerCase();\n\t\t\t\t\tvar status = this.statusFilter;\n\t\t\t\t\treturn this.rows.filter(function(r) {\n\t\t\t\t\t\tif (status !== 'all') {\n\t\t\t\t\t\t\tif (status === 'failed' && (r.status === 'success' || r.status === 'not_found')) return false;\n\t\t\t\t\t\t\tif (status !== 'failed' && r.status !== status) return false;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tif (!q) return true;\n\t\t\t\t\t\treturn (r.sku && r.sku.toLowerCase().indexOf(q) !== -1) ||\n\t\t\t\t\t\t\t(r.product_name && r.product_name.toLowerCase().indexOf(q) !== -1) ||\n\t\t\t\t\t\t\t(r.image_url && r.image_url.toLowerCase().indexOf(q) !== -1);\n\t\t\t\t\t});\n\t\t\t\t},\n\t\t\t\ttotalPages() {\n\t\t\t\t\tvar count = this.filteredRows().length;\n\t\t\t\t\treturn Math.max(1, Math.ceil(count / this.perPage));\n\t\t\t\t},\n\t\t\t\tpagedRows() {\n\t\t\t\t\tvar list = this.filteredRows();\n\t\t\t\t\tvar start = (this.currentPage - 1) * this.perPage;\n\t\t\t\t\treturn list.slice(start, start + this.perPage);\n\t\t\t\t},\n\t\t\t\tsetPage(p) {\n\t\t\t\t\tif (p >= 1 && p <= this.totalPages()) {\n\t\t\t\t\t\tthis.currentPage = p;\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t};\n\t\t});\n\t</script><div x-data=\"adminProductImagesCompletedState\"><!-- Stats Grid --><div class=\"dashboard-stat-grid cols-4 mb-6\"><div class=\"stat-card-3d\"><div class=\"stat-card-label\">إجمالي الصفوف المفحوصة</div><div class=\"stat-card-value tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.SuccessRows))
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.TotalRows))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 77, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 79, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">غير موجودة بالكتالوج</div><div class=\"stat-card-value text-warning tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">تم تنزيلها وربطها</div><div class=\"stat-card-value text-success tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.NotFoundRows))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.SuccessRows))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 81, Col: 105}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 83, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">أخطاء تنزيل / روابط تالفة</div><div class=\"stat-card-value text-danger tabular-nums\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">غير موجودة بالكتالوج</div><div class=\"stat-card-value text-warning tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.ErrorRows))
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.NotFoundRows))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 85, Col: 101}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 87, Col: 105}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div></div><!-- Panel with Table and Controls --><div class=\"glass-panel p-0 overflow-hidden\"><!-- Toolbar --><div class=\"p-4 border-b flex-between items-center flex-wrap gap-3\"><div class=\"stack-sm\"><h3 class=\"text-sm font-black text-primary m-0\">نتائج معالجة وتنزيل صور المنتجات</h3><span class=\"text-xs text-muted\">الملف: ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</div></div><div class=\"stat-card-3d\"><div class=\"stat-card-label\">أخطاء تنزيل / روابط تالفة</div><div class=\"stat-card-value text-danger tabular-nums\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(view.Session.Filename)
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", view.Session.ErrorRows))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 95, Col: 73}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 91, Col: 101}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></div><div class=\"d-flex items-center gap-2\"><a href=\"/admin/products/images/import\" class=\"btn btn-secondary btn-sm font-bold gap-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div></div></div><!-- Panel with Table and Controls --><div class=\"glass-panel p-0 overflow-hidden\"><!-- Toolbar --><div class=\"p-4 border-b flex-between items-center flex-wrap gap-3\"><div class=\"stack-sm\"><h3 class=\"text-sm font-black text-primary m-0\">نتائج معالجة وتنزيل صور المنتجات</h3><span class=\"text-xs text-muted\">الملف: ")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var7 string
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(view.Session.Filename)
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_product_images_completed.templ`, Line: 101, Col: 73}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</span></div><div class=\"d-flex items-center gap-2\"><a href=\"/admin/products/images/import\" class=\"btn btn-secondary btn-sm font-bold gap-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -120,7 +133,7 @@ func adminImageCompletedStage(view AdminProductImagesImportView) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span>عملية استرداد جديدة</span></a> <a href=\"/admin/products\" class=\"btn btn-primary btn-sm font-bold gap-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span>عملية استرداد جديدة</span></a> <a href=\"/admin/products\" class=\"btn btn-primary btn-sm font-bold gap-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -128,7 +141,15 @@ func adminImageCompletedStage(view AdminProductImagesImportView) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span>كتالوج الأدوية المعتمدة</span></a></div></div><!-- Filter Bar --><div class=\"p-3 bg-surface/40 border-b d-flex flex-wrap items-center justify-between gap-3 text-xs\"><div class=\"d-flex items-center gap-3 flex-wrap flex-1\"><div class=\"relative min-w-[240px] max-w-sm\"><input type=\"text\" x-model=\"searchQuery\" @input=\"currentPage = 1\" placeholder=\"بحث بالكود أو الاسم أو الرابط...\" class=\"form-control text-xs rounded-xl w-full border-default py-1.5 px-3\"></div><div class=\"d-flex items-center gap-1.5\"><label class=\"text-secondary font-bold whitespace-nowrap\">الحالة:</label> <select x-model=\"statusFilter\" @change=\"currentPage = 1\" class=\"form-select text-xs rounded-xl border-default py-1 px-2.5\"><option value=\"all\">كل الحالات</option> <option value=\"success\">تم الحفظ والربط</option> <option value=\"not_found\">غير موجود بالكتالوج</option> <option value=\"failed\">أخطاء التنزيل</option></select></div></div><div class=\"d-flex items-center gap-2\"><label class=\"text-secondary font-bold whitespace-nowrap\">عرض بالصفحة:</label> <select x-model.number=\"perPage\" @change=\"currentPage = 1\" class=\"form-select text-xs rounded-xl border-default py-1 px-2.5\"><option value=\"10\">10</option> <option value=\"25\">25</option> <option value=\"50\">50</option> <option value=\"100\">100</option></select></div></div><!-- Data Table --><div class=\"table-container m-0\"><table class=\"data-table m-0 text-xs\"><thead><tr><th class=\"col-num\">#</th><th>الصورة</th><th>كود الصنف (SKU)</th><th>المنتج المطابق بالكتالوج</th><th>رابط الصورة الأصلي</th><th>الحالة</th><th>الملاحظة</th></tr></thead> <tbody><template x-for=\"r in pagedRows()\" :key=\"r.index\"><tr><td class=\"col-num font-mono text-muted tabular-nums\" x-text=\"r.index\"></td><td><template x-if=\"r.saved_image_path\"><img :src=\"r.saved_image_path\" :alt=\"r.sku\" class=\"w-10 h-10 object-cover rounded-lg border border-default\"></template><template x-if=\"!r.saved_image_path\"><span class=\"text-muted\">—</span></template></td><td class=\"font-mono text-xs font-bold text-accent\" x-text=\"r.sku\"></td><td><template x-if=\"r.product_id && r.product_id > 0\"><a :href=\"'/admin/products/' + r.product_id\" target=\"_blank\" rel=\"noopener\" class=\"font-bold text-brand hover:underline\"><span x-text=\"r.product_name\"></span></a></template><template x-if=\"!r.product_id || r.product_id <= 0\"><span class=\"text-muted\">—</span></template></td><td><a :href=\"r.image_url\" target=\"_blank\" rel=\"noopener\" class=\"text-xs text-secondary hover:text-accent\"><span class=\"cell-clamp-1 truncate max-w-xs block font-mono\" :title=\"r.image_url\" x-text=\"r.image_url\"></span></a></td><td><span class=\"badge text-xs font-bold px-2 py-0.5 rounded-full\" :class=\"{\n\t\t\t\t\t\t\t\t\t\t\t'badge-emerald': r.status === 'success',\n\t\t\t\t\t\t\t\t\t\t\t'badge-amber': r.status === 'not_found',\n\t\t\t\t\t\t\t\t\t\t\t'badge-rose': r.status !== 'success' && r.status !== 'not_found'\n\t\t\t\t\t\t\t\t\t\t}\" x-text=\"r.status === 'success' ? 'تم الحفظ والربط' : (r.status === 'not_found' ? 'غير موجود بالكتالوج' : 'فشل التنزيل')\"></span></td><td class=\"text-xs text-secondary\"><span x-text=\"r.error_msg || 'تم الحفظ بنجاح'\" :class=\"r.error_msg ? 'text-danger' : 'text-muted'\"></span></td></tr></template><template x-if=\"filteredRows().length === 0\"><tr><td colspan=\"7\" class=\"p-8 text-center text-muted\">لا توجد نتائج تطابق خيارات البحث والفلترة المحددة.</td></tr></template></tbody></table></div><!-- Pagination Footer --><div class=\"p-4 border-t d-flex flex-wrap items-center justify-between gap-3 bg-surface text-xs\"><div class=\"text-secondary tabular-nums\"><span>عرض </span> <strong class=\"text-surface-fg\" x-text=\"filteredRows().length === 0 ? 0 : ((currentPage - 1) * perPage + 1)\"></strong> <span>إلى </span> <strong class=\"text-surface-fg\" x-text=\"Math.min(currentPage * perPage, filteredRows().length)\"></strong> <span>من إجمالي </span> <strong class=\"text-surface-fg\" x-text=\"filteredRows().length\"></strong> <span>صنفاً</span><template x-if=\"filteredRows().length !== rows.length\"><span class=\"text-muted\" x-text=\"' (مصفاة من ' + rows.length + ')'\"></span></template></div><div class=\"d-flex items-center gap-1\"><button type=\"button\" class=\"btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold\" :disabled=\"currentPage <= 1\" @click=\"setPage(currentPage - 1)\">السابق</button><div class=\"d-flex items-center gap-1 px-2\"><span class=\"text-secondary\">صفحة</span> <strong class=\"text-accent tabular-nums\" x-text=\"currentPage\"></strong> <span class=\"text-secondary\">من</span> <strong class=\"text-surface-fg tabular-nums\" x-text=\"totalPages()\"></strong></div><button type=\"button\" class=\"btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold\" :disabled=\"currentPage >= totalPages()\" @click=\"setPage(currentPage + 1)\">التالي</button></div></div></div><!-- Hidden JSON Payload --><script id=\"admin-image-rows-json\" type=\"application/json\">\n\t\t\t{ templ.Raw(imageRowsJSON(view.Session.Rows)) }\n\t\t</script></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span>كتالوج الأدوية المعتمدة</span></a></div></div><!-- Filter Bar --><div class=\"p-3 bg-surface/40 border-b d-flex flex-wrap items-center justify-between gap-3 text-xs\"><div class=\"d-flex items-center gap-3 flex-wrap flex-1\"><div class=\"relative min-w-[240px] max-w-sm\"><input type=\"text\" x-model=\"searchQuery\" @input=\"currentPage = 1\" placeholder=\"بحث بالكود أو الاسم أو الرابط...\" class=\"form-control text-xs rounded-xl w-full border-default py-1.5 px-3\"></div><div class=\"d-flex items-center gap-1.5\"><label class=\"text-secondary font-bold whitespace-nowrap\">الحالة:</label> <select x-model=\"statusFilter\" @change=\"currentPage = 1\" class=\"form-select text-xs rounded-xl border-default py-1 px-2.5\"><option value=\"all\">كل الحالات</option> <option value=\"success\">تم الحفظ والربط</option> <option value=\"not_found\">غير موجود بالكتالوج</option> <option value=\"failed\">أخطاء التنزيل</option></select></div></div><div class=\"d-flex items-center gap-2\"><label class=\"text-secondary font-bold whitespace-nowrap\">عرض بالصفحة:</label> <select x-model.number=\"perPage\" @change=\"currentPage = 1\" class=\"form-select text-xs rounded-xl border-default py-1 px-2.5\"><option value=\"10\">10</option> <option value=\"25\">25</option> <option value=\"50\">50</option> <option value=\"100\">100</option></select></div></div><!-- Data Table --><div class=\"table-container m-0\"><table class=\"data-table m-0 text-xs\"><thead><tr><th class=\"col-num\">#</th><th>الصورة</th><th>كود الصنف (SKU)</th><th>المنتج المطابق بالكتالوج</th><th>رابط الصورة الأصلي</th><th>الحالة</th><th>الملاحظة</th></tr></thead> <tbody><template x-for=\"r in pagedRows()\" :key=\"r.index\"><tr><td class=\"col-num font-mono text-muted tabular-nums\" x-text=\"r.index\"></td><td><template x-if=\"r.saved_image_path\"><img :src=\"r.saved_image_path\" :alt=\"r.sku\" class=\"w-10 h-10 object-cover rounded-lg border border-default\"></template><template x-if=\"!r.saved_image_path\"><span class=\"text-muted\">—</span></template></td><td class=\"font-mono text-xs font-bold text-accent\" x-text=\"r.sku\"></td><td><template x-if=\"r.product_id && r.product_id > 0\"><a :href=\"'/admin/products/' + r.product_id\" target=\"_blank\" rel=\"noopener\" class=\"font-bold text-brand hover:underline\"><span x-text=\"r.product_name\"></span></a></template><template x-if=\"!r.product_id || r.product_id <= 0\"><span class=\"text-muted\">—</span></template></td><td><a :href=\"r.image_url\" target=\"_blank\" rel=\"noopener\" class=\"text-xs text-secondary hover:text-accent\"><span class=\"cell-clamp-1 truncate max-w-xs block font-mono\" :title=\"r.image_url\" x-text=\"r.image_url\"></span></a></td><td><span class=\"badge text-xs font-bold px-2 py-0.5 rounded-full\" :class=\"{\n\t\t\t\t\t\t\t\t\t\t\t'badge-emerald': r.status === 'success',\n\t\t\t\t\t\t\t\t\t\t\t'badge-amber': r.status === 'not_found',\n\t\t\t\t\t\t\t\t\t\t\t'badge-rose': r.status !== 'success' && r.status !== 'not_found'\n\t\t\t\t\t\t\t\t\t\t}\" x-text=\"r.status === 'success' ? 'تم الحفظ والربط' : (r.status === 'not_found' ? 'غير موجود بالكتالوج' : 'فشل التنزيل')\"></span></td><td class=\"text-xs text-secondary\"><span x-text=\"r.error_msg || 'تم الحفظ بنجاح'\" :class=\"r.error_msg ? 'text-danger' : 'text-muted'\"></span></td></tr></template><template x-if=\"filteredRows().length === 0\"><tr><td colspan=\"7\" class=\"p-8 text-center text-muted\">لا توجد نتائج تطابق خيارات البحث والفلترة المحددة.</td></tr></template></tbody></table></div><!-- Pagination Footer --><div class=\"p-4 border-t d-flex flex-wrap items-center justify-between gap-3 bg-surface text-xs\"><div class=\"text-secondary tabular-nums\"><span>عرض </span> <strong class=\"text-surface-fg\" x-text=\"filteredRows().length === 0 ? 0 : ((currentPage - 1) * perPage + 1)\"></strong> <span>إلى </span> <strong class=\"text-surface-fg\" x-text=\"$min(currentPage * perPage, filteredRows().length)\"></strong> <span>من إجمالي </span> <strong class=\"text-surface-fg\" x-text=\"filteredRows().length\"></strong> <span>صنفاً</span><template x-if=\"filteredRows().length !== rows.length\"><span class=\"text-muted\" x-text=\"' (مصفاة من ' + rows.length + ')'\"></span></template></div><div class=\"d-flex items-center gap-1\"><button type=\"button\" class=\"btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold\" :disabled=\"currentPage <= 1\" @click=\"setPage(currentPage - 1)\">السابق</button><div class=\"d-flex items-center gap-1 px-2\"><span class=\"text-secondary\">صفحة</span> <strong class=\"text-accent tabular-nums\" x-text=\"currentPage\"></strong> <span class=\"text-secondary\">من</span> <strong class=\"text-surface-fg tabular-nums\" x-text=\"totalPages()\"></strong></div><button type=\"button\" class=\"btn btn-secondary btn-xs rounded-lg px-2.5 py-1 font-bold\" :disabled=\"currentPage >= totalPages()\" @click=\"setPage(currentPage + 1)\">التالي</button></div></div></div><!-- Hidden JSON Payload -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templ.JSONScript("admin-image-rows-json", json.RawMessage(imageRowsJSON(view.Session.Rows))).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

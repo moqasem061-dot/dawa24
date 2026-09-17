@@ -64,7 +64,6 @@ templ Combobox(props ComboboxProps) {
 		class={ "combobox", props.Class }
 		x-data={ comboboxState(props) }
 		x-init="init()"
-		x-on:combobox-change.window="void 0"
 		@keydown.escape.stop="close()"
 	>
 		if props.Label != "" {
@@ -88,7 +87,7 @@ templ Combobox(props ComboboxProps) {
 				@keydown.arrow-up.prevent="move(-1)"
 				@keydown.home.prevent="jump('start')"
 				@keydown.end.prevent="jump('end')"
-				@keydown.enter="if (commitActive()) { $event.preventDefault(); }"
+				@keydown.enter="commitActive() && $event.preventDefault()"
 				@keydown.tab="close()"
 				class="form-input combobox-input"
 				autocomplete="off"

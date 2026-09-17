@@ -604,14 +604,14 @@ func VendorWarehouseStockTable(data VendorWarehouseDetailData, langOpt ...string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var33 string
-			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, qty: %d }; transferModal = true;", s.StockID, s.ProductVariantID, s.ProductID, func() string {
+			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("[transferStock = { id: %d, variant_id: %d, product_id: %d, name: %q, qty: %d }, transferModal = true]", s.StockID, s.ProductVariantID, s.ProductID, func() string {
 				if s.ProductName != "" {
 					return s.ProductName
 				}
 				return s.VariantName
 			}(), s.Quantity))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_table.templ`, Line: 181, Col: 280}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_table.templ`, Line: 181, Col: 281}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 			if templ_7745c5c3_Err != nil {
@@ -656,14 +656,14 @@ func VendorWarehouseStockTable(data VendorWarehouseDetailData, langOpt ...string
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var36 string
-			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("adjustStock = { id: %d, name: %q, batch: %q, qty: %d, min: %d }; adjustModal = true;", s.StockID, func() string {
+			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("[adjustStock = { id: %d, name: %q, batch: %q, qty: %d, min: %d }, adjustModal = true]", s.StockID, func() string {
 				if s.ProductName != "" {
 					return s.ProductName
 				}
 				return s.VariantName
 			}(), s.BatchNumber, s.Quantity, s.MinThreshold))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_table.templ`, Line: 190, Col: 262}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_table.templ`, Line: 190, Col: 263}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 			if templ_7745c5c3_Err != nil {

@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -10,58 +11,65 @@ import (
 
 templ VendorOfferFormPage(data VendorOfferFormData, lang, dir string) {
 	@layouts.VendorShell(i18n.T(lang, "vendor_offer_form.shell_title"), "supply_offers", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('vendorOfferFormData', function (a0, a1) {
+				return {
+					// A nil Go slice arrives as null.
+					availableItems: a0 || [],
+					selectedItems: a1 || [],
+					searchQuery: '',
+					showDropdown: false,
+					get filteredItems() {
+						if (!this.searchQuery.trim()) return this.availableItems.slice(0, 20);
+						const q = this.searchQuery.toLowerCase();
+						return this.availableItems.filter(i =>
+							(i.name_ar && i.name_ar.toLowerCase().includes(q)) ||
+							(i.name_en && i.name_en.toLowerCase().includes(q)) ||
+							(i.sku && i.sku.toLowerCase().includes(q)) ||
+							(i.batch_number && i.batch_number.toLowerCase().includes(q))
+						).slice(0, 30);
+					},
+					addItem(item) {
+						if (!this.selectedItems.find(i => i.variant_id === item.variant_id)) {
+							this.selectedItems.push({
+								variant_id: item.variant_id,
+								name: item.name_ar || item.name_en || item.sku,
+								sku: item.sku,
+								batch: item.batch_number,
+								expiry: item.expiry_date,
+								warehouse: item.warehouse_name,
+								stock: item.available_stock,
+								original_price: item.price_float,
+								original_price_str: item.price,
+								qty: 1,
+								discount_pct: 0,
+								custom_price: item.price_float
+							});
+						}
+						this.searchQuery = '';
+						this.showDropdown = false;
+					},
+					removeItem(idx) {
+						this.selectedItems.splice(idx, 1);
+					},
+					onDiscountChange(item) {
+						if (item.original_price > 0 && item.discount_pct >= 0) {
+							item.custom_price = Math.max(0, +(item.original_price * (1 - (item.discount_pct / 100))).toFixed(2));
+						}
+					},
+					onPriceChange(item) {
+						if (item.original_price > 0 && item.custom_price >= 0) {
+							const d = ((1 - (item.custom_price / item.original_price)) * 100);
+							item.discount_pct = Math.max(0, +d.toFixed(1));
+						}
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data={ fmt.Sprintf(`{
-				availableItems: %s,
-				selectedItems: %s,
-				searchQuery: '',
-				showDropdown: false,
-				get filteredItems() {
-					if (!this.searchQuery.trim()) return this.availableItems.slice(0, 20);
-					const q = this.searchQuery.toLowerCase();
-					return this.availableItems.filter(i => 
-						(i.name_ar && i.name_ar.toLowerCase().includes(q)) ||
-						(i.name_en && i.name_en.toLowerCase().includes(q)) ||
-						(i.sku && i.sku.toLowerCase().includes(q)) ||
-						(i.batch_number && i.batch_number.toLowerCase().includes(q))
-					).slice(0, 30);
-				},
-				addItem(item) {
-					if (!this.selectedItems.find(i => i.variant_id === item.variant_id)) {
-						this.selectedItems.push({
-							variant_id: item.variant_id,
-							name: item.name_ar || item.name_en || item.sku,
-							sku: item.sku,
-							batch: item.batch_number,
-							expiry: item.expiry_date,
-							warehouse: item.warehouse_name,
-							stock: item.available_stock,
-							original_price: item.price_float,
-							original_price_str: item.price,
-							qty: 1,
-							discount_pct: 0,
-							custom_price: item.price_float
-						});
-					}
-					this.searchQuery = '';
-					this.showDropdown = false;
-				},
-				removeItem(idx) {
-					this.selectedItems.splice(idx, 1);
-				},
-				onDiscountChange(item) {
-					if (item.original_price > 0 && item.discount_pct >= 0) {
-						item.custom_price = Math.max(0, +(item.original_price * (1 - (item.discount_pct / 100))).toFixed(2));
-					}
-				},
-				onPriceChange(item) {
-					if (item.original_price > 0 && item.custom_price >= 0) {
-						const d = ((1 - (item.custom_price / item.original_price)) * 100);
-						item.discount_pct = Math.max(0, +d.toFixed(1));
-					}
-				}
-			}`, itemsToJSON(data.ItemOptions), selectedItemsJSON(data.Offer, data.ItemOptions)) }
+			x-data={ components.AlpineCall("vendorOfferFormData", json.RawMessage(itemsToJSON(data.ItemOptions)), json.RawMessage(selectedItemsJSON(data.Offer, data.ItemOptions))) }
 		>
 			
 			<!-- Header -->

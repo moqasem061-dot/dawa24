@@ -173,7 +173,7 @@ templ AdminBranchesPage(data AdminBranchesPageData, lang, dir string) {
 					</div>
 
 					<div class="d-flex items-center gap-2 flex-wrap">
-						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="resetToAddMode(); document.getElementById('admin-branch-form').scrollIntoView({behavior:'smooth'});">
+						<button type="button" class="btn btn-primary btn-sm font-bold gap-1" @click="[resetToAddMode(), $scrollToId('admin-branch-form')]">
 							@components.IconPlus("icon-xs")
 							<span>+ إضافة فرع جديد</span>
 						</button>
@@ -407,8 +407,8 @@ templ AdminBranchForm(data AdminBranchesPageData, lang string) {
 	<div
 		class="glass-panel p-5 sticky-top"
 		id="admin-branch-form"
-		@dawa-coords-change.window="if ($event.detail && ($event.detail.targetId === 'admin-branch-map-picker' || !$event.detail.targetId)) { form.latitude = $event.detail.lat; form.longitude = $event.detail.lon; }"
-		@combobox-change.window="if ($event.detail) { onComboboxChange($event.detail); }"
+		@dawa-coords-change.window="$event.detail && ($event.detail.targetId === 'admin-branch-map-picker' || !$event.detail.targetId) && [form.latitude = $event.detail.lat, form.longitude = $event.detail.lon]"
+		@combobox-change.window="$event.detail && onComboboxChange($event.detail)"
 	>
 		<!-- City and Organization coordinates/types lookup for instant UI responsiveness -->
 		<div id="admin-branch-cities-coords" class="d-none" data-coords={ CitiesCoordinatesJSON(data.Cities) }></div>
@@ -444,13 +444,7 @@ templ AdminBranchForm(data AdminBranchesPageData, lang string) {
 			class="d-flex flex-col gap-3 m-0"
 			method="POST"
 			:action="formAction"
-			@submit="
-				const cid = form.city_id || $el.querySelector('input[name=city_id]')?.value;
-				if (!form.org_id) { $event.preventDefault(); alert('يرجى اختيار المنشأة'); return; }
-				if (!cid) { $event.preventDefault(); alert('يرجى اختيار المدينة أو المحافظة'); return; }
-				form.city_id = cid;
-				if (isCustomerSelected()) { form.warehouse_type = 'pharmacy'; }
-			"
+			@submit="validateSubmit($event)"
 		>
 			<!-- Organization Select -->
 			<div class="form-group mb-0">
@@ -705,6 +699,16 @@ templ AdminBranchScript() {
 	<script nonce={ layouts.Nonce(ctx) }>
 		function adminBranchManager() {
 			return {
+				// Runs on the form's submit event: refuses an incomplete branch and
+				// fills the derived fields.
+				validateSubmit(e) {
+					const hidden = e.target.querySelector('input[name=city_id]');
+					const cid = this.form.city_id || (hidden ? hidden.value : '');
+					if (!this.form.org_id) { e.preventDefault(); alert('يرجى اختيار المنشأة'); return; }
+					if (!cid) { e.preventDefault(); alert('يرجى اختيار المدينة أو المحافظة'); return; }
+					this.form.city_id = cid;
+					if (this.isCustomerSelected()) { this.form.warehouse_type = 'pharmacy'; }
+				},
 				mode: 'add',
 				editId: 0,
 				formAction: '/admin/branches/new',
@@ -973,6 +977,8 @@ templ AdminBranchScript() {
 				}
 			};
 		}
+		// The CSP build of Alpine only sees registered components.
+		dawaData('adminBranchManager', adminBranchManager);
 	</script>
 }
 

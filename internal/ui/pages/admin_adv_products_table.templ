@@ -245,7 +245,7 @@ templ AdminAdvProductsTable(data AdminAdvProductsData, lang, dir string) {
 												type="button"
 												class="btn btn-danger btn-xs font-bold gap-1 text-white shadow-2xs"
 												title="رفض طلب الرعاية"
-												@click={ fmt.Sprintf("rejectId = %d; rejectAction = '/admin/adv-products/%d/reject'; rejectModalOpen = true", row.ID, row.ID) }
+												@click={ fmt.Sprintf("[rejectId = %d, rejectAction = '/admin/adv-products/%d/reject', rejectModalOpen = true]", row.ID, row.ID) }
 											>
 												@components.IconClose("icon-2xs")
 												<span>رفض</span>
@@ -255,7 +255,7 @@ templ AdminAdvProductsTable(data AdminAdvProductsData, lang, dir string) {
 												type="button"
 												class="btn btn-secondary btn-xs font-bold text-rose-600 gap-1"
 												title="إلغاء وتجميد الرعاية"
-												@click={ fmt.Sprintf("rejectId = %d; rejectAction = '/admin/adv-products/%d/reject'; rejectModalOpen = true", row.ID, row.ID) }
+												@click={ fmt.Sprintf("[rejectId = %d, rejectAction = '/admin/adv-products/%d/reject', rejectModalOpen = true]", row.ID, row.ID) }
 											>
 												@components.IconClose("icon-2xs")
 												<span>إلغاء</span>

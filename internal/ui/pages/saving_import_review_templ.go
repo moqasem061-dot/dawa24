@@ -369,7 +369,7 @@ func savingReviewStage(view SavingImportView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div></div><!-- Centered Modal for Linking Saving Product to Master Catalog --><div id=\"saving-catalog-match-modal\" class=\"modal-backdrop d-none\" style=\"display: none !important;\" aria-hidden=\"true\"><div class=\"glass-panel p-6 saving-match-dialog\"><div class=\"flex-between items-center pb-3 border-b mb-3\"><div class=\"stack-sm\"><h3 class=\"text-lg font-black text-primary m-0\">الربط بالكتالوج المركزي</h3><p class=\"text-xs text-secondary m-0 mt-0.5 font-mono\" id=\"saving-modal-item-name\"></p><p class=\"text-xs text-muted m-0 mt-1\">الأولوية للأصناف التي تبدأ بأول كلمة من البحث.</p></div><button type=\"button\" class=\"btn btn-secondary btn-xs\" data-on-click=\"closeSavingCatalogModal()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div></div><!-- Centered Modal for Linking Saving Product to Master Catalog --><div id=\"saving-catalog-match-modal\" class=\"modal-backdrop d-none\" aria-hidden=\"true\"><div class=\"glass-panel p-6 saving-match-dialog\"><div class=\"flex-between items-center pb-3 border-b mb-3\"><div class=\"stack-sm\"><h3 class=\"text-lg font-black text-primary m-0\">الربط بالكتالوج المركزي</h3><p class=\"text-xs text-secondary m-0 mt-0.5 font-mono\" id=\"saving-modal-item-name\"></p><p class=\"text-xs text-muted m-0 mt-1\">الأولوية للأصناف التي تبدأ بأول كلمة من البحث.</p></div><button type=\"button\" class=\"btn btn-secondary btn-xs\" data-on-click=\"closeSavingCatalogModal()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -933,7 +933,7 @@ func savingProductRow(view SavingImportView, row *StagedSavingItem) templ.Compon
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\" class=\"saving-num-field tabular-nums text-xs font-bold\" style=\"width: 82px;\"> <button type=\"submit\" class=\"btn btn-ghost btn-xs p-1 shrink-0 text-emerald\" title=\"حفظ السعر\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "\" class=\"saving-num-field tabular-nums text-xs font-bold s-w-82\"> <button type=\"submit\" class=\"btn btn-ghost btn-xs p-1 shrink-0 text-emerald\" title=\"حفظ السعر\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

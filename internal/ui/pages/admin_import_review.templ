@@ -471,7 +471,7 @@ templ importProgressCard(view ImportReviewView) {
 				<div
 					class="wiz-progress-fill"
 					id="import-progress-fill"
-					style={ templ.SafeCSS(fmt.Sprintf("width:%d%%", view.ProgressPercent())) }
+					data-pct={ fmt.Sprint(view.ProgressPercent()) }
 				></div>
 			</div>
 			<div class="wiz-progress-meta">

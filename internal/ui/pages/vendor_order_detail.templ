@@ -59,7 +59,7 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 					}
 					if string(sh.Status) == "pending" {
 						<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
-							<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+							<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 							<input type="hidden" name="status" value="confirmed" />
 							<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
 							<button type="submit" class="btn btn-primary btn-sm font-bold text-xs gap-1.5 shadow-xs">
@@ -70,7 +70,7 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 					}
 					if string(sh.Status) != "cancelled" && string(sh.Status) != "delivered" && string(sh.Status) != "completed" {
 						<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline" data-confirm="هل أنت متأكد من إلغاء أمر التوريد؟">
-							<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+							<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 							<input type="hidden" name="status" value="cancelled" />
 							<input type="hidden" name="notes" value="تم إلغاء أمر التوريد من صفحة تفاصيل الطلب" />
 							<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
@@ -310,7 +310,7 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 						<div class="p-4 rounded-xl bg-surface-sunken border">
 							<h3 class="text-xs font-black text-primary mb-2">إسناد وتعيين مندوب شحن وتوصيل:</h3>
 							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/delivery/%d/assign", sh.ID)) } method="POST" class="d-flex items-center gap-2 flex-wrap">
-								<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()" />
+								<input type="hidden" name="_csrf" value="" :value="$csrf()" />
 								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.OrderID) } />
 								<select name="courier_user_id" class="form-select form-select-sm flex-1 text-xs" required>
 									<option value="">-- اختر المندوب المسجل --</option>

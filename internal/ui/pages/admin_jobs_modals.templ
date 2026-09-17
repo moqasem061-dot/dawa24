@@ -7,7 +7,7 @@ import (
 
 templ AdminJobsModals(lang string, orgs []*AdminJobOrgOption) {
 	<!-- Add Job Modal -->
-	<div id="admin-add-job-modal" class="modal-backdrop" style="display:none;">
+	<div id="admin-add-job-modal" class="modal-backdrop s-hidden-init">
 		<div class="modal-card max-w-2xl">
 			<div class="modal-header">
 				<h3 class="modal-title font-black text-lg text-primary">نشر إعلان وظيفي جديد</h3>
@@ -73,7 +73,7 @@ templ AdminJobsModals(lang string, orgs []*AdminJobOrgOption) {
 	</div>
 
 	<!-- Edit Job Modal -->
-	<div id="admin-edit-job-modal" class="modal-backdrop" style="display:none;">
+	<div id="admin-edit-job-modal" class="modal-backdrop s-hidden-init">
 		<div class="modal-card max-w-2xl">
 			<div class="modal-header">
 				<h3 class="modal-title font-black text-lg text-primary">تعديل بيانات الإعلان الوظيفي</h3>

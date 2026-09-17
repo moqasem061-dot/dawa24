@@ -14,7 +14,8 @@ templ VendorCoveragePage(data VendorCoverageData, lang, dir string) {
 		<div id="cities-dataset" data-cities={ citiesToJSON(data.Cities) } class="d-none"></div>
 		<div id="coverages-dataset" data-coverages={ coveragesToJSON(data.Coverages) } class="d-none"></div>
 
-		<div x-data={ vendorCoverageAlpineData() } class="d-flex flex-col gap-6">
+		@vendorCoverageScript()
+		<div x-data="vendorCoverageManager" class="d-flex flex-col gap-6">
 
 			<!-- Notice / Toast Banner -->
 			if data.NoticeMessage != "" {

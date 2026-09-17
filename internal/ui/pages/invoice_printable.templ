@@ -29,12 +29,12 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 			<!-- Floating Action Toolbar (Hidden in print) -->
 			<div class="no-print-toolbar">
 				<div class="d-flex items-center gap-2">
-					<span style="font-size:1.3rem;">@components.IconFileText("icon-sm")</span>
+					<span class="s-invoice-logo">@components.IconFileText("icon-sm")</span>
      <div class="stack-sm">
-						<strong style="font-size:0.95rem; display:block; color:#0f172a;">
+						<strong class="s-invoice-name">
 							فاتورة استلام وتوريد
 						</strong>
-						<span style="font-size:0.75rem; color:#64748b;">
+						<span class="s-invoice-meta">
 							رقم الفاتورة: <span class="tabular-nums font-bold">{ data.InvoiceNumber }</span>
 						</span>
 					</div>

@@ -41,50 +41,14 @@ func tempWhDeleteDays(s *platformadmin.TempWarehouseLifecycleSettings) int {
 
 templ AdminSettings(values AdminSettingsValues, lang, dir string) {
 	@layouts.AdminShell("إعدادات المنصة والمنظومة | Platform Settings", "settings", lang, dir) {
-		<div
-			class="settings-page d-flex flex-col gap-6"
-			x-data="{
-				activeTab: 'features',
-				isMethodModalOpen: false,
-				isEditingMethod: false,
-				methodForm: {
-					id: '',
-					name_ar: '',
-					name_en: '',
-					provider_type: 'bank',
-					description_ar: '',
-					description_en: '',
-					account_name: '',
-					bank_name: '',
-					account_number: '',
-					iban: '',
-					swift_code: '',
-					branch_name: '',
-					instapay_handle: '',
-					phone_number: '',
-					is_active: true,
-					is_deposit_enabled: true,
-					is_checkout_enabled: true,
-					display_order: 1
-				},
-				init() {
-					const urlParams = new URLSearchParams(window.location.search);
-					let tab = urlParams.get('tab') || localStorage.getItem('dawa24-admin-tab') || 'features';
-					if (tab !== 'features' && tab !== 'site' && tab !== 'policies' && tab !== 'payment_methods') {
-						tab = 'features';
-					}
-					this.activeTab = tab;
-				},
-				setTab(tab) {
-					this.activeTab = tab;
-					localStorage.setItem('dawa24-admin-tab', tab);
-					const u = new URL(window.location);
-					u.searchParams.set('tab', tab);
-					window.history.replaceState({}, '', u);
-				},
-				openNewMethodModal() {
-					this.isEditingMethod = false;
-					this.methodForm = {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminSettingsState', function () {
+				return {
+					activeTab: 'features',
+					isMethodModalOpen: false,
+					isEditingMethod: false,
+					methodForm: {
 						id: '',
 						name_ar: '',
 						name_en: '',
@@ -103,36 +67,78 @@ templ AdminSettings(values AdminSettingsValues, lang, dir string) {
 						is_deposit_enabled: true,
 						is_checkout_enabled: true,
 						display_order: 1
-					};
-					const modal = document.getElementById('payment-method-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				},
-				openEditMethodModal(pm) {
-					this.isEditingMethod = true;
-					this.methodForm = {
-						id: pm.id || '',
-						name_ar: pm.name_ar || '',
-						name_en: pm.name_en || '',
-						provider_type: pm.provider_type || 'bank',
-						description_ar: pm.description_ar || '',
-						description_en: pm.description_en || '',
-						account_name: pm.account_name || '',
-						bank_name: pm.bank_name || '',
-						account_number: pm.account_number || '',
-						iban: pm.iban || '',
-						swift_code: pm.swift_code || '',
-						branch_name: pm.branch_name || '',
-						instapay_handle: pm.instapay_handle || '',
-						phone_number: pm.phone_number || '',
-						is_active: pm.is_active,
-						is_deposit_enabled: pm.is_deposit_enabled,
-						is_checkout_enabled: pm.is_checkout_enabled,
-						display_order: pm.display_order || 1
-					};
-					const modal = document.getElementById('payment-method-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+					},
+					init() {
+						const urlParams = new URLSearchParams(window.location.search);
+						let tab = urlParams.get('tab') || localStorage.getItem('dawa24-admin-tab') || 'features';
+						if (tab !== 'features' && tab !== 'site' && tab !== 'policies' && tab !== 'payment_methods') {
+							tab = 'features';
+						}
+						this.activeTab = tab;
+					},
+					setTab(tab) {
+						this.activeTab = tab;
+						localStorage.setItem('dawa24-admin-tab', tab);
+						const u = new URL(window.location);
+						u.searchParams.set('tab', tab);
+						window.history.replaceState({}, '', u);
+					},
+					openNewMethodModal() {
+						this.isEditingMethod = false;
+						this.methodForm = {
+							id: '',
+							name_ar: '',
+							name_en: '',
+							provider_type: 'bank',
+							description_ar: '',
+							description_en: '',
+							account_name: '',
+							bank_name: '',
+							account_number: '',
+							iban: '',
+							swift_code: '',
+							branch_name: '',
+							instapay_handle: '',
+							phone_number: '',
+							is_active: true,
+							is_deposit_enabled: true,
+							is_checkout_enabled: true,
+							display_order: 1
+						};
+						const modal = document.getElementById('payment-method-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					},
+					openEditMethodModal(pm) {
+						this.isEditingMethod = true;
+						this.methodForm = {
+							id: pm.id || '',
+							name_ar: pm.name_ar || '',
+							name_en: pm.name_en || '',
+							provider_type: pm.provider_type || 'bank',
+							description_ar: pm.description_ar || '',
+							description_en: pm.description_en || '',
+							account_name: pm.account_name || '',
+							bank_name: pm.bank_name || '',
+							account_number: pm.account_number || '',
+							iban: pm.iban || '',
+							swift_code: pm.swift_code || '',
+							branch_name: pm.branch_name || '',
+							instapay_handle: pm.instapay_handle || '',
+							phone_number: pm.phone_number || '',
+							is_active: pm.is_active,
+							is_deposit_enabled: pm.is_deposit_enabled,
+							is_checkout_enabled: pm.is_checkout_enabled,
+							display_order: pm.display_order || 1
+						};
+						const modal = document.getElementById('payment-method-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				};
+			});
+		</script>
+		<div
+			class="settings-page d-flex flex-col gap-6"
+			x-data="adminSettingsState"
 		>
 			
 			<!-- Header -->

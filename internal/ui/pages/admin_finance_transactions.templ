@@ -11,22 +11,28 @@ import (
 
 templ AdminFinanceTransactionsPage(data AdminFinanceData, lang, dir string) {
 	@layouts.AdminShell("سجل حركات ومعاملات المحافظ", "transactions", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('adminFinanceTransactionsState', function () {
+				return Object.assign(dawaFinanceModalState(), {
+					refundTargetID: 0,
+					refundAmount: '',
+					refundOrgName: '',
+					refundTargetType: 'transaction',
+					openRefundModal(id, amount, orgName, targetType) {
+						this.refundTargetID = id;
+						this.refundAmount = amount;
+						this.refundOrgName = orgName;
+						this.refundTargetType = targetType || 'transaction';
+						const modal = document.getElementById('finance-refund-modal');
+						if (modal && typeof modal.showModal === 'function') modal.showModal();
+					}
+				});
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				refundTargetID: 0,
-				refundAmount: '',
-				refundOrgName: '',
-				refundTargetType: 'transaction',
-				openRefundModal(id, amount, orgName, targetType) {
-					this.refundTargetID = id;
-					this.refundAmount = amount;
-					this.refundOrgName = orgName;
-					this.refundTargetType = targetType || 'transaction';
-					const modal = document.getElementById('finance-refund-modal');
-					if (modal && typeof modal.showModal === 'function') modal.showModal();
-				}
-			}"
+			x-data="adminFinanceTransactionsState"
 		>
 			<!-- Header Title & Quick Export Row -->
 			<div class="glass-panel p-6 mb-6">

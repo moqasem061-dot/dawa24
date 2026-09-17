@@ -109,11 +109,11 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 										<button
 											type="button"
 											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
-											@click="navigator.clipboard.writeText(selectedPlatform.account_number); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											@click="$copy(selectedPlatform.account_number)"
 											title="Copy"
 										>
 											@components.IconCopy("icon-2xs")
-											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+											<span x-text="$t('common.copy', 'نسخ')">نسخ</span>
 										</button>
 									</div>
 								</template>
@@ -126,11 +126,11 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 										<button
 											type="button"
 											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2 flex-shrink-0"
-											@click="navigator.clipboard.writeText(selectedPlatform.iban); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											@click="$copy(selectedPlatform.iban)"
 											title="Copy"
 										>
 											@components.IconCopy("icon-2xs")
-											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+											<span x-text="$t('common.copy', 'نسخ')">نسخ</span>
 										</button>
 									</div>
 								</template>
@@ -143,11 +143,11 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 										<button
 											type="button"
 											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
-											@click="navigator.clipboard.writeText(selectedPlatform.instapay_handle); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											@click="$copy(selectedPlatform.instapay_handle)"
 											title="Copy"
 										>
 											@components.IconCopy("icon-2xs")
-											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+											<span x-text="$t('common.copy', 'نسخ')">نسخ</span>
 										</button>
 									</div>
 								</template>
@@ -160,11 +160,11 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 										<button
 											type="button"
 											class="btn btn-ghost btn-xs text-brand font-bold py-1 px-2"
-											@click="navigator.clipboard.writeText(selectedPlatform.phone_number); if (typeof showToast === 'function') showToast('Copied', 'success')"
+											@click="$copy(selectedPlatform.phone_number)"
 											title="Copy"
 										>
 											@components.IconCopy("icon-2xs")
-											<span x-text="window.dawaT ? window.dawaT('common.copy', 'نسخ') : 'نسخ'">نسخ</span>
+											<span x-text="$t('common.copy', 'نسخ')">نسخ</span>
 										</button>
 									</div>
 								</template>
@@ -183,7 +183,7 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 								<button
 									type="button"
 									class="btn-link text-2xs font-bold text-brand"
-									@click="isDepositModalOpen = false; isAddPaymentModalOpen = true; paymentEditID = 0"
+									@click="[isDepositModalOpen = false, isAddPaymentModalOpen = true, paymentEditID = 0]"
 								>
 									{ i18n.T(lang, "wallet.add_method_btn") }
 								</button>

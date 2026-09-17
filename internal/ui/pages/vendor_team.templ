@@ -10,49 +10,55 @@ import (
 
 templ VendorTeamPage(data VendorTeamData, lang, dir string) {
 	@layouts.VendorShell(i18n.T(lang, "vendor_team.shell_title"), "team", lang, dir) {
+		<script nonce={ templ.GetNonce(ctx) }>
+			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
+			dawaData('vendorTeamState', function () {
+				return {
+					showAddModal: false,
+					showEditModal: false,
+					edit: { id: 0, name: '', phone: '', jobTitle: '', code: '', roleKey: '', roleId: '', branchId: '', isActive: true },
+					openEdit(m) {
+						this.edit = {
+							id: m.id, name: m.name || '', phone: m.phone || '',
+							jobTitle: m.jobTitle || '', code: m.code || '',
+							roleKey: m.roleKey || 'org_employee',
+							roleId: m.roleId ? String(m.roleId) : '',
+							branchId: m.branchId ? String(m.branchId) : '',
+							isActive: !!m.isActive
+						};
+						this.showEditModal = true;
+						const dlg = document.getElementById('edit-employee-modal');
+						if (dlg && typeof dlg.showModal === 'function' && !dlg.open) {
+							dlg.showModal();
+						}
+					},
+					searchQuery: '',
+					roleFilter: 'all',
+					statusFilter: 'all',
+					matchesFilter(m) {
+						const q = this.searchQuery.toLowerCase().trim();
+						const matchesSearch = !q ||
+							(m.name && m.name.toLowerCase().includes(q)) ||
+							(m.email && m.email.toLowerCase().includes(q)) ||
+							(m.phone && m.phone.toLowerCase().includes(q)) ||
+							(m.jobTitle && m.jobTitle.toLowerCase().includes(q)) ||
+							(m.code && m.code.toLowerCase().includes(q));
+
+						const matchesRole = this.roleFilter === 'all' ||
+							String(m.roleId) === this.roleFilter ||
+							m.roleKey === this.roleFilter;
+						const matchesStatus = this.statusFilter === 'all' ||
+							(this.statusFilter === 'active' && m.isActive) ||
+							(this.statusFilter === 'inactive' && !m.isActive);
+
+						return matchesSearch && matchesRole && matchesStatus;
+					}
+				};
+			});
+		</script>
 		<div
 			class="page-container"
-			x-data="{
-				showAddModal: false,
-				showEditModal: false,
-				edit: { id: 0, name: '', phone: '', jobTitle: '', code: '', roleKey: '', roleId: '', branchId: '', isActive: true },
-				openEdit(m) {
-					this.edit = {
-						id: m.id, name: m.name || '', phone: m.phone || '',
-						jobTitle: m.jobTitle || '', code: m.code || '',
-						roleKey: m.roleKey || 'org_employee',
-						roleId: m.roleId ? String(m.roleId) : '',
-						branchId: m.branchId ? String(m.branchId) : '',
-						isActive: !!m.isActive
-					};
-					this.showEditModal = true;
-					const dlg = document.getElementById('edit-employee-modal');
-					if (dlg && typeof dlg.showModal === 'function' && !dlg.open) {
-						dlg.showModal();
-					}
-				},
-				searchQuery: '',
-				roleFilter: 'all',
-				statusFilter: 'all',
-				matchesFilter(m) {
-					const q = this.searchQuery.toLowerCase().trim();
-					const matchesSearch = !q || 
-						(m.name && m.name.toLowerCase().includes(q)) || 
-						(m.email && m.email.toLowerCase().includes(q)) || 
-						(m.phone && m.phone.toLowerCase().includes(q)) || 
-						(m.jobTitle && m.jobTitle.toLowerCase().includes(q)) || 
-						(m.code && m.code.toLowerCase().includes(q));
-					
-					const matchesRole = this.roleFilter === 'all' || 
-						String(m.roleId) === this.roleFilter || 
-						m.roleKey === this.roleFilter;
-					const matchesStatus = this.statusFilter === 'all' || 
-						(this.statusFilter === 'active' && m.isActive) || 
-						(this.statusFilter === 'inactive' && !m.isActive);
-					
-					return matchesSearch && matchesRole && matchesStatus;
-				}
-			}"
+			x-data="vendorTeamState"
 		>
 			<!-- Notice / Alert Banner -->
 			if data.NoticeMsg != "" {

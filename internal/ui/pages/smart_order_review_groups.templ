@@ -10,7 +10,7 @@ import (
 templ SmartOrderReviewGroups(data SmartOrderReviewData, lang string) {
 	if len(data.AllGroups) == 0 {
 		<div class="glass-panel p-8 text-center border border-subtle rounded-2xl bg-surface-raised/40 mb-6" x-show="activeTab === 'all'">
-			<div class="user-avatar-badge text-2xl mx-auto mb-3 bg-secondary-subtle text-secondary" style="width: 54px; height: 54px;">
+			<div class="user-avatar-badge text-2xl mx-auto mb-3 bg-secondary-subtle text-secondary s-size-54">
 				@components.IconPackage("icon-md")
 			</div>
 			<h3 class="text-base font-black text-primary mb-1">{ i18n.T(lang, "smart_order.empty_filtered") }</h3>

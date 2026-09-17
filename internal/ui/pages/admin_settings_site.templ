@@ -50,11 +50,11 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 							</div>
 
 							<!-- Preview Box -->
-							<div class="p-4 rounded-xl border d-flex flex-col items-center justify-center gap-2" style="background-color: #ffffff; min-height: 120px; border-color: #e2e8f0;">
+							<div class="p-4 rounded-xl border d-flex flex-col items-center justify-center gap-2 s-logo-preview-light">
 								<span class="text-2xs font-bold text-slate-500 uppercase tracking-wider">معاينة الوضع الفاتح</span>
-								<div class="flex-center w-100" style="height: 64px;">
+								<div class="flex-center w-100 s-h-64">
 									<template x-if="logoPreview">
-										<img :src="logoPreview" alt="Light Logo Preview" class="object-contain" style="max-height: 56px; max-width: 220px;" data-img-fallback="hide"/>
+										<img :src="logoPreview" alt="Light Logo Preview" class="object-contain s-logo-preview-img" data-img-fallback="hide"/>
 									</template>
 									<template x-if="!logoPreview">
 										<div class="d-flex items-center gap-2 text-slate-400 text-xs">
@@ -73,7 +73,7 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 									name="logo_file"
 									accept="image/png,image/jpeg,image/svg+xml,image/webp"
 									class="form-input text-xs"
-									@change="if ($event.target.files.length) { logoPreview = URL.createObjectURL($event.target.files[0]); }"
+									@change="$event.target.files.length && (logoPreview = $objectURL($event.target.files[0]))"
 								/>
 								<div class="text-2xs text-muted mt-1">يدعم SVG, PNG, WebP, JPG (يُفضل خلفية شفافة).</div>
 							</div>
@@ -92,16 +92,16 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 							</div>
 
 							<!-- Preview Box -->
-							<div class="p-4 rounded-xl border d-flex flex-col items-center justify-center gap-2" style="background-color: #0f172a; min-height: 120px; border-color: #334155;">
+							<div class="p-4 rounded-xl border d-flex flex-col items-center justify-center gap-2 s-logo-preview-dark">
 								<span class="text-2xs font-bold text-slate-400 uppercase tracking-wider">معاينة الوضع الداكن</span>
-								<div class="flex-center w-100" style="height: 64px;">
+								<div class="flex-center w-100 s-h-64">
 									<template x-if="!removeDark && logoDarkPreview">
-										<img :src="logoDarkPreview" alt="Dark Logo Preview" class="object-contain" style="max-height: 56px; max-width: 220px;" data-img-fallback="hide"/>
+										<img :src="logoDarkPreview" alt="Dark Logo Preview" class="object-contain s-logo-preview-img" data-img-fallback="hide"/>
 									</template>
 									<template x-if="removeDark || !logoDarkPreview">
 										<div class="d-flex flex-col items-center gap-1">
 											<template x-if="logoPreview">
-												<img :src="logoPreview" alt="Fallback Logo" class="object-contain opacity-50" style="max-height: 48px; max-width: 180px;"/>
+												<img :src="logoPreview" alt="Fallback Logo" class="object-contain opacity-50 s-logo-preview-sm"/>
 											</template>
 											<span class="text-2xs text-slate-400" x-text="logoPreview ? 'يستخدم الشعار الفاتح تلقائياً' : 'لا يوجد شعار'"></span>
 										</div>
@@ -117,7 +117,7 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 									name="logo_dark_file"
 									accept="image/png,image/jpeg,image/svg+xml,image/webp"
 									class="form-input text-xs"
-									@change="if ($event.target.files.length) { logoDarkPreview = URL.createObjectURL($event.target.files[0]); removeDark = false; }"
+									@change="$event.target.files.length && [logoDarkPreview = $objectURL($event.target.files[0]), removeDark = false]"
 								/>
 								<div class="text-2xs text-muted mt-1">يظهر تلقائياً عندما يتصفح المستخدم المنصة بالوضع الليلي.</div>
 								
@@ -144,9 +144,9 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 						</div>
 
 						<div class="d-flex items-center gap-4 flex-wrap">
-							<div class="p-3 rounded-xl border bg-white flex-center shadow-2xs" style="width: 56px; height: 56px; border-color: #e2e8f0;">
+							<div class="p-3 rounded-xl border bg-white flex-center shadow-2xs s-favicon-preview">
 								<template x-if="faviconPreview">
-									<img :src="faviconPreview" alt="Favicon" class="object-contain" style="width: 32px; height: 32px;"/>
+									<img :src="faviconPreview" alt="Favicon" class="object-contain s-size-32"/>
 								</template>
 								<template x-if="!faviconPreview">
 									@components.IconGlobe("icon-sm text-slate-400")
@@ -159,7 +159,7 @@ templ adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) {
 									name="favicon_file"
 									accept="image/x-icon,image/png,image/svg+xml"
 									class="form-input text-xs"
-									@change="if ($event.target.files.length) { faviconPreview = URL.createObjectURL($event.target.files[0]); }"
+									@change="$event.target.files.length && (faviconPreview = $objectURL($event.target.files[0]))"
 								/>
 							</div>
 						</div>

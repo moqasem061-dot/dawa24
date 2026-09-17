@@ -435,7 +435,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span> <span class=\"badge badge-primary text-xs\" x-text=\"selectedCities.length + (window.__DAWA_LANG__ === 'en' ? ' cities selected' : ' مدينة محددة')\"></span></label></div><div class=\"d-flex items-center gap-3\"><input type=\"text\" x-model=\"citySearch\" placeholder=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "</span> <span class=\"badge badge-primary text-xs\" x-text=\"selectedCities.length + ($lang === 'en' ? ' cities selected' : ' مدينة محددة')\"></span></label></div><div class=\"d-flex items-center gap-3\"><input type=\"text\" x-model=\"citySearch\" placeholder=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -448,7 +448,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" class=\"form-control text-xs w-48 rounded-lg\"> <button type=\"button\" @click=\"toggleSelectAllCities()\" class=\"btn btn-sm btn-primary font-bold text-xs rounded-lg\"><span x-text=\"allCitiesInGov ? (window.__DAWA_LANG__ === 'en' ? 'Deselect all cities' : 'إلغاء تحديد كل المدن') : (window.__DAWA_LANG__ === 'en' ? 'Select all cities in governorate' : 'تحديد كل مدن المحافظة')\"></span></button></div></div><!-- Hidden input for all_cities_in_gov --><input type=\"hidden\" name=\"all_cities_in_gov\" :value=\"allCitiesInGov ? 'true' : 'false'\"><!-- Grid of cities under governorate --><div class=\"d-grid grid-auto-fit-sm gap-2 max-h-56 overflow-y-auto p-2 bg-surface rounded-lg border\"><template x-for=\"c in filteredCities\" :key=\"c.id\"><label :class=\"selectedCities.includes(String(c.id)) ? 'badge-primary' : 'bg-surface-sunken'\" class=\"p-2 rounded-lg border d-flex items-center gap-2 cursor-pointer transition\"><input type=\"checkbox\" name=\"city_ids\" :value=\"c.id\" :checked=\"selectedCities.includes(String(c.id))\" @change=\"toggleCity(c.id)\" class=\"w-4 h-4 cursor-pointer\"><div class=\"flex-1 min-w-0\"><div class=\"font-bold text-sm text-primary\" x-text=\"window.__DAWA_LANG__ === 'en' ? (c.name_en || c.name_ar) : c.name_ar\"></div><div class=\"text-xs text-muted\" x-text=\"window.__DAWA_LANG__ === 'en' ? c.name_ar : c.name_en\"></div></div><span class=\"badge badge-slate badge-compact\" x-text=\"((c.radius_m || 0) / 1000).toFixed(1) + (window.__DAWA_LANG__ === 'en' ? ' km' : ' كم')\"></span> <span x-show=\"c.is_capital\" class=\"badge badge-amber badge-compact\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "\" class=\"form-control text-xs w-48 rounded-lg\"> <button type=\"button\" @click=\"toggleSelectAllCities()\" class=\"btn btn-sm btn-primary font-bold text-xs rounded-lg\"><span x-text=\"allCitiesInGov ? ($lang === 'en' ? 'Deselect all cities' : 'إلغاء تحديد كل المدن') : ($lang === 'en' ? 'Select all cities in governorate' : 'تحديد كل مدن المحافظة')\"></span></button></div></div><!-- Hidden input for all_cities_in_gov --><input type=\"hidden\" name=\"all_cities_in_gov\" :value=\"allCitiesInGov ? 'true' : 'false'\"><!-- Grid of cities under governorate --><div class=\"d-grid grid-auto-fit-sm gap-2 max-h-56 overflow-y-auto p-2 bg-surface rounded-lg border\"><template x-for=\"c in filteredCities\" :key=\"c.id\"><label :class=\"selectedCities.includes($str(c.id)) ? 'badge-primary' : 'bg-surface-sunken'\" class=\"p-2 rounded-lg border d-flex items-center gap-2 cursor-pointer transition\"><input type=\"checkbox\" name=\"city_ids\" :value=\"c.id\" :checked=\"selectedCities.includes($str(c.id))\" @change=\"toggleCity(c.id)\" class=\"w-4 h-4 cursor-pointer\"><div class=\"flex-1 min-w-0\"><div class=\"font-bold text-sm text-primary\" x-text=\"$lang === 'en' ? (c.name_en || c.name_ar) : c.name_ar\"></div><div class=\"text-xs text-muted\" x-text=\"$lang === 'en' ? c.name_ar : c.name_en\"></div></div><span class=\"badge badge-slate badge-compact\" x-text=\"((c.radius_m || 0) / 1000).toFixed(1) + ($lang === 'en' ? ' km' : ' كم')\"></span> <span x-show=\"c.is_capital\" class=\"badge badge-amber badge-compact\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -604,7 +604,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</button></div><div class=\"d-grid grid-auto-fit-md gap-3\"><template x-for=\"c in getSelectedCityDetails()\" :key=\"c.id\"><div class=\"bg-surface-raised p-4 rounded-xl border d-flex flex-col gap-3 shadow-xs\"><div class=\"flex-between items-start\"><div class=\"stack-sm\"><div class=\"font-extrabold text-sm text-brand\" x-text=\"window.__DAWA_LANG__ === 'en' ? (c.name_en || c.name_ar) : c.name_ar\"></div><div class=\"text-xs text-muted\" x-text=\"(window.__DAWA_LANG__ === 'en' ? c.name_ar : c.name_en) + (c.lat ? ' (' + c.lat.toFixed(4) + ', ' + c.lon.toFixed(4) + ')' : '')\"></div></div><button type=\"button\" @click=\"toggleCity(c.id)\" class=\"btn btn-icon btn-2xs text-danger\" title=\"إزالة هذه المدينة\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</button></div><div class=\"d-grid grid-auto-fit-md gap-3\"><template x-for=\"c in getSelectedCityDetails()\" :key=\"c.id\"><div class=\"bg-surface-raised p-4 rounded-xl border d-flex flex-col gap-3 shadow-xs\"><div class=\"flex-between items-start\"><div class=\"stack-sm\"><div class=\"font-extrabold text-sm text-brand\" x-text=\"$lang === 'en' ? (c.name_en || c.name_ar) : c.name_ar\"></div><div class=\"text-xs text-muted\" x-text=\"($lang === 'en' ? c.name_ar : c.name_en) + (c.lat ? ' (' + c.lat.toFixed(4) + ', ' + c.lon.toFixed(4) + ')' : '')\"></div></div><button type=\"button\" @click=\"toggleCity(c.id)\" class=\"btn btn-icon btn-2xs text-danger\" title=\"إزالة هذه المدينة\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -625,7 +625,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</label> <input type=\"time\" :name=\"'coverage_from_' + c.id\" x-model=\"initCityConfig(String(c.id)).from\" class=\"form-control text-xs\"></div><div class=\"stack-sm\"><label class=\"d-block text-xs font-semibold text-muted mb-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 53, "</label> <input type=\"time\" :name=\"'coverage_from_' + c.id\" x-model=\"initCityConfig($str(c.id)).from\" class=\"form-control text-xs\"></div><div class=\"stack-sm\"><label class=\"d-block text-xs font-semibold text-muted mb-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -638,7 +638,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</label> <input type=\"time\" :name=\"'coverage_to_' + c.id\" x-model=\"initCityConfig(String(c.id)).to\" class=\"form-control text-xs\"></div></div><div class=\"stack-sm\"><label class=\"d-block text-xs font-semibold text-muted mb-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 54, "</label> <input type=\"time\" :name=\"'coverage_to_' + c.id\" x-model=\"initCityConfig($str(c.id)).to\" class=\"form-control text-xs\"></div></div><div class=\"stack-sm\"><label class=\"d-block text-xs font-semibold text-muted mb-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -651,7 +651,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, ":</label><div class=\"d-flex items-center gap-2\"><span class=\"badge badge-primary text-xs\" x-text=\"((c.radius_m || 0) / 1000).toFixed(1) + ' ' + (window.__DAWA_LANG__ === 'en' ? 'km from city center' : 'كم من مركز المدينة')\"></span> <span class=\"text-xs text-muted\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 55, ":</label><div class=\"d-flex items-center gap-2\"><span class=\"badge badge-primary text-xs\" x-text=\"((c.radius_m || 0) / 1000).toFixed(1) + ' ' + ($lang === 'en' ? 'km from city center' : 'كم من مركز المدينة')\"></span> <span class=\"text-xs text-muted\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -698,7 +698,7 @@ func VendorCoverageBuilder(data VendorCoverageData, lang string) templ.Component
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " × <span x-text=\"selectedCities.length > 0 ? selectedCities.length : '1'\" class=\"text-brand\"></span> = <span class=\"text-brand font-black\" x-text=\"(selectedDays.length * (selectedCities.length > 0 ? selectedCities.length : 1)) + (window.__DAWA_LANG__ === 'en' ? ' weekly coverage zones' : ' نطاق تغطية أسبوعية')\"></span></div><div class=\"text-xs text-secondary mt-1\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, " × <span x-text=\"selectedCities.length > 0 ? selectedCities.length : '1'\" class=\"text-brand\"></span> = <span class=\"text-brand font-black\" x-text=\"(selectedDays.length * (selectedCities.length > 0 ? selectedCities.length : 1)) + ($lang === 'en' ? ' weekly coverage zones' : ' نطاق تغطية أسبوعية')\"></span></div><div class=\"text-xs text-secondary mt-1\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
