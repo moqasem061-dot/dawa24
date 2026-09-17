@@ -40,16 +40,16 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.rule=Host(`${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}`)
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.entrypoints=websecure
-      - traefik.http.routers.${COMPOSE_PROJECT_NAME}.tls.certresolver=letsencrypt
-      - traefik.http.services.${COMPOSE_PROJECT_NAME}.loadbalancer.server.port=8070
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-dawa24}.rule=Host(`${APP_DOMAIN:-srv1986270.hstgr.cloud}`) || Host(`${COMPOSE_PROJECT_NAME:-dawa24}.${TRAEFIK_HOST:-srv1986270.hstgr.cloud}`)
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-dawa24}.entrypoints=websecure
+      - traefik.http.routers.${COMPOSE_PROJECT_NAME:-dawa24}.tls.certresolver=letsencrypt
+      - traefik.http.services.${COMPOSE_PROJECT_NAME:-dawa24}.loadbalancer.server.port=8070
     ports:
       - "8070"
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}
-      - APP_BASE_URL=https://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}
+      - APP_BASE_URL=${APP_BASE_URL:-https://${APP_DOMAIN:-srv1986270.hstgr.cloud}}
       - PORT=8070
       - DATABASE_URL=${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dawa24_secret_postgres_pw}@postgresql:5432/${POSTGRES_DB:-postgres}?sslmode=disable}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-dawa24_secret_redis_pw}@redis:6379/0
@@ -101,7 +101,7 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}
-      - APP_BASE_URL=https://${COMPOSE_PROJECT_NAME}.${TRAEFIK_HOST}
+      - APP_BASE_URL=${APP_BASE_URL:-https://${APP_DOMAIN:-srv1986270.hstgr.cloud}}
       - PORT=8070
       - DATABASE_URL=${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dawa24_secret_postgres_pw}@postgresql:5432/${POSTGRES_DB:-postgres}?sslmode=disable}
       - REDIS_URL=redis://:${REDIS_PASSWORD:-dawa24_secret_redis_pw}@redis:6379/0
