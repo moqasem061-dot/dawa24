@@ -45,9 +45,14 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 			}
 			token := extractToken(r, cookieName)
 			if token == "" {
-				if r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/html") {
+				if isBrowserUIRequest(r) {
 					q := url.Values{}
 					q.Set("redirect", r.URL.RequestURI())
+					if r.Header.Get("HX-Request") == "true" {
+						w.Header().Set("HX-Redirect", "/auth/login?"+q.Encode())
+						w.WriteHeader(http.StatusUnauthorized)
+						return
+					}
 					http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)
 					return
 				}
@@ -70,7 +75,7 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 					SameSite: http.SameSiteLaxMode,
 				})
 
-				if r.Method == http.MethodGet && strings.Contains(r.Header.Get("Accept"), "text/html") {
+				if isBrowserUIRequest(r) {
 					q := url.Values{}
 					q.Set("redirect", r.URL.RequestURI())
 					var appErr *apperr.Error
@@ -80,6 +85,11 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 						q.Set("error", "duplicate_login")
 					} else if errors.Is(err, identity.ErrSessionEvictedConcurrentLimit) || (errors.As(err, &appErr) && appErr.Code == "session.evicted_concurrent_limit") {
 						q.Set("error", "concurrent_limit")
+					}
+					if r.Header.Get("HX-Request") == "true" {
+						w.Header().Set("HX-Redirect", "/auth/login?"+q.Encode())
+						w.WriteHeader(http.StatusUnauthorized)
+						return
 					}
 					http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)
 					return
@@ -325,4 +335,17 @@ func isBackgroundPoll(r *http.Request) bool {
 	// An explicit opt-in for callers that are not a fixed path (SSE streams,
 	// progress pollers on a per-session URL).
 	return r.Header.Get("X-Dawa-Background") == "1"
+}
+
+// isBrowserUIRequest reports whether this request came from a human browsing the UI
+// rather than a programmatic machine client asking strictly for JSON.
+func isBrowserUIRequest(r *http.Request) bool {
+	if strings.HasPrefix(r.URL.Path, "/api/") || strings.HasPrefix(r.URL.Path, "/webhook") {
+		return false
+	}
+	accept := r.Header.Get("Accept")
+	if strings.Contains(accept, "application/json") && !strings.Contains(accept, "text/html") && !strings.Contains(accept, "*/*") {
+		return false
+	}
+	return true
 }

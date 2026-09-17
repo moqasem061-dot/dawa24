@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
@@ -25,7 +26,7 @@ func (s *Service) AnalyzeImport(
 		return nil, FileStructure{}, ErrImportUnavailable
 	}
 
-	sheet, err := ReadSpreadsheet(content, filename)
+	sheet, err := ReadSpreadsheet(content, filename, filesecurity.WithAllowURLs(true))
 	if err != nil {
 		return nil, FileStructure{}, err
 	}
@@ -191,7 +192,7 @@ func (s *Service) sheetFor(ctx context.Context, session *ImportSession) (*SheetD
 			i18n.TDefault("w4_mod.w4str_85_85"), nil)
 	}
 
-	sheet, err := ReadSpreadsheet(content, session.Filename)
+	sheet, err := ReadSpreadsheet(content, session.Filename, filesecurity.WithAllowURLs(true))
 	if err != nil {
 		return nil, err
 	}

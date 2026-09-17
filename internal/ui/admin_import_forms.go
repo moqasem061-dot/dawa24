@@ -220,7 +220,7 @@ func readUploadedFile(r *http.Request) ([]byte, string, *uploadError) {
 	if header != nil {
 		filename = header.Filename
 	}
-	if err := filesecurity.ValidateSpreadsheetSecurity(content, filename); err != nil {
+	if err := filesecurity.ValidateSpreadsheetSecurity(content, filename, filesecurity.WithAllowURLs(true)); err != nil {
 		return nil, "", &uploadError{
 			message: filesecurity.SecurityErrorMessage,
 			detail:  err.Error(),
