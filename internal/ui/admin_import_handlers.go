@@ -17,16 +17,6 @@ import (
 	"github.com/muhiya/dawa24-store/internal/ui/pages"
 )
 
-// maxImportUploadBytes caps an uploaded catalogue file. The largest real
-// distributor export seen is a few megabytes; 32 MB leaves ample headroom while
-// keeping a single request from holding that much memory.
-const maxImportUploadBytes int64 = 32 << 20
-
-// maxImportRequestBytes caps the whole request body: the file plus generous
-// room for the multipart envelope and form fields. Without it a client can
-// stream an arbitrarily large "upload" that the server spools to disk in full
-// before anything checks the size.
-const maxImportRequestBytes int64 = maxImportUploadBytes + (1 << 20)
 
 // importReviewPageSize is the staged-rows review table's page size for this
 // request: the reader's choice off ?limit= (pagination.RowsPerPageOptions), or

@@ -313,11 +313,11 @@ func (s *Service) CommitImport(ctx context.Context, publicID string) (*ImportSes
 
 	// Validation runs before the transaction: a row the domain refuses is
 	// dropped and named, not fed to the database to abort the batch with.
-	if len(prods) > maxImportBatch {
+	if maxLimit := MaxImportBatch(); maxLimit > 0 && len(prods) > maxLimit {
 		s.releaseClaim(ctx, session)
 		return session, empty, apperr.Validation("catalog.import_too_large",
 			fmt.Sprintf(i18n.TDefault("w4_mod.d_d_102"),
-				len(prods), maxImportBatch), nil)
+				len(prods), maxLimit), nil)
 	}
 	valid, issues, err := s.validateImportBatch(prods)
 	if err != nil {

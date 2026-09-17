@@ -283,8 +283,8 @@ func rowsWhere(importID int64, filter ingest.RowFilter) (string, []any) {
 func (r *Repository) RowIDsForFilter(
 	ctx context.Context, importID int64, filter ingest.RowFilter, limit int,
 ) ([]int64, error) {
-	if limit <= 0 || limit > 20000 {
-		limit = 20000
+	if limit <= 0 {
+		limit = 1000000
 	}
 	clause, args := rowsWhere(importID, filter)
 	var out []int64

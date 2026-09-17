@@ -99,12 +99,6 @@ func (s *Service) CreateProduct(ctx context.Context, p *Product) (*Product, erro
 	return p, nil
 }
 
-// maxImportBatch bounds one upload. Ten thousand rows is roughly the largest
-// real distributor catalogue and already takes several seconds inside a single
-// transaction; beyond that the request would outlive its own timeout and hold
-// write locks on catalog.products the whole time.
-const maxImportBatch = 20000
-
 // BulkImportProducts writes a parsed batch into the master catalogue.
 //
 // Rows are validated here, before the write, so a bad value is reported against
@@ -118,10 +112,10 @@ func (s *Service) BulkImportProducts(
 	if len(prods) == 0 {
 		return empty, nil, nil
 	}
-	if len(prods) > maxImportBatch {
+	if maxLimit := MaxImportBatch(); maxLimit > 0 && len(prods) > maxLimit {
 		return empty, nil, apperr.Validation("catalog.import_too_large",
 			fmt.Sprintf(i18n.TDefault("w4_mod.d_d_102"),
-				len(prods), maxImportBatch), nil)
+				len(prods), maxLimit), nil)
 	}
 
 	valid, issues, err := s.validateImportBatch(prods)

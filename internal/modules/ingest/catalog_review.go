@@ -101,7 +101,7 @@ func (s *Service) RowIDsForFilter(
 	if err != nil {
 		return nil, err
 	}
-	return s.imports.RowIDsForFilter(ctx, session.ID, filter, 20000)
+	return s.imports.RowIDsForFilter(ctx, session.ID, filter, 0)
 }
 
 // reviewSession loads an import and refuses anything not open for review.

@@ -1,6 +1,12 @@
 package catalog
 
-import "github.com/muhiya/dawa24-store/internal/shared/productmatch"
+import (
+	"os"
+	"strconv"
+	"strings"
+
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+)
 
 // What an administrator decides before a main-catalogue import runs.
 //
@@ -90,3 +96,23 @@ func DefaultImportOptions() ImportOptions {
 func (o ImportOptions) WantsEnrichment() bool {
 	return o.AssignCategory || o.AssignDosageForm || o.AssignScientificName
 }
+
+// MaxImportBatch returns the maximum number of items allowed in a single catalog import.
+// It reads from the CATALOG_MAX_IMPORT_ROWS (or MAX_IMPORT_ROWS) environment variable.
+// If the variable is unset, empty, or <= 0, it returns 0, meaning unlimited imports.
+func MaxImportBatch() int {
+	val := os.Getenv("CATALOG_MAX_IMPORT_ROWS")
+	if val == "" {
+		val = os.Getenv("MAX_IMPORT_ROWS")
+	}
+	if val != "" {
+		if n, err := strconv.Atoi(strings.TrimSpace(val)); err == nil {
+			if n > 0 {
+				return n
+			}
+			return 0
+		}
+	}
+	return 0
+}
+

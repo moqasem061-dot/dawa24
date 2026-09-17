@@ -79,6 +79,10 @@ x-app-env: &app-env
   # Marketing digest read by n8n
   MARKETING_BRIDGE_TOKEN: ${MARKETING_BRIDGE_TOKEN:-}
 
+  # Master Catalog Import (0 = unlimited)
+  CATALOG_MAX_IMPORT_ROWS: ${CATALOG_MAX_IMPORT_ROWS:-0}
+  MAX_IMPORT_UPLOAD_MB: ${MAX_IMPORT_UPLOAD_MB:-200}
+
 x-build: &build
   build:
     context: ../..
