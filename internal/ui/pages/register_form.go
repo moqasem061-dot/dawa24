@@ -36,6 +36,7 @@ type RegisterFormData struct {
 	PhoneVerified      bool
 	VerifiedEmailToken string
 	EmailVerified      bool
+	TurnstileSiteKey   string
 	Error              string
 }
 

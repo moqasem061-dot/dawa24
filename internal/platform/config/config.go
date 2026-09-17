@@ -46,6 +46,7 @@ type Config struct {
 	WhatsApp  WhatsApp
 	Marketing Marketing
 	SMTP      SMTP
+	Turnstile Turnstile
 }
 
 // AntiScrape governs the guard on the signed-out pages that publish
@@ -259,6 +260,7 @@ func load(cliOnly bool) (*Config, error) {
 	cfg.WhatsApp = loadWhatsApp(fail)
 	cfg.Marketing = loadMarketing(fail)
 	cfg.SMTP = loadSMTP()
+	cfg.Turnstile = loadTurnstile(fail)
 
 	// --- Required everywhere ---
 	if cfg.Database.URL == "" {
@@ -374,25 +376,3 @@ func getCSV(key string) []string {
 
 // ErrNoConfig is returned by helpers that require a loaded config.
 var ErrNoConfig = errors.New("config: not loaded")
-
-// DatabasePassword extracts the password from a PostgreSQL DSN.
-//
-// It exists so the Gateway settings screen can be told the one secret it must
-// never accept: the password this process connects to its own database with.
-// A malformed or password-less DSN yields "", which disables that check rather
-// than blocking configuration.
-func DatabasePassword(dsn string) string {
-	trimmed := strings.TrimSpace(dsn)
-	if trimmed == "" {
-		return ""
-	}
-	u, err := url.Parse(trimmed)
-	if err != nil || u.User == nil {
-		return ""
-	}
-	pass, ok := u.User.Password()
-	if !ok {
-		return ""
-	}
-	return pass
-}

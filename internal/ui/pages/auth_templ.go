@@ -1069,7 +1069,43 @@ func RegisterPage(lang, dir string, form RegisterFormData, cities []*platformadm
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</button></div><!-- Strength Progress Bars --><div id=\"pwd-strength-bars\" class=\"pwd-strength-bars d-flex gap-1 mt-1.5\"><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div></div><!-- Real-Time Password Checklist --><div id=\"pwd-checklist\" class=\"pwd-checklist d-flex flex-col gap-1 mt-2 text-2xs text-secondary\"><div id=\"rule-length\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> 8 أحرف على الأقل</div><div id=\"rule-casing\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> حرف كبير (A-Z) وصغير (a-z)</div><div id=\"rule-number\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> رقم واحد على الأقل (0-9)</div><div id=\"rule-special\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> رمز خاص (@, $, !, %, *, #)</div></div></div><div class=\"d-flex items-center gap-3 pt-2\"><button type=\"button\" id=\"reg-step-3-back-btn\" class=\"btn btn-secondary font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</button></div><!-- Strength Progress Bars --><div id=\"pwd-strength-bars\" class=\"pwd-strength-bars d-flex gap-1 mt-1.5\"><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div><div class=\"strength-bar-seg\"></div></div><!-- Real-Time Password Checklist --><div id=\"pwd-checklist\" class=\"pwd-checklist d-flex flex-col gap-1 mt-2 text-2xs text-secondary\"><div id=\"rule-length\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> 8 أحرف على الأقل</div><div id=\"rule-casing\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> حرف كبير (A-Z) وصغير (a-z)</div><div id=\"rule-number\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> رقم واحد على الأقل (0-9)</div><div id=\"rule-special\" class=\"pwd-checklist-item\"><span class=\"rule-icon text-muted\">●</span> رمز خاص (@, $, !, %, *, #)</div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if form.TurnstileSiteKey != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<script src=\"https://challenges.cloudflare.com/turnstile/v0/api.js\" async defer></script> <div class=\"cf-turnstile mb-3 d-flex justify-center\" data-sitekey=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var61 string
+				templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue(form.TurnstileSiteKey)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/auth.templ`, Line: 554, Col: 96}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "\" data-action=\"register\" data-theme=\"auto\" data-language=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var62 string
+				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.ResolveAttributeValue(lang)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/auth.templ`, Line: 554, Col: 160}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var62)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\"></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div class=\"d-flex items-center gap-3 pt-2\"><button type=\"button\" id=\"reg-step-3-back-btn\" class=\"btn btn-secondary font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1077,7 +1113,7 @@ func RegisterPage(lang, dir string, form RegisterFormData, cities []*platformadm
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<span>السابق</span></button> <button type=\"submit\" id=\"reg-submit-btn\" class=\"btn btn-primary btn-lg font-bold flex-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "<span>السابق</span></button> <button type=\"submit\" id=\"reg-submit-btn\" class=\"btn btn-primary btn-lg font-bold flex-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1085,20 +1121,20 @@ func RegisterPage(lang, dir string, form RegisterFormData, cities []*platformadm
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<span>إنشاء الحساب وبدء التفعيل</span></button></div><div class=\"auth-legal-terms\"><span>بتسجيلك في المنصة، أنت توافق على</span> <a href=\"/terms\" target=\"_blank\">شروط وأحكام المنصة</a> <span>و</span> <a href=\"/privacy\" target=\"_blank\">سياسة الخصوصية</a></div></section></form><div class=\"auth-footer\"><span>لديك حساب بالفعل؟</span> <a href=\"/auth/login\" class=\"font-bold text-accent text-decoration-none ms-1\">تسجيل الدخول</a></div></div></div><script defer src=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "<span>إنشاء الحساب وبدء التفعيل</span></button></div><div class=\"auth-legal-terms\"><span>بتسجيلك في المنصة، أنت توافق على</span> <a href=\"/terms\" target=\"_blank\">شروط وأحكام المنصة</a> <span>و</span> <a href=\"/privacy\" target=\"_blank\">سياسة الخصوصية</a></div></section></form><div class=\"auth-footer\"><span>لديك حساب بالفعل؟</span> <a href=\"/auth/login\" class=\"font-bold text-accent text-decoration-none ms-1\">تسجيل الدخول</a></div></div></div><script defer src=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var61 string
-			templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Asset("/static/js/registration.js"))
+			var templ_7745c5c3_Var63 string
+			templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Asset("/static/js/registration.js"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/auth.templ`, Line: 578, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/auth.templ`, Line: 583, Col: 65}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var61)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var63)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "\"></script>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\"></script>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

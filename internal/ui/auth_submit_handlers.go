@@ -118,6 +118,14 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		YearsExperience: strings.TrimSpace(r.PostFormValue("years_experience")),
 		Bio:             strings.TrimSpace(r.PostFormValue("bio")),
 		ExpectedSalary:  strings.TrimSpace(r.PostFormValue("expected_salary")),
+		TurnstileSiteKey: h.turnstileSiteKey(),
+	}
+
+	if err := h.verifyTurnstile(r, "register"); err != nil {
+		h.log.WarnContext(ctx, "registration rejected: turnstile verification failed", "error", err)
+		form.Error = i18n.T(lang, "auth.turnstile.failed")
+		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+		return
 	}
 
 	password := r.PostFormValue("password")

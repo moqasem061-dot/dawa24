@@ -257,6 +257,8 @@ func loadFrontendUIKeysB(e *engine) {
 	addKey(e, "auth.login.account_locked", "auth", "الحساب مقفل مؤقتاً بسبب تكرار محاولات الدخول الخاطئة.", "Account is temporarily locked due to multiple failed login attempts.", "Locked error")
 	addKey(e, "auth.login.mfa_unavailable", "auth", "المصادقة الثنائية غير متاحة حالياً.", "Two-factor authentication is currently unavailable.", "MFA error")
 	addKey(e, "auth.login.service_unavailable", "auth", "خدمة تسجيل الدخول غير متاحة حالياً.", "Login service is currently unavailable.", "Service error")
+	addKey(e, "auth.turnstile.failed", "auth", "فشل التحقق الأمني من كابتشا Cloudflare، يرجى المحاولة مرة أخرى.", "Cloudflare security verification failed, please try again.", "Turnstile error")
+	addKey(e, "auth.turnstile.required", "auth", "يرجى إكمال التحقق الأمني قبل المتابعة.", "Please complete the security check before continuing.", "Turnstile error")
 	addKey(e, "auth.register.default_legal_name", "auth", "منشأة جديدة", "New Organization", "Default legal name")
 	addKey(e, "auth.register.default_address", "auth", "المقر الرئيسي", "Headquarters", "Default address")
 	addKey(e, "auth.register.city_governorate_mismatch", "auth", "المدينة المختارة لا تتبع المحافظة المحددة. اختر المحافظة ثم المدينة مرة أخرى.", "The selected city does not belong to the chosen governorate. Pick the governorate, then the city, again.", "Registration validation error")

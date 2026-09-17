@@ -45,6 +45,8 @@ func (h *UIHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		errorMsg = i18n.T(lang, "auth.login.mfa_unavailable")
 	case errorKey == "auth_service_unavailable":
 		errorMsg = i18n.T(lang, "auth.login.service_unavailable")
+	case errorKey == "turnstile_failed":
+		errorMsg = i18n.T(lang, "auth.turnstile.failed")
 	default:
 		errorMsg = errorKey
 	}
@@ -54,7 +56,7 @@ func (h *UIHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
 		successMsg = i18n.T(lang, "auth.reset.success")
 	}
 
-	h.renderPage(ctx, w, "render login page", pages.LoginPage(lang, dir, errorMsg, successMsg))
+	h.renderPage(ctx, w, "render login page", pages.LoginPage(lang, dir, errorMsg, successMsg, h.turnstileSiteKey()))
 }
 
 func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
@@ -84,8 +86,9 @@ func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := pages.RegisterFormData{
-		AccountType: reqType,
-		Error:       r.URL.Query().Get("error"),
+		AccountType:      reqType,
+		Error:            r.URL.Query().Get("error"),
+		TurnstileSiteKey: h.turnstileSiteKey(),
 	}
 
 	h.renderPage(ctx, w, "render register page", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
@@ -97,6 +100,13 @@ func (h *UIHandler) OnboardingPage(w http.ResponseWriter, r *http.Request) {
 
 func (h *UIHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	if err := h.verifyTurnstile(r, "login"); err != nil {
+		h.log.WarnContext(ctx, "login rejected: turnstile verification failed", "error", err)
+		http.Redirect(w, r, "/auth/login?error=turnstile_failed", http.StatusSeeOther)
+		return
+	}
+
 	email := r.PostFormValue("email")
 	password := r.PostFormValue("password")
 	rememberMe := r.PostFormValue("remember_me")

@@ -294,6 +294,9 @@
       },
       createScript: function (input) {
         input = String(input);
+        if (/^window\.__CF\$cv\$params/.test(input) || /turnstile/i.test(input)) {
+          return input;
+        }
         var at = vettedScripts.indexOf(input);
         if (at !== -1) {
           vettedScripts.splice(at, 1);
@@ -303,8 +306,9 @@
         return null;
       },
       createScriptURL: function (input) {
-        if (sameOriginURL(input)) return String(input);
-        reportRejection('script URL', input);
+        var s = String(input);
+        if (sameOriginURL(s) || /^https:\/\/challenges\.cloudflare\.com\//.test(s)) return s;
+        reportRejection('script URL', s);
         return null;
       }
     });

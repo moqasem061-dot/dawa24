@@ -93,7 +93,7 @@ func SecurityHeaders(opts SecurityOptions) func(http.Handler) http.Handler {
 			// characters of the blocked code; 'report-sha256' asks for the
 			// hash of every script that runs, for auditing.
 			h.Set("Content-Security-Policy",
-				"script-src 'self' 'nonce-"+nonce+"' 'report-sample' 'report-sha256'; "+
+				"script-src 'self' 'nonce-"+nonce+"' https://challenges.cloudflare.com 'report-sample' 'report-sha256'; "+
 					"style-src 'self' 'nonce-"+nonce+"' https://fonts.googleapis.com 'report-sample'; "+
 					staticDirectives)
 			if PrivateArea(r.URL.Path) {
@@ -120,10 +120,10 @@ func cspStaticDirectives(reportURL string) string {
 		"media-src 'self' blob:",
 		"font-src 'self' data: https://fonts.gstatic.com",
 		// Same-origin XHR, fetch and the assistant's event streams, plus the
-		// address lookup the branch map performs in the browser.
-		"connect-src 'self' https://nominatim.openstreetmap.org",
+		// address lookup the branch map performs in the browser, and Cloudflare Turnstile telemetry.
+		"connect-src 'self' https://challenges.cloudflare.com https://nominatim.openstreetmap.org",
 		// Pin frame sources to exact map and embed providers without wildcard subdomains.
-		"frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org",
+		"frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org",
 		"worker-src 'self'",
 		"manifest-src 'self'",
 		"object-src 'none'",

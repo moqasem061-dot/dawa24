@@ -31,6 +31,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/safe"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
+	"github.com/muhiya/dawa24-store/internal/platform/turnstile"
 	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
 )
 
@@ -243,4 +244,10 @@ func (h *UIHandler) EmailOTP() *mailer.OTPEngine {
 	}
 	return h.emailOTP
 }
+
+// SetTurnstile wires the Cloudflare Turnstile CAPTCHA verification client.
+func (h *UIHandler) SetTurnstile(c turnstile.Client) {
+	h.turnstile = c
+}
+
 

@@ -549,6 +549,11 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 							</div>
 						</div>
 
+						if form.TurnstileSiteKey != "" {
+							<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+							<div class="cf-turnstile mb-3 d-flex justify-center" data-sitekey={ form.TurnstileSiteKey } data-action="register" data-theme="auto" data-language={ lang }></div>
+						}
+
 						<div class="d-flex items-center gap-3 pt-2">
 							<button type="button" id="reg-step-3-back-btn" class="btn btn-secondary font-bold">
 								@components.IconArrowRight("icon-xs")

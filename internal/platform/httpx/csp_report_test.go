@@ -95,7 +95,7 @@ func TestSecurityHeaders_CSPHardenedDirectives(t *testing.T) {
 
 	// frame-src uses no subdomain wildcards
 	assert.NotContains(t, csp, "https://*.google.com")
-	assert.Contains(t, csp, "frame-src 'self' https://www.google.com https://maps.google.com https://www.openstreetmap.org")
+	assert.Contains(t, csp, "frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org")
 }
 
 // The scanner findings this policy was hardened against: nothing may relax

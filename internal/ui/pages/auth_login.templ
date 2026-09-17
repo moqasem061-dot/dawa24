@@ -5,8 +5,14 @@ import (
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
 
-templ LoginPage(lang, dir, errorMsg, successMsg string) {
+templ LoginPage(lang, dir, errorMsg, successMsg string, turnstileSiteKey ...string) {
 	{{ site := layouts.GetSiteSettings(ctx) }}
+	{{
+		siteKey := ""
+		if len(turnstileSiteKey) > 0 {
+			siteKey = turnstileSiteKey[0]
+		}
+	}}
 	@layouts.Base("تسجيل الدخول", lang, dir) {
 		<div class="auth-page-wrapper">
 			<div class="auth-card glass-panel" x-data="{ showPwd: false }">
@@ -84,6 +90,11 @@ templ LoginPage(lang, dir, errorMsg, successMsg string) {
 							تذكرني على هذا الجهاز
 						</label>
 					</div>
+
+					if siteKey != "" {
+						<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+						<div class="cf-turnstile mb-2 d-flex justify-center" data-sitekey={ siteKey } data-action="login" data-theme="auto" data-language={ lang }></div>
+					}
 
 					<button type="submit" class="btn btn-primary btn-lg w-100 font-bold mt-2">
 						@components.IconCheck("icon-xs")

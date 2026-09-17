@@ -47,6 +47,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
+	"github.com/muhiya/dawa24-store/internal/platform/turnstile"
 	"github.com/muhiya/dawa24-store/internal/ui"
 
 	"github.com/redis/go-redis/v9"
@@ -328,6 +329,7 @@ func buildUIHandler(
 		PenaltyTTL:       cfg.Scrape.PenaltyTTL,
 	}))
 	uiHandler.SetGuestListingLimits(cfg.Scrape.GuestMaxPage, cfg.Scrape.GuestMaxPageSize)
+	uiHandler.SetTurnstile(turnstile.New(cfg.Turnstile, log))
 
 	uiHandler.SetAssistantRepository(assistantPostgres.NewRepository(db))
 	uiHandler.SetPermissionResolver(permissions)

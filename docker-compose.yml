@@ -78,6 +78,9 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-no-reply@dawa24.net}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Dawa24 | دوا 24}
+      - TURNSTILE_ENABLED=${TURNSTILE_ENABLED:-true}
+      - TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}
+      - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
     volumes:
       - dawa24-data:/app/data
     networks:

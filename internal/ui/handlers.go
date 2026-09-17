@@ -38,6 +38,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/mailer"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
+	"github.com/muhiya/dawa24-store/internal/platform/turnstile"
 	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
 )
 
@@ -83,6 +84,7 @@ type UIHandler struct {
 	tgGatewayClient telegramgateway.Client
 	tgLimiter       *telegramgateway.OTPRateLimiter
 	sessionSecret   string
+	turnstile       turnstile.Client
 
 	// whatsapp links a user's WhatsApp number for the assistant and
 	// notifications. Nil when the business number is not configured.
