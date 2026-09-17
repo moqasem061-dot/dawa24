@@ -684,12 +684,15 @@
         name.focus();
         return;
       }
+      const reqEmail = form.getAttribute('data-require-email') === 'true';
+      const reqPhone = form.getAttribute('data-require-phone') === 'true';
+
       if (email && !email.value.trim()) {
         e.preventDefault();
         email.focus();
         return;
       }
-      if (!emailToken || !emailToken.value.trim()) {
+      if (reqEmail && (!emailToken || !emailToken.value.trim())) {
         e.preventDefault();
         showEmailFeedback('يرجى تأكيد البريد الإلكتروني عبر رمز التحقق أولاً للمتابعة', true);
         if (sendEmailBtn && isShown(sendEmailBtn)) {
@@ -706,7 +709,7 @@
         phone.focus();
         return;
       }
-      if (!phoneToken || !phoneToken.value.trim()) {
+      if (reqPhone && (!phoneToken || !phoneToken.value.trim())) {
         e.preventDefault();
         showTgFeedback('يرجى تأكيد رقم الهاتف عبر رمز تيليجرام أولاً للمتابعة', true);
         if (sendTgBtn && isShown(sendTgBtn)) {

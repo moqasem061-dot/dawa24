@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"time"
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -151,4 +152,33 @@ func (s *Service) RemoveFavorite(ctx context.Context, userID, productID int64) e
 // ListFavorites returns all favorited product IDs for a user.
 func (s *Service) ListFavorites(ctx context.Context, userID int64) ([]int64, error) {
 	return s.repo.ListFavorites(ctx, userID)
+}
+
+// VerifyUserEmail marks the user's email as verified. If the email has changed, it updates the email.
+func (s *Service) VerifyUserEmail(ctx context.Context, userID int64, email string) error {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	cleanEmail := NormalizeEmail(email)
+	if cleanEmail != "" {
+		user.Email = cleanEmail
+	}
+	now := time.Now().UTC()
+	user.EmailVerifiedAt = &now
+	return s.repo.UpdateUser(ctx, user)
+}
+
+// VerifyUserPhone marks the user's phone as verified. If the phone has changed, it updates the phone.
+func (s *Service) VerifyUserPhone(ctx context.Context, userID int64, phone string) error {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+	if phone != "" {
+		user.Phone = phone
+	}
+	now := time.Now().UTC()
+	user.PhoneVerifiedAt = &now
+	return s.repo.UpdateUser(ctx, user)
 }

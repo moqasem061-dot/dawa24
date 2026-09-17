@@ -117,8 +117,10 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		Specialisation:  strings.TrimSpace(r.PostFormValue("specialisation")),
 		YearsExperience: strings.TrimSpace(r.PostFormValue("years_experience")),
 		Bio:             strings.TrimSpace(r.PostFormValue("bio")),
-		ExpectedSalary:  strings.TrimSpace(r.PostFormValue("expected_salary")),
-		TurnstileSiteKey: h.turnstileSiteKey(),
+		ExpectedSalary:           strings.TrimSpace(r.PostFormValue("expected_salary")),
+		TurnstileSiteKey:         h.turnstileSiteKey(),
+		RequireEmailVerification: h.requireEmailVerification,
+		RequirePhoneVerification: h.requirePhoneVerification,
 	}
 
 	if err := h.verifyTurnstile(r, "register"); err != nil {
@@ -135,30 +137,40 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Strict phone verification via Telegram Gateway proof token
-	if phone == "" {
-		form.Error = i18n.T(lang, "auth.telegram.phone_required")
-		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
-		return
+	// Phone verification (required if h.requirePhoneVerification, otherwise optional)
+	var normPhone string
+	if phone != "" {
+		if norm, err := telegramgateway.NormalizePhone(phone); err == nil {
+			normPhone = norm
+		}
 	}
 
-	normPhone, normErr := telegramgateway.NormalizePhone(phone)
-	if normErr != nil {
-		form.Error = i18n.T(lang, "auth.telegram.invalid_phone")
-		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
-		return
+	if h.requirePhoneVerification {
+		if phone == "" {
+			form.Error = i18n.T(lang, "auth.telegram.phone_required")
+			h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+			return
+		}
+		if normPhone == "" {
+			form.Error = i18n.T(lang, "auth.telegram.invalid_phone")
+			h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+			return
+		}
+		isVerified, verifyErr := telegramgateway.VerifyPhoneToken(verifiedPhoneToken, normPhone, h.phoneSecret())
+		if !isVerified || verifyErr != nil {
+			form.Error = i18n.T(lang, "auth.telegram.phone_required")
+			form.PhoneVerified = false
+			form.VerifiedPhoneToken = ""
+			h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+			return
+		}
+		form.PhoneVerified = true
+	} else if verifiedPhoneToken != "" && normPhone != "" {
+		isVerified, _ := telegramgateway.VerifyPhoneToken(verifiedPhoneToken, normPhone, h.phoneSecret())
+		form.PhoneVerified = isVerified
 	}
 
-	isVerified, verifyErr := telegramgateway.VerifyPhoneToken(verifiedPhoneToken, normPhone, h.phoneSecret())
-	if !isVerified || verifyErr != nil {
-		form.Error = i18n.T(lang, "auth.telegram.phone_required")
-		form.PhoneVerified = false
-		form.VerifiedPhoneToken = ""
-		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
-		return
-	}
-
-	// Strict email verification via signed HMAC token
+	// Email verification (required if h.requireEmailVerification, otherwise optional)
 	cleanEmail := identity.NormalizeEmail(email)
 	if cleanEmail == "" {
 		form.Error = i18n.T(lang, "auth.email.email_required")
@@ -166,20 +178,33 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	isEmailVerified, emailVerifyErr := mailer.VerifyEmailToken(verifiedEmailToken, cleanEmail, h.phoneSecret())
-	if !isEmailVerified || emailVerifyErr != nil {
-		form.Error = i18n.T(lang, "auth.email.email_required")
-		form.EmailVerified = false
-		form.VerifiedEmailToken = ""
-		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
-		return
+	if h.requireEmailVerification {
+		isEmailVerified, emailVerifyErr := mailer.VerifyEmailToken(verifiedEmailToken, cleanEmail, h.phoneSecret())
+		if !isEmailVerified || emailVerifyErr != nil {
+			form.Error = i18n.T(lang, "auth.email.email_required")
+			form.EmailVerified = false
+			form.VerifiedEmailToken = ""
+			h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+			return
+		}
+		form.EmailVerified = true
+	} else if verifiedEmailToken != "" {
+		isEmailVerified, _ := mailer.VerifyEmailToken(verifiedEmailToken, cleanEmail, h.phoneSecret())
+		form.EmailVerified = isEmailVerified
 	}
 
-	form.PhoneVerified = true
-	form.Phone = normPhone
-	form.EmailVerified = true
+	if normPhone != "" {
+		form.Phone = normPhone
+	}
 	form.Email = cleanEmail
 	nowUTC := time.Now().UTC()
+	var emailVerifiedAt, phoneVerifiedAt *time.Time
+	if form.EmailVerified {
+		emailVerifiedAt = &nowUTC
+	}
+	if form.PhoneVerified {
+		phoneVerifiedAt = &nowUTC
+	}
 
 	cityIDStr := r.PostFormValue("branch_city_id")
 	if cityIDStr == "" {
@@ -230,8 +255,8 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 			NameEn:          form.Name,
 			Role:            identity.RoleJobSeeker,
 			Phone:           form.Phone,
-			PhoneVerifiedAt: &nowUTC,
-			EmailVerifiedAt: &nowUTC,
+			PhoneVerifiedAt: phoneVerifiedAt,
+			EmailVerifiedAt: emailVerifiedAt,
 		})
 		if err != nil {
 			h.log.WarnContext(ctx, "ui job seeker registration failed", "email", form.Email, "error", err)
@@ -295,8 +320,8 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		NameAr:          form.Name,
 		NameEn:          form.Name,
 		Phone:           form.Phone,
-		PhoneVerifiedAt: &nowUTC,
-		EmailVerifiedAt: &nowUTC,
+		PhoneVerifiedAt: phoneVerifiedAt,
+		EmailVerifiedAt: emailVerifiedAt,
 		Org: identity.RegisterOrgInput{
 			Type:                form.AccountType,
 			LegalName:           form.LegalName,

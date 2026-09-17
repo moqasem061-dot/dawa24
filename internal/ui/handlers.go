@@ -83,8 +83,10 @@ type UIHandler struct {
 	// tgGatewayClient sends phone verification OTP messages via Telegram Gateway (https://gatewayapi.telegram.org).
 	tgGatewayClient telegramgateway.Client
 	tgLimiter       *telegramgateway.OTPRateLimiter
-	sessionSecret   string
-	turnstile       turnstile.Client
+	sessionSecret            string
+	turnstile                turnstile.Client
+	requireEmailVerification bool
+	requirePhoneVerification bool
 
 	// whatsapp links a user's WhatsApp number for the assistant and
 	// notifications. Nil when the business number is not configured.
@@ -269,43 +271,8 @@ func (h *UIHandler) RegisterPreApprovalRoutes(r chi.Router) {
 	r.Post("/notifications/{id}/read", h.MarkNotificationReadSubmit)
 	r.Post("/notifications/read-all", h.NotificationsReadAllSubmit)
 
-	// Account settings, for the caller's own account.
-	//
-	// These were in the approved-only tier, which meant a member of a company
-	// still under review could not change their own password or revoke a
-	// session on a lost device — the two things someone in that position is
-	// most likely to need. Nothing here reads or writes company data, so
-	// nothing here needs the company to be approved.
-	//
-	// The payment-method routes stay in the approved tier: they are money, and
-	// they belong to a company that may not trade yet.
-	r.Get("/settings", h.SettingsIndex)
-	r.Get("/settings/profile", redirectToSettingsTab("profile"))
-	r.Post("/settings/profile", h.SettingsProfileSubmit)
-	r.Post("/settings/password", h.SettingsPasswordSubmit)
-	r.Get("/settings/addresses", redirectToSettingsTab("profile"))
-	r.Get("/settings/security", redirectToSettingsTab("security"))
-	r.Get("/settings/preferences", redirectToSettingsTab("preferences"))
-	r.Post("/settings/addresses", h.SettingsAddressSubmit)
-	r.Post("/settings/addresses/{id}/delete", h.SettingsAddressDeleteSubmit)
-	r.Post("/settings/security/revoke", h.SettingsSessionRevokeSubmit)
-	r.Post("/settings/sessions/revoke", h.SettingsSessionRevokeSubmit)
-	r.Post("/settings/delete-request", h.SettingsDeleteRequestSubmit)
-	r.Post("/settings/delete-request/cancel", h.SettingsAccountDeletionCancelSubmit)
-	r.Post("/settings/organization/delete-request/cancel", h.SettingsOrgDeletionCancelSubmit)
-	r.Post("/settings/preferences", h.SettingsPreferencesSubmit)
-	// Linking Telegram or WhatsApp is an own-account action: it grants nothing,
-	// since the bridge re-resolves permissions and organisation approval per message.
-	r.Get("/settings/telegram", h.SettingsTelegramCard)
-	r.Post("/settings/telegram/link", h.SettingsTelegramLinkSubmit)
-	r.Post("/settings/telegram/confirm", h.SettingsTelegramConfirmSubmit)
-	r.Post("/settings/telegram/unlink", h.SettingsTelegramUnlinkSubmit)
-	r.Post("/settings/telegram/notify", h.SettingsTelegramNotifySubmit)
-	r.Get("/settings/whatsapp", h.SettingsWhatsAppCard)
-	r.Post("/settings/whatsapp/link", h.SettingsWhatsAppLinkSubmit)
-	r.Post("/settings/whatsapp/confirm", h.SettingsWhatsAppConfirmSubmit)
-	r.Post("/settings/whatsapp/unlink", h.SettingsWhatsAppUnlinkSubmit)
-	r.Post("/settings/whatsapp/notify", h.SettingsWhatsAppNotifySubmit)
+	// Account settings, for the caller's own account (including verification, security, preferences, telegram, whatsapp).
+	h.registerPreApprovalSettingsRoutes(r)
 }
 
 // RegisterApprovedSharedRoutes mounts Tier B shared routes restricted to approved

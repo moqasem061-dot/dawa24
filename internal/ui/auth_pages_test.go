@@ -115,6 +115,43 @@ func TestAuthRegisterPage_Render(t *testing.T) {
 			t.Errorf("Expected RegisterPage HTML to contain %q, but not found", snippet)
 		}
 	}
+
+	// Test optional verification rendering (default false)
+	if !strings.Contains(html, `data-require-email="false"`) {
+		t.Errorf("Expected data-require-email=\"false\" when RequireEmailVerification is false")
+	}
+	if !strings.Contains(html, "تأكيد البريد (اختياري)") {
+		t.Errorf("Expected 'تأكيد البريد (اختياري)' when RequireEmailVerification is false")
+	}
+	if !strings.Contains(html, `data-require-phone="false"`) {
+		t.Errorf("Expected data-require-phone=\"false\" when RequirePhoneVerification is false")
+	}
+	if !strings.Contains(html, "تأكيد Telegram (اختياري)") {
+		t.Errorf("Expected 'تأكيد Telegram (اختياري)' when RequirePhoneVerification is false")
+	}
+
+	// Test required verification rendering
+	formReq := form
+	formReq.RequireEmailVerification = true
+	formReq.RequirePhoneVerification = true
+	var bufReq bytes.Buffer
+	compReq := pages.RegisterPage("ar", "rtl", formReq, cities, governorates)
+	if err := compReq.Render(ctx, &bufReq); err != nil {
+		t.Fatalf("RegisterPage.Render with required verification failed: %v", err)
+	}
+	htmlReq := bufReq.String()
+	if !strings.Contains(htmlReq, `data-require-email="true"`) {
+		t.Errorf("Expected data-require-email=\"true\" when RequireEmailVerification is true")
+	}
+	if !strings.Contains(htmlReq, "تأكيد البريد مطلوب") {
+		t.Errorf("Expected 'تأكيد البريد مطلوب' when RequireEmailVerification is true")
+	}
+	if !strings.Contains(htmlReq, `data-require-phone="true"`) {
+		t.Errorf("Expected data-require-phone=\"true\" when RequirePhoneVerification is true")
+	}
+	if !strings.Contains(htmlReq, "تأكيد Telegram مطلوب") {
+		t.Errorf("Expected 'تأكيد Telegram مطلوب' when RequirePhoneVerification is true")
+	}
 }
 
 func TestMFAVerifyPage_Render(t *testing.T) {

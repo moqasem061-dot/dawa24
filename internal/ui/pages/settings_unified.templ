@@ -207,13 +207,96 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					</div>
 
 					<div class="form-group mb-0">
-						<label class="form-label" for="user-email">{ i18n.T(lang, "settings.email") }</label>
+						<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
+							<label class="form-label mb-0" for="user-email">{ i18n.T(lang, "settings.email") }</label>
+							<div class="d-flex items-center gap-2">
+								if data.User != nil && data.User.EmailVerifiedAt != nil {
+									<span id="profile-email-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+										@components.IconCheck("icon-2xs")
+										<span>{ ternaryStr(lang == "ar", "البريد مؤكد", "Email Verified") }</span>
+									</span>
+								} else {
+									<span id="profile-email-badge-unverified" class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+										@components.IconAlert("icon-2xs")
+										<span>{ ternaryStr(lang == "ar", "البريد غير مؤكد", "Unverified Email") }</span>
+									</span>
+									<button type="button" id="profile-verify-email-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
+										@components.IconMail("icon-2xs text-brand")
+										<span>{ ternaryStr(lang == "ar", "تأكيد البريد الآن", "Verify Email Now") }</span>
+									</button>
+								}
+							</div>
+						</div>
 						<input type="email" id="user-email" name="email" class="form-input tabular-nums" value={ userEmailVal(data.User) } required />
+
+						<!-- Email OTP Drawer for Profile -->
+						<div id="profile-email-otp-box" class="tg-otp-card mt-2.5 p-3 rounded-xl border bg-surface-sunken s-hidden-init">
+							<div class="d-flex items-center justify-between mb-2 text-xs text-secondary">
+								<span id="profile-email-otp-hint" class="font-semibold">{ i18n.T(lang, "auth.email.enter_code") }</span>
+								<span id="profile-email-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								<input type="text" id="profile-email-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input max-w-xs" placeholder="••••••" />
+								<button type="button" id="profile-email-verify-btn" class="btn btn-primary btn-sm font-semibold px-4">
+									{ i18n.T(lang, "auth.email.verify_code") }
+								</button>
+								<button type="button" id="profile-email-resend-btn" class="btn btn-ghost btn-sm text-xs text-muted s-hidden-init">
+									{ i18n.T(lang, "auth.email.resend_otp") }
+								</button>
+								<button type="button" id="profile-email-cancel-btn" class="btn btn-ghost btn-sm text-xs text-muted">
+									{ ternaryStr(lang == "ar", "إلغاء", "Cancel") }
+								</button>
+							</div>
+							<div id="profile-email-otp-feedback" class="text-xs font-medium mt-2 s-hidden-init"></div>
+						</div>
 					</div>
 
 					<div class="form-group mb-0">
-						<label class="form-label" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
+						<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
+							<label class="form-label mb-0" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
+							<div class="d-flex items-center gap-2">
+								if data.User != nil && data.User.PhoneVerifiedAt != nil {
+									<span id="profile-phone-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+										@components.IconCheck("icon-2xs")
+										<span>{ ternaryStr(lang == "ar", "الهاتف مؤكد", "Phone Verified") }</span>
+									</span>
+								} else {
+									<span id="profile-phone-badge-unverified" class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+										@components.IconAlert("icon-2xs")
+										<span>{ ternaryStr(lang == "ar", "الهاتف غير مؤكد", "Unverified Phone") }</span>
+									</span>
+									<button type="button" id="profile-verify-phone-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
+										<svg class="icon-2xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+											<path d="m22 2-7 20-4-9-9-4Z"></path>
+											<path d="M22 2 11 13"></path>
+										</svg>
+										<span>{ ternaryStr(lang == "ar", "تأكيد الهاتف عبر Telegram", "Verify via Telegram") }</span>
+									</button>
+								}
+							</div>
+						</div>
 						<input type="tel" id="user-phone" name="phone" class="form-input tabular-nums" value={ userPhoneVal(data.User) } />
+
+						<!-- Phone OTP Drawer for Profile -->
+						<div id="profile-phone-otp-box" class="tg-otp-card mt-2.5 p-3 rounded-xl border bg-surface-sunken s-hidden-init">
+							<div class="d-flex items-center justify-between mb-2 text-xs text-secondary">
+								<span id="profile-phone-otp-hint" class="font-semibold">{ i18n.T(lang, "auth.telegram.enter_code") }</span>
+								<span id="profile-phone-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+							</div>
+							<div class="d-flex items-center gap-2">
+								<input type="text" id="profile-phone-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input max-w-xs" placeholder="••••••" />
+								<button type="button" id="profile-phone-verify-btn" class="btn btn-primary btn-sm font-semibold px-4">
+									{ i18n.T(lang, "auth.telegram.verify_code") }
+								</button>
+								<button type="button" id="profile-phone-resend-btn" class="btn btn-ghost btn-sm text-xs text-muted s-hidden-init">
+									{ i18n.T(lang, "auth.telegram.resend_otp") }
+								</button>
+								<button type="button" id="profile-phone-cancel-btn" class="btn btn-ghost btn-sm text-xs text-muted">
+									{ ternaryStr(lang == "ar", "إلغاء", "Cancel") }
+								</button>
+							</div>
+							<div id="profile-phone-otp-feedback" class="text-xs font-medium mt-2 s-hidden-init"></div>
+						</div>
 					</div>
 
 					<div class="form-group mb-0">
@@ -482,6 +565,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 			}
 
 		</div>
+		<script src={ layouts.Asset("/js/profile_verification.js") } defer></script>
 	}
 }
 

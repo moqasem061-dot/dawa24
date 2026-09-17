@@ -41,6 +41,10 @@ func (m *mockIdentityRepoProfile) UpdateUser(ctx context.Context, u *identity.Us
 	return nil
 }
 
+func (m *mockIdentityRepoProfile) GetPermissionsForUser(ctx context.Context, userID int64, orgID int64) ([]string, error) {
+	return nil, nil
+}
+
 func TestSettingsProfileAvatarUpload(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	repo := &mockIdentityRepoProfile{}

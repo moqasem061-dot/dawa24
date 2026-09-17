@@ -330,6 +330,7 @@ func buildUIHandler(
 	}))
 	uiHandler.SetGuestListingLimits(cfg.Scrape.GuestMaxPage, cfg.Scrape.GuestMaxPageSize)
 	uiHandler.SetTurnstile(turnstile.New(cfg.Turnstile, log))
+	uiHandler.SetVerificationRequirements(cfg.Auth.RequireEmailVerification, cfg.Auth.RequirePhoneVerification)
 
 	uiHandler.SetAssistantRepository(assistantPostgres.NewRepository(db))
 	uiHandler.SetPermissionResolver(permissions)

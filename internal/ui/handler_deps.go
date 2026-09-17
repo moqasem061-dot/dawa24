@@ -250,4 +250,10 @@ func (h *UIHandler) SetTurnstile(c turnstile.Client) {
 	h.turnstile = c
 }
 
+// SetVerificationRequirements configures whether email and/or phone verification are required at registration.
+func (h *UIHandler) SetVerificationRequirements(requireEmail, requirePhone bool) {
+	h.requireEmailVerification = requireEmail
+	h.requirePhoneVerification = requirePhone
+}
+
 

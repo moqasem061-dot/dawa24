@@ -34,10 +34,12 @@ type RegisterFormData struct {
 	CVStorageKey       string
 	VerifiedPhoneToken string
 	PhoneVerified      bool
-	VerifiedEmailToken string
-	EmailVerified      bool
-	TurnstileSiteKey   string
-	Error              string
+	VerifiedEmailToken       string
+	EmailVerified            bool
+	RequireEmailVerification bool
+	RequirePhoneVerification bool
+	TurnstileSiteKey         string
+	Error                    string
 }
 
 // AlpineState renders the Alpine.js x-data payload for the two-step form.

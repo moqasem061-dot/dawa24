@@ -86,9 +86,11 @@ func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	form := pages.RegisterFormData{
-		AccountType:      reqType,
-		Error:            r.URL.Query().Get("error"),
-		TurnstileSiteKey: h.turnstileSiteKey(),
+		AccountType:              reqType,
+		Error:                    r.URL.Query().Get("error"),
+		TurnstileSiteKey:         h.turnstileSiteKey(),
+		RequireEmailVerification: h.requireEmailVerification,
+		RequirePhoneVerification: h.requirePhoneVerification,
 	}
 
 	h.renderPage(ctx, w, "render register page", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))

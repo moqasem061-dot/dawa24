@@ -145,6 +145,7 @@ func TestRegisterSubmit_PhoneVerificationRequired(t *testing.T) {
 	h := ui.NewUIHandler(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	secret := "test_session_secret_with_32_bytes_len!"
 	h.SetSessionSecret(secret)
+	h.SetVerificationRequirements(false, true)
 
 	// 1. Submit registration WITHOUT verified_phone_token
 	formData := url.Values{

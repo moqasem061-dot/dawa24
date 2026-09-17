@@ -63,7 +63,7 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 					</div>
 				}
 
-				<form id="registration-onboarding-form" method="POST" action="/auth/register" enctype="multipart/form-data" class="d-flex flex-col gap-6">
+				<form id="registration-onboarding-form" method="POST" action="/auth/register" enctype="multipart/form-data" class="d-flex flex-col gap-6" data-require-email={ fmt.Sprintf("%t", form.RequireEmailVerification) } data-require-phone={ fmt.Sprintf("%t", form.RequirePhoneVerification) }>
 					{{
 						selectedType := form.AccountType
 						if selectedType != "vendor" && selectedType != "job_seeker" {
@@ -386,7 +386,11 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 									<label class="form-label font-semibold text-xs m-0" for="reg-email">البريد الإلكتروني الرسمي *</label>
 									<span class="text-2xs text-secondary d-flex items-center gap-1">
 										@components.IconMail("icon-2xs text-brand")
-										<span>تأكيد البريد مطلوب</span>
+										if form.RequireEmailVerification {
+											<span>تأكيد البريد مطلوب</span>
+										} else {
+											<span>تأكيد البريد (اختياري)</span>
+										}
 									</span>
 								</div>
 								<div class="input-group">
@@ -450,7 +454,11 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 											<path d="m22 2-7 20-4-9-9-4Z"></path>
 											<path d="M22 2 11 13"></path>
 										</svg>
-										<span>تأكيد Telegram مطلوب</span>
+										if form.RequirePhoneVerification {
+											<span>تأكيد Telegram مطلوب</span>
+										} else {
+											<span>تأكيد Telegram (اختياري)</span>
+										}
 									</span>
 								</div>
 								<div class="input-group">
