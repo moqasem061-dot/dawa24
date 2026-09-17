@@ -45,9 +45,10 @@ func RenderOTPEmail(code, purpose, lang string) (subject, html, text string) {
         <table role="presentation" width="100%%" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
           <!-- Brand Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #008b74 0%%, #005f50 100%%); padding: 28px 32px; text-align: center;">
-              <h1 style="margin: 0; color: #ffffff; font-size: 26px; font-weight: 800; letter-spacing: -0.5px;">Dawa24 | دوا 24</h1>
-              <p style="margin: 4px 0 0 0; color: #a7f3d0; font-size: 13px; font-weight: 500;">سوق الأدوية والمستلزمات الطبية المعتمد</p>
+            <td style="background: linear-gradient(135deg, #1e40af 0%%, #2563eb 100%%); padding: 32px; text-align: center;">
+              <img src="https://dawa24.com/static/img/logo.png" alt="Dawa24" height="42" style="display: block; margin: 0 auto 12px auto; max-height: 42px; width: auto; border: 0;" />
+              <h1 style="margin: 0; color: #ffffff; font-size: 24px; font-weight: 800; letter-spacing: -0.5px;">Dawa24 | دوا 24</h1>
+              <p style="margin: 6px 0 0 0; color: #dbeafe; font-size: 13px; font-weight: 500;">سوق الأدوية والمستلزمات الطبية المعتمد</p>
             </td>
           </tr>
 
@@ -58,9 +59,9 @@ func RenderOTPEmail(code, purpose, lang string) (subject, html, text string) {
               <p style="margin: 0 0 24px 0; color: #475569; font-size: 15px; line-height: 1.6;">%s</p>
 
               <!-- OTP Code Card -->
-              <div style="background-color: #f8fafc; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
+              <div style="background-color: #f8fafc; border: 2px dashed #93c5fd; border-radius: 12px; padding: 24px; text-align: center; margin: 0 0 24px 0;">
                 <span style="display: block; font-size: 12px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px;">رمز التحقق (OTP)</span>
-                <span style="font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 36px; font-weight: 800; color: #008b74; letter-spacing: 8px; display: inline-block;">%s</span>
+                <span style="font-family: 'SF Mono', Consolas, 'Liberation Mono', Menlo, Courier, monospace; font-size: 36px; font-weight: 800; color: #1e40af; letter-spacing: 8px; display: inline-block;">%s</span>
                 <span style="display: block; font-size: 13px; color: #94a3b8; margin-top: 10px;">الرمز صالح لمدة 15 دقيقة فقط</span>
               </div>
 
@@ -89,7 +90,7 @@ func RenderOTPEmail(code, purpose, lang string) (subject, html, text string) {
                 منصة دوا 24 — سوق الأدوية والمستلزمات الصيدلانية لمصر والشرق الأوسط
               </p>
               <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                © 2026 Dawa24 Store. All rights reserved. &bull; <a href="https://dawa24.net" style="color: #008b74; text-decoration: none;">dawa24.net</a>
+                © 2026 Dawa24 Store. All rights reserved. &bull; <a href="https://dawa24.com" style="color: #2563eb; text-decoration: none;">dawa24.com</a>
               </p>
             </td>
           </tr>
@@ -122,7 +123,7 @@ Valid for 15 minutes.
 Never share this code with anyone.
 
 منصة دوا 24 - سوق الأدوية والمستلزمات الصيدلانية
-https://dawa24.net
+https://dawa24.com
 `, titleAr, code, code)
 
 	return subject, html, text
@@ -132,7 +133,7 @@ https://dawa24.net
 func RenderNotificationEmail(title, body, actionURL, lang string) (subject, html, text string) {
 	subject = fmt.Sprintf("[دوا 24] %s", title)
 	if strings.TrimSpace(actionURL) == "" {
-		actionURL = "https://dawa24.net/notifications"
+		actionURL = "https://dawa24.com/notifications"
 	}
 
 	html = fmt.Sprintf(`<!DOCTYPE html>
@@ -149,22 +150,23 @@ func RenderNotificationEmail(title, body, actionURL, lang string) (subject, html
         <table role="presentation" width="100%%" style="max-width: 580px; background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); border: 1px solid #e2e8f0;">
           <!-- Header -->
           <tr>
-            <td style="background: linear-gradient(135deg, #008b74 0%%, #005f50 100%%); padding: 24px 32px; text-align: center;">
+            <td style="background: linear-gradient(135deg, #1e40af 0%%, #2563eb 100%%); padding: 28px 32px; text-align: center;">
+              <img src="https://dawa24.com/static/img/logo.png" alt="Dawa24" height="38" style="display: block; margin: 0 auto 10px auto; max-height: 38px; width: auto; border: 0;" />
               <h1 style="margin: 0; color: #ffffff; font-size: 22px; font-weight: 800;">Dawa24 | دوا 24</h1>
-              <p style="margin: 4px 0 0 0; color: #a7f3d0; font-size: 13px;">إشعار منصة جديد</p>
+              <p style="margin: 4px 0 0 0; color: #dbeafe; font-size: 13px;">إشعار منصة جديد</p>
             </td>
           </tr>
 
           <!-- Content -->
           <tr>
             <td style="padding: 32px; direction: rtl; text-align: right;">
-              <div style="display: inline-block; background-color: #ecfdf5; color: #065f46; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;">تنبيه نظام</div>
+              <div style="display: inline-block; background-color: #eff6ff; color: #1d4ed8; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;">تنبيه نظام</div>
               <h2 style="margin: 0 0 16px 0; color: #0f172a; font-size: 19px; font-weight: 700; line-height: 1.4;">%s</h2>
               <p style="margin: 0 0 28px 0; color: #334155; font-size: 15px; line-height: 1.7; white-space: pre-line;">%s</p>
 
               <!-- CTA Button -->
               <div style="text-align: center; margin: 32px 0 16px 0;">
-                <a href="%s" style="display: inline-block; background-color: #008b74; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,139,116,0.2);">عرض التفاصيل في المنصة &larr;</a>
+                <a href="%s" style="display: inline-block; background-color: #2563eb; color: #ffffff; font-size: 15px; font-weight: 700; text-decoration: none; padding: 14px 28px; border-radius: 8px; box-shadow: 0 2px 4px rgba(37,99,235,0.25);">عرض التفاصيل في المنصة &larr;</a>
               </div>
             </td>
           </tr>
@@ -176,7 +178,7 @@ func RenderNotificationEmail(title, body, actionURL, lang string) (subject, html
                 تصلك هذه الرسالة بناءً على إعدادات التنبيهات الخاصة بحسابك في منصة دوا 24.
               </p>
               <p style="margin: 0; color: #94a3b8; font-size: 11px;">
-                لإدارة تفضيلات الإشعارات، يمكنك زيارة <a href="https://dawa24.net/settings#preferences" style="color: #008b74; text-decoration: underline;">إعدادات الحساب والتفضيلات</a>.
+                لإدارة تفضيلات الإشعارات، يمكنك زيارة <a href="https://dawa24.com/settings#preferences" style="color: #2563eb; text-decoration: underline;">إعدادات الحساب والتفضيلات</a>.
               </p>
             </td>
           </tr>
@@ -201,7 +203,7 @@ func RenderNotificationEmail(title, body, actionURL, lang string) (subject, html
 %s
 
 لإدارة تفضيلات التنبيهات:
-https://dawa24.net/settings#preferences
+https://dawa24.com/settings#preferences
 `, title, body, actionURL)
 
 	return subject, html, text

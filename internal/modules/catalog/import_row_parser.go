@@ -7,16 +7,12 @@ import (
 	"github.com/muhiya/dawa24-store/internal/shared/money"
 )
 
-// collectProducts walks every block, skipping the noise and folding in-file
-// duplicates together.
+// collectProducts walks every block and parses every valid data row into a product.
 //
 // Reading block by block is what lets a sheet whose second section adds a price
 // column be read correctly: each block is interpreted through its own header
 // rather than through the first block's mapping.
 func (r *ParseResult) collectProducts(records [][]string) []*Product {
-	// seen keys a product by the strongest identifier its row carried, so two
-	// rows sharing a SKU merge even when their names differ by a typo.
-	seen := make(map[string]*Product, r.Layout.DataRows)
 	var products []*Product
 
 	for _, block := range r.Layout.Blocks {
@@ -46,30 +42,6 @@ func (r *ParseResult) collectProducts(records [][]string) []*Product {
 				continue
 			}
 
-			key := dedupeKey(prod)
-			if existing, isDuplicate := seen[key]; isDuplicate {
-				mergeProduct(existing, prod)
-				r.Stats.DuplicateRows++
-				// The finding is reported against the FIRST occurrence's row,
-				// the only one of the two that becomes a staged row — a warning
-				// attached to the duplicate's row number never reached the
-				// review table, and the admin was never told their file had
-				// merged rows at all.
-				firstRow := 0
-				if n := len(r.SourceRows); n > 0 {
-					firstRow = r.SourceRows[n-1]
-				}
-				r.addIssue(RowIssue{
-					Row: firstRow, Value: prod.Name.Get(i18n.AR),
-					Message: fmt.Sprintf(
-						"صنف مكرر داخل الملف نفسه (الصف %d)؛ تم دمج بياناته مع الصف %d بدلاً من تكراره في الكتالوج.",
-						rIdx+1, firstRow),
-					Severity: SeverityWarning,
-				})
-				continue
-			}
-
-			seen[key] = prod
 			products = append(products, prod)
 			r.SourceRows = append(r.SourceRows, rIdx+1)
 		}

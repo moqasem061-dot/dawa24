@@ -106,9 +106,8 @@ func TestParseProductsRejectsPriceBeyondColumnRange(t *testing.T) {
 	}
 }
 
-func TestParseProductsMergesDuplicatesWithinFile(t *testing.T) {
-	// A supplier listing the same SKU twice — once with a price, once with a
-	// barcode — should end with one complete product, not two half-empty ones.
+func TestParseProductsKeepsAllRowsWithoutMergingDuplicates(t *testing.T) {
+	// Every row in the uploaded file is preserved as an individual product.
 	res := parseCSV(t, strings.Join([]string{
 		"اسم الصنف,كود الصنف,الباركود,السعر",
 		"بانادول اكسترا,PAN-1,,25.00",
@@ -116,33 +115,24 @@ func TestParseProductsMergesDuplicatesWithinFile(t *testing.T) {
 		"كتافلام,PAN-2,,42.00",
 	}, "\n"))
 
-	if len(res.Products) != 2 {
-		t.Fatalf("got %d products, want 2", len(res.Products))
+	if len(res.Products) != 3 {
+		t.Fatalf("got %d products, want 3", len(res.Products))
 	}
-	if res.Stats.DuplicateRows != 1 {
-		t.Errorf("merged %d duplicates, want 1", res.Stats.DuplicateRows)
-	}
-
-	merged := res.Products[0]
-	if merged.Price.String() != "25.00" {
-		t.Errorf("merged price = %s, want 25.00 (the later blank must not erase it)", merged.Price.String())
-	}
-	if merged.Barcode != "6221234567890" {
-		t.Errorf("merged barcode = %q, want the value the second row supplied", merged.Barcode)
+	if res.Stats.DuplicateRows != 0 {
+		t.Errorf("got %d duplicate rows, want 0", res.Stats.DuplicateRows)
 	}
 }
 
-func TestParseProductsDeduplicatesAcrossArabicSpellings(t *testing.T) {
-	// Two rows for the same product, differing only by hamza and ta-marbuta.
-	// Left alone they become two catalogue entries a pharmacist has to reconcile.
+func TestParseProductsPreservesAllRowsWithoutDeduplication(t *testing.T) {
+	// Duplicate detection is removed: rows are kept as distinct entries.
 	res := parseCSV(t, strings.Join([]string{
 		"اسم الصنف,السعر",
 		"أوجمنتين حقنة,115.00",
 		"اوجمنتين حقنه,115.00",
 	}, "\n"))
 
-	if len(res.Products) != 1 {
-		t.Fatalf("got %d products, want 1 (spelling variants of one name)", len(res.Products))
+	if len(res.Products) != 2 {
+		t.Fatalf("got %d products, want 2", len(res.Products))
 	}
 }
 

@@ -31,6 +31,12 @@ templ AdminProductsImportMapping(lang, dir string, view ImportMappingView) {
 					</div>
 
 					<div class="d-flex items-center gap-2">
+						<form method="POST" action={ mappingAction(view, "cancel") } hx-boost="false" class="m-0" onsubmit="return confirm('هل أنت متأكد من إلغاء عملية الاستيراد بالكامل؟ لن يتم حفظ أي بيانات.');">
+							<button type="submit" class="btn btn-secondary btn-sm text-danger font-bold text-xs gap-1">
+								@components.IconTrash("icon-xs")
+								<span>إلغاء العملية</span>
+							</button>
+						</form>
 						<a href="/admin/products/import" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
 							@components.IconUpload("icon-xs")
 							<span>رفع ملف آخر</span>
@@ -54,6 +60,33 @@ templ AdminProductsImportMapping(lang, dir string, view ImportMappingView) {
 					@importMappingActions(view)
 				</form>
 			</div>
+			<script nonce={ layouts.Nonce(ctx) }>
+				(function() {
+					function initMappingSamples() {
+						document.querySelectorAll('.field-mapping-select').forEach(function(sel) {
+							sel.addEventListener('change', function() {
+								var opt = this.options[this.selectedIndex];
+								var tr = this.closest('tr');
+								if (!tr) return;
+								var sampleCell = tr.querySelector('.field-sample-cell');
+								if (!sampleCell) return;
+								var sample = (opt && this.value !== '0') ? (opt.dataset.sample || '') : '';
+								if (sample) {
+									sampleCell.textContent = sample;
+									sampleCell.classList.remove('text-muted');
+								} else {
+									sampleCell.innerHTML = '<span class="text-muted text-xs">—</span>';
+								}
+							});
+						});
+					}
+					if (document.readyState === 'loading') {
+						document.addEventListener('DOMContentLoaded', initMappingSamples);
+					} else {
+						initMappingSamples();
+					}
+				})();
+			</script>
 		</div>
 	}
 }
@@ -235,17 +268,17 @@ templ importFieldLine(view ImportMappingView, field ImportFieldRow) {
 			</div>
 		</td>
 		<td>
-			<select name={ fieldSelectName(field.Field) } class="form-select text-xs w-full">
-				<option value="0" selected?={ field.Column == 0 }>— لا تقرأ هذا الحقل —</option>
+			<select name={ fieldSelectName(field.Field) } class="form-select text-xs w-full field-mapping-select">
+				<option value="0" data-sample="" selected?={ field.Column == 0 }>— لا تقرأ هذا الحقل —</option>
 				for _, option := range view.Options {
-					<option value={ fmt.Sprintf("%d", option.Value) } selected?={ option.Value == field.Column }>
+					<option value={ fmt.Sprintf("%d", option.Value) } data-sample={ option.Sample } selected?={ option.Value == field.Column }>
 						{ option.Label }
 					</option>
 				}
 			</select>
 		</td>
-		<td class="text-xs text-secondary font-mono">
-			if field.Bound() {
+		<td class="text-xs text-secondary font-mono field-sample-cell">
+			if field.Bound() && field.Sample != "" {
 				{ field.Sample }
 			} else {
 				<span class="text-muted text-xs">—</span>
@@ -331,6 +364,16 @@ templ importMappingActions(view ImportMappingView) {
 				لم يُحفظ أي صنف بعد. «تحديث المعاينة» يعيد قراءة الملف فقط، و«بدء المعالجة» يجهّز النتائج للمراجعة.
 			</span>
 			<div class="row-center">
+				<button
+					type="submit"
+					class="btn btn-ghost text-danger font-bold text-xs"
+					formaction={ mappingAction(view, "cancel") }
+					formmethod="POST"
+					onclick="return confirm('هل أنت متأكد من إلغاء عملية الاستيراد بالكامل؟ لن يتم حفظ أي بيانات.');"
+				>
+					@components.IconTrash("icon-xs")
+					<span>إلغاء العملية</span>
+				</button>
 				<button
 					type="submit"
 					class="btn btn-secondary"

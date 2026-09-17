@@ -121,9 +121,9 @@ var mappableFields = append(append([]string{}, MappableFields...), FieldDescript
 
 // sampleDepth is how many data rows are scanned for column samples, and
 // sampleCount how many distinct values are kept. Three values out of the first
-// forty rows is enough to recognise a column and cheap on a sheet of any size.
+// hundred rows is enough to recognise a column and cheap on a sheet of any size.
 const (
-	sampleDepth = 40
+	sampleDepth = 100
 	sampleCount = 3
 )
 

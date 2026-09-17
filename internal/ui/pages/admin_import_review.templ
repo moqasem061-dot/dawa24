@@ -31,6 +31,12 @@ templ AdminProductsImportReview(lang, dir string, view ImportReviewView) {
 					</div>
 
 					<div class="d-flex items-center gap-2">
+						<form method="POST" action={ importAction(view, "cancel") } hx-boost="false" class="m-0" onsubmit="return confirm('هل أنت متأكد من إلغاء عملية الاستيراد بالكامل؟ لن يتم حفظ أي بيانات.');">
+							<button type="submit" class="btn btn-secondary btn-sm text-danger font-bold text-xs gap-1">
+								@components.IconTrash("icon-xs")
+								<span>إلغاء العملية</span>
+							</button>
+						</form>
 						<a href="/admin/products/import" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
 							@components.IconUpload("icon-xs")
 							<span>استيراد ملف جديد</span>
@@ -48,7 +54,9 @@ templ AdminProductsImportReview(lang, dir string, view ImportReviewView) {
 				if view.Working {
 					@importProgressCard(view)
 				} else {
-					@importReviewBanner(view)
+					if view.Notice != "" {
+						@importStepNotice(view.Notice, view.NoticeKind)
+					}
 					@importReviewStats(view)
 					if view.Session.IsStaged() || view.Session.Status == catalog.SessionCommitted {
 						@importStructureCard(view)
@@ -121,9 +129,6 @@ templ importReviewStats(view ImportReviewView) {
 		@wizStat(FormatCount(view.Session.TotalRows), "صف في الملف", "")
 		if view.Session.BlockCount > 1 {
 			@wizStat(FormatCount(view.Session.BlockCount), "كتلة بيانات", "")
-		}
-		if view.Counts.Warnings > 0 {
-			@wizStat(FormatCount(view.Counts.Warnings), "تنبيه", "warn")
 		}
 		if view.Counts.Errors > 0 {
 			@wizStat(FormatCount(view.Counts.Errors), "صف مرفوض", "error")
@@ -261,7 +266,7 @@ templ ImportRowsCard(view ImportReviewView) {
 			{ fmt.Sprintf("الأصناف المستخرجة (%s)", FormatCount(view.Total)) }
 		</h2>
 		<p class="wiz-sub">
-			أرقام الصفوف مطابقة لأرقام الصفوف في ملف Excel. يمكنك استبعاد أي صنف من الاستيراد بضغطة زر فورية دون إعادة تحميل الصفحة.
+			أرقام الصفوف مطابقة لأرقام الصفوف في ملف Excel. يمكنك تحديد واستبعاد أي صنف من الاستيراد بضغطة زر أو عبر مربعات الاختيار فورياً.
 		</p>
 		<div class="wiz-toolbar">
 			@rowFilterChip(view, "", "الكل", view.Counts.Total)
@@ -270,6 +275,23 @@ templ ImportRowsCard(view ImportReviewView) {
 			@rowFilterChip(view, "issues", "الملاحظات", view.Counts.Errors + view.Counts.Warnings)
 			@rowFilterChip(view, "ai", "استكمال ذكي", view.Counts.AIChanged)
 			<span class="wiz-toolbar-spacer"></span>
+			<div class="d-flex items-center gap-2">
+				<form method="POST" action={ importAction(view, "select") } hx-boost="false" class="m-0">
+					<input type="hidden" name="action" value=""/>
+					<input type="hidden" name="included" value="1"/>
+					<button type="submit" class="btn btn-secondary btn-xs font-bold gap-1" title="تحديد جميع الأصناف للاستيراد">
+						@components.IconCheck("icon-2xs")
+						<span>تحديد الكل</span>
+					</button>
+				</form>
+				<form method="POST" action={ importAction(view, "select") } hx-boost="false" class="m-0">
+					<input type="hidden" name="action" value=""/>
+					<input type="hidden" name="included" value="0"/>
+					<button type="submit" class="btn btn-ghost btn-xs font-bold text-muted gap-1" title="إلغاء تحديد كافة الأصناف">
+						<span>إلغاء تحديد الكل</span>
+					</button>
+				</form>
+			</div>
 			<form
 				method="GET"
 				action={ importAction(view, "") }
@@ -295,18 +317,28 @@ templ ImportRowsCard(view ImportReviewView) {
 			<table class="data-table m-0">
 				<thead>
 					<tr>
+						<th class="text-center w-10">
+							<input
+								type="checkbox"
+								id="select-all-staged-rows"
+								class="form-check-input cursor-pointer"
+								data-session={ view.Session.PublicID }
+								title="تحديد أو إلغاء تحديد الكل"
+								checked?={ view.Counts.Affected() > 0 && view.Counts.Skip == 0 }
+							/>
+						</th>
 						<th>الصف</th>
 						<th>الإجراء</th>
 						<th>الصنف</th>
 						<th>التفاصيل والمطابقة</th>
 						<th>الملاحظات</th>
-						<th>تضمين</th>
+						<th class="text-center">تضمين</th>
 					</tr>
 				</thead>
 				<tbody id="import-rows-tbody">
 					if len(view.Rows) == 0 {
 						<tr>
-							<td colspan="6" class="p-8 text-center text-muted">
+							<td colspan="7" class="p-8 text-center text-muted">
 								<div class="d-flex flex-col items-center justify-center gap-2">
 									@components.IconInfo("icon-md text-muted")
 									<p class="m-0 font-medium">لا توجد أصناف مطابقة للتصفية المحددة</p>
@@ -324,11 +356,58 @@ templ ImportRowsCard(view ImportReviewView) {
 		if view.Total > 0 {
 			@importRowsPager(view)
 		}
+		<script nonce={ layouts.Nonce(ctx) }>
+			(function() {
+				function initMasterSelect() {
+					var master = document.getElementById('select-all-staged-rows');
+					if (!master) return;
+					var sessionID = master.dataset.session;
+					master.addEventListener('change', function() {
+						var isChecked = this.checked;
+						var form = document.createElement('form');
+						form.method = 'POST';
+						form.action = '/admin/products/import/' + sessionID + '/select';
+						var actInput = document.createElement('input');
+						actInput.type = 'hidden'; actInput.name = 'action'; actInput.value = '';
+						var incInput = document.createElement('input');
+						incInput.type = 'hidden'; incInput.name = 'included'; incInput.value = isChecked ? '1' : '0';
+						form.appendChild(actInput);
+						form.appendChild(incInput);
+						document.body.appendChild(form);
+						form.submit();
+					});
+				}
+				if (document.readyState === 'loading') {
+					document.addEventListener('DOMContentLoaded', initMasterSelect);
+				} else {
+					initMasterSelect();
+				}
+			})();
+		</script>
 	</div>
 }
 
 templ ImportRowLine(view ImportReviewView, row *catalog.StagingRow) {
 	<tr id={ fmt.Sprintf("staged-row-%d", row.ID) } class={ templ.KV("wiz-row--excluded", !row.Included) }>
+		<td class="text-center">
+			<form
+				method="POST"
+				action={ importRowAction(view, row) }
+				hx-post={ string(importRowAction(view, row)) }
+				hx-target={ fmt.Sprintf("#staged-row-%d", row.ID) }
+				hx-swap="outerHTML"
+				class="m-0 d-inline-flex items-center justify-center"
+			>
+				<input type="hidden" name="included" value={ includedToggleValue(row) }/>
+				<input
+					type="checkbox"
+					class="form-check-input cursor-pointer staged-row-check"
+					checked?={ row.Included }
+					onchange="this.form.requestSubmit()"
+					title="تضمين هذا الصنف في الاستيراد"
+				/>
+			</form>
+		</td>
 		<td class="tabular-nums text-center">{ fmt.Sprintf("%d", row.SourceRow) }</td>
 		<td>
 			<span class={ "badge", RowActionBadge(row.Action) }>{ row.Action.Label() }</span>
