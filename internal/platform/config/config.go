@@ -209,7 +209,7 @@ func load(cliOnly bool) (*Config, error) {
 		},
 
 		Gateway: Gateway{
-			BaseURL:    getStr("GATEWAY_BASE_URL", "https://api.muhiya.com"),
+			BaseURL:    getStr("GATEWAY_BASE_URL", "https://api.dawa24.com"),
 			VirtualKey: getStr("GATEWAY_VIRTUAL_KEY", ""),
 			ClientApp:  getStr("GATEWAY_CLIENT_APP", "dawa24-store"),
 			Timeout:    getDuration("GATEWAY_TIMEOUT", 60*time.Second),

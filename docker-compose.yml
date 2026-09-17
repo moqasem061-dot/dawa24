@@ -64,7 +64,7 @@ services:
       - GOMEMLIMIT=1400MiB
       - GOMAXPROCS=2
       - GATEWAY_ENABLED=${GATEWAY_ENABLED:-false}
-      - GATEWAY_BASE_URL=${GATEWAY_BASE_URL:-https://api.muhiya.com}
+      - GATEWAY_BASE_URL=${GATEWAY_BASE_URL:-https://api.dawa24.com}
       - GATEWAY_VIRTUAL_KEY=${GATEWAY_VIRTUAL_KEY:-}
       - GATEWAY_CLIENT_APP=dawa24-store
       - GOOGLE_MAPS_API_KEY=${GOOGLE_MAPS_API_KEY:-}
