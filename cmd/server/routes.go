@@ -88,7 +88,7 @@ func mountModuleRoutes(
 			return deps.CacheHandle().Redis()
 		}
 		return nil
-	}, "dawa24:ratelimit:bridge:").LimitByIP(60, time.Minute)
+	}, "dawa24:ratelimit:bridge:").LimitByIP(300, time.Minute)
 
 	bridgeRouter := r.With(bridgeLimiter)
 	uiHandler.SetTelegram(mountTelegram(bridgeRouter, cfg, log, db, permissions, deps.capsule))

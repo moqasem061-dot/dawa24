@@ -12,6 +12,9 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/config"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"net/http"
+
+	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 )
 
 // mountTelegram wires the bridge and returns its service, or nil when the
@@ -26,6 +29,16 @@ func mountTelegram(
 ) *telegram.Service {
 	if !cfg.Telegram.Enabled() {
 		log.Info("telegram bridge disabled (TELEGRAM_BOT_USERNAME / TELEGRAM_BRIDGE_TOKEN not set)")
+		r.Route(telegramHTTP.Prefix, func(g chi.Router) {
+			disabled := func(w http.ResponseWriter, r *http.Request) {
+				httpx.JSON(w, http.StatusServiceUnavailable, map[string]string{
+					"error":   "telegram_integration_disabled",
+					"message": "Telegram integration is disabled or not configured. Set TELEGRAM_BOT_USERNAME and TELEGRAM_BRIDGE_TOKEN in server environment variables to enable it.",
+				})
+			}
+			g.HandleFunc("/", disabled)
+			g.HandleFunc("/*", disabled)
+		})
 		return nil
 	}
 	svc := telegram.NewService(telegramPostgres.New(db), resolver, capsule.forChannel(actions.ChannelTelegram), telegram.Config{

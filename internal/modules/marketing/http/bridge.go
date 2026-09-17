@@ -60,6 +60,7 @@ func (b *Bridge) RegisterRoutes(r chi.Router) {
 	r.Route(Prefix, func(g chi.Router) {
 		g.Use(b.authenticate)
 		g.Get("/digest", b.Digest)
+		g.Get("/digest/", b.Digest)
 	})
 }
 

@@ -49,3 +49,34 @@ func TestNewRouterMountsWithoutPanicking(t *testing.T) {
 		t.Errorf("public route / is not mounted: got %d", rec.Code)
 	}
 }
+
+func TestBridgeEndpointsReturn503WhenDisabled(t *testing.T) {
+	log := slog.New(slog.NewTextHandler(io.Discard, nil))
+	h := newRouter(&config.Config{}, log, &dependencies{db: database.New()}, nil, nil, nil, []database.Migration{})
+
+	tests := []struct {
+		method string
+		path   string
+		want   int
+	}{
+		{http.MethodPost, "/api/v1/integrations/telegram/outbox/claim", http.StatusServiceUnavailable},
+		{http.MethodPost, "/api/v1/integrations/telegram/outbox/claim/", http.StatusServiceUnavailable},
+		{http.MethodPost, "/api/v1/integrations/telegram/outbox/report", http.StatusServiceUnavailable},
+		{http.MethodPost, "/api/v1/integrations/telegram/updates", http.StatusServiceUnavailable},
+		{http.MethodPost, "/api/v1/integrations/whatsapp/outbox/claim", http.StatusServiceUnavailable},
+		{http.MethodPost, "/api/v1/integrations/whatsapp/webhook", http.StatusServiceUnavailable},
+		{http.MethodGet, "/api/v1/integrations/marketing/digest", http.StatusServiceUnavailable},
+		{http.MethodGet, "/api/v1/integrations/marketing/digest/", http.StatusServiceUnavailable},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
+			rec := httptest.NewRecorder()
+			req := httptest.NewRequest(tt.method, tt.path, nil)
+			h.ServeHTTP(rec, req)
+			if rec.Code != tt.want {
+				t.Errorf("got status %d, want %d (body: %s)", rec.Code, tt.want, rec.Body.String())
+			}
+		})
+	}
+}

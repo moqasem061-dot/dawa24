@@ -48,9 +48,13 @@ func (b *Bridge) RegisterRoutes(r chi.Router) {
 	r.Route(Prefix, func(g chi.Router) {
 		g.Use(b.auth.Middleware)
 		g.Post("/webhook", b.Webhook)
+		g.Post("/webhook/", b.Webhook)
 		g.Post("/outbox/claim", b.Claim)
+		g.Post("/outbox/claim/", b.Claim)
 		g.Post("/outbox/report", b.Report)
+		g.Post("/outbox/report/", b.Report)
 		g.Get("/exports/{token}", b.Export)
+		g.Get("/exports/{token}/", b.Export)
 	})
 }
 
