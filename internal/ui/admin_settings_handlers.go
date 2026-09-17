@@ -207,34 +207,42 @@ func (h *UIHandler) AdminGatewaySettingsSubmit(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	endpoint := strings.TrimSpace(r.FormValue("endpoint_url"))
+	endpoint := platformadmin.NormalizeGatewayEndpoint(r.FormValue("endpoint_url"))
 	if endpoint == "" {
-		endpoint = "https://api.muhiya.com"
+		endpoint = "https://api.dawa24.com"
 	}
 	apiKey := strings.TrimSpace(r.FormValue("api_key"))
 	systemPrompt := strings.TrimSpace(r.FormValue("system_prompt"))
 	isActive := r.FormValue("is_active") == "true"
 
-	gw := &platformadmin.GatewaySettings{
-		EndpointURL:    endpoint,
-		Environment:    "production",
-		TimeoutSeconds: 30,
-		APIKey:         apiKey,
-		IsActive:       isActive,
+	gw, _ := h.adminSvc.GetGatewaySettings(ctx)
+	if gw == nil {
+		gw = &platformadmin.GatewaySettings{Environment: "production", TimeoutSeconds: 30}
 	}
+	if (apiKey == "" || strings.HasPrefix(apiKey, "•")) && gw.APIKey != "" {
+		apiKey = gw.APIKey
+	}
+	if gw.EndpointURL != endpoint || gw.APIKey != apiKey {
+		gw.VirtualKey, gw.AIUserID = "", ""
+	}
+	gw.EndpointURL = endpoint
+	gw.APIKey = apiKey
+	gw.IsActive = isActive
 
 	if err := h.adminSvc.SaveGatewaySettings(ctx, gw); err != nil {
 		h.redirectWithNotice(w, r, "/admin/settings?tab=ai", "error", h.safeMessage(err, lang))
 		return
 	}
 
-	ai := &platformadmin.AISettings{
-		APIKey:       apiKey,
-		EndpointURL:  endpoint,
-		Temperature:  0.7,
-		MaxTokens:    2048,
-		SystemPrompt: systemPrompt,
-		IsActive:     isActive,
+	ai, _ := h.adminSvc.GetAISettings(ctx)
+	if ai == nil {
+		ai = &platformadmin.AISettings{Temperature: 0.7, MaxTokens: 2048}
+	}
+	ai.APIKey = apiKey
+	ai.EndpointURL = endpoint
+	ai.IsActive = isActive
+	if systemPrompt != "" {
+		ai.SystemPrompt = systemPrompt
 	}
 	_ = h.adminSvc.SaveAISettings(ctx, ai)
 

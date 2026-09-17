@@ -80,10 +80,14 @@ func getAIToolRows(configured []*platformadmin.AIRoleModel) []AIToolRow {
 }
 
 templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
+	{{
+		storedUser, storedPass := values.GatewaySettings.AdminCredentials()
+		hasStoredPassword := storedPass != ""
+	}}
 	<div
 		x-show="activeTab === 'ai'"
 		class="stack-lg"
-		x-data={ fmt.Sprintf("adminAIManager(%q, %q)", values.GatewaySettings.EndpointURL, maskedAPIKey(values.GatewaySettings.APIKey)) }
+		x-data={ fmt.Sprintf("adminAIManager(%q, %q, %t)", values.GatewaySettings.EndpointURL, storedUser, hasStoredPassword) }
 		x-cloak
 	>
 		<!-- 1. الاتصال: Gateway Connection & Credentials -->
@@ -129,7 +133,7 @@ templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 							required
 							class="form-input text-sm"
 							dir="ltr"
-							placeholder="https://api.muhiya.com"
+							placeholder="https://api.dawa24.com"
 						/>
 					</div>
 
@@ -157,7 +161,7 @@ templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 					</div>
 
 					<div class="form-group m-0">
-						<label class="form-label font-bold text-xs">كلمة مرور مدير البوابة (Admin Password) *</label>
+						<label class="form-label font-bold text-xs">كلمة مرور مدير البوابة (Admin Password)</label>
 						<div class="relative d-flex items-center">
 							<input
 								:type="showKey ? 'text' : 'password'"
@@ -165,7 +169,8 @@ templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 								x-model="gatewayKey"
 								class="form-input pe-12 text-sm"
 								dir="ltr"
-								placeholder="كلمة مرور لوحة البوابة..."
+								:placeholder="hasStoredPassword ? '••••••••  (اترك الحقل فارغاً للاحتفاظ بكلمة المرور الحالية)' : 'كلمة مرور لوحة البوابة...'"
+								autocomplete="new-password"
 							/>
 							<button
 								type="button"

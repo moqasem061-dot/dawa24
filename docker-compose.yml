@@ -96,6 +96,9 @@ services:
       - MARKETING_BRIDGE_TOKEN=${MARKETING_BRIDGE_TOKEN:-}
     volumes:
       - dawa24-data:/app/data
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     networks:
       - postgresql-psr0_default
     depends_on:
@@ -114,6 +117,9 @@ services:
         BUILDKIT_INLINE_CACHE: "1"
     command: ["/app/worker"]
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}

@@ -181,6 +181,9 @@ services:
           cpus: "2"
     volumes:
       - uploads:/app/data
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     healthcheck:
       test: ["CMD", "curl", "-fsS", "http://localhost:8070/health"]
       interval: 15s
@@ -195,6 +198,9 @@ services:
     image: dawa24-store:local
     command: ["/app/worker"]
     restart: unless-stopped
+    dns:
+      - 1.1.1.1
+      - 8.8.8.8
     depends_on:
       migrate:
         condition: service_completed_successfully

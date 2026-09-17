@@ -264,7 +264,7 @@ func (s *Service) GetAISettings(ctx context.Context) (*AISettings, error) {
 	v := setting.Value
 	ai := &AISettings{
 		APIKey:       getString(v, "api_key", ""),
-		EndpointURL:  getString(v, "endpoint_url", "https://api.muhiya.com"),
+		EndpointURL:  NormalizeGatewayEndpoint(getString(v, "endpoint_url", "https://api.dawa24.com")),
 		Temperature:  getFloat(v, "temperature", 0.7),
 		MaxTokens:    getInt(v, "max_tokens", 2048),
 		SystemPrompt: getString(v, "system_prompt", ""),
@@ -275,6 +275,7 @@ func (s *Service) GetAISettings(ctx context.Context) (*AISettings, error) {
 
 // SaveAISettings writes AI configuration to database settings.
 func (s *Service) SaveAISettings(ctx context.Context, ai *AISettings) error {
+	ai.EndpointURL = NormalizeGatewayEndpoint(ai.EndpointURL)
 	val := map[string]any{
 		"api_key":       ai.APIKey,
 		"endpoint_url":  ai.EndpointURL,
@@ -296,7 +297,7 @@ func (s *Service) GetGatewaySettings(ctx context.Context) (*GatewaySettings, err
 	setting, err := s.setting(ctx, "gateway_configuration")
 	if err != nil || setting == nil || setting.Value == nil {
 		return &GatewaySettings{
-			EndpointURL:    "https://api.dawa24.com/v1",
+			EndpointURL:    "https://api.dawa24.com",
 			Environment:    "production",
 			TimeoutSeconds: 30,
 			IsActive:       true,
@@ -304,7 +305,7 @@ func (s *Service) GetGatewaySettings(ctx context.Context) (*GatewaySettings, err
 	}
 	v := setting.Value
 	gw := &GatewaySettings{
-		EndpointURL:    getString(v, "endpoint_url", "https://api.dawa24.com/v1"),
+		EndpointURL:    NormalizeGatewayEndpoint(getString(v, "endpoint_url", "https://api.dawa24.com")),
 		Environment:    getString(v, "environment", "production"),
 		TimeoutSeconds: getInt(v, "timeout_seconds", 30),
 		APIKey:         getString(v, "api_key", ""),
@@ -331,6 +332,7 @@ func (s *Service) GetGatewaySettings(ctx context.Context) (*GatewaySettings, err
 // The live configuration was found holding the production database password;
 // see gateway_credential.go.
 func (s *Service) SaveGatewaySettings(ctx context.Context, gw *GatewaySettings) error {
+	gw.EndpointURL = NormalizeGatewayEndpoint(gw.EndpointURL)
 	if err := ValidateAdminCredential(gw.APIKey); err != nil {
 		return err
 	}

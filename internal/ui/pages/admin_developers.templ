@@ -242,19 +242,13 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 				};
 			}
 
-			function adminAIManager(initURL, initKey) {
-				let user = 'admin';
-				let key = initKey || '';
-				if (key.includes(':')) {
-					const parts = key.split(':');
-					user = parts[0];
-					key = parts[1];
-				}
+			function adminAIManager(initURL, initUser, hasStoredPassword) {
 				return {
 					showKey: false,
-					gatewayURL: initURL || 'https://api.muhiya.com',
-					gatewayUser: user,
-					gatewayKey: key,
+					gatewayURL: initURL || 'https://api.dawa24.com',
+					gatewayUser: initUser || 'admin',
+					gatewayKey: '',
+					hasStoredPassword: Boolean(hasStoredPassword),
 					isTesting: false,
 					testResult: null,
 					liveModels: [],

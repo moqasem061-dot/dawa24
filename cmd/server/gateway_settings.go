@@ -43,7 +43,7 @@ func (a *adminGatewaySettings) GatewaySettings(ctx context.Context) (gateway.Set
 	}
 
 	settings := gateway.Settings{
-		BaseURL:      strings.TrimSpace(gw.EndpointURL),
+		BaseURL:      platformadmin.NormalizeGatewayEndpoint(gw.EndpointURL),
 		ClientApp:    "Dawa24Store",
 		Enabled:      gw.IsActive,
 		FastModel:    gw.FastModel,
@@ -61,7 +61,7 @@ func (a *adminGatewaySettings) GatewaySettings(ctx context.Context) (gateway.Set
 			if isVirtualKey(ai.APIKey) {
 				settings.VirtualKey = ai.APIKey
 				if settings.BaseURL == "" {
-					settings.BaseURL = ai.EndpointURL
+					settings.BaseURL = platformadmin.NormalizeGatewayEndpoint(ai.EndpointURL)
 				}
 				settings.Enabled = settings.Enabled || ai.IsActive
 			}

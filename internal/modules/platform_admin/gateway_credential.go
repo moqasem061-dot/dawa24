@@ -132,3 +132,16 @@ func (g *GatewaySettings) CredentialLooksMisconfigured() bool {
 	// it warns and never blocks.
 	return ValidateAdminCredential(g.APIKey) != nil || MatchesDatabaseSecret(g.APIKey)
 }
+
+// NormalizeGatewayEndpoint standardizes the Gateway base URL:
+// trims whitespace, trailing slashes, and strips accidental "/v1" or "/api" suffixes.
+func NormalizeGatewayEndpoint(raw string) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return ""
+	}
+	raw = strings.TrimRight(raw, "/")
+	raw = strings.TrimSuffix(raw, "/v1")
+	raw = strings.TrimSuffix(raw, "/api")
+	return strings.TrimRight(raw, "/")
+}

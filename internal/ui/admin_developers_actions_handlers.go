@@ -23,12 +23,32 @@ func (h *UIHandler) AdminGatewayTestConnection(w http.ResponseWriter, r *http.Re
 	w.Header().Set("Content-Type", "application/json")
 
 	_ = r.ParseForm()
-	reqEndpoint := strings.TrimSpace(r.FormValue("endpoint_url"))
+	reqEndpoint := platformadmin.NormalizeGatewayEndpoint(r.FormValue("endpoint_url"))
 	reqUser := strings.TrimSpace(r.FormValue("admin_username"))
+	reqKey := strings.TrimSpace(r.FormValue("api_key"))
+
+	// If key is empty or masked, fallback to stored credentials
+	if h.adminSvc != nil {
+		if gwSets, _ := h.adminSvc.GetGatewaySettings(ctx); gwSets != nil {
+			savedUser, savedPass := gwSets.AdminCredentials()
+			if (reqKey == "" || strings.HasPrefix(reqKey, "•")) && savedPass != "" {
+				reqKey = savedPass
+			}
+			if reqUser == "" && savedUser != "" {
+				reqUser = savedUser
+			}
+			if reqEndpoint == "" && gwSets.EndpointURL != "" {
+				reqEndpoint = platformadmin.NormalizeGatewayEndpoint(gwSets.EndpointURL)
+			}
+		}
+	}
+
+	if reqEndpoint == "" {
+		reqEndpoint = "https://api.dawa24.com"
+	}
 	if reqUser == "" {
 		reqUser = "admin"
 	}
-	reqKey := strings.TrimSpace(r.FormValue("api_key"))
 
 	// A credential typed into the connection test travels to the Gateway host
 	// exactly like a saved one, so it is validated on the same terms.
@@ -41,18 +61,25 @@ func (h *UIHandler) AdminGatewayTestConnection(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	adminClient, endpoint, _ := h.getGatewayAdminClient(ctx)
-	if reqEndpoint != "" {
-		endpoint = reqEndpoint
-		adminClient = gateway.NewAdminClient(reqEndpoint, reqUser, reqKey)
-	}
-
+	adminClient := gateway.NewAdminClient(reqEndpoint, reqUser, reqKey)
 	plans, err := adminClient.ListPlans(ctx)
 	if err != nil {
 		w.WriteHeader(http.StatusOK)
-		msg := fmt.Sprintf(i18n.T(lang, "admin.dev.connection_failed_format"), endpoint, err)
-		if strings.Contains(err.Error(), "401") || strings.Contains(err.Error(), "Unauthorized") {
-			msg = fmt.Sprintf(i18n.T(lang, "admin.dev.unauthorized_format"), endpoint)
+		errStr := err.Error()
+		var msg string
+		switch {
+		case strings.Contains(errStr, "no such host"):
+			msg = fmt.Sprintf("تعذر الاتصال بـ %s: خطأ في خادم الأسماء (DNS Lookup Failed: no such host). يرجى التأكد من كتابة الرابط بشكل صحيح وتحديث إعدادات DNS للخادم.", reqEndpoint)
+		case strings.Contains(errStr, "connection refused"):
+			msg = fmt.Sprintf("تعذر الاتصال بـ %s: تم رفض الاتصال بالخادم (Connection Refused). تأكد من تشغيل خدمة البوابة.", reqEndpoint)
+		case strings.Contains(errStr, "timeout") || strings.Contains(errStr, "deadline exceeded"):
+			msg = fmt.Sprintf("تعذر الاتصال بـ %s: انتهت مهلة الاتصال بالبوابة (Timeout).", reqEndpoint)
+		case strings.Contains(errStr, "401") || strings.Contains(errStr, "Unauthorized"):
+			msg = fmt.Sprintf("بيانات الاعتماد غير مصرح بها (401 Unauthorized) للبوابة %s. تأكد من صحة اسم المستخدم وكلمة المرور.", reqEndpoint)
+		case strings.Contains(errStr, "404") || strings.Contains(errStr, "Not Found"):
+			msg = fmt.Sprintf("المسار غير موجود (404 Not Found) على %s. تأكد من أن الرابط هو الرابط الأساسي للبوابة دون إضافة /v1 أو /api.", reqEndpoint)
+		default:
+			msg = fmt.Sprintf(i18n.T(lang, "admin.dev.connection_failed_format"), reqEndpoint, err)
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{
 			"status":  "unreachable",
@@ -64,7 +91,7 @@ func (h *UIHandler) AdminGatewayTestConnection(w http.ResponseWriter, r *http.Re
 
 	_ = json.NewEncoder(w).Encode(map[string]any{
 		"status":  "healthy",
-		"message": fmt.Sprintf(i18n.T(lang, "admin.dev.connection_healthy_format"), endpoint, len(plans)),
+		"message": fmt.Sprintf(i18n.T(lang, "admin.dev.connection_healthy_format"), reqEndpoint, len(plans)),
 		"count":   len(plans),
 	})
 }

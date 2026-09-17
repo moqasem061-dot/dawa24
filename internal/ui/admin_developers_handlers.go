@@ -26,7 +26,7 @@ func (h *UIHandler) getGatewayAdminClient(ctx context.Context) (*gateway.AdminCl
 		// check, so neither can carry a database password out of the process.
 		if gwSets, err := h.adminSvc.GetGatewaySettings(ctx); err == nil && gwSets != nil {
 			if gwSets.EndpointURL != "" {
-				endpointURL = gwSets.EndpointURL
+				endpointURL = platformadmin.NormalizeGatewayEndpoint(gwSets.EndpointURL)
 			}
 			// Not gwSets.APIKey directly: AdminCredentials refuses to hand back
 			// a value that does not look like a Gateway credential.
@@ -41,7 +41,7 @@ func (h *UIHandler) getGatewayAdminClient(ctx context.Context) (*gateway.AdminCl
 		if endpointURL == "" || secretKey == "" {
 			if aiSets, err := h.adminSvc.GetAISettings(ctx); err == nil && aiSets != nil {
 				if endpointURL == "" && aiSets.EndpointURL != "" {
-					endpointURL = aiSets.EndpointURL
+					endpointURL = platformadmin.NormalizeGatewayEndpoint(aiSets.EndpointURL)
 				}
 				if secretKey == "" && platformadmin.ValidateAdminCredential(aiSets.APIKey) == nil {
 					secretKey = strings.TrimSpace(aiSets.APIKey)
@@ -50,7 +50,7 @@ func (h *UIHandler) getGatewayAdminClient(ctx context.Context) (*gateway.AdminCl
 		}
 	}
 	if endpointURL == "" {
-		endpointURL = "https://api.muhiya.com"
+		endpointURL = "https://api.dawa24.com"
 	}
 	client := gateway.NewAdminClient(endpointURL, "", secretKey)
 	return client, endpointURL, secretKey != ""
@@ -90,7 +90,7 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 		gateway = gw
 		if gateway == nil {
 			gateway = &platformadmin.GatewaySettings{
-				EndpointURL: "https://api.muhiya.com",
+				EndpointURL: "https://api.dawa24.com",
 				IsActive:    true,
 			}
 		}
@@ -205,39 +205,38 @@ func (h *UIHandler) AdminDeveloperAISettingsSubmit(w http.ResponseWriter, r *htt
 		return
 	}
 
-	endpoint := strings.TrimSpace(r.FormValue("endpoint_url"))
-	adminUser := strings.TrimSpace(r.FormValue("admin_username"))
-	if adminUser == "" {
-		adminUser = "admin"
+	endpoint := platformadmin.NormalizeGatewayEndpoint(r.FormValue("endpoint_url"))
+	if endpoint == "" {
+		endpoint = "https://api.dawa24.com"
 	}
+	adminUser := strings.TrimSpace(r.FormValue("admin_username"))
 	apiKey := strings.TrimSpace(r.FormValue("api_key"))
 	isActive := r.FormValue("is_active") == "true"
 	systemPrompt := strings.TrimSpace(r.FormValue("system_prompt"))
 
 	// The password field renders blank on every load, so an operator who edits
 	// only the endpoint or the models must not have the credential wiped. An
-	// empty submission therefore means "keep what is stored".
-	//
-	// Only a value that still passes the shape check is carried forward. The
-	// old fallback adopted ai_configuration.api_key unconditionally, and on the
-	// live database that field holds the PostgreSQL superuser credential: every
-	// save then rebuilt the gateway credential out of it, SaveGatewaySettings
-	// rejected the result, and the administrator credential was left empty and
-	// unsettable — which is why newly approved organisations stopped getting a
-	// Gateway identity at all.
-	if apiKey == "" {
+	// empty submission (or masked placeholder) therefore means "keep what is stored".
+	if apiKey == "" || strings.HasPrefix(apiKey, "•") {
 		if existingGW, _ := h.adminSvc.GetGatewaySettings(ctx); existingGW != nil {
-			if _, pass := existingGW.AdminCredentials(); pass != "" {
-				apiKey = strings.TrimSpace(existingGW.APIKey)
+			savedUser, pass := existingGW.AdminCredentials()
+			if pass != "" {
+				apiKey = pass
+			}
+			if adminUser == "" && savedUser != "" {
+				adminUser = savedUser
 			}
 		}
 	}
-	if apiKey == "" {
+	if apiKey == "" || strings.HasPrefix(apiKey, "•") {
 		if existingAI, _ := h.adminSvc.GetAISettings(ctx); existingAI != nil &&
 			strings.TrimSpace(existingAI.APIKey) != "" &&
 			platformadmin.ValidateAdminCredential(existingAI.APIKey) == nil {
 			apiKey = strings.TrimSpace(existingAI.APIKey)
 		}
+	}
+	if adminUser == "" {
+		adminUser = "admin"
 	}
 
 	// Format combined credentials if username is custom
