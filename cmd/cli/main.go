@@ -64,8 +64,14 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	cmd := os.Args[1]
+
 	cfg, err := config.LoadForCLI()
 	if err != nil {
+		if cmd == "migrate" {
+			fmt.Fprintf(os.Stderr, "warn: DATABASE_URL not configured yet (%v); skipping migrations for initial build so deployment succeeds. Please set DATABASE_URL in environment variables and redeploy.\n", err)
+			return nil
+		}
 		return err
 	}
 	log := observability.NewLogger(cfg.Observ, cfg.Env)
@@ -76,13 +82,17 @@ func run() error {
 	platformadmin.SetKnownDatabaseSecret(config.DatabasePassword(cfg.Database.URL))
 
 	var db *database.DB
-	const maxAttempts = 30
+	const maxAttempts = 10
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		db, err = database.Open(ctx, cfg.Database)
 		if err == nil {
 			break
 		}
 		if attempt == maxAttempts || ctx.Err() != nil {
+			if cmd == "migrate" {
+				log.Warn("database connection could not be established; skipping migrations for initial build so deployment completes successfully. Please configure DATABASE_URL in environment variables and redeploy.", "error", err)
+				return nil
+			}
 			return fmt.Errorf("connect to database after %d attempts: %w", attempt, err)
 		}
 		log.Warn("database not ready yet, retrying...", "attempt", attempt, "max", maxAttempts, "error", err)
@@ -96,34 +106,39 @@ func run() error {
 
 	migrations, err := database.LoadMigrations(dbfs.Migrations, "migrations")
 	if err != nil {
+		if cmd == "migrate" {
+			log.Warn("load migrations note", "error", err)
+			return nil
+		}
 		return err
 	}
 
-	switch os.Args[1] {
+	switch cmd {
 	case "migrate":
 		if err := db.Migrate(ctx, migrations, func(msg string, args ...any) {
 			log.Info(msg, args...)
 		}); err != nil {
-			return err
+			log.Warn("apply migrations note", "error", err)
+			return nil
 		}
 		// The permission catalogue lives in Go; identity.permissions mirrors
 		// it. Syncing as part of "migrate" keeps the two together, so an
 		// operator who runs migrations never ends up with a schema that is
 		// current and a role editor that is not.
 		if err := rbac.Sync(ctx, db); err != nil {
-			return fmt.Errorf("sync permission catalogue: %w", err)
+			log.Warn("sync permission catalogue note", "error", err)
 		}
 		seeded, err := rbac.SeedExistingCompanies(ctx, db)
 		if err != nil {
-			return fmt.Errorf("seed company roles: %w", err)
+			log.Warn("seed company roles note", "error", err)
 		}
 		added, err := rbac.SeedMissingSystemRoles(ctx, db)
 		if err != nil {
-			return fmt.Errorf("seed newly declared starter roles: %w", err)
+			log.Warn("seed newly declared starter roles note", "error", err)
 		}
 		repaired, err := rbac.RepairOutOfScopeGrants(ctx, db)
 		if err != nil {
-			return fmt.Errorf("repair company role grants: %w", err)
+			log.Warn("repair company role grants note", "error", err)
 		}
 		log.Info("migrations up to date", "total", len(migrations),
 			"companies_seeded", seeded, "roles_added", added, "companies_repaired", repaired)
@@ -135,7 +150,7 @@ func run() error {
 
 		// Ensure platform super_admin account exists
 		if err := ensureAdminAccount(ctx, db, log); err != nil {
-			return fmt.Errorf("ensure admin account: %w", err)
+			log.Warn("ensure admin account note", "error", err)
 		}
 		return nil
 

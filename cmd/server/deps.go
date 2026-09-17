@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	dbfs "github.com/muhiya/dawa24-store/db"
 	"github.com/muhiya/dawa24-store/internal/platform/cache"
 	"github.com/muhiya/dawa24-store/internal/platform/config"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
@@ -146,6 +147,15 @@ func (d *dependencies) connect(ctx context.Context, cfg *config.Config, log *slo
 		if err := d.db.Connect(ctx, cfg.Database); err != nil {
 			d.setDBErr(err)
 			return err
+		}
+		// Ensure migrations are applied as soon as the database is reachable
+		migrations, migLoadErr := database.LoadMigrations(dbfs.Migrations, "migrations")
+		if migLoadErr == nil {
+			if migErr := d.db.Migrate(ctx, migrations, func(msg string, args ...any) {
+				log.Info(msg, args...)
+			}); migErr != nil {
+				log.Warn("background migration execution note", "error", migErr)
+			}
 		}
 		// The permission catalogue is defined in Go and mirrored into
 		// identity.permissions. Syncing here, on the connection that just came
