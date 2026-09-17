@@ -40,9 +40,8 @@ templ Modal(props ModalProps) {
 		if props.Open {
 			open
 		}
-		if props.AlpineOpen != "" {
-			:open={ props.AlpineOpen }
-			x-cloak
+		if flag := modalOpenFlag(props); flag != "" {
+			x-modal-open={ flag }
 		}
 		if props.AlpineClose != "" {
 			x-on:close={ props.AlpineClose }

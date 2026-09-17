@@ -130,7 +130,7 @@ func AdminTempWarehousesModals(data *AdminTempWarehousesData) templ.Component {
 			Subtitle:    "يدعم كافة أنواع الملفات (.xlsx, .xls, .csv, .txt) مع تسمية تلقائية ومعالجة متوازية فائقة السرعة",
 			Icon:        "zap",
 			Size:        "xl",
-			AlpineClose: "if (!isBulkUploading) uploadModal = false",
+			AlpineClose: "!isBulkUploading && (uploadModal = false)",
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
@@ -178,7 +178,7 @@ func AdminTempWarehousesModals(data *AdminTempWarehousesData) templ.Component {
 			Title:       "معالج ضبط وتأكيد أعمدة المستودع",
 			Icon:        "settings",
 			Size:        "xl",
-			AlpineClose: "if (!mappingSubmitting) mappingModal = false",
+			AlpineClose: "!mappingSubmitting && (mappingModal = false)",
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var5), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err

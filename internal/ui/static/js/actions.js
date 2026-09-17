@@ -498,6 +498,27 @@
       };
     });
 
+    // x-modal-open="flag": keep a <dialog> in step with an Alpine flag using
+    // showModal()/close(). Binding :open instead shows the dialog without
+    // making it modal: no backdrop, no top layer, drawn inline in the page.
+    // The dialog's own close (Esc, close button) resets the flag through the
+    // x-on:close the Modal component renders.
+    A.directive('modal-open', function (el, directive, utils) {
+      var read = utils.evaluateLater(directive.expression);
+      var first = true;
+      utils.effect(function () {
+        read(function (want) {
+          var initial = first;
+          first = false;
+          if (want && !el.open) {
+            try { el.showModal(); } catch (_) { el.setAttribute('open', ''); }
+          } else if (!want && el.open && !initial) {
+            el.close();
+          }
+        });
+      });
+    });
+
     A.directive('safe-html', function (el, directive, utils) {
       var read = utils.evaluateLater(directive.expression);
       utils.effect(function () {

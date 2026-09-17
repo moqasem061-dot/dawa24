@@ -693,7 +693,6 @@ function initSidebarNav() {
 }
 
 // Universal Accessible Native Modal Manager
-let openDialogCount = 0;
 let scrollLockY = 0;
 const lastActiveElements = new WeakMap();
 
@@ -787,15 +786,14 @@ function initModalManager() {
       handleDialogClose(e.target);
     }
   }, true);
+  // A swap can remove an open dialog without a close event.
+  document.addEventListener('htmx:afterSettle', syncScrollLock);
 
   // Body scroll lock on dialog show
   const originalShowModal = HTMLDialogElement.prototype.showModal;
   HTMLDialogElement.prototype.showModal = function() {
     if (this.open) return;
-    if (openDialogCount === 0) {
-      document.body.classList.add('modal-open');
-    }
-    openDialogCount += 1;
+    document.body.classList.add('modal-open');
 
     // Trigger map invalidation if dialog contains map
     if (this.querySelector('[data-map-picker], .map-canvas, .leaflet-container')) {
@@ -812,15 +810,27 @@ function initModalManager() {
       throw err;
     }
   };
+
+  // close() also releases the lock at once: the close event is queued, and a
+  // counter kept by events drifted (dialogs removed by a swap never fire it).
+  const originalClose = HTMLDialogElement.prototype.close;
+  HTMLDialogElement.prototype.close = function() {
+    const result = originalClose.apply(this, arguments);
+    syncScrollLock();
+    return result;
+  };
+}
+
+// syncScrollLock derives body.modal-open from the dialogs actually open.
+function syncScrollLock() {
+  const anyOpen = Array.prototype.some.call(document.querySelectorAll('dialog[open]'), function (d) {
+    try { return d.matches(':modal'); } catch (_) { return true; }
+  });
+  document.body.classList.toggle('modal-open', anyOpen);
 }
 
 function handleDialogClose(dialog) {
-  if (openDialogCount > 0) {
-    openDialogCount -= 1;
-    if (openDialogCount === 0) {
-      document.body.classList.remove('modal-open');
-    }
-  }
+  syncScrollLock();
 
   const opener = lastActiveElements.get(dialog);
   if (opener && typeof opener.focus === 'function') {

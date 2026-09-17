@@ -137,7 +137,7 @@ templ AdminTempWarehousesModals(data *AdminTempWarehousesData) {
 		Subtitle:    "يدعم كافة أنواع الملفات (.xlsx, .xls, .csv, .txt) مع تسمية تلقائية ومعالجة متوازية فائقة السرعة",
 		Icon:        "zap",
 		Size:        "xl",
-		AlpineClose: "if (!isBulkUploading) uploadModal = false",
+		AlpineClose: "!isBulkUploading && (uploadModal = false)",
 	}) {
 		<!-- Active Uploading Progress Overlay -->
 		<template x-if="isBulkUploading">
@@ -302,7 +302,7 @@ templ AdminTempWarehousesModals(data *AdminTempWarehousesData) {
 		Title:       "معالج ضبط وتأكيد أعمدة المستودع",
 		Icon:        "settings",
 		Size:        "xl",
-		AlpineClose: "if (!mappingSubmitting) mappingModal = false",
+		AlpineClose: "!mappingSubmitting && (mappingModal = false)",
 	}) {
 		<!-- Header & Queue Stepper Info -->
 		<div class="flex-between items-start mb-4 pb-4 border-b gap-4">
