@@ -68,6 +68,12 @@ func resetBillingFixtures(t *testing.T, db *database.DB) {
 		if _, err := tx.Exec(txCtx, `DELETE FROM billing.user_payment_methods WHERE user_id = $1`, testBillingUserID); err != nil {
 			return fmt.Errorf("delete user_payment_methods: %w", err)
 		}
+		if _, err := tx.Exec(txCtx, `DELETE FROM billing.wallet_deposits WHERE user_id = $1`, testBillingUserID); err != nil {
+			return fmt.Errorf("delete wallet_deposits: %w", err)
+		}
+		if _, err := tx.Exec(txCtx, `DELETE FROM billing.wallet_withdrawals WHERE user_id = $1`, testBillingUserID); err != nil {
+			return fmt.Errorf("delete wallet_withdrawals: %w", err)
+		}
 		if _, err := tx.Exec(txCtx, `DELETE FROM billing.wallet_transactions WHERE wallet_id IN (SELECT id FROM billing.wallets WHERE user_id = $1)`, testBillingUserID); err != nil {
 			return fmt.Errorf("delete wallet_transactions: %w", err)
 		}
@@ -298,6 +304,66 @@ func TestBillingRepository(t *testing.T) {
 		// Delete by owner
 		if err := repo.DeletePaymentMethod(ctx, testBillingUserID, pm.ID); err != nil {
 			t.Fatalf("DeletePaymentMethod failed: %v", err)
+		}
+	})
+
+	t.Run("Deposits_and_Withdrawals_Numeric", func(t *testing.T) {
+		w, err := repo.GetOrCreateWallet(ctx, testBillingUserID, "EGP")
+		if err != nil {
+			t.Fatalf("GetOrCreateWallet failed: %v", err)
+		}
+
+		depAmount := money.MustParse("600000.00")
+		dep := &billing.WalletDeposit{
+			WalletID:        w.ID,
+			UserID:          testBillingUserID,
+			Amount:          depAmount,
+			Currency:        "EGP",
+			PaymentMethod:   "instapay",
+			ReferenceNumber: "DEP-NUMERIC-TEST",
+		}
+		if err := repo.CreateDepositRequest(ctx, dep); err != nil {
+			t.Fatalf("CreateDepositRequest failed: %v", err)
+		}
+		if dep.ID == 0 {
+			t.Fatal("expected non-zero deposit ID")
+		}
+
+		gotDep, err := repo.GetDepositRequestByID(ctx, dep.ID)
+		if err != nil {
+			t.Fatalf("GetDepositRequestByID failed: %v", err)
+		}
+		if gotDep.Amount.String() != "600000.00" {
+			t.Errorf("deposit amount round-trip mismatch: got %v, want 600000.00", gotDep.Amount)
+		}
+
+		// Fund wallet so withdrawal balance check passes
+		if _, err := repo.RecordTransaction(ctx, w.ID, billing.TxDeposit, depAmount, "deposit", &dep.ID, "seed deposit"); err != nil {
+			t.Fatalf("RecordTransaction failed: %v", err)
+		}
+
+		wthAmount := money.MustParse("200000.00")
+		wth := &billing.WalletWithdrawal{
+			WalletID:           w.ID,
+			UserID:             testBillingUserID,
+			Amount:             wthAmount,
+			Currency:           "EGP",
+			PayoutMethodType:   "bank",
+			DestinationDetails: "EG1234567890",
+		}
+		if err := repo.CreateWithdrawalRequest(ctx, wth); err != nil {
+			t.Fatalf("CreateWithdrawalRequest failed: %v", err)
+		}
+		if wth.ID == 0 {
+			t.Fatal("expected non-zero withdrawal ID")
+		}
+
+		gotWth, err := repo.GetWithdrawalRequestByID(ctx, wth.ID)
+		if err != nil {
+			t.Fatalf("GetWithdrawalRequestByID failed: %v", err)
+		}
+		if gotWth.Amount.String() != "200000.00" {
+			t.Errorf("withdrawal amount round-trip mismatch: got %v, want 200000.00", gotWth.Amount)
 		}
 	})
 }

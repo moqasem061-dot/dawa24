@@ -17,7 +17,7 @@ func (r *Repository) AdminGetFinanceStats(ctx context.Context) (*billing.AdminFi
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// 1. Payments: gross amount paid and count of successful payments
 		const payQ = `
-			SELECT COUNT(*), COALESCE(SUM(amount), 0)
+			SELECT COUNT(*), COALESCE(SUM(amount), 0.00)
 			FROM billing.payments
 			WHERE status IN ('paid', 'completed', 'success');
 		`
@@ -27,7 +27,7 @@ func (r *Repository) AdminGetFinanceStats(ctx context.Context) (*billing.AdminFi
 
 		// 2. Invoices: total invoiced amount and count of non-cancelled invoices
 		const invQ = `
-			SELECT COUNT(*), COALESCE(SUM(total_amount), 0)
+			SELECT COUNT(*), COALESCE(SUM(total_amount), 0.00)
 			FROM billing.invoices
 			WHERE status != 'cancelled';
 		`

@@ -238,7 +238,7 @@ func (r *Repository) RenewSubscription(ctx context.Context, subID int64, walletI
 		if !cost.IsZero() && !cost.IsNegative() {
 			var balance money.Amount
 			err = tx.QueryRow(txCtx, `
-				SELECT COALESCE(SUM(amount), 0)
+				SELECT COALESCE(SUM(amount), 0.00)
 				FROM billing.wallet_transactions
 				WHERE wallet_id = $1;
 			`, walletID).Scan(&balance)

@@ -33,7 +33,7 @@ func (r *Repository) latestBalance(ctx context.Context, q queryable, walletID in
 
 func (r *Repository) pendingWithdrawals(ctx context.Context, q queryable, walletID int64) (money.Amount, error) {
 	var pending money.Amount
-	query := `SELECT COALESCE(SUM(amount), 0) FROM billing.wallet_withdrawals WHERE wallet_id = $1 AND status = 'pending';`
+	query := `SELECT COALESCE(SUM(amount), 0.00) FROM billing.wallet_withdrawals WHERE wallet_id = $1 AND status = 'pending';`
 	err := q.QueryRow(ctx, query, walletID).Scan(&pending)
 	if err != nil {
 		if database.IsNotFound(err) {
