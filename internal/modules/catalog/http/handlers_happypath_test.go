@@ -207,6 +207,9 @@ func (happyRepo) GetProductByBarcode(ctx context.Context, barcode string) (*cata
 func (happyRepo) UpdateProductImageBySKU(ctx context.Context, sku string, imagePath, imageLink string) (*catalog.Product, error) {
 	return nil, nil
 }
+func (happyRepo) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath, imageLink string) (*catalog.Product, error) {
+	return nil, nil
+}
 func (happyRepo) UpdateProductImageByID(ctx context.Context, id int64, imagePath, imageLink string) (*catalog.Product, error) {
 	return nil, nil
 }

@@ -7,7 +7,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
 	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
@@ -58,7 +57,7 @@ func (h *UIHandler) healOrgWiring(ctx context.Context, orgID int64) {
 	sysCtx := database.AsSystem(ctx)
 
 	o, err := h.orgSvc.GetOrganization(sysCtx, orgID)
-	if err != nil || o == nil || o.Status != org.StatusApproved {
+	if err != nil || o == nil {
 		return
 	}
 

@@ -80,6 +80,7 @@ services:
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Dawa24 | دوا 24}
       - SMTP_ENABLED=${SMTP_ENABLED:-true}
       - SMTP_TIMEOUT=${SMTP_TIMEOUT:-10s}
+      - DEV_SHOW_MOCK_OTP=${DEV_SHOW_MOCK_OTP:-false}
       - TURNSTILE_ENABLED=${TURNSTILE_ENABLED:-true}
       - TURNSTILE_SITE_KEY=${TURNSTILE_SITE_KEY:-}
       - TURNSTILE_SECRET_KEY=${TURNSTILE_SECRET_KEY:-}
@@ -143,13 +144,15 @@ services:
       - WORKER_MAINTENANCE=1
       - LOG_LEVEL=${LOG_LEVEL:-info}
       - LOG_FORMAT=json
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-starttls}
-      - SMTP_USERNAME=${SMTP_USERNAME:-}
+      - SMTP_HOST=${SMTP_HOST:-smtp.hostinger.com}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_ENCRYPTION=${SMTP_ENCRYPTION:-tls}
+      - SMTP_USERNAME=${SMTP_USERNAME:-no-reply@dawa24.com}
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-no-reply@dawa24.net}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-no-reply@dawa24.com}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Dawa24 | دوا 24}
+      - SMTP_ENABLED=${SMTP_ENABLED:-true}
+      - SMTP_TIMEOUT=${SMTP_TIMEOUT:-10s}
     volumes:
       - dawa24-data:/app/data
     networks:

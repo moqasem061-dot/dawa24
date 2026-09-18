@@ -19,8 +19,17 @@ func (h *UIHandler) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang, dir := h.localeAndDir(r)
 	errorMsg := ""
-	if r.URL.Query().Get("error") == "invalid_token" {
+	switch r.URL.Query().Get("error") {
+	case "invalid_token":
 		errorMsg = i18n.T(lang, "auth.reset.invalid_token")
+	case "send_failed":
+		errorMsg = i18n.T(lang, "auth.email.error_sending")
+	case "user_not_found":
+		errorMsg = "البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد"
+	case "cooldown":
+		errorMsg = i18n.T(lang, "auth.email.cooldown")
+	case "rate_limited":
+		errorMsg = i18n.T(lang, "auth.email.rate_limit")
 	}
 	email := r.URL.Query().Get("email")
 	h.renderPage(ctx, w, "render forgot password page", pages.PasswordReset(errorMsg, "", email, lang, dir))
@@ -50,23 +59,31 @@ func (h *UIHandler) ForgotSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	if !userFound {
+		h.renderPage(ctx, w, "render forgot password user not found", pages.PasswordReset("البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد", "", cleanEmail, lang, dir))
+		return
+	}
+
 	// If user exists, generate OTP and dispatch email
-	if userFound {
-		code, _, err := engine.GenerateOTP(cleanEmail, "password_reset", 15*time.Minute)
-		if err == nil {
-			if sendErr := h.Mailer().SendOTP(ctx, cleanEmail, code, "password_reset", lang); sendErr != nil {
-				h.log.WarnContext(ctx, "failed to send password reset otp email", "email", cleanEmail, "error", sendErr)
-			}
-		} else if errors.Is(err, mailer.ErrOTPInCooldown) {
+	code, _, err := engine.GenerateOTP(cleanEmail, "password_reset", 15*time.Minute)
+	if err != nil {
+		if errors.Is(err, mailer.ErrOTPInCooldown) {
 			http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&error=cooldown", http.StatusSeeOther)
 			return
 		} else if errors.Is(err, mailer.ErrOTPHourlyExceeded) {
 			http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&error=rate_limited", http.StatusSeeOther)
 			return
 		}
+		h.renderPage(ctx, w, "render forgot password send error", pages.PasswordReset(i18n.T(lang, "auth.email.error_sending"), "", cleanEmail, lang, dir))
+		return
 	}
 
-	// For security against user enumeration, redirect to verify step with generic notice
+	if sendErr := h.Mailer().SendOTP(ctx, cleanEmail, code, "password_reset", lang); sendErr != nil {
+		h.log.ErrorContext(ctx, "failed to send password reset otp email", "email", cleanEmail, "error", sendErr)
+		h.renderPage(ctx, w, "render forgot password send error", pages.PasswordReset(i18n.T(lang, "auth.email.error_sending"), "", cleanEmail, lang, dir))
+		return
+	}
+
 	http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&notice=sent", http.StatusSeeOther)
 }
 
@@ -89,6 +106,8 @@ func (h *UIHandler) ForgotVerifyPage(w http.ResponseWriter, r *http.Request) {
 		errorMsg = i18n.T(lang, "auth.email.cooldown")
 	case "rate_limited":
 		errorMsg = i18n.T(lang, "auth.email.rate_limit")
+	case "send_failed":
+		errorMsg = i18n.T(lang, "auth.email.error_sending")
 	}
 
 	var successMsg string

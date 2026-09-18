@@ -213,6 +213,17 @@ func (m *mockCatalogImageRepo) UpdateProductImageBySKU(_ context.Context, sku st
 	return nil, apperr.NotFound("product")
 }
 
+func (m *mockCatalogImageRepo) UpdateProductImageByBarcode(_ context.Context, barcode string, imagePath, imageLink string) (*catalog.Product, error) {
+	for _, p := range m.products {
+		if p.Barcode == barcode {
+			p.Image = imagePath
+			p.ImageLink = imageLink
+			return p, nil
+		}
+	}
+	return nil, apperr.NotFound("product")
+}
+
 func (m *mockCatalogImageRepo) UpdateProductImageByID(_ context.Context, id int64, imagePath, imageLink string) (*catalog.Product, error) {
 	for _, p := range m.products {
 		if p.ID == id {

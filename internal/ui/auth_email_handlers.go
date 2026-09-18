@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -121,8 +122,8 @@ func (h *UIHandler) SendEmailOTP(w http.ResponseWriter, r *http.Request) {
 		Message:   i18n.T(lang, "auth.email.code_sent"),
 	}
 
-	// In test/mock mode without configured SMTP, surface the code for local dev
-	if h.Mailer().IsMock() {
+	// In test/mock mode without configured SMTP, surface the code only for non-production development
+	if h.Mailer().IsMock() && !isProductionEnv() && devShowMockOTP() {
 		resp.MockCode = code
 	}
 
@@ -225,4 +226,14 @@ func (h *UIHandler) VerifyEmailOTP(w http.ResponseWriter, r *http.Request) {
 		Token:    token,
 		Message:  i18n.T(lang, "auth.email.verified"),
 	})
+}
+
+func isProductionEnv() bool {
+	env := strings.ToLower(strings.TrimSpace(os.Getenv("APP_ENV")))
+	return env == "prod" || env == "production"
+}
+
+func devShowMockOTP() bool {
+	v := strings.ToLower(strings.TrimSpace(os.Getenv("DEV_SHOW_MOCK_OTP")))
+	return v == "true" || v == "1" || v == "yes"
 }

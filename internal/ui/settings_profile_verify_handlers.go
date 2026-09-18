@@ -28,6 +28,7 @@ func (h *UIHandler) registerPreApprovalSettingsRoutes(r chi.Router) {
 	r.Get("/settings/profile", redirectToSettingsTab("profile"))
 	r.Post("/settings/profile", h.SettingsProfileSubmit)
 	r.Post("/settings/password", h.SettingsPasswordSubmit)
+	r.Post("/settings/password/send-otp", h.SettingsPasswordSendOTP)
 	r.Get("/settings/addresses", redirectToSettingsTab("profile"))
 	r.Get("/settings/security", redirectToSettingsTab("security"))
 	r.Get("/settings/preferences", redirectToSettingsTab("preferences"))

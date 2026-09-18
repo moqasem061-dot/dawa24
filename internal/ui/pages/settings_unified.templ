@@ -93,6 +93,17 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 				<button
 					type="button"
 					class="tab-btn"
+					:class="{ 'active': activeTab === 'security' }"
+					@click="[activeTab = 'security', $setHash('security')]"
+					data-tab-target="security"
+				>
+					@components.IconLock("icon-xs")
+					<span>{ i18n.T(lang, "settings.tab_security") }</span>
+				</button>
+
+				<button
+					type="button"
+					class="tab-btn"
 					:class="{ 'active': activeTab === 'preferences' }"
 					@click="[activeTab = 'preferences', $setHash('preferences')]"
 					data-tab-target="preferences"
@@ -410,6 +421,137 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						}
 					</div>
 				}
+			</div>
+
+			<!-- Tab: Security & Password -->
+			<div
+				id="tab-security"
+				class="tab-pane glass-panel p-8"
+				:class="{ 'active': activeTab === 'security' }"
+				x-show="activeTab === 'security'"
+			>
+				<h3 class="text-lg font-extrabold text-primary mb-2">
+					{ i18n.T(lang, "settings.security_title") }
+				</h3>
+				<p class="text-xs text-muted mb-6">
+					{ i18n.T(lang, "settings.security_desc") }
+				</p>
+
+				<form
+					action="/settings/password"
+					method="POST"
+					class="max-w-xl d-flex flex-col gap-5 text-start"
+					x-data="{
+						otpSent: false,
+						otpLoading: false,
+						otpFeedback: '',
+						otpError: false,
+						cooldown: 0,
+						sendOTP() {
+							this.otpLoading = true;
+							this.otpFeedback = '';
+							fetch('/settings/password/send-otp', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' }
+							})
+							.then(r => r.json())
+							.then(data => {
+								this.otpLoading = false;
+								if (data.ok) {
+									this.otpSent = true;
+									this.otpError = false;
+									this.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
+									this.cooldown = data.cooldown || 60;
+									let timer = setInterval(() => {
+										this.cooldown--;
+										if (this.cooldown <= 0) clearInterval(timer);
+									}, 1000);
+								} else {
+									this.otpError = true;
+									this.otpFeedback = data.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
+								}
+							})
+							.catch(() => {
+								this.otpLoading = false;
+								this.otpError = true;
+								this.otpFeedback = 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';
+							});
+						}
+					}"
+				>
+					<div class="form-group mb-0">
+						<label class="form-label font-bold text-xs mb-1" for="settings-new-password">
+							{ i18n.T(lang, "settings.new_password") }
+						</label>
+						<input
+							type="password"
+							id="settings-new-password"
+							name="new_password"
+							minlength="8"
+							required
+							placeholder="••••••••"
+							class="form-input text-xs"
+						/>
+					</div>
+
+					<div class="form-group mb-0">
+						<label class="form-label font-bold text-xs mb-1" for="settings-confirm-password">
+							{ i18n.T(lang, "settings.confirm_new_password") }
+						</label>
+						<input
+							type="password"
+							id="settings-confirm-password"
+							name="new_password_confirmation"
+							minlength="8"
+							required
+							placeholder="••••••••"
+							class="form-input text-xs"
+						/>
+					</div>
+
+					<div class="p-4 bg-surface-sunken border rounded-xl stack-sm">
+						<div class="flex-between items-center flex-wrap gap-2">
+							<label class="form-label font-bold text-xs m-0" for="settings-email-otp">
+								{ i18n.T(lang, "settings.email_otp_code") }
+							</label>
+							<button
+								type="button"
+								class="btn btn-secondary btn-sm font-bold text-xs gap-1.5"
+								@click="sendOTP()"
+								:disabled="otpLoading || cooldown > 0"
+							>
+								@components.IconMail("icon-xs")
+								<span x-show="!otpLoading && cooldown <= 0">{ i18n.T(lang, "settings.send_email_code") }</span>
+								<span x-show="otpLoading">جاري الإرسال...</span>
+								<span x-show="cooldown > 0" x-text="'إعادة الإرسال بعد ' + cooldown + ' ثانية'"></span>
+							</button>
+						</div>
+
+						<input
+							type="text"
+							id="settings-email-otp"
+							name="email_otp_code"
+							maxlength="6"
+							required
+							placeholder="123456"
+							class="form-input text-center font-mono text-lg tracking-widest font-bold"
+						/>
+
+						<template x-if="otpFeedback">
+							<div
+								:class="otpError ? 'alert alert-error text-xs font-semibold p-2.5 rounded-lg' : 'alert alert-success text-xs font-semibold p-2.5 rounded-lg'"
+								x-text="otpFeedback"
+							></div>
+						</template>
+					</div>
+
+					<div class="pt-2">
+						<button type="submit" class="btn btn-primary font-bold gap-2">
+							@components.IconLock("icon-xs")
+							<span>{ i18n.T(lang, "settings.change_password_btn") }</span>
+						</button>
+					</div>
+				</form>
 			</div>
 
 			<!-- Tab 2: Preferences -->

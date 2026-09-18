@@ -296,6 +296,8 @@ func (h *UIHandler) AdminProductsImportCommit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	imageTargets := h.extractCommittableImageTargets(sysCtx, session.ID)
+
 	written, result, err := h.catSvc.CommitImport(sysCtx, publicID)
 	if err != nil {
 		h.log.ErrorContext(ctx, "import commit failed", "session", publicID, "failures", len(result.Failures), "error", err)
@@ -304,7 +306,11 @@ func (h *UIHandler) AdminProductsImportCommit(w http.ResponseWriter, r *http.Req
 	}
 
 	h.refreshProductIndex(ctx)
-	h.watermarkImportedImages(written.ID)
+	if len(imageTargets) > 0 {
+		h.downloadImportedImages(imageTargets)
+	} else {
+		h.watermarkImportedImages(written.ID)
+	}
 	h.log.InfoContext(ctx, "import committed", "session", written.PublicID, "inserted", result.Inserted, "updated", result.Updated)
 	h.redirectWithNotice(w, r, "/admin/products", "success", fmt.Sprintf(
 		i18n.T(langOf(r), "admin.import.committed_success_format"), result.Total(), result.Inserted, result.Updated))

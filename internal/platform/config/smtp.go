@@ -27,7 +27,7 @@ func loadSMTP() SMTP {
 		}
 	}
 
-	fromEmail := getStr("SMTP_FROM_EMAIL", "no-reply@dawa24.net")
+	fromEmail := getStr("SMTP_FROM_EMAIL", "no-reply@dawa24.com")
 	fromName := getStr("SMTP_FROM_NAME", "Dawa24 | دوا 24")
 
 	return SMTP{

@@ -302,6 +302,11 @@ func (s *Service) UpdateProductImageBySKU(ctx context.Context, sku string, image
 	return s.repo.UpdateProductImageBySKU(ctx, sku, imagePath, imageLink)
 }
 
+// UpdateProductImageByBarcode downloads and sets product image by its matching Barcode.
+func (s *Service) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*Product, error) {
+	return s.repo.UpdateProductImageByBarcode(ctx, barcode, imagePath, imageLink)
+}
+
 // UpdateProductImageByID downloads and sets product image by product ID.
 func (s *Service) UpdateProductImageByID(ctx context.Context, id int64, imagePath string, imageLink string) (*Product, error) {
 	return s.repo.UpdateProductImageByID(ctx, id, imagePath, imageLink)

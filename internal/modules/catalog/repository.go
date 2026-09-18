@@ -125,6 +125,7 @@ type Repository interface {
 	GetProductBySKU(ctx context.Context, sku string) (*Product, error)
 	GetProductByBarcode(ctx context.Context, barcode string) (*Product, error)
 	UpdateProductImageBySKU(ctx context.Context, sku string, imagePath string, imageLink string) (*Product, error)
+	UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*Product, error)
 	UpdateProductImageByID(ctx context.Context, id int64, imagePath string, imageLink string) (*Product, error)
 
 	// Decision Memory & Mappings Management

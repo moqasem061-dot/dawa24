@@ -97,7 +97,17 @@ func (h *UIHandler) AdminUserSuspendSubmit(w http.ResponseWriter, r *http.Reques
 // AdminUserReactivateSubmit restores a suspended account.
 func (h *UIHandler) AdminUserReactivateSubmit(w http.ResponseWriter, r *http.Request) {
 	h.adminUserAction(w, r, func(ctx context.Context, userID, actorID int64) error {
-		return h.idSvc.AdminReactivateUser(ctx, userID, actorID)
+		if err := h.idSvc.AdminReactivateUser(ctx, userID, actorID); err != nil {
+			return err
+		}
+		h.safeGo("notify-user-reactivated", func() {
+			bgCtx := database.AsSystem(context.Background())
+			title := "تم إعادة تفعيل حسابكم بنجاح"
+			body := "تمت إعادة تفعيل وتوثيق حسابكم على منصة دوا 24 من قِبل إدارة المنصة. يمكنكم الآن تسجيل الدخول واستئناف كافة نشاطاتكم."
+			h.dispatchInAppNotification(bgCtx, userID, nil, "", title, body)
+			h.dispatchApprovalEmail(bgCtx, userID, "", title, body, "https://dawa24.com/auth/login")
+		})
+		return nil
 	})
 }
 

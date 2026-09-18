@@ -71,11 +71,34 @@ func (h *UIHandler) dispatchInAppBranchNotification(ctx context.Context, userID 
 			if userName == "" {
 				userName = u.Name.Get(i18n.EN)
 			}
-			if sendErr := h.mailer.SendNotification(bgCtx, u.Email, userName, title, body, ""); sendErr != nil {
+			if sendErr := h.mailer.SendNotification(bgCtx, u.Email, title, body, "", "ar"); sendErr != nil {
 				h.log.Warn("failed to send notification email", "user_id", userID, "email", u.Email, "error", sendErr)
 			}
 		})
 	}
+}
+
+// dispatchApprovalEmail sends an official celebration and approval transactional email directly to the user.
+func (h *UIHandler) dispatchApprovalEmail(ctx context.Context, userID int64, userName, title, message, actionURL string) {
+	if h.mailer == nil || userID <= 0 || h.idSvc == nil {
+		return
+	}
+	h.safeGo("approval-email-dispatch", func() {
+		bgCtx := database.AsSystem(context.Background())
+		u, err := h.idSvc.AdminGetUser(bgCtx, userID)
+		if err != nil || u == nil || u.Email == "" {
+			return
+		}
+		if userName == "" {
+			userName = u.Name.Get(i18n.AR)
+			if userName == "" {
+				userName = u.Name.Get(i18n.EN)
+			}
+		}
+		if err := h.mailer.SendApprovalEmail(bgCtx, u.Email, userName, title, message, actionURL, "ar"); err != nil {
+			h.log.Warn("failed to send approval email", "user_id", userID, "email", u.Email, "error", err)
+		}
+	})
 }
 
 // dispatchOrgNotification sends an in-app notification to authorized active members of an organization.

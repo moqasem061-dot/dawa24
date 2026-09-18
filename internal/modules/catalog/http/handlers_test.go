@@ -259,6 +259,9 @@ func (r stubRepo) GetProductByBarcode(ctx context.Context, barcode string) (*cat
 func (r stubRepo) UpdateProductImageBySKU(ctx context.Context, sku string, imagePath, imageLink string) (*catalog.Product, error) {
 	return nil, nil
 }
+func (r stubRepo) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath, imageLink string) (*catalog.Product, error) {
+	return nil, nil
+}
 func (r stubRepo) UpdateProductImageByID(ctx context.Context, id int64, imagePath, imageLink string) (*catalog.Product, error) {
 	return nil, nil
 }

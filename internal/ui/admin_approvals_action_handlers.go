@@ -64,14 +64,22 @@ func (h *UIHandler) AdminOrgReviewSubmit(w http.ResponseWriter, r *http.Request)
 		h.safeGo("provision-org-ai-and-sub", func() {
 			h.provisionOrgAIAndSubscription(context.Background(), id)
 		})
-	} else if status == org.StatusRejected && h.attSvc != nil {
-		sysCtx := database.AsSystem(ctx)
-		docs, _ := h.attSvc.ListByOrganization(sysCtx, id)
-		for _, d := range docs {
-			if d != nil && d.Status == attachments.StatusPending {
-				_ = h.attSvc.VerifyDocument(sysCtx, actor, d.ID, attachments.StatusRejected, rejectionReason)
+		h.safeGo("notify-org-approved", func() {
+			h.notifyOrgApproved(context.Background(), id)
+		})
+	} else if status == org.StatusRejected {
+		if h.attSvc != nil {
+			sysCtx := database.AsSystem(ctx)
+			docs, _ := h.attSvc.ListByOrganization(sysCtx, id)
+			for _, d := range docs {
+				if d != nil && d.Status == attachments.StatusPending {
+					_ = h.attSvc.VerifyDocument(sysCtx, actor, d.ID, attachments.StatusRejected, rejectionReason)
+				}
 			}
 		}
+		h.safeGo("notify-org-rejected", func() {
+			h.notifyOrgRejected(context.Background(), id, rejectionReason)
+		})
 	}
 
 	msg := i18n.T(lang, "admin.approvals.approved_and_verified_success")

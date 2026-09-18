@@ -44,6 +44,9 @@ func (mockCatalogRepoStub) GetProductByBarcode(context.Context, string) (*catalo
 func (mockCatalogRepoStub) UpdateProductImageBySKU(context.Context, string, string, string) (*catalog.Product, error) {
 	return nil, nil
 }
+func (mockCatalogRepoStub) UpdateProductImageByBarcode(context.Context, string, string, string) (*catalog.Product, error) {
+	return nil, nil
+}
 func (mockCatalogRepoStub) UpdateProductImageByID(context.Context, int64, string, string) (*catalog.Product, error) {
 	return nil, nil
 }

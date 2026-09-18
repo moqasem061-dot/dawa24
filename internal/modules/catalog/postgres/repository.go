@@ -239,6 +239,22 @@ func (r *Repository) UpdateProductImageBySKU(ctx context.Context, sku string, im
 	return prod, nil
 }
 
+// UpdateProductImageByBarcode sets the downloaded image path and source URL for a product matching the Barcode.
+func (r *Repository) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*catalog.Product, error) {
+	prod, err := r.GetProductByBarcode(ctx, barcode)
+	if err != nil {
+		return nil, err
+	}
+	prod.Image = imagePath
+	if imageLink != "" {
+		prod.ImageLink = imageLink
+	}
+	if err := r.UpdateProduct(ctx, prod); err != nil {
+		return nil, err
+	}
+	return prod, nil
+}
+
 // GetProductByBarcode retrieves a master product by its exact barcode.
 func (r *Repository) GetProductByBarcode(ctx context.Context, barcode string) (*catalog.Product, error) {
 	var p catalog.Product

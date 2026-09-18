@@ -177,8 +177,13 @@ func (h *UIHandler) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 			MaxAge:   maxAge,
 		})
 
-		if res.Session.ActiveOrgID > 0 {
-			orgID := res.Session.ActiveOrgID
+		orgID := res.Session.ActiveOrgID
+		if orgID <= 0 && h.idSvc != nil && res.User != nil {
+			if defOrgID, _, _, err := h.idSvc.DefaultOrgInfoForUser(ctx, res.User.ID); err == nil && defOrgID > 0 {
+				orgID = defOrgID
+			}
+		}
+		if orgID > 0 {
 			h.safeGo("ensure-org-ai-gateway-provisioned", func() {
 				h.EnsureOrgAIGatewayProvisioned(context.Background(), orgID)
 			})
@@ -302,9 +307,15 @@ func (h *UIHandler) MFAVerifySubmit(w http.ResponseWriter, r *http.Request) {
 		MaxAge:   maxAge,
 	})
 
-	if sess.ActiveOrgID > 0 {
+	mfaOrgID := sess.ActiveOrgID
+	if mfaOrgID <= 0 && h.idSvc != nil {
+		if defOrgID, _, _, err := h.idSvc.DefaultOrgInfoForUser(ctx, payload.UserID); err == nil && defOrgID > 0 {
+			mfaOrgID = defOrgID
+		}
+	}
+	if mfaOrgID > 0 {
 		h.safeGo("ensure-org-ai-gateway-provisioned", func() {
-			h.EnsureOrgAIGatewayProvisioned(context.Background(), sess.ActiveOrgID)
+			h.EnsureOrgAIGatewayProvisioned(context.Background(), mfaOrgID)
 		})
 	}
 

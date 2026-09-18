@@ -22,6 +22,16 @@ func (m *mockCatalogRepo) UpdateProductImageBySKU(ctx context.Context, sku strin
 	return p, nil
 }
 
+func (m *mockCatalogRepo) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*Product, error) {
+	p, err := m.GetProductByBarcode(ctx, barcode)
+	if err != nil {
+		return nil, err
+	}
+	p.Image = imagePath
+	p.ImageLink = imageLink
+	return p, nil
+}
+
 func (m *mockCatalogRepo) UpdateProductImageByID(ctx context.Context, id int64, imagePath string, imageLink string) (*Product, error) {
 	p, err := m.GetProductByID(ctx, id)
 	if err != nil {

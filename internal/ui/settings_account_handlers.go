@@ -160,39 +160,6 @@ func (h *UIHandler) SettingsSessionRevokeSubmit(w http.ResponseWriter, r *http.R
 	h.redirectWithNotice(w, r, "/settings#security", "success", i18n.T(lang, "settings.session_revoked_success"))
 }
 
-// SettingsPasswordSubmit updates the user's password from the settings form.
-func (h *UIHandler) SettingsPasswordSubmit(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang := langOf(r)
-	actor, ok := authctx.From(ctx)
-	if !ok {
-		http.Redirect(w, r, "/auth/login?redirect=/settings", http.StatusSeeOther)
-		return
-	}
-
-	if h.idSvc == nil {
-		h.redirectWithNotice(w, r, "/settings#security", "error", i18n.T(lang, "common.service_unavailable"))
-		return
-	}
-
-	_ = r.ParseForm()
-	curr := r.PostFormValue("current_password")
-	newPass := r.PostFormValue("new_password")
-	confirmPass := r.PostFormValue("new_password_confirmation")
-
-	if newPass == "" || newPass != confirmPass {
-		h.redirectWithNotice(w, r, "/settings#security", "error", i18n.T(lang, "settings.password_mismatch"))
-		return
-	}
-
-	if err := h.idSvc.ChangePassword(ctx, actor.UserID, curr, newPass); err != nil {
-		h.redirectWithNotice(w, r, "/settings#security", "error", h.safeMessage(err, lang))
-		return
-	}
-
-	h.redirectWithNotice(w, r, "/settings#security", "success", i18n.T(lang, "settings.password_changed_success"))
-}
-
 // SettingsPreferencesSubmit saves the user's preferences.
 func (h *UIHandler) SettingsPreferencesSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()

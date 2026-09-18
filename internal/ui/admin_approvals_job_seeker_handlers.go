@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 
@@ -33,6 +34,14 @@ func (h *UIHandler) AdminApproveJobSeekerSubmit(w http.ResponseWriter, r *http.R
 		h.redirectWithNotice(w, r, "/admin/approvals?tab=job_seekers", "error", h.safeMessage(err, lang))
 		return
 	}
+
+	h.safeGo("notify-job-seeker-approved", func() {
+		bgCtx := database.AsSystem(context.Background())
+		title := "تم اعتماد وتفعيل حسابكم بنجاح"
+		body := "تهانينا! تمت مراجعة واعتماد وتفعيل حسابكم المهني من قِبل إدارة منصة دوا 24. أصبح ملفكم مفعلًا الآن للتقديم على الوظائف والتواصل مع كبرى الشركات والصيدليات."
+		h.dispatchInAppNotification(bgCtx, id, nil, "", title, body)
+		h.dispatchApprovalEmail(bgCtx, id, "", title, body, "https://dawa24.com/jobs")
+	})
 
 	msg := "تم اعتماد وتفعيل حساب الباحث عن عمل بنجاح"
 	h.redirectWithNotice(w, r, "/admin/approvals?tab=job_seekers", "success", msg)

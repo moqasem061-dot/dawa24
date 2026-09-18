@@ -2,10 +2,12 @@ package platformadmin
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
+	"os"
+	"strings"
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
 // Service manages system configurations and geographical data.
@@ -292,29 +294,40 @@ func (s *Service) SaveAISettings(ctx context.Context, ai *AISettings) error {
 	})
 }
 
-// GetGatewaySettings loads API Gateway settings from database.
+// GetGatewaySettings loads API Gateway settings from database with environment fallbacks.
 func (s *Service) GetGatewaySettings(ctx context.Context) (*GatewaySettings, error) {
 	setting, err := s.setting(ctx, "gateway_configuration")
+	var gw *GatewaySettings
 	if err != nil || setting == nil || setting.Value == nil {
-		return &GatewaySettings{
+		gw = &GatewaySettings{
 			EndpointURL:    "https://api.dawa24.com",
 			Environment:    "production",
 			TimeoutSeconds: 30,
 			IsActive:       true,
-		}, nil
+		}
+	} else {
+		v := setting.Value
+		gw = &GatewaySettings{
+			EndpointURL:    NormalizeGatewayEndpoint(getString(v, "endpoint_url", "https://api.dawa24.com")),
+			Environment:    getString(v, "environment", "production"),
+			TimeoutSeconds: getInt(v, "timeout_seconds", 30),
+			APIKey:         getString(v, "api_key", ""),
+			IsActive:       getBool(v, "is_active", true),
+			VirtualKey:     getString(v, "virtual_key", ""),
+			AIUserID:       getString(v, "ai_user_id", ""),
+			FastModel:      getString(v, "fast_model", ""),
+			QualityModel:   getString(v, "quality_model", ""),
+			AIPlanID:       getString(v, "ai_plan_id", ""),
+		}
 	}
-	v := setting.Value
-	gw := &GatewaySettings{
-		EndpointURL:    NormalizeGatewayEndpoint(getString(v, "endpoint_url", "https://api.dawa24.com")),
-		Environment:    getString(v, "environment", "production"),
-		TimeoutSeconds: getInt(v, "timeout_seconds", 30),
-		APIKey:         getString(v, "api_key", ""),
-		IsActive:       getBool(v, "is_active", true),
-		VirtualKey:     getString(v, "virtual_key", ""),
-		AIUserID:       getString(v, "ai_user_id", ""),
-		FastModel:      getString(v, "fast_model", ""),
-		QualityModel:   getString(v, "quality_model", ""),
-		AIPlanID:       getString(v, "ai_plan_id", ""),
+	if envURL := strings.TrimSpace(os.Getenv("GATEWAY_BASE_URL")); envURL != "" && (gw.EndpointURL == "" || gw.EndpointURL == "https://api.dawa24.com") {
+		gw.EndpointURL = NormalizeGatewayEndpoint(envURL)
+	}
+	if gw.APIKey == "" {
+		gw.APIKey = strings.TrimSpace(os.Getenv("GATEWAY_ADMIN_KEY"))
+	}
+	if gw.VirtualKey == "" {
+		gw.VirtualKey = strings.TrimSpace(os.Getenv("GATEWAY_VIRTUAL_KEY"))
 	}
 	if gw.FastModel == "nemotron-3.5-lightning" {
 		gw.FastModel = "qwen3.7-flash"

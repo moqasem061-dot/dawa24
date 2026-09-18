@@ -113,6 +113,11 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 
 	limiter.RecordSend(normPhone, 60*time.Second)
 
+	mockCode := ""
+	if !isProductionEnv() && devShowMockOTP() {
+		mockCode = result.MockCode
+	}
+
 	w.WriteHeader(http.StatusOK)
 	_ = json.NewEncoder(w).Encode(sendOTPResp{
 		OK:        true,
@@ -120,7 +125,7 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 		Phone:     result.PhoneNumber,
 		ExpiresIn: result.ExpiresIn,
 		Cooldown:  60,
-		MockCode:  result.MockCode,
+		MockCode:  mockCode,
 		Message:   i18n.T(lang, "auth.telegram.code_sent"),
 	})
 }

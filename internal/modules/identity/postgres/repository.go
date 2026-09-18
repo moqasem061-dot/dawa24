@@ -118,7 +118,8 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*identit
 			SELECT id, public_id, email, password_hash, name, role, status, language, timezone,
 			       phone, COALESCE(avatar_url, ''), email_verified_at, phone_verified_at, created_at, updated_at, deleted_at
 			FROM identity.users
-			WHERE email = $1 AND deleted_at IS NULL;
+			WHERE (email = $1 OR LOWER(email) = LOWER($1)) AND deleted_at IS NULL
+			LIMIT 1;
 		`
 		var statusStr, langStr string
 		err := tx.QueryRow(txCtx, query, identity.NormalizeEmail(email)).Scan(

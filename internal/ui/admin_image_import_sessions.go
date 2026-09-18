@@ -165,7 +165,7 @@ func (s *AdminImageImportSessionStore) ProcessImageImport(
 	}
 	s.mu.Unlock()
 
-	prodUploadDir := filepath.Join(UploadBaseDir, "products")
+	prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
 	_ = os.MkdirAll(prodUploadDir, 0755)
 
 	total := len(rawRows)
@@ -209,13 +209,27 @@ func (s *AdminImageImportSessionStore) ProcessImageImport(
 			continue
 		}
 
-		// Look up product in master catalog by selected identifier type (barcode or sku)
+		// Look up product in master catalog by selected identifier type with smart dual fallback
 		var prod *catalog.Product
 		var err error
 		if idType == "barcode" {
 			prod, err = catSvc.GetProductByBarcode(ctx, skuVal)
+			if err != nil || prod == nil {
+				// Fallback to checking by SKU if barcode search returns nothing
+				if fallbackProd, fallbackErr := catSvc.GetProductBySKU(ctx, skuVal); fallbackErr == nil && fallbackProd != nil {
+					prod = fallbackProd
+					err = nil
+				}
+			}
 		} else {
 			prod, err = catSvc.GetProductBySKU(ctx, skuVal)
+			if err != nil || prod == nil {
+				// Fallback to checking by Barcode if SKU search returns nothing
+				if fallbackProd, fallbackErr := catSvc.GetProductByBarcode(ctx, skuVal); fallbackErr == nil && fallbackProd != nil {
+					prod = fallbackProd
+					err = nil
+				}
+			}
 		}
 		if err != nil || prod == nil {
 			itemRow.Status = "not_found"

@@ -27,6 +27,7 @@ type Mailer interface {
 	Send(ctx context.Context, msg Message) error
 	SendOTP(ctx context.Context, to, code, purpose, lang string) error
 	SendNotification(ctx context.Context, to, title, body, actionURL, lang string) error
+	SendApprovalEmail(ctx context.Context, to, userName, title, message, actionURL, lang string) error
 	IsMock() bool
 }
 
@@ -85,6 +86,21 @@ func (m *mockMailer) SendNotification(ctx context.Context, to, title, body, acti
 	})
 }
 
+func (m *mockMailer) SendApprovalEmail(ctx context.Context, to, userName, title, message, actionURL, lang string) error {
+	subj, html, text := RenderApprovalEmail(userName, title, message, actionURL, lang)
+	m.log.InfoContext(ctx, "[SMTP MOCK] approval email sent",
+		"to", to,
+		"user", userName,
+		"title", title,
+		"subject", subj)
+	return m.Send(ctx, Message{
+		To:      to,
+		Subject: subj,
+		HTML:    html,
+		Text:    text,
+	})
+}
+
 // smtpMailer delivers emails using standard SMTP over STARTTLS or TLS.
 type smtpMailer struct {
 	cfg config.SMTP
@@ -101,7 +117,7 @@ func (s *smtpMailer) Send(ctx context.Context, msg Message) error {
 	addr := fmt.Sprintf("%s:%d", s.cfg.Host, s.cfg.Port)
 	from := s.cfg.FromEmail
 	if from == "" {
-		from = "no-reply@dawa24.net"
+		from = "no-reply@dawa24.com"
 	}
 
 	// Prepare MIME message
@@ -243,6 +259,16 @@ func (s *smtpMailer) SendOTP(ctx context.Context, to, code, purpose, lang string
 
 func (s *smtpMailer) SendNotification(ctx context.Context, to, title, body, actionURL, lang string) error {
 	subj, html, text := RenderNotificationEmail(title, body, actionURL, lang)
+	return s.Send(ctx, Message{
+		To:      to,
+		Subject: subj,
+		HTML:    html,
+		Text:    text,
+	})
+}
+
+func (s *smtpMailer) SendApprovalEmail(ctx context.Context, to, userName, title, message, actionURL, lang string) error {
+	subj, html, text := RenderApprovalEmail(userName, title, message, actionURL, lang)
 	return s.Send(ctx, Message{
 		To:      to,
 		Subject: subj,
