@@ -327,7 +327,9 @@ func (s *Service) GetGatewaySettings(ctx context.Context) (*GatewaySettings, err
 		gw.APIKey = strings.TrimSpace(os.Getenv("GATEWAY_ADMIN_KEY"))
 	}
 	if gw.VirtualKey == "" {
-		gw.VirtualKey = strings.TrimSpace(os.Getenv("GATEWAY_VIRTUAL_KEY"))
+		if vk := strings.TrimSpace(os.Getenv("GATEWAY_VIRTUAL_KEY")); !strings.EqualFold(vk, "true") && !strings.EqualFold(vk, "false") {
+			gw.VirtualKey = vk
+		}
 	}
 	if gw.FastModel == "nemotron-3.5-lightning" {
 		gw.FastModel = "qwen3.7-flash"

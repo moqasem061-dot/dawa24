@@ -51,3 +51,68 @@ func TestCSPReportURL(t *testing.T) {
 		})
 	}
 }
+
+func TestProductionUserConfig(t *testing.T) {
+	t.Setenv("APP_ENV", "prod")
+	t.Setenv("APP_NAME", "Dawa24")
+	t.Setenv("APP_BASE_URL", "dawa24.com")
+	t.Setenv("PORT", "8080")
+	t.Setenv("DATABASE_URL", "postgres://UhSlybwS5B8FpEUn:m5T8WXUsrym668w43vALYn7BSHqSpPaB@postgresql:5432/EKiESdELtAkbdYOe?sslmode=disable")
+	t.Setenv("DB_MAX_CONNS", "20")
+	t.Setenv("DB_MIN_CONNS", "2")
+	t.Setenv("DB_STATEMENT_TIMEOUT", "20s")
+	t.Setenv("DB_WORKER_STATEMENT_TIMEOUT", "10m")
+	t.Setenv("REDIS_URL", "redis://localhost:6379/0")
+	t.Setenv("REDIS_POOL_SIZE", "10")
+	t.Setenv("STORAGE_ENDPOINT", "http://localhost:9000")
+	t.Setenv("STORAGE_REGION", "us-east-1")
+	t.Setenv("STORAGE_BUCKET", "dawa24")
+	t.Setenv("STORAGE_ACCESS_KEY_ID", "minioadmin")
+	t.Setenv("STORAGE_SECRET_ACCESS_KEY", "minioadmin")
+	t.Setenv("STORAGE_USE_PATH_STYLE", "true")
+	t.Setenv("STORAGE_PUBLIC_BASE_URL", "http://localhost:9000/dawa24")
+	t.Setenv("SESSION_SECRET", "fb1c706333f32af243184d9121d5e8ed1efb4ed66632dddc8242294c43bfda78")
+	t.Setenv("SESSION_COOKIE_NAME", "dawa24_session")
+	t.Setenv("SESSION_TTL", "720h")
+	t.Setenv("SESSION_SECURE", "true")
+	t.Setenv("GATEWAY_ENABLED", "true")
+	t.Setenv("GATEWAY_BASE_URL", "https://api.dawa24.com")
+	t.Setenv("GATEWAY_VIRTUAL_KEY", "true")
+	t.Setenv("GATEWAY_CLIENT_APP", "dawa24-store")
+	t.Setenv("GATEWAY_TIMEOUT", "60s")
+	t.Setenv("SMTP_HOST", "smtp.hostinger.com")
+	t.Setenv("SMTP_PORT", "465")
+	t.Setenv("SMTP_ENCRYPTION", "tls")
+	t.Setenv("SMTP_USERNAME", "no-reply@dawa24.com")
+	t.Setenv("SMTP_PASSWORD", "jajf-apbv-9vca-omfq")
+	t.Setenv("SMTP_FROM_EMAIL", "no-reply@dawa24.com")
+	t.Setenv("SMTP_FROM_NAME", "Dawa24 | دوا 24")
+	t.Setenv("SMTP_ENABLED", "true")
+	t.Setenv("SMTP_TIMEOUT", "10s")
+	t.Setenv("TELEGRAM_BOT_USERNAME", "testdawa_bot")
+	t.Setenv("TELEGRAM_BRIDGE_TOKEN", "8866730237:AAE07h3TanyHWHyWqXUlT6vLliE_M6ZAYP0")
+	t.Setenv("MARKETING_BRIDGE_TOKEN", "EAAGPMAbPp9sBSTqEOOEpWvDdHyh9vIc2eQVB7cA3LqmxsG7TrocZCVFmilJmCEoShUV7z45cLxTL3nyQZAlC7KdVZCaRHmZCTwtgizwLpnMzvPjJLfycMc3rx07x3pfOCum5Bl96hCrklfnvb2Yno7pXuS1j0Rd4nxwwrLB8x1OTWkaSDepxMd0AZAXVzZCFbh0g1aRy4TPihHZABXAEsD7Nmj5V9rxYOc24kuQ")
+	t.Setenv("TURNSTILE_ENABLED", "true")
+	t.Setenv("TURNSTILE_SITE_KEY", "0x4AAAAAAE6TPoeazzWjrNox")
+	t.Setenv("TURNSTILE_SECRET_KEY", "0x4AAAAAAE6TPjJOXXAPt59xb7yNRjBOQKY")
+	t.Setenv("AUTH_REQUIRE_EMAIL_VERIFICATION", "true")
+	t.Setenv("AUTH_REQUIRE_PHONE_VERIFICATION", "false")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("config.Load() failed with user env: %v", err)
+	}
+	if cfg.BaseURL != "https://dawa24.com" {
+		t.Errorf("expected BaseURL normalized to https://dawa24.com, got %s", cfg.BaseURL)
+	}
+	if cfg.SiteOrigin() != "https://dawa24.com" {
+		t.Errorf("expected SiteOrigin https://dawa24.com, got %s", cfg.SiteOrigin())
+	}
+	if !cfg.SMTP.Enabled {
+		t.Errorf("expected SMTP to be enabled")
+	}
+	if cfg.SMTP.Host != "smtp.hostinger.com" || cfg.SMTP.Port != 465 {
+		t.Errorf("unexpected SMTP host/port: %s:%d", cfg.SMTP.Host, cfg.SMTP.Port)
+	}
+}
+

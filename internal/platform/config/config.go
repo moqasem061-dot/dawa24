@@ -171,7 +171,7 @@ func load(cliOnly bool) (*Config, error) {
 	cfg := &Config{
 		Env:     env,
 		AppName: getStr("APP_NAME", "Dawa24"),
-		BaseURL: getStr("APP_BASE_URL", "http://localhost:8080"),
+		BaseURL: normalizeBaseURL(getStr("APP_BASE_URL", "http://localhost:8080"), env),
 
 		HTTP: loadHTTP(env),
 

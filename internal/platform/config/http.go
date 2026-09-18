@@ -72,6 +72,26 @@ func (c *Config) CSPReportHost() string {
 	return report.Hostname()
 }
 
+// normalizeBaseURL guarantees that APP_BASE_URL always carries a scheme (defaulting to https in prod)
+// and has no trailing slash.
+func normalizeBaseURL(raw string, env Env) string {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		if env == EnvProd {
+			return "https://dawa24.com"
+		}
+		return "http://localhost:8080"
+	}
+	if !strings.HasPrefix(raw, "http://") && !strings.HasPrefix(raw, "https://") {
+		if env == EnvProd {
+			raw = "https://" + raw
+		} else {
+			raw = "http://" + raw
+		}
+	}
+	return strings.TrimRight(raw, "/")
+}
+
 // SiteOrigin is the scheme://host[:port] of APP_BASE_URL.
 func (c *Config) SiteOrigin() string {
 	u, err := url.Parse(c.BaseURL)
@@ -80,6 +100,7 @@ func (c *Config) SiteOrigin() string {
 	}
 	return u.Scheme + "://" + u.Host
 }
+
 
 func validateHTTP(cfg *Config, fail func(string, ...any)) {
 	raw := cfg.HTTP.CSPReportURL
