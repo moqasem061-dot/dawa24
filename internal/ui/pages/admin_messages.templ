@@ -2,12 +2,56 @@ package pages
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
 	"github.com/muhiya/dawa24-store/internal/ui/components"
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
+
+func resolveMessageSubject(subj string) string {
+	s := strings.TrimSpace(subj)
+	if s == "" {
+		return "استفسار عام"
+	}
+	return s
+}
+
+func messageSubjectBadgeClass(subj string) string {
+	s := strings.ToLower(subj)
+	switch {
+	case strings.Contains(s, "صيدلية"):
+		return "badge-emerald"
+	case strings.Contains(s, "مورد") || strings.Contains(s, "شركة"):
+		return "badge-indigo"
+	case strings.Contains(s, "طلب") || strings.Contains(s, "توريد"):
+		return "badge-sky"
+	case strings.Contains(s, "دفع") || strings.Contains(s, "سداد") || strings.Contains(s, "فواتير"):
+		return "badge-amber"
+	case strings.Contains(s, "دعم") || strings.Contains(s, "فني"):
+		return "badge-purple"
+	default:
+		return "badge-slate"
+	}
+}
+
+func cleanPhoneForWhatsApp(phone string) string {
+	raw := strings.TrimSpace(phone)
+	raw = strings.TrimPrefix(raw, "+")
+	raw = strings.TrimPrefix(raw, "00")
+	if strings.HasPrefix(raw, "20") {
+		return raw
+	}
+	if strings.HasPrefix(raw, "0") {
+		return "20" + strings.TrimPrefix(raw, "0")
+	}
+	if len(raw) == 10 && strings.HasPrefix(raw, "1") {
+		return "20" + raw
+	}
+	return raw
+}
+
 
 templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, page, perPage, totalCount int) {
 	@layouts.AdminShell("رسائل واستفسارات التواصل", "messages", lang, dir) {
@@ -81,10 +125,10 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 											if m.Phone != "" {
 												<div dir="ltr" class="tabular-nums">
 													<span>{ m.Phone }</span>
-													{{ cleanPhone := strings.TrimPrefix(strings.TrimPrefix(m.Phone, "+"), "0") }}
-													if cleanPhone != "" {
-														<a href={ templ.SafeURL(fmt.Sprintf("https://wa.me/20%s", cleanPhone)) } target="_blank" rel="noopener" title="محادثة واتساب">
-															(واتساب )
+													{{ waPhone := cleanPhoneForWhatsApp(m.Phone) }}
+													if waPhone != "" {
+														<a href={ templ.SafeURL("https://wa.me/" + waPhone) } target="_blank" rel="noopener" class="text-xs text-success font-bold" title="محادثة واتساب">
+															(واتساب)
 														</a>
 													}
 												</div>
@@ -108,8 +152,8 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 											}
 										</td>
 										<td>
-											<span class="badge badge-sky font-bold">
-												{ m.Subject }
+											<span class={ "badge font-bold", messageSubjectBadgeClass(m.Subject) }>
+												{ resolveMessageSubject(m.Subject) }
 											</span>
 										</td>
 										<td>
@@ -134,7 +178,7 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 											<div class="table-actions">
 												if m.Email != "" {
 													<a
-														href={ templ.SafeURL(fmt.Sprintf("mailto:%s?subject=%s", m.Email, "رد بخصوص: "+m.Subject)) }
+														href={ templ.SafeURL(fmt.Sprintf("mailto:%s?subject=%s", m.Email, url.QueryEscape("رد بخصوص: "+resolveMessageSubject(m.Subject)))) }
 														class="btn btn-secondary btn-sm"
 														title="إرسال بريد إلكتروني"
 													>

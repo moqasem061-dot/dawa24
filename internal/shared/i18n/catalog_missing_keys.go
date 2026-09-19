@@ -140,5 +140,39 @@ func loadMissingCatalogKeys(e *engine) {
 	addKey(e, "vendor_stock_alerts.btn_adjust_title", "vendor_stock_alerts", "تعديل رصيد الصنف في هذا المخزن", "Adjust stock in warehouse", "Tooltip")
 	addKey(e, "vendor_stock_alerts.btn_view_wh", "vendor_stock_alerts", "عرض تفاصيل المخزن", "View warehouse details", "Tooltip")
 	addKey(e, "vendor_stock_alerts.main_branch", "vendor_stock_alerts", "الفرع الرئيسي", "Main Branch", "Label")
+	addKey(e, "vendor_stock_alerts.deficit_packs", "vendor_stock_alerts", "عجز %d عبوة", "Deficit %d packs", "Deficit badge")
+	addKey(e, "vendor_stock_alerts.shortage_packs", "vendor_stock_alerts", "نقص %d عبوة", "Shortage %d packs", "Shortage badge")
+
+	// Approvals & Job Seekers
+	addKey(e, "admin.approvals.id_service_unavailable", "admin", "خدمة إدارة الهوية غير متاحة حالياً.", "Identity management service is currently unavailable.", "Service error")
+	addKey(e, "admin.approvals.invalid_user_id", "admin", "معرف المستخدم غير صالح.", "Invalid user ID.", "Validation error")
+	addKey(e, "admin.approvals.job_seeker_approved_success", "admin", "تم اعتماد وتفعيل حساب الباحث عن عمل بنجاح.", "Job seeker account approved and activated successfully.", "Notice")
+	addKey(e, "admin.approvals.job_seeker_rejected_success", "admin", "تم رفض / إيقاف حساب الباحث عن عمل بنجاح.", "Job seeker account rejected or suspended successfully.", "Notice")
+	addKey(e, "admin.approvals.job_seeker_notif_title", "admin", "تم اعتماد وتفعيل حسابكم بنجاح", "Your account has been approved and activated successfully", "Notification title")
+	addKey(e, "admin.approvals.job_seeker_notif_body", "admin", "تهانينا! تمت مراجعة واعتماد وتفعيل حسابكم المهني من قِبل إدارة منصة دوا 24. أصبح ملفكم مفعلًا الآن للتقديم على الوظائف والتواصل مع كبرى الشركات والصيدليات.", "Congratulations! Your professional profile has been reviewed, approved, and activated by Dawa24 administration. Your profile is now active to apply for jobs and connect with top companies and pharmacies.", "Notification body")
+
+	// Common Saving State
+	addKey(e, "common.saving", "common", "جاري الحفظ...", "Saving...", "Action progress")
+
+	// Settings & Security OTP
+	addKey(e, "settings.otp_sent_to_email", "settings", "تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح.", "Verification code has been sent to your email successfully.", "Notice")
+
+	// Vendor Inventory Stock Adjust & Transfer
+	addKey(e, "vendor_inventory.adjust_title", "vendor_inventory", "تعديل رصيد الصنف", "Adjust Item Stock", "Modal title")
+	addKey(e, "vendor_inventory.available_label", "vendor_inventory", "الرصيد المتاح", "Available Stock", "Label")
+	addKey(e, "vendor_inventory.badge_low_stock", "vendor_inventory", "مخزون منخفض", "Low Stock", "Badge")
+	addKey(e, "vendor_inventory.current_stock_label", "vendor_inventory", "الرصيد الحالي بالمخزن", "Current Warehouse Stock", "Label")
+	addKey(e, "vendor_inventory.select_dest_warehouse", "vendor_inventory", "-- اختر المخزن المحوّل إليه --", "-- Select Destination Warehouse --", "Select placeholder")
+	addKey(e, "vendor_inventory.transfer_dest_label", "vendor_inventory", "المخزن المحوّل إليه", "Destination Warehouse", "Field label")
+	addKey(e, "vendor_inventory.transfer_notes_label", "vendor_inventory", "ملاحظات التحويل (اختياري)", "Transfer Notes (Optional)", "Field label")
+	addKey(e, "vendor_inventory.transfer_qty_label", "vendor_inventory", "الكمية المراد تحويلها", "Quantity to Transfer", "Field label")
+	addKey(e, "vendor_inventory.transfer_source_label", "vendor_inventory", "المخزن الحالي (المصدر)", "Source Warehouse", "Field label")
+	addKey(e, "vendor_inventory.transfer_title", "vendor_inventory", "تحويل رصيد بين المخازن", "Stock Transfer Between Warehouses", "Modal title")
+
+	// Organization Types & Models
+	addKey(e, "w4_mod.manufacturer_14", "org", "مصنّع أدوية", "Pharmaceutical Manufacturer", "Organization type")
+	addKey(e, "org.type.wholesaler", "org", "تاجر جملة", "Wholesaler", "Organization type")
+	addKey(e, "org.type.distributor", "org", "موزع أدوية", "Medicine Distributor", "Organization type")
+	addKey(e, "org.type.manufacturer", "org", "مصنّع أدوية", "Pharmaceutical Manufacturer", "Organization type")
 }
 

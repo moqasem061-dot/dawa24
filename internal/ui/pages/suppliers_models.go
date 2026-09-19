@@ -255,15 +255,15 @@ func OrgTypeBadgeClass(t org.OrganizationType) string {
 func OrgTypeLabel(t org.OrganizationType) string {
 	switch t {
 	case org.TypeVendor:
-		return i18n.TDefault("w4_ui.s_192_192")
+		return i18n.TDefault("org.type.vendor")
 	case "wholesaler":
-		return i18n.TDefault("w4_ui.s_193_193")
+		return i18n.TDefault("org.type.wholesaler")
 	case "distributor":
-		return i18n.TDefault("w4_ui.s_194_194")
+		return i18n.TDefault("org.type.distributor")
 	case "manufacturer":
-		return i18n.TDefault("w4_mod.manufacturer_14")
+		return i18n.TDefault("org.type.manufacturer")
 	case "pharmacy", "chain_pharmacy", "individual":
-		return i18n.TDefault("w4_ui.s_195_195")
+		return i18n.TDefault("org.type.pharmacy")
 	default:
 		return string(t)
 	}

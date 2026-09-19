@@ -37,13 +37,13 @@ func (h *UIHandler) AdminApproveJobSeekerSubmit(w http.ResponseWriter, r *http.R
 
 	h.safeGo("notify-job-seeker-approved", func() {
 		bgCtx := database.AsSystem(context.Background())
-		title := "تم اعتماد وتفعيل حسابكم بنجاح"
-		body := "تهانينا! تمت مراجعة واعتماد وتفعيل حسابكم المهني من قِبل إدارة منصة دوا 24. أصبح ملفكم مفعلًا الآن للتقديم على الوظائف والتواصل مع كبرى الشركات والصيدليات."
+		title := i18n.T(lang, "admin.approvals.job_seeker_notif_title")
+		body := i18n.T(lang, "admin.approvals.job_seeker_notif_body")
 		h.dispatchInAppNotification(bgCtx, id, nil, "", title, body)
 		h.dispatchApprovalEmail(bgCtx, id, "", title, body, "https://dawa24.com/jobs")
 	})
 
-	msg := "تم اعتماد وتفعيل حساب الباحث عن عمل بنجاح"
+	msg := i18n.T(lang, "admin.approvals.job_seeker_approved_success")
 	h.redirectWithNotice(w, r, "/admin/approvals?tab=job_seekers", "success", msg)
 }
 
@@ -70,6 +70,6 @@ func (h *UIHandler) AdminRejectJobSeekerSubmit(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	msg := "تم إيقاف / رفض حساب الباحث عن عمل"
+	msg := i18n.T(lang, "admin.approvals.job_seeker_rejected_success")
 	h.redirectWithNotice(w, r, "/admin/approvals?tab=job_seekers", "success", msg)
 }

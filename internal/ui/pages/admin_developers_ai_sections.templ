@@ -1,0 +1,89 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+// AdminDevelopersAICeilingsAndLogs renders the security ceilings and AI usage logs panel.
+templ AdminDevelopersAICeilingsAndLogs() {
+	<!-- 3. الحدود: Ceilings from matchflow/ceilings.go -->
+	<div class="glass-panel mb-6">
+		<div class="flex-between items-center mb-4 pb-3 border-b">
+			<div class="row-center">
+				<div class="b2b-icon-box">
+					@components.IconShield("icon-sm")
+				</div>
+				<div class="stack-sm">
+					<h3 class="m-0 text-lg font-black">
+						3. الحدود وسقوف الأمان (Cost & Spend Ceilings)
+					</h3>
+					<p class="text-xs text-secondary mt-0.5 mb-0">
+						الحدود الصارمة المطبقة لمنع استنزاف الميزانية والوقت (internal/shared/matchflow/ceilings.go).
+					</p>
+				</div>
+			</div>
+			<span class="badge badge-sky">مضبوطة برمجياً لحماية المنظومة</span>
+		</div>
+
+		<div class="d-grid grid-cols-3 gap-4 text-xs">
+			<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+				<div class="font-black text-sm text-primary">ملفات الموردين (Vendor Profile)</div>
+				<p class="text-muted m-0">قوائم أسعار الموردين (طويلة ومتكررة أسبوعياً)</p>
+				<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+					<li>• أقصى عناصر بالدفعة: <strong>200 بند</strong></li>
+					<li>• أقصى طلبات بالعملية: <strong>60 طلباً</strong> (12,000 بند)</li>
+					<li>• المهلة الزمنية القصوى: <strong>20 دقيقة</strong></li>
+					<li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li>
+					<li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li>
+				</ul>
+			</div>
+
+			<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+				<div class="font-black text-sm text-primary">الطلب الذكي (Order Profile)</div>
+				<p class="text-muted m-0">طلبات الصيدليات المباشرة مع شريط تقدم مباشر</p>
+				<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+					<li>• أقصى عناصر بالدفعة: <strong>120 بند</strong></li>
+					<li>• أقصى طلبات بالعملية: <strong>30 طلباً</strong></li>
+					<li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li>
+					<li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li>
+					<li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li>
+				</ul>
+			</div>
+
+			<div class="p-4 border rounded-xl bg-surface-sunken stack-sm">
+				<div class="font-black text-sm text-primary">كتالوج الإدارة (Catalog Profile)</div>
+				<p class="text-muted m-0">دليل الأصناف الموحد لمنصة دوا 24 (أعلى معايير الدقة)</p>
+				<ul class="list-unstyled stack-xs mt-2 border-t pt-2">
+					<li>• أقصى عناصر بالدفعة: <strong>100 بند</strong></li>
+					<li>• أقصى طلبات بالعملية: <strong>12 طلباً</strong></li>
+					<li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li>
+					<li>• الحد الأدنى للمطابقة التلقائية: <strong>90%</strong> (دقة فائقة)</li>
+					<li>• بوابة استبعاد البنود غير المعقولة: <strong>40%</strong></li>
+				</ul>
+			</div>
+		</div>
+	</div>
+
+	<!-- 4. الاستهلاك: Usage Logs & Metrics -->
+	<div class="glass-panel">
+		<div class="flex-between items-center">
+			<div class="row-center">
+				<div class="b2b-icon-box">
+					@components.IconActivity("icon-sm")
+				</div>
+				<div class="stack-sm">
+					<h3 class="m-0 text-lg font-black">
+						4. الاستهلاك ومراقبة التكاليف (AI Consumption & Audit)
+					</h3>
+					<p class="text-xs text-secondary mt-0.5 mb-0">
+						تتبع استهلاك الرموز (Tokens) ومصروفات كل أداة ومنشأة بالتفصيل.
+					</p>
+				</div>
+			</div>
+			<a href="/admin/ai-logs" class="btn btn-secondary font-bold text-xs gap-1.5">
+				<span>عرض سجلات الاستهلاك الكاملة (AI Usage Logs)</span>
+				@components.IconArrowLeft("icon-xs")
+			</a>
+		</div>
+	</div>
+}

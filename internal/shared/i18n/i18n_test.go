@@ -2,7 +2,12 @@ package i18n_test
 
 import (
 	"database/sql/driver"
+	"os"
+	"path/filepath"
 	"reflect"
+	"regexp"
+	"sort"
+	"strings"
 	"testing"
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -324,4 +329,69 @@ func TestShellUIKeysTranslation(t *testing.T) {
 		}
 	}
 }
+
+func TestScanCodebaseForMissingI18nKeys(t *testing.T) {
+	patternT := regexp.MustCompile(`(?:i18n\.T|i18n\.Lookup)\s*\(\s*[^,]+,\s*"([a-zA-Z0-9_\.\-]+)"`)
+	patternTDefault := regexp.MustCompile(`TDefault\s*\(\s*"([a-zA-Z0-9_\.\-]+)"`)
+
+	missingKeys := make(map[string][]string)
+	walkRoots := []string{"../../../internal", "../../../cmd"}
+	for _, root := range walkRoots {
+		err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+			if err != nil || info.IsDir() {
+				return nil
+			}
+			if !strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, ".templ") {
+				return nil
+			}
+			if strings.Contains(path, "_test.go") || strings.Contains(path, "_templ.go") || strings.Contains(path, "shared/i18n") {
+				return nil
+			}
+			data, err := os.ReadFile(path)
+			if err != nil {
+				return nil
+			}
+			str := string(data)
+			for _, m := range patternT.FindAllStringSubmatch(str, -1) {
+				if len(m) > 1 {
+					k := m[1]
+					if strings.Contains(k, ".") && !strings.HasSuffix(k, ".") {
+						if _, ok := i18n.Lookup(i18n.AR, k); !ok {
+							missingKeys[k] = append(missingKeys[k], path)
+						}
+					}
+				}
+			}
+			for _, m := range patternTDefault.FindAllStringSubmatch(str, -1) {
+				if len(m) > 1 {
+					k := m[1]
+					if strings.Contains(k, ".") && !strings.HasSuffix(k, ".") {
+						if _, ok := i18n.Lookup(i18n.AR, k); !ok {
+							missingKeys[k] = append(missingKeys[k], path)
+						}
+					}
+				}
+			}
+			return nil
+		})
+		if err != nil {
+			t.Fatalf("walk %s failed: %v", root, err)
+		}
+	}
+
+	if len(missingKeys) > 0 {
+		var sortedKeys []string
+		for k := range missingKeys {
+			sortedKeys = append(sortedKeys, k)
+		}
+		sort.Strings(sortedKeys)
+		t.Logf("=== FOUND %d MISSING OR UNREGISTERED I18N KEYS ===", len(sortedKeys))
+		for _, k := range sortedKeys {
+			t.Logf("MISSING KEY: %q in %v", k, missingKeys[k])
+		}
+		t.Errorf("Found %d missing i18n keys used in code", len(missingKeys))
+	}
+}
+
+
 

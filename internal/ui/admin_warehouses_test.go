@@ -81,6 +81,26 @@ func (m *mockAdminWarehouseOrgRepo) GetBranchByID(_ context.Context, id int64) (
 	return b, nil
 }
 
+func (m *mockAdminWarehouseOrgRepo) ListOrganizations(_ context.Context, _ *org.OrganizationType, _ *org.OrganizationStatus, _, _ int) ([]*org.Organization, error) {
+	return []*org.Organization{
+		{
+			ID:        1,
+			LegalName: "صيدلية النور",
+			Type:      org.TypeCustomer,
+		},
+	}, nil
+}
+
+func (m *mockAdminWarehouseOrgRepo) ListBranchesByOrg(_ context.Context, orgID int64) ([]*org.Branch, error) {
+	var res []*org.Branch
+	for _, b := range m.branches {
+		if orgID == 0 || b.OrganizationID == orgID {
+			res = append(res, b)
+		}
+	}
+	return res, nil
+}
+
 func setupAdminWarehouseTestHandler() (*ui.UIHandler, *mockAdminWarehouseRepo, *mockAdminWarehouseOrgRepo) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	invRepo := newMockAdminWarehouseRepo()
@@ -316,3 +336,28 @@ func TestAdminWarehouseToggleSubmit(t *testing.T) {
 		t.Errorf("expected warehouse 8 to be toggled active")
 	}
 }
+
+func TestAdminWarehousePage_SearchableOrgAndBranchesRender(t *testing.T) {
+	handler, _, _ := setupAdminWarehouseTestHandler()
+
+	req := httptest.NewRequest("GET", "/admin/warehouses", nil)
+	rr := httptest.NewRecorder()
+
+	handler.AdminWarehousesPage(rr, req)
+
+	if rr.Code != http.StatusOK {
+		t.Fatalf("expected 200 OK, got %d", rr.Code)
+	}
+
+	body := rr.Body.String()
+	if !strings.Contains(body, "adminWarehouseCreateState") {
+		t.Error("expected page to register adminWarehouseCreateState for Alpine CSP")
+	}
+	if !strings.Contains(body, `name="organization_id"`) {
+		t.Error("expected hidden organization_id input")
+	}
+	if !strings.Contains(body, `x-ref="branchSelect"`) {
+		t.Error("expected branchSelect ref for dynamic options")
+	}
+}
+
