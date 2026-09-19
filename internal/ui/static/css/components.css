@@ -252,6 +252,7 @@ dialog.modal::backdrop {
 
 @media (max-width: 768px) {
   dialog.modal,
+  dialog.modal[open],
   .modal {
     padding: 0;
     align-items: flex-end;
@@ -277,13 +278,16 @@ dialog.modal::backdrop {
   .modal-content,
   .modal-backdrop > .modal-content,
   .modal-backdrop > .glass-panel,
-  .modal-backdrop > div:not(.modal-scrim) {
+  .modal-backdrop > div:not(.modal-scrim),
+  dialog.modal > form,
+  dialog.modal > div {
     max-width: 100vw !important;
     width: 100% !important;
     max-height: 92vh;
     max-height: 92dvh;
     border-radius: var(--radius-2xl, 1.25rem) var(--radius-2xl, 1.25rem) 0 0 !important;
     margin: 0 !important;
+    margin-block-start: auto !important;
     border-bottom: none !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25), var(--shadow-2xl);
   }
@@ -1770,7 +1774,7 @@ select.form-control:focus-visible {
   color: var(--text-muted, #64748b);
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  white-space: normal;
+  white-space: nowrap;
   line-height: 1.35;
   vertical-align: middle;
   border-bottom: 1px solid var(--border-card, #e2e8f0);
@@ -1800,10 +1804,37 @@ select.form-control:focus-visible {
   vertical-align: middle;
   color: var(--text-primary, #0f172a);
   font-size: var(--text-sm, 0.8125rem);
-  /* Long unbroken strings (URLs, codes) wrap instead of forcing the whole
-     table wider than the viewport. */
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
+@media (max-width: 768px) {
+  .data-table,
+  .table {
+    font-size: var(--text-xs, 0.75rem);
+    inline-size: max-content;
+    min-inline-size: 100%;
+    max-inline-size: none;
+  }
+  .data-table th {
+    padding: 0.6rem 0.75rem;
+    white-space: nowrap;
+  }
+  .data-table td {
+    padding: 0.6rem 0.75rem;
+  }
+  .data-table td.col-nowrap,
+  .data-table td.col-num,
+  .data-table td.col-actions,
+  .data-table td.col-min,
+  .data-table td.cell-nowrap,
+  .data-table td:has(.badge),
+  .data-table td:has(.btn) {
+    white-space: nowrap;
+  }
+  .data-table td.col-actions {
+    min-inline-size: max-content;
+  }
 }
 
 @media (min-width: 1280px) {
@@ -2058,6 +2089,7 @@ input:focus {
   gap: 0;
   inline-size: 100%;
   overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   /* Explicit, because overflow-x:auto computes the block axis to auto too and
      the inked underline sits a pixel proud of the box -- enough for a browser
      to fit a vertical scrollbar beside a single row of tabs. */
@@ -2178,10 +2210,19 @@ input:focus {
 
 @media (max-width: 768px) {
   .tab-btn {
-    min-block-size: var(--touch-min);
+    min-block-size: var(--touch-min, 44px);
     padding-inline: var(--space-sm);
+    flex-shrink: 0;
   }
-  .tabs-nav { margin-block-end: var(--space-md); }
+  .tabs-nav {
+    margin-block-end: var(--space-md);
+    padding-inline-end: var(--space-md);
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tabs-nav::-webkit-scrollbar {
+    display: none;
+  }
   .tabs-nav.is-inline { inline-size: 100%; }
 }
 
@@ -5885,6 +5926,27 @@ form.filter-bar { margin: 0; }
   .filter-bar {
     padding: var(--space-sm);
     margin-block-end: var(--space-md);
+  }
+}
+
+@media (max-width: 640px) {
+  .filter-bar > form,
+  .filter-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    inline-size: 100%;
+  }
+  .filter-bar .form-input,
+  .filter-bar .form-select,
+  .filter-form .form-input,
+  .filter-form .form-select {
+    inline-size: 100%;
+    min-inline-size: 0;
+  }
+  .filter-bar .btn,
+  .filter-form .btn {
+    min-block-size: var(--touch-min, 44px);
   }
 }
 

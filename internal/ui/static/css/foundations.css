@@ -292,8 +292,16 @@
    scrolling inside its own container. */
 .table-responsive {
   width: 100%;
+  max-inline-size: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.table-responsive > table,
+.table-responsive > .data-table {
+  inline-size: max-content;
+  min-inline-size: 100%;
+  max-inline-size: none;
 }
 
 /* Pagination. The component emits four class names; the stylesheet had none. */

@@ -53,14 +53,40 @@
     padding: 0.75rem 0.75rem 2rem 0.75rem;
     gap: 1rem;
   }
+  .page-title {
+    font-size: var(--text-xl, 1.25rem);
+    line-height: 1.3;
+    gap: 0.45rem;
+  }
+  .card {
+    padding: var(--space-md, 1rem);
+    border-radius: var(--radius-lg, 0.75rem);
+  }
+  .glass-panel {
+    padding: var(--space-md, 1rem);
+    border-radius: var(--radius-lg, 0.75rem);
+  }
   .filter-bar .flex-1,
-  .filter-form .flex-1 {
+  .filter-form .flex-1,
+  .filter-bar input[type="search"],
+  .filter-bar .form-input,
+  .filter-bar .form-select,
+  .filter-form .form-input,
+  .filter-form .form-select,
+  .filter-form .w-44,
+  .filter-form .w-40,
+  .filter-form .w-48,
+  .filter-form .w-56,
+  .filter-form .w-64 {
+    inline-size: 100%;
+    max-inline-size: 100%;
     flex: 1 1 100%;
     min-inline-size: 0;
   }
-  .filter-form .w-44,
-  .filter-form .w-40 {
-    inline-size: 100%;
+  .filter-bar .btn,
+  .filter-form .btn {
+    min-block-size: var(--touch-min, 44px);
+    justify-content: center;
   }
 }
 
@@ -860,8 +886,29 @@ html:not([data-theme="dark"]) .logo-dark {
    nature. */
 @media (max-width: 768px) {
   .page-container > .table-container,
-  .page-container table {
+  .table-container,
+  .table-responsive,
+  .card:has(table),
+  .card:has(.data-table),
+  .glass-panel:has(table),
+  .glass-panel:has(.data-table) {
     max-inline-size: 100%;
+    inline-size: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+  .page-container table,
+  .table-container table,
+  .table-responsive table,
+  .card:has(table) table,
+  .glass-panel:has(table) table,
+  .data-table {
+    inline-size: max-content;
+    min-inline-size: 100%;
+    max-inline-size: none;
   }
   /* Filter bars are a row of fixed-width controls; on a phone they stack. */
   .filter-bar > form,
@@ -897,32 +944,6 @@ html:not([data-theme="dark"]) .logo-dark {
 @media (pointer: coarse) {
   a, button, .btn, [role="button"] {
     -webkit-tap-highlight-color: transparent;
-  }
-}
-
-/* --- Tables on a phone ---------------------------------------------------
-   A `width: 100%` table with automatic layout does not scroll when it is too
-   wide; it compresses. Every column shrinks to its minimum content width and
-   the cells wrap, so a seven-column order table at 360px comes out as rows of
-   one- and two-character lines several centimetres tall — legible to nobody
-   and impossible to compare across.
-
-   `width: max-content` lets the table be as wide as its content actually
-   needs, and `min-width: 100%` keeps a two-column table filling the card. The
-   container already scrolls; this is what gives it something to scroll. */
-@media (max-width: 768px) {
-  .table-container .data-table,
-  .table-container > table {
-    inline-size: max-content;
-    min-inline-size: 100%;
-  }
-  /* The scrollbar is the affordance. Hiding it — which several containers on
-     this platform did — leaves no sign at all that a table continues past the
-     edge, so it stays visible here and is given a colour that reads on both
-     themes. */
-  .table-container {
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-strong) transparent;
   }
 }
 

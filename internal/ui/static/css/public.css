@@ -2113,7 +2113,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
   gap: var(--space-sm);
 }
 
-@media (max-width: 639px) {
+@media (max-width: 640px) {
   .deals-ad-card,
   .bottom-ad-card {
     flex-direction: column !important;

@@ -62,6 +62,7 @@ var routesWithoutPermissionGate = map[string]string{
 	"POST /settings/profile/send-phone-otp":             "verifying your own phone is an account action",
 	"POST /settings/profile/verify-phone-otp":           "verifying your own phone is an account action",
 	"POST /settings/password":                           "changing your own password is an account action",
+	"POST /settings/password/send-otp":                  "requesting an OTP to change your own password is an account action",
 	"POST /settings/preferences":                        "your own language and display preferences",
 	"GET /settings/telegram":                            "the caller's own Telegram link card",
 	"POST /settings/telegram/link":                      "issuing a link code for your own account",
