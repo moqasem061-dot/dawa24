@@ -36,6 +36,10 @@ func (r stubRepo) GetTemplateBySlug(context.Context, string) (*notifications.Tem
 	r.fail("GetTemplateBySlug")
 	return nil, nil
 }
+func (r stubRepo) GetNotification(context.Context, int64, int64) (*notifications.NotificationLog, error) {
+	r.fail("GetNotification")
+	return nil, nil
+}
 func (r stubRepo) ListUserNotifications(context.Context, int64, int, int) ([]*notifications.NotificationLog, error) {
 	r.fail("ListUserNotifications")
 	return nil, nil
@@ -66,6 +70,9 @@ func (happyRepo) CreateLog(ctx context.Context, l *notifications.NotificationLog
 }
 func (happyRepo) GetTemplateBySlug(ctx context.Context, slug string) (*notifications.Template, error) {
 	return &notifications.Template{ID: 1, Slug: slug}, nil
+}
+func (happyRepo) GetNotification(ctx context.Context, id, userID int64) (*notifications.NotificationLog, error) {
+	return &notifications.NotificationLog{ID: id, UserID: userID, Title: "Order Confirmed"}, nil
 }
 func (happyRepo) ListUserNotifications(ctx context.Context, userID int64, limit, offset int) ([]*notifications.NotificationLog, error) {
 	return []*notifications.NotificationLog{{ID: 1, UserID: userID, Title: "Order Confirmed"}}, nil

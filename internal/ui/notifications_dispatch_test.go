@@ -55,6 +55,15 @@ func (m *mockNotifRepo) MarkAsRead(_ context.Context, id int64, userID int64) er
 	return apperr.NotFound("notification")
 }
 
+func (m *mockNotifRepo) GetNotification(_ context.Context, id int64, userID int64) (*notifications.NotificationLog, error) {
+	for _, l := range m.logs {
+		if l.ID == id && l.UserID == userID {
+			return l, nil
+		}
+	}
+	return nil, apperr.NotFound("notification")
+}
+
 func (m *mockNotifRepo) GetUnreadCount(_ context.Context, userID int64) (int, error) {
 	c := 0
 	for _, l := range m.logs {

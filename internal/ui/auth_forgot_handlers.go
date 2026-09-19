@@ -25,7 +25,7 @@ func (h *UIHandler) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	case "send_failed":
 		errorMsg = i18n.T(lang, "auth.email.error_sending")
 	case "user_not_found":
-		errorMsg = "البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد"
+		errorMsg = i18n.T(lang, "auth.reset.user_not_found")
 	case "cooldown":
 		errorMsg = i18n.T(lang, "auth.email.cooldown")
 	case "rate_limited":
@@ -60,7 +60,7 @@ func (h *UIHandler) ForgotSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !userFound {
-		h.renderPage(ctx, w, "render forgot password user not found", pages.PasswordReset("البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد", "", cleanEmail, lang, dir))
+		h.renderPage(ctx, w, "render forgot password user not found", pages.PasswordReset(i18n.T(lang, "auth.reset.user_not_found"), "", cleanEmail, lang, dir))
 		return
 	}
 

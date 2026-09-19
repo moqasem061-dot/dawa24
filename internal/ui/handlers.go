@@ -268,6 +268,7 @@ func (h *UIHandler) RegisterPreApprovalRoutes(r chi.Router) {
 	r.Get("/notifications", h.NotificationsPage)
 	r.Get("/notifications/dropdown", h.NotificationsDropdownPartial)
 	r.Get("/notifications/unread-badge", h.NotificationsUnreadBadgePartial)
+	r.Get("/notifications/{id}/open", h.NotificationOpenRedirect)
 	r.Post("/notifications/{id}/read", h.MarkNotificationReadSubmit)
 	r.Post("/notifications/read-all", h.NotificationsReadAllSubmit)
 

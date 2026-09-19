@@ -10,6 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
+	"strings"
 
 	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
 	"github.com/muhiya/dawa24-store/internal/ui/components"
@@ -117,7 +118,7 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("adminAIManager(%q, %q, %t)", values.GatewaySettings.EndpointURL, storedUser, hasStoredPassword))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 90, Col: 119}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 91, Col: 119}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -188,7 +189,7 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(values.GatewaySettings.VirtualKey)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 189, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 190, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -233,121 +234,226 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 			return templ_7745c5c3_Err
 		}
 		for _, tool := range getAIToolRows(values.AIRoleModels) {
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<tr class=\"border-b hover:bg-surface-subtle\"><form action=\"/admin/developers/ai/role-models\" method=\"POST\"><input type=\"hidden\" name=\"role\" value=\"")
+			formID := "form-role-" + strings.ReplaceAll(tool.Role, ".", "-")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<tr class=\"border-b hover:bg-surface-subtle\"><td class=\"py-3 px-3\"><form id=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
-			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.Role)
+			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(formID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 263, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 266, Col: 21}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><td class=\"py-3 px-3\"><div class=\"font-bold text-primary\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" action=\"/admin/developers/ai/role-models\" method=\"POST\" @submit.prevent=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 string
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(tool.NameAR)
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue("saveRoleModel('" + tool.Role + "', $el)")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 265, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 269, Col: 69}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</div><div class=\"text-xs text-muted mt-0.5\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\"><input type=\"hidden\" name=\"role\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(tool.Description)
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.Role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 266, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 271, Col: 60}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</div></td><td class=\"py-3 px-3\"><code class=\"text-xs bg-surface-sunken px-1.5 py-0.5 rounded\" dir=\"ltr\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "\"></form><div class=\"font-bold text-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
-			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(tool.Role)
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(tool.NameAR)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 269, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 273, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</code></td><td class=\"py-3 px-3\"><div class=\"stack-xs\"><input type=\"text\" name=\"model\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><div class=\"text-xs text-muted mt-0.5\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
-			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.CurrentModel)
+			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(tool.Description)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 276, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 274, Col: 66}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" list=\"available-models-list\" class=\"form-input text-xs\" dir=\"ltr\" required placeholder=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</div><div x-show=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 string
-			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.DefaultModel)
+			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue("roleError && savingRole === '' && savedRole !== '" + tool.Role + "'")
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 281, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 275, Col: 92}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\"> <span class=\"text-xs text-muted\" dir=\"ltr\">افتراضي: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "\" x-cloak class=\"text-2xs text-danger mt-1\"></div></td><td class=\"py-3 px-3\"><code class=\"text-xs bg-surface-sunken px-1.5 py-0.5 rounded\" dir=\"ltr\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var10 string
-			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(tool.DefaultModel)
+			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(tool.Role)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 283, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 278, Col: 92}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</span></div></td><td class=\"py-3 px-3\"><input type=\"number\" name=\"max_tokens\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</code></td><td class=\"py-3 px-3\"><div class=\"stack-xs\"><input type=\"text\" name=\"model\" form=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var11 string
-			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tool.MaxTokens))
+			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(formID)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 290, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 285, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" placeholder=\"تلقائي\" min=\"0\" max=\"65536\" class=\"form-input text-xs text-center\" dir=\"ltr\"></td><td class=\"py-3 px-3 text-center\"><label class=\"d-inline-flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"is_active\" value=\"true\" class=\"form-checkbox\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var12 string
+			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.CurrentModel)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 286, Col: 36}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "\" list=\"available-models-list\" class=\"form-input text-xs\" dir=\"ltr\" required placeholder=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var13 string
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(tool.DefaultModel)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 291, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "\"> <span class=\"text-xs text-muted\" dir=\"ltr\">افتراضي: ")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var14 string
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(tool.DefaultModel)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 293, Col: 88}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</span></div></td><td class=\"py-3 px-3\"><input type=\"number\" name=\"max_tokens\" form=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var15 string
+			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(formID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 300, Col: 23}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var16 string
+			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tool.MaxTokens))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 301, Col: 51}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "\" placeholder=\"تلقائي\" min=\"0\" max=\"65536\" class=\"form-input text-xs text-center\" dir=\"ltr\"></td><td class=\"py-3 px-3 text-center\"><label class=\"d-inline-flex items-center cursor-pointer\"><input type=\"checkbox\" name=\"is_active\" form=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var17 string
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(formID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 314, Col: 24}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "\" value=\"true\" class=\"form-checkbox\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if tool.IsActive {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "></label></td><td class=\"py-3 px-3 text-center\"><button type=\"submit\" class=\"btn btn-primary btn-sm px-2.5 py-1 text-xs font-bold gap-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 36, "></label></td><td class=\"py-3 px-3 text-center\"><button type=\"submit\" form=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var18 string
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(formID)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 324, Col: 23}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 37, "\" class=\"btn btn-primary btn-sm px-2.5 py-1 text-xs font-bold gap-1\" :disabled=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue("savingRole === '" + tool.Role + "'")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 326, Col: 58}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 38, "\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -355,12 +461,51 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span>حفظ</span></button></td></form></tr>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<span x-show=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue("savingRole !== '" + tool.Role + "' && savedRole !== '" + tool.Role + "'")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 329, Col: 98}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 40, "\">حفظ</span> <span x-show=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var21 string
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue("savingRole === '" + tool.Role + "'")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 330, Col: 61}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 41, "\" style=\"display:none;\" x-cloak>جاري الحفظ...</span> <span x-show=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var22 string
+			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue("savedRole === '" + tool.Role + "'")
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_developers_ai.templ`, Line: 331, Col: 60}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" style=\"display:none;\" x-cloak class=\"text-emerald-300\">تم الحفظ ✓</span></button></td></tr>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</tbody></table></div><datalist id=\"available-models-list\"><template x-for=\"m in liveModels\" :key=\"m.id\"><option :value=\"m.id\" x-text=\"m.display_name || m.id\"></option></template></datalist></div><!-- 3. الحدود: Ceilings from matchflow/ceilings.go --><div class=\"glass-panel mb-6\"><div class=\"flex-between items-center mb-4 pb-3 border-b\"><div class=\"row-center\"><div class=\"b2b-icon-box\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 43, "</tbody></table></div><datalist id=\"available-models-list\"><template x-for=\"m in liveModels\" :key=\"m.id\"><option :value=\"m.id\" x-text=\"m.display_name || m.id\"></option></template></datalist></div><!-- 3. الحدود: Ceilings from matchflow/ceilings.go --><div class=\"glass-panel mb-6\"><div class=\"flex-between items-center mb-4 pb-3 border-b\"><div class=\"row-center\"><div class=\"b2b-icon-box\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -368,7 +513,7 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</div><div class=\"stack-sm\"><h3 class=\"m-0 text-lg font-black\">3. الحدود وسقوف الأمان (Cost & Spend Ceilings)</h3><p class=\"text-xs text-secondary mt-0.5 mb-0\">الحدود الصارمة المطبقة لمنع استنزاف الميزانية والوقت (internal/shared/matchflow/ceilings.go).</p></div></div><span class=\"badge badge-sky\">مضبوطة برمجياً لحماية المنظومة</span></div><div class=\"d-grid grid-cols-3 gap-4 text-xs\"><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">ملفات الموردين (Vendor Profile)</div><p class=\"text-muted m-0\">قوائم أسعار الموردين (طويلة ومتكررة أسبوعياً)</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>200 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>60 طلباً</strong> (12,000 بند)</li><li>• المهلة الزمنية القصوى: <strong>20 دقيقة</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li><li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li></ul></div><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">الطلب الذكي (Order Profile)</div><p class=\"text-muted m-0\">طلبات الصيدليات المباشرة مع شريط تقدم مباشر</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>120 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>30 طلباً</strong></li><li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li><li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li></ul></div><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">كتالوج الإدارة (Catalog Profile)</div><p class=\"text-muted m-0\">دليل الأصناف الموحد لمنصة دوا 24 (أعلى معايير الدقة)</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>100 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>12 طلباً</strong></li><li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>90%</strong> (دقة فائقة)</li><li>• بوابة استبعاد البنود غير المعقولة: <strong>40%</strong></li></ul></div></div></div><!-- 4. الاستهلاك: Usage Logs & Metrics --><div class=\"glass-panel\"><div class=\"flex-between items-center\"><div class=\"row-center\"><div class=\"b2b-icon-box\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 44, "</div><div class=\"stack-sm\"><h3 class=\"m-0 text-lg font-black\">3. الحدود وسقوف الأمان (Cost & Spend Ceilings)</h3><p class=\"text-xs text-secondary mt-0.5 mb-0\">الحدود الصارمة المطبقة لمنع استنزاف الميزانية والوقت (internal/shared/matchflow/ceilings.go).</p></div></div><span class=\"badge badge-sky\">مضبوطة برمجياً لحماية المنظومة</span></div><div class=\"d-grid grid-cols-3 gap-4 text-xs\"><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">ملفات الموردين (Vendor Profile)</div><p class=\"text-muted m-0\">قوائم أسعار الموردين (طويلة ومتكررة أسبوعياً)</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>200 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>60 طلباً</strong> (12,000 بند)</li><li>• المهلة الزمنية القصوى: <strong>20 دقيقة</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li><li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li></ul></div><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">الطلب الذكي (Order Profile)</div><p class=\"text-muted m-0\">طلبات الصيدليات المباشرة مع شريط تقدم مباشر</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>120 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>30 طلباً</strong></li><li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>80%</strong></li><li>• بوابة استبعاد البنود غير المعقولة: <strong>30%</strong></li></ul></div><div class=\"p-4 border rounded-xl bg-surface-sunken stack-sm\"><div class=\"font-black text-sm text-primary\">كتالوج الإدارة (Catalog Profile)</div><p class=\"text-muted m-0\">دليل الأصناف الموحد لمنصة دوا 24 (أعلى معايير الدقة)</p><ul class=\"list-unstyled stack-xs mt-2 border-t pt-2\"><li>• أقصى عناصر بالدفعة: <strong>100 بند</strong></li><li>• أقصى طلبات بالعملية: <strong>12 طلباً</strong></li><li>• المهلة الزمنية القصوى: <strong>8 دقائق</strong></li><li>• الحد الأدنى للمطابقة التلقائية: <strong>90%</strong> (دقة فائقة)</li><li>• بوابة استبعاد البنود غير المعقولة: <strong>40%</strong></li></ul></div></div></div><!-- 4. الاستهلاك: Usage Logs & Metrics --><div class=\"glass-panel\"><div class=\"flex-between items-center\"><div class=\"row-center\"><div class=\"b2b-icon-box\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -376,7 +521,7 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div><div class=\"stack-sm\"><h3 class=\"m-0 text-lg font-black\">4. الاستهلاك ومراقبة التكاليف (AI Consumption & Audit)</h3><p class=\"text-xs text-secondary mt-0.5 mb-0\">تتبع استهلاك الرموز (Tokens) ومصروفات كل أداة ومنشأة بالتفصيل.</p></div></div><a href=\"/admin/ai-logs\" class=\"btn btn-secondary font-bold text-xs gap-1.5\"><span>عرض سجلات الاستهلاك الكاملة (AI Usage Logs)</span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 45, "</div><div class=\"stack-sm\"><h3 class=\"m-0 text-lg font-black\">4. الاستهلاك ومراقبة التكاليف (AI Consumption & Audit)</h3><p class=\"text-xs text-secondary mt-0.5 mb-0\">تتبع استهلاك الرموز (Tokens) ومصروفات كل أداة ومنشأة بالتفصيل.</p></div></div><a href=\"/admin/ai-logs\" class=\"btn btn-secondary font-bold text-xs gap-1.5\"><span>عرض سجلات الاستهلاك الكاملة (AI Usage Logs)</span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -384,7 +529,7 @@ func AdminDevelopersAITab(values AdminDevelopersValues, lang string) templ.Compo
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 35, "</a></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 46, "</a></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -147,9 +147,12 @@ templ NotificationsList(logs []*notifications.NotificationLog) {
 								if !l.IsRead {
 									<span class="notif-pulse-dot" title="إشعار غير مقروء"></span>
 								}
-								<h4 class={ "text-sm m-0 leading-snug", templ.KV("font-black text-primary", !l.IsRead), templ.KV("font-bold text-secondary", l.IsRead) }>
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/notifications/%d/open", l.ID)) }
+									class={ "text-sm m-0 leading-snug text-decoration-none hover:underline", templ.KV("font-black text-primary", !l.IsRead), templ.KV("font-bold text-secondary", l.IsRead) }
+								>
 									{ l.Title }
-								</h4>
+								</a>
 								if !l.IsRead {
 									<span class="badge badge-sky text-2xs font-bold py-0.5 px-2">جديد</span>
 								}
@@ -175,13 +178,21 @@ templ NotificationsList(logs []*notifications.NotificationLog) {
 					</div>
 
 					<!-- Action Buttons -->
-					<div class="d-flex items-center gap-2 justify-end">
+					<div class="d-flex items-center gap-2 justify-end flex-wrap">
+						<a
+							href={ templ.SafeURL(fmt.Sprintf("/notifications/%d/open", l.ID)) }
+							class="btn btn-primary btn-sm font-bold text-xs px-3 gap-1"
+							title="فتح الصفحة ذات الصلة بالإشعار"
+						>
+							<span>عرض ومتابعة</span>
+							@components.IconArrowLeft("icon-xs")
+						</a>
 						if !l.IsRead {
 							<form action={ templ.SafeURL(fmt.Sprintf("/notifications/%d/read", l.ID)) } method="POST" class="m-0">
 								<button
 									type="submit"
 									class="btn btn-secondary btn-sm font-bold text-xs px-3 gap-1"
-									title="تحديد كمقروء"
+									title="تحديد كمقروء دون مغادرة الصفحة"
 								>
 									@components.IconCheck("icon-xs")
 									<span>تحديد كمقروء</span>

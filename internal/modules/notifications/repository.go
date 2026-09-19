@@ -9,6 +9,7 @@ import (
 type Repository interface {
 	CreateLog(ctx context.Context, log *NotificationLog) error
 	GetTemplateBySlug(ctx context.Context, slug string) (*Template, error)
+	GetNotification(ctx context.Context, id, userID int64) (*NotificationLog, error)
 	ListUserNotifications(ctx context.Context, userID int64, limit, offset int) ([]*NotificationLog, error)
 	MarkAsRead(ctx context.Context, id int64, userID int64) error
 	// MarkAllAsRead clears the whole feed in one statement rather than making

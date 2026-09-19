@@ -142,6 +142,14 @@ func (s *Service) SendEvent(
 }
 
 
+// GetNotification retrieves a single notification by ID scoped to the user.
+func (s *Service) GetNotification(ctx context.Context, id, userID int64) (*NotificationLog, error) {
+	if s == nil || s.repo == nil || id <= 0 || userID <= 0 {
+		return nil, apperr.NotFound("notification")
+	}
+	return s.repo.GetNotification(ctx, id, userID)
+}
+
 // ListUserNotifications returns paginated notification feed.
 func (s *Service) ListUserNotifications(ctx context.Context, userID int64, limit, offset int) ([]*NotificationLog, error) {
 	return s.repo.ListUserNotifications(ctx, userID, limit, offset)

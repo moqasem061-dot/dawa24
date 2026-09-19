@@ -88,6 +88,7 @@ var routesWithoutPermissionGate = map[string]string{
 	"GET /notifications":                                "what the platform is telling this caller",
 	"GET /notifications/dropdown":                       "what the platform is telling this caller",
 	"GET /notifications/unread-badge":                   "what the platform is telling this caller",
+	"GET /notifications/{id}/open":                      "opening your own notification and navigating to its destination",
 	"POST /notifications/{id}/read":                     "marking your own notification read",
 	"POST /notifications/read-all":                      "marking your own notifications read",
 	"GET /report-issue":                                 "reporting a problem must not require a grant",

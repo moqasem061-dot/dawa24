@@ -44,6 +44,14 @@ func (m *mockNotificationRepo) GetTemplateBySlug(_ context.Context, slug string)
 	return t, nil
 }
 
+func (m *mockNotificationRepo) GetNotification(_ context.Context, id int64, userID int64) (*notifications.NotificationLog, error) {
+	l, ok := m.logs[id]
+	if !ok || l.UserID != userID {
+		return nil, apperr.NotFound("notification")
+	}
+	return l, nil
+}
+
 func (m *mockNotificationRepo) ListUserNotifications(_ context.Context, userID int64, limit, offset int) ([]*notifications.NotificationLog, error) {
 	var list []*notifications.NotificationLog
 	for _, l := range m.logs {

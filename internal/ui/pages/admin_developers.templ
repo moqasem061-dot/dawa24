@@ -294,6 +294,38 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 						} finally {
 							this.isTesting = false;
 						}
+					},
+
+					savingRole: '',
+					savedRole: '',
+					roleError: '',
+
+					async saveRoleModel(role, formEl) {
+						if (!role || !formEl) return;
+						this.savingRole = role;
+						this.savedRole = '';
+						this.roleError = '';
+						try {
+							const formData = new FormData(formEl);
+							const resp = await fetch('/admin/developers/ai/role-models', {
+								method: 'POST',
+								headers: { 'Accept': 'application/json' },
+								body: formData
+							});
+							const data = await resp.json();
+							if (resp.ok && data && (data.status === 'ok' || !data.error)) {
+								this.savedRole = role;
+								setTimeout(() => {
+									if (this.savedRole === role) this.savedRole = '';
+								}, 3000);
+							} else {
+								this.roleError = (data && data.message) ? data.message : 'تعذر حفظ النموذج';
+							}
+						} catch (e) {
+							this.roleError = 'خطأ في الاتصال: ' + e.message;
+						} finally {
+							this.savingRole = '';
+						}
 					}
 				};
 			}

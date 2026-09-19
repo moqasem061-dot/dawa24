@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
@@ -9,6 +10,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/notifications"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 )
 
 // MarkAllAsRead clears every unread notification for one user.
@@ -103,4 +105,39 @@ func (r *Repository) ListUnread(ctx context.Context, userID int64, limit, offset
 		return nil, fmt.Errorf("notifications postgres: list unread: %w", err)
 	}
 	return list, nil
+}
+
+// GetNotification retrieves a single notification log by ID for the specified user.
+func (r *Repository) GetNotification(ctx context.Context, id, userID int64) (*notifications.NotificationLog, error) {
+	var n notifications.NotificationLog
+	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		query := `
+			SELECT id, public_id, user_id, organization_id, branch_id, channel, recipient, title, body,
+			       required_permission, status, error_message, is_read, read_at, sent_at, created_at
+			FROM notifications.logs
+			WHERE id = $1 AND user_id = $2;
+		`
+		var chStr, statusStr string
+		var errMsg *string
+		if err := tx.QueryRow(txCtx, query, id, userID).Scan(
+			&n.ID, &n.PublicID, &n.UserID, &n.OrganizationID, &n.BranchID, &chStr,
+			&n.Recipient, &n.Title, &n.Body, &n.RequiredPermission, &statusStr, &errMsg,
+			&n.IsRead, &n.ReadAt, &n.SentAt, &n.CreatedAt,
+		); err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return apperr.NotFound("notification")
+			}
+			return err
+		}
+		n.Channel = notifications.Channel(chStr)
+		n.Status = notifications.DeliveryStatus(statusStr)
+		if errMsg != nil {
+			n.ErrorMessage = *errMsg
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &n, nil
 }

@@ -2,6 +2,7 @@ package pages
 
 import (
 	"fmt"
+	"strings"
 
 	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
 	"github.com/muhiya/dawa24-store/internal/ui/components"
@@ -258,61 +259,78 @@ templ AdminDevelopersAITab(values AdminDevelopersValues, lang string) {
 					</thead>
 					<tbody>
 						for _, tool := range getAIToolRows(values.AIRoleModels) {
+							{{ formID := "form-role-" + strings.ReplaceAll(tool.Role, ".", "-") }}
 							<tr class="border-b hover:bg-surface-subtle">
-								<form action="/admin/developers/ai/role-models" method="POST">
-									<input type="hidden" name="role" value={ tool.Role }/>
-									<td class="py-3 px-3">
-										<div class="font-bold text-primary">{ tool.NameAR }</div>
-										<div class="text-xs text-muted mt-0.5">{ tool.Description }</div>
-									</td>
-									<td class="py-3 px-3">
-										<code class="text-xs bg-surface-sunken px-1.5 py-0.5 rounded" dir="ltr">{ tool.Role }</code>
-									</td>
-									<td class="py-3 px-3">
-										<div class="stack-xs">
-											<input
-												type="text"
-												name="model"
-												value={ tool.CurrentModel }
-												list="available-models-list"
-												class="form-input text-xs"
-												dir="ltr"
-												required
-												placeholder={ tool.DefaultModel }
-											/>
-											<span class="text-xs text-muted" dir="ltr">افتراضي: { tool.DefaultModel }</span>
-										</div>
-									</td>
-									<td class="py-3 px-3">
+								<td class="py-3 px-3">
+									<form
+										id={ formID }
+										action="/admin/developers/ai/role-models"
+										method="POST"
+										@submit.prevent={ "saveRoleModel('" + tool.Role + "', $el)" }
+									>
+										<input type="hidden" name="role" value={ tool.Role }/>
+									</form>
+									<div class="font-bold text-primary">{ tool.NameAR }</div>
+									<div class="text-xs text-muted mt-0.5">{ tool.Description }</div>
+									<div x-show={ "roleError && savingRole === '' && savedRole !== '" + tool.Role + "'" } x-cloak class="text-2xs text-danger mt-1"></div>
+								</td>
+								<td class="py-3 px-3">
+									<code class="text-xs bg-surface-sunken px-1.5 py-0.5 rounded" dir="ltr">{ tool.Role }</code>
+								</td>
+								<td class="py-3 px-3">
+									<div class="stack-xs">
 										<input
-											type="number"
-											name="max_tokens"
-											value={ fmt.Sprintf("%d", tool.MaxTokens) }
-											placeholder="تلقائي"
-											min="0"
-											max="65536"
-											class="form-input text-xs text-center"
+											type="text"
+											name="model"
+											form={ formID }
+											value={ tool.CurrentModel }
+											list="available-models-list"
+											class="form-input text-xs"
 											dir="ltr"
+											required
+											placeholder={ tool.DefaultModel }
 										/>
-									</td>
-									<td class="py-3 px-3 text-center">
-										<label class="d-inline-flex items-center cursor-pointer">
-											<input
-												type="checkbox"
-												name="is_active"
-												value="true"
-												class="form-checkbox"
-												checked?={ tool.IsActive }
-											/>
-										</label>
-									</td>
-									<td class="py-3 px-3 text-center">
-										<button type="submit" class="btn btn-primary btn-sm px-2.5 py-1 text-xs font-bold gap-1">
-											@components.IconCheck("icon-xs")
-											<span>حفظ</span>
-										</button>
-									</td>
-								</form>
+										<span class="text-xs text-muted" dir="ltr">افتراضي: { tool.DefaultModel }</span>
+									</div>
+								</td>
+								<td class="py-3 px-3">
+									<input
+										type="number"
+										name="max_tokens"
+										form={ formID }
+										value={ fmt.Sprintf("%d", tool.MaxTokens) }
+										placeholder="تلقائي"
+										min="0"
+										max="65536"
+										class="form-input text-xs text-center"
+										dir="ltr"
+									/>
+								</td>
+								<td class="py-3 px-3 text-center">
+									<label class="d-inline-flex items-center cursor-pointer">
+										<input
+											type="checkbox"
+											name="is_active"
+											form={ formID }
+											value="true"
+											class="form-checkbox"
+											checked?={ tool.IsActive }
+										/>
+									</label>
+								</td>
+								<td class="py-3 px-3 text-center">
+									<button
+										type="submit"
+										form={ formID }
+										class="btn btn-primary btn-sm px-2.5 py-1 text-xs font-bold gap-1"
+										:disabled={ "savingRole === '" + tool.Role + "'" }
+									>
+										@components.IconCheck("icon-xs")
+										<span x-show={ "savingRole !== '" + tool.Role + "' && savedRole !== '" + tool.Role + "'" }>حفظ</span>
+										<span x-show={ "savingRole === '" + tool.Role + "'" } style="display:none;" x-cloak>جاري الحفظ...</span>
+										<span x-show={ "savedRole === '" + tool.Role + "'" } style="display:none;" x-cloak class="text-emerald-300">تم الحفظ ✓</span>
+									</button>
+								</td>
 							</tr>
 						}
 					</tbody>

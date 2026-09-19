@@ -66,3 +66,32 @@ func (h *UIHandler) MarkNotificationReadSubmit(w http.ResponseWriter, r *http.Re
 
 	http.Redirect(w, r, "/notifications", http.StatusSeeOther)
 }
+
+// NotificationOpenRedirect marks a notification as read and navigates directly to the target
+// application page related to the notification's type based on user role and permissions.
+func (h *UIHandler) NotificationOpenRedirect(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	actor, ok := authctx.From(ctx)
+	if !ok || actor.UserID <= 0 {
+		http.Redirect(w, r, "/auth/login?redirect=/notifications", http.StatusSeeOther)
+		return
+	}
+
+	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
+	var notif *notifications.NotificationLog
+	if h.notifSvc != nil && id > 0 {
+		notif, _ = h.notifSvc.GetNotification(ctx, id, actor.UserID)
+		_ = h.notifSvc.MarkRead(ctx, id, actor.UserID)
+	}
+
+	destURL := h.ResolveNotificationDestination(ctx, actor, notif)
+	w.Header().Set("HX-Trigger", "notificationRead")
+
+	if h.isHTMX(r) {
+		w.Header().Set("HX-Redirect", destURL)
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
+	http.Redirect(w, r, destURL, http.StatusSeeOther)
+}

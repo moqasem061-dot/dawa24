@@ -41,42 +41,25 @@ templ NotificationsDropdownPanel(logs []*notifications.NotificationLog, unread i
 	} else {
 		<div class="nav-notif-list">
 			for _, n := range logs {
-				if !n.IsRead {
-					<div
-						hx-post={ fmt.Sprintf("/notifications/%d/read?format=dropdown", n.ID) }
-						hx-target="#notif-dropdown-content"
-						hx-swap="innerHTML"
-						class="nav-notif-item is-unread cursor-pointer"
-						role="button"
-						tabindex="0"
-						title="انقر لتحديده كمقروء"
-					>
-						<span class="nav-notif-icon w-8 h-8 max-w-[32px] max-h-[32px] shrink-0 flex items-center justify-center">
-							@notifIcon(n.Title)
-						</span>
-						<span class="nav-notif-body">
-							<span class="nav-notif-title">{ n.Title }</span>
-							<span class="nav-notif-text">{ n.Body }</span>
-						</span>
-						<span class="nav-notif-meta">
-							<span class="nav-notif-time">{ RelTime(n.CreatedAt) }</span>
-							<span class="nav-notif-dot" title="إشعار غير مقروء - انقر لتحديده كمقروء"></span>
-						</span>
-					</div>
-				} else {
-					<a href="/notifications" class="nav-notif-item">
-						<span class="nav-notif-icon w-8 h-8 max-w-[32px] max-h-[32px] shrink-0 flex items-center justify-center">
-							@notifIcon(n.Title)
-						</span>
-						<span class="nav-notif-body">
-							<span class="nav-notif-title">{ n.Title }</span>
-							<span class="nav-notif-text">{ n.Body }</span>
-						</span>
-						<span class="nav-notif-meta">
-							<span class="nav-notif-time">{ RelTime(n.CreatedAt) }</span>
-						</span>
-					</a>
-				}
+				<a
+					href={ templ.SafeURL(fmt.Sprintf("/notifications/%d/open", n.ID)) }
+					class={ "nav-notif-item", templ.KV("is-unread", !n.IsRead) }
+					title="انقر لفتح الصفحة الخاصة بالإشعار"
+				>
+					<span class="nav-notif-icon w-8 h-8 max-w-[32px] max-h-[32px] shrink-0 flex items-center justify-center">
+						@notifIcon(n.Title)
+					</span>
+					<span class="nav-notif-body">
+						<span class="nav-notif-title">{ n.Title }</span>
+						<span class="nav-notif-text">{ n.Body }</span>
+					</span>
+					<span class="nav-notif-meta">
+						<span class="nav-notif-time">{ RelTime(n.CreatedAt) }</span>
+						if !n.IsRead {
+							<span class="nav-notif-dot" title="إشعار غير مقروء"></span>
+						}
+					</span>
+				</a>
 			}
 		</div>
 	}

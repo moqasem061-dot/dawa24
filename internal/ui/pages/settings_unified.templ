@@ -46,6 +46,48 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
 				};
 			});
+
+			dawaData('settingsSecurityState', function () {
+				return {
+					otpSent: false,
+					otpLoading: false,
+					otpFeedback: '',
+					otpError: false,
+					cooldown: 0,
+					sendOTP: function () {
+						var self = this;
+						if (self.otpLoading || self.cooldown > 0) return;
+						self.otpLoading = true;
+						self.otpFeedback = '';
+						fetch('/settings/password/send-otp', {
+							method: 'POST',
+							headers: { 'Content-Type': 'application/json' }
+						})
+						.then(function (r) { return r.json(); })
+						.then(function (data) {
+							self.otpLoading = false;
+							if (data && data.ok) {
+								self.otpSent = true;
+								self.otpError = false;
+								self.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
+								self.cooldown = data.cooldown || 60;
+								var timer = setInterval(function () {
+									self.cooldown--;
+									if (self.cooldown <= 0) clearInterval(timer);
+								}, 1000);
+							} else {
+								self.otpError = true;
+								self.otpFeedback = (data && data.message) ? data.message : 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
+							}
+						})
+						.catch(function () {
+							self.otpLoading = false;
+							self.otpError = true;
+							self.otpFeedback = 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';
+						});
+					}
+				};
+			});
 		</script>
 		<div
 			class="w-full mb-16"
@@ -441,43 +483,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					action="/settings/password"
 					method="POST"
 					class="max-w-xl d-flex flex-col gap-5 text-start"
-					x-data="{
-						otpSent: false,
-						otpLoading: false,
-						otpFeedback: '',
-						otpError: false,
-						cooldown: 0,
-						sendOTP() {
-							this.otpLoading = true;
-							this.otpFeedback = '';
-							fetch('/settings/password/send-otp', {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' }
-							})
-							.then(r => r.json())
-							.then(data => {
-								this.otpLoading = false;
-								if (data.ok) {
-									this.otpSent = true;
-									this.otpError = false;
-									this.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
-									this.cooldown = data.cooldown || 60;
-									let timer = setInterval(() => {
-										this.cooldown--;
-										if (this.cooldown <= 0) clearInterval(timer);
-									}, 1000);
-								} else {
-									this.otpError = true;
-									this.otpFeedback = data.message || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
-								}
-							})
-							.catch(() => {
-								this.otpLoading = false;
-								this.otpError = true;
-								this.otpFeedback = 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';
-							});
-						}
-					}"
+					x-data="settingsSecurityState"
 				>
 					<div class="form-group mb-0">
 						<label class="form-label font-bold text-xs mb-1" for="settings-new-password">
@@ -522,8 +528,8 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 							>
 								@components.IconMail("icon-xs")
 								<span x-show="!otpLoading && cooldown <= 0">{ i18n.T(lang, "settings.send_email_code") }</span>
-								<span x-show="otpLoading">جاري الإرسال...</span>
-								<span x-show="cooldown > 0" x-text="'إعادة الإرسال بعد ' + cooldown + ' ثانية'"></span>
+								<span x-show="otpLoading" style="display: none;" x-cloak>جاري الإرسال...</span>
+								<span x-show="cooldown > 0" style="display: none;" x-cloak x-text="'إعادة الإرسال بعد ' + cooldown + ' ثانية'"></span>
 							</button>
 						</div>
 
