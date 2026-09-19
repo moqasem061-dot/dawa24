@@ -7,13 +7,13 @@ import (
 
 templ ErrorPage(title, message, retryURL, lang, dir string) {
 	@layouts.Base(title, lang, dir) {
-  <div class="stack-sm">
-			<div class="stack-xs text-sm">
+		<div class="s-error-page-wrap">
+			<div class="s-error-card">
 				@components.ErrorState(components.ErrorStateProps{
 					Title:      title,
 					Message:    message,
 					RetryURL:   retryURL,
-					RetryLabel: "العودة للرئيسية",
+					RetryLabel: "الصفحة الرئيسية",
 				})
 			</div>
 		</div>

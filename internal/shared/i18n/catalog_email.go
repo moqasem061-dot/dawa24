@@ -31,6 +31,9 @@ func loadEmailAuthKeys(e *engine) {
 	addKey(e, "auth.reset.confirm_password", ns, "تأكيد كلمة المرور الجديدة", "Confirm New Password", "Input label")
 	addKey(e, "auth.reset.password_mismatch", ns, "كلمتا المرور غير متطابقتين", "Passwords do not match", "Error message")
 	addKey(e, "auth.reset.save_password", ns, "حفظ كلمة المرور الجديدة", "Save New Password", "Submit button")
+	addKey(e, "auth.reset.save_password_desc", ns, "أدخل كلمة المرور الجديدة وتأكيدها لحسابك", "Enter your new password and confirm it for your account", "Subtitle")
+	addKey(e, "auth.reset.min_chars", ns, "8 أحرف كحد أدنى", "8 characters minimum", "Password length hint")
+	addKey(e, "auth.reset.user_not_found", ns, "البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد", "The entered email is not registered. Please check the email or create a new account.", "Error message")
 	addKey(e, "auth.reset.success", ns, "تم تغيير كلمة المرور بنجاح. يمكنك الآن تسجيل الدخول.", "Password reset successfully. You can now log in.", "Success message")
 	addKey(e, "auth.reset.invalid_token", ns, "رابط أو رمز إعادة التعيين غير صالح أو منتهي الصلاحية. يرجى البدء من جديد.", "Reset link or token is invalid or expired. Please start over.", "Error message")
 }

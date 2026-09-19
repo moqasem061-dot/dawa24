@@ -112,6 +112,9 @@ svg {
 .s-error-state-icon:not(#\#) { width:48px; height:48px; border-radius:var(--radius-lg); background:#fee2e2; color:var(--danger); display:flex; align-items:center; justify-content:center; margin-bottom:1rem; }
 .s-error-state-message:not(#\#) { font-size:0.9rem; color:#b91c1c; margin-bottom:1.25rem; max-width:440px; line-height:1.6; }
 .s-error-state-title:not(#\#) { font-size:1.15rem; font-weight:800; color:#991b1b; margin-bottom:0.35rem; }
+.s-error-page-wrap:not(#\#) { display:flex; align-items:center; justify-content:center; min-height:60vh; padding:1.5rem 1rem; }
+.s-error-card:not(#\#) { max-width:480px; width:100%; background:var(--surface, #ffffff); border:1px solid var(--border, #e2e8f0); border-radius:1.5rem; box-shadow:0 10px 25px -5px rgba(0,0,0,0.05); padding:2rem 1.5rem; text-align:center; }
+.s-error-actions:not(#\#) { display:flex; flex-wrap:wrap; gap:8px; align-items:center; justify-content:center; margin-top:0.75rem; }
 .s-favicon-preview:not(#\#) { width: 56px; height: 56px; border-color: #e2e8f0; }
 .s-filter-field:not(#\#) { min-width: 130px; flex: 1 1 130px; }
 .s-flex-none:not(#\#) { flex: 0 0 auto; }

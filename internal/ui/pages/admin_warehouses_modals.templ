@@ -1,0 +1,395 @@
+package pages
+
+import (
+	"encoding/json"
+	"fmt"
+	"strconv"
+
+	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+)
+
+templ adminWarehouseCreateModal(data AdminWarehousesData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "admin-warehouse-create-modal",
+		Title: i18n.T(lang, "admin.wh.create"),
+		Size:  "lg",
+	}) {
+		<script type="application/json" id="admin-wh-branches-json">
+			{ templ.Raw(branchesToJSON(data.Branches, lang)) }
+		</script>
+		<div
+			x-data="{
+				selectedOrg: '',
+				selectedBranch: '',
+				branches: [],
+				init() {
+					try {
+						const el = document.getElementById('admin-wh-branches-json');
+						if (el) this.branches = JSON.parse(el.textContent);
+					} catch (e) {}
+				},
+				get filteredBranches() {
+					if (!this.selectedOrg) return [];
+					return this.branches.filter(b => b.orgId === this.selectedOrg);
+				},
+				onOrgChange() {
+					this.selectedBranch = '';
+				},
+				onBranchChange() {
+					const found = this.branches.find(b => b.id === this.selectedBranch);
+					if (found) {
+						if (this.$refs.phone && !this.$refs.phone.value && found.phone) this.$refs.phone.value = found.phone;
+						if (this.$refs.address && !this.$refs.address.value && found.address) this.$refs.address.value = found.address;
+					}
+				}
+			}"
+			class="stack-md"
+		>
+			<form method="POST" action={ templ.SafeURL("/admin/warehouses/new?" + data.QueryValues().Encode()) } class="stack-md">
+				<div class="grid-2 gap-4">
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.col_owner") } <span class="text-danger">*</span>
+						</label>
+						<select
+							name="organization_id"
+							x-model="selectedOrg"
+							@change="onOrgChange"
+							required
+							class="form-select w-full text-xs font-medium"
+						>
+							<option value="">-- اختر المنشأة المالكة --</option>
+							for _, o := range data.Organizations {
+								<option value={ fmt.Sprintf("%d", o.ID) }>
+									{ o.LegalName }
+									if tn := o.TradeName.Get(i18n.Lang(lang)); tn != "" && tn != o.LegalName {
+										({ tn })
+									}
+									(#{ fmt.Sprintf("%d", o.ID) } - { i18n.TKey(lang, "org.type."+string(o.Type)) })
+								</option>
+							}
+						</select>
+					</div>
+
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.col_branch") }
+						</label>
+						<select
+							name="branch_id"
+							x-model="selectedBranch"
+							@change="onBranchChange"
+							class="form-select w-full text-xs font-medium"
+						>
+							<option value="">مخزن عام للمنشأة (بدون فرع محدد)</option>
+							<template x-for="b in filteredBranches" :key="b.id">
+								<option :value="b.id" x-text="b.name + ' (#' + b.id + ')'"></option>
+							</template>
+						</select>
+						<span class="text-2xs text-muted" x-show="selectedOrg && filteredBranches.length === 0">
+							لا توجد فروع مسجلة لهذه المنشأة (سيتم إنشاء المخزن كمخزن عام للمنشأة).
+						</span>
+					</div>
+				</div>
+
+				<div class="grid-2 gap-4">
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.col_name") } <span class="text-danger">*</span>
+						</label>
+						<input
+							type="text"
+							name="name"
+							required
+							placeholder="مثال: المستودع الرئيسي، مخزن فرع المعادي..."
+							class="form-input w-full text-xs font-semibold"
+						/>
+					</div>
+
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.field_code") }
+						</label>
+						<input
+							type="text"
+							name="code"
+							placeholder="WH-01 (يترك فارغاً للتوليد التلقائي)"
+							class="form-input w-full text-xs font-mono"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2 gap-4">
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.field_phone") }
+						</label>
+						<input
+							type="text"
+							name="phone"
+							x-ref="phone"
+							placeholder="01012345678"
+							class="form-input w-full text-xs tabular-nums"
+						/>
+					</div>
+
+					<div class="stack-xs">
+						<label class="form-label text-xs font-bold text-primary">
+							{ i18n.T(lang, "admin.wh.field_address") }
+						</label>
+						<input
+							type="text"
+							name="address"
+							x-ref="address"
+							placeholder="مثال: المنطقة الصناعية - قطعة 14 - القاهرة"
+							class="form-input w-full text-xs"
+						/>
+					</div>
+				</div>
+
+				<div class="grid-2 gap-4 pt-1">
+					<div class="stack-xs">
+						<label class="form-label text-2xs text-secondary font-medium">خط العرض (Latitude)</label>
+						<input
+							type="number"
+							step="any"
+							name="latitude"
+							placeholder="30.0444"
+							class="form-input w-full text-xs tabular-nums"
+						/>
+					</div>
+
+					<div class="stack-xs">
+						<label class="form-label text-2xs text-secondary font-medium">خط الطول (Longitude)</label>
+						<input
+							type="number"
+							step="any"
+							name="longitude"
+							placeholder="31.2357"
+							class="form-input w-full text-xs tabular-nums"
+						/>
+					</div>
+				</div>
+
+				<div class="pt-2 border-t">
+					<label class="d-flex items-center gap-2 text-xs font-bold text-primary cursor-pointer">
+						<input
+							type="checkbox"
+							name="is_active"
+							value="1"
+							checked
+							class="form-checkbox"
+						/>
+						<span>{ i18n.T(lang, "admin.wh.active") } (تفعيل المخزن فوراً لاستقبال وحفظ المخزون)</span>
+					</label>
+				</div>
+
+				<div class="modal-footer pt-3 border-t d-flex justify-end gap-2">
+					<button type="button" class="btn btn-secondary btn-sm font-bold" data-modal-close="admin-warehouse-create-modal">
+						{ i18n.T(lang, "common.cancel") }
+					</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold">
+						{ i18n.T(lang, "common.save") }
+					</button>
+				</div>
+			</form>
+		</div>
+	}
+}
+
+templ adminWarehouseEditModal(row *inventory.AdminWarehouseRow, data AdminWarehousesData, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    fmt.Sprintf("admin-warehouse-edit-%d", row.ID),
+		Title: fmt.Sprintf("%s — %s", i18n.T(lang, "common.edit"), row.Name),
+		Size:  "lg",
+	}) {
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/admin/warehouses/%d/edit?%s", row.ID, data.QueryValues().Encode())) }
+			class="stack-md"
+		>
+			<!-- Owning Organization Summary (Immutable) -->
+			<div class="p-3 bg-surface-raised border rounded-xl d-flex items-center justify-between flex-wrap gap-2 text-xs">
+				<div class="d-flex items-center gap-2">
+					<span class="text-muted font-bold">{ i18n.T(lang, "admin.wh.col_owner") }:</span>
+					<strong class="text-primary font-black">{ row.OrganizationName }</strong>
+					if row.OrganizationType != "" {
+						<span class="badge badge-slate text-2xs">{ i18n.TKey(lang, "org.type."+row.OrganizationType) }</span>
+					}
+					<span class="badge badge-sky text-2xs tabular-nums">#{ fmt.Sprintf("%d", row.OrganizationID) }</span>
+				</div>
+				if row.HoldsStock() {
+					<span class="badge badge-amber text-2xs font-bold">
+						يحتوي على { fmt.Sprintf("%d", row.TotalQuantity) } وحدة مخزنية
+					</span>
+				}
+			</div>
+
+			<div class="grid-2 gap-4">
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-primary">
+						{ i18n.T(lang, "admin.wh.col_name") } <span class="text-danger">*</span>
+					</label>
+					<input
+						type="text"
+						name="name"
+						required
+						value={ row.Name }
+						class="form-input w-full text-xs font-semibold"
+					/>
+				</div>
+
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-primary">
+						{ i18n.T(lang, "admin.wh.col_branch") }
+					</label>
+					<select name="branch_id" class="form-select w-full text-xs font-medium">
+						<option value="">مخزن عام للمنشأة (بدون فرع محدد)</option>
+						for _, b := range data.Branches {
+							if b.OrganizationID == row.OrganizationID {
+								<option
+									value={ fmt.Sprintf("%d", b.ID) }
+									selected?={ row.BranchID != nil && *row.BranchID == b.ID }
+								>
+									{ b.Name.Get(i18n.Lang(lang)) } (#{ fmt.Sprintf("%d", b.ID) })
+								</option>
+							}
+						}
+					</select>
+				</div>
+			</div>
+
+			<div class="grid-2 gap-4">
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-primary">
+						{ i18n.T(lang, "admin.wh.field_code") }
+					</label>
+					<input
+						type="text"
+						name="code"
+						value={ row.Code }
+						class="form-input w-full text-xs font-mono"
+					/>
+				</div>
+
+				<div class="stack-xs">
+					<label class="form-label text-xs font-bold text-primary">
+						{ i18n.T(lang, "admin.wh.field_phone") }
+					</label>
+					<input
+						type="text"
+						name="phone"
+						value={ row.Phone }
+						class="form-input w-full text-xs tabular-nums"
+					/>
+				</div>
+			</div>
+
+			<div class="stack-xs">
+				<label class="form-label text-xs font-bold text-primary">
+					{ i18n.T(lang, "admin.wh.field_address") }
+				</label>
+				<input
+					type="text"
+					name="address"
+					value={ row.Address }
+					class="form-input w-full text-xs"
+				/>
+			</div>
+
+			<div class="grid-2 gap-4 pt-1">
+				<div class="stack-xs">
+					<label class="form-label text-2xs text-secondary font-medium">خط العرض (Latitude)</label>
+					<input
+						type="number"
+						step="any"
+						name="latitude"
+						value={ coordValue(row.Latitude) }
+						class="form-input w-full text-xs tabular-nums"
+					/>
+				</div>
+
+				<div class="stack-xs">
+					<label class="form-label text-2xs text-secondary font-medium">خط الطول (Longitude)</label>
+					<input
+						type="number"
+						step="any"
+						name="longitude"
+						value={ coordValue(row.Longitude) }
+						class="form-input w-full text-xs tabular-nums"
+					/>
+				</div>
+			</div>
+
+			<div class="pt-2 border-t">
+				<label class="d-flex items-center gap-2 text-xs font-bold text-primary cursor-pointer">
+					<input
+						type="checkbox"
+						name="is_active"
+						value="1"
+						checked?={ row.IsActive }
+						class="form-checkbox"
+					/>
+					<span>{ i18n.T(lang, "admin.wh.active") }</span>
+				</label>
+				if row.HoldsStock() && row.IsActive {
+					<p class="text-2xs text-warning m-0 mt-1">
+						{ i18n.T(lang, "admin.wh.disable_holds_stock") }
+					</p>
+				}
+			</div>
+
+			<div class="modal-footer pt-3 border-t d-flex justify-end gap-2">
+				<button
+					type="button"
+					class="btn btn-secondary btn-sm font-bold"
+					data-modal-close={ fmt.Sprintf("admin-warehouse-edit-%d", row.ID) }
+				>
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm font-bold">
+					{ i18n.T(lang, "common.save") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+func coordValue(val *float64) string {
+	if val == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.6f", *val)
+}
+
+func branchesToJSON(branches []*org.Branch, lang string) string {
+	type brItem struct {
+		ID      string `json:"id"`
+		OrgID   string `json:"orgId"`
+		Name    string `json:"name"`
+		Phone   string `json:"phone"`
+		Address string `json:"address"`
+	}
+	items := make([]brItem, 0, len(branches))
+	for _, b := range branches {
+		if b == nil {
+			continue
+		}
+		name := b.Name.Get(i18n.Lang(lang))
+		if name == "" {
+			name = b.Code
+		}
+		items = append(items, brItem{
+			ID:      strconv.FormatInt(b.ID, 10),
+			OrgID:   strconv.FormatInt(b.OrganizationID, 10),
+			Name:    name,
+			Phone:   b.Phone,
+			Address: b.Address,
+		})
+	}
+	bytes, _ := json.Marshal(items)
+	return string(bytes)
+}

@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
 )
@@ -31,6 +33,9 @@ func (h *UIHandler) registerVendorPromoRoutes(r chi.Router) {
 		g.Get("/vendor/offers-packages/{id}", h.VendorOffersPackagesPage)
 		g.Get("/vendor/offers-packages/sponsorships", h.VendorOffersPackagesSponsorshipsPage)
 		g.Get("/vendor/offers-packages/sponsorships/{id}", h.VendorOffersPackagesSponsorshipsPage)
+		g.Get("/vendor/sponsorships", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/vendor/offers-packages/sponsorships", http.StatusMovedPermanently)
+		})
 		g.Get("/vendor/offers-packages/promotions", h.VendorOffersPackagesPromotionsPage)
 		// كشف حساب للباقة: where this purchase's credits went. The card showed
 		// "31 / 50" and nothing about the missing nineteen.

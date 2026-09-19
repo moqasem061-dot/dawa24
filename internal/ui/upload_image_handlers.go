@@ -2,6 +2,7 @@ package ui
 
 import (
 	"fmt"
+	"io"
 	"mime"
 	"net/http"
 	"os"
@@ -10,7 +11,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/muhiya/dawa24-store/internal/platform/media"
+	"github.com/muhiya/dawa24-store/internal/platform/storage"
 )
+
+var uploadStorageClient *storage.Client
+
+// SetUploadStorageClient sets the optional object storage client for serving and caching uploads from S3/MinIO.
+func SetUploadStorageClient(sc *storage.Client) {
+	uploadStorageClient = sc
+}
 
 func init() {
 	_ = mime.AddExtensionType(".mp4", "video/mp4")
@@ -100,6 +109,28 @@ func RegisterUploadRoutes(r chi.Router) {
 				return
 			}
 		}
+
+		// Fallback to S3/MinIO storage client if file is missing locally
+		if uploadStorageClient != nil {
+			s3Key := strings.TrimPrefix(filepath.ToSlash(cleanPath), "/")
+			ctx := r.Context()
+			reader, _, err := uploadStorageClient.Get(ctx, s3Key)
+			if err != nil && strings.HasPrefix(s3Key, "products/") {
+				reader, _, err = uploadStorageClient.Get(ctx, strings.TrimPrefix(s3Key, "products/"))
+			}
+			if err == nil && reader != nil {
+				defer reader.Close()
+				data, readErr := io.ReadAll(reader)
+				if readErr == nil && len(data) > 0 {
+					_ = os.MkdirAll(filepath.Dir(fullPath), 0755)
+					_ = os.WriteFile(fullPath, data, 0644)
+					_ = deriveAndStore(filepath.Dir(fullPath), filepath.Base(fullPath), data)
+					http.ServeFile(w, r, fullPath)
+					return
+				}
+			}
+		}
+
 		http.NotFound(w, r)
 	})
 }

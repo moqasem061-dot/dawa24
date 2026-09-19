@@ -282,6 +282,8 @@ func (s *AdminImageImportSessionStore) ProcessImageImport(
 			continue
 		}
 
+		_ = deriveAndStore(prodUploadDir, fileName, imgData)
+
 		publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
 
 		// Also upload to S3 if storage client is configured

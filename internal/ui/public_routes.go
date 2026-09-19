@@ -36,6 +36,9 @@ func (h *UIHandler) RegisterPublicRoutes(r chi.Router) {
 	// traffic.
 	r.Group(func(assets chi.Router) {
 		RegisterStaticRoutes(assets)
+		if h.storage != nil {
+			SetUploadStorageClient(h.storage)
+		}
 		RegisterUploadRoutes(assets)
 	})
 

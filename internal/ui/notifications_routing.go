@@ -14,6 +14,7 @@ import (
 
 var (
 	reOrderNumber = regexp.MustCompile(`\b(ORD-[A-Za-z0-9-]+)\b`)
+	reRequestID   = regexp.MustCompile(`#(\d+)`)
 )
 
 // ResolveNotificationDestination determines the optimal platform destination URL
@@ -35,14 +36,31 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		}
 	}
 
-	// 2. Orders & Commerce
+	// 2. Account & Organization Deletions
+	if isDeletionNotification(combined) {
+		if strings.Contains(combined, "منشأة") || strings.Contains(combined, "org.deletion") {
+			if actor.IsSuperAdmin() || actor.IsStaff {
+				return "/admin/deletion-requests?tab=organizations"
+			}
+			if isVendor(actor) {
+				return "/vendor/organization"
+			}
+			return "/customer/organization"
+		}
+		if actor.IsSuperAdmin() || actor.IsStaff {
+			return "/admin/deletion-requests?tab=users"
+		}
+		return "/settings?tab=security"
+	}
+
+	// 3. Orders & Commerce
 	if isOrderNotification(combined, notif.RequiredPermission) {
 		if dest := h.resolveOrderDestination(ctx, actor, combined); dest != "" {
 			return dest
 		}
 	}
 
-	// 3. Delivery & Courier
+	// 4. Delivery & Courier
 	if isDeliveryNotification(combined, notif.RequiredPermission, actor) {
 		if actor.Role == "courier" || actor.Role == "org_courier" || actor.Can("vendor.delivery.view") {
 			return "/vendor/delivery"
@@ -53,9 +71,12 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		return "/vendor/delivery"
 	}
 
-	// 4. Purchase Requests & RFQs
+	// 5. Purchase Requests & RFQs
 	if isPurchaseRequestNotification(combined, notif.RequiredPermission) {
 		if actor.Can("vendor.purchase_request.view") || actor.Role == "vendor" {
+			if reqID := extractRequestID(combined); reqID != "" {
+				return "/vendor/purchase-requests/" + reqID
+			}
 			return "/vendor/purchase-requests"
 		}
 		if actor.Can("pharmacy.order.view") || actor.Role == "customer" || actor.Role == "pharmacy" {
@@ -66,10 +87,10 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		}
 	}
 
-	// 5. Wallet & Financials (Deposits, Withdrawals, Refunds)
+	// 6. Wallet & Financials (Deposits, Withdrawals, Refunds)
 	if isWalletNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.IsStaff {
-			return "/admin/billing/wallets"
+			return "/admin/finance/wallets"
 		}
 		if isVendor(actor) {
 			if actor.Can("vendor.wallet.view") {
@@ -80,42 +101,45 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		return "/customer/wallet"
 	}
 
-	// 6. Platform Admin Approvals & Registration
+	// 7. Platform Admin Approvals, Registration & Profile Changes
 	if isApprovalNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.Can("org.approval.view") {
-			return "/admin/approvals"
+			if strings.Contains(combined, "طلب تعديل") || strings.Contains(combined, "profile_change") {
+				return "/admin/approvals?tab=requests"
+			}
+			return "/admin/approvals?tab=organizations"
 		}
 		if isVendor(actor) {
 			return "/vendor/organization"
 		}
-		return "/customer/dashboard"
+		return "/customer/organization"
 	}
 
-	// 7. Job Seekers & HR
+	// 8. Job Seekers & HR
 	if isJobNotification(combined) {
 		if actor.IsSuperAdmin() || actor.Can("org.approval.view") {
-			return "/admin/approvals/job-seekers"
+			return "/admin/approvals?tab=job_seekers"
 		}
 		return "/jobs"
 	}
 
-	// 8. Documents & Verification
+	// 9. Documents & Verification
 	if isDocumentNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.Can("hr.document.view") {
-			return "/admin/documents"
+			return "/admin/approvals?tab=documents"
 		}
 		if isVendor(actor) && actor.Can("vendor.document.view") {
 			return "/vendor/documents"
 		}
-		return "/documents"
+		return "/customer/documents"
 	}
 
-	// 9. Smart Order
+	// 10. Smart Order
 	if strings.Contains(combined, "الطلب الذكي") || strings.Contains(combined, "smart_order") || strings.Contains(combined, "smart order") {
 		return "/customer/smart-order"
 	}
 
-	// 10. Vendor Ingest / Catalog Import
+	// 11. Vendor Ingest / Catalog Import
 	if isCatalogImportNotification(combined) {
 		if actor.IsSuperAdmin() || actor.IsStaff {
 			return "/admin/products/import"
@@ -126,49 +150,55 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		return "/customer/saving-products"
 	}
 
-	// 11. Promotions, Sponsorships, Offers & Ads
+	// 12. Promotions, Sponsorships, Offers & Ads
 	if isPromoNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.IsStaff {
 			if strings.Contains(combined, "إعلان") || strings.Contains(combined, "ad.") {
-				return "/admin/ads"
+				return "/admin/offers-packages?tab=ads"
 			}
-			return "/admin/sponsorships"
+			if strings.Contains(combined, "باقة رعاية") || strings.Contains(combined, "sponsorship") {
+				return "/admin/offers-packages/sponsorships"
+			}
+			return "/admin/offers-packages"
 		}
 		if isVendor(actor) {
 			if strings.Contains(combined, "إعلان") || strings.Contains(combined, "ad.") {
 				return "/vendor/ads"
 			}
-			return "/vendor/sponsorships"
+			if strings.Contains(combined, "باقة رعاية") || strings.Contains(combined, "sponsorship") {
+				return "/vendor/offers-packages/sponsorships"
+			}
+			return "/vendor/offers"
 		}
 		return "/customer/dashboard"
 	}
 
-	// 12. Subscriptions & Sessions
+	// 13. Subscriptions & Sessions
 	if strings.Contains(combined, "اشتراك") || strings.Contains(combined, "باقة") || strings.Contains(combined, "subscription") {
 		if actor.IsSuperAdmin() || actor.IsStaff {
-			return "/admin/subscriptions"
+			return "/admin/plans?tab=subscriptions"
 		}
 		if isVendor(actor) {
 			return "/vendor/subscription"
 		}
-		return "/settings?tab=sessions"
+		return "/customer/subscription"
 	}
 
-	// 13. Team, Branches & Roles
+	// 14. Team, Branches & Roles
 	if isTeamBranchNotification(combined) {
 		if isVendor(actor) {
-			if strings.Contains(combined, "فرع") {
+			if strings.Contains(combined, "فرع") || strings.Contains(combined, "quota") {
 				return "/vendor/branches"
 			}
 			return "/vendor/team"
 		}
-		if strings.Contains(combined, "فرع") {
+		if strings.Contains(combined, "فرع") || strings.Contains(combined, "quota") {
 			return "/customer/branches"
 		}
 		return "/customer/team"
 	}
 
-	// 14. Reviews & Ratings
+	// 15. Reviews & Ratings
 	if strings.Contains(combined, "تقييم") || strings.Contains(combined, "review") {
 		if actor.IsSuperAdmin() || actor.IsStaff {
 			return "/admin/reviews"
@@ -176,15 +206,15 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 		if isVendor(actor) {
 			return "/vendor/reviews"
 		}
-		return "/customer/dashboard"
+		return "/orders"
 	}
 
-	// 15. Chat Messages
+	// 16. Chat Messages
 	if strings.Contains(combined, "محادثة") || strings.Contains(combined, "رسالة") || strings.Contains(combined, "chat") {
 		return "/chat"
 	}
 
-	// 16. Security & Password Changes
+	// 17. Security & Password Changes
 	if strings.Contains(combined, "أمان") || strings.Contains(combined, "كلمة المرور") || strings.Contains(combined, "security") || strings.Contains(combined, "password") {
 		return "/settings?tab=security"
 	}
@@ -235,10 +265,11 @@ func extractExplicitURL(text string) string {
 	if strings.Contains(text, "http://") || strings.Contains(text, "https://") {
 		parts := strings.Fields(text)
 		for _, p := range parts {
-			if strings.HasPrefix(p, "https://dawa24.com/") || strings.HasPrefix(p, "http://dawa24.com/") {
-				idx := strings.Index(p, "dawa24.com")
+			clean := strings.TrimRight(p, ".,;:!?)'\"")
+			if strings.HasPrefix(clean, "https://dawa24.com/") || strings.HasPrefix(clean, "http://dawa24.com/") {
+				idx := strings.Index(clean, "dawa24.com")
 				if idx != -1 {
-					return p[idx+len("dawa24.com"):]
+					return clean[idx+len("dawa24.com"):]
 				}
 			}
 		}
@@ -342,4 +373,17 @@ func isTeamBranchNotification(text string) bool {
 	return strings.Contains(text, "فرع") || strings.Contains(text, "فريق") ||
 		strings.Contains(text, "عضو") || strings.Contains(text, "صلاحية") ||
 		strings.Contains(text, "branch.") || strings.Contains(text, "org.user")
+}
+
+func isDeletionNotification(text string) bool {
+	return strings.Contains(text, "حذف حساب") || strings.Contains(text, "حذف منشأة") ||
+		strings.Contains(text, "حذف المنشأة") || strings.Contains(text, "account.deletion") ||
+		strings.Contains(text, "org.deletion") || strings.Contains(text, "طلب حذف")
+}
+
+func extractRequestID(text string) string {
+	if m := reRequestID.FindStringSubmatch(text); len(m) > 1 {
+		return m[1]
+	}
+	return ""
 }

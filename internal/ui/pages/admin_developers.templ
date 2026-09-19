@@ -307,19 +307,41 @@ templ AdminDevelopersPage(values AdminDevelopersValues, lang, dir string) {
 						this.roleError = '';
 						try {
 							const formData = new FormData(formEl);
+							if (formEl.id) {
+								document.querySelectorAll(`[form="${formEl.id}"]`).forEach(el => {
+									if (el.name && !formData.has(el.name)) {
+										if (el.type === 'checkbox') {
+											if (el.checked) formData.append(el.name, el.value);
+										} else {
+											formData.append(el.name, el.value);
+										}
+									}
+								});
+							}
+							const csrfCookie = document.cookie.split('; ').find(row => row.startsWith('dawa_csrf='));
+							const csrfToken = csrfCookie ? csrfCookie.split('=')[1] : '';
+							const headers = { 'Accept': 'application/json' };
+							if (csrfToken) headers['X-CSRF-Token'] = csrfToken;
+
 							const resp = await fetch('/admin/developers/ai/role-models', {
 								method: 'POST',
-								headers: { 'Accept': 'application/json' },
+								headers: headers,
 								body: formData
 							});
-							const data = await resp.json();
+							let data = null;
+							try {
+								data = await resp.json();
+							} catch (parseErr) {
+								throw new Error('فشل قراءة استجابة الخادم');
+							}
 							if (resp.ok && data && (data.status === 'ok' || !data.error)) {
 								this.savedRole = role;
+								this.roleError = '';
 								setTimeout(() => {
 									if (this.savedRole === role) this.savedRole = '';
 								}, 3000);
 							} else {
-								this.roleError = (data && data.message) ? data.message : 'تعذر حفظ النموذج';
+								this.roleError = (data && (data.message || data.error)) ? (data.message || data.error) : 'تعذر حفظ النموذج';
 							}
 						} catch (e) {
 							this.roleError = 'خطأ في الاتصال: ' + e.message;

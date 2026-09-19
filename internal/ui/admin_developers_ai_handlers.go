@@ -143,21 +143,32 @@ func (h *UIHandler) AdminAIFetchModelsAPI(w http.ResponseWriter, r *http.Request
 func (h *UIHandler) AdminAISaveRoleModelSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
+	isJSON := r.Header.Get("Accept") == "application/json"
+
+	sendError := func(status int, msg string) {
+		if isJSON {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(status)
+			_ = json.NewEncoder(w).Encode(map[string]any{"status": "error", "message": msg})
+			return
+		}
+		h.redirectWithNotice(w, r, "/admin/developers?tab=ai", "error", msg)
+	}
 
 	if h.adminSvc == nil {
-		h.redirectWithNotice(w, r, "/admin/developers?tab=ai", "error", i18n.T(lang, "admin.dev.admin_service_unavailable"))
+		sendError(http.StatusServiceUnavailable, i18n.T(lang, "admin.dev.admin_service_unavailable"))
 		return
 	}
 
 	role := strings.TrimSpace(r.FormValue("role"))
 	if role == "" {
-		h.redirectWithNotice(w, r, "/admin/developers?tab=ai", "error", "يجب تحديد أداة / دور الذكاء الاصطناعي")
+		sendError(http.StatusBadRequest, "يجب تحديد أداة / دور الذكاء الاصطناعي")
 		return
 	}
 
 	model := strings.TrimSpace(r.FormValue("model"))
 	if model == "" {
-		h.redirectWithNotice(w, r, "/admin/developers?tab=ai", "error", "يجب تحديد اسم النموذج")
+		sendError(http.StatusBadRequest, "يجب تحديد اسم النموذج")
 		return
 	}
 
@@ -186,7 +197,7 @@ func (h *UIHandler) AdminAISaveRoleModelSubmit(w http.ResponseWriter, r *http.Re
 	}
 
 	if err := h.adminSvc.SaveAIRoleModel(ctx, &rm); err != nil {
-		h.redirectWithNotice(w, r, "/admin/developers?tab=ai", "error", h.safeMessage(err, lang))
+		sendError(http.StatusInternalServerError, h.safeMessage(err, lang))
 		return
 	}
 
@@ -194,7 +205,7 @@ func (h *UIHandler) AdminAISaveRoleModelSubmit(w http.ResponseWriter, r *http.Re
 		h.gatewayKeys.Invalidate()
 	}
 
-	if r.Header.Get("Accept") == "application/json" {
+	if isJSON {
 		w.Header().Set("Content-Type", "application/json")
 		_ = json.NewEncoder(w).Encode(map[string]any{"status": "ok", "role": role, "model": model})
 		return

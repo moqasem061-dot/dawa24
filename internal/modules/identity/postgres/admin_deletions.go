@@ -35,7 +35,7 @@ func (r *Repository) ListAccountDeletionRequestsWithTotal(ctx context.Context, s
 		const query = `
 			SELECT r.id, r.user_id, COALESCE(u.name->>'ar', u.name->>'en', ''), COALESCE(u.email, ''), COALESCE(u.role, ''),
 			       r.organization_id, COALESCE(o.name->>'ar', o.name->>'en', ''), r.reason, r.status,
-			       r.admin_notes, r.reviewed_by, COALESCE(r.reviewed_at, r.resolved_at) AS reviewed_at, r.created_at, r.updated_at
+			       r.admin_notes, r.reviewed_by, r.resolved_at AS reviewed_at, r.created_at, r.updated_at
 			FROM identity.account_deletion_requests r
 			JOIN identity.users u ON u.id = r.user_id
 			LEFT JOIN org.organizations o ON o.id = r.organization_id
@@ -100,7 +100,7 @@ func (r *Repository) ReviewAccountDeletionRequest(ctx context.Context, requestID
 
 		_, err := tx.Exec(txCtx, `
 			UPDATE identity.account_deletion_requests
-			SET status = $1, admin_notes = $2, reviewed_by = $3, reviewed_at = now(), resolved_at = now(), updated_at = now()
+			SET status = $1, admin_notes = $2, reviewed_by = $3, resolved_at = now(), updated_at = now()
 			WHERE id = $4;
 		`, newStatus, adminNotes, reviewerID, requestID)
 		if err != nil {

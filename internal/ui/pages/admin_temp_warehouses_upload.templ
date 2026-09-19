@@ -125,19 +125,22 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 							let result = null;
 							try { result = await response.json(); } catch(e) {}
 
+							const returnUrl = form.dataset.returnUrl || this.$el.dataset.returnUrl || document.getElementById('temp-warehouse-back-btn')?.getAttribute('href') || '/admin/user/temparte-warehouses';
+
 							if (response.ok && result && result.success) {
 								this.uploadProgress = 100;
 								this.uploadStatus = 'تم رفع ومعالجة المستودع بنجاح!';
 								setTimeout(() => {
-									window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
+									window.location.href = returnUrl;
 								}, 1200);
 							} else {
 								this.uploadProgress = 100;
-								window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
+								window.location.href = returnUrl;
 							}
 						} catch(err) {
 							console.error('Upload error:', err);
-							window.location.href = data.PageURL || '/admin/user/temparte-warehouses';
+							const returnUrl = form.dataset.returnUrl || this.$el.dataset.returnUrl || document.getElementById('temp-warehouse-back-btn')?.getAttribute('href') || '/admin/user/temparte-warehouses';
+							window.location.href = returnUrl;
 						}
 					}
 				};
@@ -145,12 +148,18 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 		</script>
 		<div
 			x-data="adminTempWarehousesUploadState"
+			data-return-url={ data.PageURL }
 			class="page-container max-w-4xl mx-auto py-6"
 			dir={ dir }
 		>
 			<!-- Back Navigation -->
 			<div class="mb-4">
-				<a href={ templ.SafeURL(data.PageURL) } class="btn btn-ghost btn-sm font-bold text-secondary gap-1.5 hover:text-primary">
+				<a
+					id="temp-warehouse-back-btn"
+					href={ templ.SafeURL(data.PageURL) }
+					hx-boost="false"
+					class="btn btn-ghost btn-sm font-bold text-secondary gap-1.5 hover:text-primary"
+				>
 					<span>&larr;</span>
 					<span>العودة إلى قائمة المستودعات المؤقتة</span>
 				</a>
@@ -176,6 +185,7 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 				<form
 					method="POST"
 					action={ templ.SafeURL(data.Base + "/upload") }
+					data-return-url={ data.PageURL }
 					enctype="multipart/form-data"
 					@submit.prevent="submitUpload($event.target)"
 					class="d-flex flex-col gap-6 m-0"
@@ -327,7 +337,12 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 
 					<!-- Form Submit Button -->
 					<div class="flex-between items-center pt-4 border-t">
-						<a href={ templ.SafeURL(data.PageURL) } class="btn btn-secondary btn-sm font-bold">
+						<a
+							id="temp-warehouse-cancel-btn"
+							href={ templ.SafeURL(data.PageURL) }
+							hx-boost="false"
+							class="btn btn-secondary btn-sm font-bold"
+						>
 							إلغاء والرجوع
 						</a>
 						<button

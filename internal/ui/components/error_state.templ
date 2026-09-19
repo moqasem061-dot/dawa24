@@ -28,15 +28,20 @@ templ ErrorState(props ErrorStateProps) {
 				تعذر إتمام العملية المطلوبة. يرجى المحاولة مرة أخرى أو مراجعة الاتصال بالخادم.
 			}
 		</p>
-		if props.RetryURL != "" {
-			<a href={ templ.SafeURL(props.RetryURL) } class="btn btn-danger s-error-state-btn">
-				@IconRefresh("icon-xs")
-				if props.RetryLabel != "" {
-					<span>{ props.RetryLabel }</span>
-				} else {
-					<span>إعادة المحاولة</span>
-				}
-			</a>
-		}
+		<div class="s-error-actions">
+			<button type="button" onclick="window.history.length > 1 ? window.history.back() : window.location.href='/'" class="btn btn-secondary s-error-state-btn">
+				<span>الرجوع للخلف</span>
+			</button>
+			if props.RetryURL != "" {
+				<a href={ templ.SafeURL(props.RetryURL) } class="btn btn-danger s-error-state-btn">
+					@IconRefresh("icon-xs")
+					if props.RetryLabel != "" {
+						<span>{ props.RetryLabel }</span>
+					} else {
+						<span>إعادة المحاولة</span>
+					}
+				</a>
+			}
+		</div>
 	</div>
 }

@@ -1,9 +1,11 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -89,7 +91,32 @@ func (h *UIHandler) AdminWarehouseEditSubmit(w http.ResponseWriter, r *http.Requ
 	existing.Code = strings.TrimSpace(r.PostFormValue("code"))
 	existing.Phone = strings.TrimSpace(r.PostFormValue("phone"))
 	existing.Address = strings.TrimSpace(r.PostFormValue("address"))
-	existing.IsActive = r.PostFormValue("is_active") == "1"
+	existing.IsActive = r.PostFormValue("is_active") == "1" || r.PostFormValue("is_active") == "true" || r.PostFormValue("is_active") == "on"
+
+	if bStr := strings.TrimSpace(r.PostFormValue("branch_id")); bStr != "" {
+		if bID, err := strconv.ParseInt(bStr, 10, 64); err == nil && bID > 0 {
+			existing.BranchID = &bID
+		} else {
+			existing.BranchID = nil
+		}
+	} else {
+		existing.BranchID = nil
+	}
+
+	if latStr := strings.TrimSpace(r.PostFormValue("latitude")); latStr != "" {
+		if v, err := strconv.ParseFloat(latStr, 64); err == nil {
+			existing.Latitude = &v
+		}
+	} else {
+		existing.Latitude = nil
+	}
+	if lngStr := strings.TrimSpace(r.PostFormValue("longitude")); lngStr != "" {
+		if v, err := strconv.ParseFloat(lngStr, 64); err == nil {
+			existing.Longitude = &v
+		}
+	} else {
+		existing.Longitude = nil
+	}
 
 	if err := h.invSvc.AdminUpdateWarehouse(sysCtx, existing); err != nil {
 		h.log.ErrorContext(ctx, "admin update warehouse", "warehouse_id", id, "error", err)
@@ -120,15 +147,66 @@ func (h *UIHandler) AdminWarehouseCreateSubmit(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	code := strings.TrimSpace(r.PostFormValue("code"))
+	if code == "" {
+		code = fmt.Sprintf("WH-%d-%d", orgID, 100+int(time.Now().UnixNano()%900))
+	}
+
+	var branchID *int64
+	if bStr := strings.TrimSpace(r.PostFormValue("branch_id")); bStr != "" {
+		if bID, err := strconv.ParseInt(bStr, 10, 64); err == nil && bID > 0 {
+			branchID = &bID
+		}
+	}
+
+	phone := strings.TrimSpace(r.PostFormValue("phone"))
+	address := strings.TrimSpace(r.PostFormValue("address"))
+
+	var latPtr, lngPtr *float64
+	if latStr := strings.TrimSpace(r.PostFormValue("latitude")); latStr != "" {
+		if v, err := strconv.ParseFloat(latStr, 64); err == nil {
+			latPtr = &v
+		}
+	}
+	if lngStr := strings.TrimSpace(r.PostFormValue("longitude")); lngStr != "" {
+		if v, err := strconv.ParseFloat(lngStr, 64); err == nil {
+			lngPtr = &v
+		}
+	}
+
+	// Auto-fallback from branch if coordinates/address/phone are empty
+	sysCtx := database.AsSystem(ctx)
+	if (latPtr == nil || lngPtr == nil || address == "" || phone == "") && branchID != nil && h.orgSvc != nil {
+		if b, err := h.orgSvc.GetBranch(sysCtx, *branchID); err == nil && b != nil {
+			if latPtr == nil {
+				latPtr = b.Latitude
+			}
+			if lngPtr == nil {
+				lngPtr = b.Longitude
+			}
+			if address == "" && b.Address != "" {
+				address = b.Address
+			}
+			if phone == "" && b.Phone != "" {
+				phone = b.Phone
+			}
+		}
+	}
+
+	isActive := r.PostFormValue("is_active") == "1" || r.PostFormValue("is_active") == "true" || r.PostFormValue("is_active") == "on"
+
 	wh := &inventory.Warehouse{
 		OrganizationID: orgID,
+		BranchID:       branchID,
 		Name:           name,
-		Code:           strings.TrimSpace(r.PostFormValue("code")),
-		Phone:          strings.TrimSpace(r.PostFormValue("phone")),
-		Address:        strings.TrimSpace(r.PostFormValue("address")),
-		IsActive:       r.PostFormValue("is_active") == "1",
+		Code:           code,
+		Phone:          phone,
+		Address:        address,
+		Latitude:       latPtr,
+		Longitude:      lngPtr,
+		IsActive:       isActive,
 	}
-	if err := h.invSvc.AdminCreateWarehouse(database.AsSystem(ctx), wh); err != nil {
+	if err := h.invSvc.AdminCreateWarehouse(sysCtx, wh); err != nil {
 		h.log.ErrorContext(ctx, "admin create warehouse", "org_id", orgID, "error", err)
 		h.redirectWithNotice(w, r, back, "error", h.safeMessage(err, lang))
 		return

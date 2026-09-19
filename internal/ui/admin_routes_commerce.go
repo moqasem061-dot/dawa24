@@ -85,6 +85,9 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 		g.Get("/admin/wallets", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/admin/finance/wallets?tab=wallets", http.StatusMovedPermanently)
 		})
+		g.Get("/admin/billing/wallets", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/admin/finance/wallets?tab=wallets", http.StatusMovedPermanently)
+		})
 	})
 
 	r.Group(func(g chi.Router) {
@@ -119,6 +122,9 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 		g.Get("/admin/plans/subscriptions", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/admin/plans?tab=subscriptions", http.StatusMovedPermanently)
 		})
+		g.Get("/admin/subscriptions", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/admin/plans?tab=subscriptions", http.StatusMovedPermanently)
+		})
 	})
 
 	r.Group(func(g chi.Router) {
@@ -136,6 +142,9 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 		g.Get("/admin/offers-packages", h.AdminOffersPackagesHubPage)
 		g.Get("/admin/offers-packages/packages", h.AdminOfferPackagesListPage)
 		g.Get("/admin/offers-packages/packages/{id}", h.AdminOfferPackageDetailPage)
+		g.Get("/admin/sponsorships", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/admin/offers-packages/sponsorships", http.StatusMovedPermanently)
+		})
 		g.Get("/admin/offer-sponsorships", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/admin/offers-packages/sponsorships", http.StatusMovedPermanently)
 		})

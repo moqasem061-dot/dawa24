@@ -25,7 +25,7 @@ func (h *UIHandler) ForgotPasswordPage(w http.ResponseWriter, r *http.Request) {
 	case "send_failed":
 		errorMsg = i18n.T(lang, "auth.email.error_sending")
 	case "user_not_found":
-		errorMsg = i18n.T(lang, "auth.reset.user_not_found")
+		errorMsg = "البريد الإلكتروني المدخل غير مسجل لدينا، يرجى التأكد من كتابة البريد أو إنشاء حساب جديد"
 	case "cooldown":
 		errorMsg = i18n.T(lang, "auth.email.cooldown")
 	case "rate_limited":

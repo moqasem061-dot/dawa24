@@ -48,6 +48,19 @@ func (h *UIHandler) AdminWarehousesPage(w http.ResponseWriter, r *http.Request) 
 		h.log.WarnContext(ctx, "load warehouse owners", "error", ownerErr)
 	}
 
+	if h.orgSvc != nil {
+		if orgs, orgsErr := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 1000, 0); orgsErr == nil {
+			data.Organizations = orgs
+		} else {
+			h.log.WarnContext(ctx, "load organizations for warehouse admin", "error", orgsErr)
+		}
+		if branches, brErr := h.orgSvc.ListBranches(sysCtx, 0); brErr == nil {
+			data.Branches = branches
+		} else {
+			h.log.WarnContext(ctx, "load branches for warehouse admin", "error", brErr)
+		}
+	}
+
 	h.renderPage(ctx, w, "render admin warehouses page", pages.AdminWarehousesPage(data, lang, dir))
 }
 

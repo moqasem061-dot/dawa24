@@ -1,10 +1,8 @@
 package authctx
 
 import (
-	"fmt"
 	"log/slog"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
@@ -323,100 +321,3 @@ func requireType(log *slog.Logger, want string) func(http.Handler) http.Handler 
 	}
 }
 
-// redirectUnauthorized redirects an authenticated caller to their permitted home dashboard
-// with an authorization notice instead of showing a blank 404 page.
-func redirectUnauthorized(w http.ResponseWriter, r *http.Request, actor Actor) {
-	target := "/"
-	if actor.IsCustomer() {
-		target = "/customer/dashboard"
-	} else if actor.IsVendor() {
-		if actor.Can("vendor.dashboard.view") {
-			target = "/vendor/dashboard"
-		} else if actor.Can("vendor.delivery.view") {
-			target = "/vendor/delivery"
-		} else {
-			target = "/vendor/dashboard"
-		}
-	} else if actor.IsStaff {
-		target = "/admin/dashboard"
-	}
-
-	if r.URL.Path == target {
-		target = "/"
-	}
-
-	dest := target + "?auth_notice=forbidden"
-
-	http.SetCookie(w, &http.Cookie{
-		Name:     "auth_flash",
-		Value:    "forbidden",
-		Path:     "/",
-		MaxAge:   15,
-		HttpOnly: false,
-		SameSite: http.SameSiteLaxMode,
-	})
-
-	if r.Header.Get("HX-Request") == "true" {
-		currentURL := r.Header.Get("HX-Current-URL")
-		if currentURL != "" {
-			if parsed, err := url.Parse(currentURL); err == nil && (parsed.Path == target || parsed.Path == target+"/") {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
-		}
-		if r.Header.Get("HX-Boosted") != "true" && r.Method == http.MethodGet {
-			targetElem := r.Header.Get("HX-Target")
-			if targetElem != "" && targetElem != "main-content" && targetElem != "body" {
-				w.WriteHeader(http.StatusForbidden)
-				return
-			}
-		}
-
-		http.SetCookie(w, &http.Cookie{
-			Name:     "auth_flash",
-			Value:    "forbidden",
-			Path:     "/",
-			MaxAge:   15,
-			HttpOnly: false,
-			SameSite: http.SameSiteLaxMode,
-		})
-		w.Header().Set("HX-Redirect", dest)
-		w.WriteHeader(http.StatusNoContent)
-		return
-	}
-
-	http.Redirect(w, r, dest, http.StatusSeeOther)
-}
-
-// redirectToLogin sends the caller to sign in, preserving where they were
-// heading so a successful login lands back on the page they wanted.
-func redirectToLogin(w http.ResponseWriter, r *http.Request) {
-	q := url.Values{}
-	q.Set("redirect", r.URL.Path)
-	http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)
-}
-
-// notFound renders a minimal 404. It deliberately does not say whether the
-// page exists under another audience.
-func notFound(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusNotFound)
-	fmt.Fprint(w, notFoundHTML)
-}
-
-const notFoundHTML = `<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>404 — غير موجود</title>
-</head>
-<body style="font-family:system-ui,sans-serif;background:#f6f7f9;color:#24292f;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;">
-<div style="text-align:center;padding:2rem;">
-<h1 style="font-size:3rem;margin:0;color:#1f6feb;">404</h1>
-<p style="font-size:1.1rem;margin:0.5rem 0;">الصفحة غير موجودة</p>
-<p style="color:#6e7781;font-size:0.9rem;margin:0;">Page not found</p>
-<a href="/" style="display:inline-block;margin-top:1.25rem;color:#1f6feb;text-decoration:none;font-weight:600;">العودة للرئيسية</a>
-</div>
-</body>
-</html>`

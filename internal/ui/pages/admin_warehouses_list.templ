@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/muhiya/dawa24-store/internal/modules/org"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui/components"
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
@@ -31,6 +32,9 @@ type AdminWarehousesData struct {
 	SearchQuery    string
 	OrganizationID int64
 	ActiveFilter   string // "", "1", "0"
+
+	Organizations []*org.Organization
+	Branches      []*org.Branch
 }
 
 // QueryValues carries the active filters into the pager and the action forms,
@@ -143,9 +147,14 @@ templ adminWarehouseRow(row *inventory.AdminWarehouseRow, data AdminWarehousesDa
 		</td>
 		<td>
 			if row.BranchName != "" {
-				{ row.BranchName }
+				<span class="font-bold text-primary">{ row.BranchName }</span>
+				if row.BranchID != nil {
+					<span class="text-2xs text-muted tabular-nums ms-1">(#{ fmt.Sprintf("%d", *row.BranchID) })</span>
+				}
+			} else if row.BranchID != nil && *row.BranchID > 0 {
+				<span class="badge badge-sky text-2xs font-bold">{ adminWarehouseBranchLabel(row.BranchID, data.Branches, lang) }</span>
 			} else {
-				<span class="text-muted">—</span>
+				<span class="badge badge-slate text-2xs">{ i18n.T(lang, "vendor_warehouses.general_warehouse") }</span>
 			}
 		</td>
 		<td class="text-center tabular-nums">{ fmt.Sprintf("%d", row.ItemCount) }</td>
@@ -238,99 +247,18 @@ templ adminWarehouseFilters(data AdminWarehousesData, lang string) {
 	</form>
 }
 
-templ adminWarehouseCreateModal(data AdminWarehousesData, lang string) {
-	@components.Modal(components.ModalProps{
-		ID:    "admin-warehouse-create-modal",
-		Title: i18n.T(lang, "admin.wh.create"),
-		Size:  "md",
-	}) {
-		<form method="POST" action={ templ.SafeURL("/admin/warehouses/new?" + data.QueryValues().Encode()) } class="stack-md">
-			<div class="stack-xs">
-				<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.col_owner") } <span class="text-danger">*</span></label>
-				<select name="organization_id" required class="form-select w-full">
-					<option value="">—</option>
-					for _, o := range data.Owners {
-						<option value={ fmt.Sprintf("%d", o.ID) }>{ o.Name }</option>
-					}
-				</select>
-			</div>
-			@adminWarehouseFormFields(nil, lang)
-			<div class="modal-footer">
-				<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "common.save") }</button>
-			</div>
-		</form>
+func adminWarehouseBranchLabel(branchID *int64, branches []*org.Branch, lang string) string {
+	if branchID == nil || *branchID <= 0 {
+		return i18n.T(lang, "vendor_warehouses.general_warehouse")
 	}
-}
-
-templ adminWarehouseEditModal(row *inventory.AdminWarehouseRow, data AdminWarehousesData, lang string) {
-	@components.Modal(components.ModalProps{
-		ID:    fmt.Sprintf("admin-warehouse-edit-%d", row.ID),
-		Title: fmt.Sprintf("%s — %s", i18n.T(lang, "common.edit"), row.Name),
-		Size:  "md",
-	}) {
-		<form
-			method="POST"
-			action={ templ.SafeURL(fmt.Sprintf("/admin/warehouses/%d/edit?%s", row.ID, data.QueryValues().Encode())) }
-			class="stack-md"
-		>
-			@adminWarehouseFormFields(row, lang)
-			<div class="modal-footer">
-				<button type="submit" class="btn btn-primary btn-sm font-bold">{ i18n.T(lang, "common.save") }</button>
-			</div>
-		</form>
+	for _, b := range branches {
+		if b != nil && b.ID == *branchID {
+			if name := b.Name.Get(i18n.Lang(lang)); name != "" {
+				return name
+			}
+		}
 	}
-}
-
-// adminWarehouseFormFields is shared by create and edit so the two cannot drift
-// into asking for different things.
-templ adminWarehouseFormFields(row *inventory.AdminWarehouseRow, lang string) {
-	<div class="grid-2 gap-3">
-		<div class="stack-xs">
-			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.col_name") } <span class="text-danger">*</span></label>
-			<input type="text" name="name" required value={ warehouseField(row, "name") } class="form-input w-full"/>
-		</div>
-		<div class="stack-xs">
-			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_code") }</label>
-			<input type="text" name="code" value={ warehouseField(row, "code") } class="form-input w-full"/>
-		</div>
-		<div class="stack-xs">
-			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_phone") }</label>
-			<input type="text" name="phone" value={ warehouseField(row, "phone") } class="form-input w-full"/>
-		</div>
-		<div class="stack-xs">
-			<label class="form-label text-xs">{ i18n.T(lang, "admin.wh.field_address") }</label>
-			<input type="text" name="address" value={ warehouseField(row, "address") } class="form-input w-full"/>
-		</div>
-	</div>
-	<label class="d-flex items-center gap-2 text-xs font-bold">
-		<input
-			type="checkbox"
-			name="is_active"
-			value="1"
-			checked?={ row == nil || row.IsActive }
-			class="form-checkbox"
-		/>
-		<span>{ i18n.T(lang, "admin.wh.active") }</span>
-	</label>
-}
-
-// warehouseField reads one field off a row that may be nil, because the create
-// and edit forms share their body.
-func warehouseField(row *inventory.AdminWarehouseRow, field string) string {
-	if row == nil {
-		return ""
-	}
-	switch field {
-	case "name":
-		return row.Name
-	case "code":
-		return row.Code
-	case "phone":
-		return row.Phone
-	case "address":
-		return row.Address
-	}
-	return ""
+	return fmt.Sprintf("#%d", *branchID)
 }
 
 func boolParam(v bool) string {

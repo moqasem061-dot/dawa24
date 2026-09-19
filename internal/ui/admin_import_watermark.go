@@ -105,6 +105,8 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 						continue
 					}
 
+					_ = deriveAndStore(prodUploadDir, fileName, imgData)
+
 					publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
 					if h.storage != nil {
 						s3Key := fmt.Sprintf("products/%s", fileName)

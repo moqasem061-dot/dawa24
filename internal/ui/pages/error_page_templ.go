@@ -46,7 +46,7 @@ func ErrorPage(title, message, retryURL, lang, dir string) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"stack-sm\"><div class=\"stack-xs text-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"s-error-page-wrap\"><div class=\"s-error-card\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -54,7 +54,7 @@ func ErrorPage(title, message, retryURL, lang, dir string) templ.Component {
 				Title:      title,
 				Message:    message,
 				RetryURL:   retryURL,
-				RetryLabel: "العودة للرئيسية",
+				RetryLabel: "الصفحة الرئيسية",
 			}).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

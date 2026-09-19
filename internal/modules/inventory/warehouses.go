@@ -80,7 +80,7 @@ func (s *Service) DeleteWarehouse(ctx context.Context, id int64) error {
 
 // GetWarehouse returns a single warehouse.
 func (s *Service) GetWarehouse(ctx context.Context, id int64) (*Warehouse, error) {
-	if _, ok := database.TenantFrom(ctx); !ok {
+	if _, ok := database.TenantFrom(ctx); !ok && !database.IsSystem(ctx) {
 		return nil, database.ErrNoTenant
 	}
 	return s.repo.GetWarehouseByID(ctx, id)

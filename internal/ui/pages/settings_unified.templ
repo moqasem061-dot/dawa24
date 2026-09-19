@@ -39,59 +39,11 @@ type UnifiedSettingsData struct {
 templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 	@layouts.ShellFor(i18n.T(lang, "settings.unified_title"), "settings", lang, dir, authctx.FromContext(ctx)) {
 
-		<script nonce={ templ.GetNonce(ctx) }>
-			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
-			dawaData('settingsUnifiedState', function () {
-				return {
-					activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
-				};
-			});
-
-			dawaData('settingsSecurityState', function () {
-				return {
-					otpSent: false,
-					otpLoading: false,
-					otpFeedback: '',
-					otpError: false,
-					cooldown: 0,
-					sendOTP: function () {
-						var self = this;
-						if (self.otpLoading || self.cooldown > 0) return;
-						self.otpLoading = true;
-						self.otpFeedback = '';
-						fetch('/settings/password/send-otp', {
-							method: 'POST',
-							headers: { 'Content-Type': 'application/json' }
-						})
-						.then(function (r) { return r.json(); })
-						.then(function (data) {
-							self.otpLoading = false;
-							if (data && data.ok) {
-								self.otpSent = true;
-								self.otpError = false;
-								self.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
-								self.cooldown = data.cooldown || 60;
-								var timer = setInterval(function () {
-									self.cooldown--;
-									if (self.cooldown <= 0) clearInterval(timer);
-								}, 1000);
-							} else {
-								self.otpError = true;
-								self.otpFeedback = (data && data.message) ? data.message : 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
-							}
-						})
-						.catch(function () {
-							self.otpLoading = false;
-							self.otpError = true;
-							self.otpFeedback = 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';
-						});
-					}
-				};
-			});
-		</script>
 		<div
 			class="w-full mb-16"
-			x-data="settingsUnifiedState"
+			x-data="{
+				activeTab: (new URLSearchParams(window.location.search).get('tab') || window.location.hash.replace('#', '') || 'profile')
+			}"
 		>
 			<!-- Page Header -->
 			<div class="flex-between items-center flex-wrap gap-4 mb-8">
@@ -125,7 +77,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					type="button"
 					class="tab-btn"
 					:class="{ 'active': activeTab === 'profile' }"
-					@click="[activeTab = 'profile', $setHash('profile')]"
+					@click="activeTab = 'profile'; history.replaceState(null, null, '#profile')"
 					data-tab-target="profile"
 				>
 					@components.IconUser("icon-xs")
@@ -136,7 +88,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					type="button"
 					class="tab-btn"
 					:class="{ 'active': activeTab === 'security' }"
-					@click="[activeTab = 'security', $setHash('security')]"
+					@click="activeTab = 'security'; history.replaceState(null, null, '#security')"
 					data-tab-target="security"
 				>
 					@components.IconLock("icon-xs")
@@ -147,7 +99,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					type="button"
 					class="tab-btn"
 					:class="{ 'active': activeTab === 'preferences' }"
-					@click="[activeTab = 'preferences', $setHash('preferences')]"
+					@click="activeTab = 'preferences'; history.replaceState(null, null, '#preferences')"
 					data-tab-target="preferences"
 				>
 					@components.IconBell("icon-xs")
@@ -159,7 +111,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': activeTab === 'telegram' }"
-						@click="[activeTab = 'telegram', $setHash('telegram')]"
+						@click="activeTab = 'telegram'; history.replaceState(null, null, '#telegram')"
 						data-tab-target="telegram"
 					>
 						@components.IconSend("icon-xs")
@@ -172,7 +124,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': activeTab === 'whatsapp' }"
-						@click="[activeTab = 'whatsapp', $setHash('whatsapp')]"
+						@click="activeTab = 'whatsapp'; history.replaceState(null, null, '#whatsapp')"
 						data-tab-target="whatsapp"
 					>
 						@components.IconWhatsApp("icon-xs")
@@ -231,7 +183,15 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 										name="avatar_file" 
 										accept="image/png,image/jpeg,image/jpg,image/webp" 
 										class="hidden" 
-										@change="$event.target.files[0] && [removeAvatar = false, avatarPreview = $objectURL($event.target.files[0])]"
+										@change="
+											const file = $event.target.files[0];
+											if (file) {
+												removeAvatar = false;
+												const reader = new FileReader();
+												reader.onload = (e) => { avatarPreview = e.target.result };
+												reader.readAsDataURL(file);
+											}
+										"
 									/>
 								</label>
 								
@@ -240,7 +200,7 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 										type="button" 
 										class="btn btn-ghost btn-sm font-bold text-danger m-0 gap-1" 
 										x-show="!removeAvatar"
-										@click="[removeAvatar = true, avatarPreview = '', $clearInput('user-avatar-file')]"
+										@click="removeAvatar = true; avatarPreview = ''; const el = document.getElementById('user-avatar-file'); if(el) el.value = '';"
 									>
 										@components.IconTrash("icon-xs")
 										<span>{ i18n.T(lang, "settings.avatar_delete") }</span>
@@ -260,96 +220,13 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					</div>
 
 					<div class="form-group mb-0">
-						<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
-							<label class="form-label mb-0" for="user-email">{ i18n.T(lang, "settings.email") }</label>
-							<div class="d-flex items-center gap-2">
-								if data.User != nil && data.User.EmailVerifiedAt != nil {
-									<span id="profile-email-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
-										@components.IconCheck("icon-2xs")
-										<span>{ ternaryStr(lang == "ar", "البريد مؤكد", "Email Verified") }</span>
-									</span>
-								} else {
-									<span id="profile-email-badge-unverified" class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
-										@components.IconAlert("icon-2xs")
-										<span>{ ternaryStr(lang == "ar", "البريد غير مؤكد", "Unverified Email") }</span>
-									</span>
-									<button type="button" id="profile-verify-email-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
-										@components.IconMail("icon-2xs text-brand")
-										<span>{ ternaryStr(lang == "ar", "تأكيد البريد الآن", "Verify Email Now") }</span>
-									</button>
-								}
-							</div>
-						</div>
+						<label class="form-label" for="user-email">{ i18n.T(lang, "settings.email") }</label>
 						<input type="email" id="user-email" name="email" class="form-input tabular-nums" value={ userEmailVal(data.User) } required />
-
-						<!-- Email OTP Drawer for Profile -->
-						<div id="profile-email-otp-box" class="tg-otp-card mt-2.5 p-3 rounded-xl border bg-surface-sunken s-hidden-init">
-							<div class="d-flex items-center justify-between mb-2 text-xs text-secondary">
-								<span id="profile-email-otp-hint" class="font-semibold">{ i18n.T(lang, "auth.email.enter_code") }</span>
-								<span id="profile-email-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
-							</div>
-							<div class="d-flex items-center gap-2">
-								<input type="text" id="profile-email-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input max-w-xs" placeholder="••••••" />
-								<button type="button" id="profile-email-verify-btn" class="btn btn-primary btn-sm font-semibold px-4">
-									{ i18n.T(lang, "auth.email.verify_code") }
-								</button>
-								<button type="button" id="profile-email-resend-btn" class="btn btn-ghost btn-sm text-xs text-muted s-hidden-init">
-									{ i18n.T(lang, "auth.email.resend_otp") }
-								</button>
-								<button type="button" id="profile-email-cancel-btn" class="btn btn-ghost btn-sm text-xs text-muted">
-									{ ternaryStr(lang == "ar", "إلغاء", "Cancel") }
-								</button>
-							</div>
-							<div id="profile-email-otp-feedback" class="text-xs font-medium mt-2 s-hidden-init"></div>
-						</div>
 					</div>
 
 					<div class="form-group mb-0">
-						<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
-							<label class="form-label mb-0" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
-							<div class="d-flex items-center gap-2">
-								if data.User != nil && data.User.PhoneVerifiedAt != nil {
-									<span id="profile-phone-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
-										@components.IconCheck("icon-2xs")
-										<span>{ ternaryStr(lang == "ar", "الهاتف مؤكد", "Phone Verified") }</span>
-									</span>
-								} else {
-									<span id="profile-phone-badge-unverified" class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
-										@components.IconAlert("icon-2xs")
-										<span>{ ternaryStr(lang == "ar", "الهاتف غير مؤكد", "Unverified Phone") }</span>
-									</span>
-									<button type="button" id="profile-verify-phone-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
-										<svg class="icon-2xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<path d="m22 2-7 20-4-9-9-4Z"></path>
-											<path d="M22 2 11 13"></path>
-										</svg>
-										<span>{ ternaryStr(lang == "ar", "تأكيد الهاتف عبر Telegram", "Verify via Telegram") }</span>
-									</button>
-								}
-							</div>
-						</div>
+						<label class="form-label" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
 						<input type="tel" id="user-phone" name="phone" class="form-input tabular-nums" value={ userPhoneVal(data.User) } />
-
-						<!-- Phone OTP Drawer for Profile -->
-						<div id="profile-phone-otp-box" class="tg-otp-card mt-2.5 p-3 rounded-xl border bg-surface-sunken s-hidden-init">
-							<div class="d-flex items-center justify-between mb-2 text-xs text-secondary">
-								<span id="profile-phone-otp-hint" class="font-semibold">{ i18n.T(lang, "auth.telegram.enter_code") }</span>
-								<span id="profile-phone-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
-							</div>
-							<div class="d-flex items-center gap-2">
-								<input type="text" id="profile-phone-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input max-w-xs" placeholder="••••••" />
-								<button type="button" id="profile-phone-verify-btn" class="btn btn-primary btn-sm font-semibold px-4">
-									{ i18n.T(lang, "auth.telegram.verify_code") }
-								</button>
-								<button type="button" id="profile-phone-resend-btn" class="btn btn-ghost btn-sm text-xs text-muted s-hidden-init">
-									{ i18n.T(lang, "auth.telegram.resend_otp") }
-								</button>
-								<button type="button" id="profile-phone-cancel-btn" class="btn btn-ghost btn-sm text-xs text-muted">
-									{ ternaryStr(lang == "ar", "إلغاء", "Cancel") }
-								</button>
-							</div>
-							<div id="profile-phone-otp-feedback" class="text-xs font-medium mt-2 s-hidden-init"></div>
-						</div>
 					</div>
 
 					<div class="form-group mb-0">
@@ -483,8 +360,63 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					action="/settings/password"
 					method="POST"
 					class="max-w-xl d-flex flex-col gap-5 text-start"
-					x-data="settingsSecurityState"
+					x-data="{
+						otpSent: false,
+						otpLoading: false,
+						otpFeedback: '',
+						otpError: false,
+						cooldown: 0,
+						sendOTP() {
+							if (this.otpLoading || this.cooldown > 0) return;
+							this.otpLoading = true;
+							this.otpFeedback = '';
+							const csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : '') ||
+								(document.cookie.match(/(?:^|;\s*)dawa_csrf=([^;]+)/)?.[1] || '');
+							fetch('/settings/password/send-otp', {
+								method: 'POST',
+								headers: {
+									'Content-Type': 'application/json',
+									'Accept': 'application/json',
+									'X-CSRF-Token': csrfToken
+								}
+							})
+							.then(async (r) => {
+								let data = null;
+								try {
+									data = await r.json();
+								} catch (_) {}
+								if (!r.ok) {
+									const msg = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
+									throw new Error(msg);
+								}
+								return data || {};
+							})
+							.then(data => {
+								if (data && data.ok) {
+									this.otpSent = true;
+									this.otpError = false;
+									this.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
+									this.cooldown = data.cooldown || 60;
+									let timer = setInterval(() => {
+										this.cooldown--;
+										if (this.cooldown <= 0) clearInterval(timer);
+									}, 1000);
+								} else {
+									this.otpError = true;
+									this.otpFeedback = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';
+								}
+							})
+							.catch((err) => {
+								this.otpError = true;
+								this.otpFeedback = (err && err.message) || 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';
+							})
+							.finally(() => {
+								this.otpLoading = false;
+							});
+						}
+					}"
 				>
+					<input type="hidden" name="_csrf" value="" x-init="if (typeof getCsrfToken === 'function') $el.value = getCsrfToken()"/>
 					<div class="form-group mb-0">
 						<label class="form-label font-bold text-xs mb-1" for="settings-new-password">
 							{ i18n.T(lang, "settings.new_password") }
@@ -528,8 +460,8 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 							>
 								@components.IconMail("icon-xs")
 								<span x-show="!otpLoading && cooldown <= 0">{ i18n.T(lang, "settings.send_email_code") }</span>
-								<span x-show="otpLoading" style="display: none;" x-cloak>جاري الإرسال...</span>
-								<span x-show="cooldown > 0" style="display: none;" x-cloak x-text="'إعادة الإرسال بعد ' + cooldown + ' ثانية'"></span>
+								<span x-show="otpLoading">جاري الإرسال...</span>
+								<span x-show="cooldown > 0" x-text="'إعادة الإرسال بعد ' + cooldown + ' ثانية'"></span>
 							</button>
 						</div>
 
@@ -713,7 +645,6 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 			}
 
 		</div>
-		<script src={ layouts.Asset("/js/profile_verification.js") } defer></script>
 	}
 }
 
