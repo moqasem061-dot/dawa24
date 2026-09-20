@@ -69,11 +69,16 @@ func (s *Service) resolveSimilarMatches(
 		return stats
 	}
 
+	// Still the catalogue phase: this is a second read of the same table, and
+	// it reports no count either. The scoring below is what the matching phase
+	// covers, and that one can count.
+	progress.report(ImportPhaseCatalogue, 0, 0)
 	index, ok := s.catalogueIndex(ctx, session)
 	if !ok {
 		stats.Unmatched = len(residual)
 		return stats
 	}
+	progress.report(ImportPhaseMatching, 0, len(prods))
 
 	bare, corroborated := matchFloors(session.Options.MinMatchScore)
 

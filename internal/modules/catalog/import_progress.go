@@ -31,7 +31,17 @@ const (
 	// ImportPhaseMapping is the small AI translation pass: which column is which
 	// field, and which catalogue value each of the file's distinct words means.
 	ImportPhaseMapping ImportPhase = "mapping"
-	// ImportPhaseMatching is resolving rows against the existing catalogue.
+	// ImportPhaseCatalogue is reading the existing catalogue and resolving the
+	// rows that carry an exact identifier against it.
+	//
+	// A phase of its own because it is a single query followed by a single pass,
+	// neither of which can report a count while it runs. Folded into matching it
+	// was indistinguishable from the scoring that follows — and since matching
+	// reports a row count, the bar showed "0 of 19,996" and could not move until
+	// the query returned. A phase with no count drifts; a phase with one cannot.
+	ImportPhaseCatalogue ImportPhase = "catalogue"
+	// ImportPhaseMatching is scoring the rows no identifier settled against the
+	// catalogue, and adjudicating what similarity cannot.
 	ImportPhaseMatching ImportPhase = "matching"
 	// ImportPhaseStaging is writing the staged rows for review.
 	ImportPhaseStaging ImportPhase = "staging"
@@ -50,6 +60,8 @@ func (p ImportPhase) Label() string {
 		return i18n.TDefault("w4_mod.s_275_275")
 	case ImportPhaseMapping:
 		return i18n.TDefault("w4_mod.s_276_276")
+	case ImportPhaseCatalogue:
+		return "قراءة الكتالوج الحالي ومطابقة الأكواد"
 	case ImportPhaseMatching:
 		return i18n.TDefault("w4_mod.s_277_277")
 	case ImportPhaseStaging:
@@ -98,12 +110,13 @@ type ImportProgress struct {
 // They must be contiguous and end at 99; Percent supplies the last point only
 // on the terminal phase.
 var phaseBands = map[ImportPhase]importprogress.Band{
-	PhaseQueued:         {Start: 0, End: 2},
-	ImportPhaseReading:  {Start: 2, End: 10},
-	ImportPhaseParsing:  {Start: 10, End: 28},
-	ImportPhaseMapping:  {Start: 28, End: 46},
-	ImportPhaseMatching: {Start: 46, End: 84},
-	ImportPhaseStaging:  {Start: 84, End: 99},
+	PhaseQueued:          {Start: 0, End: 2},
+	ImportPhaseReading:   {Start: 2, End: 10},
+	ImportPhaseParsing:   {Start: 10, End: 28},
+	ImportPhaseMapping:   {Start: 28, End: 46},
+	ImportPhaseCatalogue: {Start: 46, End: 58},
+	ImportPhaseMatching:  {Start: 58, End: 84},
+	ImportPhaseStaging:   {Start: 84, End: 99},
 }
 
 // Percent is how far through the WHOLE run this snapshot sits, 0-100.

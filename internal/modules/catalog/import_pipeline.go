@@ -177,12 +177,16 @@ func (s *Service) prepare(
 		return nil, ctx.Err()
 	}
 
-	progress.report(ImportPhaseMatching, 0, len(parsed.Products))
+	// No count while the catalogue is read and the identifiers resolved: it is
+	// one query and one pass, and nothing inside either can report. Reported
+	// WITH a count — which is what this did — the bar showed "0 of 19,996" and
+	// was arithmetically unable to move until the call returned, which on a
+	// large catalogue is the whole of the wait somebody is watching.
+	progress.report(ImportPhaseCatalogue, 0, 0)
 	matches, err := s.imports.MatchExistingProducts(ctx, parsed.Products)
 	if err != nil {
 		return nil, err
 	}
-	progress.report(ImportPhaseMatching, len(matches), len(parsed.Products))
 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()

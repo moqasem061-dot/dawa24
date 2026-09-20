@@ -99,3 +99,61 @@ func TestOnlyCompletionReachesOneHundred(t *testing.T) {
 		t.Errorf("a finished run reports %d%%, want 100", got)
 	}
 }
+
+// The reported screenshot, exactly: 46%, "0 / 19,996", for as long as the
+// catalogue read took.
+//
+// Reading the catalogue is one query and one pass. Reported as part of the
+// matching phase it inherited that phase's row count, and a phase with a count
+// interpolates instead of drifting — so current/total of 0/19,996 pinned the
+// bar to the band's first number and no amount of waiting could move it. The
+// read has a band of its own now, and reports no count, so it drifts.
+func TestCatalogueReadDrifts(t *testing.T) {
+	start := time.Date(2026, 9, 20, 12, 0, 0, 0, time.UTC)
+	p := ImportProgress{
+		Phase:          ImportPhaseCatalogue,
+		StartedAt:      start,
+		UpdatedAt:      start,
+		PhaseStartedAt: start,
+	}
+
+	band := phaseBands[ImportPhaseCatalogue]
+	if got := p.PercentAt(start); got != int(band.Start) {
+		t.Fatalf("at the phase boundary: got %d%%, want %d%%", got, int(band.Start))
+	}
+	after := p.PercentAt(start.Add(20 * time.Second))
+	if after <= int(band.Start) {
+		t.Fatalf("the catalogue read did not move the bar: still %d%%", after)
+	}
+	if float64(after) >= band.End {
+		t.Fatalf("the catalogue read drifted into the matching band: %d%%", after)
+	}
+}
+
+// The bands must stay contiguous and end at 99, or a phase boundary either
+// jumps or rewinds — and the bar never goes backwards, so a rewind shows up as
+// a bar that stops.
+func TestPhaseBandsAreContiguous(t *testing.T) {
+	order := []ImportPhase{
+		PhaseQueued, ImportPhaseReading, ImportPhaseParsing, ImportPhaseMapping,
+		ImportPhaseCatalogue, ImportPhaseMatching, ImportPhaseStaging,
+	}
+
+	previousEnd := 0.0
+	for _, phase := range order {
+		band, ok := phaseBands[phase]
+		if !ok {
+			t.Fatalf("phase %q has no band", phase)
+		}
+		if band.Start != previousEnd {
+			t.Fatalf("phase %q starts at %v, want %v", phase, band.Start, previousEnd)
+		}
+		if !band.Valid() {
+			t.Fatalf("phase %q has an unusable band %+v", phase, band)
+		}
+		previousEnd = band.End
+	}
+	if previousEnd != 99 {
+		t.Fatalf("the bands end at %v, want 99", previousEnd)
+	}
+}

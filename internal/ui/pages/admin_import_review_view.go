@@ -56,6 +56,7 @@ func (v ImportReviewView) ProgressPhases() []ImportPhaseInfo {
 		catalog.ImportPhaseReading,
 		catalog.ImportPhaseParsing,
 		catalog.ImportPhaseMapping,
+		catalog.ImportPhaseCatalogue,
 		catalog.ImportPhaseMatching,
 		catalog.ImportPhaseStaging,
 	}
