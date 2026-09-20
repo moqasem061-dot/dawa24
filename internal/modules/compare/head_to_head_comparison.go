@@ -36,6 +36,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 
 	// Index target rows
 	targetBySKU := make(map[string]*CompareFileRow)
+	targetByBarcode := make(map[string]*CompareFileRow)
 	targetByName := make(map[string]*CompareFileRow)
 	targetByCore := make(map[string]*CompareFileRow)
 	targetBySorted := make(map[string]*CompareFileRow)
@@ -47,6 +48,9 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		}
 		cleanSKU := strings.ToLower(strings.TrimSpace(tr.SKU))
 		if cleanSKU != "" {
+			if isBarcode(cleanSKU) {
+				targetByBarcode[cleanSKU] = tr
+			}
 			targetBySKU[cleanSKU] = tr
 		}
 		norm := normalizeProductText(tr.RawName)
@@ -76,6 +80,12 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		var tr *CompareFileRow
 		if sr.MatchedProductID != nil && *sr.MatchedProductID > 0 {
 			tr = targetByProductID[*sr.MatchedProductID]
+		}
+		if tr == nil {
+			cleanSKU := strings.ToLower(strings.TrimSpace(sr.SKU))
+			if cleanSKU != "" && isBarcode(cleanSKU) {
+				tr = targetByBarcode[cleanSKU]
+			}
 		}
 		if tr == nil {
 			cleanSKU := strings.ToLower(strings.TrimSpace(sr.SKU))
@@ -134,8 +144,13 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 
 			savingsDiff, _ := tNet.Sub(sNet)
 
+			prodID := sr.MatchedProductID
+			if prodID == nil || *prodID <= 0 {
+				prodID = tr.MatchedProductID
+			}
+
 			row := &HeadToHeadRow{
-				ProductID:          sr.MatchedProductID,
+				ProductID:          prodID,
 				ProductName:        sr.RawName,
 				SKU:                sr.SKU,
 				Price:              price,

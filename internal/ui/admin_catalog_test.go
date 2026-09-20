@@ -131,6 +131,54 @@ func TestAdminCatalogAndInventoryRoutes(t *testing.T) {
 			},
 			wantStatus: http.StatusOK,
 		},
+		{
+			name:   "Staff with inventory.warehouse.manage can GET /admin/temporary-warehouses",
+			path:   "/admin/temporary-warehouses",
+			method: "GET",
+			actor: &authctx.Actor{
+				UserID:      10,
+				IsStaff:     true,
+				Role:        "staff",
+				Permissions: []string{"inventory.warehouse.manage"},
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:   "Staff with inventory.warehouse.view reaches /admin/temporary-warehouses/staging handler",
+			path:   "/admin/temporary-warehouses/staging",
+			method: "GET",
+			actor: &authctx.Actor{
+				UserID:      11,
+				IsStaff:     true,
+				Role:        "staff",
+				Permissions: []string{"inventory.warehouse.view"},
+			},
+			wantStatus: http.StatusServiceUnavailable,
+		},
+		{
+			name:   "Staff with inventory.warehouse.manage can GET /admin/user/temparte-warehouses",
+			path:   "/admin/user/temparte-warehouses",
+			method: "GET",
+			actor: &authctx.Actor{
+				UserID:      12,
+				IsStaff:     true,
+				Role:        "staff",
+				Permissions: []string{"inventory.warehouse.manage"},
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name:   "Staff with inventory.my_temp_warehouse.view can GET /admin/my/temparte-warehouses",
+			path:   "/admin/my/temparte-warehouses",
+			method: "GET",
+			actor: &authctx.Actor{
+				UserID:      13,
+				IsStaff:     true,
+				Role:        "staff",
+				Permissions: []string{"inventory.my_temp_warehouse.view"},
+			},
+			wantStatus: http.StatusOK,
+		},
 	}
 
 	for _, tt := range tests {

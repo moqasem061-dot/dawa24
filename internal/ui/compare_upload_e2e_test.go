@@ -326,6 +326,9 @@ func (m *mockCompareRepoE2E) GetSavedProductMapping(ctx context.Context, orgID *
 func (m *mockCompareRepoE2E) FindCandidateProducts(ctx context.Context, orgID *int64, query, sku string, limit int) ([]*compare.CandidateProduct, error) {
 	return nil, nil
 }
+func (m *mockCompareRepoE2E) ListCatalogMatchProducts(ctx context.Context, limit int) ([]*compare.CandidateProduct, error) {
+	return nil, nil
+}
 func (m *mockCompareRepoE2E) SearchFileRows(ctx context.Context, userID int64, orgID *int64, query string, limit int) ([]*compare.CompareFileRowWithSupplier, error) {
 	var results []*compare.CompareFileRowWithSupplier
 	cleanQ := strings.ToLower(strings.TrimSpace(query))

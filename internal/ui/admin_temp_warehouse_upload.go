@@ -304,6 +304,9 @@ func (h *UIHandler) AdminTempWarehouseUploadSubmit(w http.ResponseWriter, r *htt
 			"staging":          true,
 			"message":          fmt.Sprintf(i18n.T(lang, "admin.temp_warehouse.staging_message"), successCount, len(fileHeaders)),
 		}
+		if len(errorMessages) > 0 && successCount == 0 {
+			resp["error"] = strings.Join(errorMessages, " | ")
+		}
 		if runID > 0 {
 			resp["run_id"] = runID
 			resp["run_url"] = runURL

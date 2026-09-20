@@ -240,3 +240,42 @@ func TestCrossAudienceGates(t *testing.T) {
 		t.Errorf("Vendor on vendor gate: got %d, want 200", recVV.Code)
 	}
 }
+
+func TestRequirePagePermission_AJAXForbidden(t *testing.T) {
+	gate := authctx.RequirePagePermission("inventory.temp_warehouse.view")
+	okHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	// 1. Staff user without required permission making AJAX request gets 403 JSON
+	req := httptest.NewRequest("POST", "/admin/temporary-warehouses/upload", nil)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("X-Requested-With", "XMLHttpRequest")
+	actor := authctx.Actor{
+		UserID:      99,
+		IsStaff:     true,
+		Role:        "staff",
+		Permissions: []string{"unrelated.permission"},
+	}
+	req = req.WithContext(authctx.WithActor(req.Context(), actor))
+	rec := httptest.NewRecorder()
+	gate(okHandler).ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusForbidden {
+		t.Errorf("got status %d, want 403", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json; charset=utf-8" {
+		t.Errorf("got Content-Type %q, want application/json", ct)
+	}
+
+	// 2. Unauthenticated caller making AJAX request gets 401 JSON
+	unauthReq := httptest.NewRequest("POST", "/admin/temporary-warehouses/upload", nil)
+	unauthReq.Header.Set("Accept", "application/json")
+	unauthRec := httptest.NewRecorder()
+	gate(okHandler).ServeHTTP(unauthRec, unauthReq)
+
+	if unauthRec.Code != http.StatusUnauthorized {
+		t.Errorf("got status %d, want 401", unauthRec.Code)
+	}
+}
+

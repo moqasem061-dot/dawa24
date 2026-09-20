@@ -91,6 +91,7 @@ type Repository interface {
 	SaveCustomerProductMapping(ctx context.Context, orgID *int64, rawName string, productID int64, source string) error
 	GetSavedProductMapping(ctx context.Context, orgID *int64, rawName string) (*int64, error)
 	FindCandidateProducts(ctx context.Context, orgID *int64, query, sku string, limit int) ([]*CandidateProduct, error)
+	ListCatalogMatchProducts(ctx context.Context, limit int) ([]*CandidateProduct, error)
 
 	// Search across files
 	SearchFileRows(ctx context.Context, userID int64, orgID *int64, query string, limit int) ([]*CompareFileRowWithSupplier, error)

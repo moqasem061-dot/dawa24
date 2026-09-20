@@ -241,6 +241,7 @@ func (s *Service) StageUploadedRows(ctx context.Context, file *CompareFile, file
 	}
 
 	if len(rows) > 0 {
+		_ = s.MatchFileRowsToCatalog(ctx, file.ID, rows)
 		_ = s.repo.DeleteFileRows(ctx, file.ID)
 		if insertErr := s.repo.InsertFileRows(ctx, rows); insertErr == nil {
 			file.RowCount = len(rows)
@@ -308,6 +309,7 @@ func (s *Service) ProcessCompareFile(ctx context.Context, fileID int64) error {
 
 	// Insert new extracted rows
 	if len(rows) > 0 {
+		_ = s.MatchFileRowsToCatalog(ctx, fileID, rows)
 		if err := s.repo.InsertFileRows(ctx, rows); err != nil {
 			file.Status = FileFailed
 			file.ErrorMessage = fmt.Sprintf("Failed to insert file rows: %v", err)

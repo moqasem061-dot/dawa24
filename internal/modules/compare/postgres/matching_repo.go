@@ -73,6 +73,37 @@ func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, qu
 	return candidates, err
 }
 
+func (r *Repository) ListCatalogMatchProducts(ctx context.Context, limit int) ([]*compare.CandidateProduct, error) {
+	if limit <= 0 {
+		limit = 50000
+	}
+	var candidates []*compare.CandidateProduct
+	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		sql := `
+			SELECT p.id, COALESCE(p.sku, ''), COALESCE(p.name->>'ar', ''), COALESCE(p.name->>'en', ''),
+			       COALESCE(p.scientific_name, ''), '', COALESCE(p.barcode, ''), COALESCE(p.manufacturer, '')
+			FROM catalog.products p
+			WHERE p.deleted_at IS NULL
+			ORDER BY p.id ASC
+			LIMIT $1;
+		`
+		rows, err := tx.Query(txCtx, sql, limit)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			var c compare.CandidateProduct
+			if err := rows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode, &c.ManufacturingCompanies); err != nil {
+				return err
+			}
+			candidates = append(candidates, &c)
+		}
+		return rows.Err()
+	})
+	return candidates, err
+}
+
 func (r *Repository) SearchFileRows(ctx context.Context, userID int64, orgID *int64, query string, limit int) ([]*compare.CompareFileRowWithSupplier, error) {
 	if limit <= 0 {
 		limit = 50

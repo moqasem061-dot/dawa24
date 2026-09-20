@@ -1,16 +1,32 @@
 package authctx
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 )
 
+func isJSONOrAJAXRequest(r *http.Request) bool {
+	return strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest"
+}
+
 // redirectUnauthorized redirects an authenticated caller to their permitted home dashboard
 // with an authorization notice instead of showing a blank 404 page.
 func redirectUnauthorized(w http.ResponseWriter, r *http.Request, actor Actor) {
+	if isJSONOrAJAXRequest(r) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusForbidden)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "ليس لديك الصلاحية الكافية لتنفيذ هذه العملية.",
+		})
+		return
+	}
+
 	target := "/"
 	if actor.IsCustomer() {
 		target = "/customer/dashboard"
@@ -76,6 +92,16 @@ func redirectUnauthorized(w http.ResponseWriter, r *http.Request, actor Actor) {
 // redirectToLogin sends the caller to sign in, preserving where they were
 // heading so a successful login lands back on the page they wanted.
 func redirectToLogin(w http.ResponseWriter, r *http.Request) {
+	if isJSONOrAJAXRequest(r) {
+		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.WriteHeader(http.StatusUnauthorized)
+		_ = json.NewEncoder(w).Encode(map[string]any{
+			"success": false,
+			"error":   "يرجى تسجيل الدخول أولاً للمتابعة.",
+		})
+		return
+	}
+
 	q := url.Values{}
 	q.Set("redirect", r.URL.Path)
 	http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)

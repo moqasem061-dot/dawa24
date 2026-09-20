@@ -370,6 +370,7 @@
     var action = form.getAttribute('action') || '';
     if (action.indexOf('/catalog') !== -1 || action.indexOf('/orders') !== -1 ||
         action.indexOf('/reports') !== -1 || action.indexOf('/inventory') !== -1 ||
+        action.indexOf('/market-discounts') !== -1 ||
         action.indexOf('/admin/') !== -1 || action.indexOf('/vendor/') !== -1) return true;
     return false;
   }
@@ -413,6 +414,13 @@
     var parentForm = el.form || el.closest('form');
     if (!parentForm || !isFilterForm(parentForm)) return;
     if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
+
+    var minChars = el.hasAttribute('data-min-chars') ? parseInt(el.getAttribute('data-min-chars'), 10) : 3;
+    var val = (el.value || '').trim();
+    if (val.length > 0 && val.length < minChars) {
+      clearTimeout(searchDebounceTimer);
+      return;
+    }
 
     clearTimeout(searchDebounceTimer);
     searchDebounceTimer = setTimeout(function () {

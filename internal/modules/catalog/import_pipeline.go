@@ -149,8 +149,11 @@ func (s *Service) prepare(
 	session.AICalls, session.AIApplied, session.AIFallback, session.AINote = 0, 0, false, ""
 	session.Overrides = s.resolveColumnMapping(ctx, session, sheet, settings.Overrides)
 
+	stage := newStageClock()
+
 	progress.report(ImportPhaseParsing, 0, 0)
 	parsed := ParseSheet(sheet, session.Overrides, settings.Options)
+	stage.mark("parse")
 	applyParseStats(session, parsed)
 	session.Structure = BuildFileStructure(sheet, parsed.Layout)
 	session.SheetName = sheet.Sheet
@@ -172,6 +175,7 @@ func (s *Service) prepare(
 	}
 
 	s.resolveTaxonomies(ctx, session, parsed, progress)
+	stage.mark("taxonomies")
 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -187,6 +191,7 @@ func (s *Service) prepare(
 	if err != nil {
 		return nil, err
 	}
+	stage.mark("identifiers")
 
 	if ctx.Err() != nil {
 		return nil, ctx.Err()
@@ -198,6 +203,7 @@ func (s *Service) prepare(
 	// Without this the importer matched under a tenth of a real supplier file
 	// and staged the rest as new products, quietly duplicating the catalogue.
 	matchStats := s.resolveSimilarMatches(ctx, session, parsed.Products, matches, progress)
+	stage.mark("similarity")
 	session.AIMatched = matchStats.Similar + matchStats.AI
 	if matchStats.CeilingHit {
 		session.AIFallback = true
@@ -215,6 +221,7 @@ func (s *Service) prepare(
 	if err := s.imports.ReplaceStagingRows(ctx, session.ID, rows); err != nil {
 		return nil, err
 	}
+	stage.mark("staging")
 
 	session.Status = SessionReady
 	session.Progress = ImportProgress{Phase: ImportPhaseDone, Message: ImportPhaseDone.Label()}
@@ -232,9 +239,37 @@ func (s *Service) prepare(
 		"match_exact", matchStats.Exact, "match_similar", matchStats.Similar,
 		"match_ai", matchStats.AI, "match_unmatched", matchStats.Unmatched,
 		"match_rate_pct", matchStats.RatePercent(),
-		"ai_calls", session.AICalls, "ai_applied", session.AIApplied)
+		"ai_calls", session.AICalls, "ai_applied", session.AIApplied,
+		"ai_enabled", session.Options.UseAI,
+		// Per stage, in milliseconds. An import that "hangs" is an import with
+		// one stage far larger than the others, and until this existed the only
+		// way to find out which was to guess.
+		"stage_ms", stage.summary())
 	return session, nil
 }
+
+// stageClock times the phases of one preparation run.
+//
+// It exists because every report about this tool has been "it stops at N%", and
+// answering that from the outside means guessing which of six stages N sits in.
+// One log line at the end of a run names all six with their durations, so the
+// next report is a measurement rather than a hypothesis.
+type stageClock struct {
+	last   time.Time
+	stages []any
+}
+
+func newStageClock() *stageClock { return &stageClock{last: time.Now()} }
+
+// mark records how long the stage that just finished took.
+func (c *stageClock) mark(name string) {
+	now := time.Now()
+	c.stages = append(c.stages, name, now.Sub(c.last).Milliseconds())
+	c.last = now
+}
+
+// summary renders the stages for the log's key-value line.
+func (c *stageClock) summary() []any { return c.stages }
 
 // emptyParseMessage explains a run that produced no products, naming the reason
 // the parse itself recorded rather than leaving the admin to guess.

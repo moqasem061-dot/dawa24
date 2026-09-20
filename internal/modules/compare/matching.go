@@ -299,3 +299,74 @@ func compareMethodFor(level productmatch.MatchLevel, confidence float64) (MatchM
 		return MatchMethodFuzzy, fmt.Sprintf(i18n.TDefault("w4_mod.d_162"), int(confidence))
 	}
 }
+
+// MatchFileRowsToCatalog resolves a batch of extracted rows against the catalog using productmatch.Index.
+// It populates MatchedProductID, MatchConfidence, and MatchMethod on each row, and persists them via BulkUpdateFileRowMatches
+// if row IDs are already assigned.
+func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows []*CompareFileRow) error {
+	if len(rows) == 0 {
+		return nil
+	}
+	candidates, err := s.repo.ListCatalogMatchProducts(ctx, 50000)
+	if err != nil || len(candidates) == 0 {
+		return err
+	}
+
+	masters := make([]productmatch.MasterProduct, 0, len(candidates))
+	for _, c := range candidates {
+		if c == nil || c.ID <= 0 {
+			continue
+		}
+		masters = append(masters, productmatch.MasterProduct{
+			ID:           c.ID,
+			NameAR:       c.NameAr,
+			NameEN:       c.NameEn,
+			SKU:          c.SKU,
+			Barcode:      c.Barcode,
+			Scientific:   c.ScientificName,
+			Manufacturer: c.ManufacturingCompanies,
+		})
+	}
+	if len(masters) == 0 {
+		return nil
+	}
+
+	idx := productmatch.NewIndex(masters)
+	matchRows := make([]*productmatch.Row, len(rows))
+	for i, r := range rows {
+		cleanSKU := strings.TrimSpace(r.SKU)
+		matchRows[i] = &productmatch.Row{
+			Name:    strings.TrimSpace(r.RawName),
+			SKU:     cleanSKU,
+			Barcode: cleanSKU,
+		}
+	}
+
+	opts := productmatch.DefaultMatchOptions()
+	results := productmatch.MatchAll(idx, matchRows, opts, 0)
+
+	var matches []RowMatch
+	for i, res := range results {
+		if res.Matched() && res.Level.Settled() {
+			confidence := math.Round(res.Score * 100.0)
+			method, _ := compareMethodFor(res.Level, confidence)
+			prodID := res.ProductID
+			rows[i].MatchedProductID = &prodID
+			rows[i].MatchConfidence = confidence
+			rows[i].MatchMethod = method
+			if rows[i].ID > 0 {
+				matches = append(matches, RowMatch{
+					RowID:      rows[i].ID,
+					ProductID:  &prodID,
+					Confidence: confidence,
+					Method:     method,
+				})
+			}
+		}
+	}
+
+	if len(matches) > 0 {
+		return s.repo.BulkUpdateFileRowMatches(ctx, fileID, matches)
+	}
+	return nil
+}

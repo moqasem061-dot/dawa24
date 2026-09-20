@@ -235,14 +235,14 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\t\tdawaData('adminTempWarehousesState', function () {\n\t\t\t\treturn {\n\t\t\t\t\tselectedIds: [],\n\t\t\t\t\tselectAll: false,\n\t\t\t\t\ttoggleSelectAll(e) {\n\t\t\t\t\t\tif (e.target.checked) {\n\t\t\t\t\t\t\tthis.selectedIds = Array.from(document.querySelectorAll('.warehouse-row-checkbox')).map(el => el.value);\n\t\t\t\t\t\t\tthis.selectAll = true;\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tthis.selectedIds = [];\n\t\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tupdateSelectState() {\n\t\t\t\t\t\tconst allBoxes = Array.from(document.querySelectorAll('.warehouse-row-checkbox'));\n\t\t\t\t\t\tif (allBoxes.length === 0) {\n\t\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tthis.selectAll = allBoxes.every(el => this.selectedIds.includes(el.value));\n\t\t\t\t\t},\n\t\t\t\t\tisSelected(id) {\n\t\t\t\t\t\treturn this.selectedIds.includes(String(id));\n\t\t\t\t\t},\n\t\t\t\t\tclearSelection() {\n\t\t\t\t\t\tthis.selectedIds = [];\n\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t},\n\t\t\t\t\tsubmitBulk(action) {\n\t\t\t\t\t\tif (this.selectedIds.length === 0) return;\n\t\t\t\t\t\tif (action === 'delete') {\n\t\t\t\t\t\t\tif (!confirm('هل أنت متأكد تماماً من حذف المستودعات المحددة (' + this.selectedIds.length + ' مستودع) وكافة أصنافها نهائياً؟')) {\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} else if (action === 'archive') {\n\t\t\t\t\t\t\tif (!confirm('هل تريد أرشفة المستودعات المحددة (' + this.selectedIds.length + ' مستودع)؟')) {\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\tconst form = document.getElementById('warehouse-bulk-form');\n\t\t\t\t\t\tif (!form) return;\n\t\t\t\t\t\tdocument.getElementById('bulk-action-input').value = action;\n\t\t\t\t\t\tconst idsInput = document.getElementById('bulk-selected-ids-input');\n\t\t\t\t\t\tif (idsInput) idsInput.value = this.selectedIds.join(',');\n\t\t\t\t\t\tform.querySelectorAll('input.dynamic-bulk-id').forEach(el => el.remove());\n\t\t\t\t\t\tthis.selectedIds.forEach(id => {\n\t\t\t\t\t\t\tconst inp = document.createElement('input');\n\t\t\t\t\t\t\tinp.type = 'hidden';\n\t\t\t\t\t\t\tinp.name = 'selected_ids';\n\t\t\t\t\t\t\tinp.className = 'dynamic-bulk-id';\n\t\t\t\t\t\t\tinp.value = id;\n\t\t\t\t\t\t\tform.appendChild(inp);\n\t\t\t\t\t\t});\n\t\t\t\t\t\tform.submit();\n\t\t\t\t\t},\n\t\t\t\t\tuploadModal: false,\n\t\t\t\t\titemsModal: false,\n\t\t\t\t\tmappingModal: false,\n\t\t\t\t\tmappingLoading: false,\n\t\t\t\t\tmappingSubmitting: false,\n\t\t\t\t\tmappingFile: { id: 0, supplier_name: '', original_filename: '', row_count: 0 },\n\t\t\t\t\tmappingHeaders: [],\n\t\t\t\t\tmappingPreview: [],\n\t\t\t\t\tmappingCode: 0,\n\t\t\t\t\tmappingName: 1,\n\t\t\t\t\tmappingPrice: 2,\n\t\t\t\t\tmappingDiscount: 3,\n\t\t\t\t\tmappingQueue: [],\n\t\t\t\t\tmappingStep: 1,\n\t\t\t\t\tmappingTotal: 1,\n\t\t\t\t\tautoLaunchSetup: true,\n\t\t\t\t\tselectedWarehouse: { id: 0, name: '', total: 0 },\n\t\t\t\t\tmodalItems: [],\n\t\t\t\t\tmodalPage: 1,\n\t\t\t\t\tmodalTotalPages: 1,\n\t\t\t\t\tmodalLoading: false,\n\t\t\t\t\tuploadStep: 1,\n\t\t\t\t\tfileHeaders: [],\n\t\t\t\t\tsampleRows: [],\n\t\t\t\t\tdetectedCode: 0,\n\t\t\t\t\tdetectedName: 1,\n\t\t\t\t\tdetectedPrice: 2,\n\t\t\t\t\tdetectedDiscount: 3,\n\t\t\t\t\tisDragging: false,\n\t\t\t\t\tisBulkUploading: false,\n\t\t\t\t\tuploadProgress: 0,\n\t\t\t\t\tuploadStatusText: '',\n\t\t\t\t\tselectedFiles: [],\n\t\t\t\t\tbulkUploadResults: null,\n\t\t\t\t\tgetBase() {\n\t\t\t\t\t\treturn (this.$root && this.$root.dataset && this.$root.dataset.base) || window.location.pathname.replace(/\\/$/, '') || '/admin/temporary-warehouses';\n\t\t\t\t\t},\n\t\t\t\t\tinit() {\n\t\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\n\t\t\t\t\t\tconst setupFile = urlParams.get('setup_file');\n\t\t\t\t\t\tconst setupQueue = urlParams.get('setup_queue');\n\t\t\t\t\t\tif (setupFile) {\n\t\t\t\t\t\t\tconst queue = setupQueue ? setupQueue.split(',').filter(x => x.trim().length > 0) : [];\n\t\t\t\t\t\t\tconst step = parseInt(urlParams.get('setup_step'), 10) || 1;\n\t\t\t\t\t\t\tconst total = parseInt(urlParams.get('setup_total'), 10) || (queue.length + 1);\n\t\t\t\t\t\t\tthis.openMapping(parseInt(setupFile, 10), queue, step, total);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync openItems(id, name, total) {\n\t\t\t\t\t\tthis.selectedWarehouse = { id: id, name: name, total: total };\n\t\t\t\t\t\tthis.modalPage = 1;\n\t\t\t\t\t\tthis.itemsModal = true;\n\t\t\t\t\t\tconst dlg = document.getElementById('warehouse-items-modal');\n\t\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\n\t\t\t\t\t\t\tdlg.showModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t},\n\t\t\t\t\tasync fetchItems() {\n\t\t\t\t\t\tthis.modalLoading = true;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tthis.modalItems = json.items || [];\n\t\t\t\t\t\t\t\tthis.modalTotalPages = json.total_pages || 1;\n\t\t\t\t\t\t\t\tthis.selectedWarehouse.total = json.total || 0;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Error fetching items:', e);\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.modalLoading = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync nextModalPage() {\n\t\t\t\t\t\tif (this.modalPage < this.modalTotalPages) {\n\t\t\t\t\t\t\tthis.modalPage++;\n\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync prevModalPage() {\n\t\t\t\t\t\tif (this.modalPage > 1) {\n\t\t\t\t\t\t\tthis.modalPage--;\n\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync deleteItem(rowId) {\n\t\t\t\t\t\tif (!confirm('هل أنت متأكد من حذف هذا الصنف من المستودع؟')) return;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\t\tlet res = await fetch(base + '/items/' + rowId + '/delete', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/items/' + rowId + '/delete', {\n\t\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\t\tbody: formData\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'حدث خطأ أثناء الحذف');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\talert('فشل الاتصال بالخادم');\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync openMapping(id, queue, step, total) {\n\t\t\t\t\t\tif (!id || id <= 0) return;\n\t\t\t\t\t\tthis.mappingLoading = true;\n\t\t\t\t\t\tthis.mappingModal = true;\n\t\t\t\t\t\tthis.mappingQueue = queue || [];\n\t\t\t\t\t\tthis.mappingStep = step || 1;\n\t\t\t\t\t\tthis.mappingTotal = total || (this.mappingQueue.length + 1);\n\t\t\t\t\t\tconst dlg = document.getElementById('warehouse-mapping-modal');\n\t\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\n\t\t\t\t\t\t\tdlg.showModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + id + '/mapping-json', {\n\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + id + '/mapping-json', {\n\t\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif (!res.ok) {\n\t\t\t\t\t\t\t\tthrow new Error('HTTP ' + res.status);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tthis.mappingFile = {\n\t\t\t\t\t\t\t\t\tid: json.id,\n\t\t\t\t\t\t\t\t\tsupplier_name: json.supplier_name,\n\t\t\t\t\t\t\t\t\toriginal_filename: json.original_filename,\n\t\t\t\t\t\t\t\t\trow_count: json.row_count\n\t\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\t\tthis.mappingHeaders = json.headers || [];\n\t\t\t\t\t\t\t\tthis.mappingPreview = json.preview || [];\n\t\t\t\t\t\t\t\tthis.mappingCode = json.code_col >= 0 ? json.code_col : 0;\n\t\t\t\t\t\t\t\tthis.mappingName = json.name_col >= 0 ? json.name_col : 1;\n\t\t\t\t\t\t\t\tthis.mappingPrice = json.price_col >= 0 ? json.price_col : 2;\n\t\t\t\t\t\t\t\tthis.mappingDiscount = json.discount_col >= 0 ? json.discount_col : 3;\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'تعذر تحميل بيانات أعمدة المستودع');\n\t\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Mapping load error:', e);\n\t\t\t\t\t\t\talert('تعذر تحميل تفاصيل الأعمدة، يرجى المحاولة مرة أخرى');\n\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.mappingLoading = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync submitMapping(form) {\n\t\t\t\t\t\tif (!this.mappingFile || !this.mappingFile.id) return;\n\t\t\t\t\t\tthis.mappingSubmitting = true;\n\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\t\tformData.append('supplier_name', this.mappingFile.supplier_name || '');\n\t\t\t\t\t\t\tformData.append('col_code', this.mappingCode);\n\t\t\t\t\t\t\tformData.append('col_name', this.mappingName);\n\t\t\t\t\t\t\tformData.append('col_price', this.mappingPrice);\n\t\t\t\t\t\t\tformData.append('col_discount', this.mappingDiscount);\n\t\t\t\t\t\t\tformData.append('setup_queue', this.mappingQueue.join(','));\n\t\t\t\t\t\t\tformData.append('step', this.mappingStep);\n\t\t\t\t\t\t\tformData.append('total', this.mappingTotal);\n\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + this.mappingFile.id + '/mapping', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + this.mappingFile.id + '/mapping', {\n\t\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tif (this.mappingQueue && this.mappingQueue.length > 0) {\n\t\t\t\t\t\t\t\t\tconst nextId = parseInt(this.mappingQueue[0], 10);\n\t\t\t\t\t\t\t\t\tconst nextQueue = this.mappingQueue.slice(1);\n\t\t\t\t\t\t\t\t\tawait this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'فشل حفظ وضبط الأعمدة');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Mapping submit error:', e);\n\t\t\t\t\t\t\talert('حدث خطأ أثناء حفظ الإعدادات');\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.mappingSubmitting = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync skipMapping() {\n\t\t\t\t\t\tif (this.mappingQueue && this.mappingQueue.length > 0) {\n\t\t\t\t\t\t\tconst nextId = parseInt(this.mappingQueue[0], 10);\n\t\t\t\t\t\t\tconst nextQueue = this.mappingQueue.slice(1);\n\t\t\t\t\t\t\tawait this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tskipAllMapping() {\n\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t},\n\t\t\t\t\thandleFilesSelect(event) {\n\t\t\t\t\t\tconst files = Array.from(event.target.files || []);\n\t\t\t\t\t\tif (files.length === 0) return;\n\t\t\t\t\t\tthis.selectedFiles = files;\n\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\tif (files.length === 1) {\n\t\t\t\t\t\t\tthis.handleSingleFileHeaders(files[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\thandleDrop(event) {\n\t\t\t\t\t\tthis.isDragging = false;\n\t\t\t\t\t\tif (event.dataTransfer && event.dataTransfer.files) {\n\t\t\t\t\t\t\tconst files = Array.from(event.dataTransfer.files).filter(f =>\n\t\t\t\t\t\t\t\tf.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv') || f.name.endsWith('.txt')\n\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\tif (files.length > 0) {\n\t\t\t\t\t\t\t\tthis.selectedFiles = files;\n\t\t\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\t\t\tif (files.length === 1) {\n\t\t\t\t\t\t\t\t\tthis.handleSingleFileHeaders(files[0]);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tremoveSelectedFile(idx) {\n\t\t\t\t\t\tthis.selectedFiles.splice(idx, 1);\n\t\t\t\t\t\tif (this.selectedFiles.length === 1) {\n\t\t\t\t\t\t\tthis.handleSingleFileHeaders(this.selectedFiles[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tclearSelectedFiles() {\n\t\t\t\t\t\tthis.selectedFiles = [];\n\t\t\t\t\t\tthis.fileHeaders = [];\n\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\tif (this.$refs && this.$refs.fileInput) {\n\t\t\t\t\t\t\tthis.$refs.fileInput.value = '';\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tformatFileSize(bytes) {\n\t\t\t\t\t\tif (!bytes || bytes === 0) return '0 B';\n\t\t\t\t\t\tconst k = 1024;\n\t\t\t\t\t\tconst sizes = ['B', 'KB', 'MB', 'GB'];\n\t\t\t\t\t\tconst i = Math.floor(Math.log(bytes) / Math.log(k));\n\t\t\t\t\t\treturn parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];\n\t\t\t\t\t},\n\t\t\t\t\ttotalSelectedSize() {\n\t\t\t\t\t\tconst totalBytes = this.selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0);\n\t\t\t\t\t\treturn this.formatFileSize(totalBytes);\n\t\t\t\t\t},\n\t\t\t\t\tcleanName(filename) {\n\t\t\t\t\t\tif (!filename) return '';\n\t\t\t\t\t\tlet name = filename.replace(/\\.[^/.]+$/, '');\n\t\t\t\t\t\tname = name.replace(/[_\\-]/g, ' ').trim();\n\t\t\t\t\t\treturn name || filename;\n\t\t\t\t\t},\n\t\t\t\t\thandleSingleFileHeaders(file) {\n\t\t\t\t\t\tif (!file) return;\n\t\t\t\t\t\tconst reader = new FileReader();\n\t\t\t\t\t\treader.onload = (e) => {\n\t\t\t\t\t\t\tconst text = e.target.result;\n\t\t\t\t\t\t\tif (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {\n\t\t\t\t\t\t\t\tconst lines = text.split(/\\r?\\n/).filter(l => l.trim().length > 0);\n\t\t\t\t\t\t\t\tif (lines.length > 0) {\n\t\t\t\t\t\t\t\t\tthis.fileHeaders = lines[0].split(',').map(h => h.trim().replace(/^['\\x22]|['\\x22]$/g, ''));\n\t\t\t\t\t\t\t\t\tthis.guessColumns();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tthis.fileHeaders = ['كود الصنف (SKU)', 'اسم المنتج / الصنف', 'سعر الجمهور', 'نسبة الخصم %', 'الكمية'];\n\t\t\t\t\t\t\t\tthis.detectedCode = 0;\n\t\t\t\t\t\t\t\tthis.detectedName = 1;\n\t\t\t\t\t\t\t\tthis.detectedPrice = 2;\n\t\t\t\t\t\t\t\tthis.detectedDiscount = 3;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t};\n\t\t\t\t\t\tif (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {\n\t\t\t\t\t\t\treader.readAsText(file);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\treader.readAsArrayBuffer(file);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tguessColumns() {\n\t\t\t\t\t\tif (!this.fileHeaders || this.fileHeaders.length === 0) return;\n\t\t\t\t\t\tthis.detectedCode = 0;\n\t\t\t\t\t\tthis.detectedName = 1;\n\t\t\t\t\t\tthis.detectedPrice = 2;\n\t\t\t\t\t\tthis.detectedDiscount = 3;\n\t\t\t\t\t\tthis.fileHeaders.forEach((h, idx) => {\n\t\t\t\t\t\t\tconst norm = h.toLowerCase().replace(/[\\s_\\-]/g, '');\n\t\t\t\t\t\t\tif (norm.includes('كود') || norm.includes('code') || norm.includes('sku') || norm.includes('باركود') || norm.includes('barcode')) {\n\t\t\t\t\t\t\t\tthis.detectedCode = idx;\n\t\t\t\t\t\t\t} else if (norm.includes('اسم') || norm.includes('name') || norm.includes('صنف') || norm.includes('منتج')) {\n\t\t\t\t\t\t\t\tthis.detectedName = idx;\n\t\t\t\t\t\t\t} else if ((norm.includes('سعر') || norm.includes('price') || norm.includes('جمهور') || norm.includes('رسمي')) && !norm.includes('خصم') && !norm.includes('صافي')) {\n\t\t\t\t\t\t\t\tthis.detectedPrice = idx;\n\t\t\t\t\t\t\t} else if (norm.includes('خصم') || norm.includes('discount') || norm.includes('%') || norm.includes('نسبة')) {\n\t\t\t\t\t\t\t\tthis.detectedDiscount = idx;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t},\n\t\t\t\t\tasync submitBulkUpload(form) {\n\t\t\t\t\t\tif (this.selectedFiles.length === 0) {\n\t\t\t\t\t\t\talert('يرجى اختيار ملف أو أكثر أولاً');\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tthis.isBulkUploading = true;\n\t\t\t\t\t\tthis.uploadProgress = 10;\n\t\t\t\t\t\tthis.uploadStatusText = 'جاري رفع ' + this.selectedFiles.length + ' ملف إلى الخادم...';\n\n\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\tif (this.selectedFiles.length === 1) {\n\t\t\t\t\t\t\tformData.append('supplier_name', form.supplier_name ? form.supplier_name.value : '');\n\t\t\t\t\t\t\tformData.append('col_code', this.detectedCode);\n\t\t\t\t\t\t\tformData.append('col_name', this.detectedName);\n\t\t\t\t\t\t\tformData.append('col_price', this.detectedPrice);\n\t\t\t\t\t\t\tformData.append('col_discount', this.detectedDiscount);\n\t\t\t\t\t\t} else if (form.supplier_name && form.supplier_name.value) {\n\t\t\t\t\t\t\tformData.append('supplier_name', form.supplier_name.value);\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tfor (let i = 0; i < this.selectedFiles.length; i++) {\n\t\t\t\t\t\t\tformData.append('files', this.selectedFiles[i]);\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tthis.uploadProgress = 35;\n\t\t\t\t\t\t\tthis.uploadStatusText = 'جاري المعالجة المتوازية فائقة السرعة واستخراج أصناف المستودعات في قاعدة البيانات...';\n\n\t\t\t\t\t\t\tconst response = await fetch(form.action || (this.$root.dataset.base + '/upload'), {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\tthis.uploadProgress = 45;\n\t\t\t\t\t\t\tlet result = null;\n\t\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\t\tresult = await response.json();\n\t\t\t\t\t\t\t} catch (jsonErr) {\n\t\t\t\t\t\t\t\tconsole.warn('Non-JSON response:', jsonErr);\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tif (response.ok && result && result.success) {\n\t\t\t\t\t\t\t\tthis.bulkUploadResults = result;\n\t\t\t\t\t\t\t\tthis.uploadStatusText = result.message || 'تم الرفع، وجارٍ قراءة الأصناف…';\n\n\t\t\t\t\t\t\t\t// The upload now RETURNS as soon as the files are\n\t\t\t\t\t\t\t\t// recorded; their rows are read by goroutines that\n\t\t\t\t\t\t\t\t// outlive the request. So the bar tracks the real\n\t\t\t\t\t\t\t\t// staging instead of the fake 35→85→100 it used to\n\t\t\t\t\t\t\t\t// animate, and the mapping wizard is not opened until\n\t\t\t\t\t\t\t\t// the columns have actually been detected — it would\n\t\t\t\t\t\t\t\t// otherwise show a preview of nothing.\n\t\t\t\t\t\t\t\tawait this.awaitStaging(result.uploaded_ids || []);\n\n\t\t\t\t\t\t\t\tthis.uploadProgress = 100;\n\t\t\t\t\t\t\t\tthis.uploadStatusText = 'اكتملت قراءة الأصناف.';\n\n\t\t\t\t\t\t\t\tif (this.autoLaunchSetup && result.uploaded_ids && result.uploaded_ids.length > 0) {\n\t\t\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\t\t\t\tthis.isBulkUploading = false;\n\t\t\t\t\t\t\t\t\t\tthis.uploadModal = false;\n\t\t\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-upload-modal')?.close();\n\t\t\t\t\t\t\t\t\t\tthis.clearSelectedFiles();\n\t\t\t\t\t\t\t\t\t\tconst firstId = parseInt(result.uploaded_ids[0], 10);\n\t\t\t\t\t\t\t\t\t\tconst queue = result.uploaded_ids.slice(1);\n\t\t\t\t\t\t\t\t\t\tthis.openMapping(firstId, queue, 1, result.uploaded_ids.length);\n\t\t\t\t\t\t\t\t\t}, 500);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t\t\t}, 1200);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tlet errMsg = 'حدث خطأ أثناء معالجة الملفات';\n\t\t\t\t\t\t\t\tif (result) {\n\t\t\t\t\t\t\t\t\tif (typeof result.error === 'string' && result.error.trim()) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.error;\n\t\t\t\t\t\t\t\t\t} else if (result.error && typeof result.error === 'object') {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.error.message || result.error.detail || JSON.stringify(result.error);\n\t\t\t\t\t\t\t\t\t} else if (Array.isArray(result.errors) && result.errors.length > 0) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.errors.join('\\n');\n\t\t\t\t\t\t\t\t\t} else if (typeof result.message === 'string' && result.message.trim()) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.message;\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t} else if (!response.ok) {\n\t\t\t\t\t\t\t\t\terrMsg = 'فشل الاتصال بالخادم (' + response.status + ' ' + (response.statusText || '') + ')';\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\talert(errMsg);\n\t\t\t\t\t\t\t\tthis.isBulkUploading = false;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(err) {\n\t\t\t\t\t\t\tconsole.error('Upload error:', err);\n\t\t\t\t\t\t\tthis.uploadStatusText = 'تم إرسال الملفات بنجاح، جاري تحديث الصفحة...';\n\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t}, 2000);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\n\t\t\t\t\t/*\n\t\t\t\t\t * awaitStaging polls until every file of the batch has been read.\n\t\t\t\t\t *\n\t\t\t\t\t * The percentage is files finished out of files uploaded, which\n\t\t\t\t\t * is the only honest figure available: the server can say a file\n\t\t\t\t\t * is done, and nothing trustworthy about how far through one it\n\t\t\t\t\t * is. Failing to reach the endpoint is not failure of the import\n\t\t\t\t\t * — the files are recorded and the parse is running regardless —\n\t\t\t\t\t * so after a run of errors this stops waiting rather than\n\t\t\t\t\t * trapping the admin in a dialog that never closes.\n\t\t\t\t\t */\n\t\t\t\t\tasync awaitStaging(ids) {\n\t\t\t\t\t\tif (!ids || ids.length === 0) return;\n\t\t\t\t\t\tconst query = ids.join(',');\n\t\t\t\t\t\tlet failures = 0;\n\n\t\t\t\t\t\tfor (;;) {\n\t\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\t\tconst res = await fetch(this.$root.dataset.base + '/staging?ids=' + encodeURIComponent(query), {\n\t\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json' }\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\tif (!res.ok) throw new Error('HTTP ' + res.status);\n\t\t\t\t\t\t\t\tconst data = await res.json();\n\t\t\t\t\t\t\t\tfailures = 0;\n\n\t\t\t\t\t\t\t\tif (!data || data.ready) return;\n\n\t\t\t\t\t\t\t\tconst done = data.done || 0;\n\t\t\t\t\t\t\t\tconst total = data.total || ids.length;\n\t\t\t\t\t\t\t\t// 45..95: the first 45 was the upload itself.\n\t\t\t\t\t\t\t\tthis.uploadProgress = 45 + Math.round((data.percent || 0) * 0.5);\n\t\t\t\t\t\t\t\tthis.uploadStatusText = 'جارٍ قراءة الأصناف… (' + done + ' / ' + total + ')';\n\t\t\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\t\t\tfailures++;\n\t\t\t\t\t\t\t\tif (failures >= 5) return;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tawait new Promise((r) => setTimeout(r, 1000));\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"d-flex flex-col gap-6\" data-base=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\t\tdawaData('adminTempWarehousesState', function () {\n\t\t\t\treturn {\n\t\t\t\t\tselectedIds: [],\n\t\t\t\t\tselectAll: false,\n\t\t\t\t\ttoggleSelectAll(e) {\n\t\t\t\t\t\tif (e.target.checked) {\n\t\t\t\t\t\t\tthis.selectedIds = Array.from(document.querySelectorAll('.warehouse-row-checkbox')).map(el => el.value);\n\t\t\t\t\t\t\tthis.selectAll = true;\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tthis.selectedIds = [];\n\t\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tupdateSelectState() {\n\t\t\t\t\t\tconst allBoxes = Array.from(document.querySelectorAll('.warehouse-row-checkbox'));\n\t\t\t\t\t\tif (allBoxes.length === 0) {\n\t\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tthis.selectAll = allBoxes.every(el => this.selectedIds.includes(el.value));\n\t\t\t\t\t},\n\t\t\t\t\tisSelected(id) {\n\t\t\t\t\t\treturn this.selectedIds.includes(String(id));\n\t\t\t\t\t},\n\t\t\t\t\tclearSelection() {\n\t\t\t\t\t\tthis.selectedIds = [];\n\t\t\t\t\t\tthis.selectAll = false;\n\t\t\t\t\t},\n\t\t\t\t\tsubmitBulk(action) {\n\t\t\t\t\t\tif (this.selectedIds.length === 0) return;\n\t\t\t\t\t\tif (action === 'delete') {\n\t\t\t\t\t\t\tif (!confirm('هل أنت متأكد تماماً من حذف المستودعات المحددة (' + this.selectedIds.length + ' مستودع) وكافة أصنافها نهائياً؟')) {\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} else if (action === 'archive') {\n\t\t\t\t\t\t\tif (!confirm('هل تريد أرشفة المستودعات المحددة (' + this.selectedIds.length + ' مستودع)؟')) {\n\t\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\tconst form = document.getElementById('warehouse-bulk-form');\n\t\t\t\t\t\tif (!form) return;\n\t\t\t\t\t\tdocument.getElementById('bulk-action-input').value = action;\n\t\t\t\t\t\tconst idsInput = document.getElementById('bulk-selected-ids-input');\n\t\t\t\t\t\tif (idsInput) idsInput.value = this.selectedIds.join(',');\n\t\t\t\t\t\tform.querySelectorAll('input.dynamic-bulk-id').forEach(el => el.remove());\n\t\t\t\t\t\tthis.selectedIds.forEach(id => {\n\t\t\t\t\t\t\tconst inp = document.createElement('input');\n\t\t\t\t\t\t\tinp.type = 'hidden';\n\t\t\t\t\t\t\tinp.name = 'selected_ids';\n\t\t\t\t\t\t\tinp.className = 'dynamic-bulk-id';\n\t\t\t\t\t\t\tinp.value = id;\n\t\t\t\t\t\t\tform.appendChild(inp);\n\t\t\t\t\t\t});\n\t\t\t\t\t\tform.submit();\n\t\t\t\t\t},\n\t\t\t\t\tuploadModal: false,\n\t\t\t\t\titemsModal: false,\n\t\t\t\t\tmappingModal: false,\n\t\t\t\t\tmappingLoading: false,\n\t\t\t\t\tmappingSubmitting: false,\n\t\t\t\t\tmappingFile: { id: 0, supplier_name: '', original_filename: '', row_count: 0 },\n\t\t\t\t\tmappingHeaders: [],\n\t\t\t\t\tmappingPreview: [],\n\t\t\t\t\tmappingCode: 0,\n\t\t\t\t\tmappingName: 1,\n\t\t\t\t\tmappingPrice: 2,\n\t\t\t\t\tmappingDiscount: 3,\n\t\t\t\t\tmappingQueue: [],\n\t\t\t\t\tmappingStep: 1,\n\t\t\t\t\tmappingTotal: 1,\n\t\t\t\t\tautoLaunchSetup: true,\n\t\t\t\t\tselectedWarehouse: { id: 0, name: '', total: 0 },\n\t\t\t\t\tmodalItems: [],\n\t\t\t\t\tmodalPage: 1,\n\t\t\t\t\tmodalTotalPages: 1,\n\t\t\t\t\tmodalLoading: false,\n\t\t\t\t\tuploadStep: 1,\n\t\t\t\t\tfileHeaders: [],\n\t\t\t\t\tsampleRows: [],\n\t\t\t\t\tdetectedCode: 0,\n\t\t\t\t\tdetectedName: 1,\n\t\t\t\t\tdetectedPrice: 2,\n\t\t\t\t\tdetectedDiscount: 3,\n\t\t\t\t\tisDragging: false,\n\t\t\t\t\tisBulkUploading: false,\n\t\t\t\t\tuploadProgress: 0,\n\t\t\t\t\tuploadStatusText: '',\n\t\t\t\t\tselectedFiles: [],\n\t\t\t\t\tbulkUploadResults: null,\n\t\t\t\t\tgetBase() {\n\t\t\t\t\t\treturn (this.$root && this.$root.dataset && this.$root.dataset.base) || window.location.pathname.replace(/\\/$/, '') || '/admin/temporary-warehouses';\n\t\t\t\t\t},\n\t\t\t\t\tinit() {\n\t\t\t\t\t\tconst urlParams = new URLSearchParams(window.location.search);\n\t\t\t\t\t\tconst setupFile = urlParams.get('setup_file');\n\t\t\t\t\t\tconst setupQueue = urlParams.get('setup_queue');\n\t\t\t\t\t\tif (setupFile) {\n\t\t\t\t\t\t\tconst queue = setupQueue ? setupQueue.split(',').filter(x => x.trim().length > 0) : [];\n\t\t\t\t\t\t\tconst step = parseInt(urlParams.get('setup_step'), 10) || 1;\n\t\t\t\t\t\t\tconst total = parseInt(urlParams.get('setup_total'), 10) || (queue.length + 1);\n\t\t\t\t\t\t\tthis.openMapping(parseInt(setupFile, 10), queue, step, total);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync openItems(id, name, total) {\n\t\t\t\t\t\tthis.selectedWarehouse = { id: id, name: name, total: total };\n\t\t\t\t\t\tthis.modalPage = 1;\n\t\t\t\t\t\tthis.itemsModal = true;\n\t\t\t\t\t\tconst dlg = document.getElementById('warehouse-items-modal');\n\t\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\n\t\t\t\t\t\t\tdlg.showModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t},\n\t\t\t\t\tasync fetchItems() {\n\t\t\t\t\t\tthis.modalLoading = true;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + this.selectedWarehouse.id + '/items-json?page=' + this.modalPage + '&limit=10');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tthis.modalItems = json.items || [];\n\t\t\t\t\t\t\t\tthis.modalTotalPages = json.total_pages || 1;\n\t\t\t\t\t\t\t\tthis.selectedWarehouse.total = json.total || 0;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Error fetching items:', e);\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.modalLoading = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync nextModalPage() {\n\t\t\t\t\t\tif (this.modalPage < this.modalTotalPages) {\n\t\t\t\t\t\t\tthis.modalPage++;\n\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync prevModalPage() {\n\t\t\t\t\t\tif (this.modalPage > 1) {\n\t\t\t\t\t\t\tthis.modalPage--;\n\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync deleteItem(rowId) {\n\t\t\t\t\t\tif (!confirm('هل أنت متأكد من حذف هذا الصنف من المستودع؟')) return;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\t\tlet res = await fetch(base + '/items/' + rowId + '/delete', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/items/' + rowId + '/delete', {\n\t\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\t\tbody: formData\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tawait this.fetchItems();\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'حدث خطأ أثناء الحذف');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\talert('فشل الاتصال بالخادم');\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync openMapping(id, queue, step, total) {\n\t\t\t\t\t\tif (!id || id <= 0) return;\n\t\t\t\t\t\tthis.mappingLoading = true;\n\t\t\t\t\t\tthis.mappingModal = true;\n\t\t\t\t\t\tthis.mappingQueue = queue || [];\n\t\t\t\t\t\tthis.mappingStep = step || 1;\n\t\t\t\t\t\tthis.mappingTotal = total || (this.mappingQueue.length + 1);\n\t\t\t\t\t\tconst dlg = document.getElementById('warehouse-mapping-modal');\n\t\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\n\t\t\t\t\t\t\tdlg.showModal();\n\t\t\t\t\t\t}\n\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + id + '/mapping-json', {\n\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + id + '/mapping-json', {\n\t\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tif (!res.ok) {\n\t\t\t\t\t\t\t\tthrow new Error('HTTP ' + res.status);\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tthis.mappingFile = {\n\t\t\t\t\t\t\t\t\tid: json.id,\n\t\t\t\t\t\t\t\t\tsupplier_name: json.supplier_name,\n\t\t\t\t\t\t\t\t\toriginal_filename: json.original_filename,\n\t\t\t\t\t\t\t\t\trow_count: json.row_count\n\t\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\t\tthis.mappingHeaders = json.headers || [];\n\t\t\t\t\t\t\t\tthis.mappingPreview = json.preview || [];\n\t\t\t\t\t\t\t\tthis.mappingCode = json.code_col >= 0 ? json.code_col : 0;\n\t\t\t\t\t\t\t\tthis.mappingName = json.name_col >= 0 ? json.name_col : 1;\n\t\t\t\t\t\t\t\tthis.mappingPrice = json.price_col >= 0 ? json.price_col : 2;\n\t\t\t\t\t\t\t\tthis.mappingDiscount = json.discount_col >= 0 ? json.discount_col : 3;\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'تعذر تحميل بيانات أعمدة المستودع');\n\t\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Mapping load error:', e);\n\t\t\t\t\t\t\talert('تعذر تحميل تفاصيل الأعمدة، يرجى المحاولة مرة أخرى');\n\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.mappingLoading = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync submitMapping(form) {\n\t\t\t\t\t\tif (!this.mappingFile || !this.mappingFile.id) return;\n\t\t\t\t\t\tthis.mappingSubmitting = true;\n\t\t\t\t\t\tconst base = this.getBase();\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\t\tformData.append('supplier_name', this.mappingFile.supplier_name || '');\n\t\t\t\t\t\t\tformData.append('col_code', this.mappingCode);\n\t\t\t\t\t\t\tformData.append('col_name', this.mappingName);\n\t\t\t\t\t\t\tformData.append('col_price', this.mappingPrice);\n\t\t\t\t\t\t\tformData.append('col_discount', this.mappingDiscount);\n\t\t\t\t\t\t\tformData.append('setup_queue', this.mappingQueue.join(','));\n\t\t\t\t\t\t\tformData.append('step', this.mappingStep);\n\t\t\t\t\t\t\tformData.append('total', this.mappingTotal);\n\n\t\t\t\t\t\t\tlet res = await fetch(base + '/' + this.mappingFile.id + '/mapping', {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\tif (!res.ok && base !== '/admin/temporary-warehouses') {\n\t\t\t\t\t\t\t\tres = await fetch('/admin/temporary-warehouses/' + this.mappingFile.id + '/mapping', {\n\t\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tconst json = await res.json();\n\t\t\t\t\t\t\tif (json.success) {\n\t\t\t\t\t\t\t\tif (this.mappingQueue && this.mappingQueue.length > 0) {\n\t\t\t\t\t\t\t\t\tconst nextId = parseInt(this.mappingQueue[0], 10);\n\t\t\t\t\t\t\t\t\tconst nextQueue = this.mappingQueue.slice(1);\n\t\t\t\t\t\t\t\t\tawait this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\talert(json.error || 'فشل حفظ وضبط الأعمدة');\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(e) {\n\t\t\t\t\t\t\tconsole.error('Mapping submit error:', e);\n\t\t\t\t\t\t\talert('حدث خطأ أثناء حفظ الإعدادات');\n\t\t\t\t\t\t} finally {\n\t\t\t\t\t\t\tthis.mappingSubmitting = false;\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tasync skipMapping() {\n\t\t\t\t\t\tif (this.mappingQueue && this.mappingQueue.length > 0) {\n\t\t\t\t\t\t\tconst nextId = parseInt(this.mappingQueue[0], 10);\n\t\t\t\t\t\t\tconst nextQueue = this.mappingQueue.slice(1);\n\t\t\t\t\t\t\tawait this.openMapping(nextId, nextQueue, this.mappingStep + 1, this.mappingTotal);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tskipAllMapping() {\n\t\t\t\t\t\tthis.mappingModal = false;\n\t\t\t\t\t\tdocument.getElementById('warehouse-mapping-modal')?.close();\n\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t},\n\t\t\t\t\thandleFilesSelect(event) {\n\t\t\t\t\t\tconst files = Array.from(event.target.files || []);\n\t\t\t\t\t\tif (files.length === 0) return;\n\t\t\t\t\t\tthis.selectedFiles = files;\n\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\tif (files.length === 1) {\n\t\t\t\t\t\t\tthis.handleSingleFileHeaders(files[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\thandleDrop(event) {\n\t\t\t\t\t\tthis.isDragging = false;\n\t\t\t\t\t\tif (event.dataTransfer && event.dataTransfer.files) {\n\t\t\t\t\t\t\tconst files = Array.from(event.dataTransfer.files).filter(f =>\n\t\t\t\t\t\t\t\tf.name.endsWith('.xlsx') || f.name.endsWith('.xls') || f.name.endsWith('.csv') || f.name.endsWith('.txt')\n\t\t\t\t\t\t\t);\n\t\t\t\t\t\t\tif (files.length > 0) {\n\t\t\t\t\t\t\t\tthis.selectedFiles = files;\n\t\t\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\t\t\tif (files.length === 1) {\n\t\t\t\t\t\t\t\t\tthis.handleSingleFileHeaders(files[0]);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tremoveSelectedFile(idx) {\n\t\t\t\t\t\tthis.selectedFiles.splice(idx, 1);\n\t\t\t\t\t\tif (this.selectedFiles.length === 1) {\n\t\t\t\t\t\t\tthis.handleSingleFileHeaders(this.selectedFiles[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tclearSelectedFiles() {\n\t\t\t\t\t\tthis.selectedFiles = [];\n\t\t\t\t\t\tthis.fileHeaders = [];\n\t\t\t\t\t\tthis.bulkUploadResults = null;\n\t\t\t\t\t\tif (this.$refs && this.$refs.fileInput) {\n\t\t\t\t\t\t\tthis.$refs.fileInput.value = '';\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tformatFileSize(bytes) {\n\t\t\t\t\t\tif (!bytes || bytes === 0) return '0 B';\n\t\t\t\t\t\tconst k = 1024;\n\t\t\t\t\t\tconst sizes = ['B', 'KB', 'MB', 'GB'];\n\t\t\t\t\t\tconst i = Math.floor(Math.log(bytes) / Math.log(k));\n\t\t\t\t\t\treturn parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];\n\t\t\t\t\t},\n\t\t\t\t\ttotalSelectedSize() {\n\t\t\t\t\t\tconst totalBytes = this.selectedFiles.reduce((acc, f) => acc + (f.size || 0), 0);\n\t\t\t\t\t\treturn this.formatFileSize(totalBytes);\n\t\t\t\t\t},\n\t\t\t\t\tcleanName(filename) {\n\t\t\t\t\t\tif (!filename) return '';\n\t\t\t\t\t\tlet name = filename.replace(/\\.[^/.]+$/, '');\n\t\t\t\t\t\tname = name.replace(/[_\\-]/g, ' ').trim();\n\t\t\t\t\t\treturn name || filename;\n\t\t\t\t\t},\n\t\t\t\t\thandleSingleFileHeaders(file) {\n\t\t\t\t\t\tif (!file) return;\n\t\t\t\t\t\tconst reader = new FileReader();\n\t\t\t\t\t\treader.onload = (e) => {\n\t\t\t\t\t\t\tconst text = e.target.result;\n\t\t\t\t\t\t\tif (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {\n\t\t\t\t\t\t\t\tconst lines = text.split(/\\r?\\n/).filter(l => l.trim().length > 0);\n\t\t\t\t\t\t\t\tif (lines.length > 0) {\n\t\t\t\t\t\t\t\t\tthis.fileHeaders = lines[0].split(',').map(h => h.trim().replace(/^['\\x22]|['\\x22]$/g, ''));\n\t\t\t\t\t\t\t\t\tthis.guessColumns();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tthis.fileHeaders = ['كود الصنف (SKU)', 'اسم المنتج / الصنف', 'سعر الجمهور', 'نسبة الخصم %', 'الكمية'];\n\t\t\t\t\t\t\t\tthis.detectedCode = 0;\n\t\t\t\t\t\t\t\tthis.detectedName = 1;\n\t\t\t\t\t\t\t\tthis.detectedPrice = 2;\n\t\t\t\t\t\t\t\tthis.detectedDiscount = 3;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t};\n\t\t\t\t\t\tif (file.name.endsWith('.csv') || file.name.endsWith('.txt')) {\n\t\t\t\t\t\t\treader.readAsText(file);\n\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\treader.readAsArrayBuffer(file);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tguessColumns() {\n\t\t\t\t\t\tif (!this.fileHeaders || this.fileHeaders.length === 0) return;\n\t\t\t\t\t\tthis.detectedCode = 0;\n\t\t\t\t\t\tthis.detectedName = 1;\n\t\t\t\t\t\tthis.detectedPrice = 2;\n\t\t\t\t\t\tthis.detectedDiscount = 3;\n\t\t\t\t\t\tthis.fileHeaders.forEach((h, idx) => {\n\t\t\t\t\t\t\tconst norm = h.toLowerCase().replace(/[\\s_\\-]/g, '');\n\t\t\t\t\t\t\tif (norm.includes('كود') || norm.includes('code') || norm.includes('sku') || norm.includes('باركود') || norm.includes('barcode')) {\n\t\t\t\t\t\t\t\tthis.detectedCode = idx;\n\t\t\t\t\t\t\t} else if (norm.includes('اسم') || norm.includes('name') || norm.includes('صنف') || norm.includes('منتج')) {\n\t\t\t\t\t\t\t\tthis.detectedName = idx;\n\t\t\t\t\t\t\t} else if ((norm.includes('سعر') || norm.includes('price') || norm.includes('جمهور') || norm.includes('رسمي')) && !norm.includes('خصم') && !norm.includes('صافي')) {\n\t\t\t\t\t\t\t\tthis.detectedPrice = idx;\n\t\t\t\t\t\t\t} else if (norm.includes('خصم') || norm.includes('discount') || norm.includes('%') || norm.includes('نسبة')) {\n\t\t\t\t\t\t\t\tthis.detectedDiscount = idx;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t});\n\t\t\t\t\t},\n\t\t\t\t\tasync submitBulkUpload(form) {\n\t\t\t\t\t\tif (this.selectedFiles.length === 0) {\n\t\t\t\t\t\t\talert('يرجى اختيار ملف أو أكثر أولاً');\n\t\t\t\t\t\t\treturn;\n\t\t\t\t\t\t}\n\t\t\t\t\t\tthis.isBulkUploading = true;\n\t\t\t\t\t\tthis.uploadProgress = 10;\n\t\t\t\t\t\tthis.uploadStatusText = 'جاري رفع ' + this.selectedFiles.length + ' ملف إلى الخادم...';\n\n\t\t\t\t\t\tconst formData = new FormData();\n\t\t\t\t\t\tif (this.selectedFiles.length === 1) {\n\t\t\t\t\t\t\tformData.append('supplier_name', form.supplier_name ? form.supplier_name.value : '');\n\t\t\t\t\t\t\tformData.append('col_code', this.detectedCode);\n\t\t\t\t\t\t\tformData.append('col_name', this.detectedName);\n\t\t\t\t\t\t\tformData.append('col_price', this.detectedPrice);\n\t\t\t\t\t\t\tformData.append('col_discount', this.detectedDiscount);\n\t\t\t\t\t\t} else if (form.supplier_name && form.supplier_name.value) {\n\t\t\t\t\t\t\tformData.append('supplier_name', form.supplier_name.value);\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\tfor (let i = 0; i < this.selectedFiles.length; i++) {\n\t\t\t\t\t\t\tformData.append('files', this.selectedFiles[i]);\n\t\t\t\t\t\t}\n\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\tthis.uploadProgress = 35;\n\t\t\t\t\t\t\tthis.uploadStatusText = 'جاري المعالجة المتوازية فائقة السرعة واستخراج أصناف المستودعات في قاعدة البيانات...';\n\n\t\t\t\t\t\t\tconst response = await fetch(form.action || (this.$root.dataset.base + '/upload'), {\n\t\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\t\tbody: formData,\n\t\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t\t'X-Requested-With': 'XMLHttpRequest'\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\n\t\t\t\t\t\t\tthis.uploadProgress = 45;\n\t\t\t\t\t\t\tlet result = null;\n\t\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\t\tresult = await response.json();\n\t\t\t\t\t\t\t} catch (jsonErr) {\n\t\t\t\t\t\t\t\tconsole.warn('Non-JSON response:', jsonErr);\n\t\t\t\t\t\t\t}\n\n\t\t\t\t\t\t\tif (response.ok && result && result.success) {\n\t\t\t\t\t\t\t\tthis.bulkUploadResults = result;\n\t\t\t\t\t\t\t\tthis.uploadStatusText = result.message || 'تم الرفع، وجارٍ قراءة الأصناف…';\n\n\t\t\t\t\t\t\t\t// The upload now RETURNS as soon as the files are\n\t\t\t\t\t\t\t\t// recorded; their rows are read by goroutines that\n\t\t\t\t\t\t\t\t// outlive the request. So the bar tracks the real\n\t\t\t\t\t\t\t\t// staging instead of the fake 35→85→100 it used to\n\t\t\t\t\t\t\t\t// animate, and the mapping wizard is not opened until\n\t\t\t\t\t\t\t\t// the columns have actually been detected — it would\n\t\t\t\t\t\t\t\t// otherwise show a preview of nothing.\n\t\t\t\t\t\t\t\tawait this.awaitStaging(result.uploaded_ids || []);\n\n\t\t\t\t\t\t\t\tthis.uploadProgress = 100;\n\t\t\t\t\t\t\t\tthis.uploadStatusText = 'اكتملت قراءة الأصناف.';\n\n\t\t\t\t\t\t\t\tif (this.autoLaunchSetup && result.uploaded_ids && result.uploaded_ids.length > 0) {\n\t\t\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\t\t\t\tthis.isBulkUploading = false;\n\t\t\t\t\t\t\t\t\t\tthis.uploadModal = false;\n\t\t\t\t\t\t\t\t\t\tdocument.getElementById('warehouse-upload-modal')?.close();\n\t\t\t\t\t\t\t\t\t\tthis.clearSelectedFiles();\n\t\t\t\t\t\t\t\t\t\tconst firstId = parseInt(result.uploaded_ids[0], 10);\n\t\t\t\t\t\t\t\t\t\tconst queue = result.uploaded_ids.slice(1);\n\t\t\t\t\t\t\t\t\t\tthis.openMapping(firstId, queue, 1, result.uploaded_ids.length);\n\t\t\t\t\t\t\t\t\t}, 500);\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t\t\t}, 1200);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tlet errMsg = 'حدث خطأ أثناء معالجة الملفات';\n\t\t\t\t\t\t\t\tif (result) {\n\t\t\t\t\t\t\t\t\tif (typeof result.error === 'string' && result.error.trim()) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.error;\n\t\t\t\t\t\t\t\t\t} else if (result.error && typeof result.error === 'object') {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.error.message || result.error.detail || JSON.stringify(result.error);\n\t\t\t\t\t\t\t\t\t} else if (Array.isArray(result.errors) && result.errors.length > 0) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.errors.join('\\n');\n\t\t\t\t\t\t\t\t\t} else if (typeof result.message === 'string' && result.message.trim()) {\n\t\t\t\t\t\t\t\t\t\terrMsg = result.message;\n\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t} else if (response.status === 403) {\n\t\t\t\t\t\t\t\t\terrMsg = 'غير مصرح لك برفع أو معالجة المستودعات (يرجى مراجعة الصلاحيات).';\n\t\t\t\t\t\t\t\t} else if (response.status === 401) {\n\t\t\t\t\t\t\t\t\terrMsg = 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.';\n\t\t\t\t\t\t\t\t} else if (response.redirected) {\n\t\t\t\t\t\t\t\t\terrMsg = 'تم تحويل الطلب: يرجى التأكد من صلاحيات حسابك.';\n\t\t\t\t\t\t\t\t} else if (!response.ok) {\n\t\t\t\t\t\t\t\t\terrMsg = 'فشل الاتصال بالخادم (' + response.status + ' ' + (response.statusText || '') + ')';\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\talert(errMsg);\n\t\t\t\t\t\t\t\tthis.isBulkUploading = false;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t} catch(err) {\n\t\t\t\t\t\t\tconsole.error('Upload error:', err);\n\t\t\t\t\t\t\tthis.uploadStatusText = 'تم إرسال الملفات بنجاح، جاري تحديث الصفحة...';\n\t\t\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\t\tif (window.dawaRefresh) { window.dawaRefresh(); } else { window.location.reload(); }\n\t\t\t\t\t\t}, 2000);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\n\t\t\t\t\t/*\n\t\t\t\t\t * awaitStaging polls until every file of the batch has been read.\n\t\t\t\t\t *\n\t\t\t\t\t * The percentage is files finished out of files uploaded, which\n\t\t\t\t\t * is the only honest figure available: the server can say a file\n\t\t\t\t\t * is done, and nothing trustworthy about how far through one it\n\t\t\t\t\t * is. Failing to reach the endpoint is not failure of the import\n\t\t\t\t\t * — the files are recorded and the parse is running regardless —\n\t\t\t\t\t * so after a run of errors this stops waiting rather than\n\t\t\t\t\t * trapping the admin in a dialog that never closes.\n\t\t\t\t\t */\n\t\t\t\t\tasync awaitStaging(ids) {\n\t\t\t\t\t\tif (!ids || ids.length === 0) return;\n\t\t\t\t\t\tconst query = ids.join(',');\n\t\t\t\t\t\tlet failures = 0;\n\n\t\t\t\t\t\tfor (;;) {\n\t\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\t\tlet stagingUrl = this.$root.dataset.base + '/staging?ids=' + encodeURIComponent(query);\n\t\t\t\t\t\t\t\tlet res = await fetch(stagingUrl, {\n\t\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json' }\n\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\tif (!res.ok && this.$root.dataset.base !== '/admin/user/temparte-warehouses') {\n\t\t\t\t\t\t\t\t\tres = await fetch('/admin/user/temparte-warehouses/staging?ids=' + encodeURIComponent(query), {\n\t\t\t\t\t\t\t\t\t\theaders: { 'Accept': 'application/json' }\n\t\t\t\t\t\t\t\t\t});\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\tif (!res.ok) throw new Error('HTTP ' + res.status);\n\t\t\t\t\t\t\t\tconst data = await res.json();\n\t\t\t\t\t\t\t\tfailures = 0;\n\n\t\t\t\t\t\t\t\tif (!data || data.ready) return;\n\n\t\t\t\t\t\t\t\tconst done = data.done || 0;\n\t\t\t\t\t\t\t\tconst total = data.total || ids.length;\n\t\t\t\t\t\t\t\t// 45..95: the first 45 was the upload itself.\n\t\t\t\t\t\t\t\tthis.uploadProgress = 45 + Math.round((data.percent || 0) * 0.5);\n\t\t\t\t\t\t\t\tthis.uploadStatusText = 'جارٍ قراءة الأصناف… (' + done + ' / ' + total + ')';\n\t\t\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\t\t\tfailures++;\n\t\t\t\t\t\t\t\tif (failures >= 5) return;\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\tawait new Promise((r) => setTimeout(r, 1000));\n\t\t\t\t\t\t}\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"d-flex flex-col gap-6\" data-base=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Base)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 725, Col: 24}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 737, Col: 24}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -284,7 +284,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("مستودعات %d مشرف يعملون تحت إدارتك. لا تظهر هنا مستودعاتك أنت — لها صفحة «مستودعاتي المرفوعة» — ولا مستودعات أي مشرف خارج فريقك.", data.TeamSize))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 755, Col: 272}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 767, Col: 272}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -313,7 +313,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var7 templ.SafeURL
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL + "?type="))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 766, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 778, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -348,7 +348,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var10 templ.SafeURL
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL + "?type=moderator"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 772, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 784, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -383,7 +383,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var13 templ.SafeURL
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL + "?type=vendor"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 778, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 790, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -414,7 +414,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var15 templ.SafeURL
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL + "/upload"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 785, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 797, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -461,7 +461,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(data.NoticeMsg)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 804, Col: 21}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 816, Col: 21}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -489,7 +489,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.TotalRows))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 818, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 830, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -502,7 +502,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.TotalCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 828, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 840, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -515,7 +515,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.ActiveCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 838, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 850, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -528,7 +528,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.ArchivedCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 848, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 860, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 			if templ_7745c5c3_Err != nil {
@@ -541,7 +541,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var23 templ.SafeURL
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 858, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 870, Col: 59}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.SourceFilter)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 860, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 872, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 				if templ_7745c5c3_Err != nil {
@@ -578,7 +578,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.SortBy)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 863, Col: 58}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 875, Col: 58}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 				if templ_7745c5c3_Err != nil {
@@ -597,7 +597,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.SortOrder)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 866, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 878, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 				if templ_7745c5c3_Err != nil {
@@ -615,7 +615,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Query)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 874, Col: 25}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 886, Col: 25}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 			if templ_7745c5c3_Err != nil {
@@ -646,7 +646,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var28 string
 					templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", m.UserID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 887, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 899, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 					if templ_7745c5c3_Err != nil {
@@ -669,7 +669,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(m.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 888, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 900, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -697,7 +697,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", u.UserID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 896, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 908, Col: 51}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 					if templ_7745c5c3_Err != nil {
@@ -720,7 +720,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var31 string
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(u.Name)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 897, Col: 17}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 909, Col: 17}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
@@ -752,7 +752,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var33 templ.SafeURL
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseFilterURL(data, "ready")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 907, Col: 67}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 919, Col: 67}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -787,7 +787,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var36 templ.SafeURL
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseFilterURL(data, "archived")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 913, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 925, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
@@ -822,7 +822,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var39 templ.SafeURL
 			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseFilterURL(data, "")))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 919, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 931, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 			if templ_7745c5c3_Err != nil {
@@ -856,7 +856,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 			var templ_7745c5c3_Var41 templ.SafeURL
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.Base + "/bulk"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 936, Col: 92}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 948, Col: 92}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -919,7 +919,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var42 templ.SafeURL
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseSortURL(data, "supplier")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1025, Col: 73}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1037, Col: 73}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -959,7 +959,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var43 templ.SafeURL
 					templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseSortURL(data, "uploader")))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1040, Col: 74}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1052, Col: 74}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 					if templ_7745c5c3_Err != nil {
@@ -999,7 +999,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var44 templ.SafeURL
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseSortURL(data, "type")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1055, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1067, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -1034,7 +1034,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var45 templ.SafeURL
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseSortURL(data, "rows")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1069, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1081, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -1069,7 +1069,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 				var templ_7745c5c3_Var46 templ.SafeURL
 				templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(tempWarehouseSortURL(data, "date")))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1083, Col: 69}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1095, Col: 69}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 				if templ_7745c5c3_Err != nil {
@@ -1109,7 +1109,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var47 string
 					templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("isSelected(%d) ? 'warehouse-row-selected' : ''", item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1101, Col: 92}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1113, Col: 92}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var47)
 					if templ_7745c5c3_Err != nil {
@@ -1122,7 +1122,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var48 string
 					templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1105, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1117, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var48)
 					if templ_7745c5c3_Err != nil {
@@ -1135,7 +1135,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var49 string
 					templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", (data.Page-1)*data.PerPage+idx+1))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1113, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1125, Col: 68}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 					if templ_7745c5c3_Err != nil {
@@ -1148,7 +1148,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var50 string
 					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(item.SupplierName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1118, Col: 32}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1130, Col: 32}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 					if templ_7745c5c3_Err != nil {
@@ -1176,7 +1176,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 						var templ_7745c5c3_Var51 string
 						templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.ArchiveReason)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1125, Col: 82}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1137, Col: 82}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 						if templ_7745c5c3_Err != nil {
@@ -1189,7 +1189,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 						var templ_7745c5c3_Var52 string
 						templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(item.ArchiveReason)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1126, Col: 33}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1138, Col: 33}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
 						if templ_7745c5c3_Err != nil {
@@ -1208,7 +1208,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 						var templ_7745c5c3_Var53 string
 						templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(item.OriginalFilename)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1130, Col: 122}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1142, Col: 122}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 						if templ_7745c5c3_Err != nil {
@@ -1221,7 +1221,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 						var templ_7745c5c3_Var54 string
 						templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(item.OriginalFilename)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1131, Col: 36}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1143, Col: 36}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 						if templ_7745c5c3_Err != nil {
@@ -1245,7 +1245,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 							var templ_7745c5c3_Var55 string
 							templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(item.UploaderName)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1139, Col: 33}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1151, Col: 33}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 							if templ_7745c5c3_Err != nil {
@@ -1269,7 +1269,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 							var templ_7745c5c3_Var56 string
 							templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(item.OrgName)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1145, Col: 85}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1157, Col: 85}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 							if templ_7745c5c3_Err != nil {
@@ -1318,7 +1318,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var57 string
 					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d صنف", item.RowCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1163, Col: 53}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1175, Col: 53}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 					if templ_7745c5c3_Err != nil {
@@ -1331,7 +1331,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var58 string
 					templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(item.CreatedAt.Format("2006-01-02 03:04 PM"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1167, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1179, Col: 57}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 					if templ_7745c5c3_Err != nil {
@@ -1344,7 +1344,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var59 string
 					templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openMapping(%d, [], 1, 1)", item.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1174, Col: 76}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1186, Col: 76}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
 					if templ_7745c5c3_Err != nil {
@@ -1365,7 +1365,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var60 string
 					templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openItems(%d, %q, %d)", item.ID, item.SupplierName, item.RowCount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1185, Col: 106}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1197, Col: 106}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var60)
 					if templ_7745c5c3_Err != nil {
@@ -1386,7 +1386,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var61 templ.SafeURL
 					templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/%d/export", data.Base, item.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1195, Col: 82}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1207, Col: 82}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 					if templ_7745c5c3_Err != nil {
@@ -1407,7 +1407,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var62 templ.SafeURL
 					templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/%d/toggle-archive", data.Base, item.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1204, Col: 111}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1216, Col: 111}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 					if templ_7745c5c3_Err != nil {
@@ -1451,7 +1451,7 @@ func AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) te
 					var templ_7745c5c3_Var63 templ.SafeURL
 					templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/%d/delete", data.Base, item.ID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1219, Col: 103}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses.templ`, Line: 1231, Col: 103}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 					if templ_7745c5c3_Err != nil {

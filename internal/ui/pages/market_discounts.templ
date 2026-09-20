@@ -77,7 +77,7 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 
 			<!-- Controls: one row — search, two selects, actions, view switch -->
 			<div class="filter-bar md-controls">
-				<form method="GET" action="/market-discounts" class="md-controls-form" id="market-filter-form">
+				<form method="GET" action="/market-discounts" class="md-controls-form filter-form" id="market-filter-form" data-filter-form>
 					<input type="hidden" name="view" x-bind:value="currentView"/>
 					<input type="hidden" name="limit" value={ strconv.Itoa(marketDiscountsLimit(filter)) }/>
 
@@ -85,10 +85,13 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						<input
 							type="search"
 							name="q"
+							id="market-search-input"
 							value={ filter.Query }
 							class="form-input md-search"
 							placeholder="بحث باسم الصنف أو باسم المستودع..."
 							aria-label="بحث في خصومات السوق"
+							data-min-chars="3"
+							autocomplete="off"
 						/>
 
 						<select name="supplier" class="form-select md-select" data-autosubmit aria-label="المستودع المؤقت">

@@ -394,6 +394,10 @@ func (m *mockCompareRepo) FindCandidateProducts(ctx context.Context, orgID *int6
 	return candidates, nil
 }
 
+func (m *mockCompareRepo) ListCatalogMatchProducts(ctx context.Context, limit int) ([]*compare.CandidateProduct, error) {
+	return m.FindCandidateProducts(ctx, nil, "", "", limit)
+}
+
 func (m *mockCompareRepo) SearchFileRows(ctx context.Context, userID int64, orgID *int64, query string, limit int) ([]*compare.CompareFileRowWithSupplier, error) {
 	var results []*compare.CompareFileRowWithSupplier
 	cleanQ := strings.ToLower(strings.TrimSpace(query))

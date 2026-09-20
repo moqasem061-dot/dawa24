@@ -198,9 +198,15 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.temp_warehouse.view"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.temp_warehouse.view", "inventory.temp_warehouse.manage",
+			"inventory.warehouse.view", "inventory.warehouse.manage", "inventory.warehouse.update",
+			"inventory.my_temp_warehouse.view", "inventory.my_temp_warehouse.manage",
+			"inventory.team_temp_warehouse.view", "inventory.team_temp_warehouse.manage",
+		))
 		g.Get("/admin/temporary-warehouses", h.AdminTempWarehousesPage)
 		g.Get("/admin/temporary-warehouses/upload", h.AdminTempWarehouseUploadPage)
+		g.Get("/admin/temporary-warehouses/staging", h.CompareStagingStatus)
 		g.Get("/admin/temporary-warehouses/{id}/items-json", h.AdminTempWarehouseItemsJSON)
 		g.Get("/admin/temporary-warehouses/{id}/mapping-json", h.AdminTempWarehouseMappingJSON)
 		g.Get("/admin/temporary-warehouses/{id}/export", h.AdminTempWarehouseExportXLSX)
@@ -217,10 +223,12 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 		g.Get("/admin/user/temparte-warehouses/{id}", h.AdminTempWarehousesPage)
 
 		g.Get("/admin/admins/temparte-warehouses", h.AdminTempWarehousesPage)
+		g.Get("/admin/admins/temparte-warehouses/staging", h.CompareStagingStatus)
 		g.Get("/admin/admins/temparte-warehouses/{id}/items-json", h.AdminTempWarehouseItemsJSON)
 		g.Get("/admin/admins/temparte-warehouses/{id}/mapping-json", h.AdminTempWarehouseMappingJSON)
 
 		g.Get("/admin/plan/temparte-warehouses", h.AdminTempWarehousesPage)
+		g.Get("/admin/plan/temparte-warehouses/staging", h.CompareStagingStatus)
 		g.Get("/admin/plan/temparte-warehouses/{id}/items-json", h.AdminTempWarehouseItemsJSON)
 		g.Get("/admin/plan/temparte-warehouses/{id}/mapping-json", h.AdminTempWarehouseMappingJSON)
 		g.Get("/admin/plan/temparte-warehouses/{id}", h.AdminTempWarehousesPage)
@@ -229,10 +237,10 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission(
-			"inventory.warehouse.update",
-			"inventory.temp_warehouse.manage",
-			"inventory.temp_warehouse.view",
-			"inventory.my_temp_warehouse.manage",
+			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
+			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
+			"inventory.my_temp_warehouse.manage", "inventory.my_temp_warehouse.view",
+			"inventory.team_temp_warehouse.manage", "inventory.team_temp_warehouse.view",
 		))
 		g.Post("/admin/temporary-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/user/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
@@ -254,7 +262,9 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.warehouse.delete", "inventory.temp_warehouse.manage"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.warehouse.delete", "inventory.temp_warehouse.manage", "inventory.warehouse.manage",
+		))
 		g.Post("/admin/temporary-warehouses/items/{id}/delete", h.AdminTempWarehouseItemDeleteSubmit)
 		g.Post("/admin/temporary-warehouses/{id}/delete", h.AdminTempWarehouseDeleteSubmit)
 	})
@@ -262,7 +272,11 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	// "مستودعاتي المرفوعة" — same screen, scoped to the signed-in user's own
 	// uploads. Its own permissions so a moderator can be given just this.
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.my_temp_warehouse.view"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.my_temp_warehouse.view", "inventory.my_temp_warehouse.manage",
+			"inventory.temp_warehouse.view", "inventory.temp_warehouse.manage",
+			"inventory.warehouse.view", "inventory.warehouse.manage",
+		))
 		g.Get("/admin/my/temparte-warehouses", h.AdminMyTempWarehousesPage)
 		g.Get("/admin/my/temparte-warehouses/upload", h.AdminTempWarehouseUploadPage)
 		g.Get("/admin/my/temparte-warehouses/staging", h.CompareStagingStatus)
@@ -271,7 +285,11 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 		g.Get("/admin/my/temparte-warehouses/{id}/export", h.AdminMyTempWarehouseExportXLSX)
 	})
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.my_temp_warehouse.manage"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.my_temp_warehouse.manage", "inventory.my_temp_warehouse.view",
+			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
+			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
+		))
 		g.Post("/admin/my/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/my/temparte-warehouses/{id}/mapping", h.AdminMyTempWarehouseMappingSubmit)
 		g.Post("/admin/my/temparte-warehouses/{id}/toggle-archive", h.AdminMyTempWarehouseToggleArchiveSubmit)
@@ -290,7 +308,11 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	// below, because a route gate cannot know which files belong to which
 	// hierarchy. See admin_team_temp_warehouse_handlers.go.
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.team_temp_warehouse.view"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.team_temp_warehouse.view", "inventory.team_temp_warehouse.manage",
+			"inventory.temp_warehouse.view", "inventory.temp_warehouse.manage",
+			"inventory.warehouse.view", "inventory.warehouse.manage",
+		))
 		g.Get("/admin/team/temparte-warehouses", h.AdminTeamTempWarehousesPage)
 		g.Get("/admin/team/temparte-warehouses/upload", h.AdminTempWarehouseUploadPage)
 		g.Get("/admin/team/temparte-warehouses/staging", h.CompareStagingStatus)
@@ -299,7 +321,11 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 		g.Get("/admin/team/temparte-warehouses/{id}/export", h.AdminTeamTempWarehouseExportXLSX)
 	})
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.team_temp_warehouse.manage"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.team_temp_warehouse.manage", "inventory.team_temp_warehouse.view",
+			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
+			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
+		))
 		g.Post("/admin/team/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/team/temparte-warehouses/{id}/mapping", h.AdminTeamTempWarehouseMappingSubmit)
 		g.Post("/admin/team/temparte-warehouses/{id}/toggle-archive", h.AdminTeamTempWarehouseToggleArchiveSubmit)

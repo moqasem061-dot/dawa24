@@ -29,6 +29,8 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 	}
 
 	var resultRows []*ProductComparisonRow
+	byProductID := make(map[int64]*ProductComparisonRow)
+	byBarcode := make(map[string]*ProductComparisonRow)
 	bySKU := make(map[string]*ProductComparisonRow)
 	byNorm := make(map[string]*ProductComparisonRow)
 	byCore := make(map[string]*ProductComparisonRow)
@@ -62,21 +64,24 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 
 			var compRow *ProductComparisonRow
 
-			// 1. Match across vendor files by clean SKU — but never against a
+			// 1. Match across vendor files by master catalog product ID (exact 100% catalog match)
+			if r.MatchedProductID != nil && *r.MatchedProductID > 0 {
+				compRow = byProductID[*r.MatchedProductID]
+			}
+
+			// 2. Match across vendor files by clean barcode (8 to 14 digits)
+			if compRow == nil && cleanSKU != "" && isBarcode(cleanSKU) {
+				if candidate := byBarcode[cleanSKU]; candidate != nil {
+					existing := keyOfRow[candidate]
+					if existing == "" || coreKey == "" || existing == coreKey {
+						compRow = candidate
+					}
+				}
+			}
+
+			// 3. Match across vendor files by clean SKU — but never against a
 			//    row that is demonstrably a different product.
-			//
-			// These are two SUPPLIERS' internal item numbers, not a shared
-			// catalogue code. Supplier A's "951" and supplier B's "951" are the
-			// same string by coincidence far more often than by agreement, and
-			// this index merged them with no check on the name at all: one
-			// comparison line, two unrelated medicines, and a "best price" that
-			// was simply the cheaper of the two drugs.
-			//
-			// The guard is deliberately narrow. A code hit is still accepted
-			// when either row's name could not be read — that is the case the
-			// code index exists for — and refused only when both names read
-			// clearly and say different products.
-			if cleanSKU != "" {
+			if compRow == nil && cleanSKU != "" {
 				if candidate := bySKU[cleanSKU]; candidate != nil {
 					existing := keyOfRow[candidate]
 					if existing == "" || coreKey == "" || existing == coreKey {
@@ -84,15 +89,15 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 					}
 				}
 			}
-			// 2. Match across vendor files by exact normalized Arabic/English name
+			// 4. Match across vendor files by exact normalized Arabic/English name
 			if compRow == nil && normText != "" {
 				compRow = byNorm[normText]
 			}
-			// 3. Match across vendor files by core drug phonetic/noise-free key
+			// 5. Match across vendor files by core drug phonetic/noise-free key
 			if compRow == nil && coreKey != "" {
 				compRow = byCore[coreKey]
 			}
-			// 4. Match across vendor files by bag-of-words sorted key
+			// 6. Match across vendor files by bag-of-words sorted key
 			if compRow == nil && sortedKey != "" {
 				compRow = bySorted[sortedKey]
 			}
@@ -111,19 +116,26 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 
 			if compRow == nil {
 				compRow = &ProductComparisonRow{
-					ProductName:  r.RawName,
-					SKU:          r.SKU,
-					Offers:       make(map[string]SupplierOffer),
-					BestPrice:    r.Price,
-					BestDiscount: r.Discount,
-					BestNetPrice: netPrice,
-					BestSupplier: f.SupplierName,
+					ProductName:      r.RawName,
+					SKU:              r.SKU,
+					MatchedProductID: r.MatchedProductID,
+					Offers:           make(map[string]SupplierOffer),
+					BestPrice:        r.Price,
+					BestDiscount:     r.Discount,
+					BestNetPrice:     netPrice,
+					BestSupplier:     f.SupplierName,
 				}
 				resultRows = append(resultRows, compRow)
 				keyOfRow[compRow] = coreKey
 
 				// Register in all lookup indices
+				if r.MatchedProductID != nil && *r.MatchedProductID > 0 {
+					byProductID[*r.MatchedProductID] = compRow
+				}
 				if cleanSKU != "" {
+					if isBarcode(cleanSKU) {
+						byBarcode[cleanSKU] = compRow
+					}
 					bySKU[cleanSKU] = compRow
 				}
 				if normText != "" {
@@ -134,6 +146,11 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 				}
 				if sortedKey != "" {
 					bySorted[sortedKey] = compRow
+				}
+			} else {
+				if compRow.MatchedProductID == nil && r.MatchedProductID != nil && *r.MatchedProductID > 0 {
+					compRow.MatchedProductID = r.MatchedProductID
+					byProductID[*r.MatchedProductID] = compRow
 				}
 			}
 
@@ -249,4 +266,16 @@ func (s *Service) RunSupplierVsSupplier(ctx context.Context, sourceFileID, targe
 	}
 
 	return items, stats, nil
+}
+
+func isBarcode(s string) bool {
+	if len(s) < 8 || len(s) > 14 {
+		return false
+	}
+	for _, c := range s {
+		if c < '0' || c > '9' {
+			return false
+		}
+	}
+	return true
 }

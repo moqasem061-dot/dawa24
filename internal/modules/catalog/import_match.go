@@ -78,6 +78,20 @@ func (s *Service) resolveSimilarMatches(
 		stats.Unmatched = len(residual)
 		return stats
 	}
+	// The AI tier is decided once, here, and every later branch reads this
+	// rather than the option. It used to be read in four places, and two of
+	// them were reached only because a slice happened to be empty when the
+	// switch was off — a guard by coincidence, which is no guard at all.
+	//
+	// The ports are checked alongside the switch because retrieval exists to
+	// feed them: the recall pass builds shortlists for the adjudicator and the
+	// decision cache, and on a deployment with neither it is several seconds of
+	// work per twenty thousand rows for an answer nothing will read. It is
+	// deliberately NOT gated on the mapper — that port answers a different
+	// question, which columns and taxonomy words mean what, and a deployment
+	// can have one without the other.
+	useAI := session.Options.UseAI && (s.adjudicator != nil || s.matchMemory != nil)
+
 	progress.report(ImportPhaseMatching, 0, len(prods))
 
 	bare, corroborated := matchFloors(session.Options.MinMatchScore)
@@ -87,62 +101,51 @@ func (s *Service) resolveSimilarMatches(
 	opts.MinReview = min(productmatch.DefaultMinReview, corroborated)
 	opts.MaxCandidates = 5
 
-	// Retrieval for the AI tier is a separate, recall-tuned pass rather than a
-	// reuse of the scorer's own candidates.
-	//
-	// By the time a row reaches the model the scorer has already decided it
-	// cannot answer, and handing over the top rows of the pool that defeated it
-	// asks a question the shortlist has answered wrongly. The other three
-	// importers have done it this way for some time; this one had not, which is
-	// why its adjudication tier could only ever re-rank.
-	recall := productmatch.DefaultRecallOptions()
-	recall.Limit = catalogCeilings.RecallLimit
-
 	rows := make([]*productmatch.Row, len(residual))
 	for n, i := range residual {
 		rows[n] = matchRowFor(prods[i])
 	}
-	scored := productmatch.MatchAll(index, rows, opts, 0)
 
-	var retrieved [][]productmatch.MatchCandidate
-	if session.Options.UseAI {
-		retrieved = productmatch.RecallAll(index, rows, recall, 0)
+	// Both passes are chunked so the phase can report, be cancelled and be
+	// timed. See import_match_chunks.go: a step that cannot say where it has
+	// reached is indistinguishable from one that has died, and this is the step
+	// every "stuck at N%" report has named.
+	passes := 1
+	if useAI {
+		passes = 2
+	}
+	settled := len(matches)
+
+	scored, err := scoreRows(ctx, s.log, index, rows, opts,
+		matchingProgress(progress, settled, len(residual), len(prods), 0, passes))
+	if err != nil {
+		stats.Unmatched = len(residual)
+		return stats
 	}
 
-	var forAI []pendingMatch
-	for n, i := range residual {
-		row, res := rows[n], scored[n]
-		switch {
-		case res.Matched() && acceptsUpdate(index, row, res, bare, corroborated):
-			matches[i] = ExistingMatch{ProductID: res.ProductID, Reason: MatchSimilar}
-			stats.Similar++
-			if session.Options.UseAI {
-				id := res.ProductID
-				forAI = append(forAI, pendingMatch{
-					index:      i,
-					candidates: withCurrent(retrieved[n], index, id),
-					settled:    true,
-					guess:      &id,
-					score:      res.Score,
-				})
-			}
-		default:
-			if !session.Options.UseAI {
-				stats.Unmatched++
-				continue
-			}
-			wide := retrieved[n]
-			if len(wide) == 0 {
-				stats.Unmatched++
-				continue
-			}
-			forAI = append(forAI, pendingMatch{index: i, candidates: wide, score: res.Score})
-		}
+	// Classification happens on the SCORES ALONE, before any retrieval.
+	//
+	// That ordering is the whole saving. Retrieval used to run over every
+	// residual row so the loop below could read retrieved[n] — a second pass as
+	// expensive as the scoring one, measured at ninety seconds per twenty
+	// thousand rows on a catalogue whose names are not distinctive — and then
+	// at most twelve hundred of those shortlists were ever asked about. The
+	// rest were built, held in memory, and thrown away.
+	//
+	// So the rows are classified first, the ones worth asking about are chosen,
+	// and only those are retrieved for.
+	wanted := s.classifyScored(index, rows, residual, scored, matches, &stats,
+		classifyOptions{useAI: useAI, bare: bare, corroborated: corroborated})
+
+	forAI, err := s.retrieveForAI(ctx, index, rows, residual, scored, wanted,
+		matchingProgress(progress, settled, len(residual), len(prods), 1, passes))
+	if err != nil {
+		return stats
 	}
 
-	if progress != nil {
-		progress.report(ImportPhaseMatching, len(matches), len(prods))
-	}
+	// No report here. The chunked passes above have already walked the count to
+	// the end of the residue, and len(matches) is a smaller number — reporting
+	// it would rewind the bar, which reads as a failure even on a healthy run.
 	if ctx.Err() != nil {
 		return stats
 	}
@@ -150,7 +153,7 @@ func (s *Service) resolveSimilarMatches(
 	if len(forAI) == 0 {
 		return stats
 	}
-	if !session.Options.UseAI {
+	if !useAI {
 		stats.Unmatched += len(forAI)
 		return stats
 	}

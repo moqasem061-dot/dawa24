@@ -664,6 +664,12 @@ templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
 									} else if (typeof result.message === 'string' && result.message.trim()) {
 										errMsg = result.message;
 									}
+								} else if (response.status === 403) {
+									errMsg = 'غير مصرح لك برفع أو معالجة المستودعات (يرجى مراجعة الصلاحيات).';
+								} else if (response.status === 401) {
+									errMsg = 'انتهت الجلسة، يرجى تسجيل الدخول مجدداً.';
+								} else if (response.redirected) {
+									errMsg = 'تم تحويل الطلب: يرجى التأكد من صلاحيات حسابك.';
 								} else if (!response.ok) {
 									errMsg = 'فشل الاتصال بالخادم (' + response.status + ' ' + (response.statusText || '') + ')';
 								}
@@ -697,9 +703,15 @@ templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
 
 						for (;;) {
 							try {
-								const res = await fetch(this.$root.dataset.base + '/staging?ids=' + encodeURIComponent(query), {
+								let stagingUrl = this.$root.dataset.base + '/staging?ids=' + encodeURIComponent(query);
+								let res = await fetch(stagingUrl, {
 									headers: { 'Accept': 'application/json' }
 								});
+								if (!res.ok && this.$root.dataset.base !== '/admin/user/temparte-warehouses') {
+									res = await fetch('/admin/user/temparte-warehouses/staging?ids=' + encodeURIComponent(query), {
+										headers: { 'Accept': 'application/json' }
+									});
+								}
 								if (!res.ok) throw new Error('HTTP ' + res.status);
 								const data = await res.json();
 								failures = 0;
