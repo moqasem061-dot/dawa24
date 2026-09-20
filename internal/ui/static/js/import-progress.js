@@ -109,6 +109,13 @@
 				this.countEl.textContent = '';
 			}
 		}
+		if (snapshot.failed || snapshot.status === 'failed' || snapshot.phase === 'failed') {
+			this.fail(snapshot.message || 'تعذرت معالجة الملف');
+			if (this.onDone) {
+				setTimeout(this.onDone, 800);
+			}
+			return;
+		}
 		var isDone = snapshot.done || snapshot.is_ready ||
 			snapshot.state === 'ready' || snapshot.state === 'committed' ||
 			snapshot.status === 'ready' || snapshot.status === 'committed';

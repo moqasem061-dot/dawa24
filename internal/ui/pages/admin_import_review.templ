@@ -580,6 +580,15 @@ templ importProgressCard(view ImportReviewView) {
 			لن يتم حفظ أي صنف في الكتالوج قبل مراجعتك وتأكيدك.
 		</p>
 
+		<div class="wiz-actions mt-4">
+			<form method="POST" action={ importAction(view, "cancel") } hx-boost="false" class="wiz-actions-note" onsubmit="return confirm('هل أنت متأكد من إلغاء عملية الاستيراد بالكامل؟ لن يتم حفظ أي بيانات.');">
+				<button type="submit" class="btn btn-secondary btn-sm text-danger font-bold text-xs gap-1">
+					@components.IconTrash("icon-xs")
+					<span>إلغاء العملية</span>
+				</button>
+			</form>
+		</div>
+
 		<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
 			// See vendor_ingest_results.templ: this inline script runs while the
 			// document is parsing, and import-progress.js is deferred, so the

@@ -371,7 +371,7 @@ func (h *UIHandler) AdminProductsImportProgress(w http.ResponseWriter, r *http.R
 		"total":   progress.Total,
 		"percent": progress.Percent(),
 		"done":    !session.IsProcessing(),
-		"failed":  progress.Phase == catalog.ImportPhaseFailed,
+		"failed":  progress.Phase == catalog.ImportPhaseFailed || session.Status == catalog.SessionFailed,
 		"status":  string(session.Status),
 		"elapsed": int(progress.Elapsed().Seconds()),
 	}

@@ -98,7 +98,11 @@ func (s *Service) resolveSimilarMatches(
 		rows[n] = matchRowFor(prods[i])
 	}
 	scored := productmatch.MatchAll(index, rows, opts, 0)
-	retrieved := productmatch.RecallAll(index, rows, recall, 0)
+
+	var retrieved [][]productmatch.MatchCandidate
+	if session.Options.UseAI {
+		retrieved = productmatch.RecallAll(index, rows, recall, 0)
+	}
 
 	var forAI []pendingMatch
 	for n, i := range residual {
@@ -107,19 +111,21 @@ func (s *Service) resolveSimilarMatches(
 		case res.Matched() && acceptsUpdate(index, row, res, bare, corroborated):
 			matches[i] = ExistingMatch{ProductID: res.ProductID, Reason: MatchSimilar}
 			stats.Similar++
-			// And it is checked. A similarity match here overwrites the
-			// catalogue entry every pharmacy on the platform reads, so it is
-			// the one applied match on the platform most worth a second
-			// opinion — and until now it was the only one that never got one.
-			id := res.ProductID
-			forAI = append(forAI, pendingMatch{
-				index:      i,
-				candidates: withCurrent(retrieved[n], index, id),
-				settled:    true,
-				guess:      &id,
-				score:      res.Score,
-			})
+			if session.Options.UseAI {
+				id := res.ProductID
+				forAI = append(forAI, pendingMatch{
+					index:      i,
+					candidates: withCurrent(retrieved[n], index, id),
+					settled:    true,
+					guess:      &id,
+					score:      res.Score,
+				})
+			}
 		default:
+			if !session.Options.UseAI {
+				stats.Unmatched++
+				continue
+			}
 			wide := retrieved[n]
 			if len(wide) == 0 {
 				stats.Unmatched++

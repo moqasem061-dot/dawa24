@@ -3,9 +3,10 @@ package catalog
 import (
 	"context"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"time"
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
 // SessionProgress answers "what is this import doing" from whichever source
@@ -29,6 +30,23 @@ func (s *Service) SessionProgress(ctx context.Context, publicID string) (ImportP
 	// raced the very write it was waiting for.
 	if live, ok := s.progress.Progress(publicID); ok && session.IsProcessing() && !live.Phase.Terminal() {
 		return live, session, nil
+	}
+
+	// Stale/orphaned session detection: if the database says processing, but this
+	// process has no live goroutine running for it, and it has been idle without
+	// updates for more than 30 seconds, it was interrupted (e.g. server restart,
+	// crash, or abandoned). Transition it to failed so the admin can retry or cancel
+	// instead of seeing the progress bar stuck at 45% forever.
+	if session.IsProcessing() && !s.progress.Running(publicID) && time.Since(session.UpdatedAt) > 30*time.Second {
+		s.log.WarnContext(ctx, "reaping stale processing session", "session", publicID, "idle", time.Since(session.UpdatedAt))
+		session.Status = SessionFailed
+		session.ErrorMessage = "توقفت معالجة الملف بسبب مقاطعة العملية أو إعادة تشغيل الخادم. يمكنك تصحيح ربط الأعمدة وإعادة المحاولة الآن."
+		session.Progress = ImportProgress{
+			Phase:   ImportPhaseFailed,
+			Message: session.ErrorMessage,
+		}
+		_ = s.imports.UpdateImportSession(ctx, session, SessionProcessing)
+		return session.Progress, session, nil
 	}
 
 	progress := session.Progress
