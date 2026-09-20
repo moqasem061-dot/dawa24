@@ -61,6 +61,9 @@ func (s *Service) adjudicateMatches(
 	maxBatches := ceilings.MaxRequestsPerRun
 
 	for start := 0; start < len(items); start += batchSize {
+		if ctx.Err() != nil {
+			break
+		}
 		if stats.AIRequests >= maxBatches {
 			stats.CeilingHit = true
 			break
@@ -70,7 +73,11 @@ func (s *Service) adjudicateMatches(
 			end = len(items)
 		}
 		if progress != nil {
-			progress.report(ImportPhaseMatching, end, len(items))
+			processed := len(matches) + end
+			if processed > len(prods) {
+				processed = len(prods)
+			}
+			progress.report(ImportPhaseMatching, processed, len(prods))
 		}
 
 		stats.AIRequests++

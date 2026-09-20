@@ -8,6 +8,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/shared/arabic"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
@@ -269,6 +270,12 @@ func keysOf(m map[string][]int) []string {
 // lookupByColumn resolves an exact identifier column to product ids. The column
 // name is chosen from a fixed set in the caller, never from input.
 func lookupByColumn(ctx context.Context, tx pgx.Tx, orgID int64, column string, keys []string) (map[string]int64, error) {
+	out := make(map[string]int64, len(keys))
+	if len(keys) == 0 {
+		return out, nil
+	}
+
+	const batchSize = 2000
 	query := fmt.Sprintf(`
 		SELECT lower(btrim(p.%s)) AS k, min(p.id) AS id
 		FROM catalog.products p
@@ -279,54 +286,91 @@ func lookupByColumn(ctx context.Context, tx pgx.Tx, orgID int64, column string, 
 		GROUP BY 1
 	`, column, column, column)
 
-	rows, err := tx.Query(ctx, query, orgID, keys)
-	if err != nil {
-		return nil, fmt.Errorf("catalog postgres: match products by %s: %w", column, err)
-	}
-	defer rows.Close()
-
-	out := make(map[string]int64, len(keys))
-	for rows.Next() {
-		var key string
-		var id int64
-		if err := rows.Scan(&key, &id); err != nil {
-			return nil, fmt.Errorf("catalog postgres: scan %s match: %w", column, err)
+	for start := 0; start < len(keys); start += batchSize {
+		end := start + batchSize
+		if end > len(keys) {
+			end = len(keys)
 		}
-		out[key] = id
+		rows, err := tx.Query(ctx, query, orgID, keys[start:end])
+		if err != nil {
+			return nil, fmt.Errorf("catalog postgres: match products by %s: %w", column, err)
+		}
+		for rows.Next() {
+			var key string
+			var id int64
+			if err := rows.Scan(&key, &id); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("catalog postgres: scan %s match: %w", column, err)
+			}
+			out[key] = id
+		}
+		rows.Close()
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
-// lookupByName resolves products by Arabic name, normalised on both sides by
-// the database so the folding is identical.
+// lookupByName resolves products by Arabic name, normalised on both sides.
 func lookupByName(ctx context.Context, tx pgx.Tx, orgID int64, names []string) (map[string]int64, error) {
+	out := make(map[string]int64, len(names))
+	if len(names) == 0 {
+		return out, nil
+	}
+
+	normToRaws := make(map[string][]string, len(names))
+	normList := make([]string, 0, len(names))
+	for _, raw := range names {
+		norm := arabic.Normalize(raw)
+		if norm == "" {
+			continue
+		}
+		if _, exists := normToRaws[norm]; !exists {
+			normList = append(normList, norm)
+		}
+		normToRaws[norm] = append(normToRaws[norm], raw)
+	}
+	if len(normList) == 0 {
+		return out, nil
+	}
+
+	const batchSize = 1000
 	const query = `
-		SELECT k.raw, min(p.id) AS id
-		FROM unnest($2::text[]) AS k(raw)
-		JOIN catalog.products p
-		  ON p.organization_id = $1
-		 AND p.deleted_at IS NULL
-		 AND platform.normalize_arabic(p.name->>'ar') = platform.normalize_arabic(k.raw)
-		WHERE platform.normalize_arabic(k.raw) <> ''
-		GROUP BY k.raw
+		SELECT platform.normalize_arabic(p.name->>'ar') AS norm, min(p.id) AS id
+		FROM catalog.products p
+		WHERE p.organization_id = $1
+		  AND p.deleted_at IS NULL
+		  AND platform.normalize_arabic(p.name->>'ar') = ANY($2::text[])
+		GROUP BY 1
 	`
 
-	rows, err := tx.Query(ctx, query, orgID, names)
-	if err != nil {
-		return nil, fmt.Errorf("catalog postgres: match products by name: %w", err)
-	}
-	defer rows.Close()
-
-	out := make(map[string]int64, len(names))
-	for rows.Next() {
-		var name string
-		var id int64
-		if err := rows.Scan(&name, &id); err != nil {
-			return nil, fmt.Errorf("catalog postgres: scan name match: %w", err)
+	for start := 0; start < len(normList); start += batchSize {
+		end := start + batchSize
+		if end > len(normList) {
+			end = len(normList)
 		}
-		out[name] = id
+		rows, err := tx.Query(ctx, query, orgID, normList[start:end])
+		if err != nil {
+			return nil, fmt.Errorf("catalog postgres: match products by name: %w", err)
+		}
+		for rows.Next() {
+			var norm string
+			var id int64
+			if err := rows.Scan(&norm, &id); err != nil {
+				rows.Close()
+				return nil, fmt.Errorf("catalog postgres: scan name match: %w", err)
+			}
+			for _, raw := range normToRaws[norm] {
+				out[raw] = id
+			}
+		}
+		rows.Close()
+		if rows.Err() != nil {
+			return nil, rows.Err()
+		}
 	}
-	return out, rows.Err()
+	return out, nil
 }
 
 func queueInsert(batch *pgx.Batch, p *catalog.Product) {

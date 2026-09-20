@@ -105,13 +105,27 @@ func (s *Service) prepare(
 
 	progress.report(ImportPhaseParsing, len(parsed.Products), len(parsed.Products))
 
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	s.resolveTaxonomies(ctx, session, parsed, progress)
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 
 	progress.report(ImportPhaseMatching, 0, len(parsed.Products))
 	matches, err := s.imports.MatchExistingProducts(ctx, parsed.Products)
 	if err != nil {
 		return nil, err
 	}
+	progress.report(ImportPhaseMatching, len(matches), len(parsed.Products))
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
+
 	// The exact identifiers have had their turn. Everything they missed is
 	// scored against the catalogue in memory, and — where the buyer left the AI
 	// switch on — what similarity still cannot settle is adjudicated in batches.
@@ -122,22 +136,16 @@ func (s *Service) prepare(
 	if matchStats.CeilingHit {
 		session.AIFallback = true
 	}
+	progress.report(ImportPhaseMatching, len(parsed.Products), len(parsed.Products))
+
+	if ctx.Err() != nil {
+		return nil, ctx.Err()
+	}
 
 	progress.report(ImportPhaseStaging, 0, len(parsed.Products))
 	rows := buildStagingRows(parsed, matches, session.Mode)
 	applyRowStats(session, rows)
 	session.NewBrands = collectNewBrands(parsed.Products, matches)
-	// NewCategories was already computed by resolveTaxonomies; both proposals
-	// are persisted here so the review screen can show them.
-	// The rows land before the status does, and that order matters.
-	//
-	// Flipping the session to 'ready' first opened a window — a second on a
-	// nine-thousand-row file — in which the review screen, the progress poll
-	// and a commit all saw a finished import with an empty staging table. That
-	// window is the "it says it imported nine thousand products and shows me
-	// nothing" report. The session stays 'processing' until the rows it
-	// promises are actually there, and 'processing' is not reviewable, so
-	// nothing can cancel or commit underneath the write.
 	if err := s.imports.ReplaceStagingRows(ctx, session.ID, rows); err != nil {
 		return nil, err
 	}

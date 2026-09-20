@@ -261,6 +261,7 @@ func (s *Service) PrepareImportAsync(ctx context.Context, publicID string, setti
 	// Detached from the request: the admin's browser navigating away, or the
 	// request timing out, must not abandon a run that is already underway.
 	runCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), prepareTimeout)
+	s.progress.RegisterCancel(publicID, cancel)
 
 	go func() {
 		defer cancel()
@@ -273,7 +274,7 @@ func (s *Service) PrepareImportAsync(ctx context.Context, publicID string, setti
 		}()
 		_, err := s.prepare(runCtx, publicID, settings, s.persistedProgress(runCtx, publicID, report))
 		s.progress.Finish(publicID, err)
-		if err != nil {
+		if err != nil && !errors.Is(err, context.Canceled) && runCtx.Err() == nil {
 			s.log.ErrorContext(runCtx, "background import preparation failed",
 				"session", publicID, "error", err)
 			s.recordPrepareFailure(runCtx, publicID, err)

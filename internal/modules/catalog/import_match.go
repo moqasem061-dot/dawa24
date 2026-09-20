@@ -129,6 +129,13 @@ func (s *Service) resolveSimilarMatches(
 		}
 	}
 
+	if progress != nil {
+		progress.report(ImportPhaseMatching, len(matches), len(prods))
+	}
+	if ctx.Err() != nil {
+		return stats
+	}
+
 	if len(forAI) == 0 {
 		return stats
 	}

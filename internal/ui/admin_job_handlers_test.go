@@ -107,6 +107,19 @@ func (m *mockAdminHRRepo) CountApplicationsByOffer(ctx context.Context, offerID 
 	return cnt, nil
 }
 
+func (m *mockAdminHRRepo) CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error) {
+	counts := make(map[int64]int, len(offerIDs))
+	for _, id := range offerIDs {
+		counts[id] = 0
+	}
+	for _, a := range m.applications {
+		if _, ok := counts[a.JobOfferID]; ok {
+			counts[a.JobOfferID]++
+		}
+	}
+	return counts, nil
+}
+
 func (m *mockAdminHRRepo) ListApplicationsByOffer(ctx context.Context, offerID int64, limit, offset int) ([]*hr.JobApplication, error) {
 	var result []*hr.JobApplication
 	for _, a := range m.applications {

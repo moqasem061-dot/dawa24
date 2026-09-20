@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"context"
 	"errors"
 	"sync"
 	"time"
@@ -162,13 +163,44 @@ func (f ProgressFunc) report(phase ImportPhase, current, total int) {
 // batch to say something that stops being true the moment the process ends. The
 // durable record is the session row, which reaches "ready" when the work lands.
 type ProgressTracker struct {
-	mu   sync.RWMutex
-	runs map[string]ImportProgress
+	mu      sync.RWMutex
+	runs    map[string]ImportProgress
+	cancels map[string]context.CancelFunc
 }
 
 // NewProgressTracker creates an empty tracker.
 func NewProgressTracker() *ProgressTracker {
-	return &ProgressTracker{runs: map[string]ImportProgress{}}
+	return &ProgressTracker{
+		runs:    map[string]ImportProgress{},
+		cancels: map[string]context.CancelFunc{},
+	}
+}
+
+// RegisterCancel saves the context cancellation function for an active run.
+func (t *ProgressTracker) RegisterCancel(sessionID string, cancel context.CancelFunc) {
+	if t == nil {
+		return
+	}
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	t.cancels[sessionID] = cancel
+}
+
+// Cancel terminates the active run for the session if one is in flight.
+func (t *ProgressTracker) Cancel(sessionID string) bool {
+	if t == nil {
+		return false
+	}
+	t.mu.Lock()
+	cancel, ok := t.cancels[sessionID]
+	delete(t.cancels, sessionID)
+	t.mu.Unlock()
+	if ok && cancel != nil {
+		cancel()
+		t.Finish(sessionID, errors.New("cancelled by user"))
+		return true
+	}
+	return false
 }
 
 // TryBegin registers a run only when no other run holds the session, returning
@@ -220,6 +252,7 @@ func (t *ProgressTracker) Finish(sessionID string, err error) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
+	delete(t.cancels, sessionID)
 	run := t.runs[sessionID]
 	run.UpdatedAt = time.Now()
 	if err != nil {
@@ -257,6 +290,7 @@ func (t *ProgressTracker) sweepLocked() {
 	for id, run := range t.runs {
 		if run.Phase.Terminal() && time.Since(run.UpdatedAt) > progressRetention {
 			delete(t.runs, id)
+			delete(t.cancels, id)
 		}
 	}
 }

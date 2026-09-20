@@ -21,9 +21,8 @@ func (s *Service) releaseClaim(ctx context.Context, session *ImportSession) {
 
 // CancelImport discards a session without touching the catalogue.
 //
-// The transition is guarded: cancelling an already-committed session is refused
-// rather than reported as success, which is what the unguarded overwrite used
-// to do.
+// If the session is currently processing in the background, it cancels the active run,
+// transitions the session to SessionCancelled, and cleans up workspace files.
 func (s *Service) CancelImport(ctx context.Context, publicID string) error {
 	if s.imports == nil {
 		return ErrImportUnavailable
@@ -32,20 +31,24 @@ func (s *Service) CancelImport(ctx context.Context, publicID string) error {
 	if err != nil {
 		return err
 	}
-	// The session row is the authority on whether a run is live. The in-memory
-	// tracker lags it — it is updated after the transaction commits — so
-	// consulting it here refused a cancel for the few milliseconds after a run
-	// had already finished and durably said so.
-	if session.IsProcessing() {
-		return apperr.Conflict("catalog.import_still_processing",
-			i18n.TDefault("w4_mod.w4str_103_103"))
+	if session.Status == SessionCancelled {
+		return nil
 	}
-	if !session.IsReviewable() && session.Status != SessionFailed {
+	if !session.IsProcessing() && !session.IsReviewable() && session.Status != SessionFailed && session.Status != SessionDraft {
 		return apperr.Conflict("catalog.import_not_cancellable",
 			i18n.TDefault("w4_mod.w4str_104_104"))
 	}
+
+	// Terminate active background run if in flight
+	s.progress.Cancel(publicID)
+
 	from := session.Status
 	session.Status = SessionCancelled
+	session.ErrorMessage = "تم إلغاء العملية بواسطة المستخدم"
+	session.Progress = ImportProgress{
+		Phase:   ImportPhaseFailed,
+		Message: "تم إلغاء العملية",
+	}
 	if err := s.imports.UpdateImportSession(ctx, session, from); err != nil {
 		return err
 	}

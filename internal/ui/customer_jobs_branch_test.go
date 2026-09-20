@@ -53,6 +53,10 @@ func (m *mockHRRepoJobs) CountApplicationsByOffer(ctx context.Context, offerID i
 	return 0, nil
 }
 
+func (m *mockHRRepoJobs) CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error) {
+	return make(map[int64]int), nil
+}
+
 func (m *mockHRRepoJobs) CreateJobOffer(ctx context.Context, j *hr.JobOffer) error {
 	j.ID = int64(len(m.createdJobs) + 1)
 	m.createdJobs = append(m.createdJobs, j)
