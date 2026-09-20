@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
@@ -243,6 +245,11 @@ func saveUploadedFileFull(r *http.Request, fieldName, category string) (uploaded
 	}
 	_ = deriveAndStore(destDir, uniqueName, data)
 
+	if uploadStorageClient != nil {
+		s3Key := fmt.Sprintf("%s/%s", category, uniqueName)
+		_ = uploadStorageClient.Put(r.Context(), s3Key, bytes.NewReader(data), int64(len(data)), mimeType)
+	}
+
 	meta.URL = fmt.Sprintf("/uploads/%s/%s", category, uniqueName)
 	meta.OriginalName = header.Filename
 	meta.SizeBytes = int64(len(data))
@@ -293,6 +300,11 @@ func saveUploadedBytes(data []byte, originalFilename, category string) (string, 
 		return "", fmt.Errorf("failed to save file: %w", err)
 	}
 	_ = deriveAndStore(targetDir, safeFilename, data)
+
+	if uploadStorageClient != nil {
+		s3Key := fmt.Sprintf("%s/%s", category, safeFilename)
+		_ = uploadStorageClient.Put(context.Background(), s3Key, bytes.NewReader(data), int64(len(data)), mime.TypeByExtension(ext))
+	}
 
 	return fmt.Sprintf("/uploads/%s/%s", category, safeFilename), nil
 }

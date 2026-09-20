@@ -24,7 +24,7 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@dawa24.net}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin!Dawa24!2026}
     volumes:
-      - dawa24-data:/app/data
+      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
     networks:
       - postgresql-psr0_default
 
@@ -95,10 +95,15 @@ services:
       - WHATSAPP_NOTIFICATION_TEMPLATE=${WHATSAPP_NOTIFICATION_TEMPLATE:-}
       - WHATSAPP_TEMPLATE_LANGUAGE=${WHATSAPP_TEMPLATE_LANGUAGE:-ar}
       - MARKETING_BRIDGE_TOKEN=${MARKETING_BRIDGE_TOKEN:-}
-      - CATALOG_MAX_IMPORT_ROWS=${CATALOG_MAX_IMPORT_ROWS:-0}
-      - MAX_IMPORT_UPLOAD_MB=${MAX_IMPORT_UPLOAD_MB:-200}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT:-}
+      - STORAGE_REGION=${STORAGE_REGION:-us-east-1}
+      - STORAGE_BUCKET=${STORAGE_BUCKET:-dawa24}
+      - STORAGE_ACCESS_KEY_ID=${STORAGE_ACCESS_KEY_ID:-}
+      - STORAGE_SECRET_ACCESS_KEY=${STORAGE_SECRET_ACCESS_KEY:-}
+      - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
+      - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - dawa24-data:/app/data
+      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
     dns:
       - 1.1.1.1
       - 8.8.8.8
@@ -153,8 +158,15 @@ services:
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Dawa24 | دوا 24}
       - SMTP_ENABLED=${SMTP_ENABLED:-true}
       - SMTP_TIMEOUT=${SMTP_TIMEOUT:-10s}
+      - STORAGE_ENDPOINT=${STORAGE_ENDPOINT:-}
+      - STORAGE_REGION=${STORAGE_REGION:-us-east-1}
+      - STORAGE_BUCKET=${STORAGE_BUCKET:-dawa24}
+      - STORAGE_ACCESS_KEY_ID=${STORAGE_ACCESS_KEY_ID:-}
+      - STORAGE_SECRET_ACCESS_KEY=${STORAGE_SECRET_ACCESS_KEY:-}
+      - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
+      - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - dawa24-data:/app/data
+      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
     networks:
       - postgresql-psr0_default
     depends_on:
