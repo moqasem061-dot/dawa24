@@ -10,6 +10,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
 	"github.com/muhiya/dawa24-store/internal/shared/arabic"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
 )
 
 // productMatch is an incoming row tied to a catalogue row already on file.
@@ -19,14 +20,24 @@ type productMatch struct {
 }
 
 // resolveExistingProducts finds, for each incoming product, the catalogue row it
-// should update — matching on SKU first, then barcode, then normalised name.
+// should update — matching on SKU first, then barcode, then name and attributes.
+//
+// A product that already carries an id is left exactly as it is. That is the
+// commit honouring the screen: the administrator reviewed a row as "update
+// product 4412", and re-deriving the answer here is how a commit came to write
+// somewhere else than the review said it would.
 func resolveExistingProducts(ctx context.Context, tx pgx.Tx, prods []*catalog.Product) (map[int]productMatch, error) {
 	byOrg := map[int64][]int{}
+	decided := map[int]productMatch{}
 	for i, p := range prods {
+		if p.ID > 0 {
+			decided[i] = productMatch{id: p.ID, reason: catalog.MatchNone}
+			continue
+		}
 		byOrg[p.OrganizationID] = append(byOrg[p.OrganizationID], i)
 	}
 
-	m := &productMatcher{ctx: ctx, tx: tx, prods: prods, matches: map[int]productMatch{}}
+	m := &productMatcher{ctx: ctx, tx: tx, prods: prods, matches: decided}
 	for orgID, idxs := range byOrg {
 		if err := m.matchOrg(orgID, idxs); err != nil {
 			return nil, err
@@ -69,16 +80,107 @@ func (m *productMatcher) matchOrg(orgID int64, idxs []int) error {
 		m.record(wanted, found, column.reason)
 	}
 
+	return m.matchByName(orgID, idxs)
+}
+
+// matchByName is the fallback tier: no identifier agreed, so the name has to
+// carry the decision — and a name alone is not enough to make one.
+//
+// It used to be. The query grouped catalog.products by normalised name and took
+// min(id), which says that every catalogue row sharing a name is one product.
+// On this catalogue that is false in the most damaging way available: اوجمنتين
+// 375 مجم and اوجمنتين 1 جم are two rows, two strengths, two medicines and one
+// normalised name, so an import of either updated whichever had the lower id
+// and the other strength was silently overwritten.
+//
+// So the name now retrieves CANDIDATES and the attributes decide between them.
+// A candidate the row contradicts on dose, line extension or pharmaceutical
+// form is not a match at any score — see productmatch.Discriminate, which is
+// the same comparison the scorer and the AI adjudicator refuse pairs on. What
+// survives is chosen deterministically, and a row whose strength nothing in the
+// catalogue shares stays unmatched, which stages it as the new product it is.
+func (m *productMatcher) matchByName(orgID int64, idxs []int) error {
 	wanted := m.pending(idxs, func(p *catalog.Product) string { return p.Name.Get(i18n.AR) })
 	if len(wanted) == 0 {
 		return nil
 	}
-	found, err := lookupByName(m.ctx, m.tx, orgID, keysOf(wanted))
+
+	candidates, err := lookupNameCandidates(m.ctx, m.tx, orgID, keysOf(wanted))
 	if err != nil {
 		return err
 	}
-	m.record(wanted, found, catalog.MatchName)
+
+	for name, rows := range wanted {
+		shortlist := candidates[arabic.Normalize(name)]
+		if len(shortlist) == 0 {
+			continue
+		}
+		for _, i := range rows {
+			if id, ok := chooseByIdentity(shortlist, catalog.IdentityFields(m.prods[i])); ok {
+				m.matches[i] = productMatch{id: id, reason: catalog.MatchName}
+			}
+		}
+	}
 	return nil
+}
+
+// nameCandidate is one catalogue row that shares a normalised name with an
+// incoming row, carrying the attributes that tell the two apart.
+type nameCandidate struct {
+	id     int64
+	fields productmatch.ProductFields
+}
+
+// chooseByIdentity picks the catalogue row an incoming row should update, from
+// the rows that share its name.
+//
+// Contradicted candidates are dropped outright. Among what remains, a candidate
+// that states the same attribute the row states is preferred over one that is
+// silent about it: where the catalogue holds both "اوجمنتين" and "اوجمنتين 1 جم"
+// and the row says 1 g, the row that says so too is the one meant, and the bare
+// one is the older, vaguer entry.
+//
+// The final tie-break is the lowest id, which is what the previous min(id)
+// query returned. Two catalogue rows that genuinely cannot be told apart are a
+// duplicate somebody already created; picking the same one every time keeps a
+// re-import updating it rather than adding a third.
+func chooseByIdentity(shortlist []nameCandidate, row productmatch.ProductFields) (int64, bool) {
+	var (
+		bestID           int64
+		bestCorroborated bool
+		found            bool
+	)
+	for _, c := range shortlist {
+		if productmatch.Separable(row, c.fields) {
+			continue
+		}
+		corroborated := statesSameAttributes(row, c.fields)
+		if !found || beats(c.id, corroborated, bestID, bestCorroborated) {
+			bestID, bestCorroborated, found = c.id, corroborated, true
+		}
+	}
+	return bestID, found
+}
+
+// beats orders two surviving candidates: corroboration first, then the lower
+// id. Both halves are deliberate — the first picks the entry that says what the
+// row says, the second makes the choice repeatable across runs.
+func beats(id int64, corroborated bool, bestID int64, bestCorroborated bool) bool {
+	if corroborated != bestCorroborated {
+		return corroborated
+	}
+	return id < bestID
+}
+
+// statesSameAttributes reports whether both sides name the attributes that
+// separate one strength of a brand from another. Discriminate has already
+// ruled out the pairs that disagree, so where both speak, both agree.
+func statesSameAttributes(row, candidate productmatch.ProductFields) bool {
+	both := func(a, b string) bool {
+		return strings.TrimSpace(a) != "" && strings.TrimSpace(b) != ""
+	}
+	return both(row.Concentration, candidate.Concentration) ||
+		both(row.DosageForm, candidate.DosageForm)
 }
 
 // pending groups the still-unmatched rows by the key one strategy looks them up
@@ -159,107 +261,69 @@ func lookupByColumn(ctx context.Context, tx pgx.Tx, orgID int64, column string, 
 	return out, nil
 }
 
-// lookupByName resolves products by Arabic name, normalised on both sides.
-// For bulk operations (> 200 items), scanning product names once and matching in Go
-// is orders of magnitude faster (50ms vs 30+ seconds) and completely immune
-// to missing function indexes or statement timeouts.
-func lookupByName(ctx context.Context, tx pgx.Tx, orgID int64, names []string) (map[string]int64, error) {
-	out := make(map[string]int64, len(names))
+// lookupNameCandidates loads every catalogue row whose normalised Arabic name
+// is one the caller asked about, with the attributes that tell same-named rows
+// apart.
+//
+// One scan of the organisation's products, normalised and bucketed in Go. The
+// alternative — a WHERE platform.normalize_arabic(name) = ANY($2) per batch —
+// was measured at thirty seconds and over against fifty here, because it cannot
+// use an index on a function of a JSONB field and re-normalises every row for
+// every batch. It is also what made the tier fragile: the same expression run
+// by Postgres and by Go had to agree, and a statement timeout on a large
+// catalogue failed the whole import rather than the tier.
+//
+// It returns ALL the rows behind a name, not one. Which of them an incoming row
+// means is a question about strengths and forms, and it is answered in Go by
+// chooseByIdentity; a GROUP BY that returns min(id) answers it by accident.
+func lookupNameCandidates(
+	ctx context.Context, tx pgx.Tx, orgID int64, names []string,
+) (map[string][]nameCandidate, error) {
+	out := map[string][]nameCandidate{}
 	if len(names) == 0 {
 		return out, nil
 	}
 
-	normToRaws := make(map[string][]string, len(names))
-	normList := make([]string, 0, len(names))
+	wanted := make(map[string]bool, len(names))
 	for _, raw := range names {
-		norm := arabic.Normalize(raw)
-		if norm == "" {
-			continue
+		if norm := arabic.Normalize(raw); norm != "" {
+			wanted[norm] = true
 		}
-		if _, exists := normToRaws[norm]; !exists {
-			normList = append(normList, norm)
-		}
-		normToRaws[norm] = append(normToRaws[norm], raw)
 	}
-	if len(normList) == 0 {
+	if len(wanted) == 0 {
 		return out, nil
 	}
 
-	if len(normList) > 200 {
-		query := `
-			SELECT min(p.id) AS id, COALESCE(p.name->>'ar', '') AS name_ar
-			FROM catalog.products p
-			WHERE p.organization_id = $1
-			  AND p.deleted_at IS NULL
-			  AND btrim(COALESCE(p.name->>'ar', '')) <> ''
-			GROUP BY 2
-		`
-		rows, err := tx.Query(ctx, query, orgID)
-		if err != nil {
-			return nil, fmt.Errorf("catalog postgres: match products by name bulk: %w", err)
-		}
-		defer rows.Close()
-
-		wantedSet := make(map[string]bool, len(normList))
-		for _, n := range normList {
-			wantedSet[n] = true
-		}
-
-		for rows.Next() {
-			var id int64
-			var rawDBName string
-			if err := rows.Scan(&id, &rawDBName); err != nil {
-				return nil, fmt.Errorf("catalog postgres: scan bulk name: %w", err)
-			}
-			normDB := arabic.Normalize(rawDBName)
-			if wantedSet[normDB] {
-				for _, raw := range normToRaws[normDB] {
-					if _, exists := out[raw]; !exists {
-						out[raw] = id
-					}
-				}
-			}
-		}
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
-		return out, nil
-	}
-
-	const batchSize = 1000
-	const query = `
-		SELECT platform.normalize_arabic(p.name->>'ar') AS norm, min(p.id) AS id
+	rows, err := tx.Query(ctx, `
+		SELECT p.id,
+		       COALESCE(p.name->>'ar', ''),
+		       COALESCE(p.name->>'en', ''),
+		       COALESCE(p.concentration, ''),
+		       COALESCE(p.dosage_form, ''),
+		       COALESCE(p.unit, '')
 		FROM catalog.products p
 		WHERE p.organization_id = $1
 		  AND p.deleted_at IS NULL
-		  AND platform.normalize_arabic(p.name->>'ar') = ANY($2::text[])
-		GROUP BY 1
-	`
+		  AND btrim(COALESCE(p.name->>'ar', '')) <> ''
+	`, orgID)
+	if err != nil {
+		return nil, fmt.Errorf("catalog postgres: load name candidates: %w", err)
+	}
+	defer rows.Close()
 
-	for start := 0; start < len(normList); start += batchSize {
-		end := start + batchSize
-		if end > len(normList) {
-			end = len(normList)
+	for rows.Next() {
+		var c nameCandidate
+		if err := rows.Scan(&c.id, &c.fields.NameAR, &c.fields.NameEN,
+			&c.fields.Concentration, &c.fields.DosageForm, &c.fields.Unit); err != nil {
+			return nil, fmt.Errorf("catalog postgres: scan name candidate: %w", err)
 		}
-		rows, err := tx.Query(ctx, query, orgID, normList[start:end])
-		if err != nil {
-			return nil, fmt.Errorf("catalog postgres: match products by name: %w", err)
+		norm := arabic.Normalize(c.fields.NameAR)
+		if wanted[norm] {
+			out[norm] = append(out[norm], c)
 		}
-		for rows.Next() {
-			var norm string
-			var id int64
-			if err := rows.Scan(&norm, &id); err != nil {
-				rows.Close()
-				return nil, fmt.Errorf("catalog postgres: scan name match: %w", err)
-			}
-			for _, raw := range normToRaws[norm] {
-				out[raw] = id
-			}
-		}
-		rows.Close()
-		if rows.Err() != nil {
-			return nil, rows.Err()
-		}
+	}
+	if rows.Err() != nil {
+		return nil, fmt.Errorf("catalog postgres: read name candidates: %w", rows.Err())
 	}
 	return out, nil
 }

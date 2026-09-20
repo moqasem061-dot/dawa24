@@ -48,6 +48,14 @@ func (r *ParseResult) collectProducts(records [][]string) []*Product {
 	}
 
 	crossFillIdentifiers(products)
+
+	// Folding is the administrator's choice and is off by default: see
+	// ImportOptions.MergeDuplicateRows. It runs after cross-filling, so a row
+	// that borrowed an item code from its neighbours is grouped by it like any
+	// other.
+	if r.options.MergeDuplicateRows {
+		products, r.SourceRows, r.Stats.DuplicateRows = foldDuplicates(products, r.SourceRows)
+	}
 	return products
 }
 

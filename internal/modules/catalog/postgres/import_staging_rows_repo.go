@@ -19,7 +19,9 @@ import (
 // again — so this is a replace rather than an append, and it uses COPY because
 // the alternative at nine thousand rows is nine thousand round trips.
 func (r *Repository) ReplaceStagingRows(ctx context.Context, sessionID int64, rows []*catalog.StagingRow) error {
-	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+	// Clearing and re-staging an entire spreadsheet, at the end of a background
+	// run. Both halves are single statements over as many rows as the file has.
+	return r.db.InLongTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if _, err := tx.Exec(txCtx,
 			`DELETE FROM catalog.import_staging_rows WHERE session_id = $1`, sessionID); err != nil {
 			return fmt.Errorf("catalog postgres: clear staging rows: %w", err)

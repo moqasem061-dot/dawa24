@@ -269,50 +269,76 @@ func (s *Service) PrepareImportAsync(ctx context.Context, publicID string, setti
 			if p := recover(); p != nil {
 				s.log.ErrorContext(runCtx, "background import preparation panicked",
 					"session", publicID, "panic", p)
-				s.recordPrepareFailure(runCtx, publicID, fmt.Errorf("panic during import: %v", p))
+				s.recordPrepareFailure(context.WithoutCancel(runCtx), publicID,
+					fmt.Errorf("panic during import: %v", p))
+				s.progress.Finish(publicID, fmt.Errorf("panic during import: %v", p))
 			}
 		}()
 		_, err := s.prepare(runCtx, publicID, settings, s.persistedProgress(runCtx, publicID, report))
-		s.progress.Finish(publicID, err)
-		if err != nil && !errors.Is(err, context.Canceled) && runCtx.Err() == nil {
+
+		// The durable record is written BEFORE the in-memory run is released,
+		// and that order is the fix for a misleading failure message rather
+		// than a tidiness. Finish marks the run terminal; a poll arriving in
+		// the gap between that and this write finds a session still marked
+		// processing with no live run behind it, decides it was orphaned by a
+		// restart, and overwrites the real reason with a generic one. The admin
+		// was then told the server had restarted when what actually happened
+		// was a timeout, a rejected AI key, or a file with no readable rows.
+		if err != nil && !errors.Is(err, context.Canceled) {
+			// runCtx is spent when the run timed out, so the write that records
+			// WHY gets a context of its own. Without it a run that exhausted
+			// prepareTimeout recorded nothing at all and sat at 'processing'
+			// until the reaper collected it.
 			s.log.ErrorContext(runCtx, "background import preparation failed",
 				"session", publicID, "error", err)
-			s.recordPrepareFailure(runCtx, publicID, err)
+			s.recordPrepareFailure(context.WithoutCancel(runCtx), publicID, err)
 		}
+		s.progress.Finish(publicID, err)
 	}()
 	return nil
 }
 
-// persistedProgress wraps the in-memory reporter so each phase change is also
-// written to the session row.
+// progressHeartbeat is the longest a healthy run may go without writing to its
+// own session row.
 //
-// Five writes per run, one per phase — not per batch. That is what lets a page
-// loaded in a second browser tab, or after a deploy, say what the run is doing
-// instead of guessing from an empty map.
+// The row is the only thing that can tell a crashed run from a slow one, and it
+// used to be written once per phase. A phase is minutes — matching a large file
+// runs a full catalogue read, a scoring pass and up to a dozen adjudication
+// requests without ever changing phase — so its timestamp went stale while the
+// run was perfectly healthy, and the orphan check had nothing to trust.
+//
+// Fifteen seconds. One narrow UPDATE of one row, four times a minute, while an
+// import is actually running.
+const progressHeartbeat = 15 * time.Second
+
+// persistedProgress wraps the in-memory reporter so the session row keeps up
+// with the run.
+//
+// Two destinations at two deliberately different rates: the live bar hears
+// every tick over the progress hub, and the row is written on a phase change or
+// every progressHeartbeat. Taking the bar's movement from the row instead would
+// mean a write per batch, or a watcher re-reading on a timer — the polling this
+// replaced. The row carries enough to answer "what is this run doing" in
+// another tab and "is this run alive" to the orphan check.
 func (s *Service) persistedProgress(ctx context.Context, publicID string, report ProgressFunc) ProgressFunc {
-	var last ImportPhase
+	var (
+		last      ImportPhase
+		lastWrite time.Time
+	)
 	return func(phase ImportPhase, current, total int) {
 		report.report(phase, current, total)
 
-		// Announce EVERY tick, persist only phase changes.
-		//
-		// These are two different jobs and they want two different rates. The
-		// row exists so a page opened in another tab can say what the run is
-		// doing, which one write per phase answers. A bar being watched wants
-		// the batch-by-batch movement — and taking that from the row would mean
-		// either writing per batch or a watcher re-reading on a timer, which is
-		// the polling this replaced. Publishing costs a map lookup and a
-		// channel send.
 		if s.notifyProgress != nil {
 			s.notifyProgress(publicID, ImportProgress{
 				Phase: phase, Current: current, Total: total, Message: phase.Label(),
 			})
 		}
 
-		if phase == last {
+		now := time.Now()
+		if phase == last && now.Sub(lastWrite) < progressHeartbeat {
 			return
 		}
-		last = phase
+		last, lastWrite = phase, now
 		if err := s.imports.SaveImportProgress(ctx, publicID, ImportProgress{
 			Phase: phase, Current: current, Total: total, Message: phase.Label(),
 		}); err != nil {

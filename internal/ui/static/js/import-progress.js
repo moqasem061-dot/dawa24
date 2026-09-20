@@ -62,13 +62,27 @@
 
 		// shown is what the user sees; target is the last value the server
 		// confirmed. shown drifts toward target and stops short of it.
-		this.shown = 0;
-		this.target = 0;
+		//
+		// Both start from what the server already rendered into the page. The
+		// bar is drawn server-side with the run's current percentage and then
+		// this took over from zero, so every page load of a run already at 46%
+		// rewound the bar to the start and crept back — which reads as the
+		// import having restarted.
+		this.shown = this.seed();
+		this.target = this.shown;
 		this.done = false;
 		this.lastServerAt = Date.now();
 		this.timer = null;
 		this.render();
 	}
+
+	/** seed reads the percentage the server rendered into the bar, if any. */
+	ImportProgress.prototype.seed = function () {
+		if (!this.fill) return 0;
+		var pct = parseFloat(this.fill.dataset ? this.fill.dataset.pct : '');
+		if (!isFinite(pct) || pct < 0) return 0;
+		return clamp(pct, 0, MAX_BEFORE_DONE);
+	};
 
 	ImportProgress.prototype.render = function () {
 		var v = this.done ? 100 : Math.floor(clamp(this.shown, 0, MAX_BEFORE_DONE));
@@ -88,9 +102,9 @@
 		var pct = typeof snapshot.percent === 'number' ? snapshot.percent : snapshot.progress;
 		if (typeof pct === 'number' && pct >= 0) {
 			// Never rewind. A lower number from the server is a recomputation,
-			// not a regression in the work.
+			// not a regression in the work. The drift loop closes the gap
+			// upward; nothing here moves the displayed value directly.
 			this.target = Math.max(this.target, pct);
-			this.shown = Math.max(this.shown, Math.min(this.shown, this.target));
 			this.lastServerAt = Date.now();
 		}
 		var msg = snapshot.message || snapshot.phase || snapshot.progress_phase;
@@ -155,11 +169,31 @@
 			if (gap > 0.1) {
 				// Ease smoothly toward what the server already confirmed.
 				self.shown += gap * 0.25;
+			} else if (gap > 0) {
+				// Close the last tenth of a point outright.
+				//
+				// This is the "stuck at 45%" report, exactly. The ease above
+				// stops once the gap is under a tenth, so `shown` settled at
+				// target − 0.1 — and render floors it, so a server reporting 46
+				// displayed 45. The drift branch below could not rescue it
+				// either, having never worked. The bar then showed 45% for the
+				// whole of the matching phase and the admin read a working
+				// import as a hung one.
+				self.shown = self.target;
 			} else if (idle > 0.5) {
 				// The server has told us nothing new. Creep toward the next
 				// whole point without ever arriving, so the bar shows life
 				// without claiming progress nobody reported.
-				var room = (self.target + 1) * DRIFT_CEILING - self.shown;
+				//
+				// The ceiling is the confirmed value plus a fraction of one
+				// point. It used to be (target + 1) * DRIFT_CEILING, which is
+				// the next point scaled by 0.9 — below the confirmed value
+				// itself for any target above nine, so `room` was negative and
+				// this branch had never moved the bar once in its life. The bar
+				// simply froze on whatever the server last said, which is the
+				// exact appearance of a hung import this code exists to avoid.
+				var ceiling = Math.min(self.target + DRIFT_CEILING, MAX_BEFORE_DONE);
+				var room = ceiling - self.shown;
 				if (room > 0) {
 					self.shown += room * (1 - Math.pow(0.5, 0.10 / DRIFT_HALF_LIFE));
 				}

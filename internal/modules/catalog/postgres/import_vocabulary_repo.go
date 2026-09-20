@@ -220,6 +220,12 @@ func scanImportSession(row rowScanner) (*catalog.ImportSession, error) {
 	if progressAt != nil {
 		s.Progress.UpdatedAt = *progressAt
 		s.Progress.StartedAt = *progressAt
+		// progress_at is written only when the phase CHANGES — SaveImportProgress
+		// is deliberately one write per phase, not one per batch — so it is
+		// exactly when this phase began. Carrying it across is what lets a page
+		// opened in a second tab, or after a deploy, drift the bar through the
+		// phase's band instead of pinning it to the band's first number.
+		s.Progress.PhaseStartedAt = *progressAt
 	}
 	return &s, nil
 }

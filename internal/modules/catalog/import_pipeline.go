@@ -32,13 +32,20 @@ func (s *Service) SessionProgress(ctx context.Context, publicID string) (ImportP
 		return live, session, nil
 	}
 
-	// Stale/orphaned session detection: if the database says processing, but this
-	// process has no live goroutine running for it, and it has been idle without
-	// updates for more than 30 seconds, it was interrupted (e.g. server restart,
-	// crash, or abandoned). Transition it to failed so the admin can retry or cancel
-	// instead of seeing the progress bar stuck at 45% forever.
-	if session.IsProcessing() && !s.progress.Running(publicID) && time.Since(session.UpdatedAt) > 30*time.Second {
-		s.log.WarnContext(ctx, "reaping stale processing session", "session", publicID, "idle", time.Since(session.UpdatedAt))
+	// An orphan: the row says processing, no run in this process is behind it,
+	// and nothing has written to it for long enough that none ever will. That
+	// is a server restart, a crash, or a deploy mid-import, and the admin needs
+	// to be told so they can retry rather than watch a bar that will never move
+	// again.
+	//
+	// It is deliberately NOT the first thing checked. A healthy long run holds
+	// its entry in the tracker and is answered above; a failing one writes its
+	// own reason before the tracker releases it. Both of those orderings exist
+	// because this reaper used to win the race and replace a specific, useful
+	// failure with a guess about the server.
+	if idle, orphaned := s.orphanedFor(session, publicID); orphaned {
+		s.log.WarnContext(ctx, "reaping stale processing session",
+			"session", publicID, "idle", idle)
 		session.Status = SessionFailed
 		session.ErrorMessage = "توقفت معالجة الملف بسبب مقاطعة العملية أو إعادة تشغيل الخادم. يمكنك تصحيح ربط الأعمدة وإعادة المحاولة الآن."
 		session.Progress = ImportProgress{
@@ -69,6 +76,43 @@ func (s *Service) SessionProgress(ctx context.Context, publicID string) (ImportP
 		progress.Message = progress.Phase.Label()
 	}
 	return progress, session, nil
+}
+
+// orphanRecoveryDelay is how long a processing session may go without a write
+// before it is treated as abandoned.
+//
+// It has to clear the longest gap a HEALTHY run leaves between writes, because
+// anything shorter force-fails a working import. That used to be a whole phase
+// — minutes, on a file large enough to matter — against a window of thirty
+// seconds, so a live run was one in-memory map miss away from being declared
+// dead. A run now writes to its row every progressHeartbeat whatever phase it
+// is in, which is what makes a short window safe rather than optimistic.
+//
+// Ninety seconds is six missed heartbeats: long enough to ride out a slow
+// statement or a paused container, short enough that an administrator whose
+// deploy interrupted an import is told so rather than left watching.
+const orphanRecoveryDelay = 90 * time.Second
+
+// orphanedFor reports whether a processing session has been abandoned, and how
+// long it has been silent.
+//
+// Silence is measured from the freshest thing the row knows: its own updated_at
+// and the progress timestamp the run writes at each phase change. Taking only
+// the first of those would call a run abandoned while it was demonstrably
+// writing progress.
+func (s *Service) orphanedFor(session *ImportSession, publicID string) (time.Duration, bool) {
+	if !session.IsProcessing() || s.progress.Running(publicID) {
+		return 0, false
+	}
+	last := session.UpdatedAt
+	if session.Progress.UpdatedAt.After(last) {
+		last = session.Progress.UpdatedAt
+	}
+	if last.IsZero() {
+		return 0, false
+	}
+	idle := time.Since(last)
+	return idle, idle > orphanRecoveryDelay
 }
 
 func (s *Service) prepare(

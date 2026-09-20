@@ -42,6 +42,7 @@ func readImportSettings(r *http.Request) catalog.ImportSettings {
 			AssignScientificName: formChecked(r, "assign_scientific_name"),
 			UseAI:                formChecked(r, "use_ai"),
 			DefaultCategoryID:    formInt64(r, "default_category_id"),
+			MergeDuplicateRows:   formChecked(r, "merge_duplicate_rows"),
 			MinMatchScore:        formMatchScore(r, "min_match_score"),
 		}.Normalize(),
 		Overrides: readLayoutOverrides(r),

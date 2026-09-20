@@ -109,7 +109,11 @@ func (r *Repository) BulkCommitProducts(
 		return 0, result, nil
 	}
 
-	err = r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+	// The archive and the upsert of a whole catalogue, in one transaction. A
+	// clear-and-add over forty thousand products is well past what a request is
+	// allowed, and being cancelled halfway is the one outcome this transaction
+	// exists to prevent.
+	err = r.db.InLongTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if archiveOrg > 0 {
 			tag, err := tx.Exec(txCtx, `
 				UPDATE catalog.products

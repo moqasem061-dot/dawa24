@@ -221,7 +221,12 @@ func (r *Repository) MatchExistingProducts(
 		return out, nil
 	}
 
-	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+	// InLongReadTx, not InReadTx. This reads every catalogue row that shares a
+	// name with something in the uploaded file, and it runs inside a background
+	// preparation rather than a request. Under the pool's ordinary ceiling a
+	// large catalogue had this statement cancelled by Postgres, which fails the
+	// whole run — see database.InLongReadTx.
+	err := r.db.InLongReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// Matching is scoped per organisation, and a freshly parsed product has
 		// none yet — the write path assigns it. The same assignment has to
 		// happen here or the preview would match every row against organisation

@@ -56,6 +56,26 @@ func (db *DB) InLongTx(ctx context.Context, fn func(context.Context, pgx.Tx) err
 	})
 }
 
+// InLongReadTx is InLongTx for work that only reads.
+//
+// The read side needs it as much as the write side and had no way to ask. What
+// an administrative import reads in the background is the whole master
+// catalogue — forty thousand products projected for the in-memory matcher, and
+// every row sharing a name with something in the uploaded file — and both of
+// those are single statements against a table that grows. Under the web pool's
+// ceiling they were one busy afternoon away from being cancelled by Postgres,
+// and a cancelled read fails the run: the importer cannot match what it cannot
+// see, so it stops rather than staging forty thousand rows as new products.
+//
+// It takes a read-write transaction deliberately. SET LOCAL is a write to the
+// session's configuration and a read-only transaction refuses it, so the choice
+// is between a read-only transaction that cannot raise its ceiling and a
+// read-write one that can. Nothing inside issues a write; the ceiling is what
+// this is for.
+func (db *DB) InLongReadTx(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
+	return db.InLongTx(ctx, fn)
+}
+
 // setLocalStatementTimeout raises the ceiling for the current transaction.
 //
 // The value is interpolated rather than parameterised because SET LOCAL does

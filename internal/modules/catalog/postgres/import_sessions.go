@@ -273,6 +273,21 @@ func (r *Repository) UpdateImportSession(
 // running one. The alternative — reusing the full save — would have the
 // background goroutine overwrite counts, options and status it does not own,
 // which is a race that only ever shows up on a big file.
+//
+// progress_at moves only when the PHASE moves, and the row decides that rather
+// than the caller. Two readers depend on the distinction and they want opposite
+// things from it:
+//
+//   - the progress bar needs to know when the current phase BEGAN, so a phase
+//     that reports no row count can drift through its band instead of freezing;
+//   - the orphan check needs to know when the run last showed a sign of life,
+//     so a crashed run is collected and a live one is not.
+//
+// The first is progress_at. The second is updated_at, which the table's touch
+// trigger advances on every write here, heartbeat included. Writing now() into
+// progress_at unconditionally would have collapsed the two, and each heartbeat
+// would have told the bar its phase had just started — resetting the drift to
+// zero on a timer, which is the freeze it exists to prevent.
 func (r *Repository) SaveImportProgress(
 	ctx context.Context, publicID string, p catalog.ImportProgress,
 ) error {
@@ -280,7 +295,9 @@ func (r *Repository) SaveImportProgress(
 		_, err := tx.Exec(txCtx, `
 			UPDATE catalog.import_sessions
 			SET progress_phase = $2, progress_current = $3, progress_total = $4,
-			    progress_at = now()
+			    progress_at = CASE
+			        WHEN progress_phase IS DISTINCT FROM $2 OR progress_at IS NULL
+			        THEN now() ELSE progress_at END
 			WHERE public_id = $1 AND status = 'processing'
 		`, publicID, string(p.Phase), p.Current, p.Total)
 		if err != nil {

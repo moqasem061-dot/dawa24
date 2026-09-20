@@ -113,7 +113,19 @@ var phaseBands = map[ImportPhase]importprogress.Band{
 // which pass they were watching. It also returned -1 for any phase without a
 // row count — three of the six — so the bar spent most of a long import as an
 // indeterminate barber-pole that discarded the one thing it did know.
-func (p ImportProgress) Percent() int {
+func (p ImportProgress) Percent() int { return p.PercentAt(time.Now()) }
+
+// PercentAt is Percent as of a given moment, which is the form the tests use
+// and the form that makes the drift honest.
+//
+// The drift is measured against the reader's clock, not against the snapshot's
+// own UpdatedAt. That distinction is the difference between a bar that moves
+// and one that does not: UpdatedAt only advances when the run REPORTS, and the
+// phases that need the drift are precisely the ones that report nothing for
+// minutes at a time. Measured that way a phase's elapsed time was always zero
+// at the moment anybody looked, every uncounted phase pinned the bar to the
+// start of its band, and the drift this package exists for never ran once.
+func (p ImportProgress) PercentAt(now time.Time) int {
 	switch p.Phase {
 	case ImportPhaseDone:
 		return importprogress.Complete
@@ -126,24 +138,37 @@ func (p ImportProgress) Percent() int {
 	if !ok {
 		return 0
 	}
-	return importprogress.Percent(band, p.Current, p.Total, p.PhaseElapsed())
+	return importprogress.Percent(band, p.Current, p.Total, p.PhaseElapsedAt(now))
 }
 
-// PhaseElapsed is how long the run has been in its current phase, which is what
-// drives the drift for a phase that cannot count its own work.
+// PhaseElapsed is how long the run has been in its current phase, as of now.
 func (p ImportProgress) PhaseElapsed() time.Duration {
-	if p.PhaseStartedAt.IsZero() {
-		return p.Elapsed()
-	}
-	return p.UpdatedAt.Sub(p.PhaseStartedAt)
+	return p.PhaseElapsedAt(time.Now())
 }
 
-// Elapsed is how long the run has been going.
-func (p ImportProgress) Elapsed() time.Duration {
+// PhaseElapsedAt is how long the run had been in its current phase at the given
+// moment, which is what drives the drift for a phase that cannot count its own
+// work.
+//
+// A snapshot that never recorded when its phase began falls back to the run's
+// own start. That is the durable path: the session row records when the phase
+// last changed, and a page opened in a second tab reads it from there.
+func (p ImportProgress) PhaseElapsedAt(now time.Time) time.Duration {
+	if !p.PhaseStartedAt.IsZero() {
+		return now.Sub(p.PhaseStartedAt)
+	}
+	return p.ElapsedAt(now)
+}
+
+// Elapsed is how long the run has been going, as of now.
+func (p ImportProgress) Elapsed() time.Duration { return p.ElapsedAt(time.Now()) }
+
+// ElapsedAt is how long the run had been going at the given moment.
+func (p ImportProgress) ElapsedAt(now time.Time) time.Duration {
 	if p.StartedAt.IsZero() {
 		return 0
 	}
-	return p.UpdatedAt.Sub(p.StartedAt)
+	return now.Sub(p.StartedAt)
 }
 
 // ProgressFunc receives progress updates. A nil ProgressFunc is valid and

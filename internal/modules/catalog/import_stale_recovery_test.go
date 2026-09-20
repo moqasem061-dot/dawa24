@@ -18,9 +18,13 @@ func TestSessionProgress_ReapsStaleProcessingSession(t *testing.T) {
 		t.Fatalf("analyze failed: %v", err)
 	}
 
-	// Simulate a session left in 'processing' in the database from a previous run or server restart.
+	// Simulate a session left in 'processing' in the database from a previous run
+	// or server restart. The silence has to clear orphanRecoveryDelay, which is
+	// now measured against a run that writes a heartbeat to its own row rather
+	// than only at phase boundaries — so a gap this long means the writer is
+	// gone, not that the phase is slow.
 	session.Status = catalog.SessionProcessing
-	session.UpdatedAt = time.Now().Add(-2 * time.Minute)
+	session.UpdatedAt = time.Now().Add(-10 * time.Minute)
 	session.Progress = catalog.ImportProgress{
 		Phase:   catalog.ImportPhaseMatching,
 		Current: 0,

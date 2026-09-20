@@ -47,6 +47,23 @@ type ImportOptions struct {
 	// DefaultCategoryID is applied to every product that ends without one,
 	// including when AI is off. Zero leaves the column null.
 	DefaultCategoryID int64 `json:"default_category_id,omitempty"`
+	// MergeDuplicateRows folds rows of the uploaded file that describe the same
+	// product into one staged row.
+	//
+	// Off by default, because it was removed on purpose: every line of the
+	// administrator's file reaching the review screen is what lets them SEE a
+	// distributor's four-lines-per-product export rather than be told about it
+	// afterwards.
+	//
+	// It exists as a switch because leaving it off has a cost at the other end.
+	// Two rows the catalogue resolves to one product both write to it, and the
+	// later one wins with whatever it happens to carry; two rows the catalogue
+	// has never seen both insert, and the master catalogue gains a duplicate
+	// that every later import then has to choose between. Turning this on
+	// merges only rows that nothing distinguishes — a different strength, form
+	// or line extension keeps them apart — and the count is reported on the
+	// review screen, so a fold is visible rather than silent.
+	MergeDuplicateRows bool `json:"merge_duplicate_rows"`
 	// MinMatchScore is the platform-wide "أقل نسبة مطابقة" control, 0–1.
 	//
 	// Same name, same default and same meaning as the vendor import, the
@@ -115,4 +132,3 @@ func MaxImportBatch() int {
 	}
 	return 0
 }
-

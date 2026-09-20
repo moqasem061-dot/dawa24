@@ -19,7 +19,9 @@ import (
 // once per import and not once per row.
 func (r *Repository) ListMatchProducts(ctx context.Context) ([]catalog.MatchProduct, error) {
 	var out []catalog.MatchProduct
-	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+	// The whole catalogue in one statement, read by a background matcher rather
+	// than by a request. It outgrew the pool's ordinary ceiling.
+	err := r.db.InLongReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
 		rows, err := tx.Query(txCtx, `
 			SELECT id,
 			       COALESCE(name->>'ar', ''), COALESCE(name->>'en', ''),

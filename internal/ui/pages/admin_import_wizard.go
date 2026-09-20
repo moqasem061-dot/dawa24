@@ -80,6 +80,12 @@ func importToggles(opts catalog.ImportOptions, aiAvailable bool) []ImportToggle 
 			Description: i18n.T("ar", "wizard.opt.assign_scientific_desc"),
 			Checked:     opts.AssignScientificName,
 		},
+		{
+			Name: "merge_duplicate_rows", Icon: "🧲",
+			Title:       "دمج الصفوف المكررة",
+			Description: "يدمج الصفوف التي تصف نفس الصنف في صف واحد. الأصناف التي يختلف تركيزها أو شكلها الصيدلي تبقى منفصلة.",
+			Checked:     opts.MergeDuplicateRows,
+		},
 	}
 
 	// One line, not four paragraphs. The description used to explain the

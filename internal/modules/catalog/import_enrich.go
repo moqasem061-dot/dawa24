@@ -3,8 +3,10 @@ package catalog
 import (
 	"context"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strings"
+	"time"
+
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
 // Filling in what the file did not say.
@@ -133,6 +135,25 @@ func (s *Service) resolveDosageForms(
 		mapping.Matched(), len(sources), unmatchedSuffix(len(mapping.Unmatched())))}
 }
 
+// aiMappingTimeout bounds one mapping request, whatever the Gateway is doing.
+//
+// This is the fix for an import that stopped moving in the taxonomy phase and
+// failed some minutes later with nothing useful to say. The Gateway gives the
+// value-mapping capability 120 seconds per attempt and retries twice, so a slow
+// upstream could hold ONE of these calls for six minutes; the import makes
+// three of them, and the phase reports no row count, so the bar sat wherever
+// the last phase left it for the better part of quarter of an hour.
+//
+// Ninety seconds is under a single attempt's budget and above any healthy
+// answer measured on real files. Cutting a request short costs the model's
+// opinion on a taxonomy, which exact folding has already answered for
+// everything that matches on spelling — the import proceeds either way. Sitting
+// on a hung connection costs the whole run.
+//
+// The batched category inference has had a timeout of its own since it was
+// written; this is the same discipline applied to the two calls that did not.
+const aiMappingTimeout = 90 * time.Second
+
 // mapValues runs one value-mapping request, falling back to exact folding alone
 // when the model is unavailable.
 func (s *Service) mapValues(
@@ -141,6 +162,9 @@ func (s *Service) mapValues(
 	if !session.Options.UseAI || s.mapper == nil || len(targets) == 0 {
 		return BuildValueMapping(sources, targets, ValueMapResult{})
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, aiMappingTimeout)
+	defer cancel()
 
 	req := ValueMapRequest{
 		Kind: kind, Sources: sources, Targets: targets,
@@ -194,6 +218,12 @@ func (s *Service) resolveColumnMapping(
 	if session.CreatedBy != nil {
 		req.UserID = *session.CreatedBy
 	}
+
+	// Bounded like every other mapping call. This one runs before parsing, so a
+	// hung request holds the whole import at the reading phase — where the bar
+	// has the least to say about why.
+	ctx, cancel := context.WithTimeout(ctx, aiMappingTimeout)
+	defer cancel()
 
 	session.AICalls++
 	result, err := s.mapper.MapColumns(ctx, req)
