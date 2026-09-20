@@ -646,7 +646,7 @@ func CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) templ.Com
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<!-- Supplier Info Box --><div class=\"p-2.5 rounded-xl bg-surface-sunken border mb-2.5 flex-between items-center\"><div class=\"d-flex items-center gap-2 text-truncate\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<!-- Supplier Info --><div class=\"py-2 mb-2 flex-between items-center border-t border-b border-subtle\"><div class=\"d-flex items-center gap-2 text-truncate\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -914,7 +914,7 @@ func CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) templ.Com
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div><!-- Pricing & Action Footer --><div class=\"border-t pt-2.5 mt-auto\"><div class=\"p-2.5 rounded-xl bg-surface-sunken border mb-3\"><div class=\"flex-between items-center gap-2\"><div class=\"d-flex flex-col gap-1\"><!-- سعر الجمهور --><div class=\"d-flex items-baseline gap-1 text-xs\"><span class=\"text-secondary font-medium\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div><!-- Pricing & Action Footer --><div class=\"border-t pt-2.5 mt-auto\"><div class=\"mb-3\"><div class=\"flex-between items-center gap-2\"><div class=\"d-flex flex-col gap-1\"><!-- سعر الجمهور --><div class=\"d-flex items-baseline gap-1 text-xs\"><span class=\"text-secondary font-medium\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

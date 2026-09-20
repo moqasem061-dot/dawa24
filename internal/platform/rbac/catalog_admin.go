@@ -182,6 +182,7 @@ func adminCatalogPerms() []Permission {
 		adminAct("inventory.admin", g, "واجهة المخزون البرمجية", "Inventory API", "inventory.warehouse.view"),
 
 		adminPage("inventory.temp_warehouse.view", g, "temp_warehouses", "المستودعات المؤقتة", "Temporary warehouses"),
+		adminAct("inventory.temp_warehouse.manage", g, "إدارة المستودعات المؤقتة", "Manage temporary warehouses", "inventory.temp_warehouse.view"),
 		adminPage("inventory.my_temp_warehouse.view", g, "my_temp_warehouses", "مستودعاتي المرفوعة", "My uploaded warehouses"),
 		adminAct("inventory.my_temp_warehouse.manage", g, "إدارة مستودعاتي المرفوعة", "Manage my uploaded warehouses", "inventory.my_temp_warehouse.view"),
 

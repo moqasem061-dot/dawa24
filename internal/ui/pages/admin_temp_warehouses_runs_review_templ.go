@@ -76,136 +76,162 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div><h1 class=\"text-2xl font-black text-surface-fg\">مراجعة واعتماد الدفعة</h1><p class=\"text-xs text-secondary mt-1\">تأكد من مطابقة جميع الملفات وجاهزيتها قبل بدء المعالجة والتشغيل.</p></div><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</span></div><h1 class=\"text-2xl font-black text-surface-fg\">مراجعة واعتماد الدفعة</h1><p class=\"text-xs text-secondary mt-1\">تأكد من مطابقة جميع الملفات وجاهزيتها قبل بدء المعالجة والتشغيل.</p></div><div class=\"d-flex items-center gap-2\"><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var5 templ.SafeURL
-			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping", run.BaseURL, run.ID)))
+			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 25, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 26, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"btn btn-outline btn-sm rounded-xl font-bold\">العودة لتعديل الأعمدة</a></div><!-- Stepper Indicator --><div class=\"grid grid-cols-3 gap-3 mb-6\"><div class=\"p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center\"><div class=\"text-xs font-semibold text-emerald-600 dark:text-emerald-400\">الخطوة 1: الرفع</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">تم الرفع بنجاح</div></div><div class=\"p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center\"><div class=\"text-xs font-semibold text-emerald-600 dark:text-emerald-400\">الخطوة 2: الأعمدة</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">تم تعيين الأعمدة</div></div><div class=\"p-3 rounded-xl bg-accent/10 border border-accent text-center shadow-xs\"><div class=\"text-xs font-semibold text-accent\">الخطوة 3: الاعتماد</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">جاهز للتشغيل</div></div></div><!-- Files Table --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs mb-6 overflow-hidden\"><h3 class=\"text-base font-bold text-surface-fg mb-4\">ملفات الدفعة (")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"m-0\"><button type=\"submit\" class=\"btn btn-ghost btn-sm text-secondary hover:text-danger rounded-xl font-bold\" data-confirm=\"هل أنت متأكد من رغبتك في إلغاء عملية الرفع هذه؟\">إلغاء العملية</button></form><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var6 string
-			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(files)))
+			var templ_7745c5c3_Var6 templ.SafeURL
+			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 48, Col: 113}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 35, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, ")</h3><div class=\"table-responsive border rounded-xl border-default overflow-hidden\"><table class=\"table table-hover text-xs w-full text-start\"><thead class=\"bg-surface border-b border-default font-bold text-secondary\"><tr><th class=\"p-3 w-12 text-center\">#</th><th class=\"p-3\">اسم المورد</th><th class=\"p-3\">اسم الملف</th><th class=\"p-3 text-center\">عدد الأصناف</th><th class=\"p-3 text-center\">حالة التعيين</th><th class=\"p-3 text-end\">إجراء</th></tr></thead> <tbody class=\"divide-y divide-default\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"btn btn-outline btn-sm rounded-xl font-bold\">العودة لتعديل الأعمدة</a></div></div><!-- Stepper Indicator --><div class=\"grid grid-cols-3 gap-3 mb-6\"><div class=\"p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center\"><div class=\"text-xs font-semibold text-emerald-600 dark:text-emerald-400\">الخطوة 1: الرفع</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">تم الرفع بنجاح</div></div><div class=\"p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-center\"><div class=\"text-xs font-semibold text-emerald-600 dark:text-emerald-400\">الخطوة 2: الأعمدة</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">تم تعيين الأعمدة</div></div><div class=\"p-3 rounded-xl bg-accent/10 border border-accent text-center shadow-xs\"><div class=\"text-xs font-semibold text-accent\">الخطوة 3: الاعتماد</div><div class=\"text-sm font-bold text-surface-fg mt-0.5\">جاهز للتشغيل</div></div></div><!-- Files Table --><div class=\"glass-panel p-5 rounded-2xl border border-default bg-surface-raised shadow-xs mb-6 overflow-hidden\"><h3 class=\"text-base font-bold text-surface-fg mb-4\">ملفات الدفعة (")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var7 string
+			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(files)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 59, Col: 113}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, ")</h3><div class=\"table-responsive border rounded-xl border-default overflow-hidden\"><table class=\"table table-hover text-xs w-full text-start\"><thead class=\"bg-surface border-b border-default font-bold text-secondary\"><tr><th class=\"p-3 w-12 text-center\">#</th><th class=\"p-3\">اسم المورد</th><th class=\"p-3\">اسم الملف</th><th class=\"p-3 text-center\">عدد الأصناف</th><th class=\"p-3 text-center\">حالة التعيين</th><th class=\"p-3 text-end\">إجراء</th></tr></thead> <tbody class=\"divide-y divide-default\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			for idx, f := range files {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<tr><td class=\"p-3 text-center font-bold text-secondary\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var7 string
-				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(idx + 1))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 64, Col: 83}
-				}
-				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</td><td class=\"p-3 font-bold text-surface-fg\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<tr><td class=\"p-3 text-center font-bold text-secondary\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var8 string
-				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(f.SupplierName)
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(idx + 1))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 65, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 75, Col: 83}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"p-3 text-secondary font-mono\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</td><td class=\"p-3 font-bold text-surface-fg\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var9 string
-				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(f.Filename)
+				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(f.SupplierName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 66, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 76, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"p-3 text-center font-bold\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</td><td class=\"p-3 text-secondary font-mono\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var10 string
-				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.RowCount))
+				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(f.Filename)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 67, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 77, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"p-3 text-center\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</td><td class=\"p-3 text-center font-bold\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				if f.IsMapped {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">جاهز للاعتماد</span>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				} else {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span class=\"badge badge-warning text-xs font-bold px-2 py-0.5 rounded-full\">يحتاج تعيين</span>")
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</td><td class=\"p-3 text-end\"><a href=\"")
+				var templ_7745c5c3_Var11 string
+				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.RowCount))
 				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-				var templ_7745c5c3_Var11 templ.SafeURL
-				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", run.BaseURL, run.ID, f.ID)))
-				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 77, Col: 104}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 78, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" class=\"btn btn-ghost btn-xs text-accent font-bold hover:underline\">تعديل الأعمدة</a></td></tr>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</td><td class=\"p-3 text-center\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if f.IsMapped {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span class=\"badge badge-success text-xs font-bold px-2 py-0.5 rounded-full\">جاهز للاعتماد</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"badge badge-warning text-xs font-bold px-2 py-0.5 rounded-full\">يحتاج تعيين</span>")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</td><td class=\"p-3 text-end\"><a href=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var12 templ.SafeURL
+				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", run.BaseURL, run.ID, f.ID)))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 88, Col: 104}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "\" class=\"btn btn-ghost btn-xs text-accent font-bold hover:underline\">تعديل الأعمدة</a></td></tr>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</tbody></table></div></div><!-- Commit Form & Card --><div class=\"glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs d-flex flex-col md:flex-row items-center justify-between gap-4\"><div><div class=\"font-bold text-base text-surface-fg\">تأكيد وتشغيل دفعة الملفات</div><div class=\"text-xs text-secondary mt-1\">سيتم حفظ جميع المخططات وتفعيل الملفات المؤقتة لتصبح متاحة فوراً في النظام.</div></div><form method=\"POST\" action=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</tbody></table></div></div><!-- Commit Form & Card --><div class=\"glass-panel p-6 rounded-2xl border border-emerald-500/30 bg-emerald-50/50 dark:bg-emerald-950/20 shadow-xs d-flex flex-col md:flex-row items-center justify-between gap-4\"><div><div class=\"font-bold text-base text-surface-fg\">تأكيد وتشغيل دفعة الملفات</div><div class=\"text-xs text-secondary mt-1\">سيتم حفظ جميع المخططات وتفعيل الملفات المؤقتة لتصبح متاحة فوراً في النظام.</div></div><div class=\"d-flex items-center gap-3\"><form method=\"POST\" action=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var12 templ.SafeURL
-			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/commit", run.BaseURL, run.ID)))
+			var templ_7745c5c3_Var13 templ.SafeURL
+			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 96, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 108, Col: 102}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\" class=\"m-0\"><button type=\"submit\" class=\"btn btn-emerald font-bold text-sm px-6 py-3 rounded-xl shadow-sm d-inline-flex items-center gap-2\"><span>اعتماد وتشغيل جميع الملفات</span> <span>✓</span></button></form></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "\" class=\"m-0\"><button type=\"submit\" class=\"btn btn-ghost text-sm text-secondary hover:text-danger px-4 py-3 rounded-xl font-bold\" data-confirm=\"هل أنت متأكد من رغبتك في إلغاء عملية الرفع هذه؟\">إلغاء العملية</button></form><form method=\"POST\" action=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var14 templ.SafeURL
+			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/commit", run.BaseURL, run.ID)))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 117, Col: 102}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" class=\"m-0\"><button type=\"submit\" class=\"btn btn-emerald font-bold text-sm px-6 py-3 rounded-xl shadow-sm d-inline-flex items-center gap-2\"><span>اعتماد وتشغيل جميع الملفات</span> <span>✓</span></button></form></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -236,12 +262,12 @@ func AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir stri
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var13 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var13 == nil {
-			templ_7745c5c3_Var13 = templ.NopComponent
+		templ_7745c5c3_Var15 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var15 == nil {
+			templ_7745c5c3_Var15 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Var14 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		templ_7745c5c3_Var16 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -253,78 +279,78 @@ func AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir stri
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<script nonce=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var15 string
-			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 113, Col: 37}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\">\r\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\r\n\t\t\tdawaData('adminTempWarehousesRunsReviewData', function (a0, a1, a2, a3) {\r\n\t\t\t\treturn {\r\n\t\t\t\t\trunId: a0,\r\n\t\t\t\t\tpercent: a1,\r\n\t\t\t\t\tphase: a2,\r\n\t\t\t\t\tdone: a3,\r\n\t\t\t\t\terror: '',\r\n\t\t\t\t\tinit() {\r\n\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\tlet src = new EventSource('/api/progress/' + this.runId);\r\n\t\t\t\t\t\tsrc.onmessage = (e) => {\r\n\t\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\t\tlet d = JSON.parse(e.data);\r\n\t\t\t\t\t\t\t\tif (d.percent !== undefined) this.percent = d.percent;\r\n\t\t\t\t\t\t\t\tif (d.phase) this.phase = d.phase;\r\n\t\t\t\t\t\t\t\tif (d.done || this.percent >= 100 || this.phase === 'done') {\r\n\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\tsrc.close();\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t} catch(err) {}\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t\tsrc.onerror = () => {\r\n\t\t\t\t\t\t\tsetInterval(() => {\r\n\t\t\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\t\t\tfetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })\r\n\t\t\t\t\t\t\t\t\t.then(r => r.json())\r\n\t\t\t\t\t\t\t\t\t.then(data => {\r\n\t\t\t\t\t\t\t\t\t\tif (data.percent !== undefined) this.percent = data.percent;\r\n\t\t\t\t\t\t\t\t\t\tif (data.phase) this.phase = data.phase;\r\n\t\t\t\t\t\t\t\t\t\tif (data.done || this.percent >= 100) {\r\n\t\t\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t\t\t}).catch(() => {});\r\n\t\t\t\t\t\t\t}, 2000);\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t}\r\n\t\t\t\t};\r\n\t\t\t});\r\n\t\t</script> <div class=\"max-w-2xl mx-auto pb-12\" x-data=\"")
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			var templ_7745c5c3_Var16 string
-			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.AlpineCall("adminTempWarehousesRunsReviewData", run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 157, Col: 145}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\"><div class=\"glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center\"><div class=\"w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4\"><span x-show=\"!done\" class=\"animate-spin\">⚙️</span> <span x-show=\"done\" x-cloak>🎉</span></div><h1 class=\"text-2xl font-black text-surface-fg mb-1\"><span x-show=\"!done\">جاري معالجة دفعة المستودعات</span> <span x-show=\"done\" x-cloak>تم اكتمال المعالجة بنجاح!</span></h1><p class=\"text-xs text-secondary mb-6\">دفعة: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<script nonce=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
-			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(run.Filename)
+			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 170, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 135, Col: 37}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " (")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">\r\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\r\n\t\t\tdawaData('adminTempWarehousesRunsReviewData', function (a0, a1, a2, a3) {\r\n\t\t\t\treturn {\r\n\t\t\t\t\trunId: a0,\r\n\t\t\t\t\tpercent: a1,\r\n\t\t\t\t\tphase: a2,\r\n\t\t\t\t\tdone: a3,\r\n\t\t\t\t\terror: '',\r\n\t\t\t\t\tinit() {\r\n\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\tlet src = new EventSource('/api/progress/' + this.runId);\r\n\t\t\t\t\t\tsrc.onmessage = (e) => {\r\n\t\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\t\tlet d = JSON.parse(e.data);\r\n\t\t\t\t\t\t\t\tif (d.percent !== undefined) this.percent = d.percent;\r\n\t\t\t\t\t\t\t\tif (d.phase) this.phase = d.phase;\r\n\t\t\t\t\t\t\t\tif (d.done || this.percent >= 100 || this.phase === 'done') {\r\n\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\tsrc.close();\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t} catch(err) {}\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t\tsrc.onerror = () => {\r\n\t\t\t\t\t\t\tsetInterval(() => {\r\n\t\t\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\t\t\tfetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })\r\n\t\t\t\t\t\t\t\t\t.then(r => r.json())\r\n\t\t\t\t\t\t\t\t\t.then(data => {\r\n\t\t\t\t\t\t\t\t\t\tif (data.percent !== undefined) this.percent = data.percent;\r\n\t\t\t\t\t\t\t\t\t\tif (data.phase) this.phase = data.phase;\r\n\t\t\t\t\t\t\t\t\t\tif (data.done || this.percent >= 100) {\r\n\t\t\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t\t\t}).catch(() => {});\r\n\t\t\t\t\t\t\t}, 2000);\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t}\r\n\t\t\t\t};\r\n\t\t\t});\r\n\t\t</script> <div class=\"max-w-2xl mx-auto pb-12\" x-data=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
-			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", run.TotalFiles))
+			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.AlpineCall("adminTempWarehousesRunsReviewData", run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 170, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 179, Col: 145}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " ملفات)</p><!-- Progress Bar --><div class=\"w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5\"><div class=\"bg-accent h-full rounded-full transition-all duration-300\" :style=\"{ width: percent + '%' }\"></div></div><div class=\"d-flex items-center justify-between text-xs font-mono text-secondary mb-8\"><span x-text=\"'المرحلة: ' + phase\"></span> <span class=\"font-bold text-accent\" x-text=\"percent + '%'\"></span></div><div class=\"pt-4 border-t border-default\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center\"><div class=\"w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4\"><span x-show=\"!done\" class=\"animate-spin\">⚙️</span> <span x-show=\"done\" x-cloak>🎉</span></div><h1 class=\"text-2xl font-black text-surface-fg mb-1\"><span x-show=\"!done\">جاري معالجة دفعة المستودعات</span> <span x-show=\"done\" x-cloak>تم اكتمال المعالجة بنجاح!</span></h1><p class=\"text-xs text-secondary mb-6\">دفعة: ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var19 templ.SafeURL
-			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(run.BaseURL))
+			var templ_7745c5c3_Var19 string
+			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(run.Filename)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 187, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" class=\"btn btn-accent font-bold text-sm px-6 py-2.5 rounded-xl shadow-xs\">الانتقال إلى قائمة المستودعات</a></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " (")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var20 string
+			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", run.TotalFiles))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 68}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " ملفات)</p><!-- Progress Bar --><div class=\"w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5\"><div class=\"bg-accent h-full rounded-full transition-all duration-300\" :style=\"{ width: percent + '%' }\"></div></div><div class=\"d-flex items-center justify-between text-xs font-mono text-secondary mb-8\"><span x-text=\"'المرحلة: ' + phase\"></span> <span class=\"font-bold text-accent\" x-text=\"percent + '%'\"></span></div><div class=\"pt-4 border-t border-default\"><a href=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var21 templ.SafeURL
+			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(run.BaseURL))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 209, Col: 39}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"btn btn-accent font-bold text-sm px-6 py-2.5 rounded-xl shadow-xs\">الانتقال إلى قائمة المستودعات</a></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.AdminShell("حالة معالجة الجلسة", "inventory", lang, dir).Render(templ.WithChildren(ctx, templ_7745c5c3_Var14), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.AdminShell("حالة معالجة الجلسة", "inventory", lang, dir).Render(templ.WithChildren(ctx, templ_7745c5c3_Var16), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

@@ -228,7 +228,12 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.warehouse.update"))
+		g.Use(authctx.RequirePagePermission(
+			"inventory.warehouse.update",
+			"inventory.temp_warehouse.manage",
+			"inventory.temp_warehouse.view",
+			"inventory.my_temp_warehouse.manage",
+		))
 		g.Post("/admin/temporary-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/user/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/admins/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
@@ -249,7 +254,7 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("inventory.warehouse.delete"))
+		g.Use(authctx.RequirePagePermission("inventory.warehouse.delete", "inventory.temp_warehouse.manage"))
 		g.Post("/admin/temporary-warehouses/items/{id}/delete", h.AdminTempWarehouseItemDeleteSubmit)
 		g.Post("/admin/temporary-warehouses/{id}/delete", h.AdminTempWarehouseDeleteSubmit)
 	})

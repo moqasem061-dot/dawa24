@@ -19,9 +19,20 @@
     };
   }
 
+  const SAFE_URL = /^(?:https?:\/\/|\/|blob:|data:image\/)/i;
+  function isSafeUrl(u) {
+    if (!u || typeof u !== 'string') return false;
+    const clean = u.trim().replace(/[\u0000-\u0020]/g, '');
+    return SAFE_URL.test(clean);
+  }
+
   window.openFilePreview = function (opts) {
     if (!opts || !opts.url) return;
     const url = opts.url;
+    if (!isSafeUrl(url)) return;
+    if (opts.downloadUrl && !isSafeUrl(opts.downloadUrl)) {
+      opts.downloadUrl = '';
+    }
     const els = getModalElements();
     if (!els.modal) return;
 
@@ -29,12 +40,17 @@
     const defaultDigitalFile = typeof window.dawaT === 'function' ? window.dawaT('preview.digital_file', 'ملف رقمي') : 'ملف رقمي';
     const filename = opts.filename || (opts.title && opts.title.includes('.') ? opts.title : clean.split('/').pop()) || defaultDigitalFile;
     const ext = (filename.split('.').pop() || clean.split('.').pop() || '').toLowerCase();
-    const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
+    
+    const mime = (opts.mime || '').toLowerCase();
+    const isImageExt = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif', 'bmp', 'ico'].includes(ext);
+    const isMimeImage = mime.startsWith('image/');
+    const isExplicitImage = opts.isImage === true || opts.isImage === 'true' || isMimeImage || isImageExt;
+    const isPdf = ext === 'pdf' || mime === 'application/pdf';
 
     if (els.titleEl) {
       const defaultImgTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.image', 'معاينة الصورة') : 'معاينة الصورة';
       const defaultDocTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.document', 'معاينة المستند') : 'معاينة المستند';
-      els.titleEl.textContent = opts.title || (isImage ? defaultImgTitle : defaultDocTitle);
+      els.titleEl.textContent = opts.title || (isExplicitImage ? defaultImgTitle : defaultDocTitle);
     }
     if (els.filenameEl) {
       els.filenameEl.textContent = filename;
@@ -50,7 +66,7 @@
       els.errBox.classList.add('hidden');
     }
 
-    if (isImage) {
+    function showAsImage(imgUrl) {
       if (els.iframe) {
         els.iframe.classList.add('hidden');
         els.iframe.src = 'about:blank';
@@ -58,15 +74,18 @@
       if (els.img && els.imgContainer) {
         els.img.onload = function () {
           if (els.errBox) els.errBox.classList.add('hidden');
+          els.imgContainer.classList.remove('hidden');
         };
         els.img.onerror = function () {
-          if (els.imgContainer) els.imgContainer.classList.add('hidden');
-          if (els.errBox) els.errBox.classList.remove('hidden');
+          els.imgContainer.classList.add('hidden');
+          showAsIframe(imgUrl);
         };
-        els.img.src = url;
+        els.img.src = imgUrl;
         els.imgContainer.classList.remove('hidden');
       }
-    } else {
+    }
+
+    function showAsIframe(frameUrl) {
       if (els.imgContainer) {
         els.imgContainer.classList.add('hidden');
       }
@@ -75,8 +94,40 @@
       }
       if (els.iframe) {
         els.iframe.classList.remove('hidden');
-        els.iframe.src = url;
+        els.iframe.src = frameUrl;
       }
+    }
+
+    if (isExplicitImage) {
+      showAsImage(url);
+    } else if (isPdf) {
+      showAsIframe(url);
+    } else {
+      // Ambiguous URL (e.g. /documents/{id}/view): probe if it's an image first
+      const probe = new Image();
+      let finished = false;
+      probe.onload = function () {
+        if (finished) return;
+        finished = true;
+        if (els.titleEl && !opts.title) {
+          const defaultImgTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.image', 'معاينة الصورة') : 'معاينة الصورة';
+          els.titleEl.textContent = defaultImgTitle;
+        }
+        showAsImage(url);
+      };
+      probe.onerror = function () {
+        if (finished) return;
+        finished = true;
+        showAsIframe(url);
+      };
+      probe.src = url;
+      // If probe takes longer than 1.5s, fall back to iframe
+      setTimeout(function () {
+        if (!finished) {
+          finished = true;
+          showAsIframe(url);
+        }
+      }, 1500);
     }
 
     if (typeof els.modal.showModal === 'function') {

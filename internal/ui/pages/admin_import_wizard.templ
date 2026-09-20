@@ -280,11 +280,7 @@ templ importHistoryCard(sessions []*catalog.ImportSession) {
 					for _, session := range sessions {
 						<tr>
 							<td>
-								if session.IsReviewable() {
-									<a href={ templ.SafeURL("/admin/products/import/" + session.PublicID) } class="text-accent font-bold">{ session.Filename }</a>
-								} else {
-									{ session.Filename }
-								}
+								<a href={ templ.SafeURL("/admin/products/import/" + session.PublicID) } class="text-accent font-bold hover:underline">{ session.Filename }</a>
 							</td>
 							<td>{ session.Mode.Label() }</td>
 							<td class="tabular-nums">{ FormatCount(session.InsertRows) }</td>

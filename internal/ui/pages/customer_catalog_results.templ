@@ -163,8 +163,8 @@ templ CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) {
 						</div>
 					}
 
-					<!-- Supplier Info Box -->
-					<div class="p-2.5 rounded-xl bg-surface-sunken border mb-2.5 flex-between items-center">
+					<!-- Supplier Info -->
+					<div class="py-2 mb-2 flex-between items-center border-t border-b border-subtle">
 						<div class="d-flex items-center gap-2 text-truncate">
 							@components.IconTruck("icon-xs text-primary flex-shrink-0")
 							<div class="text-truncate">
@@ -230,7 +230,7 @@ templ CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) {
 
 					<!-- Pricing & Action Footer -->
 					<div class="border-t pt-2.5 mt-auto">
-						<div class="p-2.5 rounded-xl bg-surface-sunken border mb-3">
+						<div class="mb-3">
 							<div class="flex-between items-center gap-2">
 								<div class="d-flex flex-col gap-1">
 									<!-- سعر الجمهور -->

@@ -260,8 +260,8 @@ func (h *UIHandler) SetLanguage(w http.ResponseWriter, r *http.Request) {
 
 // resolveLocale resolves the request language and text direction.
 //
-// Precedence: query ?lang= → dawa24_lang cookie → Accept-Language → Arabic.
-// Arabic is the default and the primary language of the marketplace.
+// Precedence: query ?lang= → dawa24_lang cookie → Arabic.
+// Arabic is the default and primary language of the marketplace on first visit.
 func resolveLocale(r *http.Request) (string, string) {
 	if r == nil {
 		return "ar", "rtl"
@@ -271,11 +271,6 @@ func resolveLocale(r *http.Request) (string, string) {
 	}
 	if cookie, err := r.Cookie("dawa24_lang"); err == nil && cookie.Value != "" {
 		return dirForLang(cookie.Value)
-	}
-	if header := r.Header.Get("Accept-Language"); header != "" {
-		if lang := acceptLanguage(header); lang != "" {
-			return dirForLang(lang)
-		}
 	}
 	return "ar", "rtl"
 }

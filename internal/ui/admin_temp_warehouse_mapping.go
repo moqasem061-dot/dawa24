@@ -3,7 +3,7 @@ package ui
 import (
 	"encoding/json"
 	"fmt"
-	"math"
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -15,7 +15,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/compare"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
 	"github.com/muhiya/dawa24-store/internal/shared/sheet"
 )
 
@@ -150,67 +150,41 @@ func (h *UIHandler) AdminTempWarehouseMappingSubmit(w http.ResponseWriter, r *ht
 		}
 	}
 
-	// Try reading spreadsheet from storage path or upload candidates
+	// Try reading spreadsheet from storage path, object storage, or upload candidates
 	var fileBytes []byte
 	storagePath := resolveStoragePath(f.StorageKey, "temp_warehouses")
 	if storagePath != "" {
 		fileBytes, _ = os.ReadFile(storagePath)
 	}
+	if len(fileBytes) == 0 && h.storage != nil && f.StorageKey != "" {
+		if r, _, err := h.storage.Get(ctx, f.StorageKey); err == nil && r != nil {
+			fileBytes, _ = io.ReadAll(r)
+			_ = r.Close()
+		}
+	}
 
 	if len(fileBytes) > 0 {
 		rawRows, err := sheet.ReadRows(fileBytes, f.OriginalFilename)
 		if err == nil && len(rawRows) > 1 {
-			_ = h.compareSvc.DeleteFileRows(ctx, fileID)
-
-			fileRows := make([]*compare.CompareFileRow, 0, len(rawRows)-1)
-			for idx, row := range rawRows[1:] {
-				if len(row) == 0 {
-					continue
-				}
-				rawName := ""
-				if nameCol >= 0 && nameCol < len(row) {
-					rawName = strings.TrimSpace(row[nameCol])
-				}
-				if rawName == "" {
-					continue
-				}
-				sku := ""
-				if codeCol >= 0 && codeCol < len(row) {
-					sku = strings.TrimSpace(row[codeCol])
-				}
-				priceMinor := int64(0)
-				if priceCol >= 0 && priceCol < len(row) {
-					if p, err := parsePriceFloat(row[priceCol]); err == nil && p > 0 {
-						priceMinor = int64(math.Round(p * 100))
-					}
-				}
-				discountPct := 0.0
-				if discountCol >= 0 && discountCol < len(row) {
-					if d, err := parsePriceFloat(row[discountCol]); err == nil && d >= 0 {
-						discountPct = d
-						if discountPct > 100 {
-							discountPct = 100
-						}
-					}
-				}
-				priceMoney := money.FromMinor(priceMinor)
-				priceAfterMinor := int64(math.Round(float64(priceMinor) * (1.0 - (discountPct / 100.0))))
-				priceAfterMoney := money.FromMinor(priceAfterMinor)
-
-				fileRows = append(fileRows, &compare.CompareFileRow{
-					FileID:             f.ID,
-					OrganizationID:     f.OrganizationID,
-					RowNumber:          idx + 2,
-					RawName:            rawName,
-					NormalizedName:     strings.ToLower(rawName),
-					SKU:                sku,
-					Price:              priceMoney,
-					Discount:           discountPct,
-					PriceAfterDiscount: priceAfterMoney,
-				})
+			layout, _ := productmatch.AnalyzeLayout(rawRows)
+			dataStart := layout.FirstDataRow
+			if layout.HeaderRow < 0 || len(layout.Headers) == 0 {
+				dataStart = 1
 			}
+			if dataStart < 1 || dataStart > len(rawRows) {
+				dataStart = 1
+			}
+			dataRows := rawRows[dataStart:]
+
+			_ = h.compareSvc.DeleteFileRows(ctx, fileID)
+			fileRows := buildTempWarehouseRows(f, dataRows, dataStart, codeCol, nameCol, priceCol, discountCol)
 			if len(fileRows) > 0 {
-				_ = h.compareSvc.InsertFileRows(ctx, fileRows)
+				if err := h.compareSvc.InsertFileRows(ctx, fileRows); err != nil {
+					h.log.ErrorContext(ctx, "insert warehouse file rows on remap", "error", err, "file_id", f.ID)
+				} else {
+					f.Status = compare.FileReady
+					f.ErrorMessage = ""
+				}
 			}
 			f.RowCount = len(fileRows)
 		}

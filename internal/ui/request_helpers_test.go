@@ -215,15 +215,15 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 		}
 	})
 
-	t.Run("accept-language header en when no cookie or query", func(t *testing.T) {
+	t.Run("first visit with english browser header defaults to arabic", func(t *testing.T) {
 		req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
 		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 		lang, dir := h.localeAndDir(req)
-		if lang != "en" || dir != "ltr" {
-			t.Fatalf("expected (en, ltr), got (%s, %s)", lang, dir)
+		if lang != "ar" || dir != "rtl" {
+			t.Fatalf("expected (ar, rtl), got (%s, %s)", lang, dir)
 		}
-		if got := langOf(req); got != "en" {
-			t.Fatalf("expected langOf=en, got %s", got)
+		if got := langOf(req); got != "ar" {
+			t.Fatalf("expected langOf=ar, got %s", got)
 		}
 	})
 }

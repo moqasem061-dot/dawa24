@@ -160,6 +160,15 @@ templ AdminTempWarehouseRunMappingPage(run *TempWarehouseRunView, curFile *TempW
 						✓ تم حفظ التعيين تلقائياً
 					</div>
 					<div class="text-xs font-bold text-danger" x-show="saveError" x-text="saveError" x-cloak></div>
+					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", run.BaseURL, run.ID)) } class="m-0">
+						<button
+							type="submit"
+							class="btn btn-ghost btn-sm text-secondary hover:text-danger rounded-xl font-bold"
+							data-confirm="هل أنت متأكد من رغبتك في إلغاء عملية الرفع هذه؟"
+						>
+							إلغاء العملية
+						</button>
+					</form>
 					<a href={ templ.SafeURL(fmt.Sprintf("%s/runs/%d/review", run.BaseURL, run.ID)) } class="btn btn-outline btn-sm rounded-xl font-bold">
 						مراجعة الدفعة ({ fmt.Sprintf("%d", len(files)) } ملفات)
 					</a>

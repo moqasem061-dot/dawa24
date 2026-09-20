@@ -252,7 +252,6 @@ func loadShellUIKeys(e *engine) {
 	addKey(e, "checkout.cold_chain_label", "checkout", "الشحن المبرد (Cold-Chain):", "Cold-Chain Shipping:", "Checkout cold chain label")
 	addKey(e, "checkout.cold_chain_free", "checkout", "مجاناً للطلبيات المعتمدة", "Free for certified orders", "Checkout cold chain free")
 	addKey(e, "checkout.confirm_btn", "checkout", "تأكيد الطلب وإرساله للموردين", "Confirm Order & Send to Suppliers", "Checkout confirm button")
-	addKey(e, "checkout.escrow_badge", "checkout", "معاملة مضمونة بنظام الضمان المالي الدوائي (Escrow).", "Transaction protected by Pharmaceutical Escrow Guarantee.", "Checkout escrow badge")
 
 	// Upload progress keys
 	addKey(e, "upload.preparing", "upload", "جارٍ التحضير…", "Preparing…", "Upload preparing")

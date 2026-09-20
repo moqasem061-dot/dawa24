@@ -120,6 +120,8 @@ func PlatformRoles() []SystemRole {
 			Permissions: []string{
 				"platform.dashboard.view",
 				"notifications.center.view",
+				"inventory.temp_warehouse.view",
+				"inventory.temp_warehouse.manage",
 				"inventory.my_temp_warehouse.view",
 				"inventory.my_temp_warehouse.manage",
 				"inventory.team_temp_warehouse.view",
