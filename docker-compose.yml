@@ -24,7 +24,7 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@dawa24.net}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-Admin!Dawa24!2026}
     volumes:
-      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
     networks:
       - postgresql-psr0_default
 
@@ -103,7 +103,7 @@ services:
       - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
       - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
     dns:
       - 1.1.1.1
       - 8.8.8.8
@@ -166,7 +166,7 @@ services:
       - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
       - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - ${DATA_VOLUME_PATH:-dawa24-data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
     networks:
       - postgresql-psr0_default
     depends_on:
