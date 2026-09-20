@@ -100,7 +100,7 @@ func (h *UIHandler) handleSavingProductsImportSubmit(w http.ResponseWriter, r *h
 
 	for i := 1; i < len(rawRows); i++ {
 		row := rawRows[i]
-		if len(row) == 0 || IsAllEmptyRow(row) || IsSummaryOrTotalRow(row) {
+		if IsJunkOrEmptyRow(row) {
 			continue
 		}
 
@@ -121,7 +121,7 @@ func (h *UIHandler) handleSavingProductsImportSubmit(w http.ResponseWriter, r *h
 		if name == "" && sku != "" {
 			name = sku
 		}
-		if name == "" {
+		if !IsValidSavingRow(name, sku) {
 			continue
 		}
 

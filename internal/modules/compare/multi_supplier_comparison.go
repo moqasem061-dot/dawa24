@@ -49,6 +49,9 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 		}
 
 		for _, r := range rows {
+			if r == nil || !IsValidProductRow(r.RawName, r.SKU, r.Price, r.Discount) {
+				continue
+			}
 			normText := normalizeProductText(r.RawName)
 			if normText == "" {
 				normText = r.NormalizedName

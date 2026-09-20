@@ -28,6 +28,7 @@ type Repository interface {
 	CreateJobApplication(ctx context.Context, a *JobApplication) error
 	ListApplicationsByOffer(ctx context.Context, offerID int64, limit, offset int) ([]*JobApplication, error)
 	CountApplicationsByOffer(ctx context.Context, offerID int64) (int, error)
+	CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error)
 	ListApplicationsByUser(ctx context.Context, userID int64) ([]*JobApplication, error)
 	GetApplicationByID(ctx context.Context, id int64) (*JobApplication, error)
 	AcceptAndOnboardApplicant(ctx context.Context, in AcceptApplicantInput) (*JobApplication, error)

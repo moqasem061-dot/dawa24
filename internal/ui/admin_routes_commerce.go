@@ -20,6 +20,7 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 			id := chi.URLParam(r, "id")
 			http.Redirect(w, r, "/admin/orders/"+id, http.StatusMovedPermanently)
 		})
+		g.Post("/admin/orders/{id}/status", h.AdminOrderStatusSubmit)
 	})
 
 	// Offers & Promotions

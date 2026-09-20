@@ -152,6 +152,11 @@ func (s *Service) CountApplications(ctx context.Context, offerID int64) (int, er
 	return s.repo.CountApplicationsByOffer(ctx, offerID)
 }
 
+// CountApplicationsForOffers returns application counts for multiple vacancies in a single batch query.
+func (s *Service) CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error) {
+	return s.repo.CountApplicationsForOffers(ctx, offerIDs)
+}
+
 // ApplyToJob records an application for a vacancy.
 func (s *Service) ApplyToJob(ctx context.Context, a *JobApplication) error {
 	if a.ApplicantName == "" || a.ApplicantEmail == "" {

@@ -28,13 +28,19 @@ templ CustomerCatalogFilter(data CatalogPageData, langOpt ...string) {
 			</a>
 		</div>
 
-		<form action="/catalog" method="GET" class="d-flex flex-col gap-4" id="catalog-filter-form">
+		<form action="/catalog" method="GET" class="d-flex flex-col gap-4" id="catalog-filter-form" hx-get="/catalog" hx-target="#catalog-results" hx-push-url="true" hx-include="[name='q']" data-filter-form>
 			<!-- Anti-Scraping Honeypot Trap (Hidden from users) -->
 			<input type="text" name="company_tax_ref" class="hidden" tabindex="-1" autocomplete="off" />
 			<input type="hidden" name="filter_applied" value="1" />
 
 			if data.Query != "" {
 				<input type="hidden" name="q" value={ data.Query } />
+			}
+			if data.CategoryID != nil && *data.CategoryID > 0 {
+				<input type="hidden" name="category_id" id="catalog-filter-category-id" value={ strconv.FormatInt(*data.CategoryID, 10) } />
+			}
+			if data.BrandID != nil && *data.BrandID > 0 {
+				<input type="hidden" name="brand_id" id="catalog-filter-brand-id" value={ strconv.FormatInt(*data.BrandID, 10) } />
 			}
 			if data.Sort != "" {
 				<input type="hidden" name="sort" value={ data.Sort } />

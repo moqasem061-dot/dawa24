@@ -263,6 +263,10 @@ func buildTempWarehouseRows(
 		}
 		priceAfterMinor := int64(math.Round(float64(priceMinor) * (1.0 - (discountPct / 100.0))))
 
+		if !compare.IsValidProductRow(rawName, sku, money.FromMinor(priceMinor), discountPct) {
+			continue
+		}
+
 		out = append(out, &compare.CompareFileRow{
 			FileID:             file.ID,
 			OrganizationID:     file.OrganizationID,

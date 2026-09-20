@@ -360,6 +360,20 @@
     if (form && form.hasAttribute && form.hasAttribute('data-confirm')) confirmed(form, evt);
   }, true);
 
+  function isFilterForm(form) {
+    if (!form || !form.tagName || form.tagName.toLowerCase() !== 'form') return false;
+    var method = (form.getAttribute('method') || 'GET').toUpperCase();
+    if (method !== 'GET') return false;
+    var cls = (form.className || '');
+    if (cls.indexOf('filter-bar') !== -1 || cls.indexOf('filter-form') !== -1) return true;
+    if (form.hasAttribute('data-filter-form')) return true;
+    var action = form.getAttribute('action') || '';
+    if (action.indexOf('/catalog') !== -1 || action.indexOf('/orders') !== -1 ||
+        action.indexOf('/reports') !== -1 || action.indexOf('/inventory') !== -1 ||
+        action.indexOf('/admin/') !== -1 || action.indexOf('/vendor/') !== -1) return true;
+    return false;
+  }
+
   document.addEventListener('change', function (evt) {
     var el = evt.target;
     if (!el || !el.getAttribute) return;
@@ -372,6 +386,66 @@
       if (window.dawaNavigate) window.dawaNavigate(el.value);
       else window.location.assign(el.value);
     }
+
+    var tag = (el.tagName || '').toLowerCase();
+    var type = (el.type || '').toLowerCase();
+    var parentForm = el.form || el.closest('form');
+    if (!parentForm || !isFilterForm(parentForm)) return;
+    if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
+
+    if (tag === 'select' || type === 'checkbox' || type === 'radio' || type === 'date') {
+      if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
+      else parentForm.submit();
+    }
+  });
+
+  var searchDebounceTimer = null;
+  document.addEventListener('input', function (evt) {
+    var el = evt.target;
+    if (!el || !el.tagName) return;
+    var tag = el.tagName.toLowerCase();
+    var type = (el.type || '').toLowerCase();
+    var name = (el.name || '').toLowerCase();
+
+    var isSearchInput = (tag === 'input' && (type === 'search' || type === 'text' || name === 'q' || name.indexOf('search') !== -1 || name.indexOf('filter') !== -1));
+    if (!isSearchInput) return;
+
+    var parentForm = el.form || el.closest('form');
+    if (!parentForm || !isFilterForm(parentForm)) return;
+    if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
+
+    clearTimeout(searchDebounceTimer);
+    searchDebounceTimer = setTimeout(function () {
+      try {
+        if (window.sessionStorage) {
+          window.sessionStorage.setItem('dawa_last_filter_focus', JSON.stringify({
+            name: el.name,
+            id: el.id,
+            pos: typeof el.selectionStart === 'number' ? el.selectionStart : null
+          }));
+        }
+      } catch (_) {}
+      if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
+      else parentForm.submit();
+    }, 380);
+  });
+
+  document.addEventListener('DOMContentLoaded', function () {
+    try {
+      var saved = window.sessionStorage ? window.sessionStorage.getItem('dawa_last_filter_focus') : null;
+      if (saved) {
+        window.sessionStorage.removeItem('dawa_last_filter_focus');
+        var info = JSON.parse(saved);
+        var targetEl = (info.id && document.getElementById(info.id)) ||
+                       (info.name && document.querySelector('input[name="' + info.name + '"]'));
+        if (targetEl && typeof targetEl.focus === 'function') {
+          targetEl.focus();
+          if (info.pos !== null && typeof targetEl.setSelectionRange === 'function') {
+            targetEl.setSelectionRange(info.pos, info.pos);
+          }
+        }
+      }
+    } catch (_) {}
   });
 
   // x-safe-html="expr": Alpine's x-html for the CSP build, which has no

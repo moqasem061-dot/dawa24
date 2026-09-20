@@ -119,6 +119,10 @@ func (m *mockHRRepo) CountApplicationsByOffer(_ context.Context, _ int64) (int, 
 	return 0, nil
 }
 
+func (m *mockHRRepo) CountApplicationsForOffers(_ context.Context, _ []int64) (map[int64]int, error) {
+	return make(map[int64]int), nil
+}
+
 func (m *mockHRRepo) ListApplicationsByUser(_ context.Context, _ int64) ([]*hr.JobApplication, error) {
 	return nil, nil
 }

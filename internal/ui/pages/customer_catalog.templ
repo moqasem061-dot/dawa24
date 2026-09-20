@@ -219,6 +219,7 @@ templ CustomerCatalog(data CatalogPageData, lang, dir string, isPartial bool) {
 										placeholder={ i18n.T(lang, "catalog.search_placeholder") }
 										class="form-input text-xs w-full"
 										hx-get="/catalog"
+										hx-include="#catalog-filter-form"
 										hx-trigger="keyup changed delay:350ms, search"
 										hx-target="#catalog-results"
 										hx-push-url="true"

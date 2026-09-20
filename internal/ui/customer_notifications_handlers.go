@@ -67,31 +67,37 @@ func (h *UIHandler) MarkNotificationReadSubmit(w http.ResponseWriter, r *http.Re
 	http.Redirect(w, r, "/notifications", http.StatusSeeOther)
 }
 
-// NotificationOpenRedirect marks a notification as read and navigates directly to the target
-// application page related to the notification's type based on user role and permissions.
+// NotificationOpenRedirect marks a notification as read and redirects the user to its relevant target.
 func (h *UIHandler) NotificationOpenRedirect(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	actor, ok := authctx.From(ctx)
-	if !ok || actor.UserID <= 0 {
-		http.Redirect(w, r, "/auth/login?redirect=/notifications", http.StatusSeeOther)
-		return
-	}
-
+	actor, _ := authctx.From(ctx)
 	id, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	var notif *notifications.NotificationLog
+
+	targetURL := fallbackDashboard(actor)
+
 	if h.notifSvc != nil && id > 0 {
-		notif, _ = h.notifSvc.GetNotification(ctx, id, actor.UserID)
+		var notif *notifications.NotificationLog
+		if logs, err := h.notifSvc.ListUserNotifications(ctx, actor.UserID, 100, 0); err == nil {
+			for _, l := range logs {
+				if l != nil && l.ID == id {
+					notif = l
+					break
+				}
+			}
+		}
+		if notif != nil {
+			targetURL = h.ResolveNotificationDestination(ctx, actor, notif)
+		}
 		_ = h.notifSvc.MarkRead(ctx, id, actor.UserID)
 	}
 
-	destURL := h.ResolveNotificationDestination(ctx, actor, notif)
 	w.Header().Set("HX-Trigger", "notificationRead")
 
 	if h.isHTMX(r) {
-		w.Header().Set("HX-Redirect", destURL)
+		w.Header().Set("HX-Redirect", targetURL)
 		w.WriteHeader(http.StatusOK)
 		return
 	}
 
-	http.Redirect(w, r, destURL, http.StatusSeeOther)
+	http.Redirect(w, r, targetURL, http.StatusSeeOther)
 }

@@ -190,7 +190,7 @@ func (h *UIHandler) startSavingImportRun(
 		publishProgress(30, phaseMatching, 0)
 
 		for i, row := range rows {
-			if len(row) == 0 || IsAllEmptyRow(row) || IsSummaryOrTotalRow(row) {
+			if IsJunkOrEmptyRow(row) {
 				continue
 			}
 
@@ -209,7 +209,7 @@ func (h *UIHandler) startSavingImportRun(
 			if name == "" && sku != "" {
 				name = sku
 			}
-			if name == "" {
+			if !IsValidSavingRow(name, sku) {
 				continue
 			}
 

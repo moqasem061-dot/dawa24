@@ -53,7 +53,7 @@ func (h *UIHandler) notifyOrderPlaced(ctx context.Context, order *commerce.Order
 	}
 }
 
-// notifyOrderStatusChanged dispatches updates to the customer when a vendor updates shipment status.
+// notifyOrderStatusChanged dispatches updates to the customer, vendor teams, and platform admin.
 func (h *UIHandler) notifyOrderStatusChanged(
 	ctx context.Context,
 	order *commerce.Order,
@@ -75,15 +75,38 @@ func (h *UIHandler) notifyOrderStatusChanged(
 		vendorName = i18n.T("ar", "notif.the_vendor")
 	}
 
+	statusLabel := string(toStatus)
+	switch toStatus {
+	case commerce.StatusPending:
+		statusLabel = "بانتظار التأكيد"
+	case commerce.StatusProcessing:
+		statusLabel = "قيد التجهيز"
+	case commerce.StatusConfirmed:
+		statusLabel = "تم التأكيد"
+	case commerce.StatusShipped, commerce.StatusInTransit:
+		statusLabel = "قيد الشحن والتوصيل"
+	case commerce.StatusOutForDelivery:
+		statusLabel = "مع المندوب للتسليم"
+	case commerce.StatusDelivered, commerce.StatusCompleted:
+		statusLabel = "تم التسليم بنجاح"
+	case commerce.StatusCancelled:
+		statusLabel = "ملغي"
+	case commerce.StatusFailed:
+		statusLabel = "فشل التوريد"
+	case commerce.StatusReturned, commerce.StatusRefunded:
+		statusLabel = "مرتجع / مسترد"
+	}
+
 	reasonStr := ""
 	if strings.TrimSpace(notes) != "" {
 		reasonStr = fmt.Sprintf("(ملاحظات: %s)", notes)
 	}
 
+	// 1. Notify Customer / Pharmacy
 	vars := map[string]string{
 		"order_number": orderNum,
 		"vendor_name":  vendorName,
-		"status":       string(toStatus),
+		"status":       statusLabel,
 		"reason":       reasonStr,
 	}
 
@@ -91,6 +114,28 @@ func (h *UIHandler) notifyOrderStatusChanged(
 	if order.OrganizationID != nil && *order.OrganizationID > 0 {
 		h.dispatchOrgBranchEvent(ctx, notifications.EventOrderStatusChanged, *order.OrganizationID, order.BranchID, vars)
 	}
+
+	// 2. Notify Vendor Organization(s)
+	vendorTitle := fmt.Sprintf("تحديث حالة الطلب %s", orderNum)
+	vendorBody := fmt.Sprintf("تم تحديث حالة الطلب إلى: %s %s", statusLabel, reasonStr)
+	for _, sh := range order.Shipments {
+		if sh == nil || sh.OrganizationID <= 0 {
+			continue
+		}
+		if shipmentID > 0 && sh.ID != shipmentID {
+			continue
+		}
+		h.dispatchOrgBranchNotification(ctx, sh.OrganizationID, sh.BranchID, "vendor.order.view", vendorTitle, vendorBody)
+	}
+
+	// 3. Notify Admin Team
+	adminTitle := fmt.Sprintf("تحديث حالة طلب توريد %s", orderNum)
+	buyerName := "صيدلية"
+	if order.OrganizationID != nil {
+		buyerName = h.resolveOrgName(ctx, *order.OrganizationID)
+	}
+	adminBody := fmt.Sprintf("تم تحديث حالة الطلب %s إلى: %s. المشتري: %s، المورد: %s %s", orderNum, statusLabel, buyerName, vendorName, reasonStr)
+	h.dispatchAdminNotification(ctx, "commerce.order.view", adminTitle, adminBody)
 }
 
 // notifyOrderCancelledByBuyer dispatches notification to the supplier when a buyer cancels an order.
@@ -315,81 +360,4 @@ func (h *UIHandler) notifyAdStatus(ctx context.Context, vendorOrgID int64, adTit
 		"reason":   reasonStr,
 	}
 	h.dispatchOrgEvent(ctx, notifications.EventAdStatus, vendorOrgID, vars)
-}
-
-// notifySmartOrderRunFinished alerts the user when a smart-ordering calculation finishes.
-func (h *UIHandler) notifySmartOrderRunFinished(ctx context.Context, userID int64, orgID int64, runID int64) {
-	vars := map[string]string{
-		"run_id": fmt.Sprintf("%d", runID),
-	}
-	var orgPtr *int64
-	if orgID > 0 {
-		orgPtr = &orgID
-	}
-	h.dispatchEvent(ctx, notifications.EventSmartOrderRunFinished, userID, orgPtr, vars)
-}
-
-// notifySmartOrderRunFailed alerts the user when a smart-ordering run fails.
-func (h *UIHandler) notifySmartOrderRunFailed(ctx context.Context, userID int64, orgID int64, runID int64, errMsg string) {
-	vars := map[string]string{
-		"run_id": fmt.Sprintf("%d", runID),
-		"error":  errMsg,
-	}
-	var orgPtr *int64
-	if orgID > 0 {
-		orgPtr = &orgID
-	}
-	h.dispatchEvent(ctx, notifications.EventSmartOrderRunFailed, userID, orgPtr, vars)
-}
-
-// notifyImportRunFinished alerts the user when an import finishes committing.
-func (h *UIHandler) notifyImportRunFinished(ctx context.Context, userID int64, orgID int64, runID int64, rowCount int) {
-	vars := map[string]string{
-		"run_id":     fmt.Sprintf("%d", runID),
-		"rows_count": fmt.Sprintf("%d", rowCount),
-	}
-	var orgPtr *int64
-	if orgID > 0 {
-		orgPtr = &orgID
-	}
-	h.dispatchEvent(ctx, notifications.EventImportRunFinished, userID, orgPtr, vars)
-}
-
-// notifyImportRunFailed alerts the user when an import run fails.
-func (h *UIHandler) notifyImportRunFailed(ctx context.Context, userID int64, orgID int64, runID int64, errMsg string) {
-	vars := map[string]string{
-		"run_id": fmt.Sprintf("%d", runID),
-		"error":  errMsg,
-	}
-	var orgPtr *int64
-	if orgID > 0 {
-		orgPtr = &orgID
-	}
-	h.dispatchEvent(ctx, notifications.EventImportRunFailed, userID, orgPtr, vars)
-}
-
-// notifyQuotaExhausted alerts the buying organization when a branch quota is reached.
-func (h *UIHandler) notifyQuotaExhausted(ctx context.Context, buyingOrgID int64, branchName, vendorName, productName string) {
-	if buyingOrgID <= 0 {
-		return
-	}
-	vars := map[string]string{
-		"branch_name":  branchName,
-		"vendor_name":  vendorName,
-		"product_name": productName,
-	}
-	h.dispatchOrgEvent(ctx, notifications.EventQuotaExhausted, buyingOrgID, vars)
-}
-
-// notifyQuotaReleased alerts the buying organization when a supplier releases quota.
-func (h *UIHandler) notifyQuotaReleased(ctx context.Context, buyingOrgID int64, branchName, vendorName, productName string) {
-	if buyingOrgID <= 0 {
-		return
-	}
-	vars := map[string]string{
-		"branch_name":  branchName,
-		"vendor_name":  vendorName,
-		"product_name": productName,
-	}
-	h.dispatchOrgEvent(ctx, notifications.EventQuotaReleased, buyingOrgID, vars)
 }

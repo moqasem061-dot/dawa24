@@ -53,10 +53,20 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 											<span>{ off.BranchName }</span>
 											<span>•</span>
 										}
-										<span class="text-amber-500 font-bold d-flex items-center gap-0.5">
-											<span>★</span>
-											<span class="tabular-nums">4.9</span>
-										</span>
+										if off.SupplierRating > 0 {
+											<span class="text-amber-500 font-bold d-flex items-center gap-0.5">
+												<span>★</span>
+												<span class="tabular-nums">{ fmt.Sprintf("%.1f", off.SupplierRating) }</span>
+											</span>
+										} else {
+											<span class="badge badge-emerald text-2xs font-medium">
+												if lang == "en" {
+													New
+												} else {
+													جديد
+												}
+											</span>
+										}
 									</div>
 								</td>
 

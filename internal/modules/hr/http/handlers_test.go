@@ -110,6 +110,10 @@ func (r stubRepo) CountApplicationsByOffer(context.Context, int64) (int, error) 
 	r.fail("CountApplicationsByOffer")
 	return 0, nil
 }
+func (r stubRepo) CountApplicationsForOffers(context.Context, []int64) (map[int64]int, error) {
+	r.fail("CountApplicationsForOffers")
+	return nil, nil
+}
 func (r stubRepo) ListApplicationsByUser(context.Context, int64) ([]*hr.JobApplication, error) {
 	r.fail("ListApplicationsByUser")
 	return nil, nil
@@ -200,6 +204,9 @@ func (happyRepo) ListApplicationsByOffer(ctx context.Context, offerID int64, lim
 }
 func (happyRepo) CountApplicationsByOffer(ctx context.Context, offerID int64) (int, error) {
 	return 1, nil
+}
+func (happyRepo) CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error) {
+	return make(map[int64]int), nil
 }
 func (happyRepo) ListApplicationsByUser(ctx context.Context, userID int64) ([]*hr.JobApplication, error) {
 	return []*hr.JobApplication{{ID: 1, ApplicantName: "أحمد", ApplicantEmail: "a@example.com"}}, nil

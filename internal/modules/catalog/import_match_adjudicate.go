@@ -17,6 +17,7 @@ package catalog
 
 import (
 	"context"
+	"time"
 
 	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
 	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
@@ -81,7 +82,9 @@ func (s *Service) adjudicateMatches(
 		if session.CreatedBy != nil {
 			req.UserID = *session.CreatedBy
 		}
-		results, err := s.adjudicator.AdjudicateMatches(ctx, req)
+		batchCtx, batchCancel := context.WithTimeout(ctx, 20*time.Second)
+		results, err := s.adjudicator.AdjudicateMatches(batchCtx, req)
+		batchCancel()
 		if err != nil {
 			// One failed batch is not a failed import: those rows keep the
 			// deterministic outcome, which is "this is a new product" for an

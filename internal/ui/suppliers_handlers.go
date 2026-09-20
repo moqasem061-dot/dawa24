@@ -251,7 +251,7 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 			workingHours, coverageDays, coverageAreas, isOpenNow, statusNote := computeVendorWorkingStatus(branches, coverages)
 			lat, lng, hasCoords := resolveSupplierCoordinates(o.ID, branches, coverages)
 
-			rating := 5.0
+			rating := 0.0
 			if o.Rating > 0 {
 				rating = float64(o.Rating)
 			}

@@ -30,6 +30,7 @@ type Client struct {
 	driver      *riverpgxv5.Driver
 	workers     *river.Workers
 	log         *slog.Logger
+	db          *database.DB
 }
 
 // Config holds queue client configuration.
@@ -68,6 +69,7 @@ func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.L
 		driver:      driver,
 		workers:     workers,
 		log:         log,
+		db:          db,
 	}, nil
 }
 
@@ -85,12 +87,53 @@ func (c *Client) Migrate(ctx context.Context) error {
 	return nil
 }
 
-// Start begins processing jobs from configured queues.
+// Start begins processing jobs from configured queues and activates the stalled job reaper.
 func (c *Client) Start(ctx context.Context) error {
 	if err := c.riverClient.Start(ctx); err != nil {
 		return fmt.Errorf("queue: start: %w", err)
 	}
+	c.StartStalledJobReaper(ctx, 3*time.Minute, 15*time.Minute)
 	return nil
+}
+
+// ReapStalledJobs marks jobs in river_job that have been running longer than maxAge as cancelled.
+func (c *Client) ReapStalledJobs(ctx context.Context, maxAge time.Duration) (int64, error) {
+	if c.db == nil {
+		return 0, nil
+	}
+	if maxAge <= 0 {
+		maxAge = 15 * time.Minute
+	}
+	tag, err := c.db.Pool().Exec(ctx, `
+		UPDATE river_job
+		SET state = 'cancelled',
+		    finalized_at = now()
+		WHERE state = 'running'
+		  AND attempted_at < now() - ($1 || ' seconds')::interval;
+	`, fmt.Sprintf("%d", int(maxAge.Seconds())))
+	if err != nil {
+		return 0, fmt.Errorf("queue: reap stalled jobs: %w", err)
+	}
+	if tag.RowsAffected() > 0 {
+		c.log.WarnContext(ctx, "reaped stalled river jobs", "count", tag.RowsAffected(), "max_age", maxAge)
+	}
+	return tag.RowsAffected(), nil
+}
+
+// StartStalledJobReaper runs a background goroutine that periodically calls ReapStalledJobs.
+func (c *Client) StartStalledJobReaper(ctx context.Context, interval, maxAge time.Duration) {
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				_, _ = c.ReapStalledJobs(ctx, maxAge)
+			}
+		}
+	}()
 }
 
 // Stop gracefully stops job processing, waiting for active jobs to complete up to timeout.

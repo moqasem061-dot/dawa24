@@ -50,16 +50,48 @@ templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOff
 				</div>
 
 				<!-- Vendor Pharmacist Reviews & Trust Score -->
-				<div class="d-flex items-center gap-2 bg-surface p-2 px-3 rounded-xl border">
-					<span class="text-amber-500 text-sm leading-none">★</span>
-					<div class="text-start">
-						<div class="d-flex items-center gap-1">
-							<strong class="text-xs font-black text-primary tabular-nums">4.9</strong>
-							<span class="text-2xs text-muted">/ 5.0</span>
+				if offers[0].SupplierRating > 0 {
+					<div class="d-flex items-center gap-2 bg-surface p-2 px-3 rounded-xl border">
+						<span class="text-amber-500 text-sm leading-none">★</span>
+						<div class="text-start">
+							<div class="d-flex items-center gap-1">
+								<strong class="text-xs font-black text-primary tabular-nums">{ fmt.Sprintf("%.1f", offers[0].SupplierRating) }</strong>
+								<span class="text-2xs text-muted">/ 5.0</span>
+							</div>
+							if offers[0].ReviewCount > 0 {
+								<span class="text-2xs text-muted d-block font-medium">
+									if lang == "en" {
+										{ fmt.Sprintf("(%d reviews)", offers[0].ReviewCount) }
+									} else {
+										{ fmt.Sprintf("(%d تقييم)", offers[0].ReviewCount) }
+									}
+								</span>
+							} else {
+								<span class="text-2xs text-muted d-block font-medium">{ i18n.T(lang, "product.pharmacist_rating_trusted") }</span>
+							}
 						</div>
-						<span class="text-2xs text-muted d-block font-medium">{ i18n.T(lang, "product.pharmacist_rating_trusted") }</span>
 					</div>
-				</div>
+				} else {
+					<div class="d-flex items-center gap-2 bg-surface p-2 px-3 rounded-xl border">
+						<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "product.badge_certified") }</span>
+						<div class="text-start">
+							<span class="text-xs font-bold text-primary">
+								if lang == "en" {
+									Verified Supplier
+								} else {
+									مورد معتمد
+								}
+							</span>
+							<span class="text-2xs text-muted d-block font-medium">
+								if lang == "en" {
+									New Supplier
+								} else {
+									مورد جديد
+								}
+							</span>
+						</div>
+					</div>
+				}
 			</div>
 
 			<!-- 3-Column Structured Layout: Pricing | Stock & Coverage | Quick Order -->

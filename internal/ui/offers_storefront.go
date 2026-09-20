@@ -195,10 +195,16 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 			}
 		}
 
+		var supplierRating float64
+		if orgn != nil && orgn.Rating > 0 {
+			supplierRating = float64(orgn.Rating)
+		}
+
 		off := pages.SupplierOffer{
 			VariantID:        v.ID,
 			SupplierID:       v.OrganizationID,
 			SupplierName:     supplierName,
+			SupplierRating:   supplierRating,
 			IsVerified:       orgn == nil || orgn.Status == org.StatusApproved,
 			Price:            price,
 			OldPrice:         oldPrice,
@@ -308,11 +314,17 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 				promoCovReason = "الصنف غير متوفر حالياً لدى المورد"
 			}
 
+			var promoSupplierRating float64
+			if orgn != nil && orgn.Rating > 0 {
+				promoSupplierRating = float64(orgn.Rating)
+			}
+
 			newOffer := pages.SupplierOffer{
 				VariantID:        varID,
 				OfferID:          row.Offer.ID,
 				SupplierID:       row.Offer.OrganizationID,
 				SupplierName:     sName,
+				SupplierRating:   promoSupplierRating,
 				IsVerified:       orgn == nil || orgn.Status == org.StatusApproved,
 				Price:            price,
 				OldPrice:         bd.ListPrice,

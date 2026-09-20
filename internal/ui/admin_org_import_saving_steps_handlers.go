@@ -131,7 +131,7 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 	var totalValMinor int64
 
 	for _, row := range session.RawDataRows {
-		if len(row) == 0 || IsAllEmptyRow(row) || IsSummaryOrTotalRow(row) {
+		if IsJunkOrEmptyRow(row) {
 			continue
 		}
 
@@ -149,7 +149,7 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 		if name == "" && sku != "" {
 			name = sku
 		}
-		if name == "" {
+		if !IsValidSavingRow(name, sku) {
 			continue
 		}
 

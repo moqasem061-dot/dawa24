@@ -34,17 +34,20 @@ func (h *UIHandler) VendorJobsPage(w http.ResponseWriter, r *http.Request) {
 
 		jobs, total, _ := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
 		totalCount = total
+		var jobIDs []int64
+		for _, j := range jobs {
+			if j != nil {
+				jobIDs = append(jobIDs, j.ID)
+			}
+		}
+		appCounts, _ := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
 		for _, j := range jobs {
 			if j == nil {
 				continue
 			}
-			cnt := 0
-			if appCount, err := h.hrSvc.CountApplications(ctx, j.ID); err == nil {
-				cnt = appCount
-			}
 			jobItems = append(jobItems, &pages.VendorJobItem{
 				Job:               j,
-				ApplicationsCount: cnt,
+				ApplicationsCount: appCounts[j.ID],
 			})
 		}
 	}
@@ -127,17 +130,20 @@ func (h *UIHandler) CustomerJobsPage(w http.ResponseWriter, r *http.Request) {
 
 		jobs, total, _ := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
 		totalCount = total
+		var jobIDs []int64
+		for _, j := range jobs {
+			if j != nil {
+				jobIDs = append(jobIDs, j.ID)
+			}
+		}
+		appCounts, _ := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
 		for _, j := range jobs {
 			if j == nil {
 				continue
 			}
-			cnt := 0
-			if appCount, err := h.hrSvc.CountApplications(ctx, j.ID); err == nil {
-				cnt = appCount
-			}
 			jobItems = append(jobItems, &pages.VendorJobItem{
 				Job:               j,
-				ApplicationsCount: cnt,
+				ApplicationsCount: appCounts[j.ID],
 			})
 		}
 	}

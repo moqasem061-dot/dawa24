@@ -80,6 +80,11 @@ func (s *Service) extractRowFromRecord(record []string, headers []string, file *
 	// Calculate price after discount
 	priceAfterDiscount := CalculatePriceAfterDiscount(price, discount)
 
+	// Check validity before creating and returning row
+	if !IsValidProductRow(name, code, price, discount) {
+		return nil
+	}
+
 	// Normalize name for matching
 	normalizedName := arabic.Normalize(name)
 	normalizedName = strings.ToLower(strings.TrimSpace(normalizedName))

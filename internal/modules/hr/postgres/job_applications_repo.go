@@ -102,6 +102,38 @@ func (r *Repository) CountApplicationsByOffer(ctx context.Context, offerID int64
 	return count, err
 }
 
+// CountApplicationsForOffers returns application counts for a slice of job IDs in a single query.
+func (r *Repository) CountApplicationsForOffers(ctx context.Context, offerIDs []int64) (map[int64]int, error) {
+	counts := make(map[int64]int, len(offerIDs))
+	if len(offerIDs) == 0 {
+		return counts, nil
+	}
+	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		const query = `
+			SELECT job_offer_id, COUNT(*)
+			FROM hr.job_applications
+			WHERE job_offer_id = ANY($1)
+			GROUP BY job_offer_id;
+		`
+		rows, err := tx.Query(txCtx, query, offerIDs)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var offerID int64
+			var cnt int
+			if err := rows.Scan(&offerID, &cnt); err != nil {
+				return err
+			}
+			counts[offerID] = cnt
+		}
+		return rows.Err()
+	})
+	return counts, err
+}
+
 // ListPublishedJobsWithTotal returns published vacancies and total count.
 func (r *Repository) ListPublishedJobsWithTotal(ctx context.Context, limit, offset int) ([]*hr.JobOffer, int, error) {
 	var list []*hr.JobOffer

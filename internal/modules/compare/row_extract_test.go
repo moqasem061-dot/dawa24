@@ -1,6 +1,10 @@
 package compare
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/muhiya/dawa24-store/internal/shared/money"
+)
 
 func TestDiscountClampPreventsOverflow(t *testing.T) {
 	f := &CompareFile{ID: 1}
@@ -27,5 +31,42 @@ func TestDiscountClampPreventsOverflow(t *testing.T) {
 	row = s.extractRowFromRecord([]string{"6221048001234567", "10", "بانادول"}, nil, f, 3)
 	if row.Price.Minor() >= maxPriceMinor {
 		t.Errorf("price minor = %d, want < %d", row.Price.Minor(), maxPriceMinor)
+	}
+}
+
+func TestIsValidProductRow(t *testing.T) {
+	tests := []struct {
+		name     string
+		rawName  string
+		sku      string
+		price    int64
+		discount float64
+		want     bool
+	}{
+		{"empty name", "", "SKU1", 1000, 10, false},
+		{"whitespace name", "   ", "SKU1", 1000, 10, false},
+		{"dashes junk", "---", "", 0, 0, false},
+		{"dots junk", "...", "SKU2", 500, 0, false},
+		{"asterisks junk", "*-*-*", "", 0, 0, false},
+		{"slashes junk", "/ / /", "", 0, 0, false},
+		{"single character letter", "a", "", 100, 0, false},
+		{"single character digit", "1", "", 100, 0, false},
+		{"arabic header keyword", "اسم الصنف", "", 0, 0, false},
+		{"english header keyword", "Product Name", "", 0, 0, false},
+		{"item code keyword", "كود الصنف", "", 0, 0, false},
+		{"page divider note", "صفحة 2 من 10", "", 0, 0, false},
+		{"total summary line", "Total Summary", "", 0, 0, false},
+		{"valid arabic medicine", "بانادول إكسترا", "PAN-01", 3500, 15, true},
+		{"valid english medicine", "Augmentin 1g", "AUG-100", 9500, 10, true},
+		{"valid short medicine", "AD3", "SKU", 1200, 5, true},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := IsValidProductRow(tc.rawName, tc.sku, money.FromMinor(tc.price), tc.discount)
+			if got != tc.want {
+				t.Errorf("IsValidProductRow(%q) = %v; want %v", tc.rawName, got, tc.want)
+			}
+		})
 	}
 }
