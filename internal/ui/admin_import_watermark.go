@@ -11,15 +11,40 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
 	"github.com/muhiya/dawa24-store/internal/modules/ingest"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/media"
 )
 
 type catalogImageTarget struct {
-	SKU     string
-	Barcode string
-	URL     string
+	ProductID int64
+	SKU       string
+	Barcode   string
+	URL       string
+}
+
+// extractCommittedImageTargets extracts products with external image URLs directly from the committed batch.
+func extractCommittedImageTargets(prods []*catalog.Product) []catalogImageTarget {
+	var targets []catalogImageTarget
+	for _, p := range prods {
+		if p == nil || p.ID <= 0 {
+			continue
+		}
+		imgURL := strings.TrimSpace(p.ImageLink)
+		if imgURL == "" {
+			imgURL = strings.TrimSpace(p.Image)
+		}
+		if strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://") {
+			targets = append(targets, catalogImageTarget{
+				ProductID: p.ID,
+				SKU:       strings.TrimSpace(p.SKU),
+				Barcode:   strings.TrimSpace(p.Barcode),
+				URL:       imgURL,
+			})
+		}
+	}
+	return targets
 }
 
 // extractCommittableImageTargets extracts products with external image URLs before staging rows are wiped.
@@ -42,11 +67,18 @@ func (h *UIHandler) extractCommittableImageTargets(ctx context.Context, sessionI
 		}
 		sku := strings.TrimSpace(row.Product.SKU)
 		barcode := strings.TrimSpace(row.Product.Barcode)
-		if (strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://")) && (sku != "" || barcode != "") {
+		var prodID int64
+		if row.Product.ID > 0 {
+			prodID = row.Product.ID
+		} else if row.MatchedProductID != nil {
+			prodID = *row.MatchedProductID
+		}
+		if (strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://")) && (sku != "" || barcode != "" || prodID > 0) {
 			targets = append(targets, catalogImageTarget{
-				SKU:     sku,
-				Barcode: barcode,
-				URL:     imgURL,
+				ProductID: prodID,
+				SKU:       sku,
+				Barcode:   barcode,
+				URL:       imgURL,
 			})
 		}
 	}
@@ -115,7 +147,12 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 
 					sysCtx := database.AsSystem(bgCtx)
 					updated := false
-					if item.SKU != "" {
+					if item.ProductID > 0 {
+						if _, err := h.catSvc.UpdateProductImageByID(sysCtx, item.ProductID, publicPath, item.URL); err == nil {
+							updated = true
+						}
+					}
+					if !updated && item.SKU != "" {
 						if _, err := h.catSvc.UpdateProductImageBySKU(sysCtx, item.SKU, publicPath, item.URL); err == nil {
 							updated = true
 						}

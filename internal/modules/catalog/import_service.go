@@ -138,6 +138,9 @@ func buildStagingRows(
 			row.MatchReason = match.Reason
 		}
 		row.Action = actionFor(mode, row.MatchedProductID != nil)
+		if row.Action == ActionSkip {
+			row.Included = false
+		}
 
 		// A row carrying a blocking finding is never silently committed, whatever
 		// the mode says. The admin sees it in the review table as excluded.
@@ -302,6 +305,8 @@ func (s *Service) CommitImport(ctx context.Context, publicID string) (*ImportSes
 		// transaction, so no stale identity survives to be updated.
 		if session.Mode != ModeClearAndAdd && row.Action == ActionUpdate && row.MatchedProductID != nil {
 			product.ID = *row.MatchedProductID
+		} else {
+			product.ID = 0
 		}
 		prods = append(prods, product)
 	}

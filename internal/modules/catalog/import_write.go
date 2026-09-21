@@ -73,6 +73,8 @@ type BulkWriteResult struct {
 	// Failures lists the rows the database refused. When it is non-empty the
 	// whole transaction was rolled back and nothing was written.
 	Failures []WriteFailure
+	// CommittedProducts holds the products that were successfully inserted or updated with their IDs.
+	CommittedProducts []*Product
 }
 
 // Total is the number of catalogue rows the import touched.

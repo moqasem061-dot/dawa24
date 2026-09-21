@@ -340,7 +340,7 @@ func ParseStagingFilter(values url.Values, pageSize int) catalog.StagingFilter {
 		filter.Action = catalog.ActionInsert
 	case string(catalog.ActionUpdate), "تحديث", "التحديثات":
 		filter.Action = catalog.ActionUpdate
-	case string(catalog.ActionSkip), "تخطي":
+	case string(catalog.ActionSkip), "تخطي", "المتخطاة":
 		filter.Action = catalog.ActionSkip
 	case "issues", "الملاحظات":
 		filter.OnlyIssues = true

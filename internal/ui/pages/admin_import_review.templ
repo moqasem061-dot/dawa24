@@ -272,6 +272,7 @@ templ ImportRowsCard(view ImportReviewView) {
 			@rowFilterChip(view, "", "الكل", view.Counts.Total)
 			@rowFilterChip(view, string(catalog.ActionInsert), "الجديدة", view.Counts.Insert)
 			@rowFilterChip(view, string(catalog.ActionUpdate), "التحديثات", view.Counts.Update)
+			@rowFilterChip(view, string(catalog.ActionSkip), "المتخطاة", view.Counts.Skip)
 			@rowFilterChip(view, "issues", "الملاحظات", view.Counts.Errors + view.Counts.Warnings)
 			@rowFilterChip(view, "ai", "استكمال ذكي", view.Counts.AIChanged)
 			<span class="wiz-toolbar-spacer"></span>
@@ -414,6 +415,12 @@ templ ImportRowLine(view ImportReviewView, row *catalog.StagingRow) {
 		</td>
 		<td>
 			<div class="wiz-row-name">{ row.DisplayName() }</div>
+			if row.Product != nil && row.Product.ImageLink != "" {
+				<div class="wiz-row-meta text-xs text-sky d-flex items-center gap-1 mt-1">
+					<span>📷</span>
+					<span class="truncate" style="max-width: 250px;" title={ row.Product.ImageLink }>رابط صورة: { row.Product.ImageLink }</span>
+				</div>
+			}
 			if row.MatchedProductID != nil {
 				<div class="wiz-row-match">
 					<span class="wiz-row-match-label">المنتج المطابق:</span>

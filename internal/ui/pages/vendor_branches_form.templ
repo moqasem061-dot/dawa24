@@ -200,9 +200,6 @@ templ VendorBranchesForm(data VendorBranchesData, lang string) {
 						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded">
 							<input type="checkbox" name="institutional_works" value={ fmt.Sprintf("%d", work.ID) } x-model="form.institutional_works" class="form-checkbox"/>
 							<span>
-								if work.Icon != "" {
-									{ work.Icon } 
-								}
 								if title := work.Title.Get(i18n.Lang(lang)); title != "" {
 									{ title }
 								} else if title := work.Title.Get(i18n.AR); title != "" {

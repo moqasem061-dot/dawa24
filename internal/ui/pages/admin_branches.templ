@@ -633,7 +633,7 @@ templ AdminBranchForm(data AdminBranchesPageData, lang string) {
 				<div class="bg-surface-sunken p-3 rounded-xl border d-flex flex-col gap-2">
 					<div class="d-flex items-center justify-between">
 						<label class="text-xs font-black text-primary m-0 d-block">
-							الأعمال المؤسسية المغطاة (Institutional Works)
+							الأعمال المؤسسية المغطاة
 						</label>
 						<span class="text-2xs text-muted">اختياري</span>
 					</div>
@@ -650,9 +650,6 @@ templ AdminBranchForm(data AdminBranchesPageData, lang string) {
 										class="form-checkbox"
 									/>
 									<span class="truncate">
-										if work.Icon != "" {
-											{ work.Icon } 
-										}
 										if title := work.Title["ar"]; title != "" {
 											{ title }
 										} else {
@@ -1023,9 +1020,6 @@ templ AdminBranchDetailPage(b *org.Branch, assignedWorks []*org.InstitutionalWor
 						<div class="d-flex flex-wrap gap-2 mb-4">
 							for _, work := range assignedWorks {
 								<span class="badge badge-primary text-xs font-bold p-2">
-									if work.Icon != "" {
-										{ work.Icon } 
-									}
 									if title := work.Title["ar"]; title != "" {
 										{ title }
 									} else {

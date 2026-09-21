@@ -354,7 +354,7 @@ func TestAdminBranches_OrgTypeWarehouseToggleAndParity(t *testing.T) {
 	}
 
 	// 4. Institutional works section must be rendered
-	if !strings.Contains(html, "الأعمال المؤسسية المغطاة (Institutional Works)") {
+	if !strings.Contains(html, "الأعمال المؤسسية المغطاة") {
 		t.Errorf("expected Institutional Works section in form")
 	}
 	if !strings.Contains(html, "التأمين الصحي") || !strings.Contains(html, "المناقصات الحكومية") {

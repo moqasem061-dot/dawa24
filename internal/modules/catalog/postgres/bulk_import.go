@@ -167,20 +167,37 @@ func bulkUpsertInTx(
 	}
 	result.CategoriesCreated = categoriesCreated
 
-	existing, err := resolveExistingProducts(ctx, tx, prods)
-	if err != nil {
-		return result, err
+	var toInsert, toUpdate []int
+	var hasPreassigned bool
+	for _, p := range prods {
+		if p.ID > 0 {
+			hasPreassigned = true
+			break
+		}
 	}
 
-	var toInsert, toUpdate []int
-	for i, p := range prods {
-		if m, ok := existing[i]; ok {
-			p.ID = m.id
-			result.Matches[i] = m.reason
-			toUpdate = append(toUpdate, i)
-			continue
+	if hasPreassigned {
+		for i, p := range prods {
+			if p.ID > 0 {
+				toUpdate = append(toUpdate, i)
+			} else {
+				toInsert = append(toInsert, i)
+			}
 		}
-		toInsert = append(toInsert, i)
+	} else {
+		existing, err := resolveExistingProducts(ctx, tx, prods)
+		if err != nil {
+			return result, err
+		}
+		for i, p := range prods {
+			if m, ok := existing[i]; ok {
+				p.ID = m.id
+				result.Matches[i] = m.reason
+				toUpdate = append(toUpdate, i)
+				continue
+			}
+			toInsert = append(toInsert, i)
+		}
 	}
 
 	inserter := &batchWriter{tx: tx, prods: prods, res: &result, queue: queueInsert, scan: scanInsert}
@@ -188,7 +205,11 @@ func bulkUpsertInTx(
 		return result, err
 	}
 	updater := &batchWriter{tx: tx, prods: prods, res: &result, queue: queueUpdate, scan: scanUpdate}
-	return result, updater.write(ctx, toUpdate)
+	if err := updater.write(ctx, toUpdate); err != nil {
+		return result, err
+	}
+	result.CommittedProducts = prods
+	return result, nil
 }
 
 // applyWriteDefaults fills the values the NOT NULL columns require. The products

@@ -86,6 +86,12 @@ func importToggles(opts catalog.ImportOptions, aiAvailable bool) []ImportToggle 
 			Description: "يدمج الصفوف التي تصف نفس الصنف في صف واحد. الأصناف التي يختلف تركيزها أو شكلها الصيدلي تبقى منفصلة.",
 			Checked:     opts.MergeDuplicateRows,
 		},
+		{
+			Name: "download_images", Icon: "🖼️",
+			Title:       "تنزيل ومعالجة صور المنتجات",
+			Description: "يقوم بتنزيل الصور من الروابط، وتطبيق العلامة المائية وضغطها وحفظها في التخزين السحابي.",
+			Checked:     opts.DownloadImages,
+		},
 	}
 
 	// One line, not four paragraphs. The description used to explain the

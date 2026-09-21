@@ -183,7 +183,7 @@ func loadVendorUIKeysH(e *engine) {
 	addKey(e, "vendor_branches.placeholder_address", "vendor_branches", "مثال: المنطقة الصناعية الثانية، قطعة 42", "e.g. 2nd Industrial Zone, Plot 42", "Placeholder")
 	addKey(e, "vendor_branches.lbl_phone", "vendor_branches", "رقم هاتف الفرع", "Branch Phone #", "Label")
 	addKey(e, "vendor_branches.lbl_capacity_input", "vendor_branches", "المساحة التخزينية (م²)", "Storage Area (sqm)", "Label")
-	addKey(e, "vendor_branches.lbl_institutional_section", "vendor_branches", "الأعمال المؤسسية المغطاة (Institutional Works)", "Institutional Works Covered", "Label")
+	addKey(e, "vendor_branches.lbl_institutional_section", "vendor_branches", "الأعمال المؤسسية المغطاة", "Institutional Works Covered", "Label")
 	addKey(e, "vendor_branches.chk_cold_storage", "vendor_branches", "سلسلة تبريد (2° - 8°)", "Cold Chain (2° - 8°C)", "Checkbox")
 	addKey(e, "vendor_branches.chk_is_main", "vendor_branches", "تعيين كفرع رئيسي", "Set as Main Branch", "Checkbox")
 	addKey(e, "vendor_branches.btn_save_edit", "vendor_branches", "حفظ تحديثات الفرع", "Save Branch Updates", "Button")

@@ -2,6 +2,7 @@ package catalog
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/shared/money"
@@ -159,10 +160,19 @@ func (c rowCursor) parse() (*Product, bool) {
 		return nil, false
 	}
 	c.readStatus(prod)
-	img := c.value(FieldImage)
+	img := strings.TrimSpace(c.value(FieldImage))
 	if img != "" {
-		prod.Image = img
 		prod.ImageLink = img
+		if strings.HasPrefix(img, "http://") || strings.HasPrefix(img, "https://") {
+			// External URL: kept in ImageLink for download and processing.
+			// Image is left empty until the image is downloaded and stored locally.
+			prod.Image = ""
+		} else if strings.HasPrefix(img, "/uploads/") || strings.HasPrefix(img, "/images/") {
+			prod.Image = img
+		} else {
+			c.warn("", img, "رابط الصورة لا يبدأ بـ http:// أو https://")
+			prod.Image = ""
+		}
 	}
 	return prod, true
 }

@@ -33,6 +33,8 @@ type ImportOptions struct {
 	AssignDosageForm bool `json:"assign_dosage_form"`
 	// AssignScientificName fills the generic name.
 	AssignScientificName bool `json:"assign_scientific_name"`
+	// DownloadImages downloads and processes external image links (watermark, compress, store).
+	DownloadImages bool `json:"download_images"`
 	// UseAI lets the Gateway settle what the deterministic rules could not:
 	// which column is which field, what a category or form word means, and —
 	// the one that decides the match rate — which catalogue product an
@@ -104,6 +106,7 @@ func DefaultImportOptions() ImportOptions {
 		AssignDosageForm:     true,
 		AssignCategory:       true,
 		AssignScientificName: true,
+		DownloadImages:       true,
 		UseAI:                false,
 		MinMatchScore:        productmatch.DefaultMinStrong,
 	}

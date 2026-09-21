@@ -151,6 +151,7 @@ func (v ImportMappingView) PricingTaxonomyFields() []ImportFieldRow {
 		catalog.FieldDescriptionAR: true,
 		catalog.FieldDescriptionEN: true,
 		catalog.FieldStatus:        true,
+		catalog.FieldImage:         true,
 	}
 	for _, f := range v.Fields {
 		if pricingSet[f.Field] {
