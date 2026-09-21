@@ -611,5 +611,28 @@
     });
   });
 
+  // Global image error handler: handles broken images safely without inline onerror handlers
+  // (which Content-Security-Policy script-src-attr 'none' blocks).
+  window.addEventListener('error', function (e) {
+    var el = e.target;
+    if (el && el.tagName === 'IMG') {
+      el.style.display = 'none';
+      var parent = el.parentElement;
+      if (parent) {
+        var fallback = (el.nextElementSibling && el.nextElementSibling.classList.contains('product-img-fallback')) ?
+          el.nextElementSibling : parent.querySelector('.product-img-fallback');
+        if (fallback) {
+          fallback.classList.remove('hidden');
+          fallback.style.display = 'inline-flex';
+        }
+        if (parent.tagName === 'A') {
+          parent.removeAttribute('href');
+          parent.classList.remove('cursor-zoom-in');
+          parent.style.cursor = 'default';
+        }
+      }
+    }
+  }, true);
+
   window.dawaActions = { parse: parse };
 })();

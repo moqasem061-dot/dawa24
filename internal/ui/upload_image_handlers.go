@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"mime"
@@ -9,8 +12,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
 	"github.com/muhiya/dawa24-store/internal/platform/media"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 )
@@ -48,17 +53,60 @@ func RegisterUploadRoutes(r chi.Router) {
 		_ = os.MkdirAll(filepath.Join(baseDir, cat), 0755)
 	}
 
+	// /uploads/proxy securely fetches and caches remote images to satisfy CSP 'self'
+	r.Get("/uploads/proxy", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("X-Content-Type-Options", "nosniff")
+		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+		w.Header().Set("Accept-Ranges", "bytes")
+
+		rawURL := r.URL.Query().Get("url")
+		if rawURL == "" {
+			http.NotFound(w, r)
+			return
+		}
+
+		h := sha256.Sum256([]byte(rawURL))
+		hashStr := hex.EncodeToString(h[:16])
+		ext := strings.ToLower(filepath.Ext(rawURL))
+		if idx := strings.Index(ext, "?"); idx != -1 {
+			ext = ext[:idx]
+		}
+		if ext == "" || len(ext) > 5 || (!strings.HasPrefix(ext, ".jp") && ext != ".png" && ext != ".webp" && ext != ".gif") {
+			ext = ".jpg"
+		}
+		cacheFilename := filepath.Join("products", "proxy_"+hashStr+ext)
+		fullPath := filepath.Join(baseDir, cacheFilename)
+
+		size := r.URL.Query().Get("s")
+
+		if st, err := os.Stat(fullPath); err == nil && !st.IsDir() {
+			rendPath := resolveRendition(baseDir, cacheFilename, size)
+			serveStaticUpload(w, r, rendPath)
+			return
+		}
+
+		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		defer cancel()
+		data, detectedExt, err := ingest.DownloadProductImage(ctx, rawURL)
+		if err != nil || len(data) == 0 {
+			http.NotFound(w, r)
+			return
+		}
+		if detectedExt != "" {
+			ext = "." + detectedExt
+			cacheFilename = filepath.Join("products", "proxy_"+hashStr+ext)
+			fullPath = filepath.Join(baseDir, cacheFilename)
+		}
+		_ = os.MkdirAll(filepath.Dir(fullPath), 0755)
+		_ = os.WriteFile(fullPath, data, 0644)
+		_ = deriveAndStore(filepath.Dir(fullPath), filepath.Base(fullPath), data)
+
+		rendPath := resolveRendition(baseDir, cacheFilename, size)
+		serveStaticUpload(w, r, rendPath)
+	})
+
 	r.Get("/uploads/*", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; sandbox")
-		// Immutable, not 24 hours.
-		//
-		// Every filename this application writes is "<category>_<16 random hex
-		// characters><ext>" — see saveUploadedFile. A stored file's content
-		// therefore never changes: replacing an image mints a new name and the
-		// old URL stops being referenced. Telling browsers it might change in a
-		// day made every returning visitor revalidate every product thumbnail
-		// on the page, daily, to be told nothing had changed.
 		w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
 		w.Header().Set("Accept-Ranges", "bytes")
 		rctx := chi.RouteContext(r.Context())
@@ -79,16 +127,6 @@ func RegisterUploadRoutes(r chi.Router) {
 		if len(parts) > 0 && privateUploadCategories[parts[0]] {
 			http.Error(w, "Forbidden: private document", http.StatusForbidden)
 			return
-		}
-
-		ext := strings.ToLower(filepath.Ext(cleanPath))
-		switch ext {
-		case ".mp4":
-			w.Header().Set("Content-Type", "video/mp4")
-		case ".webm":
-			w.Header().Set("Content-Type", "video/webm")
-		case ".mov":
-			w.Header().Set("Content-Type", "video/quicktime")
 		}
 
 		// ?s=thumb|card|full selects a rendition; anything else, or a
@@ -116,15 +154,12 @@ func RegisterUploadRoutes(r chi.Router) {
 			for _, cp := range candidatePaths {
 				fullPath := resolveRendition(dir, cp, size)
 				if st, err := os.Stat(fullPath); err == nil && !st.IsDir() {
-					if fullPath != filepath.Join(dir, cp) {
-						w.Header().Del("Content-Type")
-					}
-					http.ServeFile(w, r, fullPath)
+					serveStaticUpload(w, r, fullPath)
 					return
 				}
 				orig := filepath.Join(dir, cp)
 				if st, err := os.Stat(orig); err == nil && !st.IsDir() {
-					http.ServeFile(w, r, orig)
+					serveStaticUpload(w, r, orig)
 					return
 				}
 			}
@@ -152,7 +187,7 @@ func RegisterUploadRoutes(r chi.Router) {
 						_ = os.MkdirAll(filepath.Dir(targetSavePath), 0755)
 						_ = os.WriteFile(targetSavePath, data, 0644)
 						_ = deriveAndStore(filepath.Dir(targetSavePath), filepath.Base(targetSavePath), data)
-						http.ServeFile(w, r, targetSavePath)
+						serveStaticUpload(w, r, targetSavePath)
 						return
 					}
 				}
@@ -161,6 +196,33 @@ func RegisterUploadRoutes(r chi.Router) {
 
 		http.NotFound(w, r)
 	})
+}
+
+// serveStaticUpload sets exact MIME Content-Type and serves the static upload file without breaking image rendering with sandbox CSP.
+func serveStaticUpload(w http.ResponseWriter, r *http.Request, fullPath string) {
+	ext := strings.ToLower(filepath.Ext(fullPath))
+	switch ext {
+	case ".jpg", ".jpeg":
+		w.Header().Set("Content-Type", "image/jpeg")
+	case ".png":
+		w.Header().Set("Content-Type", "image/png")
+	case ".webp":
+		w.Header().Set("Content-Type", "image/webp")
+	case ".gif":
+		w.Header().Set("Content-Type", "image/gif")
+	case ".svg":
+		w.Header().Set("Content-Type", "image/svg+xml")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	case ".mp4":
+		w.Header().Set("Content-Type", "video/mp4")
+	case ".webm":
+		w.Header().Set("Content-Type", "video/webm")
+	case ".mov":
+		w.Header().Set("Content-Type", "video/quicktime")
+	default:
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
+	}
+	http.ServeFile(w, r, fullPath)
 }
 
 // deriveAndStore writes the scaled renditions of an uploaded image next to the

@@ -162,7 +162,7 @@ func ProductImage(img imageurl.Image) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" onerror=\"this.onerror=null; this.style.display='none'; var f=(this.nextElementSibling && this.nextElementSibling.classList.contains('product-img-fallback')) ? this.nextElementSibling : (this.parentElement ? this.parentElement.querySelector('.product-img-fallback') : null); if(f){f.classList.remove('hidden'); f.style.display='inline-flex';} if(this.parentElement && this.parentElement.tagName==='A'){this.parentElement.removeAttribute('href'); this.parentElement.classList.remove('cursor-zoom-in'); this.parentElement.style.cursor='default';}\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
