@@ -8,6 +8,7 @@ import (
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
 )
 
 // RunSupplierVsSupplierDetailed executes full head-to-head comparison with custom filtering, matching, and metrics.
@@ -41,8 +42,13 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 	targetByCore := make(map[string]*CompareFileRow)
 	targetBySorted := make(map[string]*CompareFileRow)
 	targetByProductID := make(map[int64]*CompareFileRow)
+	targetByBaseKey := make(map[string][]*targetRowEntry)
 
-	for _, tr := range targetRows {
+	// Prepare candidates for fuzzy matching fallback
+	targetByID := make(map[int64]*CompareFileRow, len(targetRows))
+	masters := make([]productmatch.MasterProduct, 0, len(targetRows))
+
+	for i, tr := range targetRows {
 		if tr.MatchedProductID != nil && *tr.MatchedProductID > 0 {
 			targetByProductID[*tr.MatchedProductID] = tr
 		}
@@ -65,6 +71,32 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		if sortedKey != "" {
 			targetBySorted[sortedKey] = tr
 		}
+		baseKey, pCount, hasCount := productmatch.ProductKeyParts(tr.RawName)
+		if baseKey != "" {
+			targetByBaseKey[baseKey] = append(targetByBaseKey[baseKey], &targetRowEntry{
+				row:       tr,
+				packCount: pCount,
+				hasCount:  hasCount,
+			})
+		}
+
+		tID := tr.ID
+		if tID <= 0 {
+			tID = int64(i + 1)
+		}
+		targetByID[tID] = tr
+		masters = append(masters, productmatch.MasterProduct{
+			ID:      tID,
+			NameAR:  tr.RawName,
+			NameEN:  tr.RawName,
+			SKU:     tr.SKU,
+			Barcode: tr.SKU,
+		})
+	}
+
+	var fuzzyIndex *productmatch.Index
+	if len(masters) > 0 {
+		fuzzyIndex = productmatch.NewIndex(masters)
 	}
 
 	var allSharedRows []*HeadToHeadRow
@@ -78,32 +110,102 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 
 	for _, sr := range sourceRows {
 		var tr *CompareFileRow
+		// 1. Matched master catalog ID
 		if sr.MatchedProductID != nil && *sr.MatchedProductID > 0 {
 			tr = targetByProductID[*sr.MatchedProductID]
 		}
+		// 2. Barcode
 		if tr == nil {
 			cleanSKU := strings.ToLower(strings.TrimSpace(sr.SKU))
 			if cleanSKU != "" && isBarcode(cleanSKU) {
 				tr = targetByBarcode[cleanSKU]
 			}
 		}
+		// 3. SKU
 		if tr == nil {
 			cleanSKU := strings.ToLower(strings.TrimSpace(sr.SKU))
 			if cleanSKU != "" {
 				tr = targetBySKU[cleanSKU]
 			}
 		}
+		// 4. Normalized name
 		if tr == nil {
 			norm := normalizeProductText(sr.RawName)
 			tr = targetByName[norm]
 		}
+		// 5. Exact ProductKey
 		if tr == nil {
 			coreKey := getCoreDrugMatchKey(sr.RawName)
 			tr = targetByCore[coreKey]
 		}
+		// 6. Bag of words
 		if tr == nil {
 			sortedKey := getSortedWordsKey(sr.RawName)
 			tr = targetBySorted[sortedKey]
+		}
+		// 7. Base Product Key (Brand + Modifiers + Letters + Dose) with Pack Compatibility
+		if tr == nil {
+			srBaseKey, srCount, srHasCount := productmatch.ProductKeyParts(sr.RawName)
+			if srBaseKey != "" {
+				candidates := targetByBaseKey[srBaseKey]
+				if len(candidates) == 1 {
+					c := candidates[0]
+					if srHasCount && c.hasCount {
+						if math.Abs(srCount-c.packCount) < 0.01 {
+							tr = c.row
+						}
+					} else {
+						if isPriceCompatible(sr.Price, c.row.Price) {
+							tr = c.row
+						}
+					}
+				} else if len(candidates) > 1 {
+					if srHasCount {
+						for _, c := range candidates {
+							if c.hasCount && math.Abs(srCount-c.packCount) < 0.01 {
+								tr = c.row
+								break
+							}
+						}
+					}
+					if tr == nil && sr.Price.IsPositive() {
+						var bestCandidate *CompareFileRow
+						minDiff := int64(math.MaxInt64)
+						for _, c := range candidates {
+							if c.row.Price.IsPositive() {
+								diff := sr.Price.Minor() - c.row.Price.Minor()
+								if diff < 0 {
+									diff = -diff
+								}
+								if diff < minDiff && isPriceCompatible(sr.Price, c.row.Price) {
+									minDiff = diff
+									bestCandidate = c.row
+								}
+							}
+						}
+						if bestCandidate != nil {
+							tr = bestCandidate
+						}
+					}
+				}
+			}
+		}
+		// 8. Smart Fuzzy Fallback via productmatch.Index
+		if tr == nil && fuzzyIndex != nil {
+			mRow := &productmatch.Row{
+				Name: sr.RawName,
+				SKU:  sr.SKU,
+			}
+			opts := productmatch.DefaultMatchOptions()
+			opts.MinStrong = 0.50
+			res := fuzzyIndex.Match(mRow, opts)
+			if res.Matched() && res.Level.Settled() {
+				if candidate := targetByID[res.ProductID]; candidate != nil {
+					if isPriceCompatible(sr.Price, candidate.Price) {
+						tr = candidate
+					}
+				}
+			}
 		}
 
 		if tr != nil {
@@ -215,4 +317,26 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		SourceTotal:        sourceTotal,
 		TargetTotal:        targetTotal,
 	}, nil
+}
+
+type targetRowEntry struct {
+	row       *CompareFileRow
+	packCount float64
+	hasCount  bool
+}
+
+// isPriceCompatible checks whether two public prices are within a plausible ratio (0.35x to 2.85x)
+// to prevent matching different pack sizes (e.g. 20 tablets vs 200 tablets).
+// If either price is zero/unknown, it returns true.
+// Uses integer arithmetic on minor units (piastres) in accordance with Rule 1.
+func isPriceCompatible(p1, p2 money.Amount) bool {
+	if p1.IsZero() || p2.IsZero() {
+		return true
+	}
+	m1 := p1.Minor()
+	m2 := p2.Minor()
+	if m1 <= 0 || m2 <= 0 {
+		return true
+	}
+	return m1*100 >= m2*35 && m1*100 <= m2*285
 }

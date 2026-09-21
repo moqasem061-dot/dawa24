@@ -51,31 +51,23 @@ import (
 // Returns "" for a name with nothing identifying in it, which callers must treat
 // as "do not group this row" rather than as a key of its own — an empty key
 // shared by every unreadable line would merge them all into one.
-func ProductKey(name string) string {
+// ProductKeyParts decomposes a product name into its base identity key
+// (brand, modifiers, letters, doses) and any pack count figure.
+// It excludes pack count (c:) and residual numbers (r:) from the baseKey.
+func ProductKeyParts(name string) (baseKey string, packCount float64, hasCount bool) {
 	if strings.TrimSpace(name) == "" {
-		return ""
+		return "", 0, false
 	}
 
 	var parts []string
 
 	// 1. The brand, folded so that two alphabets and two spellings agree.
-	//
-	// A token long enough to fold safely contributes its skeleton; one too
-	// short contributes itself. minVariantKeyRunes is four consonants because
-	// three collide freely — "دار" and "دور" both reduce to "dr" — and a brand
-	// short enough to be excluded is short enough to be spelled the same way
-	// twice.
 	marks := identityMarks(name)
 	brand := make([]string, 0, 4)
 	for _, tok := range coreTokens(name) {
 		if _, isModifier := variantModifiers[tok]; isModifier {
 			continue // carried below, in canonical form
 		}
-		// An identity letter is carried below too, and must not also appear
-		// here: "بتنوفيت ان" would contribute the raw token "ان" where
-		// "betnovate n" contributes "n", and the two spellings of one product
-		// would key differently on the very letter that identifies it. A letter
-		// is too short to fold, so this is the only place it can be normalised.
 		if key, named := letterNames[tok]; named {
 			if _, isMark := marks[key]; isMark {
 				continue
@@ -88,61 +80,62 @@ func ProductKey(name string) string {
 		brand = append(brand, tok)
 	}
 	if len(brand) == 0 {
-		return ""
+		return "", 0, false
 	}
-	// Sorted, because one supplier writes "ليميتلس اولزايم" and the next writes
-	// "اولزايم ليميتلس" and they are the same box.
 	sort.Strings(brand)
 	parts = append(parts, "n:"+strings.Join(brand, "-"))
 
-	// 2. The line extension. "بانادول" and "بانادول اكسترا" are two products,
-	//    and so are "plus" written in either alphabet.
+	// 2. The line extension.
 	if mods := sortedKeys(modifiersIn(name)); len(mods) > 0 {
 		parts = append(parts, "m:"+strings.Join(mods, "-"))
 	}
 
-	// 3. The identity letter. بتنوفيت ان and بتنوفيت سي are different medicines
-	//    at different prices, and the whole difference is one letter.
+	// 3. The identity letter.
 	if list := sortedKeys(marks); len(list) > 0 {
 		parts = append(parts, "l:"+strings.Join(list, "-"))
 	}
 
-	// 4. Every dose the name states, in a common base unit, sorted.
-	//
-	// Sorted rather than in written order, so "10/20 مجم" and "20/10 مجم" are
-	// one product — and every component present, so "10/20" and "10/40" are not.
-	// This is what the old regex could not do: it read one figure out of a ratio
-	// and discarded the rest.
+	// 4. Every dose the name states.
 	if doses := doseSignature(strengthSet(name)); doses != "" {
 		parts = append(parts, "d:"+doses)
 	}
 
-	// 5. What the pack holds. A strip of 20 and a box of 200 are priced
-	//    separately and are not the same offer.
+	baseKey = strings.Join(parts, "|")
+
+	// 5. Pack count or residual figure
+	qty := readQuantities(name)
+	if len(qty.counts) > 0 {
+		return baseKey, qty.counts[0].value, true
+	}
+	if len(qty.residual) > 0 {
+		return baseKey, qty.residual[0], true
+	}
+
+	return baseKey, 0, false
+}
+
+// BaseProductKey returns the base identity key without pack counts or bare residuals.
+func BaseProductKey(name string) string {
+	baseKey, _, _ := ProductKeyParts(name)
+	return baseKey
+}
+
+func ProductKey(name string) string {
+	baseKey, _, _ := ProductKeyParts(name)
+	if baseKey == "" {
+		return ""
+	}
+
+	var parts []string
+	parts = append(parts, baseKey)
+
+	// 5. What the pack holds.
 	qty := readQuantities(name)
 	if counts := countSignature(qty); counts != "" {
 		parts = append(parts, "c:"+counts)
 	}
 
 	// 6. A bare figure, but ONLY when the name states nothing else numeric.
-	//
-	// "اتاكاند 16" and "اتاكاند 32" are two strengths of a blood-pressure
-	// medicine written without their unit, which every Egyptian price list does
-	// somewhere. With the figure discarded they keyed identically, and the
-	// compare screen showed ONE row carrying offers for two different medicines
-	// with a "best price" that was simply the cheaper drug. That is the worst
-	// thing this tool can do, because it is wrong rather than merely unhelpful.
-	//
-	// The condition is what keeps it safe. A residual is a figure whose noun
-	// this engine could not read — a lot number, half a bonus notation, a wipe
-	// count — and keying on one beside a real dose would split products that
-	// two suppliers merely described with different amounts of detail. So it
-	// speaks only when it is the sole numeric thing in the name, where it is
-	// far more likely to be the strength than to be noise.
-	//
-	// The trade it accepts: "كريم 50" and "كريم 50 جم" key differently. That is
-	// two rows for one product, which a reader can see and reconcile — as
-	// against one row for two products, which a reader cannot.
 	if len(qty.counts) == 0 && len(strengthSet(name)) == 0 && len(qty.residual) > 0 {
 		figures := make([]string, 0, len(qty.residual))
 		for _, v := range qty.residual {

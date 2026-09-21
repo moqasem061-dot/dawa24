@@ -80,6 +80,16 @@ func NewIndex(products []MasterProduct) *Index {
 		makerKeys: make(map[string]bool, 2048),
 	}
 
+	for _, m := range defaultMakers {
+		tok := sheet.NormalizeKey(m)
+		if tok != "" {
+			idx.makers[tok] = true
+			if key := variantKeyOf(tok); key != "" {
+				idx.makerKeys[key] = true
+			}
+		}
+	}
+
 	// One scratch buffer for the whole build, reused per product.
 	scratch := make([]string, 0, 16)
 

@@ -40,13 +40,13 @@ package productmatch
 // minVariantKeyRunes is the shortest consonant skeleton allowed to stand in for
 // a word.
 //
-// Four, not the three the whole-name skeleton uses, and the difference is the
-// whole safety argument. A skeleton discards every vowel, so short words
-// collide freely: "دار" and "دور" both reduce to "dr", and so do "دير" and
-// "درة". Three consonants is a coincidence; four is usually a word. Brand names
-// short enough to be excluded by this are also short enough to be matched
-// exactly, because there is less of them to misspell.
-const minVariantKeyRunes = 4
+// Three consonants aligns with minSkeletonRunes in translit.go. Two consonants
+// collide freely: "دار" and "دور" both reduce to "dr", and so do "دير" and "درة".
+// Three consonants (e.g. mbk for Mobic, krm for Curam, trg for Tareg, dnl for
+// Daonil, mrl for Amaryl, zkr for Zocor, gnf for Januvia, dfn for Diovan, blf
+// for Abilify) are distinct pharmaceutical brand skeletons that enable
+// cross-script matching between Arabic and Latin distributor price lists.
+const minVariantKeyRunes = 3
 
 // variantWeight is what a variant-key agreement is worth, as a fraction of what
 // the same word matching exactly would be worth.

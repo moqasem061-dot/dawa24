@@ -140,3 +140,21 @@ func vocabRate(sample []string, set map[string]struct{}) float64 {
 	}
 	return float64(n) / float64(len(sample))
 }
+
+// defaultMakers are well-known pharmaceutical companies in the Egyptian market.
+// They pre-seed the matching index so that rows containing the company name
+// (e.g. "كونجستال اقراص (سيجما)") recognize the manufacturer even when comparing
+// spreadsheets without a separate manufacturer column.
+var defaultMakers = []string{
+	"سيجما", "sigma", "فاركو", "pharco", "ايبيكو", "eipico", "امون", "amoun",
+	"نوفارتس", "novartis", "سانوفي", "sanofi", "سيديكو", "sedico", "ايفا", "eva",
+	"ماركيرل", "marcyrl", "اوركيديا", "orchidia", "حكمة", "هيكما", "hikma",
+	"راميدا", "rameda", "المهن", "muhp", "العامرية", "amriya", "الاسكندرية", "alexandria",
+	"النيل", "nile", "سيد", "cid", "مصر", "misr", "القاهرة", "cairo",
+	"جلاكسو", "gsk", "glaxo", "فايزر", "pfizer", "ابوت", "abbott", "سيرفييه", "servier",
+	"استرازينيكا", "astrazeneca", "باير", "bayer", "بورينجر", "boehringer", "روش", "roche",
+	"جونسون", "johnson", "ابوتيكس", "apotex", "مينا فارم", "minapharm", "الدلتا", "delta",
+	"جلوبال", "global", "اندلسية", "andalousia", "اكديما", "acdimas", "ماش", "mash",
+	"الفا", "alpha", "نوفو", "novo", "ساندوز", "sandoz",
+}
+

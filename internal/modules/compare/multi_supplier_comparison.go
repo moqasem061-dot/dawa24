@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
 )
 
 // RunMultiSupplierComparison executes multi-supplier analysis across 1 to 10 selected files (Plan V5 Phase 2 §2.5).
@@ -35,6 +36,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 	byNorm := make(map[string]*ProductComparisonRow)
 	byCore := make(map[string]*ProductComparisonRow)
 	bySorted := make(map[string]*ProductComparisonRow)
+	byBaseCore := make(map[string][]*multiCompBaseEntry)
 
 	// keyOfRow remembers what each comparison row IS, so a SKU collision cannot
 	// merge two products. See the guard below.
@@ -101,6 +103,53 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			if compRow == nil && sortedKey != "" {
 				compRow = bySorted[sortedKey]
 			}
+			// 7. Match across vendor files by Base Product Key with Pack Compatibility
+			if compRow == nil {
+				baseKey, pCount, hasCount := productmatch.ProductKeyParts(r.RawName)
+				if baseKey != "" {
+					candidates := byBaseCore[baseKey]
+					if len(candidates) == 1 {
+						c := candidates[0]
+						if hasCount && c.hasCount {
+							if math.Abs(pCount-c.packCount) < 0.01 {
+								compRow = c.compRow
+							}
+						} else {
+							if isPriceCompatible(r.Price, c.compRow.BestPrice) {
+								compRow = c.compRow
+							}
+						}
+					} else if len(candidates) > 1 {
+						if hasCount {
+							for _, c := range candidates {
+								if c.hasCount && math.Abs(pCount-c.packCount) < 0.01 {
+									compRow = c.compRow
+									break
+								}
+							}
+						}
+						if compRow == nil && r.Price.IsPositive() {
+							var bestC *ProductComparisonRow
+							minDiff := int64(math.MaxInt64)
+							for _, c := range candidates {
+								if c.compRow.BestPrice.IsPositive() {
+									diff := r.Price.Minor() - c.compRow.BestPrice.Minor()
+									if diff < 0 {
+										diff = -diff
+									}
+									if diff < minDiff && isPriceCompatible(r.Price, c.compRow.BestPrice) {
+										minDiff = diff
+										bestC = c.compRow
+									}
+								}
+							}
+							if bestC != nil {
+								compRow = bestC
+							}
+						}
+					}
+				}
+			}
 
 			netPrice := r.PriceAfterDiscount
 			if netPrice.IsZero() && r.Price.IsPositive() {
@@ -146,6 +195,14 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 				}
 				if sortedKey != "" {
 					bySorted[sortedKey] = compRow
+				}
+				baseKey, pCount, hasCount := productmatch.ProductKeyParts(r.RawName)
+				if baseKey != "" {
+					byBaseCore[baseKey] = append(byBaseCore[baseKey], &multiCompBaseEntry{
+						compRow:   compRow,
+						packCount: pCount,
+						hasCount:  hasCount,
+					})
 				}
 			} else {
 				if compRow.MatchedProductID == nil && r.MatchedProductID != nil && *r.MatchedProductID > 0 {
@@ -278,4 +335,10 @@ func isBarcode(s string) bool {
 		}
 	}
 	return true
+}
+
+type multiCompBaseEntry struct {
+	compRow   *ProductComparisonRow
+	packCount float64
+	hasCount  bool
 }
