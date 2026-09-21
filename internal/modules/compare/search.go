@@ -2,6 +2,7 @@ package compare
 
 import (
 	"context"
+	"math"
 	"sort"
 	"strings"
 
@@ -156,6 +157,11 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 			netPrice = CalculatePriceAfterDiscount(price, r.Discount)
 		} else if netPrice.IsZero() && price.IsPositive() && r.Discount == 0 {
 			netPrice = price
+		} else if price.IsZero() && netPrice.IsPositive() && r.Discount > 0 && r.Discount < 100 {
+			bps := int64(math.Round((100.0 - r.Discount) * 100.0))
+			if bps > 0 {
+				price = money.FromMinor((netPrice.Minor()*10000 + bps/2) / bps)
+			}
 		}
 
 		offer := SupplierOffer{
@@ -240,6 +246,15 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 	customCount := 0
 
 	for _, it := range items {
+		if it.BestPrice.IsZero() && it.BestNetPrice.IsPositive() && it.BestDiscount > 0 && it.BestDiscount < 100 {
+			bps := int64(math.Round((100.0 - it.BestDiscount) * 100.0))
+			if bps > 0 {
+				it.BestPrice = money.FromMinor((it.BestNetPrice.Minor()*10000 + bps/2) / bps)
+			}
+		} else if it.BestNetPrice.IsZero() && it.BestPrice.IsPositive() && it.BestDiscount > 0 {
+			it.BestNetPrice = CalculatePriceAfterDiscount(it.BestPrice, it.BestDiscount)
+		}
+
 		it.TotalSuppliers = len(it.Offers)
 
 		// Determine 3-way status

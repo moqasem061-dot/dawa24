@@ -25,7 +25,8 @@ func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, qu
 		// unrelated numbering schemes tested for equality.
 		sql := `
 			SELECT i.product_id, COALESCE(i.sku, ''), COALESCE(i.name_ar, ''), COALESCE(i.name_en, ''),
-			       COALESCE(i.scientific_name, ''), COALESCE(i.search_simple, ''), COALESCE(p.barcode, '')
+			       COALESCE(i.scientific_name, ''), COALESCE(i.search_simple, ''), COALESCE(p.barcode, ''),
+			       COALESCE(i.price, p.price, 0.00)
 			FROM catalog.product_index i
 			LEFT JOIN catalog.products p ON p.id = i.product_id
 			WHERE ($1 = '' OR i.sku = $1)
@@ -37,7 +38,8 @@ func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, qu
 			// Fall back to catalog.products
 			fallbackSQL := `
 				SELECT id, COALESCE(sku, ''), COALESCE(name->>'ar', ''), COALESCE(name->>'en', ''),
-				       COALESCE(scientific_name, ''), '', COALESCE(barcode, '')
+				       COALESCE(scientific_name, ''), '', COALESCE(barcode, ''),
+				       COALESCE(price, 0.00)
 				FROM catalog.products
 				WHERE deleted_at IS NULL
 				  AND (($1 = '' OR sku = $1)
@@ -51,7 +53,7 @@ func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, qu
 			defer fbRows.Close()
 			for fbRows.Next() {
 				var c compare.CandidateProduct
-				if err := fbRows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode); err != nil {
+				if err := fbRows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode, &c.Price); err != nil {
 					return err
 				}
 				candidates = append(candidates, &c)
@@ -62,7 +64,7 @@ func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, qu
 
 		for rows.Next() {
 			var c compare.CandidateProduct
-			if err := rows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode); err != nil {
+			if err := rows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode, &c.Price); err != nil {
 				return err
 			}
 			candidates = append(candidates, &c)
@@ -114,10 +116,12 @@ func (r *Repository) SearchFileRows(ctx context.Context, userID int64, orgID *in
 		sql := `
 			SELECT 
 				r.id, r.file_id, f.supplier_name, r.row_number, r.raw_name, r.normalized_name, COALESCE(r.sku, ''),
-				r.price, r.discount, r.price_after_discount, r.matched_product_id, r.match_confidence, r.match_method,
+				COALESCE(NULLIF(r.price, 0), cp.price, 0.00) AS price,
+				r.discount, r.price_after_discount, r.matched_product_id, r.match_confidence, r.match_method,
 				COALESCE(r.meta, '{}'::jsonb), r.created_at
 			FROM compare.file_rows r
 			JOIN compare.files f ON r.file_id = f.id
+			LEFT JOIN catalog.products cp ON cp.id = r.matched_product_id
 			WHERE f.deleted_at IS NULL AND f.status = 'ready'
 			  AND f.is_temp_warehouse = FALSE
 			  AND (

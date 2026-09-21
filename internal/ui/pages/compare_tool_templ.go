@@ -744,11 +744,24 @@ func compareToolContent(view CompareToolView) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<!-- Scripts for compare tool interactions --><script src=\"/static/js/compare_tool.js\" data-hard-nav></script><!-- Root container for dynamically injected mapping modal --><div id=\"mapping-modal-root\"></div><!-- Centered File Rename Modal -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 69, "<!-- Scripts for compare tool interactions --><script src=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Var33 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+		var templ_7745c5c3_Var33 string
+		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Asset("/static/js/compare_tool.js"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_tool.templ`, Line: 381, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "\" data-hard-nav></script><!-- Root container for dynamically injected mapping modal --><div id=\"mapping-modal-root\"></div><!-- Centered File Rename Modal -->")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Var34 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 			if !templ_7745c5c3_IsBuffer {
@@ -760,7 +773,7 @@ func compareToolContent(view CompareToolView) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 70, "<form id=\"rename-file-form\" method=\"POST\" action=\"\"><div class=\"mb-4\"><label for=\"rename-supplier-input\" class=\"form-label text-xs font-bold mb-1.5 d-block\">اسم المورد أو المستودع الجديد:</label> <input type=\"text\" id=\"rename-supplier-input\" name=\"supplier_name\" class=\"form-input w-full text-sm font-bold\" placeholder=\"مثال: المتحدة للصيادلة، فارما أوفرسيز...\" required maxlength=\"120\"></div><div class=\"flex-end gap-2 pt-2 border-t border-border\"><button type=\"button\" data-on-click=\"closeRenameModal()\" class=\"btn btn-secondary btn-sm font-bold\" data-modal-close>إلغاء</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-black\">حفظ التعديل</button></div></form>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 71, "<form id=\"rename-file-form\" method=\"POST\" action=\"\"><div class=\"mb-4\"><label for=\"rename-supplier-input\" class=\"form-label text-xs font-bold mb-1.5 d-block\">اسم المورد أو المستودع الجديد:</label> <input type=\"text\" id=\"rename-supplier-input\" name=\"supplier_name\" class=\"form-input w-full text-sm font-bold\" placeholder=\"مثال: المتحدة للصيادلة، فارما أوفرسيز...\" required maxlength=\"120\"></div><div class=\"flex-end gap-2 pt-2 border-t border-border\"><button type=\"button\" data-on-click=\"closeRenameModal()\" class=\"btn btn-secondary btn-sm font-bold\" data-modal-close>إلغاء</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-black\">حفظ التعديل</button></div></form>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -771,7 +784,7 @@ func compareToolContent(view CompareToolView) templ.Component {
 			Title: "تعديل اسم المورد / الملف",
 			Icon:  "edit",
 			Size:  "sm",
-		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var33), templ_7745c5c3_Buffer)
+		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var34), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

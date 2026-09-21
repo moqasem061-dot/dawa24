@@ -242,61 +242,118 @@ function setSearchMessage(container, cls, text) {
 // renderSearchItem builds one result card. Names, suppliers and prices come
 // from uploaded price lists, so they are set as text.
 function renderSearchItem(item) {
-	const card = compareEl('div', 'comparison-card card p-4 mb-3');
-	const top = compareEl('div', 'd-flex justify-between items-start flex-wrap gap-3');
-	const info = compareEl('div', 'stack-xs');
+	const card = compareEl('div', 'comparison-card card p-3.5 mb-3 border rounded-xl shadow-xs bg-surface');
+
+	// Top row: Name, status badge, SKU
+	const top = compareEl('div', 'd-flex justify-between items-start flex-wrap gap-2 mb-2.5 pb-2 border-b');
+	const info = compareEl('div', 'stack-2xs min-w-0');
 	const titleRow = compareEl('div', 'd-flex items-center gap-2 flex-wrap');
-	titleRow.append(compareEl('strong', 'product-title font-bold text-base', item.product_name || 'صنف دوائي'));
+	titleRow.append(compareEl('strong', 'product-title font-black text-sm text-primary', item.product_name || 'صنف دوائي'));
 
 	if (item.catalog_status === 'catalog_and_suppliers') {
-		titleRow.append(compareEl('span', 'badge badge-emerald', 'معتمد بالكتالوج ومتوفر'));
+		titleRow.append(compareEl('span', 'badge badge-emerald text-2xs font-bold', 'معتمد بالكتالوج ومتوفر'));
 	} else if (item.catalog_status === 'catalog_only') {
-		titleRow.append(compareEl('span', 'badge badge-sky', 'مسجل بالكتالوج (غير متوفر بالكشوف)'));
+		titleRow.append(compareEl('span', 'badge badge-sky text-2xs font-bold', 'مسجل بالكتالوج (غير متوفر بالكشوف)'));
 	} else {
-		titleRow.append(compareEl('span', 'badge badge-amber', 'صنف خاص بكشف المورد'));
+		titleRow.append(compareEl('span', 'badge badge-amber text-2xs font-bold', 'صنف خاص بكشف المورد'));
 	}
 	info.append(titleRow);
 	if (item.sku) {
-		info.append(compareEl('span', 'tabular-nums text-xs text-secondary', 'كود: ' + item.sku));
+		info.append(compareEl('span', 'tabular-nums text-2xs text-secondary font-medium', 'كود: ' + item.sku));
 	}
 	top.append(info);
-
-	const priceCol = compareEl('div', 'text-end');
-	const hasOffers = item.offers && Object.keys(item.offers).length > 0;
-	const hasDiscount = item.best_discount !== undefined && item.best_discount !== null && parseFloat(item.best_discount) > 0;
-	const hasNetPrice = item.best_net_price && parseFloat(item.best_net_price) > 0;
-	const hasPublicPrice = item.best_price && parseFloat(item.best_price) > 0;
-
-	if (hasDiscount || hasNetPrice || hasPublicPrice) {
-		if (hasDiscount) {
-			const discountBadge = compareEl('div', 'badge badge-emerald text-xs font-bold mb-1', 'خصم ' + parseFloat(item.best_discount) + '%');
-			priceCol.append(discountBadge);
-		}
-		if (hasPublicPrice) {
-			priceCol.append(compareEl('div', 'text-xs text-secondary tabular-nums', 'سعر الجمهور: ' + item.best_price + ' ج.م'));
-		}
-		if (hasNetPrice) {
-			priceCol.append(compareEl('div', 'text-xs font-bold text-primary tabular-nums', 'الصافي: ' + item.best_net_price + ' ج.م'));
-		}
-		if (item.best_supplier) {
-			priceCol.append(compareEl('div', 'text-2xs text-muted mt-0.5', 'أفضل عرض: ' + item.best_supplier));
-		}
-		top.append(priceCol);
-	} else {
-		top.append(compareEl('div', 'stack-sm text-xs text-muted', 'لا توجد عروض أسعار مرفوعة'));
-	}
 	card.append(top);
 
-	if (hasOffers) {
-		const offers = compareEl('div', 'offers-list d-flex flex-wrap gap-2 mt-2 pt-2 border-t');
-		for (const [sup, off] of Object.entries(item.offers)) {
-			const badgeClass = sup === item.best_supplier ? 'badge-emerald' : 'badge-secondary';
-			const disc = off.discount !== undefined && off.discount !== null ? parseFloat(off.discount) : 0;
-			const net = off.price_after_discount && parseFloat(off.price_after_discount) > 0 ? off.price_after_discount + ' ج.م' : '--';
-			offers.append(compareEl('span', 'badge ' + badgeClass + ' text-xs',
-				sup + ': خصم ' + disc + '% (صافي ' + net + ')'));
+	const hasOffers = item.offers && Object.keys(item.offers).length > 0;
+	const bestDiscNum = (item.best_discount !== undefined && item.best_discount !== null) ? parseFloat(item.best_discount) : 0;
+	const hasDiscount = bestDiscNum > 0;
+	let pubPriceNum = item.best_price ? parseFloat(item.best_price) : 0;
+	let netPriceNum = item.best_net_price ? parseFloat(item.best_net_price) : 0;
+
+	// Deterministic fallback: derive missing public price if net price and discount exist
+	if (pubPriceNum <= 0 && netPriceNum > 0 && hasDiscount && bestDiscNum < 100) {
+		pubPriceNum = parseFloat((netPriceNum / (1 - bestDiscNum / 100)).toFixed(2));
+	}
+	// Deterministic fallback: derive missing net price if public price and discount exist
+	if (netPriceNum <= 0 && pubPriceNum > 0 && hasDiscount) {
+		netPriceNum = parseFloat((pubPriceNum * (1 - bestDiscNum / 100)).toFixed(2));
+	}
+
+	if (hasDiscount || netPriceNum > 0 || pubPriceNum > 0) {
+		const priceGrid = compareEl('div', 'bg-surface-sunken p-2.5 rounded-xl border d-flex items-center justify-between flex-wrap gap-3 mb-2');
+
+		// 1. سعر الجمهور
+		const pubCol = compareEl('div', 'stack-2xs');
+		pubCol.append(compareEl('span', 'text-2xs text-secondary font-medium', 'سعر الجمهور:'));
+		const pubVal = pubPriceNum > 0 ? (pubPriceNum.toFixed(2) + ' ج.م') : 'غير محدد';
+		pubCol.append(compareEl('span', 'text-xs font-bold tabular-nums text-slate-700 dark:text-slate-300', pubVal));
+		priceGrid.append(pubCol);
+
+		// 2. نسبة الخصم
+		const discCol = compareEl('div', 'stack-2xs');
+		discCol.append(compareEl('span', 'text-2xs text-secondary font-medium', 'نسبة الخصم:'));
+		if (hasDiscount) {
+			discCol.append(compareEl('span', 'badge badge-emerald text-xs font-black px-2 py-0.5', bestDiscNum + '%'));
+		} else {
+			discCol.append(compareEl('span', 'text-xs text-muted font-bold', 'بدون خصم'));
 		}
-		card.append(offers);
+		priceGrid.append(discCol);
+
+		// 3. السعر الصافي
+		const netCol = compareEl('div', 'stack-2xs');
+		netCol.append(compareEl('span', 'text-2xs text-secondary font-medium', 'السعر الصافي (الشراء):'));
+		const netVal = netPriceNum > 0 ? (netPriceNum.toFixed(2) + ' ج.م') : '--';
+		netCol.append(compareEl('span', 'text-xs font-black tabular-nums text-emerald-600 dark:text-emerald-400', netVal));
+		priceGrid.append(netCol);
+
+		// 4. أفضل مورد
+		if (item.best_supplier) {
+			const supCol = compareEl('div', 'stack-2xs min-w-0');
+			supCol.append(compareEl('span', 'text-2xs text-secondary font-medium', 'المورد الأفضل:'));
+			supCol.append(compareEl('span', 'text-xs font-bold text-primary text-truncate d-block max-w-[160px]', item.best_supplier));
+			priceGrid.append(supCol);
+		}
+
+		card.append(priceGrid);
+	} else {
+		card.append(compareEl('div', 'bg-surface-sunken p-2.5 rounded-xl text-center text-2xs text-muted mb-2', 'لا توجد أسعار أو عروض مسجلة لهذا الصنف'));
+	}
+
+	// Detailed offers list (when more than 1 supplier exists)
+	if (hasOffers) {
+		const offerKeys = Object.keys(item.offers);
+		if (offerKeys.length > 1) {
+			const offersHeader = compareEl('div', 'text-2xs font-bold text-secondary mb-1.5', 'جميع عروض الموردين المتاحة (' + offerKeys.length + ' موردين):');
+			card.append(offersHeader);
+
+			const offersList = compareEl('div', 'd-flex flex-col gap-1.5');
+			for (const [sup, off] of Object.entries(item.offers)) {
+				const isBest = (sup === item.best_supplier);
+				const rowCls = isBest
+					? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-950 dark:text-emerald-100'
+					: 'bg-surface-sunken border text-secondary';
+				const offerRow = compareEl('div', 'p-2 rounded-lg border flex-between items-center text-xs ' + rowCls);
+
+				const supNameWrap = compareEl('div', 'd-flex items-center gap-1.5 min-w-0');
+				if (isBest) {
+					supNameWrap.append(compareEl('span', 'badge badge-emerald text-2xs font-black px-1.5 py-0.2', 'الأفضل'));
+				}
+				supNameWrap.append(compareEl('span', 'font-bold text-truncate', sup));
+				offerRow.append(supNameWrap);
+
+				const offerDetails = compareEl('div', 'd-flex items-center gap-2.5 tabular-nums text-xs flex-shrink-0');
+				const discVal = (off.discount !== undefined && off.discount !== null) ? parseFloat(off.discount) : 0;
+				offerDetails.append(compareEl('span', 'badge badge-slate text-2xs font-bold', 'خصم ' + discVal + '%'));
+				const netVal = (off.price_after_discount && parseFloat(off.price_after_discount) > 0)
+					? (parseFloat(off.price_after_discount).toFixed(2) + ' ج.م')
+					: '--';
+				offerDetails.append(compareEl('span', 'font-bold text-primary', 'صافي: ' + netVal));
+
+				offerRow.append(offerDetails);
+				offersList.append(offerRow);
+			}
+			card.append(offersList);
+		}
 	}
 	return card;
 }
