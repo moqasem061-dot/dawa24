@@ -30,22 +30,36 @@
     if (!opts || !opts.url) return;
     const url = opts.url;
     if (!isSafeUrl(url)) return;
-    if (opts.downloadUrl && !isSafeUrl(opts.downloadUrl)) {
-      opts.downloadUrl = '';
-    }
     const els = getModalElements();
     if (!els.modal) return;
 
+    // 1. Open modal immediately - zero delay
+    if (typeof els.modal.showModal === 'function') {
+      try {
+        els.modal.showModal();
+      } catch (e) {
+        els.modal.setAttribute('open', '');
+      }
+    } else {
+      els.modal.setAttribute('open', '');
+    }
+
+    if (opts.downloadUrl && !isSafeUrl(opts.downloadUrl)) {
+      opts.downloadUrl = '';
+    }
+
     const clean = url.split('?')[0].split('#')[0];
+    const urlExt = (clean.split('.').pop() || '').toLowerCase();
     const defaultDigitalFile = typeof window.dawaT === 'function' ? window.dawaT('preview.digital_file', 'ملف رقمي') : 'ملف رقمي';
-    const filename = opts.filename || (opts.title && opts.title.includes('.') ? opts.title : clean.split('/').pop()) || defaultDigitalFile;
-    const ext = (filename.split('.').pop() || clean.split('.').pop() || '').toLowerCase();
+    const filename = opts.filename || (opts.title && opts.title.includes('.') && opts.title.length < 50 ? opts.title : clean.split('/').pop()) || defaultDigitalFile;
+    const ext = (filename.split('.').pop() || urlExt || '').toLowerCase();
     
     const mime = (opts.mime || '').toLowerCase();
-    const isImageExt = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif', 'bmp', 'ico'].includes(ext);
+    const imageExtensions = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif', 'bmp', 'ico'];
+    const isImageExt = imageExtensions.includes(urlExt) || imageExtensions.includes(ext);
     const isMimeImage = mime.startsWith('image/');
     const isExplicitImage = opts.isImage === true || opts.isImage === 'true' || isMimeImage || isImageExt;
-    const isPdf = ext === 'pdf' || mime === 'application/pdf';
+    const isPdf = ext === 'pdf' || urlExt === 'pdf' || mime === 'application/pdf';
 
     if (els.titleEl) {
       const defaultImgTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.image', 'معاينة الصورة') : 'معاينة الصورة';
@@ -61,6 +75,7 @@
     }
     if (els.newtabBtn) {
       els.newtabBtn.href = url;
+      els.newtabBtn.setAttribute('target', '_blank');
     }
     if (els.errBox) {
       els.errBox.classList.add('hidden');
@@ -74,11 +89,14 @@
       if (els.img && els.imgContainer) {
         els.img.onload = function () {
           if (els.errBox) els.errBox.classList.add('hidden');
-          els.imgContainer.classList.remove('hidden');
         };
         els.img.onerror = function () {
-          els.imgContainer.classList.add('hidden');
-          showAsIframe(imgUrl);
+          if (!isExplicitImage && els.iframe) {
+            els.imgContainer.classList.add('hidden');
+            showAsIframe(imgUrl);
+          } else if (els.errBox) {
+            els.errBox.classList.remove('hidden');
+          }
         };
         els.img.src = imgUrl;
         els.imgContainer.classList.remove('hidden');
@@ -103,41 +121,8 @@
     } else if (isPdf) {
       showAsIframe(url);
     } else {
-      // Ambiguous URL (e.g. /documents/{id}/view): probe if it's an image first
-      const probe = new Image();
-      let finished = false;
-      probe.onload = function () {
-        if (finished) return;
-        finished = true;
-        if (els.titleEl && !opts.title) {
-          const defaultImgTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.image', 'معاينة الصورة') : 'معاينة الصورة';
-          els.titleEl.textContent = defaultImgTitle;
-        }
-        showAsImage(url);
-      };
-      probe.onerror = function () {
-        if (finished) return;
-        finished = true;
-        showAsIframe(url);
-      };
-      probe.src = url;
-      // If probe takes longer than 1.5s, fall back to iframe
-      setTimeout(function () {
-        if (!finished) {
-          finished = true;
-          showAsIframe(url);
-        }
-      }, 1500);
-    }
-
-    if (typeof els.modal.showModal === 'function') {
-      try {
-        els.modal.showModal();
-      } catch (e) {
-        els.modal.setAttribute('open', '');
-      }
-    } else {
-      els.modal.setAttribute('open', '');
+      // Default to image first
+      showAsImage(url);
     }
   };
 
@@ -190,11 +175,15 @@
       if (url && url !== '#' && !url.startsWith('javascript:')) {
         e.preventDefault();
         e.stopPropagation();
+        const isImg = explicit.getAttribute('data-is-image') === 'true' || 
+                      explicit.hasAttribute('data-preview-file') ||
+                      explicit.querySelector('img') !== null;
         window.openFilePreview({
           url: url,
           title: explicit.getAttribute('data-title') || explicit.getAttribute('title') || explicit.textContent.trim(),
           filename: explicit.getAttribute('data-filename') || explicit.getAttribute('data-orig-name') || '',
-          downloadUrl: explicit.getAttribute('data-download-url') || (url.includes('/view') ? url.replace(/\/view$/, '/download') : url)
+          downloadUrl: explicit.getAttribute('data-download-url') || (url.includes('/view') ? url.replace(/\/view$/, '/download') : url),
+          isImage: isImg
         });
         return;
       }

@@ -39,36 +39,39 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 			
 			<!-- Header Card -->
 			<div class="glass-panel p-6 mb-6">
-				<div class="flex-between items-start flex-wrap gap-6">
-					<div class="d-flex items-start gap-5 flex-wrap sm:flex-nowrap">
-						<div class="w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-3xl overflow-hidden bg-white border-2 border-slate-200/90 shadow-md flex-center shrink-0 p-4 relative group transition-all">
-							if resolveProductImage(p) != "" {
-								<a
-									href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(p))) }
-									data-preview-file={ imageurl.Normalize(resolveProductImage(p)) }
-									data-title={ p.Name.Get("ar") }
-									target="_blank"
-									class="w-full h-full flex-center cursor-zoom-in relative group/img"
-									title="عرض الصورة بالحجم الكامل"
-								>
-									@components.ProductImage(imageurl.Full(resolveProductImage(p), p.Name.Get("ar"), "w-full h-full object-contain transition-transform duration-300 group-hover/img:scale-105"))
-									<div class="product-img-fallback hidden w-full h-full flex-col items-center justify-center text-muted gap-2 pointer-events-none">
-										<span class="text-4xl">@components.IconPill("icon-lg text-slate-300")</span>
-										<span class="text-2xs font-bold text-slate-400">لا توجد صورة</span>
-									</div>
-									<span class="absolute bottom-2 end-2 badge badge-slate text-2xs font-bold gap-1 shadow-xs opacity-80 group-hover/img:opacity-100 transition-opacity pointer-events-none">
-										@components.IconSearch("icon-2xs")
-										<span>تكبير</span>
-									</span>
-								</a>
-							} else {
-								<div class="d-flex flex-col items-center justify-center text-muted gap-2">
+				<div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
+					<!-- Col 1: Product Image Full-Height Showcase -->
+					<div class="md:col-span-4 lg:col-span-3 flex flex-col justify-center items-center rounded-3xl overflow-hidden bg-white border-2 border-slate-200/90 shadow-md p-6 relative group transition-all min-h-[340px] md:min-h-[380px]">
+						if resolveProductImage(p) != "" {
+							<a
+								href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(p))) }
+								data-preview-file={ imageurl.Normalize(resolveProductImage(p)) }
+								data-is-image="true"
+								data-title={ p.Name.Get("ar") }
+								target="_blank"
+								class="w-full h-full flex flex-col items-center justify-center cursor-zoom-in relative group/img"
+								title="عرض الصورة بالحجم الكامل"
+							>
+								@components.ProductImage(imageurl.Full(resolveProductImage(p), p.Name.Get("ar"), "w-full h-full max-h-[320px] object-contain transition-transform duration-300 group-hover/img:scale-105"))
+								<div class="product-img-fallback hidden w-full h-full flex-col items-center justify-center text-muted gap-2 pointer-events-none">
 									<span class="text-4xl">@components.IconPill("icon-lg text-slate-300")</span>
 									<span class="text-2xs font-bold text-slate-400">لا توجد صورة</span>
 								</div>
-							}
-						</div>
+								<span class="absolute bottom-2 end-2 badge badge-slate text-2xs font-bold gap-1 shadow-xs opacity-80 group-hover/img:opacity-100 transition-opacity pointer-events-none">
+									@components.IconSearch("icon-2xs")
+									<span>تكبير</span>
+								</span>
+							</a>
+						} else {
+							<div class="d-flex flex-col items-center justify-center text-muted gap-2 my-auto">
+								<span class="text-5xl">@components.IconPill("icon-xl text-slate-300")</span>
+								<span class="text-xs font-bold text-slate-400">لا توجد صورة</span>
+							</div>
+						}
+					</div>
 
+					<!-- Col 2: Product Info & Actions -->
+					<div class="md:col-span-8 lg:col-span-9 flex flex-col justify-between gap-4">
 						<div class="stack-sm">
 							<div class="d-flex items-center gap-2 mb-1">
 								if p.Status == catalog.StatusActive {
@@ -82,39 +85,39 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 								<span class="text-xs text-muted tabular-nums font-mono">ID: #{ fmt.Sprintf("%d", p.ID) }</span>
 							</div>
 
-							<h1 class="text-2xl font-black text-primary m-0 mb-1">
+							<h1 class="text-2xl lg:text-3xl font-black text-primary m-0 mb-1 leading-tight">
 								{ p.Name.Get("ar") }
 							</h1>
 
 							if p.Name.Get("en") != "" {
-								<div class="text-sm text-secondary font-medium mb-2" dir="ltr">
+								<div class="text-sm text-secondary font-medium mb-2 font-mono" dir="ltr">
 									{ p.Name.Get("en") }
 								</div>
 							}
 
-							<div class="d-flex items-center gap-4 flex-wrap text-xs text-muted">
+							<div class="d-flex items-center gap-4 flex-wrap text-xs text-muted mt-2">
 								if p.SKU != "" {
-									<span>SKU: <strong class="text-primary tabular-nums font-mono">{ p.SKU }</strong></span>
+									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">SKU: <strong class="text-primary tabular-nums font-mono">{ p.SKU }</strong></span>
 								}
 								if p.Barcode != "" {
-									<span>باركود: <strong class="text-primary tabular-nums font-mono">{ p.Barcode }</strong></span>
+									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">باركود: <strong class="text-primary tabular-nums font-mono">{ p.Barcode }</strong></span>
 								}
 								if p.ManufacturingCompanies != "" {
-									<span>الشركة: <strong class="text-primary">{ p.ManufacturingCompanies }</strong></span>
+									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">الشركة: <strong class="text-primary">{ p.ManufacturingCompanies }</strong></span>
 								}
 							</div>
 						</div>
-					</div>
 
-					<div class="d-flex items-center gap-2">
-						<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs">
-							@components.IconArrowRight("icon-xs")
-							<span>العودة لقائمة المنتجات</span>
-						</a>
-						<a href={ templ.SafeURL(fmt.Sprintf("/catalog?q=%s", url.QueryEscape(p.Name.Get("ar")))) } target="_blank" class="btn btn-primary btn-sm font-bold text-xs">
-							@components.IconExternalLink("icon-xs")
-							<span>عرض في الكتالوج العام</span>
-						</a>
+						<div class="d-flex items-center gap-2 pt-3 border-t">
+							<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs">
+								@components.IconArrowRight("icon-xs")
+								<span>العودة لقائمة المنتجات</span>
+							</a>
+							<a href={ templ.SafeURL(fmt.Sprintf("/catalog?q=%s", url.QueryEscape(p.Name.Get("ar")))) } target="_blank" class="btn btn-primary btn-sm font-bold text-xs">
+								@components.IconExternalLink("icon-xs")
+								<span>عرض في الكتالوج العام</span>
+							</a>
+						</div>
 					</div>
 				</div>
 			</div>

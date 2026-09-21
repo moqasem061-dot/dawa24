@@ -32,7 +32,6 @@ templ UniversalFilePreviewModal(langOpt ...string) {
 						rel="noopener noreferrer"
 						class="btn btn-secondary btn-xs font-bold gap-1"
 						title={ i18n.T(lang, "preview.modal.newtab_tooltip") }
-						onclick="if(this.href && this.href !== '#') { window.open(this.href, '_blank'); return false; }"
 					>
 						@IconExternalLink("icon-xs")
 						<span>{ i18n.T(lang, "preview.modal.newtab") }</span>

@@ -1,24 +1,16 @@
 package ui
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
-	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"os"
-	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui/pages"
 )
 
@@ -140,7 +132,7 @@ func (s *AdminImageImportSessionStore) cleanupExpired() {
 	}
 }
 
-// ProcessImageImport runs the background image download and linking pipeline.
+// ProcessImageImport runs the background image download and linking pipeline concurrently.
 func (s *AdminImageImportSessionStore) ProcessImageImport(
 	ctx context.Context,
 	sessionID string,
@@ -149,191 +141,5 @@ func (s *AdminImageImportSessionStore) ProcessImageImport(
 	catSvc *catalog.Service,
 	storageClient *storage.Client,
 ) {
-	s.mu.Lock()
-	sess, ok := s.sessions[sessionID]
-	if !ok {
-		s.mu.Unlock()
-		return
-	}
-	sess.Phase = AdminImagePhaseProcessing
-	sess.Progress = 0
-	sess.ProgressNote = i18n.T("ar", "ops.image.start_download")
-	rawRows := sess.RawDataRows
-	idType := sess.IdentifierType
-	if idType == "" {
-		idType = "sku"
-	}
-	s.mu.Unlock()
-
-	prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
-	_ = os.MkdirAll(prodUploadDir, 0755)
-
-	total := len(rawRows)
-	var successCount, notFoundCount, errorCount int
-	outRows := make([]*AdminImageImportRow, 0, total)
-
-	for i, raw := range rawRows {
-		rowIdx := i + 1
-		var skuVal, urlVal string
-		if skuCol >= 0 && skuCol < len(raw) {
-			skuVal = strings.TrimSpace(raw[skuCol])
-		}
-		if urlCol >= 0 && urlCol < len(raw) {
-			urlVal = strings.TrimSpace(raw[urlCol])
-		}
-
-		itemRow := &AdminImageImportRow{
-			Index:    rowIdx,
-			SKU:      skuVal,
-			ImageURL: urlVal,
-			Status:   "pending",
-		}
-
-		if skuVal == "" {
-			itemRow.Status = "invalid_url"
-			if idType == "barcode" {
-				itemRow.ErrorMsg = "لم يتم تحديد باركود الصنف في هذا الصف"
-			} else {
-				itemRow.ErrorMsg = i18n.T("ar", "ops.image.sku_empty")
-			}
-			errorCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		if urlVal == "" || (!strings.HasPrefix(urlVal, "http://") && !strings.HasPrefix(urlVal, "https://")) {
-			itemRow.Status = "invalid_url"
-			itemRow.ErrorMsg = i18n.T("ar", "ops.image.url_invalid")
-			errorCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		// Look up product in master catalog by selected identifier type with smart dual fallback
-		var prod *catalog.Product
-		var err error
-		if idType == "barcode" {
-			prod, err = catSvc.GetProductByBarcode(ctx, skuVal)
-			if err != nil || prod == nil {
-				// Fallback to checking by SKU if barcode search returns nothing
-				if fallbackProd, fallbackErr := catSvc.GetProductBySKU(ctx, skuVal); fallbackErr == nil && fallbackProd != nil {
-					prod = fallbackProd
-					err = nil
-				}
-			}
-		} else {
-			prod, err = catSvc.GetProductBySKU(ctx, skuVal)
-			if err != nil || prod == nil {
-				// Fallback to checking by Barcode if SKU search returns nothing
-				if fallbackProd, fallbackErr := catSvc.GetProductByBarcode(ctx, skuVal); fallbackErr == nil && fallbackProd != nil {
-					prod = fallbackProd
-					err = nil
-				}
-			}
-		}
-		if err != nil || prod == nil {
-			itemRow.Status = "not_found"
-			if idType == "barcode" {
-				itemRow.ErrorMsg = fmt.Sprintf("الصنف ذو الباركود «%s» غير مسجل في الكتالوج المعتمد", skuVal)
-			} else {
-				itemRow.ErrorMsg = fmt.Sprintf(i18n.T("ar", "ops.image.prod_not_found"), skuVal)
-			}
-			notFoundCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		itemRow.ProductID = &prod.ID
-		prodName := prod.Name.Get("ar")
-		if prodName == "" {
-			prodName = prod.Name.Get("en")
-		}
-		itemRow.ProductName = prodName
-
-		// Download image safely
-		imgData, ext, dlErr := ingest.DownloadProductImage(ctx, urlVal)
-		if dlErr != nil {
-			itemRow.Status = "download_failed"
-			itemRow.ErrorMsg = fmt.Sprintf(i18n.TDefault("w4_ui.v_9"), dlErr)
-			errorCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		// Apply subtle Dawa24 watermark to the image
-		if watermarked, wmErr := ingest.ApplyWatermark(imgData, ext); wmErr == nil && len(watermarked) > 0 {
-			imgData = watermarked
-		}
-
-		// Compress and optimize image for storage
-		if compBytes, compExt, _, wasCompressed := media.Compress(imgData, media.DefaultMaxEdge); wasCompressed {
-			imgData = compBytes
-			ext = strings.TrimPrefix(compExt, ".")
-		}
-
-		// Save locally to data/uploads/products/<uuid>.<ext>
-		fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
-		localPath := filepath.Join(prodUploadDir, fileName)
-		if err := os.WriteFile(localPath, imgData, 0644); err != nil {
-			itemRow.Status = "download_failed"
-			itemRow.ErrorMsg = i18n.TDefault("w4_ui.s_7_7")
-			errorCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		_ = deriveAndStore(prodUploadDir, fileName, imgData)
-
-		publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
-
-		// Also upload to S3 if storage client is configured
-		if storageClient != nil {
-			s3Key := fmt.Sprintf("products/%s", fileName)
-			_ = storageClient.Put(ctx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
-		}
-
-		// Update product in catalog database
-		updatedProd, updateErr := catSvc.UpdateProductImageByID(ctx, prod.ID, publicPath, urlVal)
-		if updateErr != nil {
-			itemRow.Status = "download_failed"
-			itemRow.ErrorMsg = fmt.Sprintf(i18n.TDefault("w4_ui.v_10"), updateErr)
-			errorCount++
-			outRows = append(outRows, itemRow)
-			continue
-		}
-
-		itemRow.Status = "success"
-		itemRow.SavedImagePath = publicPath
-		if updatedProd != nil {
-			itemRow.ProductID = &updatedProd.ID
-		}
-		successCount++
-		outRows = append(outRows, itemRow)
-
-		// Progress update
-		if (i+1)%5 == 0 || (i+1) == total {
-			s.mu.Lock()
-			if curSess, ok := s.sessions[sessionID]; ok {
-				curSess.Progress = int(float64(i+1) / float64(total) * 100)
-				curSess.ProgressNote = fmt.Sprintf(i18n.TDefault("w4_ui.d_d_11"), i+1, total)
-				curSess.SuccessRows = successCount
-				curSess.NotFoundRows = notFoundCount
-				curSess.ErrorRows = errorCount
-				curSess.Rows = outRows
-			}
-			s.mu.Unlock()
-		}
-	}
-
-	s.mu.Lock()
-	if curSess, ok := s.sessions[sessionID]; ok {
-		curSess.Phase = AdminImagePhaseCompleted
-		curSess.Progress = 100
-		curSess.ProgressNote = i18n.TDefault("w4_ui.w4str_12_12")
-		curSess.SuccessRows = successCount
-		curSess.NotFoundRows = notFoundCount
-		curSess.ErrorRows = errorCount
-		curSess.Rows = outRows
-	}
-	s.mu.Unlock()
+	runConcurrentImageImport(ctx, s, sessionID, skuCol, urlCol, catSvc, storageClient)
 }

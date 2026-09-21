@@ -1,20 +1,15 @@
 package ui
 
 import (
-	"bytes"
 	"context"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
 )
 
 type catalogImageTarget struct {
@@ -101,7 +96,10 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
 		_ = os.MkdirAll(prodUploadDir, 0755)
 
-		concurrency := 5
+		concurrency := 12
+		if len(targets) < concurrency {
+			concurrency = len(targets)
+		}
 		jobs := make(chan catalogImageTarget, len(targets))
 		for _, t := range targets {
 			jobs <- t
@@ -120,34 +118,10 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 					default:
 					}
 
-					imgData, ext, dlErr := ingest.DownloadProductImage(bgCtx, item.URL)
-					if dlErr != nil || len(imgData) == 0 {
+					publicPath, dlErr := globalImageDownloadCache.FetchOrDownload(bgCtx, item.URL, prodUploadDir, h.storage)
+					if dlErr != nil || publicPath == "" {
 						h.log.WarnContext(bgCtx, "download imported image failed", "url", item.URL, "product_id", item.ProductID, "error", dlErr)
 						continue
-					}
-
-					if watermarked, wmErr := ingest.ApplyWatermark(imgData, ext); wmErr == nil && len(watermarked) > 0 {
-						imgData = watermarked
-					}
-
-					if compBytes, compExt, _, wasCompressed := media.Compress(imgData, media.DefaultMaxEdge); wasCompressed {
-						imgData = compBytes
-						ext = strings.TrimPrefix(compExt, ".")
-					}
-
-					fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
-					localPath := filepath.Join(prodUploadDir, fileName)
-					if err := os.WriteFile(localPath, imgData, 0644); err != nil {
-						h.log.WarnContext(bgCtx, "save imported image failed", "path", localPath, "error", err)
-						continue
-					}
-
-					_ = deriveAndStore(prodUploadDir, fileName, imgData)
-
-					publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
-					if h.storage != nil {
-						s3Key := fmt.Sprintf("products/%s", fileName)
-						_ = h.storage.Put(bgCtx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
 					}
 
 					sysCtx := database.AsSystem(bgCtx)

@@ -5669,9 +5669,9 @@ border: 1px solid rgba(255, 255, 255, 0.18);
 
 .catalog-product-detail-layout {
   display: grid;
-  grid-template-columns: 320px 1fr;
+  grid-template-columns: 380px 1fr;
   gap: 2rem;
-  align-items: start;
+  align-items: stretch;
 }
 
 @media (max-width: 1024px) {

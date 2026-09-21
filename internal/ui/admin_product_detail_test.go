@@ -65,9 +65,9 @@ func TestAdminProductDetailPage_EnlargedImageAndNoOldPrice(t *testing.T) {
 		t.Errorf("expected 'السعر القديم' to be removed from product detail page, but found it in HTML")
 	}
 
-	// 2. Product image container MUST be enlarged (w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72)
-	if !strings.Contains(html, "w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72") {
-		t.Errorf("expected product image container to have enlarged dimensions (w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72)")
+	// 2. Product image container MUST be a prominent full-height showcase (min-h-[340px] md:min-h-[380px])
+	if !strings.Contains(html, "min-h-[340px] md:min-h-[380px]") {
+		t.Errorf("expected product image container to have full-height showcase dimensions (min-h-[340px] md:min-h-[380px])")
 	}
 
 	// 3. Official Public Price MUST be rendered
