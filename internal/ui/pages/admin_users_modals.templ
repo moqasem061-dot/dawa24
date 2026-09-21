@@ -113,6 +113,7 @@ templ adminUserEditModal(data AdminUsersPageData) {
 
 			<form method="POST" :action="'/admin/users/' + editUser.id + '/edit'" class="d-grid gap-3">
 				<input type="hidden" name="redirect" value="/admin/users" />
+				<input type="hidden" name="user_id" :value="editUser.id" />
 
 				<div class="d-grid grid-2-col gap-3">
 					<div class="stack-sm">
@@ -200,6 +201,49 @@ templ adminUserEditModal(data AdminUsersPageData) {
 					</div>
 				</div>
 
+				<div class="p-3 bg-surface-sunken rounded-xl border mt-2" x-data="{ showPass: false }">
+					<div class="flex-between items-center mb-2">
+						<div class="text-xs font-black text-primary">تغيير كلمة المرور (اختياري)</div>
+						<button
+							type="button"
+							class="btn btn-secondary btn-xs text-2xs py-0.5 px-2 font-bold"
+							@click="showPass = !showPass"
+							x-text="showPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
+						>
+							إظهار كلمة المرور
+						</button>
+					</div>
+					<div class="d-grid grid-2-col gap-3">
+						<div class="stack-sm">
+							<label class="form-label" for="list-edit-pass">كلمة المرور الجديدة</label>
+							<input
+								id="list-edit-pass"
+								class="form-input font-mono text-xs"
+								:type="showPass ? 'text' : 'password'"
+								name="password"
+								minlength="8"
+								autocomplete="new-password"
+								placeholder="اتركه فارغاً إذا لم ترغب في التغيير"
+							/>
+						</div>
+						<div class="stack-sm">
+							<label class="form-label" for="list-edit-confirm-pass">تأكيد كلمة المرور</label>
+							<input
+								id="list-edit-confirm-pass"
+								class="form-input font-mono text-xs"
+								:type="showPass ? 'text' : 'password'"
+								name="confirm_password"
+								minlength="8"
+								autocomplete="new-password"
+								placeholder="أعد كتابة كلمة المرور"
+							/>
+						</div>
+					</div>
+					<span class="text-2xs text-muted mt-1.5 d-block">
+						عند إدخال كلمة مرور جديدة، يجب ألا تقل عن 8 خانات وتحتوي على حرف كبير وصغير ورقم ورمز خاص (مثل @ أو $ أو !).
+					</span>
+				</div>
+
 				<div class="d-flex items-center gap-3 mt-4 pt-3 border-t">
 					<button type="submit" class="btn btn-primary font-black">حفظ التعديلات</button>
 					<button type="button" class="btn btn-secondary" @click="showEditModal = false">إلغاء</button>
@@ -240,22 +284,33 @@ templ adminUserPasswordModal() {
 				سيتم تغيير كلمة المرور فوراً، إنهاء كافة الجلسات النشطة للمستخدم، وإلغاء أي حظر مؤقت ليتمكن من تسجيل الدخول فوراً.
 			</div>
 
-			<form method="POST" :action="'/admin/users/' + passwordUser.id + '/password'" class="d-grid gap-3">
+			<form method="POST" :action="'/admin/users/' + (passwordUser.id || '') + '/password'" class="d-grid gap-3" x-data="{ showPass: false }">
 				<input type="hidden" name="redirect" value="/admin/users" />
+				<input type="hidden" name="user_id" :value="passwordUser.id" />
 
 				<div class="stack-sm">
-					<label class="form-label" for="list-new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+					<div class="flex-between items-center mb-1">
+						<label class="form-label mb-0" for="list-new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+						<button
+							type="button"
+							class="btn btn-secondary btn-xs text-2xs py-0.5 px-2 font-bold"
+							@click="showPass = !showPass"
+							x-text="showPass ? 'إخفاء' : 'إظهار'"
+						>
+							إظهار
+						</button>
+					</div>
 					<input
 						id="list-new-pass"
 						class="form-input font-mono"
-						type="password"
+						:type="showPass ? 'text' : 'password'"
 						name="password"
 						required
 						minlength="8"
 						autocomplete="new-password"
 						placeholder="••••••••"
 					/>
-					<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً.</span>
+					<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً (مثل @ أو $ أو !).</span>
 				</div>
 
 				<div class="stack-sm">
@@ -263,7 +318,7 @@ templ adminUserPasswordModal() {
 					<input
 						id="list-confirm-pass"
 						class="form-input font-mono"
-						type="password"
+						:type="showPass ? 'text' : 'password'"
 						name="confirm_password"
 						required
 						minlength="8"

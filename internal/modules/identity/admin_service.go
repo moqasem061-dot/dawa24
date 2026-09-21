@@ -110,11 +110,12 @@ func (s *Service) AdminSetPassword(ctx context.Context, userID, actorID int64, n
 	if err := s.repo.AdminSetPassword(ctx, userID, hash, actorID); err != nil {
 		return err
 	}
-	if s.sessionStore != nil {
+	// Best-effort session revocation: revoking sessions should not abort password update if Redis is temporarily unavailable.
+	// If the actor is editing their own password via admin, do not revoke the actor's current session.
+	if s.sessionStore != nil && userID != actorID {
 		if err := s.sessionStore.DeleteAllForUser(ctx, userID); err != nil {
 			s.log.ErrorContext(ctx, "set password but could not revoke sessions",
 				"error", err, "user_id", userID, "actor_id", actorID)
-			return err
 		}
 	}
 	// Clear any lockout on the account so the user can immediately log in with the new password

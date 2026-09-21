@@ -104,6 +104,7 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 			CatalogProductID: &prodID,
 			InCatalog:        true,
 			CatalogStatus:    StatusCatalogOnly,
+			BestPrice:        c.Price,
 			Offers:           make(map[string]SupplierOffer),
 		}
 
@@ -145,14 +146,21 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 			targetItem = bySorted[sortedKey]
 		}
 
+		price := r.Price
+		if price.IsZero() && targetItem != nil && targetItem.BestPrice.IsPositive() {
+			price = targetItem.BestPrice
+		}
+
 		netPrice := r.PriceAfterDiscount
-		if netPrice.IsZero() && r.Price.IsPositive() {
-			netPrice = CalculatePriceAfterDiscount(r.Price, r.Discount)
+		if netPrice.IsZero() && price.IsPositive() && r.Discount > 0 {
+			netPrice = CalculatePriceAfterDiscount(price, r.Discount)
+		} else if netPrice.IsZero() && price.IsPositive() && r.Discount == 0 {
+			netPrice = price
 		}
 
 		offer := SupplierOffer{
 			SupplierName:       r.SupplierName,
-			Price:              r.Price,
+			Price:              price,
 			Discount:           r.Discount,
 			PriceAfterDiscount: netPrice,
 		}
@@ -170,7 +178,7 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 				InCatalog:        inCatalog,
 				CatalogStatus:    status,
 				Offers:           make(map[string]SupplierOffer),
-				BestPrice:        r.Price,
+				BestPrice:        price,
 				BestDiscount:     r.Discount,
 				BestNetPrice:     netPrice,
 				BestSupplier:     r.SupplierName,
@@ -196,10 +204,31 @@ func (s *Service) SearchAcrossSuppliersAndCatalog(ctx context.Context, userID in
 
 		targetItem.Offers[r.SupplierName] = offer
 
+		if targetItem.BestPrice.IsZero() && price.IsPositive() {
+			targetItem.BestPrice = price
+		}
+
 		// Update best pricing
-		if targetItem.BestNetPrice.IsZero() || netPrice.Minor() < targetItem.BestNetPrice.Minor() || (netPrice.Minor() == targetItem.BestNetPrice.Minor() && r.Discount > targetItem.BestDiscount) {
+		shouldUpdate := false
+		if targetItem.BestNetPrice.IsZero() && netPrice.IsPositive() {
+			shouldUpdate = true
+		} else if netPrice.IsPositive() && targetItem.BestNetPrice.IsPositive() {
+			if netPrice.Minor() < targetItem.BestNetPrice.Minor() {
+				shouldUpdate = true
+			} else if netPrice.Minor() == targetItem.BestNetPrice.Minor() && r.Discount > targetItem.BestDiscount {
+				shouldUpdate = true
+			}
+		} else if targetItem.BestNetPrice.IsZero() && netPrice.IsZero() {
+			if r.Discount > targetItem.BestDiscount || targetItem.BestSupplier == "" {
+				shouldUpdate = true
+			}
+		}
+
+		if shouldUpdate {
 			targetItem.BestNetPrice = netPrice
-			targetItem.BestPrice = r.Price
+			if price.IsPositive() {
+				targetItem.BestPrice = price
+			}
 			targetItem.BestDiscount = r.Discount
 			targetItem.BestSupplier = r.SupplierName
 		}

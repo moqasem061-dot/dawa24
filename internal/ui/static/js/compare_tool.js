@@ -245,7 +245,7 @@ function renderSearchItem(item) {
 	const card = compareEl('div', 'comparison-card card p-4 mb-3');
 	const top = compareEl('div', 'd-flex justify-between items-start flex-wrap gap-3');
 	const info = compareEl('div', 'stack-xs');
-	const titleRow = compareEl('div', 'd-flex items-center gap-2');
+	const titleRow = compareEl('div', 'd-flex items-center gap-2 flex-wrap');
 	titleRow.append(compareEl('strong', 'product-title font-bold text-base', item.product_name || 'صنف دوائي'));
 
 	if (item.catalog_status === 'catalog_and_suppliers') {
@@ -261,23 +261,40 @@ function renderSearchItem(item) {
 	}
 	top.append(info);
 
-	if (item.best_net_price && parseFloat(item.best_net_price) > 0) {
-		const price = compareEl('div', 'text-end');
-		price.append(
-			compareEl('div', 'tabular-nums', item.best_net_price + ' ج.م'),
-			compareEl('div', 'stack-sm', (item.best_supplier || 'أفضل سعر') + ' (' + (item.best_discount || 0) + '%)'));
-		top.append(price);
+	const priceCol = compareEl('div', 'text-end');
+	const hasOffers = item.offers && Object.keys(item.offers).length > 0;
+	const hasDiscount = item.best_discount !== undefined && item.best_discount !== null && parseFloat(item.best_discount) > 0;
+	const hasNetPrice = item.best_net_price && parseFloat(item.best_net_price) > 0;
+	const hasPublicPrice = item.best_price && parseFloat(item.best_price) > 0;
+
+	if (hasDiscount || hasNetPrice || hasPublicPrice) {
+		if (hasDiscount) {
+			const discountBadge = compareEl('div', 'badge badge-emerald text-xs font-bold mb-1', 'خصم ' + parseFloat(item.best_discount) + '%');
+			priceCol.append(discountBadge);
+		}
+		if (hasPublicPrice) {
+			priceCol.append(compareEl('div', 'text-xs text-secondary tabular-nums', 'سعر الجمهور: ' + item.best_price + ' ج.م'));
+		}
+		if (hasNetPrice) {
+			priceCol.append(compareEl('div', 'text-xs font-bold text-primary tabular-nums', 'الصافي: ' + item.best_net_price + ' ج.م'));
+		}
+		if (item.best_supplier) {
+			priceCol.append(compareEl('div', 'text-2xs text-muted mt-0.5', 'أفضل عرض: ' + item.best_supplier));
+		}
+		top.append(priceCol);
 	} else {
-		top.append(compareEl('div', 'stack-sm', 'لا توجد عروض أسعار مرفوعة'));
+		top.append(compareEl('div', 'stack-sm text-xs text-muted', 'لا توجد عروض أسعار مرفوعة'));
 	}
 	card.append(top);
 
-	if (item.offers && Object.keys(item.offers).length > 0) {
-		const offers = compareEl('div', 'offers-list d-flex flex-wrap gap-2 mt-2');
+	if (hasOffers) {
+		const offers = compareEl('div', 'offers-list d-flex flex-wrap gap-2 mt-2 pt-2 border-t');
 		for (const [sup, off] of Object.entries(item.offers)) {
 			const badgeClass = sup === item.best_supplier ? 'badge-emerald' : 'badge-secondary';
-			offers.append(compareEl('span', 'badge ' + badgeClass,
-				sup + ': ' + (off.discount || 0) + '% (' + (off.price_after_discount || '--') + ' ج.م)'));
+			const disc = off.discount !== undefined && off.discount !== null ? parseFloat(off.discount) : 0;
+			const net = off.price_after_discount && parseFloat(off.price_after_discount) > 0 ? off.price_after_discount + ' ج.م' : '--';
+			offers.append(compareEl('span', 'badge ' + badgeClass + ' text-xs',
+				sup + ': خصم ' + disc + '% (صافي ' + net + ')'));
 		}
 		card.append(offers);
 	}

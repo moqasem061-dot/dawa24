@@ -299,15 +299,28 @@ templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 												<button
 													type="button"
 													class="btn btn-secondary btn-xs font-bold"
-													@click={ fmt.Sprintf("openEdit({ id: %d, name_ar: %q, name_en: %q, email: %q, phone: %q, avatar_url: %q, national_id: %q, status: %q, org_id: '%d', branch_id: '%d', job_title: %q })",
-														u.ID, u.Name.Get("ar"), u.Name.Get("en"), u.Email, u.Phone, u.AvatarURL, userNID, string(u.Status), userOrgID, userBranchID, userJobTitle) }
+													data-user-id={ fmt.Sprintf("%d", u.ID) }
+													data-name-ar={ u.Name.Get("ar") }
+													data-name-en={ u.Name.Get("en") }
+													data-email={ u.Email }
+													data-phone={ u.Phone }
+													data-avatar-url={ u.AvatarURL }
+													data-national-id={ userNID }
+													data-status={ string(u.Status) }
+													data-org-id={ fmt.Sprintf("%d", userOrgID) }
+													data-branch-id={ fmt.Sprintf("%d", userBranchID) }
+													data-job-title={ userJobTitle }
+													@click="openEdit({ id: parseInt($el.dataset.userId), name_ar: $el.dataset.nameAr, name_en: $el.dataset.nameEn, email: $el.dataset.email, phone: $el.dataset.phone, avatar_url: $el.dataset.avatarUrl, national_id: $el.dataset.nationalId, status: $el.dataset.status, org_id: $el.dataset.orgId, branch_id: $el.dataset.branchId, job_title: $el.dataset.jobTitle })"
 												>
 													تعديل
 												</button>
 												<button
 													type="button"
 													class="btn btn-secondary btn-xs font-bold"
-													@click={ fmt.Sprintf("openPassword({ id: %d, name: %q, email: %q })", u.ID, userDisplayName(u), u.Email) }
+													data-user-id={ fmt.Sprintf("%d", u.ID) }
+													data-user-name={ userDisplayName(u) }
+													data-user-email={ u.Email }
+													@click="openPassword({ id: parseInt($el.dataset.userId), name: $el.dataset.userName, email: $el.dataset.userEmail })"
 												>
 													كلمة المرور
 												</button>

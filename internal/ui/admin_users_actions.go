@@ -158,6 +158,12 @@ func (h *UIHandler) AdminUserEditSubmit(w http.ResponseWriter, r *http.Request) 
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
+		id, _ = strconv.ParseInt(r.PostFormValue("user_id"), 10, 64)
+		if id <= 0 {
+			id, _ = strconv.ParseInt(r.PostFormValue("id"), 10, 64)
+		}
+	}
+	if id <= 0 {
 		h.renderError(w, r, apperr.Validation("id.invalid", "Invalid user ID", nil))
 		return
 	}
@@ -197,6 +203,21 @@ func (h *UIHandler) AdminUserEditSubmit(w http.ResponseWriter, r *http.Request) 
 	if err := h.idSvc.AdminUpdateUserDetails(sysCtx, id, editIn, actor.UserID); err != nil {
 		h.redirectAdminUsers(w, r, redirectTarget, "error", h.safeMessage(err, langOf(r)))
 		return
+	}
+
+	// Optional password change if provided in the edit user form
+	newPass := strings.TrimSpace(r.PostFormValue("password"))
+	if newPass != "" {
+		confirmPass := strings.TrimSpace(r.PostFormValue("confirm_password"))
+		if newPass != confirmPass {
+			h.redirectAdminUsers(w, r, redirectTarget, "error", i18n.T(langOf(r), "admin.users.password_mismatch"))
+			return
+		}
+		if err := h.idSvc.AdminSetPassword(ctx, id, actor.UserID, newPass); err != nil {
+			h.redirectAdminUsers(w, r, redirectTarget, "error", h.safeMessage(err, langOf(r)))
+			return
+		}
+		h.notifyUserPasswordSetByAdmin(ctx, id)
 	}
 
 	// 2. Handle organization membership & branch assignment
@@ -268,12 +289,18 @@ func (h *UIHandler) AdminUserPasswordSubmit(w http.ResponseWriter, r *http.Reque
 
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
+		id, _ = strconv.ParseInt(r.PostFormValue("user_id"), 10, 64)
+		if id <= 0 {
+			id, _ = strconv.ParseInt(r.PostFormValue("id"), 10, 64)
+		}
+	}
+	if id <= 0 {
 		h.renderError(w, r, apperr.Validation("id.invalid", "Invalid user ID", nil))
 		return
 	}
 
-	password := r.PostFormValue("password")
-	confirmPassword := r.PostFormValue("confirm_password")
+	password := strings.TrimSpace(r.PostFormValue("password"))
+	confirmPassword := strings.TrimSpace(r.PostFormValue("confirm_password"))
 	redirectTarget := r.PostFormValue("redirect")
 
 	if password == "" {

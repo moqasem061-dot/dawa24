@@ -76,7 +76,9 @@ func (h *UIHandler) registerAdminIdentityRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("identity.user.update"))
 		g.Post("/admin/users/{id}/edit", h.AdminUserEditSubmit)
+		g.Post("/admin/users/edit", h.AdminUserEditSubmit)
 		g.Post("/admin/users/{id}/password", h.AdminUserPasswordSubmit)
+		g.Post("/admin/users/password", h.AdminUserPasswordSubmit)
 		g.Post("/admin/users/{id}/suspend", h.AdminUserSuspendSubmit)
 		g.Post("/admin/users/{id}/reactivate", h.AdminUserReactivateSubmit)
 		g.Post("/admin/users/{id}/reset-mfa", h.AdminUserResetMFASubmit)

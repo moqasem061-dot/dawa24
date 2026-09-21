@@ -691,22 +691,33 @@ templ AdminUserDetailPage(v AdminUserDetailView, lang, dir string) {
 							سيتم تغيير كلمة المرور فوراً، إنهاء كافة الجلسات النشطة للمستخدم، وإلغاء أي حظر مؤقت بسبب محاولات الدخول الفاشلة ليتمكن من تسجيل الدخول فوراً.
 						</div>
 
-						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/password", u.ID)) } class="d-grid gap-3">
+						<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/users/%d/password", u.ID)) } class="d-grid gap-3" x-data="{ showPass: false }">
 							<input type="hidden" name="redirect" value={ fmt.Sprintf("/admin/users/%d", u.ID) } />
+							<input type="hidden" name="user_id" value={ fmt.Sprintf("%d", u.ID) } />
 
 							<div class="stack-sm">
-								<label class="form-label" for="new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+								<div class="flex-between items-center mb-1">
+									<label class="form-label mb-0" for="new-pass">كلمة المرور الجديدة <span class="text-danger">*</span></label>
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs text-2xs py-0.5 px-2 font-bold"
+										@click="showPass = !showPass"
+										x-text="showPass ? 'إخفاء' : 'إظهار'"
+									>
+										إظهار
+									</button>
+								</div>
 								<input
 									id="new-pass"
 									class="form-input font-mono"
-									type="password"
+									:type="showPass ? 'text' : 'password'"
 									name="password"
 									required
 									minlength="8"
 									autocomplete="new-password"
 									placeholder="••••••••"
 								/>
-								<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً.</span>
+								<span class="text-2xs text-muted">يجب ألا تقل عن 8 خانات، وتحتوي حرفاً كبيراً وحرفاً صغيراً ورقماً ورمزاً (مثل @ أو $ أو !).</span>
 							</div>
 
 							<div class="stack-sm">
@@ -714,7 +725,7 @@ templ AdminUserDetailPage(v AdminUserDetailView, lang, dir string) {
 								<input
 									id="confirm-pass"
 									class="form-input font-mono"
-									type="password"
+									:type="showPass ? 'text' : 'password'"
 									name="confirm_password"
 									required
 									minlength="8"
