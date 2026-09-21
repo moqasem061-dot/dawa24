@@ -72,13 +72,84 @@ type Image struct {
 	AspectW, AspectH int
 }
 
+// Normalize cleans and standardises an image URL stored in the database or passed from an import.
+func Normalize(rawURL string) string {
+	raw := strings.TrimSpace(rawURL)
+	if raw == "" {
+		return ""
+	}
+
+	// Strip own domain / localhost / minio prefixes
+	for _, prefix := range []string{
+		"https://dawa24.com/",
+		"http://dawa24.com/",
+		"https://api.dawa24.com/",
+		"http://api.dawa24.com/",
+		"http://localhost:8080/",
+		"http://localhost:3000/",
+		"http://localhost:9000/dawa24/",
+		"http://127.0.0.1:9000/dawa24/",
+		"http://minio:9000/dawa24/",
+	} {
+		if strings.HasPrefix(raw, prefix) {
+			raw = "/" + strings.TrimPrefix(raw, prefix)
+			break
+		}
+	}
+
+	// Normalize slashes
+	raw = strings.ReplaceAll(raw, "\\", "/")
+
+	// Handle legacy storage/app/public paths and data/uploads paths
+	if strings.HasPrefix(raw, "/data/uploads/") {
+		raw = strings.TrimPrefix(raw, "/data")
+	} else if strings.HasPrefix(raw, "data/uploads/") {
+		raw = "/" + strings.TrimPrefix(raw, "data/")
+	} else if strings.HasPrefix(raw, "/storage/uploads/") {
+		raw = strings.TrimPrefix(raw, "/storage")
+	} else if strings.HasPrefix(raw, "storage/uploads/") {
+		raw = "/" + strings.TrimPrefix(raw, "storage/")
+	} else if strings.HasPrefix(raw, "/storage/products/") {
+		raw = "/uploads/products/" + strings.TrimPrefix(raw, "/storage/products/")
+	} else if strings.HasPrefix(raw, "storage/products/") {
+		raw = "/uploads/products/" + strings.TrimPrefix(raw, "storage/products/")
+	} else if strings.HasPrefix(raw, "/storage/") {
+		raw = "/uploads/" + strings.TrimPrefix(raw, "/storage/")
+	} else if strings.HasPrefix(raw, "storage/") {
+		raw = "/uploads/" + strings.TrimPrefix(raw, "storage/")
+	} else if strings.HasPrefix(raw, "uploads/") {
+		raw = "/" + raw
+	} else if strings.HasPrefix(raw, "products/") {
+		raw = "/uploads/" + raw
+	} else if strings.HasPrefix(raw, "/products/") {
+		raw = "/uploads" + raw
+	}
+
+	// If it's a bare filename like "xyz.jpg" or "6224003890152.jpg"
+	if !strings.Contains(raw, "/") {
+		lower := strings.ToLower(raw)
+		if strings.HasSuffix(lower, ".jpg") || strings.HasSuffix(lower, ".jpeg") ||
+			strings.HasSuffix(lower, ".png") || strings.HasSuffix(lower, ".webp") ||
+			strings.HasSuffix(lower, ".gif") {
+			raw = "/uploads/products/" + raw
+		}
+	}
+
+	// If it is an insecure HTTP URL, upgrade to HTTPS to avoid mixed-content blocking
+	if strings.HasPrefix(raw, "http://") && !strings.Contains(raw, "localhost") && !strings.Contains(raw, "127.0.0.1") {
+		raw = "https://" + strings.TrimPrefix(raw, "http://")
+	}
+
+	return raw
+}
+
 // hosted reports whether this URL points at a file we stored and can resize.
 //
 // catalog.products carries both `image` (uploaded here) and `image_link` (a
 // supplier's own URL). We do not host the second, cannot derive renditions for
 // it, and must not rewrite it.
 func (i Image) hosted() bool {
-	return strings.HasPrefix(i.URL, "/uploads/")
+	return strings.HasPrefix(Normalize(i.URL), "/uploads/")
 }
 
 func (i Image) spec() slotSpec {
@@ -102,10 +173,11 @@ func sized(rawURL, rendition string) string {
 
 // Src is the 1x source.
 func (i Image) Src() string {
-	if !i.hosted() {
-		return i.URL
+	norm := Normalize(i.URL)
+	if !strings.HasPrefix(norm, "/uploads/") {
+		return norm
 	}
-	return sized(i.URL, i.spec().rendition)
+	return sized(norm, i.spec().rendition)
 }
 
 // SrcSet offers the next rendition up for high-density displays.
@@ -113,14 +185,15 @@ func (i Image) Src() string {
 // Empty for a remote image and for the largest slot, and an empty srcset is
 // valid and inert — the browser simply uses src.
 func (i Image) SrcSet() string {
-	if !i.hosted() {
+	norm := Normalize(i.URL)
+	if !strings.HasPrefix(norm, "/uploads/") {
 		return ""
 	}
 	s := i.spec()
 	if s.next == "" {
 		return ""
 	}
-	return sized(i.URL, s.rendition) + " 1x, " + sized(i.URL, s.next) + " 2x"
+	return sized(norm, s.rendition) + " 1x, " + sized(norm, s.next) + " 2x"
 }
 
 // Sizes is the layout hint that goes with SrcSet.
@@ -148,7 +221,7 @@ func (i Image) aspect() (int, int) {
 // carry the right RATIO: the browser uses them to compute an aspect ratio and
 // then lets CSS size the box. Getting the ratio right is what removes the
 // layout shift; getting the absolute numbers "right" is not possible here,
-// because CSS decides the real size.
+// because responsive CSS will size the box differently on every device.
 func (i Image) WidthAttr() string {
 	return strconv.Itoa(i.spec().cssWidth)
 }
@@ -156,7 +229,8 @@ func (i Image) WidthAttr() string {
 // HeightAttr is WidthAttr scaled by the declared aspect ratio.
 func (i Image) HeightAttr() string {
 	w, h := i.aspect()
-	return strconv.Itoa(i.spec().cssWidth * h / w)
+	cssH := (i.spec().cssWidth * h) / w
+	return strconv.Itoa(cssH)
 }
 
 // Loading is "eager" for the one image the reader is waiting for and "lazy"
@@ -171,13 +245,13 @@ func (i Image) Loading() string {
 // Thumb, Card and Full are the constructors templates use, so a call site reads
 // as the slot it is rather than as a struct literal.
 func Thumb(url, alt, class string) Image {
-	return Image{URL: url, Alt: alt, Class: class, Slot: SlotThumb}
+	return Image{URL: Normalize(url), Alt: alt, Class: class, Slot: SlotThumb}
 }
 
 func Card(url, alt, class string) Image {
-	return Image{URL: url, Alt: alt, Class: class, Slot: SlotCard}
+	return Image{URL: Normalize(url), Alt: alt, Class: class, Slot: SlotCard}
 }
 
 func Full(url, alt, class string) Image {
-	return Image{URL: url, Alt: alt, Class: class, Slot: SlotFull, Eager: true}
+	return Image{URL: Normalize(url), Alt: alt, Class: class, Slot: SlotFull, Eager: true}
 }

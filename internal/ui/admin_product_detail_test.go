@@ -97,3 +97,34 @@ func TestAdminProductDetailPage_EnlargedImageAndNoOldPrice(t *testing.T) {
 		t.Errorf("expected price '31.50' in vendor offers table")
 	}
 }
+
+func TestAdminProductDetailPage_ImageLinkFallback(t *testing.T) {
+	prod := &catalog.Product{
+		ID:        102674,
+		Name:      i18n.Text{"ar": "يوفي برو اويل كنترول", "en": "Uvepro Oil Control"},
+		SKU:       "6224003890152",
+		Barcode:   "6224003890152",
+		Price:     money.MustParse("289.00"),
+		Image:     "", // Empty Image
+		ImageLink: "uploads/products/uvepro.jpg", // Relative ImageLink without leading slash
+		Status:    catalog.StatusActive,
+	}
+
+	var buf bytes.Buffer
+	err := pages.AdminProductDetailPage(prod, nil, nil, nil, nil, "ar", "rtl").Render(context.Background(), &buf)
+	if err != nil {
+		t.Fatalf("failed to render AdminProductDetailPage: %v", err)
+	}
+
+	html := buf.String()
+
+	// Must resolve ImageLink and normalize to /uploads/products/uvepro.jpg
+	if !strings.Contains(html, "/uploads/products/uvepro.jpg") {
+		t.Errorf("expected normalized /uploads/products/uvepro.jpg in HTML, got: %s", html)
+	}
+
+	// Must contain fallback container with class product-img-fallback
+	if !strings.Contains(html, "product-img-fallback") {
+		t.Errorf("expected product-img-fallback container in HTML")
+	}
+}

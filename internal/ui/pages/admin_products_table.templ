@@ -102,8 +102,8 @@ templ AdminProductsTable(
 						<!-- 1. Thumbnail -->
 						<td class="text-center align-middle">
 							<div class="product-thumb-box mx-auto">
-								if p.Image != "" {
-									@components.ProductImage(imageurl.Thumb(p.Image, p.Name.Get(i18n.Lang(lang)), "product-thumb-img"))
+								if resolveProductImage(p) != "" {
+									@components.ProductImage(imageurl.Thumb(resolveProductImage(p), p.Name.Get(i18n.Lang(lang)), "product-thumb-img"))
 								} else {
 									<span class="text-muted">@components.IconPill("icon-sm")</span>
 								}

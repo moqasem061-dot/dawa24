@@ -250,8 +250,8 @@ func AdminProductsTable(
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			if p.Image != "" {
-				templ_7745c5c3_Err = components.ProductImage(imageurl.Thumb(p.Image, p.Name.Get(i18n.Lang(lang)), "product-thumb-img")).Render(ctx, templ_7745c5c3_Buffer)
+			if resolveProductImage(p) != "" {
+				templ_7745c5c3_Err = components.ProductImage(imageurl.Thumb(resolveProductImage(p), p.Name.Get(i18n.Lang(lang)), "product-thumb-img")).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

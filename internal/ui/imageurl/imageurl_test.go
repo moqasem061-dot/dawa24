@@ -118,3 +118,35 @@ func TestZeroValueSlotIsUsable(t *testing.T) {
 		t.Error("HeightAttr() = 0; a zero aspect ratio must default to square")
 	}
 }
+
+func TestNormalize(t *testing.T) {
+	tests := []struct {
+		input string
+		want  string
+	}{
+		{"", ""},
+		{"   ", ""},
+		{"/uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"products/123.jpg", "/uploads/products/123.jpg"},
+		{"/products/123.jpg", "/uploads/products/123.jpg"},
+		{"storage/products/123.jpg", "/uploads/products/123.jpg"},
+		{"/storage/products/123.jpg", "/uploads/products/123.jpg"},
+		{"storage/uploads/123.jpg", "/uploads/123.jpg"},
+		{"/storage/uploads/123.jpg", "/uploads/123.jpg"},
+		{"data/uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"/data/uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"https://dawa24.com/uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"http://localhost:9000/dawa24/uploads/products/123.jpg", "/uploads/products/123.jpg"},
+		{"6224003890152.jpg", "/uploads/products/6224003890152.jpg"},
+		{"http://example.com/img.png", "https://example.com/img.png"},
+		{"https://example.com/img.png", "https://example.com/img.png"},
+	}
+
+	for _, tc := range tests {
+		got := Normalize(tc.input)
+		if got != tc.want {
+			t.Errorf("Normalize(%q) = %q, want %q", tc.input, got, tc.want)
+		}
+	}
+}

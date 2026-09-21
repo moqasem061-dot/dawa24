@@ -59,8 +59,17 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 								</span>
 							</div>
 
-							if product.Image != "" {
-								@components.ProductImage(imageurl.Full(product.Image, productTitle(product), "max-h-60 max-w-full object-contain my-3"))
+							if resolveProductImage(product) != "" {
+								<div class="w-full h-full flex-center relative">
+									@components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "max-h-60 max-w-full object-contain my-3"))
+									<div class="product-img-fallback hidden flex-col items-center justify-center text-muted gap-2">
+										<div class="w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4">
+											@components.IconPill("icon-lg")
+										</div>
+										<div class="font-extrabold text-sm text-primary">{ i18n.T(lang, "product.official_package") }</div>
+										<span class="text-xs text-muted">{ i18n.T(lang, "product.eda_compliant") }</span>
+									</div>
+								</div>
 							} else {
 								<div class="w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4">
 									@components.IconPill("icon-lg")
