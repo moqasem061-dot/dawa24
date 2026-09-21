@@ -102,6 +102,10 @@ func SecureHTTPClient() *http.Client {
 
 // DownloadProductImage securely downloads an image from a remote URL with SSRF guards and size limits.
 func DownloadProductImage(ctx context.Context, imageURL string) ([]byte, string, error) {
+	imageURL = strings.Trim(strings.TrimSpace(imageURL), "\"'")
+	if strings.HasPrefix(imageURL, "//") {
+		imageURL = "https:" + imageURL
+	}
 	parsed, err := url.Parse(imageURL)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {
 		return nil, "", ErrInvalidURL
@@ -112,7 +116,9 @@ func DownloadProductImage(ctx context.Context, imageURL string) ([]byte, string,
 	if err != nil {
 		return nil, "", err
 	}
-	req.Header.Set("User-Agent", "Dawa24-Catalog-Bot/1.0")
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36")
+	req.Header.Set("Accept", "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8")
+	req.Header.Set("Accept-Language", "en-US,en;q=0.9,ar;q=0.8")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -122,6 +128,16 @@ func DownloadProductImage(ctx context.Context, imageURL string) ([]byte, string,
 
 	if resp.StatusCode != http.StatusOK {
 		return nil, "", fmt.Errorf("remote server returned status %d", resp.StatusCode)
+	}
+
+	// Limit reader to 10MB
+	limitReader := io.LimitReader(resp.Body, 10<<20+1)
+	data, err := io.ReadAll(limitReader)
+	if err != nil {
+		return nil, "", fmt.Errorf("read response body: %w", err)
+	}
+	if len(data) > 10<<20 {
+		return nil, "", ErrImageTooLarge
 	}
 
 	contentType := strings.ToLower(resp.Header.Get("Content-Type"))
@@ -135,18 +151,40 @@ func DownloadProductImage(ctx context.Context, imageURL string) ([]byte, string,
 		ext = "webp"
 	case strings.Contains(contentType, "image/gif"):
 		ext = "gif"
-	default:
-		return nil, "", ErrUnsupportedType
 	}
 
-	// Limit reader to 10MB
-	limitReader := io.LimitReader(resp.Body, 10<<20+1)
-	data, err := io.ReadAll(limitReader)
-	if err != nil {
-		return nil, "", fmt.Errorf("read response body: %w", err)
+	// Fallback 1: Inspect magic bytes via http.DetectContentType
+	if ext == "" && len(data) > 0 {
+		sniff := http.DetectContentType(data)
+		switch {
+		case strings.Contains(sniff, "image/jpeg"):
+			ext = "jpg"
+		case strings.Contains(sniff, "image/png"):
+			ext = "png"
+		case strings.Contains(sniff, "image/webp"):
+			ext = "webp"
+		case strings.Contains(sniff, "image/gif"):
+			ext = "gif"
+		}
 	}
-	if len(data) > 10<<20 {
-		return nil, "", ErrImageTooLarge
+
+	// Fallback 2: Check URL path suffix
+	if ext == "" {
+		lowerPath := strings.ToLower(parsed.Path)
+		switch {
+		case strings.HasSuffix(lowerPath, ".jpg") || strings.HasSuffix(lowerPath, ".jpeg"):
+			ext = "jpg"
+		case strings.HasSuffix(lowerPath, ".png"):
+			ext = "png"
+		case strings.HasSuffix(lowerPath, ".webp"):
+			ext = "webp"
+		case strings.HasSuffix(lowerPath, ".gif"):
+			ext = "gif"
+		}
+	}
+
+	if ext == "" {
+		return nil, "", ErrUnsupportedType
 	}
 
 	return data, ext, nil

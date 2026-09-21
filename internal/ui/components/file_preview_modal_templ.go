@@ -57,24 +57,24 @@ func UniversalFilePreviewModal(langOpt ...string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h3><p class=\"text-xs text-muted font-mono m-0\" id=\"universal-preview-filename\" dir=\"ltr\"></p></div></div><div class=\"d-flex items-center gap-2\"><a id=\"universal-preview-download\" href=\"#\" download class=\"btn btn-secondary btn-xs font-bold gap-1\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</h3><p class=\"text-xs text-muted font-mono m-0\" id=\"universal-preview-filename\" dir=\"ltr\"></p></div></div><div class=\"d-flex items-center gap-2\"><a id=\"universal-preview-newtab\" href=\"#\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"btn btn-secondary btn-xs font-bold gap-1\" title=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var3 string
-		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "preview.modal.download_tooltip"))
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "preview.modal.newtab_tooltip"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 33, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 34, Col: 58}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" onclick=\"if(this.href && this.href !== '#') { window.open(this.href, '_blank'); return false; }\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = IconDownload("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = IconExternalLink("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -83,22 +83,22 @@ func UniversalFilePreviewModal(langOpt ...string) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
-		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "preview.modal.download"))
+		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "preview.modal.newtab"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 36, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 38, Col: 50}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></a> <a id=\"universal-preview-newtab\" href=\"#\" target=\"_blank\" rel=\"noopener\" class=\"btn btn-secondary btn-xs font-bold gap-1\" title=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</span></a> <button type=\"button\" class=\"btn btn-ghost btn-xs btn-icon\" data-on-click=\"window.closeFilePreview()\" aria-label=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var5 string
-		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "preview.modal.newtab_tooltip"))
+		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "preview.modal.close"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 44, Col: 58}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 44, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -108,45 +108,11 @@ func UniversalFilePreviewModal(langOpt ...string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = IconExternalLink("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span>")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var6 string
-		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "preview.modal.newtab"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 47, Col: 50}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></a> <button type=\"button\" class=\"btn btn-ghost btn-xs btn-icon\" data-on-click=\"window.closeFilePreview()\" aria-label=\"")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "preview.modal.close"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/file_preview_modal.templ`, Line: 53, Col: 54}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
 		templ_7745c5c3_Err = IconClose("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</button></div></div><div class=\"modal-body p-0\"><div class=\"doc-viewer-viewport\" id=\"universal-preview-viewport\"><!-- PDF / Document Iframe --><iframe id=\"universal-preview-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\" loading=\"lazy\"></iframe><!-- Image Viewport --><div id=\"universal-preview-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"universal-preview-img\" src=\"\" alt=\"معاينة الملف\" class=\"doc-viewer-img\"></div><!-- Error State Placeholder --><div id=\"universal-preview-error\" class=\"hidden p-6 text-center stack-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</button></div></div><div class=\"modal-body p-0\"><div class=\"doc-viewer-viewport\" id=\"universal-preview-viewport\"><!-- PDF / Document Iframe --><iframe id=\"universal-preview-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\" loading=\"lazy\"></iframe><!-- Image Viewport --><div id=\"universal-preview-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"universal-preview-img\" src=\"\" alt=\"معاينة الملف\" class=\"doc-viewer-img\"></div><!-- Error State Placeholder --><div id=\"universal-preview-error\" class=\"hidden p-6 text-center stack-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -154,7 +120,7 @@ func UniversalFilePreviewModal(langOpt ...string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<p class=\"text-sm font-bold text-primary m-0\">تعذر تحميل معاينة هذا الملف مباشرة</p><p class=\"text-xs text-muted m-0\">يمكنك استخدام زر التحميل أو فتح الملف في نافذة مستقلة للمعاينة.</p></div></div></div><div class=\"modal-footer pt-3 border-t flex-between items-center\"><span class=\"text-xs text-muted\" id=\"universal-preview-footer-note\">معاينة الملفات والمستندات الرقمية المعتمدة</span> <button type=\"button\" class=\"btn btn-secondary btn-sm font-bold\" data-on-click=\"window.closeFilePreview()\">إغلاق المعاينة</button></div></div></dialog>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<p class=\"text-sm font-bold text-primary m-0\">تعذر تحميل معاينة هذا الملف مباشرة</p><p class=\"text-xs text-muted m-0\">يمكنك استخدام زر التحميل أو فتح الملف في نافذة مستقلة للمعاينة.</p></div></div></div><div class=\"modal-footer pt-3 border-t flex-between items-center\"><span class=\"text-xs text-muted\" id=\"universal-preview-footer-note\">معاينة الملفات والمستندات الرقمية المعتمدة</span> <button type=\"button\" class=\"btn btn-secondary btn-sm font-bold\" data-on-click=\"window.closeFilePreview()\">إغلاق المعاينة</button></div></div></dialog>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

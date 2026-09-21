@@ -11,7 +11,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
 
-templ CustomerCheckout(cart *commerce.Cart, branches []*CheckoutBranchItem, wallet *billing.Wallet, paymentMethods []*billing.PlatformPaymentMethod, lang, dir string) {
+templ CustomerCheckout(cart *commerce.Cart, branches []*CheckoutBranchItem, wallet *billing.Wallet, paymentMethods []*billing.PlatformPaymentMethod, userPaymentMethods []*billing.UserPaymentMethod, lang, dir string) {
 	@layouts.ShellFor(fmt.Sprintf("%s | B2B Checkout", i18n.T(lang, "checkout.title")), "checkout", lang, dir, authctx.FromContext(ctx)) {
 		<div class="page-container max-w-6xl">
 			
@@ -195,34 +195,288 @@ templ CustomerCheckout(cart *commerce.Cart, branches []*CheckoutBranchItem, wall
 										</div>
 									</label>
 
-									<!-- Other Active Platform Payment Methods (InstaPay, Bank Transfer, Cards) -->
+									<!-- Other Active Platform Payment Methods (InstaPay, Bank Transfer, Mobile Wallets, Cards) -->
 									for _, pm := range paymentMethods {
-										if pm != nil && pm.ID != "wallet" && pm.ID != "cod" && pm.ProviderType != "cash" && pm.ProviderType != "wallet" {
-											<label
-												class="checkout-branch-item"
-												:class={ fmt.Sprintf("{ 'border-brand bg-surface-sunken': selectedMethod === %q }", pm.ID) }
+										if pm != nil && pm.ID != "wallet" && pm.ID != "cod" && pm.ProviderType != "cash" {
+											{{ matchingSaved := FilterUserPaymentMethodsByProvider(userPaymentMethods, pm.ProviderType) }}
+											<div
+												class="checkout-branch-item flex-col items-stretch gap-3 transition-colors"
+												:class={ fmt.Sprintf("{ 'border-brand bg-surface-sunken ring-1 ring-brand': selectedMethod === %q }", pm.ID) }
 											>
-												<input
-													type="radio"
-													name="payment_method"
-													value={ pm.ID }
-													@change={ fmt.Sprintf("selectedMethod = %q", pm.ID) }
-													class="form-radio mt-1 text-brand"
-												/>
-												<div class="flex-1">
-													<div class="flex-between mb-1 flex-wrap gap-2">
-														<div class="font-extrabold text-base text-primary">
-															{ pm.Name.Get(i18n.Lang(lang)) }
+												<label class="d-flex items-start gap-3 cursor-pointer w-full">
+													<input
+														type="radio"
+														name="payment_method"
+														value={ pm.ID }
+														@change={ fmt.Sprintf("selectedMethod = %q", pm.ID) }
+														class="form-radio mt-1 text-brand"
+													/>
+													<div class="flex-1">
+														<div class="flex-between mb-1 flex-wrap gap-2">
+															<div class="font-extrabold text-base text-primary">
+																{ pm.Name.Get(i18n.Lang(lang)) }
+															</div>
+															<span class="badge badge-sky text-xs font-bold">{ pm.ProviderType }</span>
 														</div>
-														<span class="badge badge-sky text-xs font-bold">{ pm.ProviderType }</span>
+														if pm.Description.Get(i18n.Lang(lang)) != "" {
+															<div class="text-xs text-secondary leading-relaxed">
+																{ pm.Description.Get(i18n.Lang(lang)) }
+															</div>
+														}
 													</div>
-													if pm.Description.Get(i18n.Lang(lang)) != "" {
-														<div class="text-xs text-secondary leading-relaxed">
-															{ pm.Description.Get(i18n.Lang(lang)) }
+												</label>
+
+												<!-- Expandable details when this method is selected -->
+												<div
+													x-show={ fmt.Sprintf("selectedMethod === %q", pm.ID) }
+													x-cloak
+													class="mt-2 pt-3 border-t border-border-subtle d-flex flex-col gap-3 text-xs"
+												>
+													<!-- 1. Platform Official Transfer Credentials -->
+													<div class="p-3.5 rounded-lg bg-surface border border-border-subtle shadow-xs">
+														<div class="d-flex items-center gap-2 mb-2.5 font-bold text-primary">
+															@components.IconBuilding("icon-xs text-brand")
+															<span>{ i18n.TDefault("بيانات التحويل المعتمدة لمنصة دواء 24 (حساب الاستلام):") }</span>
+														</div>
+
+														if pm.ProviderType == "bank" {
+															<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+																if pm.BankName != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between">
+																		<span class="text-muted">{ i18n.TDefault("اسم البنك:") }</span>
+																		<strong class="text-primary font-bold">{ pm.BankName }</strong>
+																	</div>
+																}
+																if pm.AccountName != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between">
+																		<span class="text-muted">{ i18n.TDefault("اسم صاحب الحساب:") }</span>
+																		<strong class="text-primary font-bold">{ pm.AccountName }</strong>
+																	</div>
+																}
+																if pm.AccountNumber != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2">
+																		<span class="text-muted">{ i18n.TDefault("رقم الحساب:") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-primary">
+																			<span>{ pm.AccountNumber }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ رقم الحساب") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.AccountNumber) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+																if pm.IBAN != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2 md:col-span-2">
+																		<span class="text-muted">{ i18n.TDefault("الآيبان (IBAN):") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-primary break-all">
+																			<span>{ pm.IBAN }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ الآيبان") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.IBAN) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+																if pm.SwiftCode != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2">
+																		<span class="text-muted">{ i18n.TDefault("رمز السويفت (SWIFT):") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-primary">
+																			<span>{ pm.SwiftCode }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ السويفت كود") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.SwiftCode) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+																if pm.BranchName != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between">
+																		<span class="text-muted">{ i18n.TDefault("الفرع:") }</span>
+																		<strong class="text-primary font-bold">{ pm.BranchName }</strong>
+																	</div>
+																}
+															</div>
+														} else if pm.ProviderType == "instapay" {
+															<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+																if pm.InstaPayHandle != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2 md:col-span-2">
+																		<span class="text-muted">{ i18n.TDefault("عنوان الدفع اللحظي (IPA):") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-brand">
+																			<span>{ pm.InstaPayHandle }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ عنوان إنستاباي") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.InstaPayHandle) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+																if pm.AccountName != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between">
+																		<span class="text-muted">{ i18n.TDefault("اسم المستفيد:") }</span>
+																		<strong class="text-primary font-bold">{ pm.AccountName }</strong>
+																	</div>
+																}
+																if pm.PhoneNumber != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2">
+																		<span class="text-muted">{ i18n.TDefault("رقم الهاتف المسجل:") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-primary">
+																			<span>{ pm.PhoneNumber }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ رقم الهاتف") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.PhoneNumber) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+															</div>
+														} else if pm.ProviderType == "wallet" {
+															<div class="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+																if pm.PhoneNumber != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between gap-2 md:col-span-2">
+																		<span class="text-muted">{ i18n.TDefault("رقم محفظة الاستلام:") }</span>
+																		<div class="d-flex items-center gap-1.5 font-mono font-bold text-brand">
+																			<span>{ pm.PhoneNumber }</span>
+																			<button
+																				type="button"
+																				class="btn btn-ghost btn-2xs p-1"
+																				title={ i18n.TDefault("نسخ رقم المحفظة") }
+																				@click={ fmt.Sprintf("$copy(%q)", pm.PhoneNumber) }
+																			>
+																				@components.IconCopy("icon-2xs")
+																			</button>
+																		</div>
+																	</div>
+																}
+																if pm.AccountName != "" {
+																	<div class="p-2 rounded bg-surface-raised flex-between">
+																		<span class="text-muted">{ i18n.TDefault("اسم المحفظة / الجهة:") }</span>
+																		<strong class="text-primary font-bold">{ pm.AccountName }</strong>
+																	</div>
+																}
+															</div>
+														} else if pm.ProviderType == "card" {
+															<p class="text-muted m-0 leading-relaxed">
+																{ i18n.TDefault("سيتم توجيهك إلى بوابة الدفع الإلكتروني الآمنة المعتمدة لإتمام السداد فور تأكيد الطلب.") }
+															</p>
+														}
+													</div>
+
+													<!-- 2. Buyer's Saved Accounts Matching This Provider -->
+													if pm.ProviderType != "card" {
+														<div class="p-3.5 rounded-lg bg-surface border border-border-subtle">
+															<div class="flex-between mb-2.5 flex-wrap gap-2">
+																<div class="d-flex items-center gap-2 font-bold text-primary">
+																	@components.IconWallet("icon-xs text-brand")
+																	<span>{ i18n.TDefault("طريقة السداد / الحساب المحول منه بالمنشأة:") }</span>
+																</div>
+																<a
+																	href={ templ.SafeURL(func() string {
+																		if actor := authctx.FromContext(ctx); actor.IsVendor() {
+																			return "/vendor/wallet"
+																		}
+																		return "/customer/wallet"
+																	}()) }
+																	target="_blank"
+																	class="text-2xs font-bold text-brand hover:underline d-flex items-center gap-1"
+																>
+																	@components.IconPlus("icon-2xs")
+																	<span>{ i18n.TDefault("إدارة أو إضافة حساب في المحفظة ↗") }</span>
+																</a>
+															</div>
+
+															if len(matchingSaved) > 0 {
+																<div class="d-flex flex-col gap-2">
+																	for idx, upm := range matchingSaved {
+																		<label class="d-flex items-start gap-2.5 p-2.5 rounded-lg border border-border-subtle bg-surface-raised hover:bg-surface-sunken cursor-pointer transition-colors">
+																			<input
+																				type="radio"
+																				name="sender_payment_method_id"
+																				value={ fmt.Sprintf("%d", upm.ID) }
+																				checked?={ upm.IsDefault || (idx == 0 && !HasDefaultPaymentMethod(matchingSaved)) }
+																				class="form-radio mt-0.5 text-brand"
+																			/>
+																			<div class="flex-1">
+																				<div class="flex-between flex-wrap gap-1">
+																					<strong class="text-primary font-bold">{ upm.AccountIdentifier }</strong>
+																					if upm.IsDefault {
+																						<span class="badge badge-emerald text-2xs font-bold">{ i18n.TDefault("الافتراضي") }</span>
+																					}
+																				</div>
+																				if upm.Details.AccountHolder != "" && upm.Details.AccountHolder != upm.AccountIdentifier {
+																					<div class="text-muted text-2xs mt-0.5">
+																						<span>{ i18n.TDefault("صاحب الحساب:") } { upm.Details.AccountHolder }</span>
+																					</div>
+																				}
+																			</div>
+																		</label>
+																	}
+																</div>
+															} else {
+																<div class="p-3 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-600 dark:text-amber-400 d-flex items-center justify-between flex-wrap gap-2">
+																	<div class="d-flex items-center gap-2">
+																		@components.IconAlert("icon-xs flex-shrink-0")
+																		<span>{ i18n.TDefault("لم تقم بإضافة وسيلة دفع من هذا النوع في محفظتك بعد.") }</span>
+																	</div>
+																	<a
+																		href={ templ.SafeURL(func() string {
+																			if actor := authctx.FromContext(ctx); actor.IsVendor() {
+																				return "/vendor/wallet"
+																			}
+																			return "/customer/wallet"
+																		}()) }
+																		target="_blank"
+																		class="btn btn-secondary btn-xs font-bold gap-1"
+																	>
+																		@components.IconPlus("icon-2xs")
+																		<span>{ i18n.TDefault("إضافة الآن بالمحفظة") }</span>
+																	</a>
+																</div>
+															}
+														</div>
+													}
+
+													<!-- 3. Payment Reference / Transaction ID -->
+													if pm.ProviderType != "card" {
+														<div class="p-3.5 rounded-lg bg-surface border border-border-subtle">
+															<label class="d-flex flex-col gap-1.5">
+																<span class="font-bold text-primary d-flex items-center gap-1.5">
+																	@components.IconFileText("icon-xs text-muted")
+																	<span>{ i18n.TDefault("رقم العملية / مرجع التحويل (Payment Reference):") }</span>
+																</span>
+																<input
+																	type="text"
+																	name="payment_reference"
+																	placeholder={ i18n.TDefault("مثال: REF-12345678 أو رقم الإشعار البنكي / إنستاباي") }
+																	class="form-input w-full text-xs font-mono"
+																/>
+																<span class="text-2xs text-muted">
+																	{ i18n.TDefault("إدخال رقم العملية يسرّع مراجعة وتأكيد الطلب وشحنه فوراً من قِبل المورد.") }
+																</span>
+															</label>
 														</div>
 													}
 												</div>
-											</label>
+											</div>
 										}
 									}
 								</div>

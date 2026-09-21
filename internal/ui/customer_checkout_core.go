@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/muhiya/dawa24-store/internal/modules/commerce"
@@ -27,9 +28,11 @@ import (
 type checkoutRequest struct {
 	// FormBranchID is the legacy form value; the buying-branch selection in the
 	// context is authoritative when present.
-	FormBranchID  string
-	PaymentMethod string
-	Notes         string
+	FormBranchID          string
+	PaymentMethod         string
+	SenderPaymentMethodID int64
+	PaymentReference      string
+	Notes                 string
 }
 
 // checkoutFailure says where to send the buyer and why. A failure with neither
@@ -100,12 +103,35 @@ func (h *UIHandler) planCheckout(ctx context.Context, actor authctx.Actor, lang 
 		return nil, f
 	}
 
+	notes := req.Notes
+	var paymentMeta []string
+	if req.PaymentReference != "" {
+		paymentMeta = append(paymentMeta, fmt.Sprintf("مرجع التحويل: %s", req.PaymentReference))
+	}
+	if req.SenderPaymentMethodID > 0 && h.billSvc != nil {
+		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+		for _, uid := range candidateUIDs {
+			if upm, err := h.billSvc.GetPaymentMethodByID(ctx, uid, req.SenderPaymentMethodID); err == nil && upm != nil {
+				paymentMeta = append(paymentMeta, fmt.Sprintf("المحول منه: %s", upm.AccountIdentifier))
+				break
+			}
+		}
+	}
+	if len(paymentMeta) > 0 {
+		metaStr := fmt.Sprintf("[%s]", strings.Join(paymentMeta, " | "))
+		if strings.TrimSpace(notes) != "" {
+			notes = metaStr + " " + notes
+		} else {
+			notes = metaStr
+		}
+	}
+
 	input := commerce.CheckoutInput{
 		CustomerID:    actor.UserID,
 		BranchID:      branchID,
 		PaymentMethod: paymentMethod,
 		PaymentStatus: commerce.PaymentUnpaid,
-		Notes:         req.Notes,
+		Notes:         notes,
 		Items:         items,
 	}
 	if actor.OrganizationID > 0 {

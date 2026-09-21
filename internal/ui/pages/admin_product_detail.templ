@@ -41,14 +41,25 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 			<div class="glass-panel p-6 mb-6">
 				<div class="flex-between items-start flex-wrap gap-6">
 					<div class="d-flex items-start gap-5 flex-wrap sm:flex-nowrap">
-						<div class="w-36 h-36 sm:w-44 sm:h-44 rounded-2xl overflow-hidden bg-white border border-slate-200/90 shadow-xs flex-center shrink-0 p-2.5 relative group">
+						<div class="w-52 h-52 sm:w-64 sm:h-64 md:w-72 md:h-72 rounded-3xl overflow-hidden bg-white border-2 border-slate-200/90 shadow-md flex-center shrink-0 p-4 relative group transition-all">
 							if resolveProductImage(p) != "" {
-								<a href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(p))) } target="_blank" class="w-full h-full flex-center cursor-zoom-in relative group/img" title="عرض الصورة بالحجم الكامل">
+								<a
+									href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(p))) }
+									data-preview-file={ imageurl.Normalize(resolveProductImage(p)) }
+									data-title={ p.Name.Get("ar") }
+									target="_blank"
+									class="w-full h-full flex-center cursor-zoom-in relative group/img"
+									title="عرض الصورة بالحجم الكامل"
+								>
 									@components.ProductImage(imageurl.Full(resolveProductImage(p), p.Name.Get("ar"), "w-full h-full object-contain transition-transform duration-300 group-hover/img:scale-105"))
 									<div class="product-img-fallback hidden w-full h-full flex-col items-center justify-center text-muted gap-2 pointer-events-none">
 										<span class="text-4xl">@components.IconPill("icon-lg text-slate-300")</span>
 										<span class="text-2xs font-bold text-slate-400">لا توجد صورة</span>
 									</div>
+									<span class="absolute bottom-2 end-2 badge badge-slate text-2xs font-bold gap-1 shadow-xs opacity-80 group-hover/img:opacity-100 transition-opacity pointer-events-none">
+										@components.IconSearch("icon-2xs")
+										<span>تكبير</span>
+									</span>
 								</a>
 							} else {
 								<div class="d-flex flex-col items-center justify-center text-muted gap-2">

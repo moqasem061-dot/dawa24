@@ -180,6 +180,9 @@
     const target = e.target;
     if (!target) return;
 
+    // Do NOT intercept clicks inside the preview modal itself (e.g. newtab button, close button)
+    if (target.closest('#universal-file-preview-modal')) return;
+
     // 1. Explicit preview triggers: [data-preview-file], [data-preview-doc]
     const explicit = target.closest('[data-preview-file], [data-preview-doc]');
     if (explicit) {

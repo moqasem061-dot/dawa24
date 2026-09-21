@@ -31,9 +31,12 @@ func extractCommittedImageTargets(prods []*catalog.Product) []catalogImageTarget
 		if p == nil || p.ID <= 0 {
 			continue
 		}
-		imgURL := strings.TrimSpace(p.ImageLink)
+		imgURL := strings.Trim(strings.TrimSpace(p.ImageLink), "\"'")
 		if imgURL == "" {
-			imgURL = strings.TrimSpace(p.Image)
+			imgURL = strings.Trim(strings.TrimSpace(p.Image), "\"'")
+		}
+		if strings.HasPrefix(imgURL, "//") {
+			imgURL = "https:" + imgURL
 		}
 		if strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://") {
 			targets = append(targets, catalogImageTarget{
@@ -119,6 +122,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 
 					imgData, ext, dlErr := ingest.DownloadProductImage(bgCtx, item.URL)
 					if dlErr != nil || len(imgData) == 0 {
+						h.log.WarnContext(bgCtx, "download imported image failed", "url", item.URL, "product_id", item.ProductID, "error", dlErr)
 						continue
 					}
 
@@ -134,6 +138,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 					fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
 					localPath := filepath.Join(prodUploadDir, fileName)
 					if err := os.WriteFile(localPath, imgData, 0644); err != nil {
+						h.log.WarnContext(bgCtx, "save imported image failed", "path", localPath, "error", err)
 						continue
 					}
 
@@ -165,6 +170,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		}
 		wg.Wait()
 		h.log.InfoContext(bgCtx, "finished downloading imported product images", "count", len(targets))
+		h.refreshProductIndex(bgCtx)
 	})
 }
 

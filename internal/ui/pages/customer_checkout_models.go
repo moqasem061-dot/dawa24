@@ -3,9 +3,31 @@ package pages
 import (
 	"context"
 
+	"github.com/muhiya/dawa24-store/internal/modules/billing"
 	"github.com/muhiya/dawa24-store/internal/modules/org"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
 )
+
+// FilterUserPaymentMethodsByProvider returns user payment methods matching the given provider type.
+func FilterUserPaymentMethodsByProvider(methods []*billing.UserPaymentMethod, providerType string) []*billing.UserPaymentMethod {
+	var result []*billing.UserPaymentMethod
+	for _, m := range methods {
+		if m != nil && m.Provider == providerType {
+			result = append(result, m)
+		}
+	}
+	return result
+}
+
+// HasDefaultPaymentMethod reports whether any method in the list is marked default.
+func HasDefaultPaymentMethod(methods []*billing.UserPaymentMethod) bool {
+	for _, m := range methods {
+		if m != nil && m.IsDefault {
+			return true
+		}
+	}
+	return false
+}
 
 // CheckoutBranchItem holds a customer's branch alongside its cart availability and refusal reason.
 type CheckoutBranchItem struct {

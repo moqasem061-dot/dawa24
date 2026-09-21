@@ -30,7 +30,7 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 	userID := actor.UserID
 
 	if h.commSvc == nil {
-		h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckout(nil, nil, nil, nil, lang, dir))
+		h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckout(nil, nil, nil, nil, nil, lang, dir))
 		return
 	}
 
@@ -96,7 +96,9 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 	}
 
 	var checkoutMethods []*billing.PlatformPaymentMethod
+	var userPaymentMethods []*billing.UserPaymentMethod
 	var walletCheckoutAllowed bool
+	var wallet *billing.Wallet
 	if h.billSvc != nil {
 		if pms, err := h.billSvc.ListPlatformPaymentMethods(ctx, true); err == nil {
 			for _, pm := range pms {
@@ -108,17 +110,28 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 				}
 			}
 		}
-	}
 
-	var wallet *billing.Wallet
-	if walletCheckoutAllowed && h.billSvc != nil && actor.OrganizationID > 0 {
-		walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
-		if wItem, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP"); err == nil {
-			wallet = wItem
+		walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+		seenPM := make(map[int64]bool)
+		for _, uid := range candidateUIDs {
+			if upms, err := h.billSvc.ListPaymentMethods(ctx, uid); err == nil {
+				for _, upm := range upms {
+					if upm != nil && !seenPM[upm.ID] {
+						seenPM[upm.ID] = true
+						userPaymentMethods = append(userPaymentMethods, upm)
+					}
+				}
+			}
+		}
+
+		if walletCheckoutAllowed && actor.OrganizationID > 0 {
+			if wItem, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP"); err == nil {
+				wallet = wItem
+			}
 		}
 	}
 
-	h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckout(cart, branches, wallet, checkoutMethods, lang, dir))
+	h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckout(cart, branches, wallet, checkoutMethods, userPaymentMethods, lang, dir))
 }
 
 func (h *UIHandler) CheckoutSubmit(w http.ResponseWriter, r *http.Request) {
@@ -152,10 +165,19 @@ func (h *UIHandler) CheckoutSubmit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	var senderPMID int64
+	if sIDStr := strings.TrimSpace(r.PostFormValue("sender_payment_method_id")); sIDStr != "" {
+		if parsedID, err := strconv.ParseInt(sIDStr, 10, 64); err == nil {
+			senderPMID = parsedID
+		}
+	}
+
 	plan, failure := h.planCheckout(ctx, actor, lang, checkoutRequest{
-		FormBranchID:  formBranchID,
-		PaymentMethod: strings.TrimSpace(r.PostFormValue("payment_method")),
-		Notes:         r.PostFormValue("notes"),
+		FormBranchID:          formBranchID,
+		PaymentMethod:         strings.TrimSpace(r.PostFormValue("payment_method")),
+		SenderPaymentMethodID: senderPMID,
+		PaymentReference:      strings.TrimSpace(r.PostFormValue("payment_reference")),
+		Notes:                 r.PostFormValue("notes"),
 	})
 	if failure == nil {
 		var order *commerce.Order

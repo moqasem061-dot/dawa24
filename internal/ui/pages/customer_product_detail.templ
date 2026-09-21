@@ -51,17 +51,24 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 					
 					<!-- Col 1 (Right in RTL): Product Media, Official Package & Trust Signals -->
 					<div class="d-flex flex-col gap-4">
-						<div class="p-6 rounded-2xl bg-surface-raised border d-flex flex-col items-center justify-center relative overflow-hidden">
-							<div class="absolute top-3 start-3">
-								<span class="badge badge-emerald text-xs font-bold gap-1">
+						<div class="w-full min-h-[320px] sm:min-h-[360px] p-5 rounded-3xl bg-white border-2 border-slate-200/90 shadow-md flex-center relative overflow-hidden group transition-all">
+							<div class="absolute top-3.5 start-3.5 z-10">
+								<span class="badge badge-emerald text-xs font-bold gap-1 shadow-xs">
 									@components.IconCheck("icon-xs")
 									<span>{ i18n.T(lang, "product.certified_item") }</span>
 								</span>
 							</div>
 
 							if resolveProductImage(product) != "" {
-								<div class="w-full h-full flex-center relative">
-									@components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "max-h-60 max-w-full object-contain my-3"))
+								<a
+									href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(product))) }
+									data-preview-file={ imageurl.Normalize(resolveProductImage(product)) }
+									data-title={ productTitle(product) }
+									target="_blank"
+									class="w-full h-full flex-center cursor-zoom-in relative group/img my-2"
+									title={ i18n.T(lang, "product.view_full_image") }
+								>
+									@components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "max-h-72 max-w-full object-contain transition-transform duration-300 group-hover/img:scale-105"))
 									<div class="product-img-fallback hidden flex-col items-center justify-center text-muted gap-2">
 										<div class="w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4">
 											@components.IconPill("icon-lg")
@@ -69,10 +76,14 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 										<div class="font-extrabold text-sm text-primary">{ i18n.T(lang, "product.official_package") }</div>
 										<span class="text-xs text-muted">{ i18n.T(lang, "product.eda_compliant") }</span>
 									</div>
-								</div>
+									<span class="absolute bottom-2.5 end-2.5 badge badge-slate text-2xs font-bold gap-1 shadow-xs opacity-80 group-hover/img:opacity-100 transition-opacity pointer-events-none">
+										@components.IconSearch("icon-2xs")
+										<span>{ i18n.TDefault("تكبير الصورة") }</span>
+									</span>
+								</a>
 							} else {
-								<div class="w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4">
-									@components.IconPill("icon-lg")
+								<div class="w-28 h-28 rounded-2xl bg-primary-subtle text-primary flex-center text-4xl mb-3 mt-4">
+									@components.IconPill("icon-xl")
 								</div>
 								<div class="font-extrabold text-sm text-primary">{ i18n.T(lang, "product.official_package") }</div>
 								<span class="text-xs text-muted">{ i18n.T(lang, "product.eda_compliant") }</span>

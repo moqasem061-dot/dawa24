@@ -306,6 +306,9 @@ func (h *UIHandler) AdminProductsImportCommit(w http.ResponseWriter, r *http.Req
 	h.refreshProductIndex(ctx)
 	if session.Options.DownloadImages {
 		targets := extractCommittedImageTargets(result.CommittedProducts)
+		if len(targets) == 0 {
+			targets = h.extractCommittableImageTargets(sysCtx, session.ID)
+		}
 		if len(targets) > 0 {
 			h.downloadImportedImages(targets)
 		}
