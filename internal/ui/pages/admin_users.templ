@@ -57,14 +57,56 @@ templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 					showAddStaff: false,
 					showEditModal: false,
 					showPasswordModal: false,
+					showEditPass: false,
+					showPasswordPass: false,
 					editUser: { id: 0, name_ar: '', name_en: '', email: '', phone: '', avatar_url: '', national_id: '', status: 'active', org_id: '0', branch_id: '0', job_title: '' },
 					passwordUser: { id: 0, name: '', email: '' },
+					openEditFromEl(el) {
+						if (!el || !el.dataset) return;
+						const d = el.dataset;
+						this.editUser = {
+							id: parseInt(d.userId || '0', 10),
+							name_ar: d.nameAr || '',
+							name_en: d.nameEn || '',
+							email: d.email || '',
+							phone: d.phone || '',
+							avatar_url: d.avatarUrl || '',
+							national_id: d.nationalId || '',
+							status: d.status || 'active',
+							org_id: d.orgId || '0',
+							branch_id: d.branchId || '0',
+							job_title: d.jobTitle || ''
+						};
+						this.showEditPass = false;
+						this.showEditModal = true;
+					},
+					openPasswordFromEl(el) {
+						if (!el || !el.dataset) return;
+						const d = el.dataset;
+						this.passwordUser = {
+							id: parseInt(d.userId || '0', 10),
+							name: d.userName || '',
+							email: d.userEmail || ''
+						};
+						this.showPasswordPass = false;
+						this.showPasswordModal = true;
+					},
 					openEdit(u) {
-						this.editUser = u;
+						if (u && u.dataset) {
+							this.openEditFromEl(u);
+							return;
+						}
+						this.editUser = u || {};
+						this.showEditPass = false;
 						this.showEditModal = true;
 					},
 					openPassword(u) {
-						this.passwordUser = u;
+						if (u && u.dataset) {
+							this.openPasswordFromEl(u);
+							return;
+						}
+						this.passwordUser = u || {};
+						this.showPasswordPass = false;
 						this.showPasswordModal = true;
 					}
 				};
@@ -310,7 +352,7 @@ templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 													data-org-id={ fmt.Sprintf("%d", userOrgID) }
 													data-branch-id={ fmt.Sprintf("%d", userBranchID) }
 													data-job-title={ userJobTitle }
-													@click="openEdit({ id: parseInt($el.dataset.userId), name_ar: $el.dataset.nameAr, name_en: $el.dataset.nameEn, email: $el.dataset.email, phone: $el.dataset.phone, avatar_url: $el.dataset.avatarUrl, national_id: $el.dataset.nationalId, status: $el.dataset.status, org_id: $el.dataset.orgId, branch_id: $el.dataset.branchId, job_title: $el.dataset.jobTitle })"
+													@click="openEditFromEl($el)"
 												>
 													تعديل
 												</button>
@@ -320,7 +362,7 @@ templ AdminUsersPage(data AdminUsersPageData, lang, dir string) {
 													data-user-id={ fmt.Sprintf("%d", u.ID) }
 													data-user-name={ userDisplayName(u) }
 													data-user-email={ u.Email }
-													@click="openPassword({ id: parseInt($el.dataset.userId), name: $el.dataset.userName, email: $el.dataset.userEmail })"
+													@click="openPasswordFromEl($el)"
 												>
 													كلمة المرور
 												</button>

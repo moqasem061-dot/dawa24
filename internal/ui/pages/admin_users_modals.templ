@@ -201,14 +201,14 @@ templ adminUserEditModal(data AdminUsersPageData) {
 					</div>
 				</div>
 
-				<div class="p-3 bg-surface-sunken rounded-xl border mt-2" x-data="{ showPass: false }">
+				<div class="p-3 bg-surface-sunken rounded-xl border mt-2">
 					<div class="flex-between items-center mb-2">
 						<div class="text-xs font-black text-primary">تغيير كلمة المرور (اختياري)</div>
 						<button
 							type="button"
 							class="btn btn-secondary btn-xs text-2xs py-0.5 px-2 font-bold"
-							@click="showPass = !showPass"
-							x-text="showPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
+							@click="showEditPass = !showEditPass"
+							x-text="showEditPass ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
 						>
 							إظهار كلمة المرور
 						</button>
@@ -219,7 +219,7 @@ templ adminUserEditModal(data AdminUsersPageData) {
 							<input
 								id="list-edit-pass"
 								class="form-input font-mono text-xs"
-								:type="showPass ? 'text' : 'password'"
+								:type="showEditPass ? 'text' : 'password'"
 								name="password"
 								minlength="8"
 								autocomplete="new-password"
@@ -231,7 +231,7 @@ templ adminUserEditModal(data AdminUsersPageData) {
 							<input
 								id="list-edit-confirm-pass"
 								class="form-input font-mono text-xs"
-								:type="showPass ? 'text' : 'password'"
+								:type="showEditPass ? 'text' : 'password'"
 								name="confirm_password"
 								minlength="8"
 								autocomplete="new-password"
@@ -284,7 +284,7 @@ templ adminUserPasswordModal() {
 				سيتم تغيير كلمة المرور فوراً، إنهاء كافة الجلسات النشطة للمستخدم، وإلغاء أي حظر مؤقت ليتمكن من تسجيل الدخول فوراً.
 			</div>
 
-			<form method="POST" :action="'/admin/users/' + (passwordUser.id || '') + '/password'" class="d-grid gap-3" x-data="{ showPass: false }">
+			<form method="POST" :action="'/admin/users/' + (passwordUser.id || '') + '/password'" class="d-grid gap-3">
 				<input type="hidden" name="redirect" value="/admin/users" />
 				<input type="hidden" name="user_id" :value="passwordUser.id" />
 
@@ -294,8 +294,8 @@ templ adminUserPasswordModal() {
 						<button
 							type="button"
 							class="btn btn-secondary btn-xs text-2xs py-0.5 px-2 font-bold"
-							@click="showPass = !showPass"
-							x-text="showPass ? 'إخفاء' : 'إظهار'"
+							@click="showPasswordPass = !showPasswordPass"
+							x-text="showPasswordPass ? 'إخفاء' : 'إظهار'"
 						>
 							إظهار
 						</button>
@@ -303,7 +303,7 @@ templ adminUserPasswordModal() {
 					<input
 						id="list-new-pass"
 						class="form-input font-mono"
-						:type="showPass ? 'text' : 'password'"
+						:type="showPasswordPass ? 'text' : 'password'"
 						name="password"
 						required
 						minlength="8"
@@ -318,7 +318,7 @@ templ adminUserPasswordModal() {
 					<input
 						id="list-confirm-pass"
 						class="form-input font-mono"
-						:type="showPass ? 'text' : 'password'"
+						:type="showPasswordPass ? 'text' : 'password'"
 						name="confirm_password"
 						required
 						minlength="8"
