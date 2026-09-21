@@ -231,7 +231,7 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 			<p class="text-xs text-muted m-0 mt-1">
 				مرتبة بقيمة الفارق للوحدة الواحدة، لا بالنسبة المئوية: فارق 9% على عبوة غالية يفوق فارق 60% على عبوة رخيصة.
 			</p>
-			<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center">
+			<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center filter-form" data-filter-form>
 				if data.IsAdmin && data.TargetOrgID > 0 {
 					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
 				}
@@ -239,11 +239,13 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 					<input type="hidden" name="q_single" value={ data.SingleQuery }/>
 				}
 				<input
-					type="text"
+					type="search"
 					name="q"
 					value={ data.Query }
 					class="form-input text-sm flex-1"
 					placeholder="بحث باسم الصنف، الكود، أو المورد..."
+					data-min-chars="3"
+					autocomplete="off"
 				/>
 				<button type="submit" class="btn btn-primary btn-sm font-bold">بحث</button>
 				if data.Query != "" {
@@ -372,7 +374,7 @@ templ marketIntelExclusives(data MarketIntelligencePageData) {
 				<p class="text-xs text-muted m-0 mt-1">
 					لا تقبل المقارنة السعرية. أعلاها قيمة أولاً، فهي أكبر تعرّض تفاوضي.
 				</p>
-				<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center">
+				<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center filter-form" data-filter-form>
 					if data.IsAdmin && data.TargetOrgID > 0 {
 						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
 					}
@@ -380,11 +382,13 @@ templ marketIntelExclusives(data MarketIntelligencePageData) {
 						<input type="hidden" name="q" value={ data.Query }/>
 					}
 					<input
-						type="text"
+						type="search"
 						name="q_single"
 						value={ data.SingleQuery }
 						class="form-input text-sm flex-1"
 						placeholder="بحث باسم الصنف، الكود، أو المورد..."
+						data-min-chars="3"
+						autocomplete="off"
 					/>
 					<button type="submit" class="btn btn-primary btn-sm font-bold">بحث</button>
 					if data.SingleQuery != "" {

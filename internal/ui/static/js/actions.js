@@ -362,6 +362,7 @@
 
   function isFilterForm(form) {
     if (!form || !form.tagName || form.tagName.toLowerCase() !== 'form') return false;
+    if (form.hasAttribute('data-no-filter') || form.hasAttribute('data-no-autosubmit')) return false;
     var method = (form.getAttribute('method') || 'GET').toUpperCase();
     if (method !== 'GET') return false;
     var cls = (form.className || '');
@@ -370,7 +371,7 @@
     var action = form.getAttribute('action') || '';
     if (action.indexOf('/catalog') !== -1 || action.indexOf('/orders') !== -1 ||
         action.indexOf('/reports') !== -1 || action.indexOf('/inventory') !== -1 ||
-        action.indexOf('/market-discounts') !== -1 ||
+        action.indexOf('/market-discounts') !== -1 || action.indexOf('/compare') !== -1 ||
         action.indexOf('/admin/') !== -1 || action.indexOf('/vendor/') !== -1) return true;
     return false;
   }
@@ -394,7 +395,7 @@
     if (!parentForm || !isFilterForm(parentForm)) return;
     if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
 
-    if (tag === 'select' || type === 'checkbox' || type === 'radio' || type === 'date') {
+    if (tag === 'select' || type === 'checkbox' || type === 'radio' || type === 'date' || type === 'number') {
       if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
       else parentForm.submit();
     }
@@ -408,7 +409,7 @@
     var type = (el.type || '').toLowerCase();
     var name = (el.name || '').toLowerCase();
 
-    var isSearchInput = (tag === 'input' && (type === 'search' || type === 'text' || name === 'q' || name.indexOf('search') !== -1 || name.indexOf('filter') !== -1));
+    var isSearchInput = (tag === 'input' && (type === 'search' || type === 'text' || name === 'q' || name.indexOf('q') === 0 || name.indexOf('search') !== -1 || name.indexOf('filter') !== -1));
     if (!isSearchInput) return;
 
     var parentForm = el.form || el.closest('form');

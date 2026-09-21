@@ -106,7 +106,7 @@ templ benchmarkControls(data MarketBenchmarkPageData) {
 		class="filter-bar bench-controls"
 		x-data={ fmt.Sprintf("{ ranges: %t }", data.MinPrice != "" || data.MaxPrice != "" || data.MinDiscount != "" || data.MaxDiscount != "") }
 	>
-		<form method="GET" action="/compare/market-benchmark" class="bench-controls-form">
+		<form method="GET" action="/compare/market-benchmark" class="bench-controls-form filter-form" data-filter-form>
 			if data.IsAdmin && data.TargetOrgID > 0 {
 				<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
 			}
@@ -127,7 +127,7 @@ templ benchmarkControls(data MarketBenchmarkPageData) {
 
 				<label class="bench-field is-grow">
 					<span class="bench-field-label">بحث</span>
-					<input type="search" name="q" value={ data.Query } placeholder="اسم الصنف أو الكود…" class="form-input"/>
+					<input type="search" name="q" value={ data.Query } placeholder="اسم الصنف أو الكود…" class="form-input" data-min-chars="3" autocomplete="off"/>
 				</label>
 
 				<label class="bench-field">

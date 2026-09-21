@@ -163,7 +163,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 
 		<!-- Supplier Selector Form -->
 		<div class="filter-bar">
-			<form method="GET" action="/compare/head-to-head" class="d-grid gap-4 items-end m-0">
+			<form method="GET" action="/compare/head-to-head" class="d-grid gap-4 items-end m-0" data-no-filter>
 				if data.IsAdmin && data.TargetOrgID > 0 {
 					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
 				}
@@ -264,7 +264,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 
 			<!-- Filter Bar -->
 			<div class="filter-bar">
-				<form method="GET" action="/compare/head-to-head" class="m-0">
+				<form method="GET" action="/compare/head-to-head" class="m-0 filter-form" data-filter-form>
 					if data.IsAdmin && data.TargetOrgID > 0 {
 						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
 					}
@@ -274,7 +274,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 
 					<div class="d-grid gap-3 items-end">
 						<!-- الحد الأدنى للسعر -->
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
 								الحد الأدنى للسعر
 							</label>
@@ -289,7 +289,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						</div>
 
 						<!-- الحد الأقصى للسعر -->
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
 								الحد الأقصى للسعر
 							</label>
@@ -304,7 +304,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						</div>
 
 						<!-- الحد الأدنى للخصم -->
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
 								الحد الأدنى للخصم
 							</label>
@@ -319,7 +319,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						</div>
 
 						<!-- الحد الأقصى للخصم -->
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
 								الحد الأقصى للخصم
 							</label>
@@ -334,22 +334,31 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						</div>
 
 						<!-- بحث بالاسم -->
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
 								بحث باسم الصنف أو الكود
 							</label>
 							<input
-								type="text"
+								type="search"
 								name="q"
 								value={ data.Query }
-								placeholder="اسم الصنف..."
+								placeholder="اسم الصنف أو الكود..."
 								class="form-input text-xs"
+								data-min-chars="3"
+								autocomplete="off"
 							/>
 						</div>
 
-						<button type="submit" class="btn btn-primary font-bold px-4">
-							تطبيق الفلتر
-						</button>
+						<div class="d-flex gap-2">
+							<button type="submit" class="btn btn-primary font-bold px-4">
+								تطبيق الفلتر
+							</button>
+							if data.Query != "" || data.MinPrice != "" || data.MaxPrice != "" || data.MinDiscount != "" || data.MaxDiscount != "" {
+								<a href={ templ.SafeURL(buildHeadToHeadURL(data.SourceFileID, data.TargetFileID, "", "", "", "", "", data.ActiveTab, data.TargetOrgID)) } class="btn btn-ghost font-bold px-3">
+									مسح
+								</a>
+							}
+						</div>
 					</div>
 				</form>
 

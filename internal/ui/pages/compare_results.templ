@@ -65,6 +65,24 @@ func (d CompareResultsPageData) FilterURL(filter string) string {
 	return "/compare/results?" + encoded
 }
 
+func (d CompareResultsPageData) ClearSearchURL() string {
+	vals := url.Values{}
+	if d.SuppliersParam != "" {
+		vals.Set("suppliers", d.SuppliersParam)
+	}
+	if d.ActiveFilter != "" && d.ActiveFilter != "all" {
+		vals.Set("filter", d.ActiveFilter)
+	}
+	if d.IsAdmin && d.TargetOrgID > 0 {
+		vals.Set("org_id", fmt.Sprintf("%d", d.TargetOrgID))
+	}
+	encoded := vals.Encode()
+	if encoded == "" {
+		return "/compare/results"
+	}
+	return "/compare/results?" + encoded
+}
+
 func formatRowsCount(res *compare.ComparisonResultSet) string {
 	if res == nil {
 		return "0"
@@ -233,7 +251,7 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 					</div>
 
 					<!-- Search Filter Form -->
-					<form method="GET" action="/compare/results" class="min-w-280 m-0 d-flex gap-2">
+					<form method="GET" action="/compare/results" class="min-w-280 m-0 d-flex gap-2 filter-form" data-filter-form>
 						if data.SuppliersParam != "" {
 							<input type="hidden" name="suppliers" value={ data.SuppliersParam } />
 						}
@@ -244,16 +262,23 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 							<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
 						}
 						<input
-							type="text"
+							type="search"
 							name="q"
 							value={ data.Query }
 							id="comparison-table-search"
 							placeholder="بحث باسم الصنف، الكود، أو المورد..."
 							class="form-input text-xs"
+							data-min-chars="3"
+							autocomplete="off"
 						/>
-						<button type="submit" class="btn btn-secondary btn-sm font-bold">
+						<button type="submit" class="btn btn-secondary btn-sm font-bold" title="بحث">
 							@components.IconSearch("icon-xs")
 						</button>
+						if data.Query != "" {
+							<a href={ templ.SafeURL(data.ClearSearchURL()) } class="btn btn-secondary btn-sm px-2 text-muted" title="مسح البحث">
+								✕
+							</a>
+						}
 					</form>
 				</div>
 
