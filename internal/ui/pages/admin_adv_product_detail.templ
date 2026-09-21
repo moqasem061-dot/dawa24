@@ -123,6 +123,7 @@ templ AdminAdvProductDetailPage(lang, dir string, data AdminAdvProductDetailData
 						<div class="w-12 h-12 rounded-lg bg-surface-sunken border shrink-0 overflow-hidden d-flex items-center justify-center">
 							if data.Row.ProductImage != "" {
 								@components.ProductImage(imageurl.Thumb(data.Row.ProductImage, data.Row.ProductName.Get(i18n.ParseLang(lang)), "w-full h-full object-cover"))
+								<span class="product-img-fallback hidden">@components.IconPackage("icon-sm text-muted")</span>
 							} else {
 								@components.IconPackage("icon-sm text-muted")
 							}

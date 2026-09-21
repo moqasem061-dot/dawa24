@@ -70,6 +70,7 @@ templ AdminAdvProductsTable(data AdminAdvProductsData, lang, dir string) {
 										<div class="w-10 h-10 rounded-lg bg-surface-sunken border d-flex items-center justify-center shrink-0 overflow-hidden">
 											if row.ProductImage != "" {
 												@components.ProductImage(imageurl.Thumb(row.ProductImage, row.ProductName.Get(i18n.ParseLang(lang)), "w-full h-full object-cover"))
+												<span class="product-img-fallback hidden">@components.IconPackage("icon-xs text-muted")</span>
 											} else {
 												@components.IconPackage("icon-xs text-muted")
 											}

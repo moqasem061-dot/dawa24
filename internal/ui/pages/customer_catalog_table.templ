@@ -5,6 +5,7 @@ import (
 
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/imageurl"
 )
 
 templ CustomerCatalogTable(variants []*SupplierVariantCard, lang string) {
@@ -31,7 +32,10 @@ templ CustomerCatalogTable(variants []*SupplierVariantCard, lang string) {
 								<div class="d-flex items-center gap-2.5">
 									<div class="catalog-thumb-box">
 										if v.ProductImage != "" {
-											<img src={ v.ProductImage } alt={ v.ProductNameAr } class="w-full h-full object-contain p-0.5" loading="lazy" />
+											@components.ProductImage(imageurl.Thumb(v.ProductImage, v.ProductNameAr, "w-full h-full object-contain p-0.5"))
+											<span class="product-img-fallback hidden text-muted">
+												@components.IconPill("icon-xs")
+											</span>
 										} else {
 											<span class="text-muted">
 												@components.IconPill("icon-xs")

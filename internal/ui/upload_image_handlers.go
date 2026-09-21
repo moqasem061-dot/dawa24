@@ -5,6 +5,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -62,6 +63,9 @@ func RegisterUploadRoutes(r chi.Router) {
 		w.Header().Set("Accept-Ranges", "bytes")
 		rctx := chi.RouteContext(r.Context())
 		path := rctx.URLParam("*")
+		if unescaped, err := url.PathUnescape(path); err == nil {
+			path = unescaped
+		}
 		cleanPath := filepath.Clean(filepath.FromSlash(path))
 		if strings.Contains(cleanPath, "..") {
 			http.Error(w, "Forbidden", http.StatusForbidden)
@@ -90,43 +94,67 @@ func RegisterUploadRoutes(r chi.Router) {
 		// ?s=thumb|card|full selects a rendition; anything else, or a
 		// rendition that was never produced, serves the original.
 		size := r.URL.Query().Get("s")
-		fullPath := resolveRendition(baseDir, cleanPath, size)
-		if _, err := os.Stat(fullPath); err == nil {
-			// The rendition may be a different type from the original — a WebP
-			// upload derives to JPEG — so the Content-Type set from the request
-			// path above would be wrong. Clear it and let ServeFile sniff.
-			if fullPath != filepath.Join(baseDir, cleanPath) {
-				w.Header().Del("Content-Type")
-			}
-			http.ServeFile(w, r, fullPath)
-			return
+
+		// Search baseDir and known fallback directories, testing both cleanPath
+		// and cleanPath with/without "products/" prefix.
+		candidatePaths := []string{cleanPath}
+		normCandidate := strings.TrimPrefix(filepath.ToSlash(cleanPath), "/")
+		if strings.HasPrefix(normCandidate, "products/") {
+			candidatePaths = append(candidatePaths, strings.TrimPrefix(normCandidate, "products/"))
+		} else {
+			candidatePaths = append(candidatePaths, filepath.Join("products", cleanPath))
 		}
-		// Resilient fallback check in default relative directory
-		if baseDir != "data/uploads" {
-			fallbackPath := filepath.Join("data/uploads", cleanPath)
-			if _, err := os.Stat(fallbackPath); err == nil {
-				http.ServeFile(w, r, fallbackPath)
-				return
+
+		searchDirs := []string{baseDir}
+		for _, dir := range []string{"data/uploads", "cmd/server/data/uploads", "internal/ui/data/uploads"} {
+			if dir != baseDir {
+				searchDirs = append(searchDirs, dir)
+			}
+		}
+
+		for _, dir := range searchDirs {
+			for _, cp := range candidatePaths {
+				fullPath := resolveRendition(dir, cp, size)
+				if st, err := os.Stat(fullPath); err == nil && !st.IsDir() {
+					if fullPath != filepath.Join(dir, cp) {
+						w.Header().Del("Content-Type")
+					}
+					http.ServeFile(w, r, fullPath)
+					return
+				}
+				orig := filepath.Join(dir, cp)
+				if st, err := os.Stat(orig); err == nil && !st.IsDir() {
+					http.ServeFile(w, r, orig)
+					return
+				}
 			}
 		}
 
 		// Fallback to S3/MinIO storage client if file is missing locally
 		if uploadStorageClient != nil {
-			s3Key := strings.TrimPrefix(filepath.ToSlash(cleanPath), "/")
 			ctx := r.Context()
-			reader, _, err := uploadStorageClient.Get(ctx, s3Key)
-			if err != nil && strings.HasPrefix(s3Key, "products/") {
-				reader, _, err = uploadStorageClient.Get(ctx, strings.TrimPrefix(s3Key, "products/"))
+			targetSavePath := filepath.Join(baseDir, cleanPath)
+			s3Keys := []string{strings.TrimPrefix(filepath.ToSlash(cleanPath), "/")}
+			for _, cp := range candidatePaths {
+				k := strings.TrimPrefix(filepath.ToSlash(cp), "/")
+				if k != s3Keys[0] {
+					s3Keys = append(s3Keys, k)
+				}
+				s3Keys = append(s3Keys, "uploads/"+k)
 			}
-			if err == nil && reader != nil {
-				defer reader.Close()
-				data, readErr := io.ReadAll(reader)
-				if readErr == nil && len(data) > 0 {
-					_ = os.MkdirAll(filepath.Dir(fullPath), 0755)
-					_ = os.WriteFile(fullPath, data, 0644)
-					_ = deriveAndStore(filepath.Dir(fullPath), filepath.Base(fullPath), data)
-					http.ServeFile(w, r, fullPath)
-					return
+
+			for _, s3Key := range s3Keys {
+				reader, _, err := uploadStorageClient.Get(ctx, s3Key)
+				if err == nil && reader != nil {
+					data, readErr := io.ReadAll(reader)
+					_ = reader.Close()
+					if readErr == nil && len(data) > 0 {
+						_ = os.MkdirAll(filepath.Dir(targetSavePath), 0755)
+						_ = os.WriteFile(targetSavePath, data, 0644)
+						_ = deriveAndStore(filepath.Dir(targetSavePath), filepath.Base(targetSavePath), data)
+						http.ServeFile(w, r, targetSavePath)
+						return
+					}
 				}
 			}
 		}

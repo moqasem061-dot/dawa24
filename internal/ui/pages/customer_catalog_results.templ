@@ -82,6 +82,16 @@ templ CustomerCatalogGrid(variants []*SupplierVariantCard, lang string) {
 					<div class="product-card-media">
 						if v.ProductImage != "" {
 							@components.ProductImage(imageurl.Card(v.ProductImage, v.ProductNameAr, "product-card-img"))
+							<div class="product-img-fallback product-card-placeholder hidden">
+								@components.IconPill("icon-lg")
+								<span class="text-xs font-bold opacity-60">
+									if lang == "en" {
+										Item image
+									} else {
+										صورة الصنف
+									}
+								</span>
+							</div>
 						} else {
 							<div class="product-card-placeholder">
 								@components.IconPill("icon-lg")
