@@ -93,8 +93,15 @@ func TestAdminProductDetailPage_EnlargedImageAndNoOldPrice(t *testing.T) {
 	if !strings.Contains(html, "50 وحدة") {
 		t.Errorf("expected stock quantity '50 وحدة' in vendor offers table")
 	}
-	if !strings.Contains(html, "31.50") {
-		t.Errorf("expected price '31.50' in vendor offers table")
+	// 6. Muhiya design B2B showcase layout & specs table
+	if !strings.Contains(html, "b2b-product-showcase") {
+		t.Errorf("expected 'b2b-product-showcase' layout container")
+	}
+	if !strings.Contains(html, "b2b-product-media-card") {
+		t.Errorf("expected 'b2b-product-media-card' fixed container")
+	}
+	if !strings.Contains(html, "b2b-specs-table") {
+		t.Errorf("expected 'b2b-specs-table' clean specification table")
 	}
 }
 

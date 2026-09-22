@@ -1,0 +1,17 @@
+package pages
+
+import (
+	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+)
+
+// AdminApisProductsPage renders external API sync settings for catalog products.
+templ AdminApisProductsPage(lang, dir string) {
+	@layouts.AdminShell("ربط وتزامن واجهات API للمنتجات", "catalog", lang, dir) {
+		<div class="glass-panel max-w-2xl mx-auto">
+			<h2 class="mb-sm text-base font-bold text-primary">مزامنة المنتجات عبر واجهات API الخارجية</h2>
+			<p class="text-sm text-secondary mb-6">سجل الروابط ونقاط النهاية (Endpoints) الخاصة بالتكامل والمزامنة التلقائية للأصناف.</p>
+			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد روابط API متصلة", Message: "قم بإضافة موفر API لمزامنة المخزون تلقائياً."})
+		</div>
+	}
+}

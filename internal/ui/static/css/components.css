@@ -9369,3 +9369,167 @@ body.dark .upload-progress-note {
   .htmx-request .htmx-indicator,
   .htmx-request.htmx-indicator { opacity: 1; transition: opacity 200ms ease-in; }
 }
+
+/* ==========================================================================
+   DAWA 24 B2B PRODUCT DETAIL SHOWCASE (muhiya-design)
+   Clean e-commerce product layouts, fixed-ratio media cards, and specs tables
+   ========================================================================== */
+
+.b2b-product-showcase {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 1.5rem;
+  align-items: start;
+  margin-block-end: 1.5rem;
+}
+
+@media (max-width: 992px) {
+  .b2b-product-showcase {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.b2b-customer-showcase {
+  display: grid;
+  grid-template-columns: 320px 1fr 320px;
+  gap: 1.5rem;
+  align-items: start;
+  margin-block-end: 1.5rem;
+}
+
+@media (max-width: 1200px) {
+  .b2b-customer-showcase {
+    grid-template-columns: 300px 1fr;
+  }
+  .b2b-customer-showcase .b2b-buybox-col {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 860px) {
+  .b2b-customer-showcase {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+}
+
+.b2b-product-gallery {
+  position: sticky;
+  top: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.b2b-product-media-card {
+  width: 100%;
+  max-width: 340px;
+  height: 340px;
+  max-height: 340px;
+  margin-inline: auto;
+  background: var(--bg-surface-raised, #ffffff);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-xl, 0.75rem);
+  box-shadow: var(--shadow-xs, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+@media (max-width: 480px) {
+  .b2b-product-media-card {
+    max-width: 100%;
+    height: 280px;
+  }
+}
+
+.b2b-product-media-card img,
+.b2b-product-img {
+  max-width: 100% !important;
+  max-height: 280px !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: contain !important;
+  display: block;
+  margin-inline: auto;
+  transition: transform var(--duration-fast, 150ms) ease;
+}
+
+.b2b-product-media-card:hover .b2b-product-img,
+.b2b-product-media-card:hover img {
+  transform: scale(1.02);
+}
+
+.b2b-product-info-panel {
+  background: var(--bg-surface-raised, #ffffff);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-xl, 0.75rem);
+  box-shadow: var(--shadow-xs, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.b2b-pricing-banner {
+  padding: 1rem 1.25rem;
+  background: var(--bg-surface-sunken, #f8fafc);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-lg, 0.5rem);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.b2b-specs-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs, 0.75rem);
+  border-spacing: 0;
+}
+
+.b2b-specs-table tr {
+  border-bottom: 1px solid var(--border-subtle, #f1f5f9);
+}
+
+.b2b-specs-table tr:last-child {
+  border-bottom: none;
+}
+
+.b2b-specs-table th,
+.b2b-specs-table td {
+  padding: 0.55rem 0.5rem;
+  vertical-align: middle;
+}
+
+.b2b-specs-table th {
+  color: var(--text-secondary, #64748b);
+  font-weight: 600;
+  width: 32%;
+  text-align: start;
+}
+
+.b2b-specs-table td {
+  color: var(--text-primary, #0f172a);
+  font-weight: 700;
+  text-align: start;
+}
+
+.b2b-trust-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-surface-sunken, #f8fafc);
+  border: 1px solid var(--border-card, #e2e8f0);
+  border-radius: var(--radius-lg, 0.5rem);
+  font-size: var(--text-xs, 0.75rem);
+}
+

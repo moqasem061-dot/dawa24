@@ -47,8 +47,13 @@
       els.newtabBtn.href = url;
       els.newtabBtn.setAttribute('target', '_blank');
       els.newtabBtn.setAttribute('rel', 'noopener noreferrer');
+      els.newtabBtn.setAttribute('data-no-boost', 'true');
       els.newtabBtn.onclick = function (e) {
         e.stopPropagation();
+        if (url && url !== '#') {
+          window.open(url, '_blank');
+          e.preventDefault();
+        }
       };
     }
     if (els.errBox) {

@@ -108,4 +108,15 @@ func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
 	if !strings.Contains(html, "مستودع ابن سينا فارما") {
 		t.Errorf("expected competing supplier in offers table")
 	}
+
+	// 6. Muhiya design B2B showcase layout & specs table
+	if !strings.Contains(html, "b2b-customer-showcase") {
+		t.Errorf("expected 'b2b-customer-showcase' layout container")
+	}
+	if !strings.Contains(html, "b2b-product-media-card") {
+		t.Errorf("expected 'b2b-product-media-card' fixed container")
+	}
+	if !strings.Contains(html, "b2b-specs-table") {
+		t.Errorf("expected 'b2b-specs-table' clean specification table")
+	}
 }
