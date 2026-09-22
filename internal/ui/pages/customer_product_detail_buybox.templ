@@ -10,258 +10,219 @@ import (
 )
 
 templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOffer, lang, dir string) {
-	<div class="rounded-2xl bg-surface-raised border overflow-hidden shadow-xs product-detail-buy-box">
+	<div class="glass-panel p-5 rounded-2xl border shadow-xs product-detail-buy-box stack-md text-start">
 		if len(offers) > 0 {
-			<!-- Supplier Header & Reviews Strip -->
-			<div class="p-4 px-5 border-b bg-surface-raised flex-between items-center flex-wrap gap-3">
-				<div class="d-flex items-center gap-3">
-					<div class="w-10 h-10 rounded-xl bg-brand-subtle text-brand flex-center text-lg shrink-0">
-						@components.IconBuilding("icon-sm")
-					</div>
-					<div class="stack-2xs text-start">
-						<div class="d-flex items-center gap-2">
-							<span class="text-sm font-black text-primary">
-								{ offers[0].SupplierName }
-							</span>
-							if offers[0].IsVerified {
-								<span class="badge badge-emerald text-2xs font-extrabold gap-1">
-									@components.IconShield("icon-2xs")
-									<span>{ i18n.T(lang, "product.verified_supplier") }</span>
-								</span>
-							}
-							if offers[0].IsNegotiable {
-								<span class="badge badge-amber text-2xs font-extrabold gap-1">
-									@components.IconTag("icon-2xs")
-									<span>{ i18n.T(lang, "product.negotiable") }</span>
-								</span>
-							}
-						</div>
-						<div class="d-flex items-center gap-3 text-2xs text-muted">
-							if offers[0].BranchName != "" {
-								<span>{ fmt.Sprintf(i18n.T(lang, "product.branch_prefix"), offers[0].BranchName) }</span>
-								<span>•</span>
-							}
-							<span class="d-flex items-center gap-1 text-emerald font-bold">
-								@components.IconTruck("icon-2xs")
-								<span>{ i18n.T(lang, "product.delivery_24h") }</span>
-							</span>
-						</div>
-					</div>
+			<!-- 1. Pricing & Net Savings -->
+			<div class="stack-2xs pb-3 border-b">
+				<span class="text-2xs text-muted font-bold d-block">{ i18n.T(lang, "product.pharmacy_supply_price") }</span>
+				<div class="d-flex items-baseline gap-1.5 flex-wrap">
+					<span class="tabular-nums text-3xl font-black text-brand">
+						{ offers[0].Price.String() }
+					</span>
+					<span class="text-xs font-bold text-secondary">{ i18n.T(lang, "product.per_pack_suffix") }</span>
 				</div>
 
-				<!-- Vendor Pharmacist Reviews & Trust Score -->
-				if offers[0].SupplierRating > 0 {
-					<div class="d-flex items-center gap-2 bg-surface p-2 px-3 rounded-xl border">
-						<span class="text-amber-500 text-sm leading-none">★</span>
-						<div class="text-start">
-							<div class="d-flex items-center gap-1">
-								<strong class="text-xs font-black text-primary tabular-nums">{ fmt.Sprintf("%.1f", offers[0].SupplierRating) }</strong>
-								<span class="text-2xs text-muted">/ 5.0</span>
-							</div>
-							if offers[0].ReviewCount > 0 {
-								<span class="text-2xs text-muted d-block font-medium">
-									if lang == "en" {
-										{ fmt.Sprintf("(%d reviews)", offers[0].ReviewCount) }
-									} else {
-										{ fmt.Sprintf("(%d تقييم)", offers[0].ReviewCount) }
-									}
-								</span>
-							} else {
-								<span class="text-2xs text-muted d-block font-medium">{ i18n.T(lang, "product.pharmacist_rating_trusted") }</span>
-							}
-						</div>
+				if offers[0].OldPrice.IsPositive() && offers[0].OldPrice.Minor() > offers[0].Price.Minor() {
+					<div class="text-2xs text-muted">
+						<span>{ i18n.T(lang, "product.public_price_label") }</span>
+						<span class="line-through font-mono">{ fmt.Sprintf("%s %s", offers[0].OldPrice.String(), i18n.T(lang, "common.currency_egp")) }</span>
 					</div>
-				} else {
-					<div class="d-flex items-center gap-2 bg-surface p-2 px-3 rounded-xl border">
-						<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "product.badge_certified") }</span>
-						<div class="text-start">
-							<span class="text-xs font-bold text-primary">
-								if lang == "en" {
-									Verified Supplier
-								} else {
-									مورد معتمد
-								}
-							</span>
-							<span class="text-2xs text-muted d-block font-medium">
-								if lang == "en" {
-									New Supplier
-								} else {
-									مورد جديد
-								}
-							</span>
-						</div>
+				}
+
+				if offers[0].DiscountBPS > 0 {
+					<div class="mt-1">
+						<span class="badge badge-emerald text-2xs font-black">
+							{ fmt.Sprintf(i18n.T(lang, "product.savings_badge"), offers[0].DiscountAmount.String(), int(float64(offers[0].DiscountBPS)/100.0 + 0.5)) }
+						</span>
 					</div>
 				}
 			</div>
 
-			<!-- 3-Column Structured Layout: Pricing | Stock & Coverage | Quick Order -->
-			<div class="p-5 d-grid grid-cols-1 md:grid-cols-3 gap-5">
-				<!-- Column 1: Pricing & Net Savings -->
-				<div class="p-4 rounded-xl bg-surface-raised border stack-xs text-start">
-					<span class="text-2xs text-muted font-bold d-block">{ i18n.T(lang, "product.pharmacy_supply_price") }</span>
-					<div class="d-flex items-baseline gap-1.5 flex-wrap">
-						<span class="tabular-nums text-2xl font-black text-brand">
-							{ offers[0].Price.String() }
+			<!-- 2. Supplier & Trust Strip -->
+			<div class="pb-3 border-b stack-xs">
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<span class="text-2xs text-muted font-bold">المورد:</span>
+					<span class="text-xs font-black text-primary">
+						{ offers[0].SupplierName }
+					</span>
+					if offers[0].IsVerified {
+						<span class="badge badge-emerald text-2xs font-extrabold gap-0.5">
+							@components.IconShield("icon-2xs")
+							<span>{ i18n.T(lang, "product.verified_supplier") }</span>
 						</span>
-						<span class="text-xs font-bold text-secondary">{ i18n.T(lang, "product.per_pack_suffix") }</span>
-					</div>
-
-					if offers[0].OldPrice.IsPositive() && offers[0].OldPrice.Minor() > offers[0].Price.Minor() {
-						<div class="text-2xs text-muted">
-							<span>{ i18n.T(lang, "product.public_price_label") }</span>
-							<span class="line-through font-mono">{ fmt.Sprintf("%s %s", offers[0].OldPrice.String(), i18n.T(lang, "common.currency_egp")) }</span>
-						</div>
 					}
-
-					if offers[0].DiscountBPS > 0 {
-						<div class="mt-1">
-							<span class="badge badge-emerald text-2xs font-black">
-								{ fmt.Sprintf(i18n.T(lang, "product.savings_badge"), offers[0].DiscountAmount.String(), int(float64(offers[0].DiscountBPS)/100.0 + 0.5)) }
-							</span>
-						</div>
+					if offers[0].IsNegotiable {
+						<span class="badge badge-amber text-2xs font-extrabold gap-0.5">
+							@components.IconTag("icon-2xs")
+							<span>{ i18n.T(lang, "product.negotiable") }</span>
+						</span>
 					}
 				</div>
 
-				<!-- Column 2: Inventory & Coverage Status -->
-				<div class="p-4 rounded-xl bg-surface-raised border stack-xs text-start text-xs">
-					if buying, has := authctx.BuyingBranchFrom(ctx); has && len(buying.Branches) > 0 {
-						<div class="mb-2 p-1.5 px-2.5 rounded-lg bg-surface border text-2xs d-flex items-center gap-1.5 flex-wrap">
-							<span class="text-muted font-bold">{ i18n.T(lang, "product.receiving_branch") }</span>
-							<span class="text-primary font-black d-flex items-center gap-1">
-								if buying.IsLocked {
-									@components.IconLock("icon-2xs text-amber")
-								} else {
-									@components.IconMapPin("icon-2xs text-brand")
-								}
-								<span>{ ActiveBranchName(buying) }</span>
-							</span>
+				if offers[0].BranchName != "" {
+					<div class="text-2xs text-muted">
+						<span>{ fmt.Sprintf(i18n.T(lang, "product.branch_prefix"), offers[0].BranchName) }</span>
+					</div>
+				}
+
+				<div class="d-flex items-center gap-2 text-2xs flex-wrap">
+					if offers[0].SupplierRating > 0 {
+						<div class="d-flex items-center gap-1 text-amber-500 font-bold">
+							<span>★</span>
+							<span class="tabular-nums text-primary">{ fmt.Sprintf("%.1f", offers[0].SupplierRating) }</span>
+							if offers[0].ReviewCount > 0 {
+								<span class="text-muted font-normal">({ fmt.Sprintf("%d", offers[0].ReviewCount) })</span>
+							}
+						</div>
+						<span>•</span>
+					}
+					<span class="text-emerald font-bold d-flex items-center gap-1">
+						@components.IconTruck("icon-2xs")
+						<span>{ i18n.T(lang, "product.delivery_24h") }</span>
+					</span>
+				</div>
+			</div>
+
+			<!-- 3. Inventory & Coverage Status -->
+			<div class="pb-3 border-b stack-xs text-xs">
+				if buying, has := authctx.BuyingBranchFrom(ctx); has && len(buying.Branches) > 0 {
+					<div class="p-1.5 px-2.5 rounded-lg bg-surface border text-2xs d-flex items-center gap-1.5 flex-wrap mb-1">
+						<span class="text-muted font-bold">{ i18n.T(lang, "product.receiving_branch") }</span>
+						<span class="text-primary font-black d-flex items-center gap-1">
 							if buying.IsLocked {
-								<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "product.branch_locked") }</span>
+								@components.IconLock("icon-2xs text-amber")
+							} else {
+								@components.IconMapPin("icon-2xs text-brand")
 							}
-						</div>
-					}
-					<div class="flex-between items-center pb-1.5 border-b">
-						<span class="text-muted">{ i18n.T(lang, "product.available_stock_label") }</span>
-						if offers[0].AvailableStock > 0 {
-							<strong class="text-brand font-black tabular-nums">{ fmt.Sprintf(i18n.T(lang, "product.units_count"), offers[0].AvailableStock) }</strong>
-						} else {
-							<strong class="text-danger font-bold">{ i18n.T(lang, "product.out_of_stock") }</strong>
+							<span>{ ActiveBranchName(buying) }</span>
+						</span>
+						if buying.IsLocked {
+							<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "product.branch_locked") }</span>
 						}
 					</div>
+				}
 
-					<div class="flex-between items-center pb-1.5 border-b">
-						<span class="text-muted">{ i18n.T(lang, "product.min_order_qty_label") }</span>
-						<strong class="text-primary font-bold tabular-nums">{ fmt.Sprintf(i18n.T(lang, "product.units_count"), max(1, offers[0].MinOrderQty)) }</strong>
-					</div>
-
-					if offers[0].ExpiryDate != "" {
-						<div class="flex-between items-center pb-1.5 border-b">
-							<span class="text-muted">{ i18n.T(lang, "product.expiry_date_label") }</span>
-							<strong class="font-mono text-primary tabular-nums">{ offers[0].ExpiryDate }</strong>
-						</div>
+				<div class="flex-between items-center py-1">
+					<span class="text-muted">{ i18n.T(lang, "product.available_stock_label") }</span>
+					if offers[0].AvailableStock > 0 {
+						<strong class="text-brand font-black tabular-nums">{ fmt.Sprintf(i18n.T(lang, "product.units_count"), offers[0].AvailableStock) }</strong>
+					} else {
+						<strong class="text-danger font-bold">{ i18n.T(lang, "product.out_of_stock") }</strong>
 					}
-
-					<div class="pt-1">
-						if offers[0].IsCovered {
-							<div class="p-1.5 px-2.5 rounded-lg bg-emerald-subtle text-emerald text-2xs font-bold d-flex items-center gap-1.5">
-								@components.IconCheck("icon-2xs")
-								<span>{ i18n.T(lang, "product.covered_for_branch") }</span>
-							</div>
-						} else {
-							<div class="p-1.5 px-2.5 rounded-lg bg-danger-subtle text-danger text-2xs font-bold d-flex items-center gap-1.5">
-								@components.IconAlert("icon-2xs")
-								<span>
-									if offers[0].CoverageReason != "" {
-										{ offers[0].CoverageReason }
-									} else {
-										{ i18n.T(lang, "product.outside_coverage") }
-									}
-								</span>
-							</div>
-						}
-					</div>
 				</div>
 
-				<!-- Column 3: Stepper & Add to Cart Action -->
-				<div class="p-4 rounded-xl bg-surface-raised border d-flex flex-col justify-between gap-3 text-start">
-					if offers[0].CanAddToCart {
-						<form method="POST" action="/cart/add" hx-post="/cart/add" hx-swap="none" class="d-flex flex-col justify-between h-full gap-3 m-0">
-							<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", offers[0].VariantID) } />
-							<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", product.ID) } />
-							<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", offers[0].SupplierID) } />
-							<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", offers[0].SupplierID) } />
-							<input type="hidden" name="offer_price" value={ offers[0].Price.String() } />
+				<div class="flex-between items-center py-1">
+					<span class="text-muted">{ i18n.T(lang, "product.min_order_qty_label") }</span>
+					<strong class="text-primary font-bold tabular-nums">{ fmt.Sprintf(i18n.T(lang, "product.units_count"), max(1, offers[0].MinOrderQty)) }</strong>
+				</div>
 
-							<div>
-								<label class="text-2xs font-bold text-secondary d-block mb-1.5">{ i18n.T(lang, "product.select_quantity") }</label>
-								<div class="cart-stepper-control w-full justify-between">
-									<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, -1)">−</button>
-									<input
-										type="number"
-										name="qty"
-										value={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
-										min={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
-										max={ fmt.Sprintf("%d", offers[0].OrderCeiling()) }
-										class="cart-stepper-input flex-1 text-center font-black"
-									/>
-									<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, 1)">+</button>
-								</div>
-							</div>
+				if offers[0].ExpiryDate != "" {
+					<div class="flex-between items-center py-1">
+						<span class="text-muted">{ i18n.T(lang, "product.expiry_date_label") }</span>
+						<strong class="font-mono text-primary tabular-nums">{ offers[0].ExpiryDate }</strong>
+					</div>
+				}
 
-							<button type="submit" class="btn btn-primary font-black text-xs w-full py-2.5 gap-1.5 shadow-sm">
-								@components.IconPlus("icon-xs")
-								<span>{ i18n.T(lang, "product.add_to_cart") }</span>
-							</button>
-							if offers[0].IsNegotiable {
-								<button
-									type="button"
-									class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300"
-									data-variant-id={ fmt.Sprintf("%d", offers[0].VariantID) }
-									data-product-id={ fmt.Sprintf("%d", product.ID) }
-									data-vendor-id={ fmt.Sprintf("%d", offers[0].SupplierID) }
-									data-product-name={ productTitle(product) }
-									data-current-price={ offers[0].Price.String() }
-									data-min-qty={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
-									data-on-click="openNegotiationModal(this)"
-								>
-									@components.IconTag("icon-xs")
-									<span>{ i18n.T(lang, "product.request_negotiation") }</span>
-								</button>
-							}
-						</form>
+				<div class="pt-1">
+					if offers[0].IsCovered {
+						<div class="p-1.5 px-2.5 rounded-lg bg-emerald-subtle text-emerald text-2xs font-bold d-flex items-center gap-1.5">
+							@components.IconCheck("icon-2xs")
+							<span>{ i18n.T(lang, "product.covered_for_branch") }</span>
+						</div>
 					} else {
-						<div class="d-flex flex-col justify-center items-center h-full text-center gap-2">
-							if offers[0].CoverageReason != "" {
-								<span class="text-xs text-danger font-bold">{ offers[0].CoverageReason }</span>
-							} else {
-								<span class="text-xs text-muted font-bold">{ i18n.T(lang, "product.order_unavailable_now") }</span>
-							}
-							<button type="button" disabled class="btn btn-secondary text-xs w-full py-2.5 font-bold cursor-not-allowed opacity-60">
+						<div class="p-1.5 px-2.5 rounded-lg bg-danger-subtle text-danger text-2xs font-bold d-flex items-center gap-1.5">
+							@components.IconAlert("icon-2xs")
+							<span>
 								if offers[0].CoverageReason != "" {
 									{ offers[0].CoverageReason }
 								} else {
-									{ i18n.T(lang, "product.not_available_direct") }
+									{ i18n.T(lang, "product.outside_coverage") }
 								}
-							</button>
-							if offers[0].IsNegotiable {
-								<button
-									type="button"
-									class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300"
-									data-variant-id={ fmt.Sprintf("%d", offers[0].VariantID) }
-									data-product-id={ fmt.Sprintf("%d", product.ID) }
-									data-vendor-id={ fmt.Sprintf("%d", offers[0].SupplierID) }
-									data-product-name={ productTitle(product) }
-									data-current-price={ offers[0].Price.String() }
-									data-min-qty={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
-									data-on-click="openNegotiationModal(this)"
-								>
-									@components.IconTag("icon-xs")
-									<span>{ i18n.T(lang, "product.request_negotiation") }</span>
-								</button>
-							}
+							</span>
 						</div>
 					}
 				</div>
+			</div>
+
+			<!-- 4. Stepper & Cart Action -->
+			<div class="stack-sm">
+				if offers[0].CanAddToCart {
+					<form method="POST" action="/cart/add" hx-post="/cart/add" hx-swap="none" class="stack-sm m-0">
+						<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", offers[0].VariantID) } />
+						<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", product.ID) } />
+						<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", offers[0].SupplierID) } />
+						<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", offers[0].SupplierID) } />
+						<input type="hidden" name="offer_price" value={ offers[0].Price.String() } />
+
+						<div>
+							<label class="text-2xs font-bold text-secondary d-block mb-1.5">{ i18n.T(lang, "product.select_quantity") }</label>
+							<div class="cart-stepper-control w-full justify-between">
+								<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, -1)">−</button>
+								<input
+									type="number"
+									name="qty"
+									value={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
+									min={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
+									max={ fmt.Sprintf("%d", offers[0].OrderCeiling()) }
+									class="cart-stepper-input flex-1 text-center font-black"
+								/>
+								<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, 1)">+</button>
+							</div>
+						</div>
+
+						<button type="submit" class="btn btn-primary font-black text-xs w-full py-2.5 gap-1.5 shadow-sm justify-center">
+							@components.IconPlus("icon-xs")
+							<span>{ i18n.T(lang, "product.add_to_cart") }</span>
+						</button>
+						if offers[0].IsNegotiable {
+							<button
+								type="button"
+								class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300 justify-center"
+								data-variant-id={ fmt.Sprintf("%d", offers[0].VariantID) }
+								data-product-id={ fmt.Sprintf("%d", product.ID) }
+								data-vendor-id={ fmt.Sprintf("%d", offers[0].SupplierID) }
+								data-product-name={ productTitle(product) }
+								data-current-price={ offers[0].Price.String() }
+								data-min-qty={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
+								data-on-click="openNegotiationModal(this)"
+							>
+								@components.IconTag("icon-xs")
+								<span>{ i18n.T(lang, "product.request_negotiation") }</span>
+							</button>
+						}
+					</form>
+				} else {
+					<div class="d-flex flex-col justify-center items-center text-center gap-2">
+						if offers[0].CoverageReason != "" {
+							<span class="text-xs text-danger font-bold">{ offers[0].CoverageReason }</span>
+						} else {
+							<span class="text-xs text-muted font-bold">{ i18n.T(lang, "product.order_unavailable_now") }</span>
+						}
+						<button type="button" disabled class="btn btn-secondary text-xs w-full py-2.5 font-bold cursor-not-allowed opacity-60">
+							if offers[0].CoverageReason != "" {
+								{ offers[0].CoverageReason }
+							} else {
+								{ i18n.T(lang, "product.not_available_direct") }
+							}
+						</button>
+						if offers[0].IsNegotiable {
+							<button
+								type="button"
+								class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300 justify-center"
+								data-variant-id={ fmt.Sprintf("%d", offers[0].VariantID) }
+								data-product-id={ fmt.Sprintf("%d", product.ID) }
+								data-vendor-id={ fmt.Sprintf("%d", offers[0].SupplierID) }
+								data-product-name={ productTitle(product) }
+								data-current-price={ offers[0].Price.String() }
+								data-min-qty={ fmt.Sprintf("%d", max(1, offers[0].MinOrderQty)) }
+								data-on-click="openNegotiationModal(this)"
+							>
+								@components.IconTag("icon-xs")
+								<span>{ i18n.T(lang, "product.request_negotiation") }</span>
+							</button>
+						}
+					</div>
+				}
 			</div>
 		} else {
 			<!-- Creative Sourcing Request State (No Offers) -->

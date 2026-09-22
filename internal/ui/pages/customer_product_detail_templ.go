@@ -177,7 +177,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<!-- 1. Hero Product Showcase Grid (2 Columns: Media & Master Specs) --><div class=\"glass-panel p-6 mb-6 border rounded-2xl shadow-xs\"><div class=\"catalog-product-detail-layout\"><!-- Col 1 (Right in RTL): Product Media, Official Package & Trust Signals --><div class=\"d-flex flex-col gap-4\"><div class=\"p-6 rounded-2xl bg-surface-raised border d-flex flex-col items-center justify-center relative overflow-hidden\"><div class=\"absolute top-3 start-3\"><span class=\"badge badge-emerald text-xs font-bold gap-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<!-- 1. Hero Product Showcase Grid (3 Columns Amazon Style: Media, Specs, Buy Box) --><div class=\"grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-6\"><!-- Col 1 (Right in RTL): Product Media, Official Package & Trust Signals (Sticky) --><div class=\"lg:col-span-4 xl:col-span-3 sticky top-6\"><div class=\"glass-panel p-4 flex flex-col justify-center items-center rounded-2xl bg-white border border-slate-200/90 shadow-xs relative min-h-[300px] md:min-h-[340px]\"><div class=\"absolute top-3 start-3\"><span class=\"badge badge-emerald text-xs font-bold gap-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -192,7 +192,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.certified_item"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 58, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 57, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -207,11 +207,11 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "max-h-60 max-w-full object-contain my-3")).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "w-auto max-w-full max-h-[260px] md:max-h-[280px] object-contain my-3")).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"product-img-fallback hidden flex-col items-center justify-center text-muted gap-2\"><div class=\"w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div class=\"product-img-fallback hidden flex-col items-center justify-center text-muted gap-2\"><div class=\"w-20 h-20 rounded-2xl bg-primary-subtle text-primary flex-center text-2xl mb-2 mt-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -226,7 +226,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.official_package"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 69, Col: 101}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 68, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -239,7 +239,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.eda_compliant"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 70, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 69, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -249,8 +249,9 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"w-24 h-24 rounded-2xl bg-primary-subtle text-primary flex-center text-3xl mb-3 mt-4\">")
+			}
+			if resolveProductImage(product) == "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"w-20 h-20 rounded-2xl bg-primary-subtle text-primary flex-center text-2xl mb-2 mt-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -265,7 +266,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.official_package"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 77, Col: 99}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 77, Col: 98}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 				if templ_7745c5c3_Err != nil {
@@ -278,7 +279,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.eda_compliant"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 78, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 78, Col: 79}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -289,7 +290,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><!-- Pharmacist Trust Signals --><div class=\"p-3 bg-surface-raised rounded-xl border stack-2xs text-xs\"><div class=\"d-flex items-center gap-2 text-success font-bold\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</div><!-- Pharmacist Trust Signals Under Image --><div class=\"mt-3 p-3 bg-surface-raised rounded-xl border stack-2xs text-2xs\"><div class=\"d-flex items-center gap-2 text-success font-bold\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -304,7 +305,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.trust_expiry_check"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 86, Col: 58}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 86, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -325,13 +326,13 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.trust_secure_supply"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 90, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 90, Col: 58}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span></div></div></div><!-- Col 2 (Left in RTL): Clinical Specifications & Purchasing --><div class=\"d-flex flex-col gap-4\"><!-- Header Block --><div><div class=\"d-flex items-center gap-2 mb-2 flex-wrap\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</span></div></div></div><!-- Col 2 (Center in RTL): Product Info, Clinical Specifications, Variants & Indications --><div class=\"lg:col-span-5 xl:col-span-6 glass-panel p-6 stack-md\"><!-- Header Block --><div><div class=\"d-flex items-center gap-2 mb-2 flex-wrap\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -351,7 +352,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var18 string
 				templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(product.ManufacturingCompanies)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 103, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 103, Col: 47}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 				if templ_7745c5c3_Err != nil {
@@ -370,7 +371,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var19 string
 				templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(product.DosageForm)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 108, Col: 30}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 108, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 				if templ_7745c5c3_Err != nil {
@@ -381,14 +382,14 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div><h1 class=\"text-2xl font-black text-primary m-0 mb-1 leading-tight\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 34, "</div><h1 class=\"text-2xl lg:text-3xl font-black text-primary m-0 mb-1 leading-tight\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(productTitle(product))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 114, Col: 31}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 114, Col: 30}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -406,7 +407,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(product.Name["en"])
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 119, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 119, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 				if templ_7745c5c3_Err != nil {
@@ -422,7 +423,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				return templ_7745c5c3_Err
 			}
 			if product.Active != "" || (product.ScientificName != "" && product.ScientificName != product.Active) || product.Barcode != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"d-grid grid-auto-fit-sm p-4 rounded-xl bg-surface-raised border text-xs gap-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 39, "<div class=\"d-grid grid-auto-fit-sm p-4 rounded-xl bg-surface-sunken border text-xs gap-3\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -434,7 +435,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var22 string
 					templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.active_ingredient"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 129, Col: 109}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 129, Col: 108}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 					if templ_7745c5c3_Err != nil {
@@ -447,7 +448,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(product.Active)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 130, Col: 65}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 130, Col: 64}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -466,7 +467,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.scientific_name"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 135, Col: 107}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 135, Col: 106}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
@@ -479,7 +480,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var25 string
 					templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(product.ScientificName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 136, Col: 73}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 136, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 					if templ_7745c5c3_Err != nil {
@@ -498,7 +499,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var26 string
 					templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.gtin_barcode"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 141, Col: 104}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 141, Col: 103}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 					if templ_7745c5c3_Err != nil {
@@ -511,7 +512,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					var templ_7745c5c3_Var27 string
 					templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(product.Barcode)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 142, Col: 66}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 142, Col: 65}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 					if templ_7745c5c3_Err != nil {
@@ -532,14 +533,14 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 				return templ_7745c5c3_Err
 			}
 			if len(variants) > 0 {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div><label class=\"text-xs font-extrabold text-primary d-block mb-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "<div class=\"pt-3 border-t\"><label class=\"text-xs font-extrabold text-primary d-block mb-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "product.registered_variants"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 152, Col: 54}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 152, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -558,7 +559,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 						var templ_7745c5c3_Var29 string
 						templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(v.Name["ar"])
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 159, Col: 27}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 159, Col: 26}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 						if templ_7745c5c3_Err != nil {
@@ -568,7 +569,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 						var templ_7745c5c3_Var30 string
 						templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(v.SKU)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 161, Col: 20}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 161, Col: 19}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 						if templ_7745c5c3_Err != nil {
@@ -587,7 +588,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 						var templ_7745c5c3_Var31 string
 						templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%s %s", v.Price.String(), i18n.T(lang, "common.currency_egp")))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 166, Col: 90}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 166, Col: 89}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 						if templ_7745c5c3_Err != nil {
@@ -608,7 +609,42 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<!-- Primary Purchase Box / Special Sourcing Card -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 59, "<!-- Description / Indications if present -->")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if product.Description["ar"] != "" || product.Description["en"] != "" {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "<div class=\"pt-3 border-t\"><div class=\"text-xs font-bold text-muted mb-1.5\">الوصف ودواعي الاستعمال:</div><div class=\"text-xs text-primary leading-relaxed bg-surface-sunken p-3 rounded-lg border\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				if product.Description["ar"] != "" {
+					var templ_7745c5c3_Var32 string
+					templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(product.Description["ar"])
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 181, Col: 36}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				} else {
+					var templ_7745c5c3_Var33 string
+					templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(product.Description["en"])
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 183, Col: 36}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</div></div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "</div><!-- Col 3 (Left in RTL): Primary Purchase Box / Special Sourcing Card (Sticky) --><div class=\"lg:col-span-3 xl:col-span-3 sticky top-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -616,7 +652,7 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 60, "</div></div></div><!-- 2. Other Supplier Offers Comparison Table -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 63, "</div></div><!-- 2. Other Supplier Offers Comparison Table -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -624,20 +660,20 @@ func CustomerProductDetail(product *catalog.Product, variants []*catalog.Product
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 61, "</div><script nonce=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 64, "</div><script nonce=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var32 string
-			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
+			var templ_7745c5c3_Var34 string
+			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 188, Col: 36}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/customer_product_detail.templ`, Line: 202, Col: 36}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 62, "\">\n\t\t\tfunction stepCatalogQty(btn, delta) {\n\t\t\t\tconst form = btn.closest('form') || btn.closest('.product-detail-buy-box');\n\t\t\t\tif (!form) return;\n\t\t\t\tconst input = form.querySelector('input[name=\"qty\"]');\n\t\t\t\tif (input) {\n\t\t\t\t\tlet val = parseInt(input.value, 10) || 1;\n\t\t\t\t\tval += delta;\n\t\t\t\t\tconst min = parseInt(input.getAttribute('min') || '1', 10);\n\t\t\t\t\tconst max = parseInt(input.getAttribute('max') || '9999', 10);\n\t\t\t\t\tif (val < min) val = min;\n\t\t\t\t\tif (val > max && max > 0) val = max;\n\t\t\t\t\tinput.value = val;\n\t\t\t\t}\n\t\t\t}\n\t\t</script> ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 65, "\">\n\t\t\tfunction stepCatalogQty(btn, delta) {\n\t\t\t\tconst form = btn.closest('form') || btn.closest('.product-detail-buy-box');\n\t\t\t\tif (!form) return;\n\t\t\t\tconst input = form.querySelector('input[name=\"qty\"]');\n\t\t\t\tif (input) {\n\t\t\t\t\tlet val = parseInt(input.value, 10) || 1;\n\t\t\t\t\tval += delta;\n\t\t\t\t\tconst min = parseInt(input.getAttribute('min') || '1', 10);\n\t\t\t\t\tconst max = parseInt(input.getAttribute('max') || '9999', 10);\n\t\t\t\t\tif (val < min) val = min;\n\t\t\t\t\tif (val > max && max > 0) val = max;\n\t\t\t\t\tinput.value = val;\n\t\t\t\t}\n\t\t\t}\n\t\t</script> ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

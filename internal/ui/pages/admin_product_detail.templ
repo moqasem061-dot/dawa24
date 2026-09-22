@@ -37,11 +37,21 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 	@layouts.AdminShell(fmt.Sprintf("تفاصيل الصنف: %s", p.Name.Get("ar")), "products", lang, dir) {
 		<div class="page-container max-w-5xl mx-auto">
 			
-			<!-- Header Card -->
-			<div class="glass-panel p-6 mb-6">
-				<div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-stretch">
-					<!-- Col 1: Product Image Full-Height Showcase -->
-					<div class="md:col-span-4 lg:col-span-3 flex flex-col justify-center items-center rounded-3xl overflow-hidden bg-white border-2 border-slate-200/90 shadow-md p-6 relative group transition-all min-h-[340px] md:min-h-[380px]">
+			<!-- Breadcrumb Navigation -->
+			<nav class="d-flex items-center gap-2 text-xs text-muted mb-4 flex-wrap font-bold" aria-label="مسار التنقل">
+				<a href="/admin/dashboard" class="text-secondary hover:text-primary transition-colors">لوحة الإدارة</a>
+				<span>/</span>
+				<a href="/admin/products" class="text-secondary hover:text-primary transition-colors">قائمة الأصناف والمنتجات</a>
+				<span>/</span>
+				<span class="text-primary font-black">{ p.Name.Get("ar") }</span>
+			</nav>
+
+			<!-- Amazon-Style 3-Column Product Showcase -->
+			<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-6">
+				
+				<!-- Col 1 (Right in RTL): Product Image Showcase (Sticky) -->
+				<div class="lg:col-span-4 xl:col-span-3 sticky top-6">
+					<div class="glass-panel p-4 flex flex-col justify-center items-center rounded-2xl bg-white border border-slate-200/90 shadow-xs relative group transition-all min-h-[340px] md:min-h-[380px]">
 						if resolveProductImage(p) != "" {
 							<a
 								href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(p))) }
@@ -52,7 +62,7 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 								class="w-full h-full flex flex-col items-center justify-center cursor-zoom-in relative group/img"
 								title="عرض الصورة بالحجم الكامل"
 							>
-								@components.ProductImage(imageurl.Full(resolveProductImage(p), p.Name.Get("ar"), "w-full h-full max-h-[320px] object-contain transition-transform duration-300 group-hover/img:scale-105"))
+								@components.ProductImage(imageurl.Full(resolveProductImage(p), p.Name.Get("ar"), "w-auto max-w-full max-h-[280px] md:max-h-[300px] object-contain transition-transform duration-300 group-hover/img:scale-105"))
 								<div class="product-img-fallback hidden w-full h-full flex-col items-center justify-center text-muted gap-2 pointer-events-none">
 									<span class="text-4xl">@components.IconPill("icon-lg text-slate-300")</span>
 									<span class="text-2xs font-bold text-slate-400">لا توجد صورة</span>
@@ -70,176 +80,200 @@ templ AdminProductDetailPage(p *catalog.Product, variants []*catalog.ProductVari
 						}
 					</div>
 
-					<!-- Col 2: Product Info & Actions -->
-					<div class="md:col-span-8 lg:col-span-9 flex flex-col justify-between gap-4">
-						<div class="stack-sm">
-							<div class="d-flex items-center gap-2 mb-1">
-								if p.Status == catalog.StatusActive {
-									<span class="badge badge-emerald text-xs font-bold">نشط ومتاح في السوق</span>
-								} else {
-									<span class="badge badge-rose text-xs font-bold">موقوف / معطل</span>
-								}
-								if p.IsFeatured {
-									<span class="badge badge-sky text-xs font-bold">مميز </span>
-								}
-								<span class="text-xs text-muted tabular-nums font-mono">ID: #{ fmt.Sprintf("%d", p.ID) }</span>
+					<!-- Quality & Standard Signals Under Image -->
+					<div class="mt-3 p-3 bg-surface-raised rounded-xl border stack-2xs text-2xs text-secondary">
+						<div class="d-flex items-center gap-2 text-primary font-bold">
+							@components.IconShield("icon-2xs text-brand")
+							<span>صنف قياسي بالكتالوج الموحد</span>
+						</div>
+						<div class="d-flex items-center gap-2 text-muted">
+							@components.IconCheckCircle("icon-2xs text-emerald")
+							<span>مطابق لمواصفات هيئة الدواء (EDA)</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Col 2 (Center in RTL): Product Details, Clinical Specifications & Indications -->
+				<div class="lg:col-span-5 xl:col-span-6 glass-panel p-6 stack-md">
+					<!-- Brand & Title Block -->
+					<div>
+						<div class="d-flex items-center gap-2 mb-2 flex-wrap">
+							if p.ManufacturingCompanies != "" {
+								<span class="badge badge-slate text-xs font-bold gap-1">
+									@components.IconBuilding("icon-2xs")
+									<span>{ p.ManufacturingCompanies }</span>
+								</span>
+							}
+							if p.DosageForm != "" {
+								<span class="badge badge-sky text-xs font-bold">
+									{ p.DosageForm }
+								</span>
+							}
+						</div>
+
+						<h1 class="text-2xl lg:text-3xl font-black text-primary m-0 mb-1 leading-tight">
+							{ p.Name.Get("ar") }
+						</h1>
+
+						if p.Name.Get("en") != "" {
+							<div class="text-sm text-secondary font-medium mb-3 font-mono" dir="ltr">
+								{ p.Name.Get("en") }
+							</div>
+						}
+
+						<div class="d-flex items-center gap-3 flex-wrap text-xs text-muted pt-2 border-t">
+							if p.SKU != "" {
+								<span>SKU: <strong class="text-primary tabular-nums font-mono">{ p.SKU }</strong></span>
+								<span>•</span>
+							}
+							if p.Barcode != "" {
+								<span>باركود: <strong class="text-primary tabular-nums font-mono">{ p.Barcode }</strong></span>
+								<span>•</span>
+							}
+							<span class="tabular-nums font-mono">معرف النظام: #{ fmt.Sprintf("%d", p.ID) }</span>
+						</div>
+					</div>
+
+					<!-- Master Specifications Grid -->
+					<div class="pt-3 border-t">
+						<h2 class="text-xs font-extrabold text-muted uppercase tracking-wider mb-3">
+							المواصفات والبيانات القياسية للأصناف
+						</h2>
+						<div class="d-grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">الاسم العلمي (Scientific Name)</div>
+								<div class="font-bold text-primary font-mono">
+									if p.ScientificName != "" {
+										{ p.ScientificName }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</div>
 							</div>
 
-							<h1 class="text-2xl lg:text-3xl font-black text-primary m-0 mb-1 leading-tight">
-								{ p.Name.Get("ar") }
-							</h1>
-
-							if p.Name.Get("en") != "" {
-								<div class="text-sm text-secondary font-medium mb-2 font-mono" dir="ltr">
-									{ p.Name.Get("en") }
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">المادة الفعالة (Active Ingredient)</div>
+								<div class="font-bold text-primary">
+									if p.Active != "" {
+										{ p.Active }
+									} else {
+										<span class="text-muted">—</span>
+									}
 								</div>
-							}
+							</div>
 
-							<div class="d-flex items-center gap-4 flex-wrap text-xs text-muted mt-2">
-								if p.SKU != "" {
-									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">SKU: <strong class="text-primary tabular-nums font-mono">{ p.SKU }</strong></span>
-								}
-								if p.Barcode != "" {
-									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">باركود: <strong class="text-primary tabular-nums font-mono">{ p.Barcode }</strong></span>
-								}
-								if p.ManufacturingCompanies != "" {
-									<span class="p-1.5 px-2.5 rounded-lg bg-surface-raised border">الشركة: <strong class="text-primary">{ p.ManufacturingCompanies }</strong></span>
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">الشكل الصيدلي (Dosage Form)</div>
+								<div class="font-bold text-primary">
+									if p.DosageForm != "" {
+										{ p.DosageForm }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</div>
+							</div>
+
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">التركيز الدوائي (Concentration)</div>
+								<div class="font-bold text-primary">
+									if p.Concentration != "" {
+										{ p.Concentration }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</div>
+							</div>
+
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">وحدة التعبئة (Unit)</div>
+								<div class="font-bold text-primary">
+									if p.Unit != "" {
+										{ p.Unit }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</div>
+							</div>
+
+							<div class="p-3 bg-surface-sunken border rounded-lg">
+								<div class="text-2xs text-muted mb-0.5">التصنيف الدوائي (Pharmacology)</div>
+								<div class="font-bold text-primary">
+									if p.Pharmacology != "" {
+										{ p.Pharmacology }
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Description & Indications -->
+					if p.Description.Get("ar") != "" || p.Description.Get("en") != "" {
+						<div class="pt-3 border-t">
+							<div class="text-xs font-bold text-muted mb-1.5">الوصف ودواعي الاستعمال:</div>
+							<div class="text-xs text-primary leading-relaxed bg-surface-sunken p-3 rounded-lg border">
+								if p.Description.Get("ar") != "" {
+									{ p.Description.Get("ar") }
+								} else {
+									{ p.Description.Get("en") }
 								}
 							</div>
 						</div>
+					}
+				</div>
 
-						<div class="d-flex items-center gap-2 pt-3 border-t">
-							<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs">
-								@components.IconArrowRight("icon-xs")
-								<span>العودة لقائمة المنتجات</span>
-							</a>
-							<a href={ templ.SafeURL(fmt.Sprintf("/catalog?q=%s", url.QueryEscape(p.Name.Get("ar")))) } target="_blank" class="btn btn-primary btn-sm font-bold text-xs">
+				<!-- Col 3 (Left in RTL): Amazon-style Buy Box / Admin Operations Card (Sticky) -->
+				<div class="lg:col-span-3 xl:col-span-3 sticky top-6">
+					<div class="glass-panel p-5 stack-md">
+						<div class="flex-between items-center pb-3 border-b">
+							<span class="text-xs font-bold text-muted">حالة الصنف في المنصة</span>
+							if p.Status == catalog.StatusActive {
+								<span class="badge badge-emerald text-xs font-bold">نشط ومتاح في السوق</span>
+							} else {
+								<span class="badge badge-rose text-xs font-bold">موقوف / معطل</span>
+							}
+						</div>
+
+						<!-- Pricing Block -->
+						<div class="stack-xs">
+							<div class="stat-card-label text-xs">سعر الجمهور الرسمي</div>
+							<div class="d-flex items-baseline gap-1">
+								<span class="text-3xl font-black text-primary tabular-nums">{ p.Price.String() }</span>
+								<span class="text-xs font-bold text-secondary">ج.م</span>
+							</div>
+							<div class="stat-card-sub text-muted text-2xs">السعر المعتمد للصيدليات والجمهور</div>
+						</div>
+
+						<!-- Quick Market Metrics -->
+						<div class="stack-xs pt-3 border-t text-xs">
+							<div class="flex-between items-center py-1">
+								<span class="stat-card-label text-xs">عروض التوريد النشطة</span>
+								<strong class="stat-card-value text-sky tabular-nums font-black text-base">{ fmt.Sprintf("%d", len(variants)) }</strong>
+							</div>
+							<div class="stat-card-sub text-muted text-2xs mb-2">عدد عروض الموردين المتاحة في السوق</div>
+
+							<div class="flex-between items-center py-1 pt-2 border-t">
+								<span class="stat-card-label text-xs">مرات الطلب والبيع</span>
+								<strong class="stat-card-value text-success tabular-nums font-black text-base">{ fmt.Sprintf("%d", p.SoldTimes) }</strong>
+							</div>
+							<div class="stat-card-sub text-muted text-2xs">إجمالي مرات الشراء المسجلة للصنف</div>
+						</div>
+
+						<!-- Actions -->
+						<div class="stack-xs pt-3 border-t">
+							<a href={ templ.SafeURL(fmt.Sprintf("/catalog?q=%s", url.QueryEscape(p.Name.Get("ar")))) } target="_blank" class="btn btn-primary btn-sm font-bold text-xs w-full justify-center">
 								@components.IconExternalLink("icon-xs")
 								<span>عرض في الكتالوج العام</span>
 							</a>
-						</div>
-					</div>
-				</div>
-			</div>
-
-			<!-- Stats Strip -->
-			<div class="dashboard-stat-grid mb-6">
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-xs">سعر الجمهور الرسمي</div>
-					<div class="stat-card-value text-primary tabular-nums text-2xl font-black">
-						{ p.Price.String() } <span class="text-xs font-normal">ج.م</span>
-					</div>
-					<div class="stat-card-sub text-muted text-xs mt-1">السعر المعتمد للصيدليات والجمهور</div>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-xs">عروض التوريد النشطة</div>
-					<div class="stat-card-value text-sky tabular-nums text-2xl font-black">
-						{ fmt.Sprintf("%d", len(variants)) }
-					</div>
-					<div class="stat-card-sub text-muted text-xs mt-1">عدد عروض الموردين المتاحة في السوق</div>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-xs">مرات الطلب والبيع</div>
-					<div class="stat-card-value text-success tabular-nums text-2xl font-black">
-						{ fmt.Sprintf("%d", p.SoldTimes) }
-					</div>
-					<div class="stat-card-sub text-muted text-xs mt-1">إجمالي مرات الشراء المسجلة للصنف</div>
-				</div>
-			</div>
-
-			<!-- Specifications Grid & Info -->
-			<div class="glass-panel p-6 mb-6">
-				<div class="flex-between items-center pb-3 mb-4 border-b">
-					<div class="d-flex items-center gap-2">
-						<span class="text-lg">@components.IconFileText("icon-sm")</span>
-						<h2 class="text-base font-black text-primary m-0">
-							المواصفات والبيانات القياسية للأصناف
-						</h2>
-					</div>
-				</div>
-
-				<div class="d-grid grid-auto-fit-md gap-4">
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">الاسم العلمي (Scientific Name)</div>
-						<div class="text-xs font-bold text-primary font-mono">
-							if p.ScientificName != "" {
-								{ p.ScientificName }
-							} else {
-								<span class="text-muted"></span>
-							}
-						</div>
-					</div>
-
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">المادة الفعالة (Active Ingredient)</div>
-						<div class="text-xs font-bold text-primary">
-							if p.Active != "" {
-								{ p.Active }
-							} else {
-								<span class="text-muted"></span>
-							}
-						</div>
-					</div>
-
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">الشكل الصيدلي (Dosage Form)</div>
-						<div class="text-xs font-bold text-primary">
-							if p.DosageForm != "" {
-								{ p.DosageForm }
-							} else {
-								<span class="text-muted"></span>
-							}
-						</div>
-					</div>
-
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">التركيز الدوائي (Concentration)</div>
-						<div class="text-xs font-bold text-primary">
-							if p.Concentration != "" {
-								{ p.Concentration }
-							} else {
-								<span class="text-muted"></span>
-							}
-						</div>
-					</div>
-
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">وحدة التعبئة (Unit)</div>
-						<div class="text-xs font-bold text-primary">
-							if p.Unit != "" {
-								{ p.Unit }
-							} else {
-								<span class="text-muted"></span>
-							}
-						</div>
-					</div>
-
-					<div class="p-3 bg-surface-sunken border rounded-lg">
-						<div class="text-xs text-muted mb-1">التصنيف الدوائي (Pharmacology)</div>
-						<div class="text-xs font-bold text-primary">
-							if p.Pharmacology != "" {
-								{ p.Pharmacology }
-							} else {
-								<span class="text-muted"></span>
-							}
+							<a href="/admin/products" class="btn btn-secondary btn-sm font-bold text-xs w-full justify-center">
+								@components.IconArrowRight("icon-xs")
+								<span>العودة لقائمة المنتجات</span>
+							</a>
 						</div>
 					</div>
 				</div>
 
-				if p.Description.Get("ar") != "" || p.Description.Get("en") != "" {
-					<div class="mt-4 pt-4 border-t">
-						<div class="text-xs font-bold text-muted mb-1">الوصف ودواعي الاستعمال:</div>
-						<div class="text-xs text-primary leading-relaxed">
-							if p.Description.Get("ar") != "" {
-								{ p.Description.Get("ar") }
-							} else {
-								{ p.Description.Get("en") }
-							}
-						</div>
-					</div>
-				}
 			</div>
 
 			<!-- Linked Vendor Offers / Variants -->
