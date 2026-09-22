@@ -108,7 +108,7 @@ func VendorDeliveryHandoverCard(sh *commerce.OrderShipment, langOpt ...string) t
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		if sh.CourierCollection().Kind != commerce.CollectNothing {
+		if sh.CourierCollection().Kind != commerce.CollectNothing && !IsPrepaidPaymentMethod(sh.PaymentMethod) && sh.CourierCollection().Amount.IsPositive() {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<div class=\"p-3.5 rounded-2xl bg-surface-sunken border text-start\"><div class=\"d-flex items-center justify-between mb-2\"><label for=\"collected_amount_input\" class=\"form-label text-xs font-black text-primary m-0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err

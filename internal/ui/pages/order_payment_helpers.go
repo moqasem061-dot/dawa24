@@ -48,7 +48,7 @@ func IsPrepaidPaymentMethod(method string) bool {
 }
 
 // FormatPaymentStatusLabel returns a localized status label for the order payment status.
-func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string) string {
+func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string, orderStatus ...commerce.OrderStatus) string {
 	switch status {
 	case commerce.PaymentPaid:
 		return i18n.T(lang, "orders.payment_status.paid")
@@ -68,6 +68,16 @@ func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string
 			return i18n.T(lang, "orders.payment_status.wallet_pending")
 		}
 		if !IsPrepaidPaymentMethod(method) {
+			if len(orderStatus) > 0 {
+				switch orderStatus[0] {
+				case commerce.StatusConfirmed, commerce.StatusProcessing, commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
+					return i18n.T(lang, "orders.payment_status.cod_confirmed")
+				case commerce.StatusPending:
+					return i18n.T(lang, "orders.payment_status.cod_pending")
+				case commerce.StatusDelivered, commerce.StatusCompleted:
+					return i18n.T(lang, "orders.payment_status.paid")
+				}
+			}
 			return i18n.T(lang, "orders.payment_status.cod_due")
 		}
 		return i18n.T(lang, "orders.payment_status.online_pending")
@@ -75,7 +85,7 @@ func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string
 }
 
 // PaymentStatusBadgeClass returns the CSS class for the payment status badge.
-func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string) string {
+func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string, orderStatus ...commerce.OrderStatus) string {
 	switch status {
 	case commerce.PaymentPaid:
 		return "badge-emerald"
@@ -90,6 +100,14 @@ func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string) strin
 		return "badge-sky"
 	default:
 		if !IsPrepaidPaymentMethod(method) {
+			if len(orderStatus) > 0 {
+				switch orderStatus[0] {
+				case commerce.StatusConfirmed, commerce.StatusProcessing, commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
+					return "badge-sky"
+				case commerce.StatusDelivered, commerce.StatusCompleted:
+					return "badge-emerald"
+				}
+			}
 			return "badge-amber"
 		}
 		return "badge-sky"
@@ -97,7 +115,7 @@ func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string) strin
 }
 
 // PaymentStatusTextClass returns the text color class for the sidebar status.
-func PaymentStatusTextClass(status commerce.PaymentStatus, method string) string {
+func PaymentStatusTextClass(status commerce.PaymentStatus, method string, orderStatus ...commerce.OrderStatus) string {
 	switch status {
 	case commerce.PaymentPaid:
 		return "text-emerald"
@@ -112,6 +130,14 @@ func PaymentStatusTextClass(status commerce.PaymentStatus, method string) string
 		return "text-sky"
 	default:
 		if !IsPrepaidPaymentMethod(method) {
+			if len(orderStatus) > 0 {
+				switch orderStatus[0] {
+				case commerce.StatusConfirmed, commerce.StatusProcessing, commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
+					return "text-sky"
+				case commerce.StatusDelivered, commerce.StatusCompleted:
+					return "text-emerald"
+				}
+			}
 			return "text-amber"
 		}
 		return "text-sky"

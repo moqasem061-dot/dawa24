@@ -114,6 +114,8 @@ func loadOrdersUIKeys(e *engine) {
 	addKey(e, "orders.payment_status.online_authorized", "orders", "معتمد (بانتظار التسوية)", "Authorized (Pending Settlement)", "Payment status online authorized")
 	addKey(e, "orders.payment_status.online_pending", "orders", "بانتظار تأكيد الدفع الإلكتروني", "Pending Electronic Payment Confirmation", "Payment status online pending")
 	addKey(e, "orders.payment_status.cod_due", "orders", "مستحق عند الاستلام", "Due on Delivery", "Payment status COD due")
+	addKey(e, "orders.payment_status.cod_confirmed", "orders", "مؤكد (مستحق عند الاستلام)", "Confirmed (Due on Delivery)", "Payment status COD confirmed")
+	addKey(e, "orders.payment_status.cod_pending", "orders", "مستحق عند الاستلام (بانتظار تأكيد المورد)", "Due on Delivery (Awaiting Vendor Confirmation)", "Payment status COD pending vendor confirmation")
 	addKey(e, "orders.payment_status.refunded", "orders", "مسترجع", "Refunded", "Payment status refunded")
 	addKey(e, "orders.payment_status.partially_refunded", "orders", "مسترجع جزئياً", "Partially Refunded", "Payment status partially refunded")
 	addKey(e, "orders.payment_status.failed", "orders", "فشلت عملية الدفع", "Payment Failed", "Payment status failed")

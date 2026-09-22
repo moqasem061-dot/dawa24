@@ -76,16 +76,29 @@ templ CustomerOfferCheckoutPage(offer *promo.Offer, lang, dir string) {
 
 			<form class="stack-md" method="POST" action="/checkout">
 				<input type="hidden" name="offer_id" value={ fmt.Sprintf("%d", offer.ID) } />
-    <div class="stack-sm">
+				<div class="stack-sm">
+					<h3 class="font-bold text-sm m-0">طريقة السداد</h3>
+					<div class="d-grid grid-cols-2 gap-3">
+						<label class="d-flex items-center gap-2 p-2.5 rounded-lg border bg-surface-raised cursor-pointer">
+							<input type="radio" name="payment_method" value="cod" checked class="form-radio text-brand"/>
+							<span class="text-xs font-bold text-primary">دفع عند الاستلام (COD)</span>
+						</label>
+						<label class="d-flex items-center gap-2 p-2.5 rounded-lg border bg-surface-raised cursor-pointer">
+							<input type="radio" name="payment_method" value="instapay" class="form-radio text-brand"/>
+							<span class="text-xs font-bold text-primary">تحويل إنستاباي (InstaPay)</span>
+						</label>
+					</div>
+				</div>
+				<div class="stack-sm">
 					<h3 class="font-bold text-sm m-0">بيانات التسليم والفرع</h3>
 					<div class="stack">
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="form-label">فرع الاستلام</label>
 							<select name="branch_id" class="form-input" required>
 								<option value="1">الفرع الرئيسي للصيدلية</option>
 							</select>
 						</div>
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<label class="form-label">ملاحظات التوصيل</label>
 							<textarea name="notes" class="form-input" rows="2" placeholder="مواعيد التسليم أو تعليمات الشحن..."></textarea>
 						</div>

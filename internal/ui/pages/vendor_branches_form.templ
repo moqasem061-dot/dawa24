@@ -197,9 +197,15 @@ templ VendorBranchesForm(data VendorBranchesData, lang string) {
 
 				<div class="d-grid grid-cols-2 gap-1.5 mt-1">
 					for _, work := range data.InstitutionalWorks {
-						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded">
-							<input type="checkbox" name="institutional_works" value={ fmt.Sprintf("%d", work.ID) } x-model="form.institutional_works" class="form-checkbox"/>
-							<span>
+						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1.5 rounded-lg border bg-surface-raised hover:bg-surface-sunken transition-colors">
+							<input
+								type="radio"
+								name="institutional_works"
+								value={ fmt.Sprintf("%d", work.ID) }
+								x-model="form.institutional_work"
+								class="form-radio text-brand"
+							/>
+							<span class="font-bold text-primary">
 								if title := work.Title.Get(i18n.Lang(lang)); title != "" {
 									{ title }
 								} else if title := work.Title.Get(i18n.AR); title != "" {

@@ -66,8 +66,8 @@ templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatus
 							<span class="badge badge-slate text-xs font-bold">
 								{ FormatPaymentMethodName(order.PaymentMethod, lang) }
 							</span>
-							<span class={ "badge text-xs font-bold", PaymentStatusBadgeClass(order.PaymentStatus, order.PaymentMethod) }>
-								{ FormatPaymentStatusLabel(order.PaymentStatus, order.PaymentMethod, lang) }
+							<span class={ "badge text-xs font-bold", PaymentStatusBadgeClass(order.PaymentStatus, order.PaymentMethod, order.Status) }>
+								{ FormatPaymentStatusLabel(order.PaymentStatus, order.PaymentMethod, lang, order.Status) }
 							</span>
 							if order.IsNegotiation {
 								if order.NegotiationStatus == "pending" {

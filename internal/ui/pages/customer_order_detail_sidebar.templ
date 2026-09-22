@@ -78,8 +78,8 @@ templ CustomerOrderSidebar(order *commerce.Order, lang string) {
 					</div>
 					<div class="flex-between items-center">
 						<span class="text-muted">{ i18n.T(lang, "orders.summary_payment_status") }</span>
-						<span class={ "font-bold", PaymentStatusTextClass(order.PaymentStatus, order.PaymentMethod) }>
-							{ FormatPaymentStatusLabel(order.PaymentStatus, order.PaymentMethod, lang) }
+						<span class={ "font-bold", PaymentStatusTextClass(order.PaymentStatus, order.PaymentMethod, order.Status) }>
+							{ FormatPaymentStatusLabel(order.PaymentStatus, order.PaymentMethod, lang, order.Status) }
 						</span>
 					</div>
 				</div>

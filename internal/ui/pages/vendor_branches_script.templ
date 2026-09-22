@@ -36,7 +36,7 @@ templ VendorBranchesScript() {
 					is_main: false,
 					latitude: 30.0444,
 					longitude: 31.2357,
-					institutional_works: []
+					institutional_work: ''
 				},
 				init() {
 					const urlParams = new URLSearchParams(window.location.search);
@@ -195,7 +195,7 @@ templ VendorBranchesScript() {
 						is_main: !!b.is_main,
 						latitude: latVal,
 						longitude: lonVal,
-						institutional_works: Array.isArray(b.institutional_works) ? b.institutional_works : []
+						institutional_work: (Array.isArray(b.institutional_works) && b.institutional_works.length > 0) ? String(b.institutional_works[0]) : (b.institutional_work ? String(b.institutional_work) : '')
 					};
 					const formEl = document.getElementById('branch-form-panel');
 					if (formEl) {
@@ -241,7 +241,7 @@ templ VendorBranchesScript() {
 						is_main: false,
 						latitude: 30.0444,
 						longitude: 31.2357,
-						institutional_works: []
+						institutional_work: ''
 					};
 					this.$nextTick(() => {
 						if (typeof window.dawaComboboxSet === 'function') {

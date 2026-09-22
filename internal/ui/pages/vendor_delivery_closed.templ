@@ -50,7 +50,7 @@ templ VendorDeliveryHandoverCard(sh *commerce.OrderShipment, langOpt ...string) 
 				/>
 			</div>
 
-			if sh.CourierCollection().Kind != commerce.CollectNothing {
+			if sh.CourierCollection().Kind != commerce.CollectNothing && !IsPrepaidPaymentMethod(sh.PaymentMethod) && sh.CourierCollection().Amount.IsPositive() {
 				<div class="p-3.5 rounded-2xl bg-surface-sunken border text-start">
 					<div class="d-flex items-center justify-between mb-2">
 						<label for="collected_amount_input" class="form-label text-xs font-black text-primary m-0">

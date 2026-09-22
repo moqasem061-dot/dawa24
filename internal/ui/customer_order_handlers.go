@@ -1,13 +1,16 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/muhiya/dawa24-store/internal/modules/commerce"
 	"github.com/muhiya/dawa24-store/internal/modules/org"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/shared/pagination"
 	"github.com/muhiya/dawa24-store/internal/ui/pages"
 )
@@ -62,11 +65,31 @@ func (h *UIHandler) CustomerOrderDetailPage(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	order, err := h.commSvc.GetOrder(ctx, id)
-	if err != nil {
-		h.renderError(w, r, err)
+	actor, ok := authctx.From(ctx)
+	if !ok || actor.UserID <= 0 {
+		http.Redirect(w, r, fmt.Sprintf("/auth/login?redirect=/orders/%d", id), http.StatusSeeOther)
 		return
 	}
+
+	order, err := h.commSvc.GetOrder(ctx, id)
+	if err != nil || order == nil {
+		h.redirectWithNotice(w, r, "/orders", "error", i18n.T(lang, "orders.order_not_found"))
+		return
+	}
+
+	// Security & Tenant Isolation: verify actor is the buyer, staff, or vendor for this order.
+	switch evaluateCustomerOrderAccess(actor, order) {
+	case OrderAccessAllowed:
+		// Authorized as buyer or platform staff
+	case OrderAccessRedirectToVendor:
+		http.Redirect(w, r, fmt.Sprintf("/vendor/orders/%d", order.ID), http.StatusSeeOther)
+		return
+	case OrderAccessDenied:
+		// Unauthorized actor trying to view another organization's order
+		h.redirectWithNotice(w, r, "/orders", "error", i18n.T(lang, "orders.order_not_found"))
+		return
+	}
+
 	h.enrichOrderPricing(ctx, order)
 
 	history, _ := h.commSvc.GetOrderHistory(ctx, id)
@@ -94,4 +117,29 @@ func (h *UIHandler) CustomerOrderDetailPage(w http.ResponseWriter, r *http.Reque
 	h.renderPage(ctx, w, "render customer order detail page", pages.CustomerOrderDetail(order, history, noticeType, noticeMsg, lang, dir, reviewedMap))
 }
 
-// CustomerOrderEditSubmit handles customer edits to quantities and items of a pending order.
+// OrderAccessDecision represents the authorization outcome for customer order viewing.
+type OrderAccessDecision int
+
+const (
+	OrderAccessAllowed OrderAccessDecision = iota
+	OrderAccessRedirectToVendor
+	OrderAccessDenied
+)
+
+// evaluateCustomerOrderAccess verifies whether the actor is the buyer, staff, or a vendor on the order.
+func evaluateCustomerOrderAccess(actor authctx.Actor, order *commerce.Order) OrderAccessDecision {
+	if order == nil {
+		return OrderAccessDenied
+	}
+	isBuyer := order.CustomerID == actor.UserID || (order.OrganizationID != nil && actor.OrganizationID > 0 && *order.OrganizationID == actor.OrganizationID)
+	if isBuyer || actor.IsStaff || actor.IsPlatformAdmin() {
+		return OrderAccessAllowed
+	}
+	for _, sh := range order.Shipments {
+		if sh != nil && actor.OrganizationID > 0 && sh.OrganizationID == actor.OrganizationID {
+			return OrderAccessRedirectToVendor
+		}
+	}
+	return OrderAccessDenied
+}
+

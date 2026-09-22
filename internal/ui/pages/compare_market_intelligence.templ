@@ -114,6 +114,7 @@ templ CompareMarketIntelligenceContent(data MarketIntelligencePageData) {
 			}
 			@marketIntelCoverage(data.Report.Coverage)
 		}
+		@CompareMarketIntelligenceScript()
 	</div>
 }
 
@@ -223,35 +224,31 @@ templ marketIntelInsights(title string, items []compare.Insight) {
 }
 
 templ marketIntelSavingsTable(data MarketIntelligencePageData) {
-	<div class="glass-panel p-0 mb-6 overflow-hidden">
-		<div class="p-4 px-6 border-b">
-			<h3 class="text-base font-extrabold text-primary m-0">
-				⚡ المنتجات ذات فارق الوفر الأكبر بالسوق
-			</h3>
-			<p class="text-xs text-muted m-0 mt-1">
-				مرتبة بقيمة الفارق للوحدة الواحدة، لا بالنسبة المئوية: فارق 9% على عبوة غالية يفوق فارق 60% على عبوة رخيصة.
-			</p>
-			<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center filter-form" data-filter-form>
-				if data.IsAdmin && data.TargetOrgID > 0 {
-					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
-				}
-				if data.SingleQuery != "" {
-					<input type="hidden" name="q_single" value={ data.SingleQuery }/>
-				}
-				<input
-					type="search"
-					name="q"
-					value={ data.Query }
-					class="form-input text-sm flex-1"
-					placeholder="بحث باسم الصنف، الكود، أو المورد..."
-					data-min-chars="3"
-					autocomplete="off"
-				/>
-				<button type="submit" class="btn btn-primary btn-sm font-bold">بحث</button>
-				if data.Query != "" {
-					<a href={ templ.SafeURL(data.ClearQueryURL()) } class="btn btn-secondary btn-sm">مسح</a>
-				}
-			</form>
+	<div class="glass-panel p-0 mb-6 overflow-hidden" x-data="marketTableManager('table-savings')">
+		<div class="p-4 px-6 border-b flex-between flex-wrap gap-3">
+			<div class="stack-2xs">
+				<h3 class="text-base font-extrabold text-primary m-0">
+					⚡ المنتجات ذات فارق الوفر الأكبر بالسوق
+				</h3>
+				<p class="text-xs text-muted m-0 mt-1">
+					مرتبة بقيمة الفارق للوحدة الواحدة، لا بالنسبة المئوية: فارق 9% على عبوة غالية يفوق فارق 60% على عبوة رخيصة.
+				</p>
+			</div>
+			if len(data.Report.TopSavings) > 0 {
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<span class="text-xs text-secondary tabular-nums font-bold" x-text="'عرض ' + visibleCount + ' من ' + totalCount + ' صنف'"></span>
+					<button
+						type="button"
+						x-show="hasActiveFilters()"
+						x-cloak
+						@click="clearFilters()"
+						class="btn btn-secondary btn-xs font-bold gap-1"
+					>
+						@components.IconX("icon-2xs")
+						<span>مسح الفلاتر</span>
+					</button>
+				</div>
+			}
 		</div>
 		if len(data.Report.TopSavings) == 0 {
 			<div class="p-6 text-sm text-muted">
@@ -263,17 +260,132 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 			</div>
 		} else {
 			<div class="table-container">
-				<table class="data-table intel-spread-table">
+				<table id="table-savings" class="data-table intel-spread-table">
 					<thead>
 						<tr>
-							<th>المنتج</th>
-							<th class="text-center">العرض الأفضل (سعر وخصم)</th>
-							<th class="text-center">العرض الأعلى (سعر وخصم)</th>
+							<th class="cursor-pointer select-none" @click="sortBy('name', 'str')" title="اضغط للفرز حسب اسم الصنف">
+								<div class="d-flex items-center justify-between gap-2">
+									<span>المنتج</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'name' }">
+										<span x-show="sortCol !== 'name'">↕</span>
+										<span x-show="sortCol === 'name' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'name' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-center cursor-pointer select-none" @click="sortBy('best-price', 'num')" title="اضغط للفرز حسب أفضل سعر">
+								<div class="d-flex items-center justify-center gap-2">
+									<span>العرض الأفضل (سعر وخصم)</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'best-price' }">
+										<span x-show="sortCol !== 'best-price'">↕</span>
+										<span x-show="sortCol === 'best-price' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'best-price' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-center cursor-pointer select-none" @click="sortBy('worst-price', 'num')" title="اضغط للفرز حسب أعلى سعر">
+								<div class="d-flex items-center justify-center gap-2">
+									<span>العرض الأعلى (سعر وخصم)</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'worst-price' }">
+										<span x-show="sortCol !== 'worst-price'">↕</span>
+										<span x-show="sortCol === 'worst-price' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'worst-price' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+						</tr>
+						<!-- Column Filters Row -->
+						<tr class="bg-surface-sunken">
+							<th class="p-2">
+								<div class="d-flex items-center gap-2 flex-wrap">
+									<input
+										type="text"
+										placeholder="بحث بالاسم أو SKU..."
+										class="form-input text-xs py-1 px-2.5 flex-1 table-col-filter"
+										@input="setFilter('search', $event.target.value)"
+									/>
+									<select
+										class="form-input text-xs py-1 px-2 table-col-filter w-auto"
+										@change="setFilter('catalog', $event.target.value)"
+									>
+										<option value="all">كل الحالات</option>
+										<option value="in_catalog">مرتبط بالكتالوج</option>
+										<option value="name_matched">مطابقة بالاسم</option>
+									</select>
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold py-1 px-2 whitespace-nowrap"
+										@click="sortBy('diff', 'num')"
+										title="فرز حسب قيمة الوفر"
+									>
+										<span>الوفر </span>
+										<span x-show="sortCol === 'diff' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'diff' && sortDir === 'desc'">▼</span>
+										<span x-show="sortCol !== 'diff'">↕</span>
+									</button>
+								</div>
+							</th>
+							<th class="p-2 text-center">
+								<div class="d-flex items-center justify-center gap-2">
+									<input
+										type="text"
+										placeholder="فلترة المورد الأفضل..."
+										class="form-input text-xs py-1 px-2.5 w-full text-center table-col-filter"
+										@input="setFilter('best-supplier', $event.target.value)"
+									/>
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold py-1 px-2 whitespace-nowrap"
+										@click="sortBy('best-discount', 'num')"
+										title="فرز حسب نسبة الخصم الأفضل"
+									>
+										<span>خصم </span>
+										<span x-show="sortCol === 'best-discount' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'best-discount' && sortDir === 'desc'">▼</span>
+										<span x-show="sortCol !== 'best-discount'">↕</span>
+									</button>
+								</div>
+							</th>
+							<th class="p-2 text-center">
+								<div class="d-flex items-center justify-center gap-2">
+									<input
+										type="text"
+										placeholder="فلترة المورد الأعلى..."
+										class="form-input text-xs py-1 px-2.5 w-full text-center table-col-filter"
+										@input="setFilter('worst-supplier', $event.target.value)"
+									/>
+									<button
+										type="button"
+										class="btn btn-secondary btn-xs font-bold py-1 px-2 whitespace-nowrap"
+										@click="sortBy('worst-discount', 'num')"
+										title="فرز حسب نسبة الخصم الأعلى"
+									>
+										<span>خصم </span>
+										<span x-show="sortCol === 'worst-discount' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'worst-discount' && sortDir === 'desc'">▼</span>
+										<span x-show="sortCol !== 'worst-discount'">↕</span>
+									</button>
+								</div>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
 						for _, it := range data.Report.TopSavings {
-							<tr>
+							<tr
+								data-row="true"
+								data-name={ it.ProductName }
+								data-sku={ it.SKU }
+								data-search={ fmt.Sprintf("%s %s", it.ProductName, it.SKU) }
+								data-catalog={ ifElseStr(it.InCatalog, "in_catalog", "name_matched") }
+								data-diff={ fmt.Sprintf("%d", it.PriceDifference.Minor()) }
+								data-percent={ fmt.Sprintf("%.2f", it.PricePercent) }
+								data-best-supplier={ it.BestSupplier }
+								data-best-price={ fmt.Sprintf("%d", it.BestNet.Minor()) }
+								data-best-discount={ fmt.Sprintf("%.2f", it.BestDiscount) }
+								data-worst-supplier={ it.WorstSupplier }
+								data-worst-price={ fmt.Sprintf("%d", it.WorstNet.Minor()) }
+								data-worst-discount={ fmt.Sprintf("%.2f", it.WorstDiscount) }
+							>
 								<td>
 									<div class="fw-800 text-sm">{ it.ProductName }</div>
 									<div class="text-xs text-muted tabular-nums mt-1">
@@ -306,6 +418,9 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 						}
 					</tbody>
 				</table>
+				<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+					لا توجد أصناف تطابق الفلاتر المحددة.
+				</div>
 			</div>
 		}
 	</div>
@@ -313,8 +428,23 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 
 templ marketIntelBestSupplier(r *compare.StrategicSavingReport) {
 	if r.BestSupplier != nil {
-		<div class="glass-panel p-6 mb-6">
-			<h3 class="text-base font-extrabold text-primary m-0 mb-1">المورد الأفضل إجمالاً</h3>
+		<div class="glass-panel p-6 mb-6" x-data="marketTableManager('table-standings')">
+			<div class="flex-between flex-wrap gap-3 mb-1">
+				<h3 class="text-base font-extrabold text-primary m-0">المورد الأفضل إجمالاً</h3>
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<span class="text-xs text-secondary tabular-nums font-bold" x-text="'عرض ' + visibleCount + ' من ' + totalCount + ' مورد'"></span>
+					<button
+						type="button"
+						x-show="hasActiveFilters()"
+						x-cloak
+						@click="clearFilters()"
+						class="btn btn-secondary btn-xs font-bold gap-1"
+					>
+						@components.IconX("icon-2xs")
+						<span>مسح الفلاتر</span>
+					</button>
+				</div>
+			</div>
 			<p class="text-xs text-muted m-0 mb-4">
 				ليس صاحب أكبر خصم ولا صاحب أكثر الأصناف، بل من تكلف سلة ما يعرضه أقل ما يمكن مقارنةً بأفضل أسعار السوق لنفس السلة.
 			</p>
@@ -329,21 +459,108 @@ templ marketIntelBestSupplier(r *compare.StrategicSavingReport) {
 				</div>
 			</div>
 			<div class="table-container">
-				<table class="data-table">
+				<table id="table-standings" class="data-table">
 					<thead>
 						<tr>
-							<th>المورد</th>
-							<th class="text-end">أصناف مقارَنة</th>
-							<th class="text-end">الأرخص في</th>
-							<th class="text-end">متوسط الفارق عن الأفضل</th>
-							<th class="text-end">متوسط الخصم</th>
-							<th class="text-end">تكلفة سلته</th>
-							<th class="text-end">الفائض عن الأمثل</th>
+							<th class="cursor-pointer select-none" @click="sortBy('supplier', 'str')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-between gap-1">
+									<span>المورد</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'supplier' }">
+										<span x-show="sortCol !== 'supplier'">↕</span>
+										<span x-show="sortCol === 'supplier' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'supplier' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('offers', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>أصناف مقارَنة</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'offers' }">
+										<span x-show="sortCol !== 'offers'">↕</span>
+										<span x-show="sortCol === 'offers' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'offers' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('wins', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>الأرخص في</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'wins' }">
+										<span x-show="sortCol !== 'wins'">↕</span>
+										<span x-show="sortCol === 'wins' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'wins' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('premium', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>متوسط الفارق</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'premium' }">
+										<span x-show="sortCol !== 'premium'">↕</span>
+										<span x-show="sortCol === 'premium' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'premium' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('discount', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>متوسط الخصم</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'discount' }">
+										<span x-show="sortCol !== 'discount'">↕</span>
+										<span x-show="sortCol === 'discount' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'discount' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('basket-cost', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>تكلفة سلته</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'basket-cost' }">
+										<span x-show="sortCol !== 'basket-cost'">↕</span>
+										<span x-show="sortCol === 'basket-cost' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'basket-cost' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+							<th class="text-end cursor-pointer select-none" @click="sortBy('excess', 'num')" title="اضغط للفرز">
+								<div class="d-flex items-center justify-end gap-1">
+									<span>الفائض عن الأمثل</span>
+									<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'excess' }">
+										<span x-show="sortCol !== 'excess'">↕</span>
+										<span x-show="sortCol === 'excess' && sortDir === 'asc'">▲</span>
+										<span x-show="sortCol === 'excess' && sortDir === 'desc'">▼</span>
+									</span>
+								</div>
+							</th>
+						</tr>
+						<!-- Filter Row -->
+						<tr class="bg-surface-sunken">
+							<th class="p-2" colspan="2">
+								<input
+									type="text"
+									placeholder="فلترة باسم المورد..."
+									class="form-input text-xs py-1 px-2.5 w-full table-col-filter"
+									@input="setFilter('supplier', $event.target.value)"
+								/>
+							</th>
+							<th class="p-2 text-end" colspan="5">
+								<span class="text-xs text-muted">انقر فوق أي رأس عامود للفرز التصاعدي أو التنازلي</span>
+							</th>
 						</tr>
 					</thead>
 					<tbody>
 						for _, st := range r.Standings {
-							<tr>
+							<tr
+								data-row="true"
+								data-supplier={ st.SupplierName }
+								data-offers={ fmt.Sprintf("%d", st.Offers) }
+								data-wins={ fmt.Sprintf("%d", st.Wins) }
+								data-win-rate={ fmt.Sprintf("%.2f", st.WinRate) }
+								data-premium={ fmt.Sprintf("%.4f", st.AvgPremium) }
+								data-discount={ fmt.Sprintf("%.2f", st.AvgDiscount) }
+								data-basket-cost={ fmt.Sprintf("%d", st.BasketCost.Minor()) }
+								data-excess={ fmt.Sprintf("%d", st.Excess().Minor()) }
+							>
 								<td class="fw-800">{ st.SupplierName }</td>
 								<td class="text-end tabular-nums">{ fmt.Sprintf("%d", st.Offers) }</td>
 								<td class="text-end tabular-nums">{ fmt.Sprintf("%d (%.0f%%)", st.Wins, st.WinRate) }</td>
@@ -361,6 +578,9 @@ templ marketIntelBestSupplier(r *compare.StrategicSavingReport) {
 						}
 					</tbody>
 				</table>
+				<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+					لا يوجد موردون يطابقون الفلتر.
+				</div>
 			</div>
 		</div>
 	}
@@ -368,33 +588,29 @@ templ marketIntelBestSupplier(r *compare.StrategicSavingReport) {
 
 templ marketIntelExclusives(data MarketIntelligencePageData) {
 	if len(data.Report.Exclusives) > 0 || data.SingleQuery != "" {
-		<div class="glass-panel p-0 mb-6 overflow-hidden">
-			<div class="p-4 px-6 border-b">
-				<h3 class="text-base font-extrabold text-primary m-0">أصناف لدى مورد واحد فقط</h3>
-				<p class="text-xs text-muted m-0 mt-1">
-					لا تقبل المقارنة السعرية. أعلاها قيمة أولاً، فهي أكبر تعرّض تفاوضي.
-				</p>
-				<form method="GET" action="/compare/market-intelligence" class="d-flex gap-2 mt-3 flex-wrap items-center filter-form" data-filter-form>
-					if data.IsAdmin && data.TargetOrgID > 0 {
-						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
-					}
-					if data.Query != "" {
-						<input type="hidden" name="q" value={ data.Query }/>
-					}
-					<input
-						type="search"
-						name="q_single"
-						value={ data.SingleQuery }
-						class="form-input text-sm flex-1"
-						placeholder="بحث باسم الصنف، الكود، أو المورد..."
-						data-min-chars="3"
-						autocomplete="off"
-					/>
-					<button type="submit" class="btn btn-primary btn-sm font-bold">بحث</button>
-					if data.SingleQuery != "" {
-						<a href={ templ.SafeURL(data.ClearSingleQueryURL()) } class="btn btn-secondary btn-sm">مسح</a>
-					}
-				</form>
+		<div class="glass-panel p-0 mb-6 overflow-hidden" x-data="marketTableManager('table-exclusives')">
+			<div class="p-4 px-6 border-b flex-between flex-wrap gap-3">
+				<div class="stack-2xs">
+					<h3 class="text-base font-extrabold text-primary m-0">أصناف لدى مورد واحد فقط</h3>
+					<p class="text-xs text-muted m-0 mt-1">
+						لا تقبل المقارنة السعرية. أعلاها قيمة أولاً، فهي أكبر تعرّض تفاوضي.
+					</p>
+				</div>
+				if len(data.Report.Exclusives) > 0 {
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<span class="text-xs text-secondary tabular-nums font-bold" x-text="'عرض ' + visibleCount + ' من ' + totalCount + ' صنف'"></span>
+						<button
+							type="button"
+							x-show="hasActiveFilters()"
+							x-cloak
+							@click="clearFilters()"
+							class="btn btn-secondary btn-xs font-bold gap-1"
+						>
+							@components.IconX("icon-2xs")
+							<span>مسح الفلاتر</span>
+						</button>
+					</div>
+				}
 			</div>
 			if len(data.Report.Exclusives) == 0 {
 				<div class="p-6 text-sm text-muted">
@@ -402,19 +618,99 @@ templ marketIntelExclusives(data MarketIntelligencePageData) {
 				</div>
 			} else {
 				<div class="table-container">
-					<table class="data-table">
+					<table id="table-exclusives" class="data-table">
 						<thead>
 							<tr>
-								<th>اسم الصنف</th>
-								<th>الكود</th>
-								<th>المورد الوحيد</th>
-								<th class="text-end">السعر النهائي</th>
-								<th class="text-end">الخصم</th>
+								<th class="cursor-pointer select-none" @click="sortBy('name', 'str')" title="اضغط للفرز حسب اسم الصنف">
+									<div class="d-flex items-center justify-between gap-1">
+										<span>اسم الصنف</span>
+										<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'name' }">
+											<span x-show="sortCol !== 'name'">↕</span>
+											<span x-show="sortCol === 'name' && sortDir === 'asc'">▲</span>
+											<span x-show="sortCol === 'name' && sortDir === 'desc'">▼</span>
+										</span>
+									</div>
+								</th>
+								<th class="cursor-pointer select-none" @click="sortBy('sku', 'str')" title="اضغط للفرز حسب الكود">
+									<div class="d-flex items-center justify-between gap-1">
+										<span>الكود</span>
+										<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'sku' }">
+											<span x-show="sortCol !== 'sku'">↕</span>
+											<span x-show="sortCol === 'sku' && sortDir === 'asc'">▲</span>
+											<span x-show="sortCol === 'sku' && sortDir === 'desc'">▼</span>
+										</span>
+									</div>
+								</th>
+								<th class="cursor-pointer select-none" @click="sortBy('supplier', 'str')" title="اضغط للفرز حسب المورد">
+									<div class="d-flex items-center justify-between gap-1">
+										<span>المورد الوحيد</span>
+										<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'supplier' }">
+											<span x-show="sortCol !== 'supplier'">↕</span>
+											<span x-show="sortCol === 'supplier' && sortDir === 'asc'">▲</span>
+											<span x-show="sortCol === 'supplier' && sortDir === 'desc'">▼</span>
+										</span>
+									</div>
+								</th>
+								<th class="text-end cursor-pointer select-none" @click="sortBy('price', 'num')" title="اضغط للفرز حسب السعر">
+									<div class="d-flex items-center justify-end gap-1">
+										<span>السعر النهائي</span>
+										<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'price' }">
+											<span x-show="sortCol !== 'price'">↕</span>
+											<span x-show="sortCol === 'price' && sortDir === 'asc'">▲</span>
+											<span x-show="sortCol === 'price' && sortDir === 'desc'">▼</span>
+										</span>
+									</div>
+								</th>
+								<th class="text-end cursor-pointer select-none" @click="sortBy('discount', 'num')" title="اضغط للفرز حسب الخصم">
+									<div class="d-flex items-center justify-end gap-1">
+										<span>الخصم</span>
+										<span class="text-2xs font-mono" :class="{ 'text-brand font-black': sortCol === 'discount' }">
+											<span x-show="sortCol !== 'discount'">↕</span>
+											<span x-show="sortCol === 'discount' && sortDir === 'asc'">▲</span>
+											<span x-show="sortCol === 'discount' && sortDir === 'desc'">▼</span>
+										</span>
+									</div>
+								</th>
+							</tr>
+							<!-- Filter Row -->
+							<tr class="bg-surface-sunken">
+								<th class="p-2">
+									<input
+										type="text"
+										placeholder="فلترة بالاسم..."
+										class="form-input text-xs py-1 px-2.5 w-full table-col-filter"
+										@input="setFilter('name', $event.target.value)"
+									/>
+								</th>
+								<th class="p-2">
+									<input
+										type="text"
+										placeholder="فلترة بالكود..."
+										class="form-input text-xs py-1 px-2.5 w-full table-col-filter"
+										@input="setFilter('sku', $event.target.value)"
+									/>
+								</th>
+								<th class="p-2">
+									<input
+										type="text"
+										placeholder="فلترة بالمورد..."
+										class="form-input text-xs py-1 px-2.5 w-full table-col-filter"
+										@input="setFilter('supplier', $event.target.value)"
+									/>
+								</th>
+								<th class="p-2" colspan="2"></th>
 							</tr>
 						</thead>
 						<tbody>
 							for _, it := range data.Report.Exclusives {
-								<tr>
+								<tr
+									data-row="true"
+									data-name={ it.ProductName }
+									data-sku={ it.SKU }
+									data-supplier={ it.BestSupplier }
+									data-price={ fmt.Sprintf("%d", it.BestNet.Minor()) }
+									data-discount={ fmt.Sprintf("%.2f", it.BestDiscount) }
+								>
 									<td class="fw-800">{ it.ProductName }</td>
 									<td class="text-xs text-muted tabular-nums">
 										if it.SKU != "" {
@@ -430,10 +726,124 @@ templ marketIntelExclusives(data MarketIntelligencePageData) {
 							}
 						</tbody>
 					</table>
+					<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+						لا توجد أصناف حصرية تطابق الفلتر.
+					</div>
 				</div>
 			}
 		</div>
 	}
+}
+
+templ CompareMarketIntelligenceScript() {
+	<script nonce={ layouts.Nonce(ctx) }>
+		function marketTableManager(tableId) {
+			return {
+				sortCol: '',
+				sortDir: 'asc',
+				filters: {},
+				visibleCount: 0,
+				totalCount: 0,
+
+				init() {
+					this.updateCounts();
+				},
+
+				updateCounts() {
+					const table = document.getElementById(tableId);
+					if (!table) return;
+					const rows = table.querySelectorAll('tbody tr[data-row]');
+					this.totalCount = rows.length;
+					let vis = 0;
+					rows.forEach(r => {
+						if (r.style.display !== 'none') vis++;
+					});
+					this.visibleCount = vis;
+				},
+
+				setFilter(key, val) {
+					this.filters[key] = (val || '').toLowerCase().trim();
+					this.applyFilters();
+				},
+
+				clearFilters() {
+					this.filters = {};
+					const table = document.getElementById(tableId);
+					if (!table) return;
+					table.querySelectorAll('.table-col-filter').forEach(el => el.value = '');
+					this.applyFilters();
+				},
+
+				hasActiveFilters() {
+					return Object.values(this.filters).some(v => v !== '');
+				},
+
+				applyFilters() {
+					const table = document.getElementById(tableId);
+					if (!table) return;
+					const rows = table.querySelectorAll('tbody tr[data-row]');
+					let visible = 0;
+
+					rows.forEach(row => {
+						let matches = true;
+						for (const [key, val] of Object.entries(this.filters)) {
+							if (!val) continue;
+							const rowVal = (row.getAttribute('data-' + key) || '').toLowerCase();
+							if (key === 'catalog') {
+								if (val !== 'all' && rowVal !== val) {
+									matches = false;
+									break;
+								}
+							} else {
+								if (!rowVal.includes(val)) {
+									matches = false;
+									break;
+								}
+							}
+						}
+						row.style.display = matches ? '' : 'none';
+						if (matches) visible++;
+					});
+
+					this.visibleCount = visible;
+					const emptyMsg = table.parentElement ? table.parentElement.querySelector('.table-filter-empty') : null;
+					if (emptyMsg) {
+						emptyMsg.style.display = visible === 0 ? '' : 'none';
+					}
+				},
+
+				sortBy(col, type) {
+					const table = document.getElementById(tableId);
+					if (!table) return;
+					const tbody = table.querySelector('tbody');
+					if (!tbody) return;
+
+					if (this.sortCol === col) {
+						this.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';
+					} else {
+						this.sortCol = col;
+						this.sortDir = (type === 'num' || col.includes('diff') || col.includes('cost') || col.includes('price')) ? 'desc' : 'asc';
+					}
+
+					const rows = Array.from(tbody.querySelectorAll('tr[data-row]'));
+					rows.sort((a, b) => {
+						let valA = a.getAttribute('data-' + col) || '';
+						let valB = b.getAttribute('data-' + col) || '';
+
+						if (type === 'num') {
+							const numA = parseFloat(valA) || 0;
+							const numB = parseFloat(valB) || 0;
+							return this.sortDir === 'asc' ? numA - numB : numB - numA;
+						}
+						return this.sortDir === 'asc' ? valA.localeCompare(valB, 'ar') : valB.localeCompare(valA, 'ar');
+					});
+
+					rows.forEach(row => tbody.appendChild(row));
+				}
+			};
+		}
+		dawaData('marketTableManager', marketTableManager);
+	</script>
 }
 
 templ marketIntelCoverage(c compare.MarketCoverage) {

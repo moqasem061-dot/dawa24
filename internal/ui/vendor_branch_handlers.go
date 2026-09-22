@@ -124,7 +124,7 @@ func (h *UIHandler) VendorBranchNewSubmit(w http.ResponseWriter, r *http.Request
 		gmaps = r.PostFormValue("branch_google_maps_url")
 	}
 
-	instWorks := r.Form["institutional_works"]
+	instWorks := parseSingleInstitutionalWork(r)
 
 	var managerName string
 	if managerID != nil && h.idSvc != nil {
@@ -349,40 +349,13 @@ func (h *UIHandler) VendorBranchEditSubmit(w http.ResponseWriter, r *http.Reques
 	h.redirectWithNotice(w, r, "/vendor/branches", "success", i18n.T(langOf(r), "vendor.branch.update_success"))
 }
 
-// VendorBranchDeleteSubmit deletes a branch scoped to the vendor organization.
-func (h *UIHandler) VendorBranchDeleteSubmit(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	actor, ok := authctx.From(ctx)
-	if !ok || actor.OrganizationID <= 0 {
-		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-		return
+func parseSingleInstitutionalWork(r *http.Request) []string {
+	instWorks := r.Form["institutional_works"]
+	if len(instWorks) == 0 && r.PostFormValue("institutional_work") != "" {
+		instWorks = []string{r.PostFormValue("institutional_work")}
 	}
-	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err != nil || id <= 0 {
-		h.redirectWithNotice(w, r, "/vendor/branches", "error", i18n.T(langOf(r), "vendor.branch.invalid_id_alt"))
-		return
+	if len(instWorks) > 1 {
+		instWorks = instWorks[:1]
 	}
-	if h.orgSvc == nil {
-		h.redirectWithNotice(w, r, "/vendor/branches", "error", i18n.T(langOf(r), "vendor.branch.orgs_service_unavailable"))
-		return
-	}
-	existing, err := h.orgSvc.GetBranch(ctx, id)
-	if err != nil || existing == nil || existing.OrganizationID != actor.OrganizationID {
-		h.redirectWithNotice(w, r, "/vendor/branches", "error", i18n.T(langOf(r), "vendor.branch.not_found_edit"))
-		return
-	}
-	if existing.IsMain {
-		h.redirectWithNotice(w, r, "/vendor/branches", "error", i18n.T(langOf(r), "customer.branch.cannot_delete_main"))
-		return
-	}
-	if err := h.orgSvc.DeleteBranch(ctx, id, actor.OrganizationID); err != nil {
-		h.log.ErrorContext(ctx, "delete branch", "error", err, "branch", id, "org", actor.OrganizationID)
-		h.redirectWithNotice(w, r, "/vendor/branches", "error", h.safeMessage(err, langOf(r)))
-		return
-	}
-	// The selector's option list is cached per organisation for a few seconds
-	// (see branchCacheTTL); drop it so the person who just made this change
-	// sees it on the next page rather than up to thirty seconds later.
-	InvalidateBranchOptionsCache(actor.OrganizationID)
-	h.redirectWithNotice(w, r, "/vendor/branches", "success", i18n.T(langOf(r), "customer.branch.delete_success"))
+	return instWorks
 }

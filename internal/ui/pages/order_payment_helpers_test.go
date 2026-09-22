@@ -64,9 +64,21 @@ func TestFormatPaymentStatusLabel(t *testing.T) {
 	if got := FormatPaymentStatusLabel(commerce.PaymentRefunded, "wallet", "ar"); got != "مسترجع" {
 		t.Errorf("got %q, want 'مسترجع'", got)
 	}
-	// COD unpaid
+	// COD unpaid without order status
 	if got := FormatPaymentStatusLabel(commerce.PaymentUnpaid, "cod", "ar"); got != "مستحق عند الاستلام" {
 		t.Errorf("got %q, want 'مستحق عند الاستلام'", got)
+	}
+	// COD unpaid with pending order status
+	if got := FormatPaymentStatusLabel(commerce.PaymentUnpaid, "cod", "ar", commerce.StatusPending); got != "مستحق عند الاستلام (بانتظار تأكيد المورد)" {
+		t.Errorf("got %q, want 'مستحق عند الاستلام (بانتظار تأكيد المورد)'", got)
+	}
+	// COD unpaid with confirmed order status
+	if got := FormatPaymentStatusLabel(commerce.PaymentUnpaid, "cod", "ar", commerce.StatusConfirmed); got != "مؤكد (مستحق عند الاستلام)" {
+		t.Errorf("got %q, want 'مؤكد (مستحق عند الاستلام)'", got)
+	}
+	// COD unpaid badge class with confirmed order status
+	if got := PaymentStatusBadgeClass(commerce.PaymentUnpaid, "cod", commerce.StatusConfirmed); got != "badge-sky" {
+		t.Errorf("got %q, want 'badge-sky'", got)
 	}
 	// InstaPay unpaid
 	if got := FormatPaymentStatusLabel(commerce.PaymentUnpaid, "instapay", "ar"); got != "بانتظار تأكيد الدفع الإلكتروني" {

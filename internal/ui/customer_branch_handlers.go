@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -74,6 +75,15 @@ func (h *UIHandler) CustomerBranchesPage(w http.ResponseWriter, r *http.Request)
 		}
 		if instWorks, err = h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true); err != nil {
 			h.log.ErrorContext(ctx, "list pharmacy institutional works", "error", err)
+		}
+		var pharmacyWorks []*org.InstitutionalWork
+		for _, w := range instWorks {
+			if w != nil && (strings.EqualFold(w.Slug, "pharmacy") || strings.Contains(w.Title["ar"], "صيدلية") || strings.EqualFold(w.Title["en"], "pharmacy")) {
+				pharmacyWorks = append(pharmacyWorks, w)
+			}
+		}
+		if len(pharmacyWorks) > 0 {
+			instWorks = pharmacyWorks
 		}
 	}
 
@@ -163,7 +173,7 @@ func (h *UIHandler) CustomerBranchNewSubmit(w http.ResponseWriter, r *http.Reque
 		Longitude:          lngPtr,
 		IsMain:             isMain,
 		Status:             "active",
-		InstitutionalWorks: r.Form["institutional_works"],
+		InstitutionalWorks: h.resolveCustomerInstitutionalWork(ctx, r),
 	}
 
 	if h.orgSvc != nil {
@@ -284,7 +294,7 @@ func (h *UIHandler) CustomerBranchEditSubmit(w http.ResponseWriter, r *http.Requ
 		Longitude:          lngPtr,
 		IsMain:             isMain,
 		Status:             status,
-		InstitutionalWorks: r.Form["institutional_works"],
+		InstitutionalWorks: h.resolveCustomerInstitutionalWork(ctx, r),
 	}
 
 	if err := h.orgSvc.UpdateBranch(ctx, b); err != nil {
@@ -304,10 +314,10 @@ func (h *UIHandler) CustomerBranchEditSubmit(w http.ResponseWriter, r *http.Requ
 		h.notifyBranchInstitutionalWorksChanged(ctx, actor.OrganizationID, nameAr)
 	}
 
-	h.redirectWithNotice(w, r, "/customer/branches", "success", i18n.T(langOf(r), "customer.branch.update_success"))
+	h.redirectWithNotice(w, r, "/customer/branches", "success", i18n.T(langOf(r), "customer.branch.edit_success"))
 }
 
-// CustomerBranchDeleteSubmit deletes a branch owned by the customer organization.
+// CustomerBranchDeleteSubmit deletes a branch scoped to the customer organization.
 func (h *UIHandler) CustomerBranchDeleteSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	actor, ok := authctx.From(ctx)
@@ -348,4 +358,24 @@ func (h *UIHandler) CustomerBranchDeleteSubmit(w http.ResponseWriter, r *http.Re
 // CustomerSwitchActiveBranchSubmit handles switching the active branch for customer context.
 func (h *UIHandler) CustomerSwitchActiveBranchSubmit(w http.ResponseWriter, r *http.Request) {
 	h.SetBuyingBranchSubmit(w, r)
+}
+
+func (h *UIHandler) resolveCustomerInstitutionalWork(ctx context.Context, r *http.Request) []string {
+	instWorks := r.Form["institutional_works"]
+	if len(instWorks) == 0 && r.PostFormValue("institutional_work") != "" {
+		instWorks = []string{r.PostFormValue("institutional_work")}
+	}
+	if len(instWorks) > 1 {
+		instWorks = instWorks[:1]
+	}
+	if len(instWorks) == 0 && h.orgSvc != nil {
+		if allWorks, err := h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true); err == nil {
+			for _, w := range allWorks {
+				if w != nil && (strings.EqualFold(w.Slug, "pharmacy") || strings.Contains(w.Title["ar"], "صيدلية") || strings.EqualFold(w.Title["en"], "pharmacy")) {
+					return []string{strconv.FormatInt(w.ID, 10)}
+				}
+			}
+		}
+	}
+	return instWorks
 }

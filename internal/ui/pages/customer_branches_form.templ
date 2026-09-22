@@ -134,13 +134,19 @@ templ CustomerBranchesForm(data CustomerBranchesData, lang string) {
 			<!-- Section: Institutional Works -->
 			<div class="bg-surface-sunken p-3 rounded-xl border d-flex flex-col gap-2">
 				<label class="text-xs font-black text-primary m-0 d-block">
-					الأعمال المؤسسية المغطاة
+					العمل المؤسسي المغطى للفرع
 				</label>
 
-				<div class="d-grid grid-cols-2 gap-1.5 mt-1">
+				<div class="d-flex flex-col gap-1.5 mt-1">
 					for _, work := range data.InstitutionalWorks {
-						<label class="d-flex items-center gap-1.5 text-xs text-secondary cursor-pointer p-1 rounded">
-							<input type="checkbox" name="institutional_works" value={ fmt.Sprintf("%d", work.ID) } x-model="form.institutional_works" class="form-checkbox"/>
+						<label class="d-flex items-center gap-2 text-xs text-primary font-bold p-2 rounded-lg bg-surface-raised border">
+							<input
+								type="radio"
+								name="institutional_works"
+								value={ fmt.Sprintf("%d", work.ID) }
+								checked
+								class="form-radio text-brand"
+							/>
 							<span>
 								if title := work.Title["ar"]; title != "" {
 									{ title }
@@ -148,6 +154,7 @@ templ CustomerBranchesForm(data CustomerBranchesData, lang string) {
 									{ work.Title["en"] }
 								}
 							</span>
+							<span class="badge badge-emerald text-2xs mr-auto font-bold">افتراضي</span>
 						</label>
 					}
 				</div>
