@@ -9,6 +9,7 @@ import (
 
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 )
 
@@ -250,6 +251,10 @@ func (m *testMockIdentityRepo) ListAccountDeletionRequestsWithTotal(ctx context.
 	return nil, 0, nil
 }
 func (m *testMockIdentityRepo) ReviewAccountDeletionRequest(ctx context.Context, requestID, reviewerID int64, approve bool, adminNotes string) error {
+	return nil
+}
+
+func (m *testMockIdentityRepo) RecordAudit(ctx context.Context, e database.AuditEntry) error {
 	return nil
 }
 

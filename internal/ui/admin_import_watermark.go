@@ -1,15 +1,20 @@
 package ui
 
 import (
+	"bytes"
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/modules/ingest"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/muhiya/dawa24-store/internal/platform/media"
 )
 
 type catalogImageTarget struct {
@@ -26,12 +31,9 @@ func extractCommittedImageTargets(prods []*catalog.Product) []catalogImageTarget
 		if p == nil || p.ID <= 0 {
 			continue
 		}
-		imgURL := strings.Trim(strings.TrimSpace(p.ImageLink), "\"'")
+		imgURL := strings.TrimSpace(p.ImageLink)
 		if imgURL == "" {
-			imgURL = strings.Trim(strings.TrimSpace(p.Image), "\"'")
-		}
-		if strings.HasPrefix(imgURL, "//") {
-			imgURL = "https:" + imgURL
+			imgURL = strings.TrimSpace(p.Image)
 		}
 		if strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://") {
 			targets = append(targets, catalogImageTarget{
@@ -96,10 +98,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
 		_ = os.MkdirAll(prodUploadDir, 0755)
 
-		concurrency := 12
-		if len(targets) < concurrency {
-			concurrency = len(targets)
-		}
+		concurrency := 5
 		jobs := make(chan catalogImageTarget, len(targets))
 		for _, t := range targets {
 			jobs <- t
@@ -118,10 +117,32 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 					default:
 					}
 
-					publicPath, dlErr := globalImageDownloadCache.FetchOrDownload(bgCtx, item.URL, prodUploadDir, h.storage)
-					if dlErr != nil || publicPath == "" {
-						h.log.WarnContext(bgCtx, "download imported image failed", "url", item.URL, "product_id", item.ProductID, "error", dlErr)
+					imgData, ext, dlErr := ingest.DownloadProductImage(bgCtx, item.URL)
+					if dlErr != nil || len(imgData) == 0 {
 						continue
+					}
+
+					if watermarked, wmErr := ingest.ApplyWatermark(imgData, ext); wmErr == nil && len(watermarked) > 0 {
+						imgData = watermarked
+					}
+
+					if compBytes, compExt, _, wasCompressed := media.Compress(imgData, media.DefaultMaxEdge); wasCompressed {
+						imgData = compBytes
+						ext = strings.TrimPrefix(compExt, ".")
+					}
+
+					fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
+					localPath := filepath.Join(prodUploadDir, fileName)
+					if err := os.WriteFile(localPath, imgData, 0644); err != nil {
+						continue
+					}
+
+					_ = deriveAndStore(prodUploadDir, fileName, imgData)
+
+					publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
+					if h.storage != nil {
+						s3Key := fmt.Sprintf("products/%s", fileName)
+						_ = h.storage.Put(bgCtx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
 					}
 
 					sysCtx := database.AsSystem(bgCtx)
@@ -144,7 +165,6 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		}
 		wg.Wait()
 		h.log.InfoContext(bgCtx, "finished downloading imported product images", "count", len(targets))
-		h.refreshProductIndex(bgCtx)
 	})
 }
 

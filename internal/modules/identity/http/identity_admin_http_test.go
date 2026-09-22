@@ -282,3 +282,6 @@ func (happyRepo) UpdatePlatformRole(ctx context.Context, role *identity.Platform
 }
 
 func (happyRepo) DeletePlatformRole(ctx context.Context, key string) error { return nil }
+
+func (r stubRepo) RecordAudit(_ context.Context, _ database.AuditEntry) error { return nil }
+func (happyRepo) RecordAudit(_ context.Context, _ database.AuditEntry) error  { return nil }

@@ -182,6 +182,36 @@ func TestWalletCollectionRuleIsOneRule(t *testing.T) {
 			wantKind: commerce.CollectNothing,
 			wantMino: 0,
 		},
+		{
+			name: "unpaid instapay collects nothing from courier",
+			shipment: &commerce.OrderShipment{
+				PaymentMethod: "instapay",
+				PaymentStatus: commerce.PaymentUnpaid,
+				TotalAmount:   money.FromMinor(53500),
+			},
+			wantKind: commerce.CollectNothing,
+			wantMino: 0,
+		},
+		{
+			name: "unpaid card collects nothing from courier",
+			shipment: &commerce.OrderShipment{
+				PaymentMethod: "card",
+				PaymentStatus: commerce.PaymentUnpaid,
+				TotalAmount:   money.FromMinor(53500),
+			},
+			wantKind: commerce.CollectNothing,
+			wantMino: 0,
+		},
+		{
+			name: "unpaid bank transfer collects nothing from courier",
+			shipment: &commerce.OrderShipment{
+				PaymentMethod: "bank_transfer",
+				PaymentStatus: commerce.PaymentUnpaid,
+				TotalAmount:   money.FromMinor(53500),
+			},
+			wantKind: commerce.CollectNothing,
+			wantMino: 0,
+		},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {

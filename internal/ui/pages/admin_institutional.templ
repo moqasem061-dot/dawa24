@@ -14,13 +14,114 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 		<script nonce={ templ.GetNonce(ctx) }>
 			// Moved out of x-data: the CSP build of Alpine cannot parse methods.
 			dawaData('adminInstitutionalState', function () {
+				const urlParams = new URLSearchParams(window.location.search);
+				const initialTab = urlParams.get('tab') || localStorage.getItem('dawa24-inst-tab') || 'all';
+
 				return {
 					// The template cannot call page globals under the CSP build.
 					getIconEmoji(id) { return getIconEmoji(id); },
 					searchQuery: '',
-					statusFilter: 'all',
+					statusFilter: initialTab,
 					isModalOpen: false,
 					isEdit: false,
+					isSubmitting: false,
+					setTab(tab) {
+						this.statusFilter = tab;
+						try {
+							localStorage.setItem('dawa24-inst-tab', tab);
+							const u = new URL(window.location);
+							u.searchParams.set('tab', tab);
+							window.history.replaceState({}, '', u);
+						} catch (e) {}
+					},
+					async handleStatusToggle(e, id) {
+						const form = e.target;
+						const btn = form.querySelector('button');
+						if (btn) btn.disabled = true;
+						try {
+							const formData = new FormData(form);
+							const resp = await fetch(form.action, {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'Accept': 'application/json',
+									'X-Requested-With': 'XMLHttpRequest'
+								}
+							});
+							if (resp.ok) {
+								if (window.dawaRefresh) {
+									window.dawaRefresh();
+								} else {
+									window.location.reload();
+								}
+							} else {
+								form.submit();
+							}
+						} catch (err) {
+							form.submit();
+						}
+					},
+					async handleModalSubmit(e) {
+						if (this.isSubmitting) return;
+						this.isSubmitting = true;
+						const form = e.target;
+						const submitBtn = form.querySelector('button[type="submit"]');
+						if (submitBtn) submitBtn.disabled = true;
+						try {
+							const formData = new FormData(form);
+							const actionUrl = this.isEdit ? ('/admin/institutional/' + this.form.id) : '/admin/institutional/new';
+							const resp = await fetch(actionUrl, {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'Accept': 'application/json',
+									'X-Requested-With': 'XMLHttpRequest'
+								}
+							});
+							if (resp.ok) {
+								const modal = document.getElementById('institutional-modal');
+								if (modal && typeof modal.close === 'function') modal.close();
+								if (window.dawaRefresh) {
+									window.dawaRefresh();
+								} else {
+									window.location.reload();
+								}
+							} else {
+								form.submit();
+							}
+						} catch (err) {
+							form.submit();
+						} finally {
+							this.isSubmitting = false;
+							if (submitBtn) submitBtn.disabled = false;
+						}
+					},
+					async handleDelete(e) {
+						const form = e.target;
+						if (!confirm('هل أنت متأكد من حذف هذا الكيان المؤسسي؟')) return;
+						try {
+							const formData = new FormData(form);
+							const resp = await fetch(form.action, {
+								method: 'POST',
+								body: formData,
+								headers: {
+									'Accept': 'application/json',
+									'X-Requested-With': 'XMLHttpRequest'
+								}
+							});
+							if (resp.ok) {
+								if (window.dawaRefresh) {
+									window.dawaRefresh();
+								} else {
+									window.location.reload();
+								}
+							} else {
+								form.submit();
+							}
+						} catch (err) {
+							form.submit();
+						}
+					},
 					form: {
 						id: 0,
 						title_ar: '',
@@ -242,7 +343,7 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': statusFilter === 'all' }"
-						@click="statusFilter = 'all'"
+						@click="setTab('all')"
 					>
 						الكل ({ fmt.Sprintf("%d", len(allWorks)) })
 					</button>
@@ -250,7 +351,7 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 						type="button"
 						class="tab-btn"
 						:class="{ 'active': statusFilter === 'active' }"
-						@click="statusFilter = 'active'"
+						@click="setTab('active')"
 					>
 						النشطة فقط ({ fmt.Sprintf("%d", countActiveWorks(allWorks)) })
 					</button>
@@ -376,10 +477,11 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 
 										<!-- 5. Active Status Toggle -->
 										<td>
-											<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/status", item.ID)) }>
+											<form class="stack-md" method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/status", item.ID)) } @submit.prevent={ fmt.Sprintf("handleStatusToggle($event, %d)", item.ID) }>
+												<input type="hidden" name="tab" :value="statusFilter"/>
 												<button
 													type="submit"
-													class={ "badge", templ.KV("badge-emerald", item.IsActive), templ.KV("badge-danger", !item.IsActive) }
+													class={ "badge cursor-pointer", templ.KV("badge-emerald", item.IsActive), templ.KV("badge-danger", !item.IsActive) }
 												
 													title={ ternary(item.IsActive, "انقر للتعطيل", "انقر للتفعيل") }
 												>
@@ -405,7 +507,8 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 												>
 													@components.IconEdit("icon-xs")
 												</button>
-												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/delete", item.ID)) } class="m-0" data-confirm="هل أنت متأكد من حذف هذا الكيان المؤسسي؟">
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/institutional/%d/delete", item.ID)) } class="m-0" data-confirm="هل أنت متأكد من حذف هذا الكيان المؤسسي؟" @submit.prevent="handleDelete($event)">
+													<input type="hidden" name="tab" :value="statusFilter"/>
 													<button type="submit" class="btn btn-secondary btn-icon" title="حذف">
 														@components.IconTrash("icon-xs")
 													</button>
@@ -430,7 +533,9 @@ templ AdminInstitutional(lang, dir string, items []*org.InstitutionalWork, allWo
 						:action="isEdit ? ('/admin/institutional/' + form.id) : '/admin/institutional/new'"
 						method="POST"
 						class="d-flex flex-col gap-4 m-0"
+						@submit.prevent="handleModalSubmit($event)"
 					>
+						<input type="hidden" name="tab" :value="statusFilter"/>
 						<div class="modal-body d-flex flex-col gap-3">
 							<!-- Active Status Toggle Switch -->
 							<div class="flex-between items-center bg-surface-sunken p-3 rounded-xl border">

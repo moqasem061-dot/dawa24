@@ -105,6 +105,23 @@ func (h *UIHandler) CustomerEmployeeCreateSubmit(w http.ResponseWriter, r *http.
 		}
 	}
 
+	if h.idSvc != nil {
+		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: &orgID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.created",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(targetUserID, 10),
+		After: map[string]any{
+			"name":          name,
+			"email":         email,
+			"role_key":      roleKey,
+			"employee_code": employeeCode,
+			"job_title":     member.JobTitle,
+		},
+	})
+	}
+
 	h.invalidatePermissions(targetUserID, orgID)
 	h.redirectWithNotice(w, r, teamBack, "success", i18n.T(lang, "customer.employee.create_success"))
 }
@@ -118,7 +135,6 @@ func (h *UIHandler) CustomerEmployeeEditSubmit(w http.ResponseWriter, r *http.Re
 		http.Redirect(w, r, "/auth/login?redirect="+teamBack, http.StatusSeeOther)
 		return
 	}
-	_ = actor
 
 	member, ok := h.loadTeamMember(w, r, orgID, lang)
 	if !ok {
@@ -173,6 +189,21 @@ func (h *UIHandler) CustomerEmployeeEditSubmit(w http.ResponseWriter, r *http.Re
 		}
 	}
 
+	if h.idSvc != nil {
+		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: &orgID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.updated",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		After: map[string]any{
+			"role_key":      patch.RoleKey,
+			"employee_code": patch.EmployeeCode,
+			"job_title":     patch.JobTitle,
+		},
+	})
+	}
+
 	h.invalidatePermissions(member.UserID, orgID)
 	h.redirectWithNotice(w, r, teamBack, "success", i18n.T(lang, "customer.employee.update_success"))
 }
@@ -204,6 +235,22 @@ func (h *UIHandler) CustomerEmployeeDeleteSubmit(w http.ResponseWriter, r *http.
 		h.redirectWithNotice(w, r, teamBack, "error", h.safeMessage(err, lang))
 		return
 	}
+
+	if h.idSvc != nil {
+		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: &orgID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.deleted",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		Before: map[string]any{
+			"role_key":      member.RoleKey,
+			"employee_code": member.EmployeeCode,
+			"job_title":     member.JobTitle,
+		},
+	})
+	}
+
 	h.invalidatePermissions(member.UserID, orgID)
 	h.redirectWithNotice(w, r, teamBack, "success", i18n.T(lang, "customer.employee.delete_success"))
 }
@@ -234,6 +281,19 @@ func (h *UIHandler) CustomerEmployeeStatusSubmit(w http.ResponseWriter, r *http.
 		h.redirectWithNotice(w, r, teamBack, "error", h.safeMessage(err, lang))
 		return
 	}
+
+	if h.idSvc != nil {
+		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: &orgID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.updated",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		Before:         map[string]any{"is_active": member.IsActive},
+		After:          map[string]any{"is_active": !member.IsActive},
+	})
+	}
+
 	h.invalidatePermissions(member.UserID, orgID)
 	h.redirectWithNotice(w, r, teamBack, "success", i18n.T(lang, "customer.employee.status_success"))
 }

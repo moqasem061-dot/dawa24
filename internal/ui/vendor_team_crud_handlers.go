@@ -128,6 +128,21 @@ func (h *UIHandler) VendorTeamNewSubmit(w http.ResponseWriter, r *http.Request) 
 		_ = h.orgSvc.AssignBranchManager(sysCtx, actor.OrganizationID, *branchID, &targetUserID)
 	}
 
+	h.recordAudit(ctx, database.AuditEntry{
+		OrganizationID: &actor.OrganizationID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.created",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(targetUserID, 10),
+		After: map[string]any{
+			"name":          name,
+			"email":         email,
+			"role_key":      roleKey,
+			"employee_code": employeeCode,
+			"job_title":     jobTitle,
+		},
+	})
+
 	h.invalidatePermissions(targetUserID, actor.OrganizationID)
 	h.invalidatePermissions(actor.UserID, actor.OrganizationID)
 
@@ -237,6 +252,19 @@ func (h *UIHandler) VendorTeamEditSubmit(w http.ResponseWriter, r *http.Request)
 		_ = h.orgSvc.AssignBranchManager(sysCtx, actor.OrganizationID, *branchID, &member.UserID)
 	}
 
+	h.recordAudit(ctx, database.AuditEntry{
+		OrganizationID: &actor.OrganizationID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.updated",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		After: map[string]any{
+			"role_key":      roleKey,
+			"employee_code": employeeCode,
+			"job_title":     jobTitle,
+		},
+	})
+
 	h.invalidatePermissions(member.UserID, actor.OrganizationID)
 	h.invalidatePermissions(actor.UserID, actor.OrganizationID)
 
@@ -278,6 +306,17 @@ func (h *UIHandler) VendorTeamToggleSubmit(w http.ResponseWriter, r *http.Reques
 		h.redirectWithNotice(w, r, "/vendor/team", "error", h.safeMessage(err, langOf(r)))
 		return
 	}
+
+	h.recordAudit(ctx, database.AuditEntry{
+		OrganizationID: &actor.OrganizationID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.updated",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		Before:         map[string]any{"is_active": member.IsActive},
+		After:          map[string]any{"is_active": !member.IsActive},
+	})
+
 	h.redirectWithNotice(w, r, "/vendor/team", "success", i18n.T(langOf(r), "vendor.team.status_updated_success"))
 }
 
@@ -317,6 +356,20 @@ func (h *UIHandler) VendorTeamDeleteSubmit(w http.ResponseWriter, r *http.Reques
 		h.redirectWithNotice(w, r, "/vendor/team", "error", h.safeMessage(err, langOf(r)))
 		return
 	}
+
+	h.recordAudit(ctx, database.AuditEntry{
+		OrganizationID: &actor.OrganizationID,
+		ActorUserID:    actor.UserID,
+		Action:         "member.deleted",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(member.UserID, 10),
+		Before: map[string]any{
+			"role_key":      member.RoleKey,
+			"employee_code": member.EmployeeCode,
+			"job_title":     member.JobTitle,
+		},
+	})
+
 	h.redirectWithNotice(w, r, "/vendor/team", "success", i18n.T(langOf(r), "vendor.team.deleted_success"))
 }
 

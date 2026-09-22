@@ -136,6 +136,8 @@ func loadVendorUIKeysA(e *engine) {
 	addKey(e, "activities.col_id", "activities", "المعرف", "Identifier", "Header")
 	addKey(e, "activities.col_ip", "activities", "عنوان IP", "IP Address", "Header")
 	addKey(e, "activities.col_date", "activities", "التاريخ والوقت", "Date & Time", "Header")
+	addKey(e, "activities.col_actions", "activities", "الإجراءات", "Actions", "Header")
+	addKey(e, "activities.btn_details", "activities", "تفاصيل", "Details", "Button")
 	addKey(e, "activities.default_actor", "activities", "مستخدم المنشأة", "Org User", "Fallback")
 	addKey(e, "activities.ip_internal", "activities", "داخلي", "Internal", "Badge")
 

@@ -2,6 +2,8 @@ package identity
 
 import (
 	"context"
+
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 )
 
 // Repository defines the storage contract for the identity module.
@@ -79,4 +81,7 @@ type Repository interface {
 	ListAccountDeletionRequests(ctx context.Context, status string) ([]*AccountDeletionRequest, error)
 	ListAccountDeletionRequestsWithTotal(ctx context.Context, status string, limit, offset int) ([]*AccountDeletionRequest, int, error)
 	ReviewAccountDeletionRequest(ctx context.Context, requestID, reviewerID int64, approve bool, adminNotes string) error
+
+	// RecordAudit records an audit entry for user lifecycle and security actions.
+	RecordAudit(ctx context.Context, e database.AuditEntry) error
 }

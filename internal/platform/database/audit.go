@@ -109,6 +109,16 @@ func WriteAudit(ctx context.Context, tx pgx.Tx, e AuditEntry) error {
 	return nil
 }
 
+// RecordAudit records an audit entry in its own transaction (for events outside an existing transaction).
+func RecordAudit(ctx context.Context, db *DB, e AuditEntry) error {
+	if db == nil {
+		return nil
+	}
+	return db.InTx(AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		return WriteAudit(txCtx, tx, e)
+	})
+}
+
 // marshalAudit renders a value as JSONB, or NULL when there is nothing to say —
 // a creation has no before state and a deletion has no after state.
 func marshalAudit(v any) ([]byte, error) {

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sort"
 	"strings"
 	"testing"
 	"time"
@@ -291,3 +292,36 @@ func waitForArchived(t *testing.T, repo interface {
 		time.Sleep(200 * time.Millisecond)
 	}
 }
+
+func (m *mockBulkCompareRepo) ArchiveOldestFiles(ctx context.Context, userID int64, orgID *int64, keepCount int, reason string) ([]string, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	var active []*compare.CompareFile
+	for _, f := range m.files {
+		if f.Status != compare.FileArchived && !f.IsTempWarehouse && f.DeletedAt == nil {
+			if (orgID != nil && f.OrganizationID != nil && *f.OrganizationID == *orgID) || (f.OrganizationID == nil && f.UserID == userID) {
+				active = append(active, f)
+			}
+		}
+	}
+	if len(active) <= keepCount {
+		return nil, nil
+	}
+	sort.Slice(active, func(i, j int) bool { return active[i].ID < active[j].ID })
+	toArchiveCount := len(active) - keepCount
+	var archivedNames []string
+	for i := 0; i < toArchiveCount; i++ {
+		f := active[i]
+		f.Status = compare.FileArchived
+		f.ArchiveReason = reason
+		now := time.Now().UTC()
+		f.ArchivedAt = &now
+		archivedNames = append(archivedNames, f.SupplierName)
+	}
+	return archivedNames, nil
+}
+
+func (m *mockBulkCompareRepo) ListCatalogMatchProducts(ctx context.Context, limit int) ([]*compare.CandidateProduct, error) {
+	return nil, nil
+}
+

@@ -187,8 +187,14 @@ func (s *OrderShipment) CourierCollection() CourierCollection {
 			return CourierCollection{Kind: CollectShippingOnly, Amount: s.ShippingFee}
 		}
 		return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
-	case s.PaymentMethod == "cod" || s.PaymentStatus != PaymentPaid:
+	case s.PaymentMethod == "cod" || s.PaymentMethod == "" || s.PaymentMethod == "cash" || s.PaymentMethod == "cash_on_delivery":
+		if s.PaymentStatus == PaymentPaid {
+			return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
+		}
 		return CourierCollection{Kind: CollectFull, Amount: s.TotalAmount}
+	default:
+		// Any electronic / prepaid payment method (instapay, card, bank_transfer, fawry, etc.).
+		// The pharmacy settles payment electronically; courier does not collect cash.
+		return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
 	}
-	return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
 }

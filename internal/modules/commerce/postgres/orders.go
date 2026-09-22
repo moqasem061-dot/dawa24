@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 
@@ -108,6 +109,12 @@ func (r *Repository) CreateOrder(
 		var orgID *int64
 		if order.OrganizationID != nil && *order.OrganizationID > 0 {
 			orgID = order.OrganizationID
+		} else if order.CustomerID > 0 {
+			var memberOrgID int64
+			if err := tx.QueryRow(txCtx, `SELECT organization_id FROM org.members WHERE user_id = $1 AND status = 'active' ORDER BY CASE WHEN role_key IN ('owner', 'org_owner') THEN 0 ELSE 1 END, id LIMIT 1`, order.CustomerID).Scan(&memberOrgID); err == nil && memberOrgID > 0 {
+				order.OrganizationID = &memberOrgID
+				orgID = &memberOrgID
+			}
 		}
 
 		negStatus := string(order.NegotiationStatus)
@@ -301,7 +308,47 @@ func (r *Repository) CreateOrder(
 			INSERT INTO commerce.order_status_history (order_id, to_status, notes)
 			VALUES ($1, $2, 'Order placed successfully');
 		`
-		_, err = tx.Exec(txCtx, queryHistory, order.ID, string(order.Status))
-		return err
+		if _, err := tx.Exec(txCtx, queryHistory, order.ID, string(order.Status)); err != nil {
+			return err
+		}
+
+		// 5. Write audit logs for customer pharmacy and vendor(s)
+		orderIDStr := strconv.FormatInt(order.ID, 10)
+		if order.OrganizationID != nil && *order.OrganizationID > 0 {
+			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: order.OrganizationID,
+				ActorUserID:    order.CustomerID,
+				Action:         "order.created",
+				EntityType:     "order",
+				EntityID:       orderIDStr,
+				After: map[string]any{
+					"order_number":   order.OrderNumber,
+					"total_amount":   order.TotalAmount.String(),
+					"payment_method": order.PaymentMethod,
+					"lines_count":    len(lines),
+				},
+			})
+		}
+
+		for _, s := range shipments {
+			if s.OrganizationID > 0 {
+				vOrgID := s.OrganizationID
+				_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+					OrganizationID: &vOrgID,
+					ActorUserID:    order.CustomerID,
+					Action:         "order.received",
+					EntityType:     "order",
+					EntityID:       orderIDStr,
+					After: map[string]any{
+						"order_number":    order.OrderNumber,
+						"shipment_number": s.ShipmentNumber,
+						"total_amount":    s.TotalAmount.String(),
+						"payment_method":  order.PaymentMethod,
+					},
+				})
+			}
+		}
+
+		return nil
 	})
 }

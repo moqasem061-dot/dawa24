@@ -5,11 +5,13 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
 // MFAStatus represents the current two-factor authentication state for a user.
@@ -154,6 +156,19 @@ func (s *Service) ConfirmEnableMFA(ctx context.Context, userID int64, code strin
 
 	s.log.InfoContext(ctx, "mfa successfully enabled", "user_id", userID)
 
+	var pOrgID *int64
+	if oID, _, _, err := s.repo.DefaultOrgInfoForUser(ctx, userID); err == nil && oID > 0 {
+		pOrgID = &oID
+	}
+	_ = s.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: pOrgID,
+		ActorUserID:    userID,
+		Action:         "user.mfa_enabled",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(userID, 10),
+		After:          map[string]any{"enabled": true, "type": "totp", "enabled_at": now.Format(time.RFC3339)},
+	})
+
 	return &MFAActivationResult{
 		Success:       true,
 		RecoveryCodes: recoveryCodes,
@@ -200,6 +215,19 @@ func (s *Service) DisableMFA(ctx context.Context, userID int64, password, code s
 	if err := s.repo.UpsertMFA(ctx, disabledMFA); err != nil {
 		return fmt.Errorf("disable mfa: %w", err)
 	}
+
+	var pOrgID *int64
+	if oID, _, _, err := s.repo.DefaultOrgInfoForUser(ctx, userID); err == nil && oID > 0 {
+		pOrgID = &oID
+	}
+	_ = s.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: pOrgID,
+		ActorUserID:    userID,
+		Action:         "user.mfa_disabled",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(userID, 10),
+		After:          map[string]any{"enabled": false, "type": "totp", "disabled_at": time.Now().UTC().Format(time.RFC3339)},
+	})
 
 	s.log.InfoContext(ctx, "mfa disabled by user", "user_id", userID)
 	return nil

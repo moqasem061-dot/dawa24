@@ -18,6 +18,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/notifications"
 	"github.com/muhiya/dawa24-store/internal/modules/workflow"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui"
@@ -84,6 +85,10 @@ type mockIssueIdentityRepo struct {
 	identity.Repository
 	staffIDs []int64
 	users    map[int64]*identity.User
+}
+
+func (m *mockIssueIdentityRepo) RecordAudit(_ context.Context, _ database.AuditEntry) error {
+	return nil
 }
 
 func (m *mockIssueIdentityRepo) ListStaffUserIDs(_ context.Context) ([]int64, error) {

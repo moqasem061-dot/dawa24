@@ -13,6 +13,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/modules/notifications"
 	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/shared/money"
 )
@@ -20,6 +21,10 @@ import (
 type mockIdentityRepoForTableTest struct {
 	identity.Repository
 	adminUser int64
+}
+
+func (m *mockIdentityRepoForTableTest) RecordAudit(_ context.Context, _ database.AuditEntry) error {
+	return nil
 }
 
 func (m *mockIdentityRepoForTableTest) ListStaffUserIDs(_ context.Context) ([]int64, error) {

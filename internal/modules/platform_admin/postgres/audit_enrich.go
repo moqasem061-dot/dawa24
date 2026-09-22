@@ -190,6 +190,142 @@ func enrichAuditEntry(e *platformadmin.AuditEntry) {
 		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.logout_body"), actor)
 		e.Severity = "info"
 
+	case strings.Contains(act, "password_changed"):
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.user.password_changed")
+		}
+		e.Title = i18n.TDefault("audit.title.user.password_changed")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.user.password_changed"), actor)
+		e.Severity = "warning"
+
+	case strings.Contains(act, "mfa_enabled"):
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.user.mfa_enabled")
+		}
+		e.Title = i18n.TDefault("audit.title.user.mfa_enabled")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.user.mfa_enabled"), actor)
+		e.Severity = "success"
+
+	case strings.Contains(act, "mfa_disabled"):
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.user.mfa_disabled")
+		}
+		e.Title = i18n.TDefault("audit.title.user.mfa_disabled")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.user.mfa_disabled"), actor)
+		e.Severity = "warning"
+
+	case act == "order.created":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.created")
+		}
+		e.Title = i18n.TDefault("audit.title.order.created")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.created"), actor, e.EntityID)
+		e.Severity = "success"
+
+	case act == "order.received":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.received")
+		}
+		e.Title = i18n.TDefault("audit.title.order.received")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.received"), e.EntityID)
+		e.Severity = "info"
+
+	case act == "order.confirmed":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.confirmed")
+		}
+		e.Title = i18n.TDefault("audit.title.order.confirmed")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.confirmed"), actor, e.EntityID)
+		e.Severity = "success"
+
+	case act == "order.processing":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.processing")
+		}
+		e.Title = i18n.TDefault("audit.title.order.processing")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.processing"), actor, e.EntityID)
+		e.Severity = "info"
+
+	case act == "order.ready_for_pickup":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.ready_for_pickup")
+		}
+		e.Title = i18n.TDefault("audit.title.order.ready_for_pickup")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.ready_for_pickup"), actor, e.EntityID)
+		e.Severity = "info"
+
+	case act == "order.shipped":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.shipped")
+		}
+		e.Title = i18n.TDefault("audit.title.order.shipped")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.shipped"), actor, e.EntityID)
+		e.Severity = "info"
+
+	case act == "order.delivered":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.delivered")
+		}
+		e.Title = i18n.TDefault("audit.title.order.delivered")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.delivered"), actor, e.EntityID)
+		e.Severity = "success"
+
+	case act == "order.cancelled":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.cancelled")
+		}
+		e.Title = i18n.TDefault("audit.title.order.cancelled")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.cancelled"), actor, e.EntityID)
+		e.Severity = "warning"
+
+	case act == "order.updated":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.updated")
+		}
+		e.Title = i18n.TDefault("audit.title.order.updated")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.updated"), actor, e.EntityID)
+		e.Severity = "info"
+
+	case act == "order.negotiation_accepted":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.negotiation_accepted")
+		}
+		e.Title = i18n.TDefault("audit.title.order.negotiation_accepted")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.negotiation_accepted"), actor, e.EntityID)
+		e.Severity = "success"
+
+	case act == "order.negotiation_rejected":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.order.negotiation_rejected")
+		}
+		e.Title = i18n.TDefault("audit.title.order.negotiation_rejected")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.order.negotiation_rejected"), actor, e.EntityID)
+		e.Severity = "warning"
+
+	case act == "member.created":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.member.created")
+		}
+		e.Title = i18n.TDefault("audit.title.member.created")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.member.created"), actor)
+		e.Severity = "success"
+
+	case act == "member.updated":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.member.updated")
+		}
+		e.Title = i18n.TDefault("audit.title.member.updated")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.member.updated"), actor)
+		e.Severity = "info"
+
+	case act == "member.deleted":
+		if e.ActionLabelAr == "" {
+			e.ActionLabelAr = i18n.TDefault("audit.action.member.deleted")
+		}
+		e.Title = i18n.TDefault("audit.title.member.deleted")
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.member.deleted"), actor)
+		e.Severity = "warning"
+
 	default:
 		if e.ActionLabelAr == "" {
 			parts := strings.Split(e.Action, ".")

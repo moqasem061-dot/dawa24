@@ -225,54 +225,34 @@ func (r *Repository) GetProductBySKU(ctx context.Context, sku string) (*catalog.
 
 // UpdateProductImageBySKU sets the downloaded image path and source URL for a product matching the SKU.
 func (r *Repository) UpdateProductImageBySKU(ctx context.Context, sku string, imagePath string, imageLink string) (*catalog.Product, error) {
-	var prod catalog.Product
-	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			UPDATE catalog.products
-			SET image = $2,
-			    image_link = CASE WHEN $3 != '' THEN $3 ELSE image_link END,
-			    updated_at = now()
-			WHERE sku = $1 AND deleted_at IS NULL
-			RETURNING id, sku, barcode, image, image_link;
-		`
-		if err := tx.QueryRow(txCtx, query, sku, imagePath, imageLink).Scan(&prod.ID, &prod.SKU, &prod.Barcode, &prod.Image, &prod.ImageLink); err != nil {
-			if database.IsNotFound(err) {
-				return apperr.NotFound("product")
-			}
-			return fmt.Errorf("catalog postgres: update product image by sku: %w", err)
-		}
-		return nil
-	})
+	prod, err := r.GetProductBySKU(ctx, sku)
 	if err != nil {
 		return nil, err
 	}
-	return &prod, nil
+	prod.Image = imagePath
+	if imageLink != "" {
+		prod.ImageLink = imageLink
+	}
+	if err := r.UpdateProduct(ctx, prod); err != nil {
+		return nil, err
+	}
+	return prod, nil
 }
 
 // UpdateProductImageByBarcode sets the downloaded image path and source URL for a product matching the Barcode.
 func (r *Repository) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*catalog.Product, error) {
-	var prod catalog.Product
-	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			UPDATE catalog.products
-			SET image = $2,
-			    image_link = CASE WHEN $3 != '' THEN $3 ELSE image_link END,
-			    updated_at = now()
-			WHERE barcode = $1 AND deleted_at IS NULL
-			RETURNING id, sku, barcode, image, image_link;
-		`
-		if err := tx.QueryRow(txCtx, query, barcode, imagePath, imageLink).Scan(&prod.ID, &prod.SKU, &prod.Barcode, &prod.Image, &prod.ImageLink); err != nil {
-			if database.IsNotFound(err) {
-				return apperr.NotFound("product")
-			}
-			return fmt.Errorf("catalog postgres: update product image by barcode: %w", err)
-		}
-		return nil
-	})
+	prod, err := r.GetProductByBarcode(ctx, barcode)
 	if err != nil {
 		return nil, err
 	}
-	return &prod, nil
+	prod.Image = imagePath
+	if imageLink != "" {
+		prod.ImageLink = imageLink
+	}
+	if err := r.UpdateProduct(ctx, prod); err != nil {
+		return nil, err
+	}
+	return prod, nil
 }
 
 // GetProductByBarcode retrieves a master product by its exact barcode.
@@ -316,26 +296,16 @@ func (r *Repository) GetProductByBarcode(ctx context.Context, barcode string) (*
 
 // UpdateProductImageByID sets the downloaded image path and source URL for a product by its ID.
 func (r *Repository) UpdateProductImageByID(ctx context.Context, id int64, imagePath string, imageLink string) (*catalog.Product, error) {
-	var prod catalog.Product
-	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			UPDATE catalog.products
-			SET image = $2,
-			    image_link = CASE WHEN $3 != '' THEN $3 ELSE image_link END,
-			    updated_at = now()
-			WHERE id = $1 AND deleted_at IS NULL
-			RETURNING id, sku, barcode, image, image_link;
-		`
-		if err := tx.QueryRow(txCtx, query, id, imagePath, imageLink).Scan(&prod.ID, &prod.SKU, &prod.Barcode, &prod.Image, &prod.ImageLink); err != nil {
-			if database.IsNotFound(err) {
-				return apperr.NotFound("product")
-			}
-			return fmt.Errorf("catalog postgres: update product image by id: %w", err)
-		}
-		return nil
-	})
+	prod, err := r.GetProductByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return &prod, nil
+	prod.Image = imagePath
+	if imageLink != "" {
+		prod.ImageLink = imageLink
+	}
+	if err := r.UpdateProduct(ctx, prod); err != nil {
+		return nil, err
+	}
+	return prod, nil
 }

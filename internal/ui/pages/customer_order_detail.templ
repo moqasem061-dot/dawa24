@@ -63,15 +63,12 @@ templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatus
 								{ fmt.Sprintf(i18n.T(lang, "orders.detail_title"), order.OrderNumber) }
 							</h1>
 							@components.StatusBadge(string(order.Status), lang)
-							if order.PaymentStatus == commerce.PaymentPaid {
-								<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "orders.paid_full") }</span>
-							} else if order.PaymentStatus == commerce.PaymentAuthorized && order.PaymentMethod == "wallet" {
-								<span class="badge badge-amber text-xs font-bold">معتمد من المحفظة (يُخصم عند تأكيد المورد)</span>
-							} else if order.PaymentStatus == commerce.PaymentRefunded {
-								<span class="badge badge-purple text-xs font-bold">مسترجع</span>
-							} else {
-								<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "orders.cod") }</span>
-							}
+							<span class="badge badge-slate text-xs font-bold">
+								{ FormatPaymentMethodName(order.PaymentMethod, lang) }
+							</span>
+							<span class={ "badge text-xs font-bold", PaymentStatusBadgeClass(order.PaymentStatus, order.PaymentMethod) }>
+								{ FormatPaymentStatusLabel(order.PaymentStatus, order.PaymentMethod, lang) }
+							</span>
 							if order.IsNegotiation {
 								if order.NegotiationStatus == "pending" {
 									<span class="badge badge-amber text-xs font-black gap-1">
@@ -246,7 +243,7 @@ templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatus
 												}
 											</div>
 											<p class="text-xs text-emerald-800 m-0 mt-1 font-medium max-w-md leading-relaxed">
-												{ fmt.Sprintf(i18n.T(lang, "orders.parcel_pin_instruction"), sh.VendorName.Get(i18n.ParseLang(lang))) }
+												{ FormatParcelPINInstruction(sh.VendorName.Get(i18n.ParseLang(lang)), order.PaymentMethod, sh.CourierCollection().Kind, lang) }
 											</p>
 										</div>
 									</div>

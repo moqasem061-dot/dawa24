@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"strconv"
 	"sync"
 	"time"
 
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
@@ -291,77 +293,32 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, er
 		}
 	}
 
+	var pOrgID *int64
+	if orgID > 0 {
+		pOrgID = &orgID
+	}
+	_ = s.RecordAudit(ctx, database.AuditEntry{
+		OrganizationID: pOrgID,
+		ActorUserID:    user.ID,
+		Action:         "user.login",
+		EntityType:     "user",
+		EntityID:       strconv.FormatInt(user.ID, 10),
+		IP:             input.IP,
+		After: map[string]any{
+			"device":      dev.DeviceName,
+			"device_type": dev.DeviceType,
+			"browser":     dev.Browser,
+			"os":          dev.OS,
+			"ip":          input.IP,
+			"login_time":  now.Format(time.RFC3339),
+		},
+	})
+
 	s.log.InfoContext(ctx, "user logged in", "user_id", user.ID, "active_org", orgID, "device", dev.DeviceName, "max_sessions", maxSessions)
 	return &LoginResult{
 		User:    user,
 		Session: sess,
 	}, nil
-}
-
-// ChangePassword verifies current password and updates to the new hashed password.
-func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassword, newPassword string) error {
-	user, err := s.repo.GetUserByID(ctx, userID)
-	if err != nil {
-		return err
-	}
-	if !CheckPassword(user.PasswordHash, currentPassword) {
-		return apperr.Validation("auth.invalid_password", i18n.TDefault("w4_mod.w4str_182_182"), nil)
-	}
-	if len(newPassword) < 8 {
-		return apperr.Validation("auth.weak_password", i18n.TDefault("w4_mod.8_183"), nil)
-	}
-
-	hash, err := HashPassword(newPassword)
-	if err != nil {
-		return err
-	}
-	user.PasswordHash = hash
-	user.UpdatedAt = time.Now()
-	if err := s.repo.UpdateUser(ctx, user); err != nil {
-		return err
-	}
-	if s.sessionStore != nil {
-		_ = s.sessionStore.DeleteAllForUser(ctx, userID)
-	}
-	s.log.InfoContext(ctx, "user password updated", "user_id", userID)
-	return nil
-}
-
-// ResetPassword resets a user's password directly after OTP verification.
-func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) error {
-	cleanEmail := NormalizeEmail(email)
-	if cleanEmail == "" {
-		return apperr.Validation("email.invalid", "A valid email address is required.", nil)
-	}
-	user, err := s.repo.GetUserByEmail(ctx, cleanEmail)
-	if err != nil {
-		return err
-	}
-	if len(newPassword) < 8 {
-		return apperr.Validation("auth.weak_password", i18n.TDefault("w4_mod.8_183"), nil)
-	}
-	hash, err := HashPassword(newPassword)
-	if err != nil {
-		return err
-	}
-	user.PasswordHash = hash
-	user.UpdatedAt = time.Now().UTC()
-	if err := s.repo.UpdateUser(ctx, user); err != nil {
-		return err
-	}
-	maxSessions := 10
-	_ = s.repo.UpsertSecurity(ctx, &UserSecurity{
-		UserID:              user.ID,
-		LoginAttempts:       0,
-		LastPasswordChange:  &user.UpdatedAt,
-		PasswordChangeCount: 1,
-		MaxLoginSessions:    &maxSessions,
-	})
-	if s.sessionStore != nil {
-		_ = s.sessionStore.DeleteAllForUser(ctx, user.ID)
-	}
-	s.log.InfoContext(ctx, "user password reset successfully", "user_id", user.ID)
-	return nil
 }
 
 // Logout terminates a session.

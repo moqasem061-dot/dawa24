@@ -48,13 +48,7 @@ templ InvoicePrintableThermal(data billing.PrintableInvoiceData) {
 		}
 		<div class="thermal-row">
 			<span>السداد:</span>
-			if data.PaymentMethod == "cash" || data.PaymentMethod == "cash_on_delivery" || data.PaymentMethod == "cod" {
-				<span>نقداً عند الاستلام</span>
-			} else if data.PaymentMethod == "wallet" {
-				<span>المحفظة الإلكترونية</span>
-			} else {
-				<span>آجل / حساب ائتماني</span>
-			}
+			<span>{ FormatPaymentMethodName(data.PaymentMethod, "ar") }</span>
 		</div>
 		<div class="thermal-row">
 			<span>العميل:</span>

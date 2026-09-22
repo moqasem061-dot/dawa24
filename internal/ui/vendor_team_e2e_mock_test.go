@@ -6,6 +6,7 @@ import (
 
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
@@ -14,6 +15,10 @@ type mockIdentityRepoTeamTest struct {
 	users  map[string]*identity.User
 	byID   map[int64]*identity.User
 	nextID int64
+}
+
+func (m *mockIdentityRepoTeamTest) RecordAudit(_ context.Context, _ database.AuditEntry) error {
+	return nil
 }
 
 func newMockIdentityRepoTeamTest() *mockIdentityRepoTeamTest {

@@ -82,13 +82,7 @@ templ InvoicePrintableA4(data billing.PrintableInvoiceData) {
 				</div>
 				<div class="stack-sm font-size-10 text-slate">
 					<span class="dir-rtl d-inline-block font-size-10 text-muted m-right-1">طريقة السداد:</span>
-					if data.PaymentMethod == "cash" || data.PaymentMethod == "cash_on_delivery" || data.PaymentMethod == "cod" {
-						<span class="font-bold">نقداً عند الاستلام</span>
-					} else if data.PaymentMethod == "wallet" {
-						<span class="font-bold">المحفظة الإلكترونية</span>
-					} else {
-						<span class="font-bold">آجل / حساب ائتماني</span>
-					}
+					<span class="font-bold">{ FormatPaymentMethodName(data.PaymentMethod, "ar") }</span>
 				</div>
 			</div>
 

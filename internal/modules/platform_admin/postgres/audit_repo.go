@@ -81,14 +81,18 @@ func (r *Repository) ListOrgStaffAuditLogWithTotal(ctx context.Context, orgID in
 		const countQuery = `
 			SELECT count(*)
 			FROM platform.audit_log a
-			JOIN identity.users u ON a.actor_user_id = u.id
+			LEFT JOIN identity.users u ON a.actor_user_id = u.id
 			WHERE a.organization_id = $1
-			  AND a.actor_user_id IN (
-			      SELECT user_id FROM org.members WHERE organization_id = $1
-			      UNION
-			      SELECT owner_id FROM org.organizations WHERE id = $1
+			  AND (
+			      a.actor_user_id IN (
+			          SELECT user_id FROM org.members WHERE organization_id = $1
+			          UNION
+			          SELECT owner_id FROM org.organizations WHERE id = $1
+			      )
+			      OR a.actor_user_id = 0
+			      OR a.actor_user_id IS NULL
 			  )
-			  AND (u.role IS NULL OR u.role NOT IN ('super_admin', 'platform_admin', 'admin_staff', 'staff'));
+			  AND (u.role IS NULL OR u.role NOT IN ('super_admin', 'platform_admin'));
 		`
 		if err := tx.QueryRow(txCtx, countQuery, orgID).Scan(&total); err != nil {
 			return err
@@ -105,15 +109,19 @@ func (r *Repository) ListOrgStaffAuditLogWithTotal(ctx context.Context, orgID in
 			       COALESCE(a.request_id, '') AS req_id,
 			       a.before, a.after, a.created_at
 			FROM platform.audit_log a
-			JOIN identity.users u ON a.actor_user_id = u.id
+			LEFT JOIN identity.users u ON a.actor_user_id = u.id
 			LEFT JOIN org.organizations o ON a.organization_id = o.id
 			WHERE a.organization_id = $1
-			  AND a.actor_user_id IN (
-			      SELECT user_id FROM org.members WHERE organization_id = $1
-			      UNION
-			      SELECT owner_id FROM org.organizations WHERE id = $1
+			  AND (
+			      a.actor_user_id IN (
+			          SELECT user_id FROM org.members WHERE organization_id = $1
+			          UNION
+			          SELECT owner_id FROM org.organizations WHERE id = $1
+			      )
+			      OR a.actor_user_id = 0
+			      OR a.actor_user_id IS NULL
 			  )
-			  AND (u.role IS NULL OR u.role NOT IN ('super_admin', 'platform_admin', 'admin_staff', 'staff'))
+			  AND (u.role IS NULL OR u.role NOT IN ('super_admin', 'platform_admin'))
 			ORDER BY a.created_at DESC, a.id DESC
 			LIMIT $2 OFFSET $3;
 		`

@@ -42,9 +42,10 @@ var routesWithoutPermissionGate = map[string]string{
 	// listed here.
 
 	// Assets. Public by definition.
-	"GET /static/*":   "static assets are public",
-	"GET /uploads/*":  "uploaded media is public; the handler checks the path, not the caller",
-	"GET /robots.txt": "crawler policy is public",
+	"GET /static/*":        "static assets are public",
+	"GET /uploads/*":       "uploaded media is public; the handler checks the path, not the caller",
+	"GET /uploads/proxy":   "remote image proxy is public to satisfy CSP",
+	"GET /robots.txt":      "crawler policy is public",
 
 	// The caller's own account. A member holding nothing must still be able to
 	// change their password, revoke a session on a lost device, and read what

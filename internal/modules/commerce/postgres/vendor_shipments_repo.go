@@ -3,6 +3,7 @@ package postgres
 import (
 	"context"
 	"fmt"
+	"strconv"
 
 	"github.com/jackc/pgx/v5"
 
@@ -100,6 +101,16 @@ func (r *Repository) CountOrders(ctx context.Context) (int, error) {
 // AcceptNegotiation confirms a negotiated order and sets its status to confirmed.
 func (r *Repository) AcceptNegotiation(ctx context.Context, orderID int64, actorID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		var customerOrgID *int64
+		var customerUserID int64
+		err := tx.QueryRow(txCtx, `SELECT organization_id, customer_id FROM commerce.orders WHERE id = $1 FOR UPDATE;`, orderID).Scan(&customerOrgID, &customerUserID)
+		if err != nil {
+			if database.IsNotFound(err) {
+				return apperr.NotFound("order")
+			}
+			return err
+		}
+
 		query := `
 			UPDATE commerce.orders
 			SET negotiation_status = 'accepted',
@@ -124,6 +135,37 @@ func (r *Repository) AcceptNegotiation(ctx context.Context, orderID int64, actor
 			VALUES ($1, 'confirmed', 'تم قبول السعر المتفاوض عليه واعتماد الطلب من قبل المورد', $2);
 		`, orderID, actorID)
 
+		// Audit logs for customer and vendor
+		orderIDStr := strconv.FormatInt(orderID, 10)
+		if customerOrgID != nil && *customerOrgID > 0 {
+			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: customerOrgID,
+				ActorUserID:    actorID,
+				Action:         "order.negotiation_accepted",
+				EntityType:     "order",
+				EntityID:       orderIDStr,
+				After:          map[string]any{"negotiation_status": "accepted", "status": "confirmed"},
+			})
+		}
+
+		rows, err := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, orderID)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var vOrgID int64
+				if err := rows.Scan(&vOrgID); err == nil && vOrgID > 0 {
+					_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+						OrganizationID: &vOrgID,
+						ActorUserID:    actorID,
+						Action:         "order.negotiation_accepted",
+						EntityType:     "order",
+						EntityID:       orderIDStr,
+						After:          map[string]any{"negotiation_status": "accepted", "status": "confirmed"},
+					})
+				}
+			}
+		}
+
 		return nil
 	})
 }
@@ -131,6 +173,16 @@ func (r *Repository) AcceptNegotiation(ctx context.Context, orderID int64, actor
 // RejectNegotiation rejects a negotiated order and sets its status to cancelled.
 func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		var customerOrgID *int64
+		var customerUserID int64
+		err := tx.QueryRow(txCtx, `SELECT organization_id, customer_id FROM commerce.orders WHERE id = $1 FOR UPDATE;`, orderID).Scan(&customerOrgID, &customerUserID)
+		if err != nil {
+			if database.IsNotFound(err) {
+				return apperr.NotFound("order")
+			}
+			return err
+		}
+
 		if reason == "" {
 			reason = i18n.TDefault("w4_mod.s_360_360")
 		}
@@ -158,6 +210,37 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 			INSERT INTO commerce.order_status_history (order_id, to_status, notes, changed_by_user_id)
 			VALUES ($1, 'cancelled', $2, $3);
 		`, orderID, reason, actorID)
+
+		// Audit logs for customer and vendor
+		orderIDStr := strconv.FormatInt(orderID, 10)
+		if customerOrgID != nil && *customerOrgID > 0 {
+			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: customerOrgID,
+				ActorUserID:    actorID,
+				Action:         "order.negotiation_rejected",
+				EntityType:     "order",
+				EntityID:       orderIDStr,
+				After:          map[string]any{"negotiation_status": "rejected", "status": "cancelled", "reason": reason},
+			})
+		}
+
+		rows, err := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, orderID)
+		if err == nil {
+			defer rows.Close()
+			for rows.Next() {
+				var vOrgID int64
+				if err := rows.Scan(&vOrgID); err == nil && vOrgID > 0 {
+					_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+						OrganizationID: &vOrgID,
+						ActorUserID:    actorID,
+						Action:         "order.negotiation_rejected",
+						EntityType:     "order",
+						EntityID:       orderIDStr,
+						After:          map[string]any{"negotiation_status": "rejected", "status": "cancelled", "reason": reason},
+					})
+				}
+			}
+		}
 
 		return nil
 	})

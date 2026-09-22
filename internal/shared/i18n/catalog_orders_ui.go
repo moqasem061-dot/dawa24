@@ -55,6 +55,8 @@ func loadOrdersUIKeys(e *engine) {
 	addKey(e, "orders.parcel_shipment_num", "orders", "رقم الشحنة:", "Shipment No:", "Shipment number label")
 	addKey(e, "orders.parcel_waybill", "orders", "بوليصة:", "Waybill:", "Waybill label")
 	addKey(e, "orders.parcel_pin_instruction", "orders", "أعطِ هذا الكود فقط لمندوب مورد هذا الطرد (%s) عند استلام أصنافه والتأكد منها وسداد القيمة.", "Provide this code only to the supplier courier (%s) upon physical receipt, verification, and payment.", "Parcel PIN instruction")
+	addKey(e, "orders.parcel_pin_instruction_prepaid", "orders", "أعطِ هذا الكود فقط لمندوب مورد هذا الطرد (%s) عند استلام أصنافه والتأكد منها (تم السداد إلكترونياً ولا يُطلب منك أي مبالغ نقدية عند الاستلام).", "Provide this PIN only to the supplier courier (%s) upon receiving and inspecting the items (Settled electronically; no cash is required upon delivery).", "Parcel PIN instruction for prepaid/online")
+	addKey(e, "orders.parcel_pin_instruction_shipping_only", "orders", "أعطِ هذا الكود فقط لمندوب مورد هذا الطرد (%s) عند استلام أصنافه والتأكد منها وسداد مصاريف الشحن فقط.", "Provide this PIN only to the supplier courier (%s) upon inspection and pay the shipping fee only.", "Parcel PIN instruction for shipping only")
 	addKey(e, "orders.parcel_pin_label", "orders", "كود التسليم لمندوب طرد %d:", "Delivery code for courier parcel %d:", "Parcel PIN label")
 
 	// Order Lines & Table
@@ -90,6 +92,31 @@ func loadOrdersUIKeys(e *engine) {
 	addKey(e, "orders.summary_payment_status", "orders", "حالة السداد:", "Payment Status:", "Summary payment status")
 	addKey(e, "orders.payment_due_cod", "orders", "مستحق عند الاستلام", "Due on Delivery", "Payment due on delivery")
 	addKey(e, "orders.invoice_available_notice", "orders", "تتاح طباعة الفاتورة فور تأكيد وقبول المورد للطلب", "Invoice printing becomes available once confirmed by supplier", "Invoice available notice")
+
+	// Payment Methods
+	addKey(e, "orders.payment_method.cod", "orders", "الدفع عند الاستلام", "Cash on Delivery", "Payment method COD")
+	addKey(e, "orders.payment_method.wallet", "orders", "المحفظة الإلكترونية", "E-Wallet", "Payment method Wallet")
+	addKey(e, "orders.payment_method.instapay", "orders", "إنستاباي (InstaPay)", "InstaPay", "Payment method InstaPay")
+	addKey(e, "orders.payment_method.card", "orders", "بطاقة بنكية", "Bank Card", "Payment method Card")
+	addKey(e, "orders.payment_method.bank_transfer", "orders", "تحويل بنكي", "Bank Transfer", "Payment method Bank Transfer")
+	addKey(e, "orders.payment_method.fawry", "orders", "فوري (Fawry)", "Fawry", "Payment method Fawry")
+	addKey(e, "orders.payment_method.vodafone_cash", "orders", "فودافون كاش", "Vodafone Cash", "Payment method Vodafone Cash")
+	addKey(e, "orders.payment_method.orange_cash", "orders", "أورنج كاش", "Orange Cash", "Payment method Orange Cash")
+	addKey(e, "orders.payment_method.etisalat_cash", "orders", "اتصالات كاش", "Etisalat Cash", "Payment method Etisalat Cash")
+	addKey(e, "orders.payment_method.we_pay", "orders", "وي باي (WE Pay)", "WE Pay", "Payment method WE Pay")
+	addKey(e, "orders.payment_method.credit", "orders", "آجل تجاري", "Commercial Credit", "Payment method Credit")
+	addKey(e, "orders.payment_method.online", "orders", "دفع إلكتروني", "Online Payment", "Payment method Online")
+
+	// Payment Statuses
+	addKey(e, "orders.payment_status.paid", "orders", "مدفوع بالكامل", "Paid in Full", "Payment status paid")
+	addKey(e, "orders.payment_status.wallet_authorized", "orders", "معتمد من المحفظة (يُخصم عند تأكيد المورد)", "Authorized from Wallet", "Payment status wallet authorized")
+	addKey(e, "orders.payment_status.wallet_pending", "orders", "بانتظار التأكيد من المحفظة", "Pending Wallet Confirmation", "Payment status wallet pending")
+	addKey(e, "orders.payment_status.online_authorized", "orders", "معتمد (بانتظار التسوية)", "Authorized (Pending Settlement)", "Payment status online authorized")
+	addKey(e, "orders.payment_status.online_pending", "orders", "بانتظار تأكيد الدفع الإلكتروني", "Pending Electronic Payment Confirmation", "Payment status online pending")
+	addKey(e, "orders.payment_status.cod_due", "orders", "مستحق عند الاستلام", "Due on Delivery", "Payment status COD due")
+	addKey(e, "orders.payment_status.refunded", "orders", "مسترجع", "Refunded", "Payment status refunded")
+	addKey(e, "orders.payment_status.partially_refunded", "orders", "مسترجع جزئياً", "Partially Refunded", "Payment status partially refunded")
+	addKey(e, "orders.payment_status.failed", "orders", "فشلت عملية الدفع", "Payment Failed", "Payment status failed")
 
 	// Order Receiving Branch Sidebar Card
 	addKey(e, "orders.branch_card_title", "orders", "بيانات فرع الاستلام", "Receiving Branch Details", "Branch card title")

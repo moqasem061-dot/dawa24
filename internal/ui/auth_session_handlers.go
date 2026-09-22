@@ -3,19 +3,39 @@ package ui
 import (
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 )
 
 // LogoutSubmit logs the user out, invalidating their session token.
 func (h *UIHandler) LogoutSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	actor, hasActor := authctx.From(ctx)
+
 	cookie, err := r.Cookie(h.cookieName())
 	if err == nil && cookie.Value != "" && h.idSvc != nil {
 		_ = h.idSvc.Logout(ctx, cookie.Value)
+	}
+
+	if hasActor && actor.UserID > 0 && h.idSvc != nil {
+		var pOrgID *int64
+		if actor.OrganizationID > 0 {
+			pOrgID = &actor.OrganizationID
+		}
+		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
+			OrganizationID: pOrgID,
+			ActorUserID:    actor.UserID,
+			Action:         "user.logout",
+			EntityType:     "user",
+			EntityID:       strconv.FormatInt(actor.UserID, 10),
+			IP:             h.clientIP(r),
+			After:          map[string]any{"logout_time": time.Now().UTC().Format(time.RFC3339)},
+		})
 	}
 
 	http.SetCookie(w, &http.Cookie{

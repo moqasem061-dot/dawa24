@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui"
 )
@@ -20,6 +21,10 @@ import (
 type mockIdentityRepoProfile struct {
 	identity.Repository
 	user *identity.User
+}
+
+func (m *mockIdentityRepoProfile) RecordAudit(_ context.Context, _ database.AuditEntry) error {
+	return nil
 }
 
 func (m *mockIdentityRepoProfile) GetUserByID(ctx context.Context, id int64) (*identity.User, error) {

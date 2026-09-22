@@ -69,4 +69,68 @@ func loadAuditKeys(e *engine) {
 	addKey(e, "audit.action.reference.plan.create", "audit", "إنشاء باقة اشتراك", "Create Plan", "Audit log action")
 	addKey(e, "audit.action.reference.plan.edit", "audit", "تعديل باقة اشتراك", "Edit Plan", "Audit log action")
 	addKey(e, "audit.action.reference.plan.toggle", "audit", "تغيير حالة باقة الاشتراك", "Toggle Plan Status", "Audit log action")
+
+	// User & Security Actions
+	addKey(e, "audit.action.user.login", "audit", "تسجيل دخول", "User Login", "Audit log action")
+	addKey(e, "audit.action.user.logout", "audit", "تسجيل خروج", "User Logout", "Audit log action")
+	addKey(e, "audit.action.user.password_changed", "audit", "تغيير كلمة المرور", "Password Changed", "Audit log action")
+	addKey(e, "audit.action.user.mfa_enabled", "audit", "تفعيل المصادقة الثنائية (MFA)", "MFA Enabled", "Audit log action")
+	addKey(e, "audit.action.user.mfa_disabled", "audit", "تعطيل المصادقة الثنائية (MFA)", "MFA Disabled", "Audit log action")
+
+	// Order Lifecycle Actions
+	addKey(e, "audit.action.order.created", "audit", "إنشاء طلب جديد", "Order Created", "Audit log action")
+	addKey(e, "audit.action.order.received", "audit", "استلام طلب توريد جديد", "Order Received", "Audit log action")
+	addKey(e, "audit.action.order.confirmed", "audit", "قبول واعتماد الطلب", "Order Confirmed", "Audit log action")
+	addKey(e, "audit.action.order.processing", "audit", "جاري تجهيز وتعبئة الطلب", "Order Processing", "Audit log action")
+	addKey(e, "audit.action.order.ready_for_pickup", "audit", "جاهز للاستلام / الشحن", "Ready for Pickup", "Audit log action")
+	addKey(e, "audit.action.order.shipped", "audit", "شحن الطلب مع المندوب", "Order Shipped", "Audit log action")
+	addKey(e, "audit.action.order.delivered", "audit", "استلام وتوصيل الطلب بنجاح", "Order Delivered", "Audit log action")
+	addKey(e, "audit.action.order.cancelled", "audit", "إلغاء الطلب", "Order Cancelled", "Audit log action")
+	addKey(e, "audit.action.order.updated", "audit", "تعديل بيانات وأصناف الطلب", "Order Updated", "Audit log action")
+	addKey(e, "audit.action.order.negotiation_accepted", "audit", "قبول تفاوض الطلب", "Negotiation Accepted", "Audit log action")
+	addKey(e, "audit.action.order.negotiation_rejected", "audit", "رفض تفاوض الطلب", "Negotiation Rejected", "Audit log action")
+
+	// Team / Staff Management Actions
+	addKey(e, "audit.action.member.created", "audit", "إضافة موظف جديد", "Create Member", "Audit log action")
+	addKey(e, "audit.action.member.updated", "audit", "تعديل بيانات موظف", "Update Member", "Audit log action")
+	addKey(e, "audit.action.member.deleted", "audit", "حذف / إيقاف موظف", "Delete Member", "Audit log action")
+
+	// Audit Titles and Descriptions
+	addKey(e, "audit.title.user.password_changed", "audit", "تغيير كلمة المرور", "Password Changed", "Audit title")
+	addKey(e, "audit.desc.user.password_changed", "audit", "%s قام بتغيير كلمة المرور الخاصة بحسابه", "%s changed their account password", "Audit description")
+	addKey(e, "audit.title.user.mfa_enabled", "audit", "تفعيل المصادقة الثنائية (MFA)", "MFA Enabled", "Audit title")
+	addKey(e, "audit.desc.user.mfa_enabled", "audit", "%s قام بتفعيل ميزة التحقق بخطوتين (MFA)", "%s enabled two-factor authentication (MFA)", "Audit description")
+	addKey(e, "audit.title.user.mfa_disabled", "audit", "تعطيل المصادقة الثنائية (MFA)", "MFA Disabled", "Audit title")
+	addKey(e, "audit.desc.user.mfa_disabled", "audit", "%s قام بتعطيل التحقق بخطوتين (MFA)", "%s disabled two-factor authentication (MFA)", "Audit description")
+
+	addKey(e, "audit.title.order.created", "audit", "إنشاء طلب جديد", "Order Created", "Audit title")
+	addKey(e, "audit.desc.order.created", "audit", "%s قام بإنشاء طلب توريد جديد برقم %s", "%s created a new purchase order #%s", "Audit description")
+	addKey(e, "audit.title.order.received", "audit", "استلام طلب توريد جديد", "Order Received", "Audit title")
+	addKey(e, "audit.desc.order.received", "audit", "تم استلام طلب توريد جديد برقم %s", "New supply order received #%s", "Audit description")
+	addKey(e, "audit.title.order.confirmed", "audit", "قبول واعتماد الطلب", "Order Confirmed", "Audit title")
+	addKey(e, "audit.desc.order.confirmed", "audit", "%s قام بقبول واعتماد أمر التوريد رقم %s", "%s confirmed supply order #%s", "Audit description")
+	addKey(e, "audit.title.order.processing", "audit", "جاري تجهيز الطلب", "Order Processing", "Audit title")
+	addKey(e, "audit.desc.order.processing", "audit", "%s قام ببدء تجهيز وتعبئة أمر التوريد رقم %s", "%s started processing supply order #%s", "Audit description")
+	addKey(e, "audit.title.order.ready_for_pickup", "audit", "الطلب جاهز للاستلام", "Ready for Pickup", "Audit title")
+	addKey(e, "audit.desc.order.ready_for_pickup", "audit", "%s قام بتأكيد جاهزية الطلب رقم %s للشحن", "%s marked order #%s ready for pickup", "Audit description")
+	addKey(e, "audit.title.order.shipped", "audit", "شحن أمر التوريد", "Order Shipped", "Audit title")
+	addKey(e, "audit.desc.order.shipped", "audit", "%s قام بشحن وتسليم أمر التوريد رقم %s للمندوب", "%s dispatched supply order #%s to courier", "Audit description")
+	addKey(e, "audit.title.order.delivered", "audit", "استلام وتوصيل الطلب", "Order Delivered", "Audit title")
+	addKey(e, "audit.desc.order.delivered", "audit", "%s قام بتأكيد توصيل واستلام أمر التوريد رقم %s بنجاح", "%s confirmed delivery of supply order #%s", "Audit description")
+	addKey(e, "audit.title.order.cancelled", "audit", "إلغاء أمر التوريد", "Order Cancelled", "Audit title")
+	addKey(e, "audit.desc.order.cancelled", "audit", "%s قام بإلغاء أمر التوريد رقم %s", "%s cancelled supply order #%s", "Audit description")
+	addKey(e, "audit.title.order.updated", "audit", "تعديل بيانات وأصناف الطلب", "Order Updated", "Audit title")
+	addKey(e, "audit.desc.order.updated", "audit", "%s قام بتعديل كميات أو أصناف أمر التوريد رقم %s", "%s updated quantities or items in order #%s", "Audit description")
+	addKey(e, "audit.title.order.negotiation_accepted", "audit", "قبول تفاوض الطلب", "Negotiation Accepted", "Audit title")
+	addKey(e, "audit.desc.order.negotiation_accepted", "audit", "%s قام بقبول السعر المتفاوض عليه للطلب رقم %s", "%s accepted price negotiation for order #%s", "Audit description")
+	addKey(e, "audit.title.order.negotiation_rejected", "audit", "رفض تفاوض الطلب", "Negotiation Rejected", "Audit title")
+	addKey(e, "audit.desc.order.negotiation_rejected", "audit", "%s قام برفض التفاوض على أمر التوريد رقم %s", "%s rejected price negotiation for order #%s", "Audit description")
+
+	addKey(e, "audit.title.member.created", "audit", "إضافة موظف جديد", "Create Staff Member", "Audit title")
+	addKey(e, "audit.desc.member.created", "audit", "%s قام بإضافة موظف جديد إلى المنشأة", "%s added a new staff member to the organization", "Audit description")
+	addKey(e, "audit.title.member.updated", "audit", "تعديل بيانات موظف", "Update Staff Member", "Audit title")
+	addKey(e, "audit.desc.member.updated", "audit", "%s قام بتعديل بيانات أو صلاحيات الموظف", "%s updated staff member profile or permissions", "Audit description")
+	addKey(e, "audit.title.member.deleted", "audit", "حذف / إيقاف موظف", "Delete Staff Member", "Audit title")
+	addKey(e, "audit.desc.member.deleted", "audit", "%s قام بحذف أو إيقاف موظف من المنشأة", "%s removed or disabled a staff member", "Audit description")
 }
+

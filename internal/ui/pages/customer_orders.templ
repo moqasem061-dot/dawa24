@@ -201,15 +201,12 @@ templ CustomerOrdersList(orders []*commerce.Order, lang string, dirOpt ...string
 								#{ o.OrderNumber }
 							</a>
 							@components.StatusBadge(string(o.Status), lang)
-							if o.PaymentStatus == commerce.PaymentPaid {
-								<span class="badge badge-emerald text-xs font-bold">{ i18n.T(lang, "orders.paid") }</span>
-							} else if o.PaymentStatus == commerce.PaymentAuthorized && o.PaymentMethod == "wallet" {
-								<span class="badge badge-amber text-xs font-bold">معتمد من المحفظة</span>
-							} else if o.PaymentStatus == commerce.PaymentRefunded {
-								<span class="badge badge-purple text-xs font-bold">مسترجع</span>
-							} else {
-								<span class="badge badge-amber text-xs font-bold">{ i18n.T(lang, "orders.cod") }</span>
-							}
+							<span class="badge badge-slate text-xs font-bold">
+								{ FormatPaymentMethodName(o.PaymentMethod, lang) }
+							</span>
+							<span class={ "badge text-xs font-bold", PaymentStatusBadgeClass(o.PaymentStatus, o.PaymentMethod) }>
+								{ FormatPaymentStatusLabel(o.PaymentStatus, o.PaymentMethod, lang) }
+							</span>
 							if o.IsNegotiation {
 								if o.NegotiationStatus == "pending" {
 									<span class="badge badge-amber text-xs font-bold gap-1">

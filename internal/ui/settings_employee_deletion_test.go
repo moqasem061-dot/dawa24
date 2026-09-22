@@ -12,6 +12,7 @@ import (
 
 	"github.com/muhiya/dawa24-store/internal/modules/identity"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"github.com/muhiya/dawa24-store/internal/ui"
@@ -19,6 +20,10 @@ import (
 
 type mockIdentityDeletionRepo struct {
 	identity.Repository
+}
+
+func (m *mockIdentityDeletionRepo) RecordAudit(_ context.Context, _ database.AuditEntry) error {
+	return nil
 }
 
 func (m *mockIdentityDeletionRepo) GetUserByID(_ context.Context, id int64) (*identity.User, error) {

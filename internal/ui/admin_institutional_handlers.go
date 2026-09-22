@@ -1,8 +1,10 @@
 package ui
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -32,12 +34,37 @@ func (h *UIHandler) AdminInstitutionalPage(w http.ResponseWriter, r *http.Reques
 	h.renderPage(ctx, w, "render admin institutional", pages.AdminInstitutional(lang, dir, items, allWorks, unassignedBranches))
 }
 
+func (h *UIHandler) redirectAdminInstitutional(w http.ResponseWriter, r *http.Request, noticeType, message string) {
+	if r.Header.Get("Accept") == "application/json" || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
+		w.Header().Set("Content-Type", "application/json")
+		if noticeType == "error" {
+			w.WriteHeader(http.StatusBadRequest)
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": false, "error": message})
+		} else {
+			_ = json.NewEncoder(w).Encode(map[string]any{"ok": true, "message": message})
+		}
+		return
+	}
+
+	tab := strings.TrimSpace(r.FormValue("tab"))
+	if tab == "" {
+		if u, err := url.Parse(r.Referer()); err == nil && u != nil {
+			tab = strings.TrimSpace(u.Query().Get("tab"))
+		}
+	}
+	target := "/admin/institutional"
+	if tab != "" {
+		target += "?tab=" + url.QueryEscape(tab)
+	}
+	h.redirectWithNotice(w, r, target, noticeType, message)
+}
+
 // AdminInstitutionalNewSubmit creates a new institutional work category.
 func (h *UIHandler) AdminInstitutionalNewSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
 	if h.orgSvc == nil {
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", i18n.T(lang, "admin.inst.service_unavailable"))
+		h.redirectAdminInstitutional(w, r, "error", i18n.T(lang, "admin.inst.service_unavailable"))
 		return
 	}
 
@@ -45,7 +72,7 @@ func (h *UIHandler) AdminInstitutionalNewSubmit(w http.ResponseWriter, r *http.R
 	titleAr := strings.TrimSpace(r.PostFormValue("title_ar"))
 	titleEn := strings.TrimSpace(r.PostFormValue("title_en"))
 	if titleAr == "" && titleEn == "" {
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", i18n.T(lang, "admin.inst.title_required"))
+		h.redirectAdminInstitutional(w, r, "error", i18n.T(lang, "admin.inst.title_required"))
 		return
 	}
 	if titleAr == "" {
@@ -103,11 +130,11 @@ func (h *UIHandler) AdminInstitutionalNewSubmit(w http.ResponseWriter, r *http.R
 
 	if err := h.orgSvc.CreateInstitutionalWork(ctx, iw); err != nil {
 		h.log.ErrorContext(ctx, "failed to create institutional work", "error", err)
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", h.safeMessage(err, lang))
+		h.redirectAdminInstitutional(w, r, "error", h.safeMessage(err, lang))
 		return
 	}
 
-	h.redirectWithNotice(w, r, "/admin/institutional", "success", i18n.T(lang, "admin.inst.created_success"))
+	h.redirectAdminInstitutional(w, r, "success", i18n.T(lang, "admin.inst.created_success"))
 }
 
 // AdminInstitutionalEditSubmit updates an existing institutional category.
@@ -116,7 +143,7 @@ func (h *UIHandler) AdminInstitutionalEditSubmit(w http.ResponseWriter, r *http.
 	lang := langOf(r)
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 {
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", i18n.T(lang, "admin.inst.invalid_id"))
+		h.redirectAdminInstitutional(w, r, "error", i18n.T(lang, "admin.inst.invalid_id"))
 		return
 	}
 
@@ -124,7 +151,7 @@ func (h *UIHandler) AdminInstitutionalEditSubmit(w http.ResponseWriter, r *http.
 	titleAr := strings.TrimSpace(r.PostFormValue("title_ar"))
 	titleEn := strings.TrimSpace(r.PostFormValue("title_en"))
 	if titleAr == "" && titleEn == "" {
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", i18n.T(lang, "admin.inst.title_required"))
+		h.redirectAdminInstitutional(w, r, "error", i18n.T(lang, "admin.inst.title_required"))
 		return
 	}
 	if titleAr == "" {
@@ -177,11 +204,11 @@ func (h *UIHandler) AdminInstitutionalEditSubmit(w http.ResponseWriter, r *http.
 
 	if err := h.orgSvc.UpdateInstitutionalWork(ctx, iw); err != nil {
 		h.log.ErrorContext(ctx, "failed to update institutional work", "error", err)
-		h.redirectWithNotice(w, r, "/admin/institutional", "error", h.safeMessage(err, lang))
+		h.redirectAdminInstitutional(w, r, "error", h.safeMessage(err, lang))
 		return
 	}
 
-	h.redirectWithNotice(w, r, "/admin/institutional", "success", i18n.T(lang, "admin.inst.updated_success"))
+	h.redirectAdminInstitutional(w, r, "success", i18n.T(lang, "admin.inst.updated_success"))
 }
 
 // AdminInstitutionalDeleteSubmit soft deletes an institutional category.
@@ -191,7 +218,7 @@ func (h *UIHandler) AdminInstitutionalDeleteSubmit(w http.ResponseWriter, r *htt
 	if err == nil && h.orgSvc != nil {
 		_ = h.orgSvc.DeleteInstitutionalWork(ctx, id)
 	}
-	h.redirectWithNotice(w, r, "/admin/institutional", "success", i18n.T(langOf(r), "admin.inst.deleted_success"))
+	h.redirectAdminInstitutional(w, r, "success", i18n.T(langOf(r), "admin.inst.deleted_success"))
 }
 
 // AdminInstitutionalStatusSubmit toggles active status of an institutional category.
@@ -201,5 +228,5 @@ func (h *UIHandler) AdminInstitutionalStatusSubmit(w http.ResponseWriter, r *htt
 	if err == nil && h.orgSvc != nil {
 		_ = h.orgSvc.ToggleInstitutionalWorkStatus(ctx, id)
 	}
-	h.redirectWithNotice(w, r, "/admin/institutional", "success", i18n.T(langOf(r), "admin.inst.status_updated_success"))
+	h.redirectAdminInstitutional(w, r, "success", i18n.T(langOf(r), "admin.inst.status_updated_success"))
 }
