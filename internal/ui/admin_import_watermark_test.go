@@ -1,7 +1,9 @@
 package ui
 
 import (
+	"fmt"
 	"testing"
+	"time"
 
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
 )
@@ -141,5 +143,42 @@ func TestExtractCommittedImageTargets(t *testing.T) {
 	}
 	if targets[2].URL != "https://www.example.com/p3.jpg" {
 		t.Errorf("expected https://www.example.com/p3.jpg, got %s", targets[2].URL)
+	}
+}
+
+func TestGroupImageTargets_20kBatch(t *testing.T) {
+	const totalTargets = 20000
+	const uniqueURLs = 2000
+
+	targets := make([]catalogImageTarget, totalTargets)
+	for i := 0; i < totalTargets; i++ {
+		urlIdx := i % uniqueURLs
+		targets[i] = catalogImageTarget{
+			ProductID: int64(i + 1),
+			SKU:       fmt.Sprintf("SKU-%06d", i+1),
+			Barcode:   fmt.Sprintf("622%08d", i+1),
+			URL:       fmt.Sprintf("https://cdn.dawa24.eg/catalog/med-%04d.jpg", urlIdx+1),
+		}
+	}
+
+	start := time.Now()
+	groups := groupImageTargets(targets)
+	elapsed := time.Since(start)
+
+	if len(groups) != uniqueURLs {
+		t.Fatalf("expected %d unique groups, got %d", uniqueURLs, len(groups))
+	}
+
+	totalMappedProducts := 0
+	for _, g := range groups {
+		totalMappedProducts += len(g.ProductIDs)
+	}
+
+	if totalMappedProducts != totalTargets {
+		t.Errorf("expected total mapped products to be %d, got %d", totalTargets, totalMappedProducts)
+	}
+
+	if elapsed > 100*time.Millisecond {
+		t.Errorf("expected 20k batch grouping to take < 100ms, took %v", elapsed)
 	}
 }

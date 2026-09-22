@@ -81,11 +81,14 @@ func (r *Repository) ListProductsMissingImages(ctx context.Context, limit int) (
 	var products []*catalog.Product
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
-			SELECT id, sku, barcode, image_link
+			SELECT id, sku, barcode, COALESCE(NULLIF(image_link, ''), image)
 			FROM catalog.products
 			WHERE deleted_at IS NULL
-			  AND (image IS NULL OR image = '')
-			  AND (image_link IS NOT NULL AND image_link <> '' AND (image_link LIKE 'http%' OR image_link LIKE '//%'))
+			  AND (image IS NULL OR image = '' OR image LIKE 'http%' OR image LIKE '//%')
+			  AND (
+			      (image_link IS NOT NULL AND (image_link LIKE 'http%' OR image_link LIKE '//%'))
+			      OR (image IS NOT NULL AND (image LIKE 'http%' OR image LIKE '//%'))
+			  )
 			ORDER BY id ASC
 			LIMIT $1;
 		`

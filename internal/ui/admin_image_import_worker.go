@@ -68,6 +68,12 @@ func (c *urlDownloadCache) FetchOrDownload(
 	flight.err = err
 	close(flight.done)
 
+	if err != nil {
+		c.mu.Lock()
+		delete(c.inProg, cleanURL)
+		c.mu.Unlock()
+	}
+
 	return path, err
 }
 
@@ -181,6 +187,12 @@ func runConcurrentImageImport(
 		go func() {
 			defer wg.Done()
 			for job := range jobs {
+				select {
+				case <-ctx.Done():
+					return
+				default:
+				}
+
 				itemRow := processOneImageRow(
 					ctx, job.index, job.rawRow, skuCol, urlCol, idType,
 					catSvc, storageClient, prodUploadDir,
@@ -198,7 +210,11 @@ func runConcurrentImageImport(
 					errorCount++
 				}
 
-				if completedCount%5 == 0 || completedCount == total {
+				interval := 50
+				if total < 200 {
+					interval = 5
+				}
+				if completedCount%interval == 0 || completedCount == total {
 					store.mu.Lock()
 					if curSess, ok := store.sessions[sessionID]; ok {
 						curSess.Progress = int(float64(completedCount) / float64(total) * 100)
@@ -215,8 +231,13 @@ func runConcurrentImageImport(
 		}()
 	}
 
+feedJobs:
 	for i, raw := range rawRows {
-		jobs <- imageImportJob{index: i + 1, rawRow: raw}
+		select {
+		case <-ctx.Done():
+			break feedJobs
+		case jobs <- imageImportJob{index: i + 1, rawRow: raw}:
+		}
 	}
 	close(jobs)
 	wg.Wait()

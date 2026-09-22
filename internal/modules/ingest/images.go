@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -21,7 +22,11 @@ var (
 	ErrImageTooLarge    = errors.New("image exceeds size limit (max 10MB)")
 )
 
-var privateIPBlocks []*net.IPNet
+var (
+	privateIPBlocks        []*net.IPNet
+	defaultSecureHTTPClient *http.Client
+	clientOnce             sync.Once
+)
 
 func init() {
 	cidrs := []string{
@@ -58,46 +63,53 @@ func IsPrivateIP(ip net.IP) bool {
 	return false
 }
 
-// SecureHTTPClient creates an HTTP client with DNS resolution and SSRF protection.
+// SecureHTTPClient returns a thread-safe singleton HTTP client with DNS resolution,
+// SSRF protection, and connection pooling to prevent socket exhaustion during
+// large bulk catalog image downloads (e.g. 20,000+ rows).
 func SecureHTTPClient() *http.Client {
-	dialer := &net.Dialer{
-		Timeout:   5 * time.Second,
-		KeepAlive: 30 * time.Second,
-	}
+	clientOnce.Do(func() {
+		dialer := &net.Dialer{
+			Timeout:   8 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}
 
-	transport := &http.Transport{
-		DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
-			host, port, err := net.SplitHostPort(addr)
-			if err != nil {
-				return nil, err
-			}
-
-			ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
-			if err != nil {
-				return nil, err
-			}
-
-			for _, ip := range ips {
-				if IsPrivateIP(ip) {
-					return nil, ErrPrivateIPBlocked
+		transport := &http.Transport{
+			DialContext: func(ctx context.Context, network, addr string) (net.Conn, error) {
+				host, port, err := net.SplitHostPort(addr)
+				if err != nil {
+					return nil, err
 				}
-			}
 
-			if len(ips) == 0 {
-				return nil, fmt.Errorf("no IP resolved for host %s", host)
-			}
+				ips, err := net.DefaultResolver.LookupIP(ctx, "ip", host)
+				if err != nil {
+					return nil, err
+				}
 
-			return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].String(), port))
-		},
-		MaxIdleConns:        100,
-		IdleConnTimeout:     90 * time.Second,
-		TLSHandshakeTimeout: 5 * time.Second,
-	}
+				for _, ip := range ips {
+					if IsPrivateIP(ip) {
+						return nil, ErrPrivateIPBlocked
+					}
+				}
 
-	return &http.Client{
-		Transport: transport,
-		Timeout:   10 * time.Second,
-	}
+				if len(ips) == 0 {
+					return nil, fmt.Errorf("no IP resolved for host %s", host)
+				}
+
+				return dialer.DialContext(ctx, network, net.JoinHostPort(ips[0].String(), port))
+			},
+			MaxIdleConns:        500,
+			MaxIdleConnsPerHost: 50,
+			IdleConnTimeout:     90 * time.Second,
+			TLSHandshakeTimeout: 8 * time.Second,
+		}
+
+		defaultSecureHTTPClient = &http.Client{
+			Transport: transport,
+			Timeout:   25 * time.Second,
+		}
+	})
+
+	return defaultSecureHTTPClient
 }
 
 // DownloadProductImage securely downloads an image from a remote URL with SSRF guards and size limits.

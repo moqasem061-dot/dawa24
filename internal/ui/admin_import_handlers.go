@@ -304,15 +304,7 @@ func (h *UIHandler) AdminProductsImportCommit(w http.ResponseWriter, r *http.Req
 	}
 
 	h.refreshProductIndex(ctx)
-	if session.Options.DownloadImages {
-		targets := extractCommittedImageTargets(result.CommittedProducts)
-		if len(targets) == 0 {
-			targets = h.extractCommittableImageTargets(sysCtx, session.ID)
-		}
-		if len(targets) > 0 {
-			h.downloadImportedImages(targets)
-		}
-	}
+	h.TriggerPostImportImageDownloads(ctx, session, result.CommittedProducts)
 	h.log.InfoContext(ctx, "import committed", "session", written.PublicID, "inserted", result.Inserted, "updated", result.Updated)
 	h.redirectWithNotice(w, r, "/admin/products", "success", fmt.Sprintf(
 		i18n.T(langOf(r), "admin.import.committed_success_format"), result.Total(), result.Inserted, result.Updated))

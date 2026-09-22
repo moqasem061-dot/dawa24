@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -58,5 +59,41 @@ func TestURLDownloadCache_Deduplication(t *testing.T) {
 	// 3. Download should happen only ONCE despite 15 concurrent callers!
 	if calls := atomic.LoadInt64(&downloadCalls); calls != 1 {
 		t.Errorf("expected exactly 1 download call for deduplicated URL, got %d", calls)
+	}
+}
+
+func TestURLDownloadCache_ErrorEviction(t *testing.T) {
+	var attempts int64
+	wantErr := "simulated network timeout"
+
+	cache := &urlDownloadCache{
+		inProg: make(map[string]*urlDownloadFlight),
+		fetcher: func(ctx context.Context, imageURL, uploadDir string, storageClient *storage.Client) (string, error) {
+			val := atomic.AddInt64(&attempts, 1)
+			if val == 1 {
+				return "", errors.New(wantErr)
+			}
+			return "/uploads/products/recovered.png", nil
+		},
+	}
+
+	tempDir := t.TempDir()
+
+	// First attempt fails
+	_, err := cache.FetchOrDownload(context.Background(), "https://example.com/item.png", tempDir, nil)
+	if err == nil || err.Error() != wantErr {
+		t.Fatalf("expected error %q, got %v", wantErr, err)
+	}
+
+	// Second attempt must NOT be blocked by cached error; it must retry and succeed
+	path, err := cache.FetchOrDownload(context.Background(), "https://example.com/item.png", tempDir, nil)
+	if err != nil {
+		t.Fatalf("expected retry to succeed, got error: %v", err)
+	}
+	if path != "/uploads/products/recovered.png" {
+		t.Errorf("expected path /uploads/products/recovered.png, got %s", path)
+	}
+	if calls := atomic.LoadInt64(&attempts); calls != 2 {
+		t.Errorf("expected exactly 2 attempts, got %d", calls)
 	}
 }

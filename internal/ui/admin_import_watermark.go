@@ -168,8 +168,8 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		timeout := time.Duration(len(groups)) * 12 * time.Second
 		if timeout < 30*time.Minute {
 			timeout = 30 * time.Minute
-		} else if timeout > 6*time.Hour {
-			timeout = 6 * time.Hour
+		} else if timeout > 24*time.Hour {
+			timeout = 24 * time.Hour
 		}
 
 		bgCtx, cancel := context.WithTimeout(context.Background(), timeout)
@@ -241,10 +241,11 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 			}()
 		}
 
+	feedLoop:
 		for _, g := range groups {
 			select {
 			case <-bgCtx.Done():
-				break
+				break feedLoop
 			case jobs <- g:
 			}
 		}
@@ -263,7 +264,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 
 // fetchAndStoreImage downloads, watermarks, compresses, and persists a single image to disk and S3.
 func (h *UIHandler) fetchAndStoreImage(ctx context.Context, rawURL, uploadDir string) (string, error) {
-	dlCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	dlCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
 	imgData, ext, dlErr := ingest.DownloadProductImage(dlCtx, rawURL)
@@ -322,6 +323,31 @@ func (h *UIHandler) watermarkImportedImages(sessionID int64) {
 	}
 	sysCtx := database.AsSystem(context.Background())
 	targets := h.extractCommittableImageTargets(sysCtx, sessionID)
+	if len(targets) > 0 {
+		h.downloadImportedImages(targets)
+	}
+}
+
+// TriggerPostImportImageDownloads ensures any imported products with remote image URLs
+// have their images downloaded, watermarked, stored on volume, and wired to the database.
+func (h *UIHandler) TriggerPostImportImageDownloads(
+	ctx context.Context,
+	session *catalog.ImportSession,
+	committed []*catalog.Product,
+) {
+	if h.catSvc == nil {
+		return
+	}
+	sysCtx := database.AsSystem(ctx)
+	targets := extractCommittedImageTargets(committed)
+	if len(targets) == 0 && session != nil {
+		targets = h.extractCommittableImageTargets(sysCtx, session.ID)
+	}
+	if len(targets) == 0 {
+		if missing, err := h.catSvc.ListProductsMissingImages(sysCtx, 25000); err == nil && len(missing) > 0 {
+			targets = extractCommittedImageTargets(missing)
+		}
+	}
 	if len(targets) > 0 {
 		h.downloadImportedImages(targets)
 	}
