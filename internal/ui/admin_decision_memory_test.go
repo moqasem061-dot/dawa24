@@ -202,6 +202,9 @@ func (m *mockDecisionRepo) BatchUpdateProductImageByBarcode(_ context.Context, _
 func (m *mockDecisionRepo) ListProductsMissingImages(_ context.Context, _ int) ([]*catalog.Product, error) {
 	return nil, nil
 }
+func (m *mockDecisionRepo) WireProductImageByLink(_ context.Context, _, _ string) error {
+	return nil
+}
 
 func setupDecisionTestHandler() (*UIHandler, *mockDecisionRepo) {
 	repo := newMockDecisionRepo()

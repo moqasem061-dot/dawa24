@@ -286,6 +286,15 @@ func (m *mockCatalogImageRepo) ListProductsMissingImages(_ context.Context, _ in
 	return out, nil
 }
 
+func (m *mockCatalogImageRepo) WireProductImageByLink(_ context.Context, remoteURL, localPath string) error {
+	for _, p := range m.products {
+		if (p.ImageLink == remoteURL || p.Image == remoteURL) && p.Image == "" {
+			p.Image = localPath
+		}
+	}
+	return nil
+}
+
 func (m *mockCatalogImageRepo) ListMatchDecisions(_ context.Context, _ string, _, _ int) ([]*catalog.MatchDecisionView, int, error) {
 	return nil, 0, nil
 }

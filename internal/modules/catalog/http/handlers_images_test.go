@@ -22,6 +22,10 @@ func (r stubRepo) ListProductsMissingImages(ctx context.Context, limit int) ([]*
 	return nil, nil
 }
 
+func (r stubRepo) WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error {
+	return nil
+}
+
 func (happyRepo) BatchUpdateProductImage(ctx context.Context, productIDs []int64, imagePath, imageLink string) error {
 	return nil
 }
@@ -36,4 +40,8 @@ func (happyRepo) BatchUpdateProductImageByBarcode(ctx context.Context, barcodes 
 
 func (happyRepo) ListProductsMissingImages(ctx context.Context, limit int) ([]*catalog.Product, error) {
 	return nil, nil
+}
+
+func (happyRepo) WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error {
+	return nil
 }

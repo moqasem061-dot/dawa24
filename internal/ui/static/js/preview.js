@@ -49,10 +49,6 @@
       els.newtabBtn.setAttribute('rel', 'noopener noreferrer');
       els.newtabBtn.onclick = function (e) {
         e.stopPropagation();
-        if (url && url !== '#' && !url.startsWith('javascript:')) {
-          window.open(url, '_blank', 'noopener,noreferrer');
-          e.preventDefault();
-        }
       };
     }
     if (els.errBox) {

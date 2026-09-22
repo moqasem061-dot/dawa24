@@ -35,3 +35,11 @@ func (s *Service) ListProductsMissingImages(ctx context.Context, limit int) ([]*
 	}
 	return s.repo.ListProductsMissingImages(ctx, limit)
 }
+
+// WireProductImageByLink updates products with a given image_link or remote image URL to a local volume path.
+func (s *Service) WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error {
+	if s.repo == nil || remoteURL == "" || localPath == "" {
+		return nil
+	}
+	return s.repo.WireProductImageByLink(ctx, remoteURL, localPath)
+}

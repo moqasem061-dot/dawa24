@@ -15,16 +15,26 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/muhiya/dawa24-store/internal/modules/catalog"
 	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/media"
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 )
 
-var uploadStorageClient *storage.Client
+var (
+	uploadStorageClient  *storage.Client
+	uploadCatalogService *catalog.Service
+)
 
 // SetUploadStorageClient sets the optional object storage client for serving and caching uploads from S3/MinIO.
 func SetUploadStorageClient(sc *storage.Client) {
 	uploadStorageClient = sc
+}
+
+// SetUploadCatalogService sets the catalog service for wiring cached proxy images to the database.
+func SetUploadCatalogService(cs *catalog.Service) {
+	uploadCatalogService = cs
 }
 
 func init() {
@@ -71,7 +81,7 @@ func RegisterUploadRoutes(r chi.Router) {
 		if idx := strings.Index(ext, "?"); idx != -1 {
 			ext = ext[:idx]
 		}
-		if ext == "" || len(ext) > 5 || (!strings.HasPrefix(ext, ".jp") && ext != ".png" && ext != ".webp" && ext != ".gif") {
+		if ext == "" || len(ext) > 5 || (!strings.HasPrefix(ext, ".jp") && ext != ".png" && ext != ".webp" && ext != ".gif" && ext != ".avif") {
 			ext = ".jpg"
 		}
 		cacheFilename := filepath.Join("products", "proxy_"+hashStr+ext)
@@ -80,16 +90,17 @@ func RegisterUploadRoutes(r chi.Router) {
 		size := r.URL.Query().Get("s")
 
 		if st, err := os.Stat(fullPath); err == nil && !st.IsDir() {
+			wireProxyImage(cacheFilename, rawURL)
 			rendPath := resolveRendition(baseDir, cacheFilename, size)
 			serveStaticUpload(w, r, rendPath)
 			return
 		}
 
-		ctx, cancel := context.WithTimeout(r.Context(), 10*time.Second)
+		ctx, cancel := context.WithTimeout(r.Context(), 15*time.Second)
 		defer cancel()
 		data, detectedExt, err := ingest.DownloadProductImage(ctx, rawURL)
 		if err != nil || len(data) == 0 {
-			http.NotFound(w, r)
+			serveFallbackPlaceholder(w)
 			return
 		}
 		if detectedExt != "" {
@@ -100,6 +111,8 @@ func RegisterUploadRoutes(r chi.Router) {
 		_ = os.MkdirAll(filepath.Dir(fullPath), 0755)
 		_ = os.WriteFile(fullPath, data, 0644)
 		_ = deriveAndStore(filepath.Dir(fullPath), filepath.Base(fullPath), data)
+
+		wireProxyImage(cacheFilename, rawURL)
 
 		rendPath := resolveRendition(baseDir, cacheFilename, size)
 		serveStaticUpload(w, r, rendPath)
@@ -284,4 +297,25 @@ func resolveRendition(baseDir, cleanPath, size string) string {
 		}
 	}
 	return full
+}
+
+// wireProxyImage updates catalog.products with the local cached path for any product referencing rawURL.
+func wireProxyImage(cacheFilename, rawURL string) {
+	if uploadCatalogService == nil || cacheFilename == "" || rawURL == "" {
+		return
+	}
+	publicPath := "/uploads/" + filepath.ToSlash(cacheFilename)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		_ = uploadCatalogService.WireProductImageByLink(database.AsSystem(ctx), rawURL, publicPath)
+	}()
+}
+
+const fallbackPlaceholderSVG = `<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none"><rect width="128" height="128" rx="16" fill="#F8FAFC"/><rect x="1" y="1" width="126" height="126" rx="15" stroke="#E2E8F0" stroke-width="2"/><path d="M44 48a12 12 0 1 1 24 0v32a12 12 0 1 1-24 0V48z" fill="#E2E8F0"/><path d="M56 40c-4.4 0-8 3.6-8 8v16h16V48c0-4.4-3.6-8-8-8z" fill="#94A3B8"/><circle cx="84" cy="44" r="6" fill="#CBD5E1"/><path d="M72 88l12-16 12 16H72z" fill="#CBD5E1"/></svg>`
+
+func serveFallbackPlaceholder(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "image/svg+xml")
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	_, _ = w.Write([]byte(fallbackPlaceholderSVG))
 }

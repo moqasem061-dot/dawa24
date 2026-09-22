@@ -67,6 +67,10 @@ func (m *mockCatalogRepo) ListProductsMissingImages(ctx context.Context, limit i
 	return nil, nil
 }
 
+func (m *mockCatalogRepo) WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error {
+	return nil
+}
+
 func (m *mockCatalogRepo) ListDosageForms(_ context.Context) ([]string, error) {
 	return nil, nil
 }

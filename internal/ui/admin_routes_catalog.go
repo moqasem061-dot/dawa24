@@ -104,6 +104,7 @@ func (h *UIHandler) registerAdminImportRoutes(r chi.Router) {
 		g.Post("/admin/products/import/{id}/select", h.AdminProductsImportSelect)
 		g.Post("/admin/products/import/{id}/commit", h.AdminProductsImportCommit)
 		g.Post("/admin/products/import/{id}/cancel", h.AdminProductsImportCancel)
+		g.Post("/admin/products/images/sync", h.AdminProductImagesSyncSubmit)
 	})
 
 	r.Group(func(g chi.Router) {

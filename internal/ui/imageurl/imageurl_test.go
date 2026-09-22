@@ -50,21 +50,20 @@ func TestHostedImageRequestsARendition(t *testing.T) {
 	}
 }
 
-// TestRemoteImageIsUntouched: catalog.products.image_link is a supplier's own
-// URL. We do not host it, cannot derive renditions for it, and rewriting it
-// would produce a 404.
-func TestRemoteImageIsUntouched(t *testing.T) {
+// TestRemoteImageRoutesThroughProxy asserts that remote URLs route through /uploads/proxy
+// to satisfy Content-Security-Policy (img-src 'self') and cache to volume.
+func TestRemoteImageRoutesThroughProxy(t *testing.T) {
 	const remote = "https://supplier.example/img/panadol.jpg"
 	img := Card(remote, "Panadol", "")
 
-	if got := img.Src(); got != remote {
-		t.Errorf("Src() = %q; a remote URL must pass through unchanged", got)
+	if got := img.Src(); !strings.HasPrefix(got, "/uploads/proxy?url=") || !strings.Contains(got, "s=card") {
+		t.Errorf("Src() = %q; remote URL must route through /uploads/proxy with rendition", got)
 	}
-	if got := img.SrcSet(); got != "" {
-		t.Errorf("SrcSet() = %q; there are no renditions of a remote image", got)
+	if got := img.SrcSet(); !strings.Contains(got, "/uploads/proxy?url=") || !strings.Contains(got, "1x") {
+		t.Errorf("SrcSet() = %q; want proxy renditions for remote image", got)
 	}
-	if got := img.Sizes(); got != "" {
-		t.Errorf("Sizes() = %q; want empty without a srcset", got)
+	if got := img.Sizes(); got != "200px" {
+		t.Errorf("Sizes() = %q; want 200px for card", got)
 	}
 }
 

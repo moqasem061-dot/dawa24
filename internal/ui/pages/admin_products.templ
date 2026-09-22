@@ -76,6 +76,17 @@ templ AdminProducts(lang, dir string, products []*catalog.Product, brands []*cat
 					@components.IconUpload("icon-xs")
 					<span>استيراد ملف الكتالوج (Excel / CSV)</span>
 				</a>
+				<form
+					method="POST"
+					action="/admin/products/images/sync"
+					class="d-inline m-0"
+					data-confirm="هل تريد بدء مزامنة وتنزيل جميع صور الأصناف المتبقية على السيرفر في الخلفية؟"
+				>
+					<button type="submit" class="btn btn-secondary font-semibold gap-2" title="تنزيل الصور الخارجية وحفظها على السيرفر">
+						@components.IconRefresh("icon-xs")
+						<span>مزامنة صور الكتالوج</span>
+					</button>
+				</form>
 				<button
 					type="button"
 					class="btn btn-primary font-bold gap-2"

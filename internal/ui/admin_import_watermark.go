@@ -178,7 +178,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 		prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
 		_ = os.MkdirAll(prodUploadDir, 0755)
 
-		concurrency := 16
+		concurrency := 36
 		if len(groups) < concurrency {
 			concurrency = len(groups)
 		}
@@ -226,6 +226,7 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 					if len(item.Barcodes) > 0 {
 						_ = h.catSvc.BatchUpdateProductImageByBarcode(sysCtx, item.Barcodes, publicPath, item.URL)
 					}
+					_ = h.catSvc.WireProductImageByLink(sysCtx, item.URL, publicPath)
 
 					curCompleted := atomic.LoadInt64(&completedCount)
 					if curCompleted%100 == 0 || curCompleted == totalGroups {

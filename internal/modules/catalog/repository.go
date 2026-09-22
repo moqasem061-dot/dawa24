@@ -132,6 +132,7 @@ type Repository interface {
 	BatchUpdateProductImageBySKU(ctx context.Context, skus []string, imagePath string, imageLink string) error
 	BatchUpdateProductImageByBarcode(ctx context.Context, barcodes []string, imagePath string, imageLink string) error
 	ListProductsMissingImages(ctx context.Context, limit int) ([]*Product, error)
+	WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error
 
 	// Decision Memory & Mappings Management
 	ListMatchDecisions(ctx context.Context, search string, limit, offset int) ([]*MatchDecisionView, int, error)

@@ -21,3 +21,7 @@ func (mockCatalogRepoStub) BatchUpdateProductImageByBarcode(context.Context, []s
 func (mockCatalogRepoStub) ListProductsMissingImages(context.Context, int) ([]*catalog.Product, error) {
 	return nil, nil
 }
+
+func (mockCatalogRepoStub) WireProductImageByLink(context.Context, string, string) error {
+	return nil
+}

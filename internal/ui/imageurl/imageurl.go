@@ -13,6 +13,7 @@
 package imageurl
 
 import (
+	"net/url"
 	"strconv"
 	"strings"
 )
@@ -143,13 +144,10 @@ func Normalize(rawURL string) string {
 	return raw
 }
 
-// hosted reports whether this URL points at a file we stored and can resize.
-//
-// catalog.products carries both `image` (uploaded here) and `image_link` (a
-// supplier's own URL). We do not host the second, cannot derive renditions for
-// it, and must not rewrite it.
+// hosted reports whether this URL points at a file we stored or proxy and can resize.
 func (i Image) hosted() bool {
-	return strings.HasPrefix(Normalize(i.URL), "/uploads/")
+	norm := Normalize(i.URL)
+	return strings.HasPrefix(norm, "/uploads/") || strings.HasPrefix(norm, "http://") || strings.HasPrefix(norm, "https://")
 }
 
 func (i Image) spec() slotSpec {
@@ -174,6 +172,12 @@ func sized(rawURL, rendition string) string {
 // Src is the 1x source.
 func (i Image) Src() string {
 	norm := Normalize(i.URL)
+	if strings.HasPrefix(norm, "http://") || strings.HasPrefix(norm, "https://") {
+		// Route remote images through /uploads/proxy to satisfy Content-Security-Policy (img-src 'self')
+		// and ensure server-side caching on local volume.
+		proxyBase := "/uploads/proxy?url=" + url.QueryEscape(norm)
+		return sized(proxyBase, i.spec().rendition)
+	}
 	if !strings.HasPrefix(norm, "/uploads/") {
 		return norm
 	}
@@ -182,10 +186,17 @@ func (i Image) Src() string {
 
 // SrcSet offers the next rendition up for high-density displays.
 //
-// Empty for a remote image and for the largest slot, and an empty srcset is
-// valid and inert — the browser simply uses src.
+// Empty for the largest slot, and an empty srcset is valid and inert — the browser simply uses src.
 func (i Image) SrcSet() string {
 	norm := Normalize(i.URL)
+	if strings.HasPrefix(norm, "http://") || strings.HasPrefix(norm, "https://") {
+		s := i.spec()
+		if s.next == "" {
+			return ""
+		}
+		proxyBase := "/uploads/proxy?url=" + url.QueryEscape(norm)
+		return sized(proxyBase, s.rendition) + " 1x, " + sized(proxyBase, s.next) + " 2x"
+	}
 	if !strings.HasPrefix(norm, "/uploads/") {
 		return ""
 	}

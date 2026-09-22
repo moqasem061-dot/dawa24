@@ -112,3 +112,26 @@ func (r *Repository) ListProductsMissingImages(ctx context.Context, limit int) (
 	}
 	return products, nil
 }
+
+// WireProductImageByLink updates products with a given image_link or remote image URL to a local volume path.
+func (r *Repository) WireProductImageByLink(ctx context.Context, remoteURL, localPath string) error {
+	if remoteURL == "" || localPath == "" {
+		return nil
+	}
+	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		query := `
+			UPDATE catalog.products
+			SET image = $1,
+			    image_link = CASE WHEN image_link = '' THEN $2 ELSE image_link END,
+			    updated_at = now()
+			WHERE (image_link = $2 OR image = $2)
+			  AND (image IS NULL OR image = '' OR image LIKE 'http%' OR image LIKE '//%')
+			  AND deleted_at IS NULL;
+		`
+		_, err := tx.Exec(txCtx, query, localPath, remoteURL)
+		if err != nil {
+			return fmt.Errorf("catalog postgres: wire product image by link: %w", err)
+		}
+		return nil
+	})
+}

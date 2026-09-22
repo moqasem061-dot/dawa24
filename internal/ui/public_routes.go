@@ -39,6 +39,9 @@ func (h *UIHandler) RegisterPublicRoutes(r chi.Router) {
 		if h.storage != nil {
 			SetUploadStorageClient(h.storage)
 		}
+		if h.catSvc != nil {
+			SetUploadCatalogService(h.catSvc)
+		}
 		RegisterUploadRoutes(assets)
 	})
 
