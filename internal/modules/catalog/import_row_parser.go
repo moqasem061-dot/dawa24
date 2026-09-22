@@ -160,7 +160,7 @@ func (c rowCursor) parse() (*Product, bool) {
 		return nil, false
 	}
 	c.readStatus(prod)
-	img := strings.TrimSpace(c.value(FieldImage))
+	img := cleanImageURL(c.value(FieldImage))
 	if img != "" {
 		prod.ImageLink = img
 		if strings.HasPrefix(img, "http://") || strings.HasPrefix(img, "https://") {
@@ -175,6 +175,34 @@ func (c rowCursor) parse() (*Product, bool) {
 		}
 	}
 	return prod, true
+}
+
+// cleanImageURL normalizes an image URL from spreadsheet input (handles //, www., quotes, and multi-URL cells).
+func cleanImageURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.Trim(raw, "\"'`")
+	if raw == "" {
+		return ""
+	}
+	if strings.ContainsAny(raw, ",\n\r;\t ") {
+		parts := strings.FieldsFunc(raw, func(r rune) bool {
+			return r == ',' || r == '\n' || r == '\r' || r == ';' || r == '\t' || r == ' '
+		})
+		for _, p := range parts {
+			p = strings.Trim(strings.TrimSpace(p), "\"'`")
+			if p != "" {
+				raw = p
+				break
+			}
+		}
+	}
+	if strings.HasPrefix(raw, "//") {
+		return "https:" + raw
+	}
+	if strings.HasPrefix(strings.ToLower(raw), "www.") {
+		return "https://" + raw
+	}
+	return raw
 }
 
 // resolveNames determines the product's Arabic and English names, recovering

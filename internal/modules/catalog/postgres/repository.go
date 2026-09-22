@@ -225,34 +225,18 @@ func (r *Repository) GetProductBySKU(ctx context.Context, sku string) (*catalog.
 
 // UpdateProductImageBySKU sets the downloaded image path and source URL for a product matching the SKU.
 func (r *Repository) UpdateProductImageBySKU(ctx context.Context, sku string, imagePath string, imageLink string) (*catalog.Product, error) {
-	prod, err := r.GetProductBySKU(ctx, sku)
-	if err != nil {
+	if err := r.BatchUpdateProductImageBySKU(ctx, []string{sku}, imagePath, imageLink); err != nil {
 		return nil, err
 	}
-	prod.Image = imagePath
-	if imageLink != "" {
-		prod.ImageLink = imageLink
-	}
-	if err := r.UpdateProduct(ctx, prod); err != nil {
-		return nil, err
-	}
-	return prod, nil
+	return r.GetProductBySKU(ctx, sku)
 }
 
 // UpdateProductImageByBarcode sets the downloaded image path and source URL for a product matching the Barcode.
 func (r *Repository) UpdateProductImageByBarcode(ctx context.Context, barcode string, imagePath string, imageLink string) (*catalog.Product, error) {
-	prod, err := r.GetProductByBarcode(ctx, barcode)
-	if err != nil {
+	if err := r.BatchUpdateProductImageByBarcode(ctx, []string{barcode}, imagePath, imageLink); err != nil {
 		return nil, err
 	}
-	prod.Image = imagePath
-	if imageLink != "" {
-		prod.ImageLink = imageLink
-	}
-	if err := r.UpdateProduct(ctx, prod); err != nil {
-		return nil, err
-	}
-	return prod, nil
+	return r.GetProductByBarcode(ctx, barcode)
 }
 
 // GetProductByBarcode retrieves a master product by its exact barcode.
@@ -296,16 +280,8 @@ func (r *Repository) GetProductByBarcode(ctx context.Context, barcode string) (*
 
 // UpdateProductImageByID sets the downloaded image path and source URL for a product by its ID.
 func (r *Repository) UpdateProductImageByID(ctx context.Context, id int64, imagePath string, imageLink string) (*catalog.Product, error) {
-	prod, err := r.GetProductByID(ctx, id)
-	if err != nil {
+	if err := r.BatchUpdateProductImage(ctx, []int64{id}, imagePath, imageLink); err != nil {
 		return nil, err
 	}
-	prod.Image = imagePath
-	if imageLink != "" {
-		prod.ImageLink = imageLink
-	}
-	if err := r.UpdateProduct(ctx, prod); err != nil {
-		return nil, err
-	}
-	return prod, nil
+	return r.GetProductByID(ctx, id)
 }

@@ -249,7 +249,7 @@ func processOneImageRow(
 		skuVal = strings.TrimSpace(raw[skuCol])
 	}
 	if urlCol >= 0 && urlCol < len(raw) {
-		urlVal = strings.TrimSpace(raw[urlCol])
+		urlVal = cleanTargetImageURL(raw[urlCol])
 	}
 
 	itemRow := &AdminImageImportRow{

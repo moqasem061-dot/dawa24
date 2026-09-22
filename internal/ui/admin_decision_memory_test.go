@@ -190,6 +190,19 @@ func (m *mockDecisionRepo) ListDosageForms(_ context.Context) ([]string, error) 
 	return nil, nil
 }
 
+func (m *mockDecisionRepo) BatchUpdateProductImage(_ context.Context, _ []int64, _, _ string) error {
+	return nil
+}
+func (m *mockDecisionRepo) BatchUpdateProductImageBySKU(_ context.Context, _ []string, _, _ string) error {
+	return nil
+}
+func (m *mockDecisionRepo) BatchUpdateProductImageByBarcode(_ context.Context, _ []string, _, _ string) error {
+	return nil
+}
+func (m *mockDecisionRepo) ListProductsMissingImages(_ context.Context, _ int) ([]*catalog.Product, error) {
+	return nil, nil
+}
+
 func setupDecisionTestHandler() (*UIHandler, *mockDecisionRepo) {
 	repo := newMockDecisionRepo()
 	logger := slog.New(slog.NewJSONHandler(io.Discard, nil))

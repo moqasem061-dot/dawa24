@@ -42,6 +42,31 @@ func (m *mockCatalogRepo) UpdateProductImageByID(ctx context.Context, id int64, 
 	return p, nil
 }
 
+func (m *mockCatalogRepo) BatchUpdateProductImage(ctx context.Context, productIDs []int64, imagePath string, imageLink string) error {
+	for _, id := range productIDs {
+		_, _ = m.UpdateProductImageByID(ctx, id, imagePath, imageLink)
+	}
+	return nil
+}
+
+func (m *mockCatalogRepo) BatchUpdateProductImageBySKU(ctx context.Context, skus []string, imagePath string, imageLink string) error {
+	for _, sku := range skus {
+		_, _ = m.UpdateProductImageBySKU(ctx, sku, imagePath, imageLink)
+	}
+	return nil
+}
+
+func (m *mockCatalogRepo) BatchUpdateProductImageByBarcode(ctx context.Context, barcodes []string, imagePath string, imageLink string) error {
+	for _, barcode := range barcodes {
+		_, _ = m.UpdateProductImageByBarcode(ctx, barcode, imagePath, imageLink)
+	}
+	return nil
+}
+
+func (m *mockCatalogRepo) ListProductsMissingImages(ctx context.Context, limit int) ([]*Product, error) {
+	return nil, nil
+}
+
 func (m *mockCatalogRepo) ListDosageForms(_ context.Context) ([]string, error) {
 	return nil, nil
 }

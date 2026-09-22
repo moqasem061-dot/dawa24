@@ -235,6 +235,56 @@ func (m *mockCatalogImageRepo) UpdateProductImageByID(_ context.Context, id int6
 	return nil, apperr.NotFound("product")
 }
 
+func (m *mockCatalogImageRepo) BatchUpdateProductImage(_ context.Context, productIDs []int64, imagePath, imageLink string) error {
+	for _, id := range productIDs {
+		for _, p := range m.products {
+			if p.ID == id {
+				p.Image = imagePath
+				if imageLink != "" {
+					p.ImageLink = imageLink
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (m *mockCatalogImageRepo) BatchUpdateProductImageBySKU(_ context.Context, skus []string, imagePath, imageLink string) error {
+	for _, sku := range skus {
+		if p, ok := m.products[sku]; ok {
+			p.Image = imagePath
+			if imageLink != "" {
+				p.ImageLink = imageLink
+			}
+		}
+	}
+	return nil
+}
+
+func (m *mockCatalogImageRepo) BatchUpdateProductImageByBarcode(_ context.Context, barcodes []string, imagePath, imageLink string) error {
+	for _, bc := range barcodes {
+		for _, p := range m.products {
+			if p.Barcode == bc {
+				p.Image = imagePath
+				if imageLink != "" {
+					p.ImageLink = imageLink
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (m *mockCatalogImageRepo) ListProductsMissingImages(_ context.Context, _ int) ([]*catalog.Product, error) {
+	var out []*catalog.Product
+	for _, p := range m.products {
+		if p.Image == "" && p.ImageLink != "" {
+			out = append(out, p)
+		}
+	}
+	return out, nil
+}
+
 func (m *mockCatalogImageRepo) ListMatchDecisions(_ context.Context, _ string, _, _ int) ([]*catalog.MatchDecisionView, int, error) {
 	return nil, 0, nil
 }

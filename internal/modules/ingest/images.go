@@ -102,9 +102,11 @@ func SecureHTTPClient() *http.Client {
 
 // DownloadProductImage securely downloads an image from a remote URL with SSRF guards and size limits.
 func DownloadProductImage(ctx context.Context, imageURL string) ([]byte, string, error) {
-	imageURL = strings.Trim(strings.TrimSpace(imageURL), "\"'")
+	imageURL = strings.Trim(strings.TrimSpace(imageURL), "\"'`")
 	if strings.HasPrefix(imageURL, "//") {
 		imageURL = "https:" + imageURL
+	} else if strings.HasPrefix(strings.ToLower(imageURL), "www.") {
+		imageURL = "https://" + imageURL
 	}
 	parsed, err := url.Parse(imageURL)
 	if err != nil || (parsed.Scheme != "http" && parsed.Scheme != "https") || parsed.Host == "" {

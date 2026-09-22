@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/google/uuid"
@@ -24,6 +25,41 @@ type catalogImageTarget struct {
 	URL       string
 }
 
+type catalogImageGroup struct {
+	URL        string
+	ProductIDs []int64
+	SKUs       []string
+	Barcodes   []string
+}
+
+// cleanTargetImageURL trims and normalizes image URLs from imported rows.
+func cleanTargetImageURL(raw string) string {
+	raw = strings.TrimSpace(raw)
+	raw = strings.Trim(raw, "\"'`")
+	if raw == "" {
+		return ""
+	}
+	if strings.ContainsAny(raw, ",\n\r;\t ") {
+		parts := strings.FieldsFunc(raw, func(r rune) bool {
+			return r == ',' || r == '\n' || r == '\r' || r == ';' || r == '\t' || r == ' '
+		})
+		for _, p := range parts {
+			p = strings.Trim(strings.TrimSpace(p), "\"'`")
+			if p != "" {
+				raw = p
+				break
+			}
+		}
+	}
+	if strings.HasPrefix(raw, "//") {
+		return "https:" + raw
+	}
+	if strings.HasPrefix(strings.ToLower(raw), "www.") {
+		return "https://" + raw
+	}
+	return raw
+}
+
 // extractCommittedImageTargets extracts products with external image URLs directly from the committed batch.
 func extractCommittedImageTargets(prods []*catalog.Product) []catalogImageTarget {
 	var targets []catalogImageTarget
@@ -31,9 +67,9 @@ func extractCommittedImageTargets(prods []*catalog.Product) []catalogImageTarget
 		if p == nil || p.ID <= 0 {
 			continue
 		}
-		imgURL := strings.TrimSpace(p.ImageLink)
+		imgURL := cleanTargetImageURL(p.ImageLink)
 		if imgURL == "" {
-			imgURL = strings.TrimSpace(p.Image)
+			imgURL = cleanTargetImageURL(p.Image)
 		}
 		if strings.HasPrefix(imgURL, "http://") || strings.HasPrefix(imgURL, "https://") {
 			targets = append(targets, catalogImageTarget{
@@ -61,9 +97,9 @@ func (h *UIHandler) extractCommittableImageTargets(ctx context.Context, sessionI
 		if row.Product == nil {
 			continue
 		}
-		imgURL := strings.TrimSpace(row.Product.ImageLink)
+		imgURL := cleanTargetImageURL(row.Product.ImageLink)
 		if imgURL == "" {
-			imgURL = strings.TrimSpace(row.Product.Image)
+			imgURL = cleanTargetImageURL(row.Product.Image)
 		}
 		sku := strings.TrimSpace(row.Product.SKU)
 		barcode := strings.TrimSpace(row.Product.Barcode)
@@ -85,6 +121,37 @@ func (h *UIHandler) extractCommittableImageTargets(ctx context.Context, sessionI
 	return targets
 }
 
+// groupImageTargets deduplicates identical image URLs across products into single download tasks.
+func groupImageTargets(targets []catalogImageTarget) []*catalogImageGroup {
+	byURL := make(map[string]*catalogImageGroup, len(targets)/2+1)
+	for _, t := range targets {
+		url := cleanTargetImageURL(t.URL)
+		if url == "" {
+			continue
+		}
+		g, exists := byURL[url]
+		if !exists {
+			g = &catalogImageGroup{URL: url}
+			byURL[url] = g
+		}
+		if t.ProductID > 0 {
+			g.ProductIDs = append(g.ProductIDs, t.ProductID)
+		}
+		if t.SKU != "" {
+			g.SKUs = append(g.SKUs, t.SKU)
+		}
+		if t.Barcode != "" {
+			g.Barcodes = append(g.Barcodes, t.Barcode)
+		}
+	}
+
+	groups := make([]*catalogImageGroup, 0, len(byURL))
+	for _, g := range byURL {
+		groups = append(groups, g)
+	}
+	return groups
+}
+
 // downloadImportedImages safely downloads, compresses, and links external images to products concurrently.
 func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 	if h.catSvc == nil || len(targets) == 0 {
@@ -92,20 +159,40 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 	}
 
 	h.safeGo("admin-download-imported-images", func() {
-		bgCtx, cancel := context.WithTimeout(context.Background(), 20*time.Minute)
+		groups := groupImageTargets(targets)
+		if len(groups) == 0 {
+			return
+		}
+
+		// Calculate realistic timeout: at least 30 minutes, scaling with unique image count up to 6 hours.
+		timeout := time.Duration(len(groups)) * 12 * time.Second
+		if timeout < 30*time.Minute {
+			timeout = 30 * time.Minute
+		} else if timeout > 6*time.Hour {
+			timeout = 6 * time.Hour
+		}
+
+		bgCtx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
 		prodUploadDir := filepath.Join(GetUploadBaseDir(), "products")
 		_ = os.MkdirAll(prodUploadDir, 0755)
 
-		concurrency := 5
-		jobs := make(chan catalogImageTarget, len(targets))
-		for _, t := range targets {
-			jobs <- t
+		concurrency := 16
+		if len(groups) < concurrency {
+			concurrency = len(groups)
 		}
-		close(jobs)
 
-		var wg sync.WaitGroup
+		jobs := make(chan *catalogImageGroup, concurrency*2)
+		var (
+			wg             sync.WaitGroup
+			completedCount int64
+			successCount   int64
+			failCount      int64
+			updatedRows    int64
+			totalGroups    = int64(len(groups))
+		)
+
 		for w := 0; w < concurrency; w++ {
 			wg.Add(1)
 			go func() {
@@ -117,55 +204,113 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 					default:
 					}
 
-					imgData, ext, dlErr := ingest.DownloadProductImage(bgCtx, item.URL)
-					if dlErr != nil || len(imgData) == 0 {
+					publicPath, err := h.fetchAndStoreImage(bgCtx, item.URL, prodUploadDir)
+					atomic.AddInt64(&completedCount, 1)
+
+					if err != nil || publicPath == "" {
+						atomic.AddInt64(&failCount, 1)
 						continue
 					}
 
-					if watermarked, wmErr := ingest.ApplyWatermark(imgData, ext); wmErr == nil && len(watermarked) > 0 {
-						imgData = watermarked
-					}
-
-					if compBytes, compExt, _, wasCompressed := media.Compress(imgData, media.DefaultMaxEdge); wasCompressed {
-						imgData = compBytes
-						ext = strings.TrimPrefix(compExt, ".")
-					}
-
-					fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
-					localPath := filepath.Join(prodUploadDir, fileName)
-					if err := os.WriteFile(localPath, imgData, 0644); err != nil {
-						continue
-					}
-
-					_ = deriveAndStore(prodUploadDir, fileName, imgData)
-
-					publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
-					if h.storage != nil {
-						s3Key := fmt.Sprintf("products/%s", fileName)
-						_ = h.storage.Put(bgCtx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
-					}
-
+					atomic.AddInt64(&successCount, 1)
 					sysCtx := database.AsSystem(bgCtx)
-					updated := false
-					if item.ProductID > 0 {
-						if _, err := h.catSvc.UpdateProductImageByID(sysCtx, item.ProductID, publicPath, item.URL); err == nil {
-							updated = true
-						}
+
+					// Fast batch database updates
+					if len(item.ProductIDs) > 0 {
+						_ = h.catSvc.BatchUpdateProductImage(sysCtx, item.ProductIDs, publicPath, item.URL)
+						atomic.AddInt64(&updatedRows, int64(len(item.ProductIDs)))
 					}
-					if !updated && item.SKU != "" {
-						if _, err := h.catSvc.UpdateProductImageBySKU(sysCtx, item.SKU, publicPath, item.URL); err == nil {
-							updated = true
-						}
+					if len(item.SKUs) > 0 {
+						_ = h.catSvc.BatchUpdateProductImageBySKU(sysCtx, item.SKUs, publicPath, item.URL)
 					}
-					if !updated && item.Barcode != "" {
-						_, _ = h.catSvc.UpdateProductImageByBarcode(sysCtx, item.Barcode, publicPath, item.URL)
+					if len(item.Barcodes) > 0 {
+						_ = h.catSvc.BatchUpdateProductImageByBarcode(sysCtx, item.Barcodes, publicPath, item.URL)
+					}
+
+					curCompleted := atomic.LoadInt64(&completedCount)
+					if curCompleted%100 == 0 || curCompleted == totalGroups {
+						h.log.InfoContext(bgCtx, "download imported images progress",
+							"completed", curCompleted,
+							"total_unique", totalGroups,
+							"success", atomic.LoadInt64(&successCount),
+							"failed", atomic.LoadInt64(&failCount),
+							"products_updated", atomic.LoadInt64(&updatedRows),
+						)
 					}
 				}
 			}()
 		}
+
+		for _, g := range groups {
+			select {
+			case <-bgCtx.Done():
+				break
+			case jobs <- g:
+			}
+		}
+		close(jobs)
 		wg.Wait()
-		h.log.InfoContext(bgCtx, "finished downloading imported product images", "count", len(targets))
+
+		h.log.InfoContext(bgCtx, "finished downloading imported product images",
+			"total_targets", len(targets),
+			"unique_images", totalGroups,
+			"succeeded", atomic.LoadInt64(&successCount),
+			"failed", atomic.LoadInt64(&failCount),
+			"products_updated", atomic.LoadInt64(&updatedRows),
+		)
 	})
+}
+
+// fetchAndStoreImage downloads, watermarks, compresses, and persists a single image to disk and S3.
+func (h *UIHandler) fetchAndStoreImage(ctx context.Context, rawURL, uploadDir string) (string, error) {
+	dlCtx, cancel := context.WithTimeout(ctx, 15*time.Second)
+	defer cancel()
+
+	imgData, ext, dlErr := ingest.DownloadProductImage(dlCtx, rawURL)
+	if dlErr != nil || len(imgData) == 0 {
+		return "", dlErr
+	}
+
+	if watermarked, wmErr := ingest.ApplyWatermark(imgData, ext); wmErr == nil && len(watermarked) > 0 {
+		imgData = watermarked
+	}
+
+	if compBytes, compExt, _, wasCompressed := media.Compress(imgData, media.DefaultMaxEdge); wasCompressed {
+		imgData = compBytes
+		ext = strings.TrimPrefix(compExt, ".")
+	}
+
+	fileName := fmt.Sprintf("%s.%s", uuid.New().String(), ext)
+	localPath := filepath.Join(uploadDir, fileName)
+	if err := os.WriteFile(localPath, imgData, 0644); err != nil {
+		return "", err
+	}
+
+	_ = deriveAndStore(uploadDir, fileName, imgData)
+
+	publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
+	if h.storage != nil {
+		s3Key := fmt.Sprintf("products/%s", fileName)
+		_ = h.storage.Put(ctx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
+	}
+
+	return publicPath, nil
+}
+
+// BackfillMissingProductImages discovers products with external image links but empty volume paths and queues them.
+func (h *UIHandler) BackfillMissingProductImages(ctx context.Context, limit int) (int, error) {
+	if h.catSvc == nil {
+		return 0, nil
+	}
+	prods, err := h.catSvc.ListProductsMissingImages(ctx, limit)
+	if err != nil || len(prods) == 0 {
+		return 0, err
+	}
+	targets := extractCommittedImageTargets(prods)
+	if len(targets) > 0 {
+		h.downloadImportedImages(targets)
+	}
+	return len(targets), nil
 }
 
 // watermarkImportedImages looks up committable rows from the session that provided
@@ -187,8 +332,6 @@ func (h *UIHandler) refreshProductIndex(ctx context.Context) {
 	if h.catSvc == nil {
 		return
 	}
-	// Detached from the request: the admin should not wait on it, and a client
-	// disconnect must not abort a rebuild that is already underway.
 	go func() {
 		bg, cancel := context.WithTimeout(context.WithoutCancel(ctx), 5*time.Minute)
 		defer cancel()
