@@ -238,15 +238,10 @@ func (r stubRepo) ListAllSavingProductsAdmin(ctx context.Context, _ *int64, _ *i
 func (r stubRepo) ListAllMasterProductsForMatching(ctx context.Context) ([]*catalog.CatalogMatchSource, error) {
 	return nil, nil
 }
-func (r stubRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
-	return 0, nil
-}
-func (r stubRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
-	return 0, nil
-}
-func (r stubRepo) DeleteAllProducts(ctx context.Context) (int64, error) {
-	return 0, nil
-}
+func (r stubRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error)   { return 0, nil }
+func (r stubRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) { return 0, nil }
+func (r stubRepo) DeleteAllProducts(ctx context.Context) (int64, error)                     { return 0, nil }
+func (r stubRepo) DeleteAllBrands(ctx context.Context) (int64, error)                       { return 0, nil }
 func (r stubRepo) DeleteAllSavingProducts(ctx context.Context, orgID int64) error {
 	return nil
 }

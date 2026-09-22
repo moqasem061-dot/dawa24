@@ -181,6 +181,8 @@ func loadAdminCatalogB(e *engine) {
 	addKey(e, "admin.catalog.variant_status_updated_success", "catalog", "تم تحديث حالة صنف المورد بنجاح.", "Supplier variant status updated successfully.", "Success notice")
 	addKey(e, "admin.catalog.delete_all_failed_format", "catalog", "حدث خطأ أثناء حذف منتجات الكتالوج: %s", "Failed to delete catalogue products: %s", "Error notice")
 	addKey(e, "admin.catalog.deleted_all_success_format", "catalog", "تم حذف %d صنفاً من الكتالوج المركزي الأساسي بنجاح.", "Successfully deleted %d products from primary central catalogue.", "Success notice")
+	addKey(e, "admin.brands.delete_all_failed_format", "catalog", "حدث خطأ أثناء حذف الشركات والماركات: %s", "Failed to delete brands: %s", "Error notice")
+	addKey(e, "admin.brands.deleted_all_success_format", "catalog", "تم حذف %d شركة مصنعة وماركة بنجاح.", "Successfully deleted %d brands.", "Success notice")
 
 	// --- Admin Dashboard ---
 	addKey(e, "admin.dashboard.commission_5pct", "admin", "5% عمولة", "5% Commission", "Commission label")

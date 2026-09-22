@@ -146,6 +146,11 @@ func (s *Service) DeleteBrand(ctx context.Context, id int64) error {
 	return s.repo.DeleteBrand(ctx, id)
 }
 
+// DeleteAllBrands removes all brands in the system and unlinks them from products (Super Admin).
+func (s *Service) DeleteAllBrands(ctx context.Context) (int64, error) {
+	return s.repo.DeleteAllBrands(ctx)
+}
+
 // SetProductsStatus activates or deactivates many products at once.
 //
 // Returns how many rows changed. That number can be lower than the number of

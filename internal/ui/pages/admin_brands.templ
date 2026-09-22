@@ -99,11 +99,24 @@ templ AdminBrandsPage(brands []BrandViewItem, totalCount, currentPage, pageSize 
 						</div>
 					</div>
 
-					<div class="d-flex items-center gap-2">
+					<div class="d-flex items-center gap-2 flex-wrap">
 						<button type="button" data-modal-open="brand-create-modal" class="btn btn-primary font-bold text-xs px-3 py-2">
 							@components.IconPlus("icon-xs")
 							<span>إضافة شركة مصنعة جديدة +</span>
 						</button>
+						if totalCount > 0 {
+							<form
+								method="POST"
+								action="/admin/brands/delete-all"
+								class="d-inline m-0"
+								data-confirm="تحذير نهائي فائق الأهمية: هل أنت متأكد من حذف جميع الشركات المصنعة والماركات بالكامل؟ لا يمكن التراجع عن هذا الإجراء."
+							>
+								<button type="submit" class="btn btn-ghost text-danger font-bold text-xs px-3 py-2 gap-1">
+									@components.IconTrash("icon-xs")
+									<span>حذف جميع الشركات والماركات</span>
+								</button>
+							</form>
+						}
 					</div>
 				</div>
 			</div>

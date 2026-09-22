@@ -45,6 +45,15 @@
     }
     if (els.newtabBtn) {
       els.newtabBtn.href = url;
+      els.newtabBtn.setAttribute('target', '_blank');
+      els.newtabBtn.setAttribute('rel', 'noopener noreferrer');
+      els.newtabBtn.onclick = function (e) {
+        e.stopPropagation();
+        if (url && url !== '#' && !url.startsWith('javascript:')) {
+          window.open(url, '_blank', 'noopener,noreferrer');
+          e.preventDefault();
+        }
+      };
     }
     if (els.errBox) {
       els.errBox.classList.add('hidden');
@@ -128,6 +137,11 @@
   document.addEventListener('click', function (e) {
     const target = e.target;
     if (!target) return;
+
+    // Do NOT intercept actions originating from inside the preview modal itself
+    if (target.closest('#universal-file-preview-modal')) {
+      return;
+    }
 
     // 1. Explicit preview triggers: [data-preview-file], [data-preview-doc]
     const explicit = target.closest('[data-preview-file], [data-preview-doc]');

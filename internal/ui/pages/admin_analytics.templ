@@ -10,204 +10,203 @@ import (
 
 templ AdminAnalytics(lang, dir string, a *platformadmin.VisitorAnalytics) {
 	@layouts.AdminShell("التحليلات والمؤشرات الحية | Platform Analytics", "analytics", lang, dir) {
-		<div class="page-container">
-			<!-- Header -->
-			<div class="glass-panel p-6 mb-6">
-				<div class="flex-between flex-wrap gap-4">
-     <div class="stack-sm">
-						<div class="d-flex items-center gap-3 mb-1">
-							<div class="user-avatar-badge text-xl">
-								@components.IconTrendingUp("icon-sm")
-							</div>
-							<h1 class="text-2xl font-black text-primary m-0">
-								التحليلات والمؤشرات الحية
-							</h1>
-						</div>
-						<p class="text-sm text-secondary m-0">
-							تحليل جغرافي وتوزيع للأجهزة وحركة الزيارات وأداء التوريد الحقيقي من قاعدة البيانات
-						</p>
-					</div>
+		<div class="page-container max-w-7xl mx-auto">
+			
+			<!-- Breadcrumb Navigation -->
+			<nav class="d-flex items-center gap-2 text-xs text-muted mb-4 flex-wrap font-bold" aria-label="مسار التنقل">
+				<a href="/admin/dashboard" class="text-secondary hover:text-primary transition-colors">لوحة الإدارة</a>
+				<span>/</span>
+				<span class="text-primary font-black">التحليلات ومؤشرات الأداء الحية</span>
+			</nav>
+
+			<!-- Page Header -->
+			<div class="glass-panel p-6 mb-6 rounded-2xl">
+				<div class="flex-between flex-wrap gap-4 items-center">
 					<div class="d-flex items-center gap-3">
-						<span class="badge badge-emerald text-xs font-bold gap-2 p-2 px-3">
-							@components.IconCheck("icon-xs")
-							<span>بيانات حية ومتزامنة</span>
+						<div class="w-12 h-12 rounded-2xl bg-brand/10 text-brand flex items-center justify-center text-xl shadow-xs">
+							@components.IconTrendingUp("icon-md")
+						</div>
+						<div class="stack-2xs">
+							<div class="d-flex items-center gap-2 flex-wrap">
+								<h1 class="text-2xl font-black text-primary m-0">
+									التحليلات والمؤشرات الحية
+								</h1>
+								<span class="badge badge-emerald text-xs font-bold gap-1.5 py-1 px-2.5">
+									<span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+									<span>تحديث مباشر</span>
+								</span>
+							</div>
+							<p class="text-xs text-secondary m-0">
+								تحليل جغرافي وتوزيع للأجهزة وحركة الزيارات ومؤشرات التوريد المؤسسي
+							</p>
+						</div>
+					</div>
+
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<span class="badge badge-slate text-xs font-bold gap-1.5 py-1.5 px-3">
+							@components.IconClock("icon-xs")
+							<span>مزامنة مباشرة وقاعدة بيانات فورية</span>
 						</span>
+						<a href="/admin/analytics" class="btn btn-secondary btn-sm text-xs font-bold gap-1.5">
+							@components.IconRefresh("icon-xs")
+							<span>تحديث</span>
+						</a>
 					</div>
 				</div>
 			</div>
 
-			<!-- 1. Live KPI Summary Cards -->
-			<div class="dashboard-stat-grid mb-6">
-				<div class="stat-card-3d">
-					<div class="stat-card-label">إجمالي الزيارات</div>
-					<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", a.Total) }</div>
-					<span class="text-xs text-secondary mt-1 d-block">زيارات موثقة تراكمياً</span>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-brand">زيارات اليوم</div>
-					<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", a.Today) }</div>
-					<span class="text-xs text-secondary mt-1 d-block">خلال الـ 24 ساعة الحالية</span>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-sky">الصيدليات المسجلة</div>
-					<div class="stat-card-value text-sky tabular-nums">{ fmt.Sprintf("%d", a.TotalPharmacies) }</div>
-					<span class="text-xs text-secondary mt-1 d-block">صيدليات معتمدة بالنظام</span>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-accent">الموردين المعتمدين</div>
-					<div class="stat-card-value text-accent tabular-nums">{ fmt.Sprintf("%d", a.TotalSuppliers) }</div>
-					<span class="text-xs text-secondary mt-1 d-block">شركات ومخازن توزيع</span>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-warning">أوامر التوريد</div>
-					<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", a.TotalOrders) }</div>
-					<span class="text-xs text-secondary mt-1 d-block">إجمالي عمليات الشراء</span>
-				</div>
-
-				<div class="stat-card-3d">
-					<div class="stat-card-label text-success">حجم التداولات</div>
-					<div class="stat-card-value text-success tabular-nums">{ a.TotalGMV }</div>
-					<span class="text-xs text-secondary mt-1 d-block">قيمة أوامر التوريد المنفذة</span>
-				</div>
+			<!-- 1. Live KPI Summary Cards (Responsive 6-column Grid) -->
+			<div class="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+				@analyticsMetricCard("إجمالي الزيارات", fmt.Sprintf("%d", a.Total), "زيارات موثقة تراكمياً", "hover:border-brand/40", "bg-brand/10", "text-brand") {
+					@components.IconEye("icon-xs")
+				}
+				@analyticsMetricCard("زيارات اليوم", fmt.Sprintf("%d", a.Today), "خلال آخر 24 ساعة", "hover:border-emerald-500/40", "bg-emerald-500/10", "text-emerald-600") {
+					@components.IconClock("icon-xs")
+				}
+				@analyticsMetricCard("الصيدليات", fmt.Sprintf("%d", a.TotalPharmacies), "صيدليات معتمدة", "hover:border-sky-500/40", "bg-sky-500/10", "text-sky-600") {
+					@components.IconPill("icon-xs")
+				}
+				@analyticsMetricCard("الموردون", fmt.Sprintf("%d", a.TotalSuppliers), "شركات ومستودعات", "hover:border-purple-500/40", "bg-purple-500/10", "text-purple-600") {
+					@components.IconTruck("icon-xs")
+				}
+				@analyticsMetricCard("أوامر التوريد", fmt.Sprintf("%d", a.TotalOrders), "عمليات شراء منفذة", "hover:border-amber-500/40", "bg-amber-500/10", "text-amber-600") {
+					@components.IconPackage("icon-xs")
+				}
+				@analyticsMetricCard("حجم التداولات", a.TotalGMV, "قيمة التوريد الفعلي", "hover:border-emerald-500/40", "bg-emerald-500/10", "text-emerald-600") {
+					@components.IconCreditCard("icon-xs")
+				}
 			</div>
 
-			<!-- 2. Geographic & Devices Distribution -->
-			<div class="analytics-distribution-grid mb-6">
+			<!-- 2. Geographic & Technical Distribution (12-Col Responsive Grid) -->
+			<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-6">
 				
-				<!-- Countries Breakdown -->
-				<div class="glass-panel p-6 mb-0">
-					<div class="flex-between items-center mb-4 pb-3 border-b">
-						<h3 class="text-base font-extrabold text-primary m-0 d-flex items-center gap-2">
-							@components.IconGlobe("icon-xs")
-							<span>توزيع الزوار حسب الدول</span>
-						</h3>
-						<span class="badge badge-slate text-xs font-bold">تتبع مباشر</span>
+				<!-- Right Column (5 cols in RTL): Geographic Activity -->
+				<div class="lg:col-span-5 glass-panel p-5 rounded-2xl stack-md">
+					<div class="flex-between items-center pb-3 border-b">
+						<div class="d-flex items-center gap-2">
+							<span class="p-1.5 rounded-lg bg-brand/10 text-brand">@components.IconMapPin("icon-xs")</span>
+							<h3 class="text-sm font-extrabold text-primary m-0">الانتشار الجغرافي والمدن</h3>
+						</div>
+						<span class="badge badge-slate text-2xs font-bold">توزيع الزيارات</span>
 					</div>
 
-					if len(a.ByCountry) == 0 {
-						<div class="py-6 text-center text-muted text-xs">
-							جاري تجميع البيانات الجغرافية...
-						</div>
-					} else {
-						<div class="d-flex flex-col gap-3">
-							for country, count := range a.ByCountry {
-								<div class="d-flex flex-col gap-1">
-									<div class="flex-between text-xs font-bold">
-										<span class="text-primary">{ country }</span>
-										<span class="tabular-nums text-brand">{ fmt.Sprintf("%d زيارة", count) }</span>
+					<!-- Countries Section -->
+					<div>
+						<div class="text-2xs font-bold text-muted uppercase tracking-wider mb-2">توزيع الزيارات حسب الدول</div>
+						if len(a.ByCountry) == 0 {
+							<div class="py-4 text-center text-muted text-xs bg-surface-sunken rounded-lg">
+								جاري رصد وتجميع البيانات الجغرافية...
+							</div>
+						} else {
+							<div class="space-y-3">
+								for idx, item := range SortedStatItems(a.ByCountry, a.Total) {
+									<div class="d-flex flex-col gap-1.5">
+										<div class="flex-between text-xs font-bold">
+											<div class="d-flex items-center gap-2">
+												<span class="badge badge-slate text-2xs font-bold font-mono">#{ fmt.Sprintf("%d", idx+1) }</span>
+												<span class="text-primary">{ item.Key }</span>
+											</div>
+											<div class="d-flex items-center gap-2 text-2xs">
+												<span class="text-muted tabular-nums font-mono">{ fmt.Sprintf("%d%%", item.Percent) }</span>
+												<span class="badge badge-brand text-2xs font-bold tabular-nums">{ fmt.Sprintf("%d زيارة", item.Count) }</span>
+											</div>
+										</div>
+										<div class="w-full h-1.5 rounded-full overflow-hidden bg-surface-sunken border border-slate-100 dark:border-slate-800">
+											<div class="h-full bg-brand rounded-full transition-all duration-300" data-pct={ fmt.Sprint(item.Percent) }></div>
+										</div>
 									</div>
-									<div class="w-full h-2 rounded-full overflow-hidden bg-surface-sunken border">
-										<div class="h-full bg-brand rounded-full" data-pct={ fmt.Sprint(calcPercent(count, a.Total)) }></div>
-									</div>
-								</div>
+								}
+							</div>
+						}
+					</div>
+
+					<!-- Cities Section with Constrained Scrollable Container -->
+					<div class="pt-3 border-t">
+						<div class="flex-between items-center mb-2">
+							<span class="text-2xs font-bold text-muted uppercase tracking-wider">المحافظات والمدن الأكثر نشاطاً</span>
+							if len(a.ByCity) > 0 {
+								<span class="badge badge-slate text-2xs font-mono">{ fmt.Sprintf("%d مدينة", len(a.ByCity)) }</span>
 							}
 						</div>
-					}
+
+						if len(a.ByCity) == 0 {
+							<div class="py-4 text-center text-muted text-xs bg-surface-sunken rounded-lg">
+								جاري رصد بيانات المدن والمناطق...
+							</div>
+						} else {
+							<!-- Max-height scrollable container prevents height blowout when dozens of locations exist -->
+							<div class="max-h-[300px] overflow-y-auto space-y-1.5 pe-1 focus:outline-hidden">
+								for idx, item := range SortedStatItems(a.ByCity, a.Total) {
+									<div class="flex-between items-center p-2 bg-surface-sunken hover:bg-surface-raised rounded-lg border border-slate-100 dark:border-slate-800/60 transition-colors text-xs">
+										<div class="d-flex items-center gap-2 min-w-0">
+											<span class="badge badge-slate text-2xs font-bold font-mono shrink-0">#{ fmt.Sprintf("%d", idx+1) }</span>
+											<span class="font-bold text-primary truncate">{ item.Key }</span>
+										</div>
+										<span class="badge badge-sky text-2xs font-bold tabular-nums shrink-0">{ fmt.Sprintf("%d زيارة", item.Count) }</span>
+									</div>
+								}
+							</div>
+						}
+					</div>
 				</div>
 
-				<!-- Cities Breakdown -->
-				<div class="glass-panel p-6 mb-0">
-					<div class="flex-between items-center mb-4 pb-3 border-b">
-						<h3 class="text-base font-extrabold text-primary m-0 d-flex items-center gap-2">
-							@components.IconMapPin("icon-xs")
-							<span>أكثر المدن والمحافظات نشاطاً</span>
-						</h3>
-						<span class="badge badge-slate text-xs font-bold">المناطق والمدن</span>
+				<!-- Left Column (7 cols in RTL): Devices, OS & Browsers -->
+				<div class="lg:col-span-7 glass-panel p-5 rounded-2xl stack-md">
+					<div class="flex-between items-center pb-3 border-b">
+						<div class="d-flex items-center gap-2">
+							<span class="p-1.5 rounded-lg bg-sky-500/10 text-sky-600">@components.IconMonitor("icon-xs")</span>
+							<h3 class="text-sm font-extrabold text-primary m-0">الأنظمة والأجهزة والمتصفحات</h3>
+						</div>
+						<span class="badge badge-slate text-2xs font-bold">البيئة التقنية</span>
 					</div>
 
-					if len(a.ByCity) == 0 {
-						<div class="py-6 text-center text-muted text-xs">
-							جاري رصد بيانات المدن والمناطق...
-						</div>
-					} else {
-						<div class="d-flex flex-col gap-2">
-							for city, count := range a.ByCity {
-								<div class="flex-between items-center p-3 bg-surface-sunken rounded-lg border text-xs">
-									<span class="font-bold text-primary">{ city }</span>
-									<span class="badge badge-sky text-xs font-black">{ fmt.Sprintf("%d", count) }</span>
-								</div>
-							}
-						</div>
-					}
-				</div>
-
-				<!-- Devices, OS & Browsers -->
-				<div class="glass-panel p-6 mb-0">
-					<div class="flex-between items-center mb-4 pb-3 border-b">
-						<h3 class="text-base font-extrabold text-primary m-0 d-flex items-center gap-2">
-							@components.IconMonitor("icon-xs")
-							<span>الأجهزة والمتصفحات</span>
-						</h3>
+					<div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+						@techBreakdownCard("نوع الجهاز", SortedStatItems(a.ByDevice, a.Total), "bg-sky-500")
+						@techBreakdownCard("نظام التشغيل", SortedStatItems(a.ByOS, a.Total), "bg-purple-500")
+						@techBreakdownCard("المتصفح", SortedStatItems(a.ByBrowser, a.Total), "bg-emerald-500")
 					</div>
 
-					<div class="d-flex flex-col gap-4 text-xs">
-						<!-- Device -->
-      <div class="stack-sm">
-							<div class="text-muted font-bold mb-2">نوع الجهاز:</div>
-							<div class="d-flex gap-2 flex-wrap">
-								for d, count := range a.ByDevice {
-									<span class="badge badge-slate text-xs font-bold">
-										{ d }: <strong class="tabular-nums">{ fmt.Sprintf("%d", count) }</strong>
-									</span>
-								}
-							</div>
+					<!-- Technical Summary Footer -->
+					<div class="p-3 bg-surface-sunken rounded-xl border border-slate-100 dark:border-slate-800/60 flex-between items-center text-2xs text-secondary">
+						<div class="d-flex items-center gap-2">
+							@components.IconCheck("icon-2xs text-emerald-500")
+							<span>تغطية كاملة لكافة قنوات التوريد والتصفح المكتبي والمحمول</span>
 						</div>
-
-						<!-- OS -->
-      <div class="stack-sm">
-							<div class="text-muted font-bold mb-2">نظام التشغيل:</div>
-							<div class="d-flex gap-2 flex-wrap">
-								for os, count := range a.ByOS {
-									<span class="badge badge-purple text-xs font-bold">
-										{ os }: <strong class="tabular-nums">{ fmt.Sprintf("%d", count) }</strong>
-									</span>
-								}
-							</div>
-						</div>
-
-						<!-- Browser -->
-      <div class="stack-sm">
-							<div class="text-muted font-bold mb-2">المتصفح:</div>
-							<div class="d-flex gap-2 flex-wrap">
-								for b, count := range a.ByBrowser {
-									<span class="badge badge-emerald text-xs font-bold">
-										{ b }: <strong class="tabular-nums">{ fmt.Sprintf("%d", count) }</strong>
-									</span>
-								}
-							</div>
-						</div>
+						<span class="text-muted font-mono">EDA & Security Verified</span>
 					</div>
 				</div>
 
 			</div>
 
 			<!-- 3. Recent Visits Table -->
-			<div class="glass-panel p-0 mb-6 overflow-hidden">
-				<div class="p-4 px-6 border-b flex-between items-center">
-     <div class="stack-sm">
-						<h3 class="text-base font-extrabold text-primary m-0">
-							أحدث الزيارات المسجلة على المنصة
-						</h3>
-						<p class="text-xs text-secondary m-0 mt-1">
-							سجل حي لزيارات منصة التوريد الدوائي والمتصفحات ونقاط الدخول
+			<div class="glass-panel p-0 mb-6 overflow-hidden rounded-2xl">
+				<div class="p-4 px-6 border-b flex-between items-center flex-wrap gap-3">
+					<div class="stack-2xs">
+						<div class="d-flex items-center gap-2">
+							<span class="p-1 rounded-md bg-brand/10 text-brand">@components.IconClock("icon-2xs")</span>
+							<h3 class="text-sm font-extrabold text-primary m-0">أحدث الزيارات المسجلة على المنصة</h3>
+						</div>
+						<p class="text-2xs text-secondary m-0">
+							سجل فوري متزامن لحركة زيارات منصة التوريد الدوائي والمتصفحات ونقاط الدخول
 						</p>
 					</div>
-					<span class="badge badge-emerald text-xs font-bold">محدّث لحظياً</span>
+					<div class="d-flex items-center gap-2">
+						<span class="badge badge-emerald text-2xs font-bold">محدّث لحظياً</span>
+						if a.Total > 0 {
+							<span class="badge badge-slate text-2xs font-bold font-mono">{ fmt.Sprintf("%d زيارة مسجلة", a.Total) }</span>
+						}
+					</div>
 				</div>
 
 				if len(a.Recent) == 0 {
-					<div class="p-8 text-center empty-state-glass">
-						<div class="text-4xl mb-3">@components.IconGlobe("icon-sm")</div>
-						<h3 class="text-lg font-black text-primary mb-2">لا توجد زيارات مسجلة</h3>
-						<p class="text-sm text-secondary m-0">سيتم تسجيل الزيارات فور استخدام المنصة.</p>
+					<div class="p-12 text-center empty-state-glass">
+						<div class="text-4xl mb-3 text-slate-300">@components.IconGlobe("icon-lg mx-auto")</div>
+						<h3 class="text-base font-black text-primary mb-1">لا توجد زيارات مسجلة بعد</h3>
+						<p class="text-xs text-secondary m-0">سيتم تسجيل وتحديث الزيارات فور دخول وتفاعل المستخدمين بالمنصة.</p>
 					</div>
 				} else {
-					<div class="table-container m-0">
-						<table class="data-table m-0">
+					<div class="table-container m-0 overflow-x-auto">
+						<table class="data-table m-0 text-xs w-full">
 							<thead>
 								<tr>
 									<th>التاريخ والوقت</th>
@@ -226,45 +225,48 @@ templ AdminAnalytics(lang, dir string, a *platformadmin.VisitorAnalytics) {
 											<div class="tabular-nums font-bold text-primary text-xs">
 												{ v.VisitedAt.Format("2006-01-02") }
 											</div>
-											<div class="tabular-nums text-xs text-muted">
+											<div class="tabular-nums text-2xs text-muted font-mono">
 												{ v.CreatedAt.Format("03:04:05 PM") }
 											</div>
 										</td>
 
 										<!-- 2. Country & City -->
 										<td>
-											<div class="text-xs font-extrabold text-primary">
-												{ v.Country }
+											<div class="text-xs font-bold text-primary d-flex items-center gap-1.5">
+												@components.IconMapPin("icon-2xs text-muted")
+												<span>{ v.Country }</span>
 											</div>
-											<div class="text-xs text-muted">
-												{ v.City }
-											</div>
+											if v.City != "" {
+												<div class="text-2xs text-muted ps-4">
+													{ v.City }
+												</div>
+											}
 										</td>
 
 										<!-- 3. IP -->
 										<td class="text-center">
-											<span class="badge badge-slate tabular-nums text-xs font-mono">
+											<span class="badge badge-slate tabular-nums text-2xs font-mono">
 												{ v.IP }
 											</span>
 										</td>
 
 										<!-- 4. Device -->
 										<td class="text-center">
-											<span class="badge badge-sky text-xs font-bold capitalize">
+											<span class="badge badge-sky text-2xs font-bold capitalize">
 												{ v.Device }
 											</span>
 										</td>
 
 										<!-- 5. Browser -->
 										<td class="text-center">
-											<span class="badge badge-purple text-xs font-bold capitalize">
+											<span class="badge badge-purple text-2xs font-bold capitalize">
 												{ v.Browser }
 											</span>
 										</td>
 
 										<!-- 6. OS -->
 										<td class="text-center">
-											<span class="badge badge-slate text-xs font-bold capitalize">
+											<span class="badge badge-slate text-2xs font-bold capitalize">
 												{ v.OS }
 											</span>
 										</td>
@@ -274,12 +276,14 @@ templ AdminAnalytics(lang, dir string, a *platformadmin.VisitorAnalytics) {
 						</table>
 					</div>
 					if a.Total > 0 {
-						@components.B2BPagination(components.PaginationProps{
-							CurrentPage: a.Page,
-							PageSize:    a.PerPage,
-							TotalCount:  a.Total,
-							BaseURL:     "/admin/analytics",
-						})
+						<div class="p-4 border-t">
+							@components.B2BPagination(components.PaginationProps{
+								CurrentPage: a.Page,
+								PageSize:    a.PerPage,
+								TotalCount:  a.Total,
+								BaseURL:     "/admin/analytics",
+							})
+						</div>
 					}
 				}
 			</div>
@@ -288,16 +292,40 @@ templ AdminAnalytics(lang, dir string, a *platformadmin.VisitorAnalytics) {
 	}
 }
 
-func calcPercent(count, total int) int {
-	if total <= 0 {
-		return 100
-	}
-	p := (count * 100) / total
-	if p > 100 {
-		return 100
-	}
-	if p < 1 && count > 0 {
-		return 1
-	}
-	return p
+templ analyticsMetricCard(title, value, subtitle, borderHover, iconBg, iconColor string) {
+	<div class={ "glass-panel p-4 flex flex-col justify-between rounded-xl transition-all shadow-xs", borderHover }>
+		<div class="flex-between items-center mb-1">
+			<span class="text-2xs font-bold uppercase tracking-wider text-muted">{ title }</span>
+			<span class={ "p-1.5 rounded-lg", iconBg, iconColor }>
+				{ children... }
+			</span>
+		</div>
+		<div class={ "text-2xl font-black tabular-nums mt-1", iconColor }>{ value }</div>
+		<span class="text-2xs text-secondary mt-1 d-block">{ subtitle }</span>
+	</div>
+}
+
+templ techBreakdownCard(title string, items []AnalyticsStatItem, barColor string) {
+	<div class="p-4 bg-surface-sunken rounded-xl border border-slate-100 dark:border-slate-800/60 flex flex-col justify-between">
+		<div>
+			<div class="text-2xs font-bold text-muted uppercase tracking-wider mb-3">{ title }</div>
+			if len(items) == 0 {
+				<div class="text-2xs text-muted text-center py-4">لا توجد بيانات</div>
+			} else {
+				<div class="space-y-2.5">
+					for _, item := range items {
+						<div class="stack-2xs">
+							<div class="flex-between text-2xs font-bold">
+								<span class="text-primary capitalize">{ item.Key }</span>
+								<span class="text-muted tabular-nums font-mono">{ fmt.Sprintf("%d (%d%%)", item.Count, item.Percent) }</span>
+							</div>
+							<div class="w-full h-1.5 rounded-full overflow-hidden bg-surface-raised border border-slate-200/60 dark:border-slate-700">
+								<div class={ "h-full rounded-full transition-all duration-300", barColor } data-pct={ fmt.Sprint(item.Percent) }></div>
+							</div>
+						</div>
+					}
+				</div>
+			}
+		</div>
+	</div>
 }

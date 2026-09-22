@@ -86,6 +86,7 @@ func (m *mockCatalogImageRepo) ActivateAllVariantsByOrg(_ context.Context, _ int
 	return 0, nil
 }
 func (m *mockCatalogImageRepo) DeleteAllProducts(_ context.Context) (int64, error) { return 0, nil }
+func (m *mockCatalogImageRepo) DeleteAllBrands(_ context.Context) (int64, error)   { return 0, nil }
 func (m *mockCatalogImageRepo) CreateCategory(_ context.Context, _ *catalog.Category) error {
 	return nil
 }

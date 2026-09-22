@@ -359,6 +359,10 @@ func (m *mockCatalogRepo) DeleteAllProducts(_ context.Context) (int64, error) {
 	return 0, nil
 }
 
+func (m *mockCatalogRepo) DeleteAllBrands(_ context.Context) (int64, error) {
+	return 0, nil
+}
+
 func (m *mockCatalogRepo) GetProductBySKU(_ context.Context, sku string) (*Product, error) {
 	for _, p := range m.products {
 		if p.SKU == sku || p.Barcode == sku {

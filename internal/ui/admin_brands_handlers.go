@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -204,4 +205,23 @@ func (h *UIHandler) AdminBrandDeleteSubmit(w http.ResponseWriter, r *http.Reques
 	}
 
 	h.redirectWithNotice(w, r, "/admin/brands", "success", i18n.T(lang, "admin.brands.deleted_success"))
+}
+
+// AdminBrandsDeleteAllSubmit soft-deletes all brands and unlinks them from products (Super Admin).
+func (h *UIHandler) AdminBrandsDeleteAllSubmit(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	lang := langOf(r)
+	if h.catSvc == nil {
+		h.redirectWithNotice(w, r, "/admin/brands", "error", i18n.T(lang, "admin.categories.service_unavailable"))
+		return
+	}
+
+	count, err := h.catSvc.DeleteAllBrands(database.AsSystem(ctx))
+	if err != nil {
+		h.log.ErrorContext(ctx, "admin delete all brands failed", "error", err)
+		h.redirectWithNotice(w, r, "/admin/brands", "error", fmt.Sprintf(i18n.T(lang, "admin.brands.delete_all_failed_format"), h.safeMessage(err, lang)))
+		return
+	}
+
+	h.redirectWithNotice(w, r, "/admin/brands", "success", fmt.Sprintf(i18n.T(lang, "admin.brands.deleted_all_success_format"), count))
 }

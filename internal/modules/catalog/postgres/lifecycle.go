@@ -7,6 +7,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 )
 
@@ -89,6 +90,37 @@ func (r *Repository) DeleteCategory(ctx context.Context, id int64) error {
 // DeleteBrand soft-deletes a brand.
 func (r *Repository) DeleteBrand(ctx context.Context, id int64) error {
 	return r.softDeleteTaxonomy(ctx, "catalog.brands", "brand", id)
+}
+
+// DeleteAllBrands soft-deletes all brands, unlinks them from products, and writes an audit log.
+func (r *Repository) DeleteAllBrands(ctx context.Context) (int64, error) {
+	var count int64
+	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		// Unlink brands from any existing products first
+		if _, err := tx.Exec(txCtx, `UPDATE catalog.products SET brand_id = NULL WHERE brand_id IS NOT NULL;`); err != nil {
+			return fmt.Errorf("catalog postgres: unlink products from brands: %w", err)
+		}
+		// Soft-delete all brands
+		res, err := tx.Exec(txCtx, `
+			UPDATE catalog.brands
+			SET deleted_at = now(), status = 'inactive', updated_at = now()
+			WHERE deleted_at IS NULL;
+		`)
+		if err != nil {
+			return fmt.Errorf("catalog postgres: delete all brands: %w", err)
+		}
+		count = res.RowsAffected()
+
+		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+			Action:     "catalog.brands.delete_all",
+			EntityType: "catalog_brands",
+			EntityID:   "all",
+			After:      map[string]any{"count": count},
+		})
+
+		return nil
+	})
+	return count, err
 }
 
 // softDeleteTaxonomy is shared by categories and brands, which are identical in

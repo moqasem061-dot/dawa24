@@ -374,6 +374,7 @@ func (h *UIHandler) registerAdminCatalogMutations(r chi.Router) {
 
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("catalog.brand.delete"))
+		g.Post("/admin/brands/delete-all", h.AdminBrandsDeleteAllSubmit)
 		g.Post("/admin/brands/{id}/delete", h.AdminBrandDeleteSubmit)
 	})
 

@@ -143,6 +143,18 @@ func TestAdminReferenceRoutes(t *testing.T) {
 			},
 			wantStatus: http.StatusSeeOther,
 		},
+		{
+			name:   "Super admin POST /admin/brands/delete-all returns redirect",
+			path:   "/admin/brands/delete-all",
+			method: "POST",
+			actor: &authctx.Actor{
+				UserID:      1,
+				IsStaff:     true,
+				Role:        "super_admin",
+				Permissions: []string{"*"},
+			},
+			wantStatus: http.StatusSeeOther,
+		},
 	}
 
 	for _, tt := range tests {

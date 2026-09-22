@@ -186,15 +186,10 @@ func (happyRepo) ListAllSavingProductsAdmin(ctx context.Context, _ *int64, _ *in
 func (happyRepo) ListAllMasterProductsForMatching(ctx context.Context) ([]*catalog.CatalogMatchSource, error) {
 	return nil, nil
 }
-func (happyRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
-	return 0, nil
-}
-func (happyRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
-	return 0, nil
-}
-func (happyRepo) DeleteAllProducts(ctx context.Context) (int64, error) {
-	return 0, nil
-}
+func (happyRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error)   { return 0, nil }
+func (happyRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) { return 0, nil }
+func (happyRepo) DeleteAllProducts(ctx context.Context) (int64, error)                     { return 0, nil }
+func (happyRepo) DeleteAllBrands(ctx context.Context) (int64, error)                       { return 0, nil }
 func (happyRepo) DeleteAllSavingProducts(ctx context.Context, orgID int64) error {
 	return nil
 }
