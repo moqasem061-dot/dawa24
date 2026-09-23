@@ -23,7 +23,17 @@ type SecurityOptions struct {
 	// shares the site's cookies. Empty falls back to CSPReportPath on the
 	// site's own origin, which is what development uses.
 	ReportURL string
+	// Clarity admits Microsoft Clarity's hosts to script-src, img-src and
+	// connect-src. Only set when a project id is configured, so a deployment
+	// without Clarity keeps the narrower policy.
+	Clarity bool
 }
+
+// claritySources are the hosts Microsoft documents for Clarity: the tag on
+// www.clarity.ms, the recorder on scripts.clarity.ms, collection on
+// [a-z].clarity.ms (load-balanced, hence the wildcard), and c.bing.com.
+// https://learn.microsoft.com/en-us/clarity/setup-and-installation/clarity-csp
+const claritySources = " https://*.clarity.ms https://c.bing.com"
 
 // SecurityHeaders applies baseline hardening and a strict, nonce-based
 // Content-Security-Policy.
@@ -57,7 +67,11 @@ func SecurityHeaders(opts SecurityOptions) func(http.Handler) http.Handler {
 	// intervention and crash reports, which the collector accepts and
 	// discards at debug level.
 	reportingEndpoints := `csp="` + reportURL + `", default="` + reportURL + `"`
-	staticDirectives := cspStaticDirectives(reportURL)
+	extra := ""
+	if opts.Clarity {
+		extra = claritySources
+	}
+	staticDirectives := cspStaticDirectives(reportURL, extra)
 
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -93,7 +107,7 @@ func SecurityHeaders(opts SecurityOptions) func(http.Handler) http.Handler {
 			// characters of the blocked code; 'report-sha256' asks for the
 			// hash of every script that runs, for auditing.
 			h.Set("Content-Security-Policy",
-				"script-src 'self' 'nonce-"+nonce+"' https://challenges.cloudflare.com 'report-sample' 'report-sha256'; "+
+				"script-src 'self' 'nonce-"+nonce+"' https://challenges.cloudflare.com"+extra+" 'report-sample' 'report-sha256'; "+
 					"style-src 'self' 'nonce-"+nonce+"' https://fonts.googleapis.com 'report-sample'; "+
 					staticDirectives)
 			if PrivateArea(r.URL.Path) {
@@ -109,19 +123,20 @@ func SecurityHeaders(opts SecurityOptions) func(http.Handler) http.Handler {
 
 // cspStaticDirectives holds the directives that do not change per request.
 // Built once at startup to avoid string joins on every response.
-func cspStaticDirectives(reportURL string) string {
+// extra is appended to img-src and connect-src (see SecurityOptions.Clarity).
+func cspStaticDirectives(reportURL, extra string) string {
 	return strings.Join([]string{
 		"default-src 'none'",
 		"script-src-attr 'none'",
 		"style-src-attr 'none'",
 		// Remote images are restricted to self, data/blob, and explicit OpenStreetMap tiles.
 		// Subdomain wildcards and bare 'https:' are disallowed to prevent image-based exfiltration.
-		"img-src 'self' data: blob: https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://tile.openstreetmap.org",
+		"img-src 'self' data: blob: https://a.tile.openstreetmap.org https://b.tile.openstreetmap.org https://c.tile.openstreetmap.org https://tile.openstreetmap.org" + extra,
 		"media-src 'self' blob:",
 		"font-src 'self' data: https://fonts.gstatic.com",
 		// Same-origin XHR, fetch and the assistant's event streams, plus the
 		// address lookup the branch map performs in the browser, and Cloudflare Turnstile telemetry.
-		"connect-src 'self' https://challenges.cloudflare.com https://nominatim.openstreetmap.org",
+		"connect-src 'self' https://challenges.cloudflare.com https://nominatim.openstreetmap.org" + extra,
 		// Pin frame sources to exact map and embed providers without wildcard subdomains.
 		"frame-src 'self' https://challenges.cloudflare.com https://www.google.com https://maps.google.com https://www.openstreetmap.org",
 		"worker-src 'self'",

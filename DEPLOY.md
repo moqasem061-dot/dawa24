@@ -156,6 +156,11 @@ WHATSAPP_BUSINESS_NUMBER=<business number, international form without +>
 WHATSAPP_BRIDGE_TOKEN=<openssl rand -hex 32, same value in the n8n credential>
 WHATSAPP_NOTIFICATION_TEMPLATE=<approved template name, optional>
 
+# Microsoft Clarity (heatmaps and session recordings on every page). Empty
+# disables it and keeps Clarity out of the CSP. Verify in the browser console:
+# typeof clarity === "function" and requests to *.clarity.ms/collect return 204.
+CLARITY_PROJECT_ID=ymd15b26tc
+
 GATEWAY_ENABLED=false
 GATEWAY_BASE_URL=https://api.muhiya.com
 GATEWAY_VIRTUAL_KEY=REPLACE_ME_WITH_VIRTUAL_KEY_FROM_GATEWAY_ADMIN

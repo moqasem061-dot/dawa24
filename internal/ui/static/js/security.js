@@ -193,6 +193,22 @@
     }
   }
 
+  // Microsoft Clarity loads its recorder from scripts.clarity.ms by setting
+  // script.src from the tag served by www.clarity.ms. Exact https hosts only:
+  // a hostname is compared, never a string prefix, so "clarity.ms.evil.test"
+  // or a path containing "clarity.ms" does not pass. The response CSP admits
+  // these hosts only when CLARITY_PROJECT_ID is configured, so on a deployment
+  // without Clarity the browser still refuses the load.
+  function clarityURL(url) {
+    try {
+      var u = new URL(String(url), document.baseURI);
+      return u.protocol === 'https:' && u.port === '' &&
+        (/^[a-z0-9-]+\.clarity\.ms$/.test(u.hostname) || u.hostname === 'c.bing.com');
+    } catch (_) {
+      return false;
+    }
+  }
+
   // -- htmx swap gate ----------------------------------------------------------
   var vettedResponses = [];
   var vettedScripts = [];
@@ -307,7 +323,7 @@
       },
       createScriptURL: function (input) {
         var s = String(input);
-        if (sameOriginURL(s) || /^https:\/\/challenges\.cloudflare\.com\//.test(s)) return s;
+        if (sameOriginURL(s) || /^https:\/\/challenges\.cloudflare\.com\//.test(s) || clarityURL(s)) return s;
         reportRejection('script URL', s);
         return null;
       }

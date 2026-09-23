@@ -21,8 +21,10 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<script nonce={ layouts.Nonce(ctx) } src={ layouts.Asset("/static/js/security.js") }></script>
+			@layouts.ClarityScript()
 			<title>{ fmt.Sprintf("فاتورة توريد #%s - دوا 24", data.InvoiceNumber) }</title>
-						<link rel="stylesheet" href="/static/css/invoice_printable.css"/>
+						<link rel="stylesheet" data-clarity-unmask="true" href="/static/css/invoice_printable.css"/>
 		</head>
 		<body>
 			

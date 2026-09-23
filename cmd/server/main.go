@@ -45,6 +45,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/platform/storage"
 	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/muhiya/dawa24-store/internal/ui/layouts"
 )
 
 func main() {
@@ -288,7 +289,9 @@ func newRouter(
 	r.Use(httpx.Recover(log))
 	r.Use(httpx.Logger(log))
 	r.Use(httpx.ReportHostOnly(cfg.CSPReportHost()))
-	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{ReportURL: cfg.HTTP.CSPReportURL}))
+	// The Clarity tag and the CSP that admits it are switched by the same value.
+	layouts.ClarityProjectID = cfg.Clarity.ProjectID
+	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{ReportURL: cfg.HTTP.CSPReportURL, Clarity: cfg.Clarity.Enabled()}))
 	r.Use(httpx.Locale)
 	// Shorter than HTTP.WriteTimeout so the application, not the socket, ends a
 	// slow request: the query is cancelled, its pool connection is released,

@@ -48,6 +48,7 @@ type Config struct {
 	SMTP      SMTP
 	Turnstile Turnstile
 	Auth      Auth
+	Clarity   Clarity
 }
 
 // AntiScrape governs the guard on the signed-out pages that publish
@@ -263,6 +264,7 @@ func load(cliOnly bool) (*Config, error) {
 	cfg.SMTP = loadSMTP()
 	cfg.Turnstile = loadTurnstile(fail)
 	cfg.Auth = loadAuth()
+	cfg.Clarity = loadClarity(fail)
 
 	// --- Required everywhere ---
 	if cfg.Database.URL == "" {

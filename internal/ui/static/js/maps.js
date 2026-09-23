@@ -20,6 +20,7 @@ function ensureLeaflet() {
       css.rel = 'stylesheet';
       css.href = '/static/vendor/leaflet/leaflet.css';
       css.setAttribute('data-leaflet-css', '');
+      css.setAttribute('data-clarity-unmask', 'true'); // see base.templ
       document.head.appendChild(css);
     }
     const script = document.createElement('script');
