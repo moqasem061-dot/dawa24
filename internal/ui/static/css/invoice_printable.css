@@ -294,6 +294,26 @@
 					.invoice-bottom-grid, .legal-disclaimer-box {
 						page-break-inside: avoid !important;
 					}
+
+					/* Thermal receipt print override */
+					body.thermal-mode {
+						padding: 0 !important;
+						margin: 0 auto !important;
+						width: 80mm !important;
+						max-width: 80mm !important;
+					}
+					body.thermal-mode .invoice-paper-a4 {
+						display: none !important;
+					}
+					body.thermal-mode .invoice-paper-thermal {
+						display: block !important;
+						width: 100% !important;
+						max-width: 80mm !important;
+						margin: 0 auto !important;
+						padding: 4px !important;
+						border: none !important;
+						box-shadow: none !important;
+					}
 				}
 
 				/* Thermal Receipt Specifics */

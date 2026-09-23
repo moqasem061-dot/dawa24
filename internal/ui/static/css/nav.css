@@ -330,7 +330,69 @@
   }
 
   @media (max-width: 1024px) {
-    .nav-context { display: none; }
+    .nav-context {
+      display: flex;
+      padding-inline-start: var(--space-xs);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .nav-inner {
+      padding-inline: var(--space-sm);
+      gap: var(--space-2xs);
+    }
+    .nav-lead {
+      gap: var(--space-2xs);
+      overflow: hidden;
+      flex: 1 1 auto;
+      min-inline-size: 0;
+    }
+    .nav-title {
+      font-size: var(--text-sm);
+      max-inline-size: 6.5rem;
+    }
+    .nav-context {
+      display: flex;
+      padding-inline-start: var(--space-2xs);
+      border-inline-start: 1px solid var(--nav-rule);
+      flex-shrink: 0;
+    }
+    .nav-context .nav-trigger {
+      min-block-size: 2rem;
+      padding-inline: var(--space-xs);
+      gap: 3px;
+      border-radius: var(--radius-md);
+      background: var(--bg-surface-sunken);
+      border: 1px solid var(--border-subtle);
+    }
+    .nav-context .nav-trigger:hover {
+      background: var(--nav-hover);
+    }
+    .nav-context .nav-trigger-text {
+      display: flex !important;
+    }
+    .nav-context .nav-trigger-label {
+      display: none !important;
+    }
+    .nav-context .nav-trigger-value {
+      font-size: var(--text-xs);
+      font-weight: 700;
+      max-inline-size: 5rem;
+      line-height: 1;
+    }
+    .nav-context .nav-trigger svg {
+      inline-size: 0.875rem;
+      block-size: 0.875rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .nav-title {
+      max-inline-size: 4.5rem;
+    }
+    .nav-context .nav-trigger-value {
+      max-inline-size: 3.8rem;
+    }
   }
 
   /* ========================================================================
@@ -532,6 +594,7 @@
   @media (max-width: 768px) {
     .nav-trigger { min-block-size: var(--touch-min); }
     .nav-trigger-text { display: none; }
+    .nav-context .nav-trigger-text { display: flex !important; }
   }
 
   /* --- the unread counter ------------------------------------------------ */

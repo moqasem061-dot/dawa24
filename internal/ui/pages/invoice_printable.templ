@@ -43,8 +43,10 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 				<div class="toolbar-btn-group">
 					<!-- Standard A4 Print -->
 					<button
+						id="btn-print-a4"
 						type="button"
 						class="btn-action btn-primary"
+						onclick="printA4()"
 						data-on-click="printA4()"
 						title="طباعة الفاتورة بالحجم القياسي A4"
 					>
@@ -53,8 +55,10 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 
 					<!-- Thermal Print (POS 80mm) -->
 					<button
+						id="btn-print-thermal"
 						type="button"
 						class="btn-action btn-thermal"
+						onclick="printThermal()"
 						data-on-click="printThermal()"
 						title="طباعة إيصال كاشير 80 مم"
 					>
@@ -100,8 +104,10 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 
 					<!-- Close / Back -->
 					<button
+						id="btn-print-close"
 						type="button"
 						class="btn-action btn-secondary"
+						onclick="closeWindow()"
 						data-on-click="closeWindow()"
 					>
 						<span>إغلاق</span>
@@ -122,6 +128,7 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 			<!-- Scripts for Thermal and A4 Printing Modes -->
 			<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
 				function printA4() {
+					document.body.classList.remove('thermal-mode');
 					const thermal = document.getElementById('thermal-invoice-container');
 					const a4 = document.getElementById('a4-invoice-container');
 					if (thermal) thermal.style.display = 'none';
@@ -130,20 +137,45 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 				}
 
 				function printThermal() {
+					document.body.classList.add('thermal-mode');
 					const thermal = document.getElementById('thermal-invoice-container');
 					const a4 = document.getElementById('a4-invoice-container');
 					if (a4) a4.style.display = 'none';
 					if (thermal) thermal.style.display = 'block';
 					window.print();
-					// restore after print dialog
 					setTimeout(() => {
+						document.body.classList.remove('thermal-mode');
 						if (a4) a4.style.display = 'block';
 						if (thermal) thermal.style.display = 'none';
-					}, 1000);
+					}, 1500);
 				}
 
-				// Auto print if requested via query parameter
-				window.addEventListener('DOMContentLoaded', () => {
+				function closeWindow() {
+					if (window.opener || window.history.length <= 1) {
+						window.close();
+					} else {
+						window.history.back();
+					}
+				}
+
+				// Direct event attachment and delegation
+				document.addEventListener('DOMContentLoaded', () => {
+					const btnA4 = document.getElementById('btn-print-a4');
+					if (btnA4) btnA4.addEventListener('click', printA4);
+					const btnThermal = document.getElementById('btn-print-thermal');
+					if (btnThermal) btnThermal.addEventListener('click', printThermal);
+					const btnClose = document.getElementById('btn-print-close');
+					if (btnClose) btnClose.addEventListener('click', closeWindow);
+
+					document.addEventListener('click', (e) => {
+						const btn = e.target.closest('[data-on-click]');
+						if (!btn) return;
+						const action = btn.getAttribute('data-on-click');
+						if (action === 'printA4()') { e.preventDefault(); printA4(); }
+						else if (action === 'printThermal()') { e.preventDefault(); printThermal(); }
+						else if (action === 'closeWindow()') { e.preventDefault(); closeWindow(); }
+					});
+
 					const params = new URLSearchParams(window.location.search);
 					if (params.get('thermal') === '1') {
 						printThermal();

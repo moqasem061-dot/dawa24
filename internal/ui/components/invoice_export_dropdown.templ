@@ -1,6 +1,8 @@
 package components
 
 import (
+	"fmt"
+
 	"github.com/muhiya/dawa24-store/internal/platform/httpx"
 )
 
@@ -46,7 +48,7 @@ templ InvoiceExportDropdown(props InvoiceExportDropdownProps) {
 			<button
 				type="button"
 				class="w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start"
-				@click={ "[open = false, " + AlpineCall("$printInvoice", props.PrintURL) + "]" }
+				@click={ fmt.Sprintf("open = false; (typeof window.printInvoiceDirectly === 'function' ? window.printInvoiceDirectly(%q) : window.open(%q, '_blank'))", props.PrintURL, props.PrintURL) }
 			>
 				<span class="text-accent">🖨️</span>
 				<div class="d-flex flex-col text-start">

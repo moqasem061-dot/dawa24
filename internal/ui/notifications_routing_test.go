@@ -78,6 +78,24 @@ func TestResolveNotificationDestination(t *testing.T) {
 			expected: "/vendor/delivery",
 		},
 		{
+			name:     "Customer shipment delivered notification with number",
+			actor:    customerActor,
+			notif:    &notifications.NotificationLog{Title: "تم تسليم شحنتك بنجاح (10542-1)", Body: "قام مندوب الشحن بتسليم طلبك #10542 من المورد الأهرام بنجاح."},
+			expected: "/orders/10542",
+		},
+		{
+			name:     "Vendor shipment delivered notification with number",
+			actor:    vendorActor,
+			notif:    &notifications.NotificationLog{Title: "تم تسليم الشحنة وتحصيل القيمة (10542-1)", Body: "تم تسليم الشحنة #10542-1 للصيدلية بنجاح وتأكيد كود الاستلام."},
+			expected: "/vendor/orders/10542",
+		},
+		{
+			name:     "Customer generic delivery notification must never route to vendor delivery",
+			actor:    customerActor,
+			notif:    &notifications.NotificationLog{Title: "طرد جديد قيد التوصيل", Body: "المندوب في الطريق للتسليم"},
+			expected: "/orders",
+		},
+		{
 			name:     "Vendor wallet deposit notification",
 			actor:    vendorActor,
 			notif:    &notifications.NotificationLog{Title: "تم شحن محفظتك", Body: "تم إيداع مبلغ 5000 ج.م في محفظتك"},
