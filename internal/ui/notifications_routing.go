@@ -8,6 +8,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/notifications"
 	"github.com/muhiya/dawa24-store/internal/platform/authctx"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 )
 
 // ResolveNotificationDestination determines the optimal platform destination URL
@@ -239,6 +240,11 @@ func (h *UIHandler) resolveOrderOrDeliveryDestination(ctx context.Context, actor
 						}
 					}
 				}
+				// A supplier that bought this order sees it on the buying
+				// surface; /vendor/orders/{id} takes a shipment it sells.
+				if ord.OrganizationID != nil && *ord.OrganizationID == actor.OrganizationID {
+					return fmt.Sprintf("/orders/%d", ord.ID)
+				}
 				return fmt.Sprintf("/vendor/orders/%d", ord.ID)
 			}
 			if actor.Role == "courier" || actor.Role == "org_courier" {
@@ -283,6 +289,9 @@ func (h *UIHandler) resolveOrderOrDeliveryDestination(ctx context.Context, actor
 		}
 		if actor.Can("vendor.order.view") {
 			return "/vendor/orders"
+		}
+		if actor.Can(rbac.BuyOrderView.Vendor) {
+			return "/orders"
 		}
 		return "/vendor/dashboard"
 	}

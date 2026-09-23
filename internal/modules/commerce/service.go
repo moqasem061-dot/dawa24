@@ -26,6 +26,8 @@ type Service struct {
 	// availability answers the stock / coverage / branch questions that live in
 	// other modules. Injected at the composition root; see AvailabilityProbe.
 	availability AvailabilityProbe
+	// placedHooks announce committed orders; see OnOrderPlaced.
+	placedHooks []OrderPlacedHook
 }
 
 // SetAvailabilityProbe installs the cross-module availability probe. Without
@@ -380,6 +382,7 @@ func (s *Service) Checkout(ctx context.Context, input CheckoutInput) (*Order, er
 	}
 
 	s.log.InfoContext(ctx, "order created", "order_id", order.ID, "order_number", order.OrderNumber, "vendor_count", len(shipments))
+	s.announcePlaced(ctx, order)
 	return order, nil
 }
 

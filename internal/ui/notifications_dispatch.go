@@ -7,6 +7,7 @@ import (
 	"github.com/muhiya/dawa24-store/internal/modules/notifications"
 	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"github.com/muhiya/dawa24-store/internal/platform/queue"
+	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 )
 
@@ -23,11 +24,40 @@ func (h *UIHandler) dispatchInAppBranchNotification(ctx context.Context, userID 
 	if h.notifSvc == nil || userID <= 0 {
 		return
 	}
+	if orgID != nil {
+		requiredPerm = h.scopedPermission(ctx, *orgID, requiredPerm)
+	}
+	h.writeInAppNotification(ctx, userID, orgID, branchID, requiredPerm, title, body)
+}
 
+// scopedPermission names requiredPerm in the dashboard of the organisation the
+// notification is about. A supplier buying holds vendor.buying.* keys, never
+// pharmacy.* ones, so a purchase notification filtered by the pharmacy key
+// reached no one but the owner — in the feed, and again in the Telegram and
+// WhatsApp outbox, which re-checks the same key. See rbac.Catalog.ScopedKey.
+func (h *UIHandler) scopedPermission(ctx context.Context, orgID int64, requiredPerm string) string {
+	if requiredPerm == "" || orgID <= 0 || h.orgSvc == nil {
+		return requiredPerm
+	}
+	o, err := h.orgSvc.GetOrganization(database.AsSystem(ctx), orgID)
+	if err != nil || o == nil {
+		return requiredPerm
+	}
+	scope, ok := rbac.TenantScopeFor(string(o.Type))
+	if !ok {
+		return requiredPerm
+	}
+	return rbac.Default().ScopedKey(requiredPerm, scope)
+}
+
+// writeInAppNotification persists one feed row. requiredPerm must already be
+// scoped to orgID's dashboard.
+func (h *UIHandler) writeInAppNotification(ctx context.Context, userID int64, orgID, branchID *int64, requiredPerm, title, body string) {
 	if h.notificationEnqueue != nil {
 		err := h.notificationEnqueue(ctx, queue.NotificationDeliverArgs{
 			UserID:             userID,
 			OrganizationID:     orgID,
+			BranchID:           branchID,
 			Channel:            string(notifications.ChannelInApp),
 			Recipient:          fmt.Sprintf("user-%d", userID),
 			Title:              title,
@@ -119,6 +149,7 @@ func (h *UIHandler) dispatchOrgBranchNotification(ctx context.Context, orgID int
 	if err != nil || len(members) == 0 {
 		return
 	}
+	requiredPerm = h.scopedPermission(ctx, orgID, requiredPerm)
 	seen := make(map[int64]bool, len(members))
 	for _, m := range members {
 		if m == nil || m.UserID <= 0 || !m.IsActive || seen[m.UserID] {
@@ -150,7 +181,7 @@ func (h *UIHandler) dispatchOrgBranchNotification(ctx context.Context, orgID int
 			}
 		}
 
-		h.dispatchInAppBranchNotification(ctx, m.UserID, &orgID, branchID, requiredPerm, title, body)
+		h.writeInAppNotification(ctx, m.UserID, &orgID, branchID, requiredPerm, title, body)
 	}
 }
 

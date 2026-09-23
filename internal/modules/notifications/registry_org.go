@@ -253,7 +253,7 @@ func init() {
 	registerEvent(EventDefinition{
 		Key:                EventSubscriptionUpdated,
 		DefaultChannels:    []Channel{ChannelInApp},
-		RequiredPermission: "vendor.billing.view",
+		RequiredPermission: "vendor.subscription.view",
 		TitleAr:            "تأكيد الاشتراك في الباقة",
 		TitleEn:            "Subscription Activated",
 		BodyAr:             "تم تفعيل باقة {plan_name} ({cycle}) بنجاح وخصم {cost} ج.م من المحفظة.",
@@ -262,7 +262,7 @@ func init() {
 	registerEvent(EventDefinition{
 		Key:                EventSubscriptionExpiring,
 		DefaultChannels:    []Channel{ChannelInApp},
-		RequiredPermission: "vendor.billing.view",
+		RequiredPermission: "vendor.subscription.view",
 		TitleAr:            "تنبيه: اقتراب انتهاء باقة الاشتراك",
 		TitleEn:            "Subscription Expiring Soon",
 		BodyAr:             "سينتهي اشتراكك في باقة {plan_name} خلال {days_left} أيام. يرجى تجديد الاشتراك لتجنب توقف الميزات.",
@@ -271,7 +271,7 @@ func init() {
 	registerEvent(EventDefinition{
 		Key:                EventSubscriptionExpired,
 		DefaultChannels:    []Channel{ChannelInApp},
-		RequiredPermission: "vendor.billing.view",
+		RequiredPermission: "vendor.subscription.view",
 		TitleAr:            "انتهت صلاحية باقة الاشتراك",
 		TitleEn:            "Subscription Expired",
 		BodyAr:             "انتهت صلاحية باقة {plan_name}. يرجى إعادة الاشتراك للاستمرار في الاستفادة من كافة الخدمات.",
@@ -298,7 +298,7 @@ func init() {
 	registerEvent(EventDefinition{
 		Key:                EventRefundIssued,
 		DefaultChannels:    []Channel{ChannelInApp},
-		RequiredPermission: "vendor.billing.view",
+		RequiredPermission: "vendor.wallet.view",
 		TitleAr:            "تم إصدار استرداد مالي (Refund)",
 		TitleEn:            "Refund Issued",
 		BodyAr:             "تم إصدار واسترداد مبلغ {amount} ج.م إلى محفظتك للطلب #{order_number}. السبب: {reason}",

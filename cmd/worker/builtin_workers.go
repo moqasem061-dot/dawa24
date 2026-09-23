@@ -91,11 +91,11 @@ func (w *notificationDeliverWorker) Work(ctx context.Context, job *river.Job[que
 	err := w.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			INSERT INTO notifications.logs (
-				user_id, organization_id, channel, recipient, title, body, status, error_message, sent_at, required_permission
-			) VALUES ($1, $2, $3, $4, $5, $6, 'sent', '', now(), $7)
+				user_id, organization_id, branch_id, channel, recipient, title, body, status, error_message, sent_at, required_permission
+			) VALUES ($1, $2, $3, $4, $5, $6, $7, 'sent', '', now(), $8)
 		`
 		_, err := tx.Exec(txCtx, query,
-			args.UserID, args.OrganizationID, channel, recipient,
+			args.UserID, args.OrganizationID, args.BranchID, channel, recipient,
 			args.Title, args.Body, args.RequiredPermission,
 		)
 		return err

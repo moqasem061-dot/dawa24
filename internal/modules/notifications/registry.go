@@ -14,6 +14,7 @@ const (
 	EventOrderPlaced           EventKey = "order.placed"
 	EventOrderStatusChanged    EventKey = "order.status_changed"
 	EventOrderCancelledByBuyer EventKey = "order.cancelled_by_buyer"
+	EventAdminOrderPlaced      EventKey = "admin.order.placed"
 
 	// Purchase Requests & RFQs
 	EventPurchaseRequestCreated   EventKey = "purchase_request.created"

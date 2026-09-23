@@ -11,48 +11,6 @@ import (
 	"github.com/muhiya/dawa24-store/internal/shared/money"
 )
 
-// notifyOrderPlaced dispatches notifications to the customer and all fulfilling vendor teams.
-func (h *UIHandler) notifyOrderPlaced(ctx context.Context, order *commerce.Order, pharmacyName string) {
-	if order == nil {
-		return
-	}
-
-	orderNum := order.OrderNumber
-	if orderNum == "" {
-		orderNum = fmt.Sprintf("ORD-%d", order.ID)
-	}
-
-	// 1. Notify Customer / Pharmacy
-	custVars := map[string]string{
-		"order_number": orderNum,
-		"total_amount": order.TotalAmount.String(),
-	}
-	h.dispatchEvent(ctx, notifications.EventOrderPlaced, order.CustomerID, order.OrganizationID, custVars)
-	if order.OrganizationID != nil && *order.OrganizationID > 0 {
-		h.dispatchOrgBranchEvent(ctx, notifications.EventOrderPlaced, *order.OrganizationID, order.BranchID, custVars)
-	}
-
-	// 2. Notify each Vendor Organization
-	if pharmacyName == "" {
-		pharmacyName = i18n.T("ar", "notif.verified_pharmacy")
-	}
-
-	for _, sh := range order.Shipments {
-		if sh == nil || sh.OrganizationID <= 0 {
-			continue
-		}
-		itemCount := len(sh.Lines)
-		vendorTitle := fmt.Sprintf(i18n.T("ar", "notif.new_supply_order_title"), orderNum)
-		vendorBody := fmt.Sprintf(i18n.T("ar", "notif.new_supply_order_body"),
-			pharmacyName, itemCount, sh.Subtotal.String())
-		vendorBranch := sh.BranchID
-		if vendorBranch == nil {
-			vendorBranch = order.VendorBranchID
-		}
-		h.dispatchOrgBranchNotification(ctx, sh.OrganizationID, vendorBranch, "vendor.order.view", vendorTitle, vendorBody)
-	}
-}
-
 // notifyOrderStatusChanged dispatches updates to the customer, vendor teams, and platform admin.
 func (h *UIHandler) notifyOrderStatusChanged(
 	ctx context.Context,

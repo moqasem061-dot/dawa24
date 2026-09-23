@@ -346,11 +346,8 @@ func (h *UIHandler) placeCheckout(ctx context.Context, actor authctx.Actor, lang
 		return nil, &checkoutFailure{Back: "/checkout", Err: err}
 	}
 
-	pharmacyName := h.resolveOrgName(ctx, actor.OrganizationID)
-	h.safeGo("notify-order-placed", func() {
-		h.notifyOrderPlaced(context.Background(), order, pharmacyName)
-	})
-
+	// Notifications are sent by commerce's order-placed hook
+	// (AnnounceOrderPlaced), which every order path shares.
 	_ = h.commSvc.ClearCart(ctx, actor.UserID)
 	return order, nil
 }

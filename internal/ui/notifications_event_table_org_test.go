@@ -23,7 +23,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyProfileChangeDecision(ctx, testOrgID, "البيانات التجارية", true, "")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.organization.view",
+		expectedPerm:    "pharmacy.organization.view",
 		titleSnippet:    "الموافقة على تعديل",
 	},
 	{
@@ -32,7 +32,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyProfileChangeDecision(ctx, testOrgID, "البيانات التجارية", false, "السجل غير سارٍ")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.organization.view",
+		expectedPerm:    "pharmacy.organization.view",
 		titleSnippet:    "رفض تعديل بيانات",
 	},
 	{
@@ -97,7 +97,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyOrgSuspended(ctx, testOrgID, "مخالفة الشروط")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.organization.view",
+		expectedPerm:    "pharmacy.organization.view",
 		titleSnippet:    "إيقاف المنشأة مؤقتاً",
 	},
 	{
@@ -106,7 +106,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyOrgReactivated(ctx, testOrgID)
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.organization.view",
+		expectedPerm:    "pharmacy.organization.view",
 		titleSnippet:    "إعادة تفعيل المنشأة",
 	},
 	{
@@ -115,7 +115,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyDocumentRequested(ctx, testOrgID, "ترخيص مزاولة المهنة", "مطلوب تحديث", 15)
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.document.view",
+		expectedPerm:    "pharmacy.document.view",
 		titleSnippet:    "طلب مستند رسمي",
 	},
 	{
@@ -124,7 +124,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyDocumentRejected(ctx, testOrgID, "ترخيص المزاولة", "صورة غير واضحة")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.document.view",
+		expectedPerm:    "pharmacy.document.view",
 		titleSnippet:    "رفض المستند",
 	},
 	{
@@ -194,7 +194,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifySubscriptionExpiring(ctx, testOrgID, "الباقة الاحترافية", 7)
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.billing.view",
+		expectedPerm:    "pharmacy.subscription.view",
 		titleSnippet:    "اقتراب انتهاء باقة الاشتراك",
 	},
 	{
@@ -203,7 +203,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifySubscriptionExpired(ctx, testOrgID, "الباقة الاحترافية")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.billing.view",
+		expectedPerm:    "pharmacy.subscription.view",
 		titleSnippet:    "انتهت صلاحية باقة الاشتراك",
 	},
 	{
@@ -233,7 +233,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyRefundIssued(ctx, testOrgID, "ORD-999", amt, "إرجاع صنف تالف")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.billing.view",
+		expectedPerm:    "pharmacy.wallet.view",
 		titleSnippet:    "استرداد مالي",
 	},
 	{
@@ -242,7 +242,7 @@ var orgLifecycleTestCases = []eventTestCase{
 			h.notifyNewReview(ctx, testOrgID, 5, "خدمة ممتازة وسرعة توصيل")
 		},
 		expectedMinLogs: 1,
-		expectedPerm:    "vendor.organization.view",
+		expectedPerm:    "pharmacy.organization.view",
 		titleSnippet:    "تقييم ورأي جديد",
 	},
 	{

@@ -217,6 +217,9 @@ func buildUIHandler(
 		attachSvc,
 		log,
 	)
+	// Every order the UI's commerce service commits — checkout page, Capsule,
+	// negotiation, Smart Ordering from the wizard — is announced from here.
+	commSvcUI.OnOrderPlaced(uiHandler.AnnounceOrderPlaced)
 	uiHandler.SetTrustedProxyHops(cfg.HTTP.TrustedProxyHops)
 	uiHandler.SetSecureCookie(cfg.Session.SecureOnly)
 	uiHandler.SetBaseURL(cfg.BaseURL)

@@ -44,15 +44,21 @@ type mockOrgRepoForTableTest struct {
 	ownerID int64
 	orgName string
 	staffID int64
+	// vendorOrgID is the supplier; every other organization is a pharmacy.
+	vendorOrgID int64
 }
 
 func (m *mockOrgRepoForTableTest) GetOrganizationByID(_ context.Context, id int64) (*org.Organization, error) {
+	orgType := org.TypeCustomer
+	if id == m.vendorOrgID {
+		orgType = org.TypeVendor
+	}
 	return &org.Organization{
 		ID:        id,
 		TradeName: i18n.Text{i18n.AR: m.orgName},
 		LegalName: m.orgName,
 		OwnerID:   m.ownerID,
-		Type:      org.TypeCustomer,
+		Type:      orgType,
 	}, nil
 }
 
@@ -104,6 +110,8 @@ func TestEveryEventDispatchesNotificationLog(t *testing.T) {
 		ownerID: orgOwnerID,
 		orgName: "صيدلية النور المعتمدة",
 		staffID: orgStaffID,
+
+		vendorOrgID: supplierOrgID,
 	}
 	orgSvc := org.NewService(orgRepo, logger)
 

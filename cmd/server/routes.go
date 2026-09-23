@@ -72,10 +72,12 @@ func mountModuleRoutes(
 	// Created before the assistant is mounted, which binds itself to it.
 	deps.capsule = newCapsuleBridge(cfg.BaseURL)
 	deps.actions = &lateActions{}
+	deps.orders = &lateOrderAnnouncer{}
 
 	db, idSvc, attachSvc, docsGate, storageClient, permissions := mountModuleRoutesAPI(r, cfg, log, deps, ai, adminKeys, tenantKeys)
 
 	uiHandler := buildUIHandler(cfg, log, deps, db, idSvc, attachSvc, docsGate, tenantKeys, adminKeys, storageClient, ai, permissions)
+	deps.orders.bind(uiHandler.AnnounceOrderPlaced)
 	uiHandler.SetLimiter(httpx.NewLazyLimiter(func() *redis.Client {
 		return deps.CacheHandle().Redis()
 	}, "dawa24:ratelimit:auth:"))
@@ -213,6 +215,7 @@ func mountAuthenticatedModules(
 	commRepo := commercePostgres.NewRepository(db)
 	commSvc := commerce.NewService(commRepo, log)
 	commSvc.SetRequiredDocsChecker(commerce.RequiredDocsChecker(docsGate))
+	commSvc.OnOrderPlaced(deps.orders.announce)
 	// The JSON API must enforce the same availability rules as the HTML surface,
 	// otherwise it is a way around them.
 	commSvc.SetAvailabilityProbe(newAvailabilityProbe(

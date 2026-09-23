@@ -29,6 +29,15 @@ func init() {
 		BodyAr:             "قام المشتري {customer_name} بإلغاء الطلب {order_number}. السبب: {reason}",
 		BodyEn:             "Buyer {customer_name} cancelled order {order_number}. Reason: {reason}",
 	})
+	registerEvent(EventDefinition{
+		Key:                EventAdminOrderPlaced,
+		DefaultChannels:    []Channel{ChannelInApp},
+		RequiredPermission: "commerce.order.view",
+		TitleAr:            "طلب شراء جديد {order_number}",
+		TitleEn:            "New Order {order_number}",
+		BodyAr:             "قام {account_type} {customer_name} بإرسال الطلب {order_number} بإجمالي {total_amount} ج.م إلى {shipment_count} مورد.",
+		BodyEn:             "{account_type} {customer_name} placed order {order_number} totalling {total_amount} EGP across {shipment_count} supplier(s).",
+	})
 
 	// Purchase Requests & RFQs
 	registerEvent(EventDefinition{

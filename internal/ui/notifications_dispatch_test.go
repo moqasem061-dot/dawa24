@@ -179,6 +179,11 @@ func (m *mockOrgRepoForNotifs) ListMembersByOrg(_ context.Context, orgID int64) 
 	return res, nil
 }
 
+// The couriers in these tests belong to a supplier.
+func (m *mockOrgRepoForNotifs) GetOrganizationByID(_ context.Context, id int64) (*org.Organization, error) {
+	return &org.Organization{ID: id, Type: org.TypeVendor}, nil
+}
+
 func TestCourierNotificationExclusionAndIsolation(t *testing.T) {
 	ctx := context.Background()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))

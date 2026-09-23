@@ -37,6 +37,9 @@ type dependencies struct {
 	capsule *capsuleBridge
 	// actions lets the assistant act through the UI handler built after it.
 	actions *lateActions
+	// orders lets the API's commerce service announce orders through the UI
+	// handler built after it. See order_announce_wiring.go.
+	orders *lateOrderAnnouncer
 }
 
 func newDependencies(ctx context.Context) *dependencies {
