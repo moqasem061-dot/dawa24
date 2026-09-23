@@ -83,11 +83,45 @@
 				.invoice-paper-a4 {
 					max-width: 840px;
 					margin: 0 auto;
+				}
+				/* One printed A4 sheet. On screen the sheets stack like paper. */
+				.invoice-page {
 					background: #ffffff;
-					padding: 2.25rem 2.25rem 2rem 2.25rem;
+					padding: 2.25rem 2.25rem 1.25rem 2.25rem;
 					border-radius: 10px;
 					box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 					border: 1px solid var(--border-light);
+					margin-bottom: 1.5rem;
+				}
+				.invoice-continuation-header {
+					display: flex;
+					justify-content: space-between;
+					align-items: baseline;
+					gap: 1rem;
+					border-bottom: 2px solid #0f172a;
+					padding-bottom: 0.5rem;
+					margin-bottom: 0.85rem;
+					font-size: 0.825rem;
+					color: #334155;
+				}
+				.invoice-continuation-header strong {
+					color: #0f172a;
+				}
+				.invoice-table tr.invoice-carried-row td {
+					background: #f1f5f9;
+					font-weight: 700;
+					font-size: 0.775rem;
+					color: #334155;
+				}
+				.invoice-page-footer {
+					display: flex;
+					justify-content: space-between;
+					gap: 1rem;
+					border-top: 1px solid var(--border-light);
+					padding-top: 0.4rem;
+					margin-top: 0.75rem;
+					font-size: 0.7rem;
+					color: #64748b;
 				}
 
 				/* Thermal Container */
@@ -272,9 +306,60 @@
 						width: 100% !important;
 						margin: 0 !important;
 						padding: 0 !important;
+					}
+					/* paginateInvoice sized each sheet for A4; break after each. */
+					.invoice-page {
+						padding: 0 !important;
+						margin: 0 !important;
 						border: none !important;
 						box-shadow: none !important;
 						border-radius: 0 !important;
+						break-after: page;
+						page-break-after: always;
+					}
+					.invoice-page--last {
+						break-after: auto;
+						page-break-after: auto;
+					}
+					.invoice-table {
+						margin-bottom: 0.5rem !important;
+					}
+					.invoice-table thead {
+						display: table-header-group;
+					}
+					.invoice-table th {
+						padding: 4px 5px !important;
+						font-size: 8.5pt !important;
+					}
+					.invoice-table td {
+						padding: 3px 5px !important;
+						font-size: 9pt !important;
+					}
+					/* Narrow fixed columns so the item name keeps ~half the width
+					   and a row stays one line (two for a long name). The row
+					   budgets in invoice_pagination.go assume these widths. */
+					.invoice-table {
+						table-layout: fixed;
+					}
+					.invoice-table th:nth-child(1) { width: 7mm !important; }
+					.invoice-table th:nth-child(2) { width: 20mm !important; }
+					.invoice-table th:nth-child(4) { width: 15mm !important; }
+					.invoice-table th:nth-child(5) { width: 15mm !important; }
+					.invoice-table th:nth-child(6) { width: 10mm !important; }
+					.invoice-table th:nth-child(7) { width: 20mm !important; }
+					.invoice-table th:nth-child(8) { width: 11mm !important; }
+					.invoice-table th:nth-child(9) { width: 22mm !important; }
+					.invoice-table td:not(:nth-child(3)) {
+						white-space: nowrap;
+						overflow: hidden;
+						text-overflow: ellipsis;
+					}
+					.invoice-table tr.invoice-carried-row td {
+						white-space: normal;
+					}
+					.invoice-table .badge-batch {
+						padding: 0 2px;
+						font-size: 8pt;
 					}
 					.invoice-header {
 						border-bottom: 2px solid #000000 !important;
