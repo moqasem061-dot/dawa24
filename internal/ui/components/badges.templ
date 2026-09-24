@@ -39,11 +39,11 @@ func statusTone(status string) string {
 	switch status {
 	case "active", "completed", "approved", "delivered", "published", "paid", "received", "resolved":
 		return "badge-emerald"
-	case "pending", "processing", "draft", "in_progress", "in_transit", "dispatched", "partially_paid":
+	case "pending", "processing", "draft", "in_progress", "in_transit", "out_for_delivery", "dispatched", "partially_paid", "partially_refunded":
 		return "badge-amber"
-	case "failed", "cancelled", "rejected", "suspended", "expired", "overdue", "inactive":
+	case "failed", "cancelled", "rejected", "suspended", "expired", "overdue", "inactive", "returned", "refunded":
 		return "badge-rose"
-	case "confirmed", "shipped", "quoted", "reviewed":
+	case "confirmed", "shipped", "quoted", "reviewed", "on_hold":
 		return "badge-sky"
 	default:
 		return "badge-slate"
@@ -63,32 +63,37 @@ func statusLabel(status string, langOpt ...string) string {
 
 func statusLabelEn(status string) string {
 	labels := map[string]string{
-		"active":         "Active",
-		"inactive":       "Inactive",
-		"pending":        "Pending",
-		"processing":     "Processing",
-		"in_progress":    "In Progress",
-		"draft":          "Draft",
-		"published":      "Published",
-		"approved":       "Approved",
-		"rejected":       "Rejected",
-		"suspended":      "Suspended",
-		"cancelled":      "Cancelled",
-		"failed":         "Delivery Failed",
-		"expired":        "Expired",
-		"completed":      "Completed",
-		"confirmed":      "Confirmed",
-		"dispatched":     "Dispatched",
-		"in_transit":     "In Transit",
-		"shipped":        "Shipped",
-		"delivered":      "Delivered",
-		"received":       "Received",
-		"paid":           "Paid",
-		"partially_paid": "Partially Paid",
-		"overdue":        "Overdue",
-		"resolved":       "Resolved",
-		"quoted":         "Quoted",
-		"reviewed":       "Reviewed",
+		"active":             "Active",
+		"inactive":           "Inactive",
+		"pending":            "Pending",
+		"processing":         "Processing",
+		"in_progress":        "In Progress",
+		"draft":              "Draft",
+		"published":          "Published",
+		"approved":           "Approved",
+		"rejected":           "Rejected",
+		"suspended":          "Suspended",
+		"cancelled":          "Cancelled",
+		"failed":             "Delivery Failed",
+		"expired":            "Expired",
+		"completed":          "Completed",
+		"confirmed":          "Confirmed",
+		"on_hold":            "On Hold",
+		"dispatched":         "Dispatched",
+		"in_transit":         "In Transit",
+		"out_for_delivery":   "Out for Delivery",
+		"shipped":            "Shipped",
+		"delivered":          "Delivered",
+		"received":           "Received",
+		"returned":           "Returned",
+		"paid":               "Paid",
+		"partially_paid":     "Partially Paid",
+		"refunded":           "Refunded",
+		"partially_refunded": "Partially Refunded",
+		"overdue":            "Overdue",
+		"resolved":           "Resolved",
+		"quoted":             "Quoted",
+		"reviewed":           "Reviewed",
 	}
 	if en, ok := labels[status]; ok {
 		return en
@@ -99,32 +104,37 @@ func statusLabelEn(status string) string {
 // statusLabelAr is the Arabic wording for a status key.
 func statusLabelAr(status string) string {
 	labels := map[string]string{
-		"active":         "نشط",
-		"inactive":       "غير نشط",
-		"pending":        "قيد المراجعة",
-		"processing":     "قيد المعالجة",
-		"in_progress":    "قيد التنفيذ",
-		"draft":          "مسودة",
-		"published":      "منشور",
-		"approved":       "معتمد",
-		"rejected":       "مرفوض",
-		"suspended":      "موقوف",
-		"cancelled":      "ملغى",
-		"failed":         "تعذّر التسليم",
-		"expired":        "منتهي",
-		"completed":      "مكتمل",
-		"confirmed":      "مؤكد",
-		"dispatched":     "تم الشحن",
-		"in_transit":     "في الطريق",
-		"shipped":        "تم الإرسال",
-		"delivered":      "تم التسليم",
-		"received":       "تم الاستلام",
-		"paid":           "مدفوع",
-		"partially_paid": "مدفوع جزئياً",
-		"overdue":        "متأخر",
-		"resolved":       "تم الحل",
-		"quoted":         "تم التسعير",
-		"reviewed":       "تمت المراجعة",
+		"active":             "نشط",
+		"inactive":           "غير نشط",
+		"pending":            "قيد المراجعة",
+		"processing":         "قيد المعالجة",
+		"in_progress":        "قيد التنفيذ",
+		"draft":              "مسودة",
+		"published":          "منشور",
+		"approved":           "معتمد",
+		"rejected":           "مرفوض",
+		"suspended":          "موقوف",
+		"cancelled":          "ملغى",
+		"failed":             "تعذّر التسليم",
+		"expired":            "منتهي",
+		"completed":          "مكتمل",
+		"confirmed":          "مؤكد",
+		"on_hold":            "قيد الانتظار",
+		"dispatched":         "تم الشحن",
+		"in_transit":         "في الطريق",
+		"out_for_delivery":   "جاري التوصيل",
+		"shipped":            "تم الإرسال",
+		"delivered":          "تم التسليم",
+		"received":           "تم الاستلام",
+		"returned":           "مرتجع",
+		"paid":               "مدفوع",
+		"partially_paid":     "مدفوع جزئياً",
+		"refunded":           "مسترد",
+		"partially_refunded": "مسترد جزئياً",
+		"overdue":            "متأخر",
+		"resolved":           "تم الحل",
+		"quoted":             "تم التسعير",
+		"reviewed":           "تمت المراجعة",
 	}
 	if ar, ok := labels[status]; ok {
 		return ar

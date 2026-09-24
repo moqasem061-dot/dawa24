@@ -52,6 +52,8 @@ func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string
 	switch status {
 	case commerce.PaymentPaid:
 		return i18n.T(lang, "orders.payment_status.paid")
+	case commerce.PaymentPartiallyPaid:
+		return i18n.T(lang, "orders.payment_status.partially_paid")
 	case commerce.PaymentRefunded:
 		return i18n.T(lang, "orders.payment_status.refunded")
 	case commerce.PaymentPartiallyRefunded:
@@ -89,6 +91,8 @@ func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string, order
 	switch status {
 	case commerce.PaymentPaid:
 		return "badge-emerald"
+	case commerce.PaymentPartiallyPaid:
+		return "badge-amber"
 	case commerce.PaymentRefunded, commerce.PaymentPartiallyRefunded:
 		return "badge-purple"
 	case commerce.PaymentFailed:
@@ -119,6 +123,8 @@ func PaymentStatusTextClass(status commerce.PaymentStatus, method string, orderS
 	switch status {
 	case commerce.PaymentPaid:
 		return "text-emerald"
+	case commerce.PaymentPartiallyPaid:
+		return "text-amber"
 	case commerce.PaymentRefunded, commerce.PaymentPartiallyRefunded:
 		return "text-purple"
 	case commerce.PaymentFailed:

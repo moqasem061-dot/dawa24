@@ -33,6 +33,7 @@ type PaymentStatus string
 const (
 	PaymentUnpaid            PaymentStatus = "unpaid"
 	PaymentAuthorized        PaymentStatus = "authorized"
+	PaymentPartiallyPaid     PaymentStatus = "partially_paid"
 	PaymentPaid              PaymentStatus = "paid"
 	PaymentPartiallyRefunded PaymentStatus = "partially_refunded"
 	PaymentRefunded          PaymentStatus = "refunded"

@@ -122,7 +122,18 @@ func (r *Repository) UpdateShipmentStatus(
 				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'delivered', delivered_at = now(), updated_at = now() WHERE id = $1;`, history.OrderID)
 			}
 		case commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
-			_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'shipped', delivered_at = NULL, updated_at = now() WHERE id = $1;`, history.OrderID)
+			var nonMatchingCount int
+			_ = tx.QueryRow(txCtx, `
+				SELECT COUNT(*) 
+				FROM commerce.order_shipments 
+				WHERE order_id = $1 
+				  AND status NOT IN ($2, 'delivered', 'completed', 'cancelled');
+			`, history.OrderID, string(to)).Scan(&nonMatchingCount)
+			if nonMatchingCount == 0 {
+				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = $2, delivered_at = NULL, updated_at = now() WHERE id = $1;`, history.OrderID, string(to))
+			} else {
+				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'shipped', delivered_at = NULL, updated_at = now() WHERE id = $1 AND status IN ('pending', 'processing', 'confirmed');`, history.OrderID)
+			}
 		case commerce.StatusConfirmed:
 			_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'confirmed', updated_at = now() WHERE id = $1 AND status = 'pending';`, history.OrderID)
 		case commerce.StatusFailed:

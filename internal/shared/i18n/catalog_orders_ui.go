@@ -109,6 +109,7 @@ func loadOrdersUIKeys(e *engine) {
 
 	// Payment Statuses
 	addKey(e, "orders.payment_status.paid", "orders", "مدفوع بالكامل", "Paid in Full", "Payment status paid")
+	addKey(e, "orders.payment_status.partially_paid", "orders", "مسدد جزئياً", "Partially Paid", "Payment status partially paid")
 	addKey(e, "orders.payment_status.wallet_authorized", "orders", "معتمد من المحفظة (يُخصم عند تأكيد المورد)", "Authorized from Wallet", "Payment status wallet authorized")
 	addKey(e, "orders.payment_status.wallet_pending", "orders", "بانتظار التأكيد من المحفظة", "Pending Wallet Confirmation", "Payment status wallet pending")
 	addKey(e, "orders.payment_status.online_authorized", "orders", "معتمد (بانتظار التسوية)", "Authorized (Pending Settlement)", "Payment status online authorized")

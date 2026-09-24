@@ -75,15 +75,21 @@ user means the migration's `IF NOT EXISTS` becomes a no-op.
    | `cli migrate` | the owner/admin user | also reads `DB_APP_PASSWORD` and sets `dawa24_app`'s password to it |
    | server, worker | `dawa24_app` | in `docker-compose.yml` this comes from `APP_DATABASE_URL` |
 
-   If `APP_DATABASE_URL` is not set, the server and worker use the owner
-   connection and log a security warning: every tenant policy is inert on a
-   superuser (or `BYPASSRLS`) role. Once `APP_DATABASE_URL` names `dawa24_app`,
-   set `DB_REQUIRE_RLS=true` so they refuse to start on such a role; with it set,
-   `cli migrate` also refuses to finish while `dawa24_app` still accepts the
-   default password migration 222 created it with.
+   `docker-compose.yml` requires both `MIGRATE_DATABASE_URL` (owner, for
+   `migrate` only) and `APP_DATABASE_URL` (`dawa24_app`, for server and worker);
+   it refuses to start without them. In production the server and worker also
+   refuse a connection that is a superuser, holds `BYPASSRLS`, or owns the
+   application tables (`DB_REQUIRE_RLS` defaults to `true`; `false` is a logged,
+   emergency-only opt-out). A production `cli migrate` refuses to finish while
+   `dawa24_app` still accepts the default password migration 222 created it with,
+   or when `DB_APP_PASSWORD` is shorter than 24 characters.
 
-   `SESSION_SECRET` should always be set (`openssl rand -hex 32`). Without it the
-   server starts with a random secret and everyone is signed out at each restart.
+   `SESSION_SECRET` is required in production (`openssl rand -hex 32`); the
+   server refuses to start without it.
+
+   The full model — roles, why tenants do not get their own database users, TLS,
+   `pg_hba`, rotation of every credential — is in
+   [docs/SECURITY_DATABASE_AND_SECRETS.md](docs/SECURITY_DATABASE_AND_SECRETS.md).
 
    Switching an existing deployment over:
    1. Set `DB_APP_PASSWORD` to a new long random value.

@@ -173,14 +173,16 @@ func (r *Repository) VerifyAndCompleteDelivery(
 				}
 			}
 
-			_, _ = tx.Exec(txCtx, `
+			if _, errExec := tx.Exec(txCtx, `
 				UPDATE commerce.orders
 				SET status = 'delivered',
 				    payment_status = $2,
 				    delivered_at = now(),
 				    updated_at = now()
 				WHERE id = $1;
-			`, orderID, newPaymentStatus)
+			`, orderID, newPaymentStatus); errExec != nil {
+				return fmt.Errorf("commerce postgres: update delivered order: %w", errExec)
+			}
 		}
 
 		return nil
