@@ -58,8 +58,8 @@ func main() {
 }
 
 func run() error {
-	// The one thing that still aborts at boot. A missing SESSION_SECRET or a
-	// malformed DATABASE_URL is a deployment mistake; retrying cannot fix it,
+	// The one thing that still aborts at boot. A malformed DATABASE_URL is a
+	// deployment mistake; retrying cannot fix it,
 	// and starting anyway would mean serving requests we cannot secure.
 	cfg, err := config.Load()
 	if err != nil {
@@ -78,6 +78,10 @@ func run() error {
 
 	log := observability.NewLogger(cfg.Observ, cfg.Env)
 	slog.SetDefault(log)
+	if cfg.Session.SecretGenerated {
+		log.Warn("SESSION_SECRET is not set; using a random one for this process. " +
+			"Everyone is signed out at each restart until it is set (openssl rand -hex 32).")
+	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
