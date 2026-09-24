@@ -35,7 +35,7 @@ x-app-env: &app-env
   GATEWAY_ENABLED: ${GATEWAY_ENABLED:-false}
   GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-https://api.dawa24.com}
   GATEWAY_VIRTUAL_KEY: ${GATEWAY_VIRTUAL_KEY:-}
-  GATEWAY_CLIENT_APP: ${GATEWAY_CLIENT_APP:-dawa24}
+  GATEWAY_CLIENT_APP: ${GATEWAY_CLIENT_APP:-dawa24-store}
   GATEWAY_TIMEOUT: ${GATEWAY_TIMEOUT:-60s}
 
   # SMTP Outbound Email (Password Reset, Email Verification, Notifications)

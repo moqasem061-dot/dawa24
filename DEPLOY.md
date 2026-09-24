@@ -75,11 +75,15 @@ user means the migration's `IF NOT EXISTS` becomes a no-op.
    | `cli migrate` | the owner/admin user | also reads `DB_APP_PASSWORD` and sets `dawa24_app`'s password to it |
    | server, worker | `dawa24_app` | in `docker-compose.yml` this comes from `APP_DATABASE_URL` |
 
-   In production the server and worker **refuse to start** on a role that
-   bypasses row-level security (a superuser, or `BYPASSRLS`), because every
-   tenant policy is then inert. `DB_ALLOW_RLS_BYPASS=true` overrides that, and
-   should not be set. `cli migrate` also refuses to finish while `dawa24_app`
-   still accepts the default password migration 222 created it with.
+   If `APP_DATABASE_URL` is not set, the server and worker use the owner
+   connection and log a security warning: every tenant policy is inert on a
+   superuser (or `BYPASSRLS`) role. Once `APP_DATABASE_URL` names `dawa24_app`,
+   set `DB_REQUIRE_RLS=true` so they refuse to start on such a role; with it set,
+   `cli migrate` also refuses to finish while `dawa24_app` still accepts the
+   default password migration 222 created it with.
+
+   `SESSION_SECRET` should always be set (`openssl rand -hex 32`). Without it the
+   server starts with a random secret and everyone is signed out at each restart.
 
    Switching an existing deployment over:
    1. Set `DB_APP_PASSWORD` to a new long random value.
