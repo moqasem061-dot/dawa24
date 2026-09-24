@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
@@ -55,7 +55,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 	`, orgID, userID)
 
 	// 2. Test GET /customer/sessions
-	req := httptest.NewRequest("GET", "/customer/sessions", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/sessions", nil)
 	customerActor := authctx.Actor{
 		UserID:         userID,
 		OrganizationID: orgID,
@@ -93,7 +93,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 		_, _ = db.Pool().Exec(database.AsSystem(context.Background()), `DELETE FROM org.organizations WHERE id = $1`, vendorOrgID)
 	}()
 
-	vReq := httptest.NewRequest("GET", "/vendor/sessions", nil)
+	vReq := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/sessions", nil)
 	vendorActor := authctx.Actor{
 		UserID:         userID,
 		OrganizationID: vendorOrgID,
@@ -113,7 +113,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 	// 4. Test POST /customer/sessions/revoke
 	revokeForm := url.Values{}
 	revokeForm.Set("token", "dummy_token_to_revoke")
-	revokeReq := httptest.NewRequest("POST", "/customer/sessions/revoke", strings.NewReader(revokeForm.Encode()))
+	revokeReq := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/sessions/revoke", strings.NewReader(revokeForm.Encode()))
 	revokeReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	revokeReq = revokeReq.WithContext(authctx.WithActor(revokeReq.Context(), customerActor))
 	revokeRec := httptest.NewRecorder()
@@ -129,7 +129,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 	// 5. Test POST /customer/sessions/revoke-all
 	revokeAllForm := url.Values{}
 	revokeAllForm.Set("current_token", "active_current_token")
-	revokeAllReq := httptest.NewRequest("POST", "/customer/sessions/revoke-all", strings.NewReader(revokeAllForm.Encode()))
+	revokeAllReq := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/sessions/revoke-all", strings.NewReader(revokeAllForm.Encode()))
 	revokeAllReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	revokeAllReq = revokeAllReq.WithContext(authctx.WithActor(revokeAllReq.Context(), customerActor))
 	revokeAllRec := httptest.NewRecorder()
@@ -140,7 +140,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 	}
 
 	// 6. Test GET /auth/login?error=concurrent_limit
-	loginReq := httptest.NewRequest("GET", "/auth/login?error=concurrent_limit", nil)
+	loginReq := httptest.NewRequestWithContext(context.Background(), "GET", "/auth/login?error=concurrent_limit", nil)
 	loginRec := httptest.NewRecorder()
 	handler.ServeHTTP(loginRec, loginReq)
 
@@ -156,7 +156,7 @@ func TestTenantSessionsPage_RendersAndManagesSessions(t *testing.T) {
 	}
 
 	// 7. Test GET /auth/login?error=duplicate_login
-	dupLoginReq := httptest.NewRequest("GET", "/auth/login?error=duplicate_login", nil)
+	dupLoginReq := httptest.NewRequestWithContext(context.Background(), "GET", "/auth/login?error=duplicate_login", nil)
 	dupLoginRec := httptest.NewRecorder()
 	handler.ServeHTTP(dupLoginRec, dupLoginReq)
 
@@ -174,7 +174,7 @@ func TestTenantSessions_SingularRedirects(t *testing.T) {
 	router := newRealUIHandlerRouter(h)
 
 	// 1. Customer singular redirect
-	req := httptest.NewRequest("GET", "/customer/session", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/session", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
@@ -186,7 +186,7 @@ func TestTenantSessions_SingularRedirects(t *testing.T) {
 	}
 
 	// 2. Vendor singular redirect
-	vReq := httptest.NewRequest("GET", "/vendor/session", nil)
+	vReq := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/session", nil)
 	vRec := httptest.NewRecorder()
 	router.ServeHTTP(vRec, vReq)
 

@@ -175,4 +175,3 @@ func loadMissingCatalogKeys(e *engine) {
 	addKey(e, "org.type.distributor", "org", "موزع أدوية", "Medicine Distributor", "Organization type")
 	addKey(e, "org.type.manufacturer", "org", "مصنّع أدوية", "Pharmaceutical Manufacturer", "Organization type")
 }
-

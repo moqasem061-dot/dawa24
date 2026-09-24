@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestLang(t *testing.T) {
@@ -392,6 +392,3 @@ func TestScanCodebaseForMissingI18nKeys(t *testing.T) {
 		t.Errorf("Found %d missing i18n keys used in code", len(missingKeys))
 	}
 }
-
-
-

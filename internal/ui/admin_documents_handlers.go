@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // AdminDocumentsPage redirects to the unified documents & approvals audit registry.
@@ -101,7 +101,8 @@ func (h *UIHandler) AdminVerifyUploadedDocSubmit(w http.ResponseWriter, r *http.
 
 	if h.attSvc != nil {
 		sysCtx := database.AsSystem(ctx)
-		doc, _ := h.attSvc.GetByIDAdmin(sysCtx, id)
+		doc, loadErr := h.attSvc.GetByIDAdmin(sysCtx, id)
+		h.logLoadErr(ctx, "attSvc.GetByIDAdmin", loadErr)
 		if err := h.attSvc.VerifyDocumentWithType(sysCtx, actor, id, docType, status, notes); err != nil {
 			h.redirectWithNotice(w, r, "/admin/approvals?tab=documents", "error", h.safeMessage(err, lang))
 			return

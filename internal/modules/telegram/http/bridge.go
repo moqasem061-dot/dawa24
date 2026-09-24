@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	chatHTTP "github.com/muhiya/dawa24-store/internal/modules/chatbridge/http"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
+	chatHTTP "github.com/moqasem061-dot/dawa24/internal/platform/chatbridge/http"
 )
 
 // Prefix is where the bridge lives. It is registered as long-running in

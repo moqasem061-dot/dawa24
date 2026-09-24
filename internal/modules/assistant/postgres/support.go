@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // systemCtx marks a sweep as exempt from row-level security.

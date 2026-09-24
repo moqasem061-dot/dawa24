@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // The generated commentary: التحليل الاستراتيجي التلقائي, نصيحة استراتيجية and
@@ -99,14 +99,14 @@ func strategicAnalysis(lang string, r *StrategicSavingReport) []Insight {
 	// concluding the tool is broken and a supplier fixing their column mapping.
 	if r.Coverage.Rejected > 0 {
 		var b strings.Builder
-		b.WriteString(fmt.Sprintf(i18n.T(lang, "market.intel.analysis.rejected"), r.Coverage.Rejected))
+		fmt.Fprintf(&b, i18n.T(lang, "market.intel.analysis.rejected"), r.Coverage.Rejected)
 		if len(r.RemapNeeded) > 0 {
 			b.WriteString(i18n.T(lang, "market.intel.analysis.rejected_worst"))
 			for i, sr := range r.RemapNeeded {
 				if i > 0 {
 					b.WriteString(i18n.T(lang, "common.list_separator"))
 				}
-				b.WriteString(fmt.Sprintf(i18n.T(lang, "market.intel.analysis.rejected_entry"), sr.SupplierName, sr.Rows))
+				fmt.Fprintf(&b, i18n.T(lang, "market.intel.analysis.rejected_entry"), sr.SupplierName, sr.Rows)
 			}
 			b.WriteString(i18n.T(lang, "market.intel.analysis.rejected_fix"))
 		}

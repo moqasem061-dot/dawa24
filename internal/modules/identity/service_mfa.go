@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // MFAStatus represents the current two-factor authentication state for a user.
@@ -58,7 +58,7 @@ func (s *Service) GetMFAStatus(ctx context.Context, userID int64) (*MFAStatus, e
 
 	if mfa != nil && len(mfa.RecoveryCodes) > 0 {
 		var codes []string
-		if err := json.Unmarshal(mfa.RecoveryCodes, &codes); err == nil {
+		if err := json.Unmarshal(mfa.RecoveryCodes, &codes); err == nil { // nolint:errswallow: unreadable stored codes report as none, prompting regeneration
 			status.HasRecoveryCodes = len(codes) > 0
 			status.RecoveryCodesCount = len(codes)
 		}
@@ -301,8 +301,11 @@ func (s *Service) CompleteMFALogin(ctx context.Context, userID, orgID int64, ip,
 		}
 	}
 	if orgID == 0 {
-		if o, t, st, err := s.repo.DefaultOrgInfoForUser(ctx, user.ID); err == nil {
+		if o, t, st, err := s.repo.DefaultOrgInfoForUser(ctx, user.ID); err == nil { // nolint:errswallow: the else branch logs it
 			orgID, orgType, orgStatus = o, t, st
+		} else {
+			s.log.WarnContext(ctx, "could not resolve default organization at MFA login",
+				"error", err, "user_id", user.ID)
 		}
 	}
 

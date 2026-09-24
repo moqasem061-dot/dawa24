@@ -11,11 +11,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockOrgRepoJobs struct {
@@ -96,7 +96,7 @@ func TestCustomerJobs_BranchDropdown_OwnerSeesAllBranches(t *testing.T) {
 	hrRepo := &mockHRRepoJobs{}
 	_, router := setupJobsTestRouter(orgRepo, hrRepo)
 
-	req := httptest.NewRequest(http.MethodGet, "/customer/jobs", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/jobs", nil)
 	ownerActor := authctx.Actor{
 		UserID:         1,
 		OrganizationID: 10,
@@ -129,7 +129,7 @@ func TestCustomerJobs_BranchDropdown_ScopedEmployeeOnlySeesAssignedBranch(t *tes
 	hrRepo := &mockHRRepoJobs{}
 	_, router := setupJobsTestRouter(orgRepo, hrRepo)
 
-	req := httptest.NewRequest(http.MethodGet, "/customer/jobs", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/jobs", nil)
 	bID := int64(101)
 	scopedEmployee := authctx.Actor{
 		UserID:         2,
@@ -167,7 +167,7 @@ func TestCustomerJobs_CreateJob_ValidBranch(t *testing.T) {
 	form.Set("branch_id", "101")
 	form.Set("status", "published")
 
-	req := httptest.NewRequest(http.MethodPost, "/customer/jobs", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/jobs", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	actor := authctx.Actor{
 		UserID:         1,
@@ -205,7 +205,7 @@ func TestCustomerJobs_CreateJob_UnauthorizedBranch_Rejected(t *testing.T) {
 	form.Set("branch_id", "102") // Attempts to publish on branch 102
 	form.Set("status", "published")
 
-	req := httptest.NewRequest(http.MethodPost, "/customer/jobs", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/jobs", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	bID := int64(101)
 	scopedActor := authctx.Actor{

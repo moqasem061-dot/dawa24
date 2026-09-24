@@ -7,11 +7,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // RunTurn answers one question, streaming as it goes.
@@ -47,8 +47,10 @@ func (s *Service) RunTurn(
 		entities   []Entity
 	)
 	if s.keys != nil && actor.OrgID > 0 {
-		if vk, err := s.keys(ctx, actor.OrgID); err == nil {
+		if vk, err := s.keys(ctx, actor.OrgID); err == nil { // nolint:errswallow: the else branch logs it
 			virtualKey = vk
+		} else {
+			s.log.WarnContext(ctx, "assistant: tenant gateway key unavailable", "org", actor.OrgID, "error", err)
 		}
 	}
 

@@ -11,9 +11,9 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
 )
 
 const attachmentReaderPrompt = `استخرج محتوى هذا الملف كنص منظم: العناوين، الجداول، الأرقام، والتواريخ.
@@ -55,7 +55,7 @@ func (s *Service) IngestAttachment(
 
 	key := fmt.Sprintf("capsule/%d/%d/%s", actor.OrgID, actor.UserID, uuid.NewString())
 	if s.storage != nil {
-		if err := s.storage.Put(ctx, key, bytes.NewReader(content), row.SizeBytes, row.MIMEType); err == nil {
+		if err := s.storage.Put(ctx, key, bytes.NewReader(content), row.SizeBytes, row.MIMEType); err == nil { // nolint:errswallow: the else branch logs it
 			row.StorageKey = key
 		} else {
 			s.log.WarnContext(ctx, "assistant: object storage unavailable, keeping attachment in database", "error", err)
@@ -173,7 +173,7 @@ func (s *Service) ResolveAttachments(
 func (s *Service) AttachmentBytes(ctx context.Context, row *AttachmentRow) ([]byte, error) {
 	if row.StorageKey != "" && s.storage != nil {
 		content, err := s.readObject(ctx, row.StorageKey)
-		if err == nil {
+		if err == nil { // nolint:errswallow: the failure is logged below and the database copy is tried
 			return content, nil
 		}
 		s.log.WarnContext(ctx, "assistant: object read failed, trying database copy",
@@ -302,8 +302,10 @@ func (s *Service) readAttachmentViaGateway(
 
 	var virtualKey string
 	if s.keys != nil && actor.OrgID > 0 {
-		if vk, kerr := s.keys(ctx, actor.OrgID); kerr == nil {
+		if vk, kerr := s.keys(ctx, actor.OrgID); kerr == nil { // nolint:errswallow: the else branch logs it
 			virtualKey = vk
+		} else {
+			s.log.WarnContext(ctx, "assistant: tenant gateway key unavailable", "org", actor.OrgID, "error", kerr)
 		}
 	}
 

@@ -16,7 +16,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 )
 
 // LinkStatus is where a WhatsApp number is in its lifecycle.

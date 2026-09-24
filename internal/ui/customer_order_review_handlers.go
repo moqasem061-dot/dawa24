@@ -7,10 +7,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func (h *UIHandler) ReviewSubmit(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +75,8 @@ func (h *UIHandler) ReviewSubmit(w http.ResponseWriter, r *http.Request) {
 			shipmentID = &vendorShipment.ID
 		}
 	} else if h.orgSvc != nil {
-		hasPurchased, _ := h.orgSvc.HasDeliveredOrderFromVendor(ctx, actor.OrganizationID, targetOrgID)
+		hasPurchased, loadErr := h.orgSvc.HasDeliveredOrderFromVendor(ctx, actor.OrganizationID, targetOrgID)
+		h.logLoadErr(ctx, "orgSvc.HasDeliveredOrderFromVendor", loadErr)
 		if !hasPurchased {
 			h.redirectWithNotice(w, r, redirectURL, "error", i18n.T(lang, "orders.review.not_completed_purchase"))
 			return

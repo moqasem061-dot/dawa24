@@ -2,12 +2,13 @@ package pipeline
 
 import (
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Reading the buyer's file.

@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Computing تقرير التوفير الاستراتيجي from the market as it actually is.

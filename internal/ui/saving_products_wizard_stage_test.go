@@ -3,7 +3,7 @@ package ui
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // The upload handler parses the file and then has to stop and ask which column

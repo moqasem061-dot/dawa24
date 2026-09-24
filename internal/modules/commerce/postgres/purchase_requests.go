@@ -2,15 +2,16 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // CreatePurchaseRequest inserts a new multi-line purchase request within a transaction (Plan V5 Phase 3 Â§3.1).
@@ -116,7 +117,7 @@ func (r *Repository) GetPurchaseRequestByID(ctx context.Context, id int64) (*com
 			&pr.VendorName, &pr.CustomerName,
 		)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("purchase_request")
 			}
 			return fmt.Errorf("query purchase request: %w", err)
@@ -147,7 +148,7 @@ func (r *Repository) GetPurchaseRequestByNumber(ctx context.Context, number stri
 		query := `SELECT pr.id FROM commerce.purchase_requests pr WHERE pr.request_number = $1;`
 		err := tx.QueryRow(txCtx, query, number).Scan(&id)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("purchase_request")
 			}
 			return fmt.Errorf("query purchase request by number: %w", err)

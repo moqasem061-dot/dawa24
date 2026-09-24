@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
 )
 
 type VendorWarehouseStockFilter struct {

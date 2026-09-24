@@ -9,12 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // The two tools that face the action layer.
@@ -62,7 +62,7 @@ func actionTools(r *Registry) []Tool {
 			Handler:     r.proposeAction,
 		},
 		{
-			Name: "find_offers",
+			Name:        "find_offers",
 			Description: "Search individual catalog products and supplier medicine listings (بحث في أصناف وأدوية الكتالوج وقوائم أسعار الموردين الفردية) with price, discount and stock. Returns a ref per listing for cart_add. NOTE: DO NOT use this tool when the user asks about special promotional offers, discounts or bundles (العروض والخصومات والباقات الترويجية) — use list_promotions for those!",
 			Params: objectSchema(map[string]any{
 				"search":          strProp("Product name, active ingredient or code."),
@@ -76,7 +76,7 @@ func actionTools(r *Registry) []Tool {
 			Handler:     r.findOffers,
 		},
 		{
-			Name: "list_promotions",
+			Name:        "list_promotions",
 			Description: "Promotional special offers, discounts, packages and bundles (العروض الخاصة والخصومات وباقات العروض الترويجية من جدول عروض المنصة promo.offers) the buying branch can order today, highest discount first. ALWAYS use this tool whenever the user asks about 'العروض', 'العروض الخاصة', 'الخصومات', 'عروض الموردين', or 'باقات الأدوية'. Returns a ref per offer for offer_details and offer_add.",
 			Params: objectSchema(map[string]any{
 				"search":          strProp("Offer title, supplier or product name. Omit to list all."),

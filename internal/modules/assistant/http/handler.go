@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/stream"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/stream"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 // The assistant's HTTP surface.

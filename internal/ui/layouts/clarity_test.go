@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 func renderBaseWithClarity(t *testing.T, id string, actor *authctx.Actor) string {

@@ -10,10 +10,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 func formatDiscountInt(pct float64) string {
@@ -51,7 +51,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(lang)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 20, Col: 18}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 20, Col: 18}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -64,7 +64,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(dir)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 20, Col: 30}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 20, Col: 30}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -77,7 +77,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 24, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 24, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -90,7 +90,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Asset("/static/js/security.js"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 24, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 24, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
@@ -111,7 +111,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("فاتورة توريد #%s - دوا 24", data.InvoiceNumber))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 26, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 26, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -132,13 +132,13 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(data.InvoiceNumber)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 40, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 40, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></span></div></div><div class=\"toolbar-btn-group\"><!-- Standard A4 Print --><button id=\"btn-print-a4\" type=\"button\" class=\"btn-action btn-primary\" onclick=\"printA4()\" data-on-click=\"printA4()\" title=\"طباعة الفاتورة بالحجم القياسي A4\"><span>طباعة الفاتورة (A4)</span></button><!-- Thermal Print (POS 80mm) --><button id=\"btn-print-thermal\" type=\"button\" class=\"btn-action btn-thermal\" onclick=\"printThermal()\" data-on-click=\"printThermal()\" title=\"طباعة إيصال كاشير 80 مم\"><span>طباعة إيصال كاشير (Thermal)</span></button><!-- Export Excel -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span></span></div></div><div class=\"toolbar-btn-group\"><!-- Standard A4 Print --><button id=\"btn-print-a4\" type=\"button\" class=\"btn-action btn-primary\" data-on-click=\"printA4()\" title=\"طباعة الفاتورة بالحجم القياسي A4\"><span>طباعة الفاتورة (A4)</span></button><!-- Thermal Print (POS 80mm) --><button id=\"btn-print-thermal\" type=\"button\" class=\"btn-action btn-thermal\" data-on-click=\"printThermal()\" title=\"طباعة إيصال كاشير 80 مم\"><span>طباعة إيصال كاشير (Thermal)</span></button><!-- Export Excel -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -150,7 +150,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/invoices/%d/excel", data.InvoiceID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 73, Col: 78}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 71, Col: 78}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -163,7 +163,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 			var templ_7745c5c3_Var9 templ.SafeURL
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/invoices/%d/word", data.InvoiceID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 81, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 79, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 			var templ_7745c5c3_Var10 templ.SafeURL
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/excel", *data.OrderID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 90, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 88, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 			var templ_7745c5c3_Var11 templ.SafeURL
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/orders/%d/invoice/word", *data.OrderID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 98, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 96, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -205,7 +205,7 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<!-- Close / Back --><button id=\"btn-print-close\" type=\"button\" class=\"btn-action btn-secondary\" onclick=\"closeWindow()\" data-on-click=\"closeWindow()\"><span>إغلاق</span></button></div></div><!-- =========================================================================\n\t\t\t     VIEW 1: Standard A4 Invoice\n\t\t\t     ========================================================================= -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<!-- Close / Back --><button id=\"btn-print-close\" type=\"button\" class=\"btn-action btn-secondary\" data-on-click=\"closeWindow()\"><span>إغلاق</span></button></div></div><!-- =========================================================================\n\t\t\t     VIEW 1: Standard A4 Invoice\n\t\t\t     ========================================================================= -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -228,13 +228,13 @@ func InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) t
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/invoice_printable.templ`, Line: 131, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_printable.templ`, Line: 128, Col: 37}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-hard-nav>\n\t\t\t\tfunction printA4() {\n\t\t\t\t\tdocument.body.classList.remove('thermal-mode');\n\t\t\t\t\tconst thermal = document.getElementById('thermal-invoice-container');\n\t\t\t\t\tconst a4 = document.getElementById('a4-invoice-container');\n\t\t\t\t\tif (thermal) thermal.style.display = 'none';\n\t\t\t\t\tif (a4) a4.style.display = 'block';\n\t\t\t\t\twindow.print();\n\t\t\t\t}\n\n\t\t\t\tfunction printThermal() {\n\t\t\t\t\tdocument.body.classList.add('thermal-mode');\n\t\t\t\t\tconst thermal = document.getElementById('thermal-invoice-container');\n\t\t\t\t\tconst a4 = document.getElementById('a4-invoice-container');\n\t\t\t\t\tif (a4) a4.style.display = 'none';\n\t\t\t\t\tif (thermal) thermal.style.display = 'block';\n\t\t\t\t\twindow.print();\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\tdocument.body.classList.remove('thermal-mode');\n\t\t\t\t\t\tif (a4) a4.style.display = 'block';\n\t\t\t\t\t\tif (thermal) thermal.style.display = 'none';\n\t\t\t\t\t}, 1500);\n\t\t\t\t}\n\n\t\t\t\tfunction closeWindow() {\n\t\t\t\t\tif (window.opener || window.history.length <= 1) {\n\t\t\t\t\t\twindow.close();\n\t\t\t\t\t} else {\n\t\t\t\t\t\twindow.history.back();\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Direct event attachment and delegation\n\t\t\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t\t\tconst btnA4 = document.getElementById('btn-print-a4');\n\t\t\t\t\tif (btnA4) btnA4.addEventListener('click', printA4);\n\t\t\t\t\tconst btnThermal = document.getElementById('btn-print-thermal');\n\t\t\t\t\tif (btnThermal) btnThermal.addEventListener('click', printThermal);\n\t\t\t\t\tconst btnClose = document.getElementById('btn-print-close');\n\t\t\t\t\tif (btnClose) btnClose.addEventListener('click', closeWindow);\n\n\t\t\t\t\tdocument.addEventListener('click', (e) => {\n\t\t\t\t\t\tconst btn = e.target.closest('[data-on-click]');\n\t\t\t\t\t\tif (!btn) return;\n\t\t\t\t\t\tconst action = btn.getAttribute('data-on-click');\n\t\t\t\t\t\tif (action === 'printA4()') { e.preventDefault(); printA4(); }\n\t\t\t\t\t\telse if (action === 'printThermal()') { e.preventDefault(); printThermal(); }\n\t\t\t\t\t\telse if (action === 'closeWindow()') { e.preventDefault(); closeWindow(); }\n\t\t\t\t\t});\n\n\t\t\t\t\tconst params = new URLSearchParams(window.location.search);\n\t\t\t\t\tif (params.get('thermal') === '1') {\n\t\t\t\t\t\tprintThermal();\n\t\t\t\t\t} else if (params.get('autoprint') === '1') {\n\t\t\t\t\t\tprintA4();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t</script></body></html>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "\" data-hard-nav>\n\t\t\t\tfunction printA4() {\n\t\t\t\t\tdocument.body.classList.remove('thermal-mode');\n\t\t\t\t\tconst thermal = document.getElementById('thermal-invoice-container');\n\t\t\t\t\tconst a4 = document.getElementById('a4-invoice-container');\n\t\t\t\t\tif (thermal) thermal.style.display = 'none';\n\t\t\t\t\tif (a4) a4.style.display = 'block';\n\t\t\t\t\twindow.print();\n\t\t\t\t}\n\n\t\t\t\tfunction printThermal() {\n\t\t\t\t\tdocument.body.classList.add('thermal-mode');\n\t\t\t\t\tconst thermal = document.getElementById('thermal-invoice-container');\n\t\t\t\t\tconst a4 = document.getElementById('a4-invoice-container');\n\t\t\t\t\tif (a4) a4.style.display = 'none';\n\t\t\t\t\tif (thermal) thermal.style.display = 'block';\n\t\t\t\t\twindow.print();\n\t\t\t\t\tsetTimeout(() => {\n\t\t\t\t\t\tdocument.body.classList.remove('thermal-mode');\n\t\t\t\t\t\tif (a4) a4.style.display = 'block';\n\t\t\t\t\t\tif (thermal) thermal.style.display = 'none';\n\t\t\t\t\t}, 1500);\n\t\t\t\t}\n\n\t\t\t\tfunction closeWindow() {\n\t\t\t\t\tif (window.opener || window.history.length <= 1) {\n\t\t\t\t\t\twindow.close();\n\t\t\t\t\t} else {\n\t\t\t\t\t\twindow.history.back();\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\t// Direct event attachment and delegation\n\t\t\t\tdocument.addEventListener('DOMContentLoaded', () => {\n\t\t\t\t\t// One binding per button: the buttons also carried id listeners,\n\t\t\t\t\t// so every click opened the print dialog twice.\n\t\t\t\t\tdocument.addEventListener('click', (e) => {\n\t\t\t\t\t\tconst btn = e.target.closest('[data-on-click]');\n\t\t\t\t\t\tif (!btn) return;\n\t\t\t\t\t\tconst action = btn.getAttribute('data-on-click');\n\t\t\t\t\t\tif (action === 'printA4()') { e.preventDefault(); printA4(); }\n\t\t\t\t\t\telse if (action === 'printThermal()') { e.preventDefault(); printThermal(); }\n\t\t\t\t\t\telse if (action === 'closeWindow()') { e.preventDefault(); closeWindow(); }\n\t\t\t\t\t});\n\n\t\t\t\t\tconst params = new URLSearchParams(window.location.search);\n\t\t\t\t\tif (params.get('thermal') === '1') {\n\t\t\t\t\t\tprintThermal();\n\t\t\t\t\t} else if (params.get('autoprint') === '1') {\n\t\t\t\t\t\tprintA4();\n\t\t\t\t\t}\n\t\t\t\t});\n\t\t\t</script></body></html>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

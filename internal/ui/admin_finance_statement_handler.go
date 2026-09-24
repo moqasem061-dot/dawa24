@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminFinanceStatementPage renders a printable account statement for an organization.
@@ -23,11 +23,15 @@ func (h *UIHandler) AdminFinanceStatementPage(w http.ResponseWriter, r *http.Req
 		walletIDStr := strings.TrimSpace(r.URL.Query().Get("wallet_id"))
 		walletID, wErr := strconv.ParseInt(walletIDStr, 10, 64)
 		if wErr == nil && walletID > 0 && h.billSvc != nil {
-			if wlt, _ := h.billSvc.GetWalletByID(ctx, walletID); wlt != nil {
+			if wlt, loadErr := h.billSvc.GetWalletByID(ctx, walletID); loadErr != nil {
+				h.logLoadErr(ctx, "billSvc.GetWalletByID", loadErr)
+			} else if wlt != nil {
 				if wlt.OrganizationID != nil && *wlt.OrganizationID > 0 {
 					orgID = *wlt.OrganizationID
 				} else if h.orgSvc != nil && wlt.UserID > 0 {
-					if allOrgs, _ := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0); len(allOrgs) > 0 {
+					if allOrgs, loadErr := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0); loadErr != nil {
+						h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
+					} else if len(allOrgs) > 0 {
 						for _, o := range allOrgs {
 							if o.OwnerID == wlt.UserID {
 								orgID = o.ID
@@ -47,7 +51,11 @@ func (h *UIHandler) AdminFinanceStatementPage(w http.ResponseWriter, r *http.Req
 
 	var targetOrg *org.Organization
 	if h.orgSvc != nil {
-		targetOrg, _ = h.orgSvc.GetOrganization(database.AsSystem(ctx), orgID)
+		if loaded, err := h.orgSvc.GetOrganization(database.AsSystem(ctx), orgID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.GetOrganization", err)
+		} else {
+			targetOrg = loaded
+		}
 	}
 	if targetOrg == nil {
 		h.redirectWithNotice(w, r, "/admin/finance?tab=transactions", "error", i18n.T(lang, "admin.finance.organization_not_found"))
@@ -60,19 +68,24 @@ func (h *UIHandler) AdminFinanceStatementPage(w http.ResponseWriter, r *http.Req
 	)
 
 	if h.billSvc != nil {
-		wallets, _, _ := h.billSvc.AdminListDetailedWallets(ctx, billing.WalletFilter{
+		wallets, _, loadErr := h.billSvc.AdminListDetailedWallets(ctx, billing.WalletFilter{
 			OrganizationID: orgID,
 			Limit:          1,
 		})
+		h.logLoadErr(ctx, "billSvc.AdminListDetailedWallets", loadErr)
 		if len(wallets) > 0 {
 			wallet = wallets[0]
 		}
 
-		transactions, _, _ = h.billSvc.AdminListDetailedTransactions(ctx, billing.TransactionFilter{
+		if loaded, _, err := h.billSvc.AdminListDetailedTransactions(ctx, billing.TransactionFilter{
 			OrganizationID: orgID,
 			Limit:          1000,
 			Offset:         0,
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminListDetailedTransactions", err)
+		} else {
+			transactions = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin finance statement page", pages.AdminFinanceStatement(targetOrg, wallet, transactions, lang, dir))

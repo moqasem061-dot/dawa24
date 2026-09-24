@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/pagecontrol"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // PageMaintenanceHandler renders a beautifully designed 503 maintenance page

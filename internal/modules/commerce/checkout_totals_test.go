@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // An order's money figures have to agree with the sentence the order screen

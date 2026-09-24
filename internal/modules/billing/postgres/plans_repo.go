@@ -2,15 +2,16 @@ package postgres
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // GetPlanBySlug retrieves a plan by slug.

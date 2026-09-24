@@ -14,11 +14,11 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder/pipeline"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder/pipeline"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 )
 
 // BranchResolver supplies the delivery branch's coordinates.

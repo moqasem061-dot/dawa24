@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 )
 
 // resolveInvoiceDataByParam fetches printable data by URL ID parameter.
@@ -28,7 +28,11 @@ func (h *UIHandler) resolveInvoiceDataByParam(r *http.Request, isOrder bool) (*b
 
 	if isOrder {
 		if h.commSvc != nil {
-			order, _ = h.commSvc.GetOrder(ctx, id)
+			if loaded, err := h.commSvc.GetOrder(ctx, id); err != nil {
+				h.logLoadErr(ctx, "commSvc.GetOrder", err)
+			} else {
+				order = loaded
+			}
 		}
 		if order == nil {
 			return nil, fmt.Errorf("order not found")

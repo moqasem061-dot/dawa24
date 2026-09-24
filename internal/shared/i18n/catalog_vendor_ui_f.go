@@ -84,7 +84,7 @@ func loadVendorUIKeysF(e *engine) {
 	addKey(e, "vendor_finance.earnings.btn_apply", "vendor_finance", "تطبيق الفلتر", "Apply Filter", "Button")
 	addKey(e, "vendor_finance.earnings.btn_reset", "vendor_finance", "إعادة تعيين", "Reset", "Button")
 	addKey(e, "vendor_finance.earnings.formula_desc", "vendor_finance", "إجمالي التكلفة = تكلفة شراء الصنف بعد خصم التكلفة | صافي الربح = صافي المبيعات - إجمالي التكلفة | هامش الربح % = (صافي الربح ÷ صافي المبيعات) × 100", "Total Cost = Item Purchase Cost after Cost Discount | Net Profit = Net Sales - Total Cost | Margin % = (Net Profit / Net Sales) × 100", "Formula body")
-	
+
 	// Earnings KPIs
 	addKey(e, "vendor_finance.earnings.kpi_gross_sales", "vendor_finance", "إجمالي المبيعات (الجمهور)", "Gross Sales (Retail)", "KPI label")
 	addKey(e, "vendor_finance.earnings.badge_gross", "vendor_finance", "Gross", "Gross", "Badge")

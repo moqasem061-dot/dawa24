@@ -15,11 +15,11 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 var (
@@ -124,7 +124,7 @@ func RegisterUploadRoutes(r chi.Router) {
 		w.Header().Set("Accept-Ranges", "bytes")
 		rctx := chi.RouteContext(r.Context())
 		path := rctx.URLParam("*")
-		if unescaped, err := url.PathUnescape(path); err == nil {
+		if unescaped, err := url.PathUnescape(path); err == nil { // nolint:errswallow: an invalid escape keeps the raw path, which is cleaned and checked below
 			path = unescaped
 		}
 		cleanPath := filepath.Clean(filepath.FromSlash(path))

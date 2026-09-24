@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // ListStockMovements retrieves ledger movements for an individual stock.
@@ -291,4 +291,3 @@ func (r *Repository) ListLowStocksByOrgWithTotal(
 	})
 	return list, total, err
 }
-

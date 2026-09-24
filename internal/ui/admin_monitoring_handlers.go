@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminFullErrorLogsPage renders system error logs with severity and status filters.
@@ -30,12 +30,16 @@ func (h *UIHandler) AdminFullErrorLogsPage(w http.ResponseWriter, r *http.Reques
 	var logs []*platformadmin.ErrorLog
 	var total int
 	if h.adminSvc != nil {
-		logs, total, _ = h.adminSvc.ListErrorLogs(database.AsSystem(ctx), platformadmin.ErrorLogFilter{
+		if loaded, loaded2, err := h.adminSvc.ListErrorLogs(database.AsSystem(ctx), platformadmin.ErrorLogFilter{
 			Status: statusFilter,
 			Level:  severityFilter,
 			Limit:  limit,
 			Offset: offset,
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListErrorLogs", err)
+		} else {
+			logs, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render full error logs", pages.AdminFullErrorLogsPage(logs, total, statusFilter, severityFilter, lang, dir, page, limit))
@@ -50,7 +54,11 @@ func (h *UIHandler) AdminFullErrorLogDetailPage(w http.ResponseWriter, r *http.R
 
 	var logEntry *platformadmin.ErrorLog
 	if h.adminSvc != nil && logID > 0 {
-		logEntry, _ = h.adminSvc.GetErrorLogByID(database.AsSystem(ctx), logID)
+		if loaded, err := h.adminSvc.GetErrorLogByID(database.AsSystem(ctx), logID); err != nil {
+			h.logLoadErr(ctx, "adminSvc.GetErrorLogByID", err)
+		} else {
+			logEntry = loaded
+		}
 	}
 
 	if logEntry == nil {
@@ -85,8 +93,16 @@ func (h *UIHandler) AdminFullNotificationsPage(w http.ResponseWriter, r *http.Re
 	var logs []*notifications.NotificationLog
 	unread := 0
 	if h.notifSvc != nil {
-		logs, _ = h.notifSvc.ListUserNotifications(ctx, userID, 50, 0)
-		unread, _ = h.notifSvc.GetUnreadCount(ctx, userID)
+		if loaded, err := h.notifSvc.ListUserNotifications(ctx, userID, 50, 0); err != nil {
+			h.logLoadErr(ctx, "notifSvc.ListUserNotifications", err)
+		} else {
+			logs = loaded
+		}
+		if loaded, err := h.notifSvc.GetUnreadCount(ctx, userID); err != nil {
+			h.logLoadErr(ctx, "notifSvc.GetUnreadCount", err)
+		} else {
+			unread = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin notifications", pages.Notifications(logs, unread, lang, dir, false))

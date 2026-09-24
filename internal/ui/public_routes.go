@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	identityHttp "github.com/muhiya/dawa24-store/internal/modules/identity/http"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	identityHttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 // RegisterPublicRoutes mounts everything a visitor may reach without signing
@@ -35,7 +35,7 @@ func (h *UIHandler) RegisterPublicRoutes(r chi.Router) {
 	// every CSS/JS/image request, and they are typically the majority of
 	// traffic.
 	r.Group(func(assets chi.Router) {
-		RegisterStaticRoutes(assets)
+		RegisterStaticRoutes(assets, h.siteURL)
 		if h.storage != nil {
 			SetUploadStorageClient(h.storage)
 		}

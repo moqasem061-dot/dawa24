@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // VendorCoverageCreateSubmit processes creation of weekly coverage for multiple days and multiple cities.
@@ -217,12 +217,12 @@ func (h *UIHandler) VendorCoverageCreateSubmit(w http.ResponseWriter, r *http.Re
 		// Single record fallback
 		var latVal, lngVal *float64
 		if latStr := r.PostFormValue("latitude"); latStr != "" {
-			if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+			if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 				latVal = &lat
 			}
 		}
 		if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-			if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+			if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 				lngVal = &lng
 			}
 		}

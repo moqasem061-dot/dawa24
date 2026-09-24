@@ -1,4 +1,4 @@
-﻿package catalog_test
+package catalog_test
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 // TestInferCategoriesDeterministicMatches verifies that products whose scientific names
@@ -70,7 +70,7 @@ func TestInferCategoriesFrequencyBoundedAndProgress(t *testing.T) {
 	var sb strings.Builder
 	sb.WriteString("اسم الصنف,كود الصنف,المادة الفعالة,سعر البيع\n")
 	for i := 1; i <= 200; i++ {
-		sb.WriteString(fmt.Sprintf("صنف تجريبي %d,SKU-%d,مادة فعالة فريدة %d,50.00\n", i, i, i))
+		fmt.Fprintf(&sb, "صنف تجريبي %d,SKU-%d,مادة فعالة فريدة %d,50.00\n", i, i, i)
 	}
 
 	session, _, err := svc.AnalyzeImport(ctx, []byte(sb.String()), "large.csv", 0)

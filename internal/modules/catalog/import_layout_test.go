@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 // paginatedExport builds the shape the real distributor file has: a title line,

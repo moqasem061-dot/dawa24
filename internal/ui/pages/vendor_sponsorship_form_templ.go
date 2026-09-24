@@ -12,8 +12,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Component {
@@ -44,7 +44,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 12, Col: 36}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 12, Col: 36}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
@@ -71,7 +71,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 			return string(b)
 		}()), len(data.ActivePurchases) > 0, lang, i18n.T(lang, "vendor_sponsorship.block_no_package"), i18n.T(lang, "vendor_sponsorship.block_no_items"), i18n.T(lang, "vendor_sponsorship.block_exceed_credits")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 100, Col: 205}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 100, Col: 205}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -92,7 +92,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.form_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 104, Col: 98}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 104, Col: 98}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -105,7 +105,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_item_type"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 110, Col: 127}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 110, Col: 127}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_product"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 112, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 112, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -131,7 +131,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.type_offer"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 113, Col: 75}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 113, Col: 75}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_pkg_select"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 118, Col: 128}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 118, Col: 128}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -164,7 +164,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", p.PackageID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 123, Col: 55}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 123, Col: 55}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 					if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(i18n.T(lang, "vendor_sponsorship.pkg_opt_format"), p.PackageID, p.CreditsRemaining, p.CreditsTotal))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 124, Col: 123}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 124, Col: 123}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 					if templ_7745c5c3_Err != nil {
@@ -197,7 +197,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.pkg_no_credits"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 129, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 129, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -215,7 +215,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.lbl_search_products"), i18n.T(lang, "vendor_sponsorship.lbl_search_offers")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 138, Col: 177}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 138, Col: 177}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 		if templ_7745c5c3_Err != nil {
@@ -228,7 +228,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("itemType === 'product' ? %q : %q", i18n.T(lang, "vendor_sponsorship.placeholder_search_prod"), i18n.T(lang, "vendor_sponsorship.placeholder_search_offer")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 147, Col: 189}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 147, Col: 189}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 		if templ_7745c5c3_Err != nil {
@@ -273,7 +273,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.btn_add_item"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 188, Col: 64}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 188, Col: 64}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -286,7 +286,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.no_matching_items"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 194, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 194, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -307,7 +307,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.selected_items_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 204, Col: 109}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 204, Col: 109}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -320,7 +320,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.cost_prefix"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 207, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 207, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -333,7 +333,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.empty_selected_items"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 214, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 214, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -346,7 +346,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "vendor_team.btn_delete"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 223, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 223, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -367,7 +367,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.credit_rule_notice"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 241, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 241, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
@@ -380,7 +380,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_avail_credits"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 244, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 244, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -393,7 +393,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_req_credits"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 245, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 245, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -406,7 +406,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_sponsorship.lbl_rem_credits"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 246, Col: 63}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 246, Col: 63}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -427,7 +427,7 @@ func VendorSponsorshipForm(data SponsorshipRequestsData, lang string) templ.Comp
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("canSubmit ? (lang === 'en' ? ('Submit ' + selectedItems.length + ' Requests (Deduct ' + selectedItems.length + ' credits)') : ('إرسال ' + selectedItems.length + ' طلب رعاية للمراجعة (خصم ' + selectedItems.length + ' رصيد)')) : %q", i18n.T(lang, "vendor_sponsorship.btn_submit_req")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_sponsorship_form.templ`, Line: 257, Col: 343}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_sponsorship_form.templ`, Line: 257, Col: 343}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 		if templ_7745c5c3_Err != nil {

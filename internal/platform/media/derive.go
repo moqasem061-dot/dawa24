@@ -119,7 +119,7 @@ const maxSourcePixels = 100 * 1000 * 1000
 func Derive(src []byte) ([]Derivative, error) {
 	cfg, format, err := image.DecodeConfig(bytes.NewReader(src))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnsupported, err)
+		return nil, fmt.Errorf("%w: %w", ErrUnsupported, err)
 	}
 	if cfg.Width <= 0 || cfg.Height <= 0 {
 		return nil, ErrUnsupported
@@ -131,7 +131,7 @@ func Derive(src []byte) ([]Derivative, error) {
 
 	img, _, err := image.Decode(bytes.NewReader(src))
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnsupported, err)
+		return nil, fmt.Errorf("%w: %w", ErrUnsupported, err)
 	}
 
 	// Transparency decides the codec. A PNG logo flattened onto white by the

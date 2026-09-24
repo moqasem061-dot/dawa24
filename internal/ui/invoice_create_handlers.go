@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // VendorInvoiceCreateSubmit handles vendor creation of an invoice linked to an order with dynamic amounts.
@@ -125,13 +125,13 @@ func (h *UIHandler) VendorInvoiceCreateSubmit(w http.ResponseWriter, r *http.Req
 	// Dates
 	issueDate := time.Now().UTC()
 	if issueDateStr := strings.TrimSpace(r.PostFormValue("issue_date")); issueDateStr != "" {
-		if t, err := time.Parse("2006-01-02", issueDateStr); err == nil {
+		if t, err := time.Parse("2006-01-02", issueDateStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			issueDate = t
 		}
 	}
 	dueDate := issueDate.AddDate(0, 0, 30)
 	if dueDateStr := strings.TrimSpace(r.PostFormValue("due_date")); dueDateStr != "" {
-		if t, err := time.Parse("2006-01-02", dueDateStr); err == nil {
+		if t, err := time.Parse("2006-01-02", dueDateStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			dueDate = t
 		}
 	}

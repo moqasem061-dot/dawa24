@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // AssignRowMatch links a staged row to a master catalog product manually (or clears it if productID <= 0).

@@ -4,14 +4,14 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // offersForProduct turns the approved vendor variants and promo offers selling the product into
@@ -99,8 +99,8 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 			if product != nil && product.Price.IsPositive() && product.Price.Minor() > oldPrice.Minor() {
 				oldPrice = product.Price
 			}
-			discountBPS = int64(discPct * 100.0)
-			discMinor := int64(float64(oldPrice.Minor()) * (discPct / 100.0))
+			discountBPS = money.PercentToBasisPoints(discPct)
+			discMinor := oldPrice.ApplyPercent(discountBPS).Minor()
 			discountAmt = money.FromMinor(discMinor)
 			price = money.FromMinor(oldPrice.Minor() - discMinor)
 		} else if product != nil && product.Price.IsPositive() && v.Price.IsPositive() && product.Price.Minor() > v.Price.Minor() {
@@ -123,7 +123,7 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 		branchNameStr := ""
 		cityNameStr := ""
 		var distKM float64 = 0
-		var distText string = ""
+		var distText = ""
 
 		var venBranch *org.Branch
 		if v.BranchID != nil && *v.BranchID > 0 {
@@ -164,7 +164,7 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 					Quantity:         minQty,
 					When:             time.Now(),
 				})
-				if err == nil {
+				if err == nil { // nolint:errswallow: the else branch handles it
 					maxOrderQty = res.MaxQuantity
 					covReason = res.DisplayReasonAr()
 					switch res.Disposition() {

@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // Helpers for the column setup wizard (compare_mapping.templ).

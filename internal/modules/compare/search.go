@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // CompareSearchResultItem represents an aggregated product match across supplier sheets and master catalog.

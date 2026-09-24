@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -36,7 +37,7 @@ func TestPolicyPages(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.url, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, tc.url, nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, tc.url, nil)
 			w := httptest.NewRecorder()
 			router.ServeHTTP(w, req)
 
@@ -63,7 +64,7 @@ func TestPolicyPages(t *testing.T) {
 func TestFooterContainsAllPolicyLinks(t *testing.T) {
 	router := newTestPolicyRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/terms", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/terms", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -94,7 +95,7 @@ func TestAdminSettingsPolicySubmit_Validation(t *testing.T) {
 	h := &UIHandler{}
 
 	// Test missing fields
-	req := httptest.NewRequest(http.MethodPost, "/admin/settings/policies", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/settings/policies", nil)
 	w := httptest.NewRecorder()
 	h.AdminSettingsPolicySubmit(w, req)
 
@@ -111,7 +112,7 @@ func TestAdminSettingsPolicySubmit_Validation(t *testing.T) {
 func TestVendorAgreementRedirect(t *testing.T) {
 	router := newTestPolicyRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/vendor_agreement", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor_agreement", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -128,7 +129,7 @@ func TestContactAndHowItWorksPages(t *testing.T) {
 	router := newTestPolicyRouter()
 
 	t.Run("Contact Page", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/contact", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/contact", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 
@@ -147,7 +148,7 @@ func TestContactAndHowItWorksPages(t *testing.T) {
 	})
 
 	t.Run("How It Works Page", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/how-it-works", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/how-it-works", nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 

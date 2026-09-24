@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // The route screen's data, in the two shapes it is needed in: the struct the

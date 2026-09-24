@@ -3,12 +3,12 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // SettingsIndex renders the comprehensive unified tab-based account settings hub.
@@ -99,14 +99,22 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 	isOwner := actor.IsOwner || (actor.OrganizationID > 0 && !isEmployee)
 	var pendingAccountDel *identity.AccountDeletionRequest
 	if h.idSvc != nil {
-		pendingAccountDel, _ = h.idSvc.GetPendingAccountDeletion(ctx, actor.UserID)
+		if loaded, err := h.idSvc.GetPendingAccountDeletion(ctx, actor.UserID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetPendingAccountDeletion", err)
+		} else {
+			pendingAccountDel = loaded
+		}
 	}
 
 	var pendingOrgDel *org.OrganizationDeletionRequest
 	orgName := ""
 	orgLegalName := ""
 	if actor.OrganizationID > 0 && isOwner && h.orgSvc != nil {
-		pendingOrgDel, _ = h.orgSvc.GetPendingOrganizationDeletion(ctx, actor.OrganizationID)
+		if loaded, err := h.orgSvc.GetPendingOrganizationDeletion(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.GetPendingOrganizationDeletion", err)
+		} else {
+			pendingOrgDel = loaded
+		}
 		if o, err := h.orgSvc.GetOrganization(ctx, actor.OrganizationID); err == nil && o != nil {
 			if display := o.TradeName.Get(i18n.ParseLang(lang)); display != "" {
 				orgName = display
@@ -124,7 +132,11 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 
 	var prefs *identity.UserPreferences
 	if h.idSvc != nil {
-		prefs, _ = h.idSvc.GetPreferences(ctx, actor.UserID)
+		if loaded, err := h.idSvc.GetPreferences(ctx, actor.UserID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetPreferences", err)
+		} else {
+			prefs = loaded
+		}
 	}
 
 	data := pages.UnifiedSettingsData{

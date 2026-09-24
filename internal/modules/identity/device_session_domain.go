@@ -4,9 +4,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // SessionPlan is a concurrent sign-in licensing tier.
@@ -104,9 +104,10 @@ func ParseUserAgentDevice(ua, ip string) DeviceDetails {
 
 	// 3. Compose Friendly Name
 	typeLabel := i18n.TDefault("w4s_mod.s_4_4")
-	if det.DeviceType == "mobile" {
+	switch det.DeviceType {
+	case "mobile":
 		typeLabel = i18n.TDefault("w4s_mod.s_5_5")
-	} else if det.DeviceType == "tablet" {
+	case "tablet":
 		typeLabel = i18n.TDefault("w4s_mod.s_6_6")
 	}
 

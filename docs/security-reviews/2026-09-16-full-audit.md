@@ -43,7 +43,7 @@ field_summaries:
 
 **Overall Security Posture:** HIGH RISK  
 **Assessment Date:** 2026-09-16  
-**Codebase Analyzed:** Dawa24 Store (`f:\Dawa 24\dawa24-store`)  
+**Codebase Analyzed:** Dawa24 Store (`f:\Dawa 24\dawa24`)  
 **Total Files Analyzed:** 450+ Go source files, SQL migrations, configuration manifests  
 **Total Findings:** 6  
 

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // CandidateProduct represents a product evaluated by the Purchase Priority Engine.

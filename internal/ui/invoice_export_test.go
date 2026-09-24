@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/xuri/excelize/v2"
 )
 

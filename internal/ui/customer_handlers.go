@@ -8,14 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) {
@@ -36,11 +36,11 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 	if botTrap := r.URL.Query().Get("company_tax_ref"); botTrap != "" {
 		h.scrape.Penalize(r, "honeypot_field")
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.CustomerCatalog(pages.CatalogPageData{
+		h.renderPage(ctx, w, "render CustomerCatalog", pages.CustomerCatalog(pages.CatalogPageData{
 			Page:     1,
 			PageSize: 24,
 			ViewMode: "grid",
-		}, lang, dir, h.isHTMX(r)).Render(ctx, w)
+		}, lang, dir, h.isHTMX(r)))
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 		psVal = r.URL.Query().Get("limit")
 	}
 	if psVal != "" {
-		if ps, err := strconv.Atoi(psVal); err == nil {
+		if ps, err := strconv.Atoi(psVal); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			switch ps {
 			case 12, 24, 48, 96:
 				pageSize = ps
@@ -134,10 +134,14 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 	if actor.IsStaff {
 		var categories []*catalog.Category
 		if h.catSvc != nil {
-			categories, _ = h.catSvc.ListCategories(ctx)
+			if loaded, err := h.catSvc.ListCategories(ctx); err != nil {
+				h.logLoadErr(ctx, "catSvc.ListCategories", err)
+			} else {
+				categories = loaded
+			}
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.CustomerCatalog(pages.CatalogPageData{
+		h.renderPage(ctx, w, "render CustomerCatalog", pages.CustomerCatalog(pages.CatalogPageData{
 			Query:        query,
 			Page:         1,
 			PageSize:     pageSize,
@@ -146,18 +150,18 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 			ViewMode:     viewMode,
 			IsAdminStaff: true,
 			Categories:   categories,
-		}, lang, dir, h.isHTMX(r)).Render(ctx, w)
+		}, lang, dir, h.isHTMX(r)))
 		return
 	}
 
 	if h.catSvc == nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.CustomerCatalog(pages.CatalogPageData{
+		h.renderPage(ctx, w, "render CustomerCatalog", pages.CustomerCatalog(pages.CatalogPageData{
 			Query:    query,
 			Page:     page,
 			PageSize: pageSize,
 			ViewMode: viewMode,
-		}, lang, dir, h.isHTMX(r)).Render(ctx, w)
+		}, lang, dir, h.isHTMX(r)))
 		return
 	}
 
@@ -173,11 +177,19 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 		var categories []*catalog.Category
 		var brands []*catalog.Brand
 		if h.catSvc != nil {
-			categories, _ = h.catSvc.ListCategories(ctx)
-			brands, _ = h.catSvc.ListBrands(database.AsSystem(ctx))
+			if loaded, err := h.catSvc.ListCategories(ctx); err != nil {
+				h.logLoadErr(ctx, "catSvc.ListCategories", err)
+			} else {
+				categories = loaded
+			}
+			if loaded, err := h.catSvc.ListBrands(database.AsSystem(ctx)); err != nil {
+				h.logLoadErr(ctx, "catSvc.ListBrands", err)
+			} else {
+				brands = loaded
+			}
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.CustomerCatalog(pages.CatalogPageData{
+		h.renderPage(ctx, w, "render CustomerCatalog", pages.CustomerCatalog(pages.CatalogPageData{
 			Query:          query,
 			Page:           1,
 			PageSize:       pageSize,
@@ -187,7 +199,7 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 			RequiresBranch: true,
 			Categories:     categories,
 			Brands:         brands,
-		}, lang, dir, h.isHTMX(r)).Render(ctx, w)
+		}, lang, dir, h.isHTMX(r)))
 		return
 	}
 
@@ -220,8 +232,10 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 		)
 	}
 
-	categories, _ := h.catSvc.ListCategories(ctx)
-	brands, _ := h.catSvc.ListBrands(database.AsSystem(ctx))
+	categories, loadErr := h.catSvc.ListCategories(ctx)
+	h.logLoadErr(ctx, "catSvc.ListCategories", loadErr)
+	brands, loadErr := h.catSvc.ListBrands(database.AsSystem(ctx))
+	h.logLoadErr(ctx, "catSvc.ListBrands", loadErr)
 	brandMap := make(map[int64]*catalog.Brand)
 	for _, b := range brands {
 		if b != nil {
@@ -281,7 +295,9 @@ func (h *UIHandler) CustomerCatalogPage(w http.ResponseWriter, r *http.Request) 
 
 	var catalogAds []*promo.Ad
 	if h.promoSvc != nil {
-		if ads, err := h.promoSvc.ListActiveAds(ctx, promo.PositionCatalogTop); err == nil {
+		if ads, err := h.promoSvc.ListActiveAds(ctx, promo.PositionCatalogTop); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveAds", err)
+		} else {
 			catalogAds = capAds(shuffleAds(ads), 1)
 			h.enrichAds(ctx, catalogAds)
 		}
@@ -329,7 +345,11 @@ func (h *UIHandler) buyerOffersPage(
 ) ([]*catalog.BuyerOffer, int, map[int64]commerce.AvailabilityResult, error) {
 	var allowedWorkIDs []int64
 	if customerBranchID > 0 && h.orgSvc != nil {
-		allowedWorkIDs, _ = h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), customerBranchID)
+		if loaded, err := h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), customerBranchID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ConnectedWorkIDsForBranch", err)
+		} else {
+			allowedWorkIDs = loaded
+		}
 	}
 	// Coverage is resolved as a set and pushed into the query, not applied to
 	// the rows it returns. See catalog.BuyerOfferQuery.CoveredVendorOrgIDs.

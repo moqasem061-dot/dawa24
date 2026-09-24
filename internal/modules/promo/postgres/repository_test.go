@@ -9,12 +9,12 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func getTestDB(t *testing.T) *database.DB {
@@ -277,7 +277,6 @@ func TestPromoRepository(t *testing.T) {
 			t.Fatalf("ExpirePromotions failed: %v", err)
 		}
 	})
-
 
 	t.Run("CreateSpecialOffer_PercentageAndFixedDiscounts", func(t *testing.T) {
 		// Test creating special offer with 15% discount (DiscountAmount is 0.00)

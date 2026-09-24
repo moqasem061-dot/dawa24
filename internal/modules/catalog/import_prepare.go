@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // AnalyzeImport reads an uploaded file and opens a mapping session for it.

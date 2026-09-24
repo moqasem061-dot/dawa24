@@ -3,12 +3,13 @@ package postgres
 import (
 	"context"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // RecordVisitor inserts one visitor-session-day, ignoring repeats.

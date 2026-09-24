@@ -9,8 +9,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/aiusage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Repository reads and writes the AI usage ledger.

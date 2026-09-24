@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/reqcache"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/platform/reqcache"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Service manages organization lifecycles, branch networks, and membership RBAC.

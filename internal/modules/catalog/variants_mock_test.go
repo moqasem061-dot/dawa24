@@ -7,9 +7,9 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (m *mockCatalogRepo) UpdateProductImageBySKU(ctx context.Context, sku string, imagePath string, imageLink string) (*Product, error) {
@@ -297,8 +297,8 @@ func TestDecisionMemoryServiceMethods(t *testing.T) {
 	if err != nil {
 		t.Fatalf("ListMatchDecisionsForOrg failed: %v", err)
 	}
-	if total < 0 || len(decisions) < 0 {
-		t.Errorf("unexpected results from ListMatchDecisionsForOrg")
+	if total < 0 || len(decisions) > total {
+		t.Errorf("ListMatchDecisionsForOrg: %d decisions for total %d", len(decisions), total)
 	}
 
 	if err := svc.DeleteMatchDecisionForOrg(ctx, 10, 1); err != nil {

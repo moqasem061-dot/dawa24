@@ -13,33 +13,33 @@ import (
 	"github.com/redis/go-redis/v9"
 	"github.com/riverqueue/river"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	billingPostgres "github.com/muhiya/dawa24-store/internal/modules/billing/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	catalogJobs "github.com/muhiya/dawa24-store/internal/modules/catalog/jobs"
-	catalogPostgres "github.com/muhiya/dawa24-store/internal/modules/catalog/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	comparePostgres "github.com/muhiya/dawa24-store/internal/modules/compare/postgres"
-	ingestPostgres "github.com/muhiya/dawa24-store/internal/modules/ingest/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	platformadminPostgres "github.com/muhiya/dawa24-store/internal/modules/platform_admin/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	promoPostgres "github.com/muhiya/dawa24-store/internal/modules/promo/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
-	aiusagePostgres "github.com/muhiya/dawa24-store/internal/platform/aiusage/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/cache"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/importjobs"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	importrunPostgres "github.com/muhiya/dawa24-store/internal/platform/importrun/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
+	catalogJobs "github.com/moqasem061-dot/dawa24/internal/modules/catalog/jobs"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
+	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/aiusage"
+	aiusagePostgres "github.com/moqasem061-dot/dawa24/internal/platform/aiusage/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	importrunPostgres "github.com/moqasem061-dot/dawa24/internal/platform/importrun/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	_ "github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 func main() {
@@ -94,7 +94,6 @@ func run() error {
 	river.AddWorker(workers, catalogJobs.NewProductReindexWorker(db, log))
 	river.AddWorker(workers, newDocumentScanWorker(db, s3Store, log))
 
-
 	// Smart ordering (specs/001-smart-ordering-system). Registered with AI Gateway
 	// client if configured, or deterministic fallback if unconfigured.
 	// The same usage ledger the web process writes. A smart order run or an
@@ -148,10 +147,6 @@ func run() error {
 
 	queueClient, err := queue.New(db, workers, cfg.Worker, log)
 	if err != nil {
-		return err
-	}
-
-	if err := queueClient.Migrate(ctx); err != nil {
 		return err
 	}
 

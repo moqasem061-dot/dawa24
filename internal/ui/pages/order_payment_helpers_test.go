@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 )
 
 func TestFormatPaymentMethodName(t *testing.T) {

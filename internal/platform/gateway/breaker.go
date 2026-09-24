@@ -36,10 +36,7 @@ func newBreaker(threshold int, window, openDuration time.Duration) *breaker {
 func (b *breaker) allow() bool {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	if time.Now().Before(b.openUntil) {
-		return false
-	}
-	return true
+	return !time.Now().Before(b.openUntil)
 }
 
 func (b *breaker) success() {

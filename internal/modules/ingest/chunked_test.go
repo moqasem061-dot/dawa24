@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 type mockIngestRepo struct {
@@ -207,7 +207,7 @@ func TestProcessSpreadsheetStreamCSV(t *testing.T) {
 	var sb strings.Builder
 	sb.WriteString("اسم الصنف,السعر,الكمية\n")
 	for i := 1; i <= 1200; i++ {
-		sb.WriteString(fmt.Sprintf("صنف رقم %d,100.00,10\n", i))
+		fmt.Fprintf(&sb, "صنف رقم %d,100.00,10\n", i)
 	}
 
 	progressCalls := 0

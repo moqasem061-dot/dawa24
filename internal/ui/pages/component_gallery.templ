@@ -3,8 +3,8 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type ComponentGalleryProps struct {
@@ -207,7 +207,7 @@ templ ComponentGallery(props ComponentGalleryProps) {
 			<!-- 11. Modal Dialog Component -->
 			<section class="glass-panel p-4">
 				<h2 class="text-lg font-bold mb-3">11. Modal Component (Phase 4 Native Dialog)</h2>
-				<button type="button" class="btn btn-secondary" data-on-click="window.openModal('demo-gallery-modal')">
+				<button type="button" class="btn btn-secondary" data-on-click="openDialog('demo-gallery-modal')">
 					هيكل التحميل (Skeleton)
 				</button>
 				@components.Modal(components.ModalProps{
@@ -220,8 +220,8 @@ templ ComponentGallery(props ComponentGalleryProps) {
 						<p class="text-sm">هذه نافذة تجريبية تعرض التنسيق القياسي للنوافذ في المنصة.</p>
 					</div>
 					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-on-click="window.closeModal('demo-gallery-modal')">إلغاء</button>
-						<button type="button" class="btn btn-primary" data-on-click="window.closeModal('demo-gallery-modal')">تأكيد الإجراء</button>
+						<button type="button" class="btn btn-secondary" data-on-click="closeDialog('demo-gallery-modal')">إلغاء</button>
+						<button type="button" class="btn btn-primary" data-on-click="closeDialog('demo-gallery-modal')">تأكيد الإجراء</button>
 					</div>
 				}
 			</section>

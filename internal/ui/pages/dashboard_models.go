@@ -6,18 +6,18 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // OrgSubscriptionView encapsulates subscription and AI Gateway usage details for tenant dashboards.
 type OrgSubscriptionView struct {
-	HasSubscription    bool
-	PlanName           string
-	PlanSlug           string
-	Status             string
-	ExpiresAt          string
+	HasSubscription        bool
+	PlanName               string
+	PlanSlug               string
+	Status                 string
+	ExpiresAt              string
 	MaxLoginSessions       int
 	MaxDevices             int
 	BaseLoginSessions      int
@@ -26,19 +26,19 @@ type OrgSubscriptionView struct {
 	ExtraSessionsExpires   *time.Time
 	ExtraSessionsExpiresAt string
 	AIPlanID               string
-	AIUserID           string
-	AIVirtualKeyMasked string
-	IsDefaultPlan      bool
-	AIRequestsCount    int
-	AITokensUsed       int
-	AIBudgetLimitUSD   float64
-	AIBudgetSpentUSD   float64
-	AIBudgetName       string
-	AIBudgetResetTime  string
-	RawExpiresAt       time.Time
-	DaysRemaining      int
-	HasDaysRemaining   bool
-	RenewalCost        money.Amount
+	AIUserID               string
+	AIVirtualKeyMasked     string
+	IsDefaultPlan          bool
+	AIRequestsCount        int
+	AITokensUsed           int
+	AIBudgetLimitUSD       float64
+	AIBudgetSpentUSD       float64
+	AIBudgetName           string
+	AIBudgetResetTime      string
+	RawExpiresAt           time.Time
+	DaysRemaining          int
+	HasDaysRemaining       bool
+	RenewalCost            money.Amount
 	// HasAIUsage reports whether the Gateway actually answered with this
 	// tenant's consumption.
 	//

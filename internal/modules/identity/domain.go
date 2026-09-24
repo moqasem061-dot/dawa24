@@ -1,14 +1,14 @@
 package identity
 
 import (
-	"strings"
 	"time"
 	"unicode"
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/format"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // User status enum matching PostgreSQL CHECK constraint in 002_identity.
@@ -229,9 +229,7 @@ func (u *User) ValidateLogin() error {
 }
 
 // NormalizeEmail cleans and lowercases emails for consistent lookup.
-func NormalizeEmail(email string) string {
-	return strings.ToLower(strings.TrimSpace(email))
-}
+func NormalizeEmail(email string) string { return format.NormalizeEmail(email) }
 
 // ErrInvalidCredentials is a reusable authentication failure error.
 var ErrInvalidCredentials = apperr.New(apperr.KindUnauthorized, "auth.invalid_credentials", "Invalid email or password.")

@@ -11,13 +11,13 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 type mockOrderDetailCommerceRepo struct {
@@ -157,7 +157,7 @@ func TestVendorOrderDetailPage_RenderAndData(t *testing.T) {
 	})
 
 	t.Run("VendorOrderDetailPage renders full order metadata, items, and actions", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/vendor/orders/501", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/orders/501", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 
 		// Route parameters using chi
@@ -269,7 +269,7 @@ func TestVendorDeliveryAssign_PendingGated(t *testing.T) {
 	}
 
 	t.Run("VendorOrderDetailPage shows locked message when pending", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/vendor/orders/502", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/orders/502", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "502")
@@ -293,7 +293,7 @@ func TestVendorDeliveryAssign_PendingGated(t *testing.T) {
 	})
 
 	t.Run("VendorDeliveryAssignSubmit rejects assignment when shipment is pending", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/vendor/delivery/502/assign", strings.NewReader("courier_user_id=99&return_to=/vendor/orders/602"))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/delivery/502/assign", strings.NewReader("courier_user_id=99&return_to=/vendor/orders/602"))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rctx := chi.NewRouteContext()
@@ -316,7 +316,7 @@ func TestVendorDeliveryAssign_PendingGated(t *testing.T) {
 	})
 
 	t.Run("VendorDeliveryAssign alias /vendor/orders/{id}/assign-courier works", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/vendor/orders/502/assign-courier", strings.NewReader("courier_user_id=99&return_to=/vendor/orders/602"))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/orders/502/assign-courier", strings.NewReader("courier_user_id=99&return_to=/vendor/orders/602"))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rctx := chi.NewRouteContext()
@@ -335,4 +335,3 @@ func TestVendorDeliveryAssign_PendingGated(t *testing.T) {
 		}
 	})
 }
-

@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // PERF OPTIMIZATION NOTE (Priority 10):
@@ -368,4 +368,3 @@ func (r *Repository) ListOrdersByCustomerWithTotal(ctx context.Context, customer
 	})
 	return orders, total, err
 }
-

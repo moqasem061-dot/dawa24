@@ -13,12 +13,12 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // tempWarehouseSuperBase / tempWarehouseSuperPage are the URL roots the Super
@@ -65,7 +65,9 @@ func (h *UIHandler) AdminTempWarehousesPage(w http.ResponseWriter, r *http.Reque
 		}
 	}
 	if h.compareSvc != nil {
-		if ups, err := h.compareSvc.ListTempWarehouseUploaders(database.AsSystem(ctx)); err == nil {
+		if ups, err := h.compareSvc.ListTempWarehouseUploaders(database.AsSystem(ctx)); err != nil {
+			h.logLoadErr(ctx, "compareSvc.ListTempWarehouseUploaders", err)
+		} else {
 			for _, u := range ups {
 				data.Uploaders = append(data.Uploaders, pages.AdminTempWarehouseUploader{UserID: u.UserID, Name: u.Name})
 			}
@@ -348,7 +350,7 @@ func (h *UIHandler) AdminTempWarehouseExportXLSX(w http.ResponseWriter, r *http.
 
 	f := excelize.NewFile()
 	sheet := "Warehouse Items"
-	f.SetSheetName("Sheet1", sheet)
+	sheet = renameFirstSheet(f, sheet)
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{
 		RightToLeft: func(b bool) *bool { return &b }(true),
 	})

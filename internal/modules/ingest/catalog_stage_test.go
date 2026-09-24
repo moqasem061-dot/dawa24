@@ -3,7 +3,7 @@ package ingest
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func TestCatalogImportSettingsMinScore(t *testing.T) {

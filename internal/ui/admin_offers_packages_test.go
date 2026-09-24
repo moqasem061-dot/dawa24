@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // mockAdminPromoRepo is an in-memory test double for promo.Service admin operations.
@@ -243,7 +243,7 @@ func TestAdminOffersPackages_HubPageRenders(t *testing.T) {
 	repo := newMockAdminPromoRepo()
 	_, r := setupTestPromoHandler(repo)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/offers-packages?tab=packages", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/offers-packages?tab=packages", nil)
 	req = adminContext(req)
 
 	rec := httptest.NewRecorder()
@@ -276,7 +276,7 @@ func TestAdminOffersPackages_CreateNewPackage(t *testing.T) {
 	form.Set("is_featured", "true")
 	form.Set("is_active", "true")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/offers-packages/new", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers-packages/new", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = adminContext(req)
 
@@ -317,7 +317,7 @@ func TestAdminOffersPackages_EditPackage(t *testing.T) {
 	form.Set("is_featured", "false")
 	form.Set("is_active", "true")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/offers-packages/1/edit", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers-packages/1/edit", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = adminContext(req)
 
@@ -343,7 +343,7 @@ func TestAdminOffersPackages_ToggleActive(t *testing.T) {
 	form := url.Values{}
 	form.Set("active", "false")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/offers-packages/1/toggle", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers-packages/1/toggle", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = adminContext(req)
 
@@ -358,7 +358,7 @@ func TestAdminOffersPackages_LegacyAdPlanRedirect(t *testing.T) {
 	repo := newMockAdminPromoRepo()
 	_, r := setupTestPromoHandler(repo)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/ad-plan", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/ad-plan", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -371,7 +371,7 @@ func TestAdminOffersPackages_SponsorshipApproveAndReject(t *testing.T) {
 	_, r := setupTestPromoHandler(repo)
 
 	// Approve request 101
-	req := httptest.NewRequest(http.MethodPost, "/admin/offers-packages/sponsorships/101/approve", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers-packages/sponsorships/101/approve", nil)
 	req = adminContext(req)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -381,7 +381,7 @@ func TestAdminOffersPackages_SponsorshipApproveAndReject(t *testing.T) {
 	assert.Equal(t, promo.AdminApproved, repo.requests[0].AdminStatus)
 
 	// Reject request 102
-	reqReject := httptest.NewRequest(http.MethodPost, "/admin/offers-packages/sponsorships/102/reject", strings.NewReader("notes=does+not+comply"))
+	reqReject := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers-packages/sponsorships/102/reject", strings.NewReader("notes=does+not+comply"))
 	reqReject.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqReject = adminContext(reqReject)
 	recReject := httptest.NewRecorder()

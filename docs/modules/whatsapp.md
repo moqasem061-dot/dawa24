@@ -9,7 +9,7 @@ second assistant, not a second permission system.
   `cmd/server/whatsapp_wiring.go`, settings card in
   `internal/ui/settings_whatsapp_handlers.go` +
   `internal/ui/pages/settings_whatsapp.templ`.
-- Shared with Telegram: `internal/modules/chatbridge` — actor rebuild
+- Shared with Telegram: `internal/platform/chatbridge` — actor rebuild
   (`Core.Resolve`), approval, assistant gate, rate limit, one-question lock,
   confirm path (`Core.Ask`, `Core.Decide`), `/whoami` `/org` `/notify`,
   notification eligibility (`Core.DecideNotifications`), categories — plus

@@ -3,8 +3,8 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/platform/antiscrape"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/antiscrape"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // SetScrapeGuard installs the anti-scraping guard for /catalog.

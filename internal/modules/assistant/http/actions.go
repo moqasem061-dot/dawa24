@@ -7,8 +7,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/google/uuid"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // Confirming a proposal from the drawer.

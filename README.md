@@ -1,11 +1,9 @@
-# Dawa24 Store
+# Dawa24
 
 B2B pharmaceutical marketplace — Go modular monolith replacing the Laravel 12 +
 Livewire application.
 
-Companion documents live in `../docs/rebuild/`:
-[master plan](../docs/rebuild/REBUILD_MASTER_PLAN.md) ·
-[legacy schema inventory](../docs/rebuild/SCHEMA_INVENTORY.md)
+Repository: <https://github.com/moqasem061-dot/dawa24>
 
 ---
 
@@ -77,17 +75,22 @@ docs/modules      one page per module
 
 ## Current state
 
-**Phase 1–2: platform foundations.** Built: config with fail-fast validation,
-PostgreSQL pool with RLS tenant context, Redis cache, Gateway client with circuit
-breaker and fallbacks, HTTP middleware, embedded migration runner, health and
-readiness endpoints, River worker, and the `identity` + `org` schemas.
+All bounded contexts are built and served: `identity`, `org`, `catalog`,
+`inventory`, `commerce`, `promo`, `billing`, `ingest`, `compare`, `smartorder`,
+`workflow`, `hr`, `notifications`, `chat`, `assistant`, `attachments`,
+`telegram`, `whatsapp`, `marketing`, `platform_admin` and the legacy `etl`
+(`cmd/etl`). The UI is templ + HTMX + the CSP build of Alpine, served from the
+same binary.
 
-**Not built yet:** catalog, inventory, commerce, promo, billing, ingest, workflow
-and hr modules; the templ UI layer; the legacy data ETL. Phase order is in
-[master plan §13](../docs/rebuild/REBUILD_MASTER_PLAN.md).
+Known open work is tracked in `docs/security-reviews/` and `docs/modules/`.
 
 ## Deployment
 
-Three Elest.io pipelines: PostgreSQL, Gateway (`api.muhiya.com`), and this Store.
-Migrations run as their own pipeline step before the image is promoted; rollback
-is redeploying the previous image. See ADR 0004.
+The image is built from `Dockerfile` (server, worker and cli in one image).
+`cli migrate` runs before the new server starts and exits non-zero on any
+failure, so a bad migration stops the rollout. Rollback is redeploying the
+previous image (ADR 0004).
+
+- `docker-compose.yml` — single host behind Traefik (the current production setup)
+- `deploy/hostinger/` and `docs/HOSTINGER_DEPLOYMENT_GUIDE.md` — self-contained VPS stack with Caddy
+- `DEPLOY.md` — Elest.io pipelines

@@ -251,11 +251,30 @@ func Caller(skip int) (string, int) {
 	return trimPath(file), line
 }
 
+// srcRoot is the prefix every source file of this module carries in a stack
+// trace: the module path under -trimpath (the production image), the checkout
+// directory otherwise. It is derived from this file's own path so it holds
+// whatever the module or the checkout is called; matching a hardcoded
+// directory name never matched a -trimpath build at all.
+var srcRoot = func() string {
+	const self = "internal/platform/errtrack/errtrack.go"
+	_, file, _, ok := runtime.Caller(0)
+	if !ok || !strings.HasSuffix(file, self) {
+		return ""
+	}
+	return strings.TrimSuffix(file, self)
+}()
+
+// inModule reports whether a stack-trace path belongs to this module.
+func inModule(file string) bool {
+	return srcRoot != "" && strings.HasPrefix(file, srcRoot)
+}
+
 // trimPath shortens an absolute build path to something readable in a table:
 // the module-relative path, or the last two segments when that fails.
 func trimPath(file string) string {
-	if i := strings.Index(file, "dawa24-store/"); i >= 0 {
-		return file[i+len("dawa24-store/"):]
+	if inModule(file) {
+		return file[len(srcRoot):]
 	}
 	file = strings.ReplaceAll(file, "\\", "/")
 	parts := strings.Split(file, "/")

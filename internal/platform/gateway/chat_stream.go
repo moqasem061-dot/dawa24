@@ -72,7 +72,7 @@ func (c *HTTPClient) Stream(ctx context.Context, req ChatRequest) (<-chan Stream
 	res, err := c.http.Do(httpReq)
 	if err != nil {
 		c.breaker.failure()
-		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 
 	if res.StatusCode != http.StatusOK {
@@ -119,7 +119,7 @@ func (c *HTTPClient) consumeSSE(ctx context.Context, body io.ReadCloser, events 
 				return
 			}
 			c.breaker.failure()
-			emit(StreamEvent{Err: fmt.Errorf("%w: %v", ErrUnavailable, err)})
+			emit(StreamEvent{Err: fmt.Errorf("%w: %w", ErrUnavailable, err)})
 			return
 		}
 

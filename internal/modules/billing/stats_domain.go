@@ -1,6 +1,6 @@
 package billing
 
-import "github.com/muhiya/dawa24-store/internal/shared/money"
+import "github.com/moqasem061-dot/dawa24/internal/shared/money"
 
 // AdminFinanceStats holds platform-wide aggregated financial KPI metrics directly queried from the database.
 type AdminFinanceStats struct {

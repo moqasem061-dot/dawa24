@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // AdminJobApplicationsJSON returns applicants for a vacancy as JSON.
@@ -28,7 +28,8 @@ func (h *UIHandler) AdminJobApplicationsJSON(w http.ResponseWriter, r *http.Requ
 
 	var apps []*hr.JobApplication
 	if h.hrSvc != nil {
-		aList, _ := h.hrSvc.ListApplicationsByOffer(database.AsSystem(ctx), jobID, 100, 0)
+		aList, loadErr := h.hrSvc.ListApplicationsByOffer(database.AsSystem(ctx), jobID, 100, 0)
+		h.logLoadErr(ctx, "hrSvc.ListApplicationsByOffer", loadErr)
 		apps = aList
 	}
 
@@ -148,14 +149,16 @@ func (h *UIHandler) AdminJobApplicationAcceptSubmit(w http.ResponseWriter, r *ht
 			jobTitle = i18n.T(lang, "job.notif.default_job_title")
 		}
 
-		_, _ = h.notifSvc.Send(sysCtx, notifications.SendInput{
+		if _, err := h.notifSvc.Send(sysCtx, notifications.SendInput{
 			UserID:         *app.ApplicantUserID,
 			OrganizationID: &job.OrganizationID,
 			Channel:        notifications.ChannelInApp,
 			Recipient:      app.ApplicantEmail,
 			Title:          i18n.T(lang, "job.notif.accept_title"),
 			Body:           fmt.Sprintf(i18n.T(lang, "job.notif.accept_body"), jobTitle, orgName, branchName),
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "notifSvc.Send", err)
+		}
 	}
 
 	if isJSON {
@@ -250,14 +253,16 @@ func (h *UIHandler) AdminJobApplicationRejectSubmit(w http.ResponseWriter, r *ht
 			jobTitle = i18n.T(lang, "job.notif.default_job_title")
 		}
 
-		_, _ = h.notifSvc.Send(sysCtx, notifications.SendInput{
+		if _, err := h.notifSvc.Send(sysCtx, notifications.SendInput{
 			UserID:         *app.ApplicantUserID,
 			OrganizationID: &job.OrganizationID,
 			Channel:        notifications.ChannelInApp,
 			Recipient:      app.ApplicantEmail,
 			Title:          i18n.T(lang, "job.notif.reject_title"),
 			Body:           fmt.Sprintf(i18n.T(lang, "job.notif.reject_body"), jobTitle, orgName),
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "notifSvc.Send", err)
+		}
 	}
 
 	if isJSON {

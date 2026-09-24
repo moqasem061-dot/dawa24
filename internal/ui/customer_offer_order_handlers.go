@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerOfferOrdersPage renders offer-based orders placed by the pharmacy.
@@ -33,7 +33,11 @@ func (h *UIHandler) CustomerOfferOrdersPage(w http.ResponseWriter, r *http.Reque
 	var orders []*commerce.Order
 	var total int
 	if h.commSvc != nil {
-		orders, total, _ = h.commSvc.ListCustomerOrdersWithTotal(ctx, actor.OrganizationID, limit, offset)
+		if loaded, loaded2, err := h.commSvc.ListCustomerOrdersWithTotal(ctx, actor.OrganizationID, limit, offset); err != nil {
+			h.logLoadErr(ctx, "commSvc.ListCustomerOrdersWithTotal", err)
+		} else {
+			orders, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render customer offer orders", pages.CustomerOfferOrdersPage(orders, lang, dir, page, limit, total))
@@ -65,7 +69,11 @@ func (h *UIHandler) CustomerOfferCheckoutPage(w http.ResponseWriter, r *http.Req
 
 	var offer *promo.Offer
 	if h.promoSvc != nil {
-		offer, _ = h.promoSvc.GetOffer(database.AsSystem(ctx), offerID)
+		if loaded, err := h.promoSvc.GetOffer(database.AsSystem(ctx), offerID); err != nil {
+			h.logLoadErr(ctx, "promoSvc.GetOffer", err)
+		} else {
+			offer = loaded
+		}
 	}
 
 	if offer == nil {
@@ -97,7 +105,11 @@ func (h *UIHandler) GuestOrderTrackingPage(w http.ResponseWriter, r *http.Reques
 	orderNumber := r.URL.Query().Get("order_number")
 	var order *commerce.Order
 	if orderNumber != "" && h.commSvc != nil {
-		order, _ = h.commSvc.GetOrderByNumber(database.AsSystem(ctx), orderNumber)
+		if loaded, err := h.commSvc.GetOrderByNumber(database.AsSystem(ctx), orderNumber); err != nil {
+			h.logLoadErr(ctx, "commSvc.GetOrderByNumber", err)
+		} else {
+			order = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render guest tracking", pages.GuestOrderTrackingPage(orderNumber, order, lang, dir))

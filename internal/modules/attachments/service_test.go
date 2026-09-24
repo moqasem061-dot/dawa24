@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 type stubRepo struct {

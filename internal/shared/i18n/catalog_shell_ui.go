@@ -262,7 +262,3 @@ func loadShellUIKeys(e *engine) {
 	addKey(e, "upload.failed", "upload", "تعذّر إكمال العملية.", "Operation failed.", "Upload failed caption")
 	addKey(e, "upload.try_again", "upload", "يمكنك إغلاق النافذة والمحاولة مرة أخرى.", "You may close this window and try again.", "Upload try again note")
 }
-
-
-
-

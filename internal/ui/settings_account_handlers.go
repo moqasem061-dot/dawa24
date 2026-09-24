@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // SettingsProfileSubmit saves name, phone, timezone, language, and avatar.
@@ -52,13 +52,21 @@ func (h *UIHandler) SettingsProfileSubmit(w http.ResponseWriter, r *http.Request
 
 	// Handle avatar file upload or removal
 	if r.PostFormValue("remove_avatar") == "1" {
-		_, _ = h.idSvc.UpdateAvatar(ctx, actor.UserID, "")
+		if _, err := h.idSvc.UpdateAvatar(ctx, actor.UserID, ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.UpdateAvatar", err)
+		}
 	} else if uploadedURL, err := saveUploadedFile(r, "avatar_file", "avatars"); err == nil && uploadedURL != "" {
-		_, _ = h.idSvc.UpdateAvatar(ctx, actor.UserID, uploadedURL)
+		if _, err := h.idSvc.UpdateAvatar(ctx, actor.UserID, uploadedURL); err != nil {
+			h.logLoadErr(ctx, "idSvc.UpdateAvatar", err)
+		}
 	} else if uploadedURL, err := saveUploadedFile(r, "avatar", "avatars"); err == nil && uploadedURL != "" {
-		_, _ = h.idSvc.UpdateAvatar(ctx, actor.UserID, uploadedURL)
+		if _, err := h.idSvc.UpdateAvatar(ctx, actor.UserID, uploadedURL); err != nil {
+			h.logLoadErr(ctx, "idSvc.UpdateAvatar", err)
+		}
 	} else if avatarURL := r.PostFormValue("avatar_url"); avatarURL != "" {
-		_, _ = h.idSvc.UpdateAvatar(ctx, actor.UserID, avatarURL)
+		if _, err := h.idSvc.UpdateAvatar(ctx, actor.UserID, avatarURL); err != nil {
+			h.logLoadErr(ctx, "idSvc.UpdateAvatar", err)
+		}
 	}
 
 	if h.resolver != nil {
@@ -115,7 +123,7 @@ func (h *UIHandler) SettingsAddressDeleteSubmit(w http.ResponseWriter, r *http.R
 	}
 
 	if h.idSvc != nil {
-		if id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64); err == nil {
+		if id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			_ = h.idSvc.DeleteAddress(ctx, id, actor.UserID)
 		}
 	}

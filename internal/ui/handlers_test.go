@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/mailer"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func newTestRouter(actor *authctx.Actor) http.Handler {
@@ -130,7 +131,7 @@ func TestPublicAndAuthPageRoutes(t *testing.T) {
 
 	for _, route := range routes {
 		t.Run(route.path, func(t *testing.T) {
-			req := httptest.NewRequest(route.method, route.path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -152,7 +153,7 @@ func TestPublicMarketplacePagesAreOpenToGuests(t *testing.T) {
 
 	for _, path := range []string{"/offers", "/suppliers"} {
 		t.Run("Guest_Allowed_"+path, func(t *testing.T) {
-			req := httptest.NewRequest("GET", path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", path, nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -174,7 +175,7 @@ func TestCatalogRequiresSignIn(t *testing.T) {
 
 	for _, path := range []string{"/catalog", "/catalog/1"} {
 		t.Run("Guest_Blocked_"+path, func(t *testing.T) {
-			req := httptest.NewRequest("GET", path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", path, nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -197,7 +198,7 @@ func TestCompareWorkspaceStillRequiresSignIn(t *testing.T) {
 
 	for _, path := range []string{"/compare", "/compare/results"} {
 		t.Run("Guest_Blocked_"+path, func(t *testing.T) {
-			req := httptest.NewRequest("GET", path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", path, nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)
@@ -216,7 +217,7 @@ func TestHTMXPartialHeaderHandling(t *testing.T) {
 	router := setupTestRouter()
 
 	// The catalogue partial renders for whoever asks for it
-	req := httptest.NewRequest("GET", "/catalog", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/catalog", nil)
 	req.Header.Set("HX-Request", "true")
 	rec := httptest.NewRecorder()
 
@@ -240,7 +241,7 @@ func TestAuthenticatedUIRoutesWithActor(t *testing.T) {
 	}
 	router := newTestRouter(&actor)
 
-	req := httptest.NewRequest("GET", "/cart", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/cart", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
@@ -294,7 +295,7 @@ func TestFormActionRoutes(t *testing.T) {
 	for _, route := range actionRoutes {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
 			router := newTestRouter(route.actor)
-			req := httptest.NewRequest(route.method, route.path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, nil)
 			rec := httptest.NewRecorder()
 
 			router.ServeHTTP(rec, req)

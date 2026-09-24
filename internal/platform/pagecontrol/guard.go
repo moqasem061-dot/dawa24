@@ -84,4 +84,3 @@ func Guard(next http.Handler, notFound http.HandlerFunc, log *slog.Logger) http.
 		next.ServeHTTP(w, r)
 	})
 }
-

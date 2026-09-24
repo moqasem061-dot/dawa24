@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // marketFilterClauses turns the caller's filter into AND-clauses appended to
@@ -52,7 +52,6 @@ func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, ar
 	if filter.MaxDiscount != nil {
 		where = append(where, fmt.Sprintf("(%s) <= $%d", marketWarehouseDiscountSQL, argIdx))
 		args = append(args, *filter.MaxDiscount)
-		argIdx++
 	}
 
 	if len(where) > 0 {

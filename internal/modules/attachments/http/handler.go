@@ -2,17 +2,18 @@ package http
 
 import (
 	"encoding/json"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
 	"net/http"
 	"strconv"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Handler exposes REST endpoints for file upload presigning, confirmation, and admin verification.

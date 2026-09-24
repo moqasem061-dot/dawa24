@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 )
 
 const proposalID = "3f2a9c1e-7b44-4d2a-9a51-0c6d8e2f1b7a"

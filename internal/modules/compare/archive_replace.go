@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Replacing a vendor's previous price lists with the batch that supersedes them.
@@ -94,7 +94,7 @@ func (s *Service) waitForStagedBatch(ctx context.Context, ids []int64) bool {
 
 	for {
 		statuses, err := s.StagingProgress(ctx, ids)
-		if err == nil {
+		if err == nil { // nolint:errswallow: a transient progress read failure is retried on the next tick
 			pending := false
 			ready := false
 			for _, st := range statuses {

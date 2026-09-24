@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // IsOfferLine reports whether this line is an offer bought as a unit rather
@@ -156,13 +156,13 @@ func (l *OrderLine) EffectivePurchaseCost() money.Amount {
 	}
 	pub := l.EffectivePublicPrice()
 	if l.CostDiscountPercentage > 0 && pub.IsPositive() {
-		discMinor := int64(float64(pub.Minor()) * (l.CostDiscountPercentage / 100.0))
-		return money.FromMinor(pub.Minor() - discMinor)
+		disc := pub.ApplyPercent(money.PercentToBasisPoints(l.CostDiscountPercentage))
+		return money.FromMinor(pub.Minor() - disc.Minor())
 	}
 	if l.CostPrice != nil && l.CostPrice.IsPositive() {
 		if l.CostDiscountPercentage > 0 {
-			discMinor := int64(float64(l.CostPrice.Minor()) * (l.CostDiscountPercentage / 100.0))
-			return money.FromMinor(l.CostPrice.Minor() - discMinor)
+			disc := l.CostPrice.ApplyPercent(money.PercentToBasisPoints(l.CostDiscountPercentage))
+			return money.FromMinor(l.CostPrice.Minor() - disc.Minor())
 		}
 		return *l.CostPrice
 	}

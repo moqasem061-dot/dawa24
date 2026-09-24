@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // dispatchInAppNotification sends a direct in-app notification to a single user.
@@ -64,7 +64,7 @@ func (h *UIHandler) writeInAppNotification(ctx context.Context, userID int64, or
 			Body:               body,
 			RequiredPermission: requiredPerm,
 		})
-		if err == nil {
+		if err == nil { // nolint:errswallow: success returns; a failure falls back to direct delivery below
 			return
 		}
 		h.log.WarnContext(ctx, "failed to enqueue notification job; falling back to direct delivery", "user_id", userID, "error", err)
@@ -96,10 +96,6 @@ func (h *UIHandler) writeInAppNotification(ctx context.Context, userID int64, or
 			u, uErr := h.idSvc.AdminGetUser(bgCtx, userID)
 			if uErr != nil || u == nil || u.Email == "" {
 				return
-			}
-			userName := u.Name.Get(i18n.AR)
-			if userName == "" {
-				userName = u.Name.Get(i18n.EN)
 			}
 			if sendErr := h.mailer.SendNotification(bgCtx, u.Email, title, body, "", "ar"); sendErr != nil {
 				h.log.Warn("failed to send notification email", "user_id", userID, "email", u.Email, "error", sendErr)
@@ -171,12 +167,15 @@ func (h *UIHandler) dispatchOrgBranchNotification(ctx context.Context, orgID int
 		}
 
 		if requiredPerm != "" && h.resolver != nil {
+			// Fail closed: a member whose permissions cannot be read is not
+			// shown a notification that needs one. Failing open sent billing
+			// and order alerts to every member whenever the lookup errored.
 			grant, err := h.resolver.Resolve(sysCtx, m.UserID, orgID)
-			if err == nil {
-				if !grant.IsOrgOwner && !grant.IsPlatformOwner && !grant.IsStaff && !grant.Can(requiredPerm) {
-					continue
-				}
-			} else if m.RoleKey == "org_courier" {
+			if err != nil {
+				h.logLoadErr(ctx, "resolve notification recipient", err)
+				continue
+			}
+			if !grant.IsOrgOwner && !grant.IsPlatformOwner && !grant.IsStaff && !grant.Can(requiredPerm) {
 				continue
 			}
 		}
@@ -201,11 +200,14 @@ func (h *UIHandler) dispatchAdminNotification(ctx context.Context, requiredPerm,
 			continue
 		}
 		if requiredPerm != "" && h.resolver != nil {
+			// Fail closed, as for tenant members above.
 			grant, err := h.resolver.Resolve(sysCtx, staffID, 0)
-			if err == nil {
-				if !grant.IsPlatformOwner && !grant.Can("*") && !grant.Can(requiredPerm) {
-					continue
-				}
+			if err != nil {
+				h.logLoadErr(ctx, "resolve notification recipient", err)
+				continue
+			}
+			if !grant.IsPlatformOwner && !grant.Can("*") && !grant.Can(requiredPerm) {
+				continue
 			}
 		}
 		h.dispatchInAppNotification(ctx, staffID, nil, requiredPerm, title, body)

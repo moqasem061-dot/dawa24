@@ -3,7 +3,7 @@ package http_test
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 )
 
 func (r stubRepo) ListReviewsForVendor(ctx context.Context, vendorOrgID int64, limit, offset int) ([]*org.Review, error) {

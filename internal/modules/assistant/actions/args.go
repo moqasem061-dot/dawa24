@@ -10,7 +10,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
 )
 
 // Args are an action's arguments after validation: refs are verified row ids,

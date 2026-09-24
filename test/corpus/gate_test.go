@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // TestPlausibilityGate measures how much of each file's residue would be sent to

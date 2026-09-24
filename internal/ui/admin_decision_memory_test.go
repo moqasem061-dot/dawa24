@@ -15,8 +15,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 type mockDecisionRepo struct {
@@ -217,7 +217,7 @@ func setupDecisionTestHandler() (*UIHandler, *mockDecisionRepo) {
 func TestAdminMatchDecisions_PageAndFilter(t *testing.T) {
 	h, _ := setupDecisionTestHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/match-decisions?scope=platform", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/match-decisions?scope=platform", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminMatchDecisionsPage(rec, req)
@@ -238,7 +238,7 @@ func TestAdminMatchDecisions_PageAndFilter(t *testing.T) {
 func TestAdminMatchDecisions_ExportXLSX(t *testing.T) {
 	h, _ := setupDecisionTestHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/match-decisions/export.xlsx", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/match-decisions/export.xlsx", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminMatchDecisionsExportXLSX(rec, req)
@@ -290,7 +290,7 @@ func TestAdminMatchDecision_Actions(t *testing.T) {
 	r.Post("/admin/match-decisions/bulk", h.AdminMatchDecisionBulkSubmit)
 	r.Post("/admin/match-decisions/{id}/delete", h.AdminMatchDecisionDeleteSubmit)
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/match-decisions/2/promote", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/match-decisions/2/promote", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 	if rec.Code != http.StatusSeeOther {
@@ -301,7 +301,7 @@ func TestAdminMatchDecision_Actions(t *testing.T) {
 	}
 
 	// 2. Demote
-	req = httptest.NewRequest(http.MethodPost, "/admin/match-decisions/1/demote", nil)
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/match-decisions/1/demote", nil)
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 	if rec.Code != http.StatusSeeOther {
@@ -313,7 +313,7 @@ func TestAdminMatchDecision_Actions(t *testing.T) {
 
 	// 3. Relink
 	relinkForm := url.Values{"product_id": {"303"}}
-	req = httptest.NewRequest(http.MethodPost, "/admin/match-decisions/1/relink", strings.NewReader(relinkForm.Encode()))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/match-decisions/1/relink", strings.NewReader(relinkForm.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -326,7 +326,7 @@ func TestAdminMatchDecision_Actions(t *testing.T) {
 
 	// 4. Bulk Delete
 	bulkForm := url.Values{"action": {"delete"}, "ids": {"1", "2"}}
-	req = httptest.NewRequest(http.MethodPost, "/admin/match-decisions/bulk", strings.NewReader(bulkForm.Encode()))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/match-decisions/bulk", strings.NewReader(bulkForm.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec = httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -354,7 +354,7 @@ func TestOrgDecisionMemory_Preferences(t *testing.T) {
 
 	// Customer opts out
 	prefForm := url.Values{"use_platform_memory": {"false"}}
-	req := httptest.NewRequest(http.MethodPost, "/customer/decision-memory/preference", strings.NewReader(prefForm.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/decision-memory/preference", strings.NewReader(prefForm.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()

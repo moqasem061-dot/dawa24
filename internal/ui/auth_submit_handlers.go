@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/mailer"
-	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
@@ -24,10 +24,9 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	// Process license attachment file if uploaded. Metadata (original name,
 	// MIME, size) is kept so the persisted document row stays previewable;
 	// a missing file is not an error — the document is optional at this step.
-	var licenseMeta uploadedFileMeta
-	if m, err := saveUploadedFileFull(r, "license_file", "licenses"); err == nil {
-		licenseMeta = m
-	}
+	// A file that was attached but could not be stored fails the form below,
+	// once it is built, rather than registering the account without it.
+	licenseMeta, licenseErr := optionalUploadFull(r, "license_file", "licenses")
 	licenseURL := licenseMeta.URL
 
 	var latPtr, lonPtr *float64
@@ -43,11 +42,12 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	accountType := r.PostFormValue("account_type")
-	if accountType == "job_seeker" || accountType == "seeker" {
+	switch accountType {
+	case "job_seeker", "seeker":
 		accountType = "job_seeker"
-	} else if accountType == "supplier" || accountType == "vendor" {
+	case "supplier", "vendor":
 		accountType = "vendor"
-	} else {
+	default:
 		accountType = "customer"
 	}
 
@@ -109,14 +109,14 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 			}
 			return r.PostFormValue("city_id")
 		}(),
-		BranchCount:     r.PostFormValue("branch_count"),
-		Address:         address,
-		Latitude:        r.PostFormValue("branch_lat"),
-		Longitude:       r.PostFormValue("branch_lon"),
-		GoogleMapsURL:   r.PostFormValue("branch_google_maps_url"),
-		Specialisation:  strings.TrimSpace(r.PostFormValue("specialisation")),
-		YearsExperience: strings.TrimSpace(r.PostFormValue("years_experience")),
-		Bio:             strings.TrimSpace(r.PostFormValue("bio")),
+		BranchCount:              r.PostFormValue("branch_count"),
+		Address:                  address,
+		Latitude:                 r.PostFormValue("branch_lat"),
+		Longitude:                r.PostFormValue("branch_lon"),
+		GoogleMapsURL:            r.PostFormValue("branch_google_maps_url"),
+		Specialisation:           strings.TrimSpace(r.PostFormValue("specialisation")),
+		YearsExperience:          strings.TrimSpace(r.PostFormValue("years_experience")),
+		Bio:                      strings.TrimSpace(r.PostFormValue("bio")),
 		ExpectedSalary:           strings.TrimSpace(r.PostFormValue("expected_salary")),
 		TurnstileSiteKey:         h.turnstileSiteKey(),
 		RequireEmailVerification: h.requireEmailVerification,
@@ -126,6 +126,12 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	if err := h.verifyTurnstile(r, "register"); err != nil {
 		h.log.WarnContext(ctx, "registration rejected: turnstile verification failed", "error", err)
 		form.Error = i18n.T(lang, "auth.turnstile.failed")
+		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+		return
+	}
+	if licenseErr != nil {
+		h.log.WarnContext(ctx, "registration licence file could not be saved", "error", licenseErr)
+		form.Error = i18n.T(lang, "upload.attachment_failed")
 		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
 		return
 	}
@@ -140,7 +146,7 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	// Phone verification (required if h.requirePhoneVerification, otherwise optional)
 	var normPhone string
 	if phone != "" {
-		if norm, err := telegramgateway.NormalizePhone(phone); err == nil {
+		if norm, err := telegramgateway.NormalizePhone(phone); err == nil { // nolint:errswallow: an unnormalisable number stays empty and is rejected by the validation below when required
 			normPhone = norm
 		}
 	}

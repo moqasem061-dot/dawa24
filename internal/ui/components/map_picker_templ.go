@@ -10,7 +10,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 // MapPickerProps defines configuration for the geographic coordinate and radius picker.

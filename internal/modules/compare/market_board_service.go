@@ -90,7 +90,7 @@ func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter)
 	key := "compare:market:count:" + marketFilterFingerprint(filter)
 	var cached int64
 	if s.cache != nil {
-		if err := s.cache.GetJSON(ctx, key, &cached); err == nil {
+		if err := s.cache.GetJSON(ctx, key, &cached); err == nil { // nolint:errswallow: a cache miss or error recomputes the count below
 			return cached, nil
 		}
 	}

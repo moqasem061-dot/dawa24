@@ -2,6 +2,8 @@ package pages
 
 import (
 	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
@@ -9,7 +11,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 	<div id="offer-location-form-card" class="glass-panel p-6 border rounded-2xl shadow-sm">
 		<div class="flex-between items-center mb-4 pb-3 border-b">
 			<div class="d-flex items-center gap-2">
-				<span class="text-xl">📍</span>
+				<span class="text-xl">@components.IconMapPin("icon-md")</span>
 				<div>
 					<h2 class="text-base font-black text-primary m-0" x-text="mode === 'edit' ? 'تعديل نطاق التغطية الجغرافي' : 'إضافة نطاقات تغطية للعرض (هرمي: أيام ومحافظات ومدن)'">
 						إضافة نطاقات تغطية للعرض
@@ -38,7 +40,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 			<div class="bg-surface-sunken p-4 rounded-xl border">
 				<div class="flex-between items-center mb-2.5 flex-wrap gap-2">
 					<label class="text-xs font-extrabold m-0 text-primary d-flex items-center gap-1.5">
-						<span>🗓️</span>
+						<span>@components.IconCalendar("icon-xs")</span>
 						<span>أيام سريان العرض والتوصيل (اختر يوماً أو أكثر)</span>
 						<span class="text-danger">*</span>
 					</label>
@@ -78,7 +80,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 				<!-- Governorate Selection -->
 				<div class="bg-surface-sunken p-4 rounded-xl border h-full">
 					<label class="form-label text-xs font-extrabold mb-1.5 d-block text-primary">
-						<span>📍 المحافظة المستهدفة</span> <span class="text-danger">*</span>
+						<span>المحافظة المستهدفة</span> <span class="text-danger">*</span>
 					</label>
 					<select
 						name="governorate_id"
@@ -132,7 +134,7 @@ templ VendorOfferLocationsForm(data VendorOfferLocationsData, lang string) {
 			<div x-show="selectedGovId" class="bg-surface-sunken p-4 rounded-xl border d-flex flex-col gap-3">
 				<div class="flex-between items-center flex-wrap gap-2">
 					<label class="text-xs font-extrabold m-0 text-primary d-flex items-center gap-1.5">
-						<span>🏙️</span>
+						<span>@components.IconBuilding("icon-xs")</span>
 						<span>المدن والمراكز المشمولة بالعرض في هذه المحافظة</span>
 						<span class="badge badge-primary text-2xs" x-text="selectedCities.length + ' مدينة محددة'"></span>
 					</label>

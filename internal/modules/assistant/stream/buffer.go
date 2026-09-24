@@ -23,6 +23,7 @@ package stream
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 	"time"
@@ -256,7 +257,7 @@ func (b *redisBuffer) Read(ctx context.Context, turnID string, after int64, time
 
 	for {
 		raw, err := b.rdb.LRange(ctx, key, after, -1).Result()
-		if err != nil && err != redis.Nil {
+		if err != nil && !errors.Is(err, redis.Nil) {
 			return nil, fmt.Errorf("assistant stream: read: %w", err)
 		}
 		if len(raw) > 0 {

@@ -2,9 +2,9 @@
 
 Read this before changing anything. It is short on purpose.
 
-> **Continuing this project?** Start with [`HANDOFF.md`](HANDOFF.md) — it records
-> exactly what is built, what is not, every reference path, and the remaining
-> phases in order.
+> **Continuing this project?** Read this file, then `docs/modules/<name>.md` for
+> the module you are touching, then `docs/adr/decisions.md` before proposing an
+> architectural alternative.
 
 ## What this is
 
@@ -38,16 +38,17 @@ buy from suppliers. It is being rebuilt from a Laravel 12 + Livewire monolith
    - `modules/A` may **not** import `modules/B` — use events or a public interface
    - `platform/*` may **not** import `modules/*`
    - `shared/*` imports nothing from this repo
-   `golangci-lint` (depguard) will reject violations.
+   `golangci-lint` (depguard) rejects the `shared/` and `platform/` directions;
+   `test/module_boundaries_test.go` rejects module-to-module imports; the
+   composition root (`cmd/server`) adapts one module's service to another's port.
 
 6. **400 lines per Go file, maximum.** `make check-file-size` enforces it. Split
    by concern: `domain.go`, `service.go`, `repository.go`, `http/`, `jobs/`.
 
-7. **Preserve legacy behaviour during migration.** Business rules, primary key
-   values, order-number formats and money semantics are ported *exactly*, even
-   where they look wrong. We are proving parity against the old system. Fixes
-   happen after cutover, deliberately, with tests. If something looks like a bug,
-   write it down in `docs/modules/<module>.md` — do not "improve" it.
+7. **This platform is the source of truth.** The Laravel system is retired and is
+   no longer a parity baseline. Keep data compatibility (primary keys,
+   order-number formats, imported records), but when behaviour is wrong, fix it
+   here with a test and note the change in `docs/modules/<module>.md`.
 
 ## Layout
 
@@ -84,7 +85,8 @@ Postgres schemas mirror module names: `identity`, `org`, `catalog`, `inventory`,
 - **Never hand-write what can be generated.** Migrations follow a template; SQL
   becomes typed Go via sqlc; templates become Go via templ.
 - **Do not re-derive the legacy schema.** It is documented in
-  `../docs/rebuild/SCHEMA_INVENTORY.md` (141 tables, every column and index).
+  `SCHEMA_INVENTORY.md` (141 tables, every column and index), which lives
+  outside this repository in the legacy workspace (`Dawa 24/docs/rebuild/`).
 
 ## Migrations
 
@@ -111,10 +113,7 @@ Postgres schemas mirror module names: `identity`, `org`, `catalog`, `inventory`,
 
 ## Current state
 
-Phase 1–2 of the rebuild: platform foundations. Built so far — config, database
-with RLS, cache, gateway client, HTTP middleware, migration runner, health
-endpoints, worker with River, and the `identity`/`org` schemas.
-
-Not built yet: catalog, inventory, commerce, promo, billing, ingest, workflow,
-hr modules; the templ UI layer; the legacy data ETL. See
-`../docs/rebuild/REBUILD_MASTER_PLAN.md` §13 for the phase order.
+Every bounded context under `internal/modules/` is built and served, along with
+the templ UI (`internal/ui/`) and the legacy ETL (`cmd/etl`). The work now is
+hardening and launch readiness, not new modules. Behaviour kept on purpose is
+recorded per module in `docs/modules/`.

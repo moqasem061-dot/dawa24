@@ -16,10 +16,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestCompareUploadSubmit_E2E(t *testing.T) {
@@ -45,7 +45,7 @@ func TestCompareUploadSubmit_E2E(t *testing.T) {
 	_, _ = part.Write([]byte(csvData))
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/compare/upload", &body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/upload", &body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 
 	// Attach authenticated vendor actor
@@ -106,7 +106,7 @@ func TestCompareUploadSubmit_E2E(t *testing.T) {
 	}
 
 	// Test CompareToolPage renders the file and success notice
-	reqTool := httptest.NewRequest("GET", "/compare/tool?"+u.RawQuery, nil)
+	reqTool := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/tool?"+u.RawQuery, nil)
 	reqTool = reqTool.WithContext(authctx.WithActor(reqTool.Context(), actor))
 	recTool := httptest.NewRecorder()
 	h.CompareToolPage(recTool, reqTool)
@@ -137,7 +137,7 @@ func TestCompareSampleDownload_E2E(t *testing.T) {
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, logger,
 	)
 
-	req := httptest.NewRequest("GET", "/compare/sample", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/sample", nil)
 	rec := httptest.NewRecorder()
 	h.CompareSampleDownload(rec, req)
 
@@ -189,7 +189,7 @@ func TestCompareFileMappingModal_E2E(t *testing.T) {
 	actor := authctx.Actor{UserID: 100, OrganizationID: 200, OrgType: "customer", Permissions: []string{"pharmacy.*"}}
 
 	// Test GET /compare/files/{id}/mapping-modal
-	reqModal := httptest.NewRequest("GET", fmt.Sprintf("/compare/files/%d/mapping-modal", file.ID), nil)
+	reqModal := httptest.NewRequestWithContext(context.Background(), "GET", fmt.Sprintf("/compare/files/%d/mapping-modal", file.ID), nil)
 	reqModal = reqModal.WithContext(authctx.WithActor(reqModal.Context(), actor))
 	recModal := httptest.NewRecorder()
 
@@ -253,7 +253,7 @@ func TestCompareQuickSearch_E2E(t *testing.T) {
 	actor := authctx.Actor{UserID: 100, OrganizationID: 200, OrgType: "customer", Permissions: []string{"pharmacy.*"}}
 
 	// Test GET /compare/search?q=بانادول
-	req := httptest.NewRequest("GET", "/compare/search?q=بانادول", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/search?q=بانادول", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()
 
@@ -350,7 +350,7 @@ func TestMarketDiscountsPage_E2E(t *testing.T) {
 
 	actor := authctx.Actor{UserID: 100, OrganizationID: 200, OrgType: "vendor", Permissions: []string{"vendor.*"}}
 
-	req := httptest.NewRequest("GET", "/market-discounts", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/market-discounts", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()
 

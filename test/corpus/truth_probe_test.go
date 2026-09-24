@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // TestBarcodeLabels counts how many rows in each corpus file carry a barcode

@@ -1,10 +1,11 @@
 package platformadmin
 
 import (
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Refusing to send the wrong secret to a third party.

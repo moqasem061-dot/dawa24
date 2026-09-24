@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // InvoicePrintPage renders the Egyptian-standard printable invoice for a specific invoice ID.
@@ -142,7 +142,9 @@ func (h *UIHandler) buildPrintableVendorInfo(ctx context.Context, invoice *billi
 		City:               i18n.T(lang, "invoice.default_vendor_city"),
 	}
 	if invoice != nil && invoice.OrganizationID > 0 && h.orgSvc != nil {
-		if vOrg, _ := h.orgSvc.GetOrganization(ctx, invoice.OrganizationID); vOrg != nil {
+		if vOrg, loadErr := h.orgSvc.GetOrganization(ctx, invoice.OrganizationID); loadErr != nil {
+			h.logLoadErr(ctx, "orgSvc.GetOrganization", loadErr)
+		} else if vOrg != nil {
 			vendorInfo.OrganizationID = vOrg.ID
 			if vOrg.LegalName != "" {
 				vendorInfo.LegalName = vOrg.LegalName
@@ -183,7 +185,9 @@ func (h *UIHandler) buildPrintableCustomerInfo(ctx context.Context, invoice *bil
 		custOrgID = order.OrganizationID
 	}
 	if custOrgID != nil && *custOrgID > 0 && h.orgSvc != nil {
-		if cOrg, _ := h.orgSvc.GetOrganization(ctx, *custOrgID); cOrg != nil {
+		if cOrg, loadErr := h.orgSvc.GetOrganization(ctx, *custOrgID); loadErr != nil {
+			h.logLoadErr(ctx, "orgSvc.GetOrganization", loadErr)
+		} else if cOrg != nil {
 			custInfo.OrganizationID = cOrg.ID
 			if cOrg.OrganizationNumber != "" {
 				custInfo.OrganizationNumber = cOrg.OrganizationNumber
@@ -206,7 +210,9 @@ func (h *UIHandler) buildPrintableCustomerInfo(ctx context.Context, invoice *bil
 			}
 		}
 		if invoice != nil && invoice.OrganizationID > 0 {
-			if links, err := h.orgSvc.ListUserOrganizationsByVendor(ctx, invoice.OrganizationID, "approved"); err == nil {
+			if links, err := h.orgSvc.ListUserOrganizationsByVendor(ctx, invoice.OrganizationID, "approved"); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ListUserOrganizationsByVendor", err)
+			} else {
 				for _, link := range links {
 					if link != nil && link.CustomerOrgID != nil && *link.CustomerOrgID == *custOrgID && link.OrganizationNumber != "" {
 						custInfo.OrganizationNumber = link.OrganizationNumber

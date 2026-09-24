@@ -5,12 +5,12 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	assistantPostgres "github.com/muhiya/dawa24-store/internal/modules/assistant/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	assistantPostgres "github.com/moqasem061-dot/dawa24/internal/modules/assistant/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 // Assistant retention.

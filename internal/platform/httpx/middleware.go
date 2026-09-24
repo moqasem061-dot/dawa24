@@ -15,11 +15,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/errtrack"
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
-	"github.com/muhiya/dawa24-store/internal/platform/reqcache"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/errtrack"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/reqcache"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // RequestID assigns or adopts a correlation id and echoes it back.
@@ -60,7 +60,7 @@ func Recover(log *slog.Logger) func(http.Handler) http.Handler {
 				if rec == nil {
 					return
 				}
-				if rec == http.ErrAbortHandler {
+				if rec == http.ErrAbortHandler { //nolint:errorlint // recover() yields the panic value itself, never a wrapped error
 					panic(rec)
 				}
 				stack := string(debug.Stack())

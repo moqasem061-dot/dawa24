@@ -10,13 +10,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // loadVendorInStockItems loads all product variants owned by the vendor that currently have stock > 0.
@@ -25,18 +25,21 @@ func (h *UIHandler) loadVendorInStockItems(ctx context.Context, orgID int64) []p
 	if orgID <= 0 {
 		return itemOptions
 	}
-	var warehouses []*inventory.Warehouse
 	var stocks []*inventory.Stock
 	whNameMap := make(map[int64]string)
 	stockQtyMap := make(map[int64]int)
 	stockWhMap := make(map[int64]string)
 
 	if h.invSvc != nil {
-		allWhs, _ := h.invSvc.ListWarehouses(ctx)
-		stocks, _ = h.invSvc.ListStocksByOrg(ctx, orgID)
+		allWhs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
+		if loaded, err := h.invSvc.ListStocksByOrg(ctx, orgID); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListStocksByOrg", err)
+		} else {
+			stocks = loaded
+		}
 		for _, wh := range allWhs {
 			if wh != nil && wh.OrganizationID == orgID {
-				warehouses = append(warehouses, wh)
 				whNameMap[wh.ID] = wh.Name
 			}
 		}
@@ -52,7 +55,9 @@ func (h *UIHandler) loadVendorInStockItems(ctx context.Context, orgID int64) []p
 
 	if h.catSvc != nil {
 		variants, _, err := h.catSvc.ListVariantsByOrganization(ctx, orgID, catalog.VariantSearchParams{Limit: 500})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListVariantsByOrganization", err)
+		} else {
 			for _, v := range variants {
 				if v == nil {
 					continue
@@ -124,7 +129,9 @@ func (h *UIHandler) VendorAdCreateSubmit(w http.ResponseWriter, r *http.Request)
 	if file, header, fileErr := r.FormFile("media_file"); fileErr == nil && file != nil {
 		defer file.Close()
 		if data, readErr := io.ReadAll(file); readErr == nil && len(data) > 0 {
-			if u, saveErr := saveUploadedBytes(data, header.Filename, "ads"); saveErr == nil && u != "" {
+			if u, saveErr := saveUploadedBytes(r.Context(), data, header.Filename, "ads"); saveErr != nil {
+				h.log.WarnContext(r.Context(), "ad media not saved", "file", header.Filename, "error", saveErr)
+			} else if u != "" {
 				ad.MediaURL = u
 				if strings.HasSuffix(strings.ToLower(header.Filename), ".mp4") || strings.HasSuffix(strings.ToLower(header.Filename), ".webm") {
 					ad.MediaType = promo.MediaVideo
@@ -186,7 +193,9 @@ func (h *UIHandler) VendorAdUpdateSubmit(w http.ResponseWriter, r *http.Request)
 	if file, header, fileErr := r.FormFile("media_file"); fileErr == nil && file != nil {
 		defer file.Close()
 		if data, readErr := io.ReadAll(file); readErr == nil && len(data) > 0 {
-			if u, saveErr := saveUploadedBytes(data, header.Filename, "ads"); saveErr == nil && u != "" {
+			if u, saveErr := saveUploadedBytes(r.Context(), data, header.Filename, "ads"); saveErr != nil {
+				h.log.WarnContext(r.Context(), "ad media not saved", "file", header.Filename, "error", saveErr)
+			} else if u != "" {
 				ad.MediaURL = u
 				if strings.HasSuffix(strings.ToLower(header.Filename), ".mp4") || strings.HasSuffix(strings.ToLower(header.Filename), ".webm") {
 					ad.MediaType = promo.MediaVideo
@@ -270,7 +279,7 @@ func (h *UIHandler) parseAdForm(r *http.Request, orgID int64) *promo.Ad {
 
 	// Only the four durations the wizard offers, because each is priced.
 	durationDays := 30
-	if d, err := strconv.Atoi(r.FormValue("duration_days")); err == nil {
+	if d, err := strconv.Atoi(r.FormValue("duration_days")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		switch d {
 		case 7, 15, 30, 60:
 			durationDays = d
@@ -370,7 +379,9 @@ func (h *UIHandler) validateAdSubmission(
 		stockQty := variant.StockQty
 		if h.invSvc != nil {
 			avail, err := h.invSvc.AvailableQuantity(ctx, *ad.ClickTargetID)
-			if err == nil {
+			if err != nil {
+				h.logLoadErr(ctx, "invSvc.AvailableQuantity", err)
+			} else {
 				stockQty = avail
 			}
 		}

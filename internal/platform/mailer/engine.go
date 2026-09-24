@@ -9,16 +9,16 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/format"
 )
 
 var (
-	ErrOTPNotFound        = errors.New("mailer: no pending OTP found for this email")
-	ErrOTPExpired         = errors.New("mailer: OTP code has expired")
-	ErrOTPMaxAttempts     = errors.New("mailer: maximum verification attempts exceeded")
-	ErrOTPInvalidCode     = errors.New("mailer: invalid OTP code")
-	ErrOTPInCooldown      = errors.New("mailer: please wait before requesting another code")
-	ErrOTPHourlyExceeded  = errors.New("mailer: hourly request limit reached")
+	ErrOTPNotFound       = errors.New("mailer: no pending OTP found for this email")
+	ErrOTPExpired        = errors.New("mailer: OTP code has expired")
+	ErrOTPMaxAttempts    = errors.New("mailer: maximum verification attempts exceeded")
+	ErrOTPInvalidCode    = errors.New("mailer: invalid OTP code")
+	ErrOTPInCooldown     = errors.New("mailer: please wait before requesting another code")
+	ErrOTPHourlyExceeded = errors.New("mailer: hourly request limit reached")
 )
 
 type otpEntry struct {
@@ -30,9 +30,9 @@ type otpEntry struct {
 // OTPEngine manages in-memory OTP codes, expirations, cooldowns, and rate limits.
 type OTPEngine struct {
 	mu          sync.Mutex
-	codes       map[string]otpEntry     // "purpose:email" -> entry
-	cooldowns   map[string]time.Time    // "purpose:email" -> cooldown expiry
-	hourlySends map[string][]time.Time  // "purpose:email" -> send timestamps
+	codes       map[string]otpEntry    // "purpose:email" -> entry
+	cooldowns   map[string]time.Time   // "purpose:email" -> cooldown expiry
+	hourlySends map[string][]time.Time // "purpose:email" -> send timestamps
 }
 
 // NewOTPEngine creates a new OTPEngine.
@@ -47,7 +47,7 @@ func NewOTPEngine() *OTPEngine {
 // GenerateOTP creates a cryptographically secure 6-digit code, stores it with ttl,
 // and enforces rate limits. Returns (code, cooldownSeconds, error).
 func (e *OTPEngine) GenerateOTP(email, purpose string, ttl time.Duration) (string, int, error) {
-	cleanEmail := identity.NormalizeEmail(email)
+	cleanEmail := format.NormalizeEmail(email)
 	if cleanEmail == "" {
 		return "", 0, errors.New("mailer: email cannot be empty")
 	}
@@ -104,7 +104,7 @@ func (e *OTPEngine) GenerateOTP(email, purpose string, ttl time.Duration) (strin
 // VerifyOTP validates a submitted 6-digit code against the stored OTP in constant-time.
 // On success, the OTP is consumed and removed.
 func (e *OTPEngine) VerifyOTP(email, purpose, submittedCode string) (bool, error) {
-	cleanEmail := identity.NormalizeEmail(email)
+	cleanEmail := format.NormalizeEmail(email)
 	if cleanEmail == "" {
 		return false, errors.New("mailer: email cannot be empty")
 	}

@@ -11,12 +11,18 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	_ "github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // ErrNotConnected is returned when the pool has not been established yet.
 var ErrNotConnected = errors.New("database: not connected yet")
+
+// ErrRLSBypassed is returned when row-level security is required but the
+// connecting role is a superuser or holds BYPASSRLS. It is a configuration
+// error, not a transient one: retrying cannot fix it.
+var ErrRLSBypassed = errors.New("database: the connecting role bypasses row-level security; " +
+	"connect the server and worker as dawa24_app (DB_ALLOW_RLS_BYPASS=true overrides)")
 
 // DB wraps the pool and exposes only transaction-scoped access.
 //
@@ -47,8 +53,11 @@ func (db *DB) Connect(ctx context.Context, cfg config.Database) error {
 	if err != nil {
 		return err
 	}
+	if err := db.checkRLS(ctx, pool, cfg.RequireRLS); err != nil {
+		pool.Close()
+		return err
+	}
 
-	db.logRLSBypassNotice(ctx, pool)
 	db.mu.Lock()
 	old := db.pool
 	db.pool = pool
@@ -84,17 +93,28 @@ func Open(ctx context.Context, cfg config.Database) (*DB, error) {
 		return nil, err
 	}
 	db := &DB{pool: pool}
-	db.logRLSBypassNotice(ctx, pool)
+	if err := db.checkRLS(ctx, pool, cfg.RequireRLS); err != nil {
+		pool.Close()
+		return nil, err
+	}
 	return db, nil
 }
 
-func (db *DB) logRLSBypassNotice(ctx context.Context, pool *pgxpool.Pool) {
+// checkRLS records whether the connecting role bypasses row-level security,
+// and refuses it when required. A superuser connection makes every RLS policy
+// inert, so tenant isolation then rests on each query's WHERE clause alone.
+func (db *DB) checkRLS(ctx context.Context, pool *pgxpool.Pool, required bool) error {
 	bypassed := roleBypassesRLS(ctx, pool)
 	db.rlsBypassed.Store(bypassed)
-	if bypassed {
-		slog.Warn("SECURITY NOTICE: Database connection role has SUPERUSER or BYPASSRLS privileges; engine-level Row-Level Security is INERT. Connect via non-superuser role (e.g. dawa24_app) in production.",
-			"role_bypasses_rls", true)
+	if !bypassed {
+		return nil
 	}
+	if required {
+		return ErrRLSBypassed
+	}
+	slog.Warn("SECURITY NOTICE: Database connection role has SUPERUSER or BYPASSRLS privileges; engine-level Row-Level Security is INERT. Connect via non-superuser role (e.g. dawa24_app) in production.",
+		"role_bypasses_rls", true)
+	return nil
 }
 
 func newPool(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
@@ -117,7 +137,7 @@ func newPool(ctx context.Context, cfg config.Database) (*pgxpool.Pool, error) {
 	}
 	poolCfg.ConnConfig.RuntimeParams["statement_timeout"] =
 		fmt.Sprintf("%d", cfg.StatementTimeout.Milliseconds())
-	poolCfg.ConnConfig.RuntimeParams["application_name"] = "dawa24-store"
+	poolCfg.ConnConfig.RuntimeParams["application_name"] = "dawa24"
 	poolCfg.ConnConfig.RuntimeParams["timezone"] = "Africa/Cairo"
 	poolCfg.ConnConfig.Tracer = statsTracer{}
 

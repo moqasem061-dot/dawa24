@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"errors"
 	"net/http"
 
 	"github.com/a-h/templ"
@@ -30,4 +31,17 @@ func (h *UIHandler) renderPage(ctx context.Context, w http.ResponseWriter, what 
 	if err := page.Render(ctx, w); err != nil {
 		h.log.ErrorContext(ctx, what, "error", err)
 	}
+}
+
+// logLoadErr records a read a page renders around rather than fails on: the
+// section shows empty, and the reason is in the log.
+//
+// Four hundred call sites used to discard these errors outright, so a database
+// outage presented as an empty dashboard with nothing in the logs to say why.
+// A cancelled request is the client leaving, not a failure, and is not logged.
+func (h *UIHandler) logLoadErr(ctx context.Context, what string, err error) {
+	if err == nil || errors.Is(err, context.Canceled) {
+		return
+	}
+	h.log.WarnContext(ctx, "page data unavailable", "what", what, "error", err)
 }

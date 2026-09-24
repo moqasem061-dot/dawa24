@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 type stubRepo struct{ t *testing.T }
@@ -18,41 +18,53 @@ func (r stubRepo) fail(method string) {
 }
 
 func (r stubRepo) GetOrCreateWallet(ctx context.Context, userID int64, currency string) (*billing.Wallet, error) {
-	r.fail("GetOrCreateWallet"); return nil, nil
+	r.fail("GetOrCreateWallet")
+	return nil, nil
 }
 func (r stubRepo) GetWallet(ctx context.Context, id int64) (*billing.Wallet, error) {
-	r.fail("GetWallet"); return nil, nil
+	r.fail("GetWallet")
+	return nil, nil
 }
 func (r stubRepo) RecordTransaction(ctx context.Context, walletID int64, txType billing.TransactionType, delta money.Amount, refType string, refID *int64, desc string) (*billing.WalletTransaction, error) {
-	r.fail("RecordTransaction"); return nil, nil
+	r.fail("RecordTransaction")
+	return nil, nil
 }
 func (r stubRepo) ListTransactions(ctx context.Context, walletID int64, limit, offset int) ([]*billing.WalletTransaction, error) {
-	r.fail("ListTransactions"); return nil, nil
+	r.fail("ListTransactions")
+	return nil, nil
 }
 func (r stubRepo) ListTransactionsWithTotal(ctx context.Context, walletID int64, limit, offset int) ([]*billing.WalletTransaction, int, error) {
-	r.fail("ListTransactionsWithTotal"); return nil, 0, nil
+	r.fail("ListTransactionsWithTotal")
+	return nil, 0, nil
 }
 func (r stubRepo) ListTransactionsWithTypeTotal(ctx context.Context, walletID int64, txType string, limit, offset int) ([]*billing.WalletTransaction, int, error) {
-	r.fail("ListTransactionsWithTypeTotal"); return nil, 0, nil
+	r.fail("ListTransactionsWithTypeTotal")
+	return nil, 0, nil
 }
 
 func (r stubRepo) CreatePayment(ctx context.Context, p *billing.Payment) error {
-	r.fail("CreatePayment"); return nil
+	r.fail("CreatePayment")
+	return nil
 }
 func (r stubRepo) GetPaymentByID(ctx context.Context, id int64) (*billing.Payment, error) {
-	r.fail("GetPaymentByID"); return nil, nil
+	r.fail("GetPaymentByID")
+	return nil, nil
 }
 func (r stubRepo) ListPlans(ctx context.Context) ([]*billing.Plan, error) {
-	r.fail("ListPlans"); return nil, nil
+	r.fail("ListPlans")
+	return nil, nil
 }
 func (r stubRepo) AdminListPlans(ctx context.Context) ([]*billing.Plan, error) {
-	r.fail("AdminListPlans"); return nil, nil
+	r.fail("AdminListPlans")
+	return nil, nil
 }
 func (r stubRepo) CreatePlan(ctx context.Context, p *billing.Plan) error {
-	r.fail("CreatePlan"); return nil
+	r.fail("CreatePlan")
+	return nil
 }
 func (r stubRepo) GetPlanByID(ctx context.Context, id int64) (*billing.Plan, error) {
-	r.fail("GetPlanByID"); return nil, nil
+	r.fail("GetPlanByID")
+	return nil, nil
 }
 func (r stubRepo) GetPlanBySlug(ctx context.Context, slug string) (*billing.Plan, error) {
 	r.fail("GetPlanBySlug")

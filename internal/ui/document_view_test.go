@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestDocumentViewHandler_SanitizesLocalhostAndShowsCleanError(t *testing.T) {
@@ -54,7 +54,7 @@ func TestDocumentViewHandler_SanitizesLocalhostAndShowsCleanError(t *testing.T) 
 
 	// 2. Perform GET /documents/{id}/view as admin
 	docIDStr := fmt.Sprintf("%d", docID)
-	req := httptest.NewRequest("GET", "/documents/"+docIDStr+"/view", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/documents/"+docIDStr+"/view", nil)
 	// Build chi URL params context
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", docIDStr)
@@ -126,7 +126,7 @@ func TestTenantSubscriptionPage_ShowsPlansAndUpgrades(t *testing.T) {
 	}
 
 	// 2. GET /customer/subscription
-	req := httptest.NewRequest("GET", "/customer/subscription", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/subscription", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()
 
@@ -154,7 +154,7 @@ func TestTenantSubscriptionPage_ShowsPlansAndUpgrades(t *testing.T) {
 		OrgType:        "vendor",
 		Permissions:    []string{"vendor.*"},
 	}
-	vReq := httptest.NewRequest("GET", "/vendor/subscription", nil)
+	vReq := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/subscription", nil)
 	vReq = vReq.WithContext(authctx.WithActor(vReq.Context(), vendorActor))
 	vRec := httptest.NewRecorder()
 
@@ -227,7 +227,7 @@ func TestTenantSubscriptionCheckoutSubmit_UpgradesAndDeductsWallet(t *testing.T)
 	form.Set("billing_cycle", "monthly")
 	form.Set("auto_renew", "true")
 
-	req := httptest.NewRequest("POST", "/customer/subscription/checkout", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/subscription/checkout", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()

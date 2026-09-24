@@ -3,9 +3,9 @@ package pages
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func reviewScoreOf(rev *org.Review) int {
@@ -23,21 +23,6 @@ func isStepDone(status commerce.OrderStatus, step int) bool {
 		return status == commerce.StatusConfirmed || status == commerce.StatusProcessing || status == commerce.StatusShipped || status == commerce.StatusInTransit || status == commerce.StatusOutForDelivery || status == commerce.StatusDelivered || status == commerce.StatusCompleted
 	case 3:
 		return status == commerce.StatusShipped || status == commerce.StatusInTransit || status == commerce.StatusOutForDelivery || status == commerce.StatusDelivered || status == commerce.StatusCompleted
-	case 4:
-		return status == commerce.StatusDelivered || status == commerce.StatusCompleted
-	default:
-		return false
-	}
-}
-
-func isStepActive(status commerce.OrderStatus, step int) bool {
-	switch step {
-	case 1:
-		return status == commerce.StatusPending
-	case 2:
-		return status == commerce.StatusConfirmed || status == commerce.StatusProcessing
-	case 3:
-		return status == commerce.StatusShipped || status == commerce.StatusInTransit || status == commerce.StatusOutForDelivery
 	case 4:
 		return status == commerce.StatusDelivered || status == commerce.StatusCompleted
 	default:
@@ -134,10 +119,11 @@ func linePublicPrice(l *commerce.OrderLine) money.Amount {
 	}
 	if l.OriginalDiscount.IsPositive() && l.UnitPrice.IsPositive() && l.Quantity > 0 {
 		if l.TotalPrice.Minor() == l.UnitPrice.Minor()*int64(l.Quantity) {
-			discPct := float64(l.OriginalDiscount.Minor()) / 100.0
-			rate := 1.0 - (discPct / 100.0)
-			if rate > 0.001 {
-				return money.FromMinor(int64(float64(l.UnitPrice.Minor()) / rate))
+			// OriginalDiscount holds the percentage in hundredths, i.e. basis points.
+			if keep := 10000 - l.OriginalDiscount.Minor(); keep >= 10 {
+				if gross, err := l.UnitPrice.MulRatio(10000, keep); err == nil { // nolint:errswallow: on overflow the fallbacks below apply
+					return gross
+				}
 			}
 		}
 	}

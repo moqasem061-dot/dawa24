@@ -8,14 +8,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrgImportVendorIngestPage renders the canonical vendor catalogue ingest page on behalf of target vendor org.
@@ -50,7 +50,8 @@ func (h *UIHandler) AdminOrgImportVendorIngestPage(w http.ResponseWriter, r *htt
 	}
 
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(sysCtx)
+		whs, loadErr := h.invSvc.ListWarehouses(sysCtx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, wh := range whs {
 			if wh.OrganizationID == orgID {
 				view.Warehouses = append(view.Warehouses, wh)
@@ -152,7 +153,8 @@ func (h *UIHandler) AdminOrgImportVendorIngestSessionPage(w http.ResponseWriter,
 
 	var warehouses []*inventory.Warehouse
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(sysCtx)
+		whs, loadErr := h.invSvc.ListWarehouses(sysCtx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, wh := range whs {
 			if wh.OrganizationID == orgID {
 				warehouses = append(warehouses, wh)

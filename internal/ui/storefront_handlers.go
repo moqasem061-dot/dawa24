@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorStorefrontPage renders the supplier's featured sections manager.
@@ -26,7 +26,11 @@ func (h *UIHandler) VendorStorefrontPage(w http.ResponseWriter, r *http.Request)
 
 	var sections []*promo.HighlightSection
 	if h.promoSvc != nil {
-		sections, _ = h.promoSvc.ListHighlightSectionsByOrg(ctx, actor.OrganizationID)
+		if loaded, err := h.promoSvc.ListHighlightSectionsByOrg(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListHighlightSectionsByOrg", err)
+		} else {
+			sections = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render vendor storefront", pages.VendorStorefront(lang, dir, sections))

@@ -3,7 +3,7 @@ package billing
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // AddPaymentMethod saves a user payment method.

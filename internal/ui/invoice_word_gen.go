@@ -7,7 +7,7 @@ import (
 	"html"
 	"io"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 )
 
 // GenerateInvoiceWord builds an authentic Microsoft Word (.docx) document for an invoice.
@@ -109,7 +109,7 @@ func GenerateInvoiceWord(data *billing.PrintableInvoiceData, w io.Writer) error 
 
 	for idx, line := range data.Lines {
 		discStr := formatDiscountPercent(line.DiscountPercent)
-		buf.WriteString(fmt.Sprintf(`
+		fmt.Fprintf(&buf, `
       <w:tr>
         <w:tc><w:p><w:pPr><w:bidi/><w:jc w:val="center"/></w:pPr><w:r><w:t>%d</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:pPr><w:bidi/><w:jc w:val="center"/></w:pPr><w:r><w:t>%s</w:t></w:r></w:p></w:tc>
@@ -120,7 +120,7 @@ func GenerateInvoiceWord(data *billing.PrintableInvoiceData, w io.Writer) error 
         <w:tc><w:p><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr><w:r><w:t>%s ج.م</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:pPr><w:bidi/><w:jc w:val="center"/></w:pPr><w:r><w:t>%s</w:t></w:r></w:p></w:tc>
         <w:tc><w:p><w:pPr><w:bidi/><w:jc w:val="right"/></w:pPr><w:r><w:t>%s ج.م</w:t></w:r></w:p></w:tc>
-      </w:tr>`, idx+1, html.EscapeString(line.SKU), html.EscapeString(line.ItemName), html.EscapeString(line.BatchNumber), html.EscapeString(line.ExpiryDate), line.Quantity, line.UnitPrice.String(), discStr, line.TotalPrice.String()))
+      </w:tr>`, idx+1, html.EscapeString(line.SKU), html.EscapeString(line.ItemName), html.EscapeString(line.BatchNumber), html.EscapeString(line.ExpiryDate), line.Quantity, line.UnitPrice.String(), discStr, line.TotalPrice.String())
 	}
 
 	buf.WriteString(`

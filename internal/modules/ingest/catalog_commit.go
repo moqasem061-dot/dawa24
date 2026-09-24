@@ -19,11 +19,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // commitBatchSize is how many of the vendor's rows are written per round trip.
@@ -207,7 +205,7 @@ func (s *Service) newCommitRun(
 // variant it will be written as.
 type plannedRow struct {
 	row     *RowOutcome
-	variant *catalog.ProductVariant
+	variant *VariantDraft
 	// existingID is the vendor's variant this row resolved onto before the
 	// write, and zero for a row that will create one.
 	existingID int64
@@ -220,12 +218,12 @@ func (c *commitRun) writeBatch(ctx context.Context, chunk []*RowOutcome) error {
 	// planned is indexed by the row's position in the chunk and holds nil where
 	// the import mode declined the row, so that a reference surviving the round
 	// trip still points at the row it came from.
-	writes := make([]catalog.VariantWriteRow, 0, len(planned))
+	writes := make([]VariantWriteRow, 0, len(planned))
 	for ref, p := range planned {
 		if p == nil {
 			continue
 		}
-		writes = append(writes, catalog.VariantWriteRow{Ref: ref, Variant: p.variant})
+		writes = append(writes, VariantWriteRow{Ref: ref, Variant: p.variant})
 	}
 	if len(writes) == 0 {
 		return nil
@@ -259,14 +257,14 @@ func (c *commitRun) plan(chunk []*RowOutcome) []*plannedRow {
 // runs of the same file must produce the same ledger, and a map's iteration
 // order is deliberately not the same twice.
 func (c *commitRun) applyVariantResult(
-	planned []*plannedRow, result catalog.VariantWriteResult,
-) ([]inventory.StockWriteRow, map[int]*RowOutcome) {
+	planned []*plannedRow, result VariantWriteResult,
+) ([]StockWriteRow, map[int]*RowOutcome) {
 	failed := make(map[int]string, len(result.Failures))
 	for _, failure := range result.Failures {
 		failed[failure.Ref] = failure.Message
 	}
 
-	stocks := make([]inventory.StockWriteRow, 0, len(planned))
+	stocks := make([]StockWriteRow, 0, len(planned))
 	stockRefs := make(map[int]*RowOutcome, len(planned))
 
 	for ref, p := range planned {
@@ -318,7 +316,7 @@ func (c *commitRun) applyVariantResult(
 // writeStocks writes one batch of balances and reports each failure against the
 // row that caused it.
 func (c *commitRun) writeStocks(
-	ctx context.Context, rows []inventory.StockWriteRow, byRef map[int]*RowOutcome,
+	ctx context.Context, rows []StockWriteRow, byRef map[int]*RowOutcome,
 ) {
 	if len(rows) == 0 {
 		return
@@ -342,4 +340,3 @@ func (c *commitRun) writeStocks(
 		}
 	}
 }
-

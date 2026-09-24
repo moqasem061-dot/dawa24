@@ -8,11 +8,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminCitiesPage renders the Egyptian cities and spatial coordinates management screen.
@@ -23,8 +23,16 @@ func (h *UIHandler) AdminCitiesPage(w http.ResponseWriter, r *http.Request) {
 	var governorates []*platformadmin.Governorate
 	var allCities []*platformadmin.City
 	if h.adminSvc != nil {
-		governorates, _ = h.adminSvc.ListAllGovernorates(ctx, 1)
-		allCities, _ = h.adminSvc.ListAllCities(database.AsSystem(ctx), 1)
+		if loaded, err := h.adminSvc.ListAllGovernorates(ctx, 1); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListAllGovernorates", err)
+		} else {
+			governorates = loaded
+		}
+		if loaded, err := h.adminSvc.ListAllCities(database.AsSystem(ctx), 1); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListAllCities", err)
+		} else {
+			allCities = loaded
+		}
 	}
 
 	selectedGovID, _ := strconv.ParseInt(r.URL.Query().Get("gov_id"), 10, 64)
@@ -69,7 +77,7 @@ func (h *UIHandler) AdminCitiesPage(w http.ResponseWriter, r *http.Request) {
 
 	totalFiltered := len(filteredCities)
 	var paginatedCities []*platformadmin.City
-	var totalPages int = 1
+	var totalPages int
 
 	if limit >= 1000 {
 		paginatedCities = filteredCities

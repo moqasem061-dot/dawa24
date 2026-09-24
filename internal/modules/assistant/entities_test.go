@@ -3,7 +3,7 @@ package assistant
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // The collector has to find rows wherever a tool happened to put them, because

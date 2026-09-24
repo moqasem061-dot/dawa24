@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminSettings_FeatureFlagsSectionRemoved(t *testing.T) {
@@ -35,7 +36,7 @@ func TestAdminSettings_FeatureFlagsSectionRemoved(t *testing.T) {
 	r.Get("/admin/settings", handler.AdminSettingsPage)
 
 	t.Run("GET /admin/settings contains no Feature Flags section or keys", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/settings", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/settings", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 

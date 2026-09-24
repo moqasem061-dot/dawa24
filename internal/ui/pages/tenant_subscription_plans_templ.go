@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) templ.Component {
@@ -65,7 +65,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var2).String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 1, Col: 0}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 1, Col: 0}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 				if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(p.Name.Get("ar"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 73, Col: 28}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 73, Col: 28}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(p.Slug)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 76, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 76, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 				if templ_7745c5c3_Err != nil {
@@ -132,7 +132,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(p.Description.Get("ar"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 86, Col: 33}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 86, Col: 33}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -169,7 +169,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d جلسات", p.MaxLoginSessions))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 121, Col: 111}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 121, Col: 111}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d أجهزة", p.MaxDevices))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 128, Col: 105}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 128, Col: 105}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -211,7 +211,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(p.AIPlanID)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 135, Col: 90}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 135, Col: 90}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -337,7 +337,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 					var templ_7745c5c3_Var10 string
 					templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Slug)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 197, Col: 33}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 197, Col: 33}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 					if templ_7745c5c3_Err != nil {
@@ -350,7 +350,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 					var templ_7745c5c3_Var11 string
 					templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("فترة التهدئة نشطة حتى %s", data.CooldownUntilText))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 200, Col: 99}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 200, Col: 99}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 					if templ_7745c5c3_Err != nil {
@@ -371,7 +371,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 					var templ_7745c5c3_Var12 string
 					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(data.CooldownUntilText)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 206, Col: 124}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 206, Col: 124}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -389,7 +389,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(p.Slug)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 212, Col: 32}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 212, Col: 32}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 					if templ_7745c5c3_Err != nil {
@@ -402,7 +402,7 @@ func TenantSubscriptionPlans(data TenantSubscriptionPageData, orgType string) te
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openCheckout('%s', '%s', %d, %d, %t)", p.Slug, p.Name.Get("ar"), p.PriceMonth.Minor(), p.PriceYear.Minor(), data.CurrentPlanID > 0 && data.CurrentPlanID != p.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/tenant_subscription_plans.templ`, Line: 214, Col: 192}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `tenant_subscription_plans.templ`, Line: 214, Col: 192}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 					if templ_7745c5c3_Err != nil {

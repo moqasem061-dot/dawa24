@@ -8,15 +8,15 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/aicapabilities"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder/pipeline"
-	smartorderPG "github.com/muhiya/dawa24-store/internal/modules/smartorder/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder/pipeline"
+	smartorderPG "github.com/moqasem061-dot/dawa24/internal/modules/smartorder/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // smartOrderSmoke drives a real run end to end against the live catalogue.

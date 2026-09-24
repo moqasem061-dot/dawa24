@@ -9,12 +9,12 @@ import (
 	"testing"
 	"time"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // These tests write fixture rows, so they read TEST_DATABASE_URL only — never

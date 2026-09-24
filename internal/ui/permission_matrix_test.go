@@ -1,12 +1,13 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // TestRoleRoutePermissionMatrix asserts the complete Role x Route access matrix.
@@ -224,7 +225,7 @@ func TestRoleRoutePermissionMatrix(t *testing.T) {
 			testName := act.name + " -> " + entry.path
 			t.Run(testName, func(t *testing.T) {
 				router := newTestRouter(act.actor)
-				req := httptest.NewRequest(http.MethodGet, entry.path, nil)
+				req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, entry.path, nil)
 				rec := httptest.NewRecorder()
 				router.ServeHTTP(rec, req)
 

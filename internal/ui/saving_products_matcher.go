@@ -2,16 +2,17 @@ package ui
 
 import (
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // Matching a saving-products file against the shared catalogue.

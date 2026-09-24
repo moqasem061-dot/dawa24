@@ -1,10 +1,11 @@
 package handles_test
 
 import (
+	"errors"
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
 )
 
 // A handle is the only identifier the assistant ever gives a model, so these
@@ -78,7 +79,7 @@ func TestForeignBindingIsRefused(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			if _, err := s.Resolve(issued, handles.KindOrder, tc.b); err != handles.ErrBinding {
+			if _, err := s.Resolve(issued, handles.KindOrder, tc.b); !errors.Is(err, handles.ErrBinding) {
 				t.Fatalf("err = %v, want ErrBinding", err)
 			}
 		})
@@ -129,7 +130,7 @@ func TestSignersDoNotInterchange(t *testing.T) {
 	b := handles.Binding{OrgID: 1, UserID: 1}
 
 	token := a.Issue(handles.KindOrder, 5, b)
-	if _, err := other.Resolve(token, handles.KindOrder, b); err != handles.ErrSignature {
+	if _, err := other.Resolve(token, handles.KindOrder, b); !errors.Is(err, handles.ErrSignature) {
 		t.Fatalf("err = %v, want ErrSignature", err)
 	}
 }

@@ -26,7 +26,7 @@ func (l *Loader) LoadUsers(ctx context.Context, users []*TargetUser) (int, error
 	if err != nil {
 		return 0, fmt.Errorf("begin load tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // a no-op after Commit
 
 	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO identity.users (id, public_id, email, password_hash, name, role, status, language, phone, created_at, updated_at)
@@ -71,7 +71,7 @@ func (l *Loader) LoadOrganizations(ctx context.Context, orgs []*TargetOrg) (int,
 	if err != nil {
 		return 0, fmt.Errorf("begin load tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // a no-op after Commit
 
 	stmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO org.organizations (id, public_id, name, tax_number, phone, type, status, created_at, updated_at)
@@ -117,7 +117,7 @@ func (l *Loader) LoadProducts(ctx context.Context, products []*TargetProduct, va
 	if err != nil {
 		return 0, fmt.Errorf("begin load tx: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() { _ = tx.Rollback() }() // a no-op after Commit
 
 	prodStmt, err := tx.PrepareContext(ctx, `
 		INSERT INTO catalog.products (id, public_id, category_id, name, description, dosage_form, created_at, updated_at)

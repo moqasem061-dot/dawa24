@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/aiusage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminAILogsPage renders the system-wide AI consumption logs and audit dashboard for administrators.
@@ -37,12 +37,12 @@ func (h *UIHandler) AdminAILogsPage(w http.ResponseWriter, r *http.Request) {
 
 	var since, until time.Time
 	if dateFrom != "" {
-		if t, err := time.Parse("2006-01-02", dateFrom); err == nil {
+		if t, err := time.Parse("2006-01-02", dateFrom); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			since = t
 		}
 	}
 	if dateTo != "" {
-		if t, err := time.Parse("2006-01-02", dateTo); err == nil {
+		if t, err := time.Parse("2006-01-02", dateTo); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			until = t.Add(24 * time.Hour).Add(-time.Nanosecond)
 		}
 	}
@@ -51,7 +51,9 @@ func (h *UIHandler) AdminAILogsPage(w http.ResponseWriter, r *http.Request) {
 	var orgs []*org.Organization
 	orgMap := make(map[int64]*org.Organization)
 	if h.orgSvc != nil {
-		if list, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 1000, 0); err == nil {
+		if list, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			orgs = list
 			for _, o := range list {
 				orgMap[o.ID] = o

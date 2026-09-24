@@ -15,10 +15,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestCompare_PharmacyAccessible(t *testing.T) {
@@ -31,7 +31,7 @@ func TestCompare_PharmacyAccessible(t *testing.T) {
 	vendorActor := authctx.Actor{UserID: 101, OrganizationID: 201, OrgType: "vendor", Permissions: []string{"vendor.*"}}
 
 	// 1. Compare Tool Page should NOT be accessible for pharmacy (redirects to dashboard)
-	reqTool := httptest.NewRequest("GET", "/compare/tool", nil)
+	reqTool := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/tool", nil)
 	reqTool = reqTool.WithContext(authctx.WithActor(reqTool.Context(), pharmacyActor))
 	recTool := httptest.NewRecorder()
 	h.CompareToolPage(recTool, reqTool)
@@ -40,7 +40,7 @@ func TestCompare_PharmacyAccessible(t *testing.T) {
 	}
 
 	// 2. Market Discounts Page should NOT be accessible for pharmacy (redirects to dashboard)
-	reqMarket := httptest.NewRequest("GET", "/market-discounts", nil)
+	reqMarket := httptest.NewRequestWithContext(context.Background(), "GET", "/market-discounts", nil)
 	reqMarket = reqMarket.WithContext(authctx.WithActor(reqMarket.Context(), pharmacyActor))
 	recMarket := httptest.NewRecorder()
 	h.MarketDiscountsPage(recMarket, reqMarket)
@@ -49,7 +49,7 @@ func TestCompare_PharmacyAccessible(t *testing.T) {
 	}
 
 	// 3. Compare Tool and Market Discounts should be accessible for vendor
-	reqVendorTool := httptest.NewRequest("GET", "/compare/tool", nil)
+	reqVendorTool := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/tool", nil)
 	reqVendorTool = reqVendorTool.WithContext(authctx.WithActor(reqVendorTool.Context(), vendorActor))
 	recVendorTool := httptest.NewRecorder()
 	h.CompareToolPage(recVendorTool, reqVendorTool)
@@ -87,7 +87,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	actor := authctx.Actor{UserID: 100, OrganizationID: 200, OrgType: "vendor", Permissions: []string{"vendor.*"}}
 
 	// STEP 1: Open modal for file 101 with 4-file queue
-	req1 := httptest.NewRequest("GET", "/compare/files/101/mapping-modal?setup=1&queue=101,102,103,104&step=1&total=4", nil)
+	req1 := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/files/101/mapping-modal?setup=1&queue=101,102,103,104&step=1&total=4", nil)
 	req1 = req1.WithContext(authctx.WithActor(req1.Context(), actor))
 	rCtx1 := chi.NewRouteContext()
 	rCtx1.URLParams.Add("id", "101")
@@ -111,7 +111,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	form1.Set("setup_queue", "102,103,104")
 	form1.Set("step", "1")
 	form1.Set("total", "4")
-	reqPost1 := httptest.NewRequest("POST", "/compare/files/101/mapping", strings.NewReader(form1.Encode()))
+	reqPost1 := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/files/101/mapping", strings.NewReader(form1.Encode()))
 	reqPost1.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqPost1.Header.Set("Accept", "application/json")
 	reqPost1.Header.Set("HX-Request", "true")
@@ -131,7 +131,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 
 	// STEP 2: Open modal for file 102 with queue "103,104"
 	// THIS PREVIOUSLY FAILED AND SKIPPED ALL REMAINING FILES!
-	req2 := httptest.NewRequest("GET", "/compare/files/102/mapping-modal?setup=1&queue=103,104&step=2&total=4", nil)
+	req2 := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/files/102/mapping-modal?setup=1&queue=103,104&step=2&total=4", nil)
 	req2 = req2.WithContext(authctx.WithActor(req2.Context(), actor))
 	rCtx2 := chi.NewRouteContext()
 	rCtx2.URLParams.Add("id", "102")
@@ -155,7 +155,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	form2.Set("setup_queue", "103,104")
 	form2.Set("step", "2")
 	form2.Set("total", "4")
-	reqPost2 := httptest.NewRequest("POST", "/compare/files/102/mapping", strings.NewReader(form2.Encode()))
+	reqPost2 := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/files/102/mapping", strings.NewReader(form2.Encode()))
 	reqPost2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqPost2.Header.Set("Accept", "application/json")
 	reqPost2 = reqPost2.WithContext(authctx.WithActor(reqPost2.Context(), actor))
@@ -173,7 +173,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	}
 
 	// STEP 3: Open modal for file 103 with queue "104"
-	req3 := httptest.NewRequest("GET", "/compare/files/103/mapping-modal?setup=1&queue=104&step=3&total=4", nil)
+	req3 := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/files/103/mapping-modal?setup=1&queue=104&step=3&total=4", nil)
 	req3 = req3.WithContext(authctx.WithActor(req3.Context(), actor))
 	rCtx3 := chi.NewRouteContext()
 	rCtx3.URLParams.Add("id", "103")
@@ -190,7 +190,7 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	}
 
 	// STEP 4: Open modal for file 104 with empty queue (last file)
-	req4 := httptest.NewRequest("GET", "/compare/files/104/mapping-modal?setup=1&queue=&step=4&total=4", nil)
+	req4 := httptest.NewRequestWithContext(context.Background(), "GET", "/compare/files/104/mapping-modal?setup=1&queue=&step=4&total=4", nil)
 	req4 = req4.WithContext(authctx.WithActor(req4.Context(), actor))
 	rCtx4 := chi.NewRouteContext()
 	rCtx4.URLParams.Add("id", "104")

@@ -9,10 +9,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // rbacTestDB opens the database for these tests.

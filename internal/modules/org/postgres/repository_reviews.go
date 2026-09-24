@@ -2,11 +2,12 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // ListReviewsForVendor returns reviews received by a vendor, with criteria ratings and order information.
@@ -75,7 +76,7 @@ func (r *Repository) GetReviewByOrderAndVendor(ctx context.Context, orderID, ven
 		return nil
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err

@@ -1,7 +1,5 @@
 package productmatch
 
-import ()
-
 // headerSpecs is ordered only for reading; resolution is order independent.
 //
 // Entries are written the natural way — "الشكل الدوائي", "Item No." — and

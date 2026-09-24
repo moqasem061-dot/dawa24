@@ -17,8 +17,8 @@ import (
 	"github.com/riverqueue/river/rivermigrate"
 	"github.com/riverqueue/river/rivertype"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // DefaultJobTimeout is the ceiling for any background job execution.
@@ -27,7 +27,6 @@ const DefaultJobTimeout = 30 * time.Minute
 // Client wraps a River queue client.
 type Client struct {
 	riverClient *river.Client[pgx.Tx]
-	driver      *riverpgxv5.Driver
 	workers     *river.Workers
 	log         *slog.Logger
 	db          *database.DB
@@ -66,17 +65,18 @@ func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.L
 
 	return &Client{
 		riverClient: riverClient,
-		driver:      driver,
 		workers:     workers,
 		log:         log,
 		db:          db,
 	}, nil
 }
 
-// Migrate applies pending River schema migrations.
-// River maintains its own migration versioning in river_migration tables.
-func (c *Client) Migrate(ctx context.Context) error {
-	migrator, err := rivermigrate.New(c.driver, nil)
+// MigrateSchema applies pending River schema migrations (River versions its own
+// tables in river_migration). It runs from `cli migrate`, as the schema owner,
+// alongside the application's migrations: the worker connects as the
+// least-privilege role and cannot create tables.
+func MigrateSchema(ctx context.Context, db *database.DB) error {
+	migrator, err := rivermigrate.New(riverpgxv5.New(db.Pool()), nil)
 	if err != nil {
 		return fmt.Errorf("queue: river migrator: %w", err)
 	}

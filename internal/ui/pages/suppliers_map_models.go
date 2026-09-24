@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // SuppliersMapItem is the JSON serialization schema for client-side map rendering.
@@ -199,5 +199,3 @@ func SuppliersMapJSON(data SupplierDirectoryData, lang string) string {
 	}
 	return SuppliersJSON(data.Suppliers, lang)
 }
-
-

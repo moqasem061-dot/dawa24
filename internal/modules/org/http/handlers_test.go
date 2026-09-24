@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 )
 
 type stubRepo struct {

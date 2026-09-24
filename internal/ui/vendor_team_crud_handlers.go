@@ -2,20 +2,18 @@ package ui
 
 import (
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // VendorTeamNewSubmit registers an employee and links them to the vendor org.
@@ -52,12 +50,9 @@ func (h *UIHandler) VendorTeamNewSubmit(w http.ResponseWriter, r *http.Request) 
 		roleKey = "org_employee"
 	}
 	if password == "" || len(password) < 6 {
-		randomBytes := make([]byte, 16)
-		if _, err := rand.Read(randomBytes); err == nil {
-			password = hex.EncodeToString(randomBytes) + "!A1"
-		} else {
-			password = "Dw24_" + strconv.FormatInt(time.Now().UnixNano(), 36) + "!A1"
-		}
+		// crypto/rand cannot fail (Go 1.24+), so there is no fallback: the one
+		// that was here built a guessable password from the clock.
+		password = rand.Text() + "!A1"
 	}
 
 	var branchID *int64

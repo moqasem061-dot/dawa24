@@ -1,8 +1,8 @@
 package authctxtest
 
 import (
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // ActorForRole constructs an Actor populated with declared grants from the RBAC registry.

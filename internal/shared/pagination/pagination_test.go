@@ -1,10 +1,11 @@
 package pagination_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
 )
 
 func TestPaginationNormalize(t *testing.T) {
@@ -48,7 +49,7 @@ func TestCursorRoundTrip(t *testing.T) {
 }
 
 func TestFromRequest(t *testing.T) {
-	req, _ := http.NewRequest("GET", "/api/v1/items?limit=75&cursor=abc&offset=10", nil)
+	req, _ := http.NewRequestWithContext(context.Background(), "GET", "/api/v1/items?limit=75&cursor=abc&offset=10", nil)
 	p := pagination.FromRequest(req)
 
 	if p.Limit != 75 || p.Cursor != "abc" || p.Offset != 10 {
@@ -56,7 +57,7 @@ func TestFromRequest(t *testing.T) {
 	}
 
 	// Default fallback on empty query
-	emptyReq, _ := http.NewRequest("GET", "/api/v1/items", nil)
+	emptyReq, _ := http.NewRequestWithContext(context.Background(), "GET", "/api/v1/items", nil)
 	pEmpty := pagination.FromRequest(emptyReq)
 	if pEmpty.Limit != pagination.DefaultLimit {
 		t.Errorf("expected default limit %d, got %d", pagination.DefaultLimit, pEmpty.Limit)

@@ -12,8 +12,8 @@ import (
 	"testing"
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 type mockAIDevRepo struct {
@@ -141,7 +141,7 @@ func setupAIDevTestHandler() (*UIHandler, *mockAIDevRepo) {
 func TestAdminAIFetchModelsAPI(t *testing.T) {
 	h, _ := setupAIDevTestHandler()
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/developers/ai/fetch-models", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/developers/ai/fetch-models", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminAIFetchModelsAPI(rec, req)
@@ -185,7 +185,7 @@ func TestAdminAISaveRoleModelSubmit(t *testing.T) {
 		"notes":      {"test notes"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/developers/ai/role-models", strings.NewReader(formData.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/developers/ai/role-models", strings.NewReader(formData.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	actor := authctx.Actor{UserID: 42, OrgID: 1}
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
@@ -220,7 +220,7 @@ func TestAdminAISaveRoleModelSubmit(t *testing.T) {
 		"model":     {"qwen-smart-order"},
 		"is_active": {"true"},
 	}
-	req2 := httptest.NewRequest(http.MethodPost, "/admin/developers/ai/role-models", strings.NewReader(formData2.Encode()))
+	req2 := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/developers/ai/role-models", strings.NewReader(formData2.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req2.Header.Set("Accept", "application/json")
 	rec2 := httptest.NewRecorder()
@@ -252,7 +252,7 @@ func TestAdminDevelopersPageAITab(t *testing.T) {
 		MaxTokens: &tokens,
 	})
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/developers?tab=ai", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/developers?tab=ai", nil)
 	actor := authctx.Actor{UserID: 1, Role: "admin"}
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()

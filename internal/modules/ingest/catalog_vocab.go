@@ -2,13 +2,12 @@ package ingest
 
 import (
 	"context"
-	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // UpdateStagedRow modifies a staged row's editable attributes before commit.
@@ -52,13 +51,13 @@ func (s *Service) AssignStagedRowMatch(
 	if productID <= 0 {
 		return s.imports.AssignRowMatch(ctx, session.ID, rowID, 0, "", "")
 	}
-	p, _, err := s.catalog.GetProduct(database.AsSystem(ctx), productID)
+	p, err := s.catalog.ProductRef(database.AsSystem(ctx), productID)
 	if err != nil || p == nil {
 		return apperr.NotFound("product")
 	}
-	name := p.Name.Get("ar")
+	name := p.NameAR
 	if name == "" {
-		name = p.Name.Get("en")
+		name = p.NameEN
 	}
 	return s.imports.AssignRowMatch(ctx, session.ID, rowID, productID, name, p.SKU)
 }
@@ -73,17 +72,6 @@ func (s *Service) ToggleStagedRowExclude(ctx context.Context, publicID string, r
 		return false, apperr.Conflict("import.not_in_review", i18n.TDefault("w4_mod.w4str_207_207"))
 	}
 	return s.imports.ToggleRowExclude(ctx, session.ID, rowID)
-}
-
-// SearchMasterCatalog queries master products for the manual match search modal.
-func (s *Service) SearchMasterCatalog(ctx context.Context, query string) ([]*catalog.Product, error) {
-	if s.catalog == nil {
-		return nil, ErrImportStoreUnavailable
-	}
-	return s.catalog.Search(database.AsSystem(ctx), catalog.SearchParams{
-		Query: query,
-		Limit: 25,
-	})
 }
 
 // vocabulary loads the catalogue's own brand and category names, which let the
@@ -101,18 +89,11 @@ func (s *Service) vocabulary(ctx context.Context, orgID int64) *productmatch.Voc
 		s.log.WarnContext(ctx, "import vocabulary unavailable", "error", err)
 		return productmatch.NewVocabulary(nil, nil, nil, nil)
 	}
-	brands := make([]string, 0, len(vocab.Brands))
-	for _, b := range vocab.Brands {
-		brands = append(brands, b.Name)
-	}
-	categories := make([]string, 0, len(vocab.Categories))
-	for _, c := range vocab.Categories {
-		categories = append(categories, c.Name)
-	}
+	brands, categories := vocab.Brands, vocab.Categories
 
 	var warehouses, branches []string
 	if s.inventory != nil {
-		if list, err := s.inventory.ListWarehouses(ctx); err == nil {
+		if list, err := s.inventory.ListWarehouses(ctx); err == nil { // nolint:errswallow: vocabulary is a matching hint; without warehouses the column is matched by header alone
 			for _, w := range list {
 				warehouses = append(warehouses, w.Name)
 				if w.Code != "" {
@@ -122,12 +103,4 @@ func (s *Service) vocabulary(ctx context.Context, orgID int64) *productmatch.Voc
 		}
 	}
 	return productmatch.NewVocabulary(brands, categories, warehouses, branches)
-}
-
-// describeStore is used by the handlers to explain an unavailable feature.
-func (s *Service) describeStore() error {
-	if s.imports == nil {
-		return fmt.Errorf("%w", ErrImportStoreUnavailable)
-	}
-	return nil
 }

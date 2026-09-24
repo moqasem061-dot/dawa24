@@ -10,10 +10,10 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import (
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminTempWarehouseRunReviewPage renders the batch review step before commit.
@@ -57,7 +57,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var3 templ.SafeURL
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(run.BaseURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 19, Col: 42}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 19, Col: 42}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -70,7 +70,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", run.ID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 20, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 20, Col: 56}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -83,7 +83,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var5 templ.SafeURL
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 26, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 26, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -96,7 +96,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var6 templ.SafeURL
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 35, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 35, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -109,7 +109,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(files)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 59, Col: 113}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 59, Col: 113}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -127,7 +127,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 				var templ_7745c5c3_Var8 string
 				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(idx + 1))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 75, Col: 83}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 75, Col: 83}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 				if templ_7745c5c3_Err != nil {
@@ -140,7 +140,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 				var templ_7745c5c3_Var9 string
 				templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(f.SupplierName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 76, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 76, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 				if templ_7745c5c3_Err != nil {
@@ -153,7 +153,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(f.Filename)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 77, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 77, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 				if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", f.RowCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 78, Col: 78}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 78, Col: 78}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 				var templ_7745c5c3_Var12 templ.SafeURL
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", run.BaseURL, run.ID, f.ID)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 88, Col: 104}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 88, Col: 104}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -212,7 +212,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var13 templ.SafeURL
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/cancel", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 108, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 108, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -225,7 +225,7 @@ func AdminTempWarehouseRunReviewPage(run *TempWarehouseRunView, files []*TempWar
 			var templ_7745c5c3_Var14 templ.SafeURL
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("%s/runs/%d/commit", run.BaseURL, run.ID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 117, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 117, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 			if templ_7745c5c3_Err != nil {
@@ -286,65 +286,73 @@ func AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir stri
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 135, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 135, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">\r\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\r\n\t\t\tdawaData('adminTempWarehousesRunsReviewData', function (a0, a1, a2, a3) {\r\n\t\t\t\treturn {\r\n\t\t\t\t\trunId: a0,\r\n\t\t\t\t\tpercent: a1,\r\n\t\t\t\t\tphase: a2,\r\n\t\t\t\t\tdone: a3,\r\n\t\t\t\t\terror: '',\r\n\t\t\t\t\tinit() {\r\n\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\tlet src = new EventSource('/api/progress/' + this.runId);\r\n\t\t\t\t\t\tsrc.onmessage = (e) => {\r\n\t\t\t\t\t\t\ttry {\r\n\t\t\t\t\t\t\t\tlet d = JSON.parse(e.data);\r\n\t\t\t\t\t\t\t\tif (d.percent !== undefined) this.percent = d.percent;\r\n\t\t\t\t\t\t\t\tif (d.phase) this.phase = d.phase;\r\n\t\t\t\t\t\t\t\tif (d.done || this.percent >= 100 || this.phase === 'done') {\r\n\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\tsrc.close();\r\n\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t} catch(err) {}\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t\tsrc.onerror = () => {\r\n\t\t\t\t\t\t\tsetInterval(() => {\r\n\t\t\t\t\t\t\t\tif (this.done) return;\r\n\t\t\t\t\t\t\t\tfetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })\r\n\t\t\t\t\t\t\t\t\t.then(r => r.json())\r\n\t\t\t\t\t\t\t\t\t.then(data => {\r\n\t\t\t\t\t\t\t\t\t\tif (data.percent !== undefined) this.percent = data.percent;\r\n\t\t\t\t\t\t\t\t\t\tif (data.phase) this.phase = data.phase;\r\n\t\t\t\t\t\t\t\t\t\tif (data.done || this.percent >= 100) {\r\n\t\t\t\t\t\t\t\t\t\t\tthis.done = true;\r\n\t\t\t\t\t\t\t\t\t\t\tthis.percent = 100;\r\n\t\t\t\t\t\t\t\t\t\t}\r\n\t\t\t\t\t\t\t\t\t}).catch(() => {});\r\n\t\t\t\t\t\t\t}, 2000);\r\n\t\t\t\t\t\t};\r\n\t\t\t\t\t}\r\n\t\t\t\t};\r\n\t\t\t});\r\n\t\t</script> <div class=\"max-w-2xl mx-auto pb-12\" x-data=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "\">\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\t\tdawaData('adminTempWarehousesRunsReviewData', function (a0, a1, a2, a3) {\n\t\t\t\treturn {\n\t\t\t\t\trunId: a0,\n\t\t\t\t\tpercent: a1,\n\t\t\t\t\tphase: a2,\n\t\t\t\t\tdone: a3,\n\t\t\t\t\terror: '',\n\t\t\t\t\tinit() {\n\t\t\t\t\t\tif (this.done) return;\n\t\t\t\t\t\tlet src = new EventSource('/api/progress/' + this.runId);\n\t\t\t\t\t\tsrc.onmessage = (e) => {\n\t\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\t\tlet d = JSON.parse(e.data);\n\t\t\t\t\t\t\t\tif (d.percent !== undefined) this.percent = d.percent;\n\t\t\t\t\t\t\t\tif (d.phase) this.phase = d.phase;\n\t\t\t\t\t\t\t\tif (d.done || this.percent >= 100 || this.phase === 'done') {\n\t\t\t\t\t\t\t\t\tthis.done = true;\n\t\t\t\t\t\t\t\t\tthis.percent = 100;\n\t\t\t\t\t\t\t\t\tsrc.close();\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} catch(err) {}\n\t\t\t\t\t\t};\n\t\t\t\t\t\tsrc.onerror = () => {\n\t\t\t\t\t\t\tsetInterval(() => {\n\t\t\t\t\t\t\t\tif (this.done) return;\n\t\t\t\t\t\t\t\tfetch(window.location.pathname + '?poll=1', { headers: { 'Accept': 'application/json' } })\n\t\t\t\t\t\t\t\t\t.then(r => r.json())\n\t\t\t\t\t\t\t\t\t.then(data => {\n\t\t\t\t\t\t\t\t\t\tif (data.percent !== undefined) this.percent = data.percent;\n\t\t\t\t\t\t\t\t\t\tif (data.phase) this.phase = data.phase;\n\t\t\t\t\t\t\t\t\t\tif (data.done || this.percent >= 100) {\n\t\t\t\t\t\t\t\t\t\t\tthis.done = true;\n\t\t\t\t\t\t\t\t\t\t\tthis.percent = 100;\n\t\t\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\t\t}).catch(() => {});\n\t\t\t\t\t\t\t}, 2000);\n\t\t\t\t\t\t};\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"max-w-2xl mx-auto pb-12\" x-data=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.AlpineCall("adminTempWarehousesRunsReviewData", run.ID, run.Percent, run.Phase, run.Phase == "done" || run.Percent >= 100))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 179, Col: 145}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 179, Col: 145}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center\"><div class=\"w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4\"><span x-show=\"!done\" class=\"animate-spin\">⚙️</span> <span x-show=\"done\" x-cloak>🎉</span></div><h1 class=\"text-2xl font-black text-surface-fg mb-1\"><span x-show=\"!done\">جاري معالجة دفعة المستودعات</span> <span x-show=\"done\" x-cloak>تم اكتمال المعالجة بنجاح!</span></h1><p class=\"text-xs text-secondary mb-6\">دفعة: ")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\"><div class=\"glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center\"><div class=\"w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4\"><span x-show=\"!done\" class=\"animate-spin\">⚙️</span> <span x-show=\"done\" x-cloak>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.IconCheckCircle("icon-sm").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "</span></div><h1 class=\"text-2xl font-black text-surface-fg mb-1\"><span x-show=\"!done\">جاري معالجة دفعة المستودعات</span> <span x-show=\"done\" x-cloak>تم اكتمال المعالجة بنجاح!</span></h1><p class=\"text-xs text-secondary mb-6\">دفعة: ")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(run.Filename)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 29}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 29}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, " (")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " (")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", run.TotalFiles))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 192, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " ملفات)</p><!-- Progress Bar --><div class=\"w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5\"><div class=\"bg-accent h-full rounded-full transition-all duration-300\" :style=\"{ width: percent + '%' }\"></div></div><div class=\"d-flex items-center justify-between text-xs font-mono text-secondary mb-8\"><span x-text=\"'المرحلة: ' + phase\"></span> <span class=\"font-bold text-accent\" x-text=\"percent + '%'\"></span></div><div class=\"pt-4 border-t border-default\"><a href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " ملفات)</p><!-- Progress Bar --><div class=\"w-full bg-surface border border-default rounded-full h-4 mb-3 overflow-hidden p-0.5\"><div class=\"bg-accent h-full rounded-full transition-all duration-300\" :style=\"{ width: percent + '%' }\"></div></div><div class=\"d-flex items-center justify-between text-xs font-mono text-secondary mb-8\"><span x-text=\"'المرحلة: ' + phase\"></span> <span class=\"font-bold text-accent\" x-text=\"percent + '%'\"></span></div><div class=\"pt-4 border-t border-default\"><a href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var21 templ.SafeURL
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(run.BaseURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_runs_review.templ`, Line: 209, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_runs_review.templ`, Line: 209, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "\" class=\"btn btn-accent font-bold text-sm px-6 py-2.5 rounded-xl shadow-xs\">الانتقال إلى قائمة المستودعات</a></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" class=\"btn btn-accent font-bold text-sm px-6 py-2.5 rounded-xl shadow-xs\">الانتقال إلى قائمة المستودعات</a></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

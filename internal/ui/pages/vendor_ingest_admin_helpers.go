@@ -96,4 +96,3 @@ func (v VendorImportView) ReviewURL(match, sortBy, sortOrder string, page, limit
 	}
 	return u
 }
-

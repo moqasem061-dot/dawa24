@@ -6,13 +6,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminUsersPage renders the dedicated user management directory.
@@ -31,22 +31,23 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 	orgIDFilter, _ := strconv.ParseInt(r.URL.Query().Get("org_id"), 10, 64)
 
 	var mfaBool *bool
-	if mfaFilter == "1" || mfaFilter == "enabled" || mfaFilter == "true" {
+	switch mfaFilter {
+	case "1", "enabled", "true":
 		t := true
 		mfaBool = &t
-	} else if mfaFilter == "0" || mfaFilter == "disabled" || mfaFilter == "false" {
+	case "0", "disabled", "false":
 		f := false
 		mfaBool = &f
 	}
 
 	var loginFromTime, loginToTime *time.Time
 	if loginFromFilter != "" {
-		if t, err := time.Parse("2006-01-02", loginFromFilter); err == nil {
+		if t, err := time.Parse("2006-01-02", loginFromFilter); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			loginFromTime = &t
 		}
 	}
 	if loginToFilter != "" {
-		if t, err := time.Parse("2006-01-02", loginToFilter); err == nil {
+		if t, err := time.Parse("2006-01-02", loginToFilter); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			endDay := t.Add(23*time.Hour + 59*time.Minute + 59*time.Second)
 			loginToTime = &endDay
 		}
@@ -65,7 +66,9 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 	var totalUsers, customerUsers, vendorUsers, staffUsers, activeUsers, suspendedUsers int
 
 	if h.orgSvc != nil {
-		if orgsList, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0); err == nil {
+		if orgsList, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			allOrgs = orgsList
 			for _, o := range orgsList {
 				if o != nil {
@@ -73,7 +76,9 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		if branchesList, _, err := h.orgSvc.ListBranchesWithTotal(sysCtx, org.BranchFilter{Status: "active"}, 1000, 0); err == nil {
+		if branchesList, _, err := h.orgSvc.ListBranchesWithTotal(sysCtx, org.BranchFilter{Status: "active"}, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranchesWithTotal", err)
+		} else {
 			allBranches = branchesList
 		}
 	}
@@ -83,7 +88,9 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 	userMFAStatuses := make(map[int64]*identity.MFAStatus)
 
 	if h.idSvc != nil {
-		if stats, err := h.idSvc.AdminUserStats(sysCtx); err == nil {
+		if stats, err := h.idSvc.AdminUserStats(sysCtx); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminUserStats", err)
+		} else {
 			totalUsers = stats.Total
 			staffUsers = stats.Staff
 			vendorUsers = stats.Vendor
@@ -103,11 +110,17 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 			LastLoginTo:   loginToTime,
 		}
 		uList, tot, err := h.idSvc.AdminListUsersWithTotal(sysCtx, filter, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsersWithTotal", err)
+		} else {
 			users = uList
 			totalCount = tot
 		}
-		deletionRequests, _ = h.idSvc.AdminListDeletionRequests(sysCtx, "")
+		if loaded, err := h.idSvc.AdminListDeletionRequests(sysCtx, ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListDeletionRequests", err)
+		} else {
+			deletionRequests = loaded
+		}
 
 		for _, u := range users {
 			if u == nil {
@@ -179,7 +192,7 @@ func (h *UIHandler) AdminUsersPage(w http.ResponseWriter, r *http.Request) {
 		// top-level ones are offered: the hierarchy is one level deep, so a
 		// moderator who already reports to somebody cannot be a parent, and
 		// SetModeratorParent refuses it anyway.
-		if mods, err := h.idSvc.ListModerators(sysCtx); err == nil {
+		if mods, err := h.idSvc.ListModerators(sysCtx); err == nil { // nolint:errswallow: the else branch logs it
 			for _, m := range mods {
 				if m == nil || !m.IsMain() {
 					continue

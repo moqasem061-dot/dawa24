@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/reqcache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/reqcache"
 )
 
 // The institutional-work connection rule (العمل المؤسسي), in one place.

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 )
 
 func TestReadTabularContent_CSV(t *testing.T) {

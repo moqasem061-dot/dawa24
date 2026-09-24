@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // SavingProductAdminView represents a saving product with associated user, org, and master product details.

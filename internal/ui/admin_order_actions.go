@@ -7,9 +7,9 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // AdminOrderStatusSubmit allows platform admins to transition an order or shipment status.
@@ -53,7 +53,9 @@ func (h *UIHandler) AdminOrderStatusSubmit(w http.ResponseWriter, r *http.Reques
 	} else {
 		for _, sh := range order.Shipments {
 			if sh != nil {
-				_, _ = h.commSvc.TransitionShipmentStatus(sysCtx, sh.ID, toStatus, &actor.UserID, notes)
+				if _, err := h.commSvc.TransitionShipmentStatus(sysCtx, sh.ID, toStatus, &actor.UserID, notes); err != nil {
+					h.logLoadErr(ctx, "commSvc.TransitionShipmentStatus", err)
+				}
 			}
 		}
 	}

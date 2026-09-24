@@ -6,12 +6,12 @@ import (
 	"net/http"
 	"strings"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) getGatewayAdminClient(ctx context.Context) (*gateway.AdminClient, string, bool) {
@@ -86,7 +86,8 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if h.adminSvc != nil {
-		gw, _ := h.adminSvc.GetGatewaySettings(ctx)
+		gw, loadErr := h.adminSvc.GetGatewaySettings(ctx)
+		h.logLoadErr(ctx, "adminSvc.GetGatewaySettings", loadErr)
 		gateway = gw
 		if gateway == nil {
 			gateway = &platformadmin.GatewaySettings{
@@ -95,7 +96,8 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 			}
 		}
 
-		sl, _ := h.adminSvc.ListSQLLogs(ctx, 30, 0)
+		sl, loadErr := h.adminSvc.ListSQLLogs(ctx, 30, 0)
+		h.logLoadErr(ctx, "adminSvc.ListSQLLogs", loadErr)
 		sqlLogs = sl
 
 		filter := platformadmin.ErrorLogFilter{
@@ -105,11 +107,13 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 			Limit:  limit,
 			Offset: offset,
 		}
-		el, total, _ := h.adminSvc.ListErrorLogs(ctx, filter)
+		el, total, loadErr := h.adminSvc.ListErrorLogs(ctx, filter)
+		h.logLoadErr(ctx, "adminSvc.ListErrorLogs", loadErr)
 		errorLogs = el
 		values.ErrorTotalCount = total
 
-		tot, crit, unres, affUsers, _ := h.adminSvc.GetErrorDiagnosticsMetrics(ctx)
+		tot, crit, unres, affUsers, loadErr := h.adminSvc.GetErrorDiagnosticsMetrics(ctx)
+		h.logLoadErr(ctx, "adminSvc.GetErrorDiagnosticsMetrics", loadErr)
 		values.ErrorMetrics.Total = tot
 		values.ErrorMetrics.Critical24h = crit
 		values.ErrorMetrics.Unresolved = unres
@@ -122,7 +126,8 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 			Limit:  limit,
 			Offset: offset,
 		}
-		ae, auditTotal, _ := h.adminSvc.ListAuditLogWithFilter(ctx, auditFilter)
+		ae, auditTotal, loadErr := h.adminSvc.ListAuditLogWithFilter(ctx, auditFilter)
+		h.logLoadErr(ctx, "adminSvc.ListAuditLogWithFilter", loadErr)
 		for _, e := range ae {
 			localizeAuditEntry(e, lang)
 		}
@@ -131,7 +136,8 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 		values.AuditPerPage = limit
 		values.AuditTotalCount = auditTotal
 
-		ai, _ := h.adminSvc.GetAISettings(ctx)
+		ai, loadErr := h.adminSvc.GetAISettings(ctx)
+		h.logLoadErr(ctx, "adminSvc.GetAISettings", loadErr)
 		if ai == nil {
 			ai = &platformadmin.AISettings{
 				EndpointURL: "https://api.muhiya.com",
@@ -140,7 +146,8 @@ func (h *UIHandler) AdminDevelopersPage(w http.ResponseWriter, r *http.Request) 
 		}
 		values.AISettings = ai
 
-		rms, _ := h.adminSvc.ListAIRoleModels(ctx)
+		rms, loadErr := h.adminSvc.ListAIRoleModels(ctx)
+		h.logLoadErr(ctx, "adminSvc.ListAIRoleModels", loadErr)
 		values.AIRoleModels = rms
 	}
 
@@ -218,7 +225,9 @@ func (h *UIHandler) AdminDeveloperAISettingsSubmit(w http.ResponseWriter, r *htt
 	// only the endpoint or the models must not have the credential wiped. An
 	// empty submission (or masked placeholder) therefore means "keep what is stored".
 	if apiKey == "" || strings.HasPrefix(apiKey, "•") {
-		if existingGW, _ := h.adminSvc.GetGatewaySettings(ctx); existingGW != nil {
+		if existingGW, loadErr := h.adminSvc.GetGatewaySettings(ctx); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetGatewaySettings", loadErr)
+		} else if existingGW != nil {
 			savedUser, pass := existingGW.AdminCredentials()
 			if pass != "" {
 				apiKey = pass
@@ -229,7 +238,9 @@ func (h *UIHandler) AdminDeveloperAISettingsSubmit(w http.ResponseWriter, r *htt
 		}
 	}
 	if apiKey == "" || strings.HasPrefix(apiKey, "•") {
-		if existingAI, _ := h.adminSvc.GetAISettings(ctx); existingAI != nil &&
+		if existingAI, loadErr := h.adminSvc.GetAISettings(ctx); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetAISettings", loadErr)
+		} else if existingAI != nil &&
 			strings.TrimSpace(existingAI.APIKey) != "" &&
 			platformadmin.ValidateAdminCredential(existingAI.APIKey) == nil {
 			apiKey = strings.TrimSpace(existingAI.APIKey)
@@ -292,7 +303,8 @@ func (h *UIHandler) AdminDeveloperAISettingsSubmit(w http.ResponseWriter, r *htt
 	// itself accept. A rejected value must not be copied into a second row and
 	// resurrected from there on the next save, which is exactly how the
 	// database credential outlived being removed from gateway_configuration.
-	ai, _ := h.adminSvc.GetAISettings(ctx)
+	ai, loadErr := h.adminSvc.GetAISettings(ctx)
+	h.logLoadErr(ctx, "adminSvc.GetAISettings", loadErr)
 	if ai == nil {
 		ai = &platformadmin.AISettings{}
 	}

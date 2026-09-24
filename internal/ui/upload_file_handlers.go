@@ -5,18 +5,20 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/filescan"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/filescan"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 const (
@@ -169,7 +171,7 @@ func saveUploadedFile(r *http.Request, fieldName, category string) (string, erro
 		return "", fmt.Errorf("file size exceeds maximum allowed limit (50MB)")
 	}
 
-	return saveUploadedBytes(data, header.Filename, category)
+	return saveUploadedBytes(r.Context(), data, header.Filename, category)
 }
 
 // uploadedFileMeta describes a stored upload for document rows.
@@ -261,8 +263,9 @@ func saveUploadedFileFull(r *http.Request, fieldName, category string) (uploaded
 	return meta, nil
 }
 
-// saveUploadedBytes writes byte data directly to disk.
-func saveUploadedBytes(data []byte, originalFilename, category string) (string, error) {
+// saveUploadedBytes writes byte data directly to disk, and mirrors it to
+// object storage when that is configured.
+func saveUploadedBytes(ctx context.Context, data []byte, originalFilename, category string) (string, error) {
 	if len(data) > MaxUploadBytes {
 		return "", fmt.Errorf("file size exceeds maximum allowed limit (50MB)")
 	}
@@ -303,7 +306,12 @@ func saveUploadedBytes(data []byte, originalFilename, category string) (string, 
 
 	if uploadStorageClient != nil {
 		s3Key := fmt.Sprintf("%s/%s", category, safeFilename)
-		_ = uploadStorageClient.Put(context.Background(), s3Key, bytes.NewReader(data), int64(len(data)), mime.TypeByExtension(ext))
+		// The local copy is already written and is what the returned URL
+		// serves; a failed mirror is logged, not fatal. WithoutCancel: a
+		// client that disconnects now should not abort the mirror half-way.
+		if err := uploadStorageClient.Put(context.WithoutCancel(ctx), s3Key, bytes.NewReader(data), int64(len(data)), mime.TypeByExtension(ext)); err != nil {
+			slog.WarnContext(ctx, "upload: object storage mirror failed; serving the local copy", "key", s3Key, "error", err)
+		}
 	}
 
 	return fmt.Sprintf("/uploads/%s/%s", category, safeFilename), nil
@@ -327,7 +335,7 @@ func (h *UIHandler) UploadAPISubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	_, _ = w.Write([]byte(fmt.Sprintf(`{"url":"%s"}`, url)))
+	_, _ = fmt.Fprintf(w, `{"url":"%s"}`, url)
 }
 
 // readAllUpTo reads r into memory, refusing anything past limit.
@@ -346,4 +354,32 @@ func readAllUpTo(r io.Reader, limit int64) ([]byte, error) {
 		return nil, fmt.Errorf("file exceeds the maximum allowed size")
 	}
 	return data, nil
+}
+
+// optionalUpload saves an optional file field. No file is fine and returns "";
+// a file the user did attach that cannot be stored (too large, unreadable, a
+// full disk) is returned as an error, because dropping it silently made a
+// payment or withdrawal look submitted without the receipt that was attached.
+func optionalUpload(r *http.Request, fieldName, category string) (string, error) {
+	path, err := saveUploadedFile(r, fieldName, category)
+	if noFileSent(err) {
+		return "", nil
+	}
+	return path, err
+}
+
+// noFileSent reports an upload error that only means "nothing was attached":
+// the field was empty, or the form was not multipart at all (a plain
+// url-encoded post cannot carry a file).
+func noFileSent(err error) bool {
+	return errors.Is(err, http.ErrMissingFile) || errors.Is(err, http.ErrNotMultipart)
+}
+
+// optionalUploadFull is optionalUpload keeping the file's metadata.
+func optionalUploadFull(r *http.Request, fieldName, category string) (uploadedFileMeta, error) {
+	meta, err := saveUploadedFileFull(r, fieldName, category)
+	if noFileSent(err) {
+		return uploadedFileMeta{}, nil
+	}
+	return meta, err
 }

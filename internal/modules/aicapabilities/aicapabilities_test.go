@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/aicapabilities"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 func TestDeterministicFallbackWhenGatewayDisabled(t *testing.T) {

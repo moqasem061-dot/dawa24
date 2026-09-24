@@ -15,9 +15,9 @@ package ingest
 import (
 	"errors"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // parseOptionsFrom translates the vendor's settings into reading rules.
@@ -42,7 +42,7 @@ func parseOptionsFrom(s Settings) productmatch.ParseOptions {
 // ours and is prefixed rather than dressed up, because a vendor reading it
 // needs to know it was not their file.
 func importFailureMessage(err error) string {
-	if err == nil {
+	if err == nil { // nolint:errswallow: a nil guard on the parameter, not a discarded error
 		return ""
 	}
 	var domain *apperr.Error

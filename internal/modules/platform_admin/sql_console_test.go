@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 type mockSQLRepo struct {

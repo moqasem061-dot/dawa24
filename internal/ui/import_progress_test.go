@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // mockImportRunRepo implements importrun.Repository for testing.
@@ -168,7 +168,7 @@ func TestImportProgressJSON_Unauthorized(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/imports/{id}/progress", handler.ImportProgressJSON)
 
-	req := httptest.NewRequest(http.MethodGet, "/imports/some-id/progress", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/imports/some-id/progress", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -224,7 +224,7 @@ func TestImportProgressJSON_FromDatabase(t *testing.T) {
 	})
 	r.Get("/imports/{id}/progress", handler.ImportProgressJSON)
 
-	req := httptest.NewRequest(http.MethodGet, "/imports/run-abc-123/progress", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/imports/run-abc-123/progress", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -276,7 +276,7 @@ func TestImportProgressJSON_FromInMemoryFallback(t *testing.T) {
 	})
 	r.Get("/imports/{id}/progress", handler.ImportProgressJSON)
 
-	req := httptest.NewRequest(http.MethodGet, "/imports/"+sess.ID+"/progress", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/imports/"+sess.ID+"/progress", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 

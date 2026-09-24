@@ -9,14 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
-
 
 // importReviewPageSize is the staged-rows review table's page size for this
 // request: the reader's choice off ?limit= (pagination.RowsPerPageOptions), or
@@ -239,7 +238,7 @@ func (h *UIHandler) AdminProductsImportRowToggle(w http.ResponseWriter, r *http.
 		if err == nil && row != nil {
 			view := pages.ImportReviewView{Session: &catalog.ImportSession{PublicID: publicID}}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if err := pages.ImportRowLine(view, row).Render(ctx, w); err == nil {
+			if err := pages.ImportRowLine(view, row).Render(ctx, w); err == nil { // nolint:errswallow: a failed fragment render falls back to the full page below
 				return
 			}
 		}

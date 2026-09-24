@@ -23,9 +23,9 @@ var (
 )
 
 var (
-	privateIPBlocks        []*net.IPNet
+	privateIPBlocks         []*net.IPNet
 	defaultSecureHTTPClient *http.Client
-	clientOnce             sync.Once
+	clientOnce              sync.Once
 )
 
 func init() {

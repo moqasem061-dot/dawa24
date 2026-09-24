@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 )
 
 // File decoding.
@@ -23,7 +23,6 @@ import (
 // workbook without holding fifty megabytes of parsed rows. Walk then streams
 // every row past a callback, so the import itself is bounded by one row rather
 // than by the file.
-
 
 // Magic prefixes. A ZIP container is an OOXML workbook; the OLE2 compound
 // document signature is the legacy BIFF .xls.
@@ -295,8 +294,8 @@ func (b *Book) Peek(maxRows int) (p *Preview, err error) {
 	if !p.Truncated {
 		p.TotalRows = len(p.Rows)
 		p.Estimated = false
-		p.Source.TotalRows = len(p.Rows)
-		p.Source.Estimated = false
+		p.TotalRows = len(p.Rows)
+		p.Estimated = false
 	}
 	return p, nil
 }

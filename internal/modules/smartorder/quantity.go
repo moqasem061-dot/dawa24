@@ -2,9 +2,10 @@ package smartorder
 
 import (
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strconv"
 	"strings"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Quantity parsing.
@@ -51,7 +52,7 @@ func ParseQuantity(raw string) QtyResult {
 	s = strings.TrimSpace(strings.ReplaceAll(s, ",", ""))
 
 	// A plain number is the overwhelmingly common case.
-	if v, err := strconv.ParseFloat(s, 64); err == nil {
+	if v, err := strconv.ParseFloat(s, 64); err == nil { // nolint:errswallow: not a plain number; range and word forms are tried below
 		return validateQty(v, raw)
 	}
 

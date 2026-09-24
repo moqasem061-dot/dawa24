@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
 )
 
 // SQL fragments shared by the declarations. They are Go constants formatted

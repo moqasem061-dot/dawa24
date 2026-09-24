@@ -5,7 +5,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 )
 
 func userDisplayName(u *identity.User) string {

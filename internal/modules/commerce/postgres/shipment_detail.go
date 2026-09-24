@@ -2,13 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // The enriched read of one shipment: everything a person standing at a
@@ -98,7 +99,7 @@ func (r *Repository) shipmentDetail(ctx context.Context, query string, args ...a
 		return nil
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperr.NotFound("shipment")
 		}
 		return nil, fmt.Errorf("commerce postgres: get shipment detail: %w", err)

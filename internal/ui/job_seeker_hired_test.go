@@ -3,8 +3,8 @@ package ui
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func TestJobSeekerHired_ActorAndSessionGating(t *testing.T) {

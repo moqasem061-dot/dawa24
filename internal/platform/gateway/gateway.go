@@ -26,7 +26,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 // Capability names a business task, not a model. The mapping from capability to
@@ -327,7 +327,7 @@ func (c *HTTPClient) Invoke(ctx context.Context, req Request) (*Response, error)
 	c.breaker.failure()
 	c.log.WarnContext(ctx, "gateway call exhausted retries",
 		"capability", req.Capability, "org_id", req.OrganizationID, "error", lastErr)
-	return nil, fmt.Errorf("%w: %v", ErrUnavailable, lastErr)
+	return nil, fmt.Errorf("%w: %w", ErrUnavailable, lastErr)
 }
 
 // Health probes the Gateway for the readiness endpoint. A failing Gateway does
@@ -351,7 +351,7 @@ func (c *HTTPClient) Health(ctx context.Context) error {
 	}
 	res, err := c.http.Do(req)
 	if err != nil {
-		return fmt.Errorf("%w: %v", ErrUnavailable, err)
+		return fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {

@@ -5,13 +5,13 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/datasets"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/datasets"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Platform staff commands: organisation approvals and reported issues.

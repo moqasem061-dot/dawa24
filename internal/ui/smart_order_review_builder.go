@@ -6,10 +6,10 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // SmartOrderReviewPage renders step 5: grouping by supplier and placing orders.
@@ -85,7 +85,7 @@ func (h *UIHandler) SmartOrderReviewPage(w http.ResponseWriter, r *http.Request)
 		}
 
 		lineNet := sel.LineNet
-		if calculatedNet, err := smartorder.LineNet(chosen.NetUnitPrice, l.EffectiveQty); err == nil {
+		if calculatedNet, err := smartorder.LineNet(chosen.NetUnitPrice, l.EffectiveQty); err == nil { // nolint:errswallow: money arithmetic fails only on overflow; the stored line net stands
 			lineNet = calculatedNet
 		}
 
@@ -102,7 +102,7 @@ func (h *UIHandler) SmartOrderReviewPage(w http.ResponseWriter, r *http.Request)
 			Alternatives:   alternatives,
 		}
 		group.TotalCount++
-		if sum, err := group.Subtotal.Add(lineNet); err == nil {
+		if sum, err := group.Subtotal.Add(lineNet); err == nil { // nolint:errswallow: money arithmetic fails only on overflow
 			group.Subtotal = sum
 		}
 		group.Lines = append(group.Lines, revLine)
@@ -124,7 +124,7 @@ func (h *UIHandler) SmartOrderReviewPage(w http.ResponseWriter, r *http.Request)
 	// Recompute order estimated total from all groups to guarantee consistency
 	var grandTotal money.Amount
 	for _, g := range data.AllGroups {
-		if sum, err := grandTotal.Add(g.Subtotal); err == nil {
+		if sum, err := grandTotal.Add(g.Subtotal); err == nil { // nolint:errswallow: money arithmetic fails only on overflow
 			grandTotal = sum
 		}
 	}
@@ -182,7 +182,9 @@ func (h *UIHandler) SmartOrderReviewPage(w http.ResponseWriter, r *http.Request)
 		excluded, _, err := h.smartOrderSvc.Results(ctx, run, smartorder.LineFilter{
 			Outcome: string(outcome), Limit: 200,
 		})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "smartOrderSvc.Results", err)
+		} else {
 			data.Excluded = append(data.Excluded, excluded...)
 		}
 	}

@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type ComponentGalleryProps struct {
@@ -72,7 +72,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var3).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/component_gallery.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `component_gallery.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -85,7 +85,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Density: %s", props.Density))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/component_gallery.templ`, Line: 28, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `component_gallery.templ`, Line: 28, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -98,7 +98,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Theme: %s", props.Theme))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/component_gallery.templ`, Line: 29, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `component_gallery.templ`, Line: 29, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -111,7 +111,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("Dir: %s", props.Dir))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/component_gallery.templ`, Line: 30, Col: 74}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `component_gallery.templ`, Line: 30, Col: 74}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -191,7 +191,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></section><!-- 11. Modal Dialog Component --><section class=\"glass-panel p-4\"><h2 class=\"text-lg font-bold mb-3\">11. Modal Component (Phase 4 Native Dialog)</h2><button type=\"button\" class=\"btn btn-secondary\" data-on-click=\"window.openModal('demo-gallery-modal')\">هيكل التحميل (Skeleton)</button>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</div></section><!-- 11. Modal Dialog Component --><section class=\"glass-panel p-4\"><h2 class=\"text-lg font-bold mb-3\">11. Modal Component (Phase 4 Native Dialog)</h2><button type=\"button\" class=\"btn btn-secondary\" data-on-click=\"openDialog('demo-gallery-modal')\">هيكل التحميل (Skeleton)</button>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -207,7 +207,7 @@ func ComponentGallery(props ComponentGalleryProps) templ.Component {
 					}()
 				}
 				ctx = templ.InitializeContext(ctx)
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"p-4\"><p class=\"text-sm\">هذه نافذة تجريبية تعرض التنسيق القياسي للنوافذ في المنصة.</p></div><div class=\"modal-footer\"><button type=\"button\" class=\"btn btn-secondary\" data-on-click=\"window.closeModal('demo-gallery-modal')\">إلغاء</button> <button type=\"button\" class=\"btn btn-primary\" data-on-click=\"window.closeModal('demo-gallery-modal')\">تأكيد الإجراء</button></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"p-4\"><p class=\"text-sm\">هذه نافذة تجريبية تعرض التنسيق القياسي للنوافذ في المنصة.</p></div><div class=\"modal-footer\"><button type=\"button\" class=\"btn btn-secondary\" data-on-click=\"closeDialog('demo-gallery-modal')\">إلغاء</button> <button type=\"button\" class=\"btn btn-primary\" data-on-click=\"closeDialog('demo-gallery-modal')\">تأكيد الإجراء</button></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

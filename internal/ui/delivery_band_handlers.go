@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // VendorDeliveryBandCreateSubmit creates a new distance delivery fee tier for the vendor.
@@ -98,7 +98,9 @@ func (h *UIHandler) VendorDeliveryBandDeleteSubmit(w http.ResponseWriter, r *htt
 
 	if h.orgSvc != nil {
 		bands, err := h.orgSvc.GetDeliveryBands(ctx, actor.OrganizationID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.GetDeliveryBands", err)
+		} else {
 			var updated []*org.DeliveryBand
 			for _, b := range bands {
 				if b.ID != bandID {

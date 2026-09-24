@@ -5,9 +5,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type siteSettingsKey struct{}

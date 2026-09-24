@@ -6,30 +6,30 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 
 	"github.com/go-chi/chi/v5"
 
-	attachmentsPostgres "github.com/muhiya/dawa24-store/internal/modules/attachments/postgres"
-	identityPostgres "github.com/muhiya/dawa24-store/internal/modules/identity/postgres"
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
+	attachmentsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/attachments/postgres"
+	identityPostgres "github.com/moqasem061-dot/dawa24/internal/modules/identity/postgres"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	attachmentsHttp "github.com/muhiya/dawa24-store/internal/modules/attachments/http"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	identityHttp "github.com/muhiya/dawa24-store/internal/modules/identity/http"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	orgHttp "github.com/muhiya/dawa24-store/internal/modules/org/http"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	attachmentsHttp "github.com/moqasem061-dot/dawa24/internal/modules/attachments/http"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	identityHttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	orgHttp "github.com/moqasem061-dot/dawa24/internal/modules/org/http"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/features"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/redis/go-redis/v9"
 )
 

@@ -10,14 +10,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestVendorOfferLocationsPage_AuthRequired(t *testing.T) {
 	h := newTestUIHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/vendor/offers/42/locations", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/offers/42/locations", nil)
 	rec := httptest.NewRecorder()
 
 	h.VendorOfferLocationsPage(rec, req)
@@ -42,7 +42,7 @@ func TestVendorOfferLocationsPage_OfferNotFound(t *testing.T) {
 		Permissions:    []string{"vendor.offer.view"},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/vendor/offers/999/locations", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/offers/999/locations", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "999")
@@ -80,7 +80,7 @@ func TestVendorOfferLocationNewSubmit_CityRequired(t *testing.T) {
 		"longitude":      {"31.2357"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/vendor/offers/42/locations/new", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/offers/42/locations/new", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 
@@ -108,7 +108,7 @@ func TestVendorOfferLocationDeleteSubmit_Validation(t *testing.T) {
 		Permissions:    []string{"vendor.offer.manage"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/vendor/offers/0/locations/0/delete", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/offers/0/locations/0/delete", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 
 	rctx := chi.NewRouteContext()

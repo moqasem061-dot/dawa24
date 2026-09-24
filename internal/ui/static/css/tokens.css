@@ -3,7 +3,7 @@
    Layer declaration, OKLCH Color Engine, Typography, Density & Breakpoints
    ========================================================================== */
 
-@layer reset, tokens, base, layout, components, utilities;
+@layer reset, tokens, base, layout, components, utilities, overrides;
 
 @layer tokens {
   :root {

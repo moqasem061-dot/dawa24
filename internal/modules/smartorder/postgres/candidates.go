@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -9,8 +10,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const candidateColumns = `
@@ -247,7 +248,7 @@ func (r *Repository) GetCandidate(ctx context.Context, orgID, candidateID int64)
 			 WHERE id = $1 AND organization_id = $2;`, candidateID, orgID)
 		var err error
 		c, err = scanCandidate(row)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_candidate")
 		}
 		return err
@@ -324,7 +325,7 @@ func (r *Repository) GetSelection(ctx context.Context, orgID, lineID int64) (*sm
 			&s.LineID, &s.OrganizationID, &s.CandidateID, &decidedBy,
 			&s.ToleranceApplied, &s.SkippedCandidateID, &s.SkippedExcessPct,
 			&s.UserOverridden, &s.LineNet, &s.UpdatedAt)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_selection")
 		}
 		if err != nil {

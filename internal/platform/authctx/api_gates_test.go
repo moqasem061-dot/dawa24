@@ -1,15 +1,16 @@
 package authctx_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx/authctxtest"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx/authctxtest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 func TestRequireAPIPermission(t *testing.T) {
@@ -61,7 +62,7 @@ func TestRequireAPIPermission(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/admin/commerce/orders", nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/admin/commerce/orders", nil)
 			if tt.actor != nil {
 				req = req.WithContext(authctx.WithActor(req.Context(), *tt.actor))
 			}
@@ -127,7 +128,7 @@ func TestRequireAPITenantPermission(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("POST", "/api/v1/vendor/orders/1/status", nil)
+			req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/vendor/orders/1/status", nil)
 			if tt.actor != nil {
 				req = req.WithContext(authctx.WithActor(req.Context(), *tt.actor))
 			}
@@ -201,7 +202,7 @@ func TestRequireApprovedAPI(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/api/v1/commerce/orders", nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/orders", nil)
 			if tt.actor != nil {
 				req = req.WithContext(authctx.WithActor(req.Context(), *tt.actor))
 			}

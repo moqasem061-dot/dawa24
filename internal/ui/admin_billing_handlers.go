@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminPlansPage renders the subscription plan editor and active subscribers tab.
@@ -37,7 +37,11 @@ func (h *UIHandler) AdminPlansPage(w http.ResponseWriter, r *http.Request) {
 	var totalSubs int
 	subFilters := adminSubscriptionFiltersFrom(r)
 	if h.billSvc != nil {
-		plans, _ = h.billSvc.AdminListPlans(ctx)
+		if loaded, err := h.billSvc.AdminListPlans(ctx); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminListPlans", err)
+		} else {
+			plans = loaded
+		}
 		// The subscriber log is only queried when its tab is showing. It joins
 		// four tables and the plans tab never renders a row of it.
 		if tab == "subscriptions" {

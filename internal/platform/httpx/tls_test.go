@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,7 +14,6 @@ func TestDefaultTLSConfig_HardeningInvariants(t *testing.T) {
 
 	assert.NotNil(t, cfg)
 	assert.Equal(t, uint16(tls.VersionTLS12), cfg.MinVersion)
-	assert.True(t, cfg.PreferServerCipherSuites)
 
 	// Post-Quantum Cryptography curves present
 	assert.Contains(t, cfg.CurvePreferences, tls.X25519MLKEM768)

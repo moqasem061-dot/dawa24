@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminAdvProductsPage renders the product sponsorships and promoted items dashboard.
@@ -36,10 +36,10 @@ func (h *UIHandler) AdminAdvProductsPage(w http.ResponseWriter, r *http.Request)
 	dateToStr := strings.TrimSpace(r.URL.Query().Get("date_to"))
 
 	var startsFrom, startsTo *time.Time
-	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		startsFrom = &t
 	}
-	if t, err := time.Parse("2006-01-02", dateToStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateToStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		// Include the full ending day
 		inclusive := t.Add(24 * time.Hour)
 		startsTo = &inclusive
@@ -69,18 +69,24 @@ func (h *UIHandler) AdminAdvProductsPage(w http.ResponseWriter, r *http.Request)
 	var counts promo.AdminSponsorshipCounts
 
 	if h.promoSvc != nil {
-		if rws, tot, err := h.promoSvc.ListAdminSponsorshipRows(sysCtx, filter); err == nil {
+		if rws, tot, err := h.promoSvc.ListAdminSponsorshipRows(sysCtx, filter); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListAdminSponsorshipRows", err)
+		} else {
 			rows = rws
 			total = tot
 		}
-		if c, err := h.promoSvc.AdminSponsorshipCounts(sysCtx, filter); err == nil {
+		if c, err := h.promoSvc.AdminSponsorshipCounts(sysCtx, filter); err != nil {
+			h.logLoadErr(ctx, "promoSvc.AdminSponsorshipCounts", err)
+		} else {
 			counts = c
 		}
 	}
 
 	var packages []*promo.OfferPackage
 	if h.promoSvc != nil {
-		if pkgs, err := h.promoSvc.AdminListPackages(sysCtx); err == nil {
+		if pkgs, err := h.promoSvc.AdminListPackages(sysCtx); err != nil {
+			h.logLoadErr(ctx, "promoSvc.AdminListPackages", err)
+		} else {
 			packages = pkgs
 		}
 	}
@@ -88,14 +94,18 @@ func (h *UIHandler) AdminAdvProductsPage(w http.ResponseWriter, r *http.Request)
 	var vendors []*org.Organization
 	if h.orgSvc != nil {
 		vendorType := org.TypeVendor
-		if orgs, err := h.orgSvc.ListOrganizations(sysCtx, &vendorType, nil, 100, 0); err == nil {
+		if orgs, err := h.orgSvc.ListOrganizations(sysCtx, &vendorType, nil, 100, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			vendors = orgs
 		}
 	}
 
 	var catalogProducts []*catalog.Product
 	if h.catSvc != nil {
-		if prods, err := h.catSvc.ListProducts(sysCtx, string(catalog.StatusActive), 100, 0); err == nil {
+		if prods, err := h.catSvc.ListProducts(sysCtx, string(catalog.StatusActive), 100, 0); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListProducts", err)
+		} else {
 			catalogProducts = prods
 		}
 	}
@@ -188,7 +198,8 @@ func (h *UIHandler) AdminAdvProductRejectSubmit(w http.ResponseWriter, r *http.R
 	}
 
 	sysCtx := database.AsSystem(ctx)
-	req, _ := h.promoSvc.GetSponsorshipRequestByID(sysCtx, id)
+	req, reqErr := h.promoSvc.GetSponsorshipRequestByID(sysCtx, id)
+	h.logLoadErr(ctx, "promoSvc.GetSponsorshipRequestByID", reqErr)
 	notes := strings.TrimSpace(r.PostFormValue("notes"))
 	if notes == "" {
 		notes = i18n.T(lang, "promo.sponsorship.default_reject_notes")

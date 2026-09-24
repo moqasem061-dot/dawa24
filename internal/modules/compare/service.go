@@ -9,9 +9,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // ClientInfo captures client environment details for session device cap tracking.

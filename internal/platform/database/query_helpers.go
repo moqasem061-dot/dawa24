@@ -4,13 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"strconv"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	_ "github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // ErrNoTenant is returned when tenant-scoped work is attempted without an
@@ -209,50 +208,6 @@ func (db *DB) transact(ctx context.Context, opts pgx.TxOptions, fn func(context.
 
 	if err = tx.Commit(ctx); err != nil {
 		return fmt.Errorf("database: commit: %w", err)
-	}
-	return nil
-}
-
-// applyTenant sets the GUC that row-level security policies read.
-//
-// SET LOCAL scopes the setting to this transaction, so it is discarded when the
-// connection returns to the pool. Session-level SET would leak one tenant's id
-// into the next request that borrowed the same connection — which is exactly the
-// bug this whole mechanism exists to prevent.
-func applyTenant(ctx context.Context, tx pgx.Tx) error {
-	if isSystem(ctx) {
-		// Explicit cross-tenant access. RLS policies grant the bypass role;
-		// we still clear any inherited org so nothing is silently scoped.
-		if _, err := tx.Exec(ctx, "SELECT set_config('app.is_system', 'on', true)"); err != nil {
-			return fmt.Errorf("database: set system context: %w", err)
-		}
-		return nil
-	}
-
-	orgID, ok := TenantFrom(ctx)
-	if !ok {
-		// Not every query is tenant-scoped: login, the public catalogue, and
-		// reference data are legitimately tenant-free. Those tables have no RLS
-		// policy, so leaving the GUC unset is correct. Tenant-owned tables will
-		// return zero rows, which is the safe direction to fail.
-		if _, err := tx.Exec(ctx, "SELECT set_config('app.current_org_id', '', true)"); err != nil {
-			return fmt.Errorf("database: clear tenant context: %w", err)
-		}
-		return nil
-	}
-
-	// The value is formatted in Go rather than cast in SQL.
-	//
-	// `$1::text` tells PostgreSQL the parameter's type is text, so pgx must
-	// encode an int64 as text and has no plan for that — every tenant-scoped
-	// transaction failed with "cannot find encode plan". set_config's second
-	// argument is text by signature, so the conversion has to happen on this
-	// side of the wire.
-	if _, err := tx.Exec(ctx,
-		"SELECT set_config('app.current_org_id', $1, true)",
-		strconv.FormatInt(orgID, 10),
-	); err != nil {
-		return fmt.Errorf("database: set tenant context: %w", err)
 	}
 	return nil
 }

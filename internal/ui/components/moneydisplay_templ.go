@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/muhiya/dawa24-store/internal/shared/format"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/format"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // MoneyDisplayProps renders a monetary amount with thousand-grouping and localized currency.

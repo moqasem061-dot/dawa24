@@ -6,7 +6,7 @@ import (
 	"mime/multipart"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // The two halves of "a bulk import replaces what came before it".
@@ -38,18 +38,6 @@ func trimToPlanQuota(headers []*multipart.FileHeader, maxAllowed int, lang strin
 			fmt.Sprintf(i18n.T(lang, "compare.upload.quota_skipped"), maxAllowed)+")")
 	}
 	return headers[:maxAllowed], skipped
-}
-
-// trimToBatchLimit caps a single bulk upload batch to maxBatchLimit (e.g. 100 files).
-func trimToBatchLimit(headers []*multipart.FileHeader, maxBatchLimit int, lang string) ([]*multipart.FileHeader, []string) {
-	if maxBatchLimit <= 0 || len(headers) <= maxBatchLimit {
-		return headers, nil
-	}
-	skipped := make([]string, 0, len(headers)-maxBatchLimit)
-	for _, h := range headers[maxBatchLimit:] {
-		skipped = append(skipped, h.Filename+" (تجاوز الحد الأقصى للدفعة: 100 ملف)")
-	}
-	return headers[:maxBatchLimit], skipped
 }
 
 // supersededFileIDs picks the fewest existing files that must be archived to
@@ -96,25 +84,6 @@ func (h *UIHandler) supersededFileIDs(ctx context.Context, userID int64, orgID *
 	for i := len(files) - 1; i >= 0 && len(ids) < overflow; i-- {
 		if files[i] != nil {
 			ids = append(ids, files[i].ID)
-		}
-	}
-	return ids
-}
-
-// activeCompareFileIDs lists the compare files the vendor holds right now.
-func (h *UIHandler) activeCompareFileIDs(ctx context.Context, userID int64, orgID *int64) []int64 {
-	if h.compareSvc == nil {
-		return nil
-	}
-	files, err := h.compareSvc.ListFiles(ctx, userID, orgID, nil)
-	if err != nil {
-		h.log.ErrorContext(ctx, "could not snapshot active compare files before upload", "error", err)
-		return nil
-	}
-	ids := make([]int64, 0, len(files))
-	for _, f := range files {
-		if f != nil {
-			ids = append(ids, f.ID)
 		}
 	}
 	return ids

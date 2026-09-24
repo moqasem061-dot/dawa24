@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"io"
 	"log/slog"
@@ -15,10 +16,10 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func makeTestXLSX(t *testing.T, rows [][]any) []byte {
@@ -53,7 +54,7 @@ func doMultipartPOST(t *testing.T, h http.Handler, path string, fieldName, filen
 	}
 	require.NoError(t, writer.Close())
 
-	req := httptest.NewRequest("POST", path, body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", path, body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	if actor.UserID != 0 || actor.OrganizationID != 0 || actor.Role != "" {
 		req = req.WithContext(authctx.WithActor(req.Context(), actor))
@@ -259,7 +260,7 @@ func TestSpreadsheetSecurity_CompareUploadRejection(t *testing.T) {
 	_, _ = part.Write(maliciousXLSX)
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/compare/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	actor := authctx.Actor{
 		UserID:         100,
@@ -292,7 +293,7 @@ func TestSpreadsheetSecurity_AdminTempWarehouseRejection(t *testing.T) {
 	_, _ = part.Write(maliciousXLSX)
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/admin/temporary-warehouses/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/temporary-warehouses/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	actor := authctx.Actor{
 		UserID:      1,

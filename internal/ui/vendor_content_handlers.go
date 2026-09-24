@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorPoliciesPage renders the vendor's return, payment, and shipping policies editor.
@@ -23,7 +23,9 @@ func (h *UIHandler) VendorPoliciesPage(w http.ResponseWriter, r *http.Request) {
 
 	policyMap := make(map[string]string)
 	if h.orgSvc != nil {
-		if policies, err := h.orgSvc.ListPolicies(ctx, actor.OrganizationID); err == nil {
+		if policies, err := h.orgSvc.ListPolicies(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListPolicies", err)
+		} else {
 			for _, p := range policies {
 				if p != nil {
 					policyMap[p.PolicyType] = p.Content
@@ -96,7 +98,9 @@ func (h *UIHandler) VendorSocialMediaPage(w http.ResponseWriter, r *http.Request
 
 	linksMap := make(map[string]string)
 	if h.orgSvc != nil {
-		if links, err := h.orgSvc.ListSocialMedia(ctx, actor.OrganizationID); err == nil {
+		if links, err := h.orgSvc.ListSocialMedia(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListSocialMedia", err)
+		} else {
 			for _, l := range links {
 				if l != nil {
 					linksMap[l.Platform] = l.URL

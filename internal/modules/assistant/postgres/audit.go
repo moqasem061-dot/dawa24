@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 )
 
 // ListAllConversations returns all assistant sessions across organizations for administrative audit.

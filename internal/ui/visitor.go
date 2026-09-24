@@ -3,14 +3,15 @@ package ui
 import (
 	"crypto/rand"
 	"encoding/hex"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"net"
 	"net/http"
 	"strings"
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/antiscrape"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/antiscrape"
 )
 
 const visitorCookieName = "dawa24_visitor"

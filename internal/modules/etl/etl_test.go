@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/etl"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/etl"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func TestLegacyDatetimeTransformer(t *testing.T) {

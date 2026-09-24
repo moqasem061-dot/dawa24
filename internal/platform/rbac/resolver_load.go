@@ -3,11 +3,12 @@ package rbac
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // load reads one caller's authority from the database.
@@ -76,7 +77,7 @@ func loadPlatformSide(ctx context.Context, tx pgx.Tx, g *Grant) error {
 		         ON ro.key = u.role AND ro.deleted_at IS NULL
 		 WHERE u.id = $1 AND u.deleted_at IS NULL AND u.status = 'active';
 	`, g.UserID).Scan(&g.PlatformRole, &isStaff, &g.AvatarURL, &g.Name)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		// A deleted or suspended account resolves to nothing. This is the
 		// second half of suspension: revoking the sessions closes open tabs,
 		// and this closes anything that reaches the resolver afterwards.
@@ -160,7 +161,7 @@ func loadMembership(ctx context.Context, tx pgx.Tx, g *Grant) error {
 		   AND m.is_active = true
 		   AND o.deleted_at IS NULL;
 	`, g.UserID, g.OrganizationID).Scan(&roleKey, &orgType, &orgStatus, &roleID, &roleName, &isOwner, &branchID)
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		// Not a member of the organization they asked about. Nothing is
 		// granted for it — including to a staff user, whose authority over a
 		// tenant comes from platform permissions, not from a membership they

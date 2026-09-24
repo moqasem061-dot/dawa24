@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // provision creates the least-privilege application role and grants it what the
@@ -28,7 +29,7 @@ func provision(adminDSN, roleName, password string) {
 	defer conn.Close(ctx)
 
 	ident := pgx.Identifier{roleName}.Sanitize()
-	lit := quoteLiteral(password)
+	lit := database.QuoteLiteral(password)
 
 	var exists bool
 	_ = conn.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = $1)`, roleName).Scan(&exists)
@@ -93,18 +94,4 @@ func provision(adminDSN, roleName, password string) {
 	var super bool
 	_ = conn.QueryRow(ctx, `SELECT rolsuper FROM pg_roles WHERE rolname = $1`, roleName).Scan(&super)
 	fmt.Printf("\n%s rolsuper = %t (must be false, or row-level security is bypassed)\n", roleName, super)
-}
-
-// quoteLiteral escapes a string for use as a SQL literal. Passwords cannot be
-// passed as parameters in CREATE ROLE.
-func quoteLiteral(s string) string {
-	out := make([]byte, 0, len(s)+2)
-	out = append(out, '\'')
-	for i := 0; i < len(s); i++ {
-		if s[i] == '\'' {
-			out = append(out, '\'')
-		}
-		out = append(out, s[i])
-	}
-	return string(append(out, '\''))
 }

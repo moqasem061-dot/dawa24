@@ -11,9 +11,9 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	cachepkg "github.com/muhiya/dawa24-store/internal/platform/cache"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	cachepkg "github.com/moqasem061-dot/dawa24/internal/platform/cache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // redisCmdable is the slice of the Redis client these helpers need. Naming it

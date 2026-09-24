@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // notifyOrderStatusChanged dispatches updates to the customer, vendor teams, and platform admin.
@@ -113,22 +113,6 @@ func (h *UIHandler) notifyOrderCancelledByBuyer(ctx context.Context, supplierOrg
 		"reason":        reason,
 	}
 	h.dispatchOrgEvent(ctx, notifications.EventOrderCancelledByBuyer, supplierOrgID, vars)
-}
-
-// notifyPurchaseRequestCreated dispatches notification to the vendor when a pharmacy submits a purchase request.
-func (h *UIHandler) notifyPurchaseRequestCreated(ctx context.Context, vendorOrgID int64, pharmacyName string, requestID int64, itemCount int) {
-	if vendorOrgID <= 0 {
-		return
-	}
-	if pharmacyName == "" {
-		pharmacyName = i18n.T("ar", "notif.a_pharmacy")
-	}
-	vars := map[string]string{
-		"request_id":    fmt.Sprintf("%d", requestID),
-		"pharmacy_name": pharmacyName,
-		"item_count":    fmt.Sprintf("%d", itemCount),
-	}
-	h.dispatchOrgEvent(ctx, notifications.EventPurchaseRequestCreated, vendorOrgID, vars)
 }
 
 // notifyPurchaseRequestResponded dispatches notification to the pharmacy when a vendor responds with prices.

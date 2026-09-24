@@ -14,9 +14,10 @@ package ingest
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // ReviewBulk is what one bulk action did, for the notice the vendor is shown.

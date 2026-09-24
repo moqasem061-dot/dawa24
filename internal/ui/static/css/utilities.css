@@ -822,4 +822,125 @@
 .hover-bg-surface:hover,
 .hover-lift-subtle:hover { background-color: var(--bg-surface-sunken); }
 
+/* ---- Classes templates used with no rule behind them ----
+   Each was referenced in markup and silently did nothing: a spinner that did
+   not spin, a muted label at full strength. Values come from the tokens, so
+   they follow the theme; aliases mirror the sibling they were written for.
+   check-undefined-classes keeps the list from growing again. */
+
+@keyframes dawa-spin { to { transform: rotate(360deg); } }
+@keyframes dawa-ping { 75%, 100% { transform: scale(2); opacity: 0; } }
+.animate-spin { animation: dawa-spin 1s linear infinite; }
+.animate-ping { animation: dawa-ping 1s cubic-bezier(0, 0, 0.2, 1) infinite; }
+@media (prefers-reduced-motion: reduce) {
+  .animate-ping { animation: none; }
+}
+.transition-opacity   { transition: opacity var(--duration-fast) var(--ease-smooth); }
+.transition-transform { transition: transform var(--duration-fast) var(--ease-smooth); }
+
+.opacity-30 { opacity: 0.3; }
+.opacity-70 { opacity: 0.7; }
+.opacity-80 { opacity: 0.8; }
+.blur-3xl   { filter: blur(64px); }
+
+.h-32         { block-size: 8rem; }
+.min-h-0      { min-block-size: 0; }
+.min-h-screen { min-block-size: 100vh; }
+.max-h-full   { max-block-size: 100%; }
+.s-max-h-22rem { max-block-size: 22rem; }
+.min-w-44     { min-inline-size: 11rem; }
+.pt-6 { padding-block-start: 1.5rem; }
+.pb-6 { padding-block-end: 1.5rem; }
+.bottom-2 { inset-block-end: 0.5rem; }
+.space-y-3 > * + * { margin-block-start: 0.75rem; }
+.border-t-2 { border-block-start: 2px solid var(--border); }
+
+.text-5xl { font-size: 2.5rem; line-height: 1.1; }
+.text-surface-fg { color: var(--text-primary); }
+.text-error      { color: var(--danger); }
+.text-teal       { color: var(--info); }
+.text-blue-600   { color: var(--primary); }
+.text-amber-400  { color: var(--warning); }
+.text-emerald-300,
+.text-emerald-400 { color: var(--success); }
+.text-purple-950  { color: oklch(0.35 0.12 300); }
+.decoration-purple-500 { text-decoration-color: oklch(0.55 0.16 300); }
+.hover-underline:hover { text-decoration: underline; }
+.text-gradient-brand {
+  background: linear-gradient(90deg, var(--primary), var(--accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.bg-accent { background-color: var(--accent); color: #ffffff; }
+.bg-amber-200 { background-color: var(--warning-subtle); }
+.bg-amber-400 { background-color: var(--warning); }
+.bg-subtle,
+.bg-secondary-subtle,
+.bg-surface-muted,
+.bg-surface-subtle { background-color: var(--bg-surface-sunken); }
+
+.border-default       { border-color: var(--border); }
+.border-border-subtle { border-color: var(--border-subtle); }
+.border-brand-100     { border-color: var(--primary-subtle); }
+.divide-default > * + * { border-block-start: 1px solid var(--border); }
+
+.list-unstyled { list-style: none; padding-inline-start: 0; margin: 0; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.cursor-zoom-in { cursor: zoom-in; }
+@media (min-width: 768px) { .d-md-inline { display: inline; } }
+
+.table-auto { table-layout: auto; }
+.table-sm th, .table-sm td { padding: 0.35rem 0.5rem; }
+.table-hover tbody tr:hover { background-color: var(--bg-surface-sunken); }
+
+.badge-muted,
+.badge-subtle {
+  background: var(--bg-surface-sunken);
+  color: var(--text-muted);
+  border-color: var(--border-card);
+}
+.alert-amber {
+  background: var(--warning-subtle);
+  border-color: var(--warning-border);
+  color: var(--warning-hover);
+}
+.btn-accent { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+.btn-accent:hover { background: var(--accent); filter: brightness(0.95); }
+.btn-purple { background: oklch(0.55 0.16 300); color: #ffffff; border-color: oklch(0.55 0.16 300); }
+.btn-reset { background: transparent; border: 0; padding: 0; color: inherit; font: inherit; cursor: pointer; }
+.btn-close {
+  inline-size: 2rem; block-size: 2rem;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; border-radius: var(--radius-md);
+  color: var(--text-muted); cursor: pointer;
+}
+.btn-close:hover { background: var(--bg-surface-sunken); color: var(--text-primary); }
+.form-control-sm { padding: 0.4rem 0.6rem; font-size: var(--text-xs); border-radius: var(--radius-md); }
+
+.modal-subtitle { margin: 0.25rem 0 0; font-size: var(--text-sm); color: var(--text-secondary); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-block-start: 1rem; }
+.summary-box {
+  padding: var(--space-md);
+  border: 1px solid var(--border-card);
+  border-radius: var(--radius-lg);
+  background: var(--bg-surface-sunken);
+}
+.empty-icon { font-size: 2.5rem; color: var(--text-muted); margin-block-end: 0.5rem; }
+.tg-otp-card { border-color: var(--border-card); }
+.b2b-icon-box-lg {
+  inline-size: 3.5rem; block-size: 3.5rem;
+  border-radius: var(--radius-xl);
+  background: var(--accent-subtle); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.progress-bar-bg {
+  block-size: 0.5rem;
+  border-radius: var(--radius-full);
+  background: var(--bg-surface-sunken);
+  overflow: hidden;
+}
+
 }

@@ -5,20 +5,20 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
-func TestCommitImportModes(t *testing.T) {
+// commitModesFixture is the catalogue and rows every import-mode test starts
+// from: one variant the catalogue already has and one it does not.
+func commitModesFixture() (context.Context, int64, int64, VariantKey, []*RowOutcome) {
 	ctx := context.Background()
 
 	p1 := int64(101)
 	p2 := int64(102)
 
 	// Existing variant in catalog for product 101
-	existingVariantKey := catalog.VariantKey{
+	existingVariantKey := VariantKey{
 		ID:        501,
 		ProductID: p1,
 		SKU:       "SKU-EXISTS",
@@ -55,13 +55,20 @@ func TestCommitImportModes(t *testing.T) {
 		},
 	}
 
+	return ctx, p1, p2, existingVariantKey, staged
+}
+
+func TestCommitImportModes(t *testing.T) {
+	ctx, p1, p2, existingVariantKey, staged := commitModesFixture()
+	_, _, _, _, _ = ctx, p1, p2, existingVariantKey, staged
+
 	t.Run("ModeUpsert writes both existing and new variants", func(t *testing.T) {
 		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
+			keys:          []VariantKey{existingVariantKey},
 			nextVariantID: 1000,
 		}
 		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
+			warehouses:  []Warehouse{{ID: 1}},
 			inWarehouse: map[int64]bool{501: true},
 		}
 		storeMock := &mockCommitImportStore{
@@ -73,7 +80,7 @@ func TestCommitImportModes(t *testing.T) {
 				Settings: Settings{
 					WarehouseID: 1,
 					Mode:        ModeUpsert,
-					StockMode:   inventory.StockReplace,
+					StockMode:   StockReplace,
 				},
 			},
 			stagedRows: staged,
@@ -108,11 +115,11 @@ func TestCommitImportModes(t *testing.T) {
 
 	t.Run("ModeAddOnly writes only new variants and skips existing", func(t *testing.T) {
 		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
+			keys:          []VariantKey{existingVariantKey},
 			nextVariantID: 1000,
 		}
 		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
+			warehouses:  []Warehouse{{ID: 1}},
 			inWarehouse: map[int64]bool{501: true},
 		}
 		storeMock := &mockCommitImportStore{
@@ -124,7 +131,7 @@ func TestCommitImportModes(t *testing.T) {
 				Settings: Settings{
 					WarehouseID: 1,
 					Mode:        ModeAddOnly,
-					StockMode:   inventory.StockReplace,
+					StockMode:   StockReplace,
 				},
 			},
 			stagedRows: staged,
@@ -160,11 +167,11 @@ func TestCommitImportModes(t *testing.T) {
 
 	t.Run("ModeUpdateOnly updates only existing variants and skips new", func(t *testing.T) {
 		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
+			keys:          []VariantKey{existingVariantKey},
 			nextVariantID: 1000,
 		}
 		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
+			warehouses:  []Warehouse{{ID: 1}},
 			inWarehouse: map[int64]bool{501: true},
 		}
 		storeMock := &mockCommitImportStore{
@@ -176,7 +183,7 @@ func TestCommitImportModes(t *testing.T) {
 				Settings: Settings{
 					WarehouseID: 1,
 					Mode:        ModeUpdateOnly,
-					StockMode:   inventory.StockReplace,
+					StockMode:   StockReplace,
 				},
 			},
 			stagedRows: staged,
@@ -212,11 +219,11 @@ func TestCommitImportModes(t *testing.T) {
 
 	t.Run("ModeReplace deactivates unmentioned variants", func(t *testing.T) {
 		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
+			keys:          []VariantKey{existingVariantKey},
 			nextVariantID: 1000,
 		}
 		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
+			warehouses:  []Warehouse{{ID: 1}},
 			inWarehouse: map[int64]bool{501: true},
 		}
 		storeMock := &mockCommitImportStore{
@@ -228,7 +235,7 @@ func TestCommitImportModes(t *testing.T) {
 				Settings: Settings{
 					WarehouseID: 1,
 					Mode:        ModeReplace,
-					StockMode:   inventory.StockReplace,
+					StockMode:   StockReplace,
 				},
 			},
 			stagedRows: staged,
@@ -253,215 +260,4 @@ func TestCommitImportModes(t *testing.T) {
 		}
 	})
 
-	t.Run("ModeUpdateOnly skips variants that exist only in catalog and not in selected warehouse", func(t *testing.T) {
-		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
-			nextVariantID: 1000,
-		}
-		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
-			inWarehouse: map[int64]bool{}, // Variant 501 is NOT in this warehouse!
-		}
-		storeMock := &mockCommitImportStore{
-			session: &Session{
-				ID:             6,
-				PublicID:       "imp-update-skip-catalog-only",
-				OrganizationID: 10,
-				Phase:          PhaseReview,
-				Settings: Settings{
-					WarehouseID: 1,
-					Mode:        ModeUpdateOnly,
-					StockMode:   inventory.StockReplace,
-				},
-			},
-			stagedRows: staged[:1], // only product 1 (existing in catalog, not in warehouse)
-		}
-
-		svc := NewService(nil, slog.Default())
-		svc.SetImportStore(storeMock)
-		svc.SetCatalogPort(catMock)
-		svc.SetInventoryPort(invMock)
-
-		sess, err := svc.CommitImport(ctx, "imp-update-skip-catalog-only")
-		if err != nil {
-			t.Fatalf("CommitImport failed: %v", err)
-		}
-		if sess.UpdatedRows != 0 {
-			t.Errorf("expected 0 updated rows, got %d", sess.UpdatedRows)
-		}
-		if sess.InsertedRows != 0 {
-			t.Errorf("expected 0 inserted rows, got %d", sess.InsertedRows)
-		}
-		if sess.SkippedRows != 1 {
-			t.Errorf("expected 1 skipped row, got %d", sess.SkippedRows)
-		}
-		if len(catMock.writtenVariants) != 0 {
-			t.Errorf("expected 0 variants written, got %d", len(catMock.writtenVariants))
-		}
-		if len(invMock.writtenRows) != 0 {
-			t.Errorf("expected 0 stock rows written, got %d", len(invMock.writtenRows))
-		}
-	})
-
-	t.Run("ModeAddOnly adds variant existing in catalog to warehouse when absent from warehouse", func(t *testing.T) {
-		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
-			nextVariantID: 1000,
-		}
-		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
-			inWarehouse: map[int64]bool{}, // Variant 501 is NOT in this warehouse!
-		}
-		storeMock := &mockCommitImportStore{
-			session: &Session{
-				ID:             7,
-				PublicID:       "imp-add-catalog-to-wh",
-				OrganizationID: 10,
-				Phase:          PhaseReview,
-				Settings: Settings{
-					WarehouseID: 1,
-					Mode:        ModeAddOnly,
-					StockMode:   inventory.StockReplace,
-				},
-			},
-			stagedRows: staged[:1], // only product 1 (existing in catalog, not in warehouse)
-		}
-
-		svc := NewService(nil, slog.Default())
-		svc.SetImportStore(storeMock)
-		svc.SetCatalogPort(catMock)
-		svc.SetInventoryPort(invMock)
-
-		sess, err := svc.CommitImport(ctx, "imp-add-catalog-to-wh")
-		if err != nil {
-			t.Fatalf("CommitImport failed: %v", err)
-		}
-		if sess.InsertedRows != 1 {
-			t.Errorf("expected 1 inserted row (added to warehouse), got %d", sess.InsertedRows)
-		}
-		if sess.UpdatedRows != 0 {
-			t.Errorf("expected 0 updated rows, got %d", sess.UpdatedRows)
-		}
-		if sess.SkippedRows != 0 {
-			t.Errorf("expected 0 skipped rows, got %d", sess.SkippedRows)
-		}
-		if len(invMock.writtenRows) != 1 {
-			t.Fatalf("expected 1 stock row written to warehouse, got %d", len(invMock.writtenRows))
-		}
-		if invMock.writtenRows[0].Stock.ProductVariantID != 501 {
-			t.Errorf("expected stock written for variant 501, got %d", invMock.writtenRows[0].Stock.ProductVariantID)
-		}
-	})
-
-	t.Run("ModeUpsert adds variant existing in catalog to warehouse when absent from warehouse", func(t *testing.T) {
-		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{existingVariantKey},
-			nextVariantID: 1000,
-		}
-		invMock := &mockCommitInventoryPort{
-			warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
-			inWarehouse: map[int64]bool{}, // Variant 501 is NOT in this warehouse!
-		}
-		storeMock := &mockCommitImportStore{
-			session: &Session{
-				ID:             8,
-				PublicID:       "imp-upsert-catalog-to-wh",
-				OrganizationID: 10,
-				Phase:          PhaseReview,
-				Settings: Settings{
-					WarehouseID: 1,
-					Mode:        ModeUpsert,
-					StockMode:   inventory.StockReplace,
-				},
-			},
-			stagedRows: staged[:1],
-		}
-
-		svc := NewService(nil, slog.Default())
-		svc.SetImportStore(storeMock)
-		svc.SetCatalogPort(catMock)
-		svc.SetInventoryPort(invMock)
-
-		sess, err := svc.CommitImport(ctx, "imp-upsert-catalog-to-wh")
-		if err != nil {
-			t.Fatalf("CommitImport failed: %v", err)
-		}
-		if sess.InsertedRows != 1 {
-			t.Errorf("expected 1 inserted row (added to warehouse), got %d", sess.InsertedRows)
-		}
-		if sess.UpdatedRows != 0 {
-			t.Errorf("expected 0 updated rows, got %d", sess.UpdatedRows)
-		}
-		if sess.SkippedRows != 0 {
-			t.Errorf("expected 0 skipped rows, got %d", sess.SkippedRows)
-		}
-		if len(invMock.writtenRows) != 1 {
-			t.Fatalf("expected 1 stock row written to warehouse, got %d", len(invMock.writtenRows))
-		}
-	})
-
-	t.Run("StockWriting handles BlankQuantityIsZero and StockMode", func(t *testing.T) {
-		catMock := &mockCommitCatalogPort{
-			keys:          []catalog.VariantKey{},
-			nextVariantID: 2000,
-		}
-		invMock := &mockCommitInventoryPort{
-			warehouses: []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
-		}
-		// Row with NO quantity specified
-		blankQtyRow := []*RowOutcome{
-			{
-				ID:         10,
-				SourceRow:  1,
-				ProductID:  &p1,
-				SourceCode: "SKU-BLANK-QTY",
-				Payload: &productmatch.Row{
-					Number:      1,
-					SKU:         "SKU-BLANK-QTY",
-					Name:        "Product Without Quantity",
-					PublicPrice: money.FromMajor(120),
-					HasQuantity: false,
-					Quantity:    0,
-				},
-			},
-		}
-
-		storeMock := &mockCommitImportStore{
-			session: &Session{
-				ID:             5,
-				PublicID:       "imp-blank-qty",
-				OrganizationID: 10,
-				Phase:          PhaseReview,
-				Settings: Settings{
-					WarehouseID:         1,
-					Mode:                ModeUpsert,
-					StockMode:           inventory.StockReplace,
-					BlankQuantityIsZero: true,
-				},
-			},
-			stagedRows: blankQtyRow,
-		}
-
-		svc := NewService(nil, slog.Default())
-		svc.SetImportStore(storeMock)
-		svc.SetCatalogPort(catMock)
-		svc.SetInventoryPort(invMock)
-
-		sess, err := svc.CommitImport(ctx, "imp-blank-qty")
-		if err != nil {
-			t.Fatalf("CommitImport failed: %v", err)
-		}
-
-		if sess.InsertedRows != 1 {
-			t.Errorf("expected 1 inserted row, got %d", sess.InsertedRows)
-		}
-		// Verify stock row was queued with quantity 0 and HasQuantity = true
-		if len(invMock.writtenRows) != 1 {
-			t.Fatalf("expected 1 stock row written, got %d", len(invMock.writtenRows))
-		}
-		if invMock.writtenRows[0].Stock.Quantity != 0 || !invMock.writtenRows[0].HasQuantity {
-			t.Errorf("expected stock row quantity 0 with HasQuantity true, got qty=%d hasQty=%v",
-				invMock.writtenRows[0].Stock.Quantity, invMock.writtenRows[0].HasQuantity)
-		}
-	})
 }

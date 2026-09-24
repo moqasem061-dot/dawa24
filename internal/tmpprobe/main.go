@@ -20,7 +20,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	defer tx.Rollback(ctx)
+	defer func() { _ = tx.Rollback(ctx) }() // read-only; nothing to keep
 	_, _ = tx.Exec(ctx, "SET LOCAL statement_timeout = '60s'")
 	for _, q := range strings.Split(os.Getenv("Q"), ";;") {
 		q = strings.TrimSpace(q)

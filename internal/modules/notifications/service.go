@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // SendInput specifies parameters for dispatching a notification.
@@ -141,7 +141,6 @@ func (s *Service) SendEvent(
 	return s.Send(ctx, input)
 }
 
-
 // GetNotification retrieves a single notification by ID scoped to the user.
 func (s *Service) GetNotification(ctx context.Context, id, userID int64) (*NotificationLog, error) {
 	if s == nil || s.repo == nil || id <= 0 || userID <= 0 {
@@ -188,4 +187,3 @@ func (s *Service) HasNotificationWithTitle(ctx context.Context, userID int64, ti
 	}
 	return s.repo.HasNotificationWithTitle(ctx, userID, title, since)
 }
-

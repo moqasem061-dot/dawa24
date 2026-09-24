@@ -3,7 +3,7 @@ package ui
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 var orgLifecycleTestCases = []eventTestCase{

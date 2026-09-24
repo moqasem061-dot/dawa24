@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // TenantPaymentMethodAddSubmit saves a new payment method from the dedicated wallet page.
@@ -78,7 +78,9 @@ func (h *UIHandler) TenantPaymentMethodDeleteSubmit(w http.ResponseWriter, r *ht
 		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
 		deleted := false
 		for _, uid := range candidateUIDs {
-			if err := h.billSvc.DeletePaymentMethod(ctx, uid, id); err == nil {
+			if err := h.billSvc.DeletePaymentMethod(ctx, uid, id); err != nil {
+				h.logLoadErr(ctx, "billSvc.DeletePaymentMethod", err)
+			} else {
 				deleted = true
 				break
 			}
@@ -115,17 +117,20 @@ func resolveTenantUserIDs(ctx context.Context, h *UIHandler, actor authctx.Actor
 		}
 
 		// 2. Scan employees, strictly prioritizing org_owner / owner
-		if emps, err := h.orgSvc.ListEmployees(ctx, actor.OrganizationID); err == nil {
+		if emps, err := h.orgSvc.ListEmployees(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListEmployees", err)
+		} else {
 			var ownerUID int64
 			var adminUID int64
 			for _, emp := range emps {
 				if emp != nil && emp.Member != nil {
 					addUID(emp.Member.UserID)
-					if emp.Member.RoleKey == "org_owner" || emp.Member.RoleKey == "owner" {
+					switch emp.Member.RoleKey {
+					case "org_owner", "owner":
 						if ownerUID == 0 {
 							ownerUID = emp.Member.UserID
 						}
-					} else if emp.Member.RoleKey == "org_admin" {
+					case "org_admin":
 						if adminUID == 0 {
 							adminUID = emp.Member.UserID
 						}

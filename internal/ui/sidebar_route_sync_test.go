@@ -1,13 +1,14 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // Sidebar and route, held against each other on the real router.
@@ -65,7 +66,7 @@ func refusedByGate(router http.Handler, href string) (refused bool) {
 		_ = recover()
 	}()
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, href, nil))
+	router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, href, nil))
 	if rec.Code == http.StatusNotFound {
 		return true
 	}

@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 )
 
 func TestOrgHandler_HappyPaths(t *testing.T) {
@@ -52,7 +52,7 @@ func TestOrgHandler_HappyPaths(t *testing.T) {
 			if tt.body != "" {
 				bodyReader = strings.NewReader(tt.body)
 			}
-			req := httptest.NewRequest(tt.method, tt.path, bodyReader)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, tt.path, bodyReader)
 			if tt.body != "" {
 				req.Header.Set("Content-Type", "application/json")
 			}

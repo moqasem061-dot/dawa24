@@ -3,7 +3,7 @@ package org
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // The member-addressed half of the mock repository, split from org_test.go for

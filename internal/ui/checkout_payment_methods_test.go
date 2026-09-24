@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 )
 
 type mockBillingPaymentMethodsRepo struct {

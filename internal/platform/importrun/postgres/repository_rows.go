@@ -8,7 +8,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
 )
 
 // ──────────────────────────────────────────────────────────────────────
@@ -178,7 +178,6 @@ func (r *Repository) UpdateRow(ctx context.Context, rowID int64, data json.RawMe
 		if matchedProductID != nil {
 			sets = append(sets, fmt.Sprintf("matched_product_id = $%d", n))
 			args = append(args, *matchedProductID)
-			n++
 		}
 
 		if len(sets) == 0 {

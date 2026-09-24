@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Availability is the single source of truth for "may this company buy this
@@ -142,7 +142,6 @@ func (r AvailabilityResult) Message(lang string) string {
 	}
 	return r.MessageEn
 }
-
 
 // CheckAvailability runs every purchase precondition in order and returns the
 // first failure. It delegates to CheckAvailabilityBatch so there is exactly

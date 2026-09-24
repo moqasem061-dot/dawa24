@@ -1,11 +1,12 @@
 package httpx_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 // X-Forwarded-For is written by the caller and appended to by each proxy, so
@@ -87,7 +88,7 @@ func TestClientIPCountsFromTheRight(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 			r.RemoteAddr = tc.remoteAddr
 			if tc.forwarded != "" {
 				r.Header.Set("X-Forwarded-For", tc.forwarded)
@@ -113,7 +114,7 @@ func TestForgedForwardedForCannotMintIdentities(t *testing.T) {
 	}
 
 	for _, xff := range forgeries {
-		r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 		r.RemoteAddr = "10.0.0.1:5000"
 		r.Header.Set("X-Forwarded-For", xff)
 

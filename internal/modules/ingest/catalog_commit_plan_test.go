@@ -3,8 +3,6 @@ package ingest
 import (
 	"context"
 	"testing"
-
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
 )
 
 // The review screen's figures are the commit's own decisions, counted. These
@@ -21,7 +19,7 @@ func TestPreviewCommitCountsWhatEachModeWouldWrite(t *testing.T) {
 		stagedRow(1, &existing, "SKU-HAVE", "Existing item", 3, true),
 		stagedRow(2, &fresh, "SKU-NEW", "New item", 5, true),
 	}
-	keys := []catalog.VariantKey{
+	keys := []VariantKey{
 		{ID: 501, ProductID: existing, SKU: "SKU-HAVE", Active: true},
 		{ID: 502, ProductID: 909, SKU: "SKU-UNRELATED", Active: true},
 	}
@@ -78,7 +76,7 @@ func TestPreviewCommitWritesNothing(t *testing.T) {
 	settings.Mode = ModeReplace
 
 	rows := []*RowOutcome{stagedRow(1, &product, "SKU-HAVE", "Existing item", 3, true)}
-	keys := []catalog.VariantKey{
+	keys := []VariantKey{
 		{ID: 501, ProductID: product, SKU: "SKU-HAVE", Active: true},
 		{ID: 502, ProductID: 909, SKU: "SKU-GONE", Active: true},
 	}
@@ -147,7 +145,7 @@ func TestPreviewCommitCollapsesRepeatedExistingProducts(t *testing.T) {
 		stagedRow(1, &existing, "SKU-EXIST", "Existing item", 3, true),
 		stagedRow(2, &existing, "SKU-EXIST", "Existing item repeat", 4, true),
 	}
-	keys := []catalog.VariantKey{
+	keys := []VariantKey{
 		{ID: 701, ProductID: existing, SKU: "SKU-EXIST", Active: true},
 	}
 

@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerBranchCreatePage redirects to the unified branches page in add mode.
@@ -148,12 +148,12 @@ func (h *UIHandler) CustomerBranchNewSubmit(w http.ResponseWriter, r *http.Reque
 
 	var latPtr, lngPtr *float64
 	if latStr := r.PostFormValue("latitude"); latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
 	if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}
@@ -262,12 +262,12 @@ func (h *UIHandler) CustomerBranchEditSubmit(w http.ResponseWriter, r *http.Requ
 
 	var latPtr, lngPtr *float64
 	if latStr := r.PostFormValue("latitude"); latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
 	if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}
@@ -314,7 +314,7 @@ func (h *UIHandler) CustomerBranchEditSubmit(w http.ResponseWriter, r *http.Requ
 		h.notifyBranchInstitutionalWorksChanged(ctx, actor.OrganizationID, nameAr)
 	}
 
-	h.redirectWithNotice(w, r, "/customer/branches", "success", i18n.T(langOf(r), "customer.branch.edit_success"))
+	h.redirectWithNotice(w, r, "/customer/branches", "success", i18n.T(langOf(r), "customer.branch.update_success"))
 }
 
 // CustomerBranchDeleteSubmit deletes a branch scoped to the customer organization.
@@ -369,7 +369,9 @@ func (h *UIHandler) resolveCustomerInstitutionalWork(ctx context.Context, r *htt
 		instWorks = instWorks[:1]
 	}
 	if len(instWorks) == 0 && h.orgSvc != nil {
-		if allWorks, err := h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true); err == nil {
+		if allWorks, err := h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListAllFlatInstitutionalWorks", err)
+		} else {
 			for _, w := range allWorks {
 				if w != nil && (strings.EqualFold(w.Slug, "pharmacy") || strings.Contains(w.Title["ar"], "صيدلية") || strings.EqualFold(w.Title["en"], "pharmacy")) {
 					return []string{strconv.FormatInt(w.ID, 10)}

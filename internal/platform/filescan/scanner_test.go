@@ -1,16 +1,10 @@
-﻿package filescan_test
+package filescan_test
 
 import (
-	"encoding/base64"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/filescan"
+	"github.com/moqasem061-dot/dawa24/internal/platform/filescan"
 )
-
-func decodeB64(s string) []byte {
-	b, _ := base64.StdEncoding.DecodeString(s)
-	return b
-}
 
 func TestScan_ValidFiles(t *testing.T) {
 	tests := []struct {
@@ -92,7 +86,7 @@ func TestScan_MaliciousAndTamperedFiles(t *testing.T) {
 		},
 		{
 			name:            "image containing embedded PHP tag",
-			data:            append([]byte{0xFF, 0xD8, 0xFF, 0xE0}, []byte("<" + "?php phpinfo(); ?" + ">")...),
+			data:            append([]byte{0xFF, 0xD8, 0xFF, 0xE0}, []byte("<"+"?php phpinfo(); ?"+">")...),
 			filename:        "backdoor.jpg",
 			mime:            "image/jpeg",
 			expectedVerdict: filescan.VerdictDangerousContent,

@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 // The agent loop.

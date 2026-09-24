@@ -1,11 +1,11 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"fmt"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminTempWarehouseRunReviewPage renders the batch review step before commit.
@@ -181,7 +181,7 @@ templ AdminTempWarehouseRunProgressPage(run *TempWarehouseRunView, lang, dir str
 			<div class="glass-panel p-8 rounded-3xl border border-default bg-surface-raised shadow-sm text-center">
 				<div class="w-16 h-16 rounded-2xl bg-accent/10 text-accent d-flex items-center justify-center text-3xl mx-auto mb-4">
 					<span x-show="!done" class="animate-spin">⚙️</span>
-					<span x-show="done" x-cloak>🎉</span>
+					<span x-show="done" x-cloak>@components.IconCheckCircle("icon-sm")</span>
 				</div>
 
 				<h1 class="text-2xl font-black text-surface-fg mb-1">

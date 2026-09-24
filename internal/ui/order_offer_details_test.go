@@ -12,11 +12,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestOrderLine_OfferDetailsButtonAndClickableProduct(t *testing.T) {
@@ -262,7 +262,7 @@ func TestOrderOfferHandlers_AuthenticationEnforced(t *testing.T) {
 	h := &UIHandler{}
 
 	// 1. Unauthenticated customer request
-	req1 := httptest.NewRequest("GET", "/customer/orders/1/lines/2/offer-details", nil)
+	req1 := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/orders/1/lines/2/offer-details", nil)
 	rr1 := httptest.NewRecorder()
 	h.CustomerOrderLineOfferDetails(rr1, req1)
 	if rr1.Code != http.StatusUnauthorized {
@@ -270,7 +270,7 @@ func TestOrderOfferHandlers_AuthenticationEnforced(t *testing.T) {
 	}
 
 	// 2. Unauthenticated vendor request
-	req2 := httptest.NewRequest("GET", "/vendor/orders/1/lines/2/offer-details", nil)
+	req2 := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/orders/1/lines/2/offer-details", nil)
 	rr2 := httptest.NewRecorder()
 	h.VendorOrderLineOfferDetails(rr2, req2)
 	if rr2.Code != http.StatusUnauthorized {
@@ -283,7 +283,7 @@ func TestOrderOfferHandlers_AuthenticationEnforced(t *testing.T) {
 		OrganizationID: 20,
 		OrgType:        "customer",
 	}
-	req3 := httptest.NewRequest("GET", "/customer/orders/0/lines/0/offer-details", nil)
+	req3 := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/orders/0/lines/0/offer-details", nil)
 	req3 = req3.WithContext(authctx.WithActor(req3.Context(), actor))
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "0")

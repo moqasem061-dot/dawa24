@@ -11,9 +11,9 @@ import (
 	"strings"
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // AdminSiteSettingsSubmit persists public contact info and social media links.
@@ -25,7 +25,8 @@ func (h *UIHandler) AdminSiteSettingsSubmit(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	curr, _ := h.adminSvc.GetSiteSettings(ctx)
+	curr, loadErr := h.adminSvc.GetSiteSettings(ctx)
+	h.logLoadErr(ctx, "adminSvc.GetSiteSettings", loadErr)
 	if curr == nil {
 		curr = &platformadmin.SiteSettings{SocialLinks: map[string]string{}}
 	}
@@ -34,7 +35,8 @@ func (h *UIHandler) AdminSiteSettingsSubmit(w http.ResponseWriter, r *http.Reque
 	}
 
 	section := r.FormValue("section")
-	if section == "contact" || section == "" {
+	switch section {
+	case "contact", "":
 		if name := strings.TrimSpace(r.FormValue("site_name")); name != "" {
 			curr.SiteName = name
 		}
@@ -62,7 +64,7 @@ func (h *UIHandler) AdminSiteSettingsSubmit(w http.ResponseWriter, r *http.Reque
 		if fav := strings.TrimSpace(r.FormValue("favicon_url")); fav != "" {
 			curr.FaviconURL = fav
 		}
-	} else if section == "socials" {
+	case "socials":
 		curr.SocialLinks["facebook"] = strings.TrimSpace(r.FormValue("social_facebook"))
 		curr.SocialLinks["twitter"] = strings.TrimSpace(r.FormValue("social_twitter"))
 		curr.SocialLinks["instagram"] = strings.TrimSpace(r.FormValue("social_instagram"))
@@ -166,7 +168,8 @@ func (h *UIHandler) AdminBrandingSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	curr, _ := h.adminSvc.GetSiteSettings(ctx)
+	curr, loadErr := h.adminSvc.GetSiteSettings(ctx)
+	h.logLoadErr(ctx, "adminSvc.GetSiteSettings", loadErr)
 	if curr == nil {
 		curr = &platformadmin.SiteSettings{}
 	}

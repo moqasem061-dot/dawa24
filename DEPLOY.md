@@ -1,30 +1,24 @@
 # Shipping to Elest.io — exact steps
 
-Three pipelines, in this order. Do not skip the ordering: the Store will not boot
-without PostgreSQL and Redis, and the Gateway is optional by design.
+Six pipelines, in this order. Do not skip the ordering: the Store will not boot
+without PostgreSQL and Redis. Object storage and the Gateway are optional.
 
 > Elest.io's dashboard wording shifts between releases. Where a label is quoted
 > below, match it by meaning rather than character-for-character.
 
 ---
 
-## Step 0 — Get the code into GitHub (10 minutes)
+## Step 0 — The repository
 
-Nothing here is in version control yet, and the legacy folder contains live
-credentials. Do this first.
+The code lives at <https://github.com/moqasem061-dot/dawa24> (branch `main`).
+Elest.io builds from it directly; to work locally:
 
 ```bash
-cd "F:/Dawa 24/dawa24-store"
-git init
-git add .
-git commit -m "Phase 1-2: platform foundations"
-git branch -M main
-git remote add origin git@github.com:<you>/dawa24-store.git
-git push -u origin main
+git clone https://github.com/moqasem061-dot/dawa24.git
 ```
 
-**Before you push, confirm `.env` is not staged.** `git status` must not list it.
-The `.gitignore` already excludes `.env` and `.env.*`.
+`.env` is ignored by `.gitignore` and must never be committed: `git status`
+must not list it.
 
 Separately, and independently of this project: rotate every credential that
 appears in `F:\Dawa 24\Laravel\.env`, `.env_clean`, `.env_new`, `.env_temp` —
@@ -66,33 +60,32 @@ Migration `001_foundation` also issues these, but extension creation needs
 superuser rights that `dawa24_app` will not have. Creating them here as the admin
 user means the migration's `IF NOT EXISTS` becomes a no-op.
 
-6. Migration `222_dawa24_app_role.up.sql` applies comprehensive least-privilege grants across all 21 schemas, sequences, and sets `ALTER ROLE dawa24_app NOBYPASSRLS` automatically when running `go run ./cmd/cli migrate`.
-   If running grants manually:
+6. Grants are the migrations' job, not yours. Migration `222` gives
+   `dawa24_app` least-privilege access to every application schema and sets
+   `NOBYPASSRLS`; migration `228` adds the two runtime `TRUNCATE`s and makes
+   `platform.audit_log` append-only. Nothing to run by hand.
 
-```sql
-\c dawa24_store
-GRANT USAGE ON SCHEMA identity, profile, org, catalog, inventory, commerce,
-                       promo, billing, ingest, workflow, hr, platform, ai,
-                       advertising, anti_scraping, attachments, assistant,
-                       branches, cart, customer, notifications, orders, payments,
-                       reports, reviews, support, system, users
-  TO dawa24_app;
-GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA identity, profile,
-      org, catalog, inventory, commerce, promo, billing, ingest, workflow, hr,
-      platform, ai TO dawa24_app;
-GRANT USAGE ON ALL SEQUENCES IN SCHEMA identity, profile, org, catalog,
-      inventory, commerce, promo, billing, ingest, workflow, hr, platform, ai
-  TO dawa24_app;
-
--- The audit trail is append-only. Revoking these is what makes it evidence
--- rather than just another table.
-REVOKE UPDATE, DELETE ON platform.audit_log FROM dawa24_app;
-ALTER ROLE dawa24_app NOBYPASSRLS;
-```
-
-7. Copy the connection string for `dawa24_app`. It becomes `DATABASE_URL`. **Append `?sslmode=require`** —
+7. **Two connection strings, two roles.** Append `?sslmode=require` to both —
    Elest.io terminates TLS and the driver will not use it unless told to.
-   Note: The Go application pool verifies on startup that the connected user has `NOBYPASSRLS`. If a superuser or `BYPASSRLS` role is used, a critical security warning is logged.
+
+   Every binary reads `DATABASE_URL`; what differs is which role it names.
+
+   | Process | `DATABASE_URL` names | Notes |
+   |---|---|---|
+   | `cli migrate` | the owner/admin user | also reads `DB_APP_PASSWORD` and sets `dawa24_app`'s password to it |
+   | server, worker | `dawa24_app` | in `docker-compose.yml` this comes from `APP_DATABASE_URL` |
+
+   In production the server and worker **refuse to start** on a role that
+   bypasses row-level security (a superuser, or `BYPASSRLS`), because every
+   tenant policy is then inert. `DB_ALLOW_RLS_BYPASS=true` overrides that, and
+   should not be set. `cli migrate` also refuses to finish while `dawa24_app`
+   still accepts the default password migration 222 created it with.
+
+   Switching an existing deployment over:
+   1. Set `DB_APP_PASSWORD` to a new long random value.
+   2. Run `cli migrate` with the owner `DATABASE_URL` and that `DB_APP_PASSWORD`.
+   3. Point the server's and worker's `DATABASE_URL` (compose: `APP_DATABASE_URL`)
+      at `postgres://dawa24_app:<that password>@<pg-host>:<port>/dawa24_store?sslmode=require`.
 
 **Restore drill, before you put real data in:** take a backup, restore it into a
 scratch database, and confirm it comes back. An untested backup is not a backup.
@@ -113,19 +106,21 @@ scratch database, and confirm it comes back. An untested backup is not a backup.
 
 ---
 
-## Pipeline 3 — Object storage (can wait)
+## Pipeline 3 — Object storage (optional)
 
-Only needed once file uploads and product images land (Phase 5+). Create a
-**MinIO** service, make a `dawa24` bucket, generate access keys, and fill in the
-`STORAGE_*` variables. Until then leave them at the `.env.example` defaults; the
-Store does not touch storage yet.
+Uploads (product images, licences, receipts, documents) are written under
+`DATA_DIR` on local disk, which must be a persistent volume shared by the server
+and worker. To keep them in S3-compatible storage instead, create a **MinIO**
+service (or use S3), make a `dawa24` bucket, generate access keys and fill in the
+`STORAGE_*` variables; with `STORAGE_ENDPOINT` set, production refuses to start
+without both keys.
 
 ---
 
 ## Pipeline 4 — The Store
 
 1. Elest.io → **Create Service** → **CI/CD** (deploy from a Git repository).
-2. Connect the `dawa24-store` GitHub repo, branch `main`.
+2. Connect the `dawa24` GitHub repo, branch `main`.
 3. Build: **Dockerfile** at the repository root. Elest.io detects it.
 4. Port: **8080**.
 5. Health check path: **`/health`**.
@@ -137,7 +132,8 @@ APP_NAME=Dawa24
 APP_BASE_URL=https://<your-domain>
 PORT=8080
 
-DATABASE_URL=postgres://dawa24_app:<password>@<pg-host>:<port>/dawa24_store?sslmode=require
+# The server connects as dawa24_app, never as the owner (Pipeline 1, step 7).
+DATABASE_URL=postgres://dawa24_app:<DB_APP_PASSWORD>@<pg-host>:<port>/dawa24_store?sslmode=require
 DB_MAX_CONNS=20
 DB_MIN_CONNS=2
 
@@ -164,7 +160,7 @@ CLARITY_PROJECT_ID=ymd15b26tc
 GATEWAY_ENABLED=false
 GATEWAY_BASE_URL=https://api.muhiya.com
 GATEWAY_VIRTUAL_KEY=REPLACE_ME_WITH_VIRTUAL_KEY_FROM_GATEWAY_ADMIN
-GATEWAY_CLIENT_APP=dawa24-store
+GATEWAY_CLIENT_APP=dawa24
 
 # Google Maps Embed API key (optional). Without it the location picker renders a
 # coordinate-entry fallback. Get a key in Google Cloud Console → APIs & Services
@@ -181,18 +177,22 @@ misconfigured deploy fails immediately with a list of every problem, rather than
 half-working. In particular: `APP_ENV=prod` requires HTTPS URLs and
 `SESSION_SECURE=true`, and `GATEWAY_ENABLED=true` requires a real virtual key.
 
-7. **Run migrations before the first deploy serves traffic.** The image contains
-   the CLI:
+7. **Run migrations before the new version serves traffic.** The image contains
+   the CLI. It connects as the owner, applies the application's and the job
+   queue's migrations, and sets `dawa24_app`'s password:
 
 ```bash
 docker run --rm \
-  -e DATABASE_URL='postgres://dawa24_app:<pw>@<pg-host>:<port>/dawa24_store?sslmode=require' \
-  -e REDIS_URL='redis://:<pw>@<redis-host>:<port>/0' \
-  -e SESSION_SECRET='<any 32+ byte string; unused by the CLI but required by config>' \
+  -e APP_ENV=prod \
+  -e DATABASE_URL='postgres://<admin-user>:<pw>@<pg-host>:<port>/dawa24_store?sslmode=require' \
+  -e DB_APP_PASSWORD='<the dawa24_app password>' \
+  -e ADMIN_EMAIL='<first admin email>' -e ADMIN_PASSWORD='<first admin password>' \
   <your-image>:<tag> /app/cli migrate
 ```
 
-Then apply the `GRANT` block from Pipeline 1 step 6.
+It exits non-zero on any failure; do not promote the new image until it
+succeeds. `ADMIN_*` only create the first super_admin: a deploy never changes an
+existing admin's password.
 
 If Elest.io's pipeline supports a pre-deploy hook, put `/app/cli migrate` there.
 Otherwise run it manually on each deploy that contains a new migration —
@@ -221,11 +221,10 @@ service from the same repository with:
 - The same environment variables as the Store
 - No public port, no health check path
 
-It runs River, migrates River's own schema on boot, and processes the `imports`,
-`ai`, `notifications`, `projections` and `maintenance` queues.
-
-You can skip this until Phase 5, when the import pipeline lands. Nothing enqueues
-jobs yet.
+It runs River and processes the `imports`, `ai`, `notifications`,
+`projections`, `smartorder` and `maintenance` queues. River's schema is migrated
+by `cli migrate` (step 7), not by the worker. Without the worker, imports and
+notifications queue up and are never processed.
 
 ---
 

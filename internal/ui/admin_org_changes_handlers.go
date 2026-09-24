@@ -7,11 +7,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // The administrator's side of the organization-profile workflow.
@@ -48,12 +48,12 @@ func (h *UIHandler) AdminOrgChangesPage(w http.ResponseWriter, r *http.Request) 
 
 	var dateFrom, dateTo *time.Time
 	if fromStr != "" {
-		if t, err := time.Parse("2006-01-02", fromStr); err == nil {
+		if t, err := time.Parse("2006-01-02", fromStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			dateFrom = &t
 		}
 	}
 	if toStr != "" {
-		if t, err := time.Parse("2006-01-02", toStr); err == nil {
+		if t, err := time.Parse("2006-01-02", toStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			endOfDay := t.Add(24*time.Hour - time.Nanosecond)
 			dateTo = &endOfDay
 		}
@@ -79,10 +79,15 @@ func (h *UIHandler) AdminOrgChangesPage(w http.ResponseWriter, r *http.Request) 
 	var orgs []*org.Organization
 	if h.orgSvc != nil {
 		sysCtx := database.AsSystem(ctx)
-		orgs, _ = h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			orgs = loaded
+		}
 	}
 
-	counts, _ := h.orgSvc.ProfileChangeRequestCounts(ctx)
+	counts, loadErr := h.orgSvc.ProfileChangeRequestCounts(ctx)
+	h.logLoadErr(ctx, "orgSvc.ProfileChangeRequestCounts", loadErr)
 	requests, total, err := h.orgSvc.ListProfileChangeRequestsWithFilter(ctx, filter, perPage, (page-1)*perPage)
 	if err != nil {
 		h.log.ErrorContext(ctx, "list profile change requests", "error", err)

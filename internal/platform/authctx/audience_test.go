@@ -1,13 +1,14 @@
 package authctx_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func TestRequirePagePermission(t *testing.T) {
@@ -104,7 +105,7 @@ func TestRequirePagePermission(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest("GET", "/admin/test", nil)
+			req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/test", nil)
 			if tt.actor != nil {
 				req = req.WithContext(authctx.WithActor(req.Context(), *tt.actor))
 			}
@@ -160,7 +161,7 @@ func TestOrgStatusMatrix(t *testing.T) {
 			}
 
 			// Tier B check
-			reqB := httptest.NewRequest("GET", "/wallet", nil)
+			reqB := httptest.NewRequestWithContext(context.Background(), "GET", "/wallet", nil)
 			reqB = reqB.WithContext(authctx.WithActor(reqB.Context(), actor))
 			recB := httptest.NewRecorder()
 			tierBGate(okHandler).ServeHTTP(recB, reqB)
@@ -169,7 +170,7 @@ func TestOrgStatusMatrix(t *testing.T) {
 			}
 
 			// Tier A check
-			reqA := httptest.NewRequest("GET", "/documents", nil)
+			reqA := httptest.NewRequestWithContext(context.Background(), "GET", "/documents", nil)
 			reqA = reqA.WithContext(authctx.WithActor(reqA.Context(), actor))
 			recA := httptest.NewRecorder()
 			tierAGate(okHandler).ServeHTTP(recA, reqA)
@@ -205,7 +206,7 @@ func TestCrossAudienceGates(t *testing.T) {
 	}
 
 	// 1. Customer accessing /vendor/* path gets 303 redirect
-	reqCV := httptest.NewRequest("GET", "/vendor/documents", nil)
+	reqCV := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/documents", nil)
 	reqCV = reqCV.WithContext(authctx.WithActor(reqCV.Context(), customerActor))
 	recCV := httptest.NewRecorder()
 	vendorGate(okHandler).ServeHTTP(recCV, reqCV)
@@ -214,7 +215,7 @@ func TestCrossAudienceGates(t *testing.T) {
 	}
 
 	// 2. Vendor accessing /customer/* path gets 303 redirect
-	reqVC := httptest.NewRequest("GET", "/customer/documents", nil)
+	reqVC := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/documents", nil)
 	reqVC = reqVC.WithContext(authctx.WithActor(reqVC.Context(), vendorActor))
 	recVC := httptest.NewRecorder()
 	customerGate(okHandler).ServeHTTP(recVC, reqVC)
@@ -223,7 +224,7 @@ func TestCrossAudienceGates(t *testing.T) {
 	}
 
 	// 3. Customer accessing customer gate gets 200
-	reqCC := httptest.NewRequest("GET", "/customer/documents", nil)
+	reqCC := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/documents", nil)
 	reqCC = reqCC.WithContext(authctx.WithActor(reqCC.Context(), customerActor))
 	recCC := httptest.NewRecorder()
 	customerGate(okHandler).ServeHTTP(recCC, reqCC)
@@ -232,7 +233,7 @@ func TestCrossAudienceGates(t *testing.T) {
 	}
 
 	// 4. Vendor accessing vendor gate gets 200
-	reqVV := httptest.NewRequest("GET", "/vendor/documents", nil)
+	reqVV := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/documents", nil)
 	reqVV = reqVV.WithContext(authctx.WithActor(reqVV.Context(), vendorActor))
 	recVV := httptest.NewRecorder()
 	vendorGate(okHandler).ServeHTTP(recVV, reqVV)
@@ -248,7 +249,7 @@ func TestRequirePagePermission_AJAXForbidden(t *testing.T) {
 	})
 
 	// 1. Staff user without required permission making AJAX request gets 403 JSON
-	req := httptest.NewRequest("POST", "/admin/temporary-warehouses/upload", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/temporary-warehouses/upload", nil)
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 	actor := authctx.Actor{
@@ -269,7 +270,7 @@ func TestRequirePagePermission_AJAXForbidden(t *testing.T) {
 	}
 
 	// 2. Unauthenticated caller making AJAX request gets 401 JSON
-	unauthReq := httptest.NewRequest("POST", "/admin/temporary-warehouses/upload", nil)
+	unauthReq := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/temporary-warehouses/upload", nil)
 	unauthReq.Header.Set("Accept", "application/json")
 	unauthRec := httptest.NewRecorder()
 	gate(okHandler).ServeHTTP(unauthRec, unauthReq)
@@ -278,4 +279,3 @@ func TestRequirePagePermission_AJAXForbidden(t *testing.T) {
 		t.Errorf("got status %d, want 401", unauthRec.Code)
 	}
 }
-

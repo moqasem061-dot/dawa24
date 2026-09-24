@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Trash operates across every tenant's rows by definition — it is the platform
@@ -205,8 +205,7 @@ func (r *Repository) ListTrashedRowsWithTotal(ctx context.Context, schema, table
 			prodDelExpr = "COALESCE(p.deleted_at IS NOT NULL, false)"
 		}
 
-		delByIDExpr := "NULL::bigint"
-		delByNameExpr := "''::text"
+		var delByIDExpr, delByNameExpr string
 		if hasDeletedBy {
 			delByIDExpr = "t.deleted_by"
 			delByNameExpr = fmt.Sprintf(userNameTextExpr, "u_del", "u_del", "u_del", "u_del", "u_del")

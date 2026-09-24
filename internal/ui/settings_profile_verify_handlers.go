@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/mailer"
-	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func writeJSON(w http.ResponseWriter, status int, v any) {
@@ -73,7 +73,7 @@ func (h *UIHandler) SettingsProfileSendEmailOTP(w http.ResponseWriter, r *http.R
 	rawEmail := strings.TrimSpace(r.PostFormValue("email"))
 	if rawEmail == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req sendEmailOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawEmail = strings.TrimSpace(req.Email)
 		}
 	}
@@ -150,7 +150,7 @@ func (h *UIHandler) SettingsProfileVerifyEmailOTP(w http.ResponseWriter, r *http
 	code := strings.TrimSpace(r.PostFormValue("code"))
 	if rawEmail == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req verifyEmailOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawEmail = strings.TrimSpace(req.Email)
 			code = strings.TrimSpace(req.Code)
 		}
@@ -213,7 +213,7 @@ func (h *UIHandler) SettingsProfileSendPhoneOTP(w http.ResponseWriter, r *http.R
 	rawPhone := strings.TrimSpace(r.PostFormValue("phone"))
 	if rawPhone == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req sendOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawPhone = strings.TrimSpace(req.Phone)
 		}
 	}
@@ -275,7 +275,7 @@ func (h *UIHandler) SettingsProfileVerifyPhoneOTP(w http.ResponseWriter, r *http
 	code := strings.TrimSpace(r.PostFormValue("code"))
 	if rawPhone == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req verifyOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawPhone = strings.TrimSpace(req.Phone)
 			requestID = strings.TrimSpace(req.RequestID)
 			code = strings.TrimSpace(req.Code)

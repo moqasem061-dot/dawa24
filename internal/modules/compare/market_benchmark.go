@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // مقارنة قائمتي مع عروض السوق العامة — one of my lists against everyone else's.
@@ -26,14 +26,14 @@ import (
 // average: "the market averages 12%" tells a supplier nothing about whether
 // they are beaten by one outlier or by forty houses.
 
-// equalTolerancePercent is how close two net prices must be to count as the
+// equalToleranceBPS is how close two net prices must be to count as the
 // same offer.
 //
 // Half a per cent. Pharmaceutical list prices are set to the piastre and
 // carried through discount arithmetic, so two suppliers quoting "the same"
 // price routinely differ by a few piastres of rounding. Treating that as a win
 // or a loss produces a comparison where nothing is ever equal.
-const equalTolerancePercent = 0.5
+const equalToleranceBPS = 50 // 0.5%
 
 // Benchmark classifications. These are stated in terms of the net price a
 // pharmacy pays, not the discount percentage: a 40% discount off an inflated
@@ -246,7 +246,7 @@ func benchmarkRow(r *CompareFileRow, ds *MarketDataset, supplierName string) *Be
 		return row
 	}
 
-	tolerance := int64(float64(net.Minor()) * equalTolerancePercent / 100)
+	tolerance := net.ApplyPercent(equalToleranceBPS).Minor()
 	seen := map[string]bool{}
 	var validOffers []MarketOffer
 	for _, o := range p.Offers {

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -11,10 +12,10 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // Mocks for this test suite are defined in vendor_team_e2e_mock_test.go
@@ -37,7 +38,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 
 	// 1. GET /vendor/team renders page
 	t.Run("GET /vendor/team renders 200 OK", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/team", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/team", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -80,7 +81,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 		form.Set("password", "SecurePassword123!")
 		form.Set("branch_id", "1")
 
-		req := httptest.NewRequest("POST", "/vendor/team/new", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/new", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
@@ -130,7 +131,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 		form.Set("role_id", "1") // Attempts to assign ID: 1 (org_owner)
 		form.Set("password", "SecurePassword123!")
 
-		req := httptest.NewRequest("POST", "/vendor/team/new", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/new", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
@@ -172,7 +173,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 		editForm.Set("branch_id", "1")
 		editForm.Set("is_active", "true")
 
-		req := httptest.NewRequest("POST", fmt.Sprintf("/vendor/team/%d/edit", memberID), strings.NewReader(editForm.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/vendor/team/%d/edit", memberID), strings.NewReader(editForm.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
@@ -204,7 +205,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 		form.Set("role_key", "org_manager")
 		form.Set("password", "SecurePassword123!")
 
-		req := httptest.NewRequest("POST", "/vendor/team/new", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/new", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
@@ -223,7 +224,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 			break
 		}
 
-		req := httptest.NewRequest("POST", fmt.Sprintf("/vendor/team/%d/toggle", memberID), nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/vendor/team/%d/toggle", memberID), nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -241,7 +242,7 @@ func TestVendorTeam_CompleteOverhaul_E2E(t *testing.T) {
 		}
 
 		for _, id := range memberIDs {
-			req := httptest.NewRequest("POST", fmt.Sprintf("/vendor/team/%d/delete", id), nil)
+			req := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/vendor/team/%d/delete", id), nil)
 			req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 			rec := httptest.NewRecorder()
 			r.ServeHTTP(rec, req)

@@ -9,10 +9,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/errtrack"
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/errtrack"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type langKey struct{}
@@ -164,5 +164,3 @@ func DecodeJSON(w http.ResponseWriter, r *http.Request, dst any) error {
 	}
 	return nil
 }
-
-

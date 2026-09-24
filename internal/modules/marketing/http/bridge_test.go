@@ -10,17 +10,15 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
 )
 
 const testToken = "0123456789abcdef0123456789abcdef"
 
 type fakeOffers struct{ since time.Time }
 
-func (f *fakeOffers) ListPublishedOffers(_ context.Context, since time.Time, _ int) ([]*promo.PublishedOffer, error) {
+func (f *fakeOffers) ListPublishedOffers(_ context.Context, since time.Time, _ int) ([]*Offer, error) {
 	f.since = since
-	return []*promo.PublishedOffer{{ID: 7, TitleAr: "عرض"}}, nil
+	return []*Offer{{ID: 7, TitleAr: "عرض"}}, nil
 }
 
 func serve(t *testing.T, token, path, auth string) (*httptest.ResponseRecorder, *fakeOffers) {
@@ -28,7 +26,7 @@ func serve(t *testing.T, token, path, auth string) (*httptest.ResponseRecorder, 
 	src := &fakeOffers{}
 	r := chi.NewRouter()
 	NewBridge(src, "https://example.test/", token, slog.Default()).RegisterRoutes(r)
-	req := httptest.NewRequest(http.MethodGet, Prefix+path, nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, Prefix+path, nil)
 	if auth != "" {
 		req.Header.Set("Authorization", auth)
 	}

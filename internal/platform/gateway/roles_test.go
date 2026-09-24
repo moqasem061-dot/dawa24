@@ -2,10 +2,11 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 func TestResolveRoleModel(t *testing.T) {
@@ -158,7 +159,7 @@ func TestHTTPClientRoleDisabledReturnsErrDisabled(t *testing.T) {
 		Capability: CapMatchEnhance,
 		Feature:    "variant_match",
 	})
-	if err != ErrDisabled {
+	if !errors.Is(err, ErrDisabled) {
 		t.Errorf("expected ErrDisabled when role is disabled, got %v", err)
 	}
 }

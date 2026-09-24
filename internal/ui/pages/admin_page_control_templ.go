@@ -13,8 +13,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // The System Pages screen, /admin/system-pages.
@@ -258,7 +258,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(v.Pagination.PageSize))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 164, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 164, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
@@ -276,7 +276,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(v.SearchQuery)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 170, Col: 27}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 170, Col: 27}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
@@ -385,7 +385,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(pageControlFilterHref(v, res.Key, false)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 212, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 212, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -398,7 +398,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var7).String())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 1, Col: 0}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 1, Col: 0}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -411,7 +411,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(res.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 215, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 215, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -424,7 +424,7 @@ func pageControlFilters(v SystemPagesView) templ.Component {
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(pageControlCount(v, res.Key)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 216, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 216, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 			if templ_7745c5c3_Err != nil {
@@ -477,7 +477,7 @@ func pageControlTable(v SystemPagesView) templ.Component {
 				var templ_7745c5c3_Var13 string
 				templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(v.SearchQuery)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 229, Col: 70}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 229, Col: 70}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 				if templ_7745c5c3_Err != nil {
@@ -559,7 +559,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(row.Label)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 269, Col: 52}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 269, Col: 52}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -577,7 +577,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d مسار مطابق", row.PatternCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 271, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 271, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -595,7 +595,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(row.Path)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 275, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 275, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -623,7 +623,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(pageControlResourceLabel(row.Resource))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 283, Col: 83}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 283, Col: 83}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -666,7 +666,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(row.UpdatedAt)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 298, Col: 54}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 298, Col: 54}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
@@ -684,7 +684,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("openEdit({ id: %d, path: %q, match_mode: %q, resource: %q, label_ar: %q, label_en: %q, description: %q, source: %q, is_system: %t })", row.ID, row.Path, row.MatchMode, row.Resource, row.LabelAr, row.LabelEn, row.Description, row.Source, row.IsSystem))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 306, Col: 278}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 306, Col: 278}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 			if templ_7745c5c3_Err != nil {
@@ -715,7 +715,7 @@ func pageControlRow(v SystemPagesView, row SystemPageRow) templ.Component {
 			var templ_7745c5c3_Var21 templ.SafeURL
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/system-pages/" + strconv.FormatInt(row.ID, 10) + "/delete"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 316, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 316, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -781,7 +781,7 @@ func pageControlToggle(v SystemPagesView, row SystemPageRow) templ.Component {
 			var templ_7745c5c3_Var23 templ.SafeURL
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/system-pages/" + strconv.FormatInt(row.ID, 10) + "/toggle"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 338, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 338, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -809,7 +809,7 @@ func pageControlToggle(v SystemPagesView, row SystemPageRow) templ.Component {
 			var templ_7745c5c3_Var24 templ.SafeURL
 			templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL("/admin/system-pages/" + strconv.FormatInt(row.ID, 10) + "/toggle"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 350, Col: 93}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 350, Col: 93}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 			if templ_7745c5c3_Err != nil {
@@ -854,7 +854,7 @@ func pageControlNotice(kind, message string) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 363, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 363, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 				if templ_7745c5c3_Err != nil {
@@ -872,7 +872,7 @@ func pageControlNotice(kind, message string) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 367, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 367, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 				if templ_7745c5c3_Err != nil {
@@ -977,13 +977,13 @@ func pageControlScript() templ.Component {
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_page_control.templ`, Line: 429, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_page_control.templ`, Line: 429, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\">\r\n\t\tfunction adminPageControlManager() {\r\n\t\t\treturn {\r\n\t\t\t\tshowAdd: false,\r\n\t\t\t\teditModalOpen: false,\r\n\t\t\t\teditRow: {\r\n\t\t\t\t\tid: 0,\r\n\t\t\t\t\tpath: '',\r\n\t\t\t\t\tmatch_mode: 'exact',\r\n\t\t\t\t\tresource: 'admin',\r\n\t\t\t\t\tlabel_ar: '',\r\n\t\t\t\t\tlabel_en: '',\r\n\t\t\t\t\tdescription: '',\r\n\t\t\t\t\tis_manual: false\r\n\t\t\t\t},\r\n\t\t\t\topenEdit(data) {\r\n\t\t\t\t\tthis.editRow = {\r\n\t\t\t\t\t\tid: data.id,\r\n\t\t\t\t\t\tpath: data.path || '',\r\n\t\t\t\t\t\tmatch_mode: data.match_mode || 'exact',\r\n\t\t\t\t\t\tresource: data.resource || 'admin',\r\n\t\t\t\t\t\tlabel_ar: data.label_ar || '',\r\n\t\t\t\t\t\tlabel_en: data.label_en || '',\r\n\t\t\t\t\t\tdescription: data.description || '',\r\n\t\t\t\t\t\tis_manual: data.source === 'manual' && !data.is_system\r\n\t\t\t\t\t};\r\n\t\t\t\t\tthis.editModalOpen = true;\r\n\t\t\t\t\tconst dlg = document.getElementById('page-control-edit-modal');\r\n\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\r\n\t\t\t\t\t\tdlg.showModal();\r\n\t\t\t\t\t}\r\n\t\t\t\t},\r\n\t\t\t\tcloseEdit() {\r\n\t\t\t\t\tthis.editModalOpen = false;\r\n\t\t\t\t\tdocument.getElementById('page-control-edit-modal')?.close();\r\n\t\t\t\t}\r\n\t\t\t};\r\n\t\t}\r\n\t\t// The CSP build of Alpine only sees registered components.\r\n\t\tdawaData('adminPageControlManager', adminPageControlManager);\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "\">\n\t\tfunction adminPageControlManager() {\n\t\t\treturn {\n\t\t\t\tshowAdd: false,\n\t\t\t\teditModalOpen: false,\n\t\t\t\teditRow: {\n\t\t\t\t\tid: 0,\n\t\t\t\t\tpath: '',\n\t\t\t\t\tmatch_mode: 'exact',\n\t\t\t\t\tresource: 'admin',\n\t\t\t\t\tlabel_ar: '',\n\t\t\t\t\tlabel_en: '',\n\t\t\t\t\tdescription: '',\n\t\t\t\t\tis_manual: false\n\t\t\t\t},\n\t\t\t\topenEdit(data) {\n\t\t\t\t\tthis.editRow = {\n\t\t\t\t\t\tid: data.id,\n\t\t\t\t\t\tpath: data.path || '',\n\t\t\t\t\t\tmatch_mode: data.match_mode || 'exact',\n\t\t\t\t\t\tresource: data.resource || 'admin',\n\t\t\t\t\t\tlabel_ar: data.label_ar || '',\n\t\t\t\t\t\tlabel_en: data.label_en || '',\n\t\t\t\t\t\tdescription: data.description || '',\n\t\t\t\t\t\tis_manual: data.source === 'manual' && !data.is_system\n\t\t\t\t\t};\n\t\t\t\t\tthis.editModalOpen = true;\n\t\t\t\t\tconst dlg = document.getElementById('page-control-edit-modal');\n\t\t\t\t\tif (dlg && typeof dlg.showModal === 'function' && !dlg.open) {\n\t\t\t\t\t\tdlg.showModal();\n\t\t\t\t\t}\n\t\t\t\t},\n\t\t\t\tcloseEdit() {\n\t\t\t\t\tthis.editModalOpen = false;\n\t\t\t\t\tdocument.getElementById('page-control-edit-modal')?.close();\n\t\t\t\t}\n\t\t\t};\n\t\t}\n\t\t// The CSP build of Alpine only sees registered components.\n\t\tdawaData('adminPageControlManager', adminPageControlManager);\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

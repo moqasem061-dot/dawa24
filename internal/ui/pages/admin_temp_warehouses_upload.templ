@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminTempWarehouseUploadPage renders a dedicated standalone upload page for temporary warehouses.
@@ -204,7 +204,7 @@ templ AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir stri
 							@change="onFileChange($event)"
 							class="d-none"
 						/>
-						<div class="text-4xl mb-3">📁</div>
+						<div class="text-4xl mb-3">@components.IconFolderOpen("icon-xl")</div>
 						<h3 class="text-base font-black text-primary mb-1">اضغط هنا أو اسحب الملفات لإفلاتها</h3>
 						<p class="text-xs text-secondary max-w-md mx-auto mb-2">
 							يدعم النظام ملفات Excel (.xlsx, .xls) والملفات النصية (.csv, .txt) بأي حجم.

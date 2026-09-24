@@ -12,18 +12,19 @@ import (
 	"text/tabwriter"
 	"time"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	billingPostgres "github.com/muhiya/dawa24-store/internal/modules/billing/postgres"
-	catalogPostgres "github.com/muhiya/dawa24-store/internal/modules/catalog/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	orgPG "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	orgPG "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	_ "github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 func main() {
@@ -39,7 +40,6 @@ func usage() string {
 Usage:
   cli migrate           Apply all pending migrations
   cli migrate-status    Show applied and pending migrations
-  cli migrate-data      Run legacy MariaDB to PostgreSQL ETL pipeline
   cli seed              Seed default platform reference data
   cli create-admin [email] [pwd] Create or update platform super_admin account
   cli seed-users        Create development sign-in accounts (non-prod only)
@@ -66,12 +66,12 @@ func run() error {
 
 	cmd := os.Args[1]
 
+	// Every failure below exits non-zero, including for "migrate". The compose
+	// files start the server only once migrate has completed successfully, so a
+	// migrate that reported success without migrating put a new binary on an
+	// old schema and the error surfaced later as broken pages.
 	cfg, err := config.LoadForCLI()
 	if err != nil {
-		if cmd == "migrate" {
-			fmt.Fprintf(os.Stderr, "warn: DATABASE_URL not configured yet (%v); skipping migrations for initial build so deployment succeeds. Please set DATABASE_URL in environment variables and redeploy.\n", err)
-			return nil
-		}
 		return err
 	}
 	log := observability.NewLogger(cfg.Observ, cfg.Env)
@@ -89,10 +89,6 @@ func run() error {
 			break
 		}
 		if attempt == maxAttempts || ctx.Err() != nil {
-			if cmd == "migrate" {
-				log.Warn("database connection could not be established; skipping migrations for initial build so deployment completes successfully. Please configure DATABASE_URL in environment variables and redeploy.", "error", err)
-				return nil
-			}
 			return fmt.Errorf("connect to database after %d attempts: %w", attempt, err)
 		}
 		log.Warn("database not ready yet, retrying...", "attempt", attempt, "max", maxAttempts, "error", err)
@@ -106,10 +102,6 @@ func run() error {
 
 	migrations, err := database.LoadMigrations(dbfs.Migrations, "migrations")
 	if err != nil {
-		if cmd == "migrate" {
-			log.Warn("load migrations note", "error", err)
-			return nil
-		}
 		return err
 	}
 
@@ -118,15 +110,20 @@ func run() error {
 		if err := db.Migrate(ctx, migrations, func(msg string, args ...any) {
 			log.Info(msg, args...)
 		}); err != nil {
-			log.Warn("apply migrations note", "error", err)
-			return nil
+			return fmt.Errorf("apply migrations: %w", err)
+		}
+		if err := queue.MigrateSchema(ctx, db); err != nil {
+			return fmt.Errorf("apply job queue migrations: %w", err)
+		}
+		if err := setAppRolePassword(ctx, db, log, cfg.Env.IsProd()); err != nil {
+			return err
 		}
 		// The permission catalogue lives in Go; identity.permissions mirrors
 		// it. Syncing as part of "migrate" keeps the two together, so an
 		// operator who runs migrations never ends up with a schema that is
 		// current and a role editor that is not.
 		if err := rbac.Sync(ctx, db); err != nil {
-			log.Warn("sync permission catalogue note", "error", err)
+			return fmt.Errorf("sync permission catalogue: %w", err)
 		}
 		seeded, err := rbac.SeedExistingCompanies(ctx, db)
 		if err != nil {
@@ -149,8 +146,8 @@ func run() error {
 		}
 
 		// Ensure platform super_admin account exists
-		if err := ensureAdminAccount(ctx, db, log); err != nil {
-			log.Warn("ensure admin account note", "error", err)
+		if err := ensureAdminAccount(ctx, db, log, cfg.Env.IsProd()); err != nil {
+			return fmt.Errorf("ensure admin account: %w", err)
 		}
 		return nil
 
@@ -187,31 +184,28 @@ func run() error {
 		}
 		return nil
 
-	case "migrate-data":
-		sourceURL := os.Getenv("MARIADB_SOURCE_URL")
-		if sourceURL == "" {
-			return errors.New("MARIADB_SOURCE_URL environment variable is required to execute legacy ETL migration")
-		}
-		log.Info("starting legacy MariaDB to PostgreSQL ETL pipeline", "source", sourceURL)
-		// ETL execution requires connection to source MariaDB
-		return nil
-
 	case "seed":
 		return runSeed(ctx, db, log)
 
 	case "create-admin":
-		email := "admin@dawa24.net"
-		password := "Admin!Dawa24!2026"
+		email := defaultAdminEmail
+		password := ""
 		if len(os.Args) >= 3 && os.Args[2] != "" {
 			email = os.Args[2]
 		}
 		if len(os.Args) >= 4 && os.Args[3] != "" {
 			password = os.Args[3]
 		}
+		if password == "" {
+			if cfg.Env.IsProd() {
+				return errors.New("create-admin needs an explicit password in production: cli create-admin <email> <password>")
+			}
+			password = devAdminPassword
+		}
 		if err := createOrUpdateAdmin(ctx, db, log, email, password, "Platform Super Admin", "مدير النظام العام"); err != nil {
 			return err
 		}
-		fmt.Printf("\nSuper Admin account ready:\n  Email:    %s\n  Password: %s\n  Role:     super_admin\n\n", email, password)
+		fmt.Printf("\nSuper Admin account ready:\n  Email:    %s\n  Role:     super_admin\n\n", email)
 		return nil
 
 	case "seed-users":

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
 )
 
 // notifySmartOrderRunFinished alerts the user when a smart-ordering calculation finishes.

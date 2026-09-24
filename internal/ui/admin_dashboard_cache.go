@@ -5,8 +5,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 )
 
 // The admin dashboard's numbers, computed off the request path.

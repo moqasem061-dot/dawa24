@@ -1,6 +1,6 @@
 package commerce
 
-import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+import "github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 // Disposition is how a buying surface should present a refusal.
 type Disposition int

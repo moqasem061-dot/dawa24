@@ -4,17 +4,17 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorDashboardPage renders the supplier dashboard.
@@ -33,7 +33,9 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if h.orgSvc != nil && actor.OrganizationID > 0 {
-		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err == nil {
+		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			for _, b := range branches {
 				if b != nil && (b.Status == "active" || b.Status == "") {
 					data.ActiveWarehousesCount++
@@ -43,7 +45,9 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if h.attSvc != nil && actor.OrganizationID > 0 {
-		if reqs, err := h.attSvc.ListDocumentRequests(ctx, actor, &actor.OrganizationID); err == nil {
+		if reqs, err := h.attSvc.ListDocumentRequests(ctx, actor, &actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "attSvc.ListDocumentRequests", err)
+		} else {
 			for _, reqItem := range reqs {
 				if reqItem != nil && reqItem.Status == attachments.DocReqPending {
 					data.PendingDocRequests = append(data.PendingDocRequests, reqItem)
@@ -69,9 +73,10 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 				if sh == nil {
 					continue
 				}
-				if sh.Status == commerce.StatusDelivered || sh.Status == commerce.StatusCompleted {
+				switch sh.Status {
+				case commerce.StatusDelivered, commerce.StatusCompleted:
 					data.DeliveredShipments++
-				} else if sh.Status == commerce.StatusPending || sh.Status == commerce.StatusConfirmed || sh.Status == commerce.StatusProcessing {
+				case commerce.StatusPending, commerce.StatusConfirmed, commerce.StatusProcessing:
 					data.PendingOrdersTotal, _ = data.PendingOrdersTotal.Add(sh.TotalAmount)
 					if len(data.Shipments) < 12 {
 						data.Shipments = append(data.Shipments, sh)
@@ -96,7 +101,9 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 				data.HasWallet = true
 			}
 		} else {
-			if total, err := h.commSvc.MonthSalesByVendor(ctx, actor.OrganizationID); err == nil {
+			if total, err := h.commSvc.MonthSalesByVendor(ctx, actor.OrganizationID); err != nil {
+				h.logLoadErr(ctx, "commSvc.MonthSalesByVendor", err)
+			} else {
 				data.MonthSales = total
 			}
 		}
@@ -142,7 +149,9 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 	if h.catSvc != nil && actor.OrganizationID > 0 {
-		if vStats, err := h.catSvc.VendorVariantStats(ctx, actor.OrganizationID); err == nil {
+		if vStats, err := h.catSvc.VendorVariantStats(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "catSvc.VendorVariantStats", err)
+		} else {
 			if vStats.Active > 0 && data.ActiveProducts == 0 {
 				data.ActiveProducts = vStats.Active
 			}
@@ -195,7 +204,9 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 				data.CustomerOrgName = o.TradeName.Get(i18n.Lang(lang))
 			}
 		}
-		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err == nil {
+		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			data.Branches = branches
 			data.TotalBranches = len(branches)
 			for _, b := range branches {
@@ -230,7 +241,9 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 
 	// 2. Urgent Administrative Document Requests
 	if h.attSvc != nil && actor.OrganizationID > 0 {
-		if reqs, err := h.attSvc.ListDocumentRequests(ctx, actor, &actor.OrganizationID); err == nil {
+		if reqs, err := h.attSvc.ListDocumentRequests(ctx, actor, &actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "attSvc.ListDocumentRequests", err)
+		} else {
 			for _, reqItem := range reqs {
 				if reqItem != nil && reqItem.Status == attachments.DocReqPending {
 					data.PendingDocRequests = append(data.PendingDocRequests, reqItem)
@@ -258,12 +271,13 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 						}
 					}
 				}
-				if o.Status == commerce.StatusDelivered || o.Status == commerce.StatusCompleted {
+				switch o.Status {
+				case commerce.StatusDelivered, commerce.StatusCompleted:
 					data.CompletedOrders++
 					data.TotalSpend, _ = data.TotalSpend.Add(o.TotalAmount)
-				} else if o.Status == commerce.StatusCancelled || o.Status == commerce.StatusFailed || o.Status == commerce.StatusReturned || o.Status == commerce.StatusRefunded {
+				case commerce.StatusCancelled, commerce.StatusFailed, commerce.StatusReturned, commerce.StatusRefunded:
 					data.CancelledOrders++
-				} else {
+				default:
 					data.ActiveOrders++
 					data.TotalSpend, _ = data.TotalSpend.Add(o.TotalAmount)
 				}
@@ -279,7 +293,9 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 			for _, o := range data.Orders {
 				recentIDs = append(recentIDs, o.ID)
 			}
-			if counts, err := h.commSvc.CountOrderLines(ctx, recentIDs); err == nil {
+			if counts, err := h.commSvc.CountOrderLines(ctx, recentIDs); err != nil {
+				h.logLoadErr(ctx, "commSvc.CountOrderLines", err)
+			} else {
 				for _, o := range data.Orders {
 					o.LineCount = counts[o.ID]
 					data.TotalOrderedItems += o.LineCount
@@ -304,12 +320,16 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 			data.WalletBalance = wallet.Available()
 			data.HasWallet = true
 
-			if txs, err := h.billSvc.ListWalletTransactions(ctx, wallet.ID, 5, 0); err == nil {
+			if txs, err := h.billSvc.ListWalletTransactions(ctx, wallet.ID, 5, 0); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListWalletTransactions", err)
+			} else {
 				data.RecentTransactions = txs
 			}
 		}
 
-		if deposits, err := h.billSvc.ListUserDeposits(ctx, actor.UserID, 50, 0); err == nil {
+		if deposits, err := h.billSvc.ListUserDeposits(ctx, actor.UserID, 50, 0); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListUserDeposits", err)
+		} else {
 			for _, dep := range deposits {
 				if dep != nil && dep.Status == billing.DepositPending {
 					data.PendingDepositsCount++
@@ -321,7 +341,9 @@ func (h *UIHandler) PharmacyDashboardPage(w http.ResponseWriter, r *http.Request
 
 	// 5. Smart Orders Lifecycle & Recent Runs
 	if h.smartOrderSvc != nil && actor.OrganizationID > 0 {
-		if runs, err := h.smartOrderSvc.History(ctx, actor.OrganizationID, 50, 0); err == nil {
+		if runs, err := h.smartOrderSvc.History(ctx, actor.OrganizationID, 50, 0); err != nil {
+			h.logLoadErr(ctx, "smartOrderSvc.History", err)
+		} else {
 			data.SmartOrdersTotal = len(runs)
 			data.SmartOrdersCount = len(runs)
 			for _, r := range runs {

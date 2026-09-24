@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 )
 
 type mockAvailabilityGate struct {
@@ -40,8 +40,7 @@ func TestQuotaBlockedWhenAvailabilityGateReturnsQuota(t *testing.T) {
 		VendorActive: true, ProductActive: true,
 	}}
 
-	candidates, err := s.buildCandidates(context.Background(), line, offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{})
+	candidates, err := s.buildCandidates(context.Background(), line, offers)
 	if err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}
@@ -87,8 +86,7 @@ func TestMissingBranchLocationFailsClosedWhenGateReportsNoLocation(t *testing.T)
 		VendorActive: true, ProductActive: true,
 	}}
 
-	candidates, err := s.buildCandidates(context.Background(), line, offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{})
+	candidates, err := s.buildCandidates(context.Background(), line, offers)
 	if err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}
@@ -143,8 +141,7 @@ func TestAvailabilityGateSelectsAllowedCandidateOverQuotaCandidate(t *testing.T)
 		},
 	}
 
-	candidates, err := s.buildCandidates(context.Background(), line, offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{})
+	candidates, err := s.buildCandidates(context.Background(), line, offers)
 	if err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}

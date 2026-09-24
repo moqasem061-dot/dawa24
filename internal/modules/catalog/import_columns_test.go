@@ -3,7 +3,7 @@ package catalog_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 func TestPlanColumnsBarcodeDoesNotStealSKU(t *testing.T) {

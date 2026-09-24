@@ -3,12 +3,13 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 const seoPageFields = `
@@ -131,7 +132,7 @@ func (r *Repository) GetSEOPageByRoute(ctx context.Context, route string) (*plat
 			ORDER BY (route_pattern = $1 OR ($1 = '/' AND route_pattern = '')) DESC, length(route_pattern) DESC
 			LIMIT 1`
 		p, err := scanSEOPage(tx.QueryRow(txCtx, query, route))
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil
 		}
 		if err != nil {
@@ -207,7 +208,7 @@ func (r *Repository) GetSEOSettings(ctx context.Context) (*platformadmin.SEOSett
 		return row.Scan(&s.RobotsTxt, &s.SitemapEnabled, &s.UpdatedAt)
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return &platformadmin.SEOSettings{
 				RobotsTxt:      "User-agent: *\nContent-Signal: ai-train=no, search=yes, ai-input=no\nAllow: /\nSitemap: /sitemap.xml",
 				SitemapEnabled: true,

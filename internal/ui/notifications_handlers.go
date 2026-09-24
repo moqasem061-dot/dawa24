@@ -4,10 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // NotificationsDropdownPartial renders the bell dropdown panel as an HTMX partial.
@@ -27,8 +27,16 @@ func (h *UIHandler) NotificationsDropdownPartial(w http.ResponseWriter, r *http.
 	var logs []*notifications.NotificationLog
 	unread := 0
 	if h.notifSvc != nil {
-		logs, _ = h.notifSvc.ListUserNotifications(ctx, userID, 8, 0)
-		unread, _ = h.notifSvc.GetUnreadCount(ctx, userID)
+		if loaded, err := h.notifSvc.ListUserNotifications(ctx, userID, 8, 0); err != nil {
+			h.logLoadErr(ctx, "notifSvc.ListUserNotifications", err)
+		} else {
+			logs = loaded
+		}
+		if loaded, err := h.notifSvc.GetUnreadCount(ctx, userID); err != nil {
+			h.logLoadErr(ctx, "notifSvc.GetUnreadCount", err)
+		} else {
+			unread = loaded
+		}
 	}
 	if actor, ok := authctx.From(ctx); ok {
 		logs = filterNotificationsForActor(actor, logs)
@@ -48,7 +56,11 @@ func (h *UIHandler) NotificationsUnreadBadgePartial(w http.ResponseWriter, r *ht
 
 	unread := 0
 	if h.notifSvc != nil {
-		unread, _ = h.notifSvc.GetUnreadCount(ctx, userID)
+		if loaded, err := h.notifSvc.GetUnreadCount(ctx, userID); err != nil {
+			h.logLoadErr(ctx, "notifSvc.GetUnreadCount", err)
+		} else {
+			unread = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render unread badge", pages.NotificationsUnreadBadge(unread))
@@ -70,7 +82,9 @@ func (h *UIHandler) NotificationsReadAllSubmit(w http.ResponseWriter, r *http.Re
 	}
 
 	if h.notifSvc != nil {
-		_, _ = h.notifSvc.MarkAllRead(ctx, userID)
+		if _, err := h.notifSvc.MarkAllRead(ctx, userID); err != nil {
+			h.logLoadErr(ctx, "notifSvc.MarkAllRead", err)
+		}
 	}
 
 	isDropdownHTMX := h.isHTMX(r) && (r.Header.Get("HX-Target") == "notif-dropdown-content" || r.URL.Query().Get("format") == "dropdown")
@@ -86,7 +100,11 @@ func (h *UIHandler) NotificationsReadAllSubmit(w http.ResponseWriter, r *http.Re
 
 	var logs []*notifications.NotificationLog
 	if h.notifSvc != nil {
-		logs, _ = h.notifSvc.ListUserNotifications(ctx, userID, 8, 0)
+		if loaded, err := h.notifSvc.ListUserNotifications(ctx, userID, 8, 0); err != nil {
+			h.logLoadErr(ctx, "notifSvc.ListUserNotifications", err)
+		} else {
+			logs = loaded
+		}
 	}
 	if actor, ok := authctx.From(ctx); ok {
 		logs = filterNotificationsForActor(actor, logs)

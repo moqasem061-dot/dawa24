@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // Opening a turn, shared by every interface.

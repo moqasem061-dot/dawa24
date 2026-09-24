@@ -3,7 +3,7 @@ package catalog
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // The shared catalogue, as the vendor import reads and extends it.

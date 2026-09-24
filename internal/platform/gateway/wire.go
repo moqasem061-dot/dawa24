@@ -136,13 +136,13 @@ func (c *HTTPClient) do(ctx context.Context, req Request, b budget) (*Response, 
 
 	res, err := c.http.Do(httpReq)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	defer res.Body.Close()
 
 	raw, err := io.ReadAll(io.LimitReader(res.Body, 8<<20))
 	if err != nil {
-		return nil, fmt.Errorf("%w: read body: %v", ErrUnavailable, err)
+		return nil, fmt.Errorf("%w: read body: %w", ErrUnavailable, err)
 	}
 
 	if res.StatusCode != http.StatusOK {

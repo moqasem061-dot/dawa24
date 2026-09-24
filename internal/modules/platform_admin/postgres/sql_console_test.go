@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // TestSQLConsoleRunsWithoutSuperuserOrSecrets holds the console to its role:

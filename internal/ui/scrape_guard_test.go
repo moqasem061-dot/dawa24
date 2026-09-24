@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,9 +10,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/antiscrape"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/antiscrape"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // guardedRouter mounts the real route tables with a live guard, which is
@@ -47,7 +48,7 @@ func customerActorReq(r *http.Request) *http.Request {
 // scraperRequest is what the guard exists to refuse: a HTTP client that names
 // itself.
 func scraperRequest(path string) *http.Request {
-	r := httptest.NewRequest(http.MethodGet, path, nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
 	r.Header.Set("User-Agent", "python-requests/2.31.0")
 	return r
 }
@@ -104,7 +105,7 @@ func TestOnlyTheListingRoutesAreGuarded(t *testing.T) {
 func TestCatalogStillServesABrowser(t *testing.T) {
 	router := guardedRouter()
 
-	r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 	r.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "+
 		"(KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36")
 	r.Header.Set("Accept", "text/html,application/xhtml+xml")
@@ -124,7 +125,7 @@ func TestGuardedPagesStillServeGooglebot(t *testing.T) {
 	router := guardedRouter()
 
 	for _, path := range []string{"/catalog", "/suppliers"} {
-		r := httptest.NewRequest(http.MethodGet, path, nil)
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
 		r.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
 		r.Header.Set("Accept", "text/html")
 		r = customerActorReq(r)
@@ -153,7 +154,7 @@ func TestAssistantsPassAndTrainingCrawlersDoNot(t *testing.T) {
 		"Mozilla/5.0 (compatible; Claude-User/1.0; +Claude-User@anthropic.com)",
 	}
 	for _, ua := range allowed {
-		r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 		r.Header.Set("User-Agent", ua)
 		r.Header.Set("Accept", "text/html")
 		r = customerActorReq(r)
@@ -174,7 +175,7 @@ func TestAssistantsPassAndTrainingCrawlersDoNot(t *testing.T) {
 		"Mozilla/5.0 (compatible; Google-Extended)",
 	}
 	for _, ua := range refused {
-		r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 		r.Header.Set("User-Agent", ua)
 		r.Header.Set("Accept", "text/html")
 		rec := httptest.NewRecorder()

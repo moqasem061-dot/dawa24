@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 )
 
 // Repository is this module's persistence.

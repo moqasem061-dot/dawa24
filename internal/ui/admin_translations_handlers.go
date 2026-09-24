@@ -4,11 +4,11 @@ import (
 	"net/http"
 	"strings"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) AdminTranslationsPage(w http.ResponseWriter, r *http.Request) {
@@ -24,10 +24,11 @@ func (h *UIHandler) AdminTranslationsPage(w http.ResponseWriter, r *http.Request
 	customStr := strings.TrimSpace(r.URL.Query().Get("custom"))
 
 	var customFilter *bool
-	if customStr == "true" {
+	switch customStr {
+	case "true":
 		t := true
 		customFilter = &t
-	} else if customStr == "false" {
+	case "false":
 		f := false
 		customFilter = &f
 	}
@@ -72,7 +73,11 @@ func (h *UIHandler) AdminTranslationsPage(w http.ResponseWriter, r *http.Request
 
 	var stats *platformadmin.TranslationStats
 	if h.adminSvc != nil {
-		stats, _ = h.adminSvc.GetTranslationStats(ctx)
+		if loaded, err := h.adminSvc.GetTranslationStats(ctx); err != nil {
+			h.logLoadErr(ctx, "adminSvc.GetTranslationStats", err)
+		} else {
+			stats = loaded
+		}
 	}
 	if stats == nil || stats.TotalKeys == 0 {
 		allEntries := i18n.GetAllKeyEntries()
@@ -100,7 +105,7 @@ func (h *UIHandler) AdminTranslationsPage(w http.ResponseWriter, r *http.Request
 		Pagination:   pagProps,
 	}
 
-	_ = pages.AdminTranslations(data, lang, dir).Render(ctx, w)
+	h.renderPage(ctx, w, "render AdminTranslations", pages.AdminTranslations(data, lang, dir))
 }
 
 func (h *UIHandler) AdminTranslationUpdateSubmit(w http.ResponseWriter, r *http.Request) {

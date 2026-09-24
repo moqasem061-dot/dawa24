@@ -164,7 +164,7 @@ func (c *HTTPClient) fetchModelCapabilities(ctx context.Context, settings Settin
 
 	res, err := c.http.Do(req)
 	if err != nil {
-		return ConservativeDefaultCapabilities(), fmt.Errorf("%w: %v", ErrUnavailable, err)
+		return ConservativeDefaultCapabilities(), fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	defer res.Body.Close()
 

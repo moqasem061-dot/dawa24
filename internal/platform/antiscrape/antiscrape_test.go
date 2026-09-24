@@ -1,6 +1,7 @@
 package antiscrape
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 const chromeUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
@@ -28,7 +29,7 @@ func testGuard(t *testing.T) *Guard {
 }
 
 func browserRequest(path string) *http.Request {
-	r := httptest.NewRequest(http.MethodGet, path, nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
 	r.Header.Set("User-Agent", chromeUA)
 	r.Header.Set("Accept", "text/html,application/xhtml+xml")
 	r.Header.Set("Sec-Fetch-Site", "same-origin")
@@ -74,7 +75,7 @@ func TestClassify(t *testing.T) {
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 			if tc.ua != "" {
 				r.Header.Set("User-Agent", tc.ua)
 			}
@@ -92,7 +93,7 @@ func TestClassify(t *testing.T) {
 // substring silently de-indexes the marketplace.
 func TestCrawlersAreNotMistakenForHarvesters(t *testing.T) {
 	g := testGuard(t)
-	r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 	r.Header.Set("User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)")
 	r.Header.Set("Accept", "text/html")
 	rec := httptest.NewRecorder()
@@ -106,7 +107,7 @@ func TestCrawlersAreNotMistakenForHarvesters(t *testing.T) {
 
 func TestAutomationIsRefusedOnDataRoutes(t *testing.T) {
 	g := testGuard(t)
-	r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 	r.Header.Set("User-Agent", "python-requests/2.31.0")
 	rec := httptest.NewRecorder()
 
@@ -127,7 +128,7 @@ func TestAutomationIsRefusedOnDataRoutes(t *testing.T) {
 
 func TestAuthenticatedAutomationIsMeteredNotRefused(t *testing.T) {
 	g := testGuard(t)
-	r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 	r.Header.Set("User-Agent", "curl/8.4.0")
 	r = r.WithContext(authctx.WithActor(r.Context(), authctx.Actor{UserID: 7}))
 	rec := httptest.NewRecorder()
@@ -225,7 +226,7 @@ func TestHoneypotPenaltyOutlivesTheRequestThatTrippedIt(t *testing.T) {
 // page reports a syntax error, and nobody finds the rate limit.
 func TestAPIRefusalsAreJSON(t *testing.T) {
 	g := testGuard(t)
-	r := httptest.NewRequest(http.MethodGet, "/api/v1/compare/search?q=x", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/compare/search?q=x", nil)
 	r.Header.Set("User-Agent", "curl/8.4.0")
 	rec := httptest.NewRecorder()
 
@@ -240,7 +241,7 @@ func TestAPIRefusalsAreJSON(t *testing.T) {
 // request is a background fetch.
 func TestHTMXRefusalsAreHTML(t *testing.T) {
 	g := testGuard(t)
-	r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 	r.Header.Set("User-Agent", "curl/8.4.0")
 	r.Header.Set("HX-Request", "true")
 	rec := httptest.NewRecorder()
@@ -258,7 +259,7 @@ func TestDisabledAndNilGuardsArePassthroughs(t *testing.T) {
 		"disabled": New(Options{Enabled: false}),
 	} {
 		t.Run(name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/catalog", nil)
+			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/catalog", nil)
 			r.Header.Set("User-Agent", "curl/8.4.0")
 			rec := httptest.NewRecorder()
 

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // The quota screen's wiring: routes registered, permissions enforced, and the
@@ -75,7 +76,7 @@ func TestVendorQuotaRoutes(t *testing.T) {
 
 	t.Run("a supplier with the permission opens the page", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		full.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/vendor/quotas", nil))
+		full.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/quotas", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("want 200, got %d", rec.Code)
 		}
@@ -89,7 +90,7 @@ func TestVendorQuotaRoutes(t *testing.T) {
 
 	t.Run("the view permission alone opens the page", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		viewOnly.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/vendor/quotas", nil))
+		viewOnly.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/quotas", nil))
 		if rec.Code != http.StatusOK {
 			t.Fatalf("want 200, got %d", rec.Code)
 		}
@@ -103,7 +104,7 @@ func TestVendorQuotaRoutes(t *testing.T) {
 		"/vendor/quotas/release/undo",
 	} {
 		t.Run("view-only is refused "+path, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, path,
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, path,
 				strings.NewReader(url.Values{"variant_id": {"1"}, "branch_id": {"2"}}.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			rec := httptest.NewRecorder()
@@ -116,7 +117,7 @@ func TestVendorQuotaRoutes(t *testing.T) {
 
 	t.Run("a pharmacy cannot reach the supplier's quota screen", func(t *testing.T) {
 		rec := httptest.NewRecorder()
-		pharmacy.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/vendor/quotas", nil))
+		pharmacy.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/quotas", nil))
 		if rec.Code == http.StatusOK {
 			t.Errorf("a customer must not open /vendor/quotas (got %d)", rec.Code)
 		}

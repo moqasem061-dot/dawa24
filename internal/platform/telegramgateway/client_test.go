@@ -2,6 +2,7 @@ package telegramgateway
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -73,7 +74,7 @@ func TestSignAndVerifyPhoneToken(t *testing.T) {
 
 	// 3. Verification with different phone (tampering attempt)
 	valid, err = VerifyPhoneToken(token, "01099999999", secret)
-	if valid || err != ErrTokenPhoneMismatch {
+	if valid || !errors.Is(err, ErrTokenPhoneMismatch) {
 		t.Fatalf("Expected ErrTokenPhoneMismatch, got valid=%v, err=%v", valid, err)
 	}
 
@@ -81,13 +82,13 @@ func TestSignAndVerifyPhoneToken(t *testing.T) {
 	parts := strings.Split(token, ".")
 	tamperedToken := "e30." + parts[1] // changed payload to "{}"
 	valid, err = VerifyPhoneToken(tamperedToken, phone, secret)
-	if valid || err != ErrTokenSignature {
+	if valid || !errors.Is(err, ErrTokenSignature) {
 		t.Fatalf("Expected ErrTokenSignature on tampered token, got valid=%v, err=%v", valid, err)
 	}
 
 	// 5. Verification with wrong secret
 	valid, err = VerifyPhoneToken(token, phone, "wrong_secret_key_1234567890123456")
-	if valid || err != ErrTokenSignature {
+	if valid || !errors.Is(err, ErrTokenSignature) {
 		t.Fatalf("Expected ErrTokenSignature on wrong secret, got valid=%v, err=%v", valid, err)
 	}
 
@@ -97,7 +98,7 @@ func TestSignAndVerifyPhoneToken(t *testing.T) {
 		t.Fatalf("SignPhoneToken failed: %v", err)
 	}
 	valid, err = VerifyPhoneToken(expiredToken, phone, secret)
-	if valid || err != ErrTokenExpired {
+	if valid || !errors.Is(err, ErrTokenExpired) {
 		t.Fatalf("Expected ErrTokenExpired, got valid=%v, err=%v", valid, err)
 	}
 }

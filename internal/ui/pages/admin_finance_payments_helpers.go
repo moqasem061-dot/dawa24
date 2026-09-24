@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func countPaymentsByStatus(items []*billing.AdminPaymentView, statuses ...string) int {

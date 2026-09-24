@@ -51,7 +51,7 @@ func (b *Book) openXLSX() (err error) {
 
 	f, err := excelize.OpenReader(bytes.NewReader(b.content))
 	if err != nil {
-		return fmt.Errorf("تعذر فتح ملف Excel — قد يكون الملف تالفاً أو محمياً بكلمة مرور (%v)", err)
+		return fmt.Errorf("تعذر فتح ملف Excel — قد يكون الملف تالفاً أو محمياً بكلمة مرور (%w)", err)
 	}
 
 	names := f.GetSheetList()
@@ -105,11 +105,8 @@ func (b *Book) openXLSX() (err error) {
 
 // probeSheet counts non-empty cells over the head of a worksheet.
 func probeSheet(f *excelize.File, name string) (cells, width, seen int) {
-	defer func() {
-		if r := recover(); r != nil {
-			// keep whatever was counted
-		}
-	}()
+	// A malformed sheet can panic inside excelize; keep whatever was counted.
+	defer func() { _ = recover() }()
 
 	rows, err := f.Rows(name)
 	if err != nil {

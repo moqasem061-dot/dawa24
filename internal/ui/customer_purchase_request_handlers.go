@@ -3,7 +3,7 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerPurchaseRequestWizardPage renders the clean gateway page to catalog and suppliers.

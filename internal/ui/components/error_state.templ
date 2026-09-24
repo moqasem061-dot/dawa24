@@ -29,7 +29,7 @@ templ ErrorState(props ErrorStateProps) {
 			}
 		</p>
 		<div class="s-error-actions">
-			<button type="button" onclick="window.history.length > 1 ? window.history.back() : window.location.href='/'" class="btn btn-secondary s-error-state-btn">
+			<button type="button" data-on-click="backOrHome()" class="btn btn-secondary s-error-state-btn">
 				<span>الرجوع للخلف</span>
 			</button>
 			if props.RetryURL != "" {

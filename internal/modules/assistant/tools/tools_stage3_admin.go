@@ -1,7 +1,7 @@
 package tools
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 )
 
 func adminStage3Tools(r *Registry) []Tool {

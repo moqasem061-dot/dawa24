@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request) {
@@ -100,7 +100,9 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 	var walletCheckoutAllowed bool
 	var wallet *billing.Wallet
 	if h.billSvc != nil {
-		if pms, err := h.billSvc.ListPlatformPaymentMethods(ctx, true); err == nil {
+		if pms, err := h.billSvc.ListPlatformPaymentMethods(ctx, true); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListPlatformPaymentMethods", err)
+		} else {
 			for _, pm := range pms {
 				if pm != nil && pm.IsActive && pm.IsCheckoutEnabled {
 					checkoutMethods = append(checkoutMethods, pm)
@@ -114,7 +116,9 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 		walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
 		seenPM := make(map[int64]bool)
 		for _, uid := range candidateUIDs {
-			if upms, err := h.billSvc.ListPaymentMethods(ctx, uid); err == nil {
+			if upms, err := h.billSvc.ListPaymentMethods(ctx, uid); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListPaymentMethods", err)
+			} else {
 				for _, upm := range upms {
 					if upm != nil && !seenPM[upm.ID] {
 						seenPM[upm.ID] = true
@@ -125,7 +129,9 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 		}
 
 		if walletCheckoutAllowed && actor.OrganizationID > 0 {
-			if wItem, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP"); err == nil {
+			if wItem, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP"); err != nil {
+				h.logLoadErr(ctx, "billSvc.GetWallet", err)
+			} else {
 				wallet = wItem
 			}
 		}
@@ -167,7 +173,7 @@ func (h *UIHandler) CheckoutSubmit(w http.ResponseWriter, r *http.Request) {
 
 	var senderPMID int64
 	if sIDStr := strings.TrimSpace(r.PostFormValue("sender_payment_method_id")); sIDStr != "" {
-		if parsedID, err := strconv.ParseInt(sIDStr, 10, 64); err == nil {
+		if parsedID, err := strconv.ParseInt(sIDStr, 10, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			senderPMID = parsedID
 		}
 	}

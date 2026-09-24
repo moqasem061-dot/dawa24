@@ -4,7 +4,7 @@ import (
 	"context"
 	"sync"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 )
 
 // The API's commerce service (JSON checkout, Smart Ordering) is built inside

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // شرائح ورسوم التوصيل — turning a distance into a fee, and saying how.

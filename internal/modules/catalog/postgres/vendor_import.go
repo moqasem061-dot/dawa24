@@ -8,8 +8,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Bulk variant persistence for the vendor catalogue import.
@@ -330,4 +330,3 @@ func queueVariant(batch *pgx.Batch, orgID int64, v *catalog.ProductVariant) {
 		boolText(v.IsFeatured), boolText(v.IsNegotiable), v.BatchNumber,
 		dateText(v.ExpiryDate), minOrderQty, idText(v.BranchID))
 }
-

@@ -25,8 +25,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // confDisputed is the confidence a line carries once the deterministic engine

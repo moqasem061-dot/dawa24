@@ -6,10 +6,10 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // MonthSalesByVendor sums a vendor's sold order-line totals for the current
@@ -100,7 +100,6 @@ func (r *Repository) GetVendorFinancialSummary(ctx context.Context, vendorOrgID 
 		if filter.CustomerOrgID > 0 {
 			orgFilter = fmt.Sprintf(" AND (cust_org.id = $%d OR o.organization_id = $%d)", argIdx, argIdx)
 			args = append(args, filter.CustomerOrgID)
-			argIdx++
 		}
 
 		// 2. Query delivered and confirmed shipments for this vendor in the period

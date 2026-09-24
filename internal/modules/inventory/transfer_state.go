@@ -1,6 +1,6 @@
 package inventory
 
-import "github.com/muhiya/dawa24-store/internal/shared/apperr"
+import "github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 
 // Transfers between warehouses are two-phase, not atomic.
 //

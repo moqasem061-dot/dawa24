@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminRecordInvoicePaymentSubmit records an invoice payment directly from the admin invoices page.
@@ -171,7 +171,11 @@ func (h *UIHandler) AdminOfferOrderDetailPage(w http.ResponseWriter, r *http.Req
 
 	var order *commerce.Order
 	if h.commSvc != nil && orderID > 0 {
-		order, _ = h.commSvc.GetOrder(database.AsSystem(ctx), orderID)
+		if loaded, err := h.commSvc.GetOrder(database.AsSystem(ctx), orderID); err != nil {
+			h.logLoadErr(ctx, "commSvc.GetOrder", err)
+		} else {
+			order = loaded
+		}
 	}
 
 	if order == nil {

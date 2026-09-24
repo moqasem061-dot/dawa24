@@ -2,10 +2,11 @@ package gateway
 
 import (
 	"context"
+	"errors"
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 // TestEveryRoleDeterministicFallbackWhenGatewayDisabled proves that for each
@@ -40,7 +41,7 @@ func TestEveryRoleDeterministicFallbackWhenGatewayDisabled(t *testing.T) {
 				Feature:    tc.feature,
 				Role:       tc.role,
 			})
-			if err != ErrDisabled {
+			if !errors.Is(err, ErrDisabled) {
 				t.Fatalf("expected ErrDisabled for role %s, got %v", tc.role, err)
 			}
 		})
@@ -64,7 +65,7 @@ func TestEveryRoleDeterministicFallbackWhenGatewayDisabled(t *testing.T) {
 				Feature:    tc.feature,
 				Role:       tc.role,
 			})
-			if err != ErrDisabled {
+			if !errors.Is(err, ErrDisabled) {
 				t.Fatalf("expected ErrDisabled when role %s is individually disabled, got %v", tc.role, err)
 			}
 		})

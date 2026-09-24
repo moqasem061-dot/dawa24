@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminTempWarehouseRunReviewPage renders the summary review page.
@@ -81,7 +81,8 @@ func (h *UIHandler) AdminTempWarehouseRunCommitSubmit(w http.ResponseWriter, r *
 	totalProcessed := 0
 	if h.compareSvc != nil {
 		for _, fid := range payload.FileIDs {
-			f, _ := h.compareSvc.GetFile(sysCtx, fid)
+			f, loadErr := h.compareSvc.GetFile(sysCtx, fid)
+			h.logLoadErr(ctx, "compareSvc.GetFile", loadErr)
 			if f != nil {
 				_ = h.compareSvc.ProcessCompareFile(sysCtx, fid)
 				totalProcessed += f.RowCount

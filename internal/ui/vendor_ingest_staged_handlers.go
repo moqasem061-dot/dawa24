@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -8,9 +9,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // loadImportReview fills the review table with pagination and filters.
@@ -221,7 +224,7 @@ func (h *UIHandler) VendorIngestCatalogSearchJSON(w http.ResponseWriter, r *http
 		return
 	}
 
-	products, err := h.ingSvc.SearchMasterCatalog(ctx, q)
+	products, err := h.searchMasterCatalog(ctx, q)
 	if err != nil {
 		http.Error(w, `{"error":"search_failed"}`, http.StatusInternalServerError)
 		return
@@ -334,4 +337,12 @@ func buildReviewRedirect(publicID string, r *http.Request) string {
 		url += "?" + strings.Join(params, "&")
 	}
 	return url
+}
+
+// searchMasterCatalog backs the manual-match search in the import review.
+func (h *UIHandler) searchMasterCatalog(ctx context.Context, query string) ([]*catalog.Product, error) {
+	if h.catSvc == nil {
+		return nil, ingest.ErrImportStoreUnavailable
+	}
+	return h.catSvc.Search(database.AsSystem(ctx), catalog.SearchParams{Query: query, Limit: 25})
 }

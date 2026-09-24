@@ -8,15 +8,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
-// computeVendorWorkingStatus evaluates working hours, open/closed status, and coverage schedule.
 // computeVendorWorkingStatus evaluates working hours, open/closed status, and coverage schedule.
 func computeVendorWorkingStatus(branches []*org.Branch, coverages []*workflow.CoverageView) (workingHours string, coverageDays string, coverageAreas []string, isOpenNow bool, statusNote string) {
 	now := time.Now().UTC().Add(3 * time.Hour) // Egypt Time UTC+3 / EET
@@ -25,8 +24,6 @@ func computeVendorWorkingStatus(branches []*org.Branch, coverages []*workflow.Co
 
 	workingHours = i18n.T("ar", "vendor.status.default_working_hours")
 	coverageDays = i18n.T("ar", "vendor.status.default_coverage_days")
-	isOpenNow = false
-	statusNote = i18n.T("ar", "vendor.status.closed_now")
 
 	areaMap := make(map[string]bool)
 	dayActiveMap := make(map[int]bool)
@@ -179,7 +176,7 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 		page = p
 	}
 	pageSize := 12
-	if ps, err := strconv.Atoi(r.URL.Query().Get("page_size")); err == nil {
+	if ps, err := strconv.Atoi(r.URL.Query().Get("page_size")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		switch ps {
 		case 6, 12, 24, 48:
 			pageSize = ps
@@ -196,9 +193,11 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 	if h.orgSvc != nil {
 		sysCtx := database.AsSystem(ctx)
 		typ := org.TypeVendor
-		orgs, _ := h.orgSvc.ListOrganizations(sysCtx, &typ, nil, 100, 0)
+		orgs, loadErr := h.orgSvc.ListOrganizations(sysCtx, &typ, nil, 100, 0)
+		h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
 		if len(orgs) == 0 {
-			allOrgs, _ := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 200, 0)
+			allOrgs, loadErr := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 200, 0)
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
 			for _, o := range allOrgs {
 				if o != nil && (o.Type == org.TypeVendor || string(o.Type) == "supplier" || string(o.Type) == "distributor") {
 					orgs = append(orgs, o)
@@ -231,7 +230,8 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 
-			branches, _ := h.orgSvc.ListBranches(sysCtx, o.ID)
+			branches, loadErr := h.orgSvc.ListBranches(sysCtx, o.ID)
+			h.logLoadErr(ctx, "orgSvc.ListBranches", loadErr)
 			var mainBranch *org.Branch
 			for _, b := range branches {
 				if b != nil && b.IsMain {
@@ -245,7 +245,11 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 
 			var coverages []*workflow.CoverageView
 			if h.wfSvc != nil {
-				coverages, _ = h.wfSvc.ListCoverageForOrganization(sysCtx, o.ID)
+				if loaded, err := h.wfSvc.ListCoverageForOrganization(sysCtx, o.ID); err != nil {
+					h.logLoadErr(ctx, "wfSvc.ListCoverageForOrganization", err)
+				} else {
+					coverages = loaded
+				}
 			}
 
 			workingHours, coverageDays, coverageAreas, isOpenNow, statusNote := computeVendorWorkingStatus(branches, coverages)
@@ -324,7 +328,8 @@ func (h *UIHandler) FollowedSuppliersPage(w http.ResponseWriter, r *http.Request
 
 	var suppliers []*org.Organization
 	if h.orgSvc != nil {
-		rawList, _ := h.orgSvc.ListFollowedOrganizations(ctx, userID)
+		rawList, loadErr := h.orgSvc.ListFollowedOrganizations(ctx, userID)
+		h.logLoadErr(ctx, "orgSvc.ListFollowedOrganizations", loadErr)
 		buyerOrg := buyerOrgID(ctx)
 		for _, s := range rawList {
 			if s == nil {

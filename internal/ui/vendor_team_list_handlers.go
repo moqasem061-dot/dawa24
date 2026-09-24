@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorTeamPage renders the staff and RBAC roles configuration view.
@@ -92,7 +92,8 @@ func (h *UIHandler) VendorTeamPage(w http.ResponseWriter, r *http.Request) {
 			}
 		} else {
 			// Fallback to ListMembers if ListEmployees returns empty
-			members, _ := h.orgSvc.ListMembers(ctx, actor.OrganizationID)
+			members, loadErr := h.orgSvc.ListMembers(ctx, actor.OrganizationID)
+			h.logLoadErr(ctx, "orgSvc.ListMembers", loadErr)
 			for _, m := range members {
 				name := i18n.T(lang, "role.employee")
 				email := ""
@@ -145,7 +146,9 @@ func (h *UIHandler) VendorTeamPage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// 2. Fetch branches for the branch dropdown
-		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err == nil {
+		if branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			for _, b := range branches {
 				bName := b.Name.Get(i18n.AR)
 				if bName == "" {

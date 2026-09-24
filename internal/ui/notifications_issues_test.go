@@ -14,14 +14,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockIssueNotifRepo struct {
@@ -46,7 +46,6 @@ func (m *mockIssueNotifRepo) HasNotificationWithTitle(_ context.Context, userID 
 	}
 	return false, nil
 }
-
 
 type mockIssueWorkflowRepo struct {
 	workflow.Repository
@@ -134,7 +133,7 @@ func TestIssueNotification_CustomerReportNotifiesAdmins(t *testing.T) {
 	form.Set("priority", "high")
 	form.Set("description", "زر الدفع لا يستجيب في صفحة الطلبات")
 
-	req := httptest.NewRequest(http.MethodPost, "/report-issue", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/report-issue", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	actor := authctx.Actor{
@@ -199,7 +198,7 @@ func TestIssueNotification_AdminResponseNotifiesReporter(t *testing.T) {
 	form.Set("status", "resolved")
 	form.Set("response_notes", "تم مراجعة العملية وإعادة الرصيد إلى محفظتك بنجاح.")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/report-issues/10/status", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/report-issues/10/status", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	adminActor := authctx.Actor{

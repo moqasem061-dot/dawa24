@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
@@ -125,7 +125,7 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 		"redirect_url":    {fmt.Sprintf("/orders/%d", orderID)},
 	}
 
-	revReq := httptest.NewRequest(http.MethodPost, "/reviews/submit", strings.NewReader(reviewForm.Encode()))
+	revReq := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/reviews/submit", strings.NewReader(reviewForm.Encode()))
 	revReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	revReq = revReq.WithContext(authctx.WithActor(revReq.Context(), pharmActor))
 	revRec := httptest.NewRecorder()
@@ -181,7 +181,7 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 		Permissions:    []string{"vendor.review.view", "vendor.review.reply"},
 	}
 
-	vListReq := httptest.NewRequest(http.MethodGet, "/vendor/reviews", nil)
+	vListReq := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/reviews", nil)
 	vListReq = vListReq.WithContext(authctx.WithActor(vListReq.Context(), vendActor))
 	vListRec := httptest.NewRecorder()
 
@@ -201,7 +201,7 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 	replyForm := url.Values{
 		"response": {"شكراً جزيلاً دكتور، نسعد دائماً بخدمة صيدليتكم الموقرة."},
 	}
-	replyReq := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/vendor/reviews/%d/reply", reviewID), strings.NewReader(replyForm.Encode()))
+	replyReq := httptest.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("/vendor/reviews/%d/reply", reviewID), strings.NewReader(replyForm.Encode()))
 	replyReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	replyReq = replyReq.WithContext(authctx.WithActor(replyReq.Context(), vendActor))
 	replyRec := httptest.NewRecorder()
@@ -219,7 +219,7 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 	}
 
 	// 8. View public supplier profile (/suppliers/{id}?tab=reviews)
-	pubReq := httptest.NewRequest(http.MethodGet, fmt.Sprintf("/suppliers/%d?tab=reviews", vendorOrgID), nil)
+	pubReq := httptest.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("/suppliers/%d?tab=reviews", vendorOrgID), nil)
 	pubRec := httptest.NewRecorder()
 
 	handler.ServeHTTP(pubRec, pubReq)

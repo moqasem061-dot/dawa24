@@ -3,7 +3,7 @@ package notifications
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // EventKey represents a unique, stable notification event identifier.
@@ -72,10 +72,10 @@ const (
 	EventBranchInstitutionalWorksChanged EventKey = "branch.institutional_works.changed"
 
 	// Team & Identity
-	EventUserAddedToOrg         EventKey = "org.user.added"
-	EventUserRemovedFromOrg     EventKey = "org.user.removed"
-	EventUserRoleChanged        EventKey = "user.role.changed"
-	EventUserPasswordSetByAdmin EventKey = "user.password.set_by_admin"
+	EventUserAddedToOrg                 EventKey = "org.user.added"
+	EventUserRemovedFromOrg             EventKey = "org.user.removed"
+	EventUserRoleChanged                EventKey = "user.role.changed"
+	EventUserPasswordSetByAdmin         EventKey = "user.password.set_by_admin"
 	EventAccountRegistered              EventKey = "account.registered"
 	EventAdminsNewRegistration          EventKey = "admin.new_registration"
 	EventAdminsNewJobSeekerRegistration EventKey = "admin.new_job_seeker_registration"
@@ -89,9 +89,9 @@ const (
 	EventRefundIssued           EventKey = "billing.refund.issued"
 
 	// Wallet
-	EventWalletDepositPending    EventKey = "wallet.deposit.pending"
-	EventWalletDepositApproved   EventKey = "wallet.deposit.approved"
-	EventWalletDepositRejected   EventKey = "wallet.deposit.rejected"
+	EventWalletDepositPending     EventKey = "wallet.deposit.pending"
+	EventWalletDepositApproved    EventKey = "wallet.deposit.approved"
+	EventWalletDepositRejected    EventKey = "wallet.deposit.rejected"
 	EventWalletWithdrawalPending  EventKey = "wallet.withdrawal.pending"
 	EventWalletWithdrawalApproved EventKey = "wallet.withdrawal.approved"
 	EventWalletWithdrawalRejected EventKey = "wallet.withdrawal.rejected"

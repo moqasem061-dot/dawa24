@@ -3,9 +3,9 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type MFASettingsViewData struct {
@@ -82,7 +82,7 @@ templ mfaSettingsContent(lang, dir string, data MFASettingsViewData) {
 		if len(data.RecoveryCodes) > 0 {
 			<div class="glass-panel p-6 mb-6 border-emerald bg-surface-raised shadow-sm">
 				<div class="d-flex items-start gap-4 mb-4">
-					<span class="text-2xl">🎉</span>
+					<span class="text-2xl">@components.IconCheckCircle("icon-lg")</span>
 					<div class="stack-xs">
 						<h3 class="font-bold text-base text-primary m-0">
 							تم تفعيل المصادقة الثنائية بنجاح!

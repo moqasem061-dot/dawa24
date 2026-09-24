@@ -51,7 +51,12 @@ migrate-status: ## List migrations and show how many are pending
 # pipeline, so failures are found before a push rather than after one.
 
 .PHONY: check
-check: fmt-check vet lint test check-provider-isolation check-prompt-version check-file-size check-inline-styles check-error-swallow check-no-cdn check-file-size-count check-hardcoded-arabic check-emoji check-unused-components check-important check-backdrop-filter check-transition-all check-breakpoints check-physical-properties check-topbar-impls check-modal-legacy check-modal-handwritten check-css-layered check-deadcode check-undefined-classes check-alpine-csp ## Run every gate
+check: gates test ## Run every gate and the test suite
+
+# gates is every static check without the test suite. CI runs the suite once
+# on its own (race detector and coverage together) and then this.
+.PHONY: gates
+gates: fmt-check vet lint check-provider-isolation check-prompt-version check-file-size check-inline-styles check-error-swallow check-no-cdn check-file-size-count check-hardcoded-arabic check-emoji check-unused-components check-important check-backdrop-filter check-transition-all check-breakpoints check-physical-properties check-topbar-impls check-modal-legacy check-modal-handwritten check-css-layered check-deadcode check-undefined-classes check-alpine-csp ## Run every static gate (no tests)
 
 .PHONY: check-error-swallow
 check-error-swallow: ## Fail if a service error is silently discarded
@@ -67,7 +72,7 @@ check-error-swallow: ## Fail if a service error is silently discarded
 	    grep -rnE '[a-zA-Z]+, _ = h\.[a-zA-Z]+Svc\.' internal/ui/*.go; \
 	    grep -rn '_ = pages\.' internal/ui/*.go; } | grep -v '_test.go' | grep -v 'nolint:errswallow'; \
 	  echo ""; \
-	  echo "Each site must surface the error (see docs/PLAN_V6/04_PHASE_D_SILENCE.md §D.1.4)."; \
+	  echo "Each site must surface the error: log it, return it, or show it to the user."; \
 	  echo "If silence is genuinely correct, annotate the line with // nolint:errswallow and say why."; \
 	  exit 1; \
 	fi; \
@@ -79,7 +84,8 @@ fmt: ## Format the codebase
 
 .PHONY: fmt-check
 fmt-check: ## Fail if anything is unformatted
-	@out=$$(gofmt -l .); if [ -n "$$out" ]; then echo "unformatted files:"; echo "$$out"; exit 1; fi
+	@# Files git tracks or would track: gitignored scratch (tmp/) is not the repo.
+	@out=$$(git ls-files -co --exclude-standard -- '*.go' | xargs gofmt -l); if [ -n "$$out" ]; then echo "unformatted files:"; echo "$$out"; exit 1; fi
 
 .PHONY: vet
 vet: ## Run go vet
@@ -112,11 +118,13 @@ check-provider-isolation: ## Fail if an AI provider name leaks outside platform/
 	     --include='*.go' --include='*.templ' --include='*.sql' \
 	     ./cmd ./internal ./db 2>/dev/null \
 	     | grep -v '^./internal/platform/gateway/' \
+	     | grep -v '^./internal/platform/antiscrape/' \
 	     | grep -v '_test.go'; then \
 	  echo ""; \
 	  echo "ERROR: an AI provider name appears outside internal/platform/gateway/."; \
+	  echo "(antiscrape is exempt: it names crawler user agents, not providers.)"; \
 	  echo "The Store must be provider-agnostic: ask the Gateway for a capability,"; \
-	  echo "never for a named provider or model. See docs/adr/0005-ai-gateway.md."; \
+	  echo "never for a named provider or model. See docs/adr/decisions.md (ADR 0005)."; \
 	  exit 1; \
 	fi
 	@echo "  ok: no provider names outside the gateway package"
@@ -153,16 +161,16 @@ build: ## Build all binaries into ./bin
 
 .PHONY: docker
 docker: ## Build the container image
-	docker build --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t dawa24-store:$(VERSION) .
+	docker build --build-arg VERSION=$(VERSION) --build-arg COMMIT=$(COMMIT) -t dawa24:$(VERSION) .
 
 check-inline-styles: ## Fail if inline style attributes grow past the current ceiling
 	@echo "==> checking inline styles"
-	# Ceiling lowered to 11 during the design-system unification. No inline style
+	# Ceiling 5: the CSP-hardening pass removed the rest. Before that it was 11. No inline style
 	# was added by it; the ceiling had simply drifted 70 above the real value,
 	# which is a ratchet that has stopped ratcheting.
 	@n=$$(grep -oh 'style="' internal/ui/pages/*.templ internal/ui/layouts/*.templ | wc -l | tr -d ' '); \
-	if [ "$$n" -gt 11 ]; then \
-	  echo "FAIL: $$n inline style attributes (ceiling 11)."; \
+	if [ "$$n" -gt 5 ]; then \
+	  echo "FAIL: $$n inline style attributes (ceiling 5)."; \
 	  echo ""; \
 	  echo "Inline styles bypass the tokens in app.css, which is why the design"; \
 	  echo "drifted: a fix on one page never generalises. Use a class from"; \
@@ -172,7 +180,7 @@ check-inline-styles: ## Fail if inline style attributes grow past the current ce
 	  echo "This is a ratchet: lower the ceiling in the Makefile as it drops."; \
 	  exit 1; \
 	fi; \
-	echo "OK: $$n inline styles (ceiling 11)"
+	echo "OK: $$n inline styles (ceiling 5)"
 
 # --- ratchets ------------------------------------------------------------
 # Each number below may only go down. When a change improves one, lower its
@@ -216,35 +224,39 @@ check-hardcoded-arabic: ## Fail if user-facing Arabic is hardcoded in Go
 
 .PHONY: check-emoji
 check-emoji: ## Fail if emoji in templates grow
-	# Ceiling lowered to 8 in Phase 5 Wave 2.
-	@pat=$$(printf '\360\237'); n=$$(LC_ALL=C grep -ro "$$pat" --include='*.templ' internal/ui | wc -l | tr -d " "); if [ "$$n" -gt 8 ]; then echo "FAIL: $$n emoji in templates (ceiling 8). Use an icon from internal/ui/components/icons.templ, or nothing."; exit 1; fi; echo "  ok: $$n emoji in templates (ceiling 8)"
+	# Ceiling 0: every emoji is now an icon from components/icons.templ.
+	@pat=$$(printf '\360\237'); n=$$(LC_ALL=C grep -ro "$$pat" --include='*.templ' internal/ui | wc -l | tr -d " "); if [ "$$n" -gt 0 ]; then echo "FAIL: $$n emoji in templates (ceiling 0). Use an icon from internal/ui/components/icons.templ, or nothing."; exit 1; fi; echo "  ok: $$n emoji in templates (ceiling 0)"
 
 .PHONY: check-unused-components
 check-unused-components: ## Fail if components no page uses grow
 	@n=0; for f in internal/ui/components/*.templ; do for fn in $$(grep -oE "^templ [A-Za-z0-9_]+" "$$f" | awk '{print $$2}'); do p=$$(grep -rho "components\.$$fn" --include='*.templ' internal/ui/pages internal/ui/layouts 2>/dev/null | wc -l); i=$$(grep -rho "@$$fn(" --include='*.templ' internal/ui/components 2>/dev/null | wc -l); g=$$(grep -rho "components\.$$fn" internal/ui/*.go 2>/dev/null | wc -l); if [ "$$p" -eq 0 ] && [ "$$i" -eq 0 ] && [ "$$g" -eq 0 ]; then n=$$((n+1)); echo "  unused: $$fn"; fi; done; done; if [ "$$n" -gt 0 ]; then echo "FAIL: $$n components nothing references (ceiling 0). Either a page should use it, or it should not exist."; exit 1; fi; echo "  ok: every component is referenced"
 
 .PHONY: check-important
-check-important: ## Fail if !important occurrences exceed defended ceiling (3)
+check-important: ## Fail if !important declarations exceed the visibility primitives (8)
 	@echo "==> checking !important in CSS"
-	# invoice_printable.css is excluded: it is a standalone print document with
-	# its own <!DOCTYPE>, its own :root and a * reset, loaded by no other page.
-	# There is no author cascade there for an !important to short-circuit.
-	@n=$$(grep -ro '!important' internal/ui/static/css/*.css 2>/dev/null | grep -v invoice_printable | wc -l | tr -d ' '); \
-	if [ "$$n" -gt 3 ]; then \
-	  echo "FAIL: $$n !important occurrences in CSS (ceiling 3). Cascade layers must resolve precedence."; \
+	# Counted outside comments and @media print (print must beat screen styles,
+	# including ones set from JavaScript), and outside invoice_printable.css, a
+	# standalone print document. The 8 that remain are the visibility
+	# primitives — .hidden, [hidden], dialog:not([open]), show/hide by
+	# breakpoint — which must win over every layer. A rule that has to beat a
+	# utility belongs in @layer overrides, not behind !important.
+	@n=$$(node scripts/css-important-count.cjs 2>/dev/null); \
+	if [ "$$n" -gt 8 ]; then \
+	  echo "FAIL: $$n !important declarations in CSS (ceiling 8)."; \
+	  node scripts/css-important-count.cjs >/dev/null; \
 	  exit 1; \
 	fi; \
-	echo "  ok: $$n !important occurrences outside the print document (ceiling 3)"
+	echo "  ok: $$n !important declarations, all visibility primitives (ceiling 8)"
 
 .PHONY: check-backdrop-filter
 check-backdrop-filter: ## Fail if backdrop-filter exceeds dialog overlay ceiling (4 including vendor prefix)
 	@echo "==> checking backdrop-filter in CSS"
 	@n=$$(grep -rn 'backdrop-filter:' internal/ui/static/css/*.css 2>/dev/null | grep -v '^\s*/\*' | wc -l | tr -d ' '); \
-	if [ "$$n" -gt 0 ]; then \
-	  echo "FAIL: $$n backdrop-filter rules in CSS (ceiling 0). The surfaces that used one are opaque now."; \
+	if [ "$$n" -gt 4 ]; then \
+	  echo "FAIL: $$n backdrop-filter rules in CSS (ceiling 4: the dialog overlay and its ::backdrop, each with its -webkit- prefix). Every other surface is opaque."; \
 	  exit 1; \
 	fi; \
-	echo "  ok: $$n backdrop-filter rules (ceiling 0)"
+	echo "  ok: $$n backdrop-filter rules (ceiling 4, the dialog overlay)"
 
 .PHONY: check-transition-all
 check-transition-all: ## Fail if transition: all appears in CSS
@@ -317,10 +329,9 @@ check-alpine-csp: ## Fail if an Alpine expression is outside what the @alpinejs/
 .PHONY: check-deadcode
 check-deadcode: ## Fail if unreachable exported code grows past the ceiling
 	@echo "==> checking for unreachable code"
-	@if ! go run golang.org/x/tools/cmd/deadcode@latest -test ./... > /tmp/dawa_deadcode.txt 2>/dev/null; then 	  echo "  skipped: deadcode unavailable (needs network on first run)"; exit 0; 	fi; 	n=$$(wc -l < /tmp/dawa_deadcode.txt | tr -d ' '); 	if [ "$$n" -gt 211 ]; then 	  echo "FAIL: $$n unreachable funcs (ceiling 211). See /tmp/dawa_deadcode.txt."; 	  echo "Read each finding before deleting: a symbol may be reached from a .templ"; 	  echo "file, which deadcode does not parse."; 	  exit 1; 	fi; 	echo "  ok: $$n unreachable funcs (ceiling 211)"
+	@if ! go run golang.org/x/tools/cmd/deadcode@v0.50.0 -test ./... > /tmp/dawa_deadcode.txt 2>/dev/null; then 	  echo "  skipped: deadcode unavailable (needs network on first run)"; exit 0; 	fi; 	n=$$(wc -l < /tmp/dawa_deadcode.txt | tr -d ' '); 	if [ "$$n" -gt 211 ]; then 	  echo "FAIL: $$n unreachable funcs (ceiling 211). See /tmp/dawa_deadcode.txt."; 	  echo "Read each finding before deleting: a symbol may be reached from a .templ"; 	  echo "file, which deadcode does not parse."; 	  exit 1; 	fi; 	echo "  ok: $$n unreachable funcs (ceiling 211)"
 
 .PHONY: check-undefined-classes
 check-undefined-classes: ## Fail if templates reference class names no stylesheet defines
 	@echo "==> checking for class names with no CSS rule"
-	@grep -rhoE 'class="[^"]*"' internal/ui/pages/*.templ internal/ui/layouts/*.templ internal/ui/components/*.templ 	  | sed 's/class="//; s/"$$//' | tr ' ' '
-' 	  | grep -E '^[a-zA-Z][a-zA-Z0-9_-]*$$' | sort -u > /tmp/dawa_used.txt; 	grep -rhoE '\.[a-zA-Z][a-zA-Z0-9_-]*' internal/ui/static/css/*.css | sed 's/^\.//' | sort -u > /tmp/dawa_defined.txt; 	n=$$(comm -23 /tmp/dawa_used.txt /tmp/dawa_defined.txt | wc -l | tr -d ' '); 	if [ "$$n" -gt 64 ]; then 	  echo "FAIL: $$n class names have no CSS rule (ceiling 64)."; 	  echo ""; 	  echo "An element carrying a class nothing defines is unstyled. This is how"; 	  echo "the inline-style conversion silently removed styling: the style attribute"; 	  echo "went, and the class replacing it was never written."; 	  comm -23 /tmp/dawa_used.txt /tmp/dawa_defined.txt | head -20; 	  exit 1; 	fi; 	echo "  ok: $$n undefined classes (ceiling 64; the remainder are Alpine state names in :class bindings)"
+	@grep -rhoE '(^|[^:a-zA-Z-])class="[^"]*"' internal/ui/pages/*.templ internal/ui/layouts/*.templ internal/ui/components/*.templ 	  | sed -E 's/^.?class="//; s/"$$//' | tr ' ' '\n' 	  | grep -E '^[a-zA-Z][a-zA-Z0-9_-]*$$' | sort -u > /tmp/dawa_used.txt; 	grep -rhoE '\.[a-zA-Z][a-zA-Z0-9_-]*' internal/ui/static/css/*.css | sed 's/^\.//' | sort -u > /tmp/dawa_defined.txt; 	n=$$(comm -23 /tmp/dawa_used.txt /tmp/dawa_defined.txt | wc -l | tr -d ' '); 	if [ "$$n" -gt 20 ]; then 	  echo "FAIL: $$n class names have no CSS rule (ceiling 20)."; 	  echo ""; 	  echo "An element carrying a class nothing defines is unstyled. This is how"; 	  echo "the inline-style conversion silently removed styling: the style attribute"; 	  echo "went, and the class replacing it was never written."; 	  comm -23 /tmp/dawa_used.txt /tmp/dawa_defined.txt | head -20; 	  exit 1; 	fi; 	echo "  ok: $$n undefined classes (ceiling 20; each is a JavaScript hook, not a style)"

@@ -1,12 +1,13 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // The account lifecycle, asserted as a table.
@@ -84,7 +85,7 @@ func TestAccountLifecycleMatrix(t *testing.T) {
 				// unblocks it, is stuck with no way out.
 				for _, path := range []string{tierAStatus, tierADocuments} {
 					rec := httptest.NewRecorder()
-					router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+					router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil))
 					if rec.Code == http.StatusFound {
 						t.Errorf("%s: GET %s redirected to %q; pre-approval routes must stay reachable in every state",
 							name, path, rec.Header().Get("Location"))
@@ -94,7 +95,7 @@ func TestAccountLifecycleMatrix(t *testing.T) {
 				// Tier B follows approval.
 				for _, path := range []string{tierBWallet, tierBInvoices} {
 					rec := httptest.NewRecorder()
-					router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+					router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil))
 
 					if tc.tierBAllowed {
 						if rec.Code == http.StatusFound {
@@ -143,7 +144,7 @@ func TestUnapprovedOrganizationCannotMoveMoney(t *testing.T) {
 			t.Run(status+" "+w.path, func(t *testing.T) {
 				router := newTestRouter(lifecycleActor("customer", status))
 				rec := httptest.NewRecorder()
-				router.ServeHTTP(rec, httptest.NewRequest(w.method, w.path, nil))
+				router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), w.method, w.path, nil))
 
 				if rec.Code != http.StatusFound {
 					t.Errorf("%s %s as %s returned %d, want %d — this write must not reach its handler",
@@ -172,7 +173,7 @@ func TestSharedRoutesEnforceAudience(t *testing.T) {
 		t.Run(tc.actorType+" -> "+tc.path, func(t *testing.T) {
 			router := newTestRouter(lifecycleActor(tc.actorType, "approved"))
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, tc.path, nil))
+			router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, tc.path, nil))
 
 			if rec.Code != http.StatusSeeOther {
 				t.Errorf("GET %s as %s returned %d, want %d — unauthorized audience should redirect to dashboard",

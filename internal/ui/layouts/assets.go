@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/a-h/templ"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Asset resolves a static asset path to the URL the browser should request.
@@ -64,4 +64,3 @@ func clientI18nScript(lang, dir string) templ.Component {
 		return err
 	})
 }
-

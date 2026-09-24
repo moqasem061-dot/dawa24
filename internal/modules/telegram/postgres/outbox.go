@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
 )
 
 // ClaimDeliveries leases due messages for active links. A lease that expires

@@ -8,11 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // AdminOrgImportVendorIngestSettingsSubmit records import rules on behalf of vendor org.
@@ -41,7 +40,8 @@ func (h *UIHandler) AdminOrgImportVendorIngestSettingsSubmit(w http.ResponseWrit
 		}
 	}
 	if settings.WarehouseID <= 0 && h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(sysCtx)
+		whs, loadErr := h.invSvc.ListWarehouses(sysCtx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, w := range whs {
 			if w.OrganizationID == orgID && w.IsActive {
 				settings.WarehouseID = w.ID
@@ -54,9 +54,9 @@ func (h *UIHandler) AdminOrgImportVendorIngestSettingsSubmit(w http.ResponseWrit
 	}
 
 	settings.Mode = ingest.ParseMode(r.PostFormValue("mode"))
-	settings.StockMode = inventory.StockMode(r.PostFormValue("stock_mode"))
+	settings.StockMode = ingest.StockMode(r.PostFormValue("stock_mode"))
 	settings.Duplicates = productmatch.DuplicatePolicy(r.PostFormValue("duplicates"))
-	if score, err := strconv.ParseFloat(r.PostFormValue("min_match_score"), 64); err == nil {
+	if score, err := strconv.ParseFloat(r.PostFormValue("min_match_score"), 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.MinMatchScore = score / 100
 	}
 	settings.TrustSupplierCode = checked(r, "trust_supplier_code")
@@ -68,10 +68,10 @@ func (h *UIHandler) AdminOrgImportVendorIngestSettingsSubmit(w http.ResponseWrit
 	settings.PublishImmediately = checked(r, "publish_immediately")
 	settings.UseAI = checked(r, "use_ai") && h.ingSvc.AIAvailable()
 	settings.RecordRows = checked(r, "record_rows")
-	if v, err := strconv.Atoi(r.PostFormValue("default_min_order_qty")); err == nil {
+	if v, err := strconv.Atoi(r.PostFormValue("default_min_order_qty")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.DefaultMinOrderQty = v
 	}
-	if v, err := strconv.Atoi(r.PostFormValue("default_min_threshold")); err == nil {
+	if v, err := strconv.Atoi(r.PostFormValue("default_min_threshold")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.DefaultMinThreshold = v
 	}
 

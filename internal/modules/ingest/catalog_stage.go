@@ -16,14 +16,13 @@ package ingest
 import (
 	"context"
 	"fmt"
-	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // maxOpenQuestions bounds the residue the AI stage will even consider.
@@ -62,12 +61,18 @@ func (s *Service) StageImport(ctx context.Context, session *Session) error {
 
 	var variantIdx *variantIndex
 	if s.catalog != nil {
-		if keys, err := s.catalog.ListVariantKeys(ctx, session.OrganizationID); err == nil {
+		if keys, err := s.catalog.ListVariantKeys(ctx, session.OrganizationID); err == nil { // nolint:errswallow: the else branch logs it
 			var inWarehouse map[int64]bool
 			if s.inventory != nil && session.Settings.WarehouseID > 0 {
-				inWarehouse, _ = s.inventory.VariantIDsInWarehouse(ctx, session.Settings.WarehouseID)
+				set, werr := s.inventory.VariantIDsInWarehouse(ctx, session.Settings.WarehouseID)
+				if werr != nil {
+					s.log.WarnContext(ctx, "warehouse variant set unavailable for staging", "import", session.PublicID, "error", werr)
+				}
+				inWarehouse = set
 			}
 			variantIdx = newVariantIndex(keys, inWarehouse, session.Settings.BranchID)
+		} else {
+			s.log.WarnContext(ctx, "variant keys unavailable; staging without variant matching", "import", session.PublicID, "error", err)
 		}
 	}
 
@@ -186,213 +191,4 @@ func stagingMatchOptions(settings Settings, mapped productmatch.MappedColumns) p
 	// from: a band wide enough to hold every coincidence in the catalogue.
 	opts.MinReview = max(productmatch.DefaultMinReview, min(opts.MinStrong*0.7, 0.35))
 	return opts.WithIdentifiers(mapped, settings.identifierChoices())
-}
-
-// stagingRun carries the state of one staging pass.
-type stagingRun struct {
-	svc        *Service
-	session    *Session
-	index      *productmatch.Index
-	variantIdx *variantIndex
-	match      productmatch.MatchOptions
-
-	counts counters
-
-	// byNorm collects the residue as QUESTIONS rather than rows: every row with
-	// the same normalised name asks the same thing, so they share one entry and
-	// one retrieval. On a supplier file that repeats a product per warehouse
-	// this is where most of the saving comes from, and it costs one map.
-	byNorm map[string]*openRow
-	open   []*openRow
-	// bucketOf remembers which counter each open row was first tallied under,
-	// so an AI match can move it without the review screen disagreeing with
-	// itself.
-	bucketOf map[int]matchBucket
-	// ceilingHit records that the residue outgrew what one run may ask about.
-	ceilingHit bool
-}
-
-// stage matches one batch of parsed rows and writes them to the staging table.
-func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error {
-	staged := make([]RowOutcome, 0, len(batch))
-
-	// The whole batch is scored at once, across every core.
-	//
-	// Matching is pure CPU over a read-only index, so it divides perfectly, and
-	// on the twenty-five-thousand-row price lists this importer exists for the
-	// difference is most of the wall clock: measured on a twelve-core machine,
-	// twelve thousand rows a second against eight thousand.
-	results := productmatch.MatchAll(r.index, batch, r.match, 0)
-
-	if r.svc.memory != nil && len(batch) > 0 {
-		lookupKeys := make([]string, 0, len(batch)*4)
-		for _, row := range batch {
-			name := row.DisplayName()
-			if name == "" {
-				continue
-			}
-			norm := productmatch.NormalizeText(productmatch.StripTradeAnnotations(name))
-			rawNorm := strings.ToLower(strings.TrimSpace(name))
-			if norm != "" {
-				lookupKeys = append(lookupKeys, norm, "manual:"+norm)
-			}
-			if rawNorm != "" && rawNorm != norm {
-				lookupKeys = append(lookupKeys, rawNorm, "manual:"+rawNorm)
-			}
-		}
-		if len(lookupKeys) > 0 {
-			lookupCtx := database.WithTenant(ctx, r.session.OrganizationID)
-			if decs, err := r.svc.memory.LookupDecisions(lookupCtx, lookupKeys); err == nil && len(decs) > 0 {
-				for i, row := range batch {
-					if results[i].Level == productmatch.MatchBarcode {
-						continue
-					}
-					name := row.DisplayName()
-					norm := productmatch.NormalizeText(productmatch.StripTradeAnnotations(name))
-					rawNorm := strings.ToLower(strings.TrimSpace(name))
-					var dec *CachedDecision
-					if d, ok := decs["manual:"+norm]; ok {
-						dec = &d
-					} else if d, ok := decs[norm]; ok {
-						dec = &d
-					} else if d, ok := decs["manual:"+rawNorm]; ok {
-						dec = &d
-					} else if d, ok := decs[rawNorm]; ok {
-						dec = &d
-					}
-
-					if dec != nil && dec.ChosenProductID != nil && *dec.ChosenProductID > 0 {
-						if dec.Source == "manual" || dec.Confidence >= 0.80 {
-							if p, ok := r.index.Lookup(*dec.ChosenProductID); ok && p != nil {
-								reason := "مطابقة معتمدة من ذاكرة القرارات"
-								if dec.Source == "manual" {
-									reason = "مطابقة يدوية معتمدة من ذاكرة القرارات"
-								}
-								pName := p.NameAR
-								if pName == "" {
-									pName = p.NameEN
-								}
-								results[i] = productmatch.MatchResult{
-									ProductID: p.ID,
-									Level:     productmatch.MatchExact,
-									Score:     1.0,
-									Reason:    reason,
-									Candidates: []productmatch.MatchCandidate{
-										{
-											ProductID:     p.ID,
-											Name:          pName,
-											Scientific:    p.Scientific,
-											DosageForm:    p.DosageForm,
-											Concentration: p.Concentration,
-											Manufacturer:  p.Manufacturer,
-											Score:         1.0,
-											Reason:        reason,
-										},
-									},
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
-	for i, row := range batch {
-		m := results[i]
-		bucket := bucketOf(m)
-		r.count(bucket, 1)
-		r.bucketOf[row.Number] = bucket
-
-		outcome := OutcomeStaged
-		if row.HasErrors() {
-			outcome = OutcomeError
-			r.counts.errors++
-		}
-
-		// A row the reader rejected is not worth asking about: it will not be
-		// committed whatever the answer, and paying for it is pure waste.
-		//
-		// Everything else is remembered, settled or not. A settled row is asked
-		// a different question — "is this right?" rather than "what is this?" —
-		// and the planner spends the run's budget on the uncertain rows first,
-		// so putting the whole file in front of the model costs the confident
-		// rows only what is left over.
-		if outcome != OutcomeError {
-			r.remember(row, m)
-		}
-
-		var productID *int64
-		var variantID *int64
-		inWarehouse := false
-		if m.ProductID > 0 {
-			id := m.ProductID
-			productID = &id
-		}
-		if r.variantIdx != nil {
-			pID := int64(0)
-			if productID != nil {
-				pID = *productID
-			}
-			if vID, _ := r.variantIdx.resolve(row, pID, nil); vID > 0 {
-				variantID = &vID
-				inWarehouse = r.variantIdx.inWarehouse != nil && r.variantIdx.inWarehouse[vID]
-			}
-		}
-
-		staged = append(staged, RowOutcome{
-			SourceRow:         row.Number,
-			Outcome:           outcome,
-			MatchLevel:        string(m.Level),
-			MatchScore:        m.Score,
-			ProductID:         productID,
-			VariantID:         variantID,
-			InWarehouse:       inWarehouse,
-			DisplayName:       row.Name,
-			SourceCode:        row.SKU,
-			CustomVariantName: row.Name,
-			Payload:           row,
-			Candidates:        m.Candidates,
-			Issues:            row.Issues,
-			Message:           m.Reason,
-		})
-	}
-
-	return r.svc.imports.AppendRows(ctx, r.session.ID, r.session.OrganizationID, staged)
-}
-
-// remember files an unsettled row under the question it asks.
-//
-// The first row to ask a question owns it; later rows carrying the same
-// normalised name attach their row number and nothing else. The parsed row of
-// the first is the one the identity guard re-reads, which is correct because
-// the guard reads the name and the strength — the very things that made these
-// rows one question.
-func (r *stagingRun) remember(row *productmatch.Row, m productmatch.MatchResult) {
-	if len(r.byNorm) >= maxOpenQuestions {
-		r.ceilingHit = true
-		return
-	}
-	key := productmatch.NormalizeText(row.DisplayName())
-	if key == "" {
-		return
-	}
-	if known, ok := r.byNorm[key]; ok {
-		known.sourceRows = append(known.sourceRows, row.Number)
-		return
-	}
-	q := &openRow{
-		row:        row,
-		sourceRows: []int{row.Number},
-		normName:   key,
-		score:      m.Score,
-		settled:    m.Level.Settled() && verifiable(m.Level),
-		ambiguous:  m.Level == productmatch.MatchAmbiguous,
-	}
-	if m.ProductID > 0 {
-		id := m.ProductID
-		q.guess = &id
-	}
-	r.byNorm[key] = q
-	r.open = append(r.open, q)
 }

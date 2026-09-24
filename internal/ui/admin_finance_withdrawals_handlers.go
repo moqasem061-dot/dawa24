@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // AdminWithdrawalApproveSubmit approves a pending withdrawal request and debits the user's wallet.
@@ -35,12 +35,11 @@ func (h *UIHandler) AdminWithdrawalApproveSubmit(w http.ResponseWriter, r *http.
 	}
 
 	_ = r.ParseMultipartForm(10 << 20)
-	var transferReceiptURL string
-	if file, _, err := r.FormFile("transfer_receipt"); err == nil && file != nil {
-		_ = file.Close()
-		if savedPath, err := saveUploadedFile(r, "transfer_receipt", "receipts"); err == nil {
-			transferReceiptURL = savedPath
-		}
+	transferReceiptURL, uploadErr := optionalUpload(r, "transfer_receipt", "receipts")
+	if uploadErr != nil {
+		h.log.WarnContext(ctx, "withdrawal transfer receipt could not be saved", "error", uploadErr, "withdrawal_id", withdrawalID)
+		h.redirectWithNotice(w, r, "/admin/finance/withdrawals?tab=withdrawals", "error", i18n.T(lang, "upload.attachment_failed"))
+		return
 	}
 	if transferReceiptURL == "" {
 		transferReceiptURL = strings.TrimSpace(r.PostFormValue("receipt_url"))

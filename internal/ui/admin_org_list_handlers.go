@@ -5,10 +5,10 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrganizationsPage renders the dedicated organizations management screen.
@@ -43,9 +43,21 @@ func (h *UIHandler) AdminOrganizationsPage(w http.ResponseWriter, r *http.Reques
 			filterStatus = &s
 		}
 
-		stats, _ = h.orgSvc.AdminOrgStats(sysCtx)
-		branchCounts, _ = h.orgSvc.CountBranchesByOrg(sysCtx)
-		orgs, totalMatching, _ = h.orgSvc.ListOrganizationsWithTotal(sysCtx, searchQuery, filterType, filterStatus, limit, offset)
+		if loaded, err := h.orgSvc.AdminOrgStats(sysCtx); err != nil {
+			h.logLoadErr(ctx, "orgSvc.AdminOrgStats", err)
+		} else {
+			stats = loaded
+		}
+		if loaded, err := h.orgSvc.CountBranchesByOrg(sysCtx); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountBranchesByOrg", err)
+		} else {
+			branchCounts = loaded
+		}
+		if loaded, loaded2, err := h.orgSvc.ListOrganizationsWithTotal(sysCtx, searchQuery, filterType, filterStatus, limit, offset); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizationsWithTotal", err)
+		} else {
+			orgs, totalMatching = loaded, loaded2
+		}
 	}
 
 	data := pages.AdminOrganizationsPageData{
@@ -90,7 +102,8 @@ func (h *UIHandler) AdminBranchesPage(w http.ResponseWriter, r *http.Request) {
 	var totalBranches, activeBranches, pharmacyBranches, vendorWarehouses, filteredCount int
 
 	if h.orgSvc != nil {
-		allOrgsList, _ := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0)
+		allOrgsList, loadErr := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0)
+		h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
 		allOrgs = allOrgsList
 		for _, o := range allOrgsList {
 			if o != nil {
@@ -99,7 +112,8 @@ func (h *UIHandler) AdminBranchesPage(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
-		stats, _ := h.orgSvc.AdminBranchStats(sysCtx)
+		stats, loadErr := h.orgSvc.AdminBranchStats(sysCtx)
+		h.logLoadErr(ctx, "orgSvc.AdminBranchStats", loadErr)
 		totalBranches = stats.TotalBranches
 		activeBranches = stats.ActiveBranches
 		pharmacyBranches = stats.PharmacyBranches
@@ -119,7 +133,11 @@ func (h *UIHandler) AdminBranchesPage(w http.ResponseWriter, r *http.Request) {
 			filteredCount = total
 		}
 
-		instWorks, _ = h.orgSvc.ListAllFlatInstitutionalWorks(sysCtx, true)
+		if loaded, err := h.orgSvc.ListAllFlatInstitutionalWorks(sysCtx, true); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListAllFlatInstitutionalWorks", err)
+		} else {
+			instWorks = loaded
+		}
 	}
 
 	noticeType := r.URL.Query().Get("notice")

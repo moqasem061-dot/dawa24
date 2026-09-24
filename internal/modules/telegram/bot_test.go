@@ -2,13 +2,14 @@ package telegram
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 const (
@@ -121,7 +122,7 @@ func TestLinkingRequiresBrowserConfirmationAndRevealsNothing(t *testing.T) {
 	}
 
 	// Only the account owner, signed in, can confirm — and only their own.
-	if _, err := s.ConfirmLink(context.Background(), authctx.Actor{UserID: userB}, repo.links[0].PublicID); err != ErrNoPendingLink {
+	if _, err := s.ConfirmLink(context.Background(), authctx.Actor{UserID: userB}, repo.links[0].PublicID); !errors.Is(err, ErrNoPendingLink) {
 		t.Fatalf("another user confirmed the link: %v", err)
 	}
 	if _, err := s.ConfirmLink(context.Background(), actor, repo.links[0].PublicID); err != nil {
@@ -145,7 +146,7 @@ func TestLinkCodesAreRateLimited(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if _, err := s.StartLink(context.Background(), actor); err != ErrTooManyCodes {
+	if _, err := s.StartLink(context.Background(), actor); !errors.Is(err, ErrTooManyCodes) {
 		t.Fatalf("expected ErrTooManyCodes, got %v", err)
 	}
 }

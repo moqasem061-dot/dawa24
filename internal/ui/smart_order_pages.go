@@ -10,11 +10,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/importprogress"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/importprogress"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // SmartOrderProgressPage renders step 3.
@@ -40,7 +40,8 @@ func (h *UIHandler) SmartOrderProgressPage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	events, _ := h.smartOrderSvc.Events(ctx, run.ID, 0)
+	events, loadErr := h.smartOrderSvc.Events(ctx, run.ID, 0)
+	h.logLoadErr(ctx, "smartOrderSvc.Events", loadErr)
 	data := pages.SmartOrderProgressData{
 		Run:     run,
 		Events:  events,
@@ -264,7 +265,8 @@ func (h *UIHandler) SmartOrderProgressJSON(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	events, _ := h.smartOrderSvc.Events(ctx, run.ID, 0)
+	events, eventsErr := h.smartOrderSvc.Events(ctx, run.ID, 0)
+	h.logLoadErr(ctx, "smartOrderSvc.Events", eventsErr)
 	percent := smartorder.RunPercent(events)
 	caption := i18n.T(lang, "smartorder.staging_caption")
 	if stage := smartorder.CurrentStage(events); stage != "" {

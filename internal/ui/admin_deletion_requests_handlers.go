@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 const deletionRequestsBasePath = "/admin/deletion-requests"
@@ -56,9 +56,21 @@ func (h *UIHandler) AdminDeletionRequestsPage(w http.ResponseWriter, r *http.Req
 	var userPending, userApproved, userRejected int
 
 	if h.orgSvc != nil {
-		_, orgPending, _ = h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusPending), 1, 0)
-		_, orgApproved, _ = h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusApproved), 1, 0)
-		_, orgRejected, _ = h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusRejected), 1, 0)
+		if _, loaded2, err := h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusPending), 1, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizationDeletionRequests", err)
+		} else {
+			orgPending = loaded2
+		}
+		if _, loaded2, err := h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusApproved), 1, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizationDeletionRequests", err)
+		} else {
+			orgApproved = loaded2
+		}
+		if _, loaded2, err := h.orgSvc.ListOrganizationDeletionRequests(ctx, string(org.OrgDeletionStatusRejected), 1, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizationDeletionRequests", err)
+		} else {
+			orgRejected = loaded2
+		}
 
 		if tab == "organizations" {
 			var err error
@@ -73,9 +85,21 @@ func (h *UIHandler) AdminDeletionRequestsPage(w http.ResponseWriter, r *http.Req
 
 	if h.idSvc != nil {
 		sysCtx := database.AsSystem(ctx)
-		_, userPending, _ = h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "pending", 1, 0)
-		_, userApproved, _ = h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "approved", 1, 0)
-		_, userRejected, _ = h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "rejected", 1, 0)
+		if _, loaded2, err := h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "pending", 1, 0); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListDeletionRequestsWithTotal", err)
+		} else {
+			userPending = loaded2
+		}
+		if _, loaded2, err := h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "approved", 1, 0); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListDeletionRequestsWithTotal", err)
+		} else {
+			userApproved = loaded2
+		}
+		if _, loaded2, err := h.idSvc.AdminListDeletionRequestsWithTotal(sysCtx, "rejected", 1, 0); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListDeletionRequestsWithTotal", err)
+		} else {
+			userRejected = loaded2
+		}
 
 		if tab == "users" {
 			var err error

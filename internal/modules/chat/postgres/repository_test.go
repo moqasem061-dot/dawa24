@@ -6,12 +6,12 @@ import (
 	"testing"
 	"time"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/modules/chat"
-	"github.com/muhiya/dawa24-store/internal/modules/chat/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
+	"github.com/moqasem061-dot/dawa24/internal/modules/chat/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func getTestDB(t *testing.T) *database.DB {

@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestVendorPaymentsLifecycle_E2E(t *testing.T) {
@@ -29,7 +29,7 @@ func TestVendorPaymentsLifecycle_E2E(t *testing.T) {
 	}
 
 	// 1. GET /vendor/payments should return 200 OK and show open invoices
-	reqGet := httptest.NewRequest(http.MethodGet, "/vendor/payments", nil)
+	reqGet := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/payments", nil)
 	reqGet = reqGet.WithContext(authctx.WithActor(reqGet.Context(), vendorActor))
 	recGet := httptest.NewRecorder()
 	handler.ServeHTTP(recGet, reqGet)
@@ -50,7 +50,7 @@ func TestVendorPaymentsLifecycle_E2E(t *testing.T) {
 	form.Set("reference_number", "TRX-E2E-PARTIAL-50")
 	form.Set("notes", "Partial payment via automated E2E test")
 
-	reqPost := httptest.NewRequest(http.MethodPost, "/vendor/payments/record", strings.NewReader(form.Encode()))
+	reqPost := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/payments/record", strings.NewReader(form.Encode()))
 	reqPost.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqPost = reqPost.WithContext(authctx.WithActor(reqPost.Context(), vendorActor))
 	recPost := httptest.NewRecorder()

@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // waitForTempWarehouseStaging blocks until every file of the batch has left

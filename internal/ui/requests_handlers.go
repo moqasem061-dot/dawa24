@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // RequestsPage renders the document/action request inbox.
@@ -35,12 +35,20 @@ func (h *UIHandler) RequestsPage(w http.ResponseWriter, r *http.Request) {
 		PerPage:      limit,
 	}
 	if h.wfSvc != nil && actor.OrganizationID > 0 {
-		data.Requests, data.TotalCount, _ = h.wfSvc.ListInboxWithTotal(ctx, actor.OrganizationID, r.URL.Query().Get("status"), limit, offset)
+		if loaded, loaded2, err := h.wfSvc.ListInboxWithTotal(ctx, actor.OrganizationID, r.URL.Query().Get("status"), limit, offset); err != nil {
+			h.logLoadErr(ctx, "wfSvc.ListInboxWithTotal", err)
+		} else {
+			data.Requests, data.TotalCount = loaded, loaded2
+		}
 	}
 	if h.orgSvc != nil {
 		typ := org.TypeVendor
 		status := org.StatusApproved
-		data.Suppliers, _ = h.orgSvc.ListOrganizations(ctx, &typ, &status, 50, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(ctx, &typ, &status, 50, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			data.Suppliers = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render requests page", pages.RequestsPage(lang, dir, r.URL.Query().Get("status"), data))

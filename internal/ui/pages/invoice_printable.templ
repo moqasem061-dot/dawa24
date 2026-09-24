@@ -1,11 +1,11 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 func formatDiscountInt(pct float64) string {
@@ -48,7 +48,6 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 						id="btn-print-a4"
 						type="button"
 						class="btn-action btn-primary"
-						onclick="printA4()"
 						data-on-click="printA4()"
 						title="طباعة الفاتورة بالحجم القياسي A4"
 					>
@@ -60,7 +59,6 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 						id="btn-print-thermal"
 						type="button"
 						class="btn-action btn-thermal"
-						onclick="printThermal()"
 						data-on-click="printThermal()"
 						title="طباعة إيصال كاشير 80 مم"
 					>
@@ -109,7 +107,6 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 						id="btn-print-close"
 						type="button"
 						class="btn-action btn-secondary"
-						onclick="closeWindow()"
 						data-on-click="closeWindow()"
 					>
 						<span>إغلاق</span>
@@ -162,13 +159,8 @@ templ InvoicePrintablePage(data billing.PrintableInvoiceData, lang, dir string) 
 
 				// Direct event attachment and delegation
 				document.addEventListener('DOMContentLoaded', () => {
-					const btnA4 = document.getElementById('btn-print-a4');
-					if (btnA4) btnA4.addEventListener('click', printA4);
-					const btnThermal = document.getElementById('btn-print-thermal');
-					if (btnThermal) btnThermal.addEventListener('click', printThermal);
-					const btnClose = document.getElementById('btn-print-close');
-					if (btnClose) btnClose.addEventListener('click', closeWindow);
-
+					// One binding per button: the buttons also carried id listeners,
+					// so every click opened the print dialog twice.
 					document.addEventListener('click', (e) => {
 						const btn = e.target.closest('[data-on-click]');
 						if (!btn) return;

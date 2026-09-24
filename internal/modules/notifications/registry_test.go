@@ -3,7 +3,7 @@ package notifications_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
 )
 
 func TestNotificationRegistryCompleteness(t *testing.T) {

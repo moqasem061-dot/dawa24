@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Supplier resolution.
@@ -112,8 +112,6 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 	// used to be keyed by product id, which asked the question once per product
 	// and cached a per-vendor answer under it — so the FIRST vendor's verdict
 	// was applied to every other vendor of the same product.
-	covCache := make(map[int64]coverageVerdict)
-	instCache := make(map[instKey]bool)
 	gateCache := make(map[int64]smartorder.GateVerdict)
 
 	if s.gate != nil {
@@ -164,7 +162,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 			continue
 		}
 
-		candidates, err := s.buildCandidatesWithGate(ctx, l, byProduct[*l.MatchedProductID], covCache, instCache, gateCache)
+		candidates, err := s.buildCandidatesWithGate(ctx, l, byProduct[*l.MatchedProductID], gateCache)
 		if err != nil {
 			return money.Amount{}, err
 		}
@@ -216,31 +214,17 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 	return total, nil
 }
 
-type coverageVerdict struct {
-	covered  bool
-	distance int
-}
-
-// instKey identifies one Corporate Operations question. Two offers from the
-// same supplier branch always get the same answer; two from different branches
-// of the same supplier may not, because the works are held per branch.
-type instKey struct {
-	vendorOrgID    int64
-	vendorBranchID int64
-}
-
 // buildCandidates turns raw offers into evaluated candidates for one line.
-func (s *Supplier) buildCandidates(ctx context.Context, l *smartorder.Line, offers []smartorder.Offer,
-	covCache map[int64]coverageVerdict, instCache map[instKey]bool) ([]smartorder.Candidate, error) {
-	return s.buildCandidatesWithGate(ctx, l, offers, covCache, instCache, nil)
+func (s *Supplier) buildCandidates(ctx context.Context, l *smartorder.Line, offers []smartorder.Offer) ([]smartorder.Candidate, error) {
+	return s.buildCandidatesWithGate(ctx, l, offers, nil)
 }
 
 func (s *Supplier) buildCandidatesWithGate(ctx context.Context, l *smartorder.Line, offers []smartorder.Offer,
-	covCache map[int64]coverageVerdict, instCache map[instKey]bool, gateCache map[int64]smartorder.GateVerdict) ([]smartorder.Candidate, error) {
+	gateCache map[int64]smartorder.GateVerdict) ([]smartorder.Candidate, error) {
 
 	out := make([]smartorder.Candidate, 0, len(offers))
 
-	if s.gate != nil && (gateCache == nil || len(gateCache) == 0) && len(offers) > 0 {
+	if s.gate != nil && len(gateCache) == 0 && len(offers) > 0 {
 		qty := int(l.EffectiveQty)
 		if qty <= 0 {
 			qty = 1

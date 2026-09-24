@@ -4,18 +4,16 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminFullUserPage renders the centralized user management index.
@@ -26,7 +24,11 @@ func (h *UIHandler) AdminFullUserPage(w http.ResponseWriter, r *http.Request) {
 	var users []*identity.User
 	if h.idSvc != nil {
 		// AsSystem justified: platform administrator browsing users across all tenants
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "", "")
+		if loaded, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
+			users = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin full user page", pages.AdminFullUserPage(users, "all", lang, dir))
@@ -39,7 +41,11 @@ func (h *UIHandler) AdminNewClientsPage(w http.ResponseWriter, r *http.Request) 
 
 	var users []*identity.User
 	if h.idSvc != nil {
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "customer", "")
+		if loaded, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "customer", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
+			users = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin new clients", pages.AdminFullUserPage(users, "new_clients", lang, dir))
@@ -52,7 +58,11 @@ func (h *UIHandler) AdminCustomerListPage(w http.ResponseWriter, r *http.Request
 
 	var users []*identity.User
 	if h.idSvc != nil {
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "customer", "")
+		if loaded, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "customer", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
+			users = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin customers", pages.AdminFullUserPage(users, "customers", lang, dir))
@@ -65,7 +75,11 @@ func (h *UIHandler) AdminVendorListPage(w http.ResponseWriter, r *http.Request) 
 
 	var users []*identity.User
 	if h.idSvc != nil {
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "vendor", "")
+		if loaded, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "vendor", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
+			users = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin vendors", pages.AdminFullUserPage(users, "vendors", lang, dir))
@@ -78,7 +92,11 @@ func (h *UIHandler) AdminStaffListPage(w http.ResponseWriter, r *http.Request) {
 
 	var users []*identity.User
 	if h.idSvc != nil {
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "staff", "")
+		if loaded, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "staff", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
+			users = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin staff", pages.AdminFullUserPage(users, "staff", lang, dir))
@@ -98,7 +116,11 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 
 	var user *identity.User
 	if h.idSvc != nil {
-		user, _ = h.idSvc.GetUserByID(sysCtx, userID)
+		if loaded, err := h.idSvc.GetUserByID(sysCtx, userID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetUserByID", err)
+		} else {
+			user = loaded
+		}
 	}
 
 	if user == nil {
@@ -119,7 +141,9 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 
 	// 1. National ID
 	if h.idSvc != nil {
-		if nid, err := h.idSvc.GetNationalID(sysCtx, user.ID); err == nil {
+		if nid, err := h.idSvc.GetNationalID(sysCtx, user.ID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetNationalID", err)
+		} else {
 			view.NationalID = nid
 		}
 	}
@@ -131,7 +155,9 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 	branchNames := make(map[int64]string)
 
 	if h.orgSvc != nil {
-		if orgs, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0); err == nil {
+		if orgs, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			allOrgs = orgs
 			for _, o := range orgs {
 				if o != nil {
@@ -139,7 +165,9 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 				}
 			}
 		}
-		if branches, _, err := h.orgSvc.ListBranchesWithTotal(sysCtx, org.BranchFilter{Status: "active"}, 1000, 0); err == nil {
+		if branches, _, err := h.orgSvc.ListBranchesWithTotal(sysCtx, org.BranchFilter{Status: "active"}, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranchesWithTotal", err)
+		} else {
 			allBranches = branches
 			for _, b := range branches {
 				if b != nil {
@@ -154,7 +182,11 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 	// 3. User Memberships and Member details
 	var userOrgs []*identity.UserOrgMembership
 	if h.idSvc != nil {
-		userOrgs, _ = h.idSvc.ListUserOrganizations(sysCtx, user.ID)
+		if loaded, err := h.idSvc.ListUserOrganizations(sysCtx, user.ID); err != nil {
+			h.logLoadErr(ctx, "idSvc.ListUserOrganizations", err)
+		} else {
+			userOrgs = loaded
+		}
 	}
 	view.Memberships = userOrgs
 
@@ -175,7 +207,9 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 			det.OrganizationName = orgNames[uo.OrganizationID]
 		}
 		if h.orgSvc != nil {
-			if members, err := h.orgSvc.ListMembers(sysCtx, uo.OrganizationID); err == nil {
+			if members, err := h.orgSvc.ListMembers(sysCtx, uo.OrganizationID); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ListMembers", err)
+			} else {
 				for _, m := range members {
 					if m != nil && m.UserID == user.ID {
 						det.JobTitle = m.JobTitle
@@ -215,7 +249,7 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 	view.IsModerator = user.Role == identity.RoleModerator
 	view.CanAssignModerator = actor.Can("identity.moderator.assign")
 	if view.IsModerator && view.CanAssignModerator && h.idSvc != nil {
-		if mods, err := h.idSvc.ListModerators(sysCtx); err == nil {
+		if mods, err := h.idSvc.ListModerators(sysCtx); err == nil { // nolint:errswallow: the else branch logs it
 			for _, m := range mods {
 				if m == nil {
 					continue
@@ -241,13 +275,16 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 
 	// 6. Effective Permissions resolved by rbac.Resolver
 	if h.resolver != nil {
-		platformGrant, _ := h.resolver.Resolve(sysCtx, user.ID, 0)
+		platformGrant, loadErr := h.resolver.Resolve(sysCtx, user.ID, 0)
+		h.logLoadErr(ctx, "resolver.Resolve", loadErr)
 
 		orgGrants := make(map[int64]rbac.Grant)
 		for _, uo := range userOrgs {
 			if uo != nil && uo.OrganizationID > 0 {
 				og, err := h.resolver.Resolve(sysCtx, user.ID, uo.OrganizationID)
-				if err == nil {
+				if err != nil {
+					h.logLoadErr(ctx, "resolver.Resolve", err)
+				} else {
 					orgGrants[uo.OrganizationID] = og
 				}
 			}
@@ -321,50 +358,4 @@ func (h *UIHandler) AdminUserDetailPage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	h.renderPage(ctx, w, "render admin user detail page", pages.AdminUserDetailPage(view, lang, dir))
-}
-
-// AdminUserAddressesPage renders address records for users.
-func (h *UIHandler) AdminUserAddressesPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	var users []*identity.User
-	if h.idSvc != nil {
-		users, _ = h.idSvc.AdminListUsers(database.AsSystem(ctx), "", "")
-	}
-
-	h.renderPage(ctx, w, "render admin user addresses", pages.AdminFullUserPage(users, "addresses", lang, dir))
-}
-
-// AdminUserOrganizationPage renders user-to-organization membership directory.
-func (h *UIHandler) AdminUserOrganizationPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	limit := pagination.RowsPerPage(r)
-	page := pagination.PageNumber(r)
-	offset := (page - 1) * limit
-
-	statusFilter := strings.TrimSpace(r.URL.Query().Get("status"))
-	data := &pages.AdminUserOrgData{
-		ActiveTab: statusFilter,
-		Page:      page,
-		PerPage:   limit,
-	}
-
-	sysCtx := database.AsSystem(ctx)
-	if h.orgSvc != nil {
-		list, total, err := h.orgSvc.ListAllUserOrganizationsWithTotal(sysCtx, statusFilter, limit, offset)
-		if err == nil {
-			data.UserOrgs = list
-			data.TotalCount = total
-		}
-	}
-
-	h.renderPage(ctx, w, "render admin user organizations", pages.AdminUserOrganizationsPage(lang, dir, data))
-}
-
-// AdminWantDeletePage redirects account deletion requests to the unified deletion requests screen.
-func (h *UIHandler) AdminWantDeletePage(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, "/admin/deletion-requests?tab=users", http.StatusMovedPermanently)
 }

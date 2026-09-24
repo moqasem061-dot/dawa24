@@ -3,7 +3,7 @@ package authctx
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 func TestFromGrantCarriesTheWholeHolding(t *testing.T) {

@@ -13,9 +13,9 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // KeyResolver resolves an organisation's Gateway virtual key, so AI spend is
@@ -172,9 +172,9 @@ func (m *Mapper) virtualKey(ctx context.Context, orgID int64) string {
 func translateGatewayError(err error) error {
 	switch {
 	case errors.Is(err, gateway.ErrQuotaExceeded):
-		return fmt.Errorf("%w: %v", catalog.ErrAIQuotaExceeded, err)
+		return fmt.Errorf("%w: %w", catalog.ErrAIQuotaExceeded, err)
 	case errors.Is(err, gateway.ErrUnauthorized), errors.Is(err, gateway.ErrDisabled):
-		return fmt.Errorf("%w: %v", catalog.ErrAIUnauthorized, err)
+		return fmt.Errorf("%w: %w", catalog.ErrAIUnauthorized, err)
 	default:
 		return err
 	}

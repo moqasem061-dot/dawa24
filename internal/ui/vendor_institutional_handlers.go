@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorPharmacyCoveragePage renders which pharmacies fall inside this vendor's branch coverage schedules.
@@ -38,7 +38,9 @@ func (h *UIHandler) VendorPharmacyCoveragePage(w http.ResponseWriter, r *http.Re
 	var coverages []*workflow.CoverageView
 	if h.wfSvc != nil {
 		covs, err := h.wfSvc.ListCoverageForOrganization(ctx, actor.OrganizationID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "wfSvc.ListCoverageForOrganization", err)
+		} else {
 			for _, c := range covs {
 				if c != nil && c.IsActive {
 					coverages = append(coverages, c)
@@ -51,7 +53,11 @@ func (h *UIHandler) VendorPharmacyCoveragePage(w http.ResponseWriter, r *http.Re
 	var organizations []*org.Organization
 	if h.orgSvc != nil {
 		status := org.StatusApproved
-		organizations, _ = h.orgSvc.ListOrganizations(ctx, nil, &status, 1000, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(ctx, nil, &status, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			organizations = loaded
+		}
 	}
 
 	// 3. Load cities map
@@ -111,7 +117,11 @@ func (h *UIHandler) VendorPharmacyCoveragePage(w http.ResponseWriter, r *http.Re
 
 		var branches []*org.Branch
 		if h.orgSvc != nil {
-			branches, _ = h.orgSvc.ListBranches(ctx, pharm.ID)
+			if loaded, err := h.orgSvc.ListBranches(ctx, pharm.ID); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+			} else {
+				branches = loaded
+			}
 		}
 
 		for _, pb := range branches {
@@ -271,7 +281,7 @@ func (h *UIHandler) VendorPharmacyCoveragePage(w http.ResponseWriter, r *http.Re
 					if !isCoveredToday {
 						continue
 					}
-				} else if dInt, err := strconv.Atoi(filterDay); err == nil {
+				} else if dInt, err := strconv.Atoi(filterDay); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 					if !daysMap[dInt] {
 						continue
 					}

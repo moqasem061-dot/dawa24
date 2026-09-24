@@ -27,7 +27,7 @@ func main() {
 	rehashApply := flag.Bool("rehash-apply", false, "write the corrected hashes")
 	roleName := flag.String("role", "dawa24_app", "application role name")
 	rolePass := flag.String("password", "", "application role password")
-	target := flag.String("db", "dawa24-store", "target database name")
+	target := flag.String("db", "dawa24_store", "target database name")
 	admin := flag.String("admin", "", "admin connection string (to the postgres database)")
 	flag.Parse()
 

@@ -171,7 +171,7 @@ func (a Amount) FormatWithCommas() string {
 		}
 	}
 	sb.WriteByte('.')
-	sb.WriteString(fmt.Sprintf("%0*d", Scale, cents))
+	fmt.Fprintf(&sb, "%0*d", Scale, cents)
 	return sb.String()
 }
 

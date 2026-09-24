@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 )
 
 func TestTelegram_DocumentWithCaption(t *testing.T) {

@@ -3,7 +3,7 @@ package productmatch
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Deciding that two written words name the same thing.
@@ -236,14 +236,6 @@ func releaseCodePair(a, b string) (string, bool) {
 	}
 	key, ok := variantModifiers[first+second]
 	return key, ok
-}
-
-// releaseCodes are the two-letter runs that name a different product rather
-// than abbreviating a dosage form. They are compared as modifiers, not as
-// identity letters — see modifiersIn.
-var releaseCodes = map[string]bool{
-	"sr": true, "cr": true, "xr": true, "mr": true, "er": true,
-	"xl": true, "la": true, "dr": true, "od": true,
 }
 
 // variantModifiers are the words that make one product in a brand family a

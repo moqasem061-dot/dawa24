@@ -19,7 +19,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // catalogueSnapshot is the file the harness loads.
@@ -54,7 +54,7 @@ func exportCatalogue(ctx context.Context, db *database.DB) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }() // early returns only; the success path checks Close below
 
 	zw := gzip.NewWriter(f)
 	enc := json.NewEncoder(zw)
@@ -92,6 +92,10 @@ func exportCatalogue(ctx context.Context, db *database.DB) error {
 		return err
 	}
 	if err := zw.Close(); err != nil {
+		return err
+	}
+	// A full disk surfaces here, on the final flush, not on any earlier write.
+	if err := f.Close(); err != nil {
 		return err
 	}
 

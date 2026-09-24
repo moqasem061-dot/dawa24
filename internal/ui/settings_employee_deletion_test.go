@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockIdentityDeletionRepo struct {
@@ -92,7 +92,7 @@ func TestEmployeeCannotRequestAccountDeletion(t *testing.T) {
 	}
 
 	t.Run("Employee settings page hides deletion danger zone and modal", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/settings", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/settings", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), employeeActor))
 		rr := httptest.NewRecorder()
 
@@ -110,7 +110,7 @@ func TestEmployeeCannotRequestAccountDeletion(t *testing.T) {
 	})
 
 	t.Run("Owner settings page displays deletion danger zone and modal", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/settings", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/settings", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), ownerActor))
 		rr := httptest.NewRecorder()
 
@@ -126,7 +126,7 @@ func TestEmployeeCannotRequestAccountDeletion(t *testing.T) {
 
 	t.Run("Employee POST to delete-request is rejected", func(t *testing.T) {
 		form := url.Values{"reason": {"أرغب بحذف الحساب"}}
-		req := httptest.NewRequest(http.MethodPost, "/settings/delete-request", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/delete-request", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), employeeActor))
 		rr := httptest.NewRecorder()

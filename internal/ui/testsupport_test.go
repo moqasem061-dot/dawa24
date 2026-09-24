@@ -14,41 +14,41 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	attachmentsPostgres "github.com/muhiya/dawa24-store/internal/modules/attachments/postgres"
-	billingPostgres "github.com/muhiya/dawa24-store/internal/modules/billing/postgres"
-	catalogPostgres "github.com/muhiya/dawa24-store/internal/modules/catalog/postgres"
-	chatPostgres "github.com/muhiya/dawa24-store/internal/modules/chat/postgres"
-	commercePostgres "github.com/muhiya/dawa24-store/internal/modules/commerce/postgres"
-	comparePostgres "github.com/muhiya/dawa24-store/internal/modules/compare/postgres"
-	hrPostgres "github.com/muhiya/dawa24-store/internal/modules/hr/postgres"
-	identityPostgres "github.com/muhiya/dawa24-store/internal/modules/identity/postgres"
-	ingestPostgres "github.com/muhiya/dawa24-store/internal/modules/ingest/postgres"
-	inventoryPostgres "github.com/muhiya/dawa24-store/internal/modules/inventory/postgres"
-	notificationsPostgres "github.com/muhiya/dawa24-store/internal/modules/notifications/postgres"
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	platformadminPostgres "github.com/muhiya/dawa24-store/internal/modules/platform_admin/postgres"
-	promoPostgres "github.com/muhiya/dawa24-store/internal/modules/promo/postgres"
-	workflowPostgres "github.com/muhiya/dawa24-store/internal/modules/workflow/postgres"
+	attachmentsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/attachments/postgres"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
+	chatPostgres "github.com/moqasem061-dot/dawa24/internal/modules/chat/postgres"
+	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
+	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
+	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
+	identityPostgres "github.com/moqasem061-dot/dawa24/internal/modules/identity/postgres"
+	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
+	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
+	notificationsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/notifications/postgres"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
+	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/chat"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // testDB returns a real PostgreSQL connection pool for integration tests.
@@ -221,15 +221,4 @@ func doPOST(t *testing.T, h http.Handler, path string, form url.Values, actor au
 	return rec
 }
 
-func actorFor(orgID int64, orgType string, isStaff bool, role string) authctx.Actor {
-	return authctx.Actor{
-		UserID:         1000 + orgID,
-		OrganizationID: orgID,
-		OrgType:        orgType,
-		IsStaff:        isStaff,
-		Role:           role,
-	}
-}
-
 // --- Seed Helpers with Cleanup ---
-

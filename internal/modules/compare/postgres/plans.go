@@ -2,14 +2,15 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const planColumns = `id, public_id, name, slug, description, price_monthly, price_yearly, price_lifetime, currency, trial_days, is_active, is_public, is_recommended, sort_order, created_by, updated_by, created_at, updated_at, deleted_at`
@@ -70,7 +71,7 @@ func (r *Repository) GetPlanByID(ctx context.Context, id int64) (*compare.Plan, 
 		var err error
 		p, err = scanPlan(tx.QueryRow(txCtx, query, id))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("plan")
 			}
 			return err
@@ -92,7 +93,7 @@ func (r *Repository) GetPlanBySlug(ctx context.Context, slug string) (*compare.P
 		var err error
 		p, err = scanPlan(tx.QueryRow(txCtx, query, slug))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("plan")
 			}
 			return err
@@ -255,7 +256,7 @@ func (r *Repository) GetPlanRequestByID(ctx context.Context, id int64) (*compare
 		)
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperr.NotFound("plan request")
 		}
 		return nil, err

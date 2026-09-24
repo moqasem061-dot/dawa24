@@ -8,11 +8,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminSessionPlansPage renders session plan management and seats list.
@@ -38,7 +38,9 @@ func (h *UIHandler) CustomerReportIssuePage(w http.ResponseWriter, r *http.Reque
 
 	var userIssues []*workflow.ReportIssue
 	if actor, ok := authctx.From(ctx); ok && actor.UserID > 0 && h.wfSvc != nil {
-		if list, err := h.wfSvc.ListIssuesByReporter(ctx, actor.UserID, 25, 0); err == nil {
+		if list, err := h.wfSvc.ListIssuesByReporter(ctx, actor.UserID, 25, 0); err != nil {
+			h.logLoadErr(ctx, "wfSvc.ListIssuesByReporter", err)
+		} else {
 			userIssues = list
 		}
 	}

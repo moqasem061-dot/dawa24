@@ -195,7 +195,11 @@ func TestStreamSendsCurrentStateThenClosesOnTerminal(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	resp, err := srv.Client().Get(srv.URL)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	resp, err := srv.Client().Do(req) //nolint:bodyclose // closed by the defer below
 	if err != nil {
 		t.Fatalf("get: %v", err)
 	}

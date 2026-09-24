@@ -4,8 +4,8 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/stream"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/stream"
 )
 
 // emitter writes a turn's events into the durable buffer.

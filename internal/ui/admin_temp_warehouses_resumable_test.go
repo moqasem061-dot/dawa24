@@ -14,10 +14,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockCompareFileService struct {
@@ -28,10 +28,6 @@ func newMockCompareFileService() *mockCompareFileService {
 	return &mockCompareFileService{
 		files: make(map[int64]*compare.CompareFile),
 	}
-}
-
-func (m *mockCompareFileService) addFile(f *compare.CompareFile) {
-	m.files[f.ID] = f
 }
 
 func setupResumableTestHandler() (*ui.UIHandler, *mockImportRunRepo, *mockCompareFileService) {
@@ -123,7 +119,7 @@ func TestTempWarehouseRun_DispatcherPhases(t *testing.T) {
 
 	for _, tc := range tests {
 		run.Phase = tc.phase
-		r := httptest.NewRequest(http.MethodGet, "/admin/user/temparte-warehouses/runs/1", nil)
+		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/user/temparte-warehouses/runs/1", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("runID", "1")
 		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
@@ -155,7 +151,7 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	form.Set("col_discount", "3")
 	form.Set("is_autosave", "1")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	rctx := chi.NewRouteContext()
@@ -191,7 +187,7 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	formNext.Set("col_name", "1")
 	formNext.Set("action", "next")
 
-	reqNext := httptest.NewRequest(http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formNext.Encode()))
+	reqNext := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formNext.Encode()))
 	reqNext.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqNext = reqNext.WithContext(context.WithValue(reqNext.Context(), chi.RouteCtxKey, rctx))
 
@@ -208,7 +204,7 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	formReview.Set("col_name", "1")
 	formReview.Set("action", "review")
 
-	reqReview := httptest.NewRequest(http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formReview.Encode()))
+	reqReview := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formReview.Encode()))
 	reqReview.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqReview = reqReview.WithContext(context.WithValue(reqReview.Context(), chi.RouteCtxKey, rctx))
 
@@ -228,7 +224,7 @@ func TestTempWarehouseRun_CommitAndCancel(t *testing.T) {
 	run, _ := handler.CreateTempWarehouseRun(ctx, actor, []int64{301}, map[int64]string{301: "Supp C"}, "/admin/my/temparte-warehouses")
 
 	// Test Commit
-	reqCommit := httptest.NewRequest(http.MethodPost, "/admin/my/temparte-warehouses/runs/1/commit", nil)
+	reqCommit := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/my/temparte-warehouses/runs/1/commit", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("runID", strconv.FormatInt(run.ID, 10))
 	reqCommit = reqCommit.WithContext(context.WithValue(reqCommit.Context(), chi.RouteCtxKey, rctx))
@@ -251,7 +247,7 @@ func TestTempWarehouseRun_CommitAndCancel(t *testing.T) {
 
 	// Test Cancel on new run
 	run2, _ := handler.CreateTempWarehouseRun(ctx, actor, []int64{302}, map[int64]string{302: "Supp D"}, "/admin/my/temparte-warehouses")
-	reqCancel := httptest.NewRequest(http.MethodPost, "/admin/my/temparte-warehouses/runs/2/cancel", nil)
+	reqCancel := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/my/temparte-warehouses/runs/2/cancel", nil)
 	rctx2 := chi.NewRouteContext()
 	rctx2.URLParams.Add("runID", strconv.FormatInt(run2.ID, 10))
 	reqCancel = reqCancel.WithContext(context.WithValue(reqCancel.Context(), chi.RouteCtxKey, rctx2))
@@ -277,7 +273,7 @@ func TestTempWarehouseRun_ProgressPollingJSON(t *testing.T) {
 	}
 	_ = runRepo.CreateRun(context.Background(), run)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/user/temparte-warehouses/runs/1/progress?poll=1", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/user/temparte-warehouses/runs/1/progress?poll=1", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("runID", "1")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

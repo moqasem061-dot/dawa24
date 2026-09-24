@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type VendorBranchesData struct {
@@ -106,15 +106,4 @@ func totalCapacitySQM(branches []*org.Branch) float64 {
 		total += b.CapacitySQM
 	}
 	return total
-}
-
-func formatWorksSliceJSON(works []string) string {
-	if len(works) == 0 {
-		return "[]"
-	}
-	b, err := json.Marshal(works)
-	if err != nil {
-		return "[]"
-	}
-	return string(b)
 }

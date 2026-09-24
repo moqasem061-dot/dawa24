@@ -3,7 +3,7 @@ package compare_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // The moderator hierarchy's one safety property, pinned in the type it lives in.

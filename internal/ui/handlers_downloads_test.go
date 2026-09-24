@@ -1,11 +1,12 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func TestAdminProductSampleDownloads(t *testing.T) {
@@ -19,7 +20,7 @@ func TestAdminProductSampleDownloads(t *testing.T) {
 	router := newTestRouter(&actor)
 
 	t.Run("GET /admin/products/sample.csv", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/products/sample.csv", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/products/sample.csv", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -35,7 +36,7 @@ func TestAdminProductSampleDownloads(t *testing.T) {
 	})
 
 	t.Run("GET /admin/products/sample.xlsx", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/products/sample.xlsx", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/products/sample.xlsx", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -64,7 +65,7 @@ func TestVendorIngestAndRolesRoutes(t *testing.T) {
 	router := newTestRouter(actor)
 
 	t.Run("GET /vendor/roles", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/roles", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/roles", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -74,7 +75,7 @@ func TestVendorIngestAndRolesRoutes(t *testing.T) {
 	})
 
 	t.Run("GET /vendor/ingest/sample.csv", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/ingest/sample.csv", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/ingest/sample.csv", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -90,7 +91,7 @@ func TestVendorIngestAndRolesRoutes(t *testing.T) {
 	})
 
 	t.Run("GET /vendor/ingest/sample.xlsx", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/ingest/sample.xlsx", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/ingest/sample.xlsx", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -106,7 +107,7 @@ func TestVendorIngestAndRolesRoutes(t *testing.T) {
 	})
 
 	t.Run("GET /vendor/ingest/inventory.csv", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/ingest/inventory.csv", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/ingest/inventory.csv", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 

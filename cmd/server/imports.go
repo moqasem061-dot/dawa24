@@ -6,15 +6,15 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/importjobs"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	importrunPostgres "github.com/muhiya/dawa24-store/internal/platform/importrun/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	importrunPostgres "github.com/moqasem061-dot/dawa24/internal/platform/importrun/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // wireImports configures durable import runs and background workers for the UI.

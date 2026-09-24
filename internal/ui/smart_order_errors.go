@@ -7,16 +7,16 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // translateSmartOrderError turns a domain error into something a pharmacist can
 // act on, rather than a generic or technical error code.
 func translateSmartOrderError(err error, langOptional ...string) string {
-	if err == nil {
+	if err == nil { // nolint:errswallow: a nil guard on the parameter, not a discarded error
 		return ""
 	}
 	lang := "ar"
@@ -133,10 +133,18 @@ func (h *UIHandler) SmartOrderLegacyRedirect(w http.ResponseWriter, r *http.Requ
 
 	var run *smartorder.Run
 	if numID, err := strconv.ParseInt(runParam, 10, 64); err == nil && numID > 0 {
-		run, _ = h.smartOrderSvc.GetByID(ctx, actor.OrganizationID, numID)
+		if loaded, err := h.smartOrderSvc.GetByID(ctx, actor.OrganizationID, numID); err != nil {
+			h.logLoadErr(ctx, "smartOrderSvc.GetByID", err)
+		} else {
+			run = loaded
+		}
 	}
 	if run == nil {
-		run, _ = h.smartOrderSvc.Get(ctx, actor.OrganizationID, runParam)
+		if loaded, err := h.smartOrderSvc.Get(ctx, actor.OrganizationID, runParam); err != nil {
+			h.logLoadErr(ctx, "smartOrderSvc.Get", err)
+		} else {
+			run = loaded
+		}
 	}
 	if run == nil {
 		http.Redirect(w, r, "/customer/smart-order/history", http.StatusSeeOther)
@@ -144,9 +152,10 @@ func (h *UIHandler) SmartOrderLegacyRedirect(w http.ResponseWriter, r *http.Requ
 	}
 
 	subpath := "results"
-	if run.Status == smartorder.StatusProcessing || run.Status == smartorder.StatusFinalizing || run.Status == smartorder.StatusQueued {
+	switch run.Status {
+	case smartorder.StatusProcessing, smartorder.StatusFinalizing, smartorder.StatusQueued:
 		subpath = "progress"
-	} else if run.Status == smartorder.StatusDraft || run.Status == smartorder.StatusMapping {
+	case smartorder.StatusDraft, smartorder.StatusMapping:
 		subpath = "mapping"
 	}
 

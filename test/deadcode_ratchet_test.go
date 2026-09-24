@@ -13,7 +13,7 @@ func TestDeadcodeRatchet(t *testing.T) {
 		t.Skip("skipping deadcode ratchet in short mode")
 	}
 
-	cmd := exec.Command("go", "run", "golang.org/x/tools/cmd/deadcode@latest", "./...")
+	cmd := exec.CommandContext(t.Context(), "go", "run", "golang.org/x/tools/cmd/deadcode@latest", "./...")
 	cmd.Dir = ".."
 	out, err := cmd.CombinedOutput()
 	if err != nil {

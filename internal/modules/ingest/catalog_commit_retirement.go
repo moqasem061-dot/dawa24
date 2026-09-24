@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // retireAbsent takes off sale every variant the file does not mention, for the
@@ -50,37 +48,6 @@ func (c *commitRun) keepList(ctx context.Context) []int64 {
 		out = append(out, id)
 	}
 	return out
-}
-
-// zeroBalances empties the retired variants' stock in the warehouse this import
-// wrote to.
-func (c *commitRun) zeroBalances(ctx context.Context, retired []catalog.RetiredVariant) {
-	if c.svc.inventory == nil || c.settings.WarehouseID <= 0 {
-		return
-	}
-	rows := make([]inventory.StockWriteRow, 0, len(retired))
-	for _, v := range retired {
-		if !c.variants.inWarehouse[v.ID] {
-			continue
-		}
-		rows = append(rows, inventory.StockWriteRow{
-			HasQuantity: true,
-			Stock: &inventory.Stock{
-				OrganizationID:   c.session.OrganizationID,
-				WarehouseID:      c.settings.WarehouseID,
-				ProductID:        v.ProductID,
-				ProductVariantID: v.ID,
-				Quantity:         0,
-			},
-		})
-	}
-	if len(rows) == 0 {
-		return
-	}
-	if _, err := c.svc.inventory.BulkWriteStocks(ctx, inventory.StockReplace, rows); err != nil {
-		c.svc.log.WarnContext(ctx, "replace-mode balance clearing failed",
-			"import", c.session.PublicID, "variants", len(rows), "error", err)
-	}
 }
 
 // record appends one row's outcome to the ledger the results screen reads.

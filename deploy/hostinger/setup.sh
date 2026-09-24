@@ -3,7 +3,7 @@
 # Dawa24 Store - Hostinger KVM VPS Initial Setup & Hardening Script
 # =============================================================================
 # Run this once as root on a fresh Ubuntu 22.04 / 24.04 Hostinger VPS:
-#   curl -sSL https://raw.githubusercontent.com/<user>/dawa24-store/main/deploy/hostinger/setup.sh | sudo bash
+#   curl -sSL https://raw.githubusercontent.com/moqasem061-dot/dawa24/main/deploy/hostinger/setup.sh | sudo bash
 # =============================================================================
 
 set -euo pipefail
@@ -97,7 +97,7 @@ echo "================================================================="
 echo ">>> Setup completed successfully!"
 echo "Next Steps:"
 echo " 1. Clone your repository into /opt/dawa24:"
-echo "    git clone <your-repo-url> /opt/dawa24"
+echo "    git clone https://github.com/moqasem061-dot/dawa24.git /opt/dawa24"
 echo " 2. Create /opt/dawa24/.env from template:"
 echo "    cp /opt/dawa24/deploy/hostinger/.env.production.example /opt/dawa24/.env"
 echo "    nano /opt/dawa24/.env"

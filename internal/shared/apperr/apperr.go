@@ -171,7 +171,7 @@ var arabicMessages = map[string]string{
 	"variant.price_negative":         "سعر الصنف لا يمكن أن يكون سالباً.",
 	"variant.quota_negative":         "الحصة المحددة للطلب لا يمكن أن تكون سالبة.",
 	"variant.quota_too_large":        "الحصة المحددة للطلب تتجاوز الحد الأقصى المسموح.",
-	"variant.id_required":           "معرف الصنف مطلوب.",
+	"variant.id_required":            "معرف الصنف مطلوب.",
 	"tenant.required":                "يرجى تحديد المنشأة لمتابعة العملية.",
 	"validation":                     "بيانات الطلب غير صالحة.",
 	"not_found":                      "العنصر المطلوب غير موجود.",

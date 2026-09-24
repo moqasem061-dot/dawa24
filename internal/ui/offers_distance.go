@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // calculateHaversineKM is a presentation-only distance calculation used solely

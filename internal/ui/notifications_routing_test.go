@@ -10,9 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 func TestResolveNotificationDestination(t *testing.T) {
@@ -219,7 +219,7 @@ func TestNotificationOpenRedirect(t *testing.T) {
 	r.Get("/notifications/{id}/open", handler.NotificationOpenRedirect)
 
 	// 1. Standard GET request with actor in context
-	req := httptest.NewRequest(http.MethodGet, "/notifications/42/open", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/notifications/42/open", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 	rec := httptest.NewRecorder()
 
@@ -233,7 +233,7 @@ func TestNotificationOpenRedirect(t *testing.T) {
 	assert.True(t, mockRepo.logs[0].IsRead)
 
 	// 2. HTMX GET request
-	htmxReq := httptest.NewRequest(http.MethodGet, "/notifications/42/open", nil)
+	htmxReq := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/notifications/42/open", nil)
 	htmxReq.Header.Set("HX-Request", "true")
 	htmxReq = htmxReq.WithContext(authctx.WithActor(htmxReq.Context(), vendorActor))
 	htmxRec := httptest.NewRecorder()

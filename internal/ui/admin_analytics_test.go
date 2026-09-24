@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestSortedStatItems(t *testing.T) {
@@ -54,9 +54,9 @@ func TestAdminAnalyticsPage_RenderWithHighLocationVolume(t *testing.T) {
 		TotalOrders:     430,
 		TotalGMV:        "1,250,000 EGP",
 		ByCountry: map[string]int{
-			"مصر (Egypt)":               4800,
+			"مصر (Egypt)": 4800,
 			"المملكة العربية السعودية": 150,
-			"الإمارات":                 50,
+			"الإمارات": 50,
 		},
 		ByCity: cities,
 		ByDevice: map[string]int{

@@ -3,7 +3,7 @@ package importrun_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
 )
 
 func TestRun_StatePredicates(t *testing.T) {

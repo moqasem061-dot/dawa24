@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // chunkSize bounds one pipelined round trip. Large enough that a 10,000-row
@@ -237,11 +237,6 @@ func applyWriteDefaults(p *catalog.Product, defaultOrgID int64) {
 		p.InstitutionalWorkIDs = []int64{}
 	}
 }
-
-// masterCatalogOrgEN is the canonical English name of the organisation that
-// owns the master catalogue. Migration 128 seeds it; resolveDefaultOrg creates
-// it on a deployment that predates the migration.
-const masterCatalogOrgEN = "Dawa24 Master Catalog"
 
 // masterCatalogOrgWhere is the one definition of "the master catalogue's
 // organisation" every lookup shares.

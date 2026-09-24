@@ -11,15 +11,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // SupplierProfilePage renders a supplier's public profile.
@@ -61,10 +61,15 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	branches, _ := h.orgSvc.ListBranches(sysCtx, id)
+	branches, loadErr := h.orgSvc.ListBranches(sysCtx, id)
+	h.logLoadErr(ctx, "orgSvc.ListBranches", loadErr)
 	var coverages []*workflow.CoverageView
 	if h.wfSvc != nil {
-		coverages, _ = h.wfSvc.ListCoverageForOrganization(sysCtx, id)
+		if loaded, err := h.wfSvc.ListCoverageForOrganization(sysCtx, id); err != nil {
+			h.logLoadErr(ctx, "wfSvc.ListCoverageForOrganization", err)
+		} else {
+			coverages = loaded
+		}
 	}
 	workingHours, coverageDays, coverageAreas, isOpenNow, statusNote := computeVendorWorkingStatus(branches, coverages)
 
@@ -101,7 +106,11 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 		buyerOrg = buyerOrgID(ctx)
 		customerBranchID = h.buyingBranchID(ctx, &actor)
 		if customerBranchID > 0 && h.orgSvc != nil {
-			allowedWorkIDs, _ = h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), customerBranchID)
+			if loaded, err := h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), customerBranchID); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ConnectedWorkIDsForBranch", err)
+			} else {
+				allowedWorkIDs = loaded
+			}
 		}
 	}
 
@@ -132,7 +141,9 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 		}
 
 		offers, total, err := h.catSvc.ListBuyerOffers(ctx, buyerOfferQuery)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListBuyerOffers", err)
+		} else {
 			data.TotalVariants = total
 			if total > 0 {
 				data.TotalPages = int(math.Ceil(float64(total) / float64(limit)))
@@ -172,8 +183,7 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 					minQty = 1
 				}
 
-				isCovered := true
-				canAddToCart := (availStock > 0)
+				var isCovered, canAddToCart bool
 				covReason := ""
 				maxOrderQty := availStock
 
@@ -201,10 +211,7 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 								continue
 							}
 						} else {
-							isCovered = false
-							canAddToCart = false
-							covReason = i18n.T(lang, "offers.cov_reason_verify_failed")
-							continue
+							continue // coverage could not be verified: do not list the offer
 						}
 					}
 				} else {
@@ -275,11 +282,21 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if h.promoSvc != nil {
-		data.Sections, _ = h.promoSvc.ListHighlightSectionsByOrg(ctx, id)
+		if loaded, err := h.promoSvc.ListHighlightSectionsByOrg(ctx, id); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListHighlightSectionsByOrg", err)
+		} else {
+			data.Sections = loaded
+		}
 	}
 	if h.orgSvc != nil {
-		data.Reviews, _ = h.orgSvc.ListReviews(ctx, id, 20, 0)
-		if policies, err := h.orgSvc.ListPolicies(ctx, id); err == nil {
+		if loaded, err := h.orgSvc.ListReviews(ctx, id, 20, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListReviews", err)
+		} else {
+			data.Reviews = loaded
+		}
+		if policies, err := h.orgSvc.ListPolicies(ctx, id); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListPolicies", err)
+		} else {
 			for _, pol := range policies {
 				if pol != nil && pol.PolicyType == org.PolicyTypePrivacy {
 					pol.PolicyType = org.PolicyTypeWarranty
@@ -288,7 +305,11 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 			data.Policies = policies
 		}
 		if actor, ok := authctx.From(ctx); ok {
-			data.IsFollowing, _ = h.orgSvc.IsFollowing(ctx, id, actor.UserID)
+			if loaded, err := h.orgSvc.IsFollowing(ctx, id, actor.UserID); err != nil {
+				h.logLoadErr(ctx, "orgSvc.IsFollowing", err)
+			} else {
+				data.IsFollowing = loaded
+			}
 		}
 	}
 	data.ReviewCount = len(data.Reviews)
@@ -318,7 +339,9 @@ func (h *UIHandler) SupplierFollowSubmit(w http.ResponseWriter, r *http.Request)
 	// Following your own company is not a relationship. The directory and the
 	// profile both refuse it; this refuses the form post that reaches neither.
 	if err == nil && h.orgSvc != nil && !ownedByBuyer(buyerOrgID(ctx), id) {
-		_, _ = h.orgSvc.ToggleFollow(ctx, id, userID)
+		if _, err := h.orgSvc.ToggleFollow(ctx, id, userID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ToggleFollow", err)
+		}
 	}
 
 	back := r.Referer()

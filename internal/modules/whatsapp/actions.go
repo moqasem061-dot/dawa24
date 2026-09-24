@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Confirmations and files on WhatsApp.

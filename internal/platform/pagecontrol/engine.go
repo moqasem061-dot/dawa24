@@ -10,7 +10,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Engine holds the current enable/disable rules in memory and answers the
@@ -182,7 +182,7 @@ func (e *Engine) DecisionInfo(path string) (bool, BlockedInfo) {
 			continue
 		}
 		if !haveWin || len(r.path) > winLen || (len(r.path) == winLen && !winExact) {
-			winner, haveWin, winLen, winExact = r, true, len(r.path), false
+			winner, haveWin = r, true
 		}
 		// prefixes are sorted longest-first; once we have a match no shorter
 		// prefix can beat it and no exact rule is left to consider.

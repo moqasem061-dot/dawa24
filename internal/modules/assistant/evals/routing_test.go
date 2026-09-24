@@ -6,15 +6,15 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/datasets"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/evals"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/tools"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/datasets"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/evals"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/tools"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // The offline half of the eval: can the question be answered at all, by

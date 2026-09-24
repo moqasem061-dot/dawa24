@@ -90,12 +90,12 @@ func parseSettingInt(val string) int {
 		return 0
 	}
 	// Try direct int first
-	if n, err := strconv.Atoi(val); err == nil {
+	if n, err := strconv.Atoi(val); err == nil { // nolint:errswallow: setting value parse; tried as JSON next
 		return n
 	}
 	// Try JSON map
 	var m map[string]any
-	if err := json.Unmarshal([]byte(val), &m); err == nil {
+	if err := json.Unmarshal([]byte(val), &m); err == nil { // nolint:errswallow: setting value parse; an unreadable value means no cooldown
 		if v, ok := m["days"].(float64); ok && v > 0 {
 			return int(v)
 		}
@@ -103,12 +103,12 @@ func parseSettingInt(val string) int {
 			return int(v)
 		}
 		if v, ok := m["days"].(string); ok {
-			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil { // nolint:errswallow: setting value parse; an unreadable value is skipped
 				return n
 			}
 		}
 		if v, ok := m["value"].(string); ok {
-			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil {
+			if n, err := strconv.Atoi(strings.TrimSpace(v)); err == nil { // nolint:errswallow: setting value parse; an unreadable value is skipped
 				return n
 			}
 		}

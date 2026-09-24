@@ -28,6 +28,14 @@ The `commerce` bounded context handles shopping carts, checkout processing, immu
    - The domain layer computes the exact 2-decimal scalar average of the three review criteria (`org.review_criteria`: representative rating, speed rating, quality rating) via `commerce.CalculateAverageRating`.
    - **Guards:** An order can only be rated if its status is `delivered` (or `completed`), and an order cannot be re-rated once `rated_at` is set.
 
+## Percentages applied to money
+
+Cost discounts and an edited order's tax are computed exactly: percentages are
+converted to basis points (`money.PercentToBasisPoints`) and applied with
+`money.Amount.ApplyPercent`; the edited-order tax keeps the original ratio
+tax/taxable and applies it with `money.Amount.MulRatio`. Both round half away
+from zero. No money value passes through `float64`.
+
 ## Endpoints
 
 - `POST /api/v1/commerce/checkout` — Execute checkout and create order.

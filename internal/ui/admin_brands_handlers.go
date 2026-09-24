@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminBrandsPage renders the master pharmaceutical brands and manufacturers management console.
@@ -31,7 +31,9 @@ func (h *UIHandler) AdminBrandsPage(w http.ResponseWriter, r *http.Request) {
 	var totalCount int
 	if h.catSvc != nil {
 		brandsWithCount, total, err := h.catSvc.ListBrandsWithProductCount(sysCtx, search, status, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListBrandsWithProductCount", err)
+		} else {
 			totalCount = total
 			for _, item := range brandsWithCount {
 				brandItems = append(brandItems, pages.BrandViewItem{

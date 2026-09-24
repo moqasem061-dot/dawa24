@@ -1,7 +1,7 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
 )
 
 func countOffersByStatus(offers []*promo.SpecialOffer, status string) int {

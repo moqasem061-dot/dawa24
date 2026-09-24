@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminDeletionRequestsUnifiedRoutes(t *testing.T) {
@@ -67,7 +67,7 @@ func TestAdminDeletionRequestsUnifiedRoutes(t *testing.T) {
 	})
 
 	t.Run("Approve org deletion without auth redirects to login", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/admin/deletion-requests/organizations/1/approve", nil)
+		req, _ := http.NewRequestWithContext(context.Background(), "POST", "/admin/deletion-requests/organizations/1/approve", nil)
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 
@@ -80,7 +80,7 @@ func TestAdminDeletionRequestsUnifiedRoutes(t *testing.T) {
 	})
 
 	t.Run("Approve user deletion without auth redirects to login", func(t *testing.T) {
-		req, _ := http.NewRequest("POST", "/admin/deletion-requests/users/1/approve", nil)
+		req, _ := http.NewRequestWithContext(context.Background(), "POST", "/admin/deletion-requests/users/1/approve", nil)
 		rr := httptest.NewRecorder()
 		r.ServeHTTP(rr, req)
 

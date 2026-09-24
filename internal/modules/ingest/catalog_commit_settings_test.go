@@ -19,19 +19,17 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // commitFixture wires a service against the three mocks and returns them.
-func commitFixture(session *Session, staged []*RowOutcome, keys []catalog.VariantKey,
+func commitFixture(session *Session, staged []*RowOutcome, keys []VariantKey,
 	inWarehouse map[int64]bool,
 ) (*Service, *mockCommitCatalogPort, *mockCommitInventoryPort, *mockCommitImportStore) {
 	cat := &mockCommitCatalogPort{keys: keys, nextVariantID: 9000}
 	inv := &mockCommitInventoryPort{
-		warehouses:  []*inventory.Warehouse{{ID: 1, OrganizationID: 10}},
+		warehouses:  []Warehouse{{ID: 1}},
 		inWarehouse: inWarehouse,
 	}
 	store := &mockCommitImportStore{session: session, stagedRows: staged}
@@ -89,7 +87,7 @@ func TestPublishImmediatelyIsOnByDefault(t *testing.T) {
 func TestPublishImmediatelyDecidesNewVariantStatus(t *testing.T) {
 	ctx := context.Background()
 	product := int64(101)
-	existing := catalog.VariantKey{ID: 501, ProductID: 202, SKU: "SKU-OLD"}
+	existing := VariantKey{ID: 501, ProductID: 202, SKU: "SKU-OLD"}
 
 	rows := []*RowOutcome{
 		stagedRow(1, &product, "SKU-NEW", "New item", 5, true),
@@ -99,23 +97,23 @@ func TestPublishImmediatelyDecidesNewVariantStatus(t *testing.T) {
 	for _, tc := range []struct {
 		name      string
 		publish   bool
-		wantFresh catalog.ProductStatus
+		wantFresh VariantStatus
 	}{
-		{"off creates inactive", false, catalog.StatusInactive},
-		{"on creates active", true, catalog.StatusActive},
+		{"off creates inactive", false, VariantInactive},
+		{"on creates active", true, VariantActive},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			settings := DefaultSettings()
 			settings.WarehouseID = 1
 			settings.PublishImmediately = tc.publish
 			svc, cat, _, _ := commitFixture(session("imp-"+tc.name, settings), rows,
-				[]catalog.VariantKey{existing}, nil)
+				[]VariantKey{existing}, nil)
 
 			if _, err := svc.CommitImport(ctx, "imp-"+tc.name); err != nil {
 				t.Fatalf("CommitImport: %v", err)
 			}
 
-			var fresh, updated *catalog.ProductVariant
+			var fresh, updated *VariantDraft
 			for _, w := range cat.writtenVariants {
 				if w.Variant.ID > 0 {
 					updated = w.Variant
@@ -144,7 +142,7 @@ func TestPublishImmediatelyDecidesNewVariantStatus(t *testing.T) {
 // third variant nobody buys from.
 func TestVariantResolutionPrefersTheVariantHoldingStockHere(t *testing.T) {
 	product := int64(101)
-	keys := []catalog.VariantKey{
+	keys := []VariantKey{
 		{ID: 501, ProductID: product, Unit: "علبة"},
 		{ID: 502, ProductID: product, Unit: "شريط"},
 	}
@@ -166,7 +164,7 @@ func TestVariantResolutionPrefersTheVariantHoldingStockHere(t *testing.T) {
 
 	t.Run("both stock it here: the branch breaks the tie", func(t *testing.T) {
 		branchA, branchB := int64(7), int64(8)
-		withBranches := []catalog.VariantKey{
+		withBranches := []VariantKey{
 			{ID: 501, ProductID: product, BranchID: &branchA},
 			{ID: 502, ProductID: product, BranchID: &branchB},
 		}
@@ -200,10 +198,10 @@ func TestUpdatedVariantsGetTheirBalanceWritten(t *testing.T) {
 	product := int64(202)
 	settings := DefaultSettings()
 	settings.WarehouseID = 1
-	settings.StockMode = inventory.StockReplace
+	settings.StockMode = StockReplace
 
 	rows := []*RowOutcome{stagedRow(1, &product, "SKU-OLD", "Existing item", 42, true)}
-	keys := []catalog.VariantKey{{ID: 501, ProductID: product, SKU: "SKU-OLD"}}
+	keys := []VariantKey{{ID: 501, ProductID: product, SKU: "SKU-OLD"}}
 
 	svc, _, inv, _ := commitFixture(session("imp-stock", settings), rows, keys, map[int64]bool{501: true})
 	sess, err := svc.CommitImport(ctx, "imp-stock")
@@ -217,15 +215,15 @@ func TestUpdatedVariantsGetTheirBalanceWritten(t *testing.T) {
 		t.Fatalf("stock rows written = %d, want 1", len(inv.writtenRows))
 	}
 	written := inv.writtenRows[0]
-	if written.Stock.ProductVariantID != 501 {
+	if written.VariantID != 501 {
 		t.Errorf("balance written against variant %d, want the existing 501",
-			written.Stock.ProductVariantID)
+			written.VariantID)
 	}
-	if written.Stock.Quantity != 42 || !written.HasQuantity {
+	if written.Quantity != 42 || !written.HasQuantity {
 		t.Errorf("balance = %d (has=%v), want 42 from the file",
-			written.Stock.Quantity, written.HasQuantity)
+			written.Quantity, written.HasQuantity)
 	}
-	if inv.lastMode != inventory.StockReplace {
+	if inv.lastMode != StockReplace {
 		t.Errorf("stock mode = %q, want the mode the vendor chose", inv.lastMode)
 	}
 }
@@ -236,7 +234,7 @@ func TestUpdatedVariantsGetTheirBalanceWritten(t *testing.T) {
 func TestBlankQuantityIsZeroAppliesToUpdatesToo(t *testing.T) {
 	ctx := context.Background()
 	product := int64(202)
-	keys := []catalog.VariantKey{{ID: 501, ProductID: product, SKU: "SKU-OLD"}}
+	keys := []VariantKey{{ID: 501, ProductID: product, SKU: "SKU-OLD"}}
 	rows := []*RowOutcome{stagedRow(1, &product, "SKU-OLD", "Existing item", 0, false)}
 
 	t.Run("on: the blank cell is written as zero", func(t *testing.T) {
@@ -282,7 +280,7 @@ func TestReplaceModeRetiresWhatTheFileDoesNotMention(t *testing.T) {
 	settings.Mode = ModeReplace
 
 	rows := []*RowOutcome{stagedRow(1, &written, "SKU-WRITTEN", "Written item", 3, true)}
-	keys := []catalog.VariantKey{
+	keys := []VariantKey{
 		{ID: 501, ProductID: written, SKU: "SKU-WRITTEN"},
 		{ID: 502, ProductID: held, SKU: "SKU-HELD"},
 		{ID: 503, ProductID: 404, SKU: "SKU-ABSENT"},
@@ -323,7 +321,7 @@ func TestReplaceModeRetiresWhatTheFileDoesNotMention(t *testing.T) {
 	// The delisted variant is retired through RetireVariantsExcept so that
 	// its warehouse stock and product variant are removed, without writing a zero balance back.
 	for _, row := range inv.writtenRows {
-		if row.Stock != nil && row.Stock.ProductVariantID == 503 {
+		if row.VariantID == 503 {
 			t.Error("a retired variant should not have a zero stock written back to inventory")
 		}
 	}
@@ -336,7 +334,7 @@ func TestReplaceModeRefusesToRetireAfterWritingNothing(t *testing.T) {
 	settings.WarehouseID = 1
 	settings.Mode = ModeReplace
 
-	keys := []catalog.VariantKey{{ID: 501, ProductID: 202, SKU: "SKU-OLD"}}
+	keys := []VariantKey{{ID: 501, ProductID: 202, SKU: "SKU-OLD"}}
 	svc, cat, _, _ := commitFixture(session("imp-replace-empty", settings), nil, keys, nil)
 
 	sess, err := svc.CommitImport(ctx, "imp-replace-empty")

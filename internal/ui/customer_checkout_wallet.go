@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // computeCheckoutGoodsAmount calculates the exact sum of line items net of discounts.
@@ -23,7 +23,7 @@ func computeCheckoutGoodsAmount(items []commerce.CheckoutLineItem) money.Amount 
 		if item.ListPrice.IsPositive() && item.ListPrice.Minor() > item.UnitPrice.Minor() {
 			lineTotal = lineSubtotal
 		} else if item.DiscountAmount.IsPositive() && item.DiscountAmount.Minor() < lineSubtotal.Minor() {
-			if sub, err := lineSubtotal.Sub(item.DiscountAmount); err == nil {
+			if sub, err := lineSubtotal.Sub(item.DiscountAmount); err == nil { // nolint:errswallow: money arithmetic fails only on overflow; the undiscounted total stands
 				lineTotal = sub
 			}
 		}
@@ -63,27 +63,6 @@ func (h *UIHandler) verifyWalletFunds(
 	if wallet.AvailableBalance.Minor() < goodsAmount.Minor() {
 		return 0, apperr.Validation("wallet.insufficient_funds",
 			fmt.Sprintf("رصيد المحفظة المؤسسية المتاح للاستخدام (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م).", wallet.AvailableBalance.String(), goodsAmount.String()), nil)
-	}
-
-	return walletUserID, nil
-}
-
-// processWalletPayment verifies tenant wallet funds and executes an atomic debit.
-func (h *UIHandler) processWalletPayment(
-	ctx context.Context,
-	actor authctx.Actor,
-	goodsAmount money.Amount,
-) (int64, error) {
-	walletUserID, err := h.verifyWalletFunds(ctx, actor, goodsAmount)
-	if err != nil {
-		return 0, err
-	}
-
-	// Atomic debit with pessimistic FOR UPDATE lock in billing repository
-	desc := "سداد قيمة مشتريات أدوية من المحفظة المؤسسية"
-	_, err = h.billSvc.Withdraw(ctx, walletUserID, "EGP", goodsAmount, "order", nil, desc)
-	if err != nil {
-		return 0, err
 	}
 
 	return walletUserID, nil

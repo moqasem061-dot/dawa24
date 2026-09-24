@@ -17,9 +17,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type mockAuditActivitiesRepo struct {
@@ -102,7 +102,7 @@ func TestAdminEmployeeActivities_AuthGuard(t *testing.T) {
 	_, r := setupActivitiesTestHandler(repo)
 
 	t.Run("Anonymous GET /admin/employee-activities redirects to login", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/employee-activities", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/employee-activities", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusSeeOther, rec.Code)
@@ -110,7 +110,7 @@ func TestAdminEmployeeActivities_AuthGuard(t *testing.T) {
 	})
 
 	t.Run("Anonymous GET /admin/employee-activities/export redirects to login", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/employee-activities/export", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/employee-activities/export", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusSeeOther, rec.Code)
@@ -118,7 +118,7 @@ func TestAdminEmployeeActivities_AuthGuard(t *testing.T) {
 	})
 
 	t.Run("Super admin GET /admin/employee-activities returns 200", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/employee-activities", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/employee-activities", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), superAdminActor()))
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -134,7 +134,7 @@ func TestAdminEmployeeActivities_FilterAndPagination(t *testing.T) {
 	}
 	_, r := setupActivitiesTestHandler(repo)
 
-	req := httptest.NewRequest("GET", "/admin/employee-activities?page=2&limit=10&action=catalog.product.create&date_from=2026-03-01&date_to=2026-03-15&q=Paracetamol&org_id=101&user_id=10", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/employee-activities?page=2&limit=10&action=catalog.product.create&date_from=2026-03-01&date_to=2026-03-15&q=Paracetamol&org_id=101&user_id=10", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), superAdminActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -182,7 +182,7 @@ func TestAdminEmployeeActivities_ExportExcel(t *testing.T) {
 	}
 	_, r := setupActivitiesTestHandler(repo)
 
-	req := httptest.NewRequest("GET", "/admin/employee-activities/export?date_from=2026-03-01&date_to=2026-03-15", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/employee-activities/export?date_from=2026-03-01&date_to=2026-03-15", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), superAdminActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)

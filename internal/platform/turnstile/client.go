@@ -15,7 +15,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 const defaultSiteVerifyURL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
@@ -151,7 +151,7 @@ func (c *realClient) Verify(ctx context.Context, token, clientIP, expectedAction
 		return fmt.Errorf("turnstile: failed to build verify request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", "Dawa24-Store-Turnstile/1.0")
+	req.Header.Set("User-Agent", "Dawa24-Turnstile/1.0")
 
 	resp, err := c.cfg.HTTPClient.Do(req)
 	if err != nil {

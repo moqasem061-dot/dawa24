@@ -235,4 +235,3 @@ func TestFormatWithCommas(t *testing.T) {
 		t.Errorf("FormatIntWithCommas(-5000) = %q, want -5,000", got)
 	}
 }
-

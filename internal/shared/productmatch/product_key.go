@@ -59,48 +59,10 @@ func ProductKeyParts(name string) (baseKey string, packCount float64, hasCount b
 		return "", 0, false
 	}
 
-	var parts []string
-
-	// 1. The brand, folded so that two alphabets and two spellings agree.
-	marks := identityMarks(name)
-	brand := make([]string, 0, 4)
-	for _, tok := range coreTokens(name) {
-		if _, isModifier := variantModifiers[tok]; isModifier {
-			continue // carried below, in canonical form
-		}
-		if key, named := letterNames[tok]; named {
-			if _, isMark := marks[key]; isMark {
-				continue
-			}
-		}
-		if key := variantKeyOf(tok); key != "" {
-			brand = append(brand, key)
-			continue
-		}
-		brand = append(brand, tok)
-	}
-	if len(brand) == 0 {
+	baseKey = identityKey(name, minVariantKeyRunes)
+	if baseKey == "" {
 		return "", 0, false
 	}
-	sort.Strings(brand)
-	parts = append(parts, "n:"+strings.Join(brand, "-"))
-
-	// 2. The line extension.
-	if mods := sortedKeys(modifiersIn(name)); len(mods) > 0 {
-		parts = append(parts, "m:"+strings.Join(mods, "-"))
-	}
-
-	// 3. The identity letter.
-	if list := sortedKeys(marks); len(list) > 0 {
-		parts = append(parts, "l:"+strings.Join(list, "-"))
-	}
-
-	// 4. Every dose the name states.
-	if doses := doseSignature(strengthSet(name)); doses != "" {
-		parts = append(parts, "d:"+doses)
-	}
-
-	baseKey = strings.Join(parts, "|")
 
 	// 5. Pack count or residual figure
 	qty := readQuantities(name)
@@ -214,4 +176,52 @@ func dedupeSorted(in []string) []string {
 		prev = v
 	}
 	return out
+}
+
+// identityKey is the part of a product's key that says WHICH product it is:
+// brand, line extension, identity letter and doses, without the pack size.
+// minRunes is the shortest brand skeleton allowed to stand in for a word.
+func identityKey(name string, minRunes int) string {
+	var parts []string
+
+	// 1. The brand, folded so that two alphabets and two spellings agree.
+	marks := identityMarks(name)
+	brand := make([]string, 0, 4)
+	for _, tok := range coreTokens(name) {
+		if _, isModifier := variantModifiers[tok]; isModifier {
+			continue // carried below, in canonical form
+		}
+		if key, named := letterNames[tok]; named {
+			if _, isMark := marks[key]; isMark {
+				continue
+			}
+		}
+		if key := variantKeyWith(tok, minRunes); key != "" {
+			brand = append(brand, key)
+			continue
+		}
+		brand = append(brand, tok)
+	}
+	if len(brand) == 0 {
+		return ""
+	}
+	sort.Strings(brand)
+	parts = append(parts, "n:"+strings.Join(brand, "-"))
+
+	// 2. The line extension.
+	if mods := sortedKeys(modifiersIn(name)); len(mods) > 0 {
+		parts = append(parts, "m:"+strings.Join(mods, "-"))
+	}
+
+	// 3. The identity letter.
+	if list := sortedKeys(marks); len(list) > 0 {
+		parts = append(parts, "l:"+strings.Join(list, "-"))
+	}
+
+	// 4. Every dose the name states.
+	if doses := doseSignature(strengthSet(name)); doses != "" {
+		parts = append(parts, "d:"+doses)
+	}
+
+	return strings.Join(parts, "|")
 }

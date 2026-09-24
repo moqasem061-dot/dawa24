@@ -9,9 +9,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // extractRowFromRecord extracts a CompareFileRow from a parsed record using the mapping config.
@@ -38,11 +38,11 @@ func (s *Service) extractRowFromRecord(record []string, headers []string, file *
 	priceStr := getValue(cfg.PriceCol)
 	price := money.Zero
 	if priceStr != "" {
-		if val, err := strconv.ParseFloat(priceStr, 64); err == nil {
+		if val, err := strconv.ParseFloat(priceStr, 64); err == nil { // nolint:errswallow: cell parse; tried as embedded number next
 			price = money.FromMinor(int64(math.Round(val * 100)))
 		} else {
 			// Try to extract number from string
-			if val, err := extractNumber(priceStr); err == nil {
+			if val, err := extractNumber(priceStr); err == nil { // nolint:errswallow: cell parse; an unreadable cell keeps the zero default
 				price = money.FromMinor(int64(math.Round(val * 100)))
 			}
 		}
@@ -57,10 +57,10 @@ func (s *Service) extractRowFromRecord(record []string, headers []string, file *
 	discountStr := getValue(cfg.DiscountCol)
 	discount := 0.0
 	if discountStr != "" {
-		if val, err := strconv.ParseFloat(discountStr, 64); err == nil {
+		if val, err := strconv.ParseFloat(discountStr, 64); err == nil { // nolint:errswallow: cell parse; tried as embedded number next
 			discount = val
 		} else {
-			if val, err := extractNumber(discountStr); err == nil {
+			if val, err := extractNumber(discountStr); err == nil { // nolint:errswallow: cell parse; an unreadable cell keeps the zero default
 				discount = val
 			}
 		}
@@ -259,7 +259,7 @@ func (s *Service) RunWarehouseLifecycle(
 					filepath.Join(uploadBaseDir, filepath.Base(key)),
 				}
 				for _, p := range candidates {
-					if err := os.Remove(p); err == nil {
+					if err := os.Remove(p); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
 						physicalDeleted++
 						break
 					}

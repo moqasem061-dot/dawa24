@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/stream"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/stream"
 )
 
 // The buffer is what turns "the answer stopped when I resized the window" into

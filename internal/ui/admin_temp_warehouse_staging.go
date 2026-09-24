@@ -9,13 +9,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Staging temp-warehouse uploads without holding the browser open.
@@ -83,11 +83,12 @@ func (h *UIHandler) registerTempWarehouseFile(
 	}
 
 	// On disk before the row exists, so a row can never point at nothing.
-	storageKey, _ := saveUploadedBytes(fileBytes, fh.Filename, "temp_warehouses")
-	if storageKey == "" {
+	storageKey, err := saveUploadedBytes(ctx, fileBytes, fh.Filename, "temp_warehouses")
+	if err != nil || storageKey == "" {
+		h.log.WarnContext(ctx, "temp warehouse upload not saved", "file", fh.Filename, "error", err)
 		return tempWarehouseUploadResult{
 			Filename: fh.Filename, SupplierName: supplierName, Success: false,
-			Error: i18n.T("ar", "admin.temp_warehouse.insufficient_rows"),
+			Error: i18n.T("ar", "compare.upload.save_failed"),
 		}
 	}
 

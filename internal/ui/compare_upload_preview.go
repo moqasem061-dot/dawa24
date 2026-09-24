@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Reading the head of an uploaded spreadsheet, for the mapping preview.
@@ -39,8 +39,12 @@ func (h *UIHandler) loadFileHeadersAndPreview(ctx context.Context, file *compare
 			"data" + file.StorageKey,
 		}
 		for _, cand := range candidates {
-			if f, err := os.Open(cand); err == nil {
-				headers, preview, _ = h.parseFilePreview(f, file.OriginalFilename)
+			if f, err := os.Open(cand); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
+				if loaded, loaded2, err := h.parseFilePreview(f, file.OriginalFilename); err != nil {
+					h.logLoadErr(ctx, "parseFilePreview", err)
+				} else {
+					headers, preview = loaded, loaded2
+				}
 				f.Close()
 				if len(headers) > 0 {
 					break
@@ -51,7 +55,9 @@ func (h *UIHandler) loadFileHeadersAndPreview(ctx context.Context, file *compare
 
 	// Fallback to already extracted rows in DB if disk read didn't populate headers
 	if len(headers) == 0 && file != nil && h.compareSvc != nil {
-		if dbRows, _ := h.compareSvc.ListFileRows(ctx, file.ID, 5, 0); len(dbRows) > 0 {
+		if dbRows, loadErr := h.compareSvc.ListFileRows(ctx, file.ID, 5, 0); loadErr != nil {
+			h.logLoadErr(ctx, "compareSvc.ListFileRows", loadErr)
+		} else if len(dbRows) > 0 {
 			headers = []string{i18n.T("ar", "compare.col.sku"), i18n.T("ar", "compare.col.name"), i18n.T("ar", "compare.col.price"), i18n.T("ar", "compare.col.discount")}
 			for _, dr := range dbRows {
 				preview = append(preview, []string{

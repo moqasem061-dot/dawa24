@@ -1,10 +1,9 @@
 package ingest
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Which of the vendor's own variants is this row about?
@@ -70,7 +69,7 @@ type variantIndex struct {
 
 // newVariantIndex indexes a vendor's existing variants for one destination.
 func newVariantIndex(
-	keys []catalog.VariantKey, inWarehouse map[int64]bool, branchID *int64,
+	keys []VariantKey, inWarehouse map[int64]bool, branchID *int64,
 ) *variantIndex {
 	idx := &variantIndex{
 		bySKU:              make(map[string]int64, len(keys)),
@@ -85,11 +84,9 @@ func newVariantIndex(
 		active:             make(map[int64]bool, len(keys)),
 		justWritten:        map[int64]bool{},
 	}
-	if inWarehouse != nil {
-		for k, v := range inWarehouse {
-			if v {
-				idx.initialInWarehouse[k] = true
-			}
+	for k, v := range inWarehouse {
+		if v {
+			idx.initialInWarehouse[k] = true
 		}
 	}
 	if idx.inWarehouse == nil {
@@ -209,11 +206,9 @@ func (idx *variantIndex) pickForProduct(productID int64) int64 {
 		return idx.active[id]
 	}); len(narrowed) == 1 {
 		return narrowed[0]
-	} else if len(narrowed) > 1 {
-		candidates = narrowed
 	}
 
-	return 0
+	return 0 // still ambiguous
 }
 
 // filterIDs keeps the ids the predicate accepts.
@@ -229,39 +224,6 @@ func filterIDs(ids []int64, keep func(int64) bool) []int64 {
 
 // exists reports whether an id is one of the vendor's live variants.
 func (idx *variantIndex) exists(id int64) bool { return idx.live[id] }
-
-// mentioned resolves a staged row's identifiers onto one of the vendor's
-// variants, for the replace mode's keep-list.
-//
-// Deliberately looser than resolve: it is answering "does this file talk about
-// a product the vendor already stocks", not "which variant does this row write
-// to". Where the vendor holds several variants of one product and nothing picks
-// between them, resolve refuses — correctly, because writing to the wrong one
-// moves stock. Here a refusal would delist all of them, so the question is
-// answered per product rather than per row, and every variant of a mentioned
-// product is kept.
-func (idx *variantIndex) mentioned(m RowMention) int64 {
-	if key := sheet.NormalizeKey(m.SourceCode); key != "" {
-		if id, ok := idx.bySKU[key]; ok {
-			return id
-		}
-	}
-	if code := sheet.DigitsOnly(m.Barcode); code != "" {
-		if id, ok := idx.byBarcode[code]; ok {
-			return id
-		}
-	}
-	return 0
-}
-
-// mentionedProduct lists every variant the vendor has of a catalogue product,
-// which is what a row mentioning that product protects.
-func (idx *variantIndex) mentionedProduct(productID int64) []int64 {
-	if productID <= 0 {
-		return nil
-	}
-	return idx.byProduct[productID]
-}
 
 // remember records a newly written variant so a later row in the same file
 // updates it rather than inserting a second copy of it.

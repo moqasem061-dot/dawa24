@@ -12,11 +12,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) LoginPage(w http.ResponseWriter, r *http.Request) {
@@ -75,13 +75,14 @@ func (h *UIHandler) RegisterPage(w http.ResponseWriter, r *http.Request) {
 	if reqType == "" {
 		reqType = strings.ToLower(strings.TrimSpace(r.URL.Query().Get("account_type")))
 	}
-	if reqType == "job_seeker" || reqType == "seeker" || reqType == "jobseeker" {
+	switch reqType {
+	case "job_seeker", "seeker", "jobseeker":
 		reqType = "job_seeker"
-	} else if reqType == "supplier" || reqType == "vendor" {
+	case "supplier", "vendor":
 		reqType = "vendor"
-	} else if reqType == "customer" || reqType == "pharmacy" {
+	case "customer", "pharmacy":
 		reqType = "customer"
-	} else {
+	default:
 		reqType = ""
 	}
 
@@ -356,7 +357,7 @@ func (h *UIHandler) parsePendingMFAToken(tokenStr string) (*pendingMFAPayload, e
 	mac := hmac.New(sha256.New, sigKey)
 	mac.Write([]byte(payloadB64))
 	expectedSig := hex.EncodeToString(mac.Sum(nil))
-	if hmac.Equal([]byte(sig), []byte(expectedSig)) == false {
+	if !hmac.Equal([]byte(sig), []byte(expectedSig)) {
 		return nil, identity.ErrInvalidCredentials
 	}
 

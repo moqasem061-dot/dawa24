@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 func (r *Repository) SoftDelete(ctx context.Context, id int64) error {
@@ -42,7 +42,7 @@ func (r *Repository) CreateDocumentRequest(ctx context.Context, req *attachments
 		} else {
 			st = string(req.Status)
 		}
-		var dt string = string(req.DocumentType)
+		var dt = string(req.DocumentType)
 		var subDocID *int64
 		err := tx.QueryRow(txCtx, query,
 			req.OrganizationID, req.RequestedBy, dt, req.Title, req.Description, req.DeadlineAt, st,

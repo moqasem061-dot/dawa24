@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // documentsRedirect returns the actor to their documents screen after a form
@@ -41,7 +41,8 @@ func (h *UIHandler) OrganizationDocumentsPage(w http.ResponseWriter, r *http.Req
 	if h.attSvc != nil && orgID > 0 {
 		sysCtx := database.AsSystem(ctx)
 		docs, err := h.attSvc.ListByOrganization(sysCtx, orgID)
-		reqs, _ := h.attSvc.ListDocumentRequests(sysCtx, actor, &orgID)
+		reqs, loadErr := h.attSvc.ListDocumentRequests(sysCtx, actor, &orgID)
+		h.logLoadErr(ctx, "attSvc.ListDocumentRequests", loadErr)
 		if err != nil {
 			h.log.ErrorContext(ctx, "load organization documents", "organization_id", orgID, "error", err)
 			data.Error = i18n.T(lang, "docs.load_failed")
@@ -185,7 +186,7 @@ func saveUploadedFileMeta(r *http.Request, formKey, category string) (url, name 
 	if err != nil || url == "" {
 		return url, "", err
 	}
-	if file, header, ferr := r.FormFile(formKey); ferr == nil {
+	if file, header, ferr := r.FormFile(formKey); ferr == nil { // nolint:errswallow: only the original filename is read here; the upload itself was checked above
 		defer file.Close()
 		name = header.Filename
 	}
@@ -268,4 +269,3 @@ func (h *UIHandler) RegisterVendorSharedRoutes(r chi.Router) {
 	r.Post("/vendor/documents/upload", h.OrganizationDocumentsUploadSubmit)
 	r.Post("/vendor/documents/delete", h.OrganizationDocumentDeleteSubmit)
 }
-

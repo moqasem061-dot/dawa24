@@ -6,7 +6,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 // resolveCategories links products to categories by their folded name, creating
@@ -152,4 +152,3 @@ func insertBrand(ctx context.Context, tx pgx.Tx, name string) (int64, error) {
 	}
 	return id, nil
 }
-

@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // The subscriber log's request handling.
@@ -49,7 +49,7 @@ func adminSubscriptionFiltersFrom(r *http.Request) pages.AdminSubscriptionFilter
 	// Only the windows the control offers are honoured, for the same reason
 	// pagination.RowsPerPage honours only its own set: the query string is
 	// user-supplied and an arbitrary window is a question the UI never asked.
-	if n, err := strconv.Atoi(q.Get("expiring_days")); err == nil {
+	if n, err := strconv.Atoi(q.Get("expiring_days")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		switch n {
 		case 7, 30, 90:
 			f.ExpiringWithinDays = n

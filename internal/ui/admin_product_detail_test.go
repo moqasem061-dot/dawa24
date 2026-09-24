@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestAdminProductDetailPage_EnlargedImageAndNoOldPrice(t *testing.T) {
@@ -112,7 +112,7 @@ func TestAdminProductDetailPage_ImageLinkFallback(t *testing.T) {
 		SKU:       "6224003890152",
 		Barcode:   "6224003890152",
 		Price:     money.MustParse("289.00"),
-		Image:     "", // Empty Image
+		Image:     "",                            // Empty Image
 		ImageLink: "uploads/products/uvepro.jpg", // Relative ImageLink without leading slash
 		Status:    catalog.StatusActive,
 	}

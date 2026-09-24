@@ -187,12 +187,12 @@ func (p *ColumnProfile) observeNumber(v string) {
 	if d.Percent {
 		p.Percent++
 	}
-	switch {
-	case d.Scale == 0:
+	switch d.Scale {
+	case 0:
 		p.Integer++
-	case d.Scale == 1:
+	case 1:
 		p.OneDp++
-	case d.Scale == 2:
+	case 2:
 		p.TwoDp++
 	default:
 		p.DeepDp++

@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/muhiya/dawa24-store/internal/ui/imageurl"
+import "github.com/moqasem061-dot/dawa24/internal/ui/imageurl"
 
 // ProductImage renders an uploaded image at the size the page actually needs.
 //
@@ -162,7 +162,7 @@ func ProductImage(img imageurl.Image) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" onerror=\"this.onerror=null; this.style.display='none'; if(this.nextElementSibling && this.nextElementSibling.classList.contains('product-img-fallback')){this.nextElementSibling.classList.remove('hidden'); this.nextElementSibling.style.display='flex';} if(this.parentElement && this.parentElement.tagName==='A'){this.parentElement.removeAttribute('href'); this.parentElement.classList.remove('cursor-zoom-in'); this.parentElement.style.cursor='default';}\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

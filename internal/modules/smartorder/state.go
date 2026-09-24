@@ -3,7 +3,7 @@ package smartorder
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // The run lifecycle.

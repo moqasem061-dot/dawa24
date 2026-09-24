@@ -11,8 +11,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type mockGeographyRepo struct {
@@ -175,7 +175,7 @@ func setupGeoTestHandler() (*UIHandler, *mockGeographyRepo) {
 func TestAdminCitiesPage_ShowsDisabledCityWithBadgeAndActivateButton(t *testing.T) {
 	h, _ := setupGeoTestHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/cities", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/cities", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminCitiesPage(rec, req)
@@ -214,7 +214,7 @@ func TestAdminCitiesPage_StatusFilter(t *testing.T) {
 	h, _ := setupGeoTestHandler()
 
 	// 1. status=active: shows only active cities
-	reqActive := httptest.NewRequest(http.MethodGet, "/admin/cities?status=active", nil)
+	reqActive := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/cities?status=active", nil)
 	recActive := httptest.NewRecorder()
 	h.AdminCitiesPage(recActive, reqActive)
 
@@ -227,7 +227,7 @@ func TestAdminCitiesPage_StatusFilter(t *testing.T) {
 	}
 
 	// 2. status=inactive: shows only disabled cities
-	reqInactive := httptest.NewRequest(http.MethodGet, "/admin/cities?status=inactive", nil)
+	reqInactive := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/cities?status=inactive", nil)
 	recInactive := httptest.NewRecorder()
 	h.AdminCitiesPage(recInactive, reqInactive)
 
@@ -261,7 +261,7 @@ func TestAdminCityToggleSubmit_TogglesStatus(t *testing.T) {
 	r := chi.NewRouter()
 	r.Post("/admin/cities/{id}/toggle", h.AdminCityToggleSubmit)
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/cities/2/toggle", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/cities/2/toggle", nil)
 	req.Header.Set("Referer", "/admin/cities?status=inactive")
 	rec := httptest.NewRecorder()
 

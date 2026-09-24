@@ -164,4 +164,3 @@ func loadOrdersUIKeys(e *engine) {
 	addKey(e, "reviews.comment_placeholder", "reviews", "اكتب انطباع صيدليتك عن هذا التوريد لمساعدة المورد وباقي الصيدليات...", "Write your feedback regarding this fulfillment to assist the supplier and network pharmacies...", "Review comment placeholder")
 	addKey(e, "reviews.submit_btn", "reviews", "إرسال التقييم المعتمد", "Submit Verified Review", "Review submit button")
 }
-

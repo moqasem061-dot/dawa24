@@ -8,7 +8,7 @@ import (
 	"strings"
 	"sync/atomic"
 
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
 )
 
 // The default tracker.
@@ -157,10 +157,7 @@ func PanicClass(rec any) string {
 func PanicOrigin(stack string) (string, int) {
 	for _, line := range strings.Split(stack, "\n") {
 		line = strings.TrimSpace(line)
-		if !strings.HasPrefix(line, "/") && !strings.Contains(line, ":\\") {
-			continue
-		}
-		if !strings.Contains(line, "dawa24-store") ||
+		if !inModule(line) ||
 			strings.Contains(line, "/platform/errtrack/") ||
 			strings.Contains(line, "/platform/httpx/") {
 			continue

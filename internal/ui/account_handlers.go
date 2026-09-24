@@ -9,9 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // WalletPage redirects to the dedicated wallet page.
@@ -60,12 +60,11 @@ func (h *UIHandler) WalletDepositEditSubmit(w http.ResponseWriter, r *http.Reque
 	ref := strings.TrimSpace(r.PostFormValue("reference_number"))
 	notes := strings.TrimSpace(r.PostFormValue("notes"))
 
-	var attachmentURL string
-	if file, _, err := r.FormFile("receipt"); err == nil && file != nil {
-		_ = file.Close()
-		if savedPath, err := saveUploadedFile(r, "receipt", "receipts"); err == nil {
-			attachmentURL = savedPath
-		}
+	attachmentURL, err := optionalUpload(r, "receipt", "receipts")
+	if err != nil {
+		h.log.WarnContext(ctx, "deposit receipt could not be saved", "error", err, "deposit_id", depositID)
+		h.redirectWithNotice(w, r, dest, "error", i18n.T(lang, "upload.attachment_failed"))
+		return
 	}
 
 	if h.billSvc == nil {

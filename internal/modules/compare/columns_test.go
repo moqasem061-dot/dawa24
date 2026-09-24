@@ -3,7 +3,7 @@ package compare_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 func TestDetectColumns_RealWorldHeaders(t *testing.T) {
@@ -160,8 +160,8 @@ func TestValidateMapping(t *testing.T) {
 		1: compare.FieldDiscount,
 	}
 	valid, missing = compare.ValidateMapping(missingNameMapping)
-	if valid {
-		t.Errorf("expected mapping without name to be invalid")
+	if valid || len(missing) == 0 {
+		t.Errorf("expected mapping without name to be invalid with missing fields, got missing: %v", missing)
 	}
 
 	// 4. Missing Price and Discount
@@ -170,7 +170,7 @@ func TestValidateMapping(t *testing.T) {
 		1: compare.FieldSKU,
 	}
 	valid, missing = compare.ValidateMapping(missingPriceMapping)
-	if valid {
-		t.Errorf("expected mapping without price or discount to be invalid")
+	if valid || len(missing) == 0 {
+		t.Errorf("expected mapping without price or discount to be invalid with missing fields, got missing: %v", missing)
 	}
 }

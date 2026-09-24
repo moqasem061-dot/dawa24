@@ -8,9 +8,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // handleSavingProductsImportItemUpdateSubmit updates staged item details for customer or vendor.
@@ -25,28 +25,30 @@ func (h *UIHandler) handleSavingProductsImportItemUpdateSubmit(w http.ResponseWr
 	sessionID := chi.URLParam(r, "id")
 	itemIndex, _ := strconv.Atoi(chi.URLParam(r, "itemIndex"))
 
-	if err := r.ParseForm(); err == nil {
-		name := strings.TrimSpace(r.FormValue("name"))
-		var pricePtr *money.Amount
-		if pStr := strings.TrimSpace(r.FormValue("price")); pStr != "" {
-			if amt, err := money.Parse(pStr); err == nil {
-				pricePtr = &amt
-			}
+	if err := r.ParseForm(); err != nil {
+		h.redirectWithNotice(w, r, fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery), "error", i18n.T(langOf(r), "common.invalid_form_data"))
+		return
+	}
+	name := strings.TrimSpace(r.FormValue("name"))
+	var pricePtr *money.Amount
+	if pStr := strings.TrimSpace(r.FormValue("price")); pStr != "" {
+		if amt, err := money.Parse(pStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
+			pricePtr = &amt
 		}
-		var qtyPtr *float64
-		if qStr := strings.TrimSpace(r.FormValue("quantity")); qStr != "" {
-			if q, err := strconv.ParseFloat(qStr, 64); err == nil && q > 0 {
-				qtyPtr = &q
-			}
+	}
+	var qtyPtr *float64
+	if qStr := strings.TrimSpace(r.FormValue("quantity")); qStr != "" {
+		if q, err := strconv.ParseFloat(qStr, 64); err == nil && q > 0 {
+			qtyPtr = &q
 		}
-		if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, actor.OrganizationID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
-			// Silently redirecting on a failed edit is how a row that would not
-			// save looked exactly like a row that did.
-			h.redirectWithNotice(w, r,
-				fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery),
-				"error", h.safeMessage(err, langOf(r)))
-			return
-		}
+	}
+	if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, actor.OrganizationID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
+		// Silently redirecting on a failed edit is how a row that would not
+		// save looked exactly like a row that did.
+		h.redirectWithNotice(w, r,
+			fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery),
+			"error", h.safeMessage(err, langOf(r)))
+		return
 	}
 
 	redirectURI := fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery)
@@ -66,19 +68,21 @@ func (h *UIHandler) handleSavingProductsImportItemMatchSubmit(w http.ResponseWri
 	itemIndex, _ := strconv.Atoi(chi.URLParam(r, "itemIndex"))
 
 	noticeMsg := "تم إلغاء ربط الصنف (أصبح غير مرتبط)."
-	if err := r.ParseForm(); err == nil {
-		productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
-		masterName := strings.TrimSpace(r.FormValue("master_name"))
-		masterSKU := strings.TrimSpace(r.FormValue("master_sku"))
-		if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, actor.OrganizationID, itemIndex, productID, masterName, masterSKU); err != nil {
-			h.redirectWithNotice(w, r,
-				fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery),
-				"error", h.safeMessage(err, langOf(r)))
-			return
-		}
-		if productID > 0 {
-			noticeMsg = fmt.Sprintf("تم ربط الصنف «%s» بالكتالوج المركزي.", masterName)
-		}
+	if err := r.ParseForm(); err != nil {
+		h.redirectWithNotice(w, r, fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery), "error", i18n.T(langOf(r), "common.invalid_form_data"))
+		return
+	}
+	productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
+	masterName := strings.TrimSpace(r.FormValue("master_name"))
+	masterSKU := strings.TrimSpace(r.FormValue("master_sku"))
+	if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, actor.OrganizationID, itemIndex, productID, masterName, masterSKU); err != nil {
+		h.redirectWithNotice(w, r,
+			fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery),
+			"error", h.safeMessage(err, langOf(r)))
+		return
+	}
+	if productID > 0 {
+		noticeMsg = fmt.Sprintf("تم ربط الصنف «%s» بالكتالوج المركزي.", masterName)
 	}
 
 	redirectURI := fmt.Sprintf("/%s/saving-products/import/%s?%s", audience, sessionID, r.URL.RawQuery)

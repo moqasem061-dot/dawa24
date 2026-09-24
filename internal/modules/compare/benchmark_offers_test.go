@@ -3,7 +3,7 @@ package compare
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The modal must list exactly as many offers as the badge the reader clicked.
@@ -23,7 +23,7 @@ func TestBucketPartitionMatchesTheCounts(t *testing.T) {
 		{SupplierName: "أرخص أ", NetPrice: money.FromMinor(7000)},
 	}
 
-	tolerance := int64(float64(yourNet.Minor()) * equalTolerancePercent / 100)
+	tolerance := yourNet.ApplyPercent(equalToleranceBPS).Minor()
 	counts := map[BenchmarkBucket]int{}
 	seen := map[string]bool{}
 	for _, o := range offers {

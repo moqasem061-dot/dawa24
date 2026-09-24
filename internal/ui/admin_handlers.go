@@ -6,14 +6,14 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminDashboardPage renders the platform's headline numbers.
@@ -104,7 +104,9 @@ func (h *UIHandler) computeDashboardSnapshot(ctx context.Context) *dashboardSnap
 		if h.idSvc == nil {
 			return
 		}
-		if n, err := h.idSvc.AdminCountUsers(ctx); err == nil {
+		if n, err := h.idSvc.AdminCountUsers(ctx); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminCountUsers", err)
+		} else {
 			s.totalUsers = n
 		}
 	}
@@ -113,32 +115,46 @@ func (h *UIHandler) computeDashboardSnapshot(ctx context.Context) *dashboardSnap
 		if h.orgSvc == nil {
 			return
 		}
-		if n, err := h.orgSvc.CountOrganizations(ctx, nil, nil); err == nil {
+		if n, err := h.orgSvc.CountOrganizations(ctx, nil, nil); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
 			s.totalOrganizations = n
 		}
 		pharmacyType := org.TypeCustomer
-		if n, err := h.orgSvc.CountOrganizations(ctx, &pharmacyType, nil); err == nil {
+		if n, err := h.orgSvc.CountOrganizations(ctx, &pharmacyType, nil); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
 			s.totalPharmacies = n
 		}
 		vendorType := org.TypeVendor
-		if n, err := h.orgSvc.CountOrganizations(ctx, &vendorType, nil); err == nil {
+		if n, err := h.orgSvc.CountOrganizations(ctx, &vendorType, nil); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
 			s.totalVendors = n
 		}
 		pending := org.StatusPending
-		if n, err := h.orgSvc.CountOrganizations(ctx, nil, &pending); err == nil {
+		if n, err := h.orgSvc.CountOrganizations(ctx, nil, &pending); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
 			s.pendingApprovals = n
 		}
-		if list, err := h.orgSvc.ListOrganizations(ctx, nil, &pending, 6, 0); err == nil {
+		if list, err := h.orgSvc.ListOrganizations(ctx, nil, &pending, 6, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			s.pendingOrganizations = list
 		}
-		if list, err := h.orgSvc.ListOrganizations(ctx, nil, nil, 6, 0); err == nil {
+		if list, err := h.orgSvc.ListOrganizations(ctx, nil, nil, 6, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			s.recentOrganizations = list
 		}
 		// AdminBranchStats and not ListBranches(0): the latter selects every
 		// branch on the platform, joined to identity.users with a correlated
 		// array_agg per row, and materialises the lot in Go so that len() can
 		// be taken of it. The count is a count.
-		if bs, err := h.orgSvc.AdminBranchStats(sysCtx); err == nil {
+		if bs, err := h.orgSvc.AdminBranchStats(sysCtx); err != nil {
+			h.logLoadErr(ctx, "orgSvc.AdminBranchStats", err)
+		} else {
 			s.totalBranches = bs.TotalBranches
 		}
 	}
@@ -147,10 +163,14 @@ func (h *UIHandler) computeDashboardSnapshot(ctx context.Context) *dashboardSnap
 		if h.commSvc == nil {
 			return
 		}
-		if n, err := h.commSvc.CountOrders(ctx); err == nil {
+		if n, err := h.commSvc.CountOrders(ctx); err != nil {
+			h.logLoadErr(ctx, "commSvc.CountOrders", err)
+		} else {
 			s.totalOrders = n
 		}
-		if recent, _, err := h.commSvc.AdminSearchOrdersFiltered(ctx, commerce.AdminOrderFilter{Tab: "all", Limit: 8}); err == nil {
+		if recent, _, err := h.commSvc.AdminSearchOrdersFiltered(ctx, commerce.AdminOrderFilter{Tab: "all", Limit: 8}); err != nil {
+			h.logLoadErr(ctx, "commSvc.AdminSearchOrdersFiltered", err)
+		} else {
 			s.recentOrders = recent
 			for _, o := range recent {
 				if o.Status == commerce.StatusDelivered || o.Status == commerce.StatusCompleted {
@@ -167,7 +187,9 @@ func (h *UIHandler) computeDashboardSnapshot(ctx context.Context) *dashboardSnap
 			return
 		}
 		if deps, total, err := h.billSvc.AdminListDetailedDeposits(sysCtx,
-			billing.DepositFilter{Status: "pending", Limit: 50}); err == nil {
+			billing.DepositFilter{Status: "pending", Limit: 50}); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminListDetailedDeposits", err)
+		} else {
 			s.pendingDepositsCount = total
 			var depTotal money.Amount
 			for _, d := range deps {
@@ -176,7 +198,9 @@ func (h *UIHandler) computeDashboardSnapshot(ctx context.Context) *dashboardSnap
 			s.pendingDepositsMinor = depTotal.Minor()
 		}
 		if wallets, _, err := h.billSvc.AdminListDetailedWallets(sysCtx,
-			billing.WalletFilter{Limit: 100}); err == nil {
+			billing.WalletFilter{Limit: 100}); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminListDetailedWallets", err)
+		} else {
 			for _, wlt := range wallets {
 				s.heldInWalletsMinor += wlt.Balance.Minor()
 			}

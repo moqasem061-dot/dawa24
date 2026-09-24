@@ -238,7 +238,7 @@
     background: var(--bg-surface-sunken);
     border: 1px solid var(--border-subtle);
     text-decoration: none;
-    transition: all var(--duration-fast) var(--ease-smooth);
+    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
     white-space: nowrap;
     cursor: pointer;
   }
@@ -289,7 +289,7 @@
     background: var(--bg-surface-sunken);
     border: 1px solid var(--border-subtle);
     text-decoration: none;
-    transition: all var(--duration-fast) var(--ease-smooth);
+    transition: color var(--duration-fast) var(--ease-smooth), background-color var(--duration-fast) var(--ease-smooth), border-color var(--duration-fast) var(--ease-smooth), box-shadow var(--duration-fast) var(--ease-smooth), transform var(--duration-fast) var(--ease-smooth), opacity var(--duration-fast) var(--ease-smooth);
     cursor: pointer;
   }
 
@@ -425,7 +425,7 @@
     font-size: 0.775rem;
     font-weight: 600;
     line-height: 1.25;
-    transition: all 0.12s ease;
+    transition: color 0.12s ease, background-color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.12s ease, opacity 0.12s ease;
   }
 
   .admin-dir-item:hover {

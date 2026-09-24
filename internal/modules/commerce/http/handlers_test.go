@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 type stubRepo struct{ t *testing.T }
@@ -242,4 +242,3 @@ func (r stubRepo) ListCourierWorkload(ctx context.Context, vendorOrgID int64) ([
 	r.fail("ListCourierWorkload")
 	return nil, nil
 }
-

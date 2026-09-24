@@ -9,8 +9,8 @@ import (
 
 	"github.com/redis/go-redis/v9"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Limiter provides Redis-backed rate limiting middlewares.
@@ -128,7 +128,7 @@ func (l *Limiter) LimitUserOrIP(userLimit, ipLimit int, window time.Duration) fu
 			}
 
 			var key string
-			limit := ipLimit
+			var limit int
 
 			var userID int64
 			if l.userFn != nil {
@@ -193,4 +193,3 @@ func setRateLimitHeaders(w http.ResponseWriter, limit int, count int64, ttl time
 		w.Header().Set("X-RateLimit-Reset", strconv.FormatInt(int64(ttl.Seconds()), 10))
 	}
 }
-

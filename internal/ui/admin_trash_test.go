@@ -11,9 +11,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminDeletesListsAndTrashRoutes(t *testing.T) {
@@ -244,7 +244,7 @@ func TestAdminTrashListPage_RenderingAndCounts(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/admin/trash-list", handler.AdminTrashListPage)
 
-	req := httptest.NewRequest("GET", "/admin/trash-list", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/trash-list", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), *staffTrashActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -274,7 +274,7 @@ func TestAdminTrashListModelPage_HumanIdentityAndConfirmModal(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/admin/trash-list/{model}", handler.AdminTrashListModelPage)
 
-	req := httptest.NewRequest("GET", "/admin/trash-list/catalog.products", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/trash-list/catalog.products", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), *staffTrashActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -338,7 +338,7 @@ func TestAdminTrashRestoreAndPurgeSubmissions(t *testing.T) {
 	r.Post("/admin/trash-list/{model}/{id}/purge", handler.AdminTrashPurgeSubmit)
 
 	// 1. Restore
-	reqRestore := httptest.NewRequest("POST", "/admin/trash-list/catalog.products/10/restore", nil)
+	reqRestore := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/trash-list/catalog.products/10/restore", nil)
 	reqRestore = reqRestore.WithContext(authctx.WithActor(reqRestore.Context(), *staffTrashActor()))
 	recRestore := httptest.NewRecorder()
 	r.ServeHTTP(recRestore, reqRestore)
@@ -351,7 +351,7 @@ func TestAdminTrashRestoreAndPurgeSubmissions(t *testing.T) {
 	}
 
 	// 2. Purge
-	reqPurge := httptest.NewRequest("POST", "/admin/trash-list/catalog.products/10/purge", nil)
+	reqPurge := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/trash-list/catalog.products/10/purge", nil)
 	reqPurge = reqPurge.WithContext(authctx.WithActor(reqPurge.Context(), *staffTrashActor()))
 	recPurge := httptest.NewRecorder()
 	r.ServeHTTP(recPurge, reqPurge)

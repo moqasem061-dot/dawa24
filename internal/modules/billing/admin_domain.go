@@ -3,7 +3,7 @@ package billing
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // AdminInvoiceView represents an enriched B2B invoice view for administration.
@@ -57,27 +57,27 @@ type AdminPaymentView struct {
 
 // AdminWalletDepositView represents an enriched deposit request record for admin audit and review.
 type AdminWalletDepositView struct {
-	ID               int64         `json:"id"`
-	PublicID         string        `json:"public_id"`
-	WalletID         int64         `json:"wallet_id"`
-	UserID           int64         `json:"user_id"`
-	UserName         string        `json:"user_name"`
-	UserEmail        string        `json:"user_email"`
-	UserPhone        string        `json:"user_phone"`
-	OrganizationID   *int64        `json:"organization_id,omitempty"`
-	OrganizationName string        `json:"organization_name"`
-	OrganizationType string        `json:"organization_type"`
-	Amount           money.Amount  `json:"amount"`
-	Currency         string        `json:"currency"`
-	PaymentMethod    string        `json:"payment_method"`
-	ReferenceNumber  string        `json:"reference_number"`
-	AttachmentURL    string        `json:"attachment_url,omitempty"`
-	UserNotes        string        `json:"user_notes,omitempty"`
-	Status           DepositStatus `json:"status"`
-	RejectionReason  string        `json:"rejection_reason,omitempty"`
-	ReviewedBy       *int64        `json:"reviewed_by,omitempty"`
-	ReviewerName     string        `json:"reviewer_name,omitempty"`
-	ReviewedAt       *time.Time    `json:"reviewed_at,omitempty"`
+	ID                  int64         `json:"id"`
+	PublicID            string        `json:"public_id"`
+	WalletID            int64         `json:"wallet_id"`
+	UserID              int64         `json:"user_id"`
+	UserName            string        `json:"user_name"`
+	UserEmail           string        `json:"user_email"`
+	UserPhone           string        `json:"user_phone"`
+	OrganizationID      *int64        `json:"organization_id,omitempty"`
+	OrganizationName    string        `json:"organization_name"`
+	OrganizationType    string        `json:"organization_type"`
+	Amount              money.Amount  `json:"amount"`
+	Currency            string        `json:"currency"`
+	PaymentMethod       string        `json:"payment_method"`
+	ReferenceNumber     string        `json:"reference_number"`
+	AttachmentURL       string        `json:"attachment_url,omitempty"`
+	UserNotes           string        `json:"user_notes,omitempty"`
+	Status              DepositStatus `json:"status"`
+	RejectionReason     string        `json:"rejection_reason,omitempty"`
+	ReviewedBy          *int64        `json:"reviewed_by,omitempty"`
+	ReviewerName        string        `json:"reviewer_name,omitempty"`
+	ReviewedAt          *time.Time    `json:"reviewed_at,omitempty"`
 	TransactionID       *int64        `json:"transaction_id,omitempty"`
 	IsRefunded          bool          `json:"is_refunded"`
 	RefundedBy          *int64        `json:"refunded_by,omitempty"`

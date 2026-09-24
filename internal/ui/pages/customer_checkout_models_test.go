@@ -3,8 +3,8 @@ package pages_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestFilterUserPaymentMethodsByProvider(t *testing.T) {

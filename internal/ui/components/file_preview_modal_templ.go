@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+import "github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 // UniversalFilePreviewModal provides an in-window lightbox modal for viewing images and PDFs across all platform dashboards.
 func UniversalFilePreviewModal(langOpt ...string) templ.Component {

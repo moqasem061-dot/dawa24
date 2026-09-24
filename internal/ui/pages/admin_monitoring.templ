@@ -3,9 +3,9 @@ package pages
 import (
 	"fmt"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminFullErrorLogsPage renders error logs directory.
@@ -16,7 +16,7 @@ templ AdminFullErrorLogsPage(logs []*platformadmin.ErrorLog, total int, activeSt
 				<div class="flex-between items-center flex-wrap gap-4">
 					<div class="d-flex items-center gap-3">
 						<div class="user-avatar-badge text-xl">
-							🩺
+							@components.IconActivity("icon-md")
 						</div>
       <div class="stack-sm">
 							<h1 class="text-2xl font-black text-primary m-0">سجلات تشخيص واستثناءات النظام ({ fmt.Sprintf("%d", total) })</h1>
@@ -29,7 +29,7 @@ templ AdminFullErrorLogsPage(logs []*platformadmin.ErrorLog, total int, activeSt
 			<div class="glass-panel p-0 mb-6 overflow-hidden">
 				if len(logs) == 0 {
 					<div class="p-8 text-center empty-state-glass">
-						<div class="text-4xl mb-3">🩺</div>
+						<div class="text-4xl mb-3">@components.IconActivity("icon-xl")</div>
 						<h3 class="text-lg font-black text-primary mb-2">لا توجد أخطاء مسجلة</h3>
 						<p class="text-sm text-secondary max-w-md mx-auto">النظام يعمل بكفاءة عالية دون أي استثناءات حالياً.</p>
 					</div>

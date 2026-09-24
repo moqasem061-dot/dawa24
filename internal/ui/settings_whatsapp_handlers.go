@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
-	"github.com/muhiya/dawa24-store/internal/modules/whatsapp"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/whatsapp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // The WhatsApp card on the settings page, the counterpart of the Telegram

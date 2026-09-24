@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // Reading the catalogue an import is matched against.

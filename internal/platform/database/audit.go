@@ -9,7 +9,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
 )
 
 type auditIPKey struct{}

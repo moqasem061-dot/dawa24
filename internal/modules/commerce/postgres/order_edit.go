@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/jackc/pgx/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // UpdateCustomerPendingOrder modifies items, quantities and recalculates totals for a pending order.
@@ -42,11 +42,12 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		}
 
 		// Calculate initial tax percentage rate if tax was present on the order
-		taxRate := 0.0
-		oldTaxable, _ := oldSubtotal.Sub(oldDiscount)
-		if oldTax.IsPositive() && oldTaxable.IsPositive() {
-			taxRate = float64(oldTax.Minor()) / float64(oldTaxable.Minor())
+		// The order's tax rate is kept as the exact ratio oldTax/oldTaxable.
+		oldTaxable, err := oldSubtotal.Sub(oldDiscount)
+		if err != nil {
+			return fmt.Errorf("order taxable amount: %w", err)
 		}
+		hasTaxRate := oldTax.IsPositive() && oldTaxable.IsPositive()
 
 		// Get primary shipment ID and vendor organization ID if existing
 		var defaultShipmentID, defaultOrgID int64
@@ -107,16 +108,26 @@ func (r *Repository) UpdateCustomerPendingOrder(
 				rows.Close()
 				return fmt.Errorf("scan order line pricing: %w", err)
 			}
-			lineGross := up
+			var lineGross money.Amount
+			var err error
 			if lp.IsPositive() && lp.Minor() > up.Minor() {
-				lineGross, _ = lp.MulInt(int64(qty))
+				lineGross, err = lp.MulInt(int64(qty))
 			} else if da.IsPositive() {
-				lineGross, _ = tp.Add(da)
+				lineGross, err = tp.Add(da)
 			} else {
-				lineGross, _ = up.MulInt(int64(qty))
+				lineGross, err = up.MulInt(int64(qty))
 			}
-			newSubtotal, _ = newSubtotal.Add(lineGross)
-			newTotalDiscount, _ = newTotalDiscount.Add(da)
+			if err == nil {
+				newSubtotal, err = newSubtotal.Add(lineGross)
+			}
+			if err == nil {
+				newTotalDiscount, err = newTotalDiscount.Add(da)
+			}
+			if err != nil {
+				// Overflow: writing a truncated total would misprice the order.
+				rows.Close()
+				return fmt.Errorf("recompute order totals: %w", err)
+			}
 		}
 		if err := rows.Err(); err != nil {
 			rows.Close()
@@ -124,15 +135,20 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		}
 		rows.Close()
 
-		newTaxable, _ := newSubtotal.Sub(newTotalDiscount)
+		newTaxable, err := newSubtotal.Sub(newTotalDiscount)
+		if err != nil {
+			return fmt.Errorf("recompute taxable amount: %w", err)
+		}
 		if newTaxable.IsNegative() {
 			newTaxable = money.Zero
 		}
 
 		newTaxAmount := money.Zero
-		if taxRate > 0 && newTaxable.IsPositive() {
-			taxMinor := int64(float64(newTaxable.Minor()) * taxRate)
-			newTaxAmount = money.FromMinor(taxMinor)
+		if hasTaxRate && newTaxable.IsPositive() {
+			newTaxAmount, err = newTaxable.MulRatio(oldTax.Minor(), oldTaxable.Minor())
+			if err != nil {
+				return fmt.Errorf("recompute order tax: %w", err)
+			}
 		} else if oldTax.IsPositive() {
 			newTaxAmount = oldTax
 		}

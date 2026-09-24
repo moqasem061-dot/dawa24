@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (h *UIHandler) enrichOrderPricing(ctx context.Context, order *commerce.Order) {
@@ -31,7 +31,9 @@ func (h *UIHandler) enrichOrderPricing(ctx context.Context, order *commerce.Orde
 				l.OfferProductID = &order.OfferID
 			} else if strings.Contains(l.ProductName.Get("ar"), "عرض") || strings.Contains(l.ProductName.Get("en"), "Offer") {
 				if h.promoSvc != nil {
-					if offList, err := h.promoSvc.ListActiveOffers(ctx, 50, 0); err == nil {
+					if offList, err := h.promoSvc.ListActiveOffers(ctx, 50, 0); err != nil {
+						h.logLoadErr(ctx, "promoSvc.ListActiveOffers", err)
+					} else {
 						for _, off := range offList {
 							if off.Title.Get("ar") == l.ProductName.Get("ar") || off.Title.Get("en") == l.ProductName.Get("en") {
 								offID := off.ID

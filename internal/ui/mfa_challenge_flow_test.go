@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestMFA_FullLoginChallengeFlow(t *testing.T) {
@@ -32,7 +32,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	}
 
 	// 2. Normal Login when MFA is DISABLED
-	req := httptest.NewRequest("POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 	h.LoginSubmit(rec, req)
@@ -69,7 +69,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	}
 
 	// 4. Login when MFA is ENABLED -> MUST redirect to /auth/mfa-verify and issue pending cookie
-	reqMFA := httptest.NewRequest("POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
+	reqMFA := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
 	reqMFA.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recMFA := httptest.NewRecorder()
 	h.LoginSubmit(recMFA, reqMFA)
@@ -92,7 +92,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	}
 
 	// 5. Test MFA Verify with WRONG code
-	reqWrong := httptest.NewRequest("POST", "/auth/mfa-verify", strings.NewReader("code=000000"))
+	reqWrong := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/mfa-verify", strings.NewReader("code=000000"))
 	reqWrong.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqWrong.AddCookie(pendingCookie)
 	recWrong := httptest.NewRecorder()
@@ -105,7 +105,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 
 	// 6. Test MFA Verify with VALID TOTP code
 	freshCode, _ := identity.GenerateTOTPCode(secret, time.Now().UTC())
-	reqValid := httptest.NewRequest("POST", "/auth/mfa-verify", strings.NewReader("code="+freshCode))
+	reqValid := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/mfa-verify", strings.NewReader("code="+freshCode))
 	reqValid.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqValid.AddCookie(pendingCookie)
 	recValid := httptest.NewRecorder()
@@ -134,7 +134,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	}
 
 	// 7. Test MFA Verify with single-use RECOVERY CODE
-	reqMFA2 := httptest.NewRequest("POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
+	reqMFA2 := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
 	reqMFA2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recMFA2 := httptest.NewRecorder()
 	h.LoginSubmit(recMFA2, reqMFA2)
@@ -150,7 +150,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	recoveryCode := actResult.RecoveryCodes[0]
 	form := url.Values{}
 	form.Set("recovery_code", recoveryCode)
-	reqRec := httptest.NewRequest("POST", "/auth/mfa-verify", strings.NewReader(form.Encode()))
+	reqRec := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/mfa-verify", strings.NewReader(form.Encode()))
 	reqRec.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqRec.AddCookie(pendingCookie2)
 	recRec := httptest.NewRecorder()
@@ -161,7 +161,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 	}
 
 	// Reusing same recovery code should now FAIL
-	reqMFA3 := httptest.NewRequest("POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
+	reqMFA3 := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/login", strings.NewReader("email=pharmacist-mfa@dawa24.eg&password=Password123!"))
 	reqMFA3.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recMFA3 := httptest.NewRecorder()
 	h.LoginSubmit(recMFA3, reqMFA3)
@@ -174,7 +174,7 @@ func TestMFA_FullLoginChallengeFlow(t *testing.T) {
 		}
 	}
 
-	reqRec2 := httptest.NewRequest("POST", "/auth/mfa-verify", strings.NewReader(form.Encode()))
+	reqRec2 := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/mfa-verify", strings.NewReader(form.Encode()))
 	reqRec2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqRec2.AddCookie(pendingCookie3)
 	recRec2 := httptest.NewRecorder()
@@ -213,7 +213,7 @@ func TestMFA_DashboardSettingsHandlers(t *testing.T) {
 	ctxWithActor := authctx.WithActor(context.Background(), actor)
 
 	// 1. GET /vendor/mfa (Unenrolled state)
-	reqGet := httptest.NewRequest("GET", "/vendor/mfa", nil).WithContext(ctxWithActor)
+	reqGet := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/mfa", nil).WithContext(ctxWithActor)
 	recGet := httptest.NewRecorder()
 	h.VendorMFAPage(recGet, reqGet)
 	if recGet.Result().StatusCode != http.StatusOK {
@@ -221,7 +221,7 @@ func TestMFA_DashboardSettingsHandlers(t *testing.T) {
 	}
 
 	// 2. POST /vendor/mfa/setup (Initiate setup)
-	reqSetup := httptest.NewRequest("POST", "/vendor/mfa/setup", nil).WithContext(ctxWithActor)
+	reqSetup := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/mfa/setup", nil).WithContext(ctxWithActor)
 	recSetup := httptest.NewRecorder()
 	h.VendorMFASetupSubmit(recSetup, reqSetup)
 	if recSetup.Result().StatusCode != http.StatusOK {
@@ -229,7 +229,7 @@ func TestMFA_DashboardSettingsHandlers(t *testing.T) {
 	}
 
 	// 3. Disable MFA
-	reqDisable := httptest.NewRequest("POST", "/vendor/mfa/disable", strings.NewReader("password=VendorPassword123!")).WithContext(ctxWithActor)
+	reqDisable := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/mfa/disable", strings.NewReader("password=VendorPassword123!")).WithContext(ctxWithActor)
 	reqDisable.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recDisable := httptest.NewRecorder()
 	h.VendorMFADisableSubmit(recDisable, reqDisable)
@@ -268,7 +268,7 @@ func TestSessionRevocation_PermissionsEnforcement(t *testing.T) {
 	}
 	ctxU1 := authctx.WithActor(context.Background(), actorU1)
 
-	reqRevokeU2 := httptest.NewRequest("POST", "/customer/sessions/revoke", strings.NewReader("token=token-user2")).WithContext(ctxU1)
+	reqRevokeU2 := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/sessions/revoke", strings.NewReader("token=token-user2")).WithContext(ctxU1)
 	reqRevokeU2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recRevokeU2 := httptest.NewRecorder()
 	h.TenantSessionRevokeSubmit(recRevokeU2, reqRevokeU2)
@@ -293,7 +293,7 @@ func TestSessionRevocation_PermissionsEnforcement(t *testing.T) {
 	}
 	ctxSuper := authctx.WithActor(context.Background(), actorSuper)
 
-	reqRevokeSuper := httptest.NewRequest("POST", "/customer/sessions/revoke", strings.NewReader("token=token-user2")).WithContext(ctxSuper)
+	reqRevokeSuper := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/sessions/revoke", strings.NewReader("token=token-user2")).WithContext(ctxSuper)
 	reqRevokeSuper.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recRevokeSuper := httptest.NewRecorder()
 	h.TenantSessionRevokeSubmit(recRevokeSuper, reqRevokeSuper)

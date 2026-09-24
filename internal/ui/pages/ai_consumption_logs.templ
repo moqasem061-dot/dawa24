@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AIConsumptionLogsPage renders the full AI request logs screen for either Customer or Vendor.
@@ -102,7 +102,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 			<div class="stat-card-3d">
 				<div class="flex-between items-center">
 					<span class="text-xs font-bold text-muted">إجمالي التوكنز المعالجة</span>
-					<span class="text-purple">🔮</span>
+					<span class="text-purple">@components.IconSparkles("icon-xs")</span>
 				</div>
 				<div class="tabular-nums text-2xl font-black text-purple mt-2">
 					{ fmt.Sprintf("%d", data.TotalTokens) }
@@ -137,7 +137,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 					href="/vendor/ai-logs?feature=savings_import"
 					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "savings_import"), templ.KV("btn-secondary", data.FilterFeature != "savings_import") }
 				>
-					<span>📥</span>
+					<span>@components.IconDownload("icon-xs")</span>
 					<span>استيراد منتجات التوفير</span>
 					if data.FeatureCount("savings_import") > 0 {
 						<span class="badge badge-emerald text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("savings_import")) }</span>
@@ -157,7 +157,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 					href="/vendor/ai-logs?feature=column_detect"
 					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "column_detect"), templ.KV("btn-secondary", data.FilterFeature != "column_detect") }
 				>
-					<span>📋</span>
+					<span>@components.IconList("icon-xs")</span>
 					<span>التعرف على الأعمدة</span>
 					if data.FeatureCount("column_detect") > 0 {
 						<span class="badge badge-sky text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("column_detect")) }</span>
@@ -167,7 +167,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 					href="/vendor/ai-logs?feature=assistant"
 					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "assistant"), templ.KV("btn-secondary", data.FilterFeature != "assistant") }
 				>
-					<span>💬</span>
+					<span>@components.IconMessageSquare("icon-xs")</span>
 					<span>المساعد الآلي</span>
 					if data.FeatureCount("assistant") > 0 {
 						<span class="badge badge-purple text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("assistant")) }</span>
@@ -205,7 +205,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 					href="/customer/ai-logs?feature=savings_import"
 					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "savings_import" || data.FilterFeature == "savings"), templ.KV("btn-secondary", data.FilterFeature != "savings_import" && data.FilterFeature != "savings") }
 				>
-					<span>🏷️</span>
+					<span>@components.IconTag("icon-xs")</span>
 					<span>منتجات وبدائل التوفير</span>
 					if (data.FeatureCount("savings_import") + data.FeatureCount("savings")) > 0 {
 						<span class="badge badge-emerald text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("savings_import")+data.FeatureCount("savings")) }</span>
@@ -215,7 +215,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 					href="/customer/ai-logs?feature=assistant"
 					class={ "btn btn-sm text-xs font-bold rounded-full gap-2", templ.KV("btn-primary", data.FilterFeature == "assistant"), templ.KV("btn-secondary", data.FilterFeature != "assistant") }
 				>
-					<span>💬</span>
+					<span>@components.IconMessageSquare("icon-xs")</span>
 					<span>المساعد الصيدلاني</span>
 					if data.FeatureCount("assistant") > 0 {
 						<span class="badge badge-purple text-2xs">{ fmt.Sprintf("%d", data.FeatureCount("assistant")) }</span>
@@ -346,7 +346,7 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 												</span>
 											} else if log.FeatureKey == "savings_import" || log.FeatureKey == "savings" {
 												<span class="badge badge-emerald text-xs font-bold whitespace-nowrap" title="منتجات وبدائل التوفير">
-													<span>🏷️</span>
+													<span>@components.IconTag("icon-xs")</span>
 													<span>توفير</span>
 												</span>
 											} else if log.FeatureKey == "compare_match" {
@@ -361,12 +361,12 @@ templ aiConsumptionLogsBody(data AIConsumptionLogsPageData, lang, dir string) {
 												</span>
 											} else if log.FeatureKey == "column_detect" {
 												<span class="badge badge-sky text-xs font-bold whitespace-nowrap" title="التعرف على أعمدة الكتالوج">
-													<span>📋</span>
+													<span>@components.IconList("icon-xs")</span>
 													<span>أعمدة</span>
 												</span>
 											} else {
 												<span class="badge badge-secondary text-xs font-bold whitespace-nowrap" title="المساعد الآلي">
-													<span>💬</span>
+													<span>@components.IconMessageSquare("icon-xs")</span>
 													<span>مساعد</span>
 												</span>
 											}

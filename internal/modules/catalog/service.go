@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
 	"log/slog"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Cache represents the key-value cache contract used for high-frequency catalog reads.
@@ -234,18 +235,33 @@ func (s *Service) DeleteProduct(ctx context.Context, id int64) error {
 	return s.repo.DeleteProduct(ctx, id)
 }
 
+// scopeInstitutional fills params.AllowedWorkIDs from the institutional gate
+// for the signed-in user. A gate failure is returned, not ignored: an empty
+// work list with FilterMode 0 admits restricted rows, so failing open would
+// expose institutional products to users outside those works.
+func (s *Service) scopeInstitutional(ctx context.Context, params *SearchParams) error {
+	if s.instGate == nil || len(params.AllowedWorkIDs) > 0 {
+		return nil
+	}
+	uid, err := authctx.UserID(ctx)
+	if err != nil || uid <= 0 { // anonymous callers have no institutional scope
+		return nil
+	}
+	works, err := s.instGate.AllowedWorkIDs(ctx, uid, params.FilterMode)
+	if err != nil {
+		return fmt.Errorf("resolve institutional works: %w", err)
+	}
+	params.AllowedWorkIDs = works
+	return nil
+}
+
 // Search runs full Arabic/English search across the product catalogue.
 func (s *Service) Search(ctx context.Context, params SearchParams) ([]*Product, error) {
 	if params.FirstWord == "" && params.Query != "" {
 		params.FirstWord = FirstWordOf(params.Query)
 	}
-	if s.instGate != nil && len(params.AllowedWorkIDs) == 0 {
-		if uid, err := authctx.UserID(ctx); err == nil && uid > 0 {
-			works, err := s.instGate.AllowedWorkIDs(ctx, uid, params.FilterMode)
-			if err == nil {
-				params.AllowedWorkIDs = works
-			}
-		}
+	if err := s.scopeInstitutional(ctx, &params); err != nil {
+		return nil, err
 	}
 	return s.repo.SearchProducts(ctx, params)
 }
@@ -255,13 +271,8 @@ func (s *Service) Count(ctx context.Context, params SearchParams) (int, error) {
 	if params.FirstWord == "" && params.Query != "" {
 		params.FirstWord = FirstWordOf(params.Query)
 	}
-	if s.instGate != nil && len(params.AllowedWorkIDs) == 0 {
-		if uid, err := authctx.UserID(ctx); err == nil && uid > 0 {
-			works, err := s.instGate.AllowedWorkIDs(ctx, uid, params.FilterMode)
-			if err == nil {
-				params.AllowedWorkIDs = works
-			}
-		}
+	if err := s.scopeInstitutional(ctx, &params); err != nil {
+		return 0, err
 	}
 	return s.repo.CountProducts(ctx, params)
 }
@@ -271,13 +282,8 @@ func (s *Service) SearchWithTotal(ctx context.Context, params SearchParams) ([]*
 	if params.FirstWord == "" && params.Query != "" {
 		params.FirstWord = FirstWordOf(params.Query)
 	}
-	if s.instGate != nil && len(params.AllowedWorkIDs) == 0 {
-		if uid, err := authctx.UserID(ctx); err == nil && uid > 0 {
-			works, err := s.instGate.AllowedWorkIDs(ctx, uid, params.FilterMode)
-			if err == nil {
-				params.AllowedWorkIDs = works
-			}
-		}
+	if err := s.scopeInstitutional(ctx, &params); err != nil {
+		return nil, 0, err
 	}
 	prods, err := s.repo.SearchProducts(ctx, params)
 	if err != nil {
@@ -293,13 +299,8 @@ func (s *Service) SearchWithTotal(ctx context.Context, params SearchParams) ([]*
 // FastSearch searches the denormalized read model (catalog.product_index) with deterministic fallback (Rule R3).
 // If the indexed table returns 0 results or errors, it falls back to direct catalog.products table search.
 func (s *Service) FastSearch(ctx context.Context, params SearchParams) ([]*ProductIndexItem, error) {
-	if s.instGate != nil && len(params.AllowedWorkIDs) == 0 {
-		if uid, err := authctx.UserID(ctx); err == nil && uid > 0 {
-			works, err := s.instGate.AllowedWorkIDs(ctx, uid, params.FilterMode)
-			if err == nil {
-				params.AllowedWorkIDs = works
-			}
-		}
+	if err := s.scopeInstitutional(ctx, &params); err != nil {
+		return nil, err
 	}
 
 	items, err := s.repo.SearchProductIndex(ctx, params)
@@ -363,4 +364,3 @@ func (s *Service) RebuildProductIndex(ctx context.Context) (int64, error) {
 func (s *Service) ListDosageForms(ctx context.Context) ([]string, error) {
 	return s.repo.ListDosageForms(ctx)
 }
-

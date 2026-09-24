@@ -3,7 +3,7 @@ package commerce
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The delivery representative's side of a shipment.
@@ -179,15 +179,15 @@ func (s *OrderShipment) CourierCollection() CourierCollection {
 	if s == nil {
 		return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
 	}
-	switch {
-	case s.PaymentMethod == "wallet":
+	switch s.PaymentMethod {
+	case "wallet":
 		// The goods are already paid. Anything still owed is the delivery fee,
 		// and a supplier that delivers free owes nothing at all.
 		if s.ShippingFee.IsPositive() {
 			return CourierCollection{Kind: CollectShippingOnly, Amount: s.ShippingFee}
 		}
 		return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
-	case s.PaymentMethod == "cod" || s.PaymentMethod == "" || s.PaymentMethod == "cash" || s.PaymentMethod == "cash_on_delivery":
+	case "cod", "", "cash", "cash_on_delivery":
 		if s.PaymentStatus == PaymentPaid {
 			return CourierCollection{Kind: CollectNothing, Amount: money.Zero}
 		}

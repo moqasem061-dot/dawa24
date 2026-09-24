@@ -6,9 +6,9 @@ import (
 	"strconv"
 	"strings"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) buildSEOValues(r *http.Request) *pages.AdminDevelopersSEOValues {
@@ -36,7 +36,9 @@ func (h *UIHandler) buildSEOValues(r *http.Request) *pages.AdminDevelopersSEOVal
 			Offset: offset,
 		}
 		pgs, total, err := h.adminSvc.ListSEOPages(ctx, filter)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListSEOPages", err)
+		} else {
 			val.Pages = pgs
 			val.TotalPages = total
 		}

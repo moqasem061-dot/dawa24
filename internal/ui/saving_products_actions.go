@@ -10,9 +10,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // handleSavingProductsBulkDeleteSubmit deletes multiple selected saving product records for customer or vendor.
@@ -65,7 +65,9 @@ func (h *UIHandler) handleSavingProductsBulkDeleteSubmit(w http.ResponseWriter, 
 	var deletedCount int
 	if h.catSvc != nil {
 		for _, id := range ids {
-			if err := h.catSvc.DeleteSavingProduct(ctx, id, actor.OrganizationID); err == nil {
+			if err := h.catSvc.DeleteSavingProduct(ctx, id, actor.OrganizationID); err != nil {
+				h.logLoadErr(ctx, "catSvc.DeleteSavingProduct", err)
+			} else {
 				deletedCount++
 			}
 		}
@@ -121,14 +123,16 @@ func (h *UIHandler) handleSavingProductsExport(w http.ResponseWriter, r *http.Re
 	var items []*catalog.SavingProductEnriched
 	if h.catSvc != nil {
 		it, _, err := h.catSvc.ListSavingProductsEnriched(ctx, actor.OrganizationID, "", "all", 2000, 0)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListSavingProductsEnriched", err)
+		} else {
 			items = it
 		}
 	}
 
 	f := excelize.NewFile()
 	sheet := "Saving Products"
-	f.SetSheetName("Sheet1", sheet)
+	sheet = renameFirstSheet(f, sheet)
 
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{
 		RightToLeft: func(b bool) *bool { return &b }(true),
@@ -286,7 +290,9 @@ func (h *UIHandler) SavingProductSearchJSON(w http.ResponseWriter, r *http.Reque
 			FirstWord: catalog.FirstWordOf(query),
 			Limit:     20,
 		})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.Search", err)
+		} else {
 			for _, p := range products {
 				nameAR := p.Name.Get(i18n.AR)
 				nameEN := p.Name.Get(i18n.EN)

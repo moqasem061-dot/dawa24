@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"sort"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // UpdateProgress updates the progress and phase message.
@@ -66,7 +67,9 @@ func (s *SavingImportSessionStore) UpdateStagedItem(id string, orgID int64, item
 			if isIncluded != nil {
 				it.Included = *isIncluded
 			}
-			it.TotalValue = money.FromMinor(int64(it.Quantity * float64(it.Price.Minor())))
+			if total, err := it.Price.MulQuantity(it.Quantity); err == nil { // nolint:errswallow: on overflow the previous total stands
+				it.TotalValue = total
+			}
 			s.recalculateTotals(sess)
 			return nil
 		}

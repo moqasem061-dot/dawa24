@@ -19,8 +19,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // adjudicateMatches puts the pending rows to the model, in batches, and applies

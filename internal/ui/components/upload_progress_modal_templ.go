@@ -8,7 +8,7 @@ package components
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+import "github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 // One progress dialog, for every tool that uploads a file and then works on it.
 type UploadProgressProps struct {

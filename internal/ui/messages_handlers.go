@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chat"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // MessagesPage renders the two-pane messaging surface.
@@ -41,7 +41,8 @@ func (h *UIHandler) renderMessages(w http.ResponseWriter, r *http.Request, activ
 
 	data := pages.MessagesData{CurrentOrgID: actor.OrganizationID}
 	if h.chatSvc != nil && actor.OrganizationID > 0 {
-		convs, _ := h.chatSvc.ListConversations(ctx, actor.OrganizationID, 50, 0)
+		convs, loadErr := h.chatSvc.ListConversations(ctx, actor.OrganizationID, 50, 0)
+		h.logLoadErr(ctx, "chatSvc.ListConversations", loadErr)
 		for _, c := range convs {
 			data.Items = append(data.Items, pages.ChatListItem{
 				Conversation: c,
@@ -53,7 +54,11 @@ func (h *UIHandler) renderMessages(w http.ResponseWriter, r *http.Request, activ
 			}
 		}
 		if data.Active != nil {
-			data.Thread, _ = h.chatSvc.GetThread(ctx, data.Active.ID, 100)
+			if loaded, err := h.chatSvc.GetThread(ctx, data.Active.ID, 100); err != nil {
+				h.logLoadErr(ctx, "chatSvc.GetThread", err)
+			} else {
+				data.Thread = loaded
+			}
 			_ = h.chatSvc.MarkRead(ctx, data.Active.ID, actor.OrganizationID)
 		}
 	}
@@ -91,7 +96,9 @@ func (h *UIHandler) MessagesSendSubmit(w http.ResponseWriter, r *http.Request) {
 		if actor.OrganizationID > 0 {
 			orgPtr = &actor.OrganizationID
 		}
-		_, _ = h.chatSvc.SendMessage(ctx, id, actor.UserID, orgPtr, body)
+		if _, err := h.chatSvc.SendMessage(ctx, id, actor.UserID, orgPtr, body); err != nil {
+			h.logLoadErr(ctx, "chatSvc.SendMessage", err)
+		}
 	}
 	http.Redirect(w, r, fmt.Sprintf("/messages/%d", id), http.StatusSeeOther)
 }

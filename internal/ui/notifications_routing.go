@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // ResolveNotificationDestination determines the optimal platform destination URL
@@ -210,10 +210,6 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 	}
 
 	return fallbackDashboard(actor)
-}
-
-func (h *UIHandler) resolveOrderDestination(ctx context.Context, actor authctx.Actor, text string) string {
-	return h.resolveOrderOrDeliveryDestination(ctx, actor, text, false)
 }
 
 func (h *UIHandler) resolveOrderOrDeliveryDestination(ctx context.Context, actor authctx.Actor, text string, isDelivery bool) string {

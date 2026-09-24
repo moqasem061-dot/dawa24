@@ -2,14 +2,15 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // SetCartItemQuantity changes quantity without touching unit_price.
@@ -62,7 +63,7 @@ func (r *Repository) GetShipmentByID(ctx context.Context, id int64) (*commerce.O
 		return nil
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, apperr.NotFound("shipment")
 		}
 		return nil, fmt.Errorf("commerce postgres: get shipment: %w", err)
@@ -113,23 +114,24 @@ func (r *Repository) UpdateShipmentStatus(
 		}
 
 		// Synchronize parent order status if appropriate
-		if to == commerce.StatusDelivered {
+		switch to {
+		case commerce.StatusDelivered:
 			var nonDeliveredCount int
 			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, history.OrderID).Scan(&nonDeliveredCount)
 			if nonDeliveredCount == 0 {
 				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'delivered', delivered_at = now(), updated_at = now() WHERE id = $1;`, history.OrderID)
 			}
-		} else if to == commerce.StatusShipped || to == commerce.StatusInTransit || to == commerce.StatusOutForDelivery {
+		case commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
 			_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'shipped', delivered_at = NULL, updated_at = now() WHERE id = $1;`, history.OrderID)
-		} else if to == commerce.StatusConfirmed {
+		case commerce.StatusConfirmed:
 			_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'confirmed', updated_at = now() WHERE id = $1 AND status = 'pending';`, history.OrderID)
-		} else if to == commerce.StatusFailed {
+		case commerce.StatusFailed:
 			var nonFailedCount int
 			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonFailedCount)
 			if nonFailedCount == 0 {
 				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'failed', notes = CASE WHEN $2 != '' THEN COALESCE(notes || E'\n' || $2, $2) ELSE notes END, updated_at = now() WHERE id = $1;`, history.OrderID, history.Notes)
 			}
-		} else if to == commerce.StatusCancelled {
+		case commerce.StatusCancelled:
 			var nonCancelledCount int
 			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonCancelledCount)
 			if nonCancelledCount == 0 {
@@ -186,7 +188,7 @@ func (r *Repository) RateOrder(ctx context.Context, orderID, customerID int64, r
 		var ratedAt *time.Time
 		err := tx.QueryRow(txCtx, `SELECT status, rated_at FROM commerce.orders WHERE id = $1 AND customer_id = $2;`, orderID, customerID).Scan(&status, &ratedAt)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("order")
 			}
 			return fmt.Errorf("commerce postgres: check order: %w", err)

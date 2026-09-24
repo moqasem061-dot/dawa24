@@ -19,8 +19,8 @@ package main
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // decisionStore is the half of the ingest repository that talks to the cache.

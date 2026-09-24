@@ -1,7 +1,7 @@
 # Dawa24 Store — full platform audit
 
 **Date:** 2026-09-12
-**Scope:** `dawa24-store` Go modular monolith (1,993 Go files, ~550k LOC, 786 templ
+**Scope:** `dawa24` Go modular monolith (1,993 Go files, ~550k LOC, 786 templ
 templates) audited against the live database `dawa24_store` @ `postgres-u74003.vm.elestio.app`.
 **Database:** PostgreSQL 18.6 — 20 schemas, 171 tables, 380 foreign keys, 104 RLS
 policies, 209 applied migrations.
@@ -76,7 +76,7 @@ Live connection state:
 ```
 usename  | application_name | count
 ---------+------------------+------
-postgres | dawa24-store     |   3
+postgres | dawa24     |   3
 ```
 
 `postgres` is `rolsuper = true, rolbypassrls = true`. Row-level security is

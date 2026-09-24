@@ -4,11 +4,10 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrgImportPage renders the organization product import hub.
@@ -50,8 +49,16 @@ func (h *UIHandler) AdminOrgImportPage(w http.ResponseWriter, r *http.Request) {
 
 		pharmType := org.TypeCustomer
 		vendType := org.TypeVendor
-		totalPharmacies, _ = h.orgSvc.CountOrganizations(sysCtx, &pharmType, nil)
-		totalVendors, _ = h.orgSvc.CountOrganizations(sysCtx, &vendType, nil)
+		if loaded, err := h.orgSvc.CountOrganizations(sysCtx, &pharmType, nil); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
+			totalPharmacies = loaded
+		}
+		if loaded, err := h.orgSvc.CountOrganizations(sysCtx, &vendType, nil); err != nil {
+			h.logLoadErr(ctx, "orgSvc.CountOrganizations", err)
+		} else {
+			totalVendors = loaded
+		}
 	}
 
 	data := pages.AdminOrgImportPageData{
@@ -69,18 +76,4 @@ func (h *UIHandler) AdminOrgImportPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	h.renderPage(ctx, w, "render admin org import page", pages.AdminOrgImportPage(data, lang, dir))
-}
-
-func orgDisplayName(o *org.Organization, lang string) string {
-	if o == nil {
-		return ""
-	}
-	name := o.TradeName.Get(i18n.AR)
-	if name == "" {
-		name = o.TradeName.Get(i18n.EN)
-	}
-	if name == "" {
-		name = o.LegalName
-	}
-	return name
 }

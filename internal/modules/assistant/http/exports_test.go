@@ -9,8 +9,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 type exportsByToken map[string]*assistant.Export
@@ -42,7 +42,7 @@ func TestExportDownloadIsOwnerOnly(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodGet, "/api/v1/assistant/exports/"+tc.token, nil)
+			r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/assistant/exports/"+tc.token, nil)
 			rc := chi.NewRouteContext()
 			rc.URLParams.Add("token", tc.token)
 			ctx := context.WithValue(r.Context(), chi.RouteCtxKey, rc)

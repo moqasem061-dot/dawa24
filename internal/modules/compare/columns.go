@@ -1,11 +1,12 @@
 package compare
 
 import (
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strings"
 	"unicode"
 
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
 )
 
 // TargetField represents a canonical field needed by the comparison engine from a spreadsheet.

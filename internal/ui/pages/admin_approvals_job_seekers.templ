@@ -3,8 +3,8 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 func JobSeekerSpecialisationLabel(spec string) string {
@@ -98,7 +98,7 @@ templ AdminApprovalsJobSeekersTab(data *AdminApprovalsData) {
 										</div>
 										<div class="text-2xs text-secondary mt-0.5">{ item.User.Email }</div>
 										if item.User.Phone != "" {
-											<div class="text-2xs text-muted mt-0.5">📱 { item.User.Phone }</div>
+											<div class="text-2xs text-muted mt-0.5">@components.IconPhone("icon-xxs") { item.User.Phone }</div>
 										}
 									</td>
 									<td class="p-3">

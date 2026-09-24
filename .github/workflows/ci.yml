@@ -6,6 +6,16 @@ on:
   pull_request:
     branches: [ main ]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# One database and one cache per job; every step below reads these.
+env:
+  DATABASE_URL: postgres://dawa24:dawa24@localhost:5432/dawa24_store?sslmode=disable
+  REDIS_URL: redis://localhost:6379/0
+  SESSION_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+
 jobs:
   check:
     name: Quality Gates & Tests
@@ -43,73 +53,29 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
-          check-latest: true
+          go-version-file: go.mod
 
-      - name: Format check
-        run: |
-          out=$(gofmt -l .)
-          if [ -n "$out" ]; then
-            echo "Unformatted files:"
-            echo "$out"
-            exit 1
-          fi
+      # check-alpine-csp runs a Node script.
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
 
-      - name: Go Vet
-        run: go vet ./...
-
-      - name: Check AI Provider Isolation
-        run: |
-          echo "Checking provider isolation..."
-          if grep -riE '\b(openai|anthropic|deepseek|gemini|groq|openrouter)\b' \
-               --include='*.go' --include='*.templ' --include='*.sql' \
-               ./cmd ./internal ./db 2>/dev/null \
-               | grep -v '^./internal/platform/gateway/' \
-               | grep -v '_test.go'; then
-            echo "ERROR: AI provider names found outside internal/platform/gateway/."
-            exit 1
-          fi
-          echo "ok: no provider names outside gateway package"
-
-      - name: Check Go File Sizes (<= 400 lines)
-        run: |
-          echo "Checking file sizes..."
-          fail=0
-          while read -r count file; do
-            if [ "$count" -gt 400 ]; then
-              echo "  $file: $count lines (limit 400)"
-              fail=1
-            fi
-          done < <(find ./cmd ./internal ./test -name '*.go' -not -name '*_templ.go' -exec wc -l {} + | grep -v ' total$')
-          if [ "$fail" = "1" ]; then
-            echo "ERROR: files exceed 400-line ceiling."
-            exit 1
-          fi
-          echo "ok: all Go files within limit"
+      # .golangci.yml is a v2 config; a v1 binary cannot parse it.
+      - name: Install golangci-lint
+        run: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b "$(go env GOPATH)/bin" v2.13.2
 
       - name: Run Migrations
-        env:
-          DATABASE_URL: postgres://dawa24:dawa24@localhost:5432/dawa24_store?sslmode=disable
-          REDIS_URL: redis://localhost:6379/0
-          SESSION_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
         run: |
           go run ./cmd/cli migrate
           go run ./cmd/cli migrate-status
 
-      - name: Run Tests (with race detector & coverage)
-        env:
-          DATABASE_URL: postgres://dawa24:dawa24@localhost:5432/dawa24_store?sslmode=disable
-          REDIS_URL: redis://localhost:6379/0
-          SESSION_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-        run: go test -v -race -cover -count=1 ./...
+      # The suite runs once: race detector and coverage profile together.
+      - name: Run Tests (race detector + coverage)
+        run: go test -race -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
       - name: Enforce Coverage Floor
-        env:
-          DATABASE_URL: postgres://dawa24:dawa24@localhost:5432/dawa24_store?sslmode=disable
-          REDIS_URL: redis://localhost:6379/0
-          SESSION_SECRET: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
         run: |
-          go test -coverprofile=coverage.out -count=1 ./...
           total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')
           echo "Total coverage: ${total}%"
           if awk "BEGIN{exit !(${total} < 1.0)}"; then
@@ -117,27 +83,40 @@ jobs:
             exit 1
           fi
 
-      - name: Install golangci-lint
-        run: |
-          if ! command -v golangci-lint >/dev/null 2>&1; then
-            curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.64.5
-          fi
+      # Every static gate `make check` runs, without running the tests again.
+      - name: Run Quality Gates
+        run: make gates
 
-      - name: Run Quality Gates (make check)
-        run: make check
-
-      - name: Build All 5 Production Binaries
-        run: |
-          go build -trimpath -o bin/server ./cmd/server
-          go build -trimpath -o bin/worker ./cmd/worker
-          go build -trimpath -o bin/cli ./cmd/cli
-          go build -trimpath -o bin/etl ./cmd/etl
-          go build -trimpath -o bin/dbcheck ./cmd/dbcheck
+      - name: Build Production Binaries
+        run: go build -trimpath -o bin/ ./cmd/server ./cmd/worker ./cmd/cli ./cmd/etl ./cmd/dbcheck
 
   lighthouse:
     name: Mobile Lighthouse Performance Audit
     runs-on: ubuntu-latest
     needs: [check]
+    # Advisory: a performance regression is reported, not merge-blocking.
+    continue-on-error: true
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: dawa24
+          POSTGRES_PASSWORD: dawa24
+          POSTGRES_DB: dawa24_store
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U dawa24 -d dawa24_store"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -145,8 +124,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
-          check-latest: true
+          go-version-file: go.mod
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
@@ -156,20 +134,21 @@ jobs:
       - name: Install Lighthouse CI
         run: npm install -g @lhci/cli@0.14.x
 
-      - name: Build Server Binary
-        run: go build -trimpath -o bin/server ./cmd/server
+      - name: Build and migrate
+        run: |
+          go build -trimpath -o bin/ ./cmd/server ./cmd/cli
+          ./bin/cli migrate
 
-      - name: Run Server in Background
+      - name: Start server
         env:
           PORT: "8080"
-          SESSION_SECRET: "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
         run: |
-          ./bin/server &
-          sleep 3
+          ./bin/server > server.log 2>&1 &
+          curl --retry 30 --retry-connrefused --retry-delay 1 -sf http://localhost:8080/health \
+            || { cat server.log; exit 1; }
 
       - name: Run Lighthouse CI Audit
         run: |
           lhci autorun --collect.url="http://localhost:8080/" \
                        --collect.url="http://localhost:8080/catalog" \
-                       --collect.url="http://localhost:8080/admin/organizations" \
-                       --collect.url="http://localhost:8080/cart" || true
+                       --collect.url="http://localhost:8080/cart"

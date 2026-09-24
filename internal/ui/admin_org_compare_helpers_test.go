@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestAdminCompare_URLHelpers(t *testing.T) {
@@ -12,10 +12,10 @@ func TestAdminCompare_URLHelpers(t *testing.T) {
 
 	t.Run("CompareResultsPageData", func(t *testing.T) {
 		data := pages.CompareResultsPageData{
-			IsAdmin:         true,
-			TargetOrgID:     orgID,
-			TargetOrgName:   "مستودع الأمل",
-			SuppliersParam:  "10,11",
+			IsAdmin:        true,
+			TargetOrgID:    orgID,
+			TargetOrgName:  "مستودع الأمل",
+			SuppliersParam: "10,11",
 		}
 		if url := data.FileCenterURL(); url != "/admin/organizations/import/192/compare" {
 			t.Fatalf("expected /admin/organizations/import/192/compare, got %s", url)

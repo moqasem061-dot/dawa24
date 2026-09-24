@@ -3,8 +3,8 @@ package tools_test
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // spyReader records every read that reaches the data layer. A denied call must

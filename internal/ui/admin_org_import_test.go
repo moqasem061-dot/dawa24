@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -13,8 +14,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminOrgImport_SavingWorkflow_ResumableSteps(t *testing.T) {
@@ -73,7 +74,7 @@ func TestAdminOrgImport_SavingWorkflow_ResumableSteps(t *testing.T) {
 	form.Set("col_qty", "الكمية")
 	form.Set("match_choice", "fuzzy")
 
-	req := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/runs/%s/mapping", targetOrgID, runID), strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/runs/%s/mapping", targetOrgID, runID), strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor))
 	mapPostRec := httptest.NewRecorder()
@@ -127,7 +128,7 @@ func TestAdminOrgImport_TempWarehouse_MultiFileStreaming(t *testing.T) {
 	}
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/admin/organizations/import/temp-warehouse/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/organizations/import/temp-warehouse/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor))
 
@@ -203,7 +204,7 @@ func TestAdminOrgImport_SavingWorkflow_OrgIDPathAndItemActions(t *testing.T) {
 	form.Set("col_qty", "الكمية")
 	form.Set("match_choice", "fuzzy")
 
-	mapReq := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/map", targetOrgID, runID), strings.NewReader(form.Encode()))
+	mapReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/map", targetOrgID, runID), strings.NewReader(form.Encode()))
 	mapReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	mapReq = mapReq.WithContext(authctx.WithActor(mapReq.Context(), adminActor))
 	mapRec := httptest.NewRecorder()
@@ -223,7 +224,7 @@ func TestAdminOrgImport_SavingWorkflow_OrgIDPathAndItemActions(t *testing.T) {
 	updateForm.Set("price", "20.00")
 	updateForm.Set("quantity", "150")
 
-	upReq := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/update", targetOrgID, runID), strings.NewReader(updateForm.Encode()))
+	upReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/update", targetOrgID, runID), strings.NewReader(updateForm.Encode()))
 	upReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	upReq = upReq.WithContext(authctx.WithActor(upReq.Context(), adminActor))
 	upRec := httptest.NewRecorder()
@@ -232,7 +233,7 @@ func TestAdminOrgImport_SavingWorkflow_OrgIDPathAndItemActions(t *testing.T) {
 	assert.Equal(t, http.StatusSeeOther, upRec.Code)
 
 	// 5. Toggle staged item via /items/{itemIndex}/toggle
-	toggleReq := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/toggle", targetOrgID, runID), nil)
+	toggleReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/toggle", targetOrgID, runID), nil)
 	toggleReq = toggleReq.WithContext(authctx.WithActor(toggleReq.Context(), adminActor))
 	toggleRec := httptest.NewRecorder()
 	r.ServeHTTP(toggleRec, toggleReq)
@@ -245,7 +246,7 @@ func TestAdminOrgImport_SavingWorkflow_OrgIDPathAndItemActions(t *testing.T) {
 	matchForm.Set("master_name", "بانادول مركزي")
 	matchForm.Set("master_sku", "SKU-PANA")
 
-	matchReq := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/match", targetOrgID, runID), strings.NewReader(matchForm.Encode()))
+	matchReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/saving/%s/items/0/match", targetOrgID, runID), strings.NewReader(matchForm.Encode()))
 	matchReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	matchReq = matchReq.WithContext(authctx.WithActor(matchReq.Context(), adminActor))
 	matchRec := httptest.NewRecorder()
@@ -276,7 +277,7 @@ func TestAdminOrgImport_CompareSyncAndScoping(t *testing.T) {
 	_, _ = part.Write([]byte("كود,اسم الدواء,سعر الجمهور,نسبة الخصم\n101,كونجستال أقراص,35.0,20\n"))
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", fmt.Sprintf("/admin/organizations/import/%d/compare/upload", targetOrgID), body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/admin/organizations/import/%d/compare/upload", targetOrgID), body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor))
 	rec := httptest.NewRecorder()
@@ -293,7 +294,7 @@ func TestAdminOrgImport_CompareSyncAndScoping(t *testing.T) {
 	runForm.Add("supplier_ids", "2")
 	runForm.Set("org_id", fmt.Sprintf("%d", targetOrgID))
 
-	runReq := httptest.NewRequest("POST", "/compare/run", strings.NewReader(runForm.Encode()))
+	runReq := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/run", strings.NewReader(runForm.Encode()))
 	runReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	runReq = runReq.WithContext(authctx.WithActor(runReq.Context(), adminActor))
 	runRec := httptest.NewRecorder()
@@ -305,7 +306,7 @@ func TestAdminOrgImport_CompareSyncAndScoping(t *testing.T) {
 	assert.Contains(t, runLoc, fmt.Sprintf("org_id=%d", targetOrgID))
 
 	// Test 3: CompareQuickSearch with org_id for admin
-	searchReq := httptest.NewRequest("GET", fmt.Sprintf("/compare/search?q=بانادول&org_id=%d", targetOrgID), nil)
+	searchReq := httptest.NewRequestWithContext(context.Background(), "GET", fmt.Sprintf("/compare/search?q=بانادول&org_id=%d", targetOrgID), nil)
 	searchReq.Header.Set("Accept", "application/json")
 	searchReq = searchReq.WithContext(authctx.WithActor(searchReq.Context(), adminActor))
 	searchRec := httptest.NewRecorder()
@@ -319,7 +320,7 @@ func TestAdminOrgImport_CompareSyncAndScoping(t *testing.T) {
 	renameForm.Set("supplier_name", "مورد محدث")
 	renameForm.Set("return_url", fmt.Sprintf("/admin/organizations/import/%d/compare", targetOrgID))
 
-	renameReq := httptest.NewRequest("POST", "/compare/files/999/rename", strings.NewReader(renameForm.Encode()))
+	renameReq := httptest.NewRequestWithContext(context.Background(), "POST", "/compare/files/999/rename", strings.NewReader(renameForm.Encode()))
 	renameReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	renameReq = renameReq.WithContext(authctx.WithActor(renameReq.Context(), adminActor))
 	renameRec := httptest.NewRecorder()
@@ -329,5 +330,3 @@ func TestAdminOrgImport_CompareSyncAndScoping(t *testing.T) {
 	renameLoc := renameRec.Header().Get("Location")
 	assert.Contains(t, renameLoc, fmt.Sprintf("/admin/organizations/import/%d/compare", targetOrgID))
 }
-
-

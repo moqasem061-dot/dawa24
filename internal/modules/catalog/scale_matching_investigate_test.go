@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func TestProfileMatchingAtScale(t *testing.T) {

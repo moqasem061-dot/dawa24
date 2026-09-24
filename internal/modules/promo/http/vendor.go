@@ -1,16 +1,17 @@
 package http
 
 import (
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"net/http"
 	"strconv"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // RegisterVendorSponsorshipRoutes mounts the vendor sponsorship endpoints.

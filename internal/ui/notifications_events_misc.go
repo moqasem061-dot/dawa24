@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
 )
 
 // notifySubscriptionExpired alerts an organization when its subscription has expired.

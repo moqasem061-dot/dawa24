@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorBranchesPage renders the detailed branch management view.
@@ -36,9 +36,21 @@ func (h *UIHandler) VendorBranchesPage(w http.ResponseWriter, r *http.Request) {
 	var instWorks []*org.InstitutionalWork
 	var total int
 	if h.orgSvc != nil && actor.OrganizationID > 0 {
-		branches, total, _ = h.orgSvc.ListBranchesWithTotal(ctx, org.BranchFilter{OrganizationID: actor.OrganizationID}, limit, offset)
-		employees, _ = h.orgSvc.ListEmployees(ctx, actor.OrganizationID)
-		instWorks, _ = h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true)
+		if loaded, loaded2, err := h.orgSvc.ListBranchesWithTotal(ctx, org.BranchFilter{OrganizationID: actor.OrganizationID}, limit, offset); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranchesWithTotal", err)
+		} else {
+			branches, total = loaded, loaded2
+		}
+		if loaded, err := h.orgSvc.ListEmployees(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListEmployees", err)
+		} else {
+			employees = loaded
+		}
+		if loaded, err := h.orgSvc.ListAllFlatInstitutionalWorks(ctx, true); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListAllFlatInstitutionalWorks", err)
+		} else {
+			instWorks = loaded
+		}
 	}
 
 	data := pages.VendorBranchesData{
@@ -105,7 +117,7 @@ func (h *UIHandler) VendorBranchNewSubmit(w http.ResponseWriter, r *http.Request
 		latStr = r.PostFormValue("branch_lat")
 	}
 	if latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
@@ -115,7 +127,7 @@ func (h *UIHandler) VendorBranchNewSubmit(w http.ResponseWriter, r *http.Request
 		lngStr = r.PostFormValue("branch_lon")
 	}
 	if lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}
@@ -277,7 +289,7 @@ func (h *UIHandler) VendorBranchEditSubmit(w http.ResponseWriter, r *http.Reques
 		latStr = strings.TrimSpace(r.PostFormValue("branch_lat"))
 	}
 	if latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
@@ -287,7 +299,7 @@ func (h *UIHandler) VendorBranchEditSubmit(w http.ResponseWriter, r *http.Reques
 		lngStr = strings.TrimSpace(r.PostFormValue("branch_lon"))
 	}
 	if lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}

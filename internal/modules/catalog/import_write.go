@@ -1,7 +1,10 @@
 package catalog
 
-import "fmt"
-import "github.com/muhiya/dawa24-store/internal/shared/i18n"
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+)
 
 // Result types for the bulk write, shared between the repository that produces
 // them and the admin screen that renders them.

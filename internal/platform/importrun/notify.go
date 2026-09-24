@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"sync"
 
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 )
 
 // Announcing a run's progress the moment it is written.
@@ -139,7 +139,7 @@ func (n *Notifying) announce(ctx context.Context, id int64, phase string, percen
 	if !ok {
 		// Nothing cached for this run yet. One read, then cached for the rest
 		// of it.
-		run, err := n.Repository.GetRunByID(ctx, id)
+		run, err := n.GetRunByID(ctx, id)
 		if err != nil || run == nil {
 			return
 		}

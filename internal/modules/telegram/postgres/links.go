@@ -13,9 +13,9 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 
-	chatPostgres "github.com/muhiya/dawa24-store/internal/modules/chatbridge/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
+	chatPostgres "github.com/moqasem061-dot/dawa24/internal/platform/chatbridge/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Repository implements telegram.Repository.

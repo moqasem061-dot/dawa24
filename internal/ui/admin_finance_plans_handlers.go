@@ -3,10 +3,10 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminPlansInfoPage renders subscription plan tiers directory.
@@ -16,7 +16,11 @@ func (h *UIHandler) AdminPlansInfoPage(w http.ResponseWriter, r *http.Request) {
 
 	var plans []*billing.Plan
 	if h.billSvc != nil {
-		plans, _ = h.billSvc.ListPlans(ctx)
+		if loaded, err := h.billSvc.ListPlans(ctx); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListPlans", err)
+		} else {
+			plans = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin plans info", pages.AdminPlansInfoPage(plans, lang, dir))
@@ -29,7 +33,8 @@ func (h *UIHandler) AdminPlanTypesPage(w http.ResponseWriter, r *http.Request) {
 
 	var items []pages.ReferenceItem
 	if h.billSvc != nil {
-		plans, _ := h.billSvc.ListPlans(ctx)
+		plans, loadErr := h.billSvc.ListPlans(ctx)
+		h.logLoadErr(ctx, "billSvc.ListPlans", loadErr)
 		for _, p := range plans {
 			items = append(items, pages.ReferenceItem{
 				ID:          p.ID,
@@ -51,7 +56,8 @@ func (h *UIHandler) AdminPlanFeaturesPage(w http.ResponseWriter, r *http.Request
 
 	var items []pages.ReferenceItem
 	if h.billSvc != nil {
-		plans, _ := h.billSvc.ListPlans(ctx)
+		plans, loadErr := h.billSvc.ListPlans(ctx)
+		h.logLoadErr(ctx, "billSvc.ListPlans", loadErr)
 		for _, p := range plans {
 			for k, v := range p.Features {
 				items = append(items, pages.ReferenceItem{
@@ -80,7 +86,11 @@ func (h *UIHandler) AdminPlansSubscriptionsPage(w http.ResponseWriter, r *http.R
 	var subs []*billing.Subscription
 	var total int
 	if h.billSvc != nil {
-		subs, total, _ = h.billSvc.AdminListSubscriptionsWithTotal(ctx, limit, offset)
+		if loaded, loaded2, err := h.billSvc.AdminListSubscriptionsWithTotal(ctx, limit, offset); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminListSubscriptionsWithTotal", err)
+		} else {
+			subs, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin plan subscriptions", pages.AdminPlansSubscriptionsPage(lang, dir, pages.AdminPlansSubscriptionsPageData{

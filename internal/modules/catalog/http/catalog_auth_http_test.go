@@ -8,15 +8,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 func TestProtectedRoutesRejectAnonymousCallers(t *testing.T) {
 	router := newTestRouter(t)
 	for _, route := range protectedRoutes {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
-			req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
@@ -30,7 +30,7 @@ func TestProtectedRoutesRejectAnonymousCallers(t *testing.T) {
 func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 	router := newTestRouter(t)
 	for _, route := range protectedRoutes {
-		req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "forged-token-that-was-never-issued"})
 		rec := httptest.NewRecorder()
@@ -43,7 +43,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 
 func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/catalog/products", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/catalog/products", nil)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 
@@ -61,7 +61,7 @@ func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 
 func TestHandlerRejectsUnknownJSONFields(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/catalog/products",
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/catalog/products",
 		strings.NewReader(`{"name":{"ar":"test"},"price":100,"unknown_field":"y"}`))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "valid-token"})
@@ -75,7 +75,7 @@ func TestHandlerRejectsUnknownJSONFields(t *testing.T) {
 
 func TestHandlerRejectsMalformedBody(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/catalog/products",
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/catalog/products",
 		strings.NewReader(`{"name": `))
 	req.Header.Set("Content-Type", "application/json")
 	req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "valid-token"})

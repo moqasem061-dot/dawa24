@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) CustomerOrdersPage(w http.ResponseWriter, r *http.Request) {
@@ -92,11 +92,16 @@ func (h *UIHandler) CustomerOrderDetailPage(w http.ResponseWriter, r *http.Reque
 
 	h.enrichOrderPricing(ctx, order)
 
-	history, _ := h.commSvc.GetOrderHistory(ctx, id)
+	history, loadErr := h.commSvc.GetOrderHistory(ctx, id)
+	h.logLoadErr(ctx, "commSvc.GetOrderHistory", loadErr)
 
 	var reviews []*org.Review
 	if h.orgSvc != nil {
-		reviews, _ = h.orgSvc.ListReviewsForOrder(ctx, id)
+		if loaded, err := h.orgSvc.ListReviewsForOrder(ctx, id); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListReviewsForOrder", err)
+		} else {
+			reviews = loaded
+		}
 	}
 	reviewedMap := make(map[int64]*org.Review)
 	for _, rv := range reviews {
@@ -142,4 +147,3 @@ func evaluateCustomerOrderAccess(actor authctx.Actor, order *commerce.Order) Ord
 	}
 	return OrderAccessDenied
 }
-

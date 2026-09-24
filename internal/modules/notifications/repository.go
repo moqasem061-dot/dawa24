@@ -19,4 +19,3 @@ type Repository interface {
 	GetUnreadCount(ctx context.Context, userID int64) (int, error)
 	HasNotificationWithTitle(ctx context.Context, userID int64, title string, since time.Time) (bool, error)
 }
-

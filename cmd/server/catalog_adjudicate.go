@@ -18,9 +18,9 @@ import (
 	"context"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/modules/aicapabilities"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 type catalogAdjudicateAdapter struct {

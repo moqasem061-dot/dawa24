@@ -6,8 +6,8 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // Confirming and cancelling proposals, shared by every interface.
@@ -63,7 +63,7 @@ func (s *Service) CancelAction(ctx context.Context, actor authctx.Actor, publicI
 	}
 	p, err := s.actions.Cancel(ctx, actor, publicID)
 	res := decisionResult(p, err)
-	if p != nil && err == nil {
+	if p != nil && err == nil { // nolint:errswallow: err is returned to the caller in res; this only records success
 		s.recordDecision(ctx, actor, p, res.Message)
 	}
 	return res

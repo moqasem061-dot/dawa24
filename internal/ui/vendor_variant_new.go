@@ -7,13 +7,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorVariantNewPage renders the variant creation form with master product combobox and branches.
@@ -33,7 +33,11 @@ func (h *UIHandler) VendorVariantNewPage(w http.ResponseWriter, r *http.Request)
 	// supplier unable to find anything outside that arbitrary window.
 	var branches []*org.Branch
 	if h.orgSvc != nil {
-		branches, _ = h.orgSvc.ListBranches(ctx, actor.OrganizationID)
+		if loaded, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
+			branches = loaded
+		}
 	}
 
 	selectedProdID, _ := strconv.ParseInt(r.URL.Query().Get("product_id"), 10, 64)
@@ -125,14 +129,18 @@ func (h *UIHandler) respondVariantNewError(
 			Form:     form,
 			Errors:   errors,
 		}
-		_ = pages.AddCustomVariantForm(modalData, lang).Render(ctx, w)
+		h.renderPage(ctx, w, "render AddCustomVariantForm", pages.AddCustomVariantForm(modalData, lang))
 		return
 	}
 
 	var orgBranches []*org.Branch
 	if h.orgSvc != nil {
 		actor, _ := authctx.From(ctx)
-		orgBranches, _ = h.orgSvc.ListBranches(ctx, actor.OrganizationID)
+		if loaded, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
+			orgBranches = loaded
+		}
 	}
 	editorData := pages.VendorVariantEditorData{
 		Branches:       orgBranches,
@@ -270,7 +278,7 @@ func parseAndValidateVariantNew(
 	// 8. Expiry date validation
 	var expiryDate *time.Time
 	if expiryDateStr != "" {
-		if t, err := time.Parse("2006-01-02", expiryDateStr); err == nil {
+		if t, err := time.Parse("2006-01-02", expiryDateStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			expiryDate = &t
 		} else {
 			errors.Fields["expiry_date"] = i18n.T(lang, "vendor.catalog.invalid_expiry")

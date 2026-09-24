@@ -11,7 +11,7 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 type InvoiceExportDropdownProps struct {
@@ -130,15 +130,23 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
-		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("open = false; (typeof window.printInvoiceDirectly === 'function' ? window.printInvoiceDirectly(%q) : window.open(%q, '_blank'))", props.PrintURL, props.PrintURL))
+		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("[open = false, $printInvoice(%q)]", props.PrintURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 51, Col: 187}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 51, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><span class=\"text-accent\">🖨️</span><div class=\"d-flex flex-col text-start\"><span>طباعة / تصدير PDF</span> <span class=\"text-2xs text-secondary font-normal\">طباعة فورية دون مغادرة الصفحة</span></div></button><!-- 2. Export Excel --><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\"><span class=\"text-accent\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconPrinter("icon-sm").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span><div class=\"d-flex flex-col text-start\"><span>طباعة / تصدير PDF</span> <span class=\"text-2xs text-secondary font-normal\">طباعة فورية دون مغادرة الصفحة</span></div></button><!-- 2. Export Excel --><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -151,7 +159,15 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" download class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"open = false\"><span class=\"text-emerald-600\">📊</span><div class=\"d-flex flex-col text-start\"><span>تصدير Excel (XLSX)</span> <span class=\"text-2xs text-secondary font-normal\">جدول بيانات تفصيلي جاهز</span></div></a><!-- 3. Export Word --><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" download class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"open = false\"><span class=\"text-emerald-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconFileSpreadsheet("icon-sm").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "</span><div class=\"d-flex flex-col text-start\"><span>تصدير Excel (XLSX)</span> <span class=\"text-2xs text-secondary font-normal\">جدول بيانات تفصيلي جاهز</span></div></a><!-- 3. Export Word --><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -164,7 +180,15 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" download class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"open = false\"><span class=\"text-blue-600\">📝</span><div class=\"d-flex flex-col text-start\"><span>تصدير Word (DOCX)</span> <span class=\"text-2xs text-secondary font-normal\">مستند قابل للتعديل والطباعة</span></div></a></div></div><script nonce=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "\" download class=\"w-full d-flex items-center gap-2 px-3 py-2 rounded-xl text-surface-fg hover:bg-surface font-bold transition-colors text-start\" @click=\"open = false\"><span class=\"text-blue-600\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = IconFileText("icon-sm").Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</span><div class=\"d-flex flex-col text-start\"><span>تصدير Word (DOCX)</span> <span class=\"text-2xs text-secondary font-normal\">مستند قابل للتعديل والطباعة</span></div></a></div></div><script nonce=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -177,7 +201,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "\">\r\n\t\tif (!window.printInvoiceDirectly) {\r\n\t\t\twindow.printInvoiceDirectly = function(url) {\r\n\t\t\t\tvar iframe = document.getElementById('print-invoice-hidden-iframe');\r\n\t\t\t\tif (!iframe) {\r\n\t\t\t\t\tiframe = document.createElement('iframe');\r\n\t\t\t\t\tiframe.id = 'print-invoice-hidden-iframe';\r\n\t\t\t\t\tiframe.style.position = 'fixed';\r\n\t\t\t\t\tiframe.style.right = '0';\r\n\t\t\t\t\tiframe.style.bottom = '0';\r\n\t\t\t\t\tiframe.style.width = '0';\r\n\t\t\t\t\tiframe.style.height = '0';\r\n\t\t\t\t\tiframe.style.border = '0';\r\n\t\t\t\t\tiframe.style.opacity = '0';\r\n\t\t\t\t\tiframe.style.pointerEvents = 'none';\r\n\t\t\t\t\tdocument.body.appendChild(iframe);\r\n\t\t\t\t}\r\n\t\t\t\tvar printUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';\r\n\t\t\t\tiframe.src = printUrl;\r\n\t\t\t\tiframe.onload = function() {\r\n\t\t\t\t\ttry {\r\n\t\t\t\t\t\tiframe.contentWindow.focus();\r\n\t\t\t\t\t\tiframe.contentWindow.print();\r\n\t\t\t\t\t} catch (e) {\r\n\t\t\t\t\t\twindow.open(url, '_blank');\r\n\t\t\t\t\t}\r\n\t\t\t\t};\r\n\t\t\t};\r\n\t\t}\r\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">\n\t\tif (!window.printInvoiceDirectly) {\n\t\t\twindow.printInvoiceDirectly = function(url) {\n\t\t\t\tvar iframe = document.getElementById('print-invoice-hidden-iframe');\n\t\t\t\tif (!iframe) {\n\t\t\t\t\tiframe = document.createElement('iframe');\n\t\t\t\t\tiframe.id = 'print-invoice-hidden-iframe';\n\t\t\t\t\tiframe.style.position = 'fixed';\n\t\t\t\t\tiframe.style.right = '0';\n\t\t\t\t\tiframe.style.bottom = '0';\n\t\t\t\t\tiframe.style.width = '0';\n\t\t\t\t\tiframe.style.height = '0';\n\t\t\t\t\tiframe.style.border = '0';\n\t\t\t\t\tiframe.style.opacity = '0';\n\t\t\t\t\tiframe.style.pointerEvents = 'none';\n\t\t\t\t\tdocument.body.appendChild(iframe);\n\t\t\t\t}\n\t\t\t\tvar printUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';\n\t\t\t\tiframe.src = printUrl;\n\t\t\t\tiframe.onload = function() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tiframe.contentWindow.focus();\n\t\t\t\t\t\tiframe.contentWindow.print();\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\twindow.open(url, '_blank');\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t};\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

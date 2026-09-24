@@ -5,11 +5,35 @@
 (function () {
   'use strict';
 
-  document.addEventListener('DOMContentLoaded', initProfileVerification);
+  // The settings page is also reached through boosted navigation, where this
+  // script runs after DOMContentLoaded has already fired.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initProfileVerification);
+  } else {
+    initProfileVerification();
+  }
 
   function initProfileVerification() {
     initEmailVerification();
     initPhoneVerification();
+  }
+
+  // bindOnce marks an element so a second run of this script (a revisit
+  // through boosted navigation) does not attach every listener twice.
+  function bindOnce(el) {
+    if (!el || el.dataset.verifyBound) return false;
+    el.dataset.verifyBound = '1';
+    return true;
+  }
+
+  function makeVerifiedBadge(id, label) {
+    const b = document.createElement('span');
+    b.id = id;
+    b.className = 'badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold';
+    const t = document.createElement('span');
+    t.textContent = label;
+    b.appendChild(t);
+    return b;
   }
 
   // ================= EMAIL VERIFICATION =================
@@ -29,6 +53,7 @@
     let cooldownInterval = null;
 
     if (!openBtn && !otpBox) return;
+    if (!bindOnce(otpBox || openBtn)) return;
 
     function showFeedback(msg, isError) {
       if (!feedback) return;
@@ -140,11 +165,8 @@
             if (verifiedBadge) {
               verifiedBadge.style.display = 'inline-flex';
             } else if (unverifiedBadge && unverifiedBadge.parentElement) {
-              const b = document.createElement('span');
-              b.id = 'profile-email-badge-verified';
-              b.className = 'badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold';
-              b.innerHTML = '<span>البريد مؤكد</span>';
-              unverifiedBadge.parentElement.appendChild(b);
+              unverifiedBadge.parentElement.appendChild(
+                makeVerifiedBadge('profile-email-badge-verified', unverifiedBadge.dataset.verifiedLabel || 'البريد مؤكد'));
             }
           }, 800);
         } else {
@@ -205,6 +227,7 @@
     let currentRequestId = '';
 
     if (!openBtn && !otpBox) return;
+    if (!bindOnce(otpBox || openBtn)) return;
 
     function showFeedback(msg, isError) {
       if (!feedback) return;
@@ -317,11 +340,8 @@
             if (verifiedBadge) {
               verifiedBadge.style.display = 'inline-flex';
             } else if (unverifiedBadge && unverifiedBadge.parentElement) {
-              const b = document.createElement('span');
-              b.id = 'profile-phone-badge-verified';
-              b.className = 'badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold';
-              b.innerHTML = '<span>الهاتف مؤكد</span>';
-              unverifiedBadge.parentElement.appendChild(b);
+              unverifiedBadge.parentElement.appendChild(
+                makeVerifiedBadge('profile-phone-badge-verified', unverifiedBadge.dataset.verifiedLabel || 'الهاتف مؤكد'));
             }
           }, 800);
         } else {

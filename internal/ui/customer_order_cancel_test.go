@@ -12,8 +12,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestCustomerOrderCancel_EligibleStatusAndShipments_E2E(t *testing.T) {
@@ -96,7 +96,7 @@ func TestCustomerOrderCancel_EligibleStatusAndShipments_E2E(t *testing.T) {
 	formData.Set("reason", "تغيير في الاحتياجات / طلب بالخطأ")
 	formData.Set("notes", "تم الشراء من مورد محلي آخر")
 
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 
@@ -144,7 +144,7 @@ func TestCustomerOrderCancel_EligibleStatusAndShipments_E2E(t *testing.T) {
 
 	// 6. Test re-cancelling the already-cancelled order should be rejected
 	rec2 := httptest.NewRecorder()
-	req2 := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
+	req2 := httptest.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
 	req2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req2.Header.Set("X-Requested-With", "XMLHttpRequest")
 	req2 = req2.WithContext(authctx.WithActor(req2.Context(), actor))
@@ -208,7 +208,7 @@ func TestCustomerOrderCancel_DisallowedWhenShipped(t *testing.T) {
 	formData := url.Values{}
 	formData.Set("reason", "طلب بالخطأ")
 
-	req := httptest.NewRequest(http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, fmt.Sprintf("/orders/%d/cancel", orderID), strings.NewReader(formData.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("X-Requested-With", "XMLHttpRequest")
 

@@ -3,10 +3,10 @@ package pages
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // VendorOrderOption represents a candidate order for invoice generation.
@@ -104,29 +104,5 @@ func InvoiceBadgeClass(s billing.InvoiceStatus) string {
 		return "badge-rose"
 	default:
 		return "badge-amber"
-	}
-}
-
-// msgStatusLabel maps a contact-message status onto an Arabic label.
-func msgStatusLabel(s string) string {
-	switch s {
-	case "resolved":
-		return i18n.TDefault("w4_ui.s_179_179")
-	case "read":
-		return i18n.TDefault("w4_ui.s_180_180")
-	default:
-		return i18n.TDefault("w4_ui.s_181_181")
-	}
-}
-
-// msgStatusBadge maps a contact-message status onto a badge colour class.
-func msgStatusBadge(s string) string {
-	switch s {
-	case "resolved":
-		return "badge-emerald"
-	case "read":
-		return "badge-amber"
-	default:
-		return "badge-rose"
 	}
 }

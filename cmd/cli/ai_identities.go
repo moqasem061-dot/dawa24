@@ -4,17 +4,18 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	billingPG "github.com/muhiya/dawa24-store/internal/modules/billing/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	orgPG "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	platformadminPG "github.com/muhiya/dawa24-store/internal/modules/platform_admin/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	billingPG "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	orgPG "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	platformadminPG "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 // Giving every منشأة a Gateway identity, without waiting for someone to open a

@@ -4,12 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strings"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
 )
 
 // Bulk stock persistence for the vendor catalogue import.

@@ -2,12 +2,13 @@ package mailer
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 func TestMockMailer(t *testing.T) {
@@ -95,13 +96,13 @@ func TestOTPEngine(t *testing.T) {
 
 	// Should be in cooldown immediately
 	_, _, err = engine.GenerateOTP(email, purpose, 5*time.Minute)
-	if err != ErrOTPInCooldown {
+	if !errors.Is(err, ErrOTPInCooldown) {
 		t.Fatalf("expected cooldown error, got %v", err)
 	}
 
 	// Wrong code should fail
 	ok, err := engine.VerifyOTP(email, purpose, "000000")
-	if ok || err != ErrOTPInvalidCode {
+	if ok || !errors.Is(err, ErrOTPInvalidCode) {
 		t.Fatalf("expected invalid code error, got %v", err)
 	}
 
@@ -113,7 +114,7 @@ func TestOTPEngine(t *testing.T) {
 
 	// Reusing code should fail
 	ok, err = engine.VerifyOTP(email, purpose, code)
-	if ok || err != ErrOTPNotFound {
+	if ok || !errors.Is(err, ErrOTPNotFound) {
 		t.Fatalf("expected OTP not found on second attempt, got %v", err)
 	}
 }

@@ -1,10 +1,11 @@
 package productmatch
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Pricing, stock and flags.
@@ -84,7 +85,7 @@ func (r *Reader) readDiscount(out *Row, cells []string, base money.Amount) int64
 	if raw := r.cell(cells, FieldDiscountPct); raw != "" {
 		d, err := sheet.Coerce(raw)
 		switch {
-		case err == sheet.ErrNoValue:
+		case errors.Is(err, sheet.ErrNoValue):
 		case err != nil:
 			out.add(Issue{
 				Row: out.Number, Field: FieldDiscountPct, Column: r.header(FieldDiscountPct),
@@ -136,7 +137,7 @@ func (r *Reader) readCostDiscount(out *Row, cells []string) int64 {
 	if raw := r.cell(cells, FieldCostDiscountPct); raw != "" {
 		d, err := sheet.Coerce(raw)
 		switch {
-		case err == sheet.ErrNoValue:
+		case errors.Is(err, sheet.ErrNoValue):
 		case err != nil:
 			out.add(Issue{
 				Row: out.Number, Field: FieldCostDiscountPct, Column: r.header(FieldCostDiscountPct),
@@ -214,7 +215,7 @@ func (r *Reader) amount(out *Row, cells []string, f Field) money.Amount {
 	}
 	d, err := sheet.Coerce(raw)
 	switch {
-	case err == sheet.ErrNoValue:
+	case errors.Is(err, sheet.ErrNoValue):
 		return money.Zero
 	case err != nil:
 		out.add(Issue{
@@ -265,7 +266,7 @@ func (r *Reader) readStock(out *Row, cells []string) {
 	if raw := r.cell(cells, FieldQuantity); raw != "" {
 		n, err := sheet.CoerceInt(raw)
 		switch {
-		case err == sheet.ErrNoValue:
+		case errors.Is(err, sheet.ErrNoValue):
 		case err != nil:
 			out.add(Issue{
 				Row: out.Number, Field: FieldQuantity, Column: r.header(FieldQuantity),
@@ -310,7 +311,7 @@ func (r *Reader) count(out *Row, cells []string, f Field) (int, bool) {
 	}
 	n, err := sheet.CoerceInt(raw)
 	if err != nil {
-		if err != sheet.ErrNoValue {
+		if !errors.Is(err, sheet.ErrNoValue) {
 			out.add(Issue{
 				Row: out.Number, Field: f, Column: r.header(f), Value: raw,
 				Severity: SeverityWarning,
@@ -330,7 +331,7 @@ func (r *Reader) readExpiry(out *Row, cells []string) {
 	}
 	res, err := sheet.CoerceDate(raw)
 	if err != nil {
-		if err != sheet.ErrNoValue {
+		if !errors.Is(err, sheet.ErrNoValue) {
 			out.add(Issue{
 				Row: out.Number, Field: FieldExpiryDate, Column: r.header(FieldExpiryDate),
 				Value: raw, Severity: SeverityWarning,

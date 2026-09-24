@@ -3,9 +3,9 @@ package catalog
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // ProductStatus defines lifecycle states for products and variants.
@@ -170,13 +170,13 @@ func (v *ProductVariant) DiscountedCost() money.Amount {
 		return money.Zero
 	}
 	if v.CostDiscountPercentage > 0 && v.Price.IsPositive() {
-		discMinor := int64(float64(v.Price.Minor()) * (v.CostDiscountPercentage / 100.0))
-		return money.FromMinor(v.Price.Minor() - discMinor)
+		disc := v.Price.ApplyPercent(money.PercentToBasisPoints(v.CostDiscountPercentage))
+		return money.FromMinor(v.Price.Minor() - disc.Minor())
 	}
 	if v.CostPrice != nil && v.CostPrice.IsPositive() {
 		if v.CostDiscountPercentage > 0 {
-			discMinor := int64(float64(v.CostPrice.Minor()) * (v.CostDiscountPercentage / 100.0))
-			return money.FromMinor(v.CostPrice.Minor() - discMinor)
+			disc := v.CostPrice.ApplyPercent(money.PercentToBasisPoints(v.CostDiscountPercentage))
+			return money.FromMinor(v.CostPrice.Minor() - disc.Minor())
 		}
 		return *v.CostPrice
 	}
@@ -264,7 +264,7 @@ func (v *ProductVariant) ProfitMarginPercent() float64 {
 func (p *Product) EffectivePrice() money.Amount {
 	if p.Discount.IsPositive() && p.Discount.Minor() < p.Price.Minor() {
 		eff, err := p.Price.Sub(p.Discount)
-		if err == nil {
+		if err == nil { // nolint:errswallow: money arithmetic fails only on overflow; the list price stands
 			return eff
 		}
 	}
@@ -363,39 +363,4 @@ type SavingProductEnriched struct {
 	LinkedProductSKU   string       `json:"linked_product_sku"`
 	ProvidingOrgsCount int          `json:"providing_orgs_count"`
 	TotalValue         money.Amount `json:"total_value"`
-}
-
-// ProductProviderInfo represents an organization/supplier selling a linked master product with their pricing and stock.
-type ProductProviderInfo struct {
-	OrgID              int64        `json:"org_id"`
-	OrgName            i18n.Text    `json:"org_name"`
-	VariantID          int64        `json:"variant_id"`
-	VariantName        i18n.Text    `json:"variant_name"`
-	SKU                string       `json:"sku"`
-	Unit               string       `json:"unit"`
-	Price              money.Amount `json:"price"`
-	Discount           money.Amount `json:"discount"`
-	PriceAfterDiscount money.Amount `json:"price_after_discount"`
-	StockQuantity      int          `json:"stock_quantity"`
-	Status             string       `json:"status"`
-	BranchName         i18n.Text    `json:"branch_name"`
-}
-
-// SavingProductStats summarizes saving products metrics for a vendor.
-type SavingProductStats struct {
-	CountAll      int          `json:"count_all"`
-	CountLinked   int          `json:"count_linked"`
-	CountUnlinked int          `json:"count_unlinked"`
-	FilteredCount int          `json:"filtered_count"`
-	TotalQuantity float64      `json:"total_quantity"`
-	TotalValue    money.Amount `json:"total_value"`
-}
-
-// CatalogMatchSource holds core metadata of a master product for high-speed matching.
-type CatalogMatchSource struct {
-	ID      int64  `json:"id"`
-	SKU     string `json:"sku"`
-	Barcode string `json:"barcode"`
-	NameAr  string `json:"name_ar"`
-	NameEn  string `json:"name_en"`
 }

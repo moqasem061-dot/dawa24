@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 // memoryTriggerKeywords is the fast heuristic filter run on every turn.
@@ -74,13 +74,17 @@ func (s *Service) maybeExtractMemory(parentCtx context.Context, actor authctx.Ac
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 35*time.Second)
+	// Detached from the turn so a closed stream does not cut extraction short,
+	// but keeping its values (tenant, trace) for the queries below.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(parentCtx), 35*time.Second)
 	defer cancel()
 
 	var virtualKey string
 	if s.keys != nil {
-		if vk, err := s.keys(ctx, actor.OrgID); err == nil {
+		if vk, err := s.keys(ctx, actor.OrgID); err == nil { // nolint:errswallow: the else branch logs it
 			virtualKey = vk
+		} else {
+			s.log.WarnContext(ctx, "assistant: tenant gateway key unavailable", "org", actor.OrgID, "error", err)
 		}
 	}
 

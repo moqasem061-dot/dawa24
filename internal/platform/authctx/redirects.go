@@ -5,9 +5,6 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
 )
 
 func isJSONOrAJAXRequest(r *http.Request) bool {
@@ -105,10 +102,4 @@ func redirectToLogin(w http.ResponseWriter, r *http.Request) {
 	q := url.Values{}
 	q.Set("redirect", r.URL.Path)
 	http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)
-}
-
-// notFound renders a minimal 404 via httpx unified error page.
-// It deliberately does not say whether the page exists under another audience.
-func notFound(w http.ResponseWriter, r *http.Request) {
-	httpx.Error(w, r, nil, apperr.New(apperr.KindNotFound, "route.not_found", "الصفحة غير موجودة."))
 }

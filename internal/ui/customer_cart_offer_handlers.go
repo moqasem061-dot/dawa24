@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AddOfferToCartSubmit adds an entire special offer bundle to the cart for a pharmacy.
@@ -93,7 +93,8 @@ func (h *UIHandler) AddOfferToCartSubmit(w http.ResponseWriter, r *http.Request)
 	_ = h.promoSvc.RecordOfferClick(ctx, offerID)
 
 	if h.isHTMX(r) {
-		cart, _ := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		cart, loadErr := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 		totalCount := 0
 		if cart != nil {
 			for _, ci := range cart.Items {
@@ -141,12 +142,13 @@ func (h *UIHandler) assertCartLineAvailable(
 		resMsg := res.Message(langOf(r))
 		if h.isHTMX(r) {
 			if back == "/cart" {
-				cart, _ := h.commSvc.GetCart(ctx, actor.UserID, buyerOrgID(ctx))
+				cart, loadErr := h.commSvc.GetCart(ctx, actor.UserID, buyerOrgID(ctx))
+				h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 				h.enrichCartItemsCoverage(ctx, &actor, cart, langOf(r))
 				lang, _ := h.localeAndDir(r)
 				w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":%+q,"type":"error"},"cartUpdated":{"count":%d}}`, resMsg, cartTotalItemCount(cart)))
 				w.Header().Set("Content-Type", "text/html; charset=utf-8")
-				_ = pages.CustomerCartContent(cart, h.cartGroupsFor(ctx, cart), lang).Render(ctx, w)
+				h.renderPage(ctx, w, "render CustomerCartContent", pages.CustomerCartContent(cart, h.cartGroupsFor(ctx, cart), lang))
 				return false
 			}
 			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"showToast":{"message":%+q,"type":"error"}}`, resMsg))

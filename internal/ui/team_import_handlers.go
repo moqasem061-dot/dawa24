@@ -9,12 +9,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) handleTeamImportPage(w http.ResponseWriter, r *http.Request, audience string) {
@@ -129,7 +129,9 @@ func (h *UIHandler) handleTeamImportUploadSubmit(w http.ResponseWriter, r *http.
 	h.ensureCompanyRoles(ctx, actor.OrganizationID, actor.OrgType)
 	var companyRoles []pages.TeamRoleOption
 	if h.orgSvc != nil {
-		if roles, err := h.orgSvc.ListRoles(ctx, actor.OrganizationID); err == nil {
+		if roles, err := h.orgSvc.ListRoles(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListRoles", err)
+		} else {
 			for _, role := range roles {
 				if role == nil || role.IsOwner || role.Key == "org_owner" {
 					continue
@@ -147,7 +149,9 @@ func (h *UIHandler) handleTeamImportUploadSubmit(w http.ResponseWriter, r *http.
 	// Fetch branches
 	var branches []pages.TeamBranchOption
 	if h.orgSvc != nil {
-		if branchList, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err == nil {
+		if branchList, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			for _, b := range branchList {
 				branches = append(branches, pages.TeamBranchOption{
 					ID:   b.ID,
@@ -232,4 +236,3 @@ func (h *UIHandler) handleTeamImportSessionPage(w http.ResponseWriter, r *http.R
 
 	h.renderPage(ctx, w, fmt.Sprintf("render %s team import session", audience), pages.TeamImportPage(view, lang, dir))
 }
-

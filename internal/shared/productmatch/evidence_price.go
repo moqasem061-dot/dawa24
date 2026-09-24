@@ -25,7 +25,7 @@ package productmatch
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // priceAgreementBonus is what an exactly equal printed price is worth.

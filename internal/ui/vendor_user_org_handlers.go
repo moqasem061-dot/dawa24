@@ -8,12 +8,12 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorUserSearchJSON provides live AJAX user search for vendors to link customers/pharmacies.
@@ -39,7 +39,9 @@ func (h *UIHandler) VendorUserSearchJSON(w http.ResponseWriter, r *http.Request)
 	var results []UserSearchResult
 	if h.idSvc != nil {
 		users, err := h.idSvc.SearchUsers(sysCtx, q, "", 20)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "idSvc.SearchUsers", err)
+		} else {
 			for _, u := range users {
 				if u == nil {
 					continue
@@ -101,7 +103,8 @@ func (h *UIHandler) VendorUserOrganizationsPage(w http.ResponseWriter, r *http.R
 
 	sysCtx := database.AsSystem(ctx)
 	if h.orgSvc != nil {
-		allLinks, _ := h.orgSvc.ListUserOrganizationsByVendor(sysCtx, orgID, "")
+		allLinks, loadErr := h.orgSvc.ListUserOrganizationsByVendor(sysCtx, orgID, "")
+		h.logLoadErr(ctx, "orgSvc.ListUserOrganizationsByVendor", loadErr)
 		data.TotalCount = len(allLinks)
 		for _, link := range allLinks {
 			if link == nil {
@@ -118,7 +121,9 @@ func (h *UIHandler) VendorUserOrganizationsPage(w http.ResponseWriter, r *http.R
 		}
 
 		filteredLinks, total, err := h.orgSvc.ListUserOrganizationsByVendorWithTotal(sysCtx, orgID, statusFilter, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListUserOrganizationsByVendorWithTotal", err)
+		} else {
 			data.UserOrgs = filteredLinks
 			data.FilteredTotal = total
 		}

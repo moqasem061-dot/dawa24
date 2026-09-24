@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // Two small pieces of client-side behaviour the parcel screen needs, kept
@@ -57,13 +57,13 @@ func CourierMiniMapScript() templ.Component {
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_delivery_map.templ`, Line: 25, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_delivery_map.templ`, Line: 25, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-hard-nav>\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst el = document.getElementById('courier-branch-map');\n\t\t\tif (!el) return;\n\t\t\tconst lat = parseFloat(el.getAttribute('data-lat'));\n\t\t\tconst lon = parseFloat(el.getAttribute('data-lon'));\n\t\t\tconst name = el.getAttribute('data-name') || '';\n\t\t\tconst branch = el.getAttribute('data-branch') || '';\n\t\t\tif (!lat || !lon || isNaN(lat) || isNaN(lon)) return;\n\n\t\t\tfunction renderMiniMap() {\n\t\t\t\tif (typeof L === 'undefined') return;\n\t\t\t\tconst canvas = el.querySelector('.courier-map-canvas');\n\t\t\t\tif (!canvas) return;\n\t\t\t\ttry {\n\t\t\t\t\tconst miniMap = L.map(canvas, {\n\t\t\t\t\t\tzoomControl: false,\n\t\t\t\t\t\tattributionControl: false\n\t\t\t\t\t}).setView([lat, lon], 15);\n\t\t\t\t\tL.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n\t\t\t\t\t\tmaxZoom: 19\n\t\t\t\t\t}).addTo(miniMap);\n\t\t\t\t\tconst label = branch ? '<b>' + name + '</b><br><small>' + branch + '</small>' : '<b>' + name + '</b>';\n\t\t\t\t\tL.marker([lat, lon]).addTo(miniMap).bindPopup(label).openPopup();\n\t\t\t\t} catch (e) {\n\t\t\t\t\tconsole.warn('courier mini-map init error:', e);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\tensureLeaflet().then(renderMiniMap).catch(function(err) { console.warn('leaflet error:', err); });\n\t\t\t} else if (typeof L !== 'undefined') {\n\t\t\t\trenderMiniMap();\n\t\t\t}\n\t\t});\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" data-hard-nav>\n\t\tdocument.addEventListener('DOMContentLoaded', function() {\n\t\t\tconst el = document.getElementById('courier-branch-map');\n\t\t\tif (!el) return;\n\t\t\tconst lat = parseFloat(el.getAttribute('data-lat'));\n\t\t\tconst lon = parseFloat(el.getAttribute('data-lon'));\n\t\t\tconst name = el.getAttribute('data-name') || '';\n\t\t\tconst branch = el.getAttribute('data-branch') || '';\n\t\t\tif (!lat || !lon || isNaN(lat) || isNaN(lon)) return;\n\n\t\t\tfunction renderMiniMap() {\n\t\t\t\tif (typeof L === 'undefined') return;\n\t\t\t\tconst canvas = el.querySelector('.courier-map-canvas');\n\t\t\t\tif (!canvas) return;\n\t\t\t\ttry {\n\t\t\t\t\tconst miniMap = L.map(canvas, {\n\t\t\t\t\t\tzoomControl: false,\n\t\t\t\t\t\tattributionControl: false\n\t\t\t\t\t}).setView([lat, lon], 15);\n\t\t\t\t\tL.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n\t\t\t\t\t\tmaxZoom: 19\n\t\t\t\t\t}).addTo(miniMap);\n\t\t\t\t\t// The pharmacy chose its own name and branch name, and a\n\t\t\t\t\t// Leaflet popup is HTML: escape both.\n\t\t\t\t\tconst esc = window.dawaHTML.escape;\n\t\t\t\t\tconst label = branch ? '<b>' + esc(name) + '</b><br><small>' + esc(branch) + '</small>' : '<b>' + esc(name) + '</b>';\n\t\t\t\t\tL.marker([lat, lon]).addTo(miniMap).bindPopup(label).openPopup();\n\t\t\t\t} catch (e) {\n\t\t\t\t\tconsole.warn('courier mini-map init error:', e);\n\t\t\t\t}\n\t\t\t}\n\n\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\tensureLeaflet().then(renderMiniMap).catch(function(err) { console.warn('leaflet error:', err); });\n\t\t\t} else if (typeof L !== 'undefined') {\n\t\t\t\trenderMiniMap();\n\t\t\t}\n\t\t});\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

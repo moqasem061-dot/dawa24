@@ -121,7 +121,7 @@ type tgSendResp struct {
 func (c *liveClient) SendVerification(ctx context.Context, rawPhone string) (*SendResult, error) {
 	normPhone, err := NormalizePhone(rawPhone)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidPhone, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidPhone, err)
 	}
 
 	payload := tgSendReq{
@@ -144,7 +144,7 @@ func (c *liveClient) SendVerification(ctx context.Context, rawPhone string) (*Se
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		c.log.ErrorContext(ctx, "telegram gateway sendVerificationMessage request error", "error", err)
-		return nil, fmt.Errorf("%w: %v", ErrServiceUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrServiceUnavailable, err)
 	}
 	defer resp.Body.Close()
 
@@ -221,7 +221,7 @@ func (c *liveClient) CheckVerification(ctx context.Context, requestID, code stri
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		c.log.ErrorContext(ctx, "telegram gateway checkVerificationStatus request error", "error", err)
-		return nil, fmt.Errorf("%w: %v", ErrServiceUnavailable, err)
+		return nil, fmt.Errorf("%w: %w", ErrServiceUnavailable, err)
 	}
 	defer resp.Body.Close()
 
@@ -273,7 +273,7 @@ func (m *mockClient) IsMock() bool { return true }
 func (m *mockClient) SendVerification(ctx context.Context, rawPhone string) (*SendResult, error) {
 	normPhone, err := NormalizePhone(rawPhone)
 	if err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrInvalidPhone, err)
+		return nil, fmt.Errorf("%w: %w", ErrInvalidPhone, err)
 	}
 
 	m.mu.Lock()

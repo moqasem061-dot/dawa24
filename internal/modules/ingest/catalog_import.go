@@ -1,12 +1,12 @@
 package ingest
 
 import (
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Phase is where an import has reached. It is the vendor's own progress through
@@ -104,7 +104,6 @@ type ModeOption struct {
 // ModeOptions are the four strategies, in the order they are offered.
 var ModeOptions = ModeOptionsForLang("ar")
 
-
 // ParseMode maps a submitted value onto a mode, defaulting to the safe one.
 func ParseMode(raw string) Mode {
 	switch Mode(raw) {
@@ -196,8 +195,8 @@ type Settings struct {
 	WarehouseID int64  `json:"warehouse_id"`
 	BranchID    *int64 `json:"branch_id,omitempty"`
 
-	Mode      Mode                `json:"mode"`
-	StockMode inventory.StockMode `json:"stock_mode"`
+	Mode      Mode      `json:"mode"`
+	StockMode StockMode `json:"stock_mode"`
 
 	// Duplicates decides what a repeated identity inside one file means.
 	Duplicates productmatch.DuplicatePolicy `json:"duplicates"`
@@ -273,7 +272,7 @@ type Settings struct {
 func DefaultSettings() Settings {
 	return Settings{
 		Mode:                ModeUpsert,
-		StockMode:           inventory.StockReplace,
+		StockMode:           StockReplace,
 		Duplicates:          productmatch.DuplicateLastWins,
 		MinMatchScore:       productmatch.DefaultMinStrong,
 		UseAI:               false,
@@ -292,7 +291,7 @@ func (s Settings) Normalize() Settings {
 		s.Mode = ModeUpsert
 	}
 	if s.StockMode == "" {
-		s.StockMode = inventory.StockReplace
+		s.StockMode = StockReplace
 	}
 	if s.Duplicates == "" {
 		s.Duplicates = productmatch.DuplicateLastWins

@@ -1,11 +1,8 @@
 package ingest
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
-
 
 // decide applies the import mode and builds the variant to write, or records
 // why the row is not being written at all.
@@ -50,8 +47,8 @@ func (c *commitRun) decide(sr *RowOutcome) *plannedRow {
 }
 
 // buildVariant renders a reviewed row as the vendor's own catalogue entry.
-func (c *commitRun) buildVariant(sr *RowOutcome, productID, variantID int64) *catalog.ProductVariant {
-	v := &catalog.ProductVariant{
+func (c *commitRun) buildVariant(sr *RowOutcome, productID, variantID int64) *VariantDraft {
+	v := &VariantDraft{
 		ID:             variantID,
 		OrganizationID: c.session.OrganizationID,
 		ProductID:      productID,
@@ -76,7 +73,7 @@ func (c *commitRun) buildVariant(sr *RowOutcome, productID, variantID int64) *ca
 			v.CostPrice = &cost
 		}
 		if row.CostDiscountBps > 0 {
-			v.CostDiscountPercentage = float64(row.CostDiscountBps) / 100.0
+			v.CostDiscountBps = row.CostDiscountBps
 		}
 		if row.Negotiable != nil {
 			v.IsNegotiable = *row.Negotiable
@@ -87,19 +84,19 @@ func (c *commitRun) buildVariant(sr *RowOutcome, productID, variantID int64) *ca
 }
 
 // statusFor applies "publish immediately".
-func (c *commitRun) statusFor(variantID int64) catalog.ProductStatus {
+func (c *commitRun) statusFor(variantID int64) VariantStatus {
 	if variantID > 0 {
 		return ""
 	}
 	if c.settings.PublishImmediately {
-		return catalog.StatusActive
+		return VariantActive
 	}
-	return catalog.StatusInactive
+	return VariantInactive
 }
 
 // stockFor turns a written row into the warehouse balance it implies, or nil
 // where there is nothing to write.
-func (c *commitRun) stockFor(sr *RowOutcome, variantID int64) *inventory.StockWriteRow {
+func (c *commitRun) stockFor(sr *RowOutcome, variantID int64) *StockWriteRow {
 	if c.svc.inventory == nil || c.settings.WarehouseID <= 0 || variantID <= 0 {
 		return nil
 	}
@@ -118,15 +115,13 @@ func (c *commitRun) stockFor(sr *RowOutcome, variantID int64) *inventory.StockWr
 		quantity = 0
 	}
 
-	return &inventory.StockWriteRow{
-		HasQuantity: hasQuantity,
-		Stock: &inventory.Stock{
-			OrganizationID:   c.session.OrganizationID,
-			WarehouseID:      c.settings.WarehouseID,
-			ProductID:        productOf(sr),
-			ProductVariantID: variantID,
-			Quantity:         quantity,
-			MinThreshold:     stockThreshold(row.MinThreshold, c.settings.DefaultMinThreshold),
-		},
+	return &StockWriteRow{
+		HasQuantity:    hasQuantity,
+		OrganizationID: c.session.OrganizationID,
+		WarehouseID:    c.settings.WarehouseID,
+		ProductID:      productOf(sr),
+		VariantID:      variantID,
+		Quantity:       quantity,
+		MinThreshold:   stockThreshold(row.MinThreshold, c.settings.DefaultMinThreshold),
 	}
 }

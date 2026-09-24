@@ -4,7 +4,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The market, loaded whole, and grouped by product rather than by spelling.

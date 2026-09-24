@@ -3,14 +3,14 @@ package ingest
 import (
 	"context"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
-	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
 )
 
 // ProductCandidate represents a potential matching product in the master catalogue.
@@ -336,48 +336,4 @@ func (s *Service) CancelSession(ctx context.Context, sessionID int64) error {
 // ListImportRows returns staged rows for review.
 func (s *Service) ListImportRows(ctx context.Context, sessionID int64, status string, limit, offset int) ([]*ImportRow, error) {
 	return s.repo.ListImportRows(ctx, sessionID, status, limit, offset)
-}
-
-func getRawString(m map[string]any, key string) string {
-	if key == "" || m == nil {
-		return ""
-	}
-	if val, ok := m[key]; ok && val != nil {
-		return strings.TrimSpace(fmt.Sprintf("%v", val))
-	}
-	return ""
-}
-
-func getRawStringWithFallback(m map[string]any, colName, targetField string) string {
-	if val := getRawString(m, colName); val != "" {
-		return val
-	}
-	if m == nil {
-		return ""
-	}
-	for _, rule := range columnRules {
-		if rule.field == targetField {
-			for _, ex := range rule.exact {
-				for k, v := range m {
-					if strings.EqualFold(strings.TrimSpace(k), ex) && v != nil {
-						str := strings.TrimSpace(fmt.Sprintf("%v", v))
-						if str != "" {
-							return str
-						}
-					}
-				}
-			}
-			for _, st := range rule.strong {
-				for k, v := range m {
-					if strings.Contains(strings.ToLower(strings.TrimSpace(k)), strings.ToLower(st)) && v != nil {
-						str := strings.TrimSpace(fmt.Sprintf("%v", v))
-						if str != "" {
-							return str
-						}
-					}
-				}
-			}
-		}
-	}
-	return ""
 }

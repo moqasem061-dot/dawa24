@@ -8,12 +8,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorProductsPage renders one page of the vendor's supply variants.
@@ -83,7 +83,7 @@ func vendorVariantQueryFrom(r *http.Request) catalog.VendorVariantQuery {
 	if n, err := strconv.Atoi(q.Get("page")); err == nil && n > 1 {
 		query.PageNumber = n
 	}
-	if n, err := strconv.Atoi(q.Get("limit")); err == nil {
+	if n, err := strconv.Atoi(q.Get("limit")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		query.PerPage = n
 	}
 	switch query.Status {

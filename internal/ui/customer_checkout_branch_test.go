@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestCheckoutBranchItem_DisabledNeverChecked(t *testing.T) {
@@ -115,4 +115,3 @@ func TestHasAvailableCheckoutBranch(t *testing.T) {
 		t.Errorf("expected false for nil branches")
 	}
 }
-

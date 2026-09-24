@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 // siteURL is the public origin links are built on: the configured base URL,
@@ -132,9 +132,9 @@ func (h *UIHandler) SitemapXML(w http.ResponseWriter, r *http.Request) {
 		sb.WriteString("    <loc>")
 		_ = xml.EscapeText(&sb, []byte(baseURL+item.path))
 		sb.WriteString("</loc>\n")
-		sb.WriteString(fmt.Sprintf("    <lastmod>%s</lastmod>\n", item.lastmod))
-		sb.WriteString(fmt.Sprintf("    <changefreq>%s</changefreq>\n", item.changefreq))
-		sb.WriteString(fmt.Sprintf("    <priority>%s</priority>\n", item.priority))
+		fmt.Fprintf(&sb, "    <lastmod>%s</lastmod>\n", item.lastmod)
+		fmt.Fprintf(&sb, "    <changefreq>%s</changefreq>\n", item.changefreq)
+		fmt.Fprintf(&sb, "    <priority>%s</priority>\n", item.priority)
 		sb.WriteString("  </url>\n")
 	}
 

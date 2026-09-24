@@ -10,8 +10,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/pagecontrol"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestMaintenancePage_Render(t *testing.T) {
@@ -54,7 +54,7 @@ func TestMaintenancePage_Render(t *testing.T) {
 func TestPageMaintenanceHandler_HTMLResponse(t *testing.T) {
 	h := &UIHandler{log: slog.Default()}
 
-	req := httptest.NewRequest(http.MethodGet, "/vendor/offers", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/offers", nil)
 	rec := httptest.NewRecorder()
 
 	h.PageMaintenanceHandler(rec, req)
@@ -75,7 +75,7 @@ func TestPageMaintenanceHandler_HTMLResponse(t *testing.T) {
 func TestPageMaintenanceHandler_APIResponse(t *testing.T) {
 	h := &UIHandler{log: slog.Default()}
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/orders", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/orders", nil)
 	req.Header.Set("Accept", "application/json")
 	rec := httptest.NewRecorder()
 
@@ -102,7 +102,7 @@ func TestPageMaintenanceHandler_APIResponse(t *testing.T) {
 func TestPageMaintenanceHandler_WithBlockedInfo(t *testing.T) {
 	h := &UIHandler{log: slog.Default()}
 
-	req := httptest.NewRequest(http.MethodGet, "/customer/orders", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/orders", nil)
 	info := pagecontrol.BlockedInfo{
 		RuleID:      10,
 		Path:        "/customer/orders",

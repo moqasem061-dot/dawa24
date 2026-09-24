@@ -3,12 +3,12 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/features"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // ComparePlansPage renders the pricing page for the discount-comparison plans.
@@ -32,7 +32,9 @@ func (h *UIHandler) ComparePlansPage(w http.ResponseWriter, r *http.Request) {
 	var viewPlans []*billing.Plan
 	if h.compareSvc != nil {
 		cPlans, err := h.compareSvc.ListPlans(ctx, true)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "compareSvc.ListPlans", err)
+		} else {
 			for _, cp := range cPlans {
 				viewPlans = append(viewPlans, &billing.Plan{
 					ID:          cp.ID,
@@ -46,7 +48,11 @@ func (h *UIHandler) ComparePlansPage(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	} else if h.billSvc != nil {
-		viewPlans, _ = h.billSvc.ListPlans(ctx)
+		if loaded, err := h.billSvc.ListPlans(ctx); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListPlans", err)
+		} else {
+			viewPlans = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render compare plans", pages.ComparePlansPage(lang, dir, viewPlans))
@@ -120,7 +126,8 @@ func (h *UIHandler) CompareToolPage(w http.ResponseWriter, r *http.Request) {
 	if !actor.IsStaff && h.billSvc != nil {
 		allowed, err := h.billSvc.CheckOrgEntitlement(ctx, actor.OrganizationID, actor.UserID, billing.FeatureCompareTool)
 		if err != nil || !allowed {
-			plans, _ := h.billSvc.ListPlans(ctx)
+			plans, loadErr := h.billSvc.ListPlans(ctx)
+			h.logLoadErr(ctx, "billSvc.ListPlans", loadErr)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			if err := pages.SubscriptionGatePage(lang, dir, pages.SubscriptionGateProps{
 				FeatureKey:   billing.FeatureCompareTool,
@@ -146,7 +153,11 @@ func (h *UIHandler) CompareToolPage(w http.ResponseWriter, r *http.Request) {
 		orgPtr = &actor.OrganizationID
 	}
 	if h.compareSvc != nil {
-		activeFiles, _ = h.compareSvc.ListFiles(ctx, actor.UserID, orgPtr, nil)
+		if loaded, err := h.compareSvc.ListFiles(ctx, actor.UserID, orgPtr, nil); err != nil {
+			h.logLoadErr(ctx, "compareSvc.ListFiles", err)
+		} else {
+			activeFiles = loaded
+		}
 	}
 
 	maxAllowedFiles := 10

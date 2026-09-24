@@ -10,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	commerceHttp "github.com/muhiya/dawa24-store/internal/modules/commerce/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx/authctxtest"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	commerceHttp "github.com/moqasem061-dot/dawa24/internal/modules/commerce/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx/authctxtest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 type shipmentTestRepo struct {
@@ -82,7 +82,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 1: ListVendorShipments spoofing another vendor_id returns 403", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg10Member)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/vendor/shipments?vendor_id=20", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/vendor/shipments?vendor_id=20", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -93,7 +93,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 1: ListVendorShipments for own org succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg10Member)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/vendor/shipments", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/vendor/shipments", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -104,7 +104,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 1: Non-vendor customer listing shipments returns 403", func(t *testing.T) {
 		router := newRouterWithActor(repo, customerActor)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/vendor/shipments?vendor_id=10", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/vendor/shipments?vendor_id=10", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -115,7 +115,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 1: Staff listing shipments with explicit vendor_id succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, staffActor)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/vendor/shipments?vendor_id=10", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/vendor/shipments?vendor_id=10", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -126,7 +126,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 2: TransitionShipmentStatus by non-owner vendor returns 403", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg20Member)
-		req := httptest.NewRequest("POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -138,7 +138,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 2: TransitionShipmentStatus by owning vendor with permission succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg10Member)
-		req := httptest.NewRequest("POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -150,7 +150,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 2: TransitionShipmentStatus by staff succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, staffActor)
-		req := httptest.NewRequest("POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/api/v1/commerce/shipments/1/status", strings.NewReader(`{"status":"confirmed"}`))
 		req.Header.Set("Content-Type", "application/json")
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
@@ -162,7 +162,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 3: GetShipment by non-owner vendor returns 403", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg20Member)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/shipments/1", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/shipments/1", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -173,7 +173,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 3: GetShipment by owning vendor succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, vendorOrg10Member)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/shipments/1", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/shipments/1", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 
@@ -184,7 +184,7 @@ func TestShipmentOwnershipAndSpoofing(t *testing.T) {
 
 	t.Run("Task 3: GetShipment by staff succeeds", func(t *testing.T) {
 		router := newRouterWithActor(repo, staffActor)
-		req := httptest.NewRequest("GET", "/api/v1/commerce/shipments/1", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/commerce/shipments/1", nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 

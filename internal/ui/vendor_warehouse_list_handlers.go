@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorWarehousesPage renders the vendor's permanent and branch storage warehouses.
@@ -39,7 +39,9 @@ func (h *UIHandler) VendorWarehousesPage(w http.ResponseWriter, r *http.Request)
 	var activeCount int
 	if h.invSvc != nil {
 		allWhs, whTotal, err := h.invSvc.ListWarehousesWithTotal(ctx, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "invSvc.ListWarehousesWithTotal", err)
+		} else {
 			for _, wh := range allWhs {
 				if wh.OrganizationID == actor.OrganizationID {
 					warehouses = append(warehouses, wh)
@@ -48,7 +50,9 @@ func (h *UIHandler) VendorWarehousesPage(w http.ResponseWriter, r *http.Request)
 			total = whTotal
 		}
 
-		if fullWhs, err := h.invSvc.ListWarehouses(ctx); err == nil {
+		if fullWhs, err := h.invSvc.ListWarehouses(ctx); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListWarehouses", err)
+		} else {
 			activeTotal := 0
 			orgWhCount := 0
 			for _, wh := range fullWhs {
@@ -68,7 +72,11 @@ func (h *UIHandler) VendorWarehousesPage(w http.ResponseWriter, r *http.Request)
 
 	var branches []*org.Branch
 	if h.orgSvc != nil {
-		branches, _ = h.orgSvc.ListBranches(ctx, actor.OrganizationID)
+		if loaded, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
+			branches = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render vendor warehouses page", pages.VendorWarehousesPage(warehouses, branches, lang, dir, page, limit, total, activeCount))
@@ -97,7 +105,8 @@ func (h *UIHandler) VendorWarehouseDetailPage(w http.ResponseWriter, r *http.Req
 	var otherWhs []*inventory.Warehouse
 	var allDetailed []*inventory.DetailedWarehouseStockView
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(ctx)
+		whs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, item := range whs {
 			if item.OrganizationID == actor.OrganizationID {
 				if item.ID == whID {
@@ -108,7 +117,11 @@ func (h *UIHandler) VendorWarehouseDetailPage(w http.ResponseWriter, r *http.Req
 			}
 		}
 		if wh != nil {
-			allDetailed, _ = h.invSvc.ListDetailedStocksByWarehouse(ctx, whID)
+			if loaded, err := h.invSvc.ListDetailedStocksByWarehouse(ctx, whID); err != nil {
+				h.logLoadErr(ctx, "invSvc.ListDetailedStocksByWarehouse", err)
+			} else {
+				allDetailed = loaded
+			}
 		}
 	}
 
@@ -154,7 +167,7 @@ func (h *UIHandler) VendorWarehouseDetailPage(w http.ResponseWriter, r *http.Req
 	}
 
 	limit := 20
-	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil {
+	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		switch l {
 		case 10, 20, 50, 100:
 			limit = l

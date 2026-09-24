@@ -11,10 +11,10 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminOfferPackagesListPage renders packages list.
@@ -122,7 +122,7 @@ func AdminOfferPackageDetailPage(pkgID int64, lang, dir string) templ.Component 
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", pkgID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 45, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 45, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -230,7 +230,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#%d", req.OrganizationID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 110, Col: 109}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 110, Col: 109}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -258,7 +258,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 						var templ_7745c5c3_Var9 string
 						templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("#%d", req.ItemID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 118, Col: 83}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 118, Col: 83}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 						if templ_7745c5c3_Err != nil {
@@ -276,7 +276,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 							var templ_7745c5c3_Var10 string
 							templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(req.Package.Name.Get(i18n.ParseLang(lang)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 121, Col: 63}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 121, Col: 63}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 							if templ_7745c5c3_Err != nil {
@@ -294,7 +294,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 							var templ_7745c5c3_Var11 string
 							templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", req.PackageID))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 123, Col: 63}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 123, Col: 63}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 							if templ_7745c5c3_Err != nil {
@@ -317,7 +317,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 							var templ_7745c5c3_Var12 string
 							templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", req.Package.TierLevel))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 129, Col: 67}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 129, Col: 67}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 							if templ_7745c5c3_Err != nil {
@@ -360,7 +360,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 						var templ_7745c5c3_Var13 string
 						templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(req.CreatedAt.Format("2006-01-02 03:04 PM"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 144, Col: 121}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 144, Col: 121}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 						if templ_7745c5c3_Err != nil {
@@ -378,7 +378,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 							var templ_7745c5c3_Var14 templ.SafeURL
 							templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/offers-packages/sponsorships/%d/approve", req.ID)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 148, Col: 127}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 148, Col: 127}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 							if templ_7745c5c3_Err != nil {
@@ -399,7 +399,7 @@ func AdminOfferSponsorshipsPage(lang, dir string, data AdminOfferSponsorshipsPag
 							var templ_7745c5c3_Var15 templ.SafeURL
 							templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/admin/offers-packages/sponsorships/%d/reject", req.ID)))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 154, Col: 126}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 154, Col: 126}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 							if templ_7745c5c3_Err != nil {
@@ -790,7 +790,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.Stats.TotalLocations))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 344, Col: 117}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 344, Col: 117}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -811,7 +811,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.Stats.CoveredCities))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 354, Col: 116}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 354, Col: 116}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -832,7 +832,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.Stats.CoveredGovernorates))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 364, Col: 122}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 364, Col: 122}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -853,7 +853,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.Stats.ActiveOffers))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 374, Col: 115}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 374, Col: 115}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -866,7 +866,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Filter.Search)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 388, Col: 34}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 388, Col: 34}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 			if templ_7745c5c3_Err != nil {
@@ -993,7 +993,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 					var templ_7745c5c3_Var31 templ.SafeURL
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/offers/%d", loc.OfferID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 468, Col: 75}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 468, Col: 75}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
@@ -1007,7 +1007,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var32 string
 						templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(loc.OfferTitle)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 470, Col: 30}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 470, Col: 30}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 						if templ_7745c5c3_Err != nil {
@@ -1017,7 +1017,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var33 string
 						templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("عرض رقم #%d", loc.OfferID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 472, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 472, Col: 61}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 						if templ_7745c5c3_Err != nil {
@@ -1039,7 +1039,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 					var templ_7745c5c3_Var34 string
 					templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(loc.SupplierName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 477, Col: 37}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 477, Col: 37}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 					if templ_7745c5c3_Err != nil {
@@ -1057,7 +1057,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var35 string
 						templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(loc.GovernorateName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 487, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 487, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 						if templ_7745c5c3_Err != nil {
@@ -1076,7 +1076,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var36 string
 						templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(loc.CityName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 492, Col: 28}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 492, Col: 28}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 						if templ_7745c5c3_Err != nil {
@@ -1086,7 +1086,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var37 string
 						templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("مدينة #%d", loc.CityID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 494, Col: 57}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 494, Col: 57}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 						if templ_7745c5c3_Err != nil {
@@ -1105,7 +1105,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var38 string
 						templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(loc.AddressAr)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 504, Col: 75}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 504, Col: 75}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 						if templ_7745c5c3_Err != nil {
@@ -1133,7 +1133,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var39 string
 						templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d م (%.1f كم)", loc.RadiusMeters, float64(loc.RadiusMeters)/1000.0))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 511, Col: 111}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 511, Col: 111}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 						if templ_7745c5c3_Err != nil {
@@ -1152,7 +1152,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var40 string
 						templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.4f, %.4f", loc.Latitude, loc.Longitude))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 516, Col: 76}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 516, Col: 76}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 						if templ_7745c5c3_Err != nil {
@@ -1170,7 +1170,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 					var templ_7745c5c3_Var41 string
 					templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(dayOfWeekArabicName(loc.DayOfWeek))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 527, Col: 49}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 527, Col: 49}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 					if templ_7745c5c3_Err != nil {
@@ -1188,7 +1188,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var42 string
 						templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(loc.TimeFrom)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 531, Col: 28}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 531, Col: 28}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 						if templ_7745c5c3_Err != nil {
@@ -1201,7 +1201,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var43 string
 						templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(loc.TimeTo)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 531, Col: 45}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 531, Col: 45}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 						if templ_7745c5c3_Err != nil {
@@ -1259,7 +1259,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 						var templ_7745c5c3_Var44 string
 						templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(loc.AdminStatus)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 557, Col: 92}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 557, Col: 92}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 						if templ_7745c5c3_Err != nil {
@@ -1277,7 +1277,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 					var templ_7745c5c3_Var45 string
 					templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(loc.CreatedAt.Format("2006-01-02"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 563, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 563, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 					if templ_7745c5c3_Err != nil {
@@ -1290,7 +1290,7 @@ func AdminOfferLocationsPage(lang, dir string, data AdminOfferLocationsData) tem
 					var templ_7745c5c3_Var46 templ.SafeURL
 					templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/offers/%d", loc.OfferID)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/promo_revenue_admin_subpages.templ`, Line: 569, Col: 72}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `promo_revenue_admin_subpages.templ`, Line: 569, Col: 72}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 					if templ_7745c5c3_Err != nil {

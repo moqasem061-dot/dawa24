@@ -11,9 +11,9 @@ package main
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/aicapabilities"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 type ingestEnhanceAdapter struct {

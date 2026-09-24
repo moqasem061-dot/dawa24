@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...string) templ.Component {
@@ -47,7 +47,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.modal_adjust_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 29, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 29, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -60,7 +60,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.fld_delta_help"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 32, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 32, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("'/vendor/warehouses/%d/stocks/' + adjustStock.id + '/adjust'", data.Warehouse.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 38, Col: 113}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 38, Col: 113}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -86,7 +86,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.selected_item_label"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 41, Col: 106}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 41, Col: 106}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -99,7 +99,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.fld_batch_num"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 44, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 44, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -112,7 +112,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.current_wh_stock"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 51, Col: 121}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 51, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -125,7 +125,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var8 string
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.fld_delta_qty"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 56, Col: 114}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 56, Col: 114}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -138,7 +138,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.fld_adjust_reason"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 71, Col: 121}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 71, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -151,7 +151,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.reason_audit"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 73, Col: 96}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 73, Col: 96}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -164,7 +164,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.reason_receipt"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 74, Col: 122}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 74, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -177,7 +177,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.reason_damage"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 75, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 75, Col: 116}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -190,7 +190,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.reason_manual_sale"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 76, Col: 110}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 76, Col: 110}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -203,7 +203,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.reason_other"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 77, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 77, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -216,7 +216,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.cancel"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 82, Col: 121}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 82, Col: 121}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -229,7 +229,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.btn_confirm_adjust"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 83, Col: 122}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 83, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -250,7 +250,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.modal_transfer_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 105, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 105, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -263,7 +263,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.modal_transfer_sub"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 109, Col: 59}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 109, Col: 59}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
@@ -276,7 +276,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var19 string
 		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", data.Warehouse.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 119, Col: 94}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 119, Col: 94}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 		if templ_7745c5c3_Err != nil {
@@ -289,7 +289,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var20 string
 		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("/vendor/warehouses/%d", data.Warehouse.ID))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 120, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 120, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 		if templ_7745c5c3_Err != nil {
@@ -302,7 +302,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var21 string
 		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.selected_item_label"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 124, Col: 102}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 124, Col: 102}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
@@ -315,7 +315,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var22 string
 		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.source_wh_label"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 127, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 127, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
@@ -328,7 +328,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var23 string
 		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(data.Warehouse.Name)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 127, Col: 115}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 127, Col: 115}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 		if templ_7745c5c3_Err != nil {
@@ -341,7 +341,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var24 string
 		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.th_available_stock"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 128, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 128, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
@@ -354,7 +354,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var25 string
 		templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.dest_wh_label"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 134, Col: 115}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 134, Col: 115}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 		if templ_7745c5c3_Err != nil {
@@ -372,7 +372,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.select_dest_wh_ph"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 137, Col: 76}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 137, Col: 76}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -390,7 +390,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", wh.ID))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 139, Col: 48}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 139, Col: 48}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 				if templ_7745c5c3_Err != nil {
@@ -403,7 +403,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(wh.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 140, Col: 18}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 140, Col: 18}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 				if templ_7745c5c3_Err != nil {
@@ -416,7 +416,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("(%s)", wh.Code))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 140, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 140, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 				if templ_7745c5c3_Err != nil {
@@ -447,7 +447,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.single_wh_warning"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 147, Col: 65}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 147, Col: 65}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -465,7 +465,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var31 string
 		templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.fld_transfer_qty"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 154, Col: 116}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 154, Col: 116}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 		if templ_7745c5c3_Err != nil {
@@ -478,7 +478,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var32 string
 		templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.max_transfer_prefix"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 165, Col: 60}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 165, Col: 60}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 		if templ_7745c5c3_Err != nil {
@@ -491,7 +491,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var33 string
 		templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.fld_transfer_notes"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 171, Col: 122}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 171, Col: 122}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 		if templ_7745c5c3_Err != nil {
@@ -504,7 +504,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var34 string
 		templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "vendor_inventory.transfer_notes_ph"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 176, Col: 70}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 176, Col: 70}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 		if templ_7745c5c3_Err != nil {
@@ -517,7 +517,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.chk_immediate_receive"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 184, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 184, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 		if templ_7745c5c3_Err != nil {
@@ -530,7 +530,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.cancel"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 190, Col: 123}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 190, Col: 123}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 		if templ_7745c5c3_Err != nil {
@@ -556,7 +556,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.btn_confirm_transfer"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 194, Col: 68}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 194, Col: 68}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
@@ -574,7 +574,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 			var templ_7745c5c3_Var38 string
 			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_inventory.btn_transfer_disabled"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 198, Col: 63}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 198, Col: 63}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
@@ -600,7 +600,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var39 string
 		templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_warehouse_detail.modal_clear_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 221, Col: 65}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 221, Col: 65}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 		if templ_7745c5c3_Err != nil {
@@ -613,7 +613,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var40 string
 		templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf(i18n.T(lang, "vendor_warehouse_detail.modal_clear_warning"), data.Warehouse.Name))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 228, Col: 99}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 228, Col: 99}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 		if templ_7745c5c3_Err != nil {
@@ -626,7 +626,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var41 templ.SafeURL
 		templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/vendor/warehouses/%d/clear-stocks", data.Warehouse.ID)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 231, Col: 101}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 231, Col: 101}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 		if templ_7745c5c3_Err != nil {
@@ -639,7 +639,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var42 string
 		templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.cancel"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 233, Col: 130}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 233, Col: 130}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 		if templ_7745c5c3_Err != nil {
@@ -660,7 +660,7 @@ func VendorWarehouseDetailModals(data VendorWarehouseDetailData, langOpt ...stri
 		var templ_7745c5c3_Var43 string
 		templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_warehouse_detail.modal_clear_confirm_btn"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_warehouse_detail_modals.templ`, Line: 236, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `vendor_warehouse_detail_modals.templ`, Line: 236, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 		if templ_7745c5c3_Err != nil {

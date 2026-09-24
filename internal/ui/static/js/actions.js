@@ -17,7 +17,7 @@
 //     or this, event, this.value, this.checked, this.form, this.dataset.<key>.
 //     `return f()` cancels the event when f returns false, as it did inline.
 //     Built-in statements: event.preventDefault(), event.stopPropagation(),
-//     onlySelf(), print(), history.back(), location.reload(), navigate(url),
+//     onlySelf(), print(), history.back(), backOrHome(), location.reload(), navigate(url),
 //     closeWindow(), setValue(id, value), openDialog(id), closeDialog(id),
 //     clickElement(id), focusSection(id, fallbackId, fieldSelector).
 //     A bare `name` with data-args='[...]' calls name(...args).
@@ -78,6 +78,11 @@
   var BUILTINS = {
     print: function () { window.print(); },
     'history.back': function () { window.history.back(); },
+    // backOrHome(): go back, or to the home page when there is nothing to go
+    // back to (a link opened in a new tab, a bookmark).
+    backOrHome: function () {
+      if (window.history.length > 1) window.history.back(); else BUILTINS.navigate('/');
+    },
     'location.reload': function () {
       if (window.dawaRefresh) window.dawaRefresh(); else window.location.reload();
     },

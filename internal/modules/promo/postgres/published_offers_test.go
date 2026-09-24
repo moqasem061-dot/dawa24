@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // TestListPublishedOffers checks the announcement feed follows the buyer rule:

@@ -3,9 +3,8 @@ package ingest
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // CancelImport discards an import without touching the catalogue.
@@ -47,12 +46,4 @@ func (s *Service) ImportRowCounts(ctx context.Context, publicID string) (map[str
 		return nil, err
 	}
 	return s.imports.RowCounts(ctx, session.ID)
-}
-
-// Warehouses lists the vendor's warehouses for the settings screen.
-func (s *Service) Warehouses(ctx context.Context) ([]*inventory.Warehouse, error) {
-	if s.inventory == nil {
-		return nil, apperr.Unavailable("inventory", nil)
-	}
-	return s.inventory.ListWarehouses(ctx)
 }

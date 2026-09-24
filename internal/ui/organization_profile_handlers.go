@@ -3,6 +3,7 @@ package ui
 import (
 	"fmt"
 	"io"
+	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -10,10 +11,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // بيانات المنشأة, for suppliers and pharmacies alike.
@@ -66,7 +67,8 @@ func (h *UIHandler) OrganizationProfilePage(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	orgModel, _ := h.orgSvc.GetOrganization(ctx, orgID)
+	orgModel, loadErr := h.orgSvc.GetOrganization(ctx, orgID)
+	h.logLoadErr(ctx, "orgSvc.GetOrganization", loadErr)
 	orgLegalName := ""
 	if orgModel != nil {
 		if display := orgModel.TradeName.Get(i18n.ParseLang(lang)); display != "" {
@@ -76,7 +78,8 @@ func (h *UIHandler) OrganizationProfilePage(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	pendingDeletion, _ := h.orgSvc.GetPendingOrganizationDeletion(ctx, orgID)
+	pendingDeletion, loadErr := h.orgSvc.GetPendingOrganizationDeletion(ctx, orgID)
+	h.logLoadErr(ctx, "orgSvc.GetPendingOrganizationDeletion", loadErr)
 	isOwner := actor.IsOwner || (orgModel != nil && orgModel.OwnerID == actor.UserID)
 
 	view := pages.OrganizationProfileView{
@@ -319,8 +322,9 @@ func readProfileUpload(r *http.Request, field string) string {
 	if err != nil || len(data) == 0 {
 		return ""
 	}
-	saved, err := saveUploadedBytes(data, header.Filename, "org")
+	saved, err := saveUploadedBytes(r.Context(), data, header.Filename, "org")
 	if err != nil {
+		slog.WarnContext(r.Context(), "organization upload not saved", "file", header.Filename, "error", err)
 		return ""
 	}
 	return saved

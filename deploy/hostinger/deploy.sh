@@ -19,6 +19,13 @@ if [ ! -f ".env" ]; then
     exit 1
 fi
 
+# A placeholder left in .env becomes a real, publicly known password or secret.
+if grep -qE '^[A-Z_]+=(GENERATE_RANDOM_[A-Z0-9_]*|.*yourdomain\.com)$' .env; then
+    echo "[-] Error: .env still contains template placeholders:"
+    grep -E '^[A-Z_]+=(GENERATE_RANDOM_[A-Z0-9_]*|.*yourdomain\.com)$' .env | cut -d= -f1 | sed 's/^/      /'
+    exit 1
+fi
+
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 
 echo ">>> [1/5] Pulling latest code changes..."

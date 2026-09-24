@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // TenantSessionsPage renders the dedicated Connected Devices & Active Sessions page
@@ -31,7 +31,9 @@ func (h *UIHandler) TenantSessionsPage(w http.ResponseWriter, r *http.Request) {
 	planName := i18n.T(lang, "tenant.sessions.default_plan")
 	if h.idSvc != nil {
 		limCtx, limCancel := context.WithTimeout(ctx, 2*time.Second)
-		if sMax, dMax, pName, err := h.idSvc.GetOrgPlanLimits(limCtx, actor.OrganizationID); err == nil {
+		if sMax, dMax, pName, err := h.idSvc.GetOrgPlanLimits(limCtx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetOrgPlanLimits", err)
+		} else {
 			if sMax > 0 {
 				maxSessions = sMax
 			}
@@ -52,7 +54,8 @@ func (h *UIHandler) TenantSessionsPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessCtx, sessCancel := context.WithTimeout(ctx, 3*time.Second)
-	allSessions, _ := h.fetchLiveSessions(sessCtx, actor)
+	allSessions, loadErr := h.fetchLiveSessions(sessCtx, actor)
+	h.logLoadErr(ctx, "fetchLiveSessions", loadErr)
 	sessCancel()
 
 	// 3. Current session guarantee: ensure the caller's active device is displayed

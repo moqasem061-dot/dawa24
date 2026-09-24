@@ -3,9 +3,9 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorJobsPage renders the supplier's job management surface.
@@ -27,12 +27,14 @@ func (h *UIHandler) VendorJobsPage(w http.ResponseWriter, r *http.Request) {
 	var totalCount, publishedCount, closedCount, totalApps int
 
 	if h.hrSvc != nil {
-		stats, _ := h.hrSvc.GetJobStatsByOrg(ctx, actor.OrganizationID)
+		stats, loadErr := h.hrSvc.GetJobStatsByOrg(ctx, actor.OrganizationID)
+		h.logLoadErr(ctx, "hrSvc.GetJobStatsByOrg", loadErr)
 		publishedCount = stats.PublishedCount
 		closedCount = stats.ClosedCount
 		totalApps = stats.TotalApplications
 
-		jobs, total, _ := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
+		jobs, total, loadErr := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
+		h.logLoadErr(ctx, "hrSvc.ListOrgJobsWithTotal", loadErr)
 		totalCount = total
 		var jobIDs []int64
 		for _, j := range jobs {
@@ -40,7 +42,8 @@ func (h *UIHandler) VendorJobsPage(w http.ResponseWriter, r *http.Request) {
 				jobIDs = append(jobIDs, j.ID)
 			}
 		}
-		appCounts, _ := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
+		appCounts, loadErr := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
+		h.logLoadErr(ctx, "hrSvc.CountApplicationsForOffers", loadErr)
 		for _, j := range jobs {
 			if j == nil {
 				continue
@@ -123,12 +126,14 @@ func (h *UIHandler) CustomerJobsPage(w http.ResponseWriter, r *http.Request) {
 	var totalCount, publishedCount, closedCount, totalApps int
 
 	if h.hrSvc != nil {
-		stats, _ := h.hrSvc.GetJobStatsByOrg(ctx, actor.OrganizationID)
+		stats, loadErr := h.hrSvc.GetJobStatsByOrg(ctx, actor.OrganizationID)
+		h.logLoadErr(ctx, "hrSvc.GetJobStatsByOrg", loadErr)
 		publishedCount = stats.PublishedCount
 		closedCount = stats.ClosedCount
 		totalApps = stats.TotalApplications
 
-		jobs, total, _ := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
+		jobs, total, loadErr := h.hrSvc.ListOrgJobsWithTotal(ctx, actor.OrganizationID, limit, offset)
+		h.logLoadErr(ctx, "hrSvc.ListOrgJobsWithTotal", loadErr)
 		totalCount = total
 		var jobIDs []int64
 		for _, j := range jobs {
@@ -136,7 +141,8 @@ func (h *UIHandler) CustomerJobsPage(w http.ResponseWriter, r *http.Request) {
 				jobIDs = append(jobIDs, j.ID)
 			}
 		}
-		appCounts, _ := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
+		appCounts, loadErr := h.hrSvc.CountApplicationsForOffers(ctx, jobIDs)
+		h.logLoadErr(ctx, "hrSvc.CountApplicationsForOffers", loadErr)
 		for _, j := range jobs {
 			if j == nil {
 				continue

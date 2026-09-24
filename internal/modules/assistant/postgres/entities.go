@@ -3,7 +3,7 @@ package postgres
 import (
 	"encoding/json"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 )
 
 // Storing an answer's clickable references.

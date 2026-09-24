@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/turnstile"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/turnstile"
 )
 
 func TestTurnstileMockMode(t *testing.T) {

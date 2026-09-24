@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 )
 
 // The cross-supplier stock listing has to be answerable, and its pager has to

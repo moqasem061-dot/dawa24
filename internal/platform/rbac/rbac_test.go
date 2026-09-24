@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // TestCatalogBuilds is the guard on the declarations themselves: Default()

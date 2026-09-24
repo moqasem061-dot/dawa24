@@ -2,13 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Warehouse lifecycle and reporting queries. Kept out of repository.go to stay
@@ -55,7 +56,7 @@ func (r *Repository) UpdateWarehouse(ctx context.Context, w *inventory.Warehouse
 		err := tx.QueryRow(txCtx, query, args...).Scan(&w.UpdatedAt)
 
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("warehouse")
 			}
 			return fmt.Errorf("inventory postgres: update warehouse: %w", err)

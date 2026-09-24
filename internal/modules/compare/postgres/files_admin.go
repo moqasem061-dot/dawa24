@@ -7,8 +7,8 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // uploaderLabelExpr builds a human label for a compare.files.user_id, falling
@@ -58,11 +58,9 @@ func buildAdminTempWarehouseWhere(filter compare.AdminTempWarehouseFilter) ([]st
 	if filter.OwnerOnly != nil {
 		where = append(where, fmt.Sprintf("f.user_id = $%d", i))
 		args = append(args, *filter.OwnerOnly)
-		i++
 	} else if filter.UploaderID != nil {
 		where = append(where, fmt.Sprintf("f.user_id = $%d", i))
 		args = append(args, *filter.UploaderID)
-		i++
 	}
 	switch filter.Source {
 	case "moderator":

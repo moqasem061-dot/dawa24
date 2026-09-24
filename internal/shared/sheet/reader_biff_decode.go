@@ -1,4 +1,4 @@
-﻿package sheet
+package sheet
 
 import (
 	"encoding/binary"

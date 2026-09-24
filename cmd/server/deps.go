@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"os"
 	"sync"
 	"time"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/platform/cache"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // dependencies holds connections that may not be available at boot.
@@ -44,7 +45,7 @@ type dependencies struct {
 
 func newDependencies(ctx context.Context) *dependencies {
 	return &dependencies{
-		ctx:      ctx,
+		ctx: ctx,
 		// The handle exists from the start and gains its pool when dialling
 		// succeeds. Routes are mounted before the database is up, so
 		// repositories must be handed a pointer that becomes usable later
@@ -149,17 +150,18 @@ func (d *dependencies) connect(ctx context.Context, cfg *config.Config, log *slo
 	go retryForever(ctx, log, "database", func(ctx context.Context) error {
 		if err := d.db.Connect(ctx, cfg.Database); err != nil {
 			d.setDBErr(err)
+			if errors.Is(err, database.ErrRLSBypassed) {
+				// A misconfigured role does not fix itself on retry, and serving
+				// with tenant isolation off is worse than not serving.
+				log.Error("refusing to start", "error", err)
+				os.Exit(1)
+			}
 			return err
 		}
-		// Ensure migrations are applied as soon as the database is reachable
-		migrations, migLoadErr := database.LoadMigrations(dbfs.Migrations, "migrations")
-		if migLoadErr == nil {
-			if migErr := d.db.Migrate(ctx, migrations, func(msg string, args ...any) {
-				log.Info(msg, args...)
-			}); migErr != nil {
-				log.Warn("background migration execution note", "error", migErr)
-			}
-		}
+		// Migrations are NOT applied here. `cli migrate` runs them as a deploy
+		// step before this process starts (ADR 0004): instances booting
+		// together would race, and the least-privilege role this process
+		// connects as cannot run DDL.
 		// The permission catalogue is defined in Go and mirrored into
 		// identity.permissions. Syncing here, on the connection that just came
 		// up, means a deploy that adds a permission has it grantable before the

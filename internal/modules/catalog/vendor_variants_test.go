@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 type mockVendorVariantsRepo struct {
@@ -266,6 +266,9 @@ func TestVendorVariantsServicePaginationAndStats(t *testing.T) {
 	}
 	if len(p3List) != 20 {
 		t.Errorf("got page 3 count %d, want 20", len(p3List))
+	}
+	if total != 70 {
+		t.Errorf("got page 3 total %d, want 70", total)
 	}
 
 	// 4. ProductsByIDs batch lookup

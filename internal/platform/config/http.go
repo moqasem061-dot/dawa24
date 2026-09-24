@@ -101,7 +101,6 @@ func (c *Config) SiteOrigin() string {
 	return u.Scheme + "://" + u.Host
 }
 
-
 func validateHTTP(cfg *Config, fail func(string, ...any)) {
 	raw := cfg.HTTP.CSPReportURL
 	if raw != "" {

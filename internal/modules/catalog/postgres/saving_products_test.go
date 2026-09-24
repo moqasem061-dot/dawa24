@@ -7,9 +7,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	catalogPostgres "github.com/muhiya/dawa24-store/internal/modules/catalog/postgres"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func TestSavingProductsIntegration(t *testing.T) {

@@ -3,8 +3,8 @@ package promo
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Package promo handles vendor discount offers, sponsored promotion packages,
@@ -165,16 +165,16 @@ type AdPendingChanges struct {
 
 // SpecialOffer represents the organization's special offer with product & geographic coverage rules.
 type SpecialOffer struct {
-	ID                 int64                   `json:"id"`
-	PublicID           string                  `json:"public_id"`
-	OrganizationID     int64                   `json:"organization_id"`
-	OrganizationName   string                  `json:"organization_name,omitempty"`
-	BranchID           *int64                  `json:"branch_id,omitempty"`
-	BranchName         string                  `json:"branch_name,omitempty"`
+	ID               int64  `json:"id"`
+	PublicID         string `json:"public_id"`
+	OrganizationID   int64  `json:"organization_id"`
+	OrganizationName string `json:"organization_name,omitempty"`
+	BranchID         *int64 `json:"branch_id,omitempty"`
+	BranchName       string `json:"branch_name,omitempty"`
 	// BranchUnavailable is set when the offer names a branch the supplier has
 	// since deleted or deactivated. Buyers cannot see such an offer; the
 	// supplier is told so it can pick another branch.
-	BranchUnavailable bool `json:"branch_unavailable,omitempty"`
+	BranchUnavailable  bool                    `json:"branch_unavailable,omitempty"`
 	Title              i18n.Text               `json:"title"`
 	Description        i18n.Text               `json:"description,omitempty"`
 	DiscountPercentage float64                 `json:"discount_percentage"`

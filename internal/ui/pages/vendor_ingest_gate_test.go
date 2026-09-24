@@ -3,8 +3,8 @@ package pages
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // The review screen must not print a product name beside a row the commit will

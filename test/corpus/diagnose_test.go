@@ -6,7 +6,7 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // TestDiagnoseMistakes classifies every wrong applied match by what separates

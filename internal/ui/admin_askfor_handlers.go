@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminAskForPage redirects to the unified approvals & requested documents registry.
@@ -29,7 +29,8 @@ func (h *UIHandler) AdminAskForDetailPage(w http.ResponseWriter, r *http.Request
 
 	var req *workflow.Request
 	if h.wfSvc != nil {
-		reqs, _ := h.wfSvc.ListInbox(database.AsSystem(ctx), 0, "", 100, 0)
+		reqs, loadErr := h.wfSvc.ListInbox(database.AsSystem(ctx), 0, "", 100, 0)
+		h.logLoadErr(ctx, "wfSvc.ListInbox", loadErr)
 		for _, rCand := range reqs {
 			if rCand.ID == reqID {
 				req = rCand

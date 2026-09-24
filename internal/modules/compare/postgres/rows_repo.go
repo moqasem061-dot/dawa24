@@ -3,15 +3,16 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 func (r *Repository) InsertFileRows(ctx context.Context, rows []*compare.CompareFileRow) error {
@@ -204,7 +205,7 @@ func (r *Repository) DeleteFileRowOwnedBy(ctx context.Context, rowID int64, owne
 			WHERE r.id = $1 AND r.file_id = f.id AND f.user_id = $2
 			RETURNING r.file_id;`, rowID, ownerUserID).Scan(&fileID)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("compare file row")
 			}
 			return err
@@ -315,7 +316,7 @@ func (r *Repository) GetSavedProductMapping(ctx context.Context, orgID *int64, r
 		return tx.QueryRow(txCtx, query, rawName, targetOrgID).Scan(&productID)
 	})
 	if err != nil {
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, nil
 		}
 		return nil, err

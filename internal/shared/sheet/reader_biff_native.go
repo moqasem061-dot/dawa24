@@ -298,4 +298,3 @@ func decodeChars(b []byte, cch int, high bool) string {
 	}
 	return string(runes)
 }
-

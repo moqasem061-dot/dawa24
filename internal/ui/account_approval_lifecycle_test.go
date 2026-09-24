@@ -1,12 +1,13 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // TestPendingAccountApprovalLifecycle tests the full lifecycle from pending registration
@@ -26,7 +27,7 @@ func TestPendingAccountApprovalLifecycle(t *testing.T) {
 		router := newTestRouter(pendingPharmacy)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/customer/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/dashboard", nil)
 		router.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusFound {
@@ -51,7 +52,7 @@ func TestPendingAccountApprovalLifecycle(t *testing.T) {
 		router := newTestRouter(pendingVendor)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/vendor/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/dashboard", nil)
 		router.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusFound {
@@ -87,7 +88,7 @@ func TestPendingAccountApprovalLifecycle(t *testing.T) {
 		router := newTestRouter(approvedPharmacy)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/customer/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/dashboard", nil)
 		router.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
@@ -124,7 +125,7 @@ func TestPendingAccountApprovalLifecycle(t *testing.T) {
 		router := newTestRouter(approvedVendor)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/vendor/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/dashboard", nil)
 		router.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusOK {
@@ -150,7 +151,7 @@ func TestPendingAccountApprovalLifecycle(t *testing.T) {
 		router := newTestRouter(approvedPharmacy)
 
 		rec := httptest.NewRecorder()
-		req := httptest.NewRequest("GET", "/onboarding/pending", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/onboarding/pending", nil)
 		router.ServeHTTP(rec, req)
 
 		if rec.Code != http.StatusSeeOther {

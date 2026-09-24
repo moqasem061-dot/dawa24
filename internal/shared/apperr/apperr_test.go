@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 func TestConstructors(t *testing.T) {
@@ -115,7 +115,7 @@ func TestFormattingAndDetail(t *testing.T) {
 	// Verify Wrap
 	cause := errors.New("database constraint failed")
 	wrapped := err.Wrap(cause)
-	if wrapped.Unwrap() != cause {
+	if wrapped.Unwrap() != cause { //nolint:errorlint // identity is the point: Unwrap must return the very cause
 		t.Errorf("wrapped.Unwrap() = %v; want %v", wrapped.Unwrap(), cause)
 	}
 }

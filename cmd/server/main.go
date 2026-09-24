@@ -23,29 +23,29 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	billingPostgres "github.com/muhiya/dawa24-store/internal/modules/billing/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	platformadminPostgres "github.com/muhiya/dawa24-store/internal/modules/platform_admin/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	promoPostgres "github.com/muhiya/dawa24-store/internal/modules/promo/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
-	aiusagePostgres "github.com/muhiya/dawa24-store/internal/platform/aiusage/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/errtrack"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/observability"
-	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
-	"github.com/muhiya/dawa24-store/internal/platform/safe"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	_ "github.com/muhiya/dawa24-store/internal/shared/timeutil"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/aiusage"
+	aiusagePostgres "github.com/moqasem061-dot/dawa24/internal/platform/aiusage/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/errtrack"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/observability"
+	"github.com/moqasem061-dot/dawa24/internal/platform/pagecontrol"
+	"github.com/moqasem061-dot/dawa24/internal/platform/safe"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	_ "github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 func main() {
@@ -82,7 +82,7 @@ func run() error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	log.Info("starting dawa24-store",
+	log.Info("starting dawa24",
 		"env", cfg.Env,
 		"port", cfg.HTTP.Port,
 		"version", buildVersion,

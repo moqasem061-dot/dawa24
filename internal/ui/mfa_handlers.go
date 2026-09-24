@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerMFAPage renders the Multi-Factor Authentication settings page for Pharmacy customers.
@@ -83,7 +83,8 @@ func (h *UIHandler) handleMFASetupSubmit(w http.ResponseWriter, r *http.Request,
 		return
 	}
 
-	mfaStatus, _ := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	mfaStatus, loadErr := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	h.logLoadErr(ctx, "idSvc.GetMFAStatus", loadErr)
 
 	viewData := pages.MFASettingsViewData{
 		Status:        mfaStatus,
@@ -133,7 +134,8 @@ func (h *UIHandler) handleMFAConfirmSubmit(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	mfaStatus, _ := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	mfaStatus, loadErr := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	h.logLoadErr(ctx, "idSvc.GetMFAStatus", loadErr)
 
 	viewData := pages.MFASettingsViewData{
 		Status:        mfaStatus,
@@ -222,7 +224,8 @@ func (h *UIHandler) handleMFARegenerateCodesSubmit(w http.ResponseWriter, r *htt
 		return
 	}
 
-	mfaStatus, _ := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	mfaStatus, loadErr := h.idSvc.GetMFAStatus(ctx, actor.UserID)
+	h.logLoadErr(ctx, "idSvc.GetMFAStatus", loadErr)
 
 	viewData := pages.MFASettingsViewData{
 		Status:        mfaStatus,

@@ -104,7 +104,7 @@ type traceStartKey struct{}
 type statsTracer struct{}
 
 var (
-	_ pgx.QueryTracer        = statsTracer{}
+	_ pgx.QueryTracer       = statsTracer{}
 	_ pgxpool.AcquireTracer = statsTracer{}
 )
 

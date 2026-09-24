@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Staging a supplier list without holding the pharmacy's browser open.
@@ -209,8 +209,10 @@ func (s *Service) openStoredUpload(ctx context.Context, file *CompareFile) io.Re
 	// 1. Object storage, where it is configured and the key is not a local path.
 	if s.storage != nil && file.StorageKey != "" &&
 		!strings.HasPrefix(file.StorageKey, "/") && !strings.HasPrefix(file.StorageKey, "data/") {
-		if r, _, err := s.storage.Get(ctx, file.StorageKey); err == nil {
+		if r, _, err := s.storage.Get(ctx, file.StorageKey); err == nil { // nolint:errswallow: the else branch logs it, then local copies are tried
 			return r
+		} else {
+			s.log.WarnContext(ctx, "compare upload not readable from object storage; trying local copies", "key", file.StorageKey, "error", err)
 		}
 	}
 
@@ -230,7 +232,7 @@ func (s *Service) openStoredUpload(ctx context.Context, file *CompareFile) io.Re
 			filepath.Join("data", "uploads", "compare", filepath.Base(file.OriginalFilename)),
 			"data" + file.StorageKey,
 		} {
-			if f, err := os.Open(cand); err == nil {
+			if f, err := os.Open(cand); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
 				return f
 			}
 		}
@@ -245,7 +247,7 @@ func (s *Service) openStoredUpload(ctx context.Context, file *CompareFile) io.Re
 			}
 			if strings.Contains(entry.Name(), file.OriginalFilename) ||
 				strings.HasSuffix(entry.Name(), filepath.Ext(file.OriginalFilename)) {
-				if f, err := os.Open(filepath.Join(dir, entry.Name())); err == nil {
+				if f, err := os.Open(filepath.Join(dir, entry.Name())); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
 					return f
 				}
 			}

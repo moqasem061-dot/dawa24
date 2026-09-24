@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/stream"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/stream"
 )
 
 // Attaching before the first token must BLOCK, not return "nothing".

@@ -11,11 +11,11 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockIdentityRepoProfile struct {
@@ -76,7 +76,7 @@ func TestSettingsProfileAvatarUpload(t *testing.T) {
 		_, _ = part.Write(validPNG)
 		_ = writer.Close()
 
-		req := httptest.NewRequest("POST", "/settings/profile", body)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/settings/profile", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 		actor := authctx.Actor{UserID: 42, Role: "customer"}
 		req = req.WithContext(authctx.WithActor(req.Context(), actor))
@@ -103,7 +103,7 @@ func TestSettingsProfileAvatarUpload(t *testing.T) {
 		_ = writer.WriteField("remove_avatar", "1")
 		_ = writer.Close()
 
-		req := httptest.NewRequest("POST", "/settings/profile", body)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/settings/profile", body)
 		req.Header.Set("Content-Type", writer.FormDataContentType())
 		actor := authctx.Actor{UserID: 42, Role: "customer"}
 		req = req.WithContext(authctx.WithActor(req.Context(), actor))

@@ -3,7 +3,7 @@ package productmatch
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // The processing stage.
@@ -190,11 +190,6 @@ func (p *pass) section(number int, cells []string) {
 			"يبدأ من الصف %d قسم جديد بترتيب أعمدة مختلف؛ تمت قراءته وفق عناوينه الخاصة. "+
 				"راجع نتائج هذا القسم بعناية.", number),
 	})
-}
-
-// duplicate is kept as a no-op so no valid rows are dropped, rejected, or falsely warned against.
-func (p *pass) duplicate(row *Row) bool {
-	return false
 }
 
 // IdentityKey is the strongest identity a row carries, used to detect a product

@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // UpdateOrg handles organization updates.
@@ -82,7 +82,9 @@ func (h *Handler) DeleteOrg(w http.ResponseWriter, r *http.Request) {
 	// tenant they may act on. Without this, any logged-in user could address any
 	// organization by changing the id in the URL.
 	// Deleting an organisation is its owner's decision, or platform staff's.
-	if a, ok := authctx.From(r.Context()); !ok || !((a.IsStaff && a.Can("org.organization.delete")) || (a.IsOwner && a.OrganizationID == id)) {
+	a, ok := authctx.From(r.Context())
+	allowed := ok && ((a.IsStaff && a.Can("org.organization.delete")) || (a.IsOwner && a.OrganizationID == id))
+	if !allowed {
 		httpx.Error(w, r, h.log, apperr.Forbidden("org.owner_required", "Only the organization owner can delete it."))
 		return
 	}

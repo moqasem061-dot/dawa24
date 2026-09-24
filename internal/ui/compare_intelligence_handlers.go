@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CompareMarketIntelligencePage renders the market intelligence dashboard.
@@ -78,11 +78,16 @@ func (h *UIHandler) CompareMarketIntelligencePage(w http.ResponseWriter, r *http
 	}
 
 	pageData := pages.MarketIntelligencePageData{
-		Report:        report,
-		Failed:        reportErr != nil,
-		IsCustomer:    actor.IsCustomer(),
-		IsAdmin:       isAdminActing,
-		TargetOrgID:   func() int64 { if orgPtr != nil { return *orgPtr }; return 0 }(),
+		Report:     report,
+		Failed:     reportErr != nil,
+		IsCustomer: actor.IsCustomer(),
+		IsAdmin:    isAdminActing,
+		TargetOrgID: func() int64 {
+			if orgPtr != nil {
+				return *orgPtr
+			}
+			return 0
+		}(),
 		TargetOrgName: targetOrgName,
 		Query:         savingsQuery,
 		SingleQuery:   exclusiveQuery,

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -9,13 +10,13 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -143,7 +144,7 @@ func TestVendorTeam_SelfDeleteAndSelfToggleGuard(t *testing.T) {
 
 	// 1. Trying to toggle self active status should be rejected
 	t.Run("POST /vendor/team/{id}/toggle on self is rejected", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/vendor/team/100/toggle", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/100/toggle", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -156,7 +157,7 @@ func TestVendorTeam_SelfDeleteAndSelfToggleGuard(t *testing.T) {
 
 	// 2. Trying to delete self should be rejected
 	t.Run("POST /vendor/team/{id}/delete on self is rejected", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/vendor/team/100/delete", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/100/delete", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)

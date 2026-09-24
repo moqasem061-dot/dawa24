@@ -48,7 +48,7 @@ func (c *AdminClient) upsertUser(ctx context.Context, user GatewayUser) error {
 		return fmt.Errorf("gateway admin: encode user: %w", err)
 	}
 
-	status, raw, err := c.send(ctx, http.MethodPost, "/api/users", body)
+	status, _, err := c.send(ctx, http.MethodPost, "/api/users", body)
 	if err != nil {
 		return err
 	}
@@ -57,7 +57,7 @@ func (c *AdminClient) upsertUser(ctx context.Context, user GatewayUser) error {
 	}
 
 	// Already registered: bring its plan and status back into line.
-	status, raw, err = c.send(ctx, http.MethodPut, "/api/users", body)
+	status, raw, err := c.send(ctx, http.MethodPut, "/api/users", body)
 	if err != nil {
 		return err
 	}

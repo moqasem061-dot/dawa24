@@ -4,12 +4,12 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // Promotional offers (العروض والخصومات) from the buyer's side.
@@ -61,7 +61,7 @@ func (h *UIHandler) buyerOfferQuery(ctx context.Context, actor authctx.Actor, br
 	if branch.CityID != nil {
 		b.CityID = *branch.CityID
 	}
-	if works, err := h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), branch.ID); err == nil {
+	if works, err := h.orgSvc.ConnectedWorkIDsForBranch(database.AsSystem(ctx), branch.ID); err == nil { // nolint:errswallow: the else branch logs it
 		b.AllowedWorkIDs = works
 	} else {
 		h.log.WarnContext(ctx, "offers: institutional works for branch", "branch_id", branch.ID, "error", err)
@@ -166,6 +166,7 @@ func (h *UIHandler) buyingBranch(ctx context.Context, actor *authctx.Actor) *org
 	if branchID <= 0 {
 		return nil
 	}
-	branch, _ := h.orgSvc.GetBranch(ctx, branchID)
+	branch, loadErr := h.orgSvc.GetBranch(ctx, branchID)
+	h.logLoadErr(ctx, "orgSvc.GetBranch", loadErr)
 	return branch
 }

@@ -3,7 +3,7 @@ package identity
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Repository defines the storage contract for the identity module.

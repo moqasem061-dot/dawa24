@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // Two small pieces of client-side behaviour the parcel screen needs, kept
@@ -44,7 +44,10 @@ templ CourierMiniMapScript() {
 					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 						maxZoom: 19
 					}).addTo(miniMap);
-					const label = branch ? '<b>' + name + '</b><br><small>' + branch + '</small>' : '<b>' + name + '</b>';
+					// The pharmacy chose its own name and branch name, and a
+					// Leaflet popup is HTML: escape both.
+					const esc = window.dawaHTML.escape;
+					const label = branch ? '<b>' + esc(name) + '</b><br><small>' + esc(branch) + '</small>' : '<b>' + esc(name) + '</b>';
 					L.marker([lat, lon]).addTo(miniMap).bindPopup(label).openPopup();
 				} catch (e) {
 					console.warn('courier mini-map init error:', e);

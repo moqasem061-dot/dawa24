@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -74,7 +75,7 @@ func TestSlowUploadOutlivesTheServerReadTimeout(t *testing.T) {
 		_ = pw.Close()
 	}()
 
-	req, err := http.NewRequest(http.MethodPost, srv.URL+"/vendor/saving/import", pr)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+"/vendor/saving/import", pr)
 	if err != nil {
 		t.Fatalf("request: %v", err)
 	}
@@ -120,7 +121,7 @@ func TestIsUploadOnlyMatchesFileBodies(t *testing.T) {
 		{http.MethodGet, "multipart/form-data; boundary=x", false},
 		{http.MethodPost, "", false},
 	} {
-		r := httptest.NewRequest(tc.method, "/anything", nil)
+		r := httptest.NewRequestWithContext(context.Background(), tc.method, "/anything", nil)
 		if tc.contentType != "" {
 			r.Header.Set("Content-Type", tc.contentType)
 		}

@@ -10,17 +10,17 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestSettingsProfileVerificationHandlers_Unauthorized(t *testing.T) {
 	h := ui.NewUIHandler(nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 
 	// Send Email OTP without authctx
-	req := httptest.NewRequest(http.MethodPost, "/settings/profile/send-email-otp", strings.NewReader("email=test@dawa24.eg"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/send-email-otp", strings.NewReader("email=test@dawa24.eg"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 	h.SettingsProfileSendEmailOTP(rr, req)
@@ -29,7 +29,7 @@ func TestSettingsProfileVerificationHandlers_Unauthorized(t *testing.T) {
 	}
 
 	// Verify Email OTP without authctx
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code=123456"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code=123456"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.SettingsProfileVerifyEmailOTP(rr, req)
@@ -38,7 +38,7 @@ func TestSettingsProfileVerificationHandlers_Unauthorized(t *testing.T) {
 	}
 
 	// Send Phone OTP without authctx
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/send-phone-otp", strings.NewReader("phone=01012345678"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/send-phone-otp", strings.NewReader("phone=01012345678"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.SettingsProfileSendPhoneOTP(rr, req)
@@ -47,7 +47,7 @@ func TestSettingsProfileVerificationHandlers_Unauthorized(t *testing.T) {
 	}
 
 	// Verify Phone OTP without authctx
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader("phone=01012345678&request_id=xyz&code=123456"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader("phone=01012345678&request_id=xyz&code=123456"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.SettingsProfileVerifyPhoneOTP(rr, req)
@@ -79,7 +79,7 @@ func TestSettingsProfilePhoneVerification_Flow(t *testing.T) {
 	}
 
 	// 1. Send OTP for phone
-	req := httptest.NewRequest(http.MethodPost, "/settings/profile/send-phone-otp", strings.NewReader("phone=01012345678"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/send-phone-otp", strings.NewReader("phone=01012345678"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr := httptest.NewRecorder()
@@ -103,7 +103,7 @@ func TestSettingsProfilePhoneVerification_Flow(t *testing.T) {
 
 	// 2. Verify with wrong code
 	verifyBody := "phone=01012345678&request_id=" + reqID + "&code=000000"
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader(verifyBody))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader(verifyBody))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr = httptest.NewRecorder()
@@ -115,7 +115,7 @@ func TestSettingsProfilePhoneVerification_Flow(t *testing.T) {
 
 	// 3. Verify with valid mock code (123456)
 	verifyValidBody := "phone=01012345678&request_id=" + reqID + "&code=123456"
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader(verifyValidBody))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-phone-otp", strings.NewReader(verifyValidBody))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr = httptest.NewRecorder()
@@ -152,7 +152,7 @@ func TestSettingsProfileEmailVerification_Flow(t *testing.T) {
 	}
 
 	// 1. Send OTP for email
-	req := httptest.NewRequest(http.MethodPost, "/settings/profile/send-email-otp", strings.NewReader("email=test@dawa24.eg"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/send-email-otp", strings.NewReader("email=test@dawa24.eg"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr := httptest.NewRecorder()
@@ -175,7 +175,7 @@ func TestSettingsProfileEmailVerification_Flow(t *testing.T) {
 	}
 
 	// 2. Verify with wrong code
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code=000000"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code=000000"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr = httptest.NewRecorder()
@@ -186,7 +186,7 @@ func TestSettingsProfileEmailVerification_Flow(t *testing.T) {
 	}
 
 	// 3. Verify with valid mockCode
-	req = httptest.NewRequest(http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code="+mockCode))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/settings/profile/verify-email-otp", strings.NewReader("email=test@dawa24.eg&code="+mockCode))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), actor))
 	rr = httptest.NewRecorder()

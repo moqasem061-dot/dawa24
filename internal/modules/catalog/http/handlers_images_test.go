@@ -3,7 +3,7 @@ package http_test
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 func (r stubRepo) BatchUpdateProductImage(ctx context.Context, productIDs []int64, imagePath, imageLink string) error {

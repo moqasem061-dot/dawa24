@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 )
 
 func candidate(logID int64, perm, title string) chatbridge.Candidate {

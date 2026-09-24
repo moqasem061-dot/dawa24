@@ -1,8 +1,9 @@
 package jobs
 
-import "strings"
-
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // These tests guard one specific, silent failure.
 //

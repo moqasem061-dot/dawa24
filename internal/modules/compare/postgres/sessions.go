@@ -6,9 +6,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const sessionColumns = `id, public_id, subscription_user_id, user_id, session_id, COALESCE(device_uuid, ''), is_active, COALESCE(device_name, ''), COALESCE(device_type, ''), COALESCE(platform, ''), COALESCE(platform_version, ''), COALESCE(browser, ''), COALESCE(browser_version, ''), ip_address::text, COALESCE(user_agent, ''), COALESCE(country, ''), COALESCE(city, ''), logged_in_at, last_activity_at, logged_out_at, created_at, updated_at`

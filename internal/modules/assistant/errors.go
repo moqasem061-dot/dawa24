@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 // One vocabulary for everything that can go wrong.

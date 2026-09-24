@@ -1,6 +1,6 @@
 package ingest
 
-import "github.com/muhiya/dawa24-store/internal/shared/productmatch"
+import "github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 
 // How a run accounts for itself.
 //

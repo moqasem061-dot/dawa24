@@ -1,9 +1,9 @@
 package tools
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 var vendorScope = []rbac.Scope{rbac.ScopeVendor}

@@ -7,16 +7,16 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/importprogress"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/importprogress"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // ImportProgressStream is the live half of /imports/{id}/progress.
@@ -276,7 +276,8 @@ func (h *UIHandler) SmartOrderProgressStream(w http.ResponseWriter, r *http.Requ
 		if err != nil || current == nil {
 			return progress.Snapshot{}, false
 		}
-		events, _ := h.smartOrderSvc.Events(ctx, runID, 0)
+		events, loadErr := h.smartOrderSvc.Events(ctx, runID, 0)
+		h.logLoadErr(r.Context(), "smartOrderSvc.Events", loadErr)
 		return smartOrderSnapshot(current, events, lang), true
 	}
 

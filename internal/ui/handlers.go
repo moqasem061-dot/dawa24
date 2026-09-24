@@ -6,66 +6,66 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/chat"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
-	"github.com/muhiya/dawa24-store/internal/modules/whatsapp"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/aiusage"
-	"github.com/muhiya/dawa24-store/internal/platform/antiscrape"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/platform/pagecontrol"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/platform/mailer"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
-	"github.com/muhiya/dawa24-store/internal/platform/turnstile"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
+	"github.com/moqasem061-dot/dawa24/internal/modules/whatsapp"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/aiusage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/antiscrape"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/platform/pagecontrol"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/turnstile"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // UIHandler serves server-rendered HTML pages via Templ.
 type UIHandler struct {
-	catSvc           *catalog.Service
-	orgSvc           *org.Service
-	ingSvc           *ingest.Service
-	commSvc          *commerce.Service
-	invSvc           *inventory.Service
-	idSvc            *identity.Service
-	notifSvc         *notifications.Service
-	promoSvc         *promo.Service
-	adminSvc         *platformadmin.Service
-	billSvc          *billing.Service
-	compareSvc       *compare.Service
-	chatSvc          *chat.Service
-	assistantRepo    assistant.Repository
-	wfSvc            *workflow.Service
-	coverageSvc      *workflow.CoverageService
-	hrSvc            *hr.Service
-	attSvc           *attachments.Service
-	storage          *storage.Client
-	aiClient         gateway.Client
-	gatewayKeys      GatewayKeyCache
-	tenantKeys       TenantGatewayKeys
-	aiUsage          aiusage.Repository
+	catSvc            *catalog.Service
+	orgSvc            *org.Service
+	ingSvc            *ingest.Service
+	commSvc           *commerce.Service
+	invSvc            *inventory.Service
+	idSvc             *identity.Service
+	notifSvc          *notifications.Service
+	promoSvc          *promo.Service
+	adminSvc          *platformadmin.Service
+	billSvc           *billing.Service
+	compareSvc        *compare.Service
+	chatSvc           *chat.Service
+	assistantRepo     assistant.Repository
+	wfSvc             *workflow.Service
+	coverageSvc       *workflow.CoverageService
+	hrSvc             *hr.Service
+	attSvc            *attachments.Service
+	storage           *storage.Client
+	aiClient          gateway.Client
+	gatewayKeys       GatewayKeyCache
+	tenantKeys        TenantGatewayKeys
+	aiUsage           aiusage.Repository
 	trustedProxyHops  int
 	secureCookie      bool
 	baseURL           string
@@ -81,8 +81,8 @@ type UIHandler struct {
 	telegram *telegram.Service
 
 	// tgGatewayClient sends phone verification OTP messages via Telegram Gateway (https://gatewayapi.telegram.org).
-	tgGatewayClient telegramgateway.Client
-	tgLimiter       *telegramgateway.OTPRateLimiter
+	tgGatewayClient          telegramgateway.Client
+	tgLimiter                *telegramgateway.OTPRateLimiter
 	sessionSecret            string
 	turnstile                turnstile.Client
 	requireEmailVerification bool

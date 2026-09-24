@@ -7,14 +7,15 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Repository is the PostgreSQL implementation of smartorder.Repository.
@@ -117,7 +118,7 @@ func (r *Repository) GetRunByPublicID(ctx context.Context, orgID int64, publicID
 			publicID, orgID)
 		var err error
 		run, err = scanRun(row)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_run")
 		}
 		return err
@@ -133,7 +134,7 @@ func (r *Repository) GetRunByID(ctx context.Context, orgID, id int64) (*smartord
 			`SELECT `+runColumns+` FROM smartorder.runs WHERE id = $1 AND organization_id = $2;`, id, orgID)
 		var err error
 		run, err = scanRun(row)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_run")
 		}
 		return err

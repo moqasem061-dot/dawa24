@@ -3,12 +3,12 @@ package ui
 import (
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
@@ -38,7 +38,8 @@ func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
 	sysCtx := database.AsSystem(ctx)
 
 	if h.orgSvc != nil {
-		allList, _ := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0)
+		allList, loadErr := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 500, 0)
+		h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
 		data.AllOrganizations = allList
 		for _, o := range allList {
 			if o != nil {
@@ -66,7 +67,8 @@ func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
 	if h.attSvc != nil {
 		for _, o := range data.Organizations {
 			if o != nil {
-				docs, _ := h.attSvc.ListByOrganization(sysCtx, o.ID)
+				docs, loadErr := h.attSvc.ListByOrganization(sysCtx, o.ID)
+				h.logLoadErr(ctx, "attSvc.ListByOrganization", loadErr)
 				if len(docs) > 0 {
 					data.OrgDocs[o.ID] = docs
 				}
@@ -74,12 +76,16 @@ func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
 		}
 
 		docs, _, err := h.attSvc.ListAll(sysCtx, attachments.DocumentFilter{Limit: 200})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "attSvc.ListAll", err)
+		} else {
 			data.UploadedDocs = docs
 		}
 
 		reqs, err := h.attSvc.ListDocumentRequests(sysCtx, actor, nil)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "attSvc.ListDocumentRequests", err)
+		} else {
 			data.DocRequests = reqs
 		}
 	}
@@ -88,11 +94,11 @@ func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
 		filterSeekerStatus := statusParam
 		if filterSeekerStatus == "all" {
 			filterSeekerStatus = ""
-		} else if filterSeekerStatus == "" && tab == "job_seekers" {
-			// default to all or pending
 		}
 		seekers, err := h.idSvc.AdminListUsers(sysCtx, "job_seeker", filterSeekerStatus)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
 			for _, u := range seekers {
 				if u == nil {
 					continue
@@ -101,7 +107,8 @@ func (h *UIHandler) AdminApprovalsPage(w http.ResponseWriter, r *http.Request) {
 					User: u,
 				}
 				if h.hrSvc != nil {
-					prof, _ := h.hrSvc.GetJobSeekerProfile(sysCtx, u.ID)
+					prof, loadErr := h.hrSvc.GetJobSeekerProfile(sysCtx, u.ID)
+					h.logLoadErr(ctx, "hrSvc.GetJobSeekerProfile", loadErr)
 					item.Profile = prof
 				}
 				data.JobSeekers = append(data.JobSeekers, item)

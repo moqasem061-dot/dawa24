@@ -3,11 +3,11 @@ package ui
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // buildCatalogVariantCards maps a slice of buyer offers into storefront cards,
@@ -26,7 +26,9 @@ func (h *UIHandler) buildCatalogVariantCards(
 
 	favMap := make(map[int64]bool)
 	if actor != nil && actor.UserID > 0 && h.idSvc != nil {
-		if ids, err := h.idSvc.ListFavorites(ctx, actor.UserID); err == nil {
+		if ids, err := h.idSvc.ListFavorites(ctx, actor.UserID); err != nil {
+			h.logLoadErr(ctx, "idSvc.ListFavorites", err)
+		} else {
 			for _, id := range ids {
 				favMap[id] = true
 			}

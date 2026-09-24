@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerDecisionMemoryPage renders decision memories for pharmacy customer organizations.
@@ -36,7 +36,8 @@ func (h *UIHandler) CustomerDecisionMemoryPage(w http.ResponseWriter, r *http.Re
 		h.log.ErrorContext(ctx, "failed to list match decisions for customer", "error", err)
 	}
 
-	usePlatform, _ := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	usePlatform, loadErr := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	h.logLoadErr(ctx, "catSvc.GetDecisionMemoryPreference", loadErr)
 	isEnabled := h.catSvc.IsDecisionMemoryEnabled(ctx)
 
 	data := pages.CustomerDecisionMemoryData{
@@ -51,7 +52,7 @@ func (h *UIHandler) CustomerDecisionMemoryPage(w http.ResponseWriter, r *http.Re
 		QueryValues:       r.URL.Query(),
 	}
 
-	_ = pages.CustomerDecisionMemoryPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render CustomerDecisionMemoryPage", pages.CustomerDecisionMemoryPage(lang, dir, data))
 }
 
 // CustomerDecisionMemoryTogglePlatformSubmit toggles platform memory usage for the customer organization.
@@ -64,7 +65,8 @@ func (h *UIHandler) CustomerDecisionMemoryTogglePlatformSubmit(w http.ResponseWr
 		return
 	}
 
-	current, _ := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	current, loadErr := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	h.logLoadErr(ctx, "catSvc.GetDecisionMemoryPreference", loadErr)
 	target := !current
 	if val := r.FormValue("use_platform_memory"); val != "" {
 		target = (val == "true" || val == "1" || val == "on")
@@ -211,7 +213,8 @@ func (h *UIHandler) VendorDecisionMemoryPage(w http.ResponseWriter, r *http.Requ
 		h.log.ErrorContext(ctx, "failed to list match decisions for vendor", "error", err)
 	}
 
-	usePlatform, _ := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	usePlatform, loadErr := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	h.logLoadErr(ctx, "catSvc.GetDecisionMemoryPreference", loadErr)
 	isEnabled := h.catSvc.IsDecisionMemoryEnabled(ctx)
 
 	data := pages.CustomerDecisionMemoryData{
@@ -226,7 +229,7 @@ func (h *UIHandler) VendorDecisionMemoryPage(w http.ResponseWriter, r *http.Requ
 		QueryValues:       r.URL.Query(),
 	}
 
-	_ = pages.CustomerDecisionMemoryPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render CustomerDecisionMemoryPage", pages.CustomerDecisionMemoryPage(lang, dir, data))
 }
 
 // VendorDecisionMemoryTogglePlatformSubmit toggles platform memory usage for the vendor organization.
@@ -239,7 +242,8 @@ func (h *UIHandler) VendorDecisionMemoryTogglePlatformSubmit(w http.ResponseWrit
 		return
 	}
 
-	current, _ := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	current, loadErr := h.catSvc.GetDecisionMemoryPreference(ctx, actor.OrganizationID)
+	h.logLoadErr(ctx, "catSvc.GetDecisionMemoryPreference", loadErr)
 	target := !current
 	if val := r.FormValue("use_platform_memory"); val != "" {
 		target = (val == "true" || val == "1" || val == "on")

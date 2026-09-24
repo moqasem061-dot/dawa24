@@ -4,8 +4,8 @@ import (
 	"context"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Lifecycle methods of mockInventoryRepo, kept separate from the original mock

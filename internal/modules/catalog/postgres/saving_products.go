@@ -2,14 +2,14 @@ package postgres
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // CreateSavingProduct inserts a saving product record.
@@ -183,7 +183,11 @@ func (r *Repository) ListSavingProductsEnriched(ctx context.Context, orgID int64
 				return err
 			}
 			if spe.Quantity > 0 && spe.Price.IsPositive() {
-				spe.TotalValue = money.FromMinor(int64(spe.Quantity * float64(spe.Price.Minor())))
+				val, err := spe.Price.MulQuantity(spe.Quantity)
+				if err != nil {
+					return fmt.Errorf("saving product value: %w", err)
+				}
+				spe.TotalValue = val
 			}
 			list = append(list, &spe)
 		}

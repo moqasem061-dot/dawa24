@@ -3,7 +3,7 @@ package catalog_test
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 func (mockCatalogRepoStub) BatchUpdateProductImage(context.Context, []int64, string, string) error {

@@ -6,9 +6,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) NotificationsPage(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,8 @@ func (h *UIHandler) NotificationsPage(w http.ResponseWriter, r *http.Request) {
 		logs = filterNotificationsForActor(actor, logs)
 	}
 
-	unread, _ := h.notifSvc.GetUnreadCount(ctx, userID)
+	unread, loadErr := h.notifSvc.GetUnreadCount(ctx, userID)
+	h.logLoadErr(ctx, "notifSvc.GetUnreadCount", loadErr)
 
 	h.renderPage(ctx, w, "render notifications page", pages.Notifications(logs, unread, lang, dir, h.isHTMX(r)))
 }
@@ -54,8 +55,16 @@ func (h *UIHandler) MarkNotificationReadSubmit(w http.ResponseWriter, r *http.Re
 		var logs []*notifications.NotificationLog
 		unread := 0
 		if h.notifSvc != nil {
-			logs, _ = h.notifSvc.ListUserNotifications(ctx, userID, 8, 0)
-			unread, _ = h.notifSvc.GetUnreadCount(ctx, userID)
+			if loaded, err := h.notifSvc.ListUserNotifications(ctx, userID, 8, 0); err != nil {
+				h.logLoadErr(ctx, "notifSvc.ListUserNotifications", err)
+			} else {
+				logs = loaded
+			}
+			if loaded, err := h.notifSvc.GetUnreadCount(ctx, userID); err != nil {
+				h.logLoadErr(ctx, "notifSvc.GetUnreadCount", err)
+			} else {
+				unread = loaded
+			}
 		}
 		if actor, ok := authctx.From(ctx); ok {
 			logs = filterNotificationsForActor(actor, logs)
@@ -77,7 +86,9 @@ func (h *UIHandler) NotificationOpenRedirect(w http.ResponseWriter, r *http.Requ
 
 	if h.notifSvc != nil && id > 0 {
 		var notif *notifications.NotificationLog
-		if logs, err := h.notifSvc.ListUserNotifications(ctx, actor.UserID, 100, 0); err == nil {
+		if logs, err := h.notifSvc.ListUserNotifications(ctx, actor.UserID, 100, 0); err != nil {
+			h.logLoadErr(ctx, "notifSvc.ListUserNotifications", err)
+		} else {
 			for _, l := range logs {
 				if l != nil && l.ID == id {
 					notif = l

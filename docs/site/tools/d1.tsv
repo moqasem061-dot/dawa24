@@ -156,10 +156,10 @@ internal/platform/httpx/nonce.go	رمز nonce لكل طلب يستخدم في س
 internal/platform/httpx/ratelimit.go	تحديد معدل الطلبات حسب IP أو المنشأة أو المستخدم باستخدام Redis.
 internal/platform/httpx/request_timeout.go	مهلة زمنية لكل طلب، مع استثناء المسارات الطويلة زي الاستيراد وجسور الدردشة.
 internal/platform/httpx/respond.go	مساعدات الرد JSON والأخطاء وتحديد لغة الطلب.
-internal/platform/importjobs/stage_worker.go	عامل مرحلة الاستيراد: يقرا الملف ويطابق الصفوف.
-internal/platform/importjobs/commit_worker.go	عامل مرحلة الحفظ: يكتب الصفوف المعتمدة في الجداول النهائية.
-internal/platform/importjobs/helpers.go	مساعدات مطابقة خفيفة لعمال الاستيراد.
-internal/platform/importjobs/stage_saving.go	شكل بيانات استيراد المنتجات المحفوظة.
+internal/modules/catalog/importjobs/stage_worker.go	عامل مرحلة الاستيراد: يقرا الملف ويطابق الصفوف.
+internal/modules/catalog/importjobs/commit_worker.go	عامل مرحلة الحفظ: يكتب الصفوف المعتمدة في الجداول النهائية.
+internal/modules/catalog/importjobs/helpers.go	مساعدات مطابقة خفيفة لعمال الاستيراد.
+internal/modules/catalog/importjobs/stage_saving.go	شكل بيانات استيراد المنتجات المحفوظة.
 internal/platform/importrun/importrun.go	نموذج جلسة الاستيراد الدائمة اللي بتستخدمها كل أدوات الاستيراد في المنصة.
 internal/platform/importrun/notify.go	بيعلن كل تغيير في حالة أو تقدم الاستيراد للمتابعين لحظيًا.
 internal/platform/importrun/postgres/repository.go	تخزين جلسات الاستيراد في platform.import_runs.

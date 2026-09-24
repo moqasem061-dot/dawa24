@@ -3,7 +3,7 @@ package pages
 import (
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 type AdminImageImportPhase string

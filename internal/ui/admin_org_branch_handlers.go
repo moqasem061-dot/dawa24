@@ -10,10 +10,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) getBranchWithWorks(ctx context.Context, branchID int64) (*org.Branch, []*org.InstitutionalWork, []*org.InstitutionalWork) {
@@ -25,8 +25,10 @@ func (h *UIHandler) getBranchWithWorks(ctx context.Context, branchID int64) (*or
 	if err != nil || b == nil {
 		return nil, nil, nil
 	}
-	assigned, _ := h.orgSvc.GetBranchInstitutionalWorks(sysCtx, branchID)
-	reachable, _ := h.orgSvc.GetReachableBuyerWorksForBranch(sysCtx, branchID)
+	assigned, loadErr := h.orgSvc.GetBranchInstitutionalWorks(sysCtx, branchID)
+	h.logLoadErr(ctx, "orgSvc.GetBranchInstitutionalWorks", loadErr)
+	reachable, loadErr := h.orgSvc.GetReachableBuyerWorksForBranch(sysCtx, branchID)
+	h.logLoadErr(ctx, "orgSvc.GetReachableBuyerWorksForBranch", loadErr)
 	return b, assigned, reachable
 }
 
@@ -131,12 +133,12 @@ func (h *UIHandler) AdminBranchNewSubmit(w http.ResponseWriter, r *http.Request)
 
 	var latPtr, lngPtr *float64
 	if latStr := r.PostFormValue("latitude"); latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
 	if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}
@@ -260,12 +262,12 @@ func (h *UIHandler) AdminBranchEditSubmit(w http.ResponseWriter, r *http.Request
 
 	var latPtr, lngPtr *float64
 	if latStr := r.PostFormValue("latitude"); latStr != "" {
-		if lat, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if lat, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			latPtr = &lat
 		}
 	}
 	if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if lng, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lngPtr = &lng
 		}
 	}

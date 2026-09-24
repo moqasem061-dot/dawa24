@@ -2,10 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // GetDecisionMemoryPreference returns whether the organization uses platform decision memory. Defaults to true.
@@ -21,7 +22,7 @@ func (r *Repository) GetDecisionMemoryPreference(ctx context.Context, orgID int6
 			WHERE organization_id = $1;
 		`, orgID).Scan(&usePlatform)
 	})
-	if err == pgx.ErrNoRows {
+	if errors.Is(err, pgx.ErrNoRows) {
 		return true, nil
 	}
 	return usePlatform, err

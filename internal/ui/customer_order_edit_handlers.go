@@ -11,10 +11,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (h *UIHandler) CustomerOrderEditSubmit(w http.ResponseWriter, r *http.Request) {
@@ -74,14 +74,14 @@ func (h *UIHandler) CustomerOrderEditSubmit(w http.ResponseWriter, r *http.Reque
 
 		uPrice := money.Zero
 		if i < len(unitPrices) {
-			if parsed, err := money.Parse(unitPrices[i]); err == nil {
+			if parsed, err := money.Parse(unitPrices[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 				uPrice = parsed
 			}
 		}
 
 		dAmount := money.Zero
 		if i < len(discountAmounts) {
-			if parsed, err := money.Parse(discountAmounts[i]); err == nil {
+			if parsed, err := money.Parse(discountAmounts[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 				dAmount = parsed
 			}
 		}

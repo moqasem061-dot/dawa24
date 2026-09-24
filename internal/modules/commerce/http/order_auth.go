@@ -1,6 +1,6 @@
 package http
 
-import "github.com/muhiya/dawa24-store/internal/modules/commerce"
+import "github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 
 // isFulfillingVendor checks whether the target vendor organization is assigned
 // to fulfill at least one shipment or line item of the given order.

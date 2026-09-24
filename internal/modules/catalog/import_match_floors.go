@@ -3,8 +3,8 @@ package catalog
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // How confident the main-catalogue import has to be before it applies a match.
@@ -31,20 +31,6 @@ const MatchSimilar MatchReason = "similar"
 // catalogue. The floor was not wrong about the risk; it was the only tool being
 // used to manage it.
 const similarityFloor = 0.86
-
-// corroboratedFloor is the score at or above which a match is offered as an
-// update when something other than the name agrees as well.
-//
-// The engine's own settled levels — a barcode hit, a code hit, an exact folded
-// name — are already identifiers rather than judgements. Below those, a strong
-// score whose dose and pharmaceutical form both corroborate is a different
-// proposition from a strong score on the name alone, and the identity re-check
-// that guards the AI tier is available to say so.
-//
-// So the rule is: a bare name similarity still needs 0.86, and a corroborated
-// one needs 0.78 — the figure the vendor import has always used, applied here
-// only where the extra evidence exists.
-const corroboratedFloor = 0.78
 
 // matchFloors turns the administrator's one setting — أقل نسبة مطابقة — into the
 // two floors this importer actually uses.
@@ -96,20 +82,6 @@ var aiFloor = catalogCeilings.MinApplyConfidence
 // nothing told the administrator that the other ninety-eight per cent had never
 // been looked at. The shared profile allows 12 requests of 100.
 var catalogCeilings = matchflow.For(matchflow.ProfileCatalog)
-
-// maxAIAdjudicationBatches bounds the AI tier for one import.
-//
-// It exists because an import must finish: a fifty-thousand-row file whose
-// every row is ambiguous would otherwise spend the afternoon in a model, and
-// the deterministic outcome it already has — "this is a new product" — is a
-// serviceable answer. Rows past it keep that outcome and the screen says the
-// ceiling was reached.
-var maxAIAdjudicationBatches = catalogCeilings.MaxRequestsPerRun
-
-// aiBatchSize is how many rows go in one adjudication request. Batched, never
-// per row: the same rule the smart order's adjudication follows, for the same
-// reason — one request per row turns a three-minute import into an hour.
-var aiBatchSize = catalogCeilings.MaxItemsPerRequest
 
 // MatchAdjudicationRequest is one batch of ambiguous rows, attributed to the
 // organisation whose import asked for it so AI spend is billed and capped per

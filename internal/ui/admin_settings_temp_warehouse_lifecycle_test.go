@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockLifecycleAdminRepo struct {
@@ -95,7 +95,7 @@ func TestAdminSettings_TempWarehouseLifecycle(t *testing.T) {
 	r.Post("/admin/settings/temp-warehouses/run-lifecycle", handler.AdminTempWarehouseRunLifecycle)
 
 	t.Run("GET /admin/settings renders temp warehouse lifecycle controls", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/settings?tab=features", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/settings?tab=features", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 
@@ -120,7 +120,7 @@ func TestAdminSettings_TempWarehouseLifecycle(t *testing.T) {
 		form.Set("auto_delete_days", "15")
 		form.Set("auto_delete_enabled", "true")
 
-		req := httptest.NewRequest(http.MethodPost, "/admin/settings/temp-warehouses/lifecycle", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/settings/temp-warehouses/lifecycle", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -141,7 +141,7 @@ func TestAdminSettings_TempWarehouseLifecycle(t *testing.T) {
 	})
 
 	t.Run("POST /admin/settings/temp-warehouses/run-lifecycle triggers execution", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/admin/settings/temp-warehouses/run-lifecycle", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/settings/temp-warehouses/run-lifecycle", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 

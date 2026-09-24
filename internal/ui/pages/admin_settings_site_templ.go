@@ -11,8 +11,8 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 func socialValue(links map[string]string, key string) string {
@@ -55,7 +55,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var2 string
 			templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("{ logoPreview: %q, logoDarkPreview: %q, faviconPreview: %q, removeDark: false }", siteSettings.LogoURL, siteSettings.LogoDarkURL, siteSettings.FaviconURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 23, Col: 180}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 23, Col: 180}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
 			if templ_7745c5c3_Err != nil {
@@ -116,7 +116,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.SiteName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 192, Col: 72}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 192, Col: 72}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -129,7 +129,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.Address)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 196, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 196, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -142,7 +142,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(siteSettings.SiteDescription)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 202, Col: 106}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 202, Col: 106}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -155,7 +155,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.ContactEmail)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 208, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 208, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 			if templ_7745c5c3_Err != nil {
@@ -168,7 +168,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.SupportEmail)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 212, Col: 81}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 212, Col: 81}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
@@ -181,7 +181,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.Phone)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 219, Col: 64}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 219, Col: 64}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
@@ -194,7 +194,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(siteSettings.WhatsApp)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 223, Col: 70}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 223, Col: 70}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -215,7 +215,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "facebook"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 251, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 251, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 			if templ_7745c5c3_Err != nil {
@@ -228,7 +228,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "twitter"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 255, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 255, Col: 103}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 			if templ_7745c5c3_Err != nil {
@@ -241,7 +241,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "instagram"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 262, Col: 107}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 262, Col: 107}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 			if templ_7745c5c3_Err != nil {
@@ -254,7 +254,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "linkedin"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 266, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 266, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 			if templ_7745c5c3_Err != nil {
@@ -267,7 +267,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var14 string
 			templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "youtube"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 273, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 273, Col: 103}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 			if templ_7745c5c3_Err != nil {
@@ -280,7 +280,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "tiktok"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 277, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 277, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var15)
 			if templ_7745c5c3_Err != nil {
@@ -293,7 +293,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "snapchat"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 284, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 284, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 			if templ_7745c5c3_Err != nil {
@@ -306,7 +306,7 @@ func adminSettingsSiteTab(siteSettings *platformadmin.SiteSettings) templ.Compon
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(socialValue(siteSettings.SocialLinks, "telegram"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings_site.templ`, Line: 288, Col: 105}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_settings_site.templ`, Line: 288, Col: 105}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {

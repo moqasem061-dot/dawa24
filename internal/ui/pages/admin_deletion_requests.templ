@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminDeletionRequestsView holds view data for the unified deletion requests queue.
@@ -159,7 +159,7 @@ templ AdminDeletionRequestsPage(v AdminDeletionRequestsView, lang, dir string) {
 				@deletionFilterTab(v.Tab, v.Status, "approved", "✅ تمت الموافقة والحذف")
 				@deletionFilterTab(v.Tab, v.Status, "rejected", "❌ مرفوضة")
 				if v.Tab != "users" {
-					@deletionFilterTab(v.Tab, v.Status, "cancelled", "🚫 ملغاة من المالك")
+					@deletionFilterTab(v.Tab, v.Status, "cancelled", "ملغاة من المالك")
 				}
 				@deletionFilterTab(v.Tab, v.Status, "", "الكل")
 			</div>
@@ -282,7 +282,7 @@ templ renderOrgDeletionRow(req *org.OrganizationDeletionRequest, v AdminDeletion
 				case org.OrgDeletionStatusRejected:
 					<span class="badge badge-slate text-2xs font-bold">❌ مرفوض</span>
 				case org.OrgDeletionStatusCancelled:
-					<span class="badge badge-muted text-2xs font-bold">🚫 ملغى</span>
+					<span class="badge badge-muted text-2xs font-bold">ملغى</span>
 				default:
 					<span class="badge badge-secondary text-2xs">{ string(req.Status) }</span>
 			}

@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.AdminFinanceData, string, string) {
@@ -35,7 +35,11 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 
 	var allOrgs []*org.Organization
 	if h.orgSvc != nil {
-		allOrgs, _ = h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			allOrgs = loaded
+		}
 	}
 
 	// Auto-resolve organization ID if wallet_id is supplied without org_id
@@ -68,7 +72,11 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 
 	var stats *billing.AdminFinanceStats
 	if h.billSvc != nil {
-		stats, _ = h.billSvc.AdminGetFinanceStats(ctx)
+		if loaded, err := h.billSvc.AdminGetFinanceStats(ctx); err != nil {
+			h.logLoadErr(ctx, "billSvc.AdminGetFinanceStats", err)
+		} else {
+			stats = loaded
+		}
 	}
 	if stats == nil {
 		stats = &billing.AdminFinanceStats{}
@@ -92,24 +100,32 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 	if h.billSvc != nil {
 		switch tab {
 		case "wallets":
-			wallets, totalWallets, _ = h.billSvc.AdminListDetailedWallets(ctx, billing.WalletFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedWallets(ctx, billing.WalletFilter{
 				Search:         searchQuery,
 				Type:           typeFilter,
 				OrganizationID: orgID,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedWallets", err)
+			} else {
+				wallets, totalWallets = loaded, loaded2
+			}
 		case "transactions":
-			transactions, totalTransactions, _ = h.billSvc.AdminListDetailedTransactions(ctx, billing.TransactionFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedTransactions(ctx, billing.TransactionFilter{
 				WalletID:       walletID,
 				OrganizationID: orgID,
 				Search:         searchQuery,
 				Type:           typeFilter,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedTransactions", err)
+			} else {
+				transactions, totalTransactions = loaded, loaded2
+			}
 		case "deposits":
-			deposits, totalDeposits, _ = h.billSvc.AdminListDetailedDeposits(ctx, billing.DepositFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedDeposits(ctx, billing.DepositFilter{
 				Search:         searchQuery,
 				Status:         statusFilter,
 				PaymentMethod:  methodFilter,
@@ -117,22 +133,30 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 				OrganizationID: orgID,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedDeposits", err)
+			} else {
+				deposits, totalDeposits = loaded, loaded2
+			}
 		case "withdrawals":
-			withdrawals, totalWithdrawals, _ = h.billSvc.AdminListDetailedWithdrawals(ctx, billing.WithdrawalFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedWithdrawals(ctx, billing.WithdrawalFilter{
 				Search:         searchQuery,
 				Status:         statusFilter,
 				WalletID:       walletID,
 				OrganizationID: orgID,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedWithdrawals", err)
+			} else {
+				withdrawals, totalWithdrawals = loaded, loaded2
+			}
 		case "invoices":
 			var invOrgID *int64
 			if orgID > 0 {
 				invOrgID = &orgID
 			}
-			invoices, totalInvoices, _ = h.billSvc.AdminListDetailedInvoices(ctx, billing.InvoiceFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedInvoices(ctx, billing.InvoiceFilter{
 				Search:         searchQuery,
 				Status:         statusFilter,
 				OrganizationID: invOrgID,
@@ -142,13 +166,17 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 				SortOrder:      sortOrder,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedInvoices", err)
+			} else {
+				invoices, totalInvoices = loaded, loaded2
+			}
 		case "payments":
 			var payOrgID *int64
 			if orgID > 0 {
 				payOrgID = &orgID
 			}
-			payments, totalPayments, _ = h.billSvc.AdminListDetailedPayments(ctx, billing.PaymentFilter{
+			if loaded, loaded2, err := h.billSvc.AdminListDetailedPayments(ctx, billing.PaymentFilter{
 				Search:         searchQuery,
 				Status:         statusFilter,
 				Method:         methodFilter,
@@ -157,7 +185,11 @@ func (h *UIHandler) loadAdminFinanceData(r *http.Request, tab string) (pages.Adm
 				DateTo:         dateTo,
 				Limit:          limit,
 				Offset:         offset,
-			})
+			}); err != nil {
+				h.logLoadErr(ctx, "billSvc.AdminListDetailedPayments", err)
+			} else {
+				payments, totalPayments = loaded, loaded2
+			}
 		}
 	}
 

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 // testVocabulary is the closed set a mapping request translates onto.

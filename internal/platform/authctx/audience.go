@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Audience middleware enforces who may mount an HTML route group (Rebuild V2
@@ -302,12 +302,13 @@ func requireType(log *slog.Logger, want string) func(http.Handler) http.Handler 
 				redirectUnauthorized(w, r, actor)
 				return
 			}
-			if want == "customer" {
+			switch want {
+			case "customer":
 				if actor.IsCustomer() {
 					next.ServeHTTP(w, r)
 					return
 				}
-			} else if want == "vendor" {
+			case "vendor":
 				if actor.IsVendor() {
 					next.ServeHTTP(w, r)
 					return
@@ -320,4 +321,3 @@ func requireType(log *slog.Logger, want string) func(http.Handler) http.Handler 
 		})
 	}
 }
-

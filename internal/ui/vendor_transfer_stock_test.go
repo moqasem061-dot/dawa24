@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockTransferRepo struct {
@@ -240,7 +240,7 @@ func TestVendorStockTransferSubmit_EndToEnd(t *testing.T) {
 			"product_id":        {"100"},
 			"quantity":          {"10"},
 		}
-		req := httptest.NewRequest(http.MethodPost, "/vendor/inventory/transfer", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/inventory/transfer", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		ctx := authctx.WithActor(req.Context(), authctx.Actor{UserID: 1, OrganizationID: 55})
 		ctx = database.WithTenant(ctx, 55)
@@ -268,7 +268,7 @@ func TestVendorStockTransferSubmit_EndToEnd(t *testing.T) {
 			"immediate":         {"true"},
 			"notes":             {"تحويل تجريبي لتغذية الفرع"},
 		}
-		req := httptest.NewRequest(http.MethodPost, "/vendor/inventory/transfer", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/inventory/transfer", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		ctx := authctx.WithActor(req.Context(), authctx.Actor{UserID: 1, OrganizationID: 55})
 		ctx = database.WithTenant(ctx, 55)
@@ -311,7 +311,7 @@ func TestVendorStockTransferSubmit_EndToEnd(t *testing.T) {
 	})
 
 	t.Run("VendorTransfersPage Render", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/vendor/transfers", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/transfers", nil)
 		ctx := authctx.WithActor(req.Context(), authctx.Actor{UserID: 1, OrganizationID: 55})
 		ctx = database.WithTenant(ctx, 55)
 		req = req.WithContext(ctx)
@@ -332,7 +332,7 @@ func TestVendorStockTransferSubmit_EndToEnd(t *testing.T) {
 	})
 
 	t.Run("VendorWarehouseDetailPage Operations Column Has Transfer Button", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/vendor/warehouses/1", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/warehouses/1", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("id", "1")
 		req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

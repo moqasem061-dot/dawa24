@@ -3,7 +3,7 @@ package catalog
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 )
 
 // Announcing an administrative import's progress as it is written.

@@ -1,5 +1,5 @@
 # =============================================================================
-# Dawa24 Store - Standalone Hostinger KVM VPS Compose Stack
+# Dawa24 - Standalone Hostinger KVM VPS Compose Stack
 # =============================================================================
 # Self-contained 6-service production stack:
 #   caddy     -> Edge reverse proxy on 80/443 with automated Let's Encrypt SSL
@@ -35,7 +35,7 @@ x-app-env: &app-env
   GATEWAY_ENABLED: ${GATEWAY_ENABLED:-false}
   GATEWAY_BASE_URL: ${GATEWAY_BASE_URL:-https://api.dawa24.com}
   GATEWAY_VIRTUAL_KEY: ${GATEWAY_VIRTUAL_KEY:-}
-  GATEWAY_CLIENT_APP: ${GATEWAY_CLIENT_APP:-dawa24-store}
+  GATEWAY_CLIENT_APP: ${GATEWAY_CLIENT_APP:-dawa24}
   GATEWAY_TIMEOUT: ${GATEWAY_TIMEOUT:-60s}
 
   # SMTP Outbound Email (Password Reset, Email Verification, Notifications)
@@ -149,12 +149,17 @@ services:
 
   migrate:
     <<: *build
-    image: dawa24-store:local
+    image: dawa24:local
     command: ["/app/cli", "migrate"]
     environment:
       <<: *app-env
       # Migrations require superuser privileges to ensure schemas and grants exist
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dawa24_store}?sslmode=disable
+      # migrate keeps dawa24_app's password in step with this value.
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD}
+      # Creates the first super_admin only; see .env.production.example.
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     restart: "no"
     depends_on:
       postgres:
@@ -164,7 +169,7 @@ services:
 
   server:
     <<: *build
-    image: dawa24-store:local
+    image: dawa24:local
     command: ["/app/server"]
     restart: unless-stopped
     depends_on:
@@ -199,7 +204,7 @@ services:
 
   worker:
     <<: *build
-    image: dawa24-store:local
+    image: dawa24:local
     command: ["/app/worker"]
     restart: unless-stopped
     dns:

@@ -9,20 +9,20 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/datasets"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	assistantHTTP "github.com/muhiya/dawa24-store/internal/modules/assistant/http"
-	assistantPostgres "github.com/muhiya/dawa24-store/internal/modules/assistant/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/stream"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/tools"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/cache"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/datasets"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	assistantHTTP "github.com/moqasem061-dot/dawa24/internal/modules/assistant/http"
+	assistantPostgres "github.com/moqasem061-dot/dawa24/internal/modules/assistant/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/stream"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/tools"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 // Assembling Capsule.
@@ -34,15 +34,14 @@ import (
 // holds one.
 
 type assistantDeps struct {
-	db        *database.DB
-	cfg       *config.Config
-	log       *slog.Logger
-	ai        gateway.Client
-	cacheH    *cache.Cache
-	storage   *storage.Client
-	admin     *platformadmin.Service
-	adminKeys *adminKeyProvisioner
-	keys      assistant.KeyResolver
+	db      *database.DB
+	cfg     *config.Config
+	log     *slog.Logger
+	ai      gateway.Client
+	cacheH  *cache.Cache
+	storage *storage.Client
+	admin   *platformadmin.Service
+	keys    assistant.KeyResolver
 	// coverage answers the assistant's "who delivers to my branch" tool with
 	// the platform's own coverage rule. Left nil, that tool reports itself
 	// unavailable rather than guessing.

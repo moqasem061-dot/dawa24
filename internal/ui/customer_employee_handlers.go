@@ -11,11 +11,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // The pharmacy's employee writes.
@@ -107,19 +107,19 @@ func (h *UIHandler) CustomerEmployeeCreateSubmit(w http.ResponseWriter, r *http.
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
-		OrganizationID: &orgID,
-		ActorUserID:    actor.UserID,
-		Action:         "member.created",
-		EntityType:     "user",
-		EntityID:       strconv.FormatInt(targetUserID, 10),
-		After: map[string]any{
-			"name":          name,
-			"email":         email,
-			"role_key":      roleKey,
-			"employee_code": employeeCode,
-			"job_title":     member.JobTitle,
-		},
-	})
+			OrganizationID: &orgID,
+			ActorUserID:    actor.UserID,
+			Action:         "member.created",
+			EntityType:     "user",
+			EntityID:       strconv.FormatInt(targetUserID, 10),
+			After: map[string]any{
+				"name":          name,
+				"email":         email,
+				"role_key":      roleKey,
+				"employee_code": employeeCode,
+				"job_title":     member.JobTitle,
+			},
+		})
 	}
 
 	h.invalidatePermissions(targetUserID, orgID)
@@ -191,17 +191,17 @@ func (h *UIHandler) CustomerEmployeeEditSubmit(w http.ResponseWriter, r *http.Re
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
-		OrganizationID: &orgID,
-		ActorUserID:    actor.UserID,
-		Action:         "member.updated",
-		EntityType:     "user",
-		EntityID:       strconv.FormatInt(member.UserID, 10),
-		After: map[string]any{
-			"role_key":      patch.RoleKey,
-			"employee_code": patch.EmployeeCode,
-			"job_title":     patch.JobTitle,
-		},
-	})
+			OrganizationID: &orgID,
+			ActorUserID:    actor.UserID,
+			Action:         "member.updated",
+			EntityType:     "user",
+			EntityID:       strconv.FormatInt(member.UserID, 10),
+			After: map[string]any{
+				"role_key":      patch.RoleKey,
+				"employee_code": patch.EmployeeCode,
+				"job_title":     patch.JobTitle,
+			},
+		})
 	}
 
 	h.invalidatePermissions(member.UserID, orgID)
@@ -238,17 +238,17 @@ func (h *UIHandler) CustomerEmployeeDeleteSubmit(w http.ResponseWriter, r *http.
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
-		OrganizationID: &orgID,
-		ActorUserID:    actor.UserID,
-		Action:         "member.deleted",
-		EntityType:     "user",
-		EntityID:       strconv.FormatInt(member.UserID, 10),
-		Before: map[string]any{
-			"role_key":      member.RoleKey,
-			"employee_code": member.EmployeeCode,
-			"job_title":     member.JobTitle,
-		},
-	})
+			OrganizationID: &orgID,
+			ActorUserID:    actor.UserID,
+			Action:         "member.deleted",
+			EntityType:     "user",
+			EntityID:       strconv.FormatInt(member.UserID, 10),
+			Before: map[string]any{
+				"role_key":      member.RoleKey,
+				"employee_code": member.EmployeeCode,
+				"job_title":     member.JobTitle,
+			},
+		})
 	}
 
 	h.invalidatePermissions(member.UserID, orgID)
@@ -284,14 +284,14 @@ func (h *UIHandler) CustomerEmployeeStatusSubmit(w http.ResponseWriter, r *http.
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
-		OrganizationID: &orgID,
-		ActorUserID:    actor.UserID,
-		Action:         "member.updated",
-		EntityType:     "user",
-		EntityID:       strconv.FormatInt(member.UserID, 10),
-		Before:         map[string]any{"is_active": member.IsActive},
-		After:          map[string]any{"is_active": !member.IsActive},
-	})
+			OrganizationID: &orgID,
+			ActorUserID:    actor.UserID,
+			Action:         "member.updated",
+			EntityType:     "user",
+			EntityID:       strconv.FormatInt(member.UserID, 10),
+			Before:         map[string]any{"is_active": member.IsActive},
+			After:          map[string]any{"is_active": !member.IsActive},
+		})
 	}
 
 	h.invalidatePermissions(member.UserID, orgID)

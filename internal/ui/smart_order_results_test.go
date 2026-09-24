@@ -12,9 +12,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestSmartOrderResultsRoutes(t *testing.T) {
@@ -25,7 +25,7 @@ func TestSmartOrderResultsRoutes(t *testing.T) {
 	handler.RegisterSmartOrderRoutes(r)
 
 	// 1. Anonymous access redirects to login
-	req, _ := http.NewRequest(http.MethodGet, "/customer/smart-order/new", nil)
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/smart-order/new", nil)
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	if w.Code != http.StatusSeeOther {

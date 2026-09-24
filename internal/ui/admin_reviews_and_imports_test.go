@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,8 +12,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminReviewsAndImportsRoutes(t *testing.T) {
@@ -23,7 +24,7 @@ func TestAdminReviewsAndImportsRoutes(t *testing.T) {
 	handler.RegisterAdminRoutes(r)
 
 	t.Run("Anonymous GET /admin/reviews redirects to login", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/reviews", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/reviews", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusSeeOther, rec.Code)
@@ -31,7 +32,7 @@ func TestAdminReviewsAndImportsRoutes(t *testing.T) {
 	})
 
 	t.Run("Super admin GET /admin/reviews renders reviews hub", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/reviews", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/reviews", nil)
 		actor := authctx.Actor{
 			UserID:      1,
 			IsStaff:     true,
@@ -51,7 +52,7 @@ func TestAdminReviewsAndImportsRoutes(t *testing.T) {
 	})
 
 	t.Run("Anonymous GET /admin/organizations/import redirects to login", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/organizations/import", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/organizations/import", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 		assert.Equal(t, http.StatusSeeOther, rec.Code)
@@ -59,7 +60,7 @@ func TestAdminReviewsAndImportsRoutes(t *testing.T) {
 	})
 
 	t.Run("Super admin GET /admin/organizations/import renders hub with tabs", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/organizations/import", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/organizations/import", nil)
 		actor := authctx.Actor{
 			UserID:      1,
 			IsStaff:     true,
@@ -79,7 +80,7 @@ func TestAdminReviewsAndImportsRoutes(t *testing.T) {
 	})
 
 	t.Run("Super admin GET /admin/organizations/import?tab=vendor renders vendor tab", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/organizations/import?tab=vendor", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/organizations/import?tab=vendor", nil)
 		actor := authctx.Actor{
 			UserID:      1,
 			IsStaff:     true,

@@ -1,14 +1,15 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // Cross-dashboard separation, checked on the real route table.
@@ -90,7 +91,7 @@ func TestASupplierWithTheBuyingGrantsReachesTheSharedPages(t *testing.T) {
 	for _, path := range sharedBuyingPaths {
 		t.Run(path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+			router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
 			// The harness builds the handler with nil services, so a page that
 			// reads real data answers 500 rather than rendering. Only a refusal
 			// — the gate's 303, or a 404 — means the page does not exist for
@@ -122,7 +123,7 @@ func TestASupplierWithoutTheBuyingGrantsIsRefusedTheSharedPages(t *testing.T) {
 	for _, path := range sharedBuyingPaths {
 		t.Run(path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+			router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
 			if rec.Code != http.StatusSeeOther {
 				t.Errorf("status = %d, want 303: a supplier without the buying grants opened %s",
 					rec.Code, path)
@@ -139,7 +140,7 @@ func TestASupplierCannotReachPharmacyPages(t *testing.T) {
 	for _, path := range pharmacyOnlyPaths {
 		t.Run(path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+			router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
 			// 404, never 200: a supplier must not learn that the pharmacy URL
 			// space exists, let alone see a page rendered from it.
 			if rec.Code == http.StatusOK {
@@ -160,7 +161,7 @@ func TestAPharmacyCannotReachSupplierPages(t *testing.T) {
 	for _, path := range vendorOnlyPaths {
 		t.Run(path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, httptest.NewRequest("GET", path, nil))
+			router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), "GET", path, nil))
 			if rec.Code == http.StatusOK {
 				t.Errorf("a pharmacy opened the supplier page %s", path)
 			}

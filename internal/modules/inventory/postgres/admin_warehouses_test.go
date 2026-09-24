@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
 )
 
 // The cross-tenant warehouse listing has to page honestly and its holdings have

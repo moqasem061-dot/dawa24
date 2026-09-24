@@ -296,10 +296,8 @@ body {
 
 /* Dual Logo Dark/Light Theme Switching (Zero-Latency) */
 html:not([data-theme="dark"]) .logo-dark {
-  display: none !important;
 }
 [data-theme="dark"] .logo-light:not(.logo-always) {
-  display: none !important;
 }
 [data-theme="dark"] .logo-dark {
   display: inline-block;
@@ -308,7 +306,6 @@ html:not([data-theme="dark"]) .logo-dark {
 [data-theme="dark"] .nav-brand-logo.logo-dark,
 [data-theme="dark"] .footer-logo.logo-dark,
 [data-theme="dark"] .auth-logo-img.logo-dark {
-  display: block !important;
 }
 
 .sidebar-logo {
@@ -961,5 +958,21 @@ html:not([data-theme="dark"]) .logo-dark {
 @media (prefers-reduced-motion: no-preference) {
   @view-transition {
     navigation: auto;
+  }
+}
+
+/* Rules that must outrank a utility class written on the same element.
+   @layer utilities outranks @layer components whatever the specificity, so
+   these used !important. A later layer wins by order instead, and a
+   utility's own !important (.hidden) still wins over it, as it should. */
+@layer overrides {
+  html:not([data-theme="dark"]) .logo-dark {
+    display: none;
+  }
+  [data-theme="dark"] .logo-light:not(.logo-always) {
+    display: none;
+  }
+  [data-theme="dark"] .sidebar-logo.logo-dark, [data-theme="dark"] .nav-brand-logo.logo-dark, [data-theme="dark"] .footer-logo.logo-dark, [data-theme="dark"] .auth-logo-img.logo-dark {
+    display: block;
   }
 }

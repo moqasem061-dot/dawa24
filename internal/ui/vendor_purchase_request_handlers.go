@@ -8,12 +8,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorPurchaseRequestsPage renders incoming purchase requests for a supplier (Plan V5 Phase 3 §3.1.5).
@@ -39,7 +39,9 @@ func (h *UIHandler) VendorPurchaseRequestsPage(w http.ResponseWriter, r *http.Re
 	var total int
 	if h.commSvc != nil {
 		reqs, tot, err := h.commSvc.ListVendorPurchaseRequestsWithTotal(ctx, actor.OrganizationID, status, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "commSvc.ListVendorPurchaseRequestsWithTotal", err)
+		} else {
 			requests = reqs
 			total = tot
 		}
@@ -49,7 +51,9 @@ func (h *UIHandler) VendorPurchaseRequestsPage(w http.ResponseWriter, r *http.Re
 	var negTotal int
 	if h.commSvc != nil {
 		orders, oTot, err := h.commSvc.ListVendorNegotiationOrdersWithTotal(ctx, actor.OrganizationID, status, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "commSvc.ListVendorNegotiationOrdersWithTotal", err)
+		} else {
 			negOrders = orders
 			negTotal = oTot
 		}
@@ -144,7 +148,7 @@ func (h *UIHandler) VendorPurchaseRequestLineRespondSubmit(w http.ResponseWriter
 
 	var price money.Amount
 	if pStr := r.FormValue("offered_price"); pStr != "" {
-		if p, err := money.Parse(pStr); err == nil {
+		if p, err := money.Parse(pStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			price = p
 		}
 	}

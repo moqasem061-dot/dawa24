@@ -3,7 +3,7 @@ package http_test
 import (
 	"context"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 func (r stubRepo) ListSEOPages(context.Context, platformadmin.SEOPagesFilter) ([]*platformadmin.SEOPage, int, error) {

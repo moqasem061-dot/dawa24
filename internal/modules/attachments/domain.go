@@ -5,14 +5,15 @@ package attachments
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"path/filepath"
 	"strings"
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
 	"github.com/google/uuid"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // DocumentType represents the category of the uploaded document.
@@ -191,9 +192,10 @@ func ValidatePresignRequest(req PresignRequest) error {
 	}
 
 	maxSize := int64(MaxDocumentSize)
-	if req.DocumentType == DocAvatar || req.DocumentType == DocOrgLogo || req.DocumentType == DocProductImage || req.DocumentType == DocReviewImage {
+	switch req.DocumentType {
+	case DocAvatar, DocOrgLogo, DocProductImage, DocReviewImage:
 		maxSize = MaxImageSize
-	} else if req.DocumentType == DocImportFile {
+	case DocImportFile:
 		maxSize = MaxImportSize
 	}
 

@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 )
 
 func TestCSV_RejectsHTTPAndDomains(t *testing.T) {
@@ -42,10 +42,10 @@ func TestCSV_RejectsHTTPAndDomains(t *testing.T) {
 func TestXLSX_RejectsHTTPAndDomains(t *testing.T) {
 	// 1. Clean XLSX
 	f := excelize.NewFile()
-	f.SetCellValue("Sheet1", "A1", "اسم الدواء")
-	f.SetCellValue("Sheet1", "B1", "السعر")
-	f.SetCellValue("Sheet1", "A2", "بانادول إكسترا 500 مجم أقراص")
-	f.SetCellValue("Sheet1", "B2", 55.00)
+	require.NoError(t, f.SetCellValue("Sheet1", "A1", "اسم الدواء"))
+	require.NoError(t, f.SetCellValue("Sheet1", "B1", "السعر"))
+	require.NoError(t, f.SetCellValue("Sheet1", "A2", "بانادول إكسترا 500 مجم أقراص"))
+	require.NoError(t, f.SetCellValue("Sheet1", "B2", 55.00))
 	var buf bytes.Buffer
 	require.NoError(t, f.Write(&buf))
 
@@ -54,10 +54,10 @@ func TestXLSX_RejectsHTTPAndDomains(t *testing.T) {
 
 	// 2. Malicious XLSX with URL in cell
 	fBad := excelize.NewFile()
-	fBad.SetCellValue("Sheet1", "A1", "اسم الدواء")
-	fBad.SetCellValue("Sheet1", "B1", "الرابط")
-	fBad.SetCellValue("Sheet1", "A2", "دواء تجريبي")
-	fBad.SetCellValue("Sheet1", "B2", "https://phishing.site/steal")
+	require.NoError(t, fBad.SetCellValue("Sheet1", "A1", "اسم الدواء"))
+	require.NoError(t, fBad.SetCellValue("Sheet1", "B1", "الرابط"))
+	require.NoError(t, fBad.SetCellValue("Sheet1", "A2", "دواء تجريبي"))
+	require.NoError(t, fBad.SetCellValue("Sheet1", "B2", "https://phishing.site/steal"))
 	var bufBad bytes.Buffer
 	require.NoError(t, fBad.Write(&bufBad))
 
@@ -67,7 +67,7 @@ func TestXLSX_RejectsHTTPAndDomains(t *testing.T) {
 
 	// 3. Malicious XLSX with External Hyperlink
 	fLink := excelize.NewFile()
-	fLink.SetCellValue("Sheet1", "A1", "اضغط هنا")
+	require.NoError(t, fLink.SetCellValue("Sheet1", "A1", "اضغط هنا"))
 	require.NoError(t, fLink.SetCellHyperLink("Sheet1", "A1", "http://c2.attacker.com", "External"))
 	var bufLink bytes.Buffer
 	require.NoError(t, fLink.Write(&bufLink))

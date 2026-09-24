@@ -2,15 +2,14 @@ package ingest
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"sync"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // The vendor catalogue import service.
@@ -28,19 +27,19 @@ import (
 
 // CatalogPort is the shared catalogue as this import needs it.
 type CatalogPort interface {
-	ListMatchProducts(ctx context.Context) ([]catalog.MatchProduct, error)
-	ImportVocabulary(ctx context.Context, orgID int64) (catalog.EnrichVocabulary, error)
-	ListVariantKeys(ctx context.Context, orgID int64) ([]catalog.VariantKey, error)
-	BulkWriteVariants(ctx context.Context, orgID int64, rows []catalog.VariantWriteRow) (catalog.VariantWriteResult, error)
-	RetireVariantsExcept(ctx context.Context, orgID, warehouseID int64, keep []int64) ([]catalog.RetiredVariant, error)
-	GetProduct(ctx context.Context, id int64) (*catalog.Product, []*catalog.ProductVariant, error)
-	Search(ctx context.Context, params catalog.SearchParams) ([]*catalog.Product, error)
+	ListMatchProducts(ctx context.Context) ([]MatchProduct, error)
+	ImportVocabulary(ctx context.Context, orgID int64) (Vocabulary, error)
+	ListVariantKeys(ctx context.Context, orgID int64) ([]VariantKey, error)
+	BulkWriteVariants(ctx context.Context, orgID int64, rows []VariantWriteRow) (VariantWriteResult, error)
+	RetireVariantsExcept(ctx context.Context, orgID, warehouseID int64, keep []int64) ([]RetiredVariant, error)
+	// ProductRef returns nil, nil when the product does not exist.
+	ProductRef(ctx context.Context, id int64) (*ProductRef, error)
 }
 
 // InventoryPort is the warehouse side of the same import.
 type InventoryPort interface {
-	ListWarehouses(ctx context.Context) ([]*inventory.Warehouse, error)
-	BulkWriteStocks(ctx context.Context, mode inventory.StockMode, rows []inventory.StockWriteRow) (inventory.StockWriteResult, error)
+	ListWarehouses(ctx context.Context) ([]Warehouse, error)
+	BulkWriteStocks(ctx context.Context, mode StockMode, rows []StockWriteRow) (StockWriteResult, error)
 	ClearWarehouseStocks(ctx context.Context, warehouseID int64) error
 	// VariantIDsInWarehouse is how the commit tells "this vendor stocks this
 	// product" from "this vendor stocks it in the warehouse I am writing to",
@@ -366,7 +365,7 @@ func (s *Service) AnnotateRowsWithExistingVariants(
 	}
 	var inWarehouse map[int64]bool
 	if s.inventory != nil && session.Settings.WarehouseID > 0 {
-		if set, err := s.inventory.VariantIDsInWarehouse(ctx, session.Settings.WarehouseID); err == nil {
+		if set, err := s.inventory.VariantIDsInWarehouse(ctx, session.Settings.WarehouseID); err == nil { // nolint:errswallow: the else branch logs it
 			inWarehouse = set
 		} else {
 			s.log.WarnContext(ctx, "warehouse variant set unavailable for review",

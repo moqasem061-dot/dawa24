@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestCustomerOrderEdit_QuantityAndDatabaseSync_E2E(t *testing.T) {
@@ -184,7 +184,7 @@ func TestCustomerOrderEdit_QuantityAndDatabaseSync_E2E(t *testing.T) {
 	}
 
 	// 3. Test GET /customer/orders/{id} renders the editable table with correct data attributes
-	getReq := httptest.NewRequest("GET", fmt.Sprintf("/customer/orders/%d", orderID), nil)
+	getReq := httptest.NewRequestWithContext(context.Background(), "GET", fmt.Sprintf("/customer/orders/%d", orderID), nil)
 	getReq = getReq.WithContext(authctx.WithActor(getReq.Context(), customerActor))
 	getRec := httptest.NewRecorder()
 	handler.ServeHTTP(getRec, getReq)
@@ -217,7 +217,7 @@ func TestCustomerOrderEdit_QuantityAndDatabaseSync_E2E(t *testing.T) {
 		"notes":             {"تعديل الكميات بالاتفاق مع المورد"},
 	}
 
-	postReq := httptest.NewRequest("POST", fmt.Sprintf("/orders/%d/edit", orderID), strings.NewReader(editForm.Encode()))
+	postReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/orders/%d/edit", orderID), strings.NewReader(editForm.Encode()))
 	postReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	postReq = postReq.WithContext(authctx.WithActor(postReq.Context(), customerActor))
 	postRec := httptest.NewRecorder()
@@ -279,7 +279,7 @@ func TestCustomerOrderEdit_QuantityAndDatabaseSync_E2E(t *testing.T) {
 		"discount_amount[]": {"50.00"},
 		"is_deleted[]":      {"0"},
 	}
-	exReq := httptest.NewRequest("POST", fmt.Sprintf("/orders/%d/edit", orderID), strings.NewReader(excessiveForm.Encode()))
+	exReq := httptest.NewRequestWithContext(context.Background(), "POST", fmt.Sprintf("/orders/%d/edit", orderID), strings.NewReader(excessiveForm.Encode()))
 	exReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	exReq = exReq.WithContext(authctx.WithActor(exReq.Context(), customerActor))
 	exRec := httptest.NewRecorder()

@@ -3,9 +3,9 @@ package layouts
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
 // Base is the document shell every page renders inside.
@@ -201,8 +201,6 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			<script defer src={ Asset("/static/js/upload-progress.js") }></script>
 			// Universal file & image in-window lightbox previewer.
 			<script defer src={ Asset("/static/js/preview.js") }></script>
-			// Interactive 3D pharmaceutical model renderer for landing and showcases.
-			<script defer src={ Asset("/static/js/hero_3d.js") }></script>
 		</head>
 		<body>
 			{ children... }

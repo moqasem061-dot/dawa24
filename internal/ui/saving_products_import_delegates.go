@@ -5,7 +5,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // CustomerSavingProductsSampleXLSX streams download of a clean Excel template.
@@ -13,7 +13,7 @@ func (h *UIHandler) CustomerSavingProductsSampleXLSX(w http.ResponseWriter, r *h
 	lang, _ := h.localeAndDir(r)
 	f := excelize.NewFile()
 	sheet := "Saving Products Sample"
-	f.SetSheetName("Sheet1", sheet)
+	sheet = renameFirstSheet(f, sheet)
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{
 		RightToLeft: boolPtr(true),
 	})

@@ -8,7 +8,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // AdminOrgImportSavingItemUpdateSubmit updates staged item details for an admin importing on behalf of an org.
@@ -30,24 +31,26 @@ func (h *UIHandler) AdminOrgImportSavingItemUpdateSubmit(w http.ResponseWriter, 
 		redirectURI += "?" + r.URL.RawQuery
 	}
 
-	if err := r.ParseForm(); err == nil {
-		name := strings.TrimSpace(r.FormValue("name"))
-		var pricePtr *money.Amount
-		if pStr := strings.TrimSpace(r.FormValue("price")); pStr != "" {
-			if amt, err := money.Parse(pStr); err == nil {
-				pricePtr = &amt
-			}
+	if err := r.ParseForm(); err != nil {
+		h.redirectWithNotice(w, r, redirectURI, "error", i18n.T(langOf(r), "common.invalid_form_data"))
+		return
+	}
+	name := strings.TrimSpace(r.FormValue("name"))
+	var pricePtr *money.Amount
+	if pStr := strings.TrimSpace(r.FormValue("price")); pStr != "" {
+		if amt, err := money.Parse(pStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
+			pricePtr = &amt
 		}
-		var qtyPtr *float64
-		if qStr := strings.TrimSpace(r.FormValue("quantity")); qStr != "" {
-			if q, err := strconv.ParseFloat(qStr, 64); err == nil && q > 0 {
-				qtyPtr = &q
-			}
+	}
+	var qtyPtr *float64
+	if qStr := strings.TrimSpace(r.FormValue("quantity")); qStr != "" {
+		if q, err := strconv.ParseFloat(qStr, 64); err == nil && q > 0 {
+			qtyPtr = &q
 		}
-		if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, session.OrgID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
-			h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
-			return
-		}
+	}
+	if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, session.OrgID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
+		h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
+		return
 	}
 
 	http.Redirect(w, r, redirectURI, http.StatusSeeOther)
@@ -73,17 +76,19 @@ func (h *UIHandler) AdminOrgImportSavingItemMatchSubmit(w http.ResponseWriter, r
 	}
 
 	noticeMsg := "تم إلغاء ربط الصنف (أصبح غير مرتبط)."
-	if err := r.ParseForm(); err == nil {
-		productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
-		masterName := strings.TrimSpace(r.FormValue("master_name"))
-		masterSKU := strings.TrimSpace(r.FormValue("master_sku"))
-		if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, session.OrgID, itemIndex, productID, masterName, masterSKU); err != nil {
-			h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
-			return
-		}
-		if productID > 0 {
-			noticeMsg = fmt.Sprintf("تم ربط الصنف «%s» بالكتالوج المركزي.", masterName)
-		}
+	if err := r.ParseForm(); err != nil {
+		h.redirectWithNotice(w, r, redirectURI, "error", i18n.T(langOf(r), "common.invalid_form_data"))
+		return
+	}
+	productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
+	masterName := strings.TrimSpace(r.FormValue("master_name"))
+	masterSKU := strings.TrimSpace(r.FormValue("master_sku"))
+	if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, session.OrgID, itemIndex, productID, masterName, masterSKU); err != nil {
+		h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
+		return
+	}
+	if productID > 0 {
+		noticeMsg = fmt.Sprintf("تم ربط الصنف «%s» بالكتالوج المركزي.", masterName)
 	}
 
 	h.redirectWithNotice(w, r, redirectURI, "success", noticeMsg)

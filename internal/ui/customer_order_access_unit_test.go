@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func TestEvaluateCustomerOrderAccess(t *testing.T) {
@@ -94,7 +94,7 @@ func TestEvaluateCustomerOrderAccess(t *testing.T) {
 
 func TestParseSingleInstitutionalWork(t *testing.T) {
 	// 1. Multiple values in checkbox array should be trimmed to 1
-	r1, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r1, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", nil)
 	r1.Form = url.Values{
 		"institutional_works": []string{"10", "20", "30"},
 	}
@@ -104,7 +104,7 @@ func TestParseSingleInstitutionalWork(t *testing.T) {
 	}
 
 	// 2. Single radio value in post form
-	r2, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r2, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", nil)
 	r2.PostForm = url.Values{
 		"institutional_work": []string{"25"},
 	}
@@ -114,7 +114,7 @@ func TestParseSingleInstitutionalWork(t *testing.T) {
 	}
 
 	// 3. Empty form should return empty
-	r3, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r3, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", nil)
 	r3.Form = url.Values{}
 	got3 := parseSingleInstitutionalWork(r3)
 	if len(got3) != 0 {
@@ -127,7 +127,7 @@ func TestResolveCustomerInstitutionalWork_SingleLimit(t *testing.T) {
 	ctx := context.Background()
 
 	// Multiple values trimmed to 1
-	r1, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r1, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", nil)
 	r1.Form = url.Values{
 		"institutional_works": []string{"1", "2"},
 	}
@@ -137,7 +137,7 @@ func TestResolveCustomerInstitutionalWork_SingleLimit(t *testing.T) {
 	}
 
 	// Single radio value preserved
-	r2, _ := http.NewRequest(http.MethodPost, "/", nil)
+	r2, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, "/", nil)
 	r2.PostForm = url.Values{
 		"institutional_work": []string{"5"},
 	}

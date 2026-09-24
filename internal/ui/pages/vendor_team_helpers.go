@@ -14,10 +14,10 @@ type TeamMemberView struct {
 	RoleName     string
 	// RoleID is the company's own role this member holds. Roles are per
 	// company, so this is meaningless outside the organization that owns it.
-	RoleID       int64
-	IsActive     bool
-	AvatarURL    string
-	CreatedAt    string
+	RoleID    int64
+	IsActive  bool
+	AvatarURL string
+	CreatedAt string
 }
 
 type BranchOption struct {
@@ -26,14 +26,14 @@ type BranchOption struct {
 }
 
 type VendorTeamData struct {
-	NoticeType    string
-	NoticeMsg     string
-	Members       []*TeamMemberView
-	Branches      []*BranchOption
+	NoticeType string
+	NoticeMsg  string
+	Members    []*TeamMemberView
+	Branches   []*BranchOption
 	// CompanyRoles are this company's own roles, the only ones assignable
 	// here. A role belonging to another company is not in the list and would
 	// be refused on submit even if it were.
-	CompanyRoles  []TenantRoleOption
+	CompanyRoles []TenantRoleOption
 	// CanAssignRole gates the selector. Whoever may assign a role can hand
 	// themselves everything that role holds, so it is its own permission.
 	CanAssignRole bool

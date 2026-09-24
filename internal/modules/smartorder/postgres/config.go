@@ -3,11 +3,12 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // GetConfig loads the snapshot a run executed under.
@@ -23,7 +24,7 @@ func (r *Repository) GetConfig(ctx context.Context, runID int64) (*smartorder.Co
 			&cfg.RunID, &cfg.OrganizationID, &criteria, &cfg.TolerancePct, &cfg.DefaultQuantity,
 			&cfg.MaxBudget, &cfg.UseSavingProducts, &cfg.UseAIMatching, &cfg.CriteriaDefaulted,
 			&cfg.MatchLanguage, &cfg.MinMatchScore)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_config")
 		}
 		if err != nil {
@@ -59,7 +60,7 @@ func (r *Repository) GetProfile(ctx context.Context, orgID int64) (*smartorder.P
 			&criteria, &p.TolerancePct, &p.DefaultQuantity,
 			&p.UseSavingProducts, &p.UseAIMatching, &p.LastBranchID,
 			&p.MatchLanguage, &p.MinMatchScore)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return nil // first run: platform defaults stand
 		}
 		if err != nil {
@@ -157,7 +158,7 @@ func (r *Repository) GetMapping(ctx context.Context, runID int64) (*smartorder.M
 			FROM smartorder.column_mappings WHERE run_id = $1;`, runID).Scan(
 			&m.OrganizationID, &m.HeaderRow, &fields, &detected, &confidence,
 			&m.UserOverridden, &confirmedAt)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_mapping")
 		}
 		if err != nil {

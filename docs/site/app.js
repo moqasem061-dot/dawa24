@@ -28,7 +28,7 @@
     'internal/platform/pagecontrol': 'تفعيل وتعطيل أي صفحة من لوحة الإدارة بدون نشر جديد.',
     'internal/platform/progress': 'نقل تقدم عمليات الاستيراد لحظيًا للمتصفح.',
     'internal/platform/importrun': 'نموذج موحد لجلسات الاستيراد الدائمة.',
-    'internal/platform/importjobs': 'عمال الاستيراد في الطابور.',
+    'internal/modules/catalog/importjobs': 'عمال الاستيراد في الطابور.',
     'internal/platform/queue': 'المهام الخلفية بمكتبة River.',
     'internal/platform/aiusage': 'سجل استهلاك الذكاء الاصطناعي.',
     'internal/shared': 'حزم صغيرة مستقلة بدون أي اعتماد داخلي: الفلوس، الترجمة، العربي، الأخطاء، قراءة Excel، ومحرك المطابقة.',

@@ -48,7 +48,7 @@ func diagnose(ctx context.Context, pool *pgxpool.Pool, err error) error {
 	// raise max_connections.
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "53300" {
-		return fmt.Errorf("%w: %v", ErrServerConnectionsExhausted, err)
+		return fmt.Errorf("%w: %w", ErrServerConnectionsExhausted, err)
 	}
 
 	if !errors.Is(err, context.Canceled) && !errors.Is(err, context.DeadlineExceeded) {
@@ -60,7 +60,7 @@ func diagnose(ctx context.Context, pool *pgxpool.Pool, err error) error {
 	// is the more useful thing to report and the one an operator can act on.
 	stat := pool.Stat()
 	if stat.AcquiredConns() >= stat.MaxConns() {
-		return fmt.Errorf("%w (%d/%d in use, %d waiting): %v",
+		return fmt.Errorf("%w (%d/%d in use, %d waiting): %w",
 			ErrPoolExhausted, stat.AcquiredConns(), stat.MaxConns(),
 			stat.EmptyAcquireCount(), err)
 	}

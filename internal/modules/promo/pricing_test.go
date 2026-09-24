@@ -3,7 +3,7 @@ package promo
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 var pct15 = 15.0

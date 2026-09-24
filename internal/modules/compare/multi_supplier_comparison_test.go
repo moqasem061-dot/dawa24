@@ -11,8 +11,8 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func TestMultiSupplierComparison_WithProcessedFiles(t *testing.T) {
@@ -81,7 +81,9 @@ func TestUploadAndProcessCompareFile_TemplateXLSX(t *testing.T) {
 	// Create sample Excel file identical to CompareSampleDownload
 	xf := excelize.NewFile()
 	sheetName := "كشف أسعار المورد"
-	xf.SetSheetName("Sheet1", sheetName)
+	if err := xf.SetSheetName("Sheet1", sheetName); err != nil {
+		t.Fatalf("rename sheet: %v", err)
+	}
 	_ = xf.SetSheetView(sheetName, 0, &excelize.ViewOptions{
 		RightToLeft: func() *bool { b := true; return &b }(),
 	})

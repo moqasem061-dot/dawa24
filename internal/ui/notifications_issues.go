@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 )
 
 // notifyAdminNewIssue notifies all platform staff/administrators of a newly reported issue ticket.
@@ -20,17 +20,17 @@ func (h *UIHandler) notifyAdminNewIssue(ctx context.Context, issue *workflow.Rep
 	adminTitle := fmt.Sprintf("بلاغ دعم جديد (#%d): %s", issue.ID, typeStr)
 
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("ورد بلاغ جديد رقم (#%d)", issue.ID))
+	fmt.Fprintf(&sb, "ورد بلاغ جديد رقم (#%d)", issue.ID)
 	if reporterName != "" {
-		sb.WriteString(fmt.Sprintf(" من المستخدم: %s", reporterName))
+		fmt.Fprintf(&sb, " من المستخدم: %s", reporterName)
 	}
 	if orgName != "" {
-		sb.WriteString(fmt.Sprintf(" (%s)", orgName))
+		fmt.Fprintf(&sb, " (%s)", orgName)
 	}
 	sb.WriteString(".\n")
-	sb.WriteString(fmt.Sprintf("• النوع: %s\n• الأولوية: %s\n", typeStr, priorityStr))
+	fmt.Fprintf(&sb, "• النوع: %s\n• الأولوية: %s\n", typeStr, priorityStr)
 	if issue.OrderID != nil && *issue.OrderID > 0 {
-		sb.WriteString(fmt.Sprintf("• رقم الطلب المرتبط: #%d\n", *issue.OrderID))
+		fmt.Fprintf(&sb, "• رقم الطلب المرتبط: #%d\n", *issue.OrderID)
 	}
 
 	descSnippet := issue.Description
@@ -38,7 +38,7 @@ func (h *UIHandler) notifyAdminNewIssue(ctx context.Context, issue *workflow.Rep
 	if len(runes) > 150 {
 		descSnippet = string(runes[:150]) + "..."
 	}
-	sb.WriteString(fmt.Sprintf("• التفاصيل: %s\n", descSnippet))
+	fmt.Fprintf(&sb, "• التفاصيل: %s\n", descSnippet)
 	sb.WriteString("يمكنك مراجعة البلاغ واتخاذ الإجراء اللازم من لوحة تحكم الإدارة (/admin/report-issues).")
 
 	h.dispatchAdminNotification(ctx, "workflow.issue.view", adminTitle, sb.String())
@@ -54,22 +54,23 @@ func (h *UIHandler) notifyUserIssueResponse(ctx context.Context, issue *workflow
 	statusStr := issueStatusArabic(newStatus)
 
 	var userTitle string
-	if newStatus == "resolved" {
+	switch newStatus {
+	case "resolved":
 		userTitle = fmt.Sprintf("تم الرد وحل بلاغك (#%d): %s", issue.ID, typeStr)
-	} else if newStatus == "in_progress" {
+	case "in_progress":
 		userTitle = fmt.Sprintf("تحديث على بلاغك (#%d): جاري المعالجة", issue.ID)
-	} else {
+	default:
 		userTitle = fmt.Sprintf("تحديث بشأن بلاغك (#%d)", issue.ID)
 	}
 
 	var sb strings.Builder
 	cleanNotes := strings.TrimSpace(responseNotes)
 	if cleanNotes != "" {
-		sb.WriteString(fmt.Sprintf("قام فريق الدعم الفني بالرد على بلاغك رقم (#%d):\n\n\"%s\"\n\n", issue.ID, cleanNotes))
+		fmt.Fprintf(&sb, "قام فريق الدعم الفني بالرد على بلاغك رقم (#%d):\n\n\"%s\"\n\n", issue.ID, cleanNotes)
 	} else {
-		sb.WriteString(fmt.Sprintf("تم تحديث حالة بلاغك رقم (#%d) من قبل فريق الدعم الفني.\n\n", issue.ID))
+		fmt.Fprintf(&sb, "تم تحديث حالة بلاغك رقم (#%d) من قبل فريق الدعم الفني.\n\n", issue.ID)
 	}
-	sb.WriteString(fmt.Sprintf("الحالة الحالية: %s.\n", statusStr))
+	fmt.Fprintf(&sb, "الحالة الحالية: %s.\n", statusStr)
 	sb.WriteString("يمكنك متابعة تفاصيل البلاغ وسجل تذاكرك من خلال صفحة الدعم الفني (/report-issue).")
 
 	userBody := sb.String()

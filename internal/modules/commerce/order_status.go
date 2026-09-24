@@ -6,9 +6,9 @@ import (
 	"math/big"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // IsValidStatusTransition validates order state machine transitions. Compare-
@@ -85,7 +85,7 @@ var (
 func GenerateTrackingNumber(orderNumber string, seq int) string {
 	n, err := rand.Int(rand.Reader, big.NewInt(9000))
 	randSuffix := int64(1000)
-	if err == nil {
+	if err == nil { // nolint:errswallow: crypto/rand does not fail on supported platforms; a fixed suffix is the fallback
 		randSuffix = n.Int64() + 1000
 	}
 	if orderNumber != "" {

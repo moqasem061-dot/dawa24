@@ -6,12 +6,8 @@ import (
 
 	"github.com/riverqueue/river"
 
-	"github.com/muhiya/dawa24-store/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 )
-
-type dummyArgs struct{}
-
-func (dummyArgs) Kind() string { return "dummy.job" }
 
 func TestQueueConstants(t *testing.T) {
 	if queue.DefaultJobTimeout != 30*time.Minute {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // تقرير التوفير الاستراتيجي والتوصيات.
@@ -104,11 +104,11 @@ templ CompareMarketIntelligenceContent(data MarketIntelligencePageData) {
 			</div>
 		} else {
 			@marketIntelKPIs(data.Report)
-			@marketIntelInsights("💡 التحليل الاستراتيجي التلقائي", data.Report.Analysis)
+			@marketIntelInsights("التحليل الاستراتيجي التلقائي", data.Report.Analysis)
 			if data.Report.HasData() {
 				@marketIntelSavingsTable(data)
 				@marketIntelBestSupplier(data.Report)
-				@marketIntelInsights("📌 نصيحة استراتيجية", data.Report.Advice)
+				@marketIntelInsights("نصيحة استراتيجية", data.Report.Advice)
 				@marketIntelInsights("⚡ توجيهات الشراء المثالي", data.Report.Guidance)
 				@marketIntelExclusives(data)
 			}
@@ -143,7 +143,7 @@ templ marketIntelHeader(data MarketIntelligencePageData) {
 						@components.IconSparkles("icon-sm")
 					</div>
 					<h1 class="text-2xl font-black text-primary m-0">
-						🧠 تقرير التوفير الاستراتيجي والتوصيات
+						تقرير التوفير الاستراتيجي والتوصيات
 					</h1>
 				</div>
 				<p class="text-sm text-secondary m-0">
@@ -418,7 +418,7 @@ templ marketIntelSavingsTable(data MarketIntelligencePageData) {
 						}
 					</tbody>
 				</table>
-				<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+				<div class="table-filter-empty p-6 text-center text-sm text-muted hidden">
 					لا توجد أصناف تطابق الفلاتر المحددة.
 				</div>
 			</div>
@@ -578,7 +578,7 @@ templ marketIntelBestSupplier(r *compare.StrategicSavingReport) {
 						}
 					</tbody>
 				</table>
-				<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+				<div class="table-filter-empty p-6 text-center text-sm text-muted hidden">
 					لا يوجد موردون يطابقون الفلتر.
 				</div>
 			</div>
@@ -726,7 +726,7 @@ templ marketIntelExclusives(data MarketIntelligencePageData) {
 							}
 						</tbody>
 					</table>
-					<div class="table-filter-empty p-6 text-center text-sm text-muted" style="display:none;">
+					<div class="table-filter-empty p-6 text-center text-sm text-muted hidden">
 						لا توجد أصناف حصرية تطابق الفلتر.
 					</div>
 				</div>
@@ -808,7 +808,7 @@ templ CompareMarketIntelligenceScript() {
 					this.visibleCount = visible;
 					const emptyMsg = table.parentElement ? table.parentElement.querySelector('.table-filter-empty') : null;
 					if (emptyMsg) {
-						emptyMsg.style.display = visible === 0 ? '' : 'none';
+						emptyMsg.classList.toggle('hidden', visible !== 0);
 					}
 				},
 

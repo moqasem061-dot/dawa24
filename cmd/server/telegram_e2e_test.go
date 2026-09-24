@@ -16,23 +16,23 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	dbfs "github.com/muhiya/dawa24-store/db"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/datasets"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/handles"
-	assistantPostgres "github.com/muhiya/dawa24-store/internal/modules/assistant/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/tools"
-	identityPostgres "github.com/muhiya/dawa24-store/internal/modules/identity/postgres"
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
-	telegramHTTP "github.com/muhiya/dawa24-store/internal/modules/telegram/http"
-	telegramPostgres "github.com/muhiya/dawa24-store/internal/modules/telegram/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/datasets"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
+	assistantPostgres "github.com/moqasem061-dot/dawa24/internal/modules/assistant/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/tools"
+	identityPostgres "github.com/moqasem061-dot/dawa24/internal/modules/identity/postgres"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
+	telegramHTTP "github.com/moqasem061-dot/dawa24/internal/modules/telegram/http"
+	telegramPostgres "github.com/moqasem061-dot/dawa24/internal/modules/telegram/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // The whole path, against a real database: n8n's HTTP call, the bridge's
@@ -106,7 +106,7 @@ func (e *e2e) exec(sql string, args ...any) {
 
 func (e *e2e) post(path, body string) (int, map[string]any) {
 	e.t.Helper()
-	req, _ := http.NewRequest(http.MethodPost, e.srv.URL+telegramHTTP.Prefix+path, bytes.NewBufferString(body))
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, e.srv.URL+telegramHTTP.Prefix+path, bytes.NewBufferString(body))
 	req.Header.Set("Authorization", "Bearer "+e2eToken)
 	req.Header.Set("Content-Type", "application/json")
 	res, err := http.DefaultClient.Do(req)
@@ -229,10 +229,14 @@ func TestTelegramEndToEnd(t *testing.T) {
 	tgOwner, tgPharmacist, tgCashier, tgStranger := stamp%1e9, stamp%1e9+1, stamp%1e9+2, stamp%1e9+3
 
 	t.Run("bridge refuses a caller without the token", func(t *testing.T) {
-		req, _ := http.NewRequest(http.MethodPost, srv.URL+telegramHTTP.Prefix+"/updates", strings.NewReader(`{"update_id":1}`))
+		req, _ := http.NewRequestWithContext(context.Background(), http.MethodPost, srv.URL+telegramHTTP.Prefix+"/updates", strings.NewReader(`{"update_id":1}`))
 		res, err := http.DefaultClient.Do(req)
-		if err != nil || res.StatusCode != http.StatusUnauthorized {
-			t.Fatalf("status %v %v", res.StatusCode, err)
+		if err != nil {
+			t.Fatalf("request: %v", err)
+		}
+		defer func() { _ = res.Body.Close() }()
+		if res.StatusCode != http.StatusUnauthorized {
+			t.Fatalf("status %d, want %d", res.StatusCode, http.StatusUnauthorized)
 		}
 	})
 

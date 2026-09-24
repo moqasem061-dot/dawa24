@@ -155,7 +155,7 @@ type errBatch struct{ err error }
 
 func (b errBatch) Exec() (pgconn.CommandTag, error) { return pgconn.CommandTag{}, b.err }
 func (b errBatch) Query() (pgx.Rows, error)         { return nil, b.err }
-func (b errBatch) QueryRow() pgx.Row                { return errRow{b.err} }
+func (b errBatch) QueryRow() pgx.Row                { return errRow(b) }
 func (b errBatch) Close() error                     { return b.err }
 
 // readLazily runs a read-only callback on a pooled connection through lazyTx.

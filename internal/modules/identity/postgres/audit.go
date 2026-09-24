@@ -3,7 +3,7 @@ package postgres
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // RecordAudit writes an audit log entry in its own transaction.

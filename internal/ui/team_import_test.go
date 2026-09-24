@@ -2,6 +2,7 @@ package ui_test
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"mime/multipart"
 	"net/http"
@@ -14,9 +15,9 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // TestDetectTeamColumns tests auto-detection of column headers in English and Arabic.
@@ -269,7 +270,7 @@ func TestTeamImportFlow_MultipartUploadAndMapping(t *testing.T) {
 	require.NoError(t, err)
 	writer.Close()
 
-	req := httptest.NewRequest("POST", "/vendor/team/import/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/team/import/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 

@@ -15,10 +15,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminProductImagesImportPage renders the image recovery main page with dropzone & past sessions.
@@ -260,8 +260,7 @@ func (h *UIHandler) AdminProductImagesCancelSubmit(w http.ResponseWriter, r *htt
 func (h *UIHandler) AdminProductImagesSampleXLSX(w http.ResponseWriter, r *http.Request) {
 	f := excelize.NewFile()
 	defer f.Close()
-	sheet := "Sheet1"
-	f.SetSheetName("Sheet1", sheet)
+	sheet := excelDefaultSheet
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{RightToLeft: boolPtr(true)})
 
 	headers := []string{i18n.TDefault("w4_ui.sku_7"), i18n.TDefault("w4_ui.image_url_8")}

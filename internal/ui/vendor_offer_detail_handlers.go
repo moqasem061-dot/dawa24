@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) loadVendorOfferItemOptions(ctx context.Context, orgID int64) ([]*org.Branch, []*catalog.ProductVariant, []pages.VendorOfferItemOption) {
@@ -32,17 +32,20 @@ func (h *UIHandler) loadVendorOfferItemOptions(ctx context.Context, orgID int64)
 	var variants []*catalog.ProductVariant
 	var itemOptions []pages.VendorOfferItemOption
 
-	var warehouses []*inventory.Warehouse
 	var stocks []*inventory.Stock
 	whNameMap := make(map[int64]string)
 	stockMap := make(map[int64]*inventory.Stock)
 
 	if h.invSvc != nil && orgID > 0 {
-		allWhs, _ := h.invSvc.ListWarehouses(ctx)
-		stocks, _ = h.invSvc.ListStocksByOrg(ctx, orgID)
+		allWhs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
+		if loaded, err := h.invSvc.ListStocksByOrg(ctx, orgID); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListStocksByOrg", err)
+		} else {
+			stocks = loaded
+		}
 		for _, wh := range allWhs {
 			if wh != nil && wh.OrganizationID == orgID {
-				warehouses = append(warehouses, wh)
 				whNameMap[wh.ID] = wh.Name
 			}
 		}
@@ -55,14 +58,19 @@ func (h *UIHandler) loadVendorOfferItemOptions(ctx context.Context, orgID int64)
 
 	if h.catSvc != nil {
 		vars, _, err := h.catSvc.ListVariantsByOrganization(ctx, orgID, catalog.VariantSearchParams{Limit: 500})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListVariantsByOrganization", err)
+		} else {
 			variants = vars
 		}
 		if len(variants) == 0 {
 			products, err := h.catSvc.Search(ctx, catalog.SearchParams{Limit: 100})
-			if err == nil {
+			if err != nil {
+				h.logLoadErr(ctx, "catSvc.Search", err)
+			} else {
 				for _, p := range products {
-					pVars, _ := h.catSvc.ListVariantsByProduct(ctx, p.ID)
+					pVars, loadErr := h.catSvc.ListVariantsByProduct(ctx, p.ID)
+					h.logLoadErr(ctx, "catSvc.ListVariantsByProduct", loadErr)
 					for _, v := range pVars {
 						if v.OrganizationID == orgID || v.OrganizationID == 0 {
 							variants = append(variants, v)

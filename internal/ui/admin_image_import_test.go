@@ -19,10 +19,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func TestDetectImageImportColumns(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAdminProductImagesSamples(t *testing.T) {
 	handler := &UIHandler{log: logger}
 
 	// Test CSV Sample
-	reqCSV := httptest.NewRequest("GET", "/admin/products/images/import/sample.csv", nil)
+	reqCSV := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/products/images/import/sample.csv", nil)
 	wCSV := httptest.NewRecorder()
 	handler.AdminProductImagesSampleCSV(wCSV, reqCSV)
 	if wCSV.Code != http.StatusOK {
@@ -79,7 +79,7 @@ func TestAdminProductImagesSamples(t *testing.T) {
 	}
 
 	// Test XLSX Sample
-	reqXLSX := httptest.NewRequest("GET", "/admin/products/images/import/sample.xlsx", nil)
+	reqXLSX := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/products/images/import/sample.xlsx", nil)
 	wXLSX := httptest.NewRecorder()
 	handler.AdminProductImagesSampleXLSX(wXLSX, reqXLSX)
 	if wXLSX.Code != http.StatusOK {
@@ -128,7 +128,7 @@ func TestAdminProductImagesUploadAndMappingFlow(t *testing.T) {
 	_, _ = part.Write([]byte(csvContent))
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/admin/products/images/import/upload", &body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/products/images/import/upload", &body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:         1,
@@ -164,7 +164,7 @@ func TestAdminProductImagesUploadAndMappingFlow(t *testing.T) {
 	form := url.Values{}
 	form.Set("sku_col", "0")
 	form.Set("url_col", "1")
-	reqMap := httptest.NewRequest("POST", "/admin/products/images/import/"+sessionID+"/mapping", strings.NewReader(form.Encode()))
+	reqMap := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/products/images/import/"+sessionID+"/mapping", strings.NewReader(form.Encode()))
 	reqMap.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", sessionID)
@@ -235,7 +235,7 @@ func TestAdminProductImagesBarcodeIdentificationFlow(t *testing.T) {
 	_, _ = part.Write([]byte(csvContent))
 	_ = writer.Close()
 
-	req := httptest.NewRequest("POST", "/admin/products/images/import/upload", &body)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/products/images/import/upload", &body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:         1,
@@ -259,7 +259,7 @@ func TestAdminProductImagesBarcodeIdentificationFlow(t *testing.T) {
 	form.Set("sku_col", "0") // 1st column is the identifier (Barcode)
 	form.Set("url_col", "1")
 	form.Set("identifier_type", "barcode")
-	reqMap := httptest.NewRequest("POST", "/admin/products/images/import/"+sessionID+"/mapping", strings.NewReader(form.Encode()))
+	reqMap := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/products/images/import/"+sessionID+"/mapping", strings.NewReader(form.Encode()))
 	reqMap.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", sessionID)
@@ -293,9 +293,10 @@ func TestAdminProductImagesBarcodeIdentificationFlow(t *testing.T) {
 
 	var foundBarcodeRow, notFoundBarcodeRow *AdminImageImportRow
 	for _, r := range cur.Rows {
-		if r.SKU == "6221234567890" {
+		switch r.SKU {
+		case "6221234567890":
 			foundBarcodeRow = r
-		} else if r.SKU == "9999999999999" {
+		case "9999999999999":
 			notFoundBarcodeRow = r
 		}
 	}

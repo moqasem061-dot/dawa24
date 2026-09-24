@@ -6,13 +6,13 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) loadOrgSubscriptionView(ctx context.Context, actor authctx.Actor, lang string) *pages.OrgSubscriptionView {
@@ -39,10 +39,18 @@ func (h *UIHandler) loadOrgSubscriptionView(ctx context.Context, actor authctx.A
 	// Fetch Subscription & Plan
 	if h.billSvc != nil {
 		if actor.OrganizationID > 0 {
-			sub, _ = h.billSvc.GetActiveSubscriptionByOrg(sysCtx, actor.OrganizationID)
+			if loaded, err := h.billSvc.GetActiveSubscriptionByOrg(sysCtx, actor.OrganizationID); err != nil {
+				h.logLoadErr(ctx, "billSvc.GetActiveSubscriptionByOrg", err)
+			} else {
+				sub = loaded
+			}
 		}
 		if sub == nil && actor.UserID > 0 {
-			sub, _ = h.billSvc.GetActiveSubscription(sysCtx, actor.UserID)
+			if loaded, err := h.billSvc.GetActiveSubscription(sysCtx, actor.UserID); err != nil {
+				h.logLoadErr(ctx, "billSvc.GetActiveSubscription", err)
+			} else {
+				sub = loaded
+			}
 		}
 
 		if sub != nil {
@@ -127,7 +135,7 @@ func (h *UIHandler) loadOrgSubscriptionView(ctx context.Context, actor authctx.A
 				if sub != nil && !sub.StartsAt.IsZero() && sub.StartsAt.After(since) {
 					since = sub.StartsAt
 				}
-				if summary, err := h.aiUsage.Summarize(ctx, actor.OrganizationID, since); err == nil {
+				if summary, err := h.aiUsage.Summarize(ctx, actor.OrganizationID, since); err == nil { // nolint:errswallow: the else branch handles it
 					subView.AIRequestsCount = summary.Requests
 					subView.AITokensUsed = int(summary.TotalTokens())
 					subView.AIBudgetSpentUSD = summary.CostUSD()
@@ -200,7 +208,7 @@ func (h *UIHandler) TenantSubscriptionPage(w http.ResponseWriter, r *http.Reques
 	var currentPlanID int64
 	var walletBal money.Amount
 	var autoRenew bool
-	var billingCycle string = "monthly"
+	var billingCycle = "monthly"
 	var dataCooldownActive bool
 	var dataCooldownUntil time.Time
 	var dataCooldownDays int
@@ -224,7 +232,9 @@ func (h *UIHandler) TenantSubscriptionPage(w http.ResponseWriter, r *http.Reques
 		}
 
 		if actor.OrganizationID > 0 {
-			if sub, _ := h.billSvc.GetActiveSubscriptionByOrg(sysCtx, actor.OrganizationID); sub != nil {
+			if sub, loadErr := h.billSvc.GetActiveSubscriptionByOrg(sysCtx, actor.OrganizationID); loadErr != nil {
+				h.logLoadErr(ctx, "billSvc.GetActiveSubscriptionByOrg", loadErr)
+			} else if sub != nil {
 				currentPlanID = sub.PlanID
 				autoRenew = sub.AutoRenew
 				if sub.BillingCycle != "" {
@@ -233,7 +243,9 @@ func (h *UIHandler) TenantSubscriptionPage(w http.ResponseWriter, r *http.Reques
 			}
 		}
 		if currentPlanID <= 0 && actor.UserID > 0 {
-			if sub, _ := h.billSvc.GetActiveSubscription(sysCtx, actor.UserID); sub != nil {
+			if sub, loadErr := h.billSvc.GetActiveSubscription(sysCtx, actor.UserID); loadErr != nil {
+				h.logLoadErr(ctx, "billSvc.GetActiveSubscription", loadErr)
+			} else if sub != nil {
 				currentPlanID = sub.PlanID
 				autoRenew = sub.AutoRenew
 				if sub.BillingCycle != "" {
@@ -254,7 +266,8 @@ func (h *UIHandler) TenantSubscriptionPage(w http.ResponseWriter, r *http.Reques
 		if actor.OrganizationID > 0 {
 			orgPtr = &actor.OrganizationID
 		}
-		cooldownInfo, _ := h.billSvc.CheckSubscriptionChangeCooldown(sysCtx, walletUserID, orgPtr, "")
+		cooldownInfo, loadErr := h.billSvc.CheckSubscriptionChangeCooldown(sysCtx, walletUserID, orgPtr, "")
+		h.logLoadErr(ctx, "billSvc.CheckSubscriptionChangeCooldown", loadErr)
 		dataCooldownActive = cooldownInfo.IsOnCooldown
 		dataCooldownUntil = cooldownInfo.EarliestAllowedAt
 		dataCooldownDays = cooldownInfo.CooldownDays
@@ -366,4 +379,3 @@ func (h *UIHandler) maybeNotifySubscriptionExpiring(ctx context.Context, actor a
 
 	h.dispatchInAppNotification(sysCtx, actor.UserID, orgIDPtr, "", titleAr, bodyAr)
 }
-

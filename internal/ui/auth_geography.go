@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 )
 
 // The geography the registration form offers and the checks on what comes back.
@@ -32,7 +32,8 @@ func (h *UIHandler) listCities(ctx context.Context) []*platformadmin.City {
 	if countryID == 0 {
 		countryID = countries[0].ID
 	}
-	cities, _ := h.adminSvc.ListCities(ctx, countryID)
+	cities, loadErr := h.adminSvc.ListCities(ctx, countryID)
+	h.logLoadErr(ctx, "adminSvc.ListCities", loadErr)
 	return cities
 }
 

@@ -8,10 +8,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Service encapsulates authentication and identity business workflows.
@@ -37,7 +37,7 @@ func (s *Service) resolvePermissions(ctx context.Context, userID, orgID int64) [
 // resolveGrant returns the caller's permissions and whether their platform role reaches admin.
 func (s *Service) resolveGrant(ctx context.Context, userID, orgID int64) ([]string, bool) {
 	if s.resolver != nil {
-		if grant, err := s.resolver.Resolve(ctx, userID, orgID); err == nil {
+		if grant, err := s.resolver.Resolve(ctx, userID, orgID); err == nil { // nolint:errswallow: the else branch logs it
 			return grant.Keys, grant.IsStaff
 		} else {
 			s.log.ErrorContext(ctx, "could not resolve permissions at login",
@@ -64,13 +64,13 @@ func NewService(repo Repository, sessionStore *SessionStore, log *slog.Logger) *
 
 // RegisterInput captures parameters required for creating an account.
 type RegisterInput struct {
-	Email    string    `json:"email"`
-	Password string    `json:"password"`
-	NameAr   string    `json:"name_ar"`
-	NameEn   string    `json:"name_en"`
-	Role     string    `json:"role,omitempty"`
-	Language i18n.Lang `json:"language,omitempty"`
-	Timezone string    `json:"timezone,omitempty"`
+	Email           string     `json:"email"`
+	Password        string     `json:"password"`
+	NameAr          string     `json:"name_ar"`
+	NameEn          string     `json:"name_en"`
+	Role            string     `json:"role,omitempty"`
+	Language        i18n.Lang  `json:"language,omitempty"`
+	Timezone        string     `json:"timezone,omitempty"`
 	Phone           string     `json:"phone,omitempty"`
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at,omitempty"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
@@ -125,12 +125,12 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 	}
 
 	user := &User{
-		Email:        cleanEmail,
-		PasswordHash: hash,
-		Name:         i18n.New(input.NameAr, input.NameEn),
-		Role:         role,
-		Status:       status,
-		Language:     lang,
+		Email:           cleanEmail,
+		PasswordHash:    hash,
+		Name:            i18n.New(input.NameAr, input.NameEn),
+		Role:            role,
+		Status:          status,
+		Language:        lang,
 		Timezone:        tz,
 		Phone:           input.Phone,
 		PhoneVerifiedAt: input.PhoneVerifiedAt,
@@ -238,7 +238,7 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, er
 	// than leaving the session on organization 0, which every tenant-scoped
 	// query then filters against and finds nothing.
 	if orgID == 0 {
-		if o, t, st, err := s.repo.DefaultOrgInfoForUser(ctx, user.ID); err == nil {
+		if o, t, st, err := s.repo.DefaultOrgInfoForUser(ctx, user.ID); err == nil { // nolint:errswallow: the else branch logs it
 			orgID, orgType, orgStatus = o, t, st
 		} else {
 			s.log.WarnContext(ctx, "could not resolve default organization at login",

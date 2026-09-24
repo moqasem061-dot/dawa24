@@ -4,10 +4,10 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	commercePostgres "github.com/muhiya/dawa24-store/internal/modules/commerce/postgres"
-	orgPostgres "github.com/muhiya/dawa24-store/internal/modules/org/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // The dispatch board's queries, run against a real PostgreSQL.

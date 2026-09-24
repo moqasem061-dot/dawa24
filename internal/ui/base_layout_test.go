@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // renderBase renders the document shell on its own.

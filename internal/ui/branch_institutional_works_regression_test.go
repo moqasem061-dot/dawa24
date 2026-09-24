@@ -12,10 +12,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type branchWorksMockRepo struct {
@@ -78,7 +78,7 @@ func TestBranchEdit_RetainsInstitutionalWorks(t *testing.T) {
 		"institutional_works": existingWorks,
 	}
 
-	req := httptest.NewRequest("POST", "/admin/branches/55/edit", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/branches/55/edit", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 
@@ -113,7 +113,7 @@ func TestBranchEdit_RetainsInstitutionalWorks(t *testing.T) {
 		"phone":               {"01033334444"},
 		"institutional_works": existingWorks,
 	}
-	custReq := httptest.NewRequest("POST", "/customer/branches/55/edit", strings.NewReader(custForm.Encode()))
+	custReq := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/branches/55/edit", strings.NewReader(custForm.Encode()))
 	custReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// Authenticate as owner
 	custActor := authctx.Actor{UserID: 1, OrgID: 12, Role: "customer"}
@@ -128,7 +128,10 @@ func TestBranchEdit_RetainsInstitutionalWorks(t *testing.T) {
 	if repo.updatedBranch == nil {
 		t.Fatalf("expected branch to be updated by customer")
 	}
-	if len(repo.updatedBranch.InstitutionalWorks) != 2 {
-		t.Fatalf("expected 2 institutional works retained in customer edit, got %d", len(repo.updatedBranch.InstitutionalWorks))
+	// A pharmacy's branch carries exactly one institutional work: the customer
+	// form is a single choice (see docs/modules/org.md), so the first submitted
+	// value is the one kept. It must be kept, not cleared.
+	if got := repo.updatedBranch.InstitutionalWorks; len(got) != 1 || got[0] != "101" {
+		t.Fatalf("expected the customer edit to keep its one institutional work [101], got %v", got)
 	}
 }

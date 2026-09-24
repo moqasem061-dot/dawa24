@@ -5,14 +5,14 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // InvoicesPage renders the vendor's invoice list with status badges and actions.
@@ -57,7 +57,9 @@ func (h *UIHandler) InvoicesPage(w http.ResponseWriter, r *http.Request) {
 
 	var vendorBranches []*org.Branch
 	if h.orgSvc != nil && actor.OrganizationID > 0 {
-		if bList, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err == nil {
+		if bList, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			vendorBranches = bList
 		}
 	}
@@ -88,17 +90,23 @@ func (h *UIHandler) InvoicesPage(w http.ResponseWriter, r *http.Request) {
 	// Fetch recent orders for vendor to populate the "Link Invoice to Order" modal
 	var vendorOrders []pages.VendorOrderOption
 	if h.commSvc != nil && actor.OrganizationID > 0 {
-		if shipments, _, err := h.commSvc.ListVendorShipmentsWithTotal(ctx, actor.OrganizationID, "", 50, 0); err == nil {
+		if shipments, _, err := h.commSvc.ListVendorShipmentsWithTotal(ctx, actor.OrganizationID, "", 50, 0); err != nil {
+			h.logLoadErr(ctx, "commSvc.ListVendorShipmentsWithTotal", err)
+		} else {
 			seenOrders := make(map[int64]bool)
 			for _, s := range shipments {
 				if s != nil && s.OrderID > 0 && !seenOrders[s.OrderID] {
 					seenOrders[s.OrderID] = true
 					custName := ""
 					var ord *commerce.Order
-					if o, _ := h.commSvc.GetOrder(ctx, s.OrderID); o != nil {
+					if o, loadErr := h.commSvc.GetOrder(ctx, s.OrderID); loadErr != nil {
+						h.logLoadErr(ctx, "commSvc.GetOrder", loadErr)
+					} else if o != nil {
 						ord = o
 						if h.orgSvc != nil && ord.OrganizationID != nil && *ord.OrganizationID > 0 {
-							if cOrg, _ := h.orgSvc.GetOrganization(ctx, *ord.OrganizationID); cOrg != nil {
+							if cOrg, loadErr := h.orgSvc.GetOrganization(ctx, *ord.OrganizationID); loadErr != nil {
+								h.logLoadErr(ctx, "orgSvc.GetOrganization", loadErr)
+							} else if cOrg != nil {
 								custName = cOrg.LegalName
 								if custName == "" {
 									custName = cOrg.TradeName.Get("ar")

@@ -78,7 +78,7 @@ func VerifyPhoneToken(token, expectedPhone, secret string) (bool, error) {
 
 	normExpected, err := NormalizePhone(expectedPhone)
 	if err != nil {
-		return false, fmt.Errorf("%w: %v", ErrInvalidPhone, err)
+		return false, fmt.Errorf("%w: %w", ErrInvalidPhone, err)
 	}
 
 	if phoneInToken != normExpected {

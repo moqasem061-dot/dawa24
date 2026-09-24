@@ -1,0 +1,97 @@
+package pages
+
+import (
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+// Profile email and phone fields with in-place OTP verification.
+//
+// Verification is optional at registration (AUTH_REQUIRE_*_VERIFICATION), so
+// this is where an account that skipped it gets verified later. The element
+// ids are the contract with static/js/profile_verification.js, which drives
+// the OTP round trip against /settings/profile/{send,verify}-{email,phone}-otp.
+
+templ ProfileEmailField(user *identity.User, lang string) {
+	<div class="form-group mb-0">
+		<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
+			<label class="form-label mb-0" for="user-email">{ i18n.T(lang, "settings.email") }</label>
+			<div class="d-flex items-center gap-2">
+				if user != nil && user.EmailVerifiedAt != nil {
+					<span id="profile-email-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+						@components.IconCheck("icon-xxs")
+						<span>{ i18n.T(lang, "settings.email_verified") }</span>
+					</span>
+				} else {
+					<span id="profile-email-badge-unverified" data-verified-label={ i18n.T(lang, "settings.email_verified") } class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+						@components.IconAlert("icon-xxs")
+						<span>{ i18n.T(lang, "settings.email_unverified") }</span>
+					</span>
+					<button type="button" id="profile-verify-email-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
+						@components.IconMail("icon-xxs text-brand")
+						<span>{ i18n.T(lang, "settings.verify_email_now") }</span>
+					</button>
+				}
+			</div>
+		</div>
+		<input type="email" id="user-email" name="email" class="form-input tabular-nums" value={ userEmailVal(user) } required/>
+		if user == nil || user.EmailVerifiedAt == nil {
+			@profileOTPBox("email", i18n.T(lang, "auth.email.enter_code"), i18n.T(lang, "auth.email.verify_code"), i18n.T(lang, "auth.email.resend_otp"), lang)
+		}
+	</div>
+}
+
+templ ProfilePhoneField(user *identity.User, lang string) {
+	<div class="form-group mb-0">
+		<div class="d-flex items-center justify-between mb-1.5 flex-wrap gap-2">
+			<label class="form-label mb-0" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
+			<div class="d-flex items-center gap-2">
+				if user != nil && user.PhoneVerifiedAt != nil {
+					<span id="profile-phone-badge-verified" class="badge badge-emerald d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+						@components.IconCheck("icon-xxs")
+						<span>{ i18n.T(lang, "settings.phone_verified") }</span>
+					</span>
+				} else {
+					<span id="profile-phone-badge-unverified" data-verified-label={ i18n.T(lang, "settings.phone_verified") } class="badge badge-amber d-inline-flex items-center gap-1 py-0.5 px-2 text-2xs font-semibold">
+						@components.IconAlert("icon-xxs")
+						<span>{ i18n.T(lang, "settings.phone_unverified") }</span>
+					</span>
+					<button type="button" id="profile-verify-phone-open-btn" class="btn btn-secondary btn-xs font-bold d-inline-flex items-center gap-1">
+						@components.IconSend("icon-xxs text-teal")
+						<span>{ i18n.T(lang, "settings.verify_phone_telegram") }</span>
+					</button>
+				}
+			</div>
+		</div>
+		<input type="tel" id="user-phone" name="phone" class="form-input tabular-nums" value={ userPhoneVal(user) }/>
+		if user == nil || user.PhoneVerifiedAt == nil {
+			@profileOTPBox("phone", i18n.T(lang, "auth.telegram.enter_code"), i18n.T(lang, "auth.telegram.verify_code"), i18n.T(lang, "auth.telegram.resend_otp"), lang)
+		}
+	</div>
+}
+
+// profileOTPBox is the code entry drawer, hidden until an OTP is requested.
+templ profileOTPBox(kind, hint, verifyLabel, resendLabel, lang string) {
+	<div id={ "profile-" + kind + "-otp-box" } class="tg-otp-card mt-2.5 p-3 rounded-xl border bg-surface-sunken s-hidden-init">
+		<div class="d-flex items-center justify-between mb-2 text-xs text-secondary">
+			<span class="font-semibold">{ hint }</span>
+			<span id={ "profile-" + kind + "-cooldown-timer" } class="font-mono text-muted tabular-nums"></span>
+		</div>
+		<div class="d-flex items-center gap-2">
+			<input type="text" id={ "profile-" + kind + "-otp-code" } maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input max-w-xs" placeholder="••••••"/>
+			<button type="button" id={ "profile-" + kind + "-verify-btn" } class="btn btn-primary btn-sm font-semibold px-4">{ verifyLabel }</button>
+			<button type="button" id={ "profile-" + kind + "-resend-btn" } class="btn btn-ghost btn-sm text-xs text-muted s-hidden-init">{ resendLabel }</button>
+			<button type="button" id={ "profile-" + kind + "-cancel-btn" } class="btn btn-ghost btn-sm text-xs text-muted">{ i18n.T(lang, "common.cancel") }</button>
+		</div>
+		<div id={ "profile-" + kind + "-otp-feedback" } class="text-xs font-medium mt-2 s-hidden-init"></div>
+	</div>
+}
+
+// ProfileVerifyScript loads the OTP driver. It is included once, after both
+// fields; the served path is /static/js/ (the first version pointed at /js/,
+// which does not exist, so the feature never ran).
+templ ProfileVerifyScript() {
+	<script defer nonce={ templ.GetNonce(ctx) } src={ layouts.Asset("/static/js/profile_verification.js") }></script>
+}

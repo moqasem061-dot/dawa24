@@ -29,8 +29,8 @@ import (
 	"context"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // apply validates a request's answers and records the ones that survive.

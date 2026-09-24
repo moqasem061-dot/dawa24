@@ -7,9 +7,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // PublicAdClick tracks ad click events and redirects the visitor to the target.
@@ -104,7 +104,8 @@ func (h *UIHandler) AdminSponsorshipRequestRejectSubmit(w http.ResponseWriter, r
 		return
 	}
 	sysCtx := database.AsSystem(ctx)
-	req, _ := h.promoSvc.GetSponsorshipRequestByID(sysCtx, id)
+	req, loadErr := h.promoSvc.GetSponsorshipRequestByID(sysCtx, id)
+	h.logLoadErr(ctx, "promoSvc.GetSponsorshipRequestByID", loadErr)
 	notes := r.PostFormValue("notes")
 	if err := h.promoSvc.AdminRejectSponsorshipRequest(sysCtx, id, notes); err != nil {
 		h.redirectWithNotice(w, r, "/admin/offers-packages?tab=requests", "error", h.safeMessage(err, langOf(r)))

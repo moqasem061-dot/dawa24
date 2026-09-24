@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 const DefaultBatchSize = 500

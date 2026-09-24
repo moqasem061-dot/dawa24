@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // CreateQuoteRequest creates buyer price inquiry.
@@ -64,7 +64,7 @@ func (h *Handler) RespondQuote(w http.ResponseWriter, r *http.Request) {
 
 	// A supplier answers the quotes addressed to it, not another supplier's.
 	actor, _ := authctx.From(r.Context())
-	if !(actor.IsStaff && actor.CanAny("commerce.quote.manage", "commerce.admin")) {
+	if !actor.IsStaff || !actor.CanAny("commerce.quote.manage", "commerce.admin") {
 		q, err := h.service.GetQuoteRequest(r.Context(), id)
 		if err != nil || q == nil || actor.OrganizationID <= 0 || q.OrganizationID != actor.OrganizationID {
 			httpx.Error(w, r, h.log, apperr.NotFound("quote_request"))

@@ -12,12 +12,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	ingestHttp "github.com/muhiya/dawa24-store/internal/modules/ingest/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	ingestHttp "github.com/moqasem061-dot/dawa24/internal/modules/ingest/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 type stubRepo struct{ t *testing.T }
@@ -237,7 +237,7 @@ func TestProtectedRoutesRejectAnonymousCallers(t *testing.T) {
 
 	for _, route := range protectedRoutes {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
-			req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
@@ -254,7 +254,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 	router := newTestRouter(t)
 
 	for _, route := range protectedRoutes {
-		req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "forged-token-that-was-never-issued"})
 		rec := httptest.NewRecorder()
@@ -269,7 +269,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 
 func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/ingest/sessions", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/ingest/sessions", nil)
 	rec := httptest.NewRecorder()
 
 	router.ServeHTTP(rec, req)
@@ -315,7 +315,7 @@ func TestIngestHandler_HappyPaths(t *testing.T) {
 			if tt.body != "" {
 				bodyReader = strings.NewReader(tt.body)
 			}
-			req := httptest.NewRequest(tt.method, tt.path, bodyReader)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, tt.path, bodyReader)
 			if tt.body != "" {
 				req.Header.Set("Content-Type", "application/json")
 			}
@@ -362,7 +362,7 @@ func TestIngestSessionsAreOwnerScoped(t *testing.T) {
 		if tc.body != "" {
 			body = strings.NewReader(tc.body)
 		}
-		req := httptest.NewRequest(tc.method, tc.path, body)
+		req := httptest.NewRequestWithContext(context.Background(), tc.method, tc.path, body)
 		if tc.body != "" {
 			req.Header.Set("Content-Type", "application/json")
 		}

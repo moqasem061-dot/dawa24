@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // A real BIFF distributor file the old decoder refused (Continue-record glue

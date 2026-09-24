@@ -369,10 +369,8 @@
       background: var(--nav-hover);
     }
     .nav-context .nav-trigger-text {
-      display: flex !important;
     }
     .nav-context .nav-trigger-label {
-      display: none !important;
     }
     .nav-context .nav-trigger-value {
       font-size: var(--text-xs);
@@ -386,7 +384,7 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: 640px) {
     .nav-title {
       max-inline-size: 4.5rem;
     }
@@ -594,7 +592,7 @@
   @media (max-width: 768px) {
     .nav-trigger { min-block-size: var(--touch-min); }
     .nav-trigger-text { display: none; }
-    .nav-context .nav-trigger-text { display: flex !important; }
+    .nav-context .nav-trigger-text {  }
   }
 
   /* --- the unread counter ------------------------------------------------ */
@@ -1042,7 +1040,6 @@
     }
 
     .nav-menu-settings .nav-seg-btn span {
-      display: inline !important;
       font-size: var(--text-xs);
       font-weight: 600;
     }
@@ -1455,6 +1452,29 @@
     html.is-navigating::before {
       animation: none;
       transform: scaleX(1);
+    }
+  }
+}
+
+/* Rules that must outrank a utility class written on the same element.
+   @layer utilities outranks @layer components whatever the specificity, so
+   these used !important. A later layer wins by order instead, and a
+   utility's own !important (.hidden) still wins over it, as it should. */
+@layer overrides {
+  @media (max-width: 768px) {
+    .nav-context .nav-trigger-text {
+      display: flex;
+      display: flex;
+    }
+  }
+  @media (max-width: 768px) {
+    .nav-context .nav-trigger-label {
+      display: none;
+    }
+  }
+  @media (max-width: 768px) {
+    .nav-menu-settings .nav-seg-btn span {
+      display: inline;
     }
   }
 }

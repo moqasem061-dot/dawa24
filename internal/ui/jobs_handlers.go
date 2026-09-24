@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/features"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // JobsPage renders the job board (public or authenticated in customer/vendor dashboard).
@@ -34,7 +34,11 @@ func (h *UIHandler) JobsPage(w http.ResponseWriter, r *http.Request) {
 	var rawJobs []*hr.JobOffer
 	var totalCount int
 	if h.hrSvc != nil {
-		rawJobs, totalCount, _ = h.hrSvc.ListPublishedJobsWithTotal(ctx, limit, offset)
+		if loaded, loaded2, err := h.hrSvc.ListPublishedJobsWithTotal(ctx, limit, offset); err != nil {
+			h.logLoadErr(ctx, "hrSvc.ListPublishedJobsWithTotal", err)
+		} else {
+			rawJobs, totalCount = loaded, loaded2
+		}
 	}
 
 	// Enrich with organization names.

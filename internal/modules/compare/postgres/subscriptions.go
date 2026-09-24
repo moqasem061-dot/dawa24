@@ -2,14 +2,15 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const subColumns = `s.id, s.public_id, s.plan_id, s.organization_id, s.user_id, s.billing_period, s.payment_method, s.starts_at, s.ends_at, s.status, s.seats, s.created_at, s.updated_at, s.deleted_at`
@@ -71,7 +72,7 @@ func (r *Repository) GetSubscriptionByID(ctx context.Context, id int64) (*compar
 		var err error
 		s, err = scanSubscription(tx.QueryRow(txCtx, query, id))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("subscription")
 			}
 			return err
@@ -108,7 +109,7 @@ func (r *Repository) GetActiveSubscription(ctx context.Context, userID int64, or
 		var err error
 		s, err = scanSubscription(tx.QueryRow(txCtx, query, userID, orgID))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("active subscription")
 			}
 			return err

@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/telegram"
+	"github.com/moqasem061-dot/dawa24/internal/modules/telegram"
 )
 
 const secret = "0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -18,7 +19,7 @@ func serve(token, header string) int {
 	// The service is never reached when authentication fails; a nil one
 	// proves it, because touching it would panic.
 	NewBridge((*telegram.Service)(nil), token, nil).RegisterRoutes(r)
-	req := httptest.NewRequest(http.MethodPost, Prefix+"/updates", strings.NewReader(`{"update_id":1}`))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, Prefix+"/updates", strings.NewReader(`{"update_id":1}`))
 	if header != "" {
 		req.Header.Set("Authorization", header)
 	}

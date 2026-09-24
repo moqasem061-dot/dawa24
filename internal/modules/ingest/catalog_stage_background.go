@@ -4,10 +4,10 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Running the staging pass without holding the vendor's browser open.
@@ -117,7 +117,7 @@ func (s *Service) StageInBackground(ctx context.Context, session *Session) error
 // runStaging performs the pass and records how it ended.
 func (s *Service) runStaging(ctx context.Context, session *Session) {
 	err := s.StageImport(ctx, session)
-	if err == nil {
+	if err == nil { // nolint:errswallow: the failure is logged and recorded below
 		s.log.InfoContext(ctx, "vendor import staged",
 			"import", session.PublicID, "rows", session.TotalRows,
 			"matched", session.MatchedRows, "review", session.ReviewRows,

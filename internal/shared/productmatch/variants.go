@@ -40,13 +40,19 @@ package productmatch
 // minVariantKeyRunes is the shortest consonant skeleton allowed to stand in for
 // a word.
 //
-// Three consonants aligns with minSkeletonRunes in translit.go. Two consonants
-// collide freely: "دار" and "دور" both reduce to "dr", and so do "دير" and "درة".
-// Three consonants (e.g. mbk for Mobic, krm for Curam, trg for Tareg, dnl for
-// Daonil, mrl for Amaryl, zkr for Zocor, gnf for Januvia, dfn for Diovan, blf
-// for Abilify) are distinct pharmaceutical brand skeletons that enable
-// cross-script matching between Arabic and Latin distributor price lists.
-const minVariantKeyRunes = 3
+// Four, and the accuracy corpus is why. A skeleton discards every vowel, so
+// short words collide: "دار" and "دور" both reduce to "dr". Three consonants
+// would let Mobic (mbk) or Tareg (trg) match across alphabets, and was tried:
+// on the labelled corpus it applied more WRONG catalogue matches (siblings
+// 5 -> 7) and fewer right ones (cross-script 17470 -> 16636), because across
+// a whole catalogue a three-consonant skeleton is shared by unrelated brands.
+//
+// Pairing two supplier lists is a narrower question — one candidate per side,
+// with the dose as a hard gate — and ShortBrandKey answers it with three.
+const minVariantKeyRunes = 4
+
+// minShortBrandRunes is the skeleton length ShortBrandKey accepts.
+const minShortBrandRunes = 3
 
 // variantWeight is what a variant-key agreement is worth, as a fraction of what
 // the same word matching exactly would be worth.
@@ -64,9 +70,12 @@ const variantWeight = 0.88
 // "this word has no variant key" rather than as a key of its own — an empty
 // string matching every other empty string would make every short word match
 // every other short word.
-func variantKeyOf(token string) string {
+func variantKeyOf(token string) string { return variantKeyWith(token, minVariantKeyRunes) }
+
+// variantKeyWith is variantKeyOf with an explicit minimum skeleton length.
+func variantKeyWith(token string, minRunes int) string {
 	sk := Skeleton(token)
-	if len([]rune(sk)) < minVariantKeyRunes {
+	if len([]rune(sk)) < minRunes {
 		return ""
 	}
 	return sk

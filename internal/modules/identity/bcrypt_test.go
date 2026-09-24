@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/crypto/bcrypt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 )
 
 // TestBcryptLaravelCompatibility proves that Go's bcrypt implementation verifies

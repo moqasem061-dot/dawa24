@@ -6,7 +6,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 // Recording usage without making anyone wait for it.

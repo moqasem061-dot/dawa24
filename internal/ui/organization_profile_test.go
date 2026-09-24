@@ -13,10 +13,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // بيانات المنشأة, section by section.
@@ -193,7 +193,7 @@ func TestOrganizationProfilePage_RendersEverySection(t *testing.T) {
 	repo := newProfileRepoStub()
 	h := profileHandler(repo)
 
-	req := httptest.NewRequest("GET", "/vendor/organization", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/organization", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	rec := httptest.NewRecorder()
 	h.OrganizationProfilePage(rec, req)
@@ -230,7 +230,7 @@ func TestOrganizationProfile_SectionSaveLeavesOtherSectionsAlone(t *testing.T) {
 	form.Set("address", "Cairo")
 	form.Set("organization_number", "998877")
 
-	req := httptest.NewRequest("POST", "/vendor/organization/contact", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/organization/contact", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	req = withChiParam(req, "section", "contact")
@@ -263,7 +263,7 @@ func TestOrganizationProfile_IdentityWaitsForReview(t *testing.T) {
 	form.Set("commercial_register", "CR-1")
 	form.Set("tax_number", "TX431256")
 
-	req := httptest.NewRequest("POST", "/vendor/organization/identity", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/organization/identity", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	req = withChiParam(req, "section", "identity")
@@ -289,7 +289,7 @@ func TestOrganizationProfile_IdentityWaitsForReview(t *testing.T) {
 func TestOrganizationProfile_UnknownSectionIs404(t *testing.T) {
 	h := profileHandler(newProfileRepoStub())
 
-	req := httptest.NewRequest("POST", "/vendor/organization/whatever", strings.NewReader(""))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/organization/whatever", strings.NewReader(""))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	req = withChiParam(req, "section", "whatever")
@@ -320,7 +320,7 @@ func TestVendorPoliciesSubmit_SavesWarrantyAndTrims(t *testing.T) {
 		"warranty_policy": {"   ضمان هيئة الدواء وسلسلة التبريد   "},
 	}
 
-	req := httptest.NewRequest("POST", "/vendor/policies", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/policies", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	rec := httptest.NewRecorder()
@@ -364,7 +364,7 @@ func TestVendorPoliciesPage_BackwardCompatibilityWithPrivacy(t *testing.T) {
 	}
 	h := profileHandler(repo)
 
-	req := httptest.NewRequest("GET", "/vendor/policies", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/policies", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), vendorProfileActor()))
 	rec := httptest.NewRecorder()
 

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -10,9 +11,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestVendorStockAlertsPage_E2E(t *testing.T) {
@@ -65,7 +66,7 @@ func TestVendorStockAlertsPage_E2E(t *testing.T) {
 
 	// 1. Anonymous visitor is redirected to login
 	{
-		req := httptest.NewRequest(http.MethodGet, "/vendor/inventory/alerts", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/inventory/alerts", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 
@@ -87,7 +88,7 @@ func TestVendorStockAlertsPage_E2E(t *testing.T) {
 	}
 
 	{
-		req := httptest.NewRequest(http.MethodGet, "/vendor/inventory/alerts", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/inventory/alerts", nil)
 		ctx := authctx.WithActor(req.Context(), vendorActor)
 		req = req.WithContext(ctx)
 		rec := httptest.NewRecorder()
@@ -131,7 +132,7 @@ func TestVendorStockAlertsPage_E2E(t *testing.T) {
 
 	// 3. Warehouse alerts alias works
 	{
-		req := httptest.NewRequest(http.MethodGet, "/vendor/warehouses/alerts", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/warehouses/alerts", nil)
 		ctx := authctx.WithActor(req.Context(), vendorActor)
 		req = req.WithContext(ctx)
 		rec := httptest.NewRecorder()

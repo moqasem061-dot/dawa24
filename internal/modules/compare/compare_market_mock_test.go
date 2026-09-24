@@ -3,7 +3,7 @@ package compare_test
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // LoadMarketOffers is the analytical read the two market screens use. The mock

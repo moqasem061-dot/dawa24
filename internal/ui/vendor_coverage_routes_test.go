@@ -1,14 +1,15 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func TestVendorCoverageRoutes(t *testing.T) {
@@ -38,7 +39,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// T4: Customer attempting to reach /vendor/coverage gets redirected (303)
 	t.Run("Customer GET /vendor/coverage returns 303", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/coverage", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/coverage", nil)
 		rec := httptest.NewRecorder()
 		customerRouter.ServeHTTP(rec, req)
 		if rec.Code != http.StatusSeeOther {
@@ -48,7 +49,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// T6: Vendor GET /vendor/coverage returns 200 and renders
 	t.Run("Vendor GET /vendor/coverage returns 200", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/coverage", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/coverage", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {
@@ -71,7 +72,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 			"longitude":       {"31.25"},
 			"is_active":       {"true"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/coverage", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -92,7 +93,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 			"day_of_week":     {"3"},
 			"distance_meters": {"25000"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/coverage", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -108,7 +109,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// T6: Vendor POST /vendor/coverage/{id}/toggle toggles active state
 	t.Run("Vendor POST /vendor/coverage/1/toggle", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/vendor/coverage/1/toggle", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage/1/toggle", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 
@@ -145,7 +146,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 			"address":         {"Updated Warehouse Route"},
 			"is_active":       {"true"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/coverage/1", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage/1", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -176,7 +177,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 			"coverage_to":       {"17:00"},
 			"is_active":         {"true"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/coverage", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -191,7 +192,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// T6: Vendor POST /vendor/coverage/{id}/delete deletes coverage
 	t.Run("Vendor POST /vendor/coverage/1/delete", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/vendor/coverage/1/delete", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage/1/delete", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 
@@ -210,7 +211,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 			"to_meters":    {"5000"},
 			"delivery_fee": {"35.5"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/delivery-bands/create", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/delivery-bands/create", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -222,7 +223,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// T8: Vendor POST /vendor/delivery-bands/{id}/delete removes band
 	t.Run("Vendor POST /vendor/delivery-bands/1/delete", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/vendor/delivery-bands/1/delete", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/delivery-bands/1/delete", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 
@@ -233,7 +234,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// Branch filter redirect: Vendor GET /vendor/coverage/branch/{branchID}
 	t.Run("Vendor GET /vendor/coverage/branch/100 redirects with branch_id param", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/coverage/branch/100", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/coverage/branch/100", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 
@@ -259,7 +260,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 		form := url.Values{
 			"return_branch": {"100"},
 		}
-		req := httptest.NewRequest("POST", "/vendor/coverage/1/toggle", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/vendor/coverage/1/toggle", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
@@ -275,7 +276,7 @@ func TestVendorCoverageRoutes(t *testing.T) {
 
 	// Vendor GET /vendor/coverage renders branch filter, coverages dataset, and pagination
 	t.Run("Vendor GET /vendor/coverage renders branch filter and pagination", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/coverage", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/coverage", nil)
 		rec := httptest.NewRecorder()
 		vendorRouter.ServeHTTP(rec, req)
 		if rec.Code != http.StatusOK {

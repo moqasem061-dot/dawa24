@@ -6,9 +6,9 @@ import (
 	"math"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // RunSupplierVsSupplierDetailed executes full head-to-head comparison with custom filtering, matching, and metrics.
@@ -98,6 +98,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 	if len(masters) > 0 {
 		fuzzyIndex = productmatch.NewIndex(masters)
 	}
+	shortKeys := newShortBrandPairs(sourceRows, targetRows)
 
 	var allSharedRows []*HeadToHeadRow
 	yourBetterCount := 0
@@ -206,6 +207,12 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 					}
 				}
 			}
+		}
+
+		// 9. Short cross-script brand (Mobic / موبيك) with identical doses,
+		//    only when that key names one row on each side.
+		if tr == nil {
+			tr = shortKeys.pair(sr)
 		}
 
 		if tr != nil {

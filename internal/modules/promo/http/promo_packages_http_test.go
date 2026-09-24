@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	promoHttp "github.com/muhiya/dawa24-store/internal/modules/promo/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	promoHttp "github.com/moqasem061-dot/dawa24/internal/modules/promo/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func (happyRepo) ListActiveRankedSponsorships(context.Context, promo.SponsorshipItemType) ([]*promo.RankedSponsorship, error) {
@@ -239,7 +239,7 @@ func TestProtectedRoutesRejectAnonymousCallers(t *testing.T) {
 
 	for _, route := range protectedRoutes {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
-			req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
@@ -256,7 +256,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 	router := newTestRouter(t)
 
 	for _, route := range protectedRoutes {
-		req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "forged-token-that-was-never-issued"})
 		rec := httptest.NewRecorder()
@@ -271,7 +271,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 
 func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/promo/offers", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/promo/offers", nil)
 	rec := httptest.NewRecorder()
 
 	router.ServeHTTP(rec, req)
@@ -322,7 +322,7 @@ func TestPromoHandler_HappyPaths(t *testing.T) {
 			if tt.body != "" {
 				bodyReader = strings.NewReader(tt.body)
 			}
-			req := httptest.NewRequest(tt.method, tt.path, bodyReader)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, tt.path, bodyReader)
 			if tt.body != "" {
 				req.Header.Set("Content-Type", "application/json")
 			}

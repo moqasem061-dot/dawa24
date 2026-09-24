@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type mockSEORepo struct {
@@ -150,7 +150,7 @@ func setupSEOTestHandler() (*UIHandler, *mockSEORepo) {
 func TestAdminDevelopersPage_SEOTab(t *testing.T) {
 	h, _ := setupSEOTestHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/developers?tab=seo", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/developers?tab=seo", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminDevelopersPage(rec, req)
@@ -181,7 +181,7 @@ func TestAdminDevelopersSEOSaveSubmit(t *testing.T) {
 		"keywords":          []string{"أدوية, صيدليات, كتالوج"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/developers/seo/save", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/developers/seo/save", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
@@ -213,7 +213,7 @@ func TestAdminDevelopersSEORobotsSubmit(t *testing.T) {
 		"robots_txt": []string{updatedRobots},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/developers/seo/robots", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/developers/seo/robots", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
@@ -231,7 +231,7 @@ func TestAdminDevelopersSEORobotsSubmit(t *testing.T) {
 func TestSitemapXML_DynamicSEOPages(t *testing.T) {
 	h, _ := setupSEOTestHandler()
 
-	req := httptest.NewRequest(http.MethodGet, "/sitemap.xml", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/sitemap.xml", nil)
 	rec := httptest.NewRecorder()
 
 	h.SitemapXML(rec, req)
@@ -263,7 +263,7 @@ func TestDynamicRobotsTxt_Integration(t *testing.T) {
 	r := chi.NewRouter()
 	h.RegisterPublicRoutes(r)
 
-	req := httptest.NewRequest(http.MethodGet, "/robots.txt", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/robots.txt", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 

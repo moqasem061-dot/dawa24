@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // خصومات السوق العامة shows the platform's temporary warehouses, and nothing

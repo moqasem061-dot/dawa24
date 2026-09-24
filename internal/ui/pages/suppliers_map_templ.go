@@ -11,9 +11,9 @@ import templruntime "github.com/a-h/templ/runtime"
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component {
@@ -57,7 +57,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var2).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -76,7 +76,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("supplier-card-%d", idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 32, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 32, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 				if templ_7745c5c3_Err != nil {
@@ -89,7 +89,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 33, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 33, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 				if templ_7745c5c3_Err != nil {
@@ -102,7 +102,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var6 string
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.JSArgs(idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 35, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 35, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 				if templ_7745c5c3_Err != nil {
@@ -115,7 +115,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(pin.Name)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 39, Col: 20}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 39, Col: 20}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -148,7 +148,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 					var templ_7745c5c3_Var8 string
 					templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(pin.Hours)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 50, Col: 27}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 50, Col: 27}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 					if templ_7745c5c3_Err != nil {
@@ -160,14 +160,18 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 					}
 				}
 				if pin.Address != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"text-2xs text-muted mt-1 line-clamp-1\">📍 ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<div class=\"text-2xs text-muted mt-1 line-clamp-1\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = components.IconMapPin("icon-xxs").Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var9 string
 					templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(pin.Address)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 55, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 56, Col: 23}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 					if templ_7745c5c3_Err != nil {
@@ -192,7 +196,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var10 string
 				templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("supplier-card-%d", idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 63, Col: 49}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 64, Col: 49}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 				if templ_7745c5c3_Err != nil {
@@ -205,7 +209,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 64, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 65, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 				if templ_7745c5c3_Err != nil {
@@ -218,7 +222,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.JSArgs(idx))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 66, Col: 77}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 67, Col: 77}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 				if templ_7745c5c3_Err != nil {
@@ -232,7 +236,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 					var templ_7745c5c3_Var13 string
 					templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(s.Org.TradeName.Get(i18n.Lang(lang)))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 71, Col: 49}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 72, Col: 49}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 					if templ_7745c5c3_Err != nil {
@@ -242,7 +246,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 					var templ_7745c5c3_Var14 string
 					templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(s.Org.LegalName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 73, Col: 28}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 74, Col: 28}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 					if templ_7745c5c3_Err != nil {
@@ -271,7 +275,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 				var templ_7745c5c3_Var15 string
 				templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(s.WorkingHours)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 84, Col: 31}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 85, Col: 31}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 				if templ_7745c5c3_Err != nil {
@@ -282,14 +286,18 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 					return templ_7745c5c3_Err
 				}
 				if s.Address != "" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"text-2xs text-muted mt-1 line-clamp-1\">📍 ")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<div class=\"text-2xs text-muted mt-1 line-clamp-1\">")
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = components.IconMapPin("icon-xxs").Render(ctx, templ_7745c5c3_Buffer)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var16 string
 					templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(s.Address)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 88, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 90, Col: 21}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 					if templ_7745c5c3_Err != nil {
@@ -313,7 +321,7 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(SuppliersMapJSON(data, lang))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 105, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 107, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 		if templ_7745c5c3_Err != nil {
@@ -326,13 +334,13 @@ func SuppliersMap(lang, dir string, data SupplierDirectoryData) templ.Component 
 		var templ_7745c5c3_Var18 string
 		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/suppliers_map.templ`, Line: 108, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `suppliers_map.templ`, Line: 110, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-hard-nav>\n\t\tlet mapInstance = null;\n\t\tconst markers = [];\n\t\tlet activeMarkerIdx = -1;\n\n\t\tfunction getSuppliersData() {\n\t\t\ttry {\n\t\t\t\tconst el = document.getElementById('suppliers-map-data');\n\t\t\t\tif (!el) return [];\n\t\t\t\tconst raw = el.getAttribute('data-pins');\n\t\t\t\tif (!raw) return [];\n\t\t\t\tconst parsed = JSON.parse(raw);\n\t\t\t\treturn Array.isArray(parsed) ? parsed : [];\n\t\t\t} catch (e) {\n\t\t\t\tconsole.error('Failed to parse suppliers map data:', e);\n\t\t\t\treturn [];\n\t\t\t}\n\t\t}\n\n\t\tfunction getSupplierPinIcon(isOpen, isFocused, name) {\n\t\t\tconst statusClass = isOpen ? 'is-open' : 'is-closed';\n\t\t\tconst focusedClass = isFocused ? 'is-focused' : '';\n\t\t\tconst beaconHtml = isFocused ? '<div class=\"supplier-beacon-ring\"></div><div class=\"supplier-beacon-ring-2\"></div><div class=\"supplier-floating-badge\">' + (name || 'فرع / مورد') + ' 📍</div>' : '';\n\t\t\t\n\t\t\treturn L.divIcon({\n\t\t\t\tclassName: 'custom-map-pin',\n\t\t\t\thtml: '<div class=\"supplier-pin-wrapper ' + focusedClass + '\">' +\n\t\t\t\t\tbeaconHtml +\n\t\t\t\t\t'<div class=\"supplier-pin-body ' + statusClass + '\">' +\n\t\t\t\t\t\t'<div class=\"supplier-pin-icon\">🏢</div>' +\n\t\t\t\t\t\t'<span class=\"supplier-pin-status-dot ' + statusClass + '\"></span>' +\n\t\t\t\t\t'</div>' +\n\t\t\t\t'</div>',\n\t\t\t\ticonSize: [42, 48],\n\t\t\t\ticonAnchor: [21, 44],\n\t\t\t\tpopupAnchor: [0, -44]\n\t\t\t});\n\t\t}\n\n\t\tfunction initSuppliersMap() {\n\t\t\tif (mapInstance) return;\n\t\t\tconst mapEl = document.getElementById('suppliers-leaflet-map');\n\t\t\tif (!mapEl) return;\n\n\t\t\tif (typeof L === 'undefined') {\n\t\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\t\tensureLeaflet().then(initSuppliersMap).catch(function (err) {\n\t\t\t\t\t\tmapEl.setAttribute('data-map-failed', 'true');\n\t\t\t\t\t\tconsole.error('suppliers map:', err);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Center on Egypt / Cairo by default (30.0444, 31.2357)\n\t\t\tmapInstance = L.map('suppliers-leaflet-map').setView([30.0444, 31.2357], 6);\n\n\t\t\tL.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n\t\t\t\tmaxZoom: 19,\n\t\t\t\tattribution: '© OpenStreetMap contributors'\n\t\t\t}).addTo(mapInstance);\n\n\t\t\tconst data = getSuppliersData();\n\t\t\tconst bounds = [];\n\n\t\t\tdata.forEach((s, idx) => {\n\t\t\t\tlet lat = parseFloat(s.lat);\n\t\t\t\tlet lng = parseFloat(s.lng);\n\n\t\t\t\tif (!lat || !lng || (lat === 0 && lng === 0)) {\n\t\t\t\t\tlat = 30.0444 + ((idx * 0.035) % 0.35) - 0.15;\n\t\t\t\t\tlng = 31.2357 + (((idx * 7) % 10) * 0.04) - 0.20;\n\t\t\t\t}\n\n\t\t\t\tbounds.push([lat, lng]);\n\n\t\t\t\tconst statusText = s.isOpen ? 'مفتوح الآن 🟢' : 'مغلق حالياً ⚪';\n\t\t\t\tconst customIcon = getSupplierPinIcon(s.isOpen, false, s.name);\n\t\t\t\tconst marker = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance);\n\n\t\t\t\tconst linkHtml = '<a href=\"/suppliers/' + s.id + '\" class=\"btn btn-primary btn-xs font-bold text-decoration-none d-inline-block mt-2\">عرض الكتالوج والطلب ↗</a>';\n\t\t\t\tconst popupContent = '<div class=\"p-2 text-start font-sans\" dir=\"rtl\">' +\n\t\t\t\t\t'<div class=\"font-extrabold text-sm text-primary mb-1\">' + (s.name || s.supplierName) + '</div>' +\n\t\t\t\t\t(s.branchName && s.branchName !== s.name ? '<div class=\"text-xs text-muted mb-1\">🏢 ' + s.branchName + '</div>' : '') +\n\t\t\t\t\t'<div class=\"text-xs font-bold text-secondary mb-1\">' + statusText + '</div>' +\n\t\t\t\t\t(s.hours ? '<div class=\"text-2xs text-muted mb-0.5\">⏱ مواعيد العمل: <strong>' + s.hours + '</strong></div>' : '') +\n\t\t\t\t\t(s.coverageDays ? '<div class=\"text-2xs text-muted mb-0.5\">أيام التغطية: ' + s.coverageDays + '</div>' : '') +\n\t\t\t\t\t(s.address ? '<div class=\"text-2xs text-muted mt-1\">📍 ' + s.address + '</div>' : '') +\n\t\t\t\t\tlinkHtml +\n\t\t\t\t'</div>';\n\n\t\t\t\tmarker.bindPopup(popupContent);\n\t\t\t\tmarker.on('click', function() {\n\t\t\t\t\tfocusSupplierOnMap(idx);\n\t\t\t\t});\n\n\t\t\t\tmarkers.push(marker);\n\t\t\t});\n\n\t\t\tif (bounds.length > 0) {\n\t\t\t\tmapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });\n\t\t\t}\n\t\t}\n\n\t\tfunction focusSupplierOnMap(idx) {\n\t\t\tif (typeof idx === 'string') idx = parseInt(idx, 10);\n\t\t\tswitchSupplierView('map');\n\t\t\tif (!mapInstance) {\n\t\t\t\tinitSuppliersMap();\n\t\t\t}\n\n\t\t\tconst data = getSuppliersData();\n\n\t\t\t// Highlight active card in the side list\n\t\t\tdocument.querySelectorAll('.map-supplier-item').forEach((el) => {\n\t\t\t\tel.classList.remove('active');\n\t\t\t});\n\t\t\tconst activeCard = document.getElementById('supplier-card-' + idx);\n\t\t\tif (activeCard) {\n\t\t\t\tactiveCard.classList.add('active');\n\t\t\t\tactiveCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });\n\t\t\t}\n\n\t\t\tif (mapInstance && markers[idx]) {\n\t\t\t\tmapInstance.invalidateSize(true);\n\n\t\t\t\t// Restore previous active marker to normal\n\t\t\t\tif (activeMarkerIdx >= 0 && markers[activeMarkerIdx] && activeMarkerIdx !== idx) {\n\t\t\t\t\tconst prevData = data[activeMarkerIdx];\n\t\t\t\t\tif (prevData) {\n\t\t\t\t\t\tmarkers[activeMarkerIdx].setIcon(getSupplierPinIcon(prevData.isOpen, false, prevData.name));\n\t\t\t\t\t\tmarkers[activeMarkerIdx].setZIndexOffset(0);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tconst currData = data[idx];\n\t\t\t\tconst targetPos = markers[idx].getLatLng();\n\n\t\t\t\tmarkers[idx].setIcon(getSupplierPinIcon(currData ? currData.isOpen : true, true, currData ? currData.name : ''));\n\t\t\t\tmarkers[idx].setZIndexOffset(1000);\n\t\t\t\tactiveMarkerIdx = idx;\n\n\t\t\t\tmapInstance.flyTo([targetPos.lat, targetPos.lng], 15, { animate: true, duration: 0.8 });\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tif (markers[idx]) markers[idx].openPopup();\n\t\t\t\t}, 450);\n\t\t\t}\n\t\t}\n\n\t\tfunction switchSupplierView(view) {\n\t\t\tconst listView = document.getElementById('suppliers-list-view');\n\t\t\tconst mapView = document.getElementById('suppliers-map-view');\n\t\t\tconst listBtn = document.getElementById('view-toggle-list');\n\t\t\tconst mapBtn = document.getElementById('view-toggle-map');\n\n\t\t\tif (view === 'map') {\n\t\t\t\tif (listView) listView.classList.add('d-none');\n\t\t\t\tif (mapView) mapView.classList.remove('d-none');\n\t\t\t\tif (listBtn) listBtn.classList.remove('active');\n\t\t\t\tif (mapBtn) mapBtn.classList.add('active');\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t\tif (mapInstance) mapInstance.invalidateSize(true);\n\t\t\t\t}, 50);\n\t\t\t} else {\n\t\t\t\tif (listView) listView.classList.remove('d-none');\n\t\t\t\tif (mapView) mapView.classList.add('d-none');\n\t\t\t\tif (listBtn) listBtn.classList.add('active');\n\t\t\t\tif (mapBtn) mapBtn.classList.remove('active');\n\t\t\t}\n\t\t}\n\n\t\t// Event delegation to guarantee clicks on sidebar cards work regardless of inner elements\n\t\tdocument.addEventListener('click', function(e) {\n\t\t\tconst item = e.target.closest('.map-supplier-item');\n\t\t\tif (item) {\n\t\t\t\tconst idxVal = item.getAttribute('data-supplier-idx');\n\t\t\t\tif (idxVal !== null && idxVal !== '') {\n\t\t\t\t\tfocusSupplierOnMap(parseInt(idxVal, 10));\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\n\t\tfunction setupSuppliersMapOnLoad() {\n\t\t\tconst mapView = document.getElementById('suppliers-map-view');\n\t\t\tconst urlParams = new URLSearchParams(window.location.search);\n\t\t\tif (urlParams.get('view') === 'map' || (mapView && !mapView.classList.contains('d-none'))) {\n\t\t\t\tswitchSupplierView('map');\n\t\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\t\tensureLeaflet().then(() => {\n\t\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t\t}).catch(console.error);\n\t\t\t\t} else {\n\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tdocument.addEventListener('DOMContentLoaded', setupSuppliersMapOnLoad);\n\t\twindow.addEventListener('load', setupSuppliersMapOnLoad);\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "\" data-hard-nav>\n\t\tlet mapInstance = null;\n\t\tconst markers = [];\n\t\tlet activeMarkerIdx = -1;\n\n\t\tfunction getSuppliersData() {\n\t\t\ttry {\n\t\t\t\tconst el = document.getElementById('suppliers-map-data');\n\t\t\t\tif (!el) return [];\n\t\t\t\tconst raw = el.getAttribute('data-pins');\n\t\t\t\tif (!raw) return [];\n\t\t\t\tconst parsed = JSON.parse(raw);\n\t\t\t\treturn Array.isArray(parsed) ? parsed : [];\n\t\t\t} catch (e) {\n\t\t\t\tconsole.error('Failed to parse suppliers map data:', e);\n\t\t\t\treturn [];\n\t\t\t}\n\t\t}\n\n\t\t// Every supplier value below comes from the supplier's own profile, and\n\t\t// Leaflet renders these strings as HTML: each goes through esc(), or a\n\t\t// supplier could run script in every pharmacy's browser from a name.\n\t\tconst esc = (window.dawaHTML && window.dawaHTML.escape) || function (t) {\n\t\t\treturn String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')\n\t\t\t\t.replace(/>/g, '&gt;').replace(/\"/g, '&quot;').replace(/'/g, '&#39;');\n\t\t};\n\t\tconst buildingSVG = '<svg class=\"icon-sm\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"4\" y=\"2\" width=\"16\" height=\"20\" rx=\"2\"/><path d=\"M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01\"/></svg>';\n\n\t\tfunction getSupplierPinIcon(isOpen, isFocused, name) {\n\t\t\tconst statusClass = isOpen ? 'is-open' : 'is-closed';\n\t\t\tconst focusedClass = isFocused ? 'is-focused' : '';\n\t\t\tconst beaconHtml = isFocused ? '<div class=\"supplier-beacon-ring\"></div><div class=\"supplier-beacon-ring-2\"></div><div class=\"supplier-floating-badge\">' + esc(name || 'فرع / مورد') + '</div>' : '';\n\t\t\t\n\t\t\treturn L.divIcon({\n\t\t\t\tclassName: 'custom-map-pin',\n\t\t\t\thtml: '<div class=\"supplier-pin-wrapper ' + focusedClass + '\">' +\n\t\t\t\t\tbeaconHtml +\n\t\t\t\t\t'<div class=\"supplier-pin-body ' + statusClass + '\">' +\n\t\t\t\t\t\t'<div class=\"supplier-pin-icon\">' + buildingSVG + '</div>' +\n\t\t\t\t\t\t'<span class=\"supplier-pin-status-dot ' + statusClass + '\"></span>' +\n\t\t\t\t\t'</div>' +\n\t\t\t\t'</div>',\n\t\t\t\ticonSize: [42, 48],\n\t\t\t\ticonAnchor: [21, 44],\n\t\t\t\tpopupAnchor: [0, -44]\n\t\t\t});\n\t\t}\n\n\t\tfunction initSuppliersMap() {\n\t\t\tif (mapInstance) return;\n\t\t\tconst mapEl = document.getElementById('suppliers-leaflet-map');\n\t\t\tif (!mapEl) return;\n\n\t\t\tif (typeof L === 'undefined') {\n\t\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\t\tensureLeaflet().then(initSuppliersMap).catch(function (err) {\n\t\t\t\t\t\tmapEl.setAttribute('data-map-failed', 'true');\n\t\t\t\t\t\tconsole.error('suppliers map:', err);\n\t\t\t\t\t});\n\t\t\t\t}\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\t// Center on Egypt / Cairo by default (30.0444, 31.2357)\n\t\t\tmapInstance = L.map('suppliers-leaflet-map').setView([30.0444, 31.2357], 6);\n\n\t\t\tL.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {\n\t\t\t\tmaxZoom: 19,\n\t\t\t\tattribution: '© OpenStreetMap contributors'\n\t\t\t}).addTo(mapInstance);\n\n\t\t\tconst data = getSuppliersData();\n\t\t\tconst bounds = [];\n\n\t\t\tdata.forEach((s, idx) => {\n\t\t\t\tlet lat = parseFloat(s.lat);\n\t\t\t\tlet lng = parseFloat(s.lng);\n\n\t\t\t\tif (!lat || !lng || (lat === 0 && lng === 0)) {\n\t\t\t\t\tlat = 30.0444 + ((idx * 0.035) % 0.35) - 0.15;\n\t\t\t\t\tlng = 31.2357 + (((idx * 7) % 10) * 0.04) - 0.20;\n\t\t\t\t}\n\n\t\t\t\tbounds.push([lat, lng]);\n\n\t\t\t\tconst statusText = s.isOpen ? 'مفتوح الآن' : 'مغلق حالياً';\n\t\t\t\tconst customIcon = getSupplierPinIcon(s.isOpen, false, s.name);\n\t\t\t\tconst marker = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance);\n\n\t\t\t\tconst linkHtml = '<a href=\"/suppliers/' + encodeURIComponent(s.id) + '\" class=\"btn btn-primary btn-xs font-bold text-decoration-none d-inline-block mt-2\">عرض الكتالوج والطلب ↗</a>';\n\t\t\t\tconst popupContent = '<div class=\"p-2 text-start font-sans\" dir=\"rtl\">' +\n\t\t\t\t\t'<div class=\"font-extrabold text-sm text-primary mb-1\">' + esc(s.name || s.supplierName) + '</div>' +\n\t\t\t\t\t(s.branchName && s.branchName !== s.name ? '<div class=\"text-xs text-muted mb-1\">' + esc(s.branchName) + '</div>' : '') +\n\t\t\t\t\t'<div class=\"text-xs font-bold text-secondary mb-1\">' + statusText + '</div>' +\n\t\t\t\t\t(s.hours ? '<div class=\"text-2xs text-muted mb-0.5\">مواعيد العمل: <strong>' + esc(s.hours) + '</strong></div>' : '') +\n\t\t\t\t\t(s.coverageDays ? '<div class=\"text-2xs text-muted mb-0.5\">أيام التغطية: ' + esc(s.coverageDays) + '</div>' : '') +\n\t\t\t\t\t(s.address ? '<div class=\"text-2xs text-muted mt-1\">' + esc(s.address) + '</div>' : '') +\n\t\t\t\t\tlinkHtml +\n\t\t\t\t'</div>';\n\n\t\t\t\tmarker.bindPopup(popupContent);\n\t\t\t\tmarker.on('click', function() {\n\t\t\t\t\tfocusSupplierOnMap(idx);\n\t\t\t\t});\n\n\t\t\t\tmarkers.push(marker);\n\t\t\t});\n\n\t\t\tif (bounds.length > 0) {\n\t\t\t\tmapInstance.fitBounds(bounds, { padding: [50, 50], maxZoom: 12 });\n\t\t\t}\n\t\t}\n\n\t\tfunction focusSupplierOnMap(idx) {\n\t\t\tif (typeof idx === 'string') idx = parseInt(idx, 10);\n\t\t\tswitchSupplierView('map');\n\t\t\tif (!mapInstance) {\n\t\t\t\tinitSuppliersMap();\n\t\t\t}\n\n\t\t\tconst data = getSuppliersData();\n\n\t\t\t// Highlight active card in the side list\n\t\t\tdocument.querySelectorAll('.map-supplier-item').forEach((el) => {\n\t\t\t\tel.classList.remove('active');\n\t\t\t});\n\t\t\tconst activeCard = document.getElementById('supplier-card-' + idx);\n\t\t\tif (activeCard) {\n\t\t\t\tactiveCard.classList.add('active');\n\t\t\t\tactiveCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });\n\t\t\t}\n\n\t\t\tif (mapInstance && markers[idx]) {\n\t\t\t\tmapInstance.invalidateSize(true);\n\n\t\t\t\t// Restore previous active marker to normal\n\t\t\t\tif (activeMarkerIdx >= 0 && markers[activeMarkerIdx] && activeMarkerIdx !== idx) {\n\t\t\t\t\tconst prevData = data[activeMarkerIdx];\n\t\t\t\t\tif (prevData) {\n\t\t\t\t\t\tmarkers[activeMarkerIdx].setIcon(getSupplierPinIcon(prevData.isOpen, false, prevData.name));\n\t\t\t\t\t\tmarkers[activeMarkerIdx].setZIndexOffset(0);\n\t\t\t\t\t}\n\t\t\t\t}\n\n\t\t\t\tconst currData = data[idx];\n\t\t\t\tconst targetPos = markers[idx].getLatLng();\n\n\t\t\t\tmarkers[idx].setIcon(getSupplierPinIcon(currData ? currData.isOpen : true, true, currData ? currData.name : ''));\n\t\t\t\tmarkers[idx].setZIndexOffset(1000);\n\t\t\t\tactiveMarkerIdx = idx;\n\n\t\t\t\tmapInstance.flyTo([targetPos.lat, targetPos.lng], 15, { animate: true, duration: 0.8 });\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tif (markers[idx]) markers[idx].openPopup();\n\t\t\t\t}, 450);\n\t\t\t}\n\t\t}\n\n\t\tfunction switchSupplierView(view) {\n\t\t\tconst listView = document.getElementById('suppliers-list-view');\n\t\t\tconst mapView = document.getElementById('suppliers-map-view');\n\t\t\tconst listBtn = document.getElementById('view-toggle-list');\n\t\t\tconst mapBtn = document.getElementById('view-toggle-map');\n\n\t\t\tif (view === 'map') {\n\t\t\t\tif (listView) listView.classList.add('d-none');\n\t\t\t\tif (mapView) mapView.classList.remove('d-none');\n\t\t\t\tif (listBtn) listBtn.classList.remove('active');\n\t\t\t\tif (mapBtn) mapBtn.classList.add('active');\n\t\t\t\tsetTimeout(() => {\n\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t\tif (mapInstance) mapInstance.invalidateSize(true);\n\t\t\t\t}, 50);\n\t\t\t} else {\n\t\t\t\tif (listView) listView.classList.remove('d-none');\n\t\t\t\tif (mapView) mapView.classList.add('d-none');\n\t\t\t\tif (listBtn) listBtn.classList.add('active');\n\t\t\t\tif (mapBtn) mapBtn.classList.remove('active');\n\t\t\t}\n\t\t}\n\n\t\t// Event delegation to guarantee clicks on sidebar cards work regardless of inner elements\n\t\tdocument.addEventListener('click', function(e) {\n\t\t\tconst item = e.target.closest('.map-supplier-item');\n\t\t\tif (item) {\n\t\t\t\tconst idxVal = item.getAttribute('data-supplier-idx');\n\t\t\t\tif (idxVal !== null && idxVal !== '') {\n\t\t\t\t\tfocusSupplierOnMap(parseInt(idxVal, 10));\n\t\t\t\t}\n\t\t\t}\n\t\t});\n\n\t\tfunction setupSuppliersMapOnLoad() {\n\t\t\tconst mapView = document.getElementById('suppliers-map-view');\n\t\t\tconst urlParams = new URLSearchParams(window.location.search);\n\t\t\tif (urlParams.get('view') === 'map' || (mapView && !mapView.classList.contains('d-none'))) {\n\t\t\t\tswitchSupplierView('map');\n\t\t\t\tif (typeof ensureLeaflet === 'function') {\n\t\t\t\t\tensureLeaflet().then(() => {\n\t\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t\t}).catch(console.error);\n\t\t\t\t} else {\n\t\t\t\t\tinitSuppliersMap();\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\n\t\tdocument.addEventListener('DOMContentLoaded', setupSuppliersMapOnLoad);\n\t\twindow.addEventListener('load', setupSuppliersMapOnLoad);\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

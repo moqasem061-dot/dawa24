@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func setupCooldownTest() (*Service, *mockBillingRepo) {
@@ -284,4 +284,3 @@ func TestSubscribeWithWallet_ConfigurableCooldownHours(t *testing.T) {
 		t.Errorf("expected CooldownHours to be 48, got %d", info.CooldownHours)
 	}
 }
-

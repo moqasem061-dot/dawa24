@@ -11,12 +11,12 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockOrgRepoBranchSelector struct {
@@ -78,7 +78,7 @@ func TestBranchSelector_EmployeeWithAllBranches_CanSwitch_Pharmacy(t *testing.T)
 	form.Set("branch_id", "102")
 	form.Set("redirect_to", "/customer/dashboard")
 
-	req := httptest.NewRequest(http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	// Set initial cookie to branch 101
 	req.AddCookie(&http.Cookie{Name: "dawa24_buying_branch", Value: "101"})
@@ -131,7 +131,7 @@ func TestBranchSelector_EmployeeStrictlyBound_Locked_Pharmacy(t *testing.T) {
 	form := url.Values{}
 	form.Set("branch_id", "102") // Attempting to switch to branch 102
 
-	req := httptest.NewRequest(http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), empActor))
 
@@ -176,7 +176,7 @@ func TestBranchSelector_EmployeeWithAllBranches_CanSwitch_Vendor(t *testing.T) {
 	form.Set("branch_id", "202")
 	form.Set("redirect_to", "/vendor/inventory")
 
-	req := httptest.NewRequest(http.MethodPost, "/vendor/set-branch", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/set-branch", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.AddCookie(&http.Cookie{Name: "dawa24_buying_branch", Value: "201"})
 	req = req.WithContext(authctx.WithActor(req.Context(), empActor))
@@ -228,7 +228,7 @@ func TestBranchSelector_EmployeeStrictlyBound_Locked_Vendor(t *testing.T) {
 	form := url.Values{}
 	form.Set("branch_id", "202")
 
-	req := httptest.NewRequest(http.MethodPost, "/vendor/set-branch", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/set-branch", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(req.Context(), empActor))
 
@@ -269,7 +269,7 @@ func TestBranchSelector_Owner_CanSwitch(t *testing.T) {
 	form := url.Values{}
 	form.Set("branch_id", "302")
 
-	req := httptest.NewRequest(http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/set-branch", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Referer", "http://localhost:8080/customer/branches")
 	req = req.WithContext(authctx.WithActor(req.Context(), ownerActor))

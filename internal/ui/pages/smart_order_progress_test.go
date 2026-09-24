@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 )
 
 // The processing screen shows one number and one line of text.

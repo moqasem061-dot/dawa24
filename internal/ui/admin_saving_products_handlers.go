@@ -10,12 +10,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminSavingProductsPage renders saving products (منتجات التوفير) across all users and organizations.
@@ -82,7 +82,9 @@ func (h *UIHandler) AdminSavingProductsPage(w http.ResponseWriter, r *http.Reque
 
 	var orgOptions []*pages.SavingUserOrgOption
 	if h.orgSvc != nil {
-		if orgs, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 200, 0); err == nil {
+		if orgs, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 200, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			for _, o := range orgs {
 				name := o.LegalName
 				if name == "" {
@@ -99,7 +101,9 @@ func (h *UIHandler) AdminSavingProductsPage(w http.ResponseWriter, r *http.Reque
 
 	var userOptions []*pages.SavingUserOrgOption
 	if h.idSvc != nil {
-		if users, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "", ""); err == nil {
+		if users, err := h.idSvc.AdminListUsers(database.AsSystem(ctx), "", ""); err != nil {
+			h.logLoadErr(ctx, "idSvc.AdminListUsers", err)
+		} else {
 			for _, u := range users {
 				name := u.Name.Get("ar")
 				if name == "" {
@@ -187,7 +191,9 @@ func (h *UIHandler) AdminSavingProductSearchJSON(w http.ResponseWriter, r *http.
 			FirstWord: catalog.FirstWordOf(q),
 			Limit:     20,
 		})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.Search", err)
+		} else {
 			targetName := rawName
 			if targetName == "" {
 				targetName = q

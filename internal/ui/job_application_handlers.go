@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (h *UIHandler) handleJobApplicationsJSON(w http.ResponseWriter, r *http.Request) {
@@ -37,7 +37,8 @@ func (h *UIHandler) handleJobApplicationsJSON(w http.ResponseWriter, r *http.Req
 			http.Error(w, `{"error":"not found"}`, http.StatusNotFound)
 			return
 		}
-		aList, _ := h.hrSvc.ListApplicationsByOffer(ctx, jobID, 100, 0)
+		aList, loadErr := h.hrSvc.ListApplicationsByOffer(ctx, jobID, 100, 0)
+		h.logLoadErr(ctx, "hrSvc.ListApplicationsByOffer", loadErr)
 		if aList != nil {
 			apps = aList
 		}
@@ -200,14 +201,16 @@ func (h *UIHandler) handleJobApplicationReject(w http.ResponseWriter, r *http.Re
 			jobTitle = i18n.T(lang, "job.notif.default_job_title")
 		}
 
-		_, _ = h.notifSvc.Send(ctx, notifications.SendInput{
+		if _, err := h.notifSvc.Send(ctx, notifications.SendInput{
 			UserID:         *app.ApplicantUserID,
 			OrganizationID: &actor.OrganizationID,
 			Channel:        notifications.ChannelInApp,
 			Recipient:      app.ApplicantEmail,
 			Title:          i18n.T(lang, "job.notif.reject_title"),
 			Body:           fmt.Sprintf(i18n.T(lang, "job.notif.reject_body"), jobTitle, orgName),
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "notifSvc.Send", err)
+		}
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

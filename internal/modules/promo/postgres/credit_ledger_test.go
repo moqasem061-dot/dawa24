@@ -53,7 +53,7 @@ func TestTheEntryIsWrittenInsideTheSameTransaction(t *testing.T) {
 	if update < 0 || insert < 0 || closeTx < 0 {
 		t.Fatal("ConsumeSponsorshipCredits no longer has the shape this test reads")
 	}
-	if !(update < insert && insert < closeTx) {
+	if update >= insert || insert >= closeTx {
 		t.Error("the ledger entry is not written inside the transaction that moves the counter")
 	}
 }

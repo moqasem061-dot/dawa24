@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 )
 
 func TestCoveragesToJSON(t *testing.T) {

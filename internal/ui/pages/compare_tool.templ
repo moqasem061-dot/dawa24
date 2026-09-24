@@ -3,9 +3,9 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 templ CompareToolPage(view CompareToolView) {
@@ -182,7 +182,7 @@ templ compareToolContent(view CompareToolView) {
 				<!-- Files List -->
 				if len(view.Files) == 0 {
 					<div class="empty-state-glass p-8 text-center rounded-xl border">
-						<div class="text-2xl mb-1.5">📂</div>
+						<div class="text-2xl mb-1.5">@components.IconFolderOpen("icon-lg")</div>
 						<strong class="text-primary text-xs d-block mb-1 font-bold">لا توجد ملفات مرفوعة بعد</strong>
 						<p class="text-2xs text-muted m-0">استخدم نموذج الرفع المجاور أو حمل النموذج التجريبي لاختبار المقارنة فوراً.</p>
 					</div>

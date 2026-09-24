@@ -83,8 +83,9 @@ func Scan(data []byte, filename, declaredMIME string) Result {
 		}
 	}
 
+	// declaredMIME is client-supplied and deliberately not trusted: the
+	// verdict rests on the extension and the bytes themselves.
 	ext := strings.ToLower(filepath.Ext(filename))
-	declaredMIME = strings.ToLower(strings.TrimSpace(declaredMIME))
 
 	// 3. Extension and content format validation
 	switch ext {

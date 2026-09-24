@@ -17,9 +17,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 // TestCompareTool_BulkUpload_WhenSpaceAvailable_NoFilesArchived verifies that when
@@ -81,7 +81,7 @@ func TestCompareTool_BulkUpload_WhenSpaceAvailable_NoFilesArchived(t *testing.T)
 	_, _ = p2.Write([]byte("كود,اسم,سعر,خصم\n102,كونجستال,35.0,20.0\n"))
 	_ = writer.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/compare/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/compare/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 
@@ -177,7 +177,7 @@ func TestCompareTool_BulkUpload_WhenSpaceExceeded_ArchivesOnlyExactOldestOverflo
 	_, _ = p3.Write([]byte("كود,اسم,سعر,خصم\n103,أوجمنتين,70.0,10.0\n"))
 	_ = writer.Close()
 
-	req := httptest.NewRequest(http.MethodPost, "/compare/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/compare/upload", body)
 	req.Header.Set("Content-Type", writer.FormDataContentType())
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 
@@ -232,7 +232,7 @@ func TestCompareTool_BulkUpload_WhenSpaceExceeded_ArchivesOnlyExactOldestOverflo
 		Permissions: []string{"*"},
 	}
 
-	reqAdmin := httptest.NewRequest(http.MethodGet, "/admin/user/temparte-warehouses?status=archived", nil)
+	reqAdmin := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/user/temparte-warehouses?status=archived", nil)
 	reqAdmin = reqAdmin.WithContext(authctx.WithActor(reqAdmin.Context(), adminActor))
 	recAdmin := httptest.NewRecorder()
 	r.ServeHTTP(recAdmin, reqAdmin)
@@ -249,7 +249,7 @@ func TestCompareTool_BulkUpload_WhenSpaceExceeded_ArchivesOnlyExactOldestOverflo
 	}
 
 	// 5. Verify Compare Tool workspace GET /compare/tool only presents the active files
-	reqTool := httptest.NewRequest(http.MethodGet, "/compare/tool", nil)
+	reqTool := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/compare/tool", nil)
 	reqTool = reqTool.WithContext(authctx.WithActor(reqTool.Context(), actor))
 	recTool := httptest.NewRecorder()
 	r.ServeHTTP(recTool, reqTool)
@@ -324,4 +324,3 @@ func (m *mockBulkCompareRepo) ArchiveOldestFiles(ctx context.Context, userID int
 func (m *mockBulkCompareRepo) ListCatalogMatchProducts(ctx context.Context, limit int) ([]*compare.CandidateProduct, error) {
 	return nil, nil
 }
-

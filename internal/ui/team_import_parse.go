@@ -10,8 +10,8 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 type TeamImportPhase = pages.TeamImportPhase
@@ -248,7 +248,7 @@ func GenerateTeamSampleExcel(orgType string) ([]byte, error) {
 	defer f.Close()
 
 	sheetName := i18n.T("ar", "excel.sheet.employees")
-	f.SetSheetName("Sheet1", sheetName)
+	sheetName = renameFirstSheet(f, sheetName)
 
 	headers := []string{
 		i18n.T("ar", "excel.col.full_name"),

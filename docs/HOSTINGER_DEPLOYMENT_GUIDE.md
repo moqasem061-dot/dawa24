@@ -52,7 +52,7 @@ ssh root@<YOUR_VPS_PUBLIC_IP>
 Run the automated one-click setup script to install Docker, configure UFW firewall, apply high-concurrency kernel parameters, and prepare directories:
 ```bash
 # Clone the repository into /opt/dawa24
-git clone https://github.com/<your-account>/dawa24-store.git /opt/dawa24
+git clone https://github.com/moqasem061-dot/dawa24.git /opt/dawa24
 cd /opt/dawa24
 
 # Run the setup script as root
@@ -79,6 +79,12 @@ Fill in the required variables:
    ```bash
    openssl rand -hex 32
    ```
+8. `ADMIN_EMAIL` / `ADMIN_PASSWORD`: the first super_admin, created on the first
+   deploy only. A later deploy never changes an existing admin's password; reset
+   one with `docker compose -f deploy/hostinger/docker-compose.yml exec server /app/cli create-admin <email> <password>`.
+
+`deploy.sh` refuses to run while any `GENERATE_RANDOM_*` or `yourdomain.com`
+placeholder is left in `.env`.
 
 Save and exit (`Ctrl+O`, `Enter`, `Ctrl+X`).
 

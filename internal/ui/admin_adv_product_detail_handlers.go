@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminAdvProductDetailPage renders the full detail and audit view for a single product sponsorship.
@@ -48,7 +48,9 @@ func (h *UIHandler) AdminAdvProductDetailPage(w http.ResponseWriter, r *http.Req
 	}
 
 	var creditEntries []*promo.CreditEntry
-	if entries, err := h.promoSvc.GetAdminSponsorshipCreditEntries(sysCtx, purchaseID, row.ID); err == nil {
+	if entries, err := h.promoSvc.GetAdminSponsorshipCreditEntries(sysCtx, purchaseID, row.ID); err != nil {
+		h.logLoadErr(ctx, "promoSvc.GetAdminSponsorshipCreditEntries", err)
+	} else {
 		creditEntries = entries
 	}
 
@@ -58,7 +60,9 @@ func (h *UIHandler) AdminAdvProductDetailPage(w http.ResponseWriter, r *http.Req
 		itemID = row.ProductID
 	}
 	if itemID > 0 {
-		if evs, err := h.promoSvc.GetAdminSponsorshipEvents(sysCtx, itemID); err == nil {
+		if evs, err := h.promoSvc.GetAdminSponsorshipEvents(sysCtx, itemID); err != nil {
+			h.logLoadErr(ctx, "promoSvc.GetAdminSponsorshipEvents", err)
+		} else {
 			events = evs
 		}
 	}

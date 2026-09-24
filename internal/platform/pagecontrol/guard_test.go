@@ -1,6 +1,7 @@
 package pagecontrol
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -40,7 +41,7 @@ func withGlobal(t *testing.T, e *Engine) {
 
 func do(h http.Handler, method, path string) *httptest.ResponseRecorder {
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(method, path, nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), method, path, nil))
 	return rec
 }
 
@@ -150,4 +151,3 @@ func TestGuardCustomDisabledHandler(t *testing.T) {
 		t.Errorf("captured info mismatch: %+v", capturedInfo)
 	}
 }
-

@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The read model the assistant answers from.

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Filling in what the file did not say.

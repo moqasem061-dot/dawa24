@@ -1,8 +1,8 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 type VendorOrderDetailData struct {
@@ -178,9 +178,4 @@ func computeVendorShipmentFinancialSummary(sh *commerce.OrderShipment) VendorShi
 		TotalProfit:      money.FromMinor(profitMinor),
 		MarginPct:        marginPct,
 	}
-}
-
-func computeVendorShipmentFinancials(sh *commerce.OrderShipment) (totalCost money.Amount, totalProfit money.Amount, marginPct float64) {
-	s := computeVendorShipmentFinancialSummary(sh)
-	return s.TotalCost, s.TotalProfit, s.MarginPct
 }

@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log/slog"
 	"mime/multipart"
@@ -13,7 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // The saving-products import, driven through the real handlers.
@@ -32,7 +33,7 @@ func TestSavingImportUploadLandsOnTheColumnMappingScreen(t *testing.T) {
 	router := savingFlowRouter(h, authctx.Actor{UserID: 200, OrganizationID: 100, Role: "customer"})
 
 	body, contentType := savingWorkbookUpload(t)
-	req := httptest.NewRequest(http.MethodPost, "/customer/saving-products/import/upload", body)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/saving-products/import/upload", body)
 	req.Header.Set("Content-Type", contentType)
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
@@ -112,7 +113,7 @@ func TestWizardAISwitchIsHonouredBothWays(t *testing.T) {
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "/x", strings.NewReader(tc.form))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/x", strings.NewReader(tc.form))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			if got := ParseUseAIFromWizard(req); got != tc.want {
 				t.Errorf("got %v, want %v", got, tc.want)
@@ -140,7 +141,7 @@ func savingFlowRouter(h *UIHandler, actor authctx.Actor) chi.Router {
 func savingFlowGet(t *testing.T, router chi.Router, path string) string {
 	t.Helper()
 	rec := httptest.NewRecorder()
-	router.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+	router.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("GET %s: expected 200, got %d (%s)", path, rec.Code, rec.Header().Get("Location"))
 	}

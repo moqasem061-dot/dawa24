@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func (h *UIHandler) telegramGateway() telegramgateway.Client {
@@ -58,7 +58,7 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 	rawPhone := strings.TrimSpace(r.PostFormValue("phone"))
 	if rawPhone == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req sendOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawPhone = strings.TrimSpace(req.Phone)
 		}
 	}
@@ -156,7 +156,7 @@ func (h *UIHandler) VerifyTelegramOTP(w http.ResponseWriter, r *http.Request) {
 
 	if rawPhone == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req verifyOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawPhone = strings.TrimSpace(req.Phone)
 			requestID = strings.TrimSpace(req.RequestID)
 			code = strings.TrimSpace(req.Code)

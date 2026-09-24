@@ -76,7 +76,7 @@ func ErrorState(props ErrorStateProps) templ.Component {
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p><div class=\"s-error-actions\"><button type=\"button\" onclick=\"window.history.length > 1 ? window.history.back() : window.location.href='/'\" class=\"btn btn-secondary s-error-state-btn\"><span>الرجوع للخلف</span></button> ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</p><div class=\"s-error-actions\"><button type=\"button\" data-on-click=\"backOrHome()\" class=\"btn btn-secondary s-error-state-btn\"><span>الرجوع للخلف</span></button> ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

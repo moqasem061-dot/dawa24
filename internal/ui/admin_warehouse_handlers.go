@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminWarehousesPage renders warehouse registry for fulfillment network.
@@ -78,7 +78,8 @@ func (h *UIHandler) AdminWarehouseDetailPage(w http.ResponseWriter, r *http.Requ
 
 	var wh *inventory.Warehouse
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(database.AsSystem(ctx))
+		whs, loadErr := h.invSvc.ListWarehouses(database.AsSystem(ctx))
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, item := range whs {
 			if item != nil && item.ID == whID {
 				wh = item
@@ -101,7 +102,11 @@ func (h *UIHandler) AdminWarehouseDetailPage(w http.ResponseWriter, r *http.Requ
 
 	var allStocks []*inventory.DetailedWarehouseStockView
 	if h.invSvc != nil {
-		allStocks, _ = h.invSvc.ListDetailedStocksByWarehouse(database.AsSystem(ctx), whID)
+		if loaded, err := h.invSvc.ListDetailedStocksByWarehouse(database.AsSystem(ctx), whID); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListDetailedStocksByWarehouse", err)
+		} else {
+			allStocks = loaded
+		}
 	}
 	if allStocks == nil {
 		allStocks = []*inventory.DetailedWarehouseStockView{}
@@ -245,7 +250,11 @@ func (h *UIHandler) AdminWarehouseStocksJSON(w http.ResponseWriter, r *http.Requ
 
 	var stocks []*inventory.DetailedWarehouseStockView
 	if h.invSvc != nil && whID > 0 {
-		stocks, _ = h.invSvc.ListDetailedStocksByWarehouse(database.AsSystem(ctx), whID)
+		if loaded, err := h.invSvc.ListDetailedStocksByWarehouse(database.AsSystem(ctx), whID); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListDetailedStocksByWarehouse", err)
+		} else {
+			stocks = loaded
+		}
 	}
 
 	if stocks == nil {

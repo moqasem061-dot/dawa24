@@ -12,8 +12,7 @@ import (
 // excluded, ensuring maximum ratings on security audits (e.g. SSL Labs Grade A+).
 func DefaultTLSConfig() *tls.Config {
 	return &tls.Config{
-		MinVersion:               tls.VersionTLS12,
-		PreferServerCipherSuites: true,
+		MinVersion: tls.VersionTLS12,
 		// Post-Quantum Cryptography (PQC) hybrid key exchange:
 		// X25519MLKEM768 and SecP256r1MLKEM768 combined with classical curves.
 		CurvePreferences: []tls.CurveID{

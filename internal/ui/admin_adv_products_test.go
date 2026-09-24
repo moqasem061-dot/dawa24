@@ -15,11 +15,11 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func (m *mockAdminPromoRepo) ListAdminSponsorshipRows(ctx context.Context, f promo.AdminSponsorshipFilter) ([]*promo.AdminSponsorshipRow, int, error) {
@@ -173,7 +173,7 @@ func TestAdminAdvProducts_PageRenders(t *testing.T) {
 	r.Post("/admin/adv-products/new", handler.AdminAdvProductCreateSubmit)
 
 	t.Run("GET /admin/adv-products renders hub with correct title, filters and table rows", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/adv-products?tab=all&q=بانادول&tier_level=3", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/adv-products?tab=all&q=بانادول&tier_level=3", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 
@@ -191,7 +191,7 @@ func TestAdminAdvProducts_PageRenders(t *testing.T) {
 	})
 
 	t.Run("GET /admin/adv-products/101 renders full detail page with telemetry and ledger", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/admin/adv-products/101", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/adv-products/101", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 
@@ -211,7 +211,7 @@ func TestAdminAdvProducts_PageRenders(t *testing.T) {
 		form := url.Values{}
 		form.Set("notes", "معتمد وموافق عليه")
 
-		req := httptest.NewRequest(http.MethodPost, "/admin/adv-products/101/approve", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/adv-products/101/approve", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
@@ -233,7 +233,7 @@ func TestAdminAdvProducts_PageRenders(t *testing.T) {
 		form := url.Values{}
 		form.Set("notes", "البيانات غير مكتملة")
 
-		req := httptest.NewRequest(http.MethodPost, "/admin/adv-products/101/reject", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/adv-products/101/reject", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)

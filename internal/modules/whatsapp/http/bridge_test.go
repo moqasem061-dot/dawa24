@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -8,7 +9,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/whatsapp"
+	"github.com/moqasem061-dot/dawa24/internal/modules/whatsapp"
 )
 
 const secret = "0123456789abcdef0123456789abcdef0123456789abcdef"
@@ -26,7 +27,7 @@ func TestBridgeRefusesWithoutTheSharedSecret(t *testing.T) {
 		r := chi.NewRouter()
 		NewBridge((*whatsapp.Service)(nil), c.token, nil).RegisterRoutes(r)
 		for _, path := range []string{"/webhook", "/outbox/claim", "/outbox/report"} {
-			req := httptest.NewRequest(http.MethodPost, Prefix+path, strings.NewReader(`{}`))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, Prefix+path, strings.NewReader(`{}`))
 			if c.header != "" {
 				req.Header.Set("Authorization", c.header)
 			}

@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // trigram is a three-character window, hashed.
@@ -108,7 +108,7 @@ func jaccardSorted(a, b []trigram) float64 {
 // only report that it cannot choose.
 func numberSignature(name string) []float64 {
 	fields := strings.FieldsFunc(sheet.NormalizeDigits(name), func(r rune) bool {
-		return !(r >= '0' && r <= '9') && r != '.'
+		return (r < '0' || r > '9') && r != '.'
 	})
 	var out []float64
 	for _, f := range fields {

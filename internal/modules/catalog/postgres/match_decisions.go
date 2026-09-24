@@ -5,12 +5,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // ListMatchDecisions returns paginated decision memories across the platform.
@@ -186,7 +186,7 @@ func (r *Repository) DeleteMatchDecisionForOrg(ctx context.Context, orgID, id in
 // ClearMatchDecisions purges all cached matching decisions from the system.
 func (r *Repository) ClearMatchDecisions(ctx context.Context) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		_, err := tx.Exec(txCtx, `TRUNCATE TABLE catalog.match_decisions RESTART IDENTITY;`)
+		_, err := tx.Exec(txCtx, `TRUNCATE TABLE catalog.match_decisions;`)
 		return err
 	})
 }

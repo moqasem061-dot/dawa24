@@ -2,6 +2,7 @@ package ui
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -14,7 +15,7 @@ func TestSmartOrderSamples(t *testing.T) {
 	h := &UIHandler{}
 
 	t.Run("CSV sample download", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/customer/smart-order/sample.csv", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/smart-order/sample.csv", nil)
 		rec := httptest.NewRecorder()
 		h.SmartOrderSampleCSV(rec, req)
 
@@ -38,7 +39,7 @@ func TestSmartOrderSamples(t *testing.T) {
 	})
 
 	t.Run("XLSX sample download", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/customer/smart-order/sample.xlsx", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/smart-order/sample.xlsx", nil)
 		rec := httptest.NewRecorder()
 		h.SmartOrderSampleXLSX(rec, req)
 

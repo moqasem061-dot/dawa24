@@ -8,9 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // AdminSearchOrders finds orders across every tenant.
@@ -64,9 +64,10 @@ func (r *Repository) AdminSearchOrdersWithTotal(ctx context.Context, query, tab 
 			where = append(where, "order_number ILIKE "+p)
 		}
 
-		if tab == "direct" {
+		switch tab {
+		case "direct":
 			where = append(where, "is_negotiation = false")
-		} else if tab == "negotiations" {
+		case "negotiations":
 			where = append(where, "is_negotiation = true")
 		}
 
@@ -172,9 +173,10 @@ func (r *Repository) AdminSearchOrdersFiltered(ctx context.Context, filter comme
 			where = append(where, fmt.Sprintf("(LOWER(ord.order_number) LIKE %s OR LOWER(COALESCE(corg.legal_name, '')) LIKE %s OR LOWER(COALESCE(vorg.legal_name, '')) LIKE %s OR LOWER(COALESCE(corg.name->>'ar', '')) LIKE %s OR LOWER(COALESCE(vorg.name->>'ar', '')) LIKE %s)", p, p, p, p, p))
 		}
 
-		if filter.Tab == "direct" {
+		switch filter.Tab {
+		case "direct":
 			where = append(where, "ord.is_negotiation = false")
-		} else if filter.Tab == "negotiations" {
+		case "negotiations":
 			where = append(where, "ord.is_negotiation = true")
 		}
 

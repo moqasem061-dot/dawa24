@@ -2,13 +2,14 @@ package database_test
 
 import (
 	"context"
+	"errors"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // TestUnscopedTablesHaveNoRLS is the check that keeps database.QueryUnscoped
@@ -52,7 +53,7 @@ func TestUnscopedTablesHaveNoRLS(t *testing.T) {
 			   AND c.relkind = 'r';
 		`, qualified).Scan(&exists, &rls)
 		switch {
-		case err == pgx.ErrNoRows:
+		case errors.Is(err, pgx.ErrNoRows):
 			t.Errorf("%s is listed in database.UnscopedTables but does not exist; "+
 				"remove it or fix the name", qualified)
 		case err != nil:

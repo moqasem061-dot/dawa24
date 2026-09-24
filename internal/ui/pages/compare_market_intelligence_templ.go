@@ -12,10 +12,10 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // تقرير التوفير الاستراتيجي والتوصيات.
@@ -146,7 +146,7 @@ func CompareMarketIntelligenceContent(data MarketIntelligencePageData) templ.Com
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = marketIntelInsights("💡 التحليل الاستراتيجي التلقائي", data.Report.Analysis).Render(ctx, templ_7745c5c3_Buffer)
+			templ_7745c5c3_Err = marketIntelInsights("التحليل الاستراتيجي التلقائي", data.Report.Analysis).Render(ctx, templ_7745c5c3_Buffer)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -171,7 +171,7 @@ func CompareMarketIntelligenceContent(data MarketIntelligencePageData) templ.Com
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = marketIntelInsights("📌 نصيحة استراتيجية", data.Report.Advice).Render(ctx, templ_7745c5c3_Buffer)
+				templ_7745c5c3_Err = marketIntelInsights("نصيحة استراتيجية", data.Report.Advice).Render(ctx, templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -242,7 +242,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(data.TargetOrgName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 128, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 128, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 			if templ_7745c5c3_Err != nil {
@@ -255,7 +255,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", data.TargetOrgID))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 129, Col: 95}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 129, Col: 95}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 			var templ_7745c5c3_Var5 templ.SafeURL
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.FileCenterURL()))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 132, Col: 48}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 132, Col: 48}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -295,14 +295,14 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div><h1 class=\"text-2xl font-black text-primary m-0\">🧠 تقرير التوفير الاستراتيجي والتوصيات</h1></div><p class=\"text-sm text-secondary m-0\">ما الذي يوفّره شراء كل صنف من أرخص مورد له، وأين تكمن أكبر الفوارق، ومن هو المورد الأفضل إجمالاً — محسوباً من عروض السوق الفعلية.</p></div><a href=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</div><h1 class=\"text-2xl font-black text-primary m-0\">تقرير التوفير الاستراتيجي والتوصيات</h1></div><p class=\"text-sm text-secondary m-0\">ما الذي يوفّره شراء كل صنف من أرخص مورد له، وأين تكمن أكبر الفوارق، ومن هو المورد الأفضل إجمالاً — محسوباً من عروض السوق الفعلية.</p></div><a href=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 templ.SafeURL
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.FileCenterURL()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 153, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 153, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -323,7 +323,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		var templ_7745c5c3_Var7 templ.SafeURL
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.SubtabURL("/compare/results")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 159, Col: 62}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 159, Col: 62}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {
@@ -336,7 +336,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		var templ_7745c5c3_Var8 templ.SafeURL
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.SubtabURL("/compare/head-to-head")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 160, Col: 67}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 160, Col: 67}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -349,7 +349,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		var templ_7745c5c3_Var9 templ.SafeURL
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.SubtabURL("/compare/market-benchmark")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 161, Col: 71}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 161, Col: 71}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -362,7 +362,7 @@ func marketIntelHeader(data MarketIntelligencePageData) templ.Component {
 		var templ_7745c5c3_Var10 templ.SafeURL
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.SubtabURL("/compare/market-intelligence")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 162, Col: 74}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 162, Col: 74}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -404,7 +404,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(r.OptimalCost.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 171, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 171, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -417,7 +417,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(r.WorstCost.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 178, Col: 79}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 178, Col: 79}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -430,7 +430,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var14 string
 		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(r.PotentialSavings.String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 185, Col: 85}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 185, Col: 85}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
@@ -443,7 +443,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var15 string
 		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%% من التكلفة القصوى", r.SavingsPercent))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 187, Col: 78}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 187, Col: 78}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 		if templ_7745c5c3_Err != nil {
@@ -456,7 +456,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var16 string
 		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", r.Coverage.ComparableProduct))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 193, Col: 53}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 193, Col: 53}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
@@ -469,7 +469,7 @@ func marketIntelKPIs(r *compare.StrategicSavingReport) templ.Component {
 		var templ_7745c5c3_Var17 string
 		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("من %d صنف مرصود لدى %d مورد", r.Coverage.Products, r.Coverage.Suppliers))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 196, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 196, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
@@ -512,7 +512,7 @@ func marketIntelInsights(title string, items []compare.Insight) templ.Component 
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 205, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 205, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -539,7 +539,7 @@ func marketIntelInsights(title string, items []compare.Insight) templ.Component 
 				var templ_7745c5c3_Var21 string
 				templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var20).String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 1, Col: 0}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 1, Col: 0}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var21)
 				if templ_7745c5c3_Err != nil {
@@ -572,7 +572,7 @@ func marketIntelInsights(title string, items []compare.Insight) templ.Component 
 				var templ_7745c5c3_Var22 string
 				templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(it.Text)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 218, Col: 68}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 218, Col: 68}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 				if templ_7745c5c3_Err != nil {
@@ -668,7 +668,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.ProductName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 376, Col: 34}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 376, Col: 34}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var24)
 				if templ_7745c5c3_Err != nil {
@@ -681,7 +681,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var25 string
 				templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.SKU)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 377, Col: 25}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 377, Col: 25}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var25)
 				if templ_7745c5c3_Err != nil {
@@ -694,7 +694,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var26 string
 				templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%s %s", it.ProductName, it.SKU))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 378, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 378, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var26)
 				if templ_7745c5c3_Err != nil {
@@ -707,7 +707,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var27 string
 				templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(ifElseStr(it.InCatalog, "in_catalog", "name_matched"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 379, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 379, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 				if templ_7745c5c3_Err != nil {
@@ -720,7 +720,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var28 string
 				templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", it.PriceDifference.Minor()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 380, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 380, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var28)
 				if templ_7745c5c3_Err != nil {
@@ -733,7 +733,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var29 string
 				templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", it.PricePercent))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 381, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 381, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var29)
 				if templ_7745c5c3_Err != nil {
@@ -746,7 +746,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var30 string
 				templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.BestSupplier)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 382, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 382, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var30)
 				if templ_7745c5c3_Err != nil {
@@ -759,7 +759,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var31 string
 				templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", it.BestNet.Minor()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 383, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 383, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 				if templ_7745c5c3_Err != nil {
@@ -772,7 +772,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var32 string
 				templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", it.BestDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 384, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 384, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var32)
 				if templ_7745c5c3_Err != nil {
@@ -785,7 +785,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var33 string
 				templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.WorstSupplier)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 385, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 385, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var33)
 				if templ_7745c5c3_Err != nil {
@@ -798,7 +798,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var34 string
 				templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", it.WorstNet.Minor()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 386, Col: 65}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 386, Col: 65}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var34)
 				if templ_7745c5c3_Err != nil {
@@ -811,7 +811,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var35 string
 				templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", it.WorstDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 387, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 387, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 				if templ_7745c5c3_Err != nil {
@@ -824,7 +824,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var36 string
 				templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(it.ProductName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 390, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 390, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 				if templ_7745c5c3_Err != nil {
@@ -842,7 +842,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var37 string
 					templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(it.SKU)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 393, Col: 30}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 393, Col: 30}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 					if templ_7745c5c3_Err != nil {
@@ -880,7 +880,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var38 string
 				templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(it.PriceDifference.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 404, Col: 97}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 404, Col: 97}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 				if templ_7745c5c3_Err != nil {
@@ -893,7 +893,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var39 string
 				templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", it.PricePercent))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 404, Col: 141}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 404, Col: 141}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 				if templ_7745c5c3_Err != nil {
@@ -906,7 +906,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var40 string
 				templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d مورد", it.SupplierCount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 404, Col: 194}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 404, Col: 194}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
 				if templ_7745c5c3_Err != nil {
@@ -919,7 +919,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var41 string
 				templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(it.BestNet.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 408, Col: 61}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 408, Col: 61}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 				if templ_7745c5c3_Err != nil {
@@ -932,7 +932,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var42 string
 				templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", it.BestDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 409, Col: 80}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 409, Col: 80}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
 				if templ_7745c5c3_Err != nil {
@@ -945,7 +945,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var43 string
 				templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(it.BestSupplier)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 410, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 410, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 				if templ_7745c5c3_Err != nil {
@@ -958,7 +958,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var44 string
 				templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(it.WorstNet.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 413, Col: 63}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 413, Col: 63}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
 				if templ_7745c5c3_Err != nil {
@@ -971,7 +971,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var45 string
 				templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", it.WorstDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 414, Col: 82}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 414, Col: 82}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
 				if templ_7745c5c3_Err != nil {
@@ -984,7 +984,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 				var templ_7745c5c3_Var46 string
 				templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(it.WorstSupplier)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 415, Col: 64}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 415, Col: 64}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
 				if templ_7745c5c3_Err != nil {
@@ -995,7 +995,7 @@ func marketIntelSavingsTable(data MarketIntelligencePageData) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted\" style=\"display:none;\">لا توجد أصناف تطابق الفلاتر المحددة.</div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted hidden\">لا توجد أصناف تطابق الفلاتر المحددة.</div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1053,7 +1053,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 			var templ_7745c5c3_Var48 string
 			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(r.BestSupplier.SupplierName)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 454, Col: 77}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 454, Col: 77}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
@@ -1067,7 +1067,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d صنف مقارَن · الأرخص في %d منها (%.0f%%) · متوسط خصم %.1f%%",
 				r.BestSupplier.Offers, r.BestSupplier.Wins, r.BestSupplier.WinRate, r.BestSupplier.AvgDiscount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 457, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 457, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
@@ -1085,7 +1085,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var50 string
 				templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.ResolveAttributeValue(st.SupplierName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 555, Col: 39}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 555, Col: 39}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var50)
 				if templ_7745c5c3_Err != nil {
@@ -1098,7 +1098,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var51 string
 				templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", st.Offers))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 556, Col: 50}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 556, Col: 50}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
 				if templ_7745c5c3_Err != nil {
@@ -1111,7 +1111,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var52 string
 				templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", st.Wins))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 557, Col: 46}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 557, Col: 46}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var52)
 				if templ_7745c5c3_Err != nil {
@@ -1124,7 +1124,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var53 string
 				templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", st.WinRate))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 558, Col: 55}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 558, Col: 55}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var53)
 				if templ_7745c5c3_Err != nil {
@@ -1137,7 +1137,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var54 string
 				templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.4f", st.AvgPremium))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 559, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 559, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var54)
 				if templ_7745c5c3_Err != nil {
@@ -1150,7 +1150,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var55 string
 				templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", st.AvgDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 560, Col: 59}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 560, Col: 59}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var55)
 				if templ_7745c5c3_Err != nil {
@@ -1163,7 +1163,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var56 string
 				templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", st.BasketCost.Minor()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 561, Col: 67}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 561, Col: 67}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var56)
 				if templ_7745c5c3_Err != nil {
@@ -1176,7 +1176,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var57 string
 				templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", st.Excess().Minor()))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 562, Col: 60}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 562, Col: 60}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
 				if templ_7745c5c3_Err != nil {
@@ -1189,7 +1189,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var58 string
 				templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(st.SupplierName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 564, Col: 44}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 564, Col: 44}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 				if templ_7745c5c3_Err != nil {
@@ -1202,7 +1202,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var59 string
 				templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", st.Offers))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 565, Col: 72}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 565, Col: 72}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var59))
 				if templ_7745c5c3_Err != nil {
@@ -1215,7 +1215,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var60 string
 				templ_7745c5c3_Var60, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d (%.0f%%)", st.Wins, st.WinRate))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 566, Col: 91}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 566, Col: 91}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var60))
 				if templ_7745c5c3_Err != nil {
@@ -1234,7 +1234,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 					var templ_7745c5c3_Var61 string
 					templ_7745c5c3_Var61, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("+%.1f%%", st.AvgPremium))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 571, Col: 49}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 571, Col: 49}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var61))
 					if templ_7745c5c3_Err != nil {
@@ -1248,7 +1248,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var62 string
 				templ_7745c5c3_Var62, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", st.AvgDiscount))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 574, Col: 81}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 574, Col: 81}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var62))
 				if templ_7745c5c3_Err != nil {
@@ -1261,7 +1261,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var63 string
 				templ_7745c5c3_Var63, templ_7745c5c3_Err = templ.JoinStringErrs(st.BasketCost.String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 575, Col: 66}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 575, Col: 66}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var63))
 				if templ_7745c5c3_Err != nil {
@@ -1274,7 +1274,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 				var templ_7745c5c3_Var64 string
 				templ_7745c5c3_Var64, templ_7745c5c3_Err = templ.JoinStringErrs(st.Excess().String())
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 576, Col: 76}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 576, Col: 76}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var64))
 				if templ_7745c5c3_Err != nil {
@@ -1285,7 +1285,7 @@ func marketIntelBestSupplier(r *compare.StrategicSavingReport) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted\" style=\"display:none;\">لا يوجد موردون يطابقون الفلتر.</div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted hidden\">لا يوجد موردون يطابقون الفلتر.</div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1356,7 +1356,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var66 string
 					templ_7745c5c3_Var66, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.ProductName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 708, Col: 35}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 708, Col: 35}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var66)
 					if templ_7745c5c3_Err != nil {
@@ -1369,7 +1369,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var67 string
 					templ_7745c5c3_Var67, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.SKU)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 709, Col: 26}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 709, Col: 26}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var67)
 					if templ_7745c5c3_Err != nil {
@@ -1382,7 +1382,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var68 string
 					templ_7745c5c3_Var68, templ_7745c5c3_Err = templ.ResolveAttributeValue(it.BestSupplier)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 710, Col: 40}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 710, Col: 40}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var68)
 					if templ_7745c5c3_Err != nil {
@@ -1395,7 +1395,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var69 string
 					templ_7745c5c3_Var69, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", it.BestNet.Minor()))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 711, Col: 59}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 711, Col: 59}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var69)
 					if templ_7745c5c3_Err != nil {
@@ -1408,7 +1408,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var70 string
 					templ_7745c5c3_Var70, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%.2f", it.BestDiscount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 712, Col: 61}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 712, Col: 61}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var70)
 					if templ_7745c5c3_Err != nil {
@@ -1421,7 +1421,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var71 string
 					templ_7745c5c3_Var71, templ_7745c5c3_Err = templ.JoinStringErrs(it.ProductName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 714, Col: 44}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 714, Col: 44}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var71))
 					if templ_7745c5c3_Err != nil {
@@ -1435,7 +1435,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 						var templ_7745c5c3_Var72 string
 						templ_7745c5c3_Var72, templ_7745c5c3_Err = templ.JoinStringErrs(it.SKU)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 717, Col: 19}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 717, Col: 19}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var72))
 						if templ_7745c5c3_Err != nil {
@@ -1454,7 +1454,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var73 string
 					templ_7745c5c3_Var73, templ_7745c5c3_Err = templ.JoinStringErrs(it.BestSupplier)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 722, Col: 46}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 722, Col: 46}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var73))
 					if templ_7745c5c3_Err != nil {
@@ -1467,7 +1467,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var74 string
 					templ_7745c5c3_Var74, templ_7745c5c3_Err = templ.JoinStringErrs(it.BestNet.String())
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 723, Col: 71}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 723, Col: 71}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var74))
 					if templ_7745c5c3_Err != nil {
@@ -1480,7 +1480,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 					var templ_7745c5c3_Var75 string
 					templ_7745c5c3_Var75, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", it.BestDiscount))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 724, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 724, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var75))
 					if templ_7745c5c3_Err != nil {
@@ -1491,7 +1491,7 @@ func marketIntelExclusives(data MarketIntelligencePageData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted\" style=\"display:none;\">لا توجد أصناف حصرية تطابق الفلتر.</div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 125, "</tbody></table><div class=\"table-filter-empty p-6 text-center text-sm text-muted hidden\">لا توجد أصناف حصرية تطابق الفلتر.</div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -1533,13 +1533,13 @@ func CompareMarketIntelligenceScript() templ.Component {
 		var templ_7745c5c3_Var77 string
 		templ_7745c5c3_Var77, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 739, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 739, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var77)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "\">\n\t\tfunction marketTableManager(tableId) {\n\t\t\treturn {\n\t\t\t\tsortCol: '',\n\t\t\t\tsortDir: 'asc',\n\t\t\t\tfilters: {},\n\t\t\t\tvisibleCount: 0,\n\t\t\t\ttotalCount: 0,\n\n\t\t\t\tinit() {\n\t\t\t\t\tthis.updateCounts();\n\t\t\t\t},\n\n\t\t\t\tupdateCounts() {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst rows = table.querySelectorAll('tbody tr[data-row]');\n\t\t\t\t\tthis.totalCount = rows.length;\n\t\t\t\t\tlet vis = 0;\n\t\t\t\t\trows.forEach(r => {\n\t\t\t\t\t\tif (r.style.display !== 'none') vis++;\n\t\t\t\t\t});\n\t\t\t\t\tthis.visibleCount = vis;\n\t\t\t\t},\n\n\t\t\t\tsetFilter(key, val) {\n\t\t\t\t\tthis.filters[key] = (val || '').toLowerCase().trim();\n\t\t\t\t\tthis.applyFilters();\n\t\t\t\t},\n\n\t\t\t\tclearFilters() {\n\t\t\t\t\tthis.filters = {};\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\ttable.querySelectorAll('.table-col-filter').forEach(el => el.value = '');\n\t\t\t\t\tthis.applyFilters();\n\t\t\t\t},\n\n\t\t\t\thasActiveFilters() {\n\t\t\t\t\treturn Object.values(this.filters).some(v => v !== '');\n\t\t\t\t},\n\n\t\t\t\tapplyFilters() {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst rows = table.querySelectorAll('tbody tr[data-row]');\n\t\t\t\t\tlet visible = 0;\n\n\t\t\t\t\trows.forEach(row => {\n\t\t\t\t\t\tlet matches = true;\n\t\t\t\t\t\tfor (const [key, val] of Object.entries(this.filters)) {\n\t\t\t\t\t\t\tif (!val) continue;\n\t\t\t\t\t\t\tconst rowVal = (row.getAttribute('data-' + key) || '').toLowerCase();\n\t\t\t\t\t\t\tif (key === 'catalog') {\n\t\t\t\t\t\t\t\tif (val !== 'all' && rowVal !== val) {\n\t\t\t\t\t\t\t\t\tmatches = false;\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tif (!rowVal.includes(val)) {\n\t\t\t\t\t\t\t\t\tmatches = false;\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\trow.style.display = matches ? '' : 'none';\n\t\t\t\t\t\tif (matches) visible++;\n\t\t\t\t\t});\n\n\t\t\t\t\tthis.visibleCount = visible;\n\t\t\t\t\tconst emptyMsg = table.parentElement ? table.parentElement.querySelector('.table-filter-empty') : null;\n\t\t\t\t\tif (emptyMsg) {\n\t\t\t\t\t\temptyMsg.style.display = visible === 0 ? '' : 'none';\n\t\t\t\t\t}\n\t\t\t\t},\n\n\t\t\t\tsortBy(col, type) {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst tbody = table.querySelector('tbody');\n\t\t\t\t\tif (!tbody) return;\n\n\t\t\t\t\tif (this.sortCol === col) {\n\t\t\t\t\t\tthis.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';\n\t\t\t\t\t} else {\n\t\t\t\t\t\tthis.sortCol = col;\n\t\t\t\t\t\tthis.sortDir = (type === 'num' || col.includes('diff') || col.includes('cost') || col.includes('price')) ? 'desc' : 'asc';\n\t\t\t\t\t}\n\n\t\t\t\t\tconst rows = Array.from(tbody.querySelectorAll('tr[data-row]'));\n\t\t\t\t\trows.sort((a, b) => {\n\t\t\t\t\t\tlet valA = a.getAttribute('data-' + col) || '';\n\t\t\t\t\t\tlet valB = b.getAttribute('data-' + col) || '';\n\n\t\t\t\t\t\tif (type === 'num') {\n\t\t\t\t\t\t\tconst numA = parseFloat(valA) || 0;\n\t\t\t\t\t\t\tconst numB = parseFloat(valB) || 0;\n\t\t\t\t\t\t\treturn this.sortDir === 'asc' ? numA - numB : numB - numA;\n\t\t\t\t\t\t}\n\t\t\t\t\t\treturn this.sortDir === 'asc' ? valA.localeCompare(valB, 'ar') : valB.localeCompare(valA, 'ar');\n\t\t\t\t\t});\n\n\t\t\t\t\trows.forEach(row => tbody.appendChild(row));\n\t\t\t\t}\n\t\t\t};\n\t\t}\n\t\tdawaData('marketTableManager', marketTableManager);\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 128, "\">\n\t\tfunction marketTableManager(tableId) {\n\t\t\treturn {\n\t\t\t\tsortCol: '',\n\t\t\t\tsortDir: 'asc',\n\t\t\t\tfilters: {},\n\t\t\t\tvisibleCount: 0,\n\t\t\t\ttotalCount: 0,\n\n\t\t\t\tinit() {\n\t\t\t\t\tthis.updateCounts();\n\t\t\t\t},\n\n\t\t\t\tupdateCounts() {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst rows = table.querySelectorAll('tbody tr[data-row]');\n\t\t\t\t\tthis.totalCount = rows.length;\n\t\t\t\t\tlet vis = 0;\n\t\t\t\t\trows.forEach(r => {\n\t\t\t\t\t\tif (r.style.display !== 'none') vis++;\n\t\t\t\t\t});\n\t\t\t\t\tthis.visibleCount = vis;\n\t\t\t\t},\n\n\t\t\t\tsetFilter(key, val) {\n\t\t\t\t\tthis.filters[key] = (val || '').toLowerCase().trim();\n\t\t\t\t\tthis.applyFilters();\n\t\t\t\t},\n\n\t\t\t\tclearFilters() {\n\t\t\t\t\tthis.filters = {};\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\ttable.querySelectorAll('.table-col-filter').forEach(el => el.value = '');\n\t\t\t\t\tthis.applyFilters();\n\t\t\t\t},\n\n\t\t\t\thasActiveFilters() {\n\t\t\t\t\treturn Object.values(this.filters).some(v => v !== '');\n\t\t\t\t},\n\n\t\t\t\tapplyFilters() {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst rows = table.querySelectorAll('tbody tr[data-row]');\n\t\t\t\t\tlet visible = 0;\n\n\t\t\t\t\trows.forEach(row => {\n\t\t\t\t\t\tlet matches = true;\n\t\t\t\t\t\tfor (const [key, val] of Object.entries(this.filters)) {\n\t\t\t\t\t\t\tif (!val) continue;\n\t\t\t\t\t\t\tconst rowVal = (row.getAttribute('data-' + key) || '').toLowerCase();\n\t\t\t\t\t\t\tif (key === 'catalog') {\n\t\t\t\t\t\t\t\tif (val !== 'all' && rowVal !== val) {\n\t\t\t\t\t\t\t\t\tmatches = false;\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tif (!rowVal.includes(val)) {\n\t\t\t\t\t\t\t\t\tmatches = false;\n\t\t\t\t\t\t\t\t\tbreak;\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t}\n\t\t\t\t\t\trow.style.display = matches ? '' : 'none';\n\t\t\t\t\t\tif (matches) visible++;\n\t\t\t\t\t});\n\n\t\t\t\t\tthis.visibleCount = visible;\n\t\t\t\t\tconst emptyMsg = table.parentElement ? table.parentElement.querySelector('.table-filter-empty') : null;\n\t\t\t\t\tif (emptyMsg) {\n\t\t\t\t\t\temptyMsg.classList.toggle('hidden', visible !== 0);\n\t\t\t\t\t}\n\t\t\t\t},\n\n\t\t\t\tsortBy(col, type) {\n\t\t\t\t\tconst table = document.getElementById(tableId);\n\t\t\t\t\tif (!table) return;\n\t\t\t\t\tconst tbody = table.querySelector('tbody');\n\t\t\t\t\tif (!tbody) return;\n\n\t\t\t\t\tif (this.sortCol === col) {\n\t\t\t\t\t\tthis.sortDir = this.sortDir === 'asc' ? 'desc' : 'asc';\n\t\t\t\t\t} else {\n\t\t\t\t\t\tthis.sortCol = col;\n\t\t\t\t\t\tthis.sortDir = (type === 'num' || col.includes('diff') || col.includes('cost') || col.includes('price')) ? 'desc' : 'asc';\n\t\t\t\t\t}\n\n\t\t\t\t\tconst rows = Array.from(tbody.querySelectorAll('tr[data-row]'));\n\t\t\t\t\trows.sort((a, b) => {\n\t\t\t\t\t\tlet valA = a.getAttribute('data-' + col) || '';\n\t\t\t\t\t\tlet valB = b.getAttribute('data-' + col) || '';\n\n\t\t\t\t\t\tif (type === 'num') {\n\t\t\t\t\t\t\tconst numA = parseFloat(valA) || 0;\n\t\t\t\t\t\t\tconst numB = parseFloat(valB) || 0;\n\t\t\t\t\t\t\treturn this.sortDir === 'asc' ? numA - numB : numB - numA;\n\t\t\t\t\t\t}\n\t\t\t\t\t\treturn this.sortDir === 'asc' ? valA.localeCompare(valB, 'ar') : valB.localeCompare(valA, 'ar');\n\t\t\t\t\t});\n\n\t\t\t\t\trows.forEach(row => tbody.appendChild(row));\n\t\t\t\t}\n\t\t\t};\n\t\t}\n\t\tdawaData('marketTableManager', marketTableManager);\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -1576,7 +1576,7 @@ func marketIntelCoverage(c compare.MarketCoverage) templ.Component {
 		templ_7745c5c3_Var79, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("محسوب على %d عرضاً من %d ملف لدى %d مورد. %d عرضاً (%.0f%%) مرتبط بالكتالوج المركزي.",
 			c.Offers, c.Files, c.Suppliers, c.MatchedOffers, c.MatchedPercent()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_market_intelligence.templ`, Line: 853, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `compare_market_intelligence.templ`, Line: 853, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var79))
 		if templ_7745c5c3_Err != nil {

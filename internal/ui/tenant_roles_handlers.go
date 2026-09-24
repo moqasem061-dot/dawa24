@@ -7,11 +7,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // The company role editor, /vendor/roles and /customer/roles.
@@ -194,7 +194,9 @@ func (h *UIHandler) tenantRoleDetailPage(w http.ResponseWriter, r *http.Request)
 		Sections:    rbac.Default().Matrix(scope),
 		Tenant:      true,
 	}
-	if counts, err := h.orgSvc.RoleMemberCounts(ctx, actor.OrganizationID); err == nil {
+	if counts, err := h.orgSvc.RoleMemberCounts(ctx, actor.OrganizationID); err != nil {
+		h.logLoadErr(ctx, "orgSvc.RoleMemberCounts", err)
+	} else {
 		view.MemberCount = counts[role.ID]
 	}
 

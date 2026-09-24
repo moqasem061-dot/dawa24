@@ -131,12 +131,12 @@ func (b blockingSink) Capture(context.Context, Event) error {
 func TestReportIsSafeWithNoTrackerInstalled(t *testing.T) {
 	Install(nil)
 	Report(Event{Message: "nobody is listening"})
-	ReportRequest(context.Background(), httptest.NewRequest("GET", "/x", nil),
+	ReportRequest(context.Background(), httptest.NewRequestWithContext(context.Background(), "GET", "/x", nil),
 		errors.New("x"), LevelError, 500)
 }
 
 func TestFromRequestRecordsNoBody(t *testing.T) {
-	r := httptest.NewRequest("POST", "/auth/login", nil)
+	r := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/login", nil)
 	r.Header.Set("X-Forwarded-For", "203.0.113.9, 10.0.0.1")
 	r.Header.Set("User-Agent", "probe/1.0")
 
@@ -157,13 +157,15 @@ func TestFromRequestRecordsNoBody(t *testing.T) {
 // and the recovery middleware. What an operator needs is the first frame in
 // application code.
 func TestPanicOriginSkipsRuntimeAndMiddleware(t *testing.T) {
+	// srcRoot is whatever prefix this build puts on source paths: the module
+	// path under -trimpath, the checkout directory otherwise.
 	stack := `goroutine 1 [running]:
 runtime/debug.Stack()
 	/usr/local/go/src/runtime/debug/stack.go:24 +0x5e
-github.com/muhiya/dawa24-store/internal/platform/httpx.Recover.func1.1()
-	/build/dawa24-store/internal/platform/httpx/middleware.go:57 +0x11d
-github.com/muhiya/dawa24-store/internal/ui.(*UIHandler).CartPage()
-	/build/dawa24-store/internal/ui/customer_cart_handlers.go:142 +0x2a
+github.com/moqasem061-dot/dawa24/internal/platform/httpx.Recover.func1.1()
+	` + srcRoot + `internal/platform/httpx/middleware.go:57 +0x11d
+github.com/moqasem061-dot/dawa24/internal/ui.(*UIHandler).CartPage()
+	` + srcRoot + `internal/ui/customer_cart_handlers.go:142 +0x2a
 `
 	file, line := PanicOrigin(stack)
 	if file != "internal/ui/customer_cart_handlers.go" {
@@ -185,7 +187,7 @@ func TestActorResolverAttributesTheError(t *testing.T) {
 	})
 	defer SetActorResolver(nil)
 
-	ReportRequest(context.Background(), httptest.NewRequest("GET", "/cart", nil),
+	ReportRequest(context.Background(), httptest.NewRequestWithContext(context.Background(), "GET", "/cart", nil),
 		errors.New("connection refused"), LevelError, 500)
 	tr.Stop()
 
@@ -208,17 +210,17 @@ func TestContextCanceledIsNotReported(t *testing.T) {
 	defer Install(nil)
 
 	// 1. Direct context.Canceled
-	ReportRequest(context.Background(), httptest.NewRequest("GET", "/customer/catalog", nil),
+	ReportRequest(context.Background(), httptest.NewRequestWithContext(context.Background(), "GET", "/customer/catalog", nil),
 		context.Canceled, LevelError, 500)
 
 	// 2. Wrapped context canceled error
-	ReportRequest(context.Background(), httptest.NewRequest("GET", "/customer/catalog", nil),
+	ReportRequest(context.Background(), httptest.NewRequestWithContext(context.Background(), "GET", "/customer/catalog", nil),
 		errors.New("context canceled"), LevelError, 500)
 
 	// 3. Canceled request context
 	canceledCtx, cancel := context.WithCancel(context.Background())
 	cancel()
-	req := httptest.NewRequest("GET", "/customer/catalog", nil).WithContext(canceledCtx)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/catalog", nil).WithContext(canceledCtx)
 	ReportRequest(canceledCtx, req, errors.New("read error"), LevelError, 500)
 
 	// 4. Report with message containing context canceled
@@ -238,7 +240,7 @@ func TestSetClientIPResolver(t *testing.T) {
 		return "198.51.100.42"
 	})
 
-	r := httptest.NewRequest("GET", "/test", nil)
+	r := httptest.NewRequestWithContext(context.Background(), "GET", "/test", nil)
 	r.Header.Set("X-Forwarded-For", "1.2.3.4, 5.6.7.8")
 
 	e := FromRequest(r, Event{})

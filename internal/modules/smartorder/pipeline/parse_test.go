@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 )
 
 // csvOf renders rows as a UTF-8 CSV, which is what Inspect actually reads.

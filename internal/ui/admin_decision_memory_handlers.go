@@ -11,11 +11,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminMatchDecisionsPage renders the central catalog decision memory management page for administrators.
@@ -80,7 +80,7 @@ func (h *UIHandler) AdminMatchDecisionsPage(w http.ResponseWriter, r *http.Reque
 		data.UsedTo = filter.LastUsedTo.Format("2006-01-02")
 	}
 
-	_ = pages.AdminMatchDecisionsPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render AdminMatchDecisionsPage", pages.AdminMatchDecisionsPage(lang, dir, data))
 }
 
 // AdminMatchDecisionsExportXLSX exports the filtered decision memories to Excel.
@@ -101,7 +101,7 @@ func (h *UIHandler) AdminMatchDecisionsExportXLSX(w http.ResponseWriter, r *http
 	f := excelize.NewFile()
 	defer func() { _ = f.Close() }()
 	sheet := i18n.T(lang, "admin.catalog.match_decisions")
-	f.SetSheetName("Sheet1", sheet)
+	sheet = renameFirstSheet(f, sheet)
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{RightToLeft: boolPtr(lang == "ar")})
 
 	headers := []string{
@@ -370,17 +370,17 @@ func parseAdminDecisionFilter(r *http.Request) catalog.DecisionMemoryFilter {
 	if minH, err := strconv.ParseInt(q.Get("min_hits"), 10, 64); err == nil && minH >= 0 {
 		f.MinHitCount = &minH
 	}
-	if cf, err := time.Parse("2006-01-02", q.Get("created_from")); err == nil {
+	if cf, err := time.Parse("2006-01-02", q.Get("created_from")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		f.CreatedFrom = &cf
 	}
-	if ct, err := time.Parse("2006-01-02", q.Get("created_to")); err == nil {
+	if ct, err := time.Parse("2006-01-02", q.Get("created_to")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		endDay := ct.Add(24*time.Hour - time.Nanosecond)
 		f.CreatedTo = &endDay
 	}
-	if uf, err := time.Parse("2006-01-02", q.Get("used_from")); err == nil {
+	if uf, err := time.Parse("2006-01-02", q.Get("used_from")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		f.LastUsedFrom = &uf
 	}
-	if ut, err := time.Parse("2006-01-02", q.Get("used_to")); err == nil {
+	if ut, err := time.Parse("2006-01-02", q.Get("used_to")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		endDay := ut.Add(24*time.Hour - time.Nanosecond)
 		f.LastUsedTo = &endDay
 	}

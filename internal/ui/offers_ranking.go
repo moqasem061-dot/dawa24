@@ -4,7 +4,7 @@ import (
 	"math"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // How the supplier offers under a product are ordered, and why.

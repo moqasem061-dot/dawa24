@@ -6,11 +6,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CompareRunSubmit processes selection of suppliers and redirects to results view (Plan V5 Phase 2 §2.5.1).
@@ -129,7 +129,11 @@ func (h *UIHandler) CompareMarketBenchmarkPage(w http.ResponseWriter, r *http.Re
 	// was silently shown somebody else's list as "قائمتي".
 	var files []*compare.CompareFile
 	if h.compareSvc != nil {
-		files, _ = h.compareSvc.ListFiles(sysCtx, effectiveUserID, orgPtr, nil)
+		if loaded, err := h.compareSvc.ListFiles(sysCtx, effectiveUserID, orgPtr, nil); err != nil {
+			h.logLoadErr(ctx, "compareSvc.ListFiles", err)
+		} else {
+			files = loaded
+		}
 	}
 
 	fileID, _ := strconv.ParseInt(strings.TrimSpace(r.URL.Query().Get("file")), 10, 64)
@@ -209,21 +213,26 @@ func (h *UIHandler) CompareMarketBenchmarkPage(w http.ResponseWriter, r *http.Re
 	}
 
 	pageData := pages.MarketBenchmarkPageData{
-		Result:        result,
-		PagedRows:     pagedRows,
-		Failed:        failed,
-		Files:         files,
-		FileID:        fileID,
-		Query:         filter.Query,
-		MinPrice:      strings.TrimSpace(r.URL.Query().Get("min_price")),
-		MaxPrice:      strings.TrimSpace(r.URL.Query().Get("max_price")),
-		MinDiscount:   strings.TrimSpace(r.URL.Query().Get("min_discount")),
-		MaxDiscount:   strings.TrimSpace(r.URL.Query().Get("max_discount")),
-		ActiveTab:     filter.Tab,
-		Sort:          filter.Sort,
-		IsCustomer:    actor.IsCustomer(),
-		IsAdmin:       isAdminActing,
-		TargetOrgID:   func() int64 { if orgPtr != nil { return *orgPtr }; return 0 }(),
+		Result:      result,
+		PagedRows:   pagedRows,
+		Failed:      failed,
+		Files:       files,
+		FileID:      fileID,
+		Query:       filter.Query,
+		MinPrice:    strings.TrimSpace(r.URL.Query().Get("min_price")),
+		MaxPrice:    strings.TrimSpace(r.URL.Query().Get("max_price")),
+		MinDiscount: strings.TrimSpace(r.URL.Query().Get("min_discount")),
+		MaxDiscount: strings.TrimSpace(r.URL.Query().Get("max_discount")),
+		ActiveTab:   filter.Tab,
+		Sort:        filter.Sort,
+		IsCustomer:  actor.IsCustomer(),
+		IsAdmin:     isAdminActing,
+		TargetOrgID: func() int64 {
+			if orgPtr != nil {
+				return *orgPtr
+			}
+			return 0
+		}(),
 		TargetOrgName: targetOrgName,
 		Page:          page,
 		Limit:         limit,

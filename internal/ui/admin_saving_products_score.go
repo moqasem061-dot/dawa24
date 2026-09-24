@@ -3,8 +3,8 @@ package ui
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // calculateSavingMatchScore returns a similarity score [0.30, 1.00] between a raw uploaded name and a candidate product.

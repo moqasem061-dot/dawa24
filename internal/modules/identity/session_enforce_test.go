@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 // Signing in as an administrator hung until the server's write timeout fired
@@ -291,11 +291,15 @@ func TestOrgWideConcurrentSessionsEviction(t *testing.T) {
 		Token:            "token_u201",
 		Role:             RolePharmacy,
 		MaxLoginSessions: &maxSessions,
-		CreatedAt:        time.Now().Add(-10 * time.Minute),
 	}
 	if err := store.Create(ctx, s1); err != nil {
 		t.Fatalf("Create s1: %v", err)
 	}
+	// Create stamps CreatedAt itself, from the wall clock, and "oldest" is
+	// decided on it. Windows' wall clock ticks coarsely enough for three
+	// back-to-back creates to share a timestamp, which made eviction order a
+	// coin toss; wait for the clock to move between them.
+	waitForClockTick()
 
 	// User 202 logs in (2 active in org, reached limit)
 	s2 := &Session{
@@ -304,11 +308,11 @@ func TestOrgWideConcurrentSessionsEviction(t *testing.T) {
 		Token:            "token_u202",
 		Role:             RolePharmacy,
 		MaxLoginSessions: &maxSessions,
-		CreatedAt:        time.Now().Add(-5 * time.Minute),
 	}
 	if err := store.Create(ctx, s2); err != nil {
 		t.Fatalf("Create s2: %v", err)
 	}
+	waitForClockTick()
 
 	// User 203 logs in (3 active in org > maxSessions 2)
 	s3 := &Session{
@@ -317,7 +321,6 @@ func TestOrgWideConcurrentSessionsEviction(t *testing.T) {
 		Token:            "token_u203",
 		Role:             RolePharmacy,
 		MaxLoginSessions: &maxSessions,
-		CreatedAt:        time.Now(),
 	}
 	if err := store.Create(ctx, s3); err != nil {
 		t.Fatalf("Create s3: %v", err)
@@ -335,5 +338,14 @@ func TestOrgWideConcurrentSessionsEviction(t *testing.T) {
 	}
 	if _, err := store.Get(ctx, "token_u203"); err != nil {
 		t.Fatalf("expected u203 to be active, got: %v", err)
+	}
+}
+
+// waitForClockTick returns once the UTC wall clock has moved on, so the next
+// session created is strictly newer than the last.
+func waitForClockTick() {
+	start := time.Now().UTC()
+	for !time.Now().UTC().After(start) {
+		time.Sleep(time.Millisecond)
 	}
 }

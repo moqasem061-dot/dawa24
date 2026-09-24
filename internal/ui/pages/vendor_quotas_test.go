@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 )
 
 // The quota screen must render its numbers, not just its chrome.

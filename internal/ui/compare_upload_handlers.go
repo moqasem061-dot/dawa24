@@ -14,11 +14,11 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // CompareSampleDownload generates and streams a realistic Egyptian pharmaceutical pricing & discount template file (.xlsx).
@@ -27,7 +27,7 @@ func (h *UIHandler) CompareSampleDownload(w http.ResponseWriter, r *http.Request
 	defer f.Close()
 
 	sheetName := i18n.T("ar", "excel.sheet.price_list")
-	f.SetSheetName("Sheet1", sheetName)
+	sheetName = renameFirstSheet(f, sheetName)
 
 	// Set right-to-left layout for Arabic
 	_ = f.SetSheetView(sheetName, 0, &excelize.ViewOptions{
@@ -236,7 +236,7 @@ func (h *UIHandler) CompareUploadSubmit(w http.ResponseWriter, r *http.Request) 
 			supplierName = header.Filename
 		}
 
-		localURL, localErr := saveUploadedBytes(fileBytes, header.Filename, "compare")
+		localURL, localErr := saveUploadedBytes(ctx, fileBytes, header.Filename, "compare")
 		if localErr != nil {
 			h.log.ErrorContext(ctx, "failed to save uploaded compare file to disk", "error", localErr, "file", header.Filename)
 			errorFiles = append(errorFiles, header.Filename+" ("+i18n.T(lang, "compare.upload.save_failed")+")")

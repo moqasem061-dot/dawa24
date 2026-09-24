@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log/slog"
 
-	ingestPG "github.com/muhiya/dawa24-store/internal/modules/ingest/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	ingestPG "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Releasing imports wedged in the processing phase.

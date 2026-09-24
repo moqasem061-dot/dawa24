@@ -41,20 +41,3 @@ func (s *Service) GetBranches(ctx context.Context, ids []int64) (map[int64]*Bran
 	}
 	return out, nil
 }
-
-// uniqueInt64s returns ids without duplicates or non-positive values.
-func uniqueInt64s(ids []int64) []int64 {
-	seen := make(map[int64]struct{}, len(ids))
-	out := make([]int64, 0, len(ids))
-	for _, id := range ids {
-		if id <= 0 {
-			continue
-		}
-		if _, dup := seen[id]; dup {
-			continue
-		}
-		seen[id] = struct{}{}
-		out = append(out, id)
-	}
-	return out
-}

@@ -3,7 +3,7 @@ package rbac_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // مندوب التوصيل as a role, and إدارة الشحنات as the one screen it opens.

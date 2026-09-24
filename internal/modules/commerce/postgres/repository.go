@@ -1,7 +1,7 @@
 package postgres
 
 import (
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Repository implements commerce.Repository using PostgreSQL.

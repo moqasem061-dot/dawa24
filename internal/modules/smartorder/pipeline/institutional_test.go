@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 )
 
 // Corporate Operations at the supplier stage.
@@ -80,8 +80,7 @@ func TestGateIsAskedWithTheBuyersOwnIdentity(t *testing.T) {
 		VendorActive: true, ProductActive: true,
 	}}
 
-	if _, err := s.buildCandidates(context.Background(), line, offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{}); err != nil {
+	if _, err := s.buildCandidates(context.Background(), line, offers); err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}
 
@@ -117,8 +116,7 @@ func TestGateIsAskedOncePerBatchNotPerOffer(t *testing.T) {
 			PriceMinor: 5500, MinOrderQty: 1, StockQty: 50, VendorActive: true, ProductActive: true},
 	}
 
-	if _, err := s.buildCandidates(context.Background(), matchedLine(1, 10, 5), offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{}); err != nil {
+	if _, err := s.buildCandidates(context.Background(), matchedLine(1, 10, 5), offers); err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}
 
@@ -147,8 +145,7 @@ func TestInstitutionalRefusalSurvivesTheMapping(t *testing.T) {
 		VendorActive: true, ProductActive: true,
 	}}
 
-	candidates, err := s.buildCandidates(context.Background(), line, offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{})
+	candidates, err := s.buildCandidates(context.Background(), line, offers)
 	if err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}
@@ -181,8 +178,7 @@ func TestEachSupplierGetsItsOwnVerdict(t *testing.T) {
 			PriceMinor: 4000, MinOrderQty: 1, StockQty: 50, VendorActive: true, ProductActive: true},
 	}
 
-	got, err := s.buildCandidates(context.Background(), matchedLine(1, 10, 5), offers,
-		map[int64]coverageVerdict{}, map[instKey]bool{})
+	got, err := s.buildCandidates(context.Background(), matchedLine(1, 10, 5), offers)
 	if err != nil {
 		t.Fatalf("buildCandidates: %v", err)
 	}

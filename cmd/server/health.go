@@ -2,14 +2,15 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 // buildVersion is stamped at build time via -ldflags. It makes "which version is
@@ -49,25 +50,8 @@ type statusResponse struct {
 func (h *healthHandler) live(w http.ResponseWriter, _ *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]string{
 		"status":  "ok",
-		"service": "dawa24-store",
+		"service": "dawa24",
 		"version": buildVersion,
-	})
-}
-
-// root gives a human hitting the domain something better than a bare 404.
-//
-// The UI does not exist yet; until it does, this states plainly what is running
-// and where to look. It is removed when the Phase 2 templ layout lands.
-func (h *healthHandler) root(w http.ResponseWriter, _ *http.Request) {
-	httpx.JSON(w, http.StatusOK, map[string]any{
-		"service": "dawa24-store",
-		"status":  "foundation only — no marketplace UI yet",
-		"version": buildVersion,
-		"endpoints": map[string]string{
-			"liveness":  "/health",
-			"readiness": "/ready",
-			"status":    "/api/v1/status",
-		},
 	})
 }
 
@@ -216,7 +200,8 @@ func (h *healthHandler) checkGateway(ctx context.Context) componentStatus {
 // connectingOrDown distinguishes "still dialling after boot" from "dialled and
 // failed", so an operator can tell a slow start from a misconfiguration.
 func connectingOrDown(err error) componentStatus {
-	if _, isNotConnected := err.(notConnected); isNotConnected {
+	var nc notConnected
+	if errors.As(err, &nc) {
 		return componentStatus{Status: "connecting", Detail: "establishing connection"}
 	}
 	return componentStatus{Status: "down", Detail: err.Error()}

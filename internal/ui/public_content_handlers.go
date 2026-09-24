@@ -7,12 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // ContactPage renders the public contact form.
@@ -70,7 +70,11 @@ func (h *UIHandler) AdminMessagesPage(w http.ResponseWriter, r *http.Request) {
 	var messages []*platformadmin.ContactMessage
 	var total int
 	if h.adminSvc != nil {
-		messages, total, _ = h.adminSvc.ListContactMessagesWithTotal(database.AsSystem(ctx), "", limit, offset)
+		if loaded, loaded2, err := h.adminSvc.ListContactMessagesWithTotal(database.AsSystem(ctx), "", limit, offset); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListContactMessagesWithTotal", err)
+		} else {
+			messages, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin messages", pages.AdminMessages(lang, dir, messages, page, limit, total))
@@ -82,7 +86,9 @@ func (h *UIHandler) AdminMessageToggleSubmit(w http.ResponseWriter, r *http.Requ
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err == nil && id > 0 && h.adminSvc != nil {
 		msgs, err := h.adminSvc.ListContactMessages(database.AsSystem(ctx), "", 500, 0)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListContactMessages", err)
+		} else {
 			for _, m := range msgs {
 				if m.ID == id {
 					newStatus := "read"

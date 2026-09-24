@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestSettingsPasswordChange_WithEmailOTP(t *testing.T) {
@@ -33,15 +33,15 @@ func TestSettingsPasswordChange_WithEmailOTP(t *testing.T) {
 	}
 
 	actor := authctx.Actor{
-		UserID:   user.ID,
-		Email:    user.Email,
-		Role:     "customer",
-		OrgType:  "customer",
+		UserID:  user.ID,
+		Email:   user.Email,
+		Role:    "customer",
+		OrgType: "customer",
 	}
 	ctxWithActor := authctx.WithActor(ctx, actor)
 
 	// 2. Request OTP code via POST /settings/password/send-otp
-	reqOTP := httptest.NewRequest("POST", "/settings/password/send-otp", nil).WithContext(ctxWithActor)
+	reqOTP := httptest.NewRequestWithContext(context.Background(), "POST", "/settings/password/send-otp", nil).WithContext(ctxWithActor)
 	recOTP := httptest.NewRecorder()
 	h.SettingsPasswordSendOTP(recOTP, reqOTP)
 
@@ -63,9 +63,9 @@ func TestSettingsPasswordChange_WithEmailOTP(t *testing.T) {
 	formFail := url.Values{
 		"new_password":              {"NewSecurePass123!"},
 		"new_password_confirmation": {"NewSecurePass123!"},
-		"email_otp_code":           {"000000"},
+		"email_otp_code":            {"000000"},
 	}
-	reqFail := httptest.NewRequest("POST", "/settings/password", strings.NewReader(formFail.Encode())).WithContext(ctxWithActor)
+	reqFail := httptest.NewRequestWithContext(context.Background(), "POST", "/settings/password", strings.NewReader(formFail.Encode())).WithContext(ctxWithActor)
 	reqFail.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recFail := httptest.NewRecorder()
 	h.SettingsPasswordSubmit(recFail, reqFail)
@@ -74,19 +74,6 @@ func TestSettingsPasswordChange_WithEmailOTP(t *testing.T) {
 	if !strings.Contains(locFail, "notice=error") {
 		t.Fatalf("expected notice=error with wrong OTP, got %s", locFail)
 	}
-
-	// 4. Generate valid OTP for action password_change
-	validCode, _, err := engine.GenerateOTP("user-direct@dawa24.eg", "password_change", 15*time.Minute)
-	if err != nil {
-		// If cooldown, wait or test verify directly
-	}
-	_ = validCode
-
-	// To test successful submission with known OTP code:
-	// Let's create an OTP code directly in the engine for this user's email
-	// Since in-memory OTP engine was used, let's reset cooldown or generate for user.Email:
-	testCode, _, _ := engine.GenerateOTP("security-change@dawa24.eg", "password_change", 15*time.Minute)
-	_ = testCode
 
 	// Let's register another user to have fresh cooldown
 	user2, _, err := idSvc.Register(ctx, identity.RegisterInput{
@@ -110,9 +97,9 @@ func TestSettingsPasswordChange_WithEmailOTP(t *testing.T) {
 	formSuccess := url.Values{
 		"new_password":              {"SuperSecret123!@#"},
 		"new_password_confirmation": {"SuperSecret123!@#"},
-		"email_otp_code":           {code2},
+		"email_otp_code":            {code2},
 	}
-	reqSuccess := httptest.NewRequest("POST", "/settings/password", strings.NewReader(formSuccess.Encode())).WithContext(ctxWithActor2)
+	reqSuccess := httptest.NewRequestWithContext(context.Background(), "POST", "/settings/password", strings.NewReader(formSuccess.Encode())).WithContext(ctxWithActor2)
 	reqSuccess.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recSuccess := httptest.NewRecorder()
 	h.SettingsPasswordSubmit(recSuccess, reqSuccess)
@@ -147,7 +134,7 @@ func TestForgotSubmit_UserFoundAndNotFound(t *testing.T) {
 
 	// 1. Non-existent email -> should render user_not_found error
 	formNotFound := url.Values{"email": {"nonexistent@dawa24.eg"}}
-	reqNotFound := httptest.NewRequest("POST", "/auth/forgot", strings.NewReader(formNotFound.Encode()))
+	reqNotFound := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/forgot", strings.NewReader(formNotFound.Encode()))
 	reqNotFound.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recNotFound := httptest.NewRecorder()
 	h.ForgotSubmit(recNotFound, reqNotFound)
@@ -172,7 +159,7 @@ func TestForgotSubmit_UserFoundAndNotFound(t *testing.T) {
 	}
 
 	formFound := url.Values{"email": {strings.ToUpper(existingUser.Email)}} // test case-insensitive lookup
-	reqFound := httptest.NewRequest("POST", "/auth/forgot", strings.NewReader(formFound.Encode()))
+	reqFound := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/forgot", strings.NewReader(formFound.Encode()))
 	reqFound.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recFound := httptest.NewRecorder()
 	h.ForgotSubmit(recFound, reqFound)

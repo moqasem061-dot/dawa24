@@ -4,7 +4,7 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
 )
 
 // Formatting the package-account screens.

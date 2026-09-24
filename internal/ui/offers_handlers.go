@@ -7,15 +7,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/features"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/features"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // OffersPage renders the public offers listing.
@@ -139,7 +139,8 @@ func (h *UIHandler) OfferDetailPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	locs, _ := h.promoSvc.ListSpecialOfferLocations(ctx, id)
+	locs, loadErr := h.promoSvc.ListSpecialOfferLocations(ctx, id)
+	h.logLoadErr(ctx, "promoSvc.ListSpecialOfferLocations", loadErr)
 	sp.Locations = locs
 
 	isBuyer := q.Buying
@@ -191,7 +192,7 @@ func (h *UIHandler) OfferClickSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	if h.promoSvc != nil {
-		if id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64); err == nil {
+		if id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			_ = h.promoSvc.RecordOfferClick(ctx, id)
 		}
 	}

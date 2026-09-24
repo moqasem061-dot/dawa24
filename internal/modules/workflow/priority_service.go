@@ -3,11 +3,12 @@ package workflow
 import (
 	"context"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // InstitutionalGate resolves authorized institutional works for a user.
@@ -71,10 +72,14 @@ func (s *Service) ProcessPriorityEngine(ctx context.Context, engineID int64, pro
 	// 2. Fetch authorized institutional works (Simple mode 0)
 	var authorizedWorkIDs []int64
 	if s.instGate != nil {
+		// Fail closed: an empty list admits restricted institutional rows.
 		works, err := s.instGate.AllowedWorkIDs(ctx, req.UserID, 0)
-		if err == nil {
-			authorizedWorkIDs = works
+		if err != nil {
+			s.log.ErrorContext(ctx, "priority engine could not resolve institutional works", "id", engineID, "error", err)
+			_ = s.repo.UpdatePriorityRequestStatus(ctx, engineID, "failed", err.Error(), processedBy, nil)
+			return nil, fmt.Errorf("resolve institutional works: %w", err)
 		}
+		authorizedWorkIDs = works
 	}
 
 	// 3. Build query parameters & preferences

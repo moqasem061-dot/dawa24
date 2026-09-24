@@ -263,8 +263,6 @@ dialog.modal::backdrop {
      from this layer is the one case the cascade leaves no other way to win.
      Everything else in this file that carried !important has been removed. */
   .modal-backdrop {
-    padding: 0 !important;
-    align-items: flex-end !important;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -278,13 +276,8 @@ dialog.modal::backdrop {
   .modal-backdrop > .modal-content,
   .modal-backdrop > .glass-panel,
   .modal-backdrop > div:not(.modal-scrim) {
-    max-width: 100vw !important;
-    width: 100% !important;
     max-height: 92vh;
     max-height: 92dvh;
-    border-radius: var(--radius-2xl, 1.25rem) var(--radius-2xl, 1.25rem) 0 0 !important;
-    margin: 0 !important;
-    border-bottom: none !important;
     box-shadow: 0 -10px 30px rgba(0, 0, 0, 0.25), var(--shadow-2xl);
   }
   .modal-header {
@@ -353,8 +346,6 @@ dialog.modal::backdrop {
   }
   .modal-footer > *,
   .modal-footer .btn {
-    inline-size: 100% !important;
-    width: 100% !important;
     min-block-size: 2.75rem;
     justify-content: center;
   }
@@ -397,10 +388,6 @@ dialog.modal::backdrop {
 [data-theme="dark"] .modal-dialog,
 body.dark .modal-box,
 body.dark .modal-dialog {
-  background-color: var(--bg-surface-raised, #131c22) !important;
-  color: var(--text-primary, #edf3f7) !important;
-  border-color: var(--border-card, #2a3a46) !important;
-  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 }
 
 /* Modal Sizing Modifiers */
@@ -1502,16 +1489,6 @@ dialog.modal[open] {
 	outline: none;
 }
 .sr-only {
-	position: absolute !important;
-	width: 1px !important;
-	height: 1px !important;
-	padding: 0 !important;
-	margin: -1px !important;
-	overflow: hidden !important;
-	clip: rect(0, 0, 0, 0) !important;
-	white-space: nowrap !important;
-	border: 0 !important;
-	pointer-events: none !important;
 }
 .type-card {
 	display: flex;
@@ -4473,7 +4450,7 @@ input:focus {
 }
 .catalog-dialog-search { position: sticky; inset-block-start: 3.25rem; z-index: 1; background: var(--bg-surface-raised, #fff); padding-block-end: 0.625rem; }
 .catalog-dropdown-results { display: flex; flex-direction: column; gap: 0.35rem; }
-.catalog-search-card { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; margin-bottom: 0.4rem; transition: all 0.15s ease; }
+.catalog-search-card { background: var(--surface-sunken); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 0.55rem 0.75rem; margin-bottom: 0.4rem; transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease; }
 .catalog-search-card:hover { border-color: var(--primary); background: var(--surface-raised); }
 .catalog-search-card-btn { display: flex; justify-content: space-between; align-items: center; width: 100%; padding: 0; color: var(--text); background: transparent; border: none; cursor: pointer; text-align: start; }
 .edit-line-row { display: flex; align-items: center; gap: var(--space-xs); }
@@ -5542,7 +5519,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
   cursor: pointer;
   z-index: 10;
   opacity: 0.85;
-  transition: all 200ms ease;
+  transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, opacity 200ms ease;
 }
 
 .hero-ad-nav-btn:hover {
@@ -5578,7 +5555,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
   border: none;
   cursor: pointer;
   padding: 0;
-  transition: all 250ms ease;
+  transition: color 250ms ease, background-color 250ms ease, border-color 250ms ease, box-shadow 250ms ease, transform 250ms ease, opacity 250ms ease;
 }
 
 .hero-ad-dot:hover {
@@ -5604,7 +5581,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
   width: fit-content;
   margin-top: 0.25rem;
   box-shadow: 0 4px 14px rgba(2, 132, 199, 0.4);
-  transition: all 200ms ease;
+  transition: color 200ms ease, background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease, transform 200ms ease, opacity 200ms ease;
 }
 
 .hero-ad-slide:hover .hero-ad-cta-pill {
@@ -8240,10 +8217,6 @@ tr.team-row, .team-row { display: table-row; }
 
 [data-theme="dark"] .upload-progress-modal .modal-box,
 body.dark .upload-progress-modal .modal-box {
-  background: var(--bg-surface-raised, #131c22) !important;
-  background-color: var(--bg-surface-raised, #131c22) !important;
-  border-color: var(--border-card, #2a3a46) !important;
-  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
 }
 
 .upload-progress-phase {
@@ -8570,7 +8543,7 @@ body.dark .upload-progress-note {
   font-size: 0.85rem;
   text-decoration: none;
   box-shadow: 0 2px 4px rgba(37, 99, 235, 0.2);
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   width: 100%;
 }
 
@@ -8599,7 +8572,7 @@ body.dark .upload-progress-note {
   font-weight: 800;
   font-size: 0.8rem;
   text-decoration: none;
-  transition: all 0.15s ease;
+  transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
   width: 100%;
 }
 
@@ -9256,9 +9229,6 @@ body.dark .upload-progress-note {
 
   /* A control the browser is working on: dimmed and inert, without moving. */
   .is-busy {
-    opacity: 0.6 !important;
-    pointer-events: none !important;
-    cursor: wait !important;
   }
 
 
@@ -9383,7 +9353,7 @@ body.dark .upload-progress-note {
   margin-block-end: 1.5rem;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 1024px) {
   .b2b-product-showcase {
     grid-template-columns: 1fr;
     gap: 1.25rem;
@@ -9398,7 +9368,7 @@ body.dark .upload-progress-note {
   margin-block-end: 1.5rem;
 }
 
-@media (max-width: 1200px) {
+@media (max-width: 1280px) {
   .b2b-customer-showcase {
     grid-template-columns: 300px 1fr;
   }
@@ -9407,7 +9377,7 @@ body.dark .upload-progress-note {
   }
 }
 
-@media (max-width: 860px) {
+@media (max-width: 768px) {
   .b2b-customer-showcase {
     grid-template-columns: 1fr;
     gap: 1.25rem;
@@ -9441,7 +9411,7 @@ body.dark .upload-progress-note {
   box-sizing: border-box;
 }
 
-@media (max-width: 480px) {
+@media (max-width: 640px) {
   .b2b-product-media-card {
     max-width: 100%;
     height: 280px;
@@ -9450,11 +9420,6 @@ body.dark .upload-progress-note {
 
 .b2b-product-media-card img,
 .b2b-product-img {
-  max-width: 100% !important;
-  max-height: 280px !important;
-  width: auto !important;
-  height: auto !important;
-  object-fit: contain !important;
   display: block;
   margin-inline: auto;
   transition: transform var(--duration-fast, 150ms) ease;
@@ -9533,3 +9498,68 @@ body.dark .upload-progress-note {
   font-size: var(--text-xs, 0.75rem);
 }
 
+} /* end @layer components (opened without a close; see the overrides note below) */
+
+/* Rules that must outrank a utility class written on the same element.
+   @layer utilities outranks @layer components whatever the specificity, so
+   these used !important. A later layer wins by order instead, and a
+   utility's own !important (.hidden) still wins over it, as it should. */
+@layer overrides {
+  @media (max-width: 768px) {
+    .modal-backdrop {
+      padding: 0;
+      align-items: flex-end;
+    }
+  }
+  @media (max-width: 768px) {
+    .modal-box, .modal-dialog, .modal-card, .modal-content, .modal-backdrop > .modal-content, .modal-backdrop > .glass-panel, .modal-backdrop > div:not(.modal-scrim) {
+      max-width: 100vw;
+      width: 100%;
+      border-radius: var(--radius-2xl, 1.25rem) var(--radius-2xl, 1.25rem) 0 0;
+      margin: 0;
+      border-bottom: none;
+    }
+  }
+  @media (max-width: 640px) {
+    .modal-footer > *, .modal-footer .btn {
+      inline-size: 100%;
+      width: 100%;
+    }
+  }
+  [data-theme="dark"] .modal-box, [data-theme="dark"] .modal-dialog, body.dark .modal-box, body.dark .modal-dialog {
+    background-color: var(--bg-surface-raised, #131c22);
+    color: var(--text-primary, #edf3f7);
+    border-color: var(--border-card, #2a3a46);
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+    pointer-events: none;
+  }
+  [data-theme="dark"] .upload-progress-modal .modal-box, body.dark .upload-progress-modal .modal-box {
+    background: var(--bg-surface-raised, #131c22);
+    background-color: var(--bg-surface-raised, #131c22);
+    border-color: var(--border-card, #2a3a46);
+    box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+  .is-busy {
+    opacity: 0.6;
+    pointer-events: none;
+    cursor: wait;
+  }
+  .b2b-product-media-card img, .b2b-product-img {
+    max-width: 100%;
+    max-height: 280px;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+}

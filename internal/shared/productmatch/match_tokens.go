@@ -5,7 +5,7 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // coreTokens reduces a product name to the words that identify it.

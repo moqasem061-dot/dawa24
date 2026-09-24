@@ -10,13 +10,13 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 type mockCommerceVendorOrdersRepo struct {
@@ -78,7 +78,7 @@ func TestVendorOrdersFailedFilterAndCards(t *testing.T) {
 	}
 
 	t.Run("Vendor orders page renders failed filter tab and metric card", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/vendor/orders?status=failed", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/orders?status=failed", nil)
 		req = req.WithContext(authctx.WithActor(req.Context(), vendorActor))
 		rr := httptest.NewRecorder()
 

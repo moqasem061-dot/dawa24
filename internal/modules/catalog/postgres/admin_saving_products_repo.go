@@ -7,9 +7,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // ListAllSavingProductsAdmin returns all saving products across all users and organizations with search and filtering.
@@ -94,9 +94,10 @@ func (r *Repository) ListAllSavingProductsAdmin(ctx context.Context, userID *int
 			args = append(args, term)
 			argIdx++
 		}
-		if filter == "linked" {
+		switch filter {
+		case "linked":
 			conditions = append(conditions, "sp.product_id IS NOT NULL")
-		} else if filter == "unlinked" {
+		case "unlinked":
 			conditions = append(conditions, "sp.product_id IS NULL")
 		}
 
@@ -144,9 +145,12 @@ func (r *Repository) ListAllSavingProductsAdmin(ctx context.Context, userID *int
 			); err != nil {
 				return err
 			}
-			valMinor := int64(v.Quantity * float64(v.Price.Minor()))
-			v.TotalValue = money.FromMinor(valMinor)
-			runningTotalValMinor += valMinor
+			val, err := v.Price.MulQuantity(v.Quantity)
+			if err != nil {
+				return fmt.Errorf("saving product value: %w", err)
+			}
+			v.TotalValue = val
+			runningTotalValMinor += val.Minor()
 			list = append(list, &v)
 		}
 		if stats.TotalValue.IsZero() && runningTotalValMinor > 0 {

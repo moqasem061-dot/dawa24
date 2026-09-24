@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 )
 
 type SmartOrderResultsData struct {

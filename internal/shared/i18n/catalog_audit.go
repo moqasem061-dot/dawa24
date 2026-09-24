@@ -133,4 +133,3 @@ func loadAuditKeys(e *engine) {
 	addKey(e, "audit.title.member.deleted", "audit", "حذف / إيقاف موظف", "Delete Staff Member", "Audit title")
 	addKey(e, "audit.desc.member.deleted", "audit", "%s قام بحذف أو إيقاف موظف من المنشأة", "%s removed or disabled a staff member", "Audit description")
 }
-

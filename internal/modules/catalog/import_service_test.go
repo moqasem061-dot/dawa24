@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // memoryImportStore is an in-memory ImportSessionStore.
@@ -195,9 +195,7 @@ func (m *memoryImportStore) MatchExistingProducts(
 // exactly still does, and one that expects no similarity match gets none.
 func (m *memoryImportStore) ListMatchProducts(context.Context) ([]catalog.MatchProduct, error) {
 	out := make([]catalog.MatchProduct, 0, len(m.catalogue))
-	for _, p := range m.catalogue {
-		out = append(out, p)
-	}
+	out = append(out, m.catalogue...)
 	return out, nil
 }
 

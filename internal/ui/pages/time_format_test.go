@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 func TestTimeFormat12Hour(t *testing.T) {

@@ -2,12 +2,13 @@ package storage_test
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 )
 
 func TestKeyFor(t *testing.T) {
@@ -83,23 +84,23 @@ func TestNewValidation(t *testing.T) {
 	}
 
 	// Test empty key validations
-	if err := client.Put(ctx, "", strings.NewReader("data"), 4, "text/plain"); err != storage.ErrInvalidKey {
+	if err := client.Put(ctx, "", strings.NewReader("data"), 4, "text/plain"); !errors.Is(err, storage.ErrInvalidKey) {
 		t.Errorf("expected ErrInvalidKey on Put with empty key, got %v", err)
 	}
 
-	if _, _, err := client.Get(ctx, ""); err != storage.ErrInvalidKey {
+	if _, _, err := client.Get(ctx, ""); !errors.Is(err, storage.ErrInvalidKey) {
 		t.Errorf("expected ErrInvalidKey on Get with empty key, got %v", err)
 	}
 
-	if err := client.Delete(ctx, ""); err != storage.ErrInvalidKey {
+	if err := client.Delete(ctx, ""); !errors.Is(err, storage.ErrInvalidKey) {
 		t.Errorf("expected ErrInvalidKey on Delete with empty key, got %v", err)
 	}
 
-	if _, err := client.PresignGet(ctx, "", 15*time.Minute); err != storage.ErrInvalidKey {
+	if _, err := client.PresignGet(ctx, "", 15*time.Minute); !errors.Is(err, storage.ErrInvalidKey) {
 		t.Errorf("expected ErrInvalidKey on PresignGet with empty key, got %v", err)
 	}
 
-	if _, err := client.PresignPut(ctx, "", "text/plain", 15*time.Minute); err != storage.ErrInvalidKey {
+	if _, err := client.PresignPut(ctx, "", "text/plain", 15*time.Minute); !errors.Is(err, storage.ErrInvalidKey) {
 		t.Errorf("expected ErrInvalidKey on PresignPut with empty key, got %v", err)
 	}
 }

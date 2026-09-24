@@ -19,8 +19,6 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
-
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
 )
 
 // Prefix is where the bridge lives.
@@ -32,9 +30,31 @@ const (
 	maxOffers          = 10
 )
 
+// Offer is an offer that became visible to buyers recently, described for an
+// announcement. It is this module's own type (AGENTS.md rule 5): the
+// composition root converts the promo module's record into it.
+type Offer struct {
+	ID             int64   `json:"id"`
+	TitleAr        string  `json:"title_ar"`
+	TitleEn        string  `json:"title_en"`
+	DescriptionAr  string  `json:"description_ar"`
+	DiscountType   string  `json:"discount_type"`
+	DiscountValue  float64 `json:"discount_value"`
+	TotalPrice     float64 `json:"total_price"`
+	MinOrderAmount float64 `json:"min_order_amount"`
+	SupplierName   string  `json:"supplier_name"`
+	// Cities names a capped list of the areas served; CitiesTotal counts them
+	// all, so a post can say "and 40 more areas".
+	Cities      []string   `json:"cities"`
+	CitiesTotal int        `json:"cities_total"`
+	Products    []string   `json:"products"`
+	PublishedAt time.Time  `json:"published_at"`
+	ExpiresAt   *time.Time `json:"expires_at"`
+}
+
 // OfferSource lists offers that became visible to buyers recently.
 type OfferSource interface {
-	ListPublishedOffers(ctx context.Context, since time.Time, limit int) ([]*promo.PublishedOffer, error)
+	ListPublishedOffers(ctx context.Context, since time.Time, limit int) ([]*Offer, error)
 }
 
 // Bridge serves n8n.
@@ -67,12 +87,12 @@ func (b *Bridge) RegisterRoutes(r chi.Router) {
 // digest is the response: the facts a post may state, and the links and image
 // it may use. Posts must not state anything that is not here.
 type digest struct {
-	GeneratedAt time.Time               `json:"generated_at"`
-	WindowHours int                     `json:"window_hours"`
-	NewOffers   []*promo.PublishedOffer `json:"new_offers"`
-	SiteURL     string                  `json:"site_url"`
-	OffersURL   string                  `json:"offers_url"`
-	ImageURL    string                  `json:"image_url"`
+	GeneratedAt time.Time `json:"generated_at"`
+	WindowHours int       `json:"window_hours"`
+	NewOffers   []*Offer  `json:"new_offers"`
+	SiteURL     string    `json:"site_url"`
+	OffersURL   string    `json:"offers_url"`
+	ImageURL    string    `json:"image_url"`
 }
 
 // Digest returns offers published within the last `hours` (default 24, at most
@@ -95,7 +115,7 @@ func (b *Bridge) Digest(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if offers == nil {
-		offers = []*promo.PublishedOffer{}
+		offers = []*Offer{}
 	}
 	writeJSON(w, http.StatusOK, digest{
 		GeneratedAt: now,

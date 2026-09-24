@@ -6,8 +6,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // ParseLegacyDatetime handles MySQL datetime formats and converts them explicitly to UTC.
@@ -25,7 +25,7 @@ func ParseLegacyDatetime(raw string) (*time.Time, error) {
 	}
 
 	for _, format := range formats {
-		if t, err := time.ParseInLocation(format, raw, time.UTC); err == nil {
+		if t, err := time.ParseInLocation(format, raw, time.UTC); err == nil { // nolint:errswallow: trying date formats in turn
 			utc := t.UTC()
 			return &utc, nil
 		}
@@ -68,7 +68,7 @@ func TransformToI18nText(raw string, defaultEn string) i18n.Text {
 	// If raw is already JSON encoded
 	if strings.HasPrefix(raw, "{") && strings.HasSuffix(raw, "}") {
 		var m map[string]string
-		if err := json.Unmarshal([]byte(raw), &m); err == nil {
+		if err := json.Unmarshal([]byte(raw), &m); err == nil { // nolint:errswallow: not JSON; treated as a plain string below
 			return i18n.New(m["ar"], m["en"])
 		}
 	}

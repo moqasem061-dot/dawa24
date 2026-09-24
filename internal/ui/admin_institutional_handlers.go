@@ -11,10 +11,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminInstitutionalPage renders the institutional hierarchy and classification screen.
@@ -26,9 +26,21 @@ func (h *UIHandler) AdminInstitutionalPage(w http.ResponseWriter, r *http.Reques
 	var allWorks []*org.InstitutionalWork
 	var unassignedBranches []*org.BranchWithoutWorks
 	if h.orgSvc != nil {
-		items, _ = h.orgSvc.ListInstitutionalWorks(ctx, false)
-		allWorks, _ = h.orgSvc.ListAllFlatInstitutionalWorks(ctx, false)
-		unassignedBranches, _ = h.orgSvc.ListBranchesWithoutInstitutionalWorks(ctx)
+		if loaded, err := h.orgSvc.ListInstitutionalWorks(ctx, false); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListInstitutionalWorks", err)
+		} else {
+			items = loaded
+		}
+		if loaded, err := h.orgSvc.ListAllFlatInstitutionalWorks(ctx, false); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListAllFlatInstitutionalWorks", err)
+		} else {
+			allWorks = loaded
+		}
+		if loaded, err := h.orgSvc.ListBranchesWithoutInstitutionalWorks(ctx); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranchesWithoutInstitutionalWorks", err)
+		} else {
+			unassignedBranches = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin institutional", pages.AdminInstitutional(lang, dir, items, allWorks, unassignedBranches))

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -20,7 +21,7 @@ func newTestAgentRouter() http.Handler {
 func TestLinkHeaders(t *testing.T) {
 	router := newTestAgentRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -40,7 +41,7 @@ func TestLinkHeaders(t *testing.T) {
 func TestSitemap(t *testing.T) {
 	router := newTestAgentRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/sitemap.xml", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/sitemap.xml", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
@@ -65,7 +66,7 @@ func TestLLMsTxtAndAgentsIndex(t *testing.T) {
 	router := newTestAgentRouter()
 
 	// 1. Test /llms.txt
-	req := httptest.NewRequest(http.MethodGet, "/llms.txt", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/llms.txt", nil)
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 	if w.Result().StatusCode != http.StatusOK {
@@ -73,7 +74,7 @@ func TestLLMsTxtAndAgentsIndex(t *testing.T) {
 	}
 
 	// 2. Test /.well-known/agents-index.json
-	req2 := httptest.NewRequest(http.MethodGet, "/.well-known/agents-index.json", nil)
+	req2 := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/.well-known/agents-index.json", nil)
 	w2 := httptest.NewRecorder()
 	router.ServeHTTP(w2, req2)
 	if w2.Result().StatusCode != http.StatusOK {
@@ -84,7 +85,7 @@ func TestLLMsTxtAndAgentsIndex(t *testing.T) {
 func TestMarkdownNegotiation(t *testing.T) {
 	router := newTestAgentRouter()
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	req.Header.Set("Accept", "text/markdown")
 	w := httptest.NewRecorder()
 	router.ServeHTTP(w, req)
@@ -129,7 +130,7 @@ func TestRemovedAgentToolsAndCatalogsReturn404(t *testing.T) {
 	}
 
 	for _, ep := range removedEndpoints {
-		req := httptest.NewRequest(http.MethodGet, ep, nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, ep, nil)
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)
 

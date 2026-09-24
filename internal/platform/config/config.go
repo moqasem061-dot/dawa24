@@ -80,6 +80,11 @@ type Database struct {
 	// connection, so the web's thirty seconds also capped every statement
 	// inside a background import — however long River's JobTimeout was.
 	WorkerStatementTimeout time.Duration
+	// RequireRLS makes the connection refuse a role that bypasses row-level
+	// security (a superuser, or one holding BYPASSRLS). Set for the server and
+	// worker in production; the CLI migrates as the owner and is exempt.
+	// DB_ALLOW_RLS_BYPASS=true is the explicit escape hatch.
+	RequireRLS bool
 }
 
 type Redis struct {
@@ -193,6 +198,7 @@ func load(cliOnly bool) (*Config, error) {
 			// Long enough for the largest real import statement, short enough
 			// that a runaway background query still lets go of its connection.
 			WorkerStatementTimeout: getDuration("DB_WORKER_STATEMENT_TIMEOUT", 10*time.Minute),
+			RequireRLS:             env.IsProd() && !cliOnly && !getBool("DB_ALLOW_RLS_BYPASS", false),
 		},
 
 		Redis: Redis{
@@ -213,7 +219,7 @@ func load(cliOnly bool) (*Config, error) {
 		Gateway: Gateway{
 			BaseURL:    getStr("GATEWAY_BASE_URL", "https://api.dawa24.com"),
 			VirtualKey: getStr("GATEWAY_VIRTUAL_KEY", ""),
-			ClientApp:  getStr("GATEWAY_CLIENT_APP", "dawa24-store"),
+			ClientApp:  getStr("GATEWAY_CLIENT_APP", "dawa24"),
 			Timeout:    getDuration("GATEWAY_TIMEOUT", 60*time.Second),
 			Enabled:    getBool("GATEWAY_ENABLED", false),
 		},

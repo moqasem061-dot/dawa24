@@ -7,11 +7,11 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Vendor catalog import handlers are implemented in vendor_ingest_handlers.go (Plan V5 Phase 4).
@@ -138,12 +138,14 @@ func (h *UIHandler) VendorIngestExport(w http.ResponseWriter, r *http.Request) {
 	_ = writer.Write(headers)
 
 	if h.catSvc != nil {
-		products, _ := h.catSvc.Search(database.AsSystem(ctx), catalog.SearchParams{Limit: 500})
+		products, loadErr := h.catSvc.Search(database.AsSystem(ctx), catalog.SearchParams{Limit: 500})
+		h.logLoadErr(ctx, "catSvc.Search", loadErr)
 		for _, p := range products {
 			if p == nil {
 				continue
 			}
-			variants, _ := h.catSvc.ListVariantsByProduct(ctx, p.ID)
+			variants, loadErr := h.catSvc.ListVariantsByProduct(ctx, p.ID)
+			h.logLoadErr(ctx, "catSvc.ListVariantsByProduct", loadErr)
 			for _, v := range variants {
 				if v != nil && v.OrganizationID == actor.OrganizationID {
 					expStr := ""

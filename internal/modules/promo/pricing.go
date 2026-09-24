@@ -15,7 +15,7 @@ package promo
 import (
 	"math"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // DiscountSource says which rule produced the final price.

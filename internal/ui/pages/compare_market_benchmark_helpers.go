@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // MarketBenchmarkPageData contains data for comparing list prices against the broader market.
@@ -26,7 +26,7 @@ type MarketBenchmarkPageData struct {
 	// ActiveTab is one of "all", "higher", "equal", "better", "exclusive".
 	ActiveTab string
 	// Sort is "", "discount" or "price".
-	Sort       string
+	Sort          string
 	IsCustomer    bool
 	IsAdmin       bool
 	TargetOrgID   int64
@@ -151,18 +151,6 @@ func benchmarkTabClass(active, tab string) string {
 		return "tab-btn active"
 	}
 	return "tab-btn"
-}
-
-func benchmarkRowTone(class string) string {
-	switch class {
-	case compare.BenchHigher:
-		return "badge-rose"
-	case compare.BenchBetter:
-		return "badge-emerald"
-	case compare.BenchEqual:
-		return "badge-slate"
-	}
-	return "badge-amber"
 }
 
 func benchmarkRowLabel(class string) string {

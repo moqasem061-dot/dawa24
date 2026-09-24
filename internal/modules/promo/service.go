@@ -5,10 +5,10 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/storage"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Service coordinates vendor promotions, sponsorships, and advertising campaigns.
@@ -278,8 +278,10 @@ func (s *Service) ExpirePromotionsWithMediaPurge(ctx context.Context, s3Client *
 	}
 	purged := 0
 	for _, u := range mediaURLs {
-		if err := storage.DeleteUploadedMedia(ctx, u, s3Client); err == nil {
+		if err := storage.DeleteUploadedMedia(ctx, u, s3Client); err == nil { // nolint:errswallow: the else branch logs it
 			purged++
+		} else {
+			s.log.WarnContext(ctx, "could not purge expired promo media", "url", u, "error", err)
 		}
 	}
 	if expiredCount > 0 || purged > 0 {

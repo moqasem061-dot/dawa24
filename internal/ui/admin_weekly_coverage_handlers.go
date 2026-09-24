@@ -6,13 +6,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminWeeklyCoveragesPage renders weekly delivery coverages filtered by organization dropdown.
@@ -26,7 +26,11 @@ func (h *UIHandler) AdminWeeklyCoveragesPage(w http.ResponseWriter, r *http.Requ
 
 	var orgs []*org.Organization
 	if h.orgSvc != nil {
-		orgs, _ = h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 200, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 200, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			orgs = loaded
+		}
 	}
 
 	var selectedOrgID int64
@@ -39,7 +43,9 @@ func (h *UIHandler) AdminWeeklyCoveragesPage(w http.ResponseWriter, r *http.Requ
 	if h.wfSvc != nil {
 		// AsSystem justified: platform admin viewing weekly coverages across tenants
 		cList, total, err := h.wfSvc.ListCoverageForOrganizationWithTotal(database.AsSystem(ctx), selectedOrgID, limit, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "wfSvc.ListCoverageForOrganizationWithTotal", err)
+		} else {
 			coverages = cList
 			totalCount = total
 		}
@@ -48,15 +54,27 @@ func (h *UIHandler) AdminWeeklyCoveragesPage(w http.ResponseWriter, r *http.Requ
 	var branches []*org.Branch
 	if h.orgSvc != nil {
 		if selectedOrgID > 0 {
-			branches, _ = h.orgSvc.ListBranches(database.AsSystem(ctx), selectedOrgID)
+			if loaded, err := h.orgSvc.ListBranches(database.AsSystem(ctx), selectedOrgID); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+			} else {
+				branches = loaded
+			}
 		} else {
-			branches, _ = h.orgSvc.ListBranches(database.AsSystem(ctx), 0)
+			if loaded, err := h.orgSvc.ListBranches(database.AsSystem(ctx), 0); err != nil {
+				h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+			} else {
+				branches = loaded
+			}
 		}
 	}
 
 	var cities []*platformadmin.City
 	if h.adminSvc != nil {
-		cities, _ = h.adminSvc.ListCities(database.AsSystem(ctx), 1)
+		if loaded, err := h.adminSvc.ListCities(database.AsSystem(ctx), 1); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListCities", err)
+		} else {
+			cities = loaded
+		}
 	}
 
 	data := pages.AdminWeeklyCoveragesData{

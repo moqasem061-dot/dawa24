@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminChatHistoryPage renders audit list of all AI Assistant conversations with stats, search and pagination.
@@ -81,8 +81,16 @@ func (h *UIHandler) AdminAIChatDetailPage(w http.ResponseWriter, r *http.Request
 	var summary *assistant.ConversationSummary
 	var msgs []*assistant.Message
 	if h.assistantRepo != nil {
-		summary, _ = h.assistantRepo.GetConversationSummary(database.AsSystem(ctx), convID)
-		msgs, _ = h.assistantRepo.ListMessages(database.AsSystem(ctx), convID, 200)
+		if loaded, err := h.assistantRepo.GetConversationSummary(database.AsSystem(ctx), convID); err != nil {
+			h.logLoadErr(ctx, "assistantRepo.GetConversationSummary", err)
+		} else {
+			summary = loaded
+		}
+		if loaded, err := h.assistantRepo.ListMessages(database.AsSystem(ctx), convID, 200); err != nil {
+			h.logLoadErr(ctx, "assistantRepo.ListMessages", err)
+		} else {
+			msgs = loaded
+		}
 	}
 
 	if summary == nil {

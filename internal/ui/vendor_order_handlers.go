@@ -9,13 +9,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorOrdersPage renders supplier order fulfillments.
@@ -45,11 +45,16 @@ func (h *UIHandler) VendorOrdersPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	pendingCount, _ := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusPending)})
-	confirmedCount, _ := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusConfirmed)})
-	shippedCount, _ := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusShipped)})
-	deliveredCount, _ := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusDelivered)})
-	failedCount, _ := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusFailed), string(commerce.StatusReturned)})
+	pendingCount, loadErr := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusPending)})
+	h.logLoadErr(ctx, "commSvc.CountVendorShipmentsByStatus", loadErr)
+	confirmedCount, loadErr := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusConfirmed)})
+	h.logLoadErr(ctx, "commSvc.CountVendorShipmentsByStatus", loadErr)
+	shippedCount, loadErr := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusShipped)})
+	h.logLoadErr(ctx, "commSvc.CountVendorShipmentsByStatus", loadErr)
+	deliveredCount, loadErr := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusDelivered)})
+	h.logLoadErr(ctx, "commSvc.CountVendorShipmentsByStatus", loadErr)
+	failedCount, loadErr := h.commSvc.CountVendorShipmentsByStatus(ctx, actor.OrganizationID, []string{string(commerce.StatusFailed), string(commerce.StatusReturned)})
+	h.logLoadErr(ctx, "commSvc.CountVendorShipmentsByStatus", loadErr)
 
 	data := pages.VendorOrdersData{
 		Shipments:      shipments,
@@ -140,7 +145,8 @@ func (h *UIHandler) VendorOrderDetailPage(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	history, _ := h.commSvc.ListOrderHistory(ctx, shipment.OrderID)
+	history, loadErr := h.commSvc.ListOrderHistory(ctx, shipment.OrderID)
+	h.logLoadErr(ctx, "commSvc.ListOrderHistory", loadErr)
 
 	var couriers []pages.DeliveryCourierOption
 	canAssign := actor.Can("vendor.delivery.assign")

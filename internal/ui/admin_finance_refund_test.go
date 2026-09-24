@@ -14,10 +14,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type stubRefundRepo struct {
@@ -199,7 +199,7 @@ func TestAdminFinanceRefundRoutes_Permissions(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			form := url.Values{}
 			form.Set("reason", "Refund test")
-			req := httptest.NewRequest(http.MethodPost, tt.path, strings.NewReader(form.Encode()))
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, tt.path, strings.NewReader(form.Encode()))
 			req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			if tt.actor != nil {
 				req = req.WithContext(authctx.WithActor(req.Context(), *tt.actor))
@@ -231,7 +231,7 @@ func TestAdminFinanceRefund_TransactionFunctional(t *testing.T) {
 
 		form := url.Values{}
 		form.Set("reason", "Order cancelled by supplier")
-		req := httptest.NewRequest(http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 
@@ -265,7 +265,7 @@ func TestAdminFinanceRefund_TransactionFunctional(t *testing.T) {
 
 		form := url.Values{}
 		form.Set("reason", "   ")
-		req := httptest.NewRequest(http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 
@@ -288,7 +288,7 @@ func TestAdminFinanceRefund_TransactionFunctional(t *testing.T) {
 
 		form := url.Values{}
 		form.Set("reason", "Repeated refund attempt")
-		req := httptest.NewRequest(http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/transactions/101/refund", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 
@@ -323,7 +323,7 @@ func TestAdminFinanceRefund_DepositFunctional(t *testing.T) {
 
 		form := url.Values{}
 		form.Set("reason", "Bank transfer chargeback reversal")
-		req := httptest.NewRequest(http.MethodPost, "/admin/finance/deposits/201/refund", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/deposits/201/refund", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 
@@ -354,7 +354,7 @@ func TestAdminFinanceRefund_DepositFunctional(t *testing.T) {
 
 		form := url.Values{}
 		form.Set("reason", "")
-		req := httptest.NewRequest(http.MethodPost, "/admin/finance/deposits/201/refund", strings.NewReader(form.Encode()))
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/deposits/201/refund", strings.NewReader(form.Encode()))
 		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 

@@ -7,12 +7,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) CustomerCartPage(w http.ResponseWriter, r *http.Request) {
@@ -141,7 +141,8 @@ func (h *UIHandler) AddToCartSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.isHTMX(r) {
-		cart, _ := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		cart, loadErr := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 		itemCount := 0
 		if cart != nil {
 			for _, ci := range cart.Items {
@@ -188,7 +189,8 @@ func (h *UIHandler) RemoveFromCartSubmit(w http.ResponseWriter, r *http.Request)
 	}
 
 	if h.isHTMX(r) {
-		cart, _ := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		cart, loadErr := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 		actor, _ := authctx.From(ctx)
 		h.enrichCartItemsCoverage(ctx, &actor, cart, langOf(r))
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"cartUpdated":{"count":%d}}`, cartTotalItemCount(cart)))
@@ -232,7 +234,8 @@ func (h *UIHandler) UpdateCartQuantitySubmit(w http.ResponseWriter, r *http.Requ
 			return
 		}
 		if h.isHTMX(r) {
-			cart, _ := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+			cart, loadErr := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+			h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 			actor, _ := authctx.From(ctx)
 			h.enrichCartItemsCoverage(ctx, &actor, cart, langOf(r))
 			w.Header().Set("HX-Trigger", fmt.Sprintf(`{"cartUpdated":{"count":%d}}`, cartTotalItemCount(cart)))
@@ -273,7 +276,8 @@ func (h *UIHandler) UpdateCartQuantitySubmit(w http.ResponseWriter, r *http.Requ
 	}
 
 	if h.isHTMX(r) {
-		cart, _ := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		cart, loadErr := h.commSvc.GetCart(ctx, userID, buyerOrgID(ctx))
+		h.logLoadErr(ctx, "commSvc.GetCart", loadErr)
 		actor, _ := authctx.From(ctx)
 		h.enrichCartItemsCoverage(ctx, &actor, cart, langOf(r))
 		w.Header().Set("HX-Trigger", fmt.Sprintf(`{"cartUpdated":{"count":%d}}`, cartTotalItemCount(cart)))
@@ -336,7 +340,9 @@ func (h *UIHandler) resolveCartLine(ctx context.Context, variantID, productID, v
 			}
 		}
 	} else if variantID <= 0 && productID > 0 && vendorOrgID > 0 {
-		if vars, err := h.catSvc.ListVariantsByProduct(database.AsSystem(ctx), productID); err == nil {
+		if vars, err := h.catSvc.ListVariantsByProduct(database.AsSystem(ctx), productID); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListVariantsByProduct", err)
+		} else {
 			for _, v := range vars {
 				if v != nil && v.OrganizationID == vendorOrgID && v.DeletedAt == nil && v.Status == catalog.StatusActive {
 					variantID = v.ID

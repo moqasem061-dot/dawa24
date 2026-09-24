@@ -2,12 +2,13 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Shared-catalogue reads and writes for the vendor import.
@@ -103,7 +104,7 @@ func (r *Repository) CreateImportProducts(
 	if err == nil {
 		return ids, nil
 	}
-	if err != errRowRejected {
+	if !errors.Is(err, errRowRejected) {
 		return nil, fmt.Errorf("catalog postgres: create import products: %w", err)
 	}
 	return r.createImportProductsOneByOne(ctx, orgID, prods)

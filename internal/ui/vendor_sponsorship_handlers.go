@@ -7,13 +7,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorSponsorshipRequestsPage renders the vendor's sponsorship requests list
@@ -41,11 +41,31 @@ func (h *UIHandler) VendorSponsorshipRequestsPage(w http.ResponseWriter, r *http
 	var activeOffers []*promo.Offer
 
 	if h.promoSvc != nil {
-		packages, _ = h.promoSvc.ListPackages(ctx)
-		purchases, _ = h.promoSvc.ListSponsorshipPurchases(ctx)
-		requests, totalRequests, _ = h.promoSvc.ListSponsorshipRequestsByOrgWithTotal(ctx, limit, offset)
-		activePurchases, _ = h.promoSvc.ListActiveSponsorshipPurchases(ctx)
-		activeOffers, _ = h.promoSvc.ListActiveOffers(ctx, 100, 0)
+		if loaded, err := h.promoSvc.ListPackages(ctx); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListPackages", err)
+		} else {
+			packages = loaded
+		}
+		if loaded, err := h.promoSvc.ListSponsorshipPurchases(ctx); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListSponsorshipPurchases", err)
+		} else {
+			purchases = loaded
+		}
+		if loaded, loaded2, err := h.promoSvc.ListSponsorshipRequestsByOrgWithTotal(ctx, limit, offset); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListSponsorshipRequestsByOrgWithTotal", err)
+		} else {
+			requests, totalRequests = loaded, loaded2
+		}
+		if loaded, err := h.promoSvc.ListActiveSponsorshipPurchases(ctx); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveSponsorshipPurchases", err)
+		} else {
+			activePurchases = loaded
+		}
+		if loaded, err := h.promoSvc.ListActiveOffers(ctx, 100, 0); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveOffers", err)
+		} else {
+			activeOffers = loaded
+		}
 	}
 
 	totalCredits := 0

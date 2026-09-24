@@ -6,12 +6,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) HomePage(w http.ResponseWriter, r *http.Request) {
@@ -48,7 +48,9 @@ func (h *UIHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.promoSvc != nil {
-		if activeOffers, err := h.promoSvc.ListActiveOffers(ctx, 4, 0); err == nil {
+		if activeOffers, err := h.promoSvc.ListActiveOffers(ctx, 4, 0); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveOffers", err)
+		} else {
 			offers = activeOffers
 			stats.TotalOffers = len(activeOffers)
 		}
@@ -61,18 +63,26 @@ func (h *UIHandler) HomePage(w http.ResponseWriter, r *http.Request) {
 		if allActiveAds, err := h.promoSvc.ListActiveAds(ctx, ""); err == nil && len(allActiveAds) > 0 {
 			stats.Ads = capAds(shuffleAds(allActiveAds), maxHeroAds)
 		} else {
-			if heroAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeHero); err == nil {
+			if heroAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeHero); err != nil {
+				h.logLoadErr(ctx, "promoSvc.ListActiveAds", err)
+			} else {
 				stats.Ads = append(stats.Ads, heroAds...)
 			}
-			if bannerAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeBanner); err == nil {
+			if bannerAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeBanner); err != nil {
+				h.logLoadErr(ctx, "promoSvc.ListActiveAds", err)
+			} else {
 				stats.Ads = append(stats.Ads, bannerAds...)
 			}
 			stats.Ads = capAds(shuffleAds(stats.Ads), maxHeroAds)
 		}
-		if dealsAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeDeals); err == nil {
+		if dealsAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeDeals); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveAds", err)
+		} else {
 			stats.DealsAds = capAds(shuffleAds(dealsAds), maxSectionAds)
 		}
-		if bottomAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeBottom); err == nil {
+		if bottomAds, err := h.promoSvc.ListActiveAds(ctx, promo.PositionHomeBottom); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListActiveAds", err)
+		} else {
 			stats.BottomAds = capAds(shuffleAds(bottomAds), maxSectionAds)
 		}
 		// One batched enrichment for all three groups rather than three, so the

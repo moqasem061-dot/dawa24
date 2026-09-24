@@ -1,11 +1,12 @@
 package catalog
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // collectProducts walks every block and parses every valid data row into a product.
@@ -287,7 +288,7 @@ func (c rowCursor) readAmount(field string, required bool) (money.Amount, bool) 
 
 	amt, info, err := CoerceMoney(raw)
 	switch {
-	case err == ErrNoValue:
+	case errors.Is(err, ErrNoValue):
 		return money.Zero, true
 
 	case err != nil:
@@ -343,7 +344,7 @@ func (c rowCursor) readDiscount(prod *Product) {
 
 	amt, info, err := CoerceMoney(raw)
 	switch {
-	case err == ErrNoValue:
+	case errors.Is(err, ErrNoValue):
 		return
 	case err != nil:
 		c.warn(c.label(FieldDiscount), raw, "تعذر قراءة قيمة الخصم؛ تم تجاهلها.")

@@ -10,13 +10,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/importprogress"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/importprogress"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorIngestMappingSubmit records the vendor's column corrections.
@@ -85,7 +85,8 @@ func vendorMappingOverrides(r *http.Request) (map[int]productmatch.Field, error)
 			continue
 		}
 		if other, taken := claimedBy[index]; taken {
-			return nil, fmt.Errorf("العمود رقم %d مربوط بحقلين: «%s» و«%s». اختر حقلاً واحداً لكل عمود.",
+			return nil, fmt.Errorf( //nolint:staticcheck // ST1005: a full sentence shown to the vendor as-is
+				"العمود رقم %d مربوط بحقلين: «%s» و«%s». اختر حقلاً واحداً لكل عمود.",
 				index+1, other.Label(), field.Label())
 		}
 		claimedBy[index] = field
@@ -169,7 +170,8 @@ func (h *UIHandler) VendorIngestSettingsSubmit(w http.ResponseWriter, r *http.Re
 		}
 	}
 	if settings.WarehouseID <= 0 && actor.OrganizationID > 0 && h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(ctx)
+		whs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, w := range whs {
 			if w.OrganizationID == actor.OrganizationID && w.IsActive {
 				settings.WarehouseID = w.ID
@@ -199,9 +201,9 @@ func (h *UIHandler) VendorIngestSettingsSubmit(w http.ResponseWriter, r *http.Re
 		}
 	}
 	settings.Mode = ingest.ParseMode(r.PostFormValue("mode"))
-	settings.StockMode = inventory.StockMode(r.PostFormValue("stock_mode"))
+	settings.StockMode = ingest.StockMode(r.PostFormValue("stock_mode"))
 	settings.Duplicates = productmatch.DuplicatePolicy(r.PostFormValue("duplicates"))
-	if score, err := strconv.ParseFloat(r.PostFormValue("min_match_score"), 64); err == nil {
+	if score, err := strconv.ParseFloat(r.PostFormValue("min_match_score"), 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.MinMatchScore = score / 100
 	}
 	settings.TrustSupplierCode = checked(r, "trust_supplier_code")
@@ -221,10 +223,10 @@ func (h *UIHandler) VendorIngestSettingsSubmit(w http.ResponseWriter, r *http.Re
 	// as "on" would make the results screen claim AI work that never happened.
 	settings.UseAI = checked(r, "use_ai") && h.ingSvc.AIAvailable()
 	settings.RecordRows = checked(r, "record_rows")
-	if v, err := strconv.Atoi(r.PostFormValue("default_min_order_qty")); err == nil {
+	if v, err := strconv.Atoi(r.PostFormValue("default_min_order_qty")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.DefaultMinOrderQty = v
 	}
-	if v, err := strconv.Atoi(r.PostFormValue("default_min_threshold")); err == nil {
+	if v, err := strconv.Atoi(r.PostFormValue("default_min_threshold")); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		settings.DefaultMinThreshold = v
 	}
 

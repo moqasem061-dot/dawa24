@@ -9,14 +9,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrgReviewSubmit handles full administrative approval/rejection with custom reason and document categorization.
@@ -50,7 +50,8 @@ func (h *UIHandler) AdminOrgReviewSubmit(w http.ResponseWriter, r *http.Request)
 	if status == org.StatusApproved && h.attSvc != nil {
 		overrides := make(map[int64]attachments.DocumentType)
 		sysCtx := database.AsSystem(ctx)
-		docs, _ := h.attSvc.ListByOrganization(sysCtx, id)
+		docs, loadErr := h.attSvc.ListByOrganization(sysCtx, id)
+		h.logLoadErr(ctx, "attSvc.ListByOrganization", loadErr)
 		for _, d := range docs {
 			if d != nil {
 				if t := attachments.DocumentType(strings.TrimSpace(r.PostFormValue(fmt.Sprintf("doc_type_%d", d.ID)))); t != "" {
@@ -70,7 +71,8 @@ func (h *UIHandler) AdminOrgReviewSubmit(w http.ResponseWriter, r *http.Request)
 	} else if status == org.StatusRejected {
 		if h.attSvc != nil {
 			sysCtx := database.AsSystem(ctx)
-			docs, _ := h.attSvc.ListByOrganization(sysCtx, id)
+			docs, loadErr := h.attSvc.ListByOrganization(sysCtx, id)
+			h.logLoadErr(ctx, "attSvc.ListByOrganization", loadErr)
 			for _, d := range docs {
 				if d != nil && d.Status == attachments.StatusPending {
 					_ = h.attSvc.VerifyDocument(sysCtx, actor, d.ID, attachments.StatusRejected, rejectionReason)
@@ -83,9 +85,10 @@ func (h *UIHandler) AdminOrgReviewSubmit(w http.ResponseWriter, r *http.Request)
 	}
 
 	msg := i18n.T(lang, "admin.approvals.approved_and_verified_success")
-	if status == org.StatusRejected {
+	switch status {
+	case org.StatusRejected:
 		msg = i18n.T(lang, "admin.approvals.rejected_success")
-	} else if status == org.StatusSuspended {
+	case org.StatusSuspended:
 		msg = i18n.T(lang, "admin.approvals.suspended_notice")
 	}
 
@@ -101,7 +104,9 @@ func (h *UIHandler) verifyOrgDocumentsOnApproval(ctx context.Context, actor auth
 	sysCtx := database.AsSystem(ctx)
 	defaultType := attachments.DocCommercialRegister
 	if h.orgSvc != nil {
-		if o, _ := h.orgSvc.GetOrganization(sysCtx, orgID); o != nil && o.Type == org.TypeCustomer {
+		if o, loadErr := h.orgSvc.GetOrganization(sysCtx, orgID); loadErr != nil {
+			h.logLoadErr(ctx, "orgSvc.GetOrganization", loadErr)
+		} else if o != nil && o.Type == org.TypeCustomer {
 			defaultType = attachments.DocPharmacyLicense
 		}
 	}
@@ -185,7 +190,8 @@ func (h *UIHandler) adminApprovalAction(
 		sysCtx := database.AsSystem(ctx)
 		for _, o := range pending {
 			if o != nil {
-				docs, _ := h.attSvc.ListByOrganization(sysCtx, o.ID)
+				docs, loadErr := h.attSvc.ListByOrganization(sysCtx, o.ID)
+				h.logLoadErr(ctx, "attSvc.ListByOrganization", loadErr)
 				if len(docs) > 0 {
 					orgDocs[o.ID] = docs
 				}
@@ -218,7 +224,9 @@ func (h *UIHandler) AdminApproveOrgSubmit(w http.ResponseWriter, r *http.Request
 func (h *UIHandler) AdminRejectOrgSubmit(w http.ResponseWriter, r *http.Request) {
 	h.adminApprovalAction(w, r, func(ctx context.Context, orgID int64) error {
 		err := h.orgSvc.RejectOrganization(ctx, orgID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(r.Context(), "orgSvc.RejectOrganization", err)
+		} else {
 			h.safeGo("notify-org-rejected", func() {
 				h.notifyOrgRejected(context.Background(), orgID, "")
 			})
@@ -304,8 +312,8 @@ func (h *UIHandler) provisionOrgAIAndSubscription(ctx context.Context, orgID int
 	// were in that state before anyone noticed. It is recorded where an
 	// operator actually looks — تشخيص الأخطاء — so the missing configuration
 	// names itself instead of being discovered from the outside.
-	switch {
-	case h.tenantKeys == nil:
+	switch h.tenantKeys {
+	case nil:
 		h.recordProvisioningFailure(ctx, orgID,
 			i18n.TDefault("w4_ui.w4str_3_3"))
 	default:

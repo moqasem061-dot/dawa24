@@ -8,23 +8,54 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
-// ensureAdminAccount checks if ADMIN_EMAIL is set (or defaults to admin@dawa24.net)
-// and creates or updates the super_admin account.
-func ensureAdminAccount(ctx context.Context, db *database.DB, log *slog.Logger) error {
+const defaultAdminEmail = "admin@dawa24.net"
+
+// devAdminPassword is the password a non-production super_admin gets when none
+// is given. It is in the repository, so it must never reach production.
+const devAdminPassword = "Admin!Dawa24!2026"
+
+// ensureAdminAccount creates the ADMIN_EMAIL super_admin when it does not exist
+// yet, and leaves an existing one untouched.
+//
+// It runs on every "migrate", which is every deploy. It used to upsert, which
+// reset the admin's password to ADMIN_PASSWORD (or to a default written in this
+// file) on each release: a password changed through the UI silently reverted,
+// and a production deploy without ADMIN_PASSWORD got a publicly known one.
+// Resetting a password is `cli create-admin`'s job, and it is explicit.
+func ensureAdminAccount(ctx context.Context, db *database.DB, log *slog.Logger, prod bool) error {
 	email := os.Getenv("ADMIN_EMAIL")
 	if email == "" {
-		email = "admin@dawa24.net"
-	}
-	password := os.Getenv("ADMIN_PASSWORD")
-	if password == "" {
-		password = "Admin!Dawa24!2026"
+		email = defaultAdminEmail
 	}
 
+	var exists bool
+	err := db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		return tx.QueryRow(txCtx,
+			`SELECT EXISTS (SELECT 1 FROM identity.users WHERE email = $1 AND deleted_at IS NULL)`,
+			identity.NormalizeEmail(email)).Scan(&exists)
+	})
+	if err != nil {
+		return fmt.Errorf("look up admin account: %w", err)
+	}
+	if exists {
+		log.InfoContext(ctx, "super_admin account already exists; leaving it untouched", "email", email)
+		return nil
+	}
+
+	password := os.Getenv("ADMIN_PASSWORD")
+	if password == "" {
+		if prod {
+			log.WarnContext(ctx, "no super_admin account and ADMIN_PASSWORD is not set; "+
+				"create one with: cli create-admin <email> <password>", "email", email)
+			return nil
+		}
+		password = devAdminPassword
+	}
 	return createOrUpdateAdmin(ctx, db, log, email, password, "Platform Super Admin", "مدير النظام العام")
 }
 

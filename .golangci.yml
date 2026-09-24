@@ -13,7 +13,12 @@ linters:
     - bodyclose
     - rowserrcheck
     - sqlclosecheck
-    - contextcheck
+    # contextcheck is off. It never passed here, and of its 420 findings ~310
+    # were templ components (their context arrives at Render, which it cannot
+    # follow) and ~60 were h.safeGo notifications that detach from the request
+    # on purpose: handing them the request context would carry its tenant into
+    # post-response work. The real ones it found were fixed when it was
+    # evaluated (upload mirroring, assistant memory extraction).
     - errorlint
     - noctx
     - depguard
@@ -22,23 +27,36 @@ linters:
     depguard:
       rules:
         # Architectural boundaries, enforced by the build rather than by review.
-        # See docs/adr/0002-modular-monolith.md.
+        # See docs/adr/decisions.md (ADR 0002).
         shared-is-a-leaf:
           files:
             - "**/internal/shared/**"
           deny:
-            - pkg: "github.com/muhiya/dawa24-store/internal/platform"
+            - pkg: "github.com/moqasem061-dot/dawa24/internal/platform"
               desc: "shared/ must not depend on platform/; it is a dependency-free leaf"
-            - pkg: "github.com/muhiya/dawa24-store/internal/modules"
+            - pkg: "github.com/moqasem061-dot/dawa24/internal/modules"
               desc: "shared/ must not depend on modules/"
         platform-does-not-know-modules:
           files:
             - "**/internal/platform/**"
           deny:
-            - pkg: "github.com/muhiya/dawa24-store/internal/modules"
+            - pkg: "github.com/moqasem061-dot/dawa24/internal/modules"
               desc: "platform/ is infrastructure and must not depend on business modules"
 
+  exclusions:
+    # golangci-lint v1 applied this by default; v2 has to be told. It skips
+    # unchecked Close / Flush / Fprint* / os.Remove, which are best-effort on
+    # read paths and HTTP writers. Write paths where Close can lose data (a
+    # file whose final flush may hit a full disk) check it explicitly.
+    presets:
+      - std-error-handling
+    paths:
+      - "^tmp/" # gitignored local scratch, never in CI
+
 formatters:
+  exclusions:
+    paths:
+      - "^tmp/"
   enable:
     - gofmt
     - goimports

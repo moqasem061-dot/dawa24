@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,7 +18,7 @@ func TestLimiterFailsOpenWhenRedisNil(t *testing.T) {
 		_, _ = w.Write([]byte("ok"))
 	}))
 
-	req := httptest.NewRequest("GET", "/api/v1/test", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/api/v1/test", nil)
 	w := httptest.NewRecorder()
 
 	handler.ServeHTTP(w, req)
@@ -55,7 +56,7 @@ func TestUserExtractorWiring(t *testing.T) {
 		t.Fatal("expected userFn to be set")
 	}
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	uid := limiter.userFn(req)
 	if !called || uid != 42 {
 		t.Fatalf("expected extractor to return 42, got %d", uid)

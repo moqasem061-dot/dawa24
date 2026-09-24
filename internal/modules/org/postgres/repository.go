@@ -8,9 +8,9 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // Repository implements org.Repository using PostgreSQL.
@@ -231,15 +231,16 @@ func (r *Repository) UpdateOrganizationStatus(ctx context.Context, id int64, sta
 		}
 
 		action := "org." + string(status)
-		if status == org.StatusApproved {
+		switch status {
+		case org.StatusApproved:
 			if beforeStatus == string(org.StatusSuspended) {
 				action = "org.reactivate"
 			} else {
 				action = "org.approve"
 			}
-		} else if status == org.StatusRejected {
+		case org.StatusRejected:
 			action = "org.reject"
-		} else if status == org.StatusSuspended {
+		case org.StatusSuspended:
 			action = "org.suspend"
 		}
 
@@ -325,15 +326,16 @@ func (r *Repository) ReviewOrganization(ctx context.Context, id int64, status or
 		}
 
 		action := "org." + string(status)
-		if status == org.StatusApproved {
+		switch status {
+		case org.StatusApproved:
 			if beforeStatus == string(org.StatusSuspended) {
 				action = "org.reactivate"
 			} else {
 				action = "org.approve"
 			}
-		} else if status == org.StatusRejected {
+		case org.StatusRejected:
 			action = "org.reject"
-		} else if status == org.StatusSuspended {
+		case org.StatusSuspended:
 			action = "org.suspend"
 		}
 

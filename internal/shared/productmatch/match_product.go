@@ -11,7 +11,7 @@ package productmatch
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // MasterProduct is the catalogue side of a match, projected down to the fields

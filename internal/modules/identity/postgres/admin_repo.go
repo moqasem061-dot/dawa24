@@ -7,11 +7,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // Platform administration over user accounts.
@@ -156,9 +156,10 @@ func (r *Repository) AdminUpdateUserStatus(ctx context.Context, id int64, status
 		}
 
 		action := "identity.user.status_changed"
-		if status == "suspended" {
+		switch status {
+		case "suspended":
 			action = "user.suspend"
-		} else if status == "active" {
+		case "active":
 			action = "user.reactivate"
 		}
 

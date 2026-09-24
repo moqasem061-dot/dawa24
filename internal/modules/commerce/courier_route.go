@@ -5,8 +5,8 @@ import (
 	"sort"
 	"strconv"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The delivery round, as a route rather than a list.
@@ -206,7 +206,7 @@ func BuildCourierRoute(origin GeoPoint, shipments []*OrderShipment) *CourierRout
 		}
 		stop.Shipments = append(stop.Shipments, sh)
 		stop.Units += sh.TotalUnitsCount()
-		if sum, err := stop.Collect.Add(sh.CourierCollection().Amount); err == nil {
+		if sum, err := stop.Collect.Add(sh.CourierCollection().Amount); err == nil { // nolint:errswallow: money arithmetic fails only on overflow
 			stop.Collect = sum
 		}
 		if h := sh.WaitingHours(); h > stop.MaxWaitingHours {
@@ -264,7 +264,7 @@ func measure(r *CourierRoute) {
 		cursor = s.Point
 
 		parcels += len(s.Shipments)
-		if sum, err := total.Add(s.Collect); err == nil {
+		if sum, err := total.Add(s.Collect); err == nil { // nolint:errswallow: money arithmetic fails only on overflow
 			total = sum
 		}
 		if s.IsOverdue() {
@@ -272,7 +272,7 @@ func measure(r *CourierRoute) {
 		}
 	}
 	for _, sh := range r.Unlocatable {
-		if sum, err := total.Add(sh.CourierCollection().Amount); err == nil {
+		if sum, err := total.Add(sh.CourierCollection().Amount); err == nil { // nolint:errswallow: money arithmetic fails only on overflow
 			total = sum
 		}
 	}

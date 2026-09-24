@@ -4,13 +4,13 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type UnifiedSettingsData struct {
@@ -313,15 +313,9 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 						<input type="text" id="user-name" name="name" class="form-input" value={ userNameVal(data.User, lang) } required />
 					</div>
 
-					<div class="form-group mb-0">
-						<label class="form-label" for="user-email">{ i18n.T(lang, "settings.email") }</label>
-						<input type="email" id="user-email" name="email" class="form-input tabular-nums" value={ userEmailVal(data.User) } required />
-					</div>
-
-					<div class="form-group mb-0">
-						<label class="form-label" for="user-phone">{ i18n.T(lang, "settings.phone") }</label>
-						<input type="tel" id="user-phone" name="phone" class="form-input tabular-nums" value={ userPhoneVal(data.User) } />
-					</div>
+					@ProfileEmailField(data.User, lang)
+					@ProfilePhoneField(data.User, lang)
+					@ProfileVerifyScript()
 
 					<div class="form-group mb-0">
 						<label class="form-label" for="user-role">{ i18n.T(lang, "settings.account_role") }</label>

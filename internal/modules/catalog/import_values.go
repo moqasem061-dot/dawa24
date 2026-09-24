@@ -2,11 +2,12 @@ package catalog
 
 import (
 	"errors"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Value coercion for spreadsheet cells.

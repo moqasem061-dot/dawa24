@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/chatbridge"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Confirmations and files on Telegram.
@@ -107,7 +107,7 @@ func proposalMessage(chatID int64, p chatbridge.AnswerProposal) OutMessage {
 	}
 	for i, d := range p.Details {
 		if i == 12 {
-			b.WriteString(fmt.Sprintf("\n… و%d تفاصيل أخرى في Dawa24", len(p.Details)-12))
+			fmt.Fprintf(&b, "\n… و%d تفاصيل أخرى في Dawa24", len(p.Details)-12)
 			break
 		}
 		b.WriteString("\n• " + escape(d[0]) + ": <b>" + escape(d[1]) + "</b>")

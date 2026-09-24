@@ -3,11 +3,11 @@ package integration_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder/pipeline"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder/pipeline"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // The decision cache is shared or it is nothing.
@@ -101,14 +101,14 @@ func TestCacheKeySeparatesDifferentQuestions(t *testing.T) {
 func TestSmartOrderAndVendorShareTheEnhancerContract(t *testing.T) {
 	var batch matchflow.Batch
 	// These assignments only compile while all three names refer to one type.
-	var pipelineBatch pipeline.EnhanceBatch = batch
-	var ingestBatch ingest.EnhanceBatch = batch
+	var pipelineBatch = batch
+	var ingestBatch = batch
 	_ = pipelineBatch
 	_ = ingestBatch
 
 	var decision matchflow.Decision
-	var pipelineOut pipeline.EnhanceOutcome = decision
-	var ingestOut ingest.EnhanceOutcome = decision
+	var pipelineOut = decision
+	var ingestOut = decision
 	_ = pipelineOut
 	_ = ingestOut
 

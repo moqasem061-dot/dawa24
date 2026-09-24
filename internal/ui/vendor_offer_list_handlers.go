@@ -5,10 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorOffersPage renders the Laravel-parity Special Offers management view.
@@ -24,7 +24,11 @@ func (h *UIHandler) VendorOffersPage(w http.ResponseWriter, r *http.Request) {
 
 	var offers []*promo.SpecialOffer
 	if h.promoSvc != nil && actor.OrganizationID > 0 {
-		offers, _ = h.promoSvc.ListSpecialOffersByOrg(ctx, actor.OrganizationID)
+		if loaded, err := h.promoSvc.ListSpecialOffersByOrg(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "promoSvc.ListSpecialOffersByOrg", err)
+		} else {
+			offers = loaded
+		}
 	}
 
 	q := r.URL.Query()
@@ -53,7 +57,11 @@ func (h *UIHandler) VendorOffersPage(w http.ResponseWriter, r *http.Request) {
 	data.Offers = pageSlice(filtered, data.Page, data.PerPage)
 
 	if h.orgSvc != nil && actor.OrganizationID > 0 {
-		data.Branches, _ = h.orgSvc.ListBranches(ctx, actor.OrganizationID)
+		if loaded, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
+			data.Branches = loaded
+		}
 	}
 
 	h.renderPage(ctx, w, "render vendor offers page", pages.VendorSpecialOffersPage(data, lang, dir))

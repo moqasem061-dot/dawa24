@@ -11,14 +11,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestAdminSavingProductSearchJSON_Unauthorized(t *testing.T) {
 	h := newTestUIHandler()
-	req := httptest.NewRequest(http.MethodGet, "/admin/saving-products/search-products?q=panadol", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/saving-products/search-products?q=panadol", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminSavingProductSearchJSON(rec, req)
@@ -36,7 +36,7 @@ func TestAdminSavingProductSearchJSON_ShortQuery(t *testing.T) {
 		Permissions: []string{"catalog.saving_product.view"},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/saving-products/search-products?q=a", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/saving-products/search-products?q=a", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()
 
@@ -57,7 +57,7 @@ func TestAdminSavingProductSearchJSON_ShortQuery(t *testing.T) {
 
 func TestAdminSavingProductLinkSubmit_Unauthorized(t *testing.T) {
 	h := newTestUIHandler()
-	req := httptest.NewRequest(http.MethodPost, "/admin/saving-products/10/link", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/saving-products/10/link", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminSavingProductLinkSubmit(rec, req)
@@ -79,7 +79,7 @@ func TestAdminSavingProductLinkSubmit_InvalidID(t *testing.T) {
 		Permissions: []string{"catalog.saving_product.update"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/saving-products/abc/link", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/saving-products/abc/link", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rec := httptest.NewRecorder()
 
@@ -105,7 +105,7 @@ func TestRedirectAdminSavingProducts_ContextPreservation(t *testing.T) {
 		"user_id":    {"30"},
 		"product_id": {"101"},
 	}
-	req := httptest.NewRequest(http.MethodPost, "/admin/saving-products/10/link", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/saving-products/10/link", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rec := httptest.NewRecorder()
 
@@ -187,7 +187,7 @@ func TestAdminSavingProductsPage_Smoke(t *testing.T) {
 		Permissions: []string{"catalog.saving_product.view"},
 	}
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/saving-products?page=2&q=panadol&filter=unlinked", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/saving-products?page=2&q=panadol&filter=unlinked", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), actor))
 	rctx := chi.NewRouteContext()
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

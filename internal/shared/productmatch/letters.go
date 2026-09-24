@@ -15,7 +15,7 @@ package productmatch
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // identityMarks is the set of single letters a name carries as identity.

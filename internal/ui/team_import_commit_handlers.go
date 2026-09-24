@@ -10,12 +10,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func (h *UIHandler) handleTeamImportMapSubmit(w http.ResponseWriter, r *http.Request, audience string) {
@@ -40,7 +40,7 @@ func (h *UIHandler) handleTeamImportMapSubmit(w http.ResponseWriter, r *http.Req
 	}
 
 	parseInt := func(name string, defVal int) int {
-		if v, err := strconv.Atoi(r.PostFormValue(name)); err == nil {
+		if v, err := strconv.Atoi(r.PostFormValue(name)); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			return v
 		}
 		return defVal

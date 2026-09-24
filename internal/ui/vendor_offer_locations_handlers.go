@@ -8,11 +8,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // VendorOfferLocationsPage renders geographic location coverage management for an offer.
@@ -38,7 +38,8 @@ func (h *UIHandler) VendorOfferLocationsPage(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	locs, _ := h.promoSvc.ListSpecialOfferLocations(ctx, id)
+	locs, loadErr := h.promoSvc.ListSpecialOfferLocations(ctx, id)
+	h.logLoadErr(ctx, "promoSvc.ListSpecialOfferLocations", loadErr)
 	govs := h.listGovernorates(ctx)
 	cities := h.listCities(ctx)
 
@@ -318,7 +319,7 @@ func (h *UIHandler) VendorOfferLocationNewSubmit(w http.ResponseWriter, r *http.
 				Status:      "active",
 				AdminStatus: "approved",
 			}
-			if err := h.promoSvc.AddSpecialOfferLocation(ctx, loc); err == nil {
+			if err := h.promoSvc.AddSpecialOfferLocation(ctx, loc); err == nil { // nolint:errswallow: the else branch logs each failure
 				createdCount++
 			} else {
 				h.log.WarnContext(ctx, "add special offer location failed in batch", "error", err, "city_id", city.ID, "day", day)

@@ -3,8 +3,8 @@ package ui
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // IsJunkOrEmptyRow reports whether a row is empty, pure punctuation, or a repeated header.

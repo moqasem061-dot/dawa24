@@ -1,12 +1,13 @@
 package authctx_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 func okHandler() http.Handler {
@@ -16,7 +17,7 @@ func okHandler() http.Handler {
 }
 
 func serve(gate func(http.Handler) http.Handler, actor *authctx.Actor, path string) int {
-	req := httptest.NewRequest("GET", path, nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", path, nil)
 	if actor != nil {
 		req = req.WithContext(authctx.WithActor(req.Context(), *actor))
 	}

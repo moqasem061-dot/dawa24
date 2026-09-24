@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 )
 
 // Announcing a smart order's progress as it is recorded.

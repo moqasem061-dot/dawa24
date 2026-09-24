@@ -7,11 +7,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminCategoriesPage renders master product categories CRUD.
@@ -32,9 +32,15 @@ func (h *UIHandler) AdminCategoriesPage(w http.ResponseWriter, r *http.Request) 
 	var totalCount int
 
 	if h.catSvc != nil {
-		allCats, _ = h.catSvc.ListCategories(sysCtx)
+		if loaded, err := h.catSvc.ListCategories(sysCtx); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListCategories", err)
+		} else {
+			allCats = loaded
+		}
 		catCounts, total, err := h.catSvc.ListCategoriesWithProductCount(sysCtx, search, status, pageSize, offset)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.ListCategoriesWithProductCount", err)
+		} else {
 			totalCount = total
 			for _, cc := range catCounts {
 				if cc != nil && cc.Category != nil {
@@ -207,7 +213,8 @@ func (h *UIHandler) AdminCategoryDeleteSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	count, _ := h.catSvc.CountProductsInCategory(database.AsSystem(ctx), catID)
+	count, loadErr := h.catSvc.CountProductsInCategory(database.AsSystem(ctx), catID)
+	h.logLoadErr(ctx, "catSvc.CountProductsInCategory", loadErr)
 	if count > 0 {
 		h.redirectWithNotice(w, r, "/admin/categories", "error", fmt.Sprintf(i18n.T(lang, "admin.categories.cannot_delete_has_products_format"), count))
 		return

@@ -2,19 +2,19 @@ package ui
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"net/http"
 	"sync"
 
-	"golang.org/x/sync/singleflight"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
 	"time"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
-)
+	"golang.org/x/sync/singleflight"
 
-type siteSettingsKey struct{}
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
 
 var (
 	cachedSettings *platformadmin.SiteSettings
@@ -95,7 +95,11 @@ func (h *UIHandler) siteSettingsMiddleware(next http.Handler) http.Handler {
 				// disconnects mid-flight would otherwise cancel the query every
 				// other caller is waiting on, turning one abandoned request into
 				// a failure for all of them.
-				s, _ = h.adminSvc.GetSiteSettings(context.WithoutCancel(ctx))
+				if loaded, err := h.adminSvc.GetSiteSettings(context.WithoutCancel(ctx)); err != nil {
+					h.logLoadErr(ctx, "adminSvc.GetSiteSettings", err)
+				} else {
+					s = loaded
+				}
 			}
 			if s == nil {
 				s = DefaultSiteSettings()

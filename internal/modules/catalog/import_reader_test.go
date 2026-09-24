@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 )
 
 func TestReadSpreadsheetTolerantesRaggedCSV(t *testing.T) {
@@ -185,4 +185,3 @@ func TestReadSpreadsheetAllowsImageURLs(t *testing.T) {
 		t.Errorf("image url = %q, want https://cdn.example.com/products/panadol.jpg", got)
 	}
 }
-

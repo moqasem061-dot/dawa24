@@ -46,7 +46,7 @@ const LongStatementTimeout = 10 * time.Minute
 // SET LOCAL scopes the change to this transaction, so the connection returns to
 // the pool with the ordinary ceiling restored. A session-level SET would leak
 // ten minutes of patience into the next request that borrowed the connection,
-// which is the same trap applyTenant exists to avoid for the tenant id.
+// which is the same trap tenantConfigSQL (pipelined_tx.go) avoids for the tenant id.
 func (db *DB) InLongTx(ctx context.Context, fn func(context.Context, pgx.Tx) error) error {
 	return db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
 		if err := setLocalStatementTimeout(txCtx, tx, LongStatementTimeout); err != nil {

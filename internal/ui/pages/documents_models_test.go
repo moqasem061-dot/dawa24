@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
 )
 
 func doc(id int64, t attachments.DocumentType, status attachments.DocumentStatus, at time.Time) *attachments.Document {

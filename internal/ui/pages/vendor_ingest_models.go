@@ -3,10 +3,10 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // VendorImportView is everything the import screen renders.
@@ -306,8 +306,8 @@ func FileSizeText(bytes int64, langOpt ...string) string {
 }
 
 // StockModeOptions are the three readings of an imported quantity.
-func StockModeOptions() []inventory.StockMode {
-	return []inventory.StockMode{inventory.StockReplace, inventory.StockAdd, inventory.StockKeep}
+func StockModeOptions() []ingest.StockMode {
+	return []ingest.StockMode{ingest.StockReplace, ingest.StockAdd, ingest.StockKeep}
 }
 
 // importRowsURL links one filter tab of the results table.

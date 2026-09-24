@@ -8,13 +8,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminProductDetailPage renders detail view of a master catalog product.
@@ -31,7 +31,11 @@ func (h *UIHandler) AdminProductDetailPage(w http.ResponseWriter, r *http.Reques
 	var prod *catalog.Product
 	var variants []*catalog.ProductVariant
 	if h.catSvc != nil {
-		prod, variants, _ = h.catSvc.GetProduct(database.AsSystem(ctx), prodID)
+		if loaded, loaded2, err := h.catSvc.GetProduct(database.AsSystem(ctx), prodID); err != nil {
+			h.logLoadErr(ctx, "catSvc.GetProduct", err)
+		} else {
+			prod, variants = loaded, loaded2
+		}
 	}
 
 	if prod == nil {
@@ -44,10 +48,11 @@ func (h *UIHandler) AdminProductDetailPage(w http.ResponseWriter, r *http.Reques
 	warehouseNames := make(map[int64]string)
 
 	if h.catSvc != nil {
-		variantRows, _, _ := h.catSvc.ListAdminVariantRows(database.AsSystem(ctx), catalog.AdminVariantFilter{
+		variantRows, _, loadErr := h.catSvc.ListAdminVariantRows(database.AsSystem(ctx), catalog.AdminVariantFilter{
 			ProductID: prodID,
 			Limit:     200,
 		})
+		h.logLoadErr(ctx, "catSvc.ListAdminVariantRows", loadErr)
 
 		rowByVariantID := make(map[int64]*catalog.AdminVariantRow, len(variantRows))
 		for _, row := range variantRows {
@@ -213,7 +218,9 @@ func (h *UIHandler) AdminProductChildStatusSubmit(w http.ResponseWriter, r *http
 			variant.Status = catalog.ProductStatus(newStatus)
 			sysCtx = database.WithTenant(sysCtx, variant.OrganizationID)
 			if _, err := h.catSvc.UpdateVariant(sysCtx, id, variant); err != nil {
-				_, _ = h.catSvc.ToggleVariantStatus(sysCtx, variant.OrganizationID, id)
+				if _, err := h.catSvc.ToggleVariantStatus(sysCtx, variant.OrganizationID, id); err != nil {
+					h.logLoadErr(ctx, "catSvc.ToggleVariantStatus", err)
+				}
 			}
 		}
 	}
@@ -232,7 +239,11 @@ func (h *UIHandler) AdminStocksPage(w http.ResponseWriter, r *http.Request) {
 	var stocks []*inventory.Stock
 	var total int
 	if h.invSvc != nil {
-		stocks, total, _ = h.invSvc.ListLowStockWithTotal(database.AsSystem(ctx), limit, offset)
+		if loaded, loaded2, err := h.invSvc.ListLowStockWithTotal(database.AsSystem(ctx), limit, offset); err != nil {
+			h.logLoadErr(ctx, "invSvc.ListLowStockWithTotal", err)
+		} else {
+			stocks, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin stocks page", pages.AdminStocksPage(stocks, lang, dir, page, limit, total))

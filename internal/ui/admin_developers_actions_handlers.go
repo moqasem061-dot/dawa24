@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminGatewayTestConnection probes Gateway readiness live.
@@ -29,7 +29,9 @@ func (h *UIHandler) AdminGatewayTestConnection(w http.ResponseWriter, r *http.Re
 
 	// If key is empty or masked, fallback to stored credentials
 	if h.adminSvc != nil {
-		if gwSets, _ := h.adminSvc.GetGatewaySettings(ctx); gwSets != nil {
+		if gwSets, loadErr := h.adminSvc.GetGatewaySettings(ctx); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetGatewaySettings", loadErr)
+		} else if gwSets != nil {
 			savedUser, savedPass := gwSets.AdminCredentials()
 			if (reqKey == "" || strings.HasPrefix(reqKey, "•")) && savedPass != "" {
 				reqKey = savedPass
@@ -137,7 +139,7 @@ func (h *UIHandler) AdminErrorDetailFragment(w http.ResponseWriter, r *http.Requ
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 || h.adminSvc == nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.AdminErrorDetailFragment(nil, lang).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminErrorDetailFragment", pages.AdminErrorDetailFragment(nil, lang))
 		return
 	}
 
@@ -167,7 +169,7 @@ func (h *UIHandler) AdminAuditDetailFragment(w http.ResponseWriter, r *http.Requ
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err != nil || id <= 0 || h.adminSvc == nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.AdminAuditDetailFragment(nil, lang).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminAuditDetailFragment", pages.AdminAuditDetailFragment(nil, lang))
 		return
 	}
 

@@ -3,8 +3,8 @@ package org_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func band(from, to int, fee int64, active bool) *org.DeliveryBand {

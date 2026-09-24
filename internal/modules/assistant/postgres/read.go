@@ -2,15 +2,16 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The assistant's read model.
@@ -187,7 +188,7 @@ func (r *Repository) Wallet(ctx context.Context, actor authctx.Actor) (*assistan
 			 LIMIT 1;
 		`, orgID, actor.UserID).Scan(&walletID, &currency)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
 			}
 			return err
@@ -255,7 +256,7 @@ func (r *Repository) Subscription(ctx context.Context, actor authctx.Actor) (*as
 			 LIMIT 1;
 		`, orgID).Scan(&s.PlanName, &s.Status, &s.StartsAt, &s.ExpiresAt, &priceMonth)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return nil
 			}
 			return err

@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // The supplier's quota screen, and the two remaining paths that can move a

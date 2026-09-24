@@ -1,20 +1,27 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestRobotsTxt_ContentSignals(t *testing.T) {
-	r := chi.NewRouter()
-	ui.RegisterStaticRoutes(r)
+	// The fetcher is package state another test may have installed; this test
+	// is about the embedded file.
+	saved := ui.DynamicRobotsTxtFetcher
+	ui.DynamicRobotsTxtFetcher = nil
+	t.Cleanup(func() { ui.DynamicRobotsTxtFetcher = saved })
 
-	req := httptest.NewRequest(http.MethodGet, "/robots.txt", nil)
+	r := chi.NewRouter()
+	ui.RegisterStaticRoutes(r, func(*http.Request) string { return "https://dawa24.com" })
+
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/robots.txt", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -30,6 +37,10 @@ func TestRobotsTxt_ContentSignals(t *testing.T) {
 	body := rec.Body.String()
 	if !strings.Contains(body, "Content-Signal: ai-train=no, search=yes, ai-input=no") {
 		t.Errorf("expected robots.txt to contain 'Content-Signal: ai-train=no, search=yes, ai-input=no', got body:\n%s", body)
+	}
+
+	if !strings.Contains(body, "Sitemap: https://dawa24.com/sitemap.xml") {
+		t.Errorf("Sitemap must name this deployment's absolute sitemap URL, got body:\n%s", body)
 	}
 
 	lines := strings.Split(body, "\n")

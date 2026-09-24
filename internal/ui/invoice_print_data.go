@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // buildPrintableInvoiceData assembles the full printable invoice data model,
@@ -29,7 +29,9 @@ func (h *UIHandler) buildPrintableInvoiceData(ctx context.Context, invoice *bill
 	}
 
 	if order == nil && invoice != nil && invoice.OrderID != nil && h.commSvc != nil {
-		if ord, _ := h.commSvc.GetOrder(ctx, *invoice.OrderID); ord != nil {
+		if ord, loadErr := h.commSvc.GetOrder(ctx, *invoice.OrderID); loadErr != nil {
+			h.logLoadErr(ctx, "commSvc.GetOrder", loadErr)
+		} else if ord != nil {
 			order = ord
 		}
 	}
@@ -190,10 +192,18 @@ func (h *UIHandler) buildPrintableLines(ctx context.Context, invoice *billing.In
 	var prodVariantsMap map[int64][]*catalog.ProductVariant
 	if h.catSvc != nil {
 		if len(varIDs) > 0 {
-			variantsMap, _ = h.catSvc.GetVariantsByIDs(ctx, varIDs)
+			if loaded, err := h.catSvc.GetVariantsByIDs(ctx, varIDs); err != nil {
+				h.logLoadErr(ctx, "catSvc.GetVariantsByIDs", err)
+			} else {
+				variantsMap = loaded
+			}
 		}
 		if len(prodIDs) > 0 {
-			prodVariantsMap, _ = h.catSvc.ListVariantsByProducts(ctx, prodIDs)
+			if loaded, err := h.catSvc.ListVariantsByProducts(ctx, prodIDs); err != nil {
+				h.logLoadErr(ctx, "catSvc.ListVariantsByProducts", err)
+			} else {
+				prodVariantsMap = loaded
+			}
 		}
 	}
 
@@ -338,9 +348,10 @@ func resolvePrintableLinePricing(
 	} else if matchedVariant != nil && matchedVariant.Price.IsPositive() {
 		unitPrice = matchedVariant.Price
 	} else if discPct > 0 && qty > 0 && lTotalPrice.IsPositive() && lTotalPrice.Minor() == lUnitPrice.Minor()*int64(qty) {
-		rate := 1.0 - (discPct / 100.0)
-		if rate > 0.001 {
-			unitPrice = money.FromMinor(int64(float64(lUnitPrice.Minor()) / rate))
+		if keep := 10000 - money.PercentToBasisPoints(discPct); keep >= 10 {
+			if gross, err := lUnitPrice.MulRatio(10000, keep); err == nil { // nolint:errswallow: on overflow the unit price stands
+				unitPrice = gross
+			}
 		}
 	}
 
@@ -348,13 +359,14 @@ func resolvePrintableLinePricing(
 	if qty > 0 && lTotalPrice.IsPositive() {
 		netPrice = money.FromMinor(lTotalPrice.Minor() / int64(qty))
 	} else if discPct > 0 {
-		netPrice = unitPrice.ApplyPercent(10000 - int64(discPct*100))
+		netPrice = unitPrice.ApplyPercent(10000 - money.PercentToBasisPoints(discPct))
 	}
 
 	if unitPrice.Minor() <= netPrice.Minor() && discPct > 0 {
-		rate := 1.0 - (discPct / 100.0)
-		if rate > 0.001 {
-			unitPrice = money.FromMinor(int64(float64(netPrice.Minor())/rate + 0.5))
+		if keep := 10000 - money.PercentToBasisPoints(discPct); keep >= 10 {
+			if gross, err := netPrice.MulRatio(10000, keep); err == nil { // nolint:errswallow: on overflow the unit price stands
+				unitPrice = gross
+			}
 		}
 	}
 	return unitPrice, discPct, netPrice

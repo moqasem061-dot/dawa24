@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -8,9 +9,9 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestSavingImportProgress_WireContract(t *testing.T) {
@@ -99,7 +100,7 @@ func TestSavingImportProgress_HandlerRoute(t *testing.T) {
 	})
 	r.Get("/customer/saving-products/import/session/{id}/progress", h.handleSavingProductsImportProgressJSON)
 
-	req := httptest.NewRequest(http.MethodGet, "/customer/saving-products/import/session/"+sess.ID+"/progress", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/customer/saving-products/import/session/"+sess.ID+"/progress", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 

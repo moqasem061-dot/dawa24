@@ -2,6 +2,7 @@ package httpx_test
 
 import (
 	"bytes"
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -10,7 +11,7 @@ import (
 	"testing"
 
 	"github.com/a-h/templ"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -34,7 +35,7 @@ func TestCSPReportHandler_ValidReport(t *testing.T) {
 		}
 	}`
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/csp-report", bytes.NewBufferString(payload))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/csp-report", bytes.NewBufferString(payload))
 	req.Header.Set("Content-Type", "application/csp-report")
 	rec := httptest.NewRecorder()
 
@@ -47,7 +48,7 @@ func TestCSPReportHandler_MethodNotAllowed(t *testing.T) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	handler := httpx.CSPReportHandler(log)
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/csp-report", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/csp-report", nil)
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
@@ -60,7 +61,7 @@ func TestCSPReportHandler_PayloadTooLarge(t *testing.T) {
 	handler := httpx.CSPReportHandler(log)
 
 	hugePayload := `{"csp-report":{"document-uri":"` + strings.Repeat("A", 35*1024) + `"}}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/csp-report", bytes.NewBufferString(hugePayload))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/csp-report", bytes.NewBufferString(hugePayload))
 	rec := httptest.NewRecorder()
 
 	handler(rec, req)
@@ -69,7 +70,7 @@ func TestCSPReportHandler_PayloadTooLarge(t *testing.T) {
 }
 
 func TestSecurityHeaders_CSPHardenedDirectives(t *testing.T) {
-	csp, res := serveSecurityHeaders(t, httpx.SecurityOptions{})
+	csp, res := serveSecurityHeaders(t, httpx.SecurityOptions{}) //nolint:bodyclose // closed by t.Cleanup in the helper
 
 	assert.Equal(t, `csp="/api/v1/csp-report", default="/api/v1/csp-report"`, res.Header.Get("Reporting-Endpoints"))
 	assert.Empty(t, res.Header.Get("Report-To"))
@@ -101,7 +102,7 @@ func TestSecurityHeaders_CSPHardenedDirectives(t *testing.T) {
 // The scanner findings this policy was hardened against: nothing may relax
 // script or style execution, and Trusted Types must be enforced.
 func TestSecurityHeaders_NoUnsafeSources(t *testing.T) {
-	csp, _ := serveSecurityHeaders(t, httpx.SecurityOptions{})
+	csp, _ := serveSecurityHeaders(t, httpx.SecurityOptions{}) //nolint:bodyclose // closed by t.Cleanup in the helper
 
 	assert.NotContains(t, csp, "'unsafe-eval'")
 	assert.NotContains(t, csp, "'unsafe-inline'")
@@ -133,7 +134,7 @@ func TestSecurityHeaders_NonceIsFreshAndShared(t *testing.T) {
 	}))
 	for i := 0; i < 2; i++ {
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+		handler.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil))
 		assert.Contains(t, rec.Header().Get("Content-Security-Policy"), "'nonce-"+seen[i]+"'")
 	}
 	assert.NotEqual(t, seen[0], seen[1])
@@ -141,18 +142,19 @@ func TestSecurityHeaders_NonceIsFreshAndShared(t *testing.T) {
 
 func TestSecurityHeaders_ReportsGoToConfiguredOrigin(t *testing.T) {
 	const url = "https://csp.dawa24.com/api/v1/csp-report"
-	csp, res := serveSecurityHeaders(t, httpx.SecurityOptions{ReportURL: url})
+	csp, res := serveSecurityHeaders(t, httpx.SecurityOptions{ReportURL: url}) //nolint:bodyclose // closed by t.Cleanup in the helper
 
 	assert.Contains(t, csp, "report-uri "+url)
 	assert.NotContains(t, csp, "report-uri /")
 	assert.Equal(t, `csp="`+url+`", default="`+url+`"`, res.Header.Get("Reporting-Endpoints"))
 }
 
+//nolint:bodyclose // the body is closed by t.Cleanup below
 func serveSecurityHeaders(t *testing.T, opts httpx.SecurityOptions) (string, *http.Response) {
 	t.Helper()
 	inner := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(http.StatusOK) })
 	rec := httptest.NewRecorder()
-	httpx.SecurityHeaders(opts)(inner).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/dashboard", nil))
+	httpx.SecurityHeaders(opts)(inner).ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/dashboard", nil))
 	res := rec.Result()
 	t.Cleanup(func() { _ = res.Body.Close() })
 	csp := res.Header.Get("Content-Security-Policy")
@@ -170,7 +172,7 @@ func TestCSPReportHandler_ReportingAPIBatch(t *testing.T) {
 			"sample":"alert(1)","lineNumber":7}},
 		{"type":"deprecation","url":"https://dawa24.com/","body":{"id":"X","message":"old api"}}
 	]`
-	req := httptest.NewRequest(http.MethodPost, httpx.CSPReportPath, strings.NewReader(payload))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, httpx.CSPReportPath, strings.NewReader(payload))
 	req.Header.Set("Content-Type", "application/reports+json")
 	rec := httptest.NewRecorder()
 
@@ -188,7 +190,7 @@ func TestCSPReportHandler_ReportingAPIBatch(t *testing.T) {
 func TestCSPReportHandler_CORSPreflight(t *testing.T) {
 	handler := httpx.CSPReportHandler(nil, "https://dawa24.com")
 
-	req := httptest.NewRequest(http.MethodOptions, httpx.CSPReportPath, nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodOptions, httpx.CSPReportPath, nil)
 	req.Header.Set("Origin", "https://dawa24.com")
 	req.Header.Set("Access-Control-Request-Method", "POST")
 	rec := httptest.NewRecorder()
@@ -199,7 +201,7 @@ func TestCSPReportHandler_CORSPreflight(t *testing.T) {
 	assert.Equal(t, "Content-Type", rec.Header().Get("Access-Control-Allow-Headers"))
 
 	// Another origin gets no grant.
-	req = httptest.NewRequest(http.MethodOptions, httpx.CSPReportPath, nil)
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodOptions, httpx.CSPReportPath, nil)
 	req.Header.Set("Origin", "https://evil.example")
 	rec = httptest.NewRecorder()
 	handler(rec, req)
@@ -221,7 +223,7 @@ func TestReportHostOnly(t *testing.T) {
 		{"dawa24.com", "/", http.StatusTeapot},
 	}
 	for _, c := range cases {
-		req := httptest.NewRequest(http.MethodGet, c.path, nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, c.path, nil)
 		req.Host = c.host
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
@@ -230,6 +232,6 @@ func TestReportHostOnly(t *testing.T) {
 
 	// No report host configured: a passthrough.
 	rec := httptest.NewRecorder()
-	httpx.ReportHostOnly("")(inner).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	httpx.ReportHostOnly("")(inner).ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil))
 	assert.Equal(t, http.StatusTeapot, rec.Code)
 }

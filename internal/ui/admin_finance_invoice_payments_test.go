@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -11,8 +12,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminInvoicePaymentRoutes(t *testing.T) {
@@ -23,7 +24,7 @@ func TestAdminInvoicePaymentRoutes(t *testing.T) {
 	handler.RegisterAdminRoutes(r)
 
 	// 1. Anonymous POST /admin/finance/invoices/payments redirects to login
-	reqAnon := httptest.NewRequest(http.MethodPost, "/admin/finance/invoices/payments", nil)
+	reqAnon := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/invoices/payments", nil)
 	recAnon := httptest.NewRecorder()
 	r.ServeHTTP(recAnon, reqAnon)
 	if recAnon.Code != http.StatusSeeOther {
@@ -36,7 +37,7 @@ func TestAdminInvoicePaymentRoutes(t *testing.T) {
 		IsStaff:     true,
 		Permissions: []string{"unrelated.view"},
 	}
-	reqNoPerm := httptest.NewRequest(http.MethodPost, "/admin/finance/invoices/payments", nil)
+	reqNoPerm := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/invoices/payments", nil)
 	reqNoPerm = reqNoPerm.WithContext(authctx.WithActor(reqNoPerm.Context(), staffNoPerm))
 	recNoPerm := httptest.NewRecorder()
 	r.ServeHTTP(recNoPerm, reqNoPerm)
@@ -54,7 +55,7 @@ func TestAdminInvoicePaymentRoutes(t *testing.T) {
 	form.Set("redirect_to", "/admin/finance/invoices")
 	form.Set("invoice_id", "0") // invalid invoice ID
 
-	reqWithPerm := httptest.NewRequest(http.MethodPost, "/admin/finance/invoices/payments", strings.NewReader(form.Encode()))
+	reqWithPerm := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/invoices/payments", strings.NewReader(form.Encode()))
 	reqWithPerm.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqWithPerm = reqWithPerm.WithContext(authctx.WithActor(reqWithPerm.Context(), staffPerm))
 	recWithPerm := httptest.NewRecorder()
@@ -72,7 +73,7 @@ func TestAdminInvoicePaymentRoutes(t *testing.T) {
 	}
 
 	// 4. Also verify alias route /admin/payments/record works for staff
-	reqAlias := httptest.NewRequest(http.MethodPost, "/admin/payments/record", strings.NewReader(form.Encode()))
+	reqAlias := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/payments/record", strings.NewReader(form.Encode()))
 	reqAlias.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqAlias = reqAlias.WithContext(authctx.WithActor(reqAlias.Context(), staffPerm))
 	recAlias := httptest.NewRecorder()

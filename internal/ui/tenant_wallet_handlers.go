@@ -6,12 +6,12 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func walletDestFor(actor authctx.Actor) string {
@@ -82,7 +82,9 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 	if h.billSvc != nil {
 		seenPM := make(map[int64]bool)
 		for _, uid := range candidateUIDs {
-			if pms, err := h.billSvc.ListPaymentMethods(ctx, uid); err == nil {
+			if pms, err := h.billSvc.ListPaymentMethods(ctx, uid); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListPaymentMethods", err)
+			} else {
 				for _, pm := range pms {
 					if pm != nil && !seenPM[pm.ID] {
 						seenPM[pm.ID] = true
@@ -91,7 +93,9 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}
-		if ppms, err := h.billSvc.ListPlatformPaymentMethods(ctx, true); err == nil {
+		if ppms, err := h.billSvc.ListPlatformPaymentMethods(ctx, true); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListPlatformPaymentMethods", err)
+		} else {
 			platformPaymentMethods = ppms
 		}
 		// Deposit requests back the status filter (billing.wallet_deposits.status).
@@ -104,7 +108,9 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 			if txStatus == "pending" || txStatus == "rejected" {
 				depStatus = txStatus
 			}
-			if deps, err := h.billSvc.ListUserDepositsWithStatus(ctx, walletUserID, depStatus, 50, 0); err == nil {
+			if deps, err := h.billSvc.ListUserDepositsWithStatus(ctx, walletUserID, depStatus, 50, 0); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListUserDepositsWithStatus", err)
+			} else {
 				depositRequests = deps
 			}
 		}
@@ -119,7 +125,9 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 			if txStatus == "pending" || txStatus == "rejected" {
 				withStatus = txStatus
 			}
-			if withs, err := h.billSvc.ListUserWithdrawalsWithStatus(ctx, walletUserID, withStatus, 50, 0); err == nil {
+			if withs, err := h.billSvc.ListUserWithdrawalsWithStatus(ctx, walletUserID, withStatus, 50, 0); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListUserWithdrawalsWithStatus", err)
+			} else {
 				withdrawalRequests = withs
 			}
 		}
@@ -129,7 +137,9 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 			// Ledger rows back the type filter (billing.wallet_transactions.type).
 			// A status of pending/rejected shows requests only, no ledger rows.
 			if txStatus == "" || txStatus == "completed" {
-				if list, total, err := h.billSvc.ListWalletTransactionsWithTypeTotal(ctx, wItem.ID, txType, limit, offset); err == nil {
+				if list, total, err := h.billSvc.ListWalletTransactionsWithTypeTotal(ctx, wItem.ID, txType, limit, offset); err != nil {
+					h.logLoadErr(ctx, "billSvc.ListWalletTransactionsWithTypeTotal", err)
+				} else {
 					txs = list
 					totalTxCount = total
 				}
@@ -212,12 +222,11 @@ func (h *UIHandler) TenantWalletDepositSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	var attachmentURL string
-	if file, _, err := r.FormFile("receipt"); err == nil && file != nil {
-		_ = file.Close()
-		if savedPath, err := saveUploadedFile(r, "receipt", "receipts"); err == nil {
-			attachmentURL = savedPath
-		}
+	attachmentURL, uploadErr := optionalUpload(r, "receipt", "receipts")
+	if uploadErr != nil {
+		h.log.WarnContext(ctx, "deposit receipt could not be saved", "error", uploadErr)
+		h.redirectWithNotice(w, r, dest, "error", i18n.T(lang, "upload.attachment_failed"))
+		return
 	}
 
 	if h.billSvc == nil {
@@ -238,7 +247,7 @@ func (h *UIHandler) TenantWalletDepositSubmit(w http.ResponseWriter, r *http.Req
 		senderAccount = ref
 	}
 
-	var orgID int64 = actor.OrganizationID
+	var orgID = actor.OrganizationID
 	if orgID <= 0 && h.orgSvc != nil {
 		if orgs, err := h.orgSvc.ListUserOrganizationsByUser(ctx, walletUserID); err == nil && len(orgs) > 0 {
 			if orgs[0].CustomerOrgID != nil && *orgs[0].CustomerOrgID > 0 {
@@ -329,7 +338,7 @@ func (h *UIHandler) TenantWalletWithdrawSubmit(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	var orgID int64 = actor.OrganizationID
+	var orgID = actor.OrganizationID
 	if orgID <= 0 && h.orgSvc != nil {
 		if orgs, err := h.orgSvc.ListUserOrganizationsByUser(ctx, walletUserID); err == nil && len(orgs) > 0 {
 			if orgs[0].CustomerOrgID != nil && *orgs[0].CustomerOrgID > 0 {

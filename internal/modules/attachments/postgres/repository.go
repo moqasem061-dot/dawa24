@@ -8,9 +8,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 type Repository struct {
@@ -251,7 +251,6 @@ func (r *Repository) ListAll(ctx context.Context, filter attachments.DocumentFil
 		if filter.Search != "" {
 			baseQuery += fmt.Sprintf(" AND (original_name ILIKE $%d OR file_url ILIKE $%d)", argIdx, argIdx)
 			args = append(args, "%"+filter.Search+"%")
-			argIdx++
 		}
 
 		countQuery := "SELECT COUNT(*)" + baseQuery

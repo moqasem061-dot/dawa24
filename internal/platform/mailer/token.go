@@ -12,7 +12,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/format"
 )
 
 var (
@@ -43,7 +43,7 @@ func VerifyEmailToken(token, expectedEmail, secret string) (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	cleanExpected := identity.NormalizeEmail(expectedEmail)
+	cleanExpected := format.NormalizeEmail(expectedEmail)
 	if cleanExpected == "" || email != cleanExpected {
 		return false, ErrTokenEmailMismatch
 	}
@@ -61,7 +61,7 @@ func VerifyPasswordResetToken(token, secret string) (string, error) {
 }
 
 func signToken(email, purpose, secret string, ttl time.Duration) (string, error) {
-	cleanEmail := identity.NormalizeEmail(email)
+	cleanEmail := format.NormalizeEmail(email)
 	if cleanEmail == "" {
 		return "", errors.New("mailer: email cannot be empty")
 	}

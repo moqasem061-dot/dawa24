@@ -8,10 +8,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/mailer"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 type sendEmailOTPReq struct {
@@ -36,7 +36,7 @@ func (h *UIHandler) SendEmailOTP(w http.ResponseWriter, r *http.Request) {
 	rawEmail := strings.TrimSpace(r.PostFormValue("email"))
 	if rawEmail == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req sendEmailOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawEmail = strings.TrimSpace(req.Email)
 		}
 	}
@@ -155,7 +155,7 @@ func (h *UIHandler) VerifyEmailOTP(w http.ResponseWriter, r *http.Request) {
 
 	if rawEmail == "" && strings.Contains(r.Header.Get("Content-Type"), "application/json") {
 		var req verifyEmailOTPReq
-		if err := json.NewDecoder(r.Body).Decode(&req); err == nil {
+		if err := json.NewDecoder(r.Body).Decode(&req); err == nil { // nolint:errswallow: a body that is not JSON falls through to the validation below
 			rawEmail = strings.TrimSpace(req.Email)
 			code = strings.TrimSpace(req.Code)
 		}

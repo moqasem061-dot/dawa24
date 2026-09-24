@@ -176,4 +176,4 @@ Disallow: /
 Content-Signal: ai-train=no, search=no, ai-input=no
 
 # Sitemap Location
-Sitemap: https://dawa24-store-u74003.vm.elestio.app/sitemap.xml
+Sitemap: /sitemap.xml

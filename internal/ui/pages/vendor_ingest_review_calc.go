@@ -3,10 +3,8 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func rowQuantityValue(row *ingest.RowOutcome) string {
@@ -81,22 +79,6 @@ func rowCostDiscountPercentValue(row *ingest.RowOutcome) string {
 	return "0.0"
 }
 
-// rowEffectiveCostValue calculates unit cost based on public price and cost discount, or cost price.
-func rowEffectiveCostValue(row *ingest.RowOutcome) string {
-	if row == nil || row.Payload == nil {
-		return "0.00"
-	}
-	if row.Payload.CostDiscountBps > 0 && row.Payload.PublicPrice.IsPositive() {
-		discMinor := int64(float64(row.Payload.PublicPrice.Minor()) * (float64(row.Payload.CostDiscountBps) / 10000.0))
-		cost := money.FromMinor(row.Payload.PublicPrice.Minor() - discMinor)
-		return cost.String()
-	}
-	if row.Payload.CostPrice.IsPositive() {
-		return row.Payload.CostPrice.String()
-	}
-	return "0.00"
-}
-
 // reviewRowWillImport reports whether the commit would write this row.
 func reviewRowWillImport(row *ingest.RowOutcome) bool {
 	if row == nil || row.IsExcluded || row.ProductID == nil || *row.ProductID <= 0 {
@@ -109,21 +91,21 @@ func reviewRowWillImport(row *ingest.RowOutcome) bool {
 }
 
 // ImportStockModeLabel returns a friendly label for the stock mode in the given language.
-func ImportStockModeLabel(mode inventory.StockMode, langOpt ...string) string {
+func ImportStockModeLabel(mode ingest.StockMode, langOpt ...string) string {
 	if len(langOpt) > 0 && langOpt[0] == "en" {
 		switch mode {
-		case inventory.StockAdd:
+		case ingest.StockAdd:
 			return "Add to current stock (+)"
-		case inventory.StockKeep:
+		case ingest.StockKeep:
 			return "Ignore quantities and keep current balances"
 		default:
 			return "Replace balance with incoming quantity"
 		}
 	}
 	switch mode {
-	case inventory.StockAdd:
+	case ingest.StockAdd:
 		return "إضافة إلى الرصيد الحالي (+)"
-	case inventory.StockKeep:
+	case ingest.StockKeep:
 		return "تجاهل الكميات والإبقاء على الأرصدة الحالية"
 	default:
 		return "استبدال الرصيد بالكمية الواردة"
@@ -201,4 +183,3 @@ func importResultIsFailure(view VendorImportView) bool {
 	}
 	return view.Session.Phase == ingest.PhaseFailed || view.Session.ErrorRows > 0
 }
-

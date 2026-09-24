@@ -1,18 +1,19 @@
 package ui
 
 import (
+	"context"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	h := &UIHandler{}
 
 	t.Run("preserves referer query parameters on same path and host", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("Referer", "https://store.dawa24.com/admin/users?q=ahmed&role=vendor&page=3&limit=50")
 
@@ -51,7 +52,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("ignores referer from different host", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("Referer", "https://evil.com/admin/users?q=hacked&role=admin")
 
@@ -67,7 +68,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("ignores referer from different path", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("Referer", "https://store.dawa24.com/admin/dashboard?q=ahmed")
 
@@ -83,7 +84,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("drops flash message params from referer to avoid loops", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("Referer", "https://store.dawa24.com/admin/users?q=ahmed&notice=old&msg=oldmsg&notice_type=oldtype&notice_msg=oldnotice")
 
@@ -105,7 +106,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("explicit target params override referer", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/create", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/create", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("Referer", "https://store.dawa24.com/admin/users?tab=all")
 
@@ -120,7 +121,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("supports HTMX HX-Redirect", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Host = "store.dawa24.com"
 		req.Header.Set("HX-Request", "true")
 		req.Header.Set("Referer", "https://store.dawa24.com/admin/users?q=ahmed")
@@ -139,7 +140,7 @@ func TestB1_RedirectWithNotice_PreservesFilters(t *testing.T) {
 	})
 
 	t.Run("boosted request gets a real 303, not HX-Redirect", func(t *testing.T) {
-		req := httptest.NewRequest("POST", "/admin/users/123/suspend", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/123/suspend", nil)
 		req.Header.Set("HX-Request", "true")
 		req.Header.Set("HX-Boosted", "true")
 		rec := httptest.NewRecorder()

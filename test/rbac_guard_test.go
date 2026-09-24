@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // These tests walk the source the way admin_guard_test.go does. They exist
@@ -20,7 +20,6 @@ import (
 
 var (
 	reGroup      = regexp.MustCompile(`(?s)r\.Group\(func\(g chi\.Router\) \{(.*?)\n\t\}\)`)
-	reGateKeys   = regexp.MustCompile(`Require(?:Tenant)?PagePermission\(([^)]*)\)`)
 	reQuoted     = regexp.MustCompile(`"([^"]+)"`)
 	reRouteInSrc = regexp.MustCompile(`\bg\.(Get|Post|Put|Delete|Patch)\("([^"]+)"`)
 	reBareRoute  = regexp.MustCompile(`\br\.(Get|Post|Put|Delete|Patch)\("(/(?:admin|vendor|customer)/[^"]*)"`)
@@ -193,11 +192,16 @@ func TestNoDashboardRouteIsRegisteredOutsideAGate(t *testing.T) {
 		"/customer/password":        "changing your own password is an account action, not a company one",
 		"/customer/set-branch":      "choosing which of your own branches you buy for is not a privilege",
 		"/customer/branches/active": "choosing which of your own branches you buy for is not a privilege",
-		"/customer/session":         "singular alias redirecting 301 to /customer/sessions",
-		"/vendor/session":           "singular alias redirecting 301 to /vendor/sessions",
-		"/customer/notifications":   "canonical 301 alias to /notifications",
-		"/vendor/notifications":     "canonical 301 alias to /notifications",
-		"/admin/dashboard":          "reachable by any authenticated staff member; RequireStaff is the gate",
+		// Same handler as the customer routes: SetBuyingBranchSubmit itself
+		// refuses a branch outside the caller's company, a switch away from a
+		// bound branch, and a locked selection.
+		"/vendor/set-branch":      "choosing which of your own branches you buy for is not a privilege",
+		"/vendor/branches/active": "choosing which of your own branches you buy for is not a privilege",
+		"/customer/session":       "singular alias redirecting 301 to /customer/sessions",
+		"/vendor/session":         "singular alias redirecting 301 to /vendor/sessions",
+		"/customer/notifications": "canonical 301 alias to /notifications",
+		"/vendor/notifications":   "canonical 301 alias to /notifications",
+		"/admin/dashboard":        "reachable by any authenticated staff member; RequireStaff is the gate",
 	}
 
 	for _, rel := range routeFiles {

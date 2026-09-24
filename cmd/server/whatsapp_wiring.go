@@ -5,16 +5,17 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/whatsapp"
-	whatsappHTTP "github.com/muhiya/dawa24-store/internal/modules/whatsapp/http"
-	whatsappPostgres "github.com/muhiya/dawa24-store/internal/modules/whatsapp/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/whatsapp"
+	whatsappHTTP "github.com/moqasem061-dot/dawa24/internal/modules/whatsapp/http"
+	whatsappPostgres "github.com/moqasem061-dot/dawa24/internal/modules/whatsapp/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 )
 
 // mountWhatsApp wires the WhatsApp bridge and returns its service, or nil when

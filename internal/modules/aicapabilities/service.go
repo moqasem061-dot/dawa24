@@ -3,15 +3,16 @@ package aicapabilities
 import (
 	"context"
 	"encoding/json"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/shared/arabic"
-	"github.com/muhiya/dawa24-store/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // KeyResolver resolves tenant virtual key by organization ID.
@@ -72,7 +73,7 @@ func (s *Service) MatchProduct(ctx context.Context, req MatchRequest) MatchRespo
 
 	if s.gw != nil {
 		inputBytes, err := json.Marshal(req)
-		if err == nil {
+		if err == nil { // nolint:errswallow: marshalling a plain request struct cannot fail; on failure the deterministic fallback below runs
 			gwReq := gateway.Request{
 				Capability:     gateway.CapProductMatch,
 				System:         "You are an expert pharmaceutical matching AI. You will be given a query medicine name and a list of candidate medicines from the official catalog. Identify the single best matching medicine from the candidate list, taking into account brand names, generic/scientific names, dosage forms (tablets, syrup, capsules), and concentrations (mg, ml, etc.).\n\nReturn ONLY a JSON object with this exact format:\n{\"matched_candidate\":\"<exact candidate name or empty string if no match>\",\"confidence_score\":<number between 0.0 and 1.0>,\"reason\":\"<brief Arabic explanation>\"}",
@@ -91,7 +92,7 @@ func (s *Service) MatchProduct(ctx context.Context, req MatchRequest) MatchRespo
 				cleanContent = strings.TrimSpace(cleanContent)
 
 				var matchResp MatchResponse
-				if err := json.Unmarshal([]byte(cleanContent), &matchResp); err == nil {
+				if err := json.Unmarshal([]byte(cleanContent), &matchResp); err == nil { // nolint:errswallow: unparseable model output falls through to the deterministic fallback below
 					matchResp.Source = "ai_gateway"
 					s.log.InfoContext(ctx, "ai gateway product match succeeded",
 						"query", req.QueryName,
@@ -150,7 +151,7 @@ func (s *Service) ExpandSearch(ctx context.Context, req QueryExpansionRequest) Q
 		resp, err := s.gw.Invoke(ctx, gwReq)
 		if err == nil && resp != nil && resp.Content != "" {
 			var expResp QueryExpansionResponse
-			if err := json.Unmarshal([]byte(resp.Content), &expResp); err == nil {
+			if err := json.Unmarshal([]byte(resp.Content), &expResp); err == nil { // nolint:errswallow: unparseable model output falls through to the deterministic fallback below
 				expResp.Source = "ai_gateway"
 				return expResp
 			}

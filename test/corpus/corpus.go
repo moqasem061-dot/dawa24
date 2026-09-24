@@ -22,8 +22,8 @@ import (
 	"path/filepath"
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Entry is one corpus file, as recorded by `cli corpus-export`.

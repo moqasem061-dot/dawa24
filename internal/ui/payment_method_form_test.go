@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,7 +10,7 @@ import (
 )
 
 func paymentForm(values url.Values) *http.Request {
-	r := httptest.NewRequest(http.MethodPost, "/customer/wallet/payment-methods",
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/wallet/payment-methods",
 		strings.NewReader(values.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_ = r.ParseForm()

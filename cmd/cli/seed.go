@@ -2,12 +2,13 @@ package main
 
 import (
 	"context"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"log/slog"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // runSeed inserts baseline reference data: countries, Egyptian governorates/cities,
@@ -16,7 +17,7 @@ func runSeed(ctx context.Context, db *database.DB, log *slog.Logger) error {
 	return db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		log.InfoContext(txCtx, "seeding reference data")
 
-	// 1. Roles & Permissions
+		// 1. Roles & Permissions
 		roles := []struct {
 			key         string
 			description string

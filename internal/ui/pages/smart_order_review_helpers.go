@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // SmartOrderReviewLine is one line as the review screen shows it.
@@ -79,14 +79,6 @@ func decidedLabel(d smartorder.DecidedBy, langOpt ...string) string {
 		return "تلقائي"
 	}
 	return "—"
-}
-
-func totalOrderableItems(groups []SmartOrderReviewGroup) int {
-	total := 0
-	for _, g := range groups {
-		total += len(g.Lines)
-	}
-	return total
 }
 
 // GroupLineIDsJSON returns a JSON array of line ID strings for a review group.

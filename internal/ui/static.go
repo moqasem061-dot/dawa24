@@ -17,8 +17,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // DynamicRobotsTxtFetcher optionally loads live robots.txt directives from the database.
@@ -181,7 +181,8 @@ func matchesAssetVersion(req *http.Request, asset *staticAsset) bool {
 }
 
 // RegisterStaticRoutes mounts embedded static assets with in-RAM caching, strong ETags, and 304 Not Modified support.
-func RegisterStaticRoutes(r chi.Router) {
+// siteURL resolves the public origin robots.txt advertises its sitemap under.
+func RegisterStaticRoutes(r chi.Router, siteURL func(*http.Request) string) {
 	assetOnce.Do(initStaticAssetCache)
 
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
@@ -255,7 +256,7 @@ func RegisterStaticRoutes(r chi.Router) {
 				content = []byte(dyn)
 			}
 		}
-		content = []byte(publicRobots(string(content)))
+		content = []byte(absoluteSitemap(publicRobots(string(content)), siteURL(req)))
 		// The tag is the content's hash: a length-only tag served a stale file
 		// to every cache after an edit that kept the length.
 		etag := fmt.Sprintf(`"%x"`, sha256.Sum256(content))
@@ -296,4 +297,19 @@ func publicRobots(content string) string {
 		out = append(out, line)
 	}
 	return strings.Join(out, "\n")
+}
+
+// absoluteSitemap points every Sitemap line at this deployment's own
+// sitemap. The directive must be an absolute URL, and a host written into the
+// file (or into the admin's stored copy) goes stale the moment the platform
+// moves domain: the embedded file named a retired staging host for weeks.
+func absoluteSitemap(content, siteURL string) string {
+	lines := strings.Split(content, "\n")
+	for i, line := range lines {
+		field, _, ok := strings.Cut(strings.TrimSpace(line), ":")
+		if ok && strings.EqualFold(strings.TrimSpace(field), "sitemap") {
+			lines[i] = "Sitemap: " + strings.TrimRight(siteURL, "/") + "/sitemap.xml"
+		}
+	}
+	return strings.Join(lines, "\n")
 }

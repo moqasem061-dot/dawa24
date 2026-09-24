@@ -9,31 +9,31 @@ import (
 // A registration form that empties itself on error is the fastest way to lose a
 // signup, so every field is echoed back.
 type RegisterFormData struct {
-	AccountType        string
-	Name               string
-	Email              string
-	Phone              string
-	LegalName          string
-	TradeNameAr        string
-	TradeNameEn        string
-	CommercialRegister string
-	TaxNumber          string
-	PharmacistLicense  string
-	LicenseDocumentURL string
-	GovernorateID      string
-	CityID             string
-	BranchCount        string
-	Address            string
-	Latitude           string
-	Longitude          string
-	GoogleMapsURL      string
-	Specialisation     string
-	YearsExperience    string
-	Bio                string
-	ExpectedSalary     string
-	CVStorageKey       string
-	VerifiedPhoneToken string
-	PhoneVerified      bool
+	AccountType              string
+	Name                     string
+	Email                    string
+	Phone                    string
+	LegalName                string
+	TradeNameAr              string
+	TradeNameEn              string
+	CommercialRegister       string
+	TaxNumber                string
+	PharmacistLicense        string
+	LicenseDocumentURL       string
+	GovernorateID            string
+	CityID                   string
+	BranchCount              string
+	Address                  string
+	Latitude                 string
+	Longitude                string
+	GoogleMapsURL            string
+	Specialisation           string
+	YearsExperience          string
+	Bio                      string
+	ExpectedSalary           string
+	CVStorageKey             string
+	VerifiedPhoneToken       string
+	PhoneVerified            bool
 	VerifiedEmailToken       string
 	EmailVerified            bool
 	RequireEmailVerification bool

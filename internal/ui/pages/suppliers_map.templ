@@ -3,9 +3,9 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
@@ -52,7 +52,8 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 								}
 								if pin.Address != "" {
 									<div class="text-2xs text-muted mt-1 line-clamp-1">
-										📍 { pin.Address }
+										@components.IconMapPin("icon-xxs")
+										{ pin.Address }
 									</div>
 								}
 							</div>
@@ -85,7 +86,8 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 								</div>
 								if s.Address != "" {
 									<div class="text-2xs text-muted mt-1 line-clamp-1">
-										📍 { s.Address }
+										@components.IconMapPin("icon-xxs")
+										{ s.Address }
 									</div>
 								}
 							</div>
@@ -124,17 +126,26 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 			}
 		}
 
+		// Every supplier value below comes from the supplier's own profile, and
+		// Leaflet renders these strings as HTML: each goes through esc(), or a
+		// supplier could run script in every pharmacy's browser from a name.
+		const esc = (window.dawaHTML && window.dawaHTML.escape) || function (t) {
+			return String(t == null ? '' : t).replace(/&/g, '&amp;').replace(/</g, '&lt;')
+				.replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+		};
+		const buildingSVG = '<svg class="icon-sm" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22v-4h6v4M8 6h.01M12 6h.01M16 6h.01M8 10h.01M12 10h.01M16 10h.01M8 14h.01M12 14h.01M16 14h.01"/></svg>';
+
 		function getSupplierPinIcon(isOpen, isFocused, name) {
 			const statusClass = isOpen ? 'is-open' : 'is-closed';
 			const focusedClass = isFocused ? 'is-focused' : '';
-			const beaconHtml = isFocused ? '<div class="supplier-beacon-ring"></div><div class="supplier-beacon-ring-2"></div><div class="supplier-floating-badge">' + (name || 'فرع / مورد') + ' 📍</div>' : '';
+			const beaconHtml = isFocused ? '<div class="supplier-beacon-ring"></div><div class="supplier-beacon-ring-2"></div><div class="supplier-floating-badge">' + esc(name || 'فرع / مورد') + '</div>' : '';
 			
 			return L.divIcon({
 				className: 'custom-map-pin',
 				html: '<div class="supplier-pin-wrapper ' + focusedClass + '">' +
 					beaconHtml +
 					'<div class="supplier-pin-body ' + statusClass + '">' +
-						'<div class="supplier-pin-icon">🏢</div>' +
+						'<div class="supplier-pin-icon">' + buildingSVG + '</div>' +
 						'<span class="supplier-pin-status-dot ' + statusClass + '"></span>' +
 					'</div>' +
 				'</div>',
@@ -181,18 +192,18 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 
 				bounds.push([lat, lng]);
 
-				const statusText = s.isOpen ? 'مفتوح الآن 🟢' : 'مغلق حالياً ⚪';
+				const statusText = s.isOpen ? 'مفتوح الآن' : 'مغلق حالياً';
 				const customIcon = getSupplierPinIcon(s.isOpen, false, s.name);
 				const marker = L.marker([lat, lng], { icon: customIcon }).addTo(mapInstance);
 
-				const linkHtml = '<a href="/suppliers/' + s.id + '" class="btn btn-primary btn-xs font-bold text-decoration-none d-inline-block mt-2">عرض الكتالوج والطلب ↗</a>';
+				const linkHtml = '<a href="/suppliers/' + encodeURIComponent(s.id) + '" class="btn btn-primary btn-xs font-bold text-decoration-none d-inline-block mt-2">عرض الكتالوج والطلب ↗</a>';
 				const popupContent = '<div class="p-2 text-start font-sans" dir="rtl">' +
-					'<div class="font-extrabold text-sm text-primary mb-1">' + (s.name || s.supplierName) + '</div>' +
-					(s.branchName && s.branchName !== s.name ? '<div class="text-xs text-muted mb-1">🏢 ' + s.branchName + '</div>' : '') +
+					'<div class="font-extrabold text-sm text-primary mb-1">' + esc(s.name || s.supplierName) + '</div>' +
+					(s.branchName && s.branchName !== s.name ? '<div class="text-xs text-muted mb-1">' + esc(s.branchName) + '</div>' : '') +
 					'<div class="text-xs font-bold text-secondary mb-1">' + statusText + '</div>' +
-					(s.hours ? '<div class="text-2xs text-muted mb-0.5">⏱ مواعيد العمل: <strong>' + s.hours + '</strong></div>' : '') +
-					(s.coverageDays ? '<div class="text-2xs text-muted mb-0.5">أيام التغطية: ' + s.coverageDays + '</div>' : '') +
-					(s.address ? '<div class="text-2xs text-muted mt-1">📍 ' + s.address + '</div>' : '') +
+					(s.hours ? '<div class="text-2xs text-muted mb-0.5">مواعيد العمل: <strong>' + esc(s.hours) + '</strong></div>' : '') +
+					(s.coverageDays ? '<div class="text-2xs text-muted mb-0.5">أيام التغطية: ' + esc(s.coverageDays) + '</div>' : '') +
+					(s.address ? '<div class="text-2xs text-muted mt-1">' + esc(s.address) + '</div>' : '') +
 					linkHtml +
 				'</div>';
 

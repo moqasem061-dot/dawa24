@@ -8,12 +8,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrgImportSavingMappingPage renders the persistent column mapping wizard step.
@@ -153,7 +153,7 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 			continue
 		}
 
-		var qty float64 = 1.0
+		var qty = 1.0
 		if qCol >= 0 && qCol < len(row) {
 			if parsedQ, ok := ParseFlexibleQuantity(row[qCol]); ok && parsedQ > 0 {
 				qty = parsedQ
@@ -186,7 +186,8 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 			unlinkedCount++
 		}
 
-		rowTotalMinor := int64(qty * float64(price.Minor()))
+		rowTotal, _ := price.MulQuantity(qty) // nolint:errswallow: overflow needs a quantity beyond any sheet; the row counts as 0
+		rowTotalMinor := rowTotal.Minor()
 		totalQty += qty
 		totalValMinor += rowTotalMinor
 

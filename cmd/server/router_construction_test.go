@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -8,8 +9,8 @@ import (
 	"runtime/debug"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Building the router is not a formality. chi panics at mount time for a whole
@@ -44,7 +45,7 @@ func TestNewRouterMountsWithoutPanicking(t *testing.T) {
 	// Serving one request proves the mux routes, rather than merely having been
 	// constructed without complaint.
 	rec := httptest.NewRecorder()
-	h.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
+	h.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil))
 	if rec.Code == http.StatusNotFound {
 		t.Errorf("public route / is not mounted: got %d", rec.Code)
 	}
@@ -72,7 +73,7 @@ func TestBridgeEndpointsReturn503WhenDisabled(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.method+" "+tt.path, func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			req := httptest.NewRequest(tt.method, tt.path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, tt.path, nil)
 			h.ServeHTTP(rec, req)
 			if rec.Code != tt.want {
 				t.Errorf("got status %d, want %d (body: %s)", rec.Code, tt.want, rec.Body.String())

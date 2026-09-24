@@ -15,7 +15,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 type ctxKey int

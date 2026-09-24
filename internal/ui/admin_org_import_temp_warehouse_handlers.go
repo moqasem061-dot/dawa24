@@ -7,10 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrgImportTempWarehouseUploadSubmit delegates directly to CompareUploadSubmit
@@ -43,7 +43,11 @@ func (h *UIHandler) AdminOrgImportComparePage(w http.ResponseWriter, r *http.Req
 
 	var activeFiles []*compare.CompareFile
 	if h.compareSvc != nil {
-		activeFiles, _ = h.compareSvc.ListFiles(sysCtx, 0, &orgID, nil)
+		if loaded, err := h.compareSvc.ListFiles(sysCtx, 0, &orgID, nil); err != nil {
+			h.logLoadErr(ctx, "compareSvc.ListFiles", err)
+		} else {
+			activeFiles = loaded
+		}
 	}
 
 	// File Center storage quota is determined strictly by the organization's subscription plan.
@@ -80,5 +84,3 @@ func (h *UIHandler) AdminOrgImportComparePage(w http.ResponseWriter, r *http.Req
 
 	h.renderPage(ctx, w, "render admin org compare tool", pages.CompareToolPage(view))
 }
-
-

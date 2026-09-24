@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -107,7 +108,7 @@ func TestRedirectWithNotice(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodPost, "http://example.com/submit", nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "http://example.com/submit", nil)
 			if tt.reqHost != "" {
 				req.Host = tt.reqHost
 			}
@@ -181,7 +182,7 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 	h := &UIHandler{}
 
 	t.Run("default to arabic and rtl", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/dashboard", nil)
 		lang, dir := h.localeAndDir(req)
 		if lang != "ar" || dir != "rtl" {
 			t.Fatalf("expected (ar, rtl), got (%s, %s)", lang, dir)
@@ -192,7 +193,7 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 	})
 
 	t.Run("cookie dawa24_lang=en", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/dashboard", nil)
 		req.AddCookie(&http.Cookie{Name: "dawa24_lang", Value: "en"})
 		lang, dir := h.localeAndDir(req)
 		if lang != "en" || dir != "ltr" {
@@ -204,7 +205,7 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 	})
 
 	t.Run("query overrides cookie", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/dashboard?lang=ar", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/dashboard?lang=ar", nil)
 		req.AddCookie(&http.Cookie{Name: "dawa24_lang", Value: "en"})
 		lang, dir := h.localeAndDir(req)
 		if lang != "ar" || dir != "rtl" {
@@ -216,7 +217,7 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 	})
 
 	t.Run("first visit with english browser header defaults to arabic", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/dashboard", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/dashboard", nil)
 		req.Header.Set("Accept-Language", "en-US,en;q=0.9")
 		lang, dir := h.localeAndDir(req)
 		if lang != "ar" || dir != "rtl" {
@@ -227,4 +228,3 @@ func TestResolveLocaleAndLangOf(t *testing.T) {
 		}
 	})
 }
-

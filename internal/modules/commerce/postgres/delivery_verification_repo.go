@@ -2,16 +2,18 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // VerifyAndCompleteDelivery validates the 6-digit delivery confirmation PIN and marks the shipment as delivered.
@@ -49,7 +51,7 @@ func (r *Repository) VerifyAndCompleteDelivery(
 			&attempts, &lockedUntil, &totalAmount, &shippingFee, &paymentMethod, &paymentStatus,
 		)
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("shipment")
 			}
 			return fmt.Errorf("commerce postgres: lock shipment: %w", err)

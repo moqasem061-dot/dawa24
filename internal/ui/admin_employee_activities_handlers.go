@@ -9,11 +9,11 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminEmployeeActivitiesPage renders employee audit trail with rich filters, date range, and pagination.
@@ -43,10 +43,10 @@ func (h *UIHandler) AdminEmployeeActivitiesPage(w http.ResponseWriter, r *http.R
 	}
 
 	var dateFrom, dateTo *time.Time
-	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		dateFrom = &t
 	}
-	if t, err := time.Parse("2006-01-02", dateToStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateToStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		dateTo = &t
 	}
 
@@ -78,7 +78,9 @@ func (h *UIHandler) AdminEmployeeActivitiesPage(w http.ResponseWriter, r *http.R
 
 	if h.adminSvc != nil {
 		entries, total, err := h.adminSvc.ListAuditLogWithFilter(ctx, filter)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListAuditLogWithFilter", err)
+		} else {
 			data.Entries = entries
 			data.TotalCount = total
 			data.TotalPages = (total + perPage - 1) / perPage
@@ -87,12 +89,14 @@ func (h *UIHandler) AdminEmployeeActivitiesPage(w http.ResponseWriter, r *http.R
 
 	sysCtx := database.AsSystem(ctx)
 	if h.orgSvc != nil {
-		orgs, _ := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 100, 0)
+		orgs, loadErr := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 100, 0)
+		h.logLoadErr(ctx, "orgSvc.ListOrganizations", loadErr)
 		data.Organizations = orgs
 	}
 
 	if h.idSvc != nil {
-		users, _ := h.idSvc.AdminListUsers(sysCtx, "", "")
+		users, loadErr := h.idSvc.AdminListUsers(sysCtx, "", "")
+		h.logLoadErr(ctx, "idSvc.AdminListUsers", loadErr)
 		data.Users = users
 	}
 
@@ -121,10 +125,10 @@ func (h *UIHandler) AdminEmployeeActivitiesExport(w http.ResponseWriter, r *http
 	}
 
 	var dateFrom, dateTo *time.Time
-	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateFromStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		dateFrom = &t
 	}
-	if t, err := time.Parse("2006-01-02", dateToStr); err == nil {
+	if t, err := time.Parse("2006-01-02", dateToStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 		dateTo = &t
 	}
 
@@ -141,13 +145,17 @@ func (h *UIHandler) AdminEmployeeActivitiesExport(w http.ResponseWriter, r *http
 
 	var entries []*platformadmin.AuditEntry
 	if h.adminSvc != nil {
-		entries, _, _ = h.adminSvc.ListAuditLogWithFilter(ctx, filter)
+		if loaded, _, err := h.adminSvc.ListAuditLogWithFilter(ctx, filter); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListAuditLogWithFilter", err)
+		} else {
+			entries = loaded
+		}
 	}
 
 	lang := langOf(r)
 	f := excelize.NewFile()
 	sheet := i18n.T(lang, "admin.audit.operations_sheet")
-	f.SetSheetName("Sheet1", sheet)
+	sheet = renameFirstSheet(f, sheet)
 	_ = f.SetSheetView(sheet, 0, &excelize.ViewOptions{
 		RightToLeft: func(b bool) *bool { return &b }(true),
 	})

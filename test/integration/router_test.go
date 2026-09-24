@@ -1,6 +1,7 @@
 package integration_test
 
 import (
+	"context"
 	"io"
 	"log/slog"
 	"net/http"
@@ -10,35 +11,35 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
-	"github.com/muhiya/dawa24-store/internal/platform/gateway"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 
-	billingHttp "github.com/muhiya/dawa24-store/internal/modules/billing/http"
-	catalogHttp "github.com/muhiya/dawa24-store/internal/modules/catalog/http"
-	commerceHttp "github.com/muhiya/dawa24-store/internal/modules/commerce/http"
-	hrHttp "github.com/muhiya/dawa24-store/internal/modules/hr/http"
-	identityHttp "github.com/muhiya/dawa24-store/internal/modules/identity/http"
-	ingestHttp "github.com/muhiya/dawa24-store/internal/modules/ingest/http"
-	inventoryHttp "github.com/muhiya/dawa24-store/internal/modules/inventory/http"
-	notificationsHttp "github.com/muhiya/dawa24-store/internal/modules/notifications/http"
-	orgHttp "github.com/muhiya/dawa24-store/internal/modules/org/http"
-	platformadminHttp "github.com/muhiya/dawa24-store/internal/modules/platform_admin/http"
-	promoHttp "github.com/muhiya/dawa24-store/internal/modules/promo/http"
-	workflowHttp "github.com/muhiya/dawa24-store/internal/modules/workflow/http"
+	billingHttp "github.com/moqasem061-dot/dawa24/internal/modules/billing/http"
+	catalogHttp "github.com/moqasem061-dot/dawa24/internal/modules/catalog/http"
+	commerceHttp "github.com/moqasem061-dot/dawa24/internal/modules/commerce/http"
+	hrHttp "github.com/moqasem061-dot/dawa24/internal/modules/hr/http"
+	identityHttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
+	ingestHttp "github.com/moqasem061-dot/dawa24/internal/modules/ingest/http"
+	inventoryHttp "github.com/moqasem061-dot/dawa24/internal/modules/inventory/http"
+	notificationsHttp "github.com/moqasem061-dot/dawa24/internal/modules/notifications/http"
+	orgHttp "github.com/moqasem061-dot/dawa24/internal/modules/org/http"
+	platformadminHttp "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/http"
+	promoHttp "github.com/moqasem061-dot/dawa24/internal/modules/promo/http"
+	workflowHttp "github.com/moqasem061-dot/dawa24/internal/modules/workflow/http"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/notifications"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 )
 
 func buildTestRouter(log *slog.Logger) http.Handler {
@@ -100,7 +101,7 @@ func TestRouterEndpointsMounting(t *testing.T) {
 	}
 
 	for _, ep := range endpoints {
-		req := httptest.NewRequest(ep.method, ep.path, nil)
+		req := httptest.NewRequestWithContext(context.Background(), ep.method, ep.path, nil)
 		rec := httptest.NewRecorder()
 		router.ServeHTTP(rec, req)
 

@@ -8,14 +8,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/hr"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminJobsPage renders all job vacancies across the platform with filtering and control options.
@@ -78,7 +78,9 @@ func (h *UIHandler) AdminJobsPage(w http.ResponseWriter, r *http.Request) {
 					companyType = string(o.Type)
 				}
 				appsCount := 0
-				if cnt, err := h.hrSvc.CountApplications(ctx, j.ID); err == nil {
+				if cnt, err := h.hrSvc.CountApplications(ctx, j.ID); err != nil {
+					h.logLoadErr(ctx, "hrSvc.CountApplications", err)
+				} else {
 					appsCount = cnt
 				}
 				jobViews = append(jobViews, &pages.AdminJobView{
@@ -93,7 +95,9 @@ func (h *UIHandler) AdminJobsPage(w http.ResponseWriter, r *http.Request) {
 
 	var orgOptions []*pages.AdminJobOrgOption
 	if h.orgSvc != nil {
-		if allOrgs, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0); err == nil {
+		if allOrgs, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			for _, o := range allOrgs {
 				if o == nil {
 					continue

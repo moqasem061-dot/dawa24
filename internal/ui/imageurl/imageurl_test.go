@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
 )
 
 // TestSlotsMatchMediaSizes is the seam between this package and the one that

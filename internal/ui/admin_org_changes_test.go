@@ -14,10 +14,10 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type adminOrgChangesRepoStub struct {
@@ -187,7 +187,7 @@ func TestAdminOrgChangesPage_ReadableQueueAndFilters(t *testing.T) {
 	r.Get("/admin/organizations/change-requests", handler.AdminOrgChangesPage)
 
 	// 1. Check Pending queue
-	req := httptest.NewRequest("GET", "/admin/organizations/change-requests?status=pending", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/organizations/change-requests?status=pending", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -263,7 +263,7 @@ func TestAdminOrgChangesPage_ApprovedAndRejectedCards(t *testing.T) {
 	r.Get("/admin/organizations/change-requests", handler.AdminOrgChangesPage)
 
 	// Approved tab
-	req := httptest.NewRequest("GET", "/admin/organizations/change-requests?status=approved", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/organizations/change-requests?status=approved", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -297,7 +297,7 @@ func TestAdminOrgChanges_ApproveAndRejectSubmissions(t *testing.T) {
 	r.Post("/admin/organizations/change-requests/{id}/reject", handler.AdminOrgChangeRejectSubmit)
 
 	// 1. Approve submit
-	req := httptest.NewRequest("POST", "/admin/organizations/change-requests/1/approve", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/organizations/change-requests/1/approve", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), adminActor()))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -312,7 +312,7 @@ func TestAdminOrgChanges_ApproveAndRejectSubmissions(t *testing.T) {
 	// 2. Reject submit with notes
 	form := url.Values{}
 	form.Set("notes", "سجل تجاري غير مطابق")
-	reqReject := httptest.NewRequest("POST", "/admin/organizations/change-requests/1/reject", strings.NewReader(form.Encode()))
+	reqReject := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/organizations/change-requests/1/reject", strings.NewReader(form.Encode()))
 	reqReject.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqReject = reqReject.WithContext(authctx.WithActor(req.Context(), adminActor()))
 	recReject := httptest.NewRecorder()

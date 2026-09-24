@@ -34,7 +34,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 //go:embed corpus_*.jsonl

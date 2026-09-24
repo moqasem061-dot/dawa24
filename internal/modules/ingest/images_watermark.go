@@ -26,7 +26,7 @@ var (
 func getPlatformLogo() image.Image {
 	platformLogoOnce.Do(func() {
 		img, err := png.Decode(bytes.NewReader(platformLogoBytes))
-		if err == nil {
+		if err == nil { // nolint:errswallow: embedded asset; a decode failure disables the watermark
 			platformLogoImg = img
 		}
 	})

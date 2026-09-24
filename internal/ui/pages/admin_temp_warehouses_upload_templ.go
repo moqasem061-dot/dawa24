@@ -9,8 +9,8 @@ import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
 import (
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/layouts"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // AdminTempWarehouseUploadPage renders a dedicated standalone upload page for temporary warehouses.
@@ -54,7 +54,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 11, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 11, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
@@ -67,7 +67,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.PageURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 151, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 151, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -80,7 +80,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(dir)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 153, Col: 12}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 153, Col: 12}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 			if templ_7745c5c3_Err != nil {
@@ -93,7 +93,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var6 templ.SafeURL
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 159, Col: 39}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 159, Col: 39}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -114,7 +114,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var7 templ.SafeURL
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.Base + "/upload"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 187, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 187, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -127,13 +127,21 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.PageURL)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 188, Col: 35}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 188, Col: 35}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" enctype=\"multipart/form-data\" @submit.prevent=\"submitUpload($event.target)\" class=\"d-flex flex-col gap-6 m-0\"><!-- Drag and Drop Zone --><div class=\"border-2 border-dashed border-subtle rounded-2xl p-8 text-center hover:border-accent bg-surface-sunken cursor-pointer transition-colors\" @click=\"$refs.fileInput.click()\"><input type=\"file\" name=\"files\" multiple accept=\".xlsx,.xls,.csv,.txt\" x-ref=\"fileInput\" @change=\"onFileChange($event)\" class=\"d-none\"><div class=\"text-4xl mb-3\">📁</div><h3 class=\"text-base font-black text-primary mb-1\">اضغط هنا أو اسحب الملفات لإفلاتها</h3><p class=\"text-xs text-secondary max-w-md mx-auto mb-2\">يدعم النظام ملفات Excel (.xlsx, .xls) والملفات النصية (.csv, .txt) بأي حجم.</p><div class=\"d-flex items-center justify-center gap-2 flex-wrap\"><span class=\"badge badge-brand text-2xs font-bold\">يمكنك تحديد ملف واحد أو عدة ملفات معاً</span> <a href=\"/compare/sample\" class=\"badge badge-slate text-2xs font-bold gap-1 text-primary hover:text-brand\" @click.stop=\"\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" enctype=\"multipart/form-data\" @submit.prevent=\"submitUpload($event.target)\" class=\"d-flex flex-col gap-6 m-0\"><!-- Drag and Drop Zone --><div class=\"border-2 border-dashed border-subtle rounded-2xl p-8 text-center hover:border-accent bg-surface-sunken cursor-pointer transition-colors\" @click=\"$refs.fileInput.click()\"><input type=\"file\" name=\"files\" multiple accept=\".xlsx,.xls,.csv,.txt\" x-ref=\"fileInput\" @change=\"onFileChange($event)\" class=\"d-none\"><div class=\"text-4xl mb-3\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.IconFolderOpen("icon-xl").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</div><h3 class=\"text-base font-black text-primary mb-1\">اضغط هنا أو اسحب الملفات لإفلاتها</h3><p class=\"text-xs text-secondary max-w-md mx-auto mb-2\">يدعم النظام ملفات Excel (.xlsx, .xls) والملفات النصية (.csv, .txt) بأي حجم.</p><div class=\"d-flex items-center justify-center gap-2 flex-wrap\"><span class=\"badge badge-brand text-2xs font-bold\">يمكنك تحديد ملف واحد أو عدة ملفات معاً</span> <a href=\"/compare/sample\" class=\"badge badge-slate text-2xs font-bold gap-1 text-primary hover:text-brand\" @click.stop=\"\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -141,20 +149,20 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span>تحميل كشف أسعار تجريبي (.xlsx)</span></a></div></div><!-- Selected Files Preview List --><template x-if=\"selectedFiles.length > 0\"><div class=\"stack-xs border rounded-xl p-4 bg-surface\"><div class=\"flex-between items-center mb-2\"><span class=\"text-xs font-bold text-primary\" x-text=\"'الملفات المحددة (' + selectedFiles.length + '):'\"></span> <button type=\"button\" @click=\"selectedFiles = []\" class=\"btn btn-ghost btn-xs text-rose-600 font-bold\">إلغاء الكل</button></div><div class=\"d-flex flex-col gap-2 max-h-56 overflow-y-auto\"><template x-for=\"(f, idx) in selectedFiles\" :key=\"idx\"><div class=\"p-2.5 rounded-lg bg-surface-sunken border text-xs stack-xs\"><div class=\"flex-between items-center gap-2\"><div class=\"d-flex items-center gap-2 truncate\"><span class=\"font-mono text-muted text-2xs\" x-text=\"'#' + (idx+1)\"></span> <span class=\"font-bold text-primary truncate\" x-text=\"f.name\"></span> <span class=\"badge badge-slate text-2xs tabular-nums\" x-text=\"formatSize(f.size)\"></span></div><button type=\"button\" @click=\"removeFile(idx)\" class=\"btn btn-ghost btn-xs text-danger hover:bg-rose-50 p-1\" title=\"إزالة الملف\">✕</button></div><div class=\"d-flex items-center gap-2 pt-1 border-t border-slate-200/50\"><label class=\"text-2xs text-secondary font-bold shrink-0\">اسم المورد:</label> <input type=\"text\" x-model=\"f.supplier\" class=\"form-input text-xs py-1 px-2\" placeholder=\"اكتب اسم المورد الخاص بهذا الملف...\"></div></div></template></div></div></template><!-- Common Supplier Name / Prefix Input --><div class=\"form-group mb-0\" x-show=\"selectedFiles.length <= 1\"><label class=\"form-label text-xs font-bold text-primary\">اسم المورد / المستودع <span class=\"text-muted font-normal text-2xs ms-1\">(اختياري — في حال تركه فارغاً سيتم اعتماده تلقائياً من اسم الملف)</span></label> <input type=\"text\" name=\"supplier_name\" class=\"form-input text-xs\" placeholder=\"مثال: مستودع الأمل، شركة النور للأدوية...\" :value=\"selectedFiles.length === 1 ? selectedFiles[0].supplier : ''\" @input=\"selectedFiles.length === 1 && (selectedFiles[0].supplier = $event.target.value)\"></div><div class=\"form-group mb-0\" x-show=\"selectedFiles.length > 1\"><label class=\"form-label text-xs font-bold text-primary\">بادئة مشتركة لاسم المورد <span class=\"text-muted font-normal text-2xs ms-1\">(اختياري — ستُضاف أمام اسم المورد لكل ملف إن رغبت في توحيد البادئة)</span></label> <input type=\"text\" name=\"supplier_name\" class=\"form-input text-xs\" placeholder=\"مثال: توريدات 2026، كشف...\"></div><!-- Column Mapping Options for Single File --><template x-if=\"selectedFiles.length === 1\"><div class=\"border rounded-xl p-4 bg-surface-sunken stack-sm\"><div class=\"flex-between items-center\"><strong class=\"text-xs font-black text-primary\">تعيين أعمدة البيانات في الملف:</strong> <span class=\"badge badge-sky text-2xs\">تم التعرف التلقائي الذكي</span></div><div class=\"d-grid grid-cols-4 gap-3\"><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">كود الصنف (SKU)</label> <select x-model=\"detectedCode\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedCode == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">اسم المنتج / الصنف <span class=\"text-danger\">*</span></label> <select x-model=\"detectedName\" class=\"form-select text-xs font-bold\" required><option value=\"-1\">-- اختر العمود --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedName == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">سعر الجمهور</label> <select x-model=\"detectedPrice\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedPrice == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">نسبة الخصم (%)</label> <select x-model=\"detectedDiscount\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedDiscount == idx\"></option></template></select></div></div></div></template><!-- Progress Bar (When uploading) --><div x-show=\"isUploading\" x-cloak class=\"stack-xs bg-surface-sunken border rounded-xl p-4\"><div class=\"flex-between items-center text-xs font-bold text-primary mb-1\"><span x-text=\"uploadStatus\"></span> <span class=\"tabular-nums\" x-text=\"uploadProgress + '%'\"></span></div><div class=\"w-full bg-surface-sunken rounded-full h-2.5 overflow-hidden border\"><div class=\"bg-accent h-2.5 rounded-full transition-all duration-300\" :style=\"{ width: uploadProgress + '%' }\"></div></div></div><!-- Form Submit Button --><div class=\"flex-between items-center pt-4 border-t\"><a id=\"temp-warehouse-cancel-btn\" href=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<span>تحميل كشف أسعار تجريبي (.xlsx)</span></a></div></div><!-- Selected Files Preview List --><template x-if=\"selectedFiles.length > 0\"><div class=\"stack-xs border rounded-xl p-4 bg-surface\"><div class=\"flex-between items-center mb-2\"><span class=\"text-xs font-bold text-primary\" x-text=\"'الملفات المحددة (' + selectedFiles.length + '):'\"></span> <button type=\"button\" @click=\"selectedFiles = []\" class=\"btn btn-ghost btn-xs text-rose-600 font-bold\">إلغاء الكل</button></div><div class=\"d-flex flex-col gap-2 max-h-56 overflow-y-auto\"><template x-for=\"(f, idx) in selectedFiles\" :key=\"idx\"><div class=\"p-2.5 rounded-lg bg-surface-sunken border text-xs stack-xs\"><div class=\"flex-between items-center gap-2\"><div class=\"d-flex items-center gap-2 truncate\"><span class=\"font-mono text-muted text-2xs\" x-text=\"'#' + (idx+1)\"></span> <span class=\"font-bold text-primary truncate\" x-text=\"f.name\"></span> <span class=\"badge badge-slate text-2xs tabular-nums\" x-text=\"formatSize(f.size)\"></span></div><button type=\"button\" @click=\"removeFile(idx)\" class=\"btn btn-ghost btn-xs text-danger hover:bg-rose-50 p-1\" title=\"إزالة الملف\">✕</button></div><div class=\"d-flex items-center gap-2 pt-1 border-t border-slate-200/50\"><label class=\"text-2xs text-secondary font-bold shrink-0\">اسم المورد:</label> <input type=\"text\" x-model=\"f.supplier\" class=\"form-input text-xs py-1 px-2\" placeholder=\"اكتب اسم المورد الخاص بهذا الملف...\"></div></div></template></div></div></template><!-- Common Supplier Name / Prefix Input --><div class=\"form-group mb-0\" x-show=\"selectedFiles.length <= 1\"><label class=\"form-label text-xs font-bold text-primary\">اسم المورد / المستودع <span class=\"text-muted font-normal text-2xs ms-1\">(اختياري — في حال تركه فارغاً سيتم اعتماده تلقائياً من اسم الملف)</span></label> <input type=\"text\" name=\"supplier_name\" class=\"form-input text-xs\" placeholder=\"مثال: مستودع الأمل، شركة النور للأدوية...\" :value=\"selectedFiles.length === 1 ? selectedFiles[0].supplier : ''\" @input=\"selectedFiles.length === 1 && (selectedFiles[0].supplier = $event.target.value)\"></div><div class=\"form-group mb-0\" x-show=\"selectedFiles.length > 1\"><label class=\"form-label text-xs font-bold text-primary\">بادئة مشتركة لاسم المورد <span class=\"text-muted font-normal text-2xs ms-1\">(اختياري — ستُضاف أمام اسم المورد لكل ملف إن رغبت في توحيد البادئة)</span></label> <input type=\"text\" name=\"supplier_name\" class=\"form-input text-xs\" placeholder=\"مثال: توريدات 2026، كشف...\"></div><!-- Column Mapping Options for Single File --><template x-if=\"selectedFiles.length === 1\"><div class=\"border rounded-xl p-4 bg-surface-sunken stack-sm\"><div class=\"flex-between items-center\"><strong class=\"text-xs font-black text-primary\">تعيين أعمدة البيانات في الملف:</strong> <span class=\"badge badge-sky text-2xs\">تم التعرف التلقائي الذكي</span></div><div class=\"d-grid grid-cols-4 gap-3\"><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">كود الصنف (SKU)</label> <select x-model=\"detectedCode\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedCode == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">اسم المنتج / الصنف <span class=\"text-danger\">*</span></label> <select x-model=\"detectedName\" class=\"form-select text-xs font-bold\" required><option value=\"-1\">-- اختر العمود --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedName == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">سعر الجمهور</label> <select x-model=\"detectedPrice\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedPrice == idx\"></option></template></select></div><div class=\"stack-2xs\"><label class=\"form-label text-2xs font-bold\">نسبة الخصم (%)</label> <select x-model=\"detectedDiscount\" class=\"form-select text-xs\"><option value=\"-1\">-- غير محدد --</option><template x-for=\"(h, idx) in fileHeaders\" :key=\"idx\"><option :value=\"idx\" x-text=\"h\" :selected=\"detectedDiscount == idx\"></option></template></select></div></div></div></template><!-- Progress Bar (When uploading) --><div x-show=\"isUploading\" x-cloak class=\"stack-xs bg-surface-sunken border rounded-xl p-4\"><div class=\"flex-between items-center text-xs font-bold text-primary mb-1\"><span x-text=\"uploadStatus\"></span> <span class=\"tabular-nums\" x-text=\"uploadProgress + '%'\"></span></div><div class=\"w-full bg-surface-sunken rounded-full h-2.5 overflow-hidden border\"><div class=\"bg-accent h-2.5 rounded-full transition-all duration-300\" :style=\"{ width: uploadProgress + '%' }\"></div></div></div><!-- Form Submit Button --><div class=\"flex-between items-center pt-4 border-t\"><a id=\"temp-warehouse-cancel-btn\" href=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var9 templ.SafeURL
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(data.PageURL))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_temp_warehouses_upload.templ`, Line: 342, Col: 41}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `admin_temp_warehouses_upload.templ`, Line: 342, Col: 41}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "\" hx-boost=\"false\" class=\"btn btn-secondary btn-sm font-bold\">إلغاء والرجوع</a> <button type=\"submit\" class=\"btn btn-primary btn-sm font-black px-8 py-2.5 gap-2 shadow-2xs\" :disabled=\"selectedFiles.length === 0 || isUploading\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" hx-boost=\"false\" class=\"btn btn-secondary btn-sm font-bold\">إلغاء والرجوع</a> <button type=\"submit\" class=\"btn btn-primary btn-sm font-black px-8 py-2.5 gap-2 shadow-2xs\" :disabled=\"selectedFiles.length === 0 || isUploading\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -162,7 +170,7 @@ func AdminTempWarehouseUploadPage(data *AdminTempWarehousesData, lang, dir strin
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span x-show=\"!isUploading && selectedFiles.length <= 1\">بدء رفع المستودع</span> <span x-show=\"!isUploading && selectedFiles.length > 1\" x-text=\"'بدء رفع ' + selectedFiles.length + ' ملفات'\"></span> <span x-show=\"isUploading\">جاري الرفع والمعالجة...</span></button></div></form></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span x-show=\"!isUploading && selectedFiles.length <= 1\">بدء رفع المستودع</span> <span x-show=\"!isUploading && selectedFiles.length > 1\" x-text=\"'بدء رفع ' + selectedFiles.length + ' ملفات'\"></span> <span x-show=\"isUploading\">جاري الرفع والمعالجة...</span></button></div></form></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func vendorPaginationQuery(filter catalog.VendorVariantQuery) url.Values {
@@ -114,24 +114,24 @@ func variantEditJSON(v *catalog.ProductVariant) string {
 		return "{}"
 	}
 	payload := struct {
-		ID           int64   `json:"id"`
-		NameAr       string  `json:"name_ar"`
-		NameEn       string  `json:"name_en"`
-		SKU          string  `json:"sku"`
-		Barcode      string  `json:"barcode"`
-		Unit         string  `json:"unit"`
-		Price        string  `json:"price"`
-		Discount     string  `json:"discount"`
-		CostPrice    string  `json:"cost_price"`
-		CostDiscount string  `json:"cost_discount_percentage"`
-		Stock        int     `json:"stock_qty"`
-		MinOrderQty  int     `json:"min_order_qty"`
-		QuotaLimit   string  `json:"quota_limit"`
-		Batch        string  `json:"batch_number"`
-		Expiry       string  `json:"expiry_date"`
-		BranchID     string  `json:"branch_id"`
-		Status       string  `json:"status"`
-		IsNegotiable bool    `json:"is_negotiable"`
+		ID           int64  `json:"id"`
+		NameAr       string `json:"name_ar"`
+		NameEn       string `json:"name_en"`
+		SKU          string `json:"sku"`
+		Barcode      string `json:"barcode"`
+		Unit         string `json:"unit"`
+		Price        string `json:"price"`
+		Discount     string `json:"discount"`
+		CostPrice    string `json:"cost_price"`
+		CostDiscount string `json:"cost_discount_percentage"`
+		Stock        int    `json:"stock_qty"`
+		MinOrderQty  int    `json:"min_order_qty"`
+		QuotaLimit   string `json:"quota_limit"`
+		Batch        string `json:"batch_number"`
+		Expiry       string `json:"expiry_date"`
+		BranchID     string `json:"branch_id"`
+		Status       string `json:"status"`
+		IsNegotiable bool   `json:"is_negotiable"`
 	}{
 		ID:           v.ID,
 		NameAr:       v.Name.Get(i18n.AR),

@@ -6,10 +6,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // ImportProgressJSON serves the unified progress snapshot for any import run.
@@ -113,7 +113,9 @@ func (h *UIHandler) respondWithRunProgress(w http.ResponseWriter, r *http.Reques
 	// Unpack result summary counters if present.
 	if len(run.Result) > 0 && string(run.Result) != "{}" {
 		var res map[string]any
-		if err := json.Unmarshal(run.Result, &res); err == nil {
+		if err := json.Unmarshal(run.Result, &res); err != nil {
+			h.logLoadErr(r.Context(), "decode import run result", err)
+		} else {
 			for k, v := range res {
 				resp[k] = v
 			}

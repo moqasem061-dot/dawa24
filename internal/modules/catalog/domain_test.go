@@ -3,15 +3,15 @@ package catalog_test
 import (
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func TestProductVariant_CostAndProfitCalculations(t *testing.T) {
 	t.Run("Variant with cost and discounts", func(t *testing.T) {
 		cost := money.FromMajor(80)
 		v := &catalog.ProductVariant{
-			Price:                  money.FromMajor(100), // Retail price
+			Price:                  money.FromMajor(100),  // Retail price
 			Discount:               money.FromMinor(1000), // 10.00% selling discount -> 90 selling price
 			CostPrice:              &cost,
 			CostDiscountPercentage: 20.0, // 20% cost discount -> 80 - 16 = 64
@@ -54,7 +54,7 @@ func TestProductVariant_CostAndProfitCalculations(t *testing.T) {
 
 	t.Run("Variant with CostDiscountPercentage but nil CostPrice", func(t *testing.T) {
 		v := &catalog.ProductVariant{
-			Price:                  money.FromMajor(100), // Retail price
+			Price:                  money.FromMajor(100),  // Retail price
 			Discount:               money.FromMinor(2000), // 20% selling discount -> 80
 			CostDiscountPercentage: 25.0,                  // 25% cost discount on public price -> 75
 		}

@@ -5,13 +5,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // availabilityProbe answers the cross-module questions behind
@@ -219,12 +219,12 @@ func (p *availabilityProbe) VariantsByIDs(ctx context.Context, variantIDs []int6
 			continue
 		}
 		out[id] = commerce.VariantAvailability{
-			ID:             v.ID,
-			OrganizationID: v.OrganizationID,
-			VendorBranchID: branchIDOf(v.BranchID),
-			StockQty:       stockMap[v.ID],
-			MinOrderQty:    v.MinOrderQty,
-			Active:         v.Status == catalog.StatusActive,
+			ID:                     v.ID,
+			OrganizationID:         v.OrganizationID,
+			VendorBranchID:         branchIDOf(v.BranchID),
+			StockQty:               stockMap[v.ID],
+			MinOrderQty:            v.MinOrderQty,
+			Active:                 v.Status == catalog.StatusActive,
 			QuotaLimit:             v.QuotaLimitOrZero(),
 			Price:                  v.Price,
 			Discount:               v.Discount,

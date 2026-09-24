@@ -3,6 +3,7 @@ package gateway
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http"
@@ -169,7 +170,7 @@ func TestNoActiveTranscriptionModel(t *testing.T) {
 		func(context.Context) string { return "" },
 	)
 
-	if _, err := cache.Resolve(context.Background(), "audio/webm"); err != ErrNoTranscriptionModel {
+	if _, err := cache.Resolve(context.Background(), "audio/webm"); !errors.Is(err, ErrNoTranscriptionModel) {
 		t.Fatalf("err = %v, want ErrNoTranscriptionModel", err)
 	}
 }

@@ -5,7 +5,7 @@ import (
 	"net"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 )
 
 func TestSSRFProtectedPrivateIPs(t *testing.T) {

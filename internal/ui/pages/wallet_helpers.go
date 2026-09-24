@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 )
 
 type WalletViewData struct {

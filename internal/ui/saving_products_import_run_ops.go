@@ -8,13 +8,13 @@ import (
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/importjobs"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // startSavingImportRun coordinates asynchronous processing of saving products imports.
@@ -213,7 +213,7 @@ func (h *UIHandler) startSavingImportRun(
 				continue
 			}
 
-			var qty float64 = 1.0
+			var qty = 1.0
 			if qC >= 0 && qC < len(row) {
 				if parsedQ, ok := ParseFlexibleQuantity(row[qC]); ok && parsedQ > 0 {
 					qty = parsedQ
@@ -254,7 +254,8 @@ func (h *UIHandler) startSavingImportRun(
 				unlinkedCount++
 			}
 
-			rowTotalMinor := int64(qty * float64(price.Minor()))
+			rowTotal, _ := price.MulQuantity(qty) // nolint:errswallow: overflow needs a quantity beyond any sheet; the row counts as 0
+			rowTotalMinor := rowTotal.Minor()
 			totalQty += qty
 			totalValMinor += rowTotalMinor
 

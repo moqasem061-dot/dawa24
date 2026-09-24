@@ -9,11 +9,11 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerVendorSearchJSON provides live AJAX vendor search for customers/pharmacies to link to vendors.
@@ -40,7 +40,9 @@ func (h *UIHandler) CustomerVendorSearchJSON(w http.ResponseWriter, r *http.Requ
 	if h.orgSvc != nil {
 		vType := org.TypeVendor
 		vendors, err := h.orgSvc.ListOrganizations(sysCtx, &vType, nil, 200, 0)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			qLower := strings.ToLower(q)
 			for _, v := range vendors {
 				if v == nil {
@@ -110,14 +112,18 @@ func (h *UIHandler) CustomerUserOrganizationsPage(w http.ResponseWriter, r *http
 	sysCtx := database.AsSystem(ctx)
 	if h.orgSvc != nil {
 		userOrgs, err := h.orgSvc.ListUserOrganizationsByUser(sysCtx, actor.UserID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListUserOrganizationsByUser", err)
+		} else {
 			data.UserOrgs = userOrgs
 		}
 		// Load approved vendors for selection in add modal
 		vType := org.TypeVendor
 		vStatus := org.StatusApproved
 		vendors, err := h.orgSvc.ListOrganizations(sysCtx, &vType, &vStatus, 200, 0)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			data.Vendors = vendors
 		}
 	}

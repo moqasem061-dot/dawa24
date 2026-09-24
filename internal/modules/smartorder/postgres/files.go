@@ -2,10 +2,11 @@ package postgres
 
 import (
 	"context"
+	"errors"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // The uploaded workbook, persisted between step 1 and step 2.
@@ -40,7 +41,7 @@ func (r *Repository) GetRunFile(ctx context.Context, runID, orgID int64) ([]byte
 			SELECT content, COALESCE(filename, '')
 			FROM smartorder.run_files
 			WHERE run_id = $1 AND organization_id = $2;`, runID, orgID).Scan(&content, &filename)
-		if err == pgx.ErrNoRows {
+		if errors.Is(err, pgx.ErrNoRows) {
 			return apperr.NotFound("smart_order_file")
 		}
 		return err

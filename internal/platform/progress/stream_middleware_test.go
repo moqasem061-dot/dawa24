@@ -16,8 +16,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	chimw "github.com/go-chi/chi/v5/middleware"
 
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 )
 
 // The stream has to survive the real middleware chain.
@@ -44,7 +44,7 @@ func TestStreamSurvivesTheServerMiddlewareChain(t *testing.T) {
 	r.Use(httpx.RequestID)
 	r.Use(httpx.Recover(log))
 	r.Use(httpx.Logger(log))
-	r.Use(httpx.SecurityHeaders)
+	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{}))
 	r.Use(httpx.Locale)
 	r.Use(httpx.RequestTimeout(25*time.Second, httpx.IsLongRunning))
 	r.Use(chimw.Compress(5))
@@ -59,7 +59,7 @@ func TestStreamSurvivesTheServerMiddlewareChain(t *testing.T) {
 	srv := httptest.NewServer(r)
 	defer srv.Close()
 
-	req, err := http.NewRequest(http.MethodGet, srv.URL+"/vendor/ingest/abc/stream", nil)
+	req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, srv.URL+"/vendor/ingest/abc/stream", nil)
 	if err != nil {
 		t.Fatalf("request: %v", err)
 	}
@@ -69,7 +69,7 @@ func TestStreamSurvivesTheServerMiddlewareChain(t *testing.T) {
 	req.Header.Set("Accept", "text/event-stream")
 	req.Header.Set("Accept-Encoding", "gzip")
 
-	resp, err := srv.Client().Do(req)
+	resp, err := srv.Client().Do(req) //nolint:bodyclose // closed by the defer below
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}
@@ -173,7 +173,11 @@ func TestStreamRecoversWhenThePublisherGoesQuiet(t *testing.T) {
 	}))
 	defer srv.Close()
 
-	resp, err := srv.Client().Get(srv.URL)
+	req, err := http.NewRequestWithContext(t.Context(), http.MethodGet, srv.URL, nil)
+	if err != nil {
+		t.Fatalf("request: %v", err)
+	}
+	resp, err := srv.Client().Do(req) //nolint:bodyclose // closed by the defer below
 	if err != nil {
 		t.Fatalf("connect: %v", err)
 	}

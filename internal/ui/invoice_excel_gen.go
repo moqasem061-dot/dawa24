@@ -6,7 +6,7 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 )
 
 // GenerateInvoiceExcel builds an authentic Excel spreadsheet for an invoice.

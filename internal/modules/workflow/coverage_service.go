@@ -7,7 +7,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Coord represents geographic latitude and longitude, with optional CityID.
@@ -91,7 +91,7 @@ func (cs *CoverageService) ServesPoint(ctx context.Context, orgID int64, day tim
 			LIMIT 1;
 		`
 		err := tx.QueryRow(txCtx, query, orgID, target.Lat, target.Lon, dayInt, hasCoords, targetCityID, vendorBranchID).Scan(&distanceMeters, &actualMeters)
-		if err == nil {
+		if err == nil { // nolint:errswallow: success returns; the error is handled below
 			return nil
 		}
 		if !database.IsNotFound(err) {

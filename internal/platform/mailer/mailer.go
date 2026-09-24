@@ -3,15 +3,15 @@ package mailer
 import (
 	"context"
 	"crypto/tls"
+	"encoding/base64"
 	"fmt"
 	"log/slog"
 	"net"
 	"net/smtp"
-	"encoding/base64"
 	"strings"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 // Message encapsulates an outbound email.
@@ -122,17 +122,17 @@ func (s *smtpMailer) Send(ctx context.Context, msg Message) error {
 
 	// Prepare MIME message
 	var body strings.Builder
-	body.WriteString(fmt.Sprintf("From: %s <%s>\r\n", s.cfg.FromName, from))
-	body.WriteString(fmt.Sprintf("To: %s\r\n", msg.To))
-	body.WriteString(fmt.Sprintf("Subject: =?UTF-8?B?%s?=\r\n", encodeRFC2047(msg.Subject)))
+	fmt.Fprintf(&body, "From: %s <%s>\r\n", s.cfg.FromName, from)
+	fmt.Fprintf(&body, "To: %s\r\n", msg.To)
+	fmt.Fprintf(&body, "Subject: =?UTF-8?B?%s?=\r\n", encodeRFC2047(msg.Subject))
 	body.WriteString("MIME-Version: 1.0\r\n")
 
 	boundary := fmt.Sprintf("=_dawa24_%d", time.Now().UnixNano())
-	body.WriteString(fmt.Sprintf("Content-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n", boundary))
+	fmt.Fprintf(&body, "Content-Type: multipart/alternative; boundary=\"%s\"\r\n\r\n", boundary)
 
 	// Plaintext part
 	if msg.Text != "" {
-		body.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		fmt.Fprintf(&body, "--%s\r\n", boundary)
 		body.WriteString("Content-Type: text/plain; charset=UTF-8\r\n")
 		body.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
 		body.WriteString(msg.Text)
@@ -141,13 +141,13 @@ func (s *smtpMailer) Send(ctx context.Context, msg Message) error {
 
 	// HTML part
 	if msg.HTML != "" {
-		body.WriteString(fmt.Sprintf("--%s\r\n", boundary))
+		fmt.Fprintf(&body, "--%s\r\n", boundary)
 		body.WriteString("Content-Type: text/html; charset=UTF-8\r\n")
 		body.WriteString("Content-Transfer-Encoding: 8bit\r\n\r\n")
 		body.WriteString(msg.HTML)
 		body.WriteString("\r\n\r\n")
 	}
-	body.WriteString(fmt.Sprintf("--%s--\r\n", boundary))
+	fmt.Fprintf(&body, "--%s--\r\n", boundary)
 
 	rawMsg := []byte(body.String())
 
@@ -161,76 +161,52 @@ func (s *smtpMailer) Send(ctx context.Context, msg Message) error {
 		timeout = 15 * time.Second
 	}
 
-	// Handle direct TLS (Port 465)
-	if s.cfg.Port == 465 || strings.EqualFold(s.cfg.Encryption, "tls") {
-		tlsConfig := &tls.Config{
-			ServerName: s.cfg.Host,
-			MinVersion: tls.VersionTLS12,
-		}
-		dialer := &net.Dialer{Timeout: timeout}
-		conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
-		if err != nil {
-			return fmt.Errorf("mailer: tls dial error: %w", err)
-		}
-		defer conn.Close()
-
-		c, err := smtp.NewClient(conn, s.cfg.Host)
-		if err != nil {
-			return fmt.Errorf("mailer: smtp client error: %w", err)
-		}
-		defer c.Quit()
-
-		if auth != nil {
-			if err = c.Auth(auth); err != nil {
-				return fmt.Errorf("mailer: smtp auth error: %w", err)
-			}
-		}
-		if err = c.Mail(from); err != nil {
-			return err
-		}
-		if err = c.Rcpt(msg.To); err != nil {
-			return err
-		}
-		w, err := c.Data()
-		if err != nil {
-			return err
-		}
-		if _, err = w.Write(rawMsg); err != nil {
-			return err
-		}
-		return w.Close()
+	// Port 465 (or encryption "tls") is TLS from the first byte; anything
+	// else starts plain and upgrades with STARTTLS when the server offers it.
+	implicitTLS := s.cfg.Port == 465 || strings.EqualFold(s.cfg.Encryption, "tls")
+	tlsConfig := &tls.Config{
+		ServerName: s.cfg.Host,
+		MinVersion: tls.VersionTLS12,
 	}
-
-	// Standard STARTTLS (Port 587 or 25)
-	dialer := &net.Dialer{Timeout: timeout}
-	conn, err := dialer.DialContext(ctx, "tcp", addr)
+	netDialer := &net.Dialer{Timeout: timeout}
+	var conn net.Conn
+	var err error
+	if implicitTLS {
+		conn, err = (&tls.Dialer{NetDialer: netDialer, Config: tlsConfig}).DialContext(ctx, "tcp", addr)
+	} else {
+		conn, err = netDialer.DialContext(ctx, "tcp", addr)
+	}
 	if err != nil {
 		return fmt.Errorf("mailer: dial error: %w", err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }() // after a successful QUIT the close error carries nothing
+
+	// Bound the whole conversation, not only the dial: a server that accepts
+	// and then stalls would otherwise hold the sending goroutine forever.
+	deadline := time.Now().Add(4 * timeout)
+	if d, ok := ctx.Deadline(); ok && d.Before(deadline) {
+		deadline = d
+	}
+	if err := conn.SetDeadline(deadline); err != nil {
+		return fmt.Errorf("mailer: set deadline: %w", err)
+	}
 
 	c, err := smtp.NewClient(conn, s.cfg.Host)
 	if err != nil {
 		return fmt.Errorf("mailer: smtp client error: %w", err)
 	}
-	defer c.Quit()
-
-	if ok, _ := c.Extension("STARTTLS"); ok {
-		tlsConfig := &tls.Config{
-			ServerName: s.cfg.Host,
-			MinVersion: tls.VersionTLS12,
-		}
-		if err = c.StartTLS(tlsConfig); err != nil {
-			return fmt.Errorf("mailer: starttls error: %w", err)
+	if !implicitTLS {
+		if ok, _ := c.Extension("STARTTLS"); ok {
+			if err = c.StartTLS(tlsConfig); err != nil {
+				return fmt.Errorf("mailer: starttls error: %w", err)
+			}
 		}
 	}
-
 	if auth != nil {
 		if err = c.Auth(auth); err != nil {
-			return fmt.Errorf("mailer: auth error: %w", err)
+			return fmt.Errorf("mailer: smtp auth error: %w", err)
 		}
 	}
-
 	if err = c.Mail(from); err != nil {
 		return err
 	}
@@ -244,7 +220,14 @@ func (s *smtpMailer) Send(ctx context.Context, msg Message) error {
 	if _, err = w.Write(rawMsg); err != nil {
 		return err
 	}
-	return w.Close()
+	if err = w.Close(); err != nil {
+		return err
+	}
+	// The message is accepted once DATA closes; a failed QUIT does not unsend it.
+	if err := c.Quit(); err != nil {
+		s.log.WarnContext(ctx, "mailer: smtp quit failed after delivery", "error", err)
+	}
+	return nil
 }
 
 func (s *smtpMailer) SendOTP(ctx context.Context, to, code, purpose, lang string) error {

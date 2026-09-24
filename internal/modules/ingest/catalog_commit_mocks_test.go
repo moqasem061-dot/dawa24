@@ -2,9 +2,6 @@ package ingest
 
 import (
 	"context"
-
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
 )
 
 // mockImportStore provides an in-memory fake for ImportStore during commit testing.
@@ -105,24 +102,24 @@ func (m *mockCommitImportStore) Sweep(_ context.Context) error { return nil }
 
 // mockCommitCatalogPort mocks CatalogPort for testing.
 type mockCommitCatalogPort struct {
-	keys              []catalog.VariantKey
-	writtenVariants   []catalog.VariantWriteRow
+	keys              []VariantKey
+	writtenVariants   []VariantWriteRow
 	deactivatedExcept []int64
-	retired           []catalog.RetiredVariant
+	retired           []RetiredVariant
 	nextVariantID     int64
 }
 
-func (m *mockCommitCatalogPort) ListMatchProducts(_ context.Context) ([]catalog.MatchProduct, error) {
+func (m *mockCommitCatalogPort) ListMatchProducts(_ context.Context) ([]MatchProduct, error) {
 	return nil, nil
 }
-func (m *mockCommitCatalogPort) ImportVocabulary(_ context.Context, _ int64) (catalog.EnrichVocabulary, error) {
-	return catalog.EnrichVocabulary{}, nil
+func (m *mockCommitCatalogPort) ImportVocabulary(_ context.Context, _ int64) (Vocabulary, error) {
+	return Vocabulary{}, nil
 }
-func (m *mockCommitCatalogPort) ListVariantKeys(_ context.Context, _ int64) ([]catalog.VariantKey, error) {
+func (m *mockCommitCatalogPort) ListVariantKeys(_ context.Context, _ int64) ([]VariantKey, error) {
 	return m.keys, nil
 }
-func (m *mockCommitCatalogPort) BulkWriteVariants(_ context.Context, _ int64, rows []catalog.VariantWriteRow) (catalog.VariantWriteResult, error) {
-	res := catalog.VariantWriteResult{
+func (m *mockCommitCatalogPort) BulkWriteVariants(_ context.Context, _ int64, rows []VariantWriteRow) (VariantWriteResult, error) {
+	res := VariantWriteResult{
 		IDs:          make(map[int]int64, len(rows)),
 		InsertedRefs: make(map[int]bool, len(rows)),
 	}
@@ -142,45 +139,42 @@ func (m *mockCommitCatalogPort) BulkWriteVariants(_ context.Context, _ int64, ro
 }
 func (m *mockCommitCatalogPort) RetireVariantsExcept(
 	_ context.Context, _ int64, _ int64, keep []int64,
-) ([]catalog.RetiredVariant, error) {
+) ([]RetiredVariant, error) {
 	m.deactivatedExcept = keep
 	kept := make(map[int64]bool, len(keep))
 	for _, id := range keep {
 		kept[id] = true
 	}
-	var out []catalog.RetiredVariant
+	var out []RetiredVariant
 	for _, k := range m.keys {
 		if !kept[k.ID] {
-			out = append(out, catalog.RetiredVariant{ID: k.ID, ProductID: k.ProductID})
+			out = append(out, RetiredVariant{ID: k.ID, ProductID: k.ProductID})
 		}
 	}
 	m.retired = out
 	return out, nil
 }
-func (m *mockCommitCatalogPort) GetProduct(_ context.Context, _ int64) (*catalog.Product, []*catalog.ProductVariant, error) {
-	return nil, nil, nil
-}
-func (m *mockCommitCatalogPort) Search(_ context.Context, _ catalog.SearchParams) ([]*catalog.Product, error) {
+func (m *mockCommitCatalogPort) ProductRef(_ context.Context, _ int64) (*ProductRef, error) {
 	return nil, nil
 }
 
 // mockCommitInventoryPort mocks InventoryPort for testing.
 type mockCommitInventoryPort struct {
-	warehouses  []*inventory.Warehouse
-	writtenRows []inventory.StockWriteRow
-	lastMode    inventory.StockMode
+	warehouses  []Warehouse
+	writtenRows []StockWriteRow
+	lastMode    StockMode
 	// inWarehouse is the set of variants already holding a balance in the
 	// warehouse an import is writing to.
 	inWarehouse map[int64]bool
 }
 
-func (m *mockCommitInventoryPort) ListWarehouses(_ context.Context) ([]*inventory.Warehouse, error) {
+func (m *mockCommitInventoryPort) ListWarehouses(_ context.Context) ([]Warehouse, error) {
 	return m.warehouses, nil
 }
-func (m *mockCommitInventoryPort) BulkWriteStocks(_ context.Context, mode inventory.StockMode, rows []inventory.StockWriteRow) (inventory.StockWriteResult, error) {
+func (m *mockCommitInventoryPort) BulkWriteStocks(_ context.Context, mode StockMode, rows []StockWriteRow) (StockWriteResult, error) {
 	m.lastMode = mode
 	m.writtenRows = append(m.writtenRows, rows...)
-	return inventory.StockWriteResult{Written: len(rows)}, nil
+	return StockWriteResult{Written: len(rows)}, nil
 }
 func (m *mockCommitInventoryPort) ClearWarehouseStocks(_ context.Context, _ int64) error {
 	return nil

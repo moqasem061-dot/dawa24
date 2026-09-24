@@ -11,7 +11,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // testIndex is a catalogue of three products that differ in the three ways the

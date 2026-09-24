@@ -13,9 +13,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func cleanSupplierNameFromFilename(filename string, lang ...string) string {
@@ -56,7 +56,7 @@ func resolveStoragePath(storageKey, category string) string {
 		filepath.Join("data", cleanKey),
 	}
 	for _, c := range candidates {
-		if _, err := os.Stat(c); err == nil {
+		if _, err := os.Stat(c); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
 			return c
 		}
 	}
@@ -287,7 +287,6 @@ func (h *UIHandler) AdminTempWarehouseUploadSubmit(w http.ResponseWriter, r *htt
 			h.dispatchInAppNotification(ctx, *parentID, orgID, "", notifTitle, notifBody)
 		}
 	}
-
 
 	if isJSONOrAJAX(r) {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

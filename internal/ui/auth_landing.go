@@ -3,7 +3,7 @@ package ui
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
 // dashboardLanding picks the first screen a member of a company can actually
@@ -39,8 +39,8 @@ func (h *UIHandler) findNearestCityID(ctx context.Context, lat, lon float64) int
 	if len(cities) == 0 {
 		return 1
 	}
-	var bestID int64 = cities[0].ID
-	var minDist float64 = 1e9
+	var bestID = cities[0].ID
+	var minDist = 1e9
 	for _, c := range cities {
 		if c.Latitude == 0 && c.Longitude == 0 {
 			continue

@@ -11,13 +11,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	catalogHttp "github.com/muhiya/dawa24-store/internal/modules/catalog/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	catalogHttp "github.com/moqasem061-dot/dawa24/internal/modules/catalog/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (happyRepo) GetVariantsByIDs(context.Context, []int64) (map[int64]*catalog.ProductVariant, error) {
@@ -186,10 +186,14 @@ func (happyRepo) ListAllSavingProductsAdmin(ctx context.Context, _ *int64, _ *in
 func (happyRepo) ListAllMasterProductsForMatching(ctx context.Context) ([]*catalog.CatalogMatchSource, error) {
 	return nil, nil
 }
-func (happyRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error)   { return 0, nil }
-func (happyRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) { return 0, nil }
-func (happyRepo) DeleteAllProducts(ctx context.Context) (int64, error)                     { return 0, nil }
-func (happyRepo) DeleteAllBrands(ctx context.Context) (int64, error)                       { return 0, nil }
+func (happyRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
+	return 0, nil
+}
+func (happyRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
+	return 0, nil
+}
+func (happyRepo) DeleteAllProducts(ctx context.Context) (int64, error) { return 0, nil }
+func (happyRepo) DeleteAllBrands(ctx context.Context) (int64, error)   { return 0, nil }
 func (happyRepo) DeleteAllSavingProducts(ctx context.Context, orgID int64) error {
 	return nil
 }
@@ -346,7 +350,7 @@ func TestCatalogHandler_HappyPaths(t *testing.T) {
 			if tt.body != "" {
 				bodyReader = strings.NewReader(tt.body)
 			}
-			req := httptest.NewRequest(tt.method, tt.path, bodyReader)
+			req := httptest.NewRequestWithContext(context.Background(), tt.method, tt.path, bodyReader)
 			if tt.body != "" {
 				req.Header.Set("Content-Type", "application/json")
 			}

@@ -1,6 +1,7 @@
 package ui_test
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -39,7 +40,7 @@ func TestOnboardingPendingFourDistinctStates(t *testing.T) {
 
 	for _, s := range states {
 		t.Run("state="+s.state, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, "/onboarding/pending?state="+s.state, nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/onboarding/pending?state="+s.state, nil)
 			rec := httptest.NewRecorder()
 			router.ServeHTTP(rec, req)
 

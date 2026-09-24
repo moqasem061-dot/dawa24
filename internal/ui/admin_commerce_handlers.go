@@ -7,17 +7,18 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrdersPage renders the cross-tenant order search and procurement tabs.
@@ -49,7 +50,9 @@ func (h *UIHandler) AdminOrdersPage(w http.ResponseWriter, r *http.Request) {
 	var orgs []*org.Organization
 
 	if h.orgSvc != nil {
-		if list, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 1000, 0); err == nil {
+		if list, err := h.orgSvc.ListOrganizations(sysCtx, nil, nil, 1000, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
 			orgs = list
 		}
 	}
@@ -59,7 +62,7 @@ func (h *UIHandler) AdminOrdersPage(w http.ResponseWriter, r *http.Request) {
 	// what hid every supplier that bought from another supplier.
 	var parties commerce.AdminOrderParties
 	if h.commSvc != nil {
-		if p, err := h.commSvc.AdminOrderParties(sysCtx); err == nil {
+		if p, err := h.commSvc.AdminOrderParties(sysCtx); err == nil { // nolint:errswallow: the else branch logs it
 			parties = p
 		} else {
 			h.log.WarnContext(ctx, "load admin order parties", "error", err)
@@ -70,12 +73,13 @@ func (h *UIHandler) AdminOrdersPage(w http.ResponseWriter, r *http.Request) {
 		var err error
 		kpi, err = h.commSvc.AdminOrderKPIs(ctx)
 		if err != nil {
-			all, direct, neg, _ := h.commSvc.AdminOrderStats(ctx)
+			all, direct, neg, loadErr := h.commSvc.AdminOrderStats(ctx)
+			h.logLoadErr(ctx, "commSvc.AdminOrderStats", loadErr)
 			kpi.TotalOrders = all
 			kpi.DirectOrders = direct
 			kpi.NegotiationOrders = neg
 		}
-		orders, totalCount, _ = h.commSvc.AdminSearchOrdersFiltered(ctx, commerce.AdminOrderFilter{
+		if loaded, loaded2, err := h.commSvc.AdminSearchOrdersFiltered(ctx, commerce.AdminOrderFilter{
 			Query:         query,
 			Tab:           tab,
 			Status:        status,
@@ -87,7 +91,11 @@ func (h *UIHandler) AdminOrdersPage(w http.ResponseWriter, r *http.Request) {
 			DateTo:        dateTo,
 			Limit:         limit,
 			Offset:        offset,
-		})
+		}); err != nil {
+			h.logLoadErr(ctx, "commSvc.AdminSearchOrdersFiltered", err)
+		} else {
+			orders, totalCount = loaded, loaded2
+		}
 	}
 
 	data := pages.AdminOrdersData{
@@ -130,7 +138,8 @@ func (h *UIHandler) AdminOffersPage(w http.ResponseWriter, r *http.Request) {
 	var totalCount int
 	if h.promoSvc != nil {
 		if orgID > 0 {
-			all, _ := h.promoSvc.ListSpecialOffersByOrg(ctx, orgID)
+			all, loadErr := h.promoSvc.ListSpecialOffersByOrg(ctx, orgID)
+			h.logLoadErr(ctx, "promoSvc.ListSpecialOffersByOrg", loadErr)
 			var filtered []*promo.SpecialOffer
 			for _, o := range all {
 				if o == nil {
@@ -162,13 +171,21 @@ func (h *UIHandler) AdminOffersPage(w http.ResponseWriter, r *http.Request) {
 			}
 			offers = filtered[start:end]
 		} else {
-			offers, totalCount, _ = h.promoSvc.ListAllSpecialOffersWithTotal(ctx, statusFilter, limit, offset)
+			if loaded, loaded2, err := h.promoSvc.ListAllSpecialOffersWithTotal(ctx, statusFilter, limit, offset); err != nil {
+				h.logLoadErr(ctx, "promoSvc.ListAllSpecialOffersWithTotal", err)
+			} else {
+				offers, totalCount = loaded, loaded2
+			}
 		}
 	}
 
 	var orgs []*org.Organization
 	if h.orgSvc != nil {
-		orgs, _ = h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 500, 0)
+		if loaded, err := h.orgSvc.ListOrganizations(database.AsSystem(ctx), nil, nil, 500, 0); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListOrganizations", err)
+		} else {
+			orgs = loaded
+		}
 	}
 
 	data := pages.AdminOffersData{
@@ -196,7 +213,8 @@ func (h *UIHandler) AdminOfferApproveSubmit(w http.ResponseWriter, r *http.Reque
 
 	actor, _ := authctx.From(ctx)
 	if h.promoSvc != nil {
-		off, _ := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "approved", i18n.T(lang, "admin.commerce.approved_by_admin"), actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))
 			return
@@ -233,7 +251,8 @@ func (h *UIHandler) AdminOfferRejectSubmit(w http.ResponseWriter, r *http.Reques
 	}
 
 	if h.promoSvc != nil {
-		off, _ := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "rejected", notes, actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))
 			return
@@ -270,7 +289,8 @@ func (h *UIHandler) AdminOfferRequestChangesSubmit(w http.ResponseWriter, r *htt
 	}
 
 	if h.promoSvc != nil {
-		off, _ := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "changes_requested", notes, actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))
 			return

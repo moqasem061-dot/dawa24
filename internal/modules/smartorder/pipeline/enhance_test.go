@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // The AI stage is the only part of matching that can be wrong in a way the

@@ -102,9 +102,10 @@ func (b *Book) openXLSLegacy() (err error) {
 		return b.fallbackFromBinary(nil)
 	}
 	if corruptBIFF(grids[best]) {
-		return errors.New("تعذر قراءة هذا الملف بصيغة Excel 97-2003 (.xls) قراءة كاملة — " +
-			"جزء كبير من صفوفه غير مقروء. يرجى فتحه في Excel وحفظه بصيغة " +
-			"«مصنف Excel (.xlsx)» ثم إعادة الرفع.")
+		return errors.New( //nolint:staticcheck // ST1005: a full sentence shown to the vendor as-is
+			"تعذر قراءة هذا الملف بصيغة Excel 97-2003 (.xls) قراءة كاملة — " +
+				"جزء كبير من صفوفه غير مقروء. يرجى فتحه في Excel وحفظه بصيغة " +
+				"«مصنف Excel (.xlsx)» ثم إعادة الرفع.")
 	}
 	b.source.Sheets[best].Chosen = true
 	b.source.Sheet = b.source.Sheets[best].Name
@@ -169,11 +170,9 @@ const xlsColumnProbe = 64
 
 // xlsSheetRows materialises one BIFF worksheet, keeping row positions intact.
 func xlsSheetRows(s *xls.WorkSheet) (grid [][]string) {
-	defer func() {
-		if r := recover(); r != nil {
-			// keep whatever rows were collected before panic
-		}
-	}()
+	// A malformed sheet can panic inside the BIFF reader; keep whatever rows
+	// were collected before it did.
+	defer func() { _ = recover() }()
 	width := xlsSheetWidth(s)
 	grid = make([][]string, 0, int(s.MaxRow)+1)
 	for i := 0; i <= int(s.MaxRow); i++ {

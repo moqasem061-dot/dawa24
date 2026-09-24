@@ -12,10 +12,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockAdminWarehouseRepo struct {
@@ -134,7 +134,7 @@ func TestAdminWarehouseCreateSubmit_Validation(t *testing.T) {
 		"organization_id": {""},
 		"name":            {""},
 	}
-	req := httptest.NewRequest("POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 
@@ -163,7 +163,7 @@ func TestAdminWarehouseCreateSubmit_WithExplicitDetails(t *testing.T) {
 		"longitude":       {"31.3000"},
 		"is_active":       {"1"},
 	}
-	req := httptest.NewRequest("POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 
@@ -215,7 +215,7 @@ func TestAdminWarehouseCreateSubmit_BranchFallbackAndAutoCode(t *testing.T) {
 		"longitude":       {""}, // empty: should fallback to branch
 		"is_active":       {"1"},
 	}
-	req := httptest.NewRequest("POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/warehouses/new", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 
@@ -278,7 +278,7 @@ func TestAdminWarehouseEditSubmit_SuccessAndOrgImmutability(t *testing.T) {
 		"is_active":       {"1"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/warehouses/5/edit", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/warehouses/5/edit", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "5")
@@ -320,7 +320,7 @@ func TestAdminWarehouseToggleSubmit(t *testing.T) {
 	}
 
 	form := url.Values{"active": {"1"}}
-	req := httptest.NewRequest("POST", "/admin/warehouses/8/toggle", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/warehouses/8/toggle", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("id", "8")
@@ -340,7 +340,7 @@ func TestAdminWarehouseToggleSubmit(t *testing.T) {
 func TestAdminWarehousePage_SearchableOrgAndBranchesRender(t *testing.T) {
 	handler, _, _ := setupAdminWarehouseTestHandler()
 
-	req := httptest.NewRequest("GET", "/admin/warehouses", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/warehouses", nil)
 	rr := httptest.NewRecorder()
 
 	handler.AdminWarehousesPage(rr, req)
@@ -360,4 +360,3 @@ func TestAdminWarehousePage_SearchableOrgAndBranchesRender(t *testing.T) {
 		t.Error("expected branchSelect ref for dynamic options")
 	}
 }
-

@@ -12,10 +12,10 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/modules/ingest"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/media"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
 )
 
 type catalogImageTarget struct {
@@ -313,20 +313,6 @@ func (h *UIHandler) BackfillMissingProductImages(ctx context.Context, limit int)
 		h.downloadImportedImages(targets)
 	}
 	return len(targets), nil
-}
-
-// watermarkImportedImages looks up committable rows from the session that provided
-// an external image URL, downloads each image, applies the watermark, saves it
-// to upload storage, and updates the product catalog record.
-func (h *UIHandler) watermarkImportedImages(sessionID int64) {
-	if h.catSvc == nil || sessionID <= 0 {
-		return
-	}
-	sysCtx := database.AsSystem(context.Background())
-	targets := h.extractCommittableImageTargets(sysCtx, sessionID)
-	if len(targets) > 0 {
-		h.downloadImportedImages(targets)
-	}
 }
 
 // TriggerPostImportImageDownloads ensures any imported products with remote image URLs

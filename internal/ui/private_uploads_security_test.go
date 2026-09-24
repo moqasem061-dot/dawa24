@@ -2,14 +2,15 @@ package ui_test
 
 import (
 	"bytes"
+	"context"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -30,7 +31,7 @@ func TestRegisterUploadRoutes_BlocksPrivateDocumentCategories(t *testing.T) {
 
 	for _, path := range privatePaths {
 		t.Run("private_"+path, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
 			rec := httptest.NewRecorder()
 			r.ServeHTTP(rec, req)
 
@@ -50,7 +51,7 @@ func TestRegisterUploadRoutes_BlocksPrivateDocumentCategories(t *testing.T) {
 
 	for _, path := range publicPaths {
 		t.Run("public_"+path, func(t *testing.T) {
-			req := httptest.NewRequest(http.MethodGet, path, nil)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, path, nil)
 			rec := httptest.NewRecorder()
 			r.ServeHTTP(rec, req)
 
@@ -60,7 +61,7 @@ func TestRegisterUploadRoutes_BlocksPrivateDocumentCategories(t *testing.T) {
 
 	// Path traversal attempts must be rejected with 403
 	t.Run("path_traversal", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/uploads/..%2F..%2Fetc%2Fpasswd", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/uploads/..%2F..%2Fetc%2Fpasswd", nil)
 		rec := httptest.NewRecorder()
 		r.ServeHTTP(rec, req)
 
@@ -101,7 +102,7 @@ func TestUploadAPISubmit_RejectsMaliciousPayloads(t *testing.T) {
 			assert.NoError(t, err)
 			assert.NoError(t, mw.Close())
 
-			req := httptest.NewRequest(http.MethodPost, "/api/v1/upload?category="+tc.category, &body)
+			req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/upload?category="+tc.category, &body)
 			req.Header.Set("Content-Type", mw.FormDataContentType())
 			req = req.WithContext(authctx.WithActor(req.Context(), authctx.Actor{UserID: 1, OrgID: 1}))
 

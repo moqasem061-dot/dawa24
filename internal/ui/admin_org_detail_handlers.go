@@ -10,14 +10,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminOrganizationDetailPage renders the deep 360° profile overview for an organization.
@@ -43,9 +43,21 @@ func (h *UIHandler) AdminOrganizationDetailPage(w http.ResponseWriter, r *http.R
 	var recentOrders []*commerce.Order
 
 	if h.orgSvc != nil {
-		organization, _ = h.orgSvc.GetOrganization(sysCtx, orgID)
-		branches, _ = h.orgSvc.ListBranches(sysCtx, orgID)
-		employees, _ = h.orgSvc.ListEmployees(sysCtx, orgID)
+		if loaded, err := h.orgSvc.GetOrganization(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.GetOrganization", err)
+		} else {
+			organization = loaded
+		}
+		if loaded, err := h.orgSvc.ListBranches(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
+			branches = loaded
+		}
+		if loaded, err := h.orgSvc.ListEmployees(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListEmployees", err)
+		} else {
+			employees = loaded
+		}
 	}
 
 	if organization == nil {
@@ -54,19 +66,37 @@ func (h *UIHandler) AdminOrganizationDetailPage(w http.ResponseWriter, r *http.R
 	}
 
 	if h.attSvc != nil {
-		docs, _ = h.attSvc.ListByOrganization(sysCtx, orgID)
+		if loaded, err := h.attSvc.ListByOrganization(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "attSvc.ListByOrganization", err)
+		} else {
+			docs = loaded
+		}
 	}
 
 	if h.billSvc != nil && organization.OwnerID > 0 {
-		wallet, _ = h.billSvc.GetWallet(sysCtx, organization.OwnerID, "EGP")
-		if wallet != nil {
-			recentTxs, _ = h.billSvc.ListWalletTransactions(sysCtx, wallet.ID, 5, 0)
+		if loaded, err := h.billSvc.GetWallet(sysCtx, organization.OwnerID, "EGP"); err != nil {
+			h.logLoadErr(ctx, "billSvc.GetWallet", err)
+		} else {
+			wallet = loaded
 		}
-		recentDeposits, _ = h.billSvc.ListUserDeposits(sysCtx, organization.OwnerID, 5, 0)
+		if wallet != nil {
+			if loaded, err := h.billSvc.ListWalletTransactions(sysCtx, wallet.ID, 5, 0); err != nil {
+				h.logLoadErr(ctx, "billSvc.ListWalletTransactions", err)
+			} else {
+				recentTxs = loaded
+			}
+		}
+		if loaded, err := h.billSvc.ListUserDeposits(sysCtx, organization.OwnerID, 5, 0); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListUserDeposits", err)
+		} else {
+			recentDeposits = loaded
+		}
 	}
 
 	if h.commSvc != nil {
-		if ords, err := h.commSvc.AdminSearchOrders(sysCtx, "", 20, 0); err == nil {
+		if ords, err := h.commSvc.AdminSearchOrders(sysCtx, "", 20, 0); err != nil {
+			h.logLoadErr(ctx, "commSvc.AdminSearchOrders", err)
+		} else {
 			for _, o := range ords {
 				if o != nil && o.OrganizationID != nil && *o.OrganizationID == orgID {
 					ordersCount++
@@ -84,7 +114,9 @@ func (h *UIHandler) AdminOrganizationDetailPage(w http.ResponseWriter, r *http.R
 	maxSessions := 3
 	maxDevices := 3
 	if h.idSvc != nil {
-		if s, d, p, err := h.idSvc.GetOrgPlanLimits(sysCtx, orgID); err == nil {
+		if s, d, p, err := h.idSvc.GetOrgPlanLimits(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "idSvc.GetOrgPlanLimits", err)
+		} else {
 			maxSessions = s
 			maxDevices = d
 			planName = p
@@ -102,7 +134,9 @@ func (h *UIHandler) AdminOrganizationDetailPage(w http.ResponseWriter, r *http.R
 
 	activeSessionsCount := 0
 	if h.idSvc != nil {
-		if orgSessions, err := h.idSvc.ListOrgSessions(sysCtx, orgID); err == nil {
+		if orgSessions, err := h.idSvc.ListOrgSessions(sysCtx, orgID); err != nil {
+			h.logLoadErr(ctx, "idSvc.ListOrgSessions", err)
+		} else {
 			activeSessionsCount = len(orgSessions)
 		}
 	}

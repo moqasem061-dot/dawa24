@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
 
 func (mockCatalogRepoStub) ListAllSavingProductsAdmin(context.Context, *int64, *int64, string, string, int, int) ([]*catalog.SavingProductAdminView, *catalog.SavingProductAdminStats, error) {
@@ -26,10 +26,14 @@ func (mockCatalogRepoStub) BatchUpsertSavingProducts(context.Context, int64, *in
 func (mockCatalogRepoStub) ListAllMasterProductsForMatching(context.Context) ([]*catalog.CatalogMatchSource, error) {
 	return nil, nil
 }
-func (mockCatalogRepoStub) DeleteAllVariantsByOrg(context.Context, int64) (int64, error)   { return 0, nil }
-func (mockCatalogRepoStub) ActivateAllVariantsByOrg(context.Context, int64) (int64, error) { return 0, nil }
-func (mockCatalogRepoStub) DeleteAllProducts(context.Context) (int64, error)               { return 0, nil }
-func (mockCatalogRepoStub) DeleteAllBrands(context.Context) (int64, error)                 { return 0, nil }
+func (mockCatalogRepoStub) DeleteAllVariantsByOrg(context.Context, int64) (int64, error) {
+	return 0, nil
+}
+func (mockCatalogRepoStub) ActivateAllVariantsByOrg(context.Context, int64) (int64, error) {
+	return 0, nil
+}
+func (mockCatalogRepoStub) DeleteAllProducts(context.Context) (int64, error) { return 0, nil }
+func (mockCatalogRepoStub) DeleteAllBrands(context.Context) (int64, error)   { return 0, nil }
 func (mockCatalogRepoStub) GetProductBySKU(context.Context, string) (*catalog.Product, error) {
 	return nil, nil
 }

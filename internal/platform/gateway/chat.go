@@ -274,12 +274,8 @@ func buildWireTools(tools []ToolSpec) []wireTool {
 	out := make([]wireTool, 0, len(tools))
 	for _, t := range tools {
 		out = append(out, wireTool{
-			Type: "function",
-			Function: wireToolFunc{
-				Name:        t.Name,
-				Description: t.Description,
-				Parameters:  t.Parameters,
-			},
+			Type:     "function",
+			Function: wireToolFunc(t),
 		})
 	}
 	return out

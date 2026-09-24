@@ -9,9 +9,9 @@ import (
 	"testing"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/muhiya/dawa24-store/internal/modules/identity"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestAdminUserPasswordSubmit_Success(t *testing.T) {
@@ -32,7 +32,7 @@ func TestAdminUserPasswordSubmit_Success(t *testing.T) {
 		"redirect":         {"/admin/users"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rctx := chi.NewRouteContext()
@@ -75,7 +75,7 @@ func TestAdminUserPasswordSubmit_WeakPassword(t *testing.T) {
 		"redirect":         {"/admin/users"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rctx := chi.NewRouteContext()
@@ -118,7 +118,7 @@ func TestAdminUserPasswordSubmit_Mismatch(t *testing.T) {
 		"redirect":         {"/admin/users"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/42/password", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rctx := chi.NewRouteContext()
@@ -163,7 +163,7 @@ func TestAdminUserPasswordSubmit_FallbackUserID(t *testing.T) {
 		"redirect":         {"/admin/users"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/users/password", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/password", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	actor := authctx.Actor{
@@ -206,7 +206,7 @@ func TestAdminUserEditSubmit_WithPassword(t *testing.T) {
 		"redirect":         {"/admin/users"},
 	}
 
-	req := httptest.NewRequest("POST", "/admin/users/42/edit", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), "POST", "/admin/users/42/edit", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	rctx := chi.NewRouteContext()

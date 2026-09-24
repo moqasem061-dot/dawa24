@@ -3,7 +3,7 @@ package smartorder
 import (
 	"sort"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Supplier selection: strict priority within a tolerance band.

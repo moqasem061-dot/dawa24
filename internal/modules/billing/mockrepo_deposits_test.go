@@ -3,8 +3,8 @@ package billing
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 func (m *mockBillingRepo) UpdatePaymentMethod(_ context.Context, pm *UserPaymentMethod) error {
@@ -184,4 +184,3 @@ func (m *mockBillingRepo) GetVendorPaymentStats(_ context.Context, _ int64) (*Ve
 func (m *mockBillingRepo) RecordInvoicePayment(_ context.Context, req RecordInvoicePaymentRequest) (*Payment, error) {
 	return &Payment{ID: 1, Amount: req.Amount, Method: req.Method, Status: "completed"}, nil
 }
-

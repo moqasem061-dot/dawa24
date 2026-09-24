@@ -3,13 +3,13 @@
 .env
 .env.*
 !.env.example
+!deploy/hostinger/.env.production.example
 
 # Build output
 /bin/
 /tmp/
 *.exe
-dawa24-store
-dawa24-worker
+/dawa24
 
 # Local infrastructure state
 /.data/
@@ -36,3 +36,11 @@ coverage.html
 # Uploaded files served at runtime. These are user data, not source; the
 # suite used to write into the tracked tree and a run looked like a commit.
 /internal/ui/data/uploads/
+
+# Local test inputs and tool caches. Spreadsheets used for manual import tests
+# belong outside the repository (test/corpus holds the ones the suite uses).
+/*.xlsx
+/*.xls
+/*.csv
+.specify/extensions/.cache/
+.playwright-mcp/

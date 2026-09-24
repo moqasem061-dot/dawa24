@@ -1,6 +1,6 @@
 package authctx
 
-import "github.com/muhiya/dawa24-store/internal/platform/rbac"
+import "github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 
 // ApplyGrant overlays a freshly resolved grant onto an actor.
 //

@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Service is the use-case layer for smart ordering.
@@ -232,9 +232,11 @@ func (s *Service) SetQuantity(ctx context.Context, orgID, lineID int64, qty floa
 	}
 	if sel, err := s.repo.GetSelection(ctx, orgID, lineID); err == nil && sel != nil {
 		if cand, err := s.repo.GetCandidate(ctx, orgID, sel.CandidateID); err == nil && cand != nil {
-			if net, err := LineNet(cand.NetUnitPrice, qty); err == nil {
+			if net, err := LineNet(cand.NetUnitPrice, qty); err == nil { // nolint:errswallow: money arithmetic fails only on overflow; the stored line net stands
 				sel.LineNet = net
-				_ = s.repo.UpsertSelections(ctx, []*Selection{sel})
+				if err := s.repo.UpsertSelections(ctx, []*Selection{sel}); err != nil {
+					return fmt.Errorf("update selection line net: %w", err)
+				}
 			}
 		}
 	}

@@ -1,7 +1,9 @@
 package ui_test
 
 import (
+	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -9,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/telegramgateway"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestSendTelegramOTP(t *testing.T) {
@@ -18,7 +20,7 @@ func TestSendTelegramOTP(t *testing.T) {
 	h.SetSessionSecret("test_session_secret_with_32_bytes_len!")
 
 	// 1. Invalid phone number
-	req := httptest.NewRequest(http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=invalid"))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=invalid"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 	h.SendTelegramOTP(rr, req)
@@ -36,7 +38,7 @@ func TestSendTelegramOTP(t *testing.T) {
 	}
 
 	// 2. Valid Egyptian phone number
-	req = httptest.NewRequest(http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01012345678"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01012345678"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.SendTelegramOTP(rr, req)
@@ -61,7 +63,7 @@ func TestSendTelegramOTP(t *testing.T) {
 	}
 
 	// 3. Immediate re-send (should trigger cooldown 429)
-	req = httptest.NewRequest(http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01012345678"))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01012345678"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.SendTelegramOTP(rr, req)
@@ -77,7 +79,7 @@ func TestVerifyTelegramOTP(t *testing.T) {
 	h.SetSessionSecret(secret)
 
 	// Step 1: Send OTP
-	sendReq := httptest.NewRequest(http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01198765432"))
+	sendReq := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/send-otp", strings.NewReader("phone=01198765432"))
 	sendReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	sendRR := httptest.NewRecorder()
 	h.SendTelegramOTP(sendRR, sendReq)
@@ -92,7 +94,7 @@ func TestVerifyTelegramOTP(t *testing.T) {
 		"request_id": {reqID},
 		"code":       {"000000"},
 	}
-	verifyReq := httptest.NewRequest(http.MethodPost, "/auth/telegram/verify-otp", strings.NewReader(wrongData.Encode()))
+	verifyReq := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/verify-otp", strings.NewReader(wrongData.Encode()))
 	verifyReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	verifyRR := httptest.NewRecorder()
 	h.VerifyTelegramOTP(verifyRR, verifyReq)
@@ -107,7 +109,7 @@ func TestVerifyTelegramOTP(t *testing.T) {
 		"request_id": {reqID},
 		"code":       {"123456"},
 	}
-	verifyReq = httptest.NewRequest(http.MethodPost, "/auth/telegram/verify-otp", strings.NewReader(correctData.Encode()))
+	verifyReq = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/telegram/verify-otp", strings.NewReader(correctData.Encode()))
 	verifyReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	verifyRR = httptest.NewRecorder()
 	h.VerifyTelegramOTP(verifyRR, verifyReq)
@@ -136,7 +138,7 @@ func TestVerifyTelegramOTP(t *testing.T) {
 
 	// Step 5: Verify anti-tamper check (token for phone A used with phone B)
 	valid, err = telegramgateway.VerifyPhoneToken(token, "+201011112222", secret)
-	if valid || err != telegramgateway.ErrTokenPhoneMismatch {
+	if valid || !errors.Is(err, telegramgateway.ErrTokenPhoneMismatch) {
 		t.Fatalf("Anti-tamper check failed: valid=%v, err=%v", valid, err)
 	}
 }
@@ -156,7 +158,7 @@ func TestRegisterSubmit_PhoneVerificationRequired(t *testing.T) {
 		"account_type": {"customer"},
 	}
 
-	req := httptest.NewRequest(http.MethodPost, "/auth/register", strings.NewReader(formData.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/register", strings.NewReader(formData.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr := httptest.NewRecorder()
 	h.RegisterSubmit(rr, req)
@@ -177,7 +179,7 @@ func TestRegisterSubmit_PhoneVerificationRequired(t *testing.T) {
 	}
 
 	formData.Set("verified_phone_token", diffToken)
-	req = httptest.NewRequest(http.MethodPost, "/auth/register", strings.NewReader(formData.Encode()))
+	req = httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/auth/register", strings.NewReader(formData.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	rr = httptest.NewRecorder()
 	h.RegisterSubmit(rr, req)

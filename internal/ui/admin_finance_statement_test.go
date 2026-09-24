@@ -11,10 +11,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 func TestAdminFinanceStatementAndTabs(t *testing.T) {
@@ -68,7 +68,7 @@ func TestAdminFinanceStatementAndTabs(t *testing.T) {
 		invIdx := strings.Index(navBody, "tab=invoices")
 		payIdx := strings.Index(navBody, "tab=payments")
 
-		if !(wIdx < txIdx && txIdx < depIdx && depIdx < wthIdx && wthIdx < invIdx && invIdx < payIdx) {
+		if wIdx >= txIdx || txIdx >= depIdx || depIdx >= wthIdx || wthIdx >= invIdx || invIdx >= payIdx {
 			t.Errorf("expected tabs order: wallets, transactions, deposits, withdrawals, invoices, payments; got indices: %d, %d, %d, %d, %d, %d",
 				wIdx, txIdx, depIdx, wthIdx, invIdx, payIdx)
 		}

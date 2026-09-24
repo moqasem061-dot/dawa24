@@ -9,10 +9,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/inventory"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // VendorWarehouseStockAdjustSubmit adjusts a stock level directly from warehouse detail page.
@@ -45,7 +45,8 @@ func (h *UIHandler) VendorWarehouseStockAdjustSubmit(w http.ResponseWriter, r *h
 	if h.invSvc != nil {
 		if newQtyStr := strings.TrimSpace(r.PostFormValue("new_quantity")); newQtyStr != "" {
 			if newQty, err := strconv.Atoi(newQtyStr); err == nil && newQty >= 0 {
-				stocks, _ := h.invSvc.ListStocksByWarehouse(ctx, whID)
+				stocks, loadErr := h.invSvc.ListStocksByWarehouse(ctx, whID)
+				h.logLoadErr(ctx, "invSvc.ListStocksByWarehouse", loadErr)
 				var currentStock *inventory.Stock
 				for _, st := range stocks {
 					if st.ID == stockID {
@@ -129,12 +130,12 @@ func (h *UIHandler) VendorWarehouseCreateSubmit(w http.ResponseWriter, r *http.R
 
 	var lat, lng *float64
 	if latStr := r.PostFormValue("latitude"); latStr != "" {
-		if v, err := strconv.ParseFloat(latStr, 64); err == nil {
+		if v, err := strconv.ParseFloat(latStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lat = &v
 		}
 	}
 	if lngStr := r.PostFormValue("longitude"); lngStr != "" {
-		if v, err := strconv.ParseFloat(lngStr, 64); err == nil {
+		if v, err := strconv.ParseFloat(lngStr, 64); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			lng = &v
 		}
 	}
@@ -204,7 +205,8 @@ func (h *UIHandler) VendorWarehouseUpdateSubmit(w http.ResponseWriter, r *http.R
 
 	var wh *inventory.Warehouse
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(ctx)
+		whs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, item := range whs {
 			if item.ID == whID && item.OrganizationID == actor.OrganizationID {
 				wh = item
@@ -266,7 +268,8 @@ func (h *UIHandler) VendorWarehouseToggleSubmit(w http.ResponseWriter, r *http.R
 
 	var wh *inventory.Warehouse
 	if h.invSvc != nil {
-		whs, _ := h.invSvc.ListWarehouses(ctx)
+		whs, loadErr := h.invSvc.ListWarehouses(ctx)
+		h.logLoadErr(ctx, "invSvc.ListWarehouses", loadErr)
 		for _, item := range whs {
 			if item.ID == whID && item.OrganizationID == actor.OrganizationID {
 				wh = item
@@ -283,7 +286,9 @@ func (h *UIHandler) VendorWarehouseToggleSubmit(w http.ResponseWriter, r *http.R
 	wh.IsActive = !wh.IsActive
 	if h.invSvc != nil {
 		ctx = database.WithTenant(ctx, actor.OrganizationID)
-		_, _ = h.invSvc.UpdateWarehouse(ctx, wh.ID, wh)
+		if _, err := h.invSvc.UpdateWarehouse(ctx, wh.ID, wh); err != nil {
+			h.logLoadErr(ctx, "invSvc.UpdateWarehouse", err)
+		}
 	}
 
 	msg := i18n.T(langOf(r), "vendor.warehouse.deactivated")

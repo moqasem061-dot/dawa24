@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // "مستودعات المشرفين تحت إدارتي" — a main moderator's view of their team.
@@ -79,7 +79,9 @@ func (h *UIHandler) AdminTeamTempWarehousesPage(w http.ResponseWriter, r *http.R
 		data.NoticeMsg = strings.TrimSpace(r.URL.Query().Get("msg"))
 	}
 	if h.idSvc != nil {
-		if mods, err := h.idSvc.ListModerators(database.AsSystem(ctx)); err == nil {
+		if mods, err := h.idSvc.ListModerators(database.AsSystem(ctx)); err != nil {
+			h.logLoadErr(ctx, "idSvc.ListModerators", err)
+		} else {
 			for _, m := range mods {
 				if m != nil && containsID(team, m.UserID) {
 					data.TeamMembers = append(data.TeamMembers, pages.TeamModerator{

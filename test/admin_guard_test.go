@@ -127,7 +127,7 @@ func TestTenantScopedMutationsAreGuarded(t *testing.T) {
 			if i+1 < len(locs) {
 				end = locs[i+1][0]
 			}
-			if !strings.Contains(text[loc[0]:end], "SameOrgOrForbidden") {
+			if !guarded(text[loc[0]:end]) {
 				missing = append(missing, e.Name()+": "+name)
 			}
 		}
@@ -139,8 +139,20 @@ func TestTenantScopedMutationsAreGuarded(t *testing.T) {
 		}
 	}
 	for _, m := range missing {
-		t.Errorf("%s takes an organization id from the URL without authctx.SameOrgOrForbidden", m)
+		t.Errorf("%s takes an organization id from the URL without a tenant guard", m)
 	}
+}
+
+// guarded reports whether a handler body checks that the caller may act on the
+// organization in its URL. org/http has three forms, all of which compare the
+// URL id to the caller's own organization or require a staff permission:
+// authctx.SameOrgOrForbidden, the package's orgAccess helper (same org AND the
+// action's permission), and an explicit owner-or-staff check.
+func guarded(body string) bool {
+	return strings.Contains(body, "SameOrgOrForbidden") ||
+		strings.Contains(body, "orgAccess(") ||
+		(strings.Contains(body, "a.OrganizationID == id") && strings.Contains(body, "a.IsStaff")) ||
+		strings.Contains(body, "!actor.IsStaff || !actor.Can(")
 }
 
 // TestAdminUIRoutesRequirePagePermission asserts that every admin HTML route

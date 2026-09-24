@@ -10,13 +10,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder"
-	"github.com/muhiya/dawa24-store/internal/modules/smartorder/pipeline"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder/pipeline"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // maxUploadBytes caps a direct upload.
@@ -43,7 +43,9 @@ func (h *UIHandler) SmartOrderNewPage(w http.ResponseWriter, r *http.Request) {
 
 	if h.orgSvc != nil {
 		branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
+		} else {
 			for _, b := range branches {
 				data.Branches = append(data.Branches, pages.SmartOrderBranch{
 					ID:     b.ID,
@@ -56,7 +58,9 @@ func (h *UIHandler) SmartOrderNewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.smartOrderSvc != nil {
-		if p, err := h.smartOrderSvc.Profile(ctx, actor.OrganizationID); err == nil {
+		if p, err := h.smartOrderSvc.Profile(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "smartOrderSvc.Profile", err)
+		} else {
 			data.Profile = p
 		}
 	}
@@ -142,7 +146,7 @@ func (h *UIHandler) SmartOrderCreateSubmit(w http.ResponseWriter, r *http.Reques
 
 	var budget *money.Amount
 	if s := strings.TrimSpace(r.FormValue("max_budget")); s != "" {
-		if amt, err := money.Parse(s); err == nil {
+		if amt, err := money.Parse(s); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			budget = &amt
 		}
 	}
@@ -281,7 +285,7 @@ func (h *UIHandler) SmartOrderMappingSubmit(w http.ResponseWriter, r *http.Reque
 		if v == "" {
 			continue
 		}
-		if col, err := strconv.Atoi(v); err == nil {
+		if col, err := strconv.Atoi(v); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			fields[col] = f.Key
 		}
 	}

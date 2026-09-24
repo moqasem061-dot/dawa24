@@ -123,7 +123,7 @@ func (c *HTTPClient) Transcribe(ctx context.Context, req TranscribeRequest) (str
 	res, err := c.http.Do(httpReq)
 	if err != nil {
 		c.breaker.failure()
-		return "", fmt.Errorf("%w: %v", ErrUnavailable, err)
+		return "", fmt.Errorf("%w: %w", ErrUnavailable, err)
 	}
 	defer res.Body.Close()
 

@@ -7,31 +7,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	platformadmin "github.com/muhiya/dawa24-store/internal/modules/platform_admin"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
-
-// renderCmsBlock renders a database-driven content page by block key.
-func (h *UIHandler) renderCmsBlock(w http.ResponseWriter, r *http.Request, key, fallbackTitle string) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	title, body := fallbackTitle, ""
-	if h.adminSvc != nil {
-		if b, err := h.adminSvc.GetContentBlockByKey(ctx, key); err == nil && b != nil && b.IsActive {
-			title = b.Title.Get(i18n.Lang(lang))
-			body = b.Body.Get(i18n.Lang(lang))
-		}
-	}
-
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.CmsPage(lang, dir, title, body).Render(ctx, w); err != nil {
-		h.log.ErrorContext(ctx, "render cms page", "key", key, "error", err)
-	}
-}
 
 // AboutPage renders the interactive About Us page with database-driven content.
 func (h *UIHandler) AboutPage(w http.ResponseWriter, r *http.Request) {
@@ -40,11 +21,15 @@ func (h *UIHandler) AboutPage(w http.ResponseWriter, r *http.Request) {
 
 	data := pages.AboutPageData{}
 	if h.adminSvc != nil {
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "about"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "about"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			data.HeroTitle = b.Title.Get(i18n.Lang(lang))
 			data.HeroSubtitle = b.Body.Get(i18n.Lang(lang))
 		}
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "about-hero"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "about-hero"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			if data.HeroTitle == "" {
 				data.HeroTitle = b.Title.Get(i18n.Lang(lang))
 			}
@@ -52,15 +37,21 @@ func (h *UIHandler) AboutPage(w http.ResponseWriter, r *http.Request) {
 				data.HeroSubtitle = b.Body.Get(i18n.Lang(lang))
 			}
 		}
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "about-vision"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "about-vision"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			data.VisionTitle = b.Title.Get(i18n.Lang(lang))
 			data.VisionText = b.Body.Get(i18n.Lang(lang))
 		}
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "about-mission"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "about-mission"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			data.MissionTitle = b.Title.Get(i18n.Lang(lang))
 			data.MissionText = b.Body.Get(i18n.Lang(lang))
 		}
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "about-banner"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "about-banner"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			data.BannerTitle = b.Title.Get(i18n.Lang(lang))
 			data.BannerText = b.Body.Get(i18n.Lang(lang))
 		}
@@ -83,7 +74,9 @@ func (h *UIHandler) FaqPage(w http.ResponseWriter, r *http.Request) {
 
 	customTitle, customSubtitle := "", ""
 	if h.adminSvc != nil {
-		if b, _ := h.adminSvc.GetContentBlockByKey(ctx, "faq"); b != nil && b.IsActive {
+		if b, loadErr := h.adminSvc.GetContentBlockByKey(ctx, "faq"); loadErr != nil {
+			h.logLoadErr(ctx, "adminSvc.GetContentBlockByKey", loadErr)
+		} else if b != nil && b.IsActive {
 			customTitle = b.Title.Get(i18n.Lang(lang))
 			customSubtitle = b.Body.Get(i18n.Lang(lang))
 		}
@@ -174,7 +167,11 @@ func (h *UIHandler) AdminContentPage(w http.ResponseWriter, r *http.Request) {
 	var blocks []*platformadmin.ContentBlock
 	var total int
 	if h.adminSvc != nil {
-		blocks, total, _ = h.adminSvc.ListContentBlocksWithTotal(database.AsSystem(ctx), limit, offset)
+		if loaded, loaded2, err := h.adminSvc.ListContentBlocksWithTotal(database.AsSystem(ctx), limit, offset); err != nil {
+			h.logLoadErr(ctx, "adminSvc.ListContentBlocksWithTotal", err)
+		} else {
+			blocks, total = loaded, loaded2
+		}
 	}
 
 	h.renderPage(ctx, w, "render admin content", pages.AdminContent(lang, dir, blocks, page, limit, total))

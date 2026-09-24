@@ -1,15 +1,16 @@
 package ui_test
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // خط سير التوصيل at the handler boundary.
@@ -148,7 +149,7 @@ func TestDeliveryRouteJSONRefusesAnAnonymousCaller(t *testing.T) {
 	h := deliveryHandler(&courierMockCommerceRepo{shipment: deliveryTestShipment()})
 
 	rr := httptest.NewRecorder()
-	h.VendorDeliveryRouteData(rr, httptest.NewRequest(http.MethodGet, "/vendor/delivery/route.json", nil))
+	h.VendorDeliveryRouteData(rr, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/delivery/route.json", nil))
 
 	if rr.Code != http.StatusUnauthorized {
 		t.Fatalf("expected 401 for a request with no actor, got %d", rr.Code)

@@ -6,8 +6,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // The offers behind one count on the benchmark table.
@@ -133,7 +133,7 @@ func (s *Service) BenchmarkRowOffers(
 		return out, nil
 	}
 
-	tolerance := int64(float64(net.Minor()) * equalTolerancePercent / 100)
+	tolerance := net.ApplyPercent(equalToleranceBPS).Minor()
 	seen := map[string]bool{}
 	for _, o := range p.Offers {
 		if file.SupplierName != "" && strings.EqualFold(strings.TrimSpace(o.SupplierName), strings.TrimSpace(file.SupplierName)) {

@@ -7,11 +7,11 @@ import (
 
 // OTPRateLimiter manages cooldowns and attempt counts for phone OTP operations.
 type OTPRateLimiter struct {
-	mu           sync.Mutex
-	cooldowns    map[string]time.Time // normalized phone -> cooldown expiry
-	hourlySends  map[string][]time.Time // normalized phone -> timestamps of sends
-	attempts     map[string]int       // requestID -> failed attempt count
-	lastCleaned  time.Time
+	mu          sync.Mutex
+	cooldowns   map[string]time.Time   // normalized phone -> cooldown expiry
+	hourlySends map[string][]time.Time // normalized phone -> timestamps of sends
+	attempts    map[string]int         // requestID -> failed attempt count
+	lastCleaned time.Time
 }
 
 // NewLimiter creates a new in-memory OTPRateLimiter.

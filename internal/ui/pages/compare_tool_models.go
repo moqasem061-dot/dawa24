@@ -3,17 +3,17 @@ package pages
 import (
 	"fmt"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
 // CompareToolView contains state and configuration for the 3-column compare tool workspace.
 type CompareToolView struct {
-	Lang            string
-	Dir             string
-	Files           []*compare.CompareFile
-	MaxAllowedFiles int
-	NoticeType      string
-	NoticeMsg       string
+	Lang                string
+	Dir                 string
+	Files               []*compare.CompareFile
+	MaxAllowedFiles     int
+	NoticeType          string
+	NoticeMsg           string
 	Audience            string // "admin" or ""
 	TargetOrgID         int64
 	TargetOrgName       string

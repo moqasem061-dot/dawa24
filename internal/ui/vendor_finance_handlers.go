@@ -7,16 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // parseDateParam keeps only valid YYYY-MM-DD values so a malformed query can
@@ -62,11 +60,15 @@ func (h *UIHandler) VendorPaymentsPage(w http.ResponseWriter, r *http.Request) {
 
 	if h.billSvc != nil {
 		s, err := h.billSvc.GetVendorPaymentStats(ctx, actor.OrganizationID)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "billSvc.GetVendorPaymentStats", err)
+		} else {
 			stats = s
 		}
 
-		if cOrgs, err := h.billSvc.ListVendorCustomerOrgs(ctx, actor.OrganizationID); err == nil {
+		if cOrgs, err := h.billSvc.ListVendorCustomerOrgs(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListVendorCustomerOrgs", err)
+		} else {
 			customerOrgs = cOrgs
 		}
 
@@ -82,15 +84,18 @@ func (h *UIHandler) VendorPaymentsPage(w http.ResponseWriter, r *http.Request) {
 			Offset:         offset,
 		}
 		pList, count, err := h.billSvc.ListDetailedPayments(ctx, filter)
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "billSvc.ListDetailedPayments", err)
+		} else {
 			payments = pList
 			total = count
 		}
 
-		invList, _, _ := h.billSvc.ListDetailedInvoices(ctx, billing.InvoiceFilter{
+		invList, _, loadErr := h.billSvc.ListDetailedInvoices(ctx, billing.InvoiceFilter{
 			OrganizationID: &actor.OrganizationID,
 			Limit:          100,
 		})
+		h.logLoadErr(ctx, "billSvc.ListDetailedInvoices", loadErr)
 		for _, inv := range invList {
 			if inv.Status != billing.InvoicePaid && inv.Status != billing.InvoiceCancelled {
 				openInvoices = append(openInvoices, inv)
@@ -230,7 +235,11 @@ func (h *UIHandler) VendorEarningsOrderPage(w http.ResponseWriter, r *http.Reque
 
 	var summary *commerce.VendorFinancialSummary
 	if h.commSvc != nil {
-		summary, _ = h.commSvc.GetVendorFinancialSummary(ctx, actor.OrganizationID, period, finFilter)
+		if loaded, err := h.commSvc.GetVendorFinancialSummary(ctx, actor.OrganizationID, period, finFilter); err != nil {
+			h.logLoadErr(ctx, "commSvc.GetVendorFinancialSummary", err)
+		} else {
+			summary = loaded
+		}
 	}
 	if summary == nil {
 		summary = &commerce.VendorFinancialSummary{
@@ -243,7 +252,9 @@ func (h *UIHandler) VendorEarningsOrderPage(w http.ResponseWriter, r *http.Reque
 
 	var customerOrgs []*billing.CustomerOrgSummary
 	if h.billSvc != nil {
-		if orgs, err := h.billSvc.ListVendorCustomerOrgs(ctx, actor.OrganizationID); err == nil {
+		if orgs, err := h.billSvc.ListVendorCustomerOrgs(ctx, actor.OrganizationID); err != nil {
+			h.logLoadErr(ctx, "billSvc.ListVendorCustomerOrgs", err)
+		} else {
 			customerOrgs = orgs
 		}
 	}
@@ -327,70 +338,4 @@ func (h *UIHandler) VendorEarningsOrderPage(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.renderPage(ctx, w, "render vendor earnings order", pages.VendorEarningsOrderPage(pageData))
-}
-
-func parseIntDefault(v string, def int) int {
-	if v == "" {
-		return def
-	}
-	n, err := strconv.Atoi(v)
-	if err != nil || n <= 0 {
-		return def
-	}
-	return n
-}
-
-// VendorEarningsOffersPage renders offers revenue and commissions for the vendor.
-func (h *UIHandler) VendorEarningsOffersPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	actor, ok := authctx.From(ctx)
-	if !ok || actor.OrganizationID <= 0 {
-		http.Redirect(w, r, "/auth/login?redirect=/vendor/earnings/offers", http.StatusSeeOther)
-		return
-	}
-
-	h.renderPage(ctx, w, "render vendor earnings offers", pages.VendorEarningsOffersPage(money.Zero, lang, dir))
-}
-
-// VendorOfferOrdersPage renders offer-based orders fulfilled by the vendor.
-func (h *UIHandler) VendorOfferOrdersPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	actor, ok := authctx.From(ctx)
-	if !ok || actor.OrganizationID <= 0 {
-		http.Redirect(w, r, "/auth/login?redirect=/vendor/orders/offers", http.StatusSeeOther)
-		return
-	}
-
-	limit := pagination.RowsPerPage(r)
-	page := pagination.PageNumber(r)
-	offset := (page - 1) * limit
-
-	var shipments []*commerce.OrderShipment
-	var total int
-	if h.commSvc != nil {
-		shipments, total, _ = h.commSvc.ListVendorShipmentsWithTotal(ctx, actor.OrganizationID, "", limit, offset)
-	}
-
-	h.renderPage(ctx, w, "render vendor offer orders", pages.VendorOfferOrdersPage(shipments, lang, dir, page, limit, total))
-}
-
-// VendorOfferOrderDetailPage renders single offer order details.
-func (h *UIHandler) VendorOfferOrderDetailPage(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	lang, dir := h.localeAndDir(r)
-
-	actor, ok := authctx.From(ctx)
-	if !ok || actor.OrganizationID <= 0 {
-		http.Redirect(w, r, "/auth/login", http.StatusSeeOther)
-		return
-	}
-
-	idStr := chi.URLParam(r, "id")
-	shipID, _ := strconv.ParseInt(idStr, 10, 64)
-
-	h.renderPage(ctx, w, "render vendor offer order detail", pages.VendorOfferOrderDetailPage(shipID, lang, dir))
 }

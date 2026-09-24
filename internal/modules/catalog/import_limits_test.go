@@ -5,8 +5,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestMaxImportBatch_EnvVar(t *testing.T) {
@@ -73,4 +73,3 @@ func TestBulkImportProducts_LimitEnforcedWhenConfigured(t *testing.T) {
 		_, _, _ = svc.BulkImportProducts(context.Background(), prods, catalog.BulkWriteOptions{})
 	}()
 }
-

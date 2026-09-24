@@ -10,11 +10,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func newTestUIHandler() *UIHandler {
@@ -41,7 +41,7 @@ func TestParseAndValidateVariantNew_MissingProductID(t *testing.T) {
 		"barcode":   {"6221234567890"},
 		"unit":      {"علبة"},
 	}
-	r := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_ = r.ParseForm()
 
@@ -85,7 +85,7 @@ func TestParseAndValidateVariantNew_MissingOrInvalidBranch(t *testing.T) {
 		"price":      {"100.00"},
 		"branch_id":  {""},
 	}
-	r := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_ = r.ParseForm()
 
@@ -99,7 +99,7 @@ func TestParseAndValidateVariantNew_MissingOrInvalidBranch(t *testing.T) {
 
 	// Foreign branch_id not belonging to vendor
 	formVals.Set("branch_id", "9999")
-	r2 := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
+	r2 := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
 	r2.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_ = r2.ParseForm()
 
@@ -199,7 +199,7 @@ func TestParseAndValidateVariantNew_PriceAndDiscountValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			r := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(tc.form.Encode()))
+			r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(tc.form.Encode()))
 			r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			_ = r.ParseForm()
 
@@ -238,7 +238,7 @@ func TestParseAndValidateVariantNew_SuccessAllFieldsMapped(t *testing.T) {
 		"is_negotiable":            {"true"},
 	}
 
-	r := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	_ = r.ParseForm()
 
@@ -319,7 +319,7 @@ func TestVendorVariantNewSubmit_HTMX_ValidationFailureReturns422(t *testing.T) {
 		"price":      {"50.00"},
 		"branch_id":  {"101"},
 	}
-	r := httptest.NewRequest(http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
+	r := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/variants/new", strings.NewReader(formVals.Encode()))
 	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Set("HX-Request", "true")
 

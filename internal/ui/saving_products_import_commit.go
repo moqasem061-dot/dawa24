@@ -4,8 +4,8 @@ import (
 	"context"
 	"encoding/json"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
 )
 
 // Committing a staged saving-products import.
@@ -25,7 +25,7 @@ func (h *UIHandler) commitSavingImportRun(
 ) (added int, updated int, err error) {
 	// 1. Try in-memory session first.
 	added, updated, err = globalSavingImportSessionStore.CommitSession(ctx, sessionID, orgID, userID, catSvc)
-	if err == nil {
+	if err == nil { // nolint:errswallow: err is returned to the caller; this only records success
 		if h.importRunRepo != nil {
 			if run, rErr := h.importRunRepo.GetRunByPublicID(ctx, sessionID, orgID); rErr == nil && run != nil {
 				_ = h.importRunRepo.TransitionState(ctx, run.ID, importrun.StateCommitted)

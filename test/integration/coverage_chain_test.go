@@ -7,11 +7,11 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	promoPostgres "github.com/muhiya/dawa24-store/internal/modules/promo/postgres"
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	workflowPostgres "github.com/muhiya/dawa24-store/internal/modules/workflow/postgres"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // TestCoverageChain_VisibilityRule verifies that vendor weekly coverage coordinates

@@ -9,11 +9,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	catalogHttp "github.com/muhiya/dawa24-store/internal/modules/catalog/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	catalogHttp "github.com/moqasem061-dot/dawa24/internal/modules/catalog/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 type stubRepo struct{ t *testing.T }
@@ -117,9 +117,18 @@ func (r stubRepo) CreateCategory(ctx context.Context, c *catalog.Category) error
 	r.fail("CreateCategory")
 	return nil
 }
-func (r stubRepo) GetCategoryByID(ctx context.Context, id int64) (*catalog.Category, error) { r.fail("GetCategoryByID"); return nil, nil }
-func (r stubRepo) UpdateCategory(ctx context.Context, c *catalog.Category) error { r.fail("UpdateCategory"); return nil }
-func (r stubRepo) DeleteCategory(ctx context.Context, id int64) error { r.fail("DeleteCategory"); return nil }
+func (r stubRepo) GetCategoryByID(ctx context.Context, id int64) (*catalog.Category, error) {
+	r.fail("GetCategoryByID")
+	return nil, nil
+}
+func (r stubRepo) UpdateCategory(ctx context.Context, c *catalog.Category) error {
+	r.fail("UpdateCategory")
+	return nil
+}
+func (r stubRepo) DeleteCategory(ctx context.Context, id int64) error {
+	r.fail("DeleteCategory")
+	return nil
+}
 func (r stubRepo) ListCategories(ctx context.Context) ([]*catalog.Category, error) {
 	r.fail("ListCategories")
 	return nil, nil
@@ -238,10 +247,14 @@ func (r stubRepo) ListAllSavingProductsAdmin(ctx context.Context, _ *int64, _ *i
 func (r stubRepo) ListAllMasterProductsForMatching(ctx context.Context) ([]*catalog.CatalogMatchSource, error) {
 	return nil, nil
 }
-func (r stubRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error)   { return 0, nil }
-func (r stubRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) { return 0, nil }
-func (r stubRepo) DeleteAllProducts(ctx context.Context) (int64, error)                     { return 0, nil }
-func (r stubRepo) DeleteAllBrands(ctx context.Context) (int64, error)                       { return 0, nil }
+func (r stubRepo) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
+	return 0, nil
+}
+func (r stubRepo) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) (int64, error) {
+	return 0, nil
+}
+func (r stubRepo) DeleteAllProducts(ctx context.Context) (int64, error) { return 0, nil }
+func (r stubRepo) DeleteAllBrands(ctx context.Context) (int64, error)   { return 0, nil }
 func (r stubRepo) DeleteAllSavingProducts(ctx context.Context, orgID int64) error {
 	return nil
 }
@@ -311,14 +324,14 @@ func (r stubRepo) ClearMatchDecisionsForOrg(ctx context.Context, orgID int64) er
 func (r stubRepo) SaveManualDecision(ctx context.Context, orgID, userID int64, rawName string, productID int64, reason string) error {
 	return nil
 }
-func (r stubRepo) IsDecisionMemoryEnabled(ctx context.Context) bool { return true }
+func (r stubRepo) IsDecisionMemoryEnabled(ctx context.Context) bool                 { return true }
 func (r stubRepo) SetDecisionMemoryEnabled(ctx context.Context, enabled bool) error { return nil }
 func (r stubRepo) ListCustomerMappings(ctx context.Context, orgID int64, search string, limit, offset int) ([]*catalog.CustomerMappingView, int, error) {
 	return nil, 0, nil
 }
 func (r stubRepo) DeleteCustomerMapping(ctx context.Context, orgID, id int64) error { return nil }
-func (r stubRepo) ClearCustomerMappings(ctx context.Context, orgID int64) error { return nil }
-func (r stubRepo) ListDosageForms(ctx context.Context) ([]string, error) { return nil, nil }
+func (r stubRepo) ClearCustomerMappings(ctx context.Context, orgID int64) error     { return nil }
+func (r stubRepo) ListDosageForms(ctx context.Context) ([]string, error)            { return nil, nil }
 
 func newTestRouter(t *testing.T) http.Handler {
 	t.Helper()
@@ -359,32 +372,4 @@ func newTestRouter(t *testing.T) http.Handler {
 	})
 	catalogHttp.NewHandler(svc, log).RegisterRoutes(r)
 	return r
-}
-
-var protectedRoutes = []struct{ method, path string }{
-	{http.MethodGet, "/api/v1/catalog/search"},
-	{http.MethodGet, "/api/v1/catalog/products/1"},
-	{http.MethodPut, "/api/v1/catalog/products/1"},
-	{http.MethodDelete, "/api/v1/catalog/products/1"},
-	{http.MethodPost, "/api/v1/catalog/products"},
-	{http.MethodGet, "/api/v1/catalog/products"},
-	{http.MethodPost, "/api/v1/catalog/products/bulk-status"},
-	{http.MethodPost, "/api/v1/catalog/products/1/variants"},
-	{http.MethodGet, "/api/v1/catalog/products/1/variants/1"},
-	{http.MethodPut, "/api/v1/catalog/products/1/variants/1"},
-	{http.MethodDelete, "/api/v1/catalog/products/1/variants/1"},
-	{http.MethodGet, "/api/v1/catalog/categories/1"},
-	{http.MethodPut, "/api/v1/catalog/categories/1"},
-	{http.MethodDelete, "/api/v1/catalog/categories/1"},
-	{http.MethodGet, "/api/v1/catalog/brands/1"},
-	{http.MethodPut, "/api/v1/catalog/brands/1"},
-	{http.MethodDelete, "/api/v1/catalog/brands/1"},
-	{http.MethodGet, "/api/v1/catalog/categories"},
-	{http.MethodPost, "/api/v1/catalog/categories"},
-	{http.MethodGet, "/api/v1/catalog/brands"},
-	{http.MethodPost, "/api/v1/catalog/brands"},
-	{http.MethodPost, "/api/v1/catalog/pricing/customer"},
-	{http.MethodGet, "/api/v1/catalog/pricing/customer"},
-	{http.MethodPost, "/api/v1/catalog/alerts"},
-	{http.MethodGet, "/api/v1/catalog/alerts"},
 }

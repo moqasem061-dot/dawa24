@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // fmtInt64 formats an int64 as a decimal string without importing fmt into domain.

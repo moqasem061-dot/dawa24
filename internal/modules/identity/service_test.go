@@ -2,12 +2,13 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 func TestServiceRegisterAndLogin(t *testing.T) {
@@ -59,7 +60,7 @@ func TestServiceRegisterAndLogin(t *testing.T) {
 		Email:    "pharmacist@dawa24.eg",
 		Password: "WrongPassword!",
 	})
-	if err != ErrInvalidCredentials {
+	if !errors.Is(err, ErrInvalidCredentials) {
 		t.Errorf("expected ErrInvalidCredentials on wrong password, got %v", err)
 	}
 

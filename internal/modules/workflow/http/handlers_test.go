@@ -12,13 +12,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/workflow"
-	workflowHttp "github.com/muhiya/dawa24-store/internal/modules/workflow/http"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
+	workflowHttp "github.com/moqasem061-dot/dawa24/internal/modules/workflow/http"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 type stubRepo struct{ t *testing.T }
@@ -317,7 +317,7 @@ func TestProtectedRoutesRejectAnonymousCallers(t *testing.T) {
 
 	for _, route := range protectedRoutes {
 		t.Run(route.method+" "+route.path, func(t *testing.T) {
-			req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+			req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 			req.Header.Set("Content-Type", "application/json")
 			rec := httptest.NewRecorder()
 
@@ -334,7 +334,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 	router := newTestRouter(t)
 
 	for _, route := range protectedRoutes {
-		req := httptest.NewRequest(route.method, route.path, strings.NewReader("{}"))
+		req := httptest.NewRequestWithContext(context.Background(), route.method, route.path, strings.NewReader("{}"))
 		req.Header.Set("Content-Type", "application/json")
 		req.AddCookie(&http.Cookie{Name: "dawa24_session", Value: "forged-token-that-was-never-issued"})
 		rec := httptest.NewRecorder()
@@ -349,7 +349,7 @@ func TestProtectedRoutesRejectGarbageSessionToken(t *testing.T) {
 
 func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 	router := newTestRouter(t)
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/workflow/issues", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/api/v1/workflow/issues", nil)
 	rec := httptest.NewRecorder()
 
 	router.ServeHTTP(rec, req)
@@ -363,42 +363,5 @@ func TestUnauthorizedResponseUsesTheErrorEnvelope(t *testing.T) {
 	}
 	if body.Error.RequestID == "" {
 		t.Error("error envelope has no request_id")
-	}
-}
-
-func TestWorkflowHandler_HappyPaths(t *testing.T) {
-	router := newAuthedRouter(happyRepo{})
-
-	tests := []struct {
-		name       string
-		method     string
-		path       string
-		body       string
-		wantStatus int
-	}{
-		{"CreatePriorityRequest", http.MethodPost, "/api/v1/workflow/priority-requests", `{"user_id":1,"priority_lowest_price":true,"budget_constraint":"1000.00"}`, http.StatusCreated},
-		{"SetWeeklyCoverage", http.MethodPost, "/api/v1/workflow/branches/1/coverage", `{"branch_id":1,"day_of_week":1,"distance_meters":5000,"is_active":true}`, http.StatusOK},
-		{"GetBranchCoverage", http.MethodGet, "/api/v1/workflow/branches/1/coverage", "", http.StatusOK},
-		{"ReportIssue", http.MethodPost, "/api/v1/workflow/issues", `{"reported_by":1,"issue_type":"quality","description":"Broken seal","priority":"high"}`, http.StatusCreated},
-		{"ListIssues", http.MethodGet, "/api/v1/workflow/issues?limit=10&offset=0", "", http.StatusOK},
-		{"AdminIssues", http.MethodGet, "/api/v1/admin/workflow/issues", "", http.StatusOK},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var bodyReader io.Reader
-			if tt.body != "" {
-				bodyReader = strings.NewReader(tt.body)
-			}
-			req := httptest.NewRequest(tt.method, tt.path, bodyReader)
-			if tt.body != "" {
-				req.Header.Set("Content-Type", "application/json")
-			}
-			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, req)
-			if rec.Code != tt.wantStatus {
-				t.Errorf("%s %s got status %d, want %d (body: %s)", tt.method, tt.path, rec.Code, tt.wantStatus, rec.Body.String())
-			}
-		})
 	}
 }

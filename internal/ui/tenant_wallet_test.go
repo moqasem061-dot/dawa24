@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
@@ -49,7 +49,7 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 	}()
 
 	// 2. Test GET /customer/wallet
-	cReq := httptest.NewRequest("GET", "/customer/wallet", nil)
+	cReq := httptest.NewRequestWithContext(context.Background(), "GET", "/customer/wallet", nil)
 	customerActor := authctx.Actor{
 		UserID:         userID,
 		OrganizationID: customerOrgID,
@@ -79,7 +79,7 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 		"instapay_handle": {"pharmacy@instapay"},
 		"is_default":      {"1"},
 	}
-	addReq := httptest.NewRequest("POST", "/customer/wallet/payment-methods", strings.NewReader(form.Encode()))
+	addReq := httptest.NewRequestWithContext(context.Background(), "POST", "/customer/wallet/payment-methods", strings.NewReader(form.Encode()))
 	addReq.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	addReq = addReq.WithContext(authctx.WithActor(addReq.Context(), customerActor))
 	addRec := httptest.NewRecorder()
@@ -106,7 +106,7 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 		_, _ = db.Pool().Exec(database.AsSystem(context.Background()), `DELETE FROM org.organizations WHERE id = $1`, vendorOrgID)
 	}()
 
-	vReq := httptest.NewRequest("GET", "/vendor/wallet", nil)
+	vReq := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/wallet", nil)
 	vendorActor := authctx.Actor{
 		UserID:         userID,
 		OrganizationID: vendorOrgID,
@@ -128,7 +128,7 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 	}
 
 	// 5. Test Generic /wallet 301 redirection
-	genReq := httptest.NewRequest("GET", "/wallet", nil)
+	genReq := httptest.NewRequestWithContext(context.Background(), "GET", "/wallet", nil)
 	genReq = genReq.WithContext(authctx.WithActor(genReq.Context(), vendorActor))
 	genRec := httptest.NewRecorder()
 	handler.ServeHTTP(genRec, genReq)

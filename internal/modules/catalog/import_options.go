@@ -5,7 +5,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/productmatch"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // What an administrator decides before a main-catalogue import runs.
@@ -126,7 +126,7 @@ func MaxImportBatch() int {
 		val = os.Getenv("MAX_IMPORT_ROWS")
 	}
 	if val != "" {
-		if n, err := strconv.Atoi(strings.TrimSpace(val)); err == nil {
+		if n, err := strconv.Atoi(strings.TrimSpace(val)); err == nil { // nolint:errswallow: an unparseable env value keeps the default
 			if n > 0 {
 				return n
 			}

@@ -59,7 +59,7 @@ func stripComments(src string) string {
 // be the first step back toward the tangle the module boundaries exist to
 // prevent.
 func TestSmartOrderImportsNoOtherModule(t *testing.T) {
-	const prefix = `"github.com/muhiya/dawa24-store/internal/modules/`
+	const prefix = `"github.com/moqasem061-dot/dawa24/internal/modules/`
 
 	walkGoFiles(t, filepath.Join("..", "smartorder"), func(path, src string) {
 		for _, line := range strings.Split(src, "\n") {
@@ -94,7 +94,7 @@ func TestSmartOrderImportsNoOtherModule(t *testing.T) {
 // So the assertion is targeted: no declaration binds a money-named identifier to
 // a float64.
 func TestMoneyIsNeverFloat(t *testing.T) {
-	moneyFloat := regexp.MustCompile(`(?i)(price|total|net|amount|subtotal|budget)[a-z]*\s+\*?float64`)
+	moneyFloat := regexp.MustCompile(`(?i)\b(price|total|net|amount|subtotal|budget)[a-z]*\s+\*?float64\b`)
 
 	walkGoFiles(t, filepath.Join("..", "smartorder"), func(path, src string) {
 		if strings.HasSuffix(path, "_test.go") {

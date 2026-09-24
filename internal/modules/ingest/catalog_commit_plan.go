@@ -70,8 +70,10 @@ func (s *Service) previewFor(ctx context.Context, session *Session) (CommitPlan,
 	if err != nil {
 		return plan, fmt.Errorf("preview staged rows: %w", err)
 	}
-	if _, held, err := s.imports.PendingRowIDs(ctx, session.ID, 1); err == nil {
+	if _, held, err := s.imports.PendingRowIDs(ctx, session.ID, 1); err == nil { // nolint:errswallow: the else branch logs it
 		plan.Held = held
+	} else {
+		s.log.WarnContext(ctx, "held-row count unavailable for commit plan", "import", session.PublicID, "error", err)
 	}
 
 	run, err := s.newCommitRun(ctx, session, settings)

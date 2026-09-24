@@ -3,7 +3,7 @@ package platformadmin
 import (
 	"context"
 
-	"github.com/muhiya/dawa24-store/internal/platform/reqcache"
+	"github.com/moqasem061-dot/dawa24/internal/platform/reqcache"
 )
 
 // setting reads a system setting once per request. The gateway key, the AI

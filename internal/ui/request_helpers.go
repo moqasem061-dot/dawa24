@@ -11,15 +11,15 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/errtrack"
-	"github.com/muhiya/dawa24-store/internal/platform/httpx"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/filesecurity"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/components"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/errtrack"
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // SiteSettingsMiddleware injects live SiteSettings from database into every request context.
@@ -28,7 +28,7 @@ func (h *UIHandler) SiteSettingsMiddleware(next http.Handler) http.Handler {
 }
 
 func (h *UIHandler) renderError(w http.ResponseWriter, r *http.Request, err error) {
-	if err == nil {
+	if err == nil { // nolint:errswallow: a nil guard on the parameter, not a discarded error
 		err = errors.New("internal server error")
 	}
 	ctx := r.Context()
@@ -87,7 +87,7 @@ func (h *UIHandler) renderError(w http.ResponseWriter, r *http.Request, err erro
 
 // safeMessage returns wording that may be shown to a user.
 func (h *UIHandler) safeMessage(err error, lang string) string {
-	if err == nil {
+	if err == nil { // nolint:errswallow: a nil guard on the parameter, not a discarded error
 		return ""
 	}
 	if strings.Contains(err.Error(), filesecurity.SecurityErrorMessage) {
@@ -194,7 +194,7 @@ func (h *UIHandler) redirectWithNotice(w http.ResponseWriter, r *http.Request, p
 	q := u.Query()
 
 	if ref := r.Referer(); ref != "" {
-		if refURL, err := url.Parse(ref); err == nil {
+		if refURL, err := url.Parse(ref); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			isSameHost := refURL.Host == "" ||
 				strings.EqualFold(refURL.Host, r.Host) ||
 				(r.Header.Get("X-Forwarded-Host") != "" && strings.EqualFold(refURL.Host, r.Header.Get("X-Forwarded-Host")))
@@ -314,19 +314,6 @@ func dirForLang(lang string) (string, string) {
 		return "en", "ltr"
 	}
 	return "ar", "rtl"
-}
-
-// acceptLanguage maps an Accept-Language header onto a supported language by
-// taking the first weighted entry, ignoring the rest. It is a best effort: a
-// browser sending "fr-CH, fr;q=0.9" simply gets Arabic.
-func acceptLanguage(header string) string {
-	for _, part := range strings.Split(header, ",") {
-		lang := strings.TrimSpace(strings.SplitN(part, ";", 2)[0])
-		if lang == "en" || lang == "ar" {
-			return lang
-		}
-	}
-	return ""
 }
 
 // redirectToSettingsTab permanently redirects a retired settings sub-page to

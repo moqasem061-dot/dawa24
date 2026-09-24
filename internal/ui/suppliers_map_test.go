@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestSuppliersMap_PinsRenderingAndInteraction(t *testing.T) {
@@ -20,25 +20,25 @@ func TestSuppliersMap_PinsRenderingAndInteraction(t *testing.T) {
 	riyadhAddr := "شارع العليا، riyadh"
 
 	branchCairo := &org.Branch{
-		ID:       101,
-		Name:     i18n.Text{i18n.AR: "فرع القاهرة", i18n.EN: "Cairo Branch"},
-		Address:  cairoAddr,
-		IsMain:   true,
-		Status:   "active",
+		ID:      101,
+		Name:    i18n.Text{i18n.AR: "فرع القاهرة", i18n.EN: "Cairo Branch"},
+		Address: cairoAddr,
+		IsMain:  true,
+		Status:  "active",
 	}
 	branchAswan := &org.Branch{
-		ID:       102,
-		Name:     i18n.Text{i18n.AR: "فرع أسوان", i18n.EN: "Aswan Branch"},
-		Address:  aswanAddr,
-		IsMain:   false,
-		Status:   "active",
+		ID:      102,
+		Name:    i18n.Text{i18n.AR: "فرع أسوان", i18n.EN: "Aswan Branch"},
+		Address: aswanAddr,
+		IsMain:  false,
+		Status:  "active",
 	}
 	branchRiyadh := &org.Branch{
-		ID:       103,
-		Name:     i18n.Text{i18n.AR: "فرع الرياض", i18n.EN: "Riyadh Branch"},
-		Address:  riyadhAddr,
-		IsMain:   false,
-		Status:   "active",
+		ID:      103,
+		Name:    i18n.Text{i18n.AR: "فرع الرياض", i18n.EN: "Riyadh Branch"},
+		Address: riyadhAddr,
+		IsMain:  false,
+		Status:  "active",
 	}
 
 	supplier := &pages.SupplierDirectoryItem{

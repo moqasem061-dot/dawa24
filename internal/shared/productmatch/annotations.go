@@ -34,7 +34,7 @@ package productmatch
 import (
 	"strings"
 
-	"github.com/muhiya/dawa24-store/internal/shared/sheet"
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // annotationStarters are the words that can begin a trade annotation.
@@ -54,7 +54,6 @@ var annotationStarters = map[string]bool{
 }
 
 // annotationFillers may appear inside an annotation but never begin one.
-//
 var annotationFillers = map[string]bool{
 	"م":     true,
 	"جديد":  true,

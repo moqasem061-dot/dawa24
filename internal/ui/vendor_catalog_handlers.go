@@ -10,11 +10,11 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // VendorCatalogSearchJSON returns JSON autocomplete list of general catalog products.
@@ -57,7 +57,9 @@ func (h *UIHandler) VendorCatalogSearchJSON(w http.ResponseWriter, r *http.Reque
 			Query: query,
 			Limit: 20,
 		})
-		if err == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.Search", err)
+		} else {
 			for _, p := range products {
 				label := p.Name.Get(i18n.AR)
 				if label == "" {
@@ -216,7 +218,7 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 
 	var expiryDate *time.Time
 	if expStr := strings.TrimSpace(r.FormValue("expiry_date")); expStr != "" {
-		if t, err := time.Parse("2006-01-02", expStr); err == nil {
+		if t, err := time.Parse("2006-01-02", expStr); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
 			expiryDate = &t
 		}
 	}

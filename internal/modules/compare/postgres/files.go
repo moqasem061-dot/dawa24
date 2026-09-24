@@ -3,15 +3,16 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/compare"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const fileColumns = `id, public_id, organization_id, user_id, supplier_name, original_filename, COALESCE(storage_key, ''), COALESCE(mime_type, ''), size_bytes, row_count, status, COALESCE(mapping_config, '{}'::jsonb), archived_at, COALESCE(archive_reason, ''), COALESCE(error_message, ''), is_temp_warehouse, COALESCE(visibility, 'private'), created_at, updated_at, deleted_at`
@@ -66,7 +67,7 @@ func (r *Repository) GetFileByID(ctx context.Context, id int64) (*compare.Compar
 		var err error
 		f, err = scanFile(tx.QueryRow(txCtx, query, id))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("compare file")
 			}
 			return err
@@ -83,7 +84,7 @@ func (r *Repository) GetFileByPublicID(ctx context.Context, publicID string) (*c
 		var err error
 		f, err = scanFile(tx.QueryRow(txCtx, query, publicID))
 		if err != nil {
-			if err == pgx.ErrNoRows {
+			if errors.Is(err, pgx.ErrNoRows) {
 				return apperr.NotFound("compare file")
 			}
 			return err
@@ -154,7 +155,6 @@ func (r *Repository) ListAllFiles(ctx context.Context, search string, status *co
 			q := "%" + strings.TrimSpace(search) + "%"
 			whereClauses = append(whereClauses, fmt.Sprintf("(supplier_name ILIKE $%d OR original_filename ILIKE $%d)", argIdx, argIdx))
 			args = append(args, q)
-			argIdx++
 		}
 
 		sql := `SELECT ` + fileColumns + ` FROM compare.files WHERE ` + strings.Join(whereClauses, " AND ") + ` ORDER BY created_at DESC;`

@@ -4,9 +4,9 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/shared/apperr"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // OrganizationType defines the classification of a tenant.
@@ -73,8 +73,8 @@ type Organization struct {
 	ApprovedBy         *int64             `json:"approved_by,omitempty"`
 	// The organisation's AI gateway credential. Never serialised: the JSON API
 	// returned it to any signed-in user, and a key is spendable by whoever has it.
-	AIVirtualKey string    `json:"-"`
-	AIUserID     string    `json:"-"`
+	AIVirtualKey string `json:"-"`
+	AIUserID     string `json:"-"`
 	// Extra temporary connected devices granted by platform administrators.
 	ExtraDevices          int        `json:"extra_devices"`
 	ExtraDevicesExpiresAt *time.Time `json:"extra_devices_expires_at,omitempty"`

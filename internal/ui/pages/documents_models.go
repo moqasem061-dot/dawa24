@@ -1,23 +1,9 @@
 package pages
 
 import (
-	"github.com/muhiya/dawa24-store/internal/modules/attachments"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
-
-// docTitlesAr is the UI-facing Arabic title per document type.
-var docTitlesAr = map[attachments.DocumentType]string{
-	attachments.DocCommercialRegister:  i18n.T("ar", "doc.type.commercial_register"),
-	attachments.DocTaxCard:             i18n.T("ar", "doc.type.tax_card"),
-	attachments.DocPharmacyLicense:     i18n.T("ar", "doc.type.pharmacy_license"),
-	attachments.DocPharmacistLicense:   i18n.T("ar", "doc.type.pharmacist_license"),
-	attachments.DocNationalID:          i18n.T("ar", "doc.type.national_id"),
-	attachments.DocPassport:            i18n.T("ar", "doc.type.passport"),
-	attachments.DocSyndicateCard:       i18n.T("ar", "doc.type.syndicate_card"),
-	attachments.DocAuthorizationLetter: i18n.T("ar", "doc.type.authorization_letter"),
-	attachments.DocBankCertificate:     i18n.T("ar", "doc.type.bank_certificate"),
-	attachments.DocOther:               i18n.T("ar", "doc.type.other"),
-}
 
 // DocRequirement is one entry of the document requirement table.
 type DocRequirement struct {

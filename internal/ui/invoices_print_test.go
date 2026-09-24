@@ -11,12 +11,12 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/billing"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 func TestInvoicePrintAndVendorInvoicesPages(t *testing.T) {
@@ -54,7 +54,7 @@ func TestInvoicePrintAndVendorInvoicesPages(t *testing.T) {
 	}
 
 	t.Run("Customer GET /invoices redirects to /orders", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/invoices", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/invoices", nil)
 		ctx := authctx.WithActor(context.Background(), *customerActor)
 		req = req.WithContext(ctx)
 		rec := httptest.NewRecorder()
@@ -70,7 +70,7 @@ func TestInvoicePrintAndVendorInvoicesPages(t *testing.T) {
 	})
 
 	t.Run("Vendor GET /invoices returns 200 OK", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/invoices", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/invoices", nil)
 		ctx := authctx.WithActor(context.Background(), *vendorActor)
 		req = req.WithContext(ctx)
 		rec := httptest.NewRecorder()
@@ -86,7 +86,7 @@ func TestInvoicePrintAndVendorInvoicesPages(t *testing.T) {
 	})
 
 	t.Run("Vendor GET /vendor/invoices returns 200 OK", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/vendor/invoices", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/vendor/invoices", nil)
 		ctx := authctx.WithActor(context.Background(), *vendorActor)
 		req = req.WithContext(ctx)
 		rec := httptest.NewRecorder()
@@ -98,7 +98,7 @@ func TestInvoicePrintAndVendorInvoicesPages(t *testing.T) {
 	})
 
 	t.Run("Admin GET /admin/finance?tab=invoices returns 200 OK", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/admin/finance?tab=invoices", nil)
+		req := httptest.NewRequestWithContext(context.Background(), "GET", "/admin/finance?tab=invoices", nil)
 		ctx := authctx.WithActor(context.Background(), authctx.Actor{
 			UserID:      1,
 			IsStaff:     true,

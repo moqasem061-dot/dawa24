@@ -7,8 +7,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // CustomerOrderLineOfferDetails returns the HTML modal partial containing the offer details
@@ -46,7 +46,7 @@ func (h *UIHandler) CustomerOrderLineOfferDetails(w http.ResponseWriter, r *http
 
 	lang := langOf(r)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = pages.CustomerOrderOfferModal(details, lang).Render(ctx, w)
+	h.renderPage(ctx, w, "render CustomerOrderOfferModal", pages.CustomerOrderOfferModal(details, lang))
 }
 
 // VendorOrderLineOfferDetails returns the HTML modal partial containing the offer details
@@ -84,5 +84,5 @@ func (h *UIHandler) VendorOrderLineOfferDetails(w http.ResponseWriter, r *http.R
 
 	lang := langOf(r)
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = pages.CustomerOrderOfferModal(details, lang).Render(ctx, w)
+	h.renderPage(ctx, w, "render CustomerOrderOfferModal", pages.CustomerOrderOfferModal(details, lang))
 }

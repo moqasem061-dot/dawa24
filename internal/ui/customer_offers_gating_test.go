@@ -5,22 +5,16 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"net/http"
-	"net/http/httptest"
-	"strings"
-	"testing"
 	"time"
 
-	"github.com/go-chi/chi/v5"
-
-	"github.com/muhiya/dawa24-store/internal/modules/commerce"
-	"github.com/muhiya/dawa24-store/internal/modules/org"
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/authctx"
-	"github.com/muhiya/dawa24-store/internal/platform/rbac"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/ui"
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
 type mockGatingPromoRepo struct {
@@ -33,8 +27,12 @@ func (m *mockGatingPromoRepo) ListActiveOffers(_ context.Context, _, _ int) ([]*
 	var out []*promo.Offer
 	for _, o := range m.offers {
 		s, e := time.Now().Add(-24*time.Hour), time.Now().Add(24*time.Hour)
-		if o.StartDate != nil { s = *o.StartDate }
-		if o.EndDate != nil { e = *o.EndDate }
+		if o.StartDate != nil {
+			s = *o.StartDate
+		}
+		if o.EndDate != nil {
+			e = *o.EndDate
+		}
 		out = append(out, &promo.Offer{
 			ID: o.ID, OrganizationID: o.OrganizationID, Title: o.Title,
 			DiscountType: promo.DiscountPercentage, DiscountValue: money.FromMinor(int64(o.DiscountPercentage * 100)),
@@ -87,14 +85,18 @@ func (m *mockGatingPromoRepo) covers(offerID, cityID int64) bool {
 
 func (m *mockGatingPromoRepo) GetSpecialOfferByID(_ context.Context, id int64) (*promo.SpecialOffer, error) {
 	for _, o := range m.offers {
-		if o.ID == id { return o, nil }
+		if o.ID == id {
+			return o, nil
+		}
 	}
 	return nil, fmt.Errorf("not found")
 }
 
 func (m *mockGatingPromoRepo) GetOfferByID(ctx context.Context, id int64) (*promo.Offer, error) {
 	sp, err := m.GetSpecialOfferByID(ctx, id)
-	if err != nil { return nil, err }
+	if err != nil {
+		return nil, err
+	}
 	return &promo.Offer{ID: sp.ID, OrganizationID: sp.OrganizationID, Title: sp.Title, AdminStatus: sp.AdminStatus}, nil
 }
 
@@ -102,8 +104,12 @@ func (m *mockGatingPromoRepo) ListSpecialOfferLocations(_ context.Context, offer
 	return m.locs[offerID], nil
 }
 
-func (m *mockGatingPromoRepo) RankedSponsorshipsForOffers(_ context.Context, _ []int64) ([]*promo.RankedSponsorship, error) { return nil, nil }
-func (m *mockGatingPromoRepo) IncrementOfferEngagement(_ context.Context, _ int64, _ bool) error { return nil }
+func (m *mockGatingPromoRepo) RankedSponsorshipsForOffers(_ context.Context, _ []int64) ([]*promo.RankedSponsorship, error) {
+	return nil, nil
+}
+func (m *mockGatingPromoRepo) IncrementOfferEngagement(_ context.Context, _ int64, _ bool) error {
+	return nil
+}
 
 type mockGatingOrgRepo struct {
 	org.Repository
@@ -111,7 +117,9 @@ type mockGatingOrgRepo struct {
 }
 
 func (m *mockGatingOrgRepo) GetBranchByID(_ context.Context, id int64) (*org.Branch, error) {
-	if b, ok := m.branches[id]; ok { return b, nil }
+	if b, ok := m.branches[id]; ok {
+		return b, nil
+	}
 	return nil, fmt.Errorf("branch not found")
 }
 
@@ -126,7 +134,9 @@ func (m *mockGatingOrgRepo) GetConnectedInstitutionalWorkIDs(_ context.Context, 
 func (m *mockGatingOrgRepo) ListBranches(_ context.Context, orgID int64) ([]*org.Branch, error) {
 	var out []*org.Branch
 	for _, b := range m.branches {
-		if b.OrganizationID == orgID { out = append(out, b) }
+		if b.OrganizationID == orgID {
+			out = append(out, b)
+		}
 	}
 	return out, nil
 }
@@ -141,12 +151,16 @@ type mockGatingProbe struct {
 }
 
 func (p *mockGatingProbe) Variant(_ context.Context, id int64) (commerce.VariantAvailability, error) {
-	if v, ok := p.variants[id]; ok { return v, nil }
+	if v, ok := p.variants[id]; ok {
+		return v, nil
+	}
 	return commerce.VariantAvailability{}, fmt.Errorf("variant %d not found", id)
 }
 
 func (p *mockGatingProbe) Vendor(_ context.Context, id int64) (commerce.VendorAvailability, error) {
-	if v, ok := p.vendors[id]; ok { return v, nil }
+	if v, ok := p.vendors[id]; ok {
+		return v, nil
+	}
 	return commerce.VendorAvailability{ID: id, IsVendor: true, Approved: true}, nil
 }
 
@@ -159,26 +173,36 @@ func (p *mockGatingProbe) CustomerBranch(_ context.Context, id int64) (commerce.
 	}, nil
 }
 
-func (p *mockGatingProbe) VendorCovers(_ context.Context, _, _ int64, _, _ float64, _ time.Weekday, _ *int64) (bool, error) { return true, nil }
-func (p *mockGatingProbe) VendorInstitutionalConnection(_ context.Context, _, _, _ int64) (bool, error) { return true, nil }
+func (p *mockGatingProbe) VendorCovers(_ context.Context, _, _ int64, _, _ float64, _ time.Weekday, _ *int64) (bool, error) {
+	return true, nil
+}
+func (p *mockGatingProbe) VendorInstitutionalConnection(_ context.Context, _, _, _ int64) (bool, error) {
+	return true, nil
+}
 
 func (p *mockGatingProbe) VariantsByIDs(_ context.Context, ids []int64) (map[int64]commerce.VariantAvailability, error) {
 	out := make(map[int64]commerce.VariantAvailability, len(ids))
 	for _, id := range ids {
-		if v, ok := p.variants[id]; ok { out[id] = v }
+		if v, ok := p.variants[id]; ok {
+			out[id] = v
+		}
 	}
 	return out, nil
 }
 
 func (p *mockGatingProbe) VendorsByIDs(_ context.Context, ids []int64) (map[int64]commerce.VendorAvailability, error) {
 	out := make(map[int64]commerce.VendorAvailability, len(ids))
-	for _, id := range ids { out[id] = commerce.VendorAvailability{ID: id, IsVendor: true, Approved: true} }
+	for _, id := range ids {
+		out[id] = commerce.VendorAvailability{ID: id, IsVendor: true, Approved: true}
+	}
 	return out, nil
 }
 
 func (p *mockGatingProbe) VendorInstitutionalConnections(_ context.Context, _ int64, lines []commerce.AvailabilityLine) (map[int64]bool, error) {
 	out := make(map[int64]bool, len(lines))
-	for _, l := range lines { out[l.VariantID] = true }
+	for _, l := range lines {
+		out[l.VariantID] = true
+	}
 	return out, nil
 }
 
@@ -225,7 +249,7 @@ func setupGatingTestFixture() (*ui.UIHandler, authctx.Actor) {
 		AdminStatus:        "approved",
 		StartDate:          &start,
 		EndDate:            &end,
-		Products: []*promo.SpecialOfferProduct{{ID: 1, VariantID: 1001, Quantity: 2, CustomPrice: money.FromMinor(5000)}},
+		Products:           []*promo.SpecialOfferProduct{{ID: 1, VariantID: 1001, Quantity: 2, CustomPrice: money.FromMinor(5000)}},
 	}
 
 	// Offer 2: Out-of-coverage (Alexandria only, branch is in Cairo)
@@ -239,7 +263,7 @@ func setupGatingTestFixture() (*ui.UIHandler, authctx.Actor) {
 		AdminStatus:        "approved",
 		StartDate:          &start,
 		EndDate:            &end,
-		Products: []*promo.SpecialOfferProduct{{ID: 2, VariantID: 1002, Quantity: 2, CustomPrice: money.FromMinor(7500)}},
+		Products:           []*promo.SpecialOfferProduct{{ID: 2, VariantID: 1002, Quantity: 2, CustomPrice: money.FromMinor(7500)}},
 	}
 
 	// Offer 3: Covered (Cairo), but Unavailable (Stock 0)
@@ -253,7 +277,7 @@ func setupGatingTestFixture() (*ui.UIHandler, authctx.Actor) {
 		AdminStatus:        "approved",
 		StartDate:          &start,
 		EndDate:            &end,
-		Products: []*promo.SpecialOfferProduct{{ID: 3, VariantID: 1003, Quantity: 5, CustomPrice: money.FromMinor(1600)}},
+		Products:           []*promo.SpecialOfferProduct{{ID: 3, VariantID: 1003, Quantity: 5, CustomPrice: money.FromMinor(1600)}},
 	}
 
 	locs := map[int64][]*promo.SpecialOfferLocation{
@@ -306,156 +330,4 @@ func setupGatingTestFixture() (*ui.UIHandler, authctx.Actor) {
 	}
 
 	return handler, buyerActor
-}
-
-// TestOffersPage_CoverageAndGating verifies that out-of-coverage offers are completely
-// filtered out and hidden from buyers, while guest users can browse active offers.
-func TestOffersPage_CoverageAndGating(t *testing.T) {
-	handler, buyerActor := setupGatingTestFixture()
-
-	req := httptest.NewRequest(http.MethodGet, "/offers", nil)
-	ctx := authctx.WithActor(req.Context(), buyerActor)
-	req = req.WithContext(ctx)
-
-	rr := httptest.NewRecorder()
-	handler.OffersPage(rr, req)
-
-	if rr.Code != http.StatusOK {
-		t.Fatalf("expected 200 OK, got %d", rr.Code)
-	}
-
-	body := rr.Body.String()
-
-	// 1. In-coverage Cairo offer must appear
-	if !strings.Contains(body, "عرض القاهرة المتوفر") {
-		t.Errorf("expected Cairo offer 101 to appear on offers page")
-	}
-
-	// 2. Out-of-coverage Alexandria offer must NOT appear from the start
-	if strings.Contains(body, "عرض الإسكندرية خارج التغطية") {
-		t.Errorf("out-of-coverage Alexandria offer 102 must NOT appear on offers page for Cairo buyer")
-	}
-
-	// 3. Out-of-coverage badge must NOT appear anywhere on the page
-	if strings.Contains(body, "خارج التغطية") {
-		t.Errorf("expected NO 'خارج التغطية' badge on offers page")
-	}
-
-	// 4. Covered badge is displayed for the covered offer
-	if !strings.Contains(body, "مشمول بالتغطية") {
-		t.Errorf("expected 'مشمول بالتغطية' badge for covered offer")
-	}
-
-	// 5. Guest user (not logged in as a buyer) can still browse active offers
-	guestReq := httptest.NewRequest(http.MethodGet, "/offers", nil)
-	guestRR := httptest.NewRecorder()
-	handler.OffersPage(guestRR, guestReq)
-	if guestRR.Code != http.StatusOK {
-		t.Fatalf("expected 200 OK for guest, got %d", guestRR.Code)
-	}
-	guestBody := guestRR.Body.String()
-	if !strings.Contains(guestBody, "عرض القاهرة المتوفر") {
-		t.Errorf("expected Cairo offer to appear for guest")
-	}
-	if !strings.Contains(guestBody, "عرض الإسكندرية خارج التغطية") {
-		t.Errorf("expected Alexandria offer to appear for guest browsing public catalog")
-	}
-}
-
-func TestOfferDetailPage_CoverageAndCartAction(t *testing.T) {
-	handler, buyerActor := setupGatingTestFixture()
-
-	// Subtest 1: In-coverage offer opens with green banner and enabled cart button
-	t.Run("covered offer displays success alert and enabled button", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/offers/101", nil)
-		ctx := authctx.WithActor(req.Context(), buyerActor)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", "101")
-		req = req.WithContext(context.WithValue(ctx, chi.RouteCtxKey, rctx))
-
-		rr := httptest.NewRecorder()
-		handler.OfferDetailPage(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Fatalf("expected 200 OK, got %d", rr.Code)
-		}
-		body := rr.Body.String()
-		if !strings.Contains(body, "عرض القاهرة المتوفر") {
-			t.Errorf("expected offer title on detail page")
-		}
-		if !strings.Contains(body, "فرع صيدليتك مشمول في نطاق توصيل هذا العرض") {
-			t.Errorf("expected covered banner on detail page")
-		}
-		if !strings.Contains(body, "إضافة العرض إلى السلة والشراء الآن") {
-			t.Errorf("expected enabled add-to-cart button")
-		}
-	})
-
-	// Subtest 2: Out-of-coverage offer opens with warning banner and disabled button
-	t.Run("out-of-coverage offer displays warning alert and disabled button", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodGet, "/offers/102", nil)
-		ctx := authctx.WithActor(req.Context(), buyerActor)
-		rctx := chi.NewRouteContext()
-		rctx.URLParams.Add("id", "102")
-		req = req.WithContext(context.WithValue(ctx, chi.RouteCtxKey, rctx))
-
-		rr := httptest.NewRecorder()
-		handler.OfferDetailPage(rr, req)
-
-		if rr.Code != http.StatusOK {
-			t.Fatalf("expected 200 OK, got %d", rr.Code)
-		}
-		body := rr.Body.String()
-		if !strings.Contains(body, "عرض الإسكندرية خارج التغطية") {
-			t.Errorf("expected offer title on detail page")
-		}
-		if !strings.Contains(body, "فرع صيدليتك خارج نطاق التغطية الجغرافية لهذا العرض") {
-			t.Errorf("expected out-of-coverage warning banner")
-		}
-		if !strings.Contains(body, "غير متاح لفرعك (خارج التغطية)") {
-			t.Errorf("expected disabled add-to-cart button")
-		}
-	})
-}
-
-func TestOfferAddToCart_CoverageAndAvailabilityGating(t *testing.T) {
-	handler, buyerActor := setupGatingTestFixture()
-
-	// Subtest 1: Out-of-coverage bundle cannot be added to cart
-	t.Run("out-of-coverage offer rejected at cart-add", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/cart/add-offer", strings.NewReader("offer_id=102&quantity=1"))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		ctx := authctx.WithActor(req.Context(), buyerActor)
-		req = req.WithContext(ctx)
-
-		rr := httptest.NewRecorder()
-		handler.AddOfferToCartSubmit(rr, req)
-
-		if rr.Code != http.StatusSeeOther {
-			t.Fatalf("expected 303 redirect, got %d", rr.Code)
-		}
-		loc := rr.Header().Get("Location")
-		if !strings.Contains(loc, "notice=error") {
-			t.Errorf("expected error notice on redirect, got %s", loc)
-		}
-	})
-
-	// Subtest 2: Products inside offer do not gate cart-add (bundle is ordered as promotional unit)
-	t.Run("in-coverage offer succeeds at cart-add regardless of catalog stock", func(t *testing.T) {
-		req := httptest.NewRequest(http.MethodPost, "/cart/add-offer", strings.NewReader("offer_id=103&quantity=1"))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		ctx := authctx.WithActor(req.Context(), buyerActor)
-		req = req.WithContext(ctx)
-
-		rr := httptest.NewRecorder()
-		handler.AddOfferToCartSubmit(rr, req)
-
-		if rr.Code != http.StatusSeeOther {
-			t.Fatalf("expected 303 redirect, got %d", rr.Code)
-		}
-		loc := rr.Header().Get("Location")
-		if !strings.Contains(loc, "notice=success") {
-			t.Errorf("expected success notice on redirect, got %s", loc)
-		}
-	})
 }

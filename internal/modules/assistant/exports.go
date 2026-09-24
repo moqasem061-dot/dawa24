@@ -12,9 +12,9 @@ import (
 
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/actions"
-	"github.com/muhiya/dawa24-store/internal/modules/assistant/datasets"
-	"github.com/muhiya/dawa24-store/internal/shared/timeutil"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/actions"
+	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/datasets"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // Exports: the answer to "give me all of it".
@@ -251,11 +251,11 @@ func xlsxCell(t datasets.Type, v any) any {
 		return nil
 	case json.Number:
 		if t == datasets.Int {
-			if n, err := val.Int64(); err == nil {
+			if n, err := val.Int64(); err == nil { // nolint:errswallow: not an integer; tried as a float next
 				return n
 			}
 		}
-		if f, err := val.Float64(); err == nil {
+		if f, err := val.Float64(); err == nil { // nolint:errswallow: not a number; kept as its string form below
 			return f
 		}
 		return val.String()

@@ -8,10 +8,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
-	"github.com/muhiya/dawa24-store/internal/modules/promo"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // AdminAdApproveSubmit approves an ad from the admin UI.
@@ -27,7 +27,8 @@ func (h *UIHandler) AdminAdApproveSubmit(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	sysCtx := database.AsSystem(ctx)
-	ad, _ := h.promoSvc.GetAd(sysCtx, id)
+	ad, loadErr := h.promoSvc.GetAd(sysCtx, id)
+	h.logLoadErr(ctx, "promoSvc.GetAd", loadErr)
 	notes := r.PostFormValue("notes")
 	if err := h.promoSvc.AdminApproveAd(sysCtx, id, notes); err != nil {
 		h.redirectWithNotice(w, r, "/admin/offers-packages?tab=ads", "error", h.safeMessage(err, langOf(r)))
@@ -61,7 +62,8 @@ func (h *UIHandler) AdminAdRejectSubmit(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	sysCtx := database.AsSystem(ctx)
-	ad, _ := h.promoSvc.GetAd(sysCtx, id)
+	ad, loadErr := h.promoSvc.GetAd(sysCtx, id)
+	h.logLoadErr(ctx, "promoSvc.GetAd", loadErr)
 	notes := r.PostFormValue("notes")
 	if err := h.promoSvc.AdminRejectAd(sysCtx, id, notes); err != nil {
 		h.redirectWithNotice(w, r, "/admin/offers-packages?tab=ads", "error", h.safeMessage(err, langOf(r)))

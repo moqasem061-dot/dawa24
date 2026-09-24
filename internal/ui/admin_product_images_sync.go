@@ -4,8 +4,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/muhiya/dawa24-store/internal/platform/database"
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // AdminProductImagesSyncSubmit triggers background download and local volume storage
@@ -18,7 +18,7 @@ func (h *UIHandler) AdminProductImagesSyncSubmit(w http.ResponseWriter, r *http.
 
 	if h.catSvc == nil {
 		h.redirectWithNotice(w, r, "/admin/products", "error",
-			i18n.T(lang, "admin.products.images_service_unavailable"))
+			i18n.T(lang, "admin.categories.service_unavailable"))
 		return
 	}
 

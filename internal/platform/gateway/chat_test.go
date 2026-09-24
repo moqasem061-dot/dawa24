@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/muhiya/dawa24-store/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
 
 func TestPhase2_SSEStreamingDecoding(t *testing.T) {

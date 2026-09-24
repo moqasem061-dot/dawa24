@@ -9,13 +9,13 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/xuri/excelize/v2"
 
-	"github.com/muhiya/dawa24-store/internal/modules/catalog"
-	"github.com/muhiya/dawa24-store/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 
-	"github.com/muhiya/dawa24-store/internal/shared/i18n"
-	"github.com/muhiya/dawa24-store/internal/shared/money"
-	"github.com/muhiya/dawa24-store/internal/shared/pagination"
-	"github.com/muhiya/dawa24-store/internal/ui/pages"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
 // AdminProductsPage renders the master products catalog with full-database search and pagination.
@@ -78,15 +78,27 @@ func (h *UIHandler) AdminProductsPage(w http.ResponseWriter, r *http.Request) {
 			Offset:       offset,
 			Sort:         sort,
 		})
-		if err == nil {
+		if err == nil { // nolint:errswallow: the else branch handles it
 			products = prods
 			totalProducts = total
 		} else {
 			h.log.ErrorContext(ctx, "admin products search failed", "error", err)
 		}
-		brands, _ = h.catSvc.ListBrands(sysCtx)
-		categories, _ = h.catSvc.ListCategories(sysCtx)
-		dosageForms, _ = h.catSvc.ListDosageForms(sysCtx)
+		if loaded, err := h.catSvc.ListBrands(sysCtx); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListBrands", err)
+		} else {
+			brands = loaded
+		}
+		if loaded, err := h.catSvc.ListCategories(sysCtx); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListCategories", err)
+		} else {
+			categories = loaded
+		}
+		if loaded, err := h.catSvc.ListDosageForms(sysCtx); err != nil {
+			h.logLoadErr(ctx, "catSvc.ListDosageForms", err)
+		} else {
+			dosageForms = loaded
+		}
 	}
 
 	var brandFilterVal int64
@@ -111,7 +123,9 @@ func (h *UIHandler) AdminProductStatusSubmit(w http.ResponseWriter, r *http.Requ
 	ctx := r.Context()
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
 	if err == nil && h.catSvc != nil {
-		_, _ = h.catSvc.SetProductsStatus(database.AsSystem(ctx), []int64{id}, catalog.ProductStatus(r.PostFormValue("status")))
+		if _, err := h.catSvc.SetProductsStatus(database.AsSystem(ctx), []int64{id}, catalog.ProductStatus(r.PostFormValue("status"))); err != nil {
+			h.logLoadErr(ctx, "catSvc.SetProductsStatus", err)
+		}
 	}
 	http.Redirect(w, r, "/admin/products", http.StatusSeeOther)
 }

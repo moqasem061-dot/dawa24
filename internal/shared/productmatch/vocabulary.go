@@ -1,6 +1,6 @@
 package productmatch
 
-import "github.com/muhiya/dawa24-store/internal/shared/sheet"
+import "github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 
 // Vocabularies.
 //
@@ -157,4 +157,3 @@ var defaultMakers = []string{
 	"جلوبال", "global", "اندلسية", "andalousia", "اكديما", "acdimas", "ماش", "mash",
 	"الفا", "alpha", "نوفو", "novo", "ساندوز", "sandoz",
 }
-
