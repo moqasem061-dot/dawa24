@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -26,9 +27,9 @@ const migrationDefaultAppPassword = "dawa24_app_change_me"
 //
 // With DB_APP_PASSWORD set, migrate (which runs as the schema owner) sets it,
 // so rotating the password is a config change plus a deploy. Without it, the
-// role is probed with the migration's default; still accepting that password
-// fails a production migrate, because the next step is somebody pointing
-// APP_DATABASE_URL at it.
+// role is probed with the migration's default. Still accepting that password
+// is a warning, and fails a production migrate only once DB_REQUIRE_RLS=true
+// says the server really connects as this role.
 func setAppRolePassword(ctx context.Context, db *database.DB, log *slog.Logger, prod bool) error {
 	var exists bool
 	if err := db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
@@ -56,7 +57,7 @@ func setAppRolePassword(ctx context.Context, db *database.DB, log *slog.Logger, 
 		return nil
 	}
 	msg := appRole + " still accepts the default password from migration 222; set DB_APP_PASSWORD and re-run migrate"
-	if prod {
+	if strict, _ := strconv.ParseBool(os.Getenv("DB_REQUIRE_RLS")); prod && strict {
 		return errors.New(msg)
 	}
 	log.WarnContext(ctx, msg)

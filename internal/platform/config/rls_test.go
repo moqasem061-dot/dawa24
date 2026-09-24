@@ -13,22 +13,31 @@ func setMinimalProdEnv(t *testing.T) {
 	t.Setenv("TURNSTILE_ENABLED", "false")
 }
 
-// Connecting the server or worker as a superuser switches row-level security
-// off for every table, so production requires a role that honours it.
-func TestProductionServerRequiresRLS(t *testing.T) {
+// A production server warns on a role that bypasses row-level security unless
+// DB_REQUIRE_RLS=true asks it to refuse, so a deploy that still connects as the
+// owner keeps running.
+func TestProductionServerRequiresRLSOnlyWhenAsked(t *testing.T) {
 	setMinimalProdEnv(t)
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
+	if cfg.Database.RequireRLS {
+		t.Error("RLS is required without DB_REQUIRE_RLS")
+	}
+	t.Setenv("DB_REQUIRE_RLS", "true")
+	if cfg, err = Load(); err != nil {
+		t.Fatalf("Load: %v", err)
+	}
 	if !cfg.Database.RequireRLS {
-		t.Error("a production server does not require row-level security")
+		t.Error("DB_REQUIRE_RLS=true did not make a production server require RLS")
 	}
 }
 
 // migrate runs as the schema owner, which is a superuser by design.
 func TestCLIDoesNotRequireRLS(t *testing.T) {
 	setMinimalProdEnv(t)
+	t.Setenv("DB_REQUIRE_RLS", "true")
 	cfg, err := LoadForCLI()
 	if err != nil {
 		t.Fatalf("LoadForCLI: %v", err)
@@ -38,14 +47,15 @@ func TestCLIDoesNotRequireRLS(t *testing.T) {
 	}
 }
 
-func TestRLSBypassCanBeAllowedExplicitly(t *testing.T) {
+// A deploy without SESSION_SECRET boots with a random one instead of refusing.
+func TestMissingSessionSecretIsGenerated(t *testing.T) {
 	setMinimalProdEnv(t)
-	t.Setenv("DB_ALLOW_RLS_BYPASS", "true")
+	t.Setenv("SESSION_SECRET", "")
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if cfg.Database.RequireRLS {
-		t.Error("DB_ALLOW_RLS_BYPASS=true did not lift the requirement")
+	if !cfg.Session.SecretGenerated || len(cfg.Session.Secret) < 32 {
+		t.Errorf("secret %d bytes, generated=%v", len(cfg.Session.Secret), cfg.Session.SecretGenerated)
 	}
 }

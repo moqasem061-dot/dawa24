@@ -9,6 +9,7 @@
 package config
 
 import (
+	"crypto/rand"
 	"errors"
 	"fmt"
 	"net/url"
@@ -80,10 +81,12 @@ type Database struct {
 	// connection, so the web's thirty seconds also capped every statement
 	// inside a background import — however long River's JobTimeout was.
 	WorkerStatementTimeout time.Duration
-	// RequireRLS makes the connection refuse a role that bypasses row-level
-	// security (a superuser, or one holding BYPASSRLS). Set for the server and
-	// worker in production; the CLI migrates as the owner and is exempt.
-	// DB_ALLOW_RLS_BYPASS=true is the explicit escape hatch.
+	// RequireRLS makes the server and worker refuse to start on a role that
+	// bypasses row-level security (a superuser, or one holding BYPASSRLS);
+	// without it they start and log a security warning. It is opt-in
+	// (DB_REQUIRE_RLS=true, production only) so a deploy still connecting as
+	// the owner keeps running; turn it on once APP_DATABASE_URL names
+	// dawa24_app. The CLI migrates as the owner and is never held to it.
 	RequireRLS bool
 }
 
@@ -126,11 +129,14 @@ type Maps struct {
 }
 
 type Session struct {
-	CookieName  string
-	Secret      string
-	TTL         time.Duration
-	IdleTimeout time.Duration
-	SecureOnly  bool
+	CookieName string
+	Secret     string
+	// SecretGenerated is true when SESSION_SECRET was unset and a random one
+	// was made for this process: sessions then end at every restart.
+	SecretGenerated bool
+	TTL             time.Duration
+	IdleTimeout     time.Duration
+	SecureOnly      bool
 }
 
 type Observability struct {
@@ -198,7 +204,7 @@ func load(cliOnly bool) (*Config, error) {
 			// Long enough for the largest real import statement, short enough
 			// that a runaway background query still lets go of its connection.
 			WorkerStatementTimeout: getDuration("DB_WORKER_STATEMENT_TIMEOUT", 10*time.Minute),
-			RequireRLS:             env.IsProd() && !cliOnly && !getBool("DB_ALLOW_RLS_BYPASS", false),
+			RequireRLS:             env.IsProd() && !cliOnly && getBool("DB_REQUIRE_RLS", false),
 		},
 
 		Redis: Redis{
@@ -219,7 +225,7 @@ func load(cliOnly bool) (*Config, error) {
 		Gateway: Gateway{
 			BaseURL:    getStr("GATEWAY_BASE_URL", "https://api.dawa24.com"),
 			VirtualKey: getStr("GATEWAY_VIRTUAL_KEY", ""),
-			ClientApp:  getStr("GATEWAY_CLIENT_APP", "dawa24"),
+			ClientApp:  getStr("GATEWAY_CLIENT_APP", "dawa24-store"),
 			Timeout:    getDuration("GATEWAY_TIMEOUT", 60*time.Second),
 			Enabled:    getBool("GATEWAY_ENABLED", false),
 		},
@@ -277,6 +283,9 @@ func load(cliOnly bool) (*Config, error) {
 		fail("DATABASE_URL is required")
 	} else if _, err := url.Parse(cfg.Database.URL); err != nil {
 		fail("DATABASE_URL is not a valid URL: %v", err)
+	}
+	if !cliOnly && cfg.Session.Secret == "" {
+		cfg.Session.Secret, cfg.Session.SecretGenerated = randomSecret(), true
 	}
 	if !cliOnly {
 		if cfg.Redis.URL == "" {
@@ -386,3 +395,9 @@ func getCSV(key string) []string {
 
 // ErrNoConfig is returned by helpers that require a loaded config.
 var ErrNoConfig = errors.New("config: not loaded")
+
+// randomSecret makes a 32-byte hex session secret for a process started
+// without SESSION_SECRET, so a deploy that forgot it still boots.
+func randomSecret() string {
+	return rand.Text() + rand.Text()
+}

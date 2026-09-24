@@ -78,7 +78,7 @@ func TestProductionUserConfig(t *testing.T) {
 	t.Setenv("GATEWAY_ENABLED", "true")
 	t.Setenv("GATEWAY_BASE_URL", "https://api.dawa24.com")
 	t.Setenv("GATEWAY_VIRTUAL_KEY", "true")
-	t.Setenv("GATEWAY_CLIENT_APP", "dawa24")
+	t.Setenv("GATEWAY_CLIENT_APP", "dawa24-store")
 	t.Setenv("GATEWAY_TIMEOUT", "60s")
 	t.Setenv("SMTP_HOST", "smtp.hostinger.com")
 	t.Setenv("SMTP_PORT", "465")

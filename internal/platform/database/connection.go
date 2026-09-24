@@ -22,7 +22,7 @@ var ErrNotConnected = errors.New("database: not connected yet")
 // connecting role is a superuser or holds BYPASSRLS. It is a configuration
 // error, not a transient one: retrying cannot fix it.
 var ErrRLSBypassed = errors.New("database: the connecting role bypasses row-level security; " +
-	"connect the server and worker as dawa24_app (DB_ALLOW_RLS_BYPASS=true overrides)")
+	"connect the server and worker as dawa24_app, or unset DB_REQUIRE_RLS")
 
 // DB wraps the pool and exposes only transaction-scoped access.
 //
