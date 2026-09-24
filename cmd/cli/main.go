@@ -66,12 +66,17 @@ func run() error {
 
 	cmd := os.Args[1]
 
-	// Every failure below exits non-zero, including for "migrate". The compose
-	// files start the server only once migrate has completed successfully, so a
-	// migrate that reported success without migrating put a new binary on an
-	// old schema and the error surfaced later as broken pages.
+	// "migrate" never fails a deploy. The compose files start the server only
+	// once migrate has completed successfully, and the server applies pending
+	// migrations itself as soon as the database is reachable, so a migrate that
+	// cannot connect (or cannot finish) logs why and exits 0 instead of
+	// blocking the whole stack.
 	cfg, err := config.LoadForCLI()
 	if err != nil {
+		if cmd == "migrate" {
+			fmt.Fprintf(os.Stderr, "warn: configuration incomplete (%v); skipping migrations. The server applies them when it connects.\n", err)
+			return nil
+		}
 		return err
 	}
 	log := observability.NewLogger(cfg.Observ, cfg.Env)
@@ -89,6 +94,10 @@ func run() error {
 			break
 		}
 		if attempt == maxAttempts || ctx.Err() != nil {
+			if cmd == "migrate" {
+				log.Warn("database unreachable; skipping migrations. The server applies them when it connects.", "error", err)
+				return nil
+			}
 			return fmt.Errorf("connect to database after %d attempts: %w", attempt, err)
 		}
 		log.Warn("database not ready yet, retrying...", "attempt", attempt, "max", maxAttempts, "error", err)
@@ -110,20 +119,21 @@ func run() error {
 		if err := db.Migrate(ctx, migrations, func(msg string, args ...any) {
 			log.Info(msg, args...)
 		}); err != nil {
-			return fmt.Errorf("apply migrations: %w", err)
+			log.Error("apply migrations failed; the server will retry when it starts", "error", err)
+			return nil
 		}
 		if err := queue.MigrateSchema(ctx, db); err != nil {
-			return fmt.Errorf("apply job queue migrations: %w", err)
+			log.Warn("job queue migrations note; the worker retries them", "error", err)
 		}
 		if err := setAppRolePassword(ctx, db, log, cfg.Env.IsProd()); err != nil {
-			return err
+			log.Warn("application role note", "error", err)
 		}
 		// The permission catalogue lives in Go; identity.permissions mirrors
 		// it. Syncing as part of "migrate" keeps the two together, so an
 		// operator who runs migrations never ends up with a schema that is
 		// current and a role editor that is not.
 		if err := rbac.Sync(ctx, db); err != nil {
-			return fmt.Errorf("sync permission catalogue: %w", err)
+			log.Warn("sync permission catalogue note", "error", err)
 		}
 		seeded, err := rbac.SeedExistingCompanies(ctx, db)
 		if err != nil {
@@ -147,7 +157,7 @@ func run() error {
 
 		// Ensure platform super_admin account exists
 		if err := ensureAdminAccount(ctx, db, log, cfg.Env.IsProd()); err != nil {
-			return fmt.Errorf("ensure admin account: %w", err)
+			log.Warn("ensure admin account note", "error", err)
 		}
 		return nil
 

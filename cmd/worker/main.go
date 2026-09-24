@@ -149,6 +149,11 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	// Normally already applied by `cli migrate`; repeated here so a deploy
+	// whose migrate step could not reach the database still gets its queue.
+	if err := queue.MigrateSchema(ctx, db); err != nil {
+		log.Warn("job queue migrations note", "error", err)
+	}
 
 	if err := queueClient.Start(ctx); err != nil {
 		return err

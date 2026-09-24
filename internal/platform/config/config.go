@@ -9,7 +9,6 @@
 package config
 
 import (
-	"crypto/rand"
 	"errors"
 	"fmt"
 	"net/url"
@@ -395,9 +394,3 @@ func getCSV(key string) []string {
 
 // ErrNoConfig is returned by helpers that require a loaded config.
 var ErrNoConfig = errors.New("config: not loaded")
-
-// randomSecret makes a 32-byte hex session secret for a process started
-// without SESSION_SECRET, so a deploy that forgot it still boots.
-func randomSecret() string {
-	return rand.Text() + rand.Text()
-}

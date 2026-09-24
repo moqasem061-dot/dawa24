@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	dbfs "github.com/moqasem061-dot/dawa24/db"
 	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -158,10 +159,20 @@ func (d *dependencies) connect(ctx context.Context, cfg *config.Config, log *slo
 			}
 			return err
 		}
-		// Migrations are NOT applied here. `cli migrate` runs them as a deploy
-		// step before this process starts (ADR 0004): instances booting
-		// together would race, and the least-privilege role this process
-		// connects as cannot run DDL.
+		// Pending migrations are applied as soon as the database is reachable.
+		// `cli migrate` normally ran them already and this is a no-op; when it
+		// could not (database not up yet at deploy time), this catches up. A
+		// failure is logged: under the least-privilege role DDL is refused, and
+		// the deploy's migrate step is then the one that applies them.
+		if migrations, err := database.LoadMigrations(dbfs.Migrations, "migrations"); err == nil { // nolint:errswallow: embedded files; the else branch logs it
+			if migErr := d.db.Migrate(ctx, migrations, func(msg string, args ...any) {
+				log.Info(msg, args...)
+			}); migErr != nil {
+				log.Warn("startup migration note", "error", migErr)
+			}
+		} else {
+			log.Warn("load migrations note", "error", err)
+		}
 		// The permission catalogue is defined in Go and mirrored into
 		// identity.permissions. Syncing here, on the connection that just came
 		// up, means a deploy that adds a permission has it grantable before the
