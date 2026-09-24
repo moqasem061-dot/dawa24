@@ -17,11 +17,15 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
+// testSessionSecret signs verification and reset tokens in these tests.
+const testSessionSecret = "test-session-secret-for-ui-handlers"
+
 func newTestRouter(actor *authctx.Actor) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	handler := ui.NewUIHandler(
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, logger,
 	)
+	handler.SetSessionSecret(testSessionSecret)
 
 	// Mirrors cmd/server/routes.go, except session-based RequireAuth is
 	// replaced by a stub that carries an optional test actor.
@@ -106,7 +110,7 @@ func setupTestRouter() http.Handler {
 func TestPublicAndAuthPageRoutes(t *testing.T) {
 	router := newTestRouter(nil)
 
-	validResetTok, err := mailer.SignPasswordResetToken("test@example.com", "dawa24-verification-fallback-secret-2024", 15*time.Minute)
+	validResetTok, err := mailer.SignPasswordResetToken("test@example.com", testSessionSecret, 15*time.Minute)
 	if err != nil {
 		t.Fatalf("sign password reset token: %v", err)
 	}

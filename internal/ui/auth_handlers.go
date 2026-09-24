@@ -340,7 +340,7 @@ type pendingMFAPayload struct {
 func (h *UIHandler) signPendingMFAToken(p *pendingMFAPayload) string {
 	b, _ := json.Marshal(p)
 	payloadB64 := base64.RawURLEncoding.EncodeToString(b)
-	sigKey := []byte("dawa24_mfa_intermediate_key_secret_2026")
+	sigKey := h.mfaPendingKey()
 	mac := hmac.New(sha256.New, sigKey)
 	mac.Write([]byte(payloadB64))
 	sig := hex.EncodeToString(mac.Sum(nil))
@@ -353,7 +353,7 @@ func (h *UIHandler) parsePendingMFAToken(tokenStr string) (*pendingMFAPayload, e
 		return nil, identity.ErrInvalidCredentials
 	}
 	payloadB64, sig := parts[0], parts[1]
-	sigKey := []byte("dawa24_mfa_intermediate_key_secret_2026")
+	sigKey := h.mfaPendingKey()
 	mac := hmac.New(sha256.New, sigKey)
 	mac.Write([]byte(payloadB64))
 	expectedSig := hex.EncodeToString(mac.Sum(nil))

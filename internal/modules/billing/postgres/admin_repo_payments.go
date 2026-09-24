@@ -61,7 +61,11 @@ func (r *Repository) RecordInvoicePayment(ctx context.Context, req billing.Recor
 			return fmt.Errorf("invoice not found: %w", err)
 		}
 
-		if req.OrganizationID > 0 && req.OrganizationID != orgID && (custOrgID == nil || req.OrganizationID != *custOrgID) {
+		// Only the issuing organisation (or staff, who pass 0) records a payment.
+		// Recording one marks the invoice and its order paid; letting the billed
+		// customer (customer_org_id) do it let a pharmacy settle its own debt by
+		// typing an amount.
+		if req.OrganizationID > 0 && req.OrganizationID != orgID {
 			return apperr.Forbidden("payment.forbidden", "غير مصرح لك بتسجيل دفعة على هذه الفاتورة")
 		}
 

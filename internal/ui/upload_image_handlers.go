@@ -15,11 +15,13 @@ import (
 	"time"
 
 	"github.com/go-chi/chi/v5"
+
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/media"
 	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
+	"github.com/moqasem061-dot/dawa24/internal/ui/imageurl"
 )
 
 var (
@@ -55,6 +57,21 @@ var privateUploadCategories = map[string]bool{
 	"temp_warehouses": true,
 }
 
+// isPrivateUploadPath reports whether p (a relative upload path or storage key,
+// optionally under "uploads/" or "products/") lies in a private category.
+func isPrivateUploadPath(p string) bool {
+	norm := strings.TrimPrefix(filepath.ToSlash(filepath.Clean(filepath.FromSlash(p))), "/")
+	for {
+		trimmed := strings.TrimPrefix(strings.TrimPrefix(norm, "uploads/"), "products/")
+		if trimmed == norm {
+			break
+		}
+		norm = trimmed
+	}
+	first, _, _ := strings.Cut(norm, "/")
+	return privateUploadCategories[strings.ToLower(first)]
+}
+
 // RegisterUploadRoutes registers the public static file server for uploaded documents & media.
 func RegisterUploadRoutes(r chi.Router) {
 	baseDir := GetUploadBaseDir()
@@ -71,6 +88,11 @@ func RegisterUploadRoutes(r chi.Router) {
 
 		rawURL := r.URL.Query().Get("url")
 		if rawURL == "" {
+			http.NotFound(w, r)
+			return
+		}
+		// Only URLs this server rendered are fetched; see imageurl.ProxyURL.
+		if !imageurl.ValidProxySignature(rawURL, r.URL.Query().Get("sig")) {
 			http.NotFound(w, r)
 			return
 		}
@@ -163,6 +185,17 @@ func RegisterUploadRoutes(r chi.Router) {
 			}
 		}
 
+		// Every path this handler may open is checked, not only the requested
+		// one: "products/licenses/x.pdf" passed the first-segment check and
+		// then resolved, via the products/-stripped candidate, to the private
+		// licenses/x.pdf.
+		for _, cp := range candidatePaths {
+			if isPrivateUploadPath(cp) {
+				http.Error(w, "Forbidden: private document", http.StatusForbidden)
+				return
+			}
+		}
+
 		for _, dir := range searchDirs {
 			for _, cp := range candidatePaths {
 				fullPath := resolveRendition(dir, cp, size)
@@ -192,6 +225,9 @@ func RegisterUploadRoutes(r chi.Router) {
 			}
 
 			for _, s3Key := range s3Keys {
+				if isPrivateUploadPath(s3Key) {
+					continue
+				}
 				reader, _, err := uploadStorageClient.Get(ctx, s3Key)
 				if err == nil && reader != nil {
 					data, readErr := io.ReadAll(reader)

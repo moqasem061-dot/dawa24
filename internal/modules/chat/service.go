@@ -56,6 +56,18 @@ func (s *Service) SendMessage(ctx context.Context, conversationID, senderUserID 
 	if err := m.Validate(); err != nil {
 		return nil, err
 	}
+	// The conversation is addressed by an id from the URL. Only its two
+	// organizations may post in it; otherwise anyone signed in could write
+	// into another pair's thread, and row-level security is the only thing that
+	// stopped it — which a connection that bypasses RLS does not apply.
+	conv, err := s.repo.GetConversationByID(ctx, conversationID)
+	if err != nil {
+		return nil, err
+	}
+	if conv == nil || senderOrgID == nil ||
+		(*senderOrgID != conv.OrganizationID && *senderOrgID != conv.CounterpartyOrgID) {
+		return nil, ErrNoConversation
+	}
 	if err := s.repo.SendMessage(ctx, m); err != nil {
 		return nil, err
 	}

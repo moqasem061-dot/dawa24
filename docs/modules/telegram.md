@@ -148,6 +148,10 @@ with a Telegram Trigger on the same bot — Telegram allows one webhook per bot.
   session's stale permission copy).
 - `/api/v1/integrations/telegram/` is in `httpx.longRunningPrefixes`: a question
   waits for the full turn (≤150s). n8n's timeout is 180s; keep its retries off.
+- A bridge-supplied `file_url` is fetched only when it is
+  `https://api.telegram.org/file/...`, without following redirects, and fetch
+  errors are not wrapped because Bot API URLs embed the bot token (security fix
+  2026-09-24).
 
 ## Tests
 

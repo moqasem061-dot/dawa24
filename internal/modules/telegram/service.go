@@ -199,6 +199,12 @@ func (s *Service) DownloadFile(ctx context.Context, fileID, fileURL, fileData st
 	}
 
 	if fileURL != "" {
+		// The URL arrives in the bridge payload. Fetching it unchecked let whoever
+		// holds the bridge token make this server request any address, internal
+		// ones included. Telegram serves files from one host; accept only that.
+		if !isTelegramFileURL(fileURL) {
+			return nil, errors.New("telegram: file_url must be an https://api.telegram.org/file/ address")
+		}
 		return s.fetchURL(ctx, fileURL)
 	}
 
@@ -235,9 +241,10 @@ func (s *Service) getTelegramFilePath(ctx context.Context, fileID string) (strin
 		return "", err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := telegramFileClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("telegram getFile request failed: %w", err)
+		// Not wrapped: the request URL carries the bot token.
+		return "", errors.New("telegram getFile request failed")
 	}
 	defer resp.Body.Close()
 
@@ -261,9 +268,11 @@ func (s *Service) fetchURL(ctx context.Context, url string) ([]byte, error) {
 		return nil, err
 	}
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := telegramFileClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("fetch file url failed: %w", err)
+		// Not wrapped: *url.Error repeats the URL, and a Bot API file URL embeds
+		// the bot token.
+		return nil, errors.New("telegram: fetch file failed")
 	}
 	defer resp.Body.Close()
 

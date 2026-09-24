@@ -13,7 +13,6 @@
 package imageurl
 
 import (
-	"net/url"
 	"strconv"
 	"strings"
 )
@@ -175,7 +174,7 @@ func (i Image) Src() string {
 	if strings.HasPrefix(norm, "http://") || strings.HasPrefix(norm, "https://") {
 		// Route remote images through /uploads/proxy to satisfy Content-Security-Policy (img-src 'self')
 		// and ensure server-side caching on local volume.
-		proxyBase := "/uploads/proxy?url=" + url.QueryEscape(norm)
+		proxyBase := ProxyURL(norm)
 		return sized(proxyBase, i.spec().rendition)
 	}
 	if !strings.HasPrefix(norm, "/uploads/") {
@@ -194,7 +193,7 @@ func (i Image) SrcSet() string {
 		if s.next == "" {
 			return ""
 		}
-		proxyBase := "/uploads/proxy?url=" + url.QueryEscape(norm)
+		proxyBase := ProxyURL(norm)
 		return sized(proxyBase, s.rendition) + " 1x, " + sized(proxyBase, s.next) + " 2x"
 	}
 	if !strings.HasPrefix(norm, "/uploads/") {

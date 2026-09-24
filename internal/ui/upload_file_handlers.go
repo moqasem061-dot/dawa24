@@ -128,9 +128,16 @@ func isAllowedUploadExt(category, ext string) bool {
 		return false
 	}
 	switch category {
-	case "products", "avatars", "brands", "ads", "offers":
+	case "ads":
+		return imageUploadExts[ext] || ext == ".mp4" || ext == ".webm" || ext == ".mov"
+	case "brands":
+		// Logos are often SVG; filescan rejects scripted SVG and serving sandboxes it.
+		return imageUploadExts[ext] || ext == ".svg"
+	case "products", "avatars", "offers":
 		return imageUploadExts[ext]
-	case "licenses", "resumes", "documents", "receipts", "cvs":
+	case "resumes", "cvs":
+		return docUploadExts[ext] || ext == ".doc" || ext == ".docx"
+	case "licenses", "documents", "receipts":
 		return docUploadExts[ext]
 	case "compare", "imports", "temp_warehouses":
 		return sheetUploadExts[ext]
@@ -274,8 +281,11 @@ func saveUploadedBytes(ctx context.Context, data []byte, originalFilename, categ
 	baseDir := GetUploadBaseDir()
 
 	ext := strings.ToLower(filepath.Ext(originalFilename))
-	if ext == "" {
-		ext = ".bin"
+	// The same per-category allowlist saveUploadedFileFull applies. Without it
+	// this path stored any extension (.html, .svg, .xml) under a public
+	// category; serving sandboxes such files, but they should not be stored.
+	if !isAllowedUploadExt(category, ext) {
+		return "", fmt.Errorf("file type %q is not allowed for %s uploads", ext, category)
 	}
 
 	// Pre-scan file content for exploits, malicious scripts, and header integrity

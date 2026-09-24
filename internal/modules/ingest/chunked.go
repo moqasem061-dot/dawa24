@@ -19,6 +19,10 @@ var safeUUIDRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
 
 var chunkMutex sync.Mutex
 
+// maxUploadChunks bounds one chunked upload: 200 MB in chunks of at least a
+// few MB never needs more.
+const maxUploadChunks = 64
+
 // ChunkUploadResult models the response returned after receiving a chunk.
 type ChunkUploadResult struct {
 	Completed    bool   `json:"completed"`
@@ -48,7 +52,9 @@ func (s *Service) UploadChunk(
 	if !safeUUIDRe.MatchString(fileUUID) {
 		return nil, apperr.Validation("file_uuid.invalid", "Invalid file UUID", nil)
 	}
-	if chunkIndex < 0 || totalChunks <= 0 || chunkIndex >= totalChunks {
+	// Chunks are at most 10 MB and an upload at most 200 MB; an unbounded count
+	// let one caller keep writing chunk files to the shared temp volume.
+	if chunkIndex < 0 || totalChunks <= 0 || totalChunks > maxUploadChunks || chunkIndex >= totalChunks {
 		return nil, apperr.Validation("chunk.invalid", "Invalid chunk parameters", nil)
 	}
 	if len(chunkData) == 0 {

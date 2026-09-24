@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
 	"log/slog"
 	"strings"
 
@@ -33,6 +35,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/turnstile"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/ui/imageurl"
 )
 
 // SetRoleSeeder wires starter-role provisioning for companies that have none.
@@ -214,6 +217,11 @@ func (h *UIHandler) SetTelegramGatewayClient(c telegramgateway.Client) {
 // SetSessionSecret sets the session secret used for signing verified tokens.
 func (h *UIHandler) SetSessionSecret(s string) {
 	h.sessionSecret = s
+	if s != "" {
+		mac := hmac.New(sha256.New, []byte(s))
+		mac.Write([]byte("dawa24/image-proxy/v1"))
+		imageurl.SetProxyKey(mac.Sum(nil))
+	}
 }
 
 // safeGo executes a background task with panic recovery and structured error logging.

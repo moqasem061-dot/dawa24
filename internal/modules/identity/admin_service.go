@@ -2,6 +2,8 @@ package identity
 
 import (
 	"context"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 func (s *Service) AdminListUsers(ctx context.Context, role, status string) ([]*User, error) {
@@ -37,6 +39,9 @@ func (s *Service) AdminGetUser(ctx context.Context, id int64) (*User, error) {
 // would keep working from an already-open tab until their cookie expired. That
 // window is exactly what suspending an account is meant to close.
 func (s *Service) AdminSuspendUser(ctx context.Context, id, actorID int64) error {
+	if err := s.guardPrivilegedTarget(ctx, id, actorID); err != nil {
+		return err
+	}
 	s.InvalidateUserCache(id)
 	if err := s.repo.AdminUpdateUserStatus(ctx, id, string(StatusSuspended), actorID); err != nil {
 		return err
@@ -57,6 +62,9 @@ func (s *Service) AdminSuspendUser(ctx context.Context, id, actorID int64) error
 }
 
 func (s *Service) AdminReactivateUser(ctx context.Context, id, actorID int64) error {
+	if err := s.guardPrivilegedTarget(ctx, id, actorID); err != nil {
+		return err
+	}
 	s.InvalidateUserCache(id)
 	return s.repo.AdminUpdateUserStatus(ctx, id, string(StatusActive), actorID)
 }
@@ -64,6 +72,9 @@ func (s *Service) AdminReactivateUser(ctx context.Context, id, actorID int64) er
 // AdminResetMFA clears a user's second factor and ends their sessions, so a
 // session established with the old factor cannot outlive it.
 func (s *Service) AdminResetMFA(ctx context.Context, id, actorID int64) error {
+	if err := s.guardPrivilegedTarget(ctx, id, actorID); err != nil {
+		return err
+	}
 	if err := s.repo.AdminResetMFA(ctx, id, actorID); err != nil {
 		return err
 	}
@@ -84,6 +95,17 @@ func (s *Service) AdminResetMFA(ctx context.Context, id, actorID int64) error {
 // user demoted mid-session could otherwise keep acting with the permissions
 // they held when they signed in.
 func (s *Service) AdminAssignRole(ctx context.Context, id int64, role string, actorID int64) error {
+	if id == actorID {
+		return apperr.Forbidden("identity.self_role_change", "You cannot change your own role.")
+	}
+	if err := s.guardPrivilegedTarget(ctx, id, actorID); err != nil {
+		return err
+	}
+	if role == RoleSuperAdmin {
+		if err := s.requireOwnerActor(ctx, actorID); err != nil {
+			return err
+		}
+	}
 	if err := s.repo.AdminAssignRole(ctx, id, role, actorID); err != nil {
 		return err
 	}
@@ -100,6 +122,9 @@ func (s *Service) AdminAssignRole(ctx context.Context, id int64, role string, ac
 
 // AdminSetPassword validates password strength, hashes with bcrypt, updates password_hash, revokes all sessions, and logs audit.
 func (s *Service) AdminSetPassword(ctx context.Context, userID, actorID int64, newPassword string) error {
+	if err := s.guardPrivilegedTarget(ctx, userID, actorID); err != nil {
+		return err
+	}
 	if err := ValidatePassword(newPassword); err != nil {
 		return err
 	}
@@ -132,6 +157,9 @@ func (s *Service) AdminSetPassword(ctx context.Context, userID, actorID int64, n
 
 // AdminUpdateUserDetails updates user profile information and national ID.
 func (s *Service) AdminUpdateUserDetails(ctx context.Context, userID int64, in AdminEditUserInput, actorID int64) error {
+	if err := s.guardPrivilegedTarget(ctx, userID, actorID); err != nil {
+		return err
+	}
 	if err := s.repo.AdminUpdateUserDetails(ctx, userID, in, actorID); err != nil {
 		return err
 	}

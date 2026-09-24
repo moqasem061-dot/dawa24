@@ -2,7 +2,6 @@ package identity
 
 import (
 	"context"
-	"crypto/subtle"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -141,7 +140,7 @@ func (s *Service) ConfirmEnableMFA(ctx context.Context, userID int64, code strin
 		return nil, fmt.Errorf("generate recovery codes: %w", err)
 	}
 
-	recoveryBytes, err := json.Marshal(recoveryCodes)
+	recoveryBytes, err := json.Marshal(hashRecoveryCodes(recoveryCodes))
 	if err != nil {
 		return nil, err
 	}
@@ -231,50 +230,6 @@ func (s *Service) DisableMFA(ctx context.Context, userID int64, password, code s
 
 	s.log.InfoContext(ctx, "mfa disabled by user", "user_id", userID)
 	return nil
-}
-
-// VerifyMFA checks whether a code is a valid 6-digit TOTP code or an unused recovery code.
-func (s *Service) VerifyMFA(ctx context.Context, userID int64, code string) (bool, error) {
-	if userID <= 0 {
-		return false, apperr.Validation("user_id.invalid", "Valid user ID is required.", nil)
-	}
-
-	mfa, err := s.repo.GetMFA(ctx, userID)
-	if err != nil || mfa == nil || !mfa.Enabled || len(mfa.TOTPSecret) == 0 {
-		return false, apperr.Validation("mfa.not_enabled", i18n.TDefault("w4_mod.w4str_187_187"), nil)
-	}
-
-	cleanCode := strings.ToUpper(strings.TrimSpace(code))
-	cleanCodeDigits := strings.ReplaceAll(cleanCode, "-", "")
-
-	// 1. Try standard 6-digit TOTP code
-	if len(cleanCodeDigits) == TOTPDigits {
-		if ValidateTOTP(string(mfa.TOTPSecret), cleanCodeDigits, time.Now().UTC()) {
-			return true, nil
-		}
-	}
-
-	// 2. Try single-use recovery code
-	if len(mfa.RecoveryCodes) > 0 {
-		var existingCodes []string
-		if err := json.Unmarshal(mfa.RecoveryCodes, &existingCodes); err == nil && len(existingCodes) > 0 {
-			for i, rCode := range existingCodes {
-				cleanRCode := strings.ToUpper(strings.TrimSpace(rCode))
-				if subtle.ConstantTimeCompare([]byte(cleanCode), []byte(cleanRCode)) == 1 ||
-					subtle.ConstantTimeCompare([]byte(cleanCodeDigits), []byte(strings.ReplaceAll(cleanRCode, "-", ""))) == 1 {
-					// Consume this recovery code
-					updatedCodes := append(existingCodes[:i], existingCodes[i+1:]...)
-					updatedBytes, _ := json.Marshal(updatedCodes)
-					mfa.RecoveryCodes = updatedBytes
-					_ = s.repo.UpsertMFA(ctx, mfa)
-					s.log.WarnContext(ctx, "recovery code consumed for login", "user_id", userID, "remaining_codes", len(updatedCodes))
-					return true, nil
-				}
-			}
-		}
-	}
-
-	return false, nil
 }
 
 // CompleteMFALogin generates a full authenticated session for a user who passed MFA challenge.
@@ -377,7 +332,7 @@ func (s *Service) RegenerateRecoveryCodes(ctx context.Context, userID int64, pas
 		return nil, err
 	}
 
-	codesBytes, err := json.Marshal(newCodes)
+	codesBytes, err := json.Marshal(hashRecoveryCodes(newCodes))
 	if err != nil {
 		return nil, err
 	}

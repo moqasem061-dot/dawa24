@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"os"
 
 	"github.com/jackc/pgx/v5"
 
@@ -12,12 +13,20 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
-// The shared password for every seeded account. Long enough for
-// identity.HashPassword, which rejects anything under eight characters.
-//
-// These accounts are for development and staging. Seeding refuses to run when
-// APP_ENV is prod, because a known password on a real platform is a back door.
-const seedPassword = "Dawa24!Test"
+// seedPasswordEnv names the shared password for every seeded account. It is
+// read from the environment, never written here: a password in the repository
+// is a password everyone has, and staging databases get reached too. Seeding
+// also refuses to run when APP_ENV is prod.
+const seedPasswordEnv = "SEED_PASSWORD"
+
+// seedPassword returns SEED_PASSWORD, requiring twelve characters.
+func seedPassword() (string, error) {
+	pw := os.Getenv(seedPasswordEnv)
+	if len(pw) < 12 {
+		return "", fmt.Errorf("set %s (at least 12 characters) to seed accounts", seedPasswordEnv)
+	}
+	return pw, nil
+}
 
 type seedUser struct {
 	email   string
@@ -66,7 +75,11 @@ func runSeedUsers(ctx context.Context, db *database.DB, log *slog.Logger) error 
 		},
 	}
 
-	hash, err := identity.HashPassword(seedPassword)
+	pw, err := seedPassword()
+	if err != nil {
+		return err
+	}
+	hash, err := identity.HashPassword(pw)
 	if err != nil {
 		return fmt.Errorf("hash seed password: %w", err)
 	}
@@ -172,9 +185,7 @@ func runSeedUsers(ctx context.Context, db *database.DB, log *slog.Logger) error 
 // command is to hand them to someone.
 func seedUsersSummary() string {
 	return fmt.Sprintf(`
-Development sign-in accounts (password is the same for all three):
-
-  password: %s
+Development sign-in accounts (password: the SEED_PASSWORD you set):
 
   admin@dawa24.test       super_admin   /admin/dashboard
   vendor@dawa24.test      vendor        /vendor/products
@@ -182,5 +193,5 @@ Development sign-in accounts (password is the same for all three):
 
 Sign in at /auth/login. Re-running this command resets the passwords and
 clears any suspension applied while testing.
-`, seedPassword)
+`)
 }

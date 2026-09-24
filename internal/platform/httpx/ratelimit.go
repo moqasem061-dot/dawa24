@@ -82,37 +82,6 @@ func (l *Limiter) LimitByIP(limit int, window time.Duration) func(http.Handler) 
 	}
 }
 
-// LimitByOrg creates a middleware that restricts requests per tenant organization.
-func (l *Limiter) LimitByOrg(limit int, window time.Duration) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			rdb := l.client()
-			if rdb == nil {
-				next.ServeHTTP(w, r)
-				return
-			}
-
-			orgID, ok := database.TenantFrom(r.Context())
-			if !ok {
-				orgID = 0
-			}
-
-			key := fmt.Sprintf("%sorg:%d", l.prefix, orgID)
-			allowed, count, ttl, err := l.allow(r.Context(), key, limit, window)
-			setRateLimitHeaders(w, limit, count, ttl)
-			if err != nil || !allowed {
-				if ttl > 0 {
-					w.Header().Set("Retry-After", strconv.FormatInt(int64(max(1, int(ttl.Seconds()))), 10))
-				}
-				Error(w, r, nil, apperr.New(apperr.KindRateLimited, "org_rate_limit_exceeded", "Organization rate limit exceeded. Please try again later."))
-				return
-			}
-
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
 // LimitUserOrIP provides dynamic tiered rate limiting for backend APIs:
 // - Authenticated users are metered per user ID with userLimit (e.g. 240 req/min).
 // - Unauthenticated callers are metered per client IP with ipLimit (e.g. 60 req/min).

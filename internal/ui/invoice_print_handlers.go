@@ -11,6 +11,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -35,7 +36,7 @@ func (h *UIHandler) InvoicePrintPage(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if invoice == nil {
+	if actor, _ := authctx.From(ctx); !actorMayViewInvoice(actor, invoice) {
 		http.NotFound(w, r)
 		return
 	}
@@ -70,7 +71,7 @@ func (h *UIHandler) OrderInvoicePrintPage(w http.ResponseWriter, r *http.Request
 		}
 	}
 
-	if order == nil {
+	if actor, _ := authctx.From(ctx); !actorMayViewOrder(actor, order) {
 		http.NotFound(w, r)
 		return
 	}
@@ -91,11 +92,16 @@ func (h *UIHandler) OrderInvoicePrintPage(w http.ResponseWriter, r *http.Request
 }
 
 func (h *UIHandler) synthesizeInvoiceFromOrder(ctx context.Context, order *commerce.Order) *billing.Invoice {
-	vendorOrgID := int64(1)
+	// The issuer is the fulfilling vendor. It used to default to organization 1
+	// and to take a branch id as an organization id, filing invoices under
+	// whichever company happened to own those numbers.
+	var vendorOrgID int64
 	if len(order.Shipments) > 0 && order.Shipments[0].OrganizationID > 0 {
 		vendorOrgID = order.Shipments[0].OrganizationID
-	} else if order.VendorBranchID != nil {
-		vendorOrgID = *order.VendorBranchID
+	} else if order.VendorBranchID != nil && h.orgSvc != nil {
+		if b, err := h.orgSvc.GetBranch(ctx, *order.VendorBranchID); err == nil && b != nil {
+			vendorOrgID = b.OrganizationID
+		}
 	}
 	newInv := &billing.Invoice{
 		OrganizationID: vendorOrgID,
@@ -123,6 +129,9 @@ func (h *UIHandler) synthesizeInvoiceFromOrder(ctx context.Context, order *comme
 			UnitPrice:   l.UnitPrice,
 			TotalPrice:  l.TotalPrice,
 		})
+	}
+	if vendorOrgID <= 0 {
+		return newInv // printable, but not filed under a guessed issuer
 	}
 	savedInv, errCreate := h.billSvc.CreateInvoice(ctx, newInv)
 	if errCreate == nil && savedInv != nil {

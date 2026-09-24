@@ -254,3 +254,13 @@ func (m *mockOrgRepoTeamTest) AssignMemberRole(_ context.Context, orgID, memberI
 	}
 	return nil
 }
+
+func (m *mockOrgRepoTeamTest) MemberOrganizations(_ context.Context, userID int64) ([]int64, error) {
+	var ids []int64
+	for _, mem := range m.members {
+		if mem.UserID == userID {
+			ids = append(ids, mem.OrganizationID)
+		}
+	}
+	return ids, nil
+}

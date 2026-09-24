@@ -206,11 +206,13 @@ func run() error {
 		if len(os.Args) >= 4 && os.Args[3] != "" {
 			password = os.Args[3]
 		}
+		// Prefer ADMIN_PASSWORD: an argument lands in shell history and in the
+		// process list. There is no default password in any environment.
 		if password == "" {
-			if cfg.Env.IsProd() {
-				return errors.New("create-admin needs an explicit password in production: cli create-admin <email> <password>")
-			}
-			password = devAdminPassword
+			password = os.Getenv("ADMIN_PASSWORD")
+		}
+		if password == "" {
+			return errors.New("create-admin needs a password: set ADMIN_PASSWORD (preferred) or pass it as the second argument")
 		}
 		if err := createOrUpdateAdmin(ctx, db, log, email, password, "Platform Super Admin", "مدير النظام العام"); err != nil {
 			return err

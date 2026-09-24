@@ -87,7 +87,7 @@ func (h *healthHandler) ready(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, status, statusResponse{
 		Status: overall, Version: buildVersion, Commit: buildCommit, Env: h.env,
 		Time: time.Now().UTC().Format(time.RFC3339), Pending: pending,
-		Components: components,
+		Components: h.public(components),
 	})
 }
 
@@ -105,6 +105,10 @@ func (h *healthHandler) status(w http.ResponseWriter, r *http.Request) {
 	components["migrations"] = migrationStatus
 	components["ai_gateway"] = h.checkGateway(ctx)
 
+	if h.env == "prod" {
+		h.log.InfoContext(ctx, "status check", "components", components)
+	}
+
 	overall := "ok"
 	for name, c := range components {
 		if name == "ai_gateway" {
@@ -118,7 +122,7 @@ func (h *healthHandler) status(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, statusResponse{
 		Status: overall, Version: buildVersion, Commit: buildCommit, Env: h.env,
 		Time: time.Now().UTC().Format(time.RFC3339), Pending: pending,
-		Components: components,
+		Components: h.public(components),
 	})
 }
 
@@ -205,4 +209,19 @@ func connectingOrDown(err error) componentStatus {
 		return componentStatus{Status: "connecting", Detail: "establishing connection"}
 	}
 	return componentStatus{Status: "down", Detail: err.Error()}
+}
+
+// public drops component error text in production. These endpoints answer
+// anyone; raw driver and network errors name hosts, ports and roles. The full
+// text is in the log.
+func (h *healthHandler) public(components map[string]componentStatus) map[string]componentStatus {
+	if h.env != "prod" {
+		return components
+	}
+	out := make(map[string]componentStatus, len(components))
+	for k, c := range components {
+		c.Detail = ""
+		out[k] = c
+	}
+	return out
 }

@@ -95,7 +95,7 @@ func TestServiceRegisterAndLogin(t *testing.T) {
 	if err := svc.AdminResetMFA(ctx, user.ID, 1); err != nil {
 		t.Fatalf("AdminResetMFA failed: %v", err)
 	}
-	if err := svc.AdminAssignRole(ctx, user.ID, "manager", 1); err != nil {
+	if err := svc.AdminAssignRole(ctx, user.ID, "manager", user.ID+100); err != nil {
 		t.Fatalf("AdminAssignRole failed: %v", err)
 	}
 

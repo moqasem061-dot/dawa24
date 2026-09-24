@@ -78,6 +78,10 @@ func run() error {
 
 	log := observability.NewLogger(cfg.Observ, cfg.Env)
 	slog.SetDefault(log)
+
+	if bad := httpx.SetTrustedProxies(cfg.HTTP.TrustedProxies); len(bad) > 0 {
+		log.Warn("ignoring invalid TRUSTED_PROXIES entries", "entries", bad)
+	}
 	if cfg.Session.SecretGenerated {
 		log.Warn("SESSION_SECRET is not set; using a random one for this process. " +
 			"Everyone is signed out at each restart until it is set (openssl rand -hex 32).")
@@ -292,6 +296,8 @@ func newRouter(
 	r.Use(httpx.RequestID)
 	r.Use(httpx.Recover(log))
 	r.Use(httpx.Logger(log))
+	// Above the largest upload the platform accepts (a 200 MB import batch).
+	r.Use(httpx.MaxRequestBody(256 << 20))
 	r.Use(httpx.ReportHostOnly(cfg.CSPReportHost()))
 	// The Clarity tag and the CSP that admits it are switched by the same value.
 	layouts.ClarityProjectID = cfg.Clarity.ProjectID

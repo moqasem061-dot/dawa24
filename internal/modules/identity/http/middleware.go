@@ -261,11 +261,7 @@ func ResolveTenant(service *identity.Service, log *slog.Logger) func(http.Handle
 					}
 					orgID = requested
 					if actor, ok := authctx.From(ctx); ok {
-						actor.OrganizationID = orgID
-						actor.OrgType = newType
-						actor.OrgStatus = newStatus
-						actor.Permissions = newPerms
-						ctx = authctx.WithActor(ctx, actor)
+						ctx = authctx.WithActor(ctx, switchActorOrg(ctx, service, actor, sess.UserID, orgID, newType, newStatus, newPerms))
 					}
 				}
 			}

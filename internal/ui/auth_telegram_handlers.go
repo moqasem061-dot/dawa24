@@ -32,7 +32,9 @@ func (h *UIHandler) phoneSecret() string {
 	if h.sessionSecret != "" {
 		return h.sessionSecret
 	}
-	return "dawa24-verification-fallback-secret-2024"
+	// No configured secret: a per-process random one. It was a constant in the
+	// source, which anyone could read and use to sign a password-reset token.
+	return string(h.mfaPendingKey())
 }
 
 type sendOTPReq struct {

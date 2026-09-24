@@ -10,6 +10,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 // resolveInvoiceDataByParam fetches printable data by URL ID parameter.
@@ -34,7 +35,7 @@ func (h *UIHandler) resolveInvoiceDataByParam(r *http.Request, isOrder bool) (*b
 				order = loaded
 			}
 		}
-		if order == nil {
+		if actor, _ := authctx.From(ctx); !actorMayViewOrder(actor, order) {
 			return nil, fmt.Errorf("order not found")
 		}
 	} else {
@@ -44,7 +45,7 @@ func (h *UIHandler) resolveInvoiceDataByParam(r *http.Request, isOrder bool) (*b
 				invoice = inv
 			}
 		}
-		if invoice == nil {
+		if actor, _ := authctx.From(ctx); !actorMayViewInvoice(actor, invoice) {
 			return nil, fmt.Errorf("invoice not found")
 		}
 	}

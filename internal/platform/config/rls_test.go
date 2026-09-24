@@ -13,24 +13,23 @@ func setMinimalProdEnv(t *testing.T) {
 	t.Setenv("TURNSTILE_ENABLED", "false")
 }
 
-// A production server warns on a role that bypasses row-level security unless
-// DB_REQUIRE_RLS=true asks it to refuse, so a deploy that still connects as the
-// owner keeps running.
-func TestProductionServerRequiresRLSOnlyWhenAsked(t *testing.T) {
+// A production server refuses a role that bypasses row-level security unless
+// DB_REQUIRE_RLS=false explicitly opts out.
+func TestProductionServerRequiresRLSByDefault(t *testing.T) {
 	setMinimalProdEnv(t)
 	cfg, err := Load()
 	if err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if cfg.Database.RequireRLS {
-		t.Error("RLS is required without DB_REQUIRE_RLS")
+	if !cfg.Database.RequireRLS {
+		t.Error("a production server does not require RLS by default")
 	}
-	t.Setenv("DB_REQUIRE_RLS", "true")
+	t.Setenv("DB_REQUIRE_RLS", "false")
 	if cfg, err = Load(); err != nil {
 		t.Fatalf("Load: %v", err)
 	}
-	if !cfg.Database.RequireRLS {
-		t.Error("DB_REQUIRE_RLS=true did not make a production server require RLS")
+	if cfg.Database.RequireRLS {
+		t.Error("DB_REQUIRE_RLS=false did not opt out")
 	}
 }
 
@@ -47,15 +46,19 @@ func TestCLIDoesNotRequireRLS(t *testing.T) {
 	}
 }
 
-// A deploy without SESSION_SECRET boots with a random one instead of refusing.
-func TestMissingSessionSecretIsGenerated(t *testing.T) {
+// Production refuses to start without SESSION_SECRET; development generates one.
+func TestMissingSessionSecret(t *testing.T) {
 	setMinimalProdEnv(t)
 	t.Setenv("SESSION_SECRET", "")
+	if _, err := Load(); err == nil {
+		t.Error("production started without SESSION_SECRET")
+	}
+	t.Setenv("APP_ENV", "dev")
 	cfg, err := Load()
 	if err != nil {
-		t.Fatalf("Load: %v", err)
+		t.Fatalf("Load (dev): %v", err)
 	}
 	if !cfg.Session.SecretGenerated || len(cfg.Session.Secret) < 32 {
-		t.Errorf("secret %d bytes, generated=%v", len(cfg.Session.Secret), cfg.Session.SecretGenerated)
+		t.Errorf("dev secret %d bytes, generated=%v", len(cfg.Session.Secret), cfg.Session.SecretGenerated)
 	}
 }

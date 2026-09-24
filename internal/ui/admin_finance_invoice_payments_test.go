@@ -45,11 +45,22 @@ func TestAdminInvoicePaymentRoutes(t *testing.T) {
 		t.Fatalf("expected unauthorized staff to redirect, got %d", recNoPerm.Code)
 	}
 
-	// 3. Staff with billing.invoice.view submits payment without invoice -> redirects with error notice to dest
+	// 3. Viewing invoices is not recording payments: a view-only staff member is
+	// refused, one holding billing.invoice.manage reaches the handler.
+	viewOnly := authctx.Actor{UserID: 2, IsStaff: true}
+	viewOnly.Grants([]string{"billing.invoice.view"})
+	reqView := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/finance/invoices/payments", nil)
+	reqView = reqView.WithContext(authctx.WithActor(reqView.Context(), viewOnly))
+	recView := httptest.NewRecorder()
+	r.ServeHTTP(recView, reqView)
+	if loc := recView.Header().Get("Location"); strings.HasPrefix(loc, "/admin/finance/invoices") {
+		t.Fatalf("view-only staff reached the payment handler (redirect %s)", loc)
+	}
+
 	staffPerm := authctx.Actor{
 		UserID:      2,
 		IsStaff:     true,
-		Permissions: []string{"billing.invoice.view"},
+		Permissions: []string{"billing.invoice.view", "billing.invoice.manage"},
 	}
 	form := url.Values{}
 	form.Set("redirect_to", "/admin/finance/invoices")

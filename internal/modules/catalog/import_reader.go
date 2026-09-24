@@ -13,6 +13,10 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
+// sheetUnzipLimit bounds how far an uploaded workbook may expand. excelize
+// defaults to 16 GB, which a small zip bomb can reach in temporary files.
+const sheetUnzipLimit = 1 << 30
+
 // SheetData is a decoded rectangle of cells plus what was learned decoding it.
 type SheetData struct {
 	Rows []([]string)
@@ -162,7 +166,7 @@ var errSheetTooLarge = errors.New(
 // been fully materialised in memory. Only the winning sheet is read into the
 // slice the parser consumes.
 func readExcel(content []byte) (*SheetData, error) {
-	f, err := excelize.OpenReader(bytes.NewReader(content))
+	f, err := excelize.OpenReader(bytes.NewReader(content), excelize.Options{UnzipSizeLimit: sheetUnzipLimit})
 	if err != nil {
 		return nil, fmt.Errorf(i18n.TDefault("w4_mod.excel_v_93"), err)
 	}

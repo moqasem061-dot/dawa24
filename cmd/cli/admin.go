@@ -15,10 +15,6 @@ import (
 
 const defaultAdminEmail = "admin@dawa24.net"
 
-// devAdminPassword is the password a non-production super_admin gets when none
-// is given. It is in the repository, so it must never reach production.
-const devAdminPassword = "Admin!Dawa24!2026"
-
 // ensureAdminAccount creates the ADMIN_EMAIL super_admin when it does not exist
 // yet, and leaves an existing one untouched.
 //
@@ -49,20 +45,23 @@ func ensureAdminAccount(ctx context.Context, db *database.DB, log *slog.Logger, 
 
 	password := os.Getenv("ADMIN_PASSWORD")
 	if password == "" {
-		if prod {
-			log.WarnContext(ctx, "no super_admin account and ADMIN_PASSWORD is not set; "+
-				"create one with: cli create-admin <email> <password>", "email", email)
-			return nil
-		}
-		password = devAdminPassword
+		// No default password in any environment: a password written in this
+		// repository is a password everyone has.
+		log.WarnContext(ctx, "no super_admin account and ADMIN_PASSWORD is not set; "+
+			"set ADMIN_PASSWORD and run: cli create-admin <email>", "email", email, "prod", prod)
+		return nil
 	}
 	return createOrUpdateAdmin(ctx, db, log, email, password, "Platform Super Admin", "مدير النظام العام")
 }
 
 // createOrUpdateAdmin creates or updates an administrator with role super_admin.
 func createOrUpdateAdmin(ctx context.Context, db *database.DB, log *slog.Logger, email, password, nameEn, nameAr string) error {
-	if len(password) < 8 {
-		return fmt.Errorf("admin password must be at least 8 characters")
+	// The platform owner: stronger than the ordinary account minimum.
+	if len(password) < 14 {
+		return fmt.Errorf("admin password must be at least 14 characters")
+	}
+	if err := identity.ValidatePassword(password); err != nil {
+		return fmt.Errorf("admin password: %w", err)
 	}
 
 	cleanEmail := identity.NormalizeEmail(email)

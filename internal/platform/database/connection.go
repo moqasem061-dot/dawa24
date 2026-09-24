@@ -22,7 +22,7 @@ var ErrNotConnected = errors.New("database: not connected yet")
 // connecting role is a superuser or holds BYPASSRLS. It is a configuration
 // error, not a transient one: retrying cannot fix it.
 var ErrRLSBypassed = errors.New("database: the connecting role bypasses row-level security; " +
-	"connect the server and worker as dawa24_app, or unset DB_REQUIRE_RLS")
+	"connect the server and worker as dawa24_app (APP_DATABASE_URL), not as the owner or a superuser")
 
 // DB wraps the pool and exposes only transaction-scoped access.
 //
@@ -106,14 +106,15 @@ func Open(ctx context.Context, cfg config.Database) (*DB, error) {
 func (db *DB) checkRLS(ctx context.Context, pool *pgxpool.Pool, required bool) error {
 	bypassed := roleBypassesRLS(ctx, pool)
 	db.rlsBypassed.Store(bypassed)
-	if !bypassed {
+	owns := !bypassed && roleOwnsAppTables(ctx, pool)
+	if !bypassed && !owns {
 		return nil
 	}
 	if required {
 		return ErrRLSBypassed
 	}
-	slog.Warn("SECURITY NOTICE: Database connection role has SUPERUSER or BYPASSRLS privileges; engine-level Row-Level Security is INERT. Connect via non-superuser role (e.g. dawa24_app) in production.",
-		"role_bypasses_rls", true)
+	slog.Error("SECURITY NOTICE: the database role is a superuser, holds BYPASSRLS, or owns the application tables; row-level security is inert or can be switched off. Connect the server and worker as dawa24_app.",
+		"role_bypasses_rls", bypassed, "role_owns_tables", owns)
 	return nil
 }
 
@@ -207,4 +208,25 @@ func roleBypassesRLS(ctx context.Context, pool *pgxpool.Pool) bool {
 	var bypass bool
 	err := pool.QueryRow(ctx, `SELECT rolsuper OR rolbypassrls FROM pg_roles WHERE rolname = current_user`).Scan(&bypass)
 	return err == nil && bypass
+}
+
+// roleOwnsAppTables reports whether the connecting role owns application
+// tables. FORCE ROW LEVEL SECURITY binds an owner only until it runs ALTER
+// TABLE ... DISABLE ROW LEVEL SECURITY, which an owner may, and an owner can
+// drop the tables outright; a runtime role must own nothing. public is
+// excluded because the job queue may create its tables there.
+func roleOwnsAppTables(ctx context.Context, pool *pgxpool.Pool) bool {
+	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+	var owns bool
+	err := pool.QueryRow(ctx, `
+		SELECT EXISTS (
+			SELECT 1
+			  FROM pg_class c
+			  JOIN pg_namespace n ON n.oid = c.relnamespace
+			 WHERE c.relowner = (SELECT oid FROM pg_roles WHERE rolname = current_user)
+			   AND c.relkind IN ('r', 'p')
+			   AND n.nspname NOT IN ('pg_catalog', 'information_schema', 'public')
+			   AND n.nspname NOT LIKE 'pg\_%')`).Scan(&owns)
+	return err == nil && owns
 }

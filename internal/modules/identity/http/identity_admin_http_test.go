@@ -170,7 +170,7 @@ func TestIdentityHandler_HappyPaths(t *testing.T) {
 		{"AdminSuspend", http.MethodPost, "/api/v1/admin/identity/users/1/suspend", "", http.StatusOK},
 		{"AdminReactivate", http.MethodPost, "/api/v1/admin/identity/users/1/reactivate", "", http.StatusOK},
 		{"AdminResetMFA", http.MethodPost, "/api/v1/admin/identity/users/1/reset-mfa", "", http.StatusOK},
-		{"AdminAssignRole", http.MethodPut, "/api/v1/admin/identity/users/1/role", `{"role":"vendor"}`, http.StatusOK},
+		{"AdminAssignRole", http.MethodPut, "/api/v1/admin/identity/users/2/role", `{"role":"vendor"}`, http.StatusOK},
 	}
 
 	for _, tt := range tests {

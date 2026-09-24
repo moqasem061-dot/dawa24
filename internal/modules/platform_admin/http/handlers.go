@@ -44,7 +44,12 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 	r.Get("/api/v1/platform/currencies", h.ListCurrencies)
 	r.Get("/api/v1/platform/languages", h.ListLanguages)
 	r.Post("/api/v1/platform/contact", h.SubmitContact)
-	r.Get("/api/v1/platform/contact", h.ListContactMessages)
+	// Contact messages carry visitors' names, phones and emails; reading them is
+	// the admin inbox's permission, not any member's.
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequireAPIPermission("platform.message.view", "platform.admin"))
+		g.Get("/api/v1/platform/contact", h.ListContactMessages)
+	})
 
 	h.RegisterAdminRoutes(r)
 }
@@ -67,6 +72,16 @@ func (h *Handler) GetSetting(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		httpx.Error(w, r, h.log, err)
 		return
+	}
+	// Non-public settings hold credentials (Gateway and AI api_key,
+	// virtual_key). Any approved member could read them here; only staff with
+	// the settings permission may, and everyone else sees them as absent.
+	if !s.IsPublic {
+		actor, ok := authctx.From(r.Context())
+		if !ok || !actor.CanAny("platform.setting.view", "platform.setting.update", "platform.admin") {
+			httpx.Error(w, r, h.log, apperr.NotFound("system_setting"))
+			return
+		}
 	}
 
 	httpx.JSON(w, http.StatusOK, s)

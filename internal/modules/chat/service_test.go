@@ -65,3 +65,21 @@ func TestSendMessageRejectsEmpty(t *testing.T) {
 		t.Fatal("expected error sending an empty message")
 	}
 }
+
+// Only the two organizations of a conversation may post in it.
+func TestSendMessageRequiresParticipantOrg(t *testing.T) {
+	repo := &mockRepo{conversation: &Conversation{ID: 1, OrganizationID: 5, CounterpartyOrgID: 6}}
+	svc := NewService(repo, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	ctx := context.Background()
+	outsider, member := int64(7), int64(6)
+
+	if _, err := svc.SendMessage(ctx, 1, 10, &outsider, "hi"); err == nil {
+		t.Error("an outside organization posted into the conversation")
+	}
+	if _, err := svc.SendMessage(ctx, 1, 10, nil, "hi"); err == nil {
+		t.Error("a caller with no organization posted into the conversation")
+	}
+	if _, err := svc.SendMessage(ctx, 1, 10, &member, "hi"); err != nil {
+		t.Errorf("counterparty could not post: %v", err)
+	}
+}

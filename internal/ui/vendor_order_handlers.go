@@ -242,7 +242,9 @@ func (h *UIHandler) transitionVendorShipment(
 	ctx context.Context, actor authctx.Actor, shipmentID int64, to commerce.OrderStatus, notes, carrier, tracking string,
 ) error {
 	shipment, sErr := h.commSvc.GetShipment(database.AsSystem(ctx), shipmentID)
-	if sErr != nil || shipment == nil {
+	// Ownership first: the wallet debit below runs before the commerce service
+	// would refuse another organisation's shipment.
+	if sErr != nil || shipment == nil || (!actor.IsStaff && shipment.OrganizationID != actor.OrganizationID) {
 		return fmt.Errorf("shipment not found")
 	}
 	order, oErr := h.commSvc.GetOrder(database.AsSystem(ctx), shipment.OrderID)

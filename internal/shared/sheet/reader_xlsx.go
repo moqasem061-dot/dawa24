@@ -10,6 +10,10 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// sheetUnzipLimit bounds how far an uploaded workbook may expand. excelize
+// defaults to 16 GB, which a small zip bomb can reach in temporary files.
+const sheetUnzipLimit = 1 << 30
+
 // OOXML workbook decoding.
 //
 // excelize can hand back a whole worksheet as [][]string, and that is what
@@ -49,7 +53,7 @@ func (b *Book) openXLSX() (err error) {
 		}
 	}()
 
-	f, err := excelize.OpenReader(bytes.NewReader(b.content))
+	f, err := excelize.OpenReader(bytes.NewReader(b.content), excelize.Options{UnzipSizeLimit: sheetUnzipLimit})
 	if err != nil {
 		return fmt.Errorf("تعذر فتح ملف Excel — قد يكون الملف تالفاً أو محمياً بكلمة مرور (%w)", err)
 	}

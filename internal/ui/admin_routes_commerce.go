@@ -20,7 +20,7 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 			id := chi.URLParam(r, "id")
 			http.Redirect(w, r, "/admin/orders/"+id, http.StatusMovedPermanently)
 		})
-		g.Post("/admin/orders/{id}/status", h.AdminOrderStatusSubmit)
+		g.With(authctx.RequirePagePermission("commerce.order.update")).Post("/admin/orders/{id}/status", h.AdminOrderStatusSubmit)
 	})
 
 	// Offers & Promotions
@@ -59,8 +59,8 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("billing.invoice.view", "billing.finance.view"))
 		g.Get("/admin/finance/invoices", h.AdminFinanceInvoicesPage)
-		g.Post("/admin/finance/invoices/payments", h.AdminRecordInvoicePaymentSubmit)
-		g.Post("/admin/payments/record", h.AdminRecordInvoicePaymentSubmit)
+		g.With(authctx.RequirePagePermission("billing.invoice.manage")).Post("/admin/finance/invoices/payments", h.AdminRecordInvoicePaymentSubmit)
+		g.With(authctx.RequirePagePermission("billing.invoice.manage")).Post("/admin/payments/record", h.AdminRecordInvoicePaymentSubmit)
 	})
 
 	r.Group(func(g chi.Router) {

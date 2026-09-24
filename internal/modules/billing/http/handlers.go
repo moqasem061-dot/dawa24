@@ -117,8 +117,10 @@ func (h *Handler) Deposit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Direct manual wallet deposits require billing administrator authorization
-	if !actor.IsStaff && !actor.Can("billing.admin") {
+	// Direct manual wallet deposits require billing administrator authorization.
+	// Being staff is not enough: support, moderator and developer roles hold no
+	// billing permission, and the Administrator role withholds wallet management.
+	if !actor.Can("billing.admin") {
 		httpx.Error(w, r, h.log, apperr.Forbidden("billing.admin_required", "Direct manual wallet deposits require administrator permission."))
 		return
 	}
@@ -152,7 +154,7 @@ func (h *Handler) Withdraw(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Direct manual wallet withdrawals require billing administrator authorization
-	if !actor.IsStaff && !actor.Can("billing.admin") {
+	if !actor.Can("billing.admin") {
 		httpx.Error(w, r, h.log, apperr.Forbidden("billing.admin_required", "Direct manual wallet withdrawals require administrator permission."))
 		return
 	}
@@ -204,7 +206,7 @@ func (h *Handler) Subscribe(w http.ResponseWriter, r *http.Request) {
 	}
 
 	targetUserID := actor.UserID
-	if !actor.IsStaff && !actor.Can("billing.admin") {
+	if !actor.Can("billing.admin") {
 		httpx.Error(w, r, h.log, apperr.Forbidden("billing.admin_required", "Direct subscription activation requires billing.admin privilege. Please subscribe via the billing portal."))
 		return
 	}
@@ -329,7 +331,7 @@ func (h *Handler) PayInvoice(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !actor.IsStaff && !actor.Can("billing.admin") {
+	if !actor.Can("billing.admin") {
 		httpx.Error(w, r, h.log, apperr.Forbidden("billing.admin_required", "Manual invoice settlement requires billing.admin privilege or verified payment gateway callback."))
 		return
 	}

@@ -71,6 +71,10 @@ func (h *UIHandler) VendorTeamNewSubmit(w http.ResponseWriter, r *http.Request) 
 	var targetUserID int64
 	existingUser, err := h.idSvc.GetUserByEmail(ctx, email)
 	if err == nil && existingUser != nil {
+		if !h.accountManagedByOrg(ctx, existingUser, actor.OrganizationID) {
+			h.redirectWithNotice(w, r, "/vendor/team", "error", i18n.T(langOf(r), "customer.employee.belongs_to_other_org"))
+			return
+		}
 		targetUserID = existingUser.ID
 	} else {
 		newUser, _, regErr := h.idSvc.Register(ctx, identity.RegisterInput{
@@ -211,10 +215,15 @@ func (h *UIHandler) VendorTeamEditSubmit(w http.ResponseWriter, r *http.Request)
 	sysCtx := database.AsSystem(ctx)
 
 	// 1. Profile fields on the identity user. UpdateProfile ignores empty
-	//    values, so a blank field leaves the stored one untouched.
+	//    values, so a blank field leaves the stored one untouched. An account
+	//    that also belongs to another company, or to platform staff, keeps its
+	//    own profile: this company edits only its membership.
 	if h.idSvc != nil && (name != "" || phone != "") {
-		if _, e := h.idSvc.UpdateProfile(sysCtx, member.UserID, name, name, phone, "", ""); e != nil {
-			h.log.WarnContext(ctx, "vendor employee edit: profile update failed", "user_id", member.UserID, "error", e)
+		u, e := h.idSvc.GetUserByID(sysCtx, member.UserID)
+		if e == nil && h.accountManagedByOrg(ctx, u, actor.OrganizationID) {
+			if _, e := h.idSvc.UpdateProfile(sysCtx, member.UserID, name, name, phone, "", ""); e != nil {
+				h.log.WarnContext(ctx, "vendor employee edit: profile update failed", "user_id", member.UserID, "error", e)
+			}
 		}
 	}
 

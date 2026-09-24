@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net/url"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -18,9 +17,12 @@ import (
 // appRole is the least-privilege role the server and worker connect as.
 const appRole = "dawa24_app"
 
+// minAppPasswordLen is the shortest DB_APP_PASSWORD production accepts.
+const minAppPasswordLen = 24
+
 // migrationDefaultAppPassword is the password migration 222 created appRole
 // with. It is in the repository, so a role still accepting it is open to anyone
-// who can reach the database.
+// who can reach the database. It stays here only so migrate can detect it.
 const migrationDefaultAppPassword = "dawa24_app_change_me"
 
 // setAppRolePassword keeps appRole's password out of the repository.
@@ -28,8 +30,7 @@ const migrationDefaultAppPassword = "dawa24_app_change_me"
 // With DB_APP_PASSWORD set, migrate (which runs as the schema owner) sets it,
 // so rotating the password is a config change plus a deploy. Without it, the
 // role is probed with the migration's default. Still accepting that password
-// is a warning, and fails a production migrate only once DB_REQUIRE_RLS=true
-// says the server really connects as this role.
+// fails a production migrate and is a warning elsewhere.
 func setAppRolePassword(ctx context.Context, db *database.DB, log *slog.Logger, prod bool) error {
 	var exists bool
 	if err := db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
@@ -42,6 +43,9 @@ func setAppRolePassword(ctx context.Context, db *database.DB, log *slog.Logger, 
 	}
 
 	if pw := os.Getenv("DB_APP_PASSWORD"); pw != "" {
+		if prod && (len(pw) < minAppPasswordLen || pw == migrationDefaultAppPassword) {
+			return fmt.Errorf("DB_APP_PASSWORD must be at least %d characters and not the migration default", minAppPasswordLen)
+		}
 		stmt := fmt.Sprintf("ALTER ROLE %s WITH LOGIN PASSWORD %s", pgx.Identifier{appRole}.Sanitize(), database.QuoteLiteral(pw))
 		if err := db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 			_, err := tx.Exec(txCtx, stmt)
@@ -57,7 +61,9 @@ func setAppRolePassword(ctx context.Context, db *database.DB, log *slog.Logger, 
 		return nil
 	}
 	msg := appRole + " still accepts the default password from migration 222; set DB_APP_PASSWORD and re-run migrate"
-	if strict, _ := strconv.ParseBool(os.Getenv("DB_REQUIRE_RLS")); prod && strict {
+	// The default is published in the repository, so production never accepts
+	// it, whether or not the server is already required to use RLS.
+	if prod {
 		return errors.New(msg)
 	}
 	log.WarnContext(ctx, msg)

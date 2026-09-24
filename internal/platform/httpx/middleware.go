@@ -263,7 +263,7 @@ func cookieValue(r *http.Request, name string) string {
 // trustedHops of 0 ignores X-Forwarded-For entirely and uses the peer address,
 // which is correct when nothing is in front of this process.
 func ClientIP(r *http.Request, trustedHops int) string {
-	if trustedHops > 0 {
+	if trustedHops > 0 && !peerIsUntrusted(r) {
 		if parts := splitForwarded(r.Header.Get("X-Forwarded-For")); len(parts) > 0 {
 			// Index from the right; a chain shorter than the configured hop
 			// count means the request did not come through the whole chain, so

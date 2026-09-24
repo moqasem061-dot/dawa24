@@ -4,6 +4,7 @@ import (
 	"context"
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
@@ -230,6 +231,23 @@ func (s *Service) GetOrgInfoForUser(ctx context.Context, userID, orgID int64) (o
 	orgType = normType
 	perms = s.resolvePermissions(ctx, userID, orgID)
 	return orgType, orgStatus, perms, nil
+}
+
+// ResolveGrant returns the complete RBAC grant — keys, scope, owner flag and
+// branch binding — for userID acting in orgID. ok is false when no resolver is
+// wired or resolution failed; callers must then fall back to the least
+// privilege they can derive.
+func (s *Service) ResolveGrant(ctx context.Context, userID, orgID int64) (rbac.Grant, bool) {
+	if s.resolver == nil {
+		return rbac.Grant{}, false
+	}
+	g, err := s.resolver.Resolve(ctx, userID, orgID)
+	if err != nil {
+		s.log.ErrorContext(ctx, "could not resolve grant for organization switch",
+			"error", err, "user_id", userID, "organization_id", orgID)
+		return rbac.Grant{}, false
+	}
+	return g, true
 }
 
 func stringsContains(s, substr string) bool {

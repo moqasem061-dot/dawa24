@@ -74,3 +74,7 @@ The `promo` bounded context handles promotional campaigns, vendor discount confi
   first. Tested against a real schema by `TestBuyerOfferRule`.
 - **Canonical projection:** `offerColumns` + `scanOffer` in
   `postgres/offers_products.go` — every offer SELECT reuses it.
+
+## Ad click destinations (security fix 2026-09-24)
+
+`Ad.ResolveClickURL` follows `target_url` only when it is a plain same-site path; anything else (an absolute URL, `//host`, `/\host`) falls back to the click-target type. The screens only ever store local paths, but the JSON API accepts any string and `/ads/click/{ad}` redirects to it.

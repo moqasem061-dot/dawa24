@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/a-h/templ"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -54,6 +55,9 @@ func clientI18nScript(lang, dir string) templ.Component {
 		i18n.T(lang, "preview.document"),
 		i18n.T(lang, "preview.digital_file"),
 	)
+	// %q escapes for Go, not for HTML: a translation containing "</script>"
+	// would close the element. "<\/" is the same string to JavaScript.
+	data = strings.ReplaceAll(data, "</", `<\/`)
 	return templ.ComponentFunc(func(ctx context.Context, w io.Writer) error {
 		nonce := Nonce(ctx)
 		if nonce != "" {

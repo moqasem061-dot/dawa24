@@ -19,11 +19,11 @@ services:
     restart: "no"
     environment:
       - APP_ENV=${APP_ENV:-prod}
-      # Migrations run as the schema owner. MIGRATE_DATABASE_URL may name it
-      # separately; otherwise DATABASE_URL is taken to be the owner connection.
-      - DATABASE_URL=${MIGRATE_DATABASE_URL:-${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dawa24_secret_postgres_pw}@postgresql:5432/${POSTGRES_DB:-postgres}?sslmode=disable}}
+      # Migrations run as the schema owner, from MIGRATE_DATABASE_URL only.
+      # The owner credential is never given to the server or worker.
+      - DATABASE_URL=${MIGRATE_DATABASE_URL:?Set MIGRATE_DATABASE_URL to the schema-owner connection (see docs/SECURITY_DATABASE_AND_SECRETS.md)}
       # migrate sets the dawa24_app password from this (see cmd/cli/app_role.go).
-      - DB_APP_PASSWORD=${DB_APP_PASSWORD:-}
+      - DB_APP_PASSWORD=${DB_APP_PASSWORD:?Set DB_APP_PASSWORD (at least 24 random characters)}
       - DATA_DIR=/app/data
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@dawa24.net}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
@@ -49,23 +49,24 @@ services:
       - traefik.http.routers.dawa24.tls.certresolver=letsencrypt
       - traefik.http.services.dawa24.loadbalancer.server.port=8070
     ports:
-      - "8070"
+      - "127.0.0.1::8070"
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}
       - APP_BASE_URL=${APP_BASE_URL:-https://test.dawa24.com}
       - PORT=8070
-      # Best: APP_DATABASE_URL names the least-privilege dawa24_app role (see
-      # DEPLOY.md). Unset, the owner connection is used and a security warning
-      # is logged; DB_REQUIRE_RLS=true turns that warning into a refusal.
-      - DATABASE_URL=${APP_DATABASE_URL:-${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dawa24_secret_postgres_pw}@postgresql:5432/${POSTGRES_DB:-postgres}?sslmode=disable}}
-      - DB_REQUIRE_RLS=${DB_REQUIRE_RLS:-false}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-dawa24_secret_redis_pw}@redis:6379/0
+      - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
+      # The server and worker connect as the least-privilege dawa24_app role only.
+      # They refuse to start on a superuser, BYPASSRLS or table-owner connection
+      # (DB_REQUIRE_RLS defaults to true in production).
+      - DATABASE_URL=${APP_DATABASE_URL:?Set APP_DATABASE_URL to the dawa24_app connection, never the owner or a superuser}
+      - DB_REQUIRE_RLS=${DB_REQUIRE_RLS:-true}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0
       - DB_MAX_CONNS=${DB_MAX_CONNS:-25}
       - DB_MIN_CONNS=${DB_MIN_CONNS:-2}
       - DB_STATEMENT_TIMEOUT=30s
       - DATA_DIR=/app/data
-      - SESSION_SECRET=${SESSION_SECRET:-}
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET (64 hex characters)}
       - SESSION_COOKIE_NAME=dawa24_session
       - SESSION_TTL=720h
       - SESSION_SECURE=true
@@ -142,17 +143,17 @@ services:
       - APP_NAME=${APP_NAME:-Dawa24}
       - APP_BASE_URL=${APP_BASE_URL:-https://test.dawa24.com}
       - PORT=8070
-      # Best: APP_DATABASE_URL names the least-privilege dawa24_app role (see
-      # DEPLOY.md). Unset, the owner connection is used and a security warning
-      # is logged; DB_REQUIRE_RLS=true turns that warning into a refusal.
-      - DATABASE_URL=${APP_DATABASE_URL:-${DATABASE_URL:-postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-dawa24_secret_postgres_pw}@postgresql:5432/${POSTGRES_DB:-postgres}?sslmode=disable}}
-      - DB_REQUIRE_RLS=${DB_REQUIRE_RLS:-false}
-      - REDIS_URL=redis://:${REDIS_PASSWORD:-dawa24_secret_redis_pw}@redis:6379/0
+      # The server and worker connect as the least-privilege dawa24_app role only.
+      # They refuse to start on a superuser, BYPASSRLS or table-owner connection
+      # (DB_REQUIRE_RLS defaults to true in production).
+      - DATABASE_URL=${APP_DATABASE_URL:?Set APP_DATABASE_URL to the dawa24_app connection, never the owner or a superuser}
+      - DB_REQUIRE_RLS=${DB_REQUIRE_RLS:-true}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?Set REDIS_PASSWORD}@redis:6379/0
       - DB_MAX_CONNS=${DB_MAX_CONNS:-25}
       - DB_MIN_CONNS=${DB_MIN_CONNS:-2}
       - DB_STATEMENT_TIMEOUT=30s
       - DATA_DIR=/app/data
-      - SESSION_SECRET=${SESSION_SECRET:-}
+      - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET (64 hex characters)}
       - GOMEMLIMIT=700MiB
       - GOMAXPROCS=1
       - WORKER_IMPORTS=2
@@ -192,7 +193,7 @@ services:
     image: redis:7-alpine
     container_name: dawa24-redis
     restart: unless-stopped
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-dawa24_secret_redis_pw}", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD}", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
     ports:
       - "${REDIS_HOST_PORT:-127.0.0.1:6379}:6379"
     volumes:

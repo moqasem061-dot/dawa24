@@ -17,6 +17,7 @@ The `platform_admin` bounded context provides global administrative configuratio
 ## Invariants & Rules
 
 1. **Global Configuration:** System settings can be marked `is_public: true` to be safely exposed to frontend clients without authentication.
+   Non-public settings (they include the Gateway and AI `api_key`/`virtual_key`) are returned by `GET /api/v1/platform/settings/{key}` only to holders of `platform.setting.view`, `platform.setting.update` or `platform.admin`, and read as not found otherwise. `GET /api/v1/platform/contact` requires `platform.message.view` (security fix 2026-09-24).
 2. **Normalized Geography:** Countries and cities are structured with standardized ISO-3166 alpha codes, international dialing prefixes, and local currencies.
 3. **Hardened SQL Console (Phase 0 Task 0.3):**
    - **Read-only enforcement:** Enforced at PostgreSQL engine level via `SET LOCAL transaction_read_only = on` in addition to query prefix pre-filtering. Any write (DML/DDL/write CTEs) is rejected.

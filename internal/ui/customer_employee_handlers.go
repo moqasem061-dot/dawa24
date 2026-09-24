@@ -339,6 +339,9 @@ func (h *UIHandler) resolveEmployeeUser(
 		// Reusing an account is right for someone joining their own pharmacy
 		// and wrong for an address that already works for another company:
 		// AddMember would quietly hand this company a membership of them.
+		if identity.IsPrivilegedRole(existing.Role) {
+			return 0, fmt.Errorf("%s", i18n.T(lang, "customer.employee.belongs_to_other_org"))
+		}
 		elsewhere, checkErr := h.orgSvc.UserBelongsElsewhere(sysCtx, existing.ID, orgID)
 		if checkErr != nil {
 			return 0, fmt.Errorf("%s", i18n.T(lang, "common.service_unavailable"))

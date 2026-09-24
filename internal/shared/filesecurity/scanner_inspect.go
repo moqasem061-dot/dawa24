@@ -13,6 +13,10 @@ import (
 	"github.com/xuri/excelize/v2"
 )
 
+// sheetUnzipLimit bounds how far an uploaded workbook may expand. excelize
+// defaults to 16 GB, which a small zip bomb can reach in temporary files.
+const sheetUnzipLimit = 1 << 30
+
 // ValidateSpreadsheetSecurity inspects any uploaded spreadsheet (.xlsx, .xls, .csv, text)
 // and rejects files containing URLs, web addresses, or domains with ErrSecurityBlocked.
 func ValidateSpreadsheetSecurity(content []byte, filename string, opts ...Option) (err error) {
@@ -79,7 +83,7 @@ func inspectXLSX(content []byte, cfg Options) (err error) {
 	}
 
 	// B. Inspect cell values across all sheets via excelize
-	f, err := excelize.OpenReader(bytes.NewReader(content))
+	f, err := excelize.OpenReader(bytes.NewReader(content), excelize.Options{UnzipSizeLimit: sheetUnzipLimit})
 	if err != nil {
 		return nil // Parser error will be handled by the caller
 	}

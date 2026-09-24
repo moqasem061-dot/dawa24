@@ -26,6 +26,10 @@ The `identity` bounded context manages user accounts, authentication, password v
 3. **Session Store:** Stored in Redis under `session:<token>` and `user_sessions:<userID>` sets.
 4. **Tenant Resolution:** The middleware extracts tenant ID from `X-Dawa-Org-ID` header or session `ActiveOrgID`, and sets `database.WithTenant(ctx, orgID)`.
 5. **Unified RBAC:** A user's effective permissions are the union of their platform roles (`identity.user_roles`), default role (`users.role`), and organization membership roles (`org.members`).
+6. **Registration never grants a platform role (security fix 2026-09-24):** `RegisterInput.Role`, `EmailVerifiedAt` and `PhoneVerifiedAt` are `json:"-"`; `Register` produces `user` or `job_seeker` only. Staff are created solely by `CreateStaffUser`. Previously `POST /api/v1/auth/register` accepted `"role":"super_admin"`.
+7. **Staff targets need the owner (security fix 2026-09-24):** admin password reset, MFA reset, suspend, reactivate, detail edit and role assignment on a staff account (`admin_guard.go`) require an active `super_admin` actor; granting `super_admin` requires one too; nobody changes their own role.
+8. **MFA (security fix 2026-09-24):** the `dawa24_mfa_pending` cookie is signed with a key derived from `SESSION_SECRET` (was a constant in source), and failed codes count toward the same per-account lockout as passwords.
+9. **Tenant switch rebuilds the actor (security fix 2026-09-24):** `ResolveTenant` applies the full RBAC grant of the requested organization (`tenant_switch.go`); it used to swap only `Permissions`, leaving the previous organization's permission set, owner flag and branch in force.
 
 ## Endpoints
 

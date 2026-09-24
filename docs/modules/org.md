@@ -31,3 +31,12 @@ The `org` bounded context manages organization tenants (suppliers, pharmacies, p
    - **Mode WithConnections (Purchase Requests / Guided Procurement):** `visible(product) := product.institutional_work_ids ∩ {to | (from, to) ∈ connections, from ∈ user.works} ≠ ∅`. Unrestricted products are strictly invisible in this mode.
    - Cross-module resolution is mediated via `catalog.InstitutionalGate` and `promo.InstitutionalGate` without cyclic module imports.
 5. **One institutional work per pharmacy branch:** the customer branch form is a single choice among the pharmacy works, and `resolveCustomerInstitutionalWork` keeps the first submitted value (falling back to the pharmacy work when none is sent). Admin and vendor branch forms still accept several.
+
+## User-organization links
+
+Edit, delete, approve and reject address a link by id and run as system, so every handler first calls `Service.AuthorizeUserOrgLink`: the customer side must own the link (`user_id`), the vendor side must be its `vendor_org_id`. A link the caller does not own reads as not found (security fix 2026-09-24).
+
+## Team management limits (security fix 2026-09-24)
+
+- A team manager assigns only roles whose permissions they hold themselves (`resolveTeamRole`); the owner and staff are not bounded. The fallback is the least-privileged assignable role.
+- Adding an employee by email reuses an existing account only when it is not platform staff and belongs to no other organization (`accountManagedByOrg`, vendor and pharmacy screens and team import). The team edit screen changes the person's own name and phone only under the same condition.

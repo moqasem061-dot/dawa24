@@ -64,16 +64,19 @@ func NewService(repo Repository, sessionStore *SessionStore, log *slog.Logger) *
 
 // RegisterInput captures parameters required for creating an account.
 type RegisterInput struct {
-	Email           string     `json:"email"`
-	Password        string     `json:"password"`
-	NameAr          string     `json:"name_ar"`
-	NameEn          string     `json:"name_en"`
-	Role            string     `json:"role,omitempty"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	NameAr   string `json:"name_ar"`
+	NameEn   string `json:"name_en"`
+	// Role, PhoneVerifiedAt and EmailVerifiedAt are set only by server code.
+	// They are excluded from JSON so a self-service caller cannot choose a
+	// platform role or claim a verified contact.
+	Role            string     `json:"-"`
 	Language        i18n.Lang  `json:"language,omitempty"`
 	Timezone        string     `json:"timezone,omitempty"`
 	Phone           string     `json:"phone,omitempty"`
-	PhoneVerifiedAt *time.Time `json:"phone_verified_at,omitempty"`
-	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
+	PhoneVerifiedAt *time.Time `json:"-"`
+	EmailVerifiedAt *time.Time `json:"-"`
 }
 
 // LoginInput captures authentication parameters.
@@ -104,9 +107,11 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 		return nil, nil, err
 	}
 
-	role := input.Role
-	if role != "support" && role != "admin" && role != "super_admin" && role != "developer" && role != RoleJobSeeker {
-		role = "user"
+	// Registration never grants a platform role. Staff accounts are created
+	// only through CreateStaffUser, which requires identity.admin_role.assign.
+	role := "user"
+	if input.Role == RoleJobSeeker {
+		role = RoleJobSeeker
 	}
 
 	lang := input.Language

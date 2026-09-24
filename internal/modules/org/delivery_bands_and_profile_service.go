@@ -277,6 +277,27 @@ func (s *Service) UpdateUserOrgLink(ctx context.Context, id int64, orgNumber, no
 	return s.repo.UpdateUserOrganization(ctx, id, strings.TrimSpace(orgNumber), "", strings.TrimSpace(notes))
 }
 
+// AuthorizeUserOrgLink confirms that link id belongs to the calling customer
+// user (userID) or to the calling vendor organization (vendorOrgID). Pass 0 for
+// the side that does not apply. The mutations below address a link by id alone
+// and run as system, so without this any approved member could edit, delete,
+// approve or reject any other organization's link. A link the caller does not
+// own reports as not found.
+func (s *Service) AuthorizeUserOrgLink(ctx context.Context, id, userID, vendorOrgID int64) error {
+	if id <= 0 {
+		return apperr.Validation("user_org.invalid_id", "Link ID is required.", nil)
+	}
+	link, err := s.repo.GetUserOrganizationByID(ctx, id)
+	if err != nil {
+		return err
+	}
+	if link == nil ||
+		!((userID > 0 && link.UserID == userID) || (vendorOrgID > 0 && link.VendorOrgID == vendorOrgID)) {
+		return apperr.NotFound("user_organization")
+	}
+	return nil
+}
+
 // ApproveUserOrgLink approves a customer link by the vendor or admin.
 func (s *Service) ApproveUserOrgLink(ctx context.Context, id int64) error {
 	if id <= 0 {

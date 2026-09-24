@@ -142,6 +142,11 @@ func (h *UIHandler) handleTeamImportCommitSubmit(w http.ResponseWriter, r *http.
 		var targetUserID int64
 		existingUser, err := h.idSvc.GetUserByEmail(sysCtx, row.Email)
 		if err == nil && existingUser != nil {
+			if !h.accountManagedByOrg(ctx, existingUser, actor.OrganizationID) {
+				failedCount++
+				row.ImportStatus = "failed"
+				continue
+			}
 			targetUserID = existingUser.ID
 		} else {
 			randBytes := make([]byte, 6)

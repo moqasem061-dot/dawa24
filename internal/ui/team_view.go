@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -177,8 +178,23 @@ func (h *UIHandler) resolveTeamRole(ctx context.Context, orgID int64, roleIDRaw,
 		return roleID, defaultRoleKey(roleKey)
 	}
 
-	for _, role := range roles {
+	// A team manager hands out only authority they hold themselves; otherwise
+	// holding team management alone lets them give themselves, or a colleague,
+	// every permission in the company. The owner, and platform staff acting on
+	// a tenant, are not bounded.
+	actor, hasActor := authctx.From(ctx)
+	assignable := func(role *org.Role) bool {
 		if role == nil || role.IsOwner || role.Key == "org_owner" {
+			return false
+		}
+		if hasActor && !actor.IsOwner && !actor.IsStaff {
+			return actor.CanAll(role.Permissions...)
+		}
+		return true
+	}
+
+	for _, role := range roles {
+		if !assignable(role) {
 			continue
 		}
 		if roleID > 0 && role.ID == roleID {
@@ -189,14 +205,19 @@ func (h *UIHandler) resolveTeamRole(ctx context.Context, orgID int64, roleIDRaw,
 		}
 	}
 
-	// A role id that names nothing in this company or attempts to assign owner
-	// is not assignable. Fall back to the ordinary member role rather than writing it.
+	// A role id that names nothing in this company, names the owner, or
+	// exceeds the caller's own authority is not assignable. Fall back to the
+	// assignable role with the least authority, not the first one listed.
+	var fallback *org.Role
 	for _, role := range roles {
-		if role != nil && !role.IsOwner && role.Key != "org_owner" {
-			return role.ID, role.Key
+		if assignable(role) && (fallback == nil || len(role.Permissions) < len(fallback.Permissions)) {
+			fallback = role
 		}
 	}
-	return 0, defaultRoleKey(roleKey)
+	if fallback != nil {
+		return fallback.ID, fallback.Key
+	}
+	return 0, "org_employee"
 }
 
 func defaultRoleKey(key string) string {

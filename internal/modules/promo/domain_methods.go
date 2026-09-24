@@ -66,6 +66,13 @@ func (a *Ad) DisplayText(lang string) string {
 
 // ResolveClickURL builds the destination URL based on the click target type.
 func (a *Ad) ResolveClickURL() string {
+	// The screens only ever store on-site paths. The JSON API accepts any
+	// string, and /ads/click/{ad} redirects to it, so anything that is not a
+	// plain local path is ignored rather than turning an ad into an open
+	// redirect off dawa24.
+	if a.TargetURL != "" && !isLocalPath(a.TargetURL) {
+		a = &Ad{ClickTargetType: a.ClickTargetType, ClickTargetID: a.ClickTargetID, OrganizationID: a.OrganizationID}
+	}
 	if a.TargetURL != "" {
 		if strings.Contains(a.TargetURL, "/products?variant_id=") {
 			parts := strings.Split(a.TargetURL, "=")
@@ -127,4 +134,13 @@ func (o *Offer) Validate() error {
 		return apperr.Validation("offer.dates_invalid", "Expiration date must be after start date.", nil)
 	}
 	return nil
+}
+
+// isLocalPath reports whether u is a same-site absolute path: it starts with a
+// single "/" and cannot be read by a browser as another host ("//x", "/\x").
+func isLocalPath(u string) bool {
+	if !strings.HasPrefix(u, "/") || strings.HasPrefix(u, "//") || strings.HasPrefix(u, "/\\") {
+		return false
+	}
+	return !strings.ContainsAny(u, "\r\n\t")
 }

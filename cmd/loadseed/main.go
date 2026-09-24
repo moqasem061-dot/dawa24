@@ -8,7 +8,7 @@
 //
 //	DATABASE_URL=postgres://.../dawa24_loadtest go run ./cmd/loadseed
 //
-// Every seeded user's password is LOADSEED_PASSWORD (default LoadTest#2026).
+// Every seeded user's password is LOADSEED_PASSWORD (required, no default).
 // Accounts: pharmacy1..N@loadtest.dawa24 and supplier1..N@loadtest.dawa24.
 package main
 
@@ -44,8 +44,8 @@ func main() {
 		log.Fatalf("refusing to seed %q: the database name must contain scratch, loadtest or dev", name)
 	}
 	password := os.Getenv("LOADSEED_PASSWORD")
-	if password == "" {
-		password = "LoadTest#2026"
+	if len(password) < 12 {
+		log.Fatal("LOADSEED_PASSWORD is required (at least 12 characters); there is no default")
 	}
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {

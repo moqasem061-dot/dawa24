@@ -41,9 +41,9 @@ func (h *UIHandler) registerAdminProductRoutes(r chi.Router) {
 		g.Use(authctx.RequirePagePermission("promo.adv_product.view"))
 		g.Get("/admin/adv-products", h.AdminAdvProductsPage)
 		g.Get("/admin/adv-products/{id}", h.AdminAdvProductDetailPage)
-		g.Post("/admin/adv-products/{id}/approve", h.AdminAdvProductApproveSubmit)
-		g.Post("/admin/adv-products/{id}/reject", h.AdminAdvProductRejectSubmit)
-		g.Post("/admin/adv-products/new", h.AdminAdvProductCreateSubmit)
+		g.With(authctx.RequirePagePermission("promo.adv_product.update")).Post("/admin/adv-products/{id}/approve", h.AdminAdvProductApproveSubmit)
+		g.With(authctx.RequirePagePermission("promo.adv_product.update")).Post("/admin/adv-products/{id}/reject", h.AdminAdvProductRejectSubmit)
+		g.With(authctx.RequirePagePermission("promo.adv_product.update")).Post("/admin/adv-products/new", h.AdminAdvProductCreateSubmit)
 		g.Get("/admin/import/temparte-warehouses", h.AdminAdvProductsPage)
 	})
 
@@ -54,7 +54,7 @@ func (h *UIHandler) registerAdminProductRoutes(r chi.Router) {
 			http.Redirect(w, r, "/admin/saving-products", http.StatusMovedPermanently)
 		})
 		g.Get("/admin/saving-products/search-products", h.AdminSavingProductSearchJSON)
-		g.Post("/admin/saving-products/{id}/link", h.AdminSavingProductLinkSubmit)
+		g.With(authctx.RequirePagePermission("catalog.saving_product.update")).Post("/admin/saving-products/{id}/link", h.AdminSavingProductLinkSubmit)
 		g.Get("/admin/saving-products/user/{userId}", h.AdminSavingProductsPage)
 		g.Get("/admin/saving-products/org/{organizationId}", h.AdminSavingProductsPage)
 	})
@@ -193,9 +193,9 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 		// The platform's warehouse administration. An administrator has no
 		// tenant of their own, so these run AsSystem against the owning
 		// organisation rather than through the vendor's tenant-scoped path.
-		g.Post("/admin/warehouses/new", h.AdminWarehouseCreateSubmit)
-		g.Post("/admin/warehouses/{id}/edit", h.AdminWarehouseEditSubmit)
-		g.Post("/admin/warehouses/{id}/toggle", h.AdminWarehouseToggleSubmit)
+		g.With(authctx.RequirePagePermission("inventory.warehouse.manage", "inventory.warehouse.update")).Post("/admin/warehouses/new", h.AdminWarehouseCreateSubmit)
+		g.With(authctx.RequirePagePermission("inventory.warehouse.manage", "inventory.warehouse.update")).Post("/admin/warehouses/{id}/edit", h.AdminWarehouseEditSubmit)
+		g.With(authctx.RequirePagePermission("inventory.warehouse.manage", "inventory.warehouse.update")).Post("/admin/warehouses/{id}/toggle", h.AdminWarehouseToggleSubmit)
 	})
 
 	r.Group(func(g chi.Router) {

@@ -22,6 +22,7 @@ The `billing` bounded context manages user and tenant wallets with an append-onl
 2. **Strict Overdraft Rejection:** Any withdrawal or charge that would reduce a wallet below zero is rejected with `422 Unprocessable Entity` (`wallet.insufficient_funds`).
 3. **Legacy D7 Subscription Unification:** All four legacy subscription tables (`subscriptions`, `subscription_plans`, `subscription_users`, `subscription_histories`) collapse into a unified model with `source_system` and `source_id` provenance columns.
 4. **Entitlement Resolution:** Application features verify access via `billing.Service.CheckEntitlement(ctx, userID, featureKey)`.
+5. **Direct money moves need `billing.admin` (security fix 2026-09-24):** REST direct deposit, withdrawal, subscription activation and invoice settlement no longer accept "any staff"; the actor must hold `billing.admin`.
 
 ## Endpoints
 
@@ -31,3 +32,9 @@ The `billing` bounded context manages user and tenant wallets with an append-onl
 - `GET /api/v1/billing/plans` — List active subscription plans.
 - `POST /api/v1/billing/subscriptions` — Activate plan subscription.
 - `GET /api/v1/billing/entitlements/{key}` — Query feature access entitlement.
+
+## Recording invoice payments (security fix 2026-09-24)
+
+`RecordInvoicePayment` accepts only the issuing organization (`invoices.organization_id`) or staff (organization 0). Recording a payment marks the invoice and its order paid, and the billed customer (`customer_org_id`) used to be accepted, so a pharmacy could settle its own debt by typing an amount. Admin payment routes require `billing.invoice.manage`, not the view permission.
+
+Invoice print and Excel/Word exports (`/invoices/{id}/*`, `/orders/{id}/invoice/*`) check that the caller is staff, the issuer, the billed customer, the buyer or a fulfilling vendor (`internal/ui/invoice_access.go`). Orders are read as system, so these pages previously printed any company's order. An invoice synthesised from an order is filed only when its issuer is known; it no longer defaults to organization 1.
