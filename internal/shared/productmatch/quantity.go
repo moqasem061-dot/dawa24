@@ -246,30 +246,32 @@ func foldPackMultipliers(text string) string {
 		return text
 	}
 	runes := []rune(text)
-	var b strings.Builder
-	b.Grow(len(text))
+	out := make([]rune, 0, len(runes))
 
 	for i := 0; i < len(runes); i++ {
 		r := runes[i]
 		if r != '*' && r != '×' && r != 'x' && r != 'X' {
-			b.WriteRune(r)
+			out = append(out, r)
 			continue
 		}
-		left, leftStart := trailingNumber(runes[:i])
+		// The left factor is read from what has been WRITTEN, not from the
+		// input. Once one multiplication has folded, the two differ in length,
+		// and an input offset used on the output buffer sliced past its end:
+		// "10*10 ... 5*6" panicked, and because matching runs on worker
+		// goroutines the panic took the whole server down mid-import. Reading
+		// the output also chains correctly — "2*3*4" is 24, not "6*4".
+		left, leftStart := trailingNumber(out)
 		right, rightEnd := leadingNumber(runes[i+1:])
-		product := left * right
-		if left <= 0 || right <= 0 || product > maxPackUnits {
-			b.WriteRune(r)
+		if left <= 0 || right <= 0 || left > maxPackUnits || right > maxPackUnits ||
+			left*right > maxPackUnits {
+			out = append(out, r)
 			continue
 		}
 		// Drop the left factor already written, and skip the right one.
-		out := []rune(b.String())
-		b.Reset()
-		b.WriteString(string(out[:leftStart]))
-		b.WriteString(strconv.Itoa(product))
+		out = append(out[:leftStart], []rune(strconv.Itoa(left*right))...)
 		i += rightEnd
 	}
-	return b.String()
+	return string(out)
 }
 
 // maxPackUnits bounds what a multiplication may be believed to produce. Above

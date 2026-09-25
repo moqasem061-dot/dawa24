@@ -321,6 +321,30 @@
 						break-after: auto;
 						page-break-after: auto;
 					}
+					/* Every sheet has the same geometry: the full printable
+					   height (297mm less the 10mm margins, less 5mm for engine
+					   rounding), with the footer pinned to its bottom. A short
+					   last sheet no longer ends mid-page with its footer
+					   floating, and a sheet never shares paper with the next:
+					   the break is stated before a sheet as well as after one. */
+					.invoice-page {
+						display: flex;
+						flex-direction: column;
+						min-height: 272mm;
+						break-inside: auto;
+					}
+					.invoice-page + .invoice-page {
+						break-before: page;
+						page-break-before: always;
+					}
+					.invoice-page-footer {
+						margin-top: auto !important;
+						padding-top: 2mm;
+					}
+					.invoice-header, .parties-grid, .invoice-continuation-header {
+						break-inside: avoid;
+						page-break-inside: avoid;
+					}
 					.invoice-table {
 						margin-bottom: 0.5rem !important;
 					}
@@ -346,9 +370,9 @@
 					.invoice-table th:nth-child(4) { width: 15mm !important; }
 					.invoice-table th:nth-child(5) { width: 15mm !important; }
 					.invoice-table th:nth-child(6) { width: 10mm !important; }
-					.invoice-table th:nth-child(7) { width: 20mm !important; }
+					.invoice-table th:nth-child(7) { width: 21mm !important; }
 					.invoice-table th:nth-child(8) { width: 11mm !important; }
-					.invoice-table th:nth-child(9) { width: 22mm !important; }
+					.invoice-table th:nth-child(9) { width: 26mm !important; }
 					.invoice-table td:not(:nth-child(3)) {
 						white-space: nowrap;
 						overflow: hidden;
@@ -356,6 +380,16 @@
 					}
 					.invoice-table tr.invoice-carried-row td {
 						white-space: normal;
+					}
+					/* A money figure is never cut short: an ellipsis on a price
+					   or a total prints a different number. The columns are
+					   sized for 1,000,000.00 ج.م; beyond that the cell grows. */
+					.invoice-table td:nth-child(7),
+					.invoice-table td:nth-child(9),
+					.invoice-table tr.invoice-carried-row td:last-child {
+						white-space: nowrap;
+						overflow: visible;
+						text-overflow: clip;
 					}
 					.invoice-table .badge-batch {
 						padding: 0 2px;

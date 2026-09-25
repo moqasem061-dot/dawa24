@@ -274,7 +274,9 @@ func (s *Service) PrepareImportAsync(ctx context.Context, publicID string, setti
 				s.progress.Finish(publicID, fmt.Errorf("panic during import: %v", p))
 			}
 		}()
-		_, err := s.prepare(runCtx, publicID, settings, s.persistedProgress(runCtx, publicID, report))
+		progressFn, stopHeartbeat := s.persistedProgress(runCtx, publicID, report)
+		_, err := s.prepare(runCtx, publicID, settings, progressFn)
+		stopHeartbeat()
 
 		// The durable record is written BEFORE the in-memory run is released,
 		// and that order is the fix for a misleading failure message rather
@@ -296,56 +298,6 @@ func (s *Service) PrepareImportAsync(ctx context.Context, publicID string, setti
 		s.progress.Finish(publicID, err)
 	}()
 	return nil
-}
-
-// progressHeartbeat is the longest a healthy run may go without writing to its
-// own session row.
-//
-// The row is the only thing that can tell a crashed run from a slow one, and it
-// used to be written once per phase. A phase is minutes — matching a large file
-// runs a full catalogue read, a scoring pass and up to a dozen adjudication
-// requests without ever changing phase — so its timestamp went stale while the
-// run was perfectly healthy, and the orphan check had nothing to trust.
-//
-// Fifteen seconds. One narrow UPDATE of one row, four times a minute, while an
-// import is actually running.
-const progressHeartbeat = 15 * time.Second
-
-// persistedProgress wraps the in-memory reporter so the session row keeps up
-// with the run.
-//
-// Two destinations at two deliberately different rates: the live bar hears
-// every tick over the progress hub, and the row is written on a phase change or
-// every progressHeartbeat. Taking the bar's movement from the row instead would
-// mean a write per batch, or a watcher re-reading on a timer — the polling this
-// replaced. The row carries enough to answer "what is this run doing" in
-// another tab and "is this run alive" to the orphan check.
-func (s *Service) persistedProgress(ctx context.Context, publicID string, report ProgressFunc) ProgressFunc {
-	var (
-		last      ImportPhase
-		lastWrite time.Time
-	)
-	return func(phase ImportPhase, current, total int) {
-		report.report(phase, current, total)
-
-		if s.notifyProgress != nil {
-			s.notifyProgress(publicID, ImportProgress{
-				Phase: phase, Current: current, Total: total, Message: phase.Label(),
-			})
-		}
-
-		now := time.Now()
-		if phase == last && now.Sub(lastWrite) < progressHeartbeat {
-			return
-		}
-		last, lastWrite = phase, now
-		if err := s.imports.SaveImportProgress(ctx, publicID, ImportProgress{
-			Phase: phase, Current: current, Total: total, Message: phase.Label(),
-		}); err != nil {
-			s.log.DebugContext(ctx, "persist import progress",
-				"session", publicID, "phase", phase, "error", err)
-		}
-	}
 }
 
 // recordPrepareFailure writes the reason a background run stopped onto the

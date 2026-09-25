@@ -88,31 +88,56 @@ templ InvoiceExportDropdown(props InvoiceExportDropdownProps) {
 	</div>
 	<script nonce={ httpx.Nonce(ctx) }>
 		if (!window.printInvoiceDirectly) {
+			// Prints the invoice document through a hidden iframe.
+			//
+			// It prints only after checking the iframe really holds the invoice:
+			// a route that refused and redirected used to have its destination
+			// printed instead (the admin dashboard). The document is loaded
+			// without autoprint, because the page printing itself on load AND
+			// this printing it on onload opened the dialog twice.
 			window.printInvoiceDirectly = function(url) {
-				var iframe = document.getElementById('print-invoice-hidden-iframe');
-				if (!iframe) {
-					iframe = document.createElement('iframe');
-					iframe.id = 'print-invoice-hidden-iframe';
-					iframe.style.position = 'fixed';
-					iframe.style.right = '0';
-					iframe.style.bottom = '0';
-					iframe.style.width = '0';
-					iframe.style.height = '0';
-					iframe.style.border = '0';
-					iframe.style.opacity = '0';
-					iframe.style.pointerEvents = 'none';
-					document.body.appendChild(iframe);
-				}
-				var printUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';
-				iframe.src = printUrl;
+				var target = new URL(url, window.location.href);
+				var openInTab = function() { window.open(target.href, '_blank', 'noopener'); };
+				var previous = document.getElementById('print-invoice-hidden-iframe');
+				if (previous) previous.remove();
+				var iframe = document.createElement('iframe');
+				iframe.id = 'print-invoice-hidden-iframe';
+				iframe.setAttribute('aria-hidden', 'true');
+				iframe.tabIndex = -1;
+				iframe.style.position = 'fixed';
+				iframe.style.insetInlineEnd = '0';
+				iframe.style.bottom = '0';
+				iframe.style.width = '0';
+				iframe.style.height = '0';
+				iframe.style.border = '0';
+				iframe.style.opacity = '0';
+				iframe.style.pointerEvents = 'none';
 				iframe.onload = function() {
+					var win = iframe.contentWindow;
+					var isInvoice = false;
 					try {
-						iframe.contentWindow.focus();
-						iframe.contentWindow.print();
-					} catch (e) {
-						window.open(url, '_blank');
+						isInvoice = win.location.pathname === target.pathname &&
+							!!win.document.getElementById('a4-invoice-container');
+					} catch (e) { isInvoice = false; }
+					if (!isInvoice) {
+						iframe.remove();
+						openInTab();
+						return;
+					}
+					var print = function() {
+						try {
+							win.focus();
+							if (typeof win.printA4 === 'function') { win.printA4(); } else { win.print(); }
+						} catch (e) { openInTab(); }
+					};
+					if (win.document.fonts && win.document.fonts.ready) {
+						win.document.fonts.ready.then(print, print);
+					} else {
+						print();
 					}
 				};
+				iframe.src = target.href;
+				document.body.appendChild(iframe);
 			};
 		}
 	</script>

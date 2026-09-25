@@ -13,6 +13,21 @@ type matchProduct struct {
 	ID   int64
 	Name string
 	SKU  string
+	// norm and skuKey are Name and SKU folded once, when the catalogue is
+	// loaded. findBestMatch compares every row against every product, and
+	// folding the catalogue side inside that loop re-normalised the whole
+	// catalogue for every row of the file.
+	norm   string
+	skuKey string
+}
+
+// newMatchProduct builds a catalogue entry with its comparison keys folded.
+func newMatchProduct(id int64, name, sku string) matchProduct {
+	return matchProduct{
+		ID: id, Name: name, SKU: sku,
+		norm:   arabic.Normalize(name),
+		skuKey: strings.TrimSpace(strings.ToLower(sku)),
+	}
 }
 
 // findBestMatch finds the best-matching catalogue product by name similarity.
@@ -23,10 +38,11 @@ func findBestMatch(name, sku string, products []matchProduct) (int64, float64, s
 	var bestName, bestSKU string
 
 	// If we have a SKU, try exact SKU match first.
-	if sku != "" {
-		cleanSKU := strings.TrimSpace(strings.ToLower(sku))
+	// An empty key must not match: it would equal every product that has no
+	// SKU, and "exactly" link the row to whichever came first.
+	if cleanSKU := strings.TrimSpace(strings.ToLower(sku)); cleanSKU != "" {
 		for _, p := range products {
-			if strings.TrimSpace(strings.ToLower(p.SKU)) == cleanSKU {
+			if p.skuKey == cleanSKU {
 				return p.ID, 1.0, p.Name, p.SKU
 			}
 		}
@@ -34,7 +50,7 @@ func findBestMatch(name, sku string, products []matchProduct) (int64, float64, s
 
 	// Fall back to name similarity.
 	for _, p := range products {
-		score := arabic.Similarity(normalized, arabic.Normalize(p.Name))
+		score := arabic.Similarity(normalized, p.norm)
 		if score > bestScore {
 			bestScore = score
 			bestID = p.ID

@@ -71,6 +71,7 @@ func (v ImportReviewView) ProgressPhases() []ImportPhaseInfo {
 	out := make([]ImportPhaseInfo, 0, len(phases))
 	for i, phase := range phases {
 		out = append(out, ImportPhaseInfo{
+			Key:    string(phase),
 			Label:  phase.Label(),
 			Active: i == current,
 			Done:   current > i || v.Progress.Phase == catalog.ImportPhaseDone,
@@ -81,6 +82,8 @@ func (v ImportReviewView) ProgressPhases() []ImportPhaseInfo {
 
 // ImportPhaseInfo is one stage on the progress panel.
 type ImportPhaseInfo struct {
+	// Key is the phase's wire name, which the live updater matches snapshots on.
+	Key    string
 	Label  string
 	Active bool
 	Done   bool

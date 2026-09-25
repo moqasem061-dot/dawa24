@@ -103,3 +103,24 @@ func RequireCapability(caps ...rbac.Capability) func(http.Handler) http.Handler 
 		})
 	}
 }
+
+// RequireCapabilityOrStaff is RequireCapability that also admits platform
+// staff, for read-only routes whose handler performs its own per-object check.
+//
+// Staff are not buyers, so RequireCapability sends them home. On a document
+// route that is worse than a refusal: the invoice print page is loaded into a
+// hidden iframe and printed, and a redirect printed the admin dashboard in
+// place of the invoice.
+func RequireCapabilityOrStaff(caps ...rbac.Capability) func(http.Handler) http.Handler {
+	gate := RequireCapability(caps...)
+	return func(next http.Handler) http.Handler {
+		gated := gate(next)
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if actor, ok := From(r.Context()); ok && actor.IsStaff {
+				next.ServeHTTP(w, r)
+				return
+			}
+			gated.ServeHTTP(w, r)
+		})
+	}
+}

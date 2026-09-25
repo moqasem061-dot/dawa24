@@ -342,6 +342,12 @@ func (h *UIHandler) RegisterApprovedSharedRoutes(r chi.Router) {
 		// Recording a payment marks the invoice paid: the issuing vendor's
 		// wallet-level authority, not the view grant a pharmacy also holds.
 		g.With(authctx.RequireCapability(rbac.WalletManage)).Post("/invoices/payments/record", h.VendorRecordPaymentSubmit)
+	})
+	// The invoice documents. Staff reach them from the order and invoice pages
+	// they administer; every handler checks access to the specific order or
+	// invoice (actorMayViewOrder / actorMayViewInvoice).
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequireCapabilityOrStaff(rbac.InvoiceView))
 		g.Get("/invoices/{id}/print", h.InvoicePrintPage)
 		g.Get("/invoices/{id}/excel", h.InvoiceExportExcel)
 		g.Get("/invoices/{id}/word", h.InvoiceExportWord)

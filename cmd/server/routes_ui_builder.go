@@ -122,7 +122,11 @@ func buildUIHandler(
 			Message: p.Message,
 			Current: p.Current,
 			Total:   p.Total,
-			State:   string(catalog.SessionProcessing),
+			// The phase, not the session status: the per-phase write publishes
+			// the phase too, and the page moves its step list on it. Ticks that
+			// said only "processing" left the steps frozen on whichever phase
+			// the page was rendered in while the bar named a later one.
+			State: string(p.Phase),
 		})
 	})
 	if cacheHandle := deps.CacheHandle(); cacheHandle != nil {

@@ -45,7 +45,7 @@ func MatchAll(idx *Index, rows []*Row, opts MatchOptions, workers int) []MatchRe
 	if workers <= 1 {
 		for i, row := range rows {
 			if row != nil {
-				out[i] = idx.Match(row, opts)
+				out[i] = idx.safeMatch(row, opts)
 			}
 		}
 		return out
@@ -82,7 +82,7 @@ func MatchAll(idx *Index, rows []*Row, opts MatchOptions, workers int) []MatchRe
 				}
 				for i := start; i < end; i++ {
 					if rows[i] != nil {
-						out[i] = idx.Match(rows[i], opts)
+						out[i] = idx.safeMatch(rows[i], opts)
 					}
 				}
 			}
@@ -116,7 +116,7 @@ func RecallAll(idx *Index, rows []*Row, opts RecallOptions, workers int) [][]Mat
 	if workers <= 1 {
 		for i, row := range rows {
 			if row != nil {
-				out[i] = idx.Recall(row, opts)
+				out[i] = idx.safeRecall(row, opts)
 			}
 		}
 		return out
@@ -146,7 +146,7 @@ func RecallAll(idx *Index, rows []*Row, opts RecallOptions, workers int) [][]Mat
 				}
 				for i := start; i < end; i++ {
 					if rows[i] != nil {
-						out[i] = idx.Recall(rows[i], opts)
+						out[i] = idx.safeRecall(rows[i], opts)
 					}
 				}
 			}
@@ -154,4 +154,37 @@ func RecallAll(idx *Index, rows []*Row, opts RecallOptions, workers int) [][]Mat
 	}
 	wg.Wait()
 	return out
+}
+
+// A row that crashes the scorer costs that row, not the process.
+//
+// MatchAll and RecallAll run on goroutines of their own, and a panic on a
+// goroutine nobody recovers ends the program — every request on the server, not
+// just the import. A recover in the caller cannot help: it sits on a different
+// goroutine. That is how one malformed pack string in a supplier file ("10*10
+// ... 5*6") took the server down at the start of the matching phase, and the
+// import was then reaped as "interrupted by a restart" with nothing to say why.
+//
+// The row is returned unmatched, which sends it to a human. That is the same
+// outcome as a row the engine could not place, and the correct one.
+
+// rowPanickedReason is recorded on a row whose scoring panicked.
+const rowPanickedReason = "تعذر تحليل هذا الصف تلقائياً؛ يحتاج مراجعة يدوية"
+
+func (idx *Index) safeMatch(row *Row, opts MatchOptions) (res MatchResult) {
+	defer func() {
+		if p := recover(); p != nil {
+			res = MatchResult{Level: MatchNone, Reason: rowPanickedReason}
+		}
+	}()
+	return idx.Match(row, opts)
+}
+
+func (idx *Index) safeRecall(row *Row, opts RecallOptions) (out []MatchCandidate) {
+	defer func() {
+		if p := recover(); p != nil {
+			out = nil
+		}
+	}()
+	return idx.Recall(row, opts)
 }

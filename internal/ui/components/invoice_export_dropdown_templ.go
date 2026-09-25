@@ -63,7 +63,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var2).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 		if templ_7745c5c3_Err != nil {
@@ -85,7 +85,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(props.Label)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 35, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 35, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -119,7 +119,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.CSSClasses(templ_7745c5c3_Var5).String())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 1, Col: 0}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 1, Col: 0}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 		if templ_7745c5c3_Err != nil {
@@ -132,7 +132,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("[open = false, $printInvoice(%q)]", props.PrintURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 51, Col: 77}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 51, Col: 77}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 		if templ_7745c5c3_Err != nil {
@@ -153,7 +153,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var8 templ.SafeURL
 		templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(props.ExcelURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 62, Col: 40}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 62, Col: 40}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 		if templ_7745c5c3_Err != nil {
@@ -174,7 +174,7 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var9 templ.SafeURL
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(props.WordURL))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 76, Col: 39}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 76, Col: 39}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -195,13 +195,13 @@ func InvoiceExportDropdown(props InvoiceExportDropdownProps) templ.Component {
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(httpx.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/invoice_export_dropdown.templ`, Line: 89, Col: 33}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `invoice_export_dropdown.templ`, Line: 89, Col: 33}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">\n\t\tif (!window.printInvoiceDirectly) {\n\t\t\twindow.printInvoiceDirectly = function(url) {\n\t\t\t\tvar iframe = document.getElementById('print-invoice-hidden-iframe');\n\t\t\t\tif (!iframe) {\n\t\t\t\t\tiframe = document.createElement('iframe');\n\t\t\t\t\tiframe.id = 'print-invoice-hidden-iframe';\n\t\t\t\t\tiframe.style.position = 'fixed';\n\t\t\t\t\tiframe.style.right = '0';\n\t\t\t\t\tiframe.style.bottom = '0';\n\t\t\t\t\tiframe.style.width = '0';\n\t\t\t\t\tiframe.style.height = '0';\n\t\t\t\t\tiframe.style.border = '0';\n\t\t\t\t\tiframe.style.opacity = '0';\n\t\t\t\t\tiframe.style.pointerEvents = 'none';\n\t\t\t\t\tdocument.body.appendChild(iframe);\n\t\t\t\t}\n\t\t\t\tvar printUrl = url + (url.indexOf('?') === -1 ? '?' : '&') + 'autoprint=1';\n\t\t\t\tiframe.src = printUrl;\n\t\t\t\tiframe.onload = function() {\n\t\t\t\t\ttry {\n\t\t\t\t\t\tiframe.contentWindow.focus();\n\t\t\t\t\t\tiframe.contentWindow.print();\n\t\t\t\t\t} catch (e) {\n\t\t\t\t\t\twindow.open(url, '_blank');\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t};\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "\">\n\t\tif (!window.printInvoiceDirectly) {\n\t\t\t// Prints the invoice document through a hidden iframe.\n\t\t\t//\n\t\t\t// It prints only after checking the iframe really holds the invoice:\n\t\t\t// a route that refused and redirected used to have its destination\n\t\t\t// printed instead (the admin dashboard). The document is loaded\n\t\t\t// without autoprint, because the page printing itself on load AND\n\t\t\t// this printing it on onload opened the dialog twice.\n\t\t\twindow.printInvoiceDirectly = function(url) {\n\t\t\t\tvar target = new URL(url, window.location.href);\n\t\t\t\tvar openInTab = function() { window.open(target.href, '_blank', 'noopener'); };\n\t\t\t\tvar previous = document.getElementById('print-invoice-hidden-iframe');\n\t\t\t\tif (previous) previous.remove();\n\t\t\t\tvar iframe = document.createElement('iframe');\n\t\t\t\tiframe.id = 'print-invoice-hidden-iframe';\n\t\t\t\tiframe.setAttribute('aria-hidden', 'true');\n\t\t\t\tiframe.tabIndex = -1;\n\t\t\t\tiframe.style.position = 'fixed';\n\t\t\t\tiframe.style.insetInlineEnd = '0';\n\t\t\t\tiframe.style.bottom = '0';\n\t\t\t\tiframe.style.width = '0';\n\t\t\t\tiframe.style.height = '0';\n\t\t\t\tiframe.style.border = '0';\n\t\t\t\tiframe.style.opacity = '0';\n\t\t\t\tiframe.style.pointerEvents = 'none';\n\t\t\t\tiframe.onload = function() {\n\t\t\t\t\tvar win = iframe.contentWindow;\n\t\t\t\t\tvar isInvoice = false;\n\t\t\t\t\ttry {\n\t\t\t\t\t\tisInvoice = win.location.pathname === target.pathname &&\n\t\t\t\t\t\t\t!!win.document.getElementById('a4-invoice-container');\n\t\t\t\t\t} catch (e) { isInvoice = false; }\n\t\t\t\t\tif (!isInvoice) {\n\t\t\t\t\t\tiframe.remove();\n\t\t\t\t\t\topenInTab();\n\t\t\t\t\t\treturn;\n\t\t\t\t\t}\n\t\t\t\t\tvar print = function() {\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\twin.focus();\n\t\t\t\t\t\t\tif (typeof win.printA4 === 'function') { win.printA4(); } else { win.print(); }\n\t\t\t\t\t\t} catch (e) { openInTab(); }\n\t\t\t\t\t};\n\t\t\t\t\tif (win.document.fonts && win.document.fonts.ready) {\n\t\t\t\t\t\twin.document.fonts.ready.then(print, print);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tprint();\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t\tiframe.src = target.href;\n\t\t\t\tdocument.body.appendChild(iframe);\n\t\t\t};\n\t\t}\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

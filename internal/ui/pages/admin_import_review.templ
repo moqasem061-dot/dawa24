@@ -240,6 +240,9 @@ templ importFailedCard(view ImportReviewView) {
 			لم يُحفظ أي صنف في الكتالوج. الملف المرفوع ما زال محفوظاً، ويمكنك تصحيح ربط الأعمدة
 			وإعادة المعالجة دون رفعه من جديد.
 		</p>
+		if view.Session.ErrorMessage != "" {
+			<p class="wiz-sub text-danger" role="alert">{ view.Session.ErrorMessage }</p>
+		}
 		<div class="wiz-actions">
 			<form method="POST" action={ importAction(view, "cancel") } hx-boost="false" class="wiz-actions-note">
 				<button type="submit" class="btn btn-ghost">إلغاء العملية</button>
@@ -576,7 +579,7 @@ templ importProgressCard(view ImportReviewView) {
 		</div>
 		<ol class="wiz-phases">
 			for _, phase := range view.ProgressPhases() {
-				<li class={ "wiz-phase", templ.KV("is-active", phase.Active), templ.KV("is-done", phase.Done) }>
+				<li class={ "wiz-phase", templ.KV("is-active", phase.Active), templ.KV("is-done", phase.Done) } data-phase={ phase.Key }>
 					<span class="wiz-phase-dot" aria-hidden="true"></span>
 					<span>{ phase.Label }</span>
 				</li>
@@ -617,7 +620,20 @@ templ importProgressCard(view ImportReviewView) {
 						count:   document.getElementById('import-progress-count'),
 						onDone:  function () { setTimeout(function () { window.location.reload(); }, 500); },
 					});
-					bar.follow('/admin/products/import/' + sessionID + '/stream', '/admin/products/import/' + sessionID + '/progress', 1500);
+					// The step list is rendered once; without this it stayed on the
+					// phase the page was drawn in while the bar named a later one.
+					const steps = Array.prototype.slice.call(sessionEl.querySelectorAll('.wiz-phase[data-phase]'));
+					const markSteps = function (data) {
+						const phase = data && (data.phase || data.state);
+						let current = -1;
+						steps.forEach(function (li, i) { if (li.dataset.phase === phase) current = i; });
+						if (current < 0) return;
+						steps.forEach(function (li, i) {
+							li.classList.toggle('is-active', i === current);
+							li.classList.toggle('is-done', i < current);
+						});
+					};
+					bar.follow('/admin/products/import/' + sessionID + '/stream', '/admin/products/import/' + sessionID + '/progress', 1500, markSteps);
 				}
 				if (document.readyState === 'loading') {
 					document.addEventListener('DOMContentLoaded', startProgress);

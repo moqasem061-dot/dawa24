@@ -80,11 +80,7 @@ func (w *StageWorker) stageSavingProducts(ctx context.Context, run *importrun.Ru
 				if name == "" {
 					name = p.NameEN
 				}
-				matchProducts = append(matchProducts, matchProduct{
-					ID:   p.ID,
-					Name: name,
-					SKU:  p.SKU,
-				})
+				matchProducts = append(matchProducts, newMatchProduct(p.ID, name, p.SKU))
 			}
 		}
 	}

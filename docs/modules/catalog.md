@@ -107,3 +107,30 @@ as the admin likes.
   rather than dropped. Losing stock a pharmacy owns is worse than a bad label.
 - A file whose header repeats every N rows (a print-paginated ERP export) is read
   as N blocks, each through its own header. `AnalyzeLayout` documents why.
+
+### Fixed 2026-09-25: a second import crashed the server
+
+- **Symptom.** The first import into an empty catalogue always succeeded; the
+  next one stalled at the start of matching ("0 / 8,790", ~60%), fell back a few
+  points on refresh, and was eventually failed as "interrupted by a restart".
+- **Cause.** `productmatch.foldPackMultipliers` took the left factor's offset
+  from its input and sliced the rebuilt output with it. After one fold the two
+  differ in length, so any name whose text holds a multiplication twice panicked
+  — including a single `3×1`, because the matcher reads the Arabic and English
+  names joined and the English falls back to the Arabic. 38 of the 8,790 rows in
+  the reported file did this. Matching only runs against a non-empty catalogue,
+  which is why the first upload never hit it. It ran on `MatchAll` worker
+  goroutines, where the prepare goroutine's `recover` cannot reach, so the whole
+  process died. Every tool using the matcher was exposed (vendor ingest, smart
+  order, compare, saving products).
+- **Fix.** The factor is read from the output buffer (chains such as `2*3*4`
+  now fold to 24), factors past `maxPackUnits` are refused before multiplying,
+  and `MatchAll`/`RecallAll` recover per row: a row that panics comes back
+  `MatchNone` and goes to human review. Regression:
+  `TestSecondImportSurvivesMultipliedPackCounts`, `TestFoldPackMultipliers`,
+  `FuzzFoldPackMultipliers`.
+- **Heartbeat.** The session row is now re-written every `progressHeartbeat` by
+  a ticker (`import_heartbeat.go`), not only when the pipeline reports, so a
+  long silent stretch can no longer look orphaned to another replica.
+- **Screen.** The step list follows live snapshots (it stayed on the phase the
+  page was rendered in), and the failed card shows the recorded reason.

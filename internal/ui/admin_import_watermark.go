@@ -264,7 +264,17 @@ func (h *UIHandler) downloadImportedImages(targets []catalogImageTarget) {
 }
 
 // fetchAndStoreImage downloads, watermarks, compresses, and persists a single image to disk and S3.
-func (h *UIHandler) fetchAndStoreImage(ctx context.Context, rawURL, uploadDir string) (string, error) {
+//
+// It runs on a pool of bare worker goroutines, where an unrecovered panic —
+// a malformed image tripping a decoder — ends the whole server. A bad image
+// costs that image, never the process.
+func (h *UIHandler) fetchAndStoreImage(ctx context.Context, rawURL, uploadDir string) (publicPath string, err error) {
+	defer func() {
+		if p := recover(); p != nil {
+			h.log.ErrorContext(ctx, "imported image processing panicked", "url", rawURL, "panic", p)
+			publicPath, err = "", fmt.Errorf("image processing panicked: %v", p)
+		}
+	}()
 	dlCtx, cancel := context.WithTimeout(ctx, 25*time.Second)
 	defer cancel()
 
@@ -290,7 +300,7 @@ func (h *UIHandler) fetchAndStoreImage(ctx context.Context, rawURL, uploadDir st
 
 	_ = deriveAndStore(uploadDir, fileName, imgData)
 
-	publicPath := fmt.Sprintf("/uploads/products/%s", fileName)
+	publicPath = fmt.Sprintf("/uploads/products/%s", fileName)
 	if h.storage != nil {
 		s3Key := fmt.Sprintf("products/%s", fileName)
 		_ = h.storage.Put(ctx, s3Key, bytes.NewReader(imgData), int64(len(imgData)), "image/"+ext)
