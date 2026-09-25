@@ -2,11 +2,11 @@ package ui
 
 import (
 	"context"
-	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // The buying surfaces' view of coverage.
@@ -72,7 +72,7 @@ func (h *UIHandler) coveringVendorBranchesFor(ctx context.Context, branchID int6
 		return buyingCoverage{Evaluated: true}
 	}
 
-	covered, err := h.coverageSvc.VendorBranchesServing(ctx, time.Now().Weekday(), coord)
+	covered, err := h.coverageSvc.VendorBranchesServing(ctx, timeutil.Now().Weekday(), coord)
 	if err != nil {
 		h.log.WarnContext(ctx, "could not resolve covering suppliers for a buying branch",
 			"branch_id", branchID, "error", err)

@@ -16,6 +16,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
@@ -152,7 +153,7 @@ func placeSmartOrder(commSvc *commerce.Service, orgSvc *org.Service, wfCoverage 
 						coord.Lat = *custLat
 						coord.Lon = *custLon
 					}
-					_, actualMeters, err := wfCoverage.ServesPoint(ctx, it.VendorOrgID, time.Now().Weekday(), coord)
+					_, actualMeters, err := wfCoverage.ServesPoint(ctx, it.VendorOrgID, timeutil.Now().Weekday(), coord)
 					if err == nil && actualMeters > 0 {
 						distMeters = actualMeters
 					}

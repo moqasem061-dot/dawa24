@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // AvailabilityLine describes one prospective purchase line within a batch.
@@ -270,7 +271,7 @@ func (s *Service) CheckAvailabilityBatch(
 	for _, r := range readyForCoverage {
 		key := coverageKey{vendorOrgID: r.line.VendorOrgID, vendorBranchID: r.variant.VendorBranchID}
 		if _, ok := coverageCache[key]; !ok {
-			covered, err := s.availability.VendorCovers(ctx, key.vendorOrgID, key.vendorBranchID, bLat, bLon, when.Weekday(), branch.CityID)
+			covered, err := s.availability.VendorCovers(ctx, key.vendorOrgID, key.vendorBranchID, bLat, bLon, timeutil.InCairo(when).Weekday(), branch.CityID)
 			if err != nil {
 				return nil, fmt.Errorf("availability batch: coverage for vendor %d branch %d: %w", key.vendorOrgID, key.vendorBranchID, err)
 			}

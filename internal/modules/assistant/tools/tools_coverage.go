@@ -10,6 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/assistant/handles"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 )
 
 // "Who delivers to me, and when."
@@ -61,7 +62,7 @@ func (r *Registry) coverageCheck(
 		return Result{}, err
 	}
 
-	day := time.Now().Weekday()
+	day := timeutil.Now().Weekday()
 	if strings.TrimSpace(args.Day) != "" {
 		parsed, ok := assistant.WeekdayFromArabic(strings.ToLower(strings.TrimSpace(args.Day)))
 		if !ok {

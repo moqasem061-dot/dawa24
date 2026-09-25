@@ -79,6 +79,9 @@ func (h *UIHandler) SmartOrderResultsPage(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
+	// Suppliers, stock, coverage and the delivery day move after a run is
+	// processed; the stored verdicts are re-checked before they are shown.
+	run = h.smartOrderSvc.RefreshIfDue(ctx, run)
 
 	q := r.URL.Query()
 
@@ -204,16 +207,26 @@ func (h *UIHandler) SmartOrderHistoryPage(w http.ResponseWriter, r *http.Request
 		http.Redirect(w, r, "/customer/smart-order/new", http.StatusSeeOther)
 		return
 	}
-	runs, err := h.smartOrderSvc.History(ctx, actor.OrganizationID, 50, 0)
+	page, _ := strconv.Atoi(r.URL.Query().Get("page"))
+	if page < 1 {
+		page = 1
+	}
+	// One extra row says whether an older page exists, without a count query.
+	size := pages.SmartOrderHistoryPageSize
+	runs, err := h.smartOrderSvc.History(ctx, actor.OrganizationID, size+1, (page-1)*size)
+	hasNext := len(runs) > size
+	if hasNext {
+		runs = runs[:size]
+	}
 	if err != nil {
 		h.log.ErrorContext(ctx, "smart order history: fetch runs", "error", err, "org_id", actor.OrganizationID)
 	}
-	if len(runs) == 0 && (r.URL.Path == "/customer/smart-order" || r.URL.Path == "/customer/smart-order/") {
+	if len(runs) == 0 && page == 1 && (r.URL.Path == "/customer/smart-order" || r.URL.Path == "/customer/smart-order/") {
 		http.Redirect(w, r, "/customer/smart-order/new", http.StatusSeeOther)
 		return
 	}
 	lang, dir := h.localeAndDir(r)
-	h.renderPage(ctx, w, "render smart order history page", pages.SmartOrderHistoryPage(runs, lang, dir))
+	h.renderPage(ctx, w, "render smart order history page", pages.SmartOrderHistoryPage(runs, page, hasNext, lang, dir))
 }
 
 func (h *UIHandler) vendorName(ctx context.Context, orgID int64) string {

@@ -24,6 +24,9 @@ func (h *UIHandler) SmartOrderReviewPage(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
+	// Suppliers, stock, coverage and the delivery day move after a run is
+	// processed; the stored verdicts are re-checked before they are shown.
+	run = h.smartOrderSvc.RefreshIfDue(ctx, run)
 
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))

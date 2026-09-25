@@ -2,7 +2,6 @@ package smartorder
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"strings"
 
@@ -15,6 +14,8 @@ type Service struct {
 	repo Repository
 	gate AvailabilityGate
 	log  *slog.Logger
+	// refreshes records when each run's verdicts were last re-checked.
+	refreshes refreshTracker
 }
 
 // NewService constructs the service.
@@ -205,51 +206,6 @@ func (s *Service) attachProductNames(ctx context.Context, lines []*Line) {
 // Candidates returns every vendor considered for a line, rejected ones included.
 func (s *Service) Candidates(ctx context.Context, orgID, lineID int64) ([]Candidate, error) {
 	return s.repo.ListCandidates(ctx, orgID, lineID)
-}
-
-// SetQuantity applies a buyer's quantity edit.
-func (s *Service) SetQuantity(ctx context.Context, orgID, lineID int64, qty float64) error {
-	if qty < 0 {
-		return apperr.Validation("smartorder.negative_quantity",
-			"quantity cannot be negative", nil)
-	}
-	if sel, err := s.repo.GetSelection(ctx, orgID, lineID); err == nil && sel != nil {
-		if cand, err := s.repo.GetCandidate(ctx, orgID, sel.CandidateID); err == nil && cand != nil {
-			if cand.StockQty > 0 && qty > float64(cand.StockQty) {
-				return apperr.Validation("smartorder.insufficient_stock",
-					fmt.Sprintf("الكمية المطلوبة (%g) تتجاوز المخزون المتاح لدى المورد (%d)", qty, cand.StockQty), nil)
-			}
-		}
-	}
-	if err := s.repo.UpdateLineQuantity(ctx, orgID, lineID, qty); err != nil {
-		return err
-	}
-	// A line dropped to zero is no longer ordered, so its supplier choice goes
-	// with it — leaving a dangling selection would show the buyer a supplier for
-	// something they are not buying.
-	if qty == 0 {
-		return s.repo.DeleteSelection(ctx, orgID, lineID)
-	}
-	if sel, err := s.repo.GetSelection(ctx, orgID, lineID); err == nil && sel != nil {
-		if cand, err := s.repo.GetCandidate(ctx, orgID, sel.CandidateID); err == nil && cand != nil {
-			if net, err := LineNet(cand.NetUnitPrice, qty); err == nil { // nolint:errswallow: money arithmetic fails only on overflow; the stored line net stands
-				sel.LineNet = net
-				if err := s.repo.UpsertSelections(ctx, []*Selection{sel}); err != nil {
-					return fmt.Errorf("update selection line net: %w", err)
-				}
-			}
-		}
-	}
-	return nil
-}
-
-// SetDefaultQuantity applies a default quantity to all (or selected) lines in a run.
-func (s *Service) SetDefaultQuantity(ctx context.Context, orgID, runID int64, lineIDs []int64, qty float64) error {
-	if qty <= 0 {
-		return apperr.Validation("smartorder.invalid_quantity",
-			"quantity must be greater than zero", nil)
-	}
-	return s.repo.SetDefaultQuantity(ctx, orgID, runID, lineIDs, qty)
 }
 
 // ChooseSupplier overrides the automatic selection for one line.

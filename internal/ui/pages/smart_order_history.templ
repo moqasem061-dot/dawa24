@@ -9,7 +9,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-templ SmartOrderHistoryPage(runs []*smartorder.Run, lang, dir string) {
+templ SmartOrderHistoryPage(runs []*smartorder.Run, page int, hasNext bool, lang, dir string) {
 	@layouts.ShellFor("سجل الطلبات الذكية", "purchase-request", lang, dir, authctx.FromContext(ctx)) {
 		<div class="page-container max-w-5xl">
 			<!-- Header -->
@@ -116,39 +116,14 @@ templ SmartOrderHistoryPage(runs []*smartorder.Run, lang, dir string) {
 											{ r.CreatedAt.Format("2006-01-02 03:04 PM") }
 										</td>
 										<td class="text-center">
-											if r.Status == smartorder.StatusCompleted || r.Status == smartorder.StatusStale {
-												<a
-													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/results", r.PublicID)) }
-													class="btn btn-primary btn-xs font-bold gap-1"
-												>
-													<span>مراجعة النتائج</span>
-													@components.IconArrowLeft("icon-2xs")
-												</a>
-											} else if r.Status == smartorder.StatusPlaced && r.OrderID != nil {
-												<a
-													href={ templ.SafeURL(fmt.Sprintf("/orders/%d", *r.OrderID)) }
-													class="btn btn-secondary btn-xs font-bold gap-1 text-brand"
-												>
-													<span>عرض الطلب</span>
-													@components.IconArrowLeft("icon-2xs")
-												</a>
-											} else if r.Status == smartorder.StatusProcessing || r.Status == smartorder.StatusFinalizing {
-												<a
-													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/progress", r.PublicID)) }
-													class="btn btn-secondary btn-xs font-bold gap-1 text-sky-700"
-												>
-													<span>متابعة المعالجة...</span>
-												</a>
-											} else {
-												<!-- Staging or Failed: Can Resume/Re-enter -->
-												<a
-													href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/%s/mapping", r.PublicID)) }
-													class="btn btn-secondary btn-xs font-bold gap-1"
-												>
-													<span>استكمال المسودة</span>
-													@components.IconArrowLeft("icon-2xs")
-												</a>
-											}
+											{{ resume := SmartOrderResumeFor(r) }}
+											<a
+												href={ templ.SafeURL(resume.URL) }
+												class={ "btn btn-xs font-bold gap-1", templ.KV("btn-primary", resume.Primary), templ.KV("btn-secondary", !resume.Primary) }
+											>
+												<span>{ resume.Label }</span>
+												@components.IconArrowLeft("icon-2xs")
+											</a>
 										</td>
 									</tr>
 								}
@@ -156,6 +131,21 @@ templ SmartOrderHistoryPage(runs []*smartorder.Run, lang, dir string) {
 						</table>
 					</div>
 				</div>
+				if page > 1 || hasNext {
+					<nav class="d-flex items-center justify-between mt-4" aria-label="صفحات السجل">
+						if page > 1 {
+							<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/history?page=%d", page-1)) } class="btn btn-secondary btn-sm font-bold">الأحدث</a>
+						} else {
+							<span></span>
+						}
+						<span class="text-xs text-secondary tabular-nums">{ fmt.Sprintf("صفحة %d", page) }</span>
+						if hasNext {
+							<a href={ templ.SafeURL(fmt.Sprintf("/customer/smart-order/history?page=%d", page+1)) } class="btn btn-secondary btn-sm font-bold">الأقدم</a>
+						} else {
+							<span></span>
+						}
+					</nav>
+				}
 			}
 		</div>
 	}
@@ -167,7 +157,7 @@ templ smartOrderRunBadge(status smartorder.RunStatus) {
 			<span class="badge badge-emerald text-2xs font-bold">مكتمل للمراجعة</span>
 		case smartorder.StatusPlaced:
 			<span class="badge badge-primary text-2xs font-bold">تم إصدار الطلب</span>
-		case smartorder.StatusProcessing, smartorder.StatusFinalizing:
+		case smartorder.StatusQueued, smartorder.StatusProcessing, smartorder.StatusFinalizing:
 			<span class="badge badge-sky text-2xs font-bold">جاري المقارنة</span>
 		case smartorder.StatusFailed:
 			<span class="badge badge-rose text-2xs font-bold">فشل التحليل</span>

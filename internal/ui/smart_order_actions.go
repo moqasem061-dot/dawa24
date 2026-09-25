@@ -198,6 +198,11 @@ func (h *UIHandler) SmartOrderFinalizeSubmit(w http.ResponseWriter, r *http.Requ
 	orderID, stale, err := h.smartOrderFinalizer.Finalize(ctx, run)
 	if err != nil {
 		h.log.WarnContext(ctx, "smart order finalize failed", "run_id", run.ID, "error", err)
+		// A refusal at checkout usually means the world moved (coverage,
+		// stock, quota). Bring the lines up to date so the buyer sees why.
+		if fresh, gErr := h.smartOrderSvc.GetByID(ctx, run.OrganizationID, run.ID); gErr == nil {
+			_ = h.smartOrderSvc.Refresh(ctx, fresh) // nolint:errswallow: best effort; the refusal itself is reported below
+		}
 		h.smartOrderBack(w, r, run, translateSmartOrderError(err, lang))
 		return
 	}
@@ -206,6 +211,13 @@ func (h *UIHandler) SmartOrderFinalizeSubmit(w http.ResponseWriter, r *http.Requ
 		// them on the run would outlive their usefulness; the buyer resolves
 		// them now or re-runs.
 		h.smartOrderStale.put(run.PublicID, stale)
+		// And the lines themselves are brought up to date, so the screen that
+		// names what changed also shows each line's new supplier or outcome.
+		if fresh, err := h.smartOrderSvc.GetByID(ctx, run.OrganizationID, run.ID); err == nil {
+			if err := h.smartOrderSvc.Refresh(ctx, fresh); err != nil {
+				h.log.WarnContext(ctx, "smart order refresh after stale finalize", "run_id", run.ID, "error", err)
+			}
+		}
 		http.Redirect(w, r, "/customer/smart-order/"+run.PublicID+"/review", http.StatusSeeOther)
 		return
 	}

@@ -333,6 +333,9 @@ func mountAuthenticatedModules(
 	// 14. Smart Order API
 	smartorderRepo := smartorderPG.New(db)
 	smartorderSvc := smartorder.NewService(smartorderRepo, log)
+	// The same purchase rule the UI service uses. Without it this service's
+	// match correction had no coverage check at all.
+	smartorderSvc.SetAvailabilityGate(newCommerceAvailabilityGate(commSvc))
 	soHandler := smartorderHttp.NewHandler(smartorderSvc, log)
 	soFinalizer := smartorder.NewFinalizer(
 		smartorderRepo,

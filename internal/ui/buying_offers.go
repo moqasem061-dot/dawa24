@@ -2,13 +2,13 @@ package ui
 
 import (
 	"context"
-	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
@@ -56,7 +56,7 @@ func (h *UIHandler) buyerOfferQuery(ctx context.Context, actor authctx.Actor, br
 		Lat:       coord.Lat,
 		Lon:       coord.Lon,
 		HasCoords: branch.Latitude != nil && branch.Longitude != nil && (coord.Lat != 0 || coord.Lon != 0),
-		Weekday:   time.Now().Weekday(),
+		Weekday:   timeutil.Now().Weekday(),
 	}
 	if branch.CityID != nil {
 		b.CityID = *branch.CityID
