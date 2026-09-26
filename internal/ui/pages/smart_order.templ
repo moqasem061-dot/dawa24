@@ -11,18 +11,13 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-// SmartOrderBranch is a delivery branch offered on the import screen.
-type SmartOrderBranch struct {
-	ID     int64
-	Name   string
-	City   string
-	IsMain bool
-}
-
 // SmartOrderNewData is everything the import screen needs.
 type SmartOrderNewData struct {
-	Branches []SmartOrderBranch
-	Profile  *smartorder.Profile
+	// BranchName/BranchCity describe the branch chosen in the shell's top-bar
+	// selector. The run always uses that branch; the form only displays it.
+	BranchName string
+	BranchCity string
+	Profile    *smartorder.Profile
 	// AIAvailable is false when the Gateway is unreachable, has no adjudication
 	// model configured, or the organisation has no virtual key. The toggle then
 	// renders disabled with a reason rather than enabled-but-broken.
@@ -103,18 +98,17 @@ templ SmartOrderNewPage(lang, dir string, data SmartOrderNewData) {
 					<label class="so-field-label font-bold text-sm mb-2 text-primary d-flex items-center gap-2">
 						@components.IconBuilding("icon-xs text-brand")
 						<span>{ i18n.T(lang, "smart_order.branch_field_label") }</span>
-						<span class="text-danger">*</span>
 					</label>
-					<select name="branch_id" required class="form-select font-bold text-sm">
-						for _, b := range data.Branches {
-							<option value={ fmt.Sprintf("%d", b.ID) } selected?={ b.IsMain }>
-								{ b.Name }
-								if b.City != "" {
-									{ " — " + b.City }
-								}
-							</option>
+					<div class="form-control font-bold text-sm bg-surface-sunken">
+						if data.BranchName != "" {
+							{ data.BranchName }
+							if data.BranchCity != "" {
+								{ " — " + data.BranchCity }
+							}
+						} else {
+							<span class="text-danger">{ i18n.T(lang, "smartorder.err_branch_required") }</span>
 						}
-					</select>
+					</div>
 					<p class="so-help-text mt-1 text-xs text-muted">
 						{ i18n.T(lang, "smart_order.branch_help_text") }
 					</p>

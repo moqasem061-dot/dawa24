@@ -36,7 +36,7 @@ func (h *UIHandler) smartOrderBranchRefusal(ctx context.Context, orgID, branchID
 	if err != nil || branch == nil {
 		return i18n.T(lang, "smartorder.err_branch_required")
 	}
-	// The dropdown only offers the buyer's own branches; a hand-written post is
+	// The top-bar selector only offers the buyer's own branches; a stale cookie is
 	// not so constrained, and a run built against another company's branch
 	// evaluates coverage and Corporate Operations against the wrong address.
 	if branch.OrganizationID != orgID {

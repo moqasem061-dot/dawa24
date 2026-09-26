@@ -41,19 +41,13 @@ func (h *UIHandler) SmartOrderNewPage(w http.ResponseWriter, r *http.Request) {
 	data := pages.SmartOrderNewData{Error: r.URL.Query().Get("error")}
 	selectedBranchID := h.buyingBranchID(ctx, &actor)
 
-	if h.orgSvc != nil {
-		branches, err := h.orgSvc.ListBranches(ctx, actor.OrganizationID)
-		if err != nil {
-			h.logLoadErr(ctx, "orgSvc.ListBranches", err)
-		} else {
-			for _, b := range branches {
-				data.Branches = append(data.Branches, pages.SmartOrderBranch{
-					ID:     b.ID,
-					Name:   b.Name.Get(i18n.Lang(lang)),
-					City:   b.Address,
-					IsMain: b.ID == selectedBranchID,
-				})
-			}
+	// The run is always placed for the top-bar branch; the form only shows it.
+	if h.orgSvc != nil && selectedBranchID > 0 {
+		if b, err := h.orgSvc.GetBranch(ctx, selectedBranchID); err != nil {
+			h.logLoadErr(ctx, "orgSvc.GetBranch", err)
+		} else if b != nil {
+			data.BranchName = b.Name.Get(i18n.Lang(lang))
+			data.BranchCity = b.Address
 		}
 	}
 
