@@ -34,58 +34,47 @@ import (
 )
 
 // apply validates a request's answers and records the ones that survive.
-func (e *Enhancement) apply(req matchflow.Request, asked map[string]*openRow,
-	outcomes []matchflow.Decision) []CachedDecision {
-
-	saved := make([]CachedDecision, 0, len(outcomes))
-
+func (e *Enhancement) apply(asked map[string]*openRow, a matchflow.Answer) (CachedDecision, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	for _, out := range outcomes {
-		key, ok := req.Keys[out.Ref]
-		if !ok {
-			e.Stats.Rejected++
-			continue
-		}
-		r, ok := asked[key]
-		if !ok {
-			e.Stats.Rejected++
-			continue
-		}
-
-		j := e.judge(req, r, out.Confidence, out.ProductID)
-		e.record(matchflow.Verdict(j, out.ProductID), r, out.Confidence, out.ProductID, out.Reason)
-
-		if matchflow.Remember(j, out.ProductID) {
-			saved = append(saved, CachedDecision{
-				Key:             key,
-				NormName:        r.normName,
-				ChosenProductID: out.ProductID,
-				Confidence:      out.Confidence,
-				Reason:          out.Reason,
-				PromptVersion:   PromptVersion,
-			})
-		}
+	r, ok := asked[a.Key]
+	if !ok {
+		e.Stats.Rejected++
+		return CachedDecision{}, false
 	}
-	return saved
+	out := a.Decision
+	j := e.judge(r, a)
+	e.record(matchflow.Verdict(j, out.ProductID), r, out.Confidence, out.ProductID, out.Reason)
+
+	if !matchflow.Remember(j, out.ProductID) {
+		return CachedDecision{}, false
+	}
+	return CachedDecision{
+		Key:             a.Key,
+		NormName:        r.normName,
+		ChosenProductID: out.ProductID,
+		Confidence:      out.Confidence,
+		Reason:          out.Reason,
+		PromptVersion:   PromptVersion,
+	}, true
 }
 
 // judge gathers what the shared rules need to decide one answer.
-func (e *Enhancement) judge(req matchflow.Request, r *openRow,
-	confidence float64, proposed *int64) matchflow.Judgement {
-
+func (e *Enhancement) judge(r *openRow, a matchflow.Answer) matchflow.Judgement {
+	out := a.Decision
 	j := matchflow.Judgement{
 		Settled:    r.settled,
 		Current:    r.guess,
-		Confidence: confidence,
+		Confidence: out.Confidence,
 		Floor:      ceilings.MinApplyConfidence,
+		Offered:    a.Offered,
+		Verified:   a.Verified(),
 	}
-	if proposed == nil || *proposed <= 0 {
+	if out.ProductID == nil || *out.ProductID <= 0 {
 		return j
 	}
-	_, j.Offered = req.Offered[*proposed]
-	j.Conflicts = !e.index.IdentityConflict(r.row, *proposed).None()
+	j.Conflicts = !e.index.IdentityConflict(r.row, *out.ProductID).None()
 	return j
 }
 
@@ -205,11 +194,10 @@ func (e *Enhancement) applyCache(ctx context.Context, rows []*openRow) []*openRo
 	pending := make([]*openRow, 0, len(rows))
 	for _, r := range rows {
 		d, ok := cached[decisionKey(r)]
+		manual := false
 		if !ok && r.normName != "" {
-			if md, mok := cached["manual:"+r.normName]; mok {
-				d, ok = md, true
-			} else if nd, nok := cached[r.normName]; nok {
-				d, ok = nd, true
+			if md, mok := cached["manual:"+r.normName]; mok && md.Source == "manual" {
+				d, ok, manual = md, true, true
 			}
 		}
 		if !ok {
@@ -226,6 +214,14 @@ func (e *Enhancement) applyCache(ctx context.Context, rows []*openRow) []*openRo
 			Offered:    true, // it was offered when the answer was bought
 			Confidence: d.Confidence,
 			Floor:      ceilings.MinApplyConfidence,
+			// Answers under this prompt version are remembered only after the
+			// pair check; a person's mapping is its own verification.
+			Verified: d.ChosenProductID != nil,
+		}
+		if manual {
+			// A person said so. The engine's own settled answer does not
+			// outrank them, and neither does the model's confidence scale.
+			j.Settled, j.Confidence = false, 1
 		}
 		if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
 			j.Conflicts = !e.index.IdentityConflict(r.row, *d.ChosenProductID).None()

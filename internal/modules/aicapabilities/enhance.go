@@ -115,30 +115,7 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 		return nil, fmt.Errorf("aicapabilities: empty catalogue window")
 	}
 
-	orgID := req.OrganizationID
-	userID := req.UserID
-	if orgID <= 0 {
-		if actor, ok := authctx.From(ctx); ok {
-			orgID = actor.OrgID
-			if orgID <= 0 {
-				orgID = actor.OrganizationID
-			}
-			if userID <= 0 {
-				userID = actor.UserID
-			}
-		}
-	}
-	if orgID <= 0 {
-		if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
-			orgID = tid
-		}
-	}
-	var vKey string
-	if s.keyResolver != nil && orgID > 0 {
-		if k, err := s.keyResolver(ctx, orgID); err == nil && k != "" {
-			vKey = k
-		}
-	}
+	orgID, userID, vKey := s.attribution(ctx, req.OrganizationID, req.UserID)
 
 	gwReq := gateway.Request{
 		Capability:     gateway.CapMatchEnhance,
@@ -183,12 +160,39 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 //
 // A budget that is too small truncates the JSON mid-array and loses every
 // decision in the batch, including the ones already written; one that is too
-// large costs nothing, because the model stops when it stops. So this is
-// deliberately generous.
+// large costs nothing, because the model stops when it stops. It used to be
+// twenty-eight tokens an item, which a result object with a reason already
+// exceeds — before a reasoning model has spent anything on thinking — and a
+// truncated batch was the commonest reason the stage "found nothing".
 func enhanceMaxTokens(items int) int {
-	n := items*28 + 512
-	if n > 60000 {
-		n = 60000
+	return min(items*90+4096, 60000)
+}
+
+// attribution resolves who a request is billed to and which tenant key it
+// carries. Explicit values win; the request context is the fallback, because
+// a background job has no actor and must be told.
+func (s *Service) attribution(ctx context.Context, orgID, userID int64) (int64, int64, string) {
+	if orgID <= 0 {
+		if actor, ok := authctx.From(ctx); ok {
+			orgID = actor.OrgID
+			if orgID <= 0 {
+				orgID = actor.OrganizationID
+			}
+			if userID <= 0 {
+				userID = actor.UserID
+			}
+		}
 	}
-	return n
+	if orgID <= 0 {
+		if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
+			orgID = tid
+		}
+	}
+	var vKey string
+	if s.keyResolver != nil && orgID > 0 {
+		if k, err := s.keyResolver(ctx, orgID); err == nil && k != "" {
+			vKey = k
+		}
+	}
+	return orgID, userID, vKey
 }

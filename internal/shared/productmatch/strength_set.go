@@ -117,7 +117,7 @@ const maxRatioParts = 4
 // concentrations, not combinations, and each half is already recorded under its
 // own unit.
 func strengthSet(text string) []strength {
-	norm := FoldDoseText(sheet.NormalizeDigits(text))
+	norm := FoldDoseText(foldAlef(sheet.NormalizeDigits(text)))
 	locs := strengthPattern.FindAllStringIndex(norm, -1)
 	if len(locs) == 0 {
 		return nil

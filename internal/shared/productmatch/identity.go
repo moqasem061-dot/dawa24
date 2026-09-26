@@ -65,6 +65,12 @@ func (idx *Index) IdentityConflict(row *Row, productID int64) MatchConflict {
 	if formsConflict(row, p) {
 		return MatchConflict{Kind: "form", Detail: "اختلاف الشكل الصيدلي"}
 	}
+	if routesConflict(routesIn(rowText), routesIn(prodText)) {
+		return MatchConflict{Kind: "form", Detail: "اختلاف طريق الإعطاء (عضل/وريد)"}
+	}
+	if dimensionsConflict(dimensionsIn(rowText), dimensionsIn(prodText)) {
+		return MatchConflict{Kind: "form", Detail: "اختلاف المقاس"}
+	}
 
 	if !idx.sharedProductWord(row, p) {
 		return MatchConflict{Kind: "evidence", Detail: "لا توجد كلمة مميزة مشتركة بين الاسمين"}
@@ -270,16 +276,59 @@ func (p *MasterProduct) modifiers() map[string]struct{} { return p.mods }
 // The search is over a space-stripped name, so a hit means the letters are there
 // in sequence — which for the multi-letter words in this vocabulary is enough.
 func modifierGlued(text, key string) bool {
-	joined := strings.ReplaceAll(sheet.NormalizeName(text), " ", "")
+	tokens := strings.Fields(sheet.NormalizeName(text))
 	for word, k := range variantModifiers {
 		if k != key || len([]rune(word)) < 3 {
 			// Two-letter release codes ("sr", "cr") are never searched this way:
 			// those letters occur inside ordinary words constantly.
 			continue
 		}
-		if strings.Contains(joined, word) {
-			return true
+		for i, tok := range tokens {
+			if gluedTo(tok, word) {
+				return true
+			}
+			// The modifier split by a space on this side: "اد فانس" for
+			// "ادفانس". Whole tokens only, so a span that cuts through the
+			// middle of two words — "سنترو|م ان|رجي" — is not a modifier.
+			run := tok
+			for j := i + 1; j < len(tokens) && j <= i+2 && len(run) < len(word); j++ {
+				run += tokens[j]
+				if run == word {
+					return true
+				}
+			}
 		}
+	}
+	return false
+}
+
+// gluedTo reports a modifier fused into one token.
+//
+// It used to search the whole name with every space removed, which found
+// modifiers that were never there. "سنتروم انرجي" joined is "سنترومانرجي" and
+// contains مان — so "centrum men" was never contradicted by Centrum Energy —
+// and "ليميتلس وومان" contains مان, so the women's line looked like the men's.
+// A glued modifier lives inside ONE token:
+//
+//   - at its start, before an inflection or a compound tail: ادفانسد,
+//     advanced, infants, chews, كومبي;
+//   - at its end, after a stem of two letters or more: اكوابلس, himax, the
+//     article in المضغ;
+//
+// and never in a token that is itself a vocabulary word, which is how
+// "woman" stops reading as "man".
+func gluedTo(tok, word string) bool {
+	if tok == word {
+		return false // a spaced modifier is already in the set
+	}
+	if _, isModifier := variantModifiers[tok]; isModifier {
+		return false
+	}
+	if strings.HasPrefix(tok, word) {
+		return true
+	}
+	if strings.HasSuffix(tok, word) {
+		return len([]rune(strings.TrimSuffix(tok, word))) >= 2
 	}
 	return false
 }

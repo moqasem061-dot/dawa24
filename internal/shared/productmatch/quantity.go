@@ -58,7 +58,14 @@ type quantities struct {
 // together and compared the bags by containment, which made a 30-tablet pack
 // and half a combination dose interchangeable evidence.
 func readQuantities(text string) quantities {
-	words := strings.Fields(sheet.NormalizeName(foldPackMultipliers(sheet.NormalizeDigits(text))))
+	// A written size is read as a size (dimensionsIn), never as counts: the
+	// figures of "شيت 10*20سم" sit beside a count word and were read as ten
+	// and twenty sheets.
+	digits := sheet.NormalizeDigits(text)
+	if strings.ContainsAny(digits, "*xX×") {
+		digits = dimensionPattern.ReplaceAllString(digits, " ")
+	}
+	words := strings.Fields(sheet.NormalizeName(foldPackMultipliers(digits)))
 	if len(words) == 0 {
 		return quantities{}
 	}
@@ -263,7 +270,11 @@ func foldPackMultipliers(text string) string {
 		left, leftStart := trailingNumber(out)
 		right, rightEnd := leadingNumber(runes[i+1:])
 		if left <= 0 || right <= 0 || left > maxPackUnits || right > maxPackUnits ||
-			left*right > maxPackUnits {
+			left*right > maxPackUnits ||
+			// A size is not a carton: "10*20سم" is a sheet ten by twenty
+			// centimetres, and read as two hundred it was compared as a pack
+			// count against every sibling. See identity_refine.go.
+			isDimensionMultiplier(runes, leftStart, i+1+rightEnd, out) {
 			out = append(out, r)
 			continue
 		}

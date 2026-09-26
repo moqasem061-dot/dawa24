@@ -22,6 +22,12 @@ type CandidateProduct struct {
 	ScientificName         string `json:"scientific_name"`
 	ManufacturingCompanies string `json:"manufacturing_companies"`
 	Pharmacology           string `json:"pharmacology"`
+	// DosageForm, Concentration and Unit are what the identity guard reads to
+	// tell 500 mg from 1 g and a syrup from a tablet. The projection used to
+	// leave them out, so the guard judged compare rows on names alone.
+	DosageForm    string `json:"dosage_form"`
+	Concentration string `json:"concentration"`
+	Unit          string `json:"unit"`
 	// Barcode is the catalogue's GTIN, and it exists because the ladder used
 	// to compare a row's barcode against this struct's SKU for want of
 	// anywhere else to look.
@@ -37,11 +43,6 @@ type MatchResult struct {
 	Confidence  float64     `json:"confidence"` // 0..100 scale (matching Laravel parity)
 	Method      MatchMethod `json:"method"`
 	MethodLabel string      `json:"method_label"`
-}
-
-// AIMatcher provides AI-augmented matching for low-confidence rows via the platform gateway (Rule R2, Rule R3).
-type AIMatcher interface {
-	MatchCandidate(ctx context.Context, query string, candidateNames []string) (string, float64)
 }
 
 // MatchLadder resolves a single uploaded row against the catalog using the deterministic match ladder (Plan V5 Phase 2 §2.4).
@@ -145,35 +146,13 @@ func (s *Service) MatchLadder(ctx context.Context, orgID *int64, rawName string,
 		return res, nil
 	}
 
-	// -----------------------------------------------------------------------
-	// Wave B: AI Gateway Enhancement (Plan V5 Phase 2 §2.6)
-	// Only runs on rows the deterministic matcher left below the confidence cutoff (Rule R3).
-	// -----------------------------------------------------------------------
-	if s.aiMatcher != nil && len(candidates) > 0 {
-		var candidateNames []string
-		candMap := make(map[string]*CandidateProduct)
-		for _, c := range candidates {
-			candidateNames = append(candidateNames, c.NameAr)
-			candMap[c.NameAr] = c
-			if c.NameEn != "" {
-				candidateNames = append(candidateNames, c.NameEn)
-				candMap[c.NameEn] = c
-			}
-		}
-
-		matchedName, aiScore := s.aiMatcher.MatchCandidate(ctx, rawName, candidateNames)
-		if matchedName != "" && aiScore >= 0.60 {
-			if matchedCand, ok := candMap[matchedName]; ok {
-				aiConf := math.Round(aiScore * 100.0)
-				return &MatchResult{
-					ProductID:   &matchedCand.ID,
-					Confidence:  aiConf,
-					Method:      MatchMethodAI,
-					MethodLabel: fmt.Sprintf(i18n.TDefault("w4_mod.d_164"), int(aiConf)),
-				}, nil
-			}
-		}
-	}
+	// There is deliberately no AI step in the per-row ladder. The one that was
+	// here asked for "the single best matching medicine" among the candidates —
+	// an instruction that forces a match — and when the Gateway failed it fell
+	// back to raw string similarity and applied THAT at sixty per cent, labelled
+	// as an AI match, on exactly the rows the shared engine had just refused as
+	// ambiguous. Files are matched with the shared AI stage instead; see
+	// matching_ai.go.
 
 	// -----------------------------------------------------------------------
 	// Strategy 5: Unmatched (< 55%)
@@ -235,13 +214,16 @@ func (s *Service) matchAgainst(
 		// match on its own. That is the whole difference from the blend this
 		// replaced.
 		masters = append(masters, productmatch.MasterProduct{
-			ID:           c.ID,
-			NameAR:       c.NameAr,
-			NameEN:       c.NameEn,
-			SKU:          c.SKU,
-			Barcode:      c.Barcode,
-			Scientific:   c.ScientificName,
-			Manufacturer: c.ManufacturingCompanies,
+			ID:            c.ID,
+			NameAR:        c.NameAr,
+			NameEN:        c.NameEn,
+			SKU:           c.SKU,
+			Barcode:       c.Barcode,
+			Scientific:    c.ScientificName,
+			Manufacturer:  c.ManufacturingCompanies,
+			DosageForm:    c.DosageForm,
+			Concentration: c.Concentration,
+			Unit:          c.Unit,
 		})
 	}
 	if len(masters) == 0 {
@@ -319,13 +301,16 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 			continue
 		}
 		masters = append(masters, productmatch.MasterProduct{
-			ID:           c.ID,
-			NameAR:       c.NameAr,
-			NameEN:       c.NameEn,
-			SKU:          c.SKU,
-			Barcode:      c.Barcode,
-			Scientific:   c.ScientificName,
-			Manufacturer: c.ManufacturingCompanies,
+			ID:            c.ID,
+			NameAR:        c.NameAr,
+			NameEN:        c.NameEn,
+			SKU:           c.SKU,
+			Barcode:       c.Barcode,
+			Scientific:    c.ScientificName,
+			Manufacturer:  c.ManufacturingCompanies,
+			DosageForm:    c.DosageForm,
+			Concentration: c.Concentration,
+			Unit:          c.Unit,
 		})
 	}
 	if len(masters) == 0 {
@@ -346,7 +331,6 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 	opts := productmatch.DefaultMatchOptions()
 	results := productmatch.MatchAll(idx, matchRows, opts, 0)
 
-	var matches []RowMatch
 	for i, res := range results {
 		if res.Matched() && res.Level.Settled() {
 			confidence := math.Round(res.Score * 100.0)
@@ -355,14 +339,24 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 			rows[i].MatchedProductID = &prodID
 			rows[i].MatchConfidence = confidence
 			rows[i].MatchMethod = method
-			if rows[i].ID > 0 {
-				matches = append(matches, RowMatch{
-					RowID:      rows[i].ID,
-					ProductID:  &prodID,
-					Confidence: confidence,
-					Method:     method,
-				})
-			}
+		}
+	}
+
+	// The shared AI stage, when it is wired: the rows the engine could not
+	// settle are resolved, and the ones it settled on a name are checked.
+	if s.enhancer != nil {
+		s.refineWithAI(ctx, idx, rows, matchRows, results)
+	}
+
+	var matches []RowMatch
+	for _, r := range rows {
+		if r.ID > 0 && r.MatchedProductID != nil {
+			matches = append(matches, RowMatch{
+				RowID:      r.ID,
+				ProductID:  r.MatchedProductID,
+				Confidence: r.MatchConfidence,
+				Method:     r.MatchMethod,
+			})
 		}
 	}
 

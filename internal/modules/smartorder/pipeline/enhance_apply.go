@@ -38,60 +38,50 @@ import (
 // ones, and the buyer needs both in front of them.
 const confDisputed = 0.60
 
-// apply validates a batch's answers and writes the ones that survive.
-func (e *Enhancement) apply(req matchflow.Request, groups map[string][]Review,
-	outcomes []matchflow.Decision) []smartorder.CachedDecision {
-
-	saved := make([]smartorder.CachedDecision, 0, len(outcomes))
-
+// apply judges one final answer and writes it across every line that asked.
+// It reports the decision worth remembering, if any.
+func (e *Enhancement) apply(groups map[string][]Review, a matchflow.Answer) (smartorder.CachedDecision, bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 
-	for _, out := range outcomes {
-		key, ok := req.Keys[out.Ref]
-		if !ok {
-			e.Stats.Rejected++
-			continue
-		}
-		group := groups[key]
-		if len(group) == 0 {
-			e.Stats.Rejected++
-			continue
-		}
-		lead := group[0]
-
-		j := e.judge(req, lead, out)
-		verdict := matchflow.Verdict(j, out.ProductID)
-		e.record(verdict, group, lead, out)
-
-		if matchflow.Remember(j, out.ProductID) {
-			saved = append(saved, smartorder.CachedDecision{
-				Key:             key,
-				NormName:        lead.Line.NormName,
-				ChosenProductID: out.ProductID,
-				Confidence:      out.Confidence,
-				Reason:          out.Reason,
-				PromptVersion:   PromptVersion,
-			})
-		}
+	group := groups[a.Key]
+	if len(group) == 0 {
+		e.Stats.Rejected++
+		return smartorder.CachedDecision{}, false
 	}
-	return saved
+	lead := group[0]
+	out := a.Decision
+
+	j := e.judge(lead, a)
+	e.record(matchflow.Verdict(j, out.ProductID), group, lead, out)
+
+	if !matchflow.Remember(j, out.ProductID) {
+		return smartorder.CachedDecision{}, false
+	}
+	return smartorder.CachedDecision{
+		Key:             a.Key,
+		NormName:        lead.Line.NormName,
+		ChosenProductID: out.ProductID,
+		Confidence:      out.Confidence,
+		Reason:          out.Reason,
+		PromptVersion:   PromptVersion,
+	}, true
 }
 
 // judge gathers what the shared rules need to decide one answer.
-func (e *Enhancement) judge(req matchflow.Request, r Review,
-	out matchflow.Decision) matchflow.Judgement {
-
+func (e *Enhancement) judge(r Review, a matchflow.Answer) matchflow.Judgement {
+	out := a.Decision
 	j := matchflow.Judgement{
 		Settled:    r.Settled,
 		Current:    r.Line.MatchedProductID,
 		Confidence: out.Confidence,
 		Floor:      ceilings.MinApplyConfidence,
+		Offered:    a.Offered,
+		Verified:   a.Verified(),
 	}
 	if out.ProductID == nil || *out.ProductID <= 0 {
 		return j
 	}
-	_, j.Offered = req.Offered[*out.ProductID]
 	j.Conflicts = !e.index.IdentityConflict(r.Row, *out.ProductID).None()
 	return j
 }
@@ -242,6 +232,9 @@ func (e *Enhancement) applyCache(ctx context.Context, groups map[string][]Review
 			Offered:    true, // it was offered when the answer was bought
 			Confidence: d.Confidence,
 			Floor:      ceilings.MinApplyConfidence,
+			// The prompt version is in the key, and answers under this version
+			// are remembered only after the pair check.
+			Verified: d.ChosenProductID != nil,
 		}
 		if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
 			j.Conflicts = !e.index.IdentityConflict(lead.Row, *d.ChosenProductID).None()

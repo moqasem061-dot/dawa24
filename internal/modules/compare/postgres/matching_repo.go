@@ -83,7 +83,9 @@ func (r *Repository) ListCatalogMatchProducts(ctx context.Context, limit int) ([
 	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
 		sql := `
 			SELECT p.id, COALESCE(p.sku, ''), COALESCE(p.name->>'ar', ''), COALESCE(p.name->>'en', ''),
-			       COALESCE(p.scientific_name, ''), '', COALESCE(p.barcode, ''), COALESCE(p.manufacturer, '')
+			       COALESCE(p.scientific_name, ''), '', COALESCE(p.barcode, ''),
+			       COALESCE(p.manufacturing_companies, ''),
+			       COALESCE(p.dosage_form, ''), COALESCE(p.concentration, ''), COALESCE(p.unit, '')
 			FROM catalog.products p
 			WHERE p.deleted_at IS NULL
 			ORDER BY p.id ASC
@@ -96,7 +98,8 @@ func (r *Repository) ListCatalogMatchProducts(ctx context.Context, limit int) ([
 		defer rows.Close()
 		for rows.Next() {
 			var c compare.CandidateProduct
-			if err := rows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode, &c.ManufacturingCompanies); err != nil {
+			if err := rows.Scan(&c.ID, &c.SKU, &c.NameAr, &c.NameEn, &c.ScientificName, &c.SearchSimple, &c.Barcode, &c.ManufacturingCompanies,
+				&c.DosageForm, &c.Concentration, &c.Unit); err != nil {
 				return err
 			}
 			candidates = append(candidates, &c)

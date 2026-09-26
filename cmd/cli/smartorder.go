@@ -16,7 +16,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
-	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // smartOrderSmoke drives a real run end to end against the live catalogue.
@@ -210,37 +209,7 @@ func smokeEnhancer(gw gateway.Client, orgSvc *org.Service, log *slog.Logger) pip
 		}
 		return o.AIVirtualKey, nil
 	})
-	return pipeline.NewGatewayEnhancer(&cliEnhanceAdapter{caps: caps})
-}
-
-// cliEnhanceAdapter bridges aicapabilities to the pipeline's gateway contract.
-type cliEnhanceAdapter struct {
-	caps *aicapabilities.Service
-}
-
-func (b *cliEnhanceAdapter) EnhanceBatch(ctx context.Context, batch pipeline.GatewayBatch) ([]pipeline.GatewayOutcome, error) {
-	req := aicapabilities.EnhanceRequest{
-		Catalog: make([]aicapabilities.CatalogEntry, 0, len(batch.Catalog)),
-		Items:   make([]aicapabilities.EnhanceItem, 0, len(batch.Items)),
-		// Attribution for the AI usage ledger: a smoke run is attributed like the real thing.
-		Feature: matchflow.FeatureSmartOrder,
-	}
-	for _, c := range batch.Catalog {
-		req.Catalog = append(req.Catalog, aicapabilities.CatalogEntry(c))
-	}
-	for _, it := range batch.Items {
-		req.Items = append(req.Items, aicapabilities.EnhanceItem(it))
-	}
-
-	decisions, err := b.caps.EnhanceMatches(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]pipeline.GatewayOutcome, 0, len(decisions))
-	for _, d := range decisions {
-		out = append(out, pipeline.GatewayOutcome(d))
-	}
-	return out, nil
+	return caps
 }
 
 func coverageGateCLI(cs *workflow.CoverageService) pipeline.CoverageGate {

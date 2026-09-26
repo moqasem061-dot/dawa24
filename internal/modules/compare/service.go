@@ -12,6 +12,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // ClientInfo captures client environment details for session device cap tracking.
@@ -32,10 +33,10 @@ type ClientInfo struct {
 
 // Service coordinates compare plans, subscriptions, user seats, and entitlements.
 type Service struct {
-	repo      Repository
-	log       *slog.Logger
-	aiMatcher AIMatcher
-	storage   *storage.Client
+	repo     Repository
+	log      *slog.Logger
+	enhancer matchflow.Enhancer
+	storage  *storage.Client
 	// cache holds the market board's total and supplier list. Nil is a
 	// supported state: every read falls through to the database.
 	cache Cache
@@ -49,14 +50,16 @@ func NewService(repo Repository, log *slog.Logger) *Service {
 	}
 }
 
-// SetAIMatcher configures the optional AI matching capability (Wave B / Plan V5 §2.6).
-func (s *Service) SetAIMatcher(m AIMatcher) {
-	s.aiMatcher = m
+// SetMatchEnhancer wires the shared AI matching stage — the same proposal
+// pass and pair check every other importer runs. Nil leaves compare on the
+// deterministic engine alone.
+func (s *Service) SetMatchEnhancer(e matchflow.Enhancer) {
+	s.enhancer = e
 }
 
 // AIMatchingAvailable reports whether AI matching is enabled.
 func (s *Service) AIMatchingAvailable() bool {
-	return s != nil && s.aiMatcher != nil
+	return s != nil && s.enhancer != nil
 }
 
 // SetStorage configures the object storage client for downloading uploaded files.

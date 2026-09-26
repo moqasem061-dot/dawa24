@@ -168,6 +168,21 @@ func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 	}
 
 	switch {
+	case q.formKey == "" && q.subForm != "":
+		// The row named no main form but did name a sub-form — "زيت شعر",
+		// "hair oil" — and a hair cream is not it. Skipping the comparison
+		// because the main form was missing let exactly that through.
+		//
+		// Only the distinctions that are physical rather than verbal. The
+		// sub-form vocabulary reads "mouth wash" as a wash and "مضمضة" as a
+		// mouthwash, and "gel-cream" as a gel and "كريم جل" as a cream; with
+		// no main form to anchor them, comparing those refused correct
+		// matches. An oil or a powder against a cream is never a spelling.
+		if conflictsOnStatingSide(p,
+			func(f *nameFacts) bool { return f.subForm != "" },
+			func(f *nameFacts) bool { return physicallyDistinct(q.subForm, f.subForm) }) {
+			out = append(out, conflict{"sub_form", massSubForm})
+		}
 	case q.formKey == "":
 		// The row named no form. It cannot be contradicted about one.
 	case conflictsOnStatingSide(p,
@@ -178,6 +193,19 @@ func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 		func(f *nameFacts) bool { return f.subForm != "" },
 		func(f *nameFacts) bool { return q.subForm != f.subForm }):
 		out = append(out, conflict{"sub_form", massSubForm})
+	}
+
+	// An intravenous vial is not an intramuscular one; a 2.5 cm dressing is
+	// not a 10 by 20 cm sheet. Both only where both sides state one.
+	if len(q.routes) > 0 && conflictsOnStatingSide(p,
+		func(f *nameFacts) bool { return len(f.routes) > 0 },
+		func(f *nameFacts) bool { return routesConflict(q.routes, f.routes) }) {
+		out = append(out, conflict{"route", massForm})
+	}
+	if len(q.dims) > 0 && conflictsOnStatingSide(p,
+		func(f *nameFacts) bool { return len(f.dims) > 0 },
+		func(f *nameFacts) bool { return dimensionsConflict(q.dims, f.dims) }) {
+		out = append(out, conflict{"size", massCount})
 	}
 
 	countConflict := conflictsOnStatingSide(p,
@@ -312,4 +340,21 @@ func formClass(key string) string {
 		return "external"
 	}
 	return key
+}
+
+// physicallyDistinct reports two topical sub-forms no supplier writes for one
+// another: a liquid oil or a dry powder against a semi-solid or a wash.
+func physicallyDistinct(a, b string) bool {
+	if a == b {
+		return false
+	}
+	loose := func(x string) bool { return x == "oil" || x == "powder" || x == "serum" }
+	firm := func(x string) bool {
+		switch x {
+		case "cream", "ointment", "gel", "paste", "balm", "wash", "shampoo", "soap":
+			return true
+		}
+		return false
+	}
+	return (loose(a) && (firm(b) || loose(b))) || (loose(b) && firm(a))
 }

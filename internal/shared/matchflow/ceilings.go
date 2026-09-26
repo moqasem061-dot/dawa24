@@ -126,112 +126,68 @@ const (
 )
 
 // For returns the ceilings a profile runs under.
+//
+// Every profile finishes inside fifteen minutes — the engine enforces fourteen
+// whatever is written here — and every profile spends that time on smaller
+// batches rather than larger ones. A model answering sixty lines against one
+// window attends to each of them; one answering two hundred skims the tail,
+// and the tail is where the forced matches were. The pair check then takes a
+// fifth of the wall clock, which is why proposals stop starting at eighty per
+// cent of it.
 func For(p Profile) Ceilings {
 	base := Ceilings{
 		RecallLimit:        16,
-		MaxInputBytes:      400_000,
-		MaxItemsPerRequest: 120,
-		MaxRequestsPerRun:  30,
-		MaxConcurrent:      6,
-		MaxWallClock:       8 * time.Minute,
+		MaxInputBytes:      220_000,
+		MaxItemsPerRequest: 60,
+		MaxRequestsPerRun:  120,
+		MaxConcurrent:      8,
+		MaxWallClock:       12 * time.Minute,
 		MinApplyConfidence: 0.80,
 		MinPlausible:       0.30,
 	}
 
 	switch p {
 	case ProfileOrder:
-		base.MaxItemsPerRequest = 25
-		base.RecallLimit = 6
-		base.MaxConcurrent = 4
-		base.MaxInputBytes = 80_000
-		base.MaxRequestsPerRun = 40
-		base.MaxWallClock = 5 * time.Minute
+		// A person is watching the bar. Small batches answer fastest.
+		base.MaxItemsPerRequest = 30
+		base.RecallLimit = 12
+		base.MaxInputBytes = 120_000
+		base.MaxRequestsPerRun = 120
+		base.MaxWallClock = 8 * time.Minute
 
 	case ProfileSaving:
-		base.MaxItemsPerRequest = 80
-		base.RecallLimit = 8
-		base.MaxConcurrent = 6
-		base.MaxInputBytes = 280_000
-		base.MaxRequestsPerRun = 60
-		base.MaxWallClock = 10 * time.Minute
+		base.RecallLimit = 12
+		base.MaxRequestsPerRun = 150
 		base.MinPlausible = 0.15
 
 	case ProfileVendor:
-		// A supplier file is long and its rows repeat, so more per request.
-		//
-		// The request ceiling used to be twenty, which with two hundred items
-		// apiece capped one run at four thousand distinct questions. A real
-		// Egyptian distributor's list is nine thousand rows of which seven or
-		// eight thousand are distinct after de-duplication, so the ceiling was
-		// reached on the file this whole flow exists for — and the screen told
-		// the vendor their column mapping was probably wrong, which it was not.
-		//
-		// Sixty requests of two hundred is twelve thousand questions, which
-		// covers the largest file anyone has uploaded to this system with room
-		// over. The cost is bounded by the plausibility gate long before it is
-		// bounded by this: rows the catalogue cannot plausibly answer are never
-		// sent, and on a live file that is most of the residue.
-		base.MaxItemsPerRequest = 200
-		base.MaxRequestsPerRun = 60
-		base.MaxConcurrent = 6
-		// Six concurrent requests of two hundred items finish sixty requests in
-		// well under this; the deadline exists so a Gateway that has stopped
-		// answering ends the stage rather than the import.
-		base.MaxWallClock = 20 * time.Minute
+		// Long, repetitive files. Two hundred requests of sixty is twelve
+		// thousand distinct questions — the largest file this system has seen,
+		// after de-duplication — and the risk ordering spends the wall clock on
+		// the ambiguous rows first when it runs out.
+		base.MaxRequestsPerRun = 200
+		base.MaxConcurrent = 10
+		base.MaxWallClock = 14 * time.Minute
 
 	case ProfileCatalog:
 		// The master catalogue is the one place a wrong match is not
-		// recoverable by looking at the result, so this profile is deliberately
-		// the most conservative of the three.
-		base.MaxItemsPerRequest = 100
-		base.MaxRequestsPerRun = 12
-		base.MaxConcurrent = 4
+		// recoverable by looking at the result, so it applies the least.
+		base.MaxItemsPerRequest = 50
+		base.MaxConcurrent = 6
 		base.MinApplyConfidence = 0.90
 		base.MinPlausible = 0.40
 	}
 	return base
 }
 
-// Adaptive dynamically adjusts ceilings based on the total number of items,
-// ensuring small uploads get fast low-latency batches while large uploads
-// (> 1,000 items) pack into high-throughput concurrent requests without delay.
+// Adaptive tunes the ceilings to the file. A small file gets small batches,
+// because its whole residue fits in a few requests either way and small ones
+// come back sooner. Nothing here ever raises the batch size: larger batches
+// buy throughput with attention, and attention is what the answers are made of.
 func Adaptive(p Profile, totalItems int) Ceilings {
 	c := For(p)
-	if totalItems <= 0 {
-		return c
-	}
-	switch {
-	case totalItems <= 100:
-		if c.MaxItemsPerRequest > 40 {
-			c.MaxItemsPerRequest = 40
-		}
-	case totalItems <= 1000:
-		if p != ProfileCatalog && p != ProfileVendor {
-			if c.MaxItemsPerRequest < 75 {
-				c.MaxItemsPerRequest = 75
-			}
-			if c.MaxInputBytes < 250_000 {
-				c.MaxInputBytes = 250_000
-			}
-			if c.MaxConcurrent < 6 {
-				c.MaxConcurrent = 6
-			}
-		}
-	default:
-		if p != ProfileCatalog && p != ProfileVendor {
-			if c.MaxItemsPerRequest < 100 {
-				c.MaxItemsPerRequest = 100
-			}
-			if c.MaxInputBytes < 350_000 {
-				c.MaxInputBytes = 350_000
-			}
-			if c.MaxRequestsPerRun < 60 {
-				c.MaxRequestsPerRun = 60
-			}
-			if c.MaxConcurrent < 6 {
-				c.MaxConcurrent = 6
-			}
-		}
+	if totalItems > 0 && totalItems <= 100 && c.MaxItemsPerRequest > 20 {
+		c.MaxItemsPerRequest = 20
 	}
 	return c
 }

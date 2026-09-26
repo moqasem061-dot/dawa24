@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 	"sync"
-	"sync/atomic"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -140,22 +139,6 @@ func enhanceSavingItemsWithProgress(
 		return improved
 	}
 
-	ceilings := matchflow.Adaptive(matchflow.ProfileSaving, len(items))
-	requests, _ := matchflow.Plan(pending, ceilings)
-	if len(requests) == 0 {
-		return improved
-	}
-
-	if log != nil {
-		log.InfoContext(ctx, "starting saving AI matching pass",
-			"items", len(items), "asked", len(asked), "pending", len(pending),
-			"requests", len(requests), "workers", ceilings.MaxConcurrent)
-	}
-
-	if onProgress != nil {
-		onProgress(0, len(requests), improved)
-	}
-
 	var orgID, userID int64
 	if actor, ok := authctx.From(ctx); ok {
 		orgID = actor.OrgID
@@ -170,85 +153,88 @@ func enhanceSavingItemsWithProgress(
 		}
 	}
 
+	total := len(pending)
+	if log != nil {
+		log.InfoContext(ctx, "starting saving AI matching pass",
+			"items", len(items), "asked", len(asked), "pending", total)
+	}
+	if onProgress != nil {
+		onProgress(0, total, improved)
+	}
+
 	var (
-		wg         sync.WaitGroup
-		slots      = make(chan struct{}, ceilings.MaxConcurrent)
 		mu         sync.Mutex
 		remembered []matchflow.Remembered
-		doneReqs   int32
+		done       int
 	)
-
-	for _, req := range requests {
-		wg.Add(1)
-		slots <- struct{}{}
-		go func(request matchflow.Request) {
-			defer wg.Done()
-			defer func() { <-slots }()
-			defer func() {
-				done := atomic.AddInt32(&doneReqs, 1)
-				if onProgress != nil {
-					mu.Lock()
-					curImp := improved
-					mu.Unlock()
-					onProgress(int(done), len(requests), curImp)
-				}
-				if rec := recover(); rec != nil && log != nil {
-					log.ErrorContext(ctx, "saving-list AI pass panicked", "panic", rec)
-				}
-			}()
-
-			request.Batch.Feature = matchflow.FeatureSavingsImport
-			request.Batch.OrganizationID = orgID
-			request.Batch.UserID = userID
-			decisions, err := enhancer.Enhance(ctx, request.Batch)
-			if err != nil {
-				// The deterministic outcome stands. A saving list that imports
-				// without its AI pass is a saving list; one that fails to import is
-				// nothing.
-				if log != nil {
-					log.WarnContext(ctx, "saving-list AI pass failed; deterministic outcome stands",
-						"items", len(request.Batch.Items), "error", err)
-				}
+	stats := matchflow.Run(ctx, enhancer, matchflow.Spec{
+		Profile:        matchflow.ProfileSaving,
+		Rows:           len(items),
+		Questions:      pending,
+		Feature:        matchflow.FeatureSavingsImport,
+		OrganizationID: orgID,
+		UserID:         userID,
+		Screen: func(key string, productID int64) bool {
+			mu.Lock()
+			q, ok := asked[key]
+			mu.Unlock()
+			return ok && engine.index.IdentityConflict(q.row, productID).None()
+		},
+		Describe: func(id int64) (matchflow.CatalogEntry, bool) {
+			p, ok := engine.index.Lookup(id)
+			if !ok {
+				return matchflow.CatalogEntry{}, false
+			}
+			return matchflow.CatalogEntry{
+				ProductID: p.ID, NameAR: p.NameAR, NameEN: p.NameEN,
+				Scientific: p.Scientific, DosageForm: p.DosageForm,
+				Concentration: p.Concentration, Manufacturer: p.Manufacturer,
+			}, true
+		},
+		OnAnswer: func(a matchflow.Answer) {
+			mu.Lock()
+			defer mu.Unlock()
+			q, ok := asked[a.Key]
+			if !ok {
 				return
 			}
-
-			var localImproved int
-			var localRemembered []matchflow.Remembered
-
-			for _, d := range decisions {
-				key, ok := request.Keys[d.Ref]
-				if !ok {
-					continue
-				}
-				mu.Lock()
-				q, ok := asked[key]
-				mu.Unlock()
-				if !ok {
-					continue
-				}
-				j := savingJudgement(engine, q, d.Confidence, d.ProductID)
-				localImproved += applySavingVerdict(engine, q, matchflow.Verdict(j, d.ProductID), d)
-				if matchflow.Remember(j, d.ProductID) && q.firstTarget() != nil {
-					localRemembered = append(localRemembered, matchflow.Remembered{
-						Key:             key,
-						NormName:        productmatch.NormalizeText(q.firstTarget().NameProduct),
-						ChosenProductID: d.ProductID,
-						Confidence:      d.Confidence,
-						Reason:          d.Reason,
-						PromptVersion:   matchflow.PromptVersion,
-					})
-				}
+			d := a.Decision
+			j := savingJudgement(engine, q, d.Confidence, d.ProductID)
+			// The engine checked the answer against the request's shared window,
+			// which is wider than this row's own shortlist.
+			if d.ProductID != nil && a.Offered && engine.known[*d.ProductID] {
+				j.Offered = true
 			}
-
-			if localImproved > 0 || len(localRemembered) > 0 {
-				mu.Lock()
-				improved += localImproved
-				remembered = append(remembered, localRemembered...)
-				mu.Unlock()
+			j.Verified = a.Verified()
+			improved += applySavingVerdict(engine, q, matchflow.Verdict(j, d.ProductID), d)
+			if matchflow.Remember(j, d.ProductID) && q.firstTarget() != nil {
+				remembered = append(remembered, matchflow.Remembered{
+					Key:             a.Key,
+					NormName:        productmatch.NormalizeText(q.firstTarget().NameProduct),
+					ChosenProductID: d.ProductID,
+					Confidence:      d.Confidence,
+					Reason:          d.Reason,
+					PromptVersion:   matchflow.PromptVersion,
+				})
 			}
-		}(req)
+		},
+		OnDone: func(keys []string) {
+			if onProgress == nil {
+				return
+			}
+			mu.Lock()
+			done += len(keys)
+			n, imp := done, improved
+			mu.Unlock()
+			onProgress(n, total, imp)
+		},
+	})
+	if log != nil {
+		log.InfoContext(ctx, "saving AI matching pass finished",
+			"improved", improved, "requests", stats.Requests, "checks", stats.CheckRequests,
+			"check_accepted", stats.CheckAccepted, "check_rejected", stats.CheckRejected,
+			"failed", stats.Failed, "ceiling_hit", stats.CeilingHit)
 	}
-	wg.Wait()
 
 	saveSavingMemory(ctx, memory, remembered)
 	return improved
@@ -305,9 +291,13 @@ func applySavingVerdict(engine *SavingProductMatchEngine, q *savingQuestion,
 		}
 
 	default:
-		// OutcomeKeep: if the model confirmed a settled match with high confidence,
-		// update the target confidence and mark as confirmed if it was a fuzzy match.
-		if d.ProductID != nil && *d.ProductID > 0 && d.Confidence >= savingAICeilings.MinApplyConfidence {
+		// A confirmation relabels a fuzzy match as AI-backed — but only when
+		// the model named THE SAME product. A keep verdict also covers the
+		// model naming a different product that the identity guard refused,
+		// and relabelling then showed a match the AI disagreed with as one it
+		// had endorsed.
+		if d.ProductID != nil && q.current != nil && *d.ProductID == *q.current &&
+			d.Confidence >= savingAICeilings.MinApplyConfidence {
 			for _, target := range q.targets {
 				if target.MatchType == "fuzzy_name" {
 					target.MatchType = savingMatchTypeAI
@@ -362,6 +352,9 @@ func applySavingMemory(ctx context.Context, memory matchflow.Memory,
 			j.Offered = engine.known[*d.ChosenProductID]
 			j.Conflicts = !engine.index.IdentityConflict(q.row, *d.ChosenProductID).None()
 		}
+		// Answers under this prompt version are remembered only after the
+		// pair check.
+		j.Verified = d.ChosenProductID != nil
 		improved += applySavingVerdict(engine, q, matchflow.Verdict(j, d.ChosenProductID),
 			matchflow.Decision{ProductID: d.ChosenProductID, Confidence: d.Confidence})
 	}

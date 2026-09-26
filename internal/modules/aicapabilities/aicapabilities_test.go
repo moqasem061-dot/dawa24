@@ -10,42 +10,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
-
-func TestDeterministicFallbackWhenGatewayDisabled(t *testing.T) {
-	ctx := context.Background()
-	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
-
-	gwCfg := config.Gateway{
-		BaseURL:    "http://localhost:8080",
-		VirtualKey: "dummy-key",
-		ClientApp:  "dawa24_test",
-		Enabled:    false, // Explicitly disabled
-		Timeout:    50 * time.Millisecond,
-	}
-	gwClient := gateway.New(gwCfg, logger)
-	svc := aicapabilities.NewService(gwClient, logger)
-
-	req := aicapabilities.MatchRequest{
-		QueryName: "بانادول اكسترا اقراص",
-		Candidates: []string{
-			"بنادول اكسترا اقراص",
-			"كتافلام 50 مجم",
-			"كونجستال اقراص",
-		},
-	}
-
-	resp := svc.MatchProduct(ctx, req)
-	if resp.Source != "deterministic_fallback" {
-		t.Errorf("expected source = 'deterministic_fallback', got %q", resp.Source)
-	}
-	if resp.MatchedCandidate != "بنادول اكسترا اقراص" {
-		t.Errorf("expected matched candidate = 'بنادول اكسترا اقراص', got %q", resp.MatchedCandidate)
-	}
-	if resp.ConfidenceScore < 0.85 {
-		t.Errorf("expected confidence score >= 0.85, got %f", resp.ConfidenceScore)
-	}
-}
 
 // TestBlackHoleGatewayAssertsZeroUserFacingFailures points the gateway to an unroutable IP (RFC 5737 TEST-NET-1).
 func TestBlackHoleGatewayAssertsZeroUserFacingFailures(t *testing.T) {
@@ -62,16 +28,22 @@ func TestBlackHoleGatewayAssertsZeroUserFacingFailures(t *testing.T) {
 	gwClient := gateway.New(gwCfg, logger)
 	svc := aicapabilities.NewService(gwClient, logger)
 
-	// 1. Product Matching black-hole test
-	matchResp := svc.MatchProduct(ctx, aicapabilities.MatchRequest{
-		QueryName:  "اوجمينتين 1 جم",
-		Candidates: []string{"أوجمنتين 1 جم", "فولتارين 75"},
-	})
-	if matchResp.Source != "deterministic_fallback" {
-		t.Errorf("expected black-hole match to fallback gracefully, got source %q", matchResp.Source)
+	// 1. Match enhancement against a black hole returns an error, which every
+	// importer treats as "no answer": the deterministic outcome stands. It
+	// must never fall back to guessing — that is how a string-similarity
+	// "match" used to reach compare files labelled as AI.
+	id := int64(1)
+	if _, err := svc.Enhance(ctx, matchflow.Batch{
+		Catalog: []matchflow.CatalogEntry{{ProductID: 1, NameAR: "أوجمنتين 1 جم"}},
+		Items:   []matchflow.Item{{Ref: 1, Text: "اوجمينتين 1 جم", Options: []int64{id}}},
+	}); err == nil {
+		t.Error("expected an error from an unreachable gateway, got an answer")
 	}
-	if matchResp.MatchedCandidate != "أوجمنتين 1 جم" {
-		t.Errorf("unexpected matched candidate: %q", matchResp.MatchedCandidate)
+	if _, err := svc.Verify(ctx, matchflow.CheckBatch{Pairs: []matchflow.Pair{{
+		Ref: 1, Item: matchflow.Item{Text: "اوجمينتين 1 جم"},
+		Product: matchflow.CatalogEntry{ProductID: 1, NameAR: "أوجمنتين 1 جم"},
+	}}}); err == nil {
+		t.Error("expected an error from an unreachable gateway on the pair check")
 	}
 
 	// 2. Search Expansion black-hole test

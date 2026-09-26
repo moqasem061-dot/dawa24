@@ -131,7 +131,13 @@ func planSavingQuestions(idx *productmatch.Index, items []*StagedSavingItem) map
 				Key:    key,
 				Window: window,
 				Item: matchflow.Item{
-					Text:         it.NameProduct,
+					Text: it.NameProduct,
+					// The same parsed hints the other importers send. Without
+					// them the saving list was the one importer whose model had
+					// to find the strength in the raw text unaided.
+					Strength:     productmatch.InferConcentration(it.NameProduct),
+					DosageForm:   productmatch.InferDosageForm(it.NameProduct),
+					PackSize:     productmatch.InferPackSize(it.NameProduct),
 					SKU:          it.SKU,
 					Options:      options,
 					CurrentGuess: it.ProductID,

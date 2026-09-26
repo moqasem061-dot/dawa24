@@ -39,6 +39,10 @@ type nameFacts struct {
 	// gave every such product a second, wrong strength that contradicted every
 	// row asking for it, including a row that had copied the name exactly.
 	strengths []strength
+	// routes and dims are the injection route and the physical size the name
+	// states. See identity_refine.go.
+	routes map[string]struct{}
+	dims   []string
 }
 
 // factsOf reduces one name.
@@ -53,6 +57,8 @@ func factsOf(name string) nameFacts {
 		marks:     identityMarks(name),
 		qty:       readQuantities(name),
 		strengths: strengthSet(name),
+		routes:    routesIn(name),
+		dims:      dimensionsIn(name),
 	}
 }
 
@@ -61,7 +67,8 @@ func factsOf(name string) nameFacts {
 func (f nameFacts) empty() bool {
 	return f.formKey == "" && f.subForm == "" &&
 		len(f.mods) == 0 && len(f.marks) == 0 && len(f.strengths) == 0 &&
-		len(f.qty.counts) == 0 && len(f.qty.residual) == 0
+		len(f.qty.counts) == 0 && len(f.qty.residual) == 0 &&
+		len(f.routes) == 0 && len(f.dims) == 0
 }
 
 // sideCount and sideAt give the name descriptions a candidate may be compared

@@ -1,8 +1,6 @@
 package catalog
 
 import (
-	"context"
-
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
@@ -83,68 +81,17 @@ var aiFloor = catalogCeilings.MinApplyConfidence
 // been looked at. The shared profile allows 12 requests of 100.
 var catalogCeilings = matchflow.For(matchflow.ProfileCatalog)
 
-// MatchAdjudicationRequest is one batch of ambiguous rows, attributed to the
-// organisation whose import asked for it so AI spend is billed and capped per
-// tenant rather than against one platform key.
-type MatchAdjudicationRequest struct {
-	Items []MatchAdjudicationItem `json:"items"`
-
-	OrganizationID int64 `json:"-"`
-	UserID         int64 `json:"-"`
-}
-
-// MatchAdjudicationItem is one ambiguous row and the shortlist it may resolve
-// to. Nothing else is sent, and the model may only answer with an id from the
-// shortlist.
-type MatchAdjudicationItem struct {
-	// Ref is the caller's index into its own row slice. It travels out and back
-	// so an answer can be tied to the row that asked the question.
-	Ref        int64
-	Text       string
-	Candidates []MatchAdjudicationCandidate
-	// Settled says the similarity tier already applied CurrentGuess to this
-	// row, so the question is verification rather than resolution: is this the
-	// right catalogue entry to overwrite, not which entry is it.
-	//
-	// The tier used to be shown only the rows similarity could not settle,
-	// which means the rows it settled WRONGLY — the ones that overwrite a
-	// product every pharmacy reads, at a score high enough that nobody looks —
-	// were the only rows in the file never examined twice.
-	Settled      bool
-	CurrentGuess *int64
-	CurrentScore float64
-}
-
-// MatchAdjudicationCandidate is a catalogue product as the adjudicator sees it.
-type MatchAdjudicationCandidate struct {
-	ProductID     int64
-	Name          string
-	NameEN        string
-	Scientific    string
-	DosageForm    string
-	Concentration string
-	Manufacturer  string
-}
-
 // MatchAdjudicationResult is one decision. A nil ProductID means "none of
 // these", which is a useful and frequent answer.
 type MatchAdjudicationResult struct {
-	Ref        int64
 	ProductID  *int64
 	Confidence float64
 	Reason     string
 }
 
-// MatchAdjudicator resolves rows the deterministic tiers left ambiguous.
-//
-// It is a port rather than a dependency on the gateway, so the import can be
-// tested without one and so an unconfigured deployment simply skips the tier.
-type MatchAdjudicator interface {
-	AdjudicateMatches(ctx context.Context, req MatchAdjudicationRequest) ([]MatchAdjudicationResult, error)
-}
-
-// SetMatchAdjudicator installs the AI matching port.
-func (s *Service) SetMatchAdjudicator(a MatchAdjudicator) { s.adjudicator = a }
+// SetMatchAdjudicator installs the AI matching port — the same shared
+// capability every other importer asks through, proposal pass and pair check.
+func (s *Service) SetMatchAdjudicator(a matchflow.Enhancer) { s.adjudicator = a }
 
 // MatchStats accounts for what each tier resolved, for the review screen.
 type MatchStats struct {

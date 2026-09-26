@@ -59,9 +59,7 @@ var ceilings = matchflow.For(matchflow.ProfileVendor)
 //
 // Declared here, in the module's own vocabulary, so this package never imports
 // the gateway and every test in it runs without one.
-type Enhancer interface {
-	Enhance(ctx context.Context, batch EnhanceBatch) ([]EnhanceOutcome, error)
-}
+type Enhancer = matchflow.Enhancer
 
 // EnhanceBatch is one request: a de-duplicated catalogue window and the rows to
 // resolve against it.
@@ -207,6 +205,8 @@ type AIStats struct {
 	// Ran distinguishes "the stage did nothing because there was nothing to do"
 	// from "the stage never ran", which are different things to tell a vendor.
 	Ran bool `json:"ran"`
+	// Engine is what the shared engine did: splits, retries, pair checks.
+	Engine matchflow.RunStats `json:"engine"`
 }
 
 // Used reports whether the stage did any work worth showing.
@@ -220,8 +220,12 @@ type Enhancement struct {
 	log    *slog.Logger
 	now    func() time.Time
 
-	requests int64
-	settled  int64
+	settled int64
+
+	// OrgID and UserID attribute the run's AI spend. A background job has no
+	// actor on its context, so the import's owner is stated.
+	OrgID  int64
+	UserID int64
 
 	// OnProgress, when set, receives the running count of rows settled. It is
 	// the only thing that moves the bar during the one stage that waits on a

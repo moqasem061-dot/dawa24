@@ -30,7 +30,6 @@ package pipeline
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 	"sync"
 	"sync/atomic"
@@ -60,9 +59,7 @@ var ceilings = matchflow.For(matchflow.ProfileOrder)
 //
 // Declared here, in the pipeline's own vocabulary, so this package never imports
 // the gateway and every test in it runs without one (AGENTS.md R2, R5).
-type Enhancer interface {
-	Enhance(ctx context.Context, batch EnhanceBatch) ([]EnhanceOutcome, error)
-}
+type Enhancer = matchflow.Enhancer
 
 // EnhanceBatch is one request: a de-duplicated catalogue window and the lines to
 // resolve against it.
@@ -118,6 +115,8 @@ type EnhancementStats struct {
 	// this stage stops helping.
 	RefusedBy  map[string]int
 	CeilingHit bool
+	// Engine is what the shared engine did: splits, retries, pair checks.
+	Engine matchflow.RunStats
 }
 
 // Enhancement runs the AI stage under its ceilings.
@@ -128,8 +127,12 @@ type Enhancement struct {
 	log   *slog.Logger
 	now   func() time.Time
 
-	requests int64
-	settled  int64
+	settled int64
+
+	// OrgID and UserID attribute the run's AI spend. A background job has no
+	// actor on its context, so the run's owner is stated rather than inferred.
+	OrgID  int64
+	UserID int64
 
 	// OnProgress, when set, receives the running count of lines settled. It is
 	// the only thing that moves the bar during the one stage that waits on a
@@ -166,13 +169,6 @@ func (e *Enhancement) Run(ctx context.Context, reviews []Review) {
 		return
 	}
 
-	deadline := e.now().Add(ceilings.MaxWallClock)
-	// The wall clock is enforced on the calls themselves, not merely checked
-	// between them: a check in the dispatch loop passes for every batch and
-	// then lets slow requests run past the limit unbounded.
-	runCtx, cancel := context.WithDeadline(ctx, deadline)
-	defer cancel()
-
 	for _, r := range reviews {
 		if r.Settled {
 			e.Stats.Verified++
@@ -192,108 +188,57 @@ func (e *Enhancement) Run(ctx context.Context, reviews []Review) {
 			questions = append(questions, q)
 		}
 	}
-	adaptiveCeilings := matchflow.Adaptive(matchflow.ProfileOrder, len(reviews))
-	requests, ceilingHit := matchflow.Plan(questions, adaptiveCeilings)
-	if ceilingHit {
-		e.Stats.CeilingHit = true
-	}
 
 	var (
-		wg    sync.WaitGroup
-		slots = make(chan struct{}, adaptiveCeilings.MaxConcurrent)
+		saveMu sync.Mutex
+		toSave []smartorder.CachedDecision
 	)
-
-	for _, req := range requests {
-		wg.Add(1)
-		slots <- struct{}{}
-		go func(r matchflow.Request) {
-			defer wg.Done()
-			defer func() { <-slots }()
-			lines := linesIn(r, groups)
-			// A panic inside one batch must not take the buyer's whole import
-			// down with it.
-			defer func() {
-				if rec := recover(); rec != nil {
-					e.count(func(s *EnhancementStats) { s.Rejected += lines })
-				}
-			}()
-			// The batch is accounted whatever happens to it: a failed batch
-			// still leaves its lines with their deterministic outcome, and a bar
-			// that stalls on failure reads as a hung run.
-			defer e.report(lines)
-
-			atomic.AddInt64(&e.requests, 1)
-			r.Batch.Feature = matchflow.FeatureSmartOrder
-			outcomes, err := e.callWithRetry(runCtx, r.Batch)
-			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					e.count(func(s *EnhancementStats) { s.CeilingHit = true })
-				}
-				return
+	stats := matchflow.Run(ctx, e.ai, matchflow.Spec{
+		Profile:        matchflow.ProfileOrder,
+		Rows:           len(reviews),
+		Questions:      questions,
+		Feature:        matchflow.FeatureSmartOrder,
+		OrganizationID: e.OrgID,
+		UserID:         e.UserID,
+		Screen: func(key string, productID int64) bool {
+			group := groups[key]
+			return len(group) > 0 && e.index.IdentityConflict(group[0].Row, productID).None()
+		},
+		Describe: func(id int64) (matchflow.CatalogEntry, bool) {
+			_, ok := e.index.Lookup(id)
+			return e.describe(id), ok
+		},
+		OnAnswer: func(a matchflow.Answer) {
+			if saved, ok := e.apply(groups, a); ok {
+				saveMu.Lock()
+				toSave = append(toSave, saved)
+				saveMu.Unlock()
 			}
+		},
+		OnDone: func(keys []string) {
+			n := 0
+			for _, k := range keys {
+				n += len(groups[k])
+			}
+			// The batch is accounted whatever happened to it: a failed batch
+			// still leaves its lines with their deterministic outcome, and a
+			// bar that stalls on failure reads as a hung run.
+			e.report(n)
+		},
+	})
+	e.flush(ctx, toSave)
 
-			saved := e.apply(r, groups, outcomes)
-			e.flush(runCtx, saved)
-		}(req)
-	}
-
-	wg.Wait()
-
-	e.Stats.Requests = int(atomic.LoadInt64(&e.requests))
+	e.mu.Lock()
+	e.Stats.Engine = stats
+	e.Stats.Requests = stats.Requests + stats.CheckRequests
+	e.Stats.CeilingHit = e.Stats.CeilingHit || stats.CeilingHit
+	e.mu.Unlock()
 }
 
-// linesIn counts the buyer's rows one request settles.
-//
-// It differs from the item count whenever duplicates were collapsed, and it is
-// what the progress bar counts — a bar measured in questions rather than rows
-// would stop short of the total on any file that repeats a product.
-func linesIn(r matchflow.Request, groups map[string][]Review) int {
-	n := 0
-	for _, key := range r.Keys {
-		n += len(groups[key])
-	}
-	return n
-}
-
-// callWithRetry executes an enhancement batch with a per-request timeout (60s)
-// and retries once on transient errors, protecting against hung connections
-// and occasional gateway 503/499 context cancellations.
-func (e *Enhancement) callWithRetry(ctx context.Context, batch EnhanceBatch) ([]EnhanceOutcome, error) {
-	var lastErr error
-	for attempt := 0; attempt < 2; attempt++ {
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
-		reqCtx, cancel := context.WithTimeout(ctx, 60*time.Second)
-		outcomes, err := e.ai.Enhance(reqCtx, batch)
-		cancel()
-		if err == nil {
-			return outcomes, nil
-		}
-		lastErr = err
-		if errors.Is(err, context.Canceled) || errors.Is(ctx.Err(), context.DeadlineExceeded) {
-			return nil, err
-		}
-		select {
-		case <-ctx.Done():
-			return nil, ctx.Err()
-		case <-time.After(500 * time.Millisecond):
-		}
-	}
-	return nil, lastErr
-}
-
-// report advances the progress callback by one batch.
+// report advances the progress callback.
 func (e *Enhancement) report(n int) {
 	if e.OnProgress == nil {
 		return
 	}
 	e.OnProgress(int(atomic.AddInt64(&e.settled, int64(n))))
-}
-
-// count mutates the stats under the same lock apply uses.
-func (e *Enhancement) count(fn func(*EnhancementStats)) {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	fn(&e.Stats)
 }

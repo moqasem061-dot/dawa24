@@ -39,6 +39,9 @@ type Judgement struct {
 	// Floor is the confidence below which an answer is recorded but not acted
 	// on, from the run's ceilings.
 	Floor float64
+	// Verified says the answer survived the independent pair check (see
+	// check.go), or is a remembered answer that did.
+	Verified bool
 }
 
 // Verdict decides what to do with one answer.
@@ -57,7 +60,11 @@ type Judgement struct {
 //     an unsettled row the deterministic outcome stands; on a settled row the
 //     match is withdrawn, because the model disagreed AND the disagreement
 //     survived a mechanical re-check.
-//  6. The same product the engine chose is a confirmation.
+//  6. The same product the engine chose is a confirmation. On a settled row
+//     that changes nothing. On an unsettled row the engine only guessed; a
+//     guess the model independently names AND the pair check verifies is two
+//     methods agreeing, and it is applied — left alone, it would sit in
+//     review forever with both methods saying the same thing.
 //  7. A different product on an unsettled row is applied — that is what the
 //     stage is for. On a settled row it is a disagreement between two methods
 //     that were each confident, and it goes to a person rather than to either.
@@ -85,6 +92,9 @@ func Verdict(j Judgement, proposed *int64) Outcome {
 		return OutcomeKeep
 	}
 	if sameID(j.Current, proposed) {
+		if !j.Settled && j.Verified {
+			return OutcomeApply
+		}
 		return OutcomeKeep
 	}
 	if j.Settled {

@@ -277,7 +277,7 @@ func buildUIHandler(
 		uiHandler.SetAIUsage(aiusagePostgres.NewRepository(db))
 		aiCapabilitiesSvc := aicapabilities.NewService(ai, log)
 		aiCapabilitiesSvc.SetKeyResolver(keyResolverUI)
-		compareSvcUI.SetAIMatcher(aiCapabilitiesSvc)
+		compareSvcUI.SetMatchEnhancer(aiCapabilitiesSvc)
 
 		// The catalogue import's three mapping calls: which column is which
 		// field, and which existing category and pharmaceutical form each of the
@@ -296,15 +296,20 @@ func buildUIHandler(
 		// prompt of its own. The mapper still answers the two questions that are
 		// genuinely its own — which column is which, and what a category word
 		// means — and those are asked once per file, not once per row.
-		catSvcUI.SetMatchAdjudicator(&catalogAdjudicateAdapter{caps: aiCapabilitiesSvc})
+		catSvcUI.SetMatchAdjudicator(aiCapabilitiesSvc)
 		// The vendor import runs the smart order's enhancement stage: the same
 		// system prompt, the same shared catalogue window, the same guards, and
 		// the same decision cache in catalog.match_decisions — so an answer
 		// bought by a pharmacy's order is free to the vendor whose price list
 		// asks the same question, and there is one prompt to tune rather than
 		// two that drift.
-		enhancer := &ingestEnhanceAdapter{caps: aiCapabilitiesSvc}
-		ingSvcUI.SetEnhancer(ingest.NewGatewayEnhancer(enhancer))
+		//
+		// Every importer is handed the capability service itself: it is both
+		// the proposal pass (matchflow.Enhancer) and the pair check
+		// (matchflow.Verifier), and an adapter that forwarded only the first
+		// silently switched the second off.
+		enhancer := aiCapabilitiesSvc
+		ingSvcUI.SetEnhancer(enhancer)
 		// The saving-list import runs the same stage through the same adapter.
 		// It was the last of the four importers without one, and giving it a
 		// second implementation would have been the mistake this whole refactor

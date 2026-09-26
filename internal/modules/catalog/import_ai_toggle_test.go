@@ -36,9 +36,9 @@ func (r *recordingAI) MapValues(context.Context, catalog.ValueMapRequest) (catal
 
 func (r *recordingAI) Available(context.Context) bool { return true }
 
-func (r *recordingAI) AdjudicateMatches(
-	context.Context, catalog.MatchAdjudicationRequest,
-) ([]catalog.MatchAdjudicationResult, error) {
+func (r *recordingAI) Enhance(
+	context.Context, matchflow.Batch,
+) ([]matchflow.Decision, error) {
 	r.adjudicated++
 	return nil, nil
 }

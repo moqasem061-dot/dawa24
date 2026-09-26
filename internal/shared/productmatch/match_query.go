@@ -88,6 +88,9 @@ type query struct {
 	packSize  int
 	makerKey  string
 	sciKey    string
+	// routes and dims: see identity_refine.go.
+	routes map[string]struct{}
+	dims   []string
 	// priceMinor is the printed public price the row states, in minor units.
 	// See evidence_price.go.
 	priceMinor int64
@@ -120,6 +123,8 @@ func (idx *Index) newQuery(row *Row) *query {
 		sciKey:     sheet.NormalizeKey(row.Scientific),
 		mods:       modifiersIn(full),
 		rawName:    full,
+		routes:     routesIn(full),
+		dims:       dimensionsIn(full),
 	}
 	if q.packSize == 0 {
 		q.packSize = InferPackSize(full)

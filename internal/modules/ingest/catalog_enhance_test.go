@@ -9,6 +9,7 @@ package ingest
 
 import (
 	"context"
+	"sync"
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
@@ -25,7 +26,11 @@ func testIndex() *productmatch.Index {
 }
 
 // fakeEnhancer answers with whatever it was told to, and records what it saw.
+//
+// The engine calls it from several workers at once, as it calls the real
+// capability, so its counters are guarded.
 type fakeEnhancer struct {
+	mu     sync.Mutex
 	reply  func(EnhanceBatch) []EnhanceOutcome
 	calls  int
 	items  int
@@ -33,9 +38,11 @@ type fakeEnhancer struct {
 }
 
 func (f *fakeEnhancer) Enhance(_ context.Context, b EnhanceBatch) ([]EnhanceOutcome, error) {
+	f.mu.Lock()
 	f.calls++
 	f.items += len(b.Items)
 	f.window += len(b.Catalog)
+	f.mu.Unlock()
 	return f.reply(b), nil
 }
 

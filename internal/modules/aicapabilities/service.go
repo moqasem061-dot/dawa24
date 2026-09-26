@@ -8,11 +8,8 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
-	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
-	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // KeyResolver resolves tenant virtual key by organization ID.
@@ -36,109 +33,6 @@ func NewService(gw gateway.Client, log *slog.Logger) *Service {
 // SetKeyResolver configures the tenant key resolver for per-organization Gateway billing and authorization.
 func (s *Service) SetKeyResolver(r KeyResolver) {
 	s.keyResolver = r
-}
-
-// MatchProduct matches an input product string against candidates using AI gateway with deterministic fallback.
-func (s *Service) MatchProduct(ctx context.Context, req MatchRequest) MatchResponse {
-	orgID := req.OrganizationID
-	userID := req.UserID
-	if orgID <= 0 {
-		if actor, ok := authctx.From(ctx); ok {
-			orgID = actor.OrgID
-			if orgID <= 0 {
-				orgID = actor.OrganizationID
-			}
-			if userID <= 0 {
-				userID = actor.UserID
-			}
-		}
-	}
-	if orgID <= 0 {
-		if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
-			orgID = tid
-		}
-	}
-
-	var vKey string
-	if s.keyResolver != nil && orgID > 0 {
-		if k, err := s.keyResolver(ctx, orgID); err == nil && k != "" {
-			vKey = k
-		}
-	}
-
-	feature := req.Feature
-	if feature == "" {
-		feature = matchflow.FeatureCompareTool
-	}
-
-	if s.gw != nil {
-		inputBytes, err := json.Marshal(req)
-		if err == nil { // nolint:errswallow: marshalling a plain request struct cannot fail; on failure the deterministic fallback below runs
-			gwReq := gateway.Request{
-				Capability:     gateway.CapProductMatch,
-				System:         "You are an expert pharmaceutical matching AI. You will be given a query medicine name and a list of candidate medicines from the official catalog. Identify the single best matching medicine from the candidate list, taking into account brand names, generic/scientific names, dosage forms (tablets, syrup, capsules), and concentrations (mg, ml, etc.).\n\nReturn ONLY a JSON object with this exact format:\n{\"matched_candidate\":\"<exact candidate name or empty string if no match>\",\"confidence_score\":<number between 0.0 and 1.0>,\"reason\":\"<brief Arabic explanation>\"}",
-				Input:          string(inputBytes),
-				OrganizationID: orgID,
-				UserID:         userID,
-				VirtualKey:     vKey,
-				Feature:        feature,
-			}
-			resp, err := s.gw.Invoke(ctx, gwReq)
-			if err == nil && resp != nil && resp.Content != "" {
-				cleanContent := strings.TrimSpace(resp.Content)
-				cleanContent = strings.TrimPrefix(cleanContent, "```json")
-				cleanContent = strings.TrimPrefix(cleanContent, "```")
-				cleanContent = strings.TrimSuffix(cleanContent, "```")
-				cleanContent = strings.TrimSpace(cleanContent)
-
-				var matchResp MatchResponse
-				if err := json.Unmarshal([]byte(cleanContent), &matchResp); err == nil { // nolint:errswallow: unparseable model output falls through to the deterministic fallback below
-					matchResp.Source = "ai_gateway"
-					s.log.InfoContext(ctx, "ai gateway product match succeeded",
-						"query", req.QueryName,
-						"matched", matchResp.MatchedCandidate,
-						"score", matchResp.ConfidenceScore,
-						"req_id", resp.RequestID,
-						"model", resp.Model,
-					)
-					return matchResp
-				} else {
-					s.log.WarnContext(ctx, "failed to unmarshal gateway match response", "content", resp.Content, "err", err)
-				}
-			} else {
-				s.log.WarnContext(ctx, "gateway capability execution failed, falling back to deterministic", "capability", gateway.CapProductMatch, "err", err)
-			}
-		}
-	}
-
-	// Deterministic Fallback using Arabic string similarity
-	normQuery := arabic.Normalize(req.QueryName)
-	var bestCandidate string
-	var highestScore float64
-
-	for _, cand := range req.Candidates {
-		normCand := arabic.Normalize(cand)
-		score := arabic.Similarity(normQuery, normCand)
-		if score > highestScore {
-			highestScore = score
-			bestCandidate = cand
-		}
-	}
-
-	return MatchResponse{
-		MatchedCandidate: bestCandidate,
-		ConfidenceScore:  highestScore,
-		Source:           "deterministic_fallback",
-	}
-}
-
-// MatchCandidate satisfies the Ingest matcher interface.
-func (s *Service) MatchCandidate(ctx context.Context, query string, candidateNames []string) (string, float64) {
-	resp := s.MatchProduct(ctx, MatchRequest{
-		QueryName:  query,
-		Candidates: candidateNames,
-	})
-	return resp.MatchedCandidate, resp.ConfidenceScore
 }
 
 // ExpandSearch expands pharmaceutical query keywords using AI gateway with deterministic fallback.

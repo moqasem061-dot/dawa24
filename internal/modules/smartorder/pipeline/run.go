@@ -168,6 +168,7 @@ func (r *Runner) enhance(ctx context.Context, run *smartorder.Run, cfg *smartord
 		return
 	}
 	enh := NewEnhancement(r.repo, r.ai, matcher.Index(), r.log)
+	enh.OrgID, enh.UserID = run.OrganizationID, run.UserID
 	// This is the stage that waits on a network, so it is the one that has to
 	// move the bar while it works. Reporting only on entry and exit left the
 	// buyer watching a still number through the slowest minute of the run.

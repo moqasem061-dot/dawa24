@@ -135,13 +135,20 @@ func (r *Repository) ResolveByLearned(ctx context.Context, orgID int64, names []
 	out := make(map[string]int64, len(names))
 
 	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		// 1. Check match_decisions for both organization and platform decisions
+		// 1. Decisions a person confirmed, the buyer's own or platform-wide.
+		//
+		// Only source = 'manual'. This lookup is by NAME and applies before
+		// any matching runs, so an AI answer admitted here was an unverified
+		// guess — from any prompt version, against any shortlist, possibly
+		// another organisation's — promoted to a confirmed mapping. AI answers
+		// are reused only through their versioned question key in the AI
+		// stage, where the identity guard re-checks them.
 		mRows, mErr := tx.Query(txCtx, `
 			SELECT platform.normalize_arabic(lower(trim(d.norm_name))) AS key, d.chosen_product_id
 			FROM catalog.match_decisions d
 			WHERE (d.organization_id = $1 OR d.scope = 'platform')
 			  AND d.chosen_product_id IS NOT NULL AND d.chosen_product_id > 0
-			  AND (d.confidence >= 0.80 OR d.source = 'manual')
+			  AND d.source = 'manual'
 			  AND (platform.normalize_arabic(lower(trim(d.norm_name))) = ANY($2::text[])
 			       OR ('manual:' || lower(trim(d.norm_name))) = ANY($2::text[])
 			       OR d.decision_key = ANY($2::text[]))

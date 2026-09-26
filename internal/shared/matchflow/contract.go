@@ -30,7 +30,7 @@ import "context"
 //
 // It is declared here and nowhere else. `make check-prompt-version` fails the
 // build if the literal appears outside this package.
-const PromptVersion = "sm-enh-v6"
+const PromptVersion = "sm-enh-v7"
 
 // CatalogEntry is one catalogue product as the model sees it.
 //

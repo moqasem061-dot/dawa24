@@ -9,7 +9,6 @@ package ingest
 
 import (
 	"context"
-	"errors"
 	"sync"
 	"sync/atomic"
 
@@ -31,109 +30,73 @@ func (e *Enhancement) Run(ctx context.Context, rows []*openRow) []AIMatch {
 	}
 	e.Stats.Ran = true
 
-	// The wall clock is enforced on the calls themselves, not merely checked
-	// between them: a check in the dispatch loop passes for every batch and
-	// then lets slow requests run past the limit unbounded.
-	runCtx, cancel := context.WithDeadline(ctx, e.now().Add(ceilings.MaxWallClock))
-	defer cancel()
-
 	for _, r := range rows {
 		if r.settled {
 			e.Stats.Verified += len(r.sourceRows)
 		}
 	}
 
-	// The cache answers first, so a remembered row never enters a request.
 	pending := e.applyCache(ctx, rows)
 	if len(pending) == 0 {
 		return collect(rows)
 	}
 
 	asked := byQuestion(pending)
-	adaptiveCeilings := matchflow.Adaptive(matchflow.ProfileVendor, len(rows))
-	requests, ceilingHit := matchflow.Plan(e.questions(pending), adaptiveCeilings)
-	if ceilingHit {
-		e.Stats.CeilingHit = true
-	}
-	total := 0
-	for _, req := range requests {
-		total += rowsIn(req, asked)
+	total := countRows(pending)
+	orgID, userID := e.OrgID, e.UserID
+	if orgID <= 0 {
+		if actor, ok := authctx.From(ctx); ok {
+			orgID, userID = actor.OrganizationID, actor.UserID
+		} else if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
+			orgID = tid
+		}
 	}
 
 	var (
-		wg     sync.WaitGroup
-		slots  = make(chan struct{}, adaptiveCeilings.MaxConcurrent)
 		saveMu sync.Mutex
 		toSave []CachedDecision
 	)
-	for _, request := range requests {
-		wg.Add(1)
-		slots <- struct{}{}
-		go func(req matchflow.Request) {
-			defer wg.Done()
-			defer func() { <-slots }()
-			rows := rowsIn(req, asked)
-			// A panic inside one batch must not take the vendor's whole import
-			// down with it.
-			defer func() {
-				if rec := recover(); rec != nil {
-					e.count(func(s *AIStats) { s.Rejected += rows })
-				}
-			}()
-			// The batch is accounted whatever happens to it: a failed batch
-			// still leaves its rows with their deterministic outcome, and a bar
-			// that stalls on failure reads as a hung run.
-			defer e.report(rows, total)
-
-			atomic.AddInt64(&e.requests, 1)
-			req.Batch.Feature = matchflow.FeatureVendorImport
-			if actor, ok := authctx.From(runCtx); ok {
-				if actor.OrgID > 0 {
-					req.Batch.OrganizationID = actor.OrgID
-				} else {
-					req.Batch.OrganizationID = actor.OrganizationID
-				}
-				req.Batch.UserID = actor.UserID
-			}
-			if req.Batch.OrganizationID <= 0 {
-				if tid, ok := database.TenantFrom(runCtx); ok && tid > 0 {
-					req.Batch.OrganizationID = tid
-				}
-			}
-			outcomes, err := e.ai.Enhance(runCtx, req.Batch)
-			if err != nil {
-				if errors.Is(err, context.DeadlineExceeded) {
-					e.count(func(s *AIStats) { s.CeilingHit = true })
-				}
-				return
-			}
-			if saved := e.apply(req, asked, outcomes); len(saved) > 0 {
+	stats := matchflow.Run(ctx, e.ai, matchflow.Spec{
+		Profile:        matchflow.ProfileVendor,
+		Rows:           countRows(rows),
+		Questions:      e.questions(pending),
+		Feature:        matchflow.FeatureVendorImport,
+		OrganizationID: orgID,
+		UserID:         userID,
+		Screen: func(key string, productID int64) bool {
+			r, ok := asked[key]
+			return ok && e.index.IdentityConflict(r.row, productID).None()
+		},
+		Describe: func(id int64) (matchflow.CatalogEntry, bool) {
+			_, ok := e.index.Lookup(id)
+			return e.describe(id), ok
+		},
+		OnAnswer: func(a matchflow.Answer) {
+			if saved, ok := e.apply(asked, a); ok {
 				saveMu.Lock()
-				toSave = append(toSave, saved...)
+				toSave = append(toSave, saved)
 				saveMu.Unlock()
 			}
-		}(request)
-	}
-	wg.Wait()
+		},
+		OnDone: func(keys []string) {
+			n := 0
+			for _, k := range keys {
+				if r, ok := asked[k]; ok {
+					n += len(r.sourceRows)
+				}
+			}
+			e.report(n, total)
+		},
+	})
 
-	e.Stats.Requests = int(atomic.LoadInt64(&e.requests))
+	e.mu.Lock()
+	e.Stats.Engine = stats
+	e.Stats.Requests = stats.Requests + stats.CheckRequests
+	e.Stats.CeilingHit = e.Stats.CeilingHit || stats.CeilingHit
+	e.mu.Unlock()
+
 	e.flush(ctx, toSave)
 	return collect(rows)
-}
-
-// rowsIn counts the vendor's spreadsheet rows one request settles.
-//
-// It exceeds the item count whenever duplicates were collapsed, and it is what
-// the progress bar counts — a bar measured in questions rather than rows would
-// stop short of the total on any file that repeats a product.
-func rowsIn(req matchflow.Request, asked map[string]*openRow) int {
-	n := 0
-	for _, key := range req.Keys {
-		if r, ok := asked[key]; ok {
-			n += len(r.sourceRows)
-		}
-	}
-	return n
 }
 
 // collect spreads each answer over every staged row that asked for it.

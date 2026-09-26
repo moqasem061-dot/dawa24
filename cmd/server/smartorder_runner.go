@@ -15,7 +15,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
-	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
 
@@ -69,7 +68,7 @@ func inlineSmartOrderRunner(
 			}
 			return o.AIVirtualKey, nil
 		})
-		enhancer = pipeline.NewGatewayEnhancer(&serverEnhanceAdapter{caps: caps})
+		enhancer = caps
 	}
 
 	runner := pipeline.NewRunner(repo,
@@ -210,46 +209,4 @@ func serverInstitutionalGate(svc *org.Service, log *slog.Logger) pipeline.Instit
 		}
 		return ok, nil
 	})
-}
-
-// serverEnhanceAdapter bridges aicapabilities to the pipeline's gateway contract.
-//
-// The translation is mechanical and lives here rather than in either module,
-// because this is the only place allowed to know about both.
-type serverEnhanceAdapter struct {
-	caps *aicapabilities.Service
-}
-
-func (b *serverEnhanceAdapter) EnhanceBatch(ctx context.Context, batch pipeline.GatewayBatch) ([]pipeline.GatewayOutcome, error) {
-	req := aicapabilities.EnhanceRequest{
-		Catalog: make([]aicapabilities.CatalogEntry, 0, len(batch.Catalog)),
-		Items:   make([]aicapabilities.EnhanceItem, 0, len(batch.Items)),
-		// Attribution for the AI usage ledger: the pharmacy reads i18n.TDefault("w4_mod.s_478_478") on its usage log, not a capability name.
-		Feature: matchflow.FeatureSmartOrder,
-	}
-	for _, c := range batch.Catalog {
-		req.Catalog = append(req.Catalog, aicapabilities.CatalogEntry(c))
-	}
-	for _, it := range batch.Items {
-		req.Items = append(req.Items, aicapabilities.EnhanceItem(it))
-	}
-	if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
-		req.OrganizationID = tid
-	}
-	if actor, ok := authctx.From(ctx); ok {
-		if req.OrganizationID <= 0 {
-			req.OrganizationID = actor.OrganizationID
-		}
-		req.UserID = actor.UserID
-	}
-
-	decisions, err := b.caps.EnhanceMatches(ctx, req)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]pipeline.GatewayOutcome, 0, len(decisions))
-	for _, d := range decisions {
-		out = append(out, pipeline.GatewayOutcome(d))
-	}
-	return out, nil
 }

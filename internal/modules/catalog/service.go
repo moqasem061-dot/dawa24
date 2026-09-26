@@ -36,7 +36,7 @@ type Service struct {
 	// adjudicator resolves the rows similarity could not settle. Optional in
 	// exactly the same way: unset means the tier is skipped and the import
 	// keeps its deterministic answer.
-	adjudicator MatchAdjudicator
+	adjudicator matchflow.Enhancer
 	// matchMemory is the shared decision cache. Nil means every question is
 	// paid for again, which is slower and dearer but never wrong.
 	matchMemory matchflow.Memory

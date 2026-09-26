@@ -239,33 +239,6 @@ func adjudicationText(p *Product) string {
 	return strings.Join(parts, " | ")
 }
 
-func summarizeCandidates(index *productmatch.Index,
-	candidates []productmatch.MatchCandidate) []MatchAdjudicationCandidate {
-
-	out := make([]MatchAdjudicationCandidate, 0, len(candidates))
-	for _, c := range candidates {
-		entry := MatchAdjudicationCandidate{
-			ProductID:     c.ProductID,
-			Name:          c.Name,
-			Scientific:    c.Scientific,
-			DosageForm:    c.DosageForm,
-			Concentration: c.Concentration,
-			Manufacturer:  c.Manufacturer,
-		}
-		// The English name comes from the index rather than from the shortlist,
-		// which does not carry it — and it is what settles the transliteration
-		// cases this tier exists for.
-		if p, ok := index.Lookup(c.ProductID); ok {
-			entry.NameEN = p.NameEN
-			if entry.Name == "" {
-				entry.Name = p.NameAR
-			}
-		}
-		out = append(out, entry)
-	}
-	return out
-}
-
 func inShortlist(candidates []productmatch.MatchCandidate, productID int64) bool {
 	for _, c := range candidates {
 		if c.ProductID == productID {

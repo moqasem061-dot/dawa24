@@ -52,6 +52,10 @@ func (r *stagingRun) enhance(ctx context.Context) {
 	r.progress(ctx, 45, i18n.TDefault("w4_mod.s_389_389"))
 
 	enh := NewEnhancement(s.enhancer, s.memory, r.index, s.log)
+	enh.OrgID = r.session.OrganizationID
+	if r.session.CreatedBy != nil {
+		enh.UserID = *r.session.CreatedBy
+	}
 	enh.Stats.CeilingHit = r.ceilingHit
 	enh.OnProgress = func(done, total int) {
 		if total <= 0 {

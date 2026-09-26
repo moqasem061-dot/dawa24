@@ -93,6 +93,9 @@ func (s *Service) applyMatchMemory(
 			Offered:    true, // it was offered when the answer was bought
 			Confidence: d.Confidence,
 			Floor:      aiFloor,
+			// Answers under this prompt version are remembered only after the
+			// pair check.
+			Verified: d.ChosenProductID != nil,
 		}
 		if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
 			j.Offered = inShortlist(p.candidates, *d.ChosenProductID)

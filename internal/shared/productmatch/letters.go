@@ -201,7 +201,16 @@ var letterNames = map[string]string{
 // So the distinction lives here rather than in vetoableForm: it never refuses a
 // match on its own, and it decides between candidates that are otherwise equal.
 func topicalSubForm(text string) string {
-	for _, w := range strings.Fields(sheet.NormalizeName(text)) {
+	norm := sheet.NormalizeName(text)
+	// A mouthwash is written as two words as often as one — "mouth wash",
+	// "غسول فم" — and read word by word the first of them is a plain wash,
+	// which contradicted the catalogue's مضمضة for the same bottle.
+	for _, phrase := range mouthwashPhrases {
+		if strings.Contains(norm, phrase) {
+			return "mouthwash"
+		}
+	}
+	for _, w := range strings.Fields(norm) {
 		for _, run := range letterRuns(w) {
 			if sub, ok := topicalWords[run]; ok {
 				return sub
@@ -210,6 +219,8 @@ func topicalSubForm(text string) string {
 	}
 	return ""
 }
+
+var mouthwashPhrases = []string{"mouth wash", "غسول فم", "غسول للفم", "غسول الفم"}
 
 var topicalWords = map[string]string{
 	"كريم": "cream", "cream": "cream", "crm": "cream",

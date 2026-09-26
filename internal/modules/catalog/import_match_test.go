@@ -105,12 +105,12 @@ func uncertainCatalogue() []catalog.MatchProduct {
 type stubAdjudicator struct {
 	calls   int
 	batches []int
-	answer  func(req catalog.MatchAdjudicationRequest) ([]catalog.MatchAdjudicationResult, error)
+	answer  func(req matchflow.Batch) ([]matchflow.Decision, error)
 }
 
-func (s *stubAdjudicator) AdjudicateMatches(
-	_ context.Context, req catalog.MatchAdjudicationRequest,
-) ([]catalog.MatchAdjudicationResult, error) {
+func (s *stubAdjudicator) Enhance(
+	_ context.Context, req matchflow.Batch,
+) ([]matchflow.Decision, error) {
 	s.calls++
 	s.batches = append(s.batches, len(req.Items))
 	if s.answer != nil {
@@ -128,10 +128,10 @@ func TestAdjudicationRejectsAProductItWasNotOffered(t *testing.T) {
 	svc, _ := newImportService(t, store)
 
 	invented := int64(999999)
-	ai := &stubAdjudicator{answer: func(req catalog.MatchAdjudicationRequest) ([]catalog.MatchAdjudicationResult, error) {
-		out := make([]catalog.MatchAdjudicationResult, 0, len(req.Items))
+	ai := &stubAdjudicator{answer: func(req matchflow.Batch) ([]matchflow.Decision, error) {
+		out := make([]matchflow.Decision, 0, len(req.Items))
 		for _, it := range req.Items {
-			out = append(out, catalog.MatchAdjudicationResult{
+			out = append(out, matchflow.Decision{
 				Ref: it.Ref, ProductID: &invented, Confidence: 0.99,
 			})
 		}
@@ -152,7 +152,7 @@ func TestAdjudicationFailureLeavesTheImportUsable(t *testing.T) {
 	store.catalogue = uncertainCatalogue()
 	svc, _ := newImportService(t, store)
 
-	ai := &stubAdjudicator{answer: func(catalog.MatchAdjudicationRequest) ([]catalog.MatchAdjudicationResult, error) {
+	ai := &stubAdjudicator{answer: func(matchflow.Batch) ([]matchflow.Decision, error) {
 		return nil, errors.New("gateway unavailable")
 	}}
 	svc.SetMatchAdjudicator(ai)
@@ -175,10 +175,10 @@ func TestAdjudicationIgnoresLowConfidence(t *testing.T) {
 
 	chosen := int64(4244)
 	svc.SetMatchAdjudicator(&stubAdjudicator{
-		answer: func(req catalog.MatchAdjudicationRequest) ([]catalog.MatchAdjudicationResult, error) {
-			out := make([]catalog.MatchAdjudicationResult, 0, len(req.Items))
+		answer: func(req matchflow.Batch) ([]matchflow.Decision, error) {
+			out := make([]matchflow.Decision, 0, len(req.Items))
 			for _, it := range req.Items {
-				out = append(out, catalog.MatchAdjudicationResult{
+				out = append(out, matchflow.Decision{
 					Ref: it.Ref, ProductID: &chosen, Confidence: 0.4,
 				})
 			}

@@ -299,7 +299,8 @@ var variantModifiers = map[string]string{
 	"كبار": "adult", "للكبار": "adult", "adult": "adult", "adults": "adult",
 	"مان": "men", "men": "men", "man": "men", "رجالي": "men", "للرجال": "men",
 	"الرجال": "men", "رجالى": "men",
-	"وومن": "women", "women": "women", "حريمي": "women", "للسيدات": "women",
+	"وومن": "women", "women": "women", "woman": "women", "وومان": "women",
+	"womens": "women", "ويمن": "women", "حريمي": "women", "للسيدات": "women",
 	"السيدات": "women", "سيدات": "women", "نسائي": "women", "للنساء": "women",
 
 	// Route and presentation lines sold beside the ordinary one

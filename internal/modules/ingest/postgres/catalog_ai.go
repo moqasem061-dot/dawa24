@@ -174,8 +174,13 @@ func (r *Repository) LookupDecisions(
 				}
 			}
 			put(d.Key)
-			put(d.NormName)
-			put("manual:" + d.NormName)
+			// Name-keyed lookups are a person's confirmed mappings. Filing an
+			// AI answer under them too made every remembered guess look like
+			// one.
+			if d.Source == "manual" {
+				put(d.NormName)
+				put("manual:" + d.NormName)
+			}
 		}
 		return rows.Err()
 	})

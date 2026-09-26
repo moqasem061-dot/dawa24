@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // Whether the AI tier is reached at all.
@@ -93,9 +94,9 @@ func TestTheRequestCarriesItsOwnShortlist(t *testing.T) {
 	store.catalogue = uncertainCatalogue()
 	svc, _ := newImportService(t, store)
 
-	var seen catalog.MatchAdjudicationRequest
+	var seen matchflow.Batch
 	svc.SetMatchAdjudicator(&stubAdjudicator{
-		answer: func(req catalog.MatchAdjudicationRequest) ([]catalog.MatchAdjudicationResult, error) {
+		answer: func(req matchflow.Batch) ([]matchflow.Decision, error) {
 			seen = req
 			return nil, nil
 		},
@@ -106,7 +107,7 @@ func TestTheRequestCarriesItsOwnShortlist(t *testing.T) {
 		t.Fatalf("items = %d, want 1", len(seen.Items))
 	}
 	item := seen.Items[0]
-	if len(item.Candidates) == 0 {
+	if len(item.Options) == 0 || len(seen.Catalog) == 0 {
 		t.Fatal("the row was sent with no candidates; the model would have to invent one")
 	}
 	if !strings.Contains(item.Text, "بروفين") {

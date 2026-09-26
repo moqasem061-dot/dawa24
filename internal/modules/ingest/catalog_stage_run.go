@@ -94,13 +94,15 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 						dec = &d
 					}
 
-					if dec != nil && dec.ChosenProductID != nil && *dec.ChosenProductID > 0 {
-						if dec.Source == "manual" || dec.Confidence >= 0.80 {
+					// Only a person's confirmed mapping is honoured by name. An AI
+					// answer is reused only through its versioned question key, in
+					// the AI stage, where the identity guard re-checks it; applied
+					// here by name it was an unverified guess — from any prompt
+					// version, against any shortlist — promoted to an exact match.
+					if dec != nil && dec.Source == "manual" && dec.ChosenProductID != nil && *dec.ChosenProductID > 0 {
+						{
 							if p, ok := r.index.Lookup(*dec.ChosenProductID); ok && p != nil {
-								reason := "مطابقة معتمدة من ذاكرة القرارات"
-								if dec.Source == "manual" {
-									reason = "مطابقة يدوية معتمدة من ذاكرة القرارات"
-								}
+								reason := "مطابقة يدوية معتمدة من ذاكرة القرارات"
 								pName := p.NameAR
 								if pName == "" {
 									pName = p.NameEN
