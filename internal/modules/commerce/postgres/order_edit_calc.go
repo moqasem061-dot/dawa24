@@ -120,7 +120,7 @@ func processOrderLineEditsTx(
 			var catPrice, catEffPrice money.Amount
 			var catDiscPct float64
 			if err := tx.QueryRow(txCtx, `
-				SELECT price, COALESCE(effective_price, 0), COALESCE(discount_percentage, 0.00)
+				SELECT price, ROUND(price * (1 - COALESCE(discount, 0) / 100), 2), COALESCE(discount, 0)::float8
 				FROM catalog.product_variants
 				WHERE id = $1 AND deleted_at IS NULL;
 			`, *dbVariantID).Scan(&catPrice, &catEffPrice, &catDiscPct); err == nil {
