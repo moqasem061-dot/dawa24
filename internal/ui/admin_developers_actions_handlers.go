@@ -153,7 +153,7 @@ func (h *UIHandler) AdminErrorDetailFragment(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if renderErr := pages.AdminErrorDetailFragment(entry, lang).Render(ctx, w); renderErr != nil {
+	if renderErr := pages.AdminErrorDetailFragment(entry, lang).Render(renderContext(ctx), w); renderErr != nil {
 		h.log.ErrorContext(ctx, "render error log detail", "error", renderErr)
 	}
 }
@@ -181,7 +181,7 @@ func (h *UIHandler) AdminAuditDetailFragment(w http.ResponseWriter, r *http.Requ
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if renderErr := pages.AdminAuditDetailFragment(entry, lang).Render(ctx, w); renderErr != nil {
+	if renderErr := pages.AdminAuditDetailFragment(entry, lang).Render(renderContext(ctx), w); renderErr != nil {
 		h.log.ErrorContext(ctx, "render audit entry detail", "error", renderErr)
 	}
 }

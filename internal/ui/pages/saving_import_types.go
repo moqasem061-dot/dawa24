@@ -179,3 +179,17 @@ func (v SavingImportView) WizardStep() Step {
 		return StepFile
 	}
 }
+
+// savingListedCount is what the "All" tab lists: the parsed items, once
+// processing has produced them. The file's raw row count includes rows with no
+// product name, which are never listed, so labelling the tab with it promised
+// rows the table could not show.
+func savingListedCount(sess *SavingImportSession) int {
+	if sess == nil {
+		return 0
+	}
+	if len(sess.Items) > 0 || sess.Phase == SavingPhaseReview || sess.Phase == SavingPhaseCompleted {
+		return len(sess.Items)
+	}
+	return sess.TotalRows
+}

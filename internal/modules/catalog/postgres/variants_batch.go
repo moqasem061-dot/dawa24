@@ -117,7 +117,7 @@ func (r *Repository) DeleteAllVariantsByOrg(ctx context.Context, orgID int64) (i
 		count = res.RowsAffected()
 
 		// Cascade soft-delete to associated warehouse stocks
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			UPDATE inventory.stocks
 			SET deleted_at = now()
 			WHERE organization_id = $1 AND deleted_at IS NULL;
@@ -159,8 +159,8 @@ func (r *Repository) ActivateAllVariantsByOrg(ctx context.Context, orgID int64) 
 func (r *Repository) DeleteAllProducts(ctx context.Context) (int64, error) {
 	var count int64
 	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		_, _ = tx.Exec(txCtx, `UPDATE catalog.product_variants SET deleted_at = now() WHERE deleted_at IS NULL;`)
-		_, _ = tx.Exec(txCtx, `UPDATE inventory.stocks SET deleted_at = now() WHERE deleted_at IS NULL;`)
+		_ = database.SoftExec(txCtx, tx, `UPDATE catalog.product_variants SET deleted_at = now() WHERE deleted_at IS NULL;`)
+		_ = database.SoftExec(txCtx, tx, `UPDATE inventory.stocks SET deleted_at = now() WHERE deleted_at IS NULL;`)
 		res, err := tx.Exec(txCtx, `UPDATE catalog.products SET deleted_at = now() WHERE deleted_at IS NULL;`)
 		if err != nil {
 			return fmt.Errorf("catalog postgres: delete all master products: %w", err)

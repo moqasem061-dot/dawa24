@@ -150,7 +150,7 @@ func (h *UIHandler) renderPolicy(w http.ResponseWriter, r *http.Request, slug, f
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.PolicyPage(lang, dir, title, body, slug, version, publishedAt).Render(ctx, w); err != nil {
+	if err := pages.PolicyPage(lang, dir, title, body, slug, version, publishedAt).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render policy page", "slug", slug, "error", err)
 	}
 }

@@ -48,7 +48,7 @@ func (r *Repository) ExpireSponsorshipRequests(ctx context.Context) (int64, erro
 				}
 				imgRows.Close()
 			}
-			_, _ = tx.Exec(txCtx, `UPDATE promo.offers SET image = '', is_active = false, updated_at = now() WHERE id = ANY($1);`, offerIDs)
+			_ = database.SoftExec(txCtx, tx, `UPDATE promo.offers SET image = '', is_active = false, updated_at = now() WHERE id = ANY($1);`, offerIDs)
 		}
 
 		tag, err := tx.Exec(txCtx, `

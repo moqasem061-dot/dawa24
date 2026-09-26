@@ -28,7 +28,7 @@ import (
 // rendering should call renderError instead, which still can.
 func (h *UIHandler) renderPage(ctx context.Context, w http.ResponseWriter, what string, page templ.Component) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := page.Render(ctx, w); err != nil {
+	if err := page.Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, what, "error", err)
 	}
 }
@@ -44,4 +44,19 @@ func (h *UIHandler) logLoadErr(ctx context.Context, what string, err error) {
 		return
 	}
 	h.log.WarnContext(ctx, "page data unavailable", "what", what, "error", err)
+}
+
+// renderContext is the context a page renders under: the request's values —
+// the CSP nonce, the signed-in actor, the language — without its deadline.
+//
+// templ checks ctx.Err() at the start of every component and stops rendering
+// the moment it is set. Under the request deadline that meant a page whose
+// data took most of the budget to load was cut off mid-render with no error
+// shown: the vendor import review opened on "All" straight after staging, cold
+// caches made the commit preview slow, and the page ended after the bulk bar
+// with its table missing. The deadline exists to bound database work, which
+// is finished by the time rendering starts; rendering is in-memory and takes
+// milliseconds, and a page that has begun must be finished.
+func renderContext(ctx context.Context) context.Context {
+	return context.WithoutCancel(ctx)
 }

@@ -68,9 +68,13 @@ func (r *Repository) GetOfferDetailsForOrderLine(ctx context.Context, orderID, l
 		if offerProductID != nil && *offerProductID > 0 {
 			offerID = *offerProductID
 		} else {
-			_ = tx.QueryRow(txCtx, `SELECT id FROM promo.offers WHERE (title->>'ar' = $1 OR title->>'en' = $2) LIMIT 1`, nameAr, nameEn).Scan(&offerID)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT id FROM promo.offers WHERE (title->>'ar' = $1 OR title->>'en' = $2) LIMIT 1`, nameAr, nameEn).Scan(&offerID)
+			})
 			if offerID <= 0 {
-				_ = tx.QueryRow(txCtx, `SELECT COALESCE(offer_id, 0) FROM commerce.orders WHERE id = $1`, orderID).Scan(&offerID)
+				_ = database.Soft(txCtx, tx, func() error {
+					return tx.QueryRow(txCtx, `SELECT COALESCE(offer_id, 0) FROM commerce.orders WHERE id = $1`, orderID).Scan(&offerID)
+				})
 			}
 		}
 

@@ -202,7 +202,7 @@ func (r *Repository) RetireVariantsExcept(
 			if err != nil {
 				return fmt.Errorf("catalog postgres: remove warehouse stocks: %w", err)
 			}
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				DELETE FROM inventory.stocks
 				WHERE warehouse_id = $1 
 				  AND NOT (product_variant_id = ANY($2))
@@ -217,7 +217,7 @@ func (r *Repository) RetireVariantsExcept(
 			if err != nil {
 				return fmt.Errorf("catalog postgres: remove org stocks: %w", err)
 			}
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				DELETE FROM inventory.stocks
 				WHERE organization_id = $1 AND product_variant_id = ANY($2)
 				  AND NOT EXISTS (SELECT 1 FROM inventory.stock_movements sm WHERE sm.stock_id = inventory.stocks.id)`,

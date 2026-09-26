@@ -101,6 +101,14 @@ func (r *Repository) SaveDraft(ctx context.Context, s *ingest.Session) error {
 		if tag.RowsAffected() == 0 {
 			return apperr.Conflict("import.not_open", i18n.TDefault("w4_mod.w4str_200_200"))
 		}
+		// Once rows are staged, the tab counters are read from the rows, never
+		// from the session in hand, so the tabs always sum to "All". See
+		// rowIsMatched. Earlier phases have no rows to count.
+		if s.Phase == ingest.PhaseReview || s.Phase == ingest.PhaseConfirm {
+			if _, err := tx.Exec(txCtx, refreshCounts, s.ID); err != nil {
+				return fmt.Errorf("ingest postgres: refresh import counts: %w", err)
+			}
+		}
 		return nil
 	})
 }
@@ -148,6 +156,9 @@ func (r *Repository) FinishStaging(ctx context.Context, s *ingest.Session) error
 		if tag.RowsAffected() == 0 {
 			return apperr.Conflict("import.not_processing",
 				i18n.TDefault("w4_mod.w4str_221_221"))
+		}
+		if _, err := tx.Exec(txCtx, refreshCounts, s.ID); err != nil {
+			return fmt.Errorf("ingest postgres: refresh import counts: %w", err)
 		}
 		return nil
 	})
@@ -198,9 +209,9 @@ func (r *Repository) RecoverStaleRuns(ctx context.Context) (int, error) {
 				  AND EXISTS (SELECT 1 FROM ingest.catalog_import_rows r WHERE r.import_id = i.id)
 			), tally AS (
 				SELECT r.import_id,
-				       COUNT(*) FILTER (WHERE r.match_level IN ('barcode','code','exact','strong')) AS matched,
-				       COUNT(*) FILTER (WHERE r.match_level IN ('review','ambiguous'))              AS review,
-				       COUNT(*) FILTER (WHERE r.match_level = 'none' OR r.match_level IS NULL)      AS unmatched
+				       COUNT(*) FILTER (WHERE `+rowIsMatched+`)   AS matched,
+				       COUNT(*) FILTER (WHERE `+rowIsReview+`)    AS review,
+				       COUNT(*) FILTER (WHERE `+rowIsUnmatched+`) AS unmatched
 				FROM ingest.catalog_import_rows r
 				JOIN stale ON stale.id = r.import_id
 				GROUP BY r.import_id

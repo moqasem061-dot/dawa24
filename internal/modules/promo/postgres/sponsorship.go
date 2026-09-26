@@ -238,7 +238,9 @@ func whereParam2(orgID int64) string {
 func (r *Repository) UpdateSponsorshipRequestAdminStatus(ctx context.Context, id int64, status promo.AdminStatus, notes string, reviewerID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var orgID *int64
-		_ = tx.QueryRow(txCtx, `SELECT organization_id FROM promo.sponsorship_requests WHERE id = $1;`, id).Scan(&orgID)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT organization_id FROM promo.sponsorship_requests WHERE id = $1;`, id).Scan(&orgID)
+		})
 
 		tag, err := tx.Exec(txCtx, `
 			UPDATE promo.sponsorship_requests
@@ -255,7 +257,7 @@ func (r *Repository) UpdateSponsorshipRequestAdminStatus(ctx context.Context, id
 		}
 
 		if status == promo.AdminRejected {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE promo.offer_sponsorships
 				SET status = 'cancelled', admin_status = 'rejected'
 				WHERE sponsorship_request_id = $1;

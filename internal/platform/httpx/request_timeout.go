@@ -41,11 +41,17 @@ func RequestTimeout(d time.Duration, exempt func(*http.Request) bool) func(http.
 			// still gets a deadline — an upload that has not arrived in ten
 			// minutes is not arriving — but the socket is given room for the
 			// transfer first. See LongRequestBudget.
+			//
+			// The budget is this request's own. It used to be assigned to d,
+			// the variable every request shares, so the first upload handed
+			// every later request on the server the ten-minute upload budget —
+			// and did it as a data race.
+			budget := d
 			if IsUpload(r) {
 				extendSocketDeadlines(w)
-				d = UploadRequestBudget
+				budget = UploadRequestBudget
 			}
-			ctx, cancel := context.WithTimeout(r.Context(), d)
+			ctx, cancel := context.WithTimeout(r.Context(), budget)
 			defer cancel()
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})

@@ -113,7 +113,7 @@ func (h *UIHandler) AdminSubscriptionHistoryFragment(w http.ResponseWriter, r *h
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if renderErr := pages.AdminSubscriptionHistoryFragment(rows, lang).Render(ctx, w); renderErr != nil {
+	if renderErr := pages.AdminSubscriptionHistoryFragment(rows, lang).Render(renderContext(ctx), w); renderErr != nil {
 		h.log.ErrorContext(ctx, "render subscription history", "error", renderErr)
 	}
 }

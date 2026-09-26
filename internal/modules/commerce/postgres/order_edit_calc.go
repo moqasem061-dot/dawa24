@@ -24,7 +24,7 @@ func processOrderLineEditsTx(
 	for _, l := range lines {
 		if l.IsDeleted {
 			if l.ID > 0 {
-				_, _ = tx.Exec(txCtx, `DELETE FROM commerce.order_lines WHERE id = $1 AND order_id = $2;`, l.ID, order.ID)
+				_ = database.SoftExec(txCtx, tx, `DELETE FROM commerce.order_lines WHERE id = $1 AND order_id = $2;`, l.ID, order.ID)
 			}
 			continue
 		}
@@ -64,11 +64,13 @@ func processOrderLineEditsTx(
 
 		if dbOfferProductID != nil && *dbOfferProductID > 0 {
 			var offerCustomQty, maxQtyPerOrder int
-			_ = tx.QueryRow(txCtx, `
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `
 				SELECT COALESCE(custom_qty, 1), COALESCE(max_qty_per_order, 0)
 				FROM promo.offer_products
 				WHERE id = $1;
 			`, *dbOfferProductID).Scan(&offerCustomQty, &maxQtyPerOrder)
+			})
 
 			if maxQtyPerOrder > 0 && l.Quantity > maxQtyPerOrder {
 				return apperr.Validation("max_qty_exceeded", fmt.Sprintf(i18n.TDefault("w4_mod.s_d_d_153"), dbProductName, l.Quantity, maxQtyPerOrder), nil)
@@ -80,11 +82,13 @@ func processOrderLineEditsTx(
 
 		if dbVariantID != nil && *dbVariantID > 0 {
 			var minOrderQty int
-			_ = tx.QueryRow(txCtx, `
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `
 				SELECT COALESCE(min_order_qty, 0)
 				FROM catalog.product_variants
 				WHERE id = $1 AND deleted_at IS NULL;
 			`, *dbVariantID).Scan(&minOrderQty)
+			})
 			if minOrderQty > 0 && l.Quantity < minOrderQty {
 				return apperr.Validation("min_order_qty", fmt.Sprintf(i18n.TDefault("w4_mod.s_d_155"), dbProductName, minOrderQty), nil)
 			}
@@ -94,13 +98,15 @@ func processOrderLineEditsTx(
 			if checkOrgID == 0 {
 				checkOrgID = defaultOrgID
 			}
-			_ = tx.QueryRow(txCtx, `
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `
 				SELECT COALESCE(SUM(quantity), 0)
 				FROM inventory.stocks
 				WHERE product_variant_id = $1 
 				  AND ($2::bigint = 0 OR organization_id = $2)
 				  AND deleted_at IS NULL;
 			`, *dbVariantID, checkOrgID).Scan(&availableStock)
+			})
 			if availableStock > 0 && l.Quantity > availableStock {
 				return apperr.Validation("stock_exceeded", fmt.Sprintf(i18n.TDefault("w4_mod.s_d_d_156"), dbProductName, l.Quantity, availableStock), nil)
 			}

@@ -160,7 +160,7 @@ func (r *Repository) RelinkMatchDecisionForOrg(ctx context.Context, orgID int64,
 			return err
 		}
 		if productID != nil && *productID > 0 && normName != "" {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				INSERT INTO catalog.customer_product_mappings (
 					organization_id, customer_org_id, raw_name, product_id,
 					source, status, is_active, created_at, updated_at

@@ -99,7 +99,7 @@ func (h *UIHandler) renderRegistrationFragment(
 	ctx context.Context, w http.ResponseWriter, d pages.AdminOrgRegistrationDetail, lang string,
 ) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.AdminOrgRegistrationFragment(d, lang).Render(ctx, w); err != nil {
+	if err := pages.AdminOrgRegistrationFragment(d, lang).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render registration fragment", "error", err)
 	}
 }

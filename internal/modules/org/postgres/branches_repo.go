@@ -274,7 +274,7 @@ func (r *Repository) AddMember(ctx context.Context, m *org.Member) error {
 		}
 
 		if m.IsActive {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE identity.users
 				SET status = 'active',
 				    role = CASE WHEN role = 'job_seeker' THEN 'user' ELSE role END,

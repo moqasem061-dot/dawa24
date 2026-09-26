@@ -25,7 +25,7 @@ func (r *Repository) CreatePlan(ctx context.Context, p *billing.Plan) error {
 			p.AIPlanID = "plan-basic"
 		}
 		if p.IsDefault {
-			_, _ = tx.Exec(txCtx, `UPDATE billing.plans SET is_default = false;`)
+			_ = database.SoftExec(txCtx, tx, `UPDATE billing.plans SET is_default = false;`)
 		}
 		const query = `
 			INSERT INTO billing.plans (slug, name, description, price_month, price_year, duration_days, max_users, max_login_sessions, max_devices, ai_plan_id, is_default, is_active)
@@ -105,7 +105,7 @@ func (r *Repository) UpdatePlan(ctx context.Context, p *billing.Plan) error {
 			p.AIPlanID = "plan-basic"
 		}
 		if p.IsDefault {
-			_, _ = tx.Exec(txCtx, `UPDATE billing.plans SET is_default = false WHERE id <> $1;`, p.ID)
+			_ = database.SoftExec(txCtx, tx, `UPDATE billing.plans SET is_default = false WHERE id <> $1;`, p.ID)
 		}
 		const query = `
 			UPDATE billing.plans
@@ -122,7 +122,7 @@ func (r *Repository) UpdatePlan(ctx context.Context, p *billing.Plan) error {
 		if tag.RowsAffected() == 0 {
 			return apperr.NotFound("plan")
 		}
-		_, _ = tx.Exec(txCtx, `DELETE FROM billing.plan_features WHERE plan_id = $1;`, p.ID)
+		_ = database.SoftExec(txCtx, tx, `DELETE FROM billing.plan_features WHERE plan_id = $1;`, p.ID)
 		for key, val := range p.Features {
 			if _, err := tx.Exec(txCtx, `INSERT INTO billing.plan_features (plan_id, feature_key, value) VALUES ($1, $2, $3) ON CONFLICT (plan_id, feature_key) DO UPDATE SET value = EXCLUDED.value;`, p.ID, key, val); err != nil {
 				return err
@@ -186,12 +186,14 @@ func (r *Repository) DeletePlan(ctx context.Context, id int64) error {
 		}
 
 		var activeSubs int
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM billing.subscriptions WHERE plan_id = $1 AND status = 'active' AND expires_at > now();`, id).Scan(&activeSubs)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM billing.subscriptions WHERE plan_id = $1 AND status = 'active' AND expires_at > now();`, id).Scan(&activeSubs)
+		})
 		if activeSubs > 0 {
 			return apperr.Validation("plan.has_active_subscriptions", i18n.TDefault("w4_mod.w4str_74_74"), nil)
 		}
 
-		_, _ = tx.Exec(txCtx, `DELETE FROM billing.plan_features WHERE plan_id = $1;`, id)
+		_ = database.SoftExec(txCtx, tx, `DELETE FROM billing.plan_features WHERE plan_id = $1;`, id)
 		_, err = tx.Exec(txCtx, `DELETE FROM billing.plans WHERE id = $1;`, id)
 		return err
 	})

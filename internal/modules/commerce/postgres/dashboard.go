@@ -338,7 +338,9 @@ func (r *Repository) GetVendorFinancialSummary(ctx context.Context, vendorOrgID 
 			       OR EXISTS (SELECT 1 FROM commerce.order_lines ol WHERE ol.shipment_id = s.id AND ol.organization_id = $1))
 			  AND (s.status IN ('pending', 'processing', 'on_hold') OR o.status IN ('pending', 'processing', 'on_hold'))` + pendingOrgFilter + `;
 		`
-		_ = tx.QueryRow(txCtx, queryPending, pendingArgs...).Scan(&summary.PendingOrdersCount, &summary.PendingOrdersTotal)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, queryPending, pendingArgs...).Scan(&summary.PendingOrdersCount, &summary.PendingOrdersTotal)
+		})
 
 		// 5. Wallet balance
 		queryWallet := `

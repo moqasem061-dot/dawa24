@@ -290,7 +290,7 @@ func (r *Repository) CreatePolicyVersion(ctx context.Context, p *platformadmin.P
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if p.IsPublished {
 			// Unpublish previous versions for this key
-			_, _ = tx.Exec(txCtx, `UPDATE platform_admin.policies SET is_published = false WHERE policy_key = $1;`, p.PolicyKey)
+			_ = database.SoftExec(txCtx, tx, `UPDATE platform_admin.policies SET is_published = false WHERE policy_key = $1;`, p.PolicyKey)
 			if p.PublishedAt == nil {
 				now := time.Now()
 				p.PublishedAt = &now

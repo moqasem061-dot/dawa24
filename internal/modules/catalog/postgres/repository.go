@@ -29,7 +29,9 @@ func (r *Repository) CreateProduct(ctx context.Context, p *catalog.Product) erro
 			var firstOrgID int64
 			err := tx.QueryRow(txCtx, `SELECT id FROM org.organizations WHERE status = 'approved' OR type = 'vendor' ORDER BY id ASC LIMIT 1`).Scan(&firstOrgID)
 			if err != nil || firstOrgID <= 0 {
-				_ = tx.QueryRow(txCtx, `SELECT id FROM org.organizations ORDER BY id ASC LIMIT 1`).Scan(&firstOrgID)
+				_ = database.Soft(txCtx, tx, func() error {
+					return tx.QueryRow(txCtx, `SELECT id FROM org.organizations ORDER BY id ASC LIMIT 1`).Scan(&firstOrgID)
+				})
 			}
 			if firstOrgID > 0 {
 				p.OrganizationID = firstOrgID
@@ -172,8 +174,8 @@ func (r *Repository) DeleteProduct(ctx context.Context, id int64) error {
 		}
 
 		// Cascade soft-delete to child variants and stocks
-		_, _ = tx.Exec(txCtx, `UPDATE catalog.product_variants SET deleted_at = now() WHERE product_id = $1 AND deleted_at IS NULL;`, id)
-		_, _ = tx.Exec(txCtx, `UPDATE inventory.stocks SET deleted_at = now() WHERE product_id = $1 AND deleted_at IS NULL;`, id)
+		_ = database.SoftExec(txCtx, tx, `UPDATE catalog.product_variants SET deleted_at = now() WHERE product_id = $1 AND deleted_at IS NULL;`, id)
+		_ = database.SoftExec(txCtx, tx, `UPDATE inventory.stocks SET deleted_at = now() WHERE product_id = $1 AND deleted_at IS NULL;`, id)
 
 		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 			Action:     "catalog.product.delete",

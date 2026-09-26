@@ -240,7 +240,7 @@ func (r *Repository) SaveMessage(ctx context.Context, m *assistant.Message) erro
 		}
 
 		// Update conversation updated_at
-		_, _ = tx.Exec(txCtx, `UPDATE assistant.conversations SET updated_at = now() WHERE id = $1`, m.ConversationID)
+		_ = database.SoftExec(txCtx, tx, `UPDATE assistant.conversations SET updated_at = now() WHERE id = $1`, m.ConversationID)
 		return nil
 	})
 }

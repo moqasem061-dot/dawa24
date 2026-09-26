@@ -48,7 +48,7 @@ func (r *Repository) CreateEmployee(ctx context.Context, e *hr.Employee) error {
 		}
 
 		if e.Status == "active" {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE identity.users
 				SET status = 'active',
 				    role = CASE WHEN role = 'job_seeker' THEN 'user' ELSE role END,

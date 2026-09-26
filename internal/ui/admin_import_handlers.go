@@ -76,7 +76,7 @@ func (h *UIHandler) renderImportConfigure(
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := pages.AdminProductsImportPage(lang, dir, view).Render(ctx, w); err != nil {
+	if err := pages.AdminProductsImportPage(lang, dir, view).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render import wizard", "error", err)
 	}
 }
@@ -174,12 +174,12 @@ func (h *UIHandler) renderImportReview(w http.ResponseWriter, r *http.Request, n
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
 	if h.isHTMX(r) {
-		if err := pages.ImportRowsCard(view).Render(ctx, w); err != nil {
+		if err := pages.ImportRowsCard(view).Render(renderContext(ctx), w); err != nil {
 			h.log.ErrorContext(ctx, "render import review rows partial", "error", err)
 		}
 		return
 	}
-	if err := pages.AdminProductsImportReview(lang, dir, view).Render(ctx, w); err != nil {
+	if err := pages.AdminProductsImportReview(lang, dir, view).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render import review", "error", err)
 	}
 }
@@ -238,7 +238,7 @@ func (h *UIHandler) AdminProductsImportRowToggle(w http.ResponseWriter, r *http.
 		if err == nil && row != nil {
 			view := pages.ImportReviewView{Session: &catalog.ImportSession{PublicID: publicID}}
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if err := pages.ImportRowLine(view, row).Render(ctx, w); err == nil { // nolint:errswallow: a failed fragment render falls back to the full page below
+			if err := pages.ImportRowLine(view, row).Render(renderContext(ctx), w); err == nil { // nolint:errswallow: a failed fragment render falls back to the full page below
 				return
 			}
 		}

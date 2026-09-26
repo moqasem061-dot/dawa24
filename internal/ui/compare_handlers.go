@@ -136,7 +136,7 @@ func (h *UIHandler) CompareToolPage(w http.ResponseWriter, r *http.Request) {
 				FeatureIcon:  "📊",
 				Plans:        plans,
 				Actor:        actor,
-			}).Render(ctx, w); err != nil {
+			}).Render(renderContext(ctx), w); err != nil {
 				h.log.ErrorContext(ctx, "render subscription gate page", "error", err)
 			}
 			return

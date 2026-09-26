@@ -282,7 +282,7 @@ func (r *Repository) RenewSubscription(ctx context.Context, subID int64, walletI
 		if orgID != nil {
 			histOrgID = *orgID
 		}
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO billing.subscription_histories (
 				subscription_id, organization_id, user_id, plan_id, action, amount_minor, currency, details
 			) VALUES ($1, $2, $3, $4, 'renewed', $5, 'EGP', $6);

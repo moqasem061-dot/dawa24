@@ -90,7 +90,7 @@ templ savingReviewStage(view SavingImportView) {
 		<div class="glass-panel p-4 mb-4">
 			<div class="flex-between items-center flex-wrap gap-3">
 				<div class="d-flex items-center gap-2 flex-wrap">
-					@savingFilterTab(view, "", "الكل (" + fmt.Sprint(sess.TotalRows) + ")")
+					@savingFilterTab(view, "", "الكل (" + fmt.Sprint(savingListedCount(sess)) + ")")
 					@savingFilterTab(view, "matched", "مطابق بالكتالوج (" + fmt.Sprint(sess.MatchedRows) + ")")
 					@savingFilterTab(view, "unmatched", "غير مرتبط (" + fmt.Sprint(sess.UnlinkedRows) + ")")
 				</div>

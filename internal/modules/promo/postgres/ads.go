@@ -270,7 +270,9 @@ func (r *Repository) ListActiveAds(ctx context.Context, position string) ([]*pro
 func (r *Repository) UpdateAdAdminStatus(ctx context.Context, id int64, status promo.AdminStatus, notes string, reviewerID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var orgID *int64
-		_ = tx.QueryRow(txCtx, `SELECT organization_id FROM promo.ads WHERE id = $1;`, id).Scan(&orgID)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT organization_id FROM promo.ads WHERE id = $1;`, id).Scan(&orgID)
+		})
 
 		isActive := status == promo.AdminApproved
 		tag, err := tx.Exec(txCtx, `

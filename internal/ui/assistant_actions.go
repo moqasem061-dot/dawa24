@@ -221,5 +221,5 @@ func countLabel(n int, one, many string) string {
 
 // CapsuleAssistantPanel renders the lazy-loaded Capsule AI assistant drawer over HTMX.
 func (h *UIHandler) CapsuleAssistantPanel(w http.ResponseWriter, r *http.Request) {
-	_ = components.CapsuleAssistantPanel().Render(r.Context(), w)
+	_ = components.CapsuleAssistantPanel().Render(renderContext(r.Context()), w)
 }

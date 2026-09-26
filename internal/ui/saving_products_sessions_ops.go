@@ -36,6 +36,10 @@ func (s *SavingImportSessionStore) CompleteProcessing(id string, items []*Staged
 		sess.Progress = 100
 		sess.ProgressPhase = i18n.T("ar", "ops.saving.processing_complete")
 		sess.Items = items
+		// The tab counters are counted from the items the tabs list, not
+		// taken on the caller's word: a count computed before the AI stage
+		// changed a match disagreed with the tab it labelled.
+		matched, unlinked = countSavingMatches(items)
 		sess.MatchedRows = matched
 		sess.UnlinkedRows = unlinked
 		sess.TotalQuantity = totalQty
@@ -350,4 +354,16 @@ func reviewConfidence(it *StagedSavingItem) float64 {
 		return 0
 	}
 	return it.Confidence
+}
+
+// countSavingMatches splits items the way the review tabs filter them.
+func countSavingMatches(items []*StagedSavingItem) (matched, unlinked int) {
+	for _, it := range items {
+		if it.ProductID != nil && *it.ProductID > 0 {
+			matched++
+		} else {
+			unlinked++
+		}
+	}
+	return matched, unlinked
 }

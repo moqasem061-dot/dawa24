@@ -236,7 +236,7 @@ func seedDefaultInstitutionalWorks(ctx context.Context, tx pgx.Tx) error {
 		fromID, ok1 := idMap[pair[0]]
 		toID, ok2 := idMap[pair[1]]
 		if ok1 && ok2 && fromID > 0 && toID > 0 {
-			_, _ = tx.Exec(ctx, `
+			_ = database.SoftExec(ctx, tx, `
 				INSERT INTO org.institutional_work_connections (from_institutional_work_id, to_institutional_work_id)
 				VALUES ($1, $2) ON CONFLICT (from_institutional_work_id, to_institutional_work_id) DO NOTHING;
 			`, fromID, toID)

@@ -168,7 +168,9 @@ func (r *Repository) UpdateSpecialOfferAdminStatus(ctx context.Context, id int64
 			auditAction = "promo.offer.approve"
 		}
 		var orgID *int64
-		_ = tx.QueryRow(txCtx, `SELECT organization_id FROM promo.offers WHERE id = $1;`, id).Scan(&orgID)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT organization_id FROM promo.offers WHERE id = $1;`, id).Scan(&orgID)
+		})
 
 		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 			OrganizationID: orgID,

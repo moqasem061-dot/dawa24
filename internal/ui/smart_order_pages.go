@@ -178,7 +178,7 @@ func (h *UIHandler) SmartOrderResultsPage(w http.ResponseWriter, r *http.Request
 		SortBy:    sortBy,
 		SortOrder: sortOrder,
 		Search:    search,
-	}).Render(ctx, w); err != nil {
+	}).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render smart order results page", "error", err)
 	}
 }

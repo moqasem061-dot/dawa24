@@ -135,14 +135,14 @@ func (r *Repository) AdminRefundTransaction(
 
 		// 7. If original was associated with a deposit request, update deposit request status
 		if origRefType != nil && *origRefType == "deposit_approval" && origRefID != nil {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE billing.wallet_deposits
 				SET status = 'refunded', refunded_by = $1, refunded_at = now(), refund_transaction_id = $2, updated_at = now()
 				WHERE id = $3;
 			`, refBy, tRec.ID, *origRefID)
 		} else {
 			// Check if any deposit references this transaction
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE billing.wallet_deposits
 				SET status = 'refunded', refunded_by = $1, refunded_at = now(), refund_transaction_id = $2, updated_at = now()
 				WHERE transaction_id = $3;

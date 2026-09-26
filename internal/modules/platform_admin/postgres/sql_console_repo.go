@@ -336,10 +336,18 @@ func (r *Repository) UpdateErrorLogStatus(ctx context.Context, id int64, status 
 // GetErrorDiagnosticsMetrics computes high-level error metrics for the dashboard.
 func (r *Repository) GetErrorDiagnosticsMetrics(ctx context.Context) (total, critical24h, unresolved, affectedUsers int, err error) {
 	err = r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs;`).Scan(&total)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs WHERE error_level IN ('CRITICAL', 'FATAL') AND created_at >= NOW() - INTERVAL '24 HOURS';`).Scan(&critical24h)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs WHERE status IN ('NEW', 'INVESTIGATING');`).Scan(&unresolved)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(DISTINCT user_id) FROM platform_admin.error_logs WHERE user_id IS NOT NULL;`).Scan(&affectedUsers)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs;`).Scan(&total)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs WHERE error_level IN ('CRITICAL', 'FATAL') AND created_at >= NOW() - INTERVAL '24 HOURS';`).Scan(&critical24h)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM platform_admin.error_logs WHERE status IN ('NEW', 'INVESTIGATING');`).Scan(&unresolved)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(DISTINCT user_id) FROM platform_admin.error_logs WHERE user_id IS NOT NULL;`).Scan(&affectedUsers)
+		})
 		return nil
 	})
 	return

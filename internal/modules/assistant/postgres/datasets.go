@@ -29,10 +29,10 @@ func (r *Repository) RunDataset(ctx context.Context, plan *datasets.Plan, timeou
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if _, err := tx.Exec(txCtx, "SAVEPOINT assume_dataset_role"); err == nil {
 			if _, err := tx.Exec(txCtx, "SET LOCAL ROLE "+DatasetRole); err != nil {
-				_, _ = tx.Exec(txCtx, "ROLLBACK TO SAVEPOINT assume_dataset_role")
+				_ = database.SoftExec(txCtx, tx, "ROLLBACK TO SAVEPOINT assume_dataset_role")
 				return fmt.Errorf("dataset security: cannot assume role %q: %w", DatasetRole, err)
 			}
-			_, _ = tx.Exec(txCtx, "RELEASE SAVEPOINT assume_dataset_role")
+			_ = database.SoftExec(txCtx, tx, "RELEASE SAVEPOINT assume_dataset_role")
 		}
 		if _, err := tx.Exec(txCtx, "SELECT set_config('statement_timeout', $1, true)",
 			fmt.Sprintf("%dms", timeout.Milliseconds())); err != nil {

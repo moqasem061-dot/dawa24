@@ -59,7 +59,9 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 		}
 
 		var isStaff bool
-		_ = tx.QueryRow(txCtx, `SELECT is_staff FROM identity.roles WHERE key = $1 AND deleted_at IS NULL;`, u.Role).Scan(&isStaff)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT is_staff FROM identity.roles WHERE key = $1 AND deleted_at IS NULL;`, u.Role).Scan(&isStaff)
+		})
 		if isStaff {
 			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 				Action:     "user.create_staff",
@@ -157,7 +159,9 @@ func (r *Repository) UpdateUser(ctx context.Context, u *identity.User) error {
 			WHERE id = $1 AND deleted_at IS NULL;
 		`
 		var oldHash string
-		_ = tx.QueryRow(txCtx, `SELECT password_hash FROM identity.users WHERE id = $1;`, u.ID).Scan(&oldHash)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT password_hash FROM identity.users WHERE id = $1;`, u.ID).Scan(&oldHash)
+		})
 
 		res, err := tx.Exec(txCtx, query,
 			u.ID, identity.NormalizeEmail(u.Email), u.PasswordHash, u.Name, u.Role,

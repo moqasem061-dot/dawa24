@@ -306,7 +306,7 @@ func (h *UIHandler) renderEmptyRoles(w http.ResponseWriter, r *http.Request, sco
 		Notice:     i18n.T(lang, "tenant.roles.service_unavailable"),
 	}
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.RolesPage(view, lang, dir).Render(r.Context(), w); err != nil {
+	if err := pages.RolesPage(view, lang, dir).Render(renderContext(r.Context()), w); err != nil {
 		h.log.ErrorContext(r.Context(), "render empty roles page", "error", err)
 	}
 }

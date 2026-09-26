@@ -35,13 +35,15 @@ func hydrateOrderDetails(txCtx context.Context, tx pgx.Tx, o *commerce.Order) er
 		LEFT JOIN org.branches b ON b.id = ord.branch_id
 		WHERE ord.id = $1;
 	`
-	_ = tx.QueryRow(txCtx, queryCustomer, o.ID).Scan(
-		&o.CustomerOrgName,
-		&o.CustomerBranchName,
-		&o.CustomerBranchAddress,
-		&o.CustomerBranchPhone,
-		&o.CustomerManagerName,
-	)
+	_ = database.Soft(txCtx, tx, func() error {
+		return tx.QueryRow(txCtx, queryCustomer, o.ID).Scan(
+			&o.CustomerOrgName,
+			&o.CustomerBranchName,
+			&o.CustomerBranchAddress,
+			&o.CustomerBranchPhone,
+			&o.CustomerManagerName,
+		)
+	})
 
 	// 2. Load shipments
 	queryShipments := `
@@ -224,7 +226,7 @@ func (r *Repository) UpdateOrderStatus(
 		}
 
 		if toStatus == commerce.StatusCancelled {
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE commerce.order_shipments 
 				SET status = 'cancelled', updated_at = now() 
 				WHERE order_id = $1 AND status NOT IN ('delivered', 'completed', 'shipped', 'in_transit', 'out_for_delivery');

@@ -59,18 +59,30 @@ func (r *Repository) VisitorAnalyticsWithTotal(ctx context.Context, limit, offse
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// One pass for both figures. They used to be two full scans of the
 		// largest table on the platform, run back to back.
-		_ = tx.QueryRow(txCtx, `
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `
 			SELECT COUNT(*), COUNT(*) FILTER (WHERE visited_at = CURRENT_DATE)
 			FROM platform_admin.visitors;`).Scan(&out.Total, &out.Today)
+		})
 
 		// Platform business summary stats (strictly from live database tables)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM org.organizations WHERE type IN ('pharmacy', 'customer') AND deleted_at IS NULL;`).Scan(&out.TotalPharmacies)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM org.organizations WHERE type IN ('supplier', 'vendor') AND deleted_at IS NULL;`).Scan(&out.TotalSuppliers)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM catalog.products WHERE deleted_at IS NULL;`).Scan(&out.TotalProducts)
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.orders;`).Scan(&out.TotalOrders)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM org.organizations WHERE type IN ('pharmacy', 'customer') AND deleted_at IS NULL;`).Scan(&out.TotalPharmacies)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM org.organizations WHERE type IN ('supplier', 'vendor') AND deleted_at IS NULL;`).Scan(&out.TotalSuppliers)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM catalog.products WHERE deleted_at IS NULL;`).Scan(&out.TotalProducts)
+		})
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.orders;`).Scan(&out.TotalOrders)
+		})
 
 		var totalGMVCents int64
-		_ = tx.QueryRow(txCtx, `SELECT COALESCE(SUM(total_amount), 0) FROM commerce.orders WHERE status NOT IN ('cancelled', 'rejected');`).Scan(&totalGMVCents)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COALESCE(SUM(total_amount), 0) FROM commerce.orders WHERE status NOT IN ('cancelled', 'rejected');`).Scan(&totalGMVCents)
+		})
 		out.TotalGMV = fmt.Sprintf(i18n.TDefault("w4_mod.2f_425"), float64(totalGMVCents)/100.0)
 
 		// Five breakdowns, one scan.

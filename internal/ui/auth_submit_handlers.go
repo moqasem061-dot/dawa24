@@ -268,7 +268,7 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 			h.log.WarnContext(ctx, "ui job seeker registration failed", "email", form.Email, "error", err)
 			form.Error = h.safeMessage(err, lang)
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if rerr := pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)).Render(ctx, w); rerr != nil {
+			if rerr := pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)).Render(renderContext(ctx), w); rerr != nil {
 				h.log.ErrorContext(ctx, "render register page after error", "error", rerr)
 			}
 			return
@@ -353,7 +353,7 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		h.log.WarnContext(ctx, "ui registration failed", "email", form.Email, "error", err)
 		form.Error = h.safeMessage(err, lang)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if rerr := pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)).Render(ctx, w); rerr != nil {
+		if rerr := pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)).Render(renderContext(ctx), w); rerr != nil {
 			h.log.ErrorContext(ctx, "render register page after error", "error", rerr)
 		}
 		return

@@ -86,7 +86,7 @@ func (h *UIHandler) renderImportMapping(
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	if err := pages.AdminProductsImportMapping(lang, dir, view).Render(ctx, w); err != nil {
+	if err := pages.AdminProductsImportMapping(lang, dir, view).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render import mapping", "error", err)
 	}
 }

@@ -80,7 +80,7 @@ func (r *Repository) VerifyAndCompleteDelivery(
 			newAttempts := attempts + 1
 			if newAttempts >= 5 {
 				lockTime := now.Add(15 * time.Minute)
-				_, _ = tx.Exec(txCtx, `
+				_ = database.SoftExec(txCtx, tx, `
 					UPDATE commerce.order_shipments
 					SET delivery_attempts = $2, delivery_locked_until = $3, updated_at = now()
 					WHERE id = $1;
@@ -89,7 +89,7 @@ func (r *Repository) VerifyAndCompleteDelivery(
 					i18n.TDefault("w4_mod.5_15_147"))
 			}
 
-			_, _ = tx.Exec(txCtx, `
+			_ = database.SoftExec(txCtx, tx, `
 				UPDATE commerce.order_shipments
 				SET delivery_attempts = $2, updated_at = now()
 				WHERE id = $1;
@@ -146,16 +146,24 @@ func (r *Repository) VerifyAndCompleteDelivery(
 
 		// 7. Synchronize parent order status if all shipments are delivered
 		var nonDeliveredCount int
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, orderID).Scan(&nonDeliveredCount)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, orderID).Scan(&nonDeliveredCount)
+		})
 		if nonDeliveredCount == 0 {
 			var totalOrder money.Amount
 			var totalCollectedMinor int64
-			_ = tx.QueryRow(txCtx, `SELECT COALESCE(total_amount, 0) FROM commerce.orders WHERE id = $1;`, orderID).Scan(&totalOrder)
-			_ = tx.QueryRow(txCtx, `SELECT COALESCE(SUM(collected_amount_minor), 0) FROM commerce.order_shipments WHERE order_id = $1;`, orderID).Scan(&totalCollectedMinor)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COALESCE(total_amount, 0) FROM commerce.orders WHERE id = $1;`, orderID).Scan(&totalOrder)
+			})
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COALESCE(SUM(collected_amount_minor), 0) FROM commerce.order_shipments WHERE order_id = $1;`, orderID).Scan(&totalCollectedMinor)
+			})
 
 			// Also check if payments were recorded in billing.payments
 			var billingPaid money.Amount
-			_ = tx.QueryRow(txCtx, `SELECT COALESCE(SUM(amount), 0) FROM billing.payments WHERE order_id = $1 AND status IN ('paid', 'completed');`, orderID).Scan(&billingPaid)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COALESCE(SUM(amount), 0) FROM billing.payments WHERE order_id = $1 AND status IN ('paid', 'completed');`, orderID).Scan(&billingPaid)
+			})
 
 			effectivePaidMinor := totalCollectedMinor
 			if billingPaid.Minor() > effectivePaidMinor {

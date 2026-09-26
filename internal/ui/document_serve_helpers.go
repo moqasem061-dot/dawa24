@@ -59,7 +59,7 @@ func (h *UIHandler) renderMissingDocError(w http.ResponseWriter, r *http.Request
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusNotFound)
-	if err := pages.DocumentUnavailablePage(view, lang, dir).Render(r.Context(), w); err != nil {
+	if err := pages.DocumentUnavailablePage(view, lang, dir).Render(renderContext(r.Context()), w); err != nil {
 		h.log.ErrorContext(r.Context(), "render document unavailable page", "error", err)
 	}
 }

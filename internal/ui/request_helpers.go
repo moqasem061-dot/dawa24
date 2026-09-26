@@ -67,7 +67,7 @@ func (h *UIHandler) renderError(w http.ResponseWriter, r *http.Request, err erro
 			Message:    msg,
 			RetryURL:   r.URL.String(),
 			RetryLabel: i18n.T(lang, "common.retry"),
-		}).Render(ctx, w); rerr != nil {
+		}).Render(renderContext(ctx), w); rerr != nil {
 			h.log.ErrorContext(ctx, "render error state", "error", rerr)
 		}
 		return
@@ -80,7 +80,7 @@ func (h *UIHandler) renderError(w http.ResponseWriter, r *http.Request, err erro
 		"/",
 		lang,
 		dir,
-	).Render(ctx, w); rerr != nil {
+	).Render(renderContext(ctx), w); rerr != nil {
 		h.log.ErrorContext(ctx, "render error page", "error", rerr)
 	}
 }

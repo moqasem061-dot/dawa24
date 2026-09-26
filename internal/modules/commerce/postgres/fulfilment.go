@@ -117,36 +117,44 @@ func (r *Repository) UpdateShipmentStatus(
 		switch to {
 		case commerce.StatusDelivered:
 			var nonDeliveredCount int
-			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, history.OrderID).Scan(&nonDeliveredCount)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, history.OrderID).Scan(&nonDeliveredCount)
+			})
 			if nonDeliveredCount == 0 {
-				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'delivered', delivered_at = now(), updated_at = now() WHERE id = $1;`, history.OrderID)
+				_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'delivered', delivered_at = now(), updated_at = now() WHERE id = $1;`, history.OrderID)
 			}
 		case commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:
 			var nonMatchingCount int
-			_ = tx.QueryRow(txCtx, `
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `
 				SELECT COUNT(*) 
 				FROM commerce.order_shipments 
 				WHERE order_id = $1 
 				  AND status NOT IN ($2, 'delivered', 'completed', 'cancelled');
 			`, history.OrderID, string(to)).Scan(&nonMatchingCount)
+			})
 			if nonMatchingCount == 0 {
-				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = $2, delivered_at = NULL, updated_at = now() WHERE id = $1;`, history.OrderID, string(to))
+				_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = $2, delivered_at = NULL, updated_at = now() WHERE id = $1;`, history.OrderID, string(to))
 			} else {
-				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'shipped', delivered_at = NULL, updated_at = now() WHERE id = $1 AND status IN ('pending', 'processing', 'confirmed');`, history.OrderID)
+				_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'shipped', delivered_at = NULL, updated_at = now() WHERE id = $1 AND status IN ('pending', 'processing', 'confirmed');`, history.OrderID)
 			}
 		case commerce.StatusConfirmed:
-			_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'confirmed', updated_at = now() WHERE id = $1 AND status = 'pending';`, history.OrderID)
+			_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'confirmed', updated_at = now() WHERE id = $1 AND status = 'pending';`, history.OrderID)
 		case commerce.StatusFailed:
 			var nonFailedCount int
-			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonFailedCount)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonFailedCount)
+			})
 			if nonFailedCount == 0 {
-				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'failed', notes = CASE WHEN $2 != '' THEN COALESCE(notes || E'\n' || $2, $2) ELSE notes END, updated_at = now() WHERE id = $1;`, history.OrderID, history.Notes)
+				_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'failed', notes = CASE WHEN $2 != '' THEN COALESCE(notes || E'\n' || $2, $2) ELSE notes END, updated_at = now() WHERE id = $1;`, history.OrderID, history.Notes)
 			}
 		case commerce.StatusCancelled:
 			var nonCancelledCount int
-			_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonCancelledCount)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status NOT IN ('failed', 'cancelled', 'returned');`, history.OrderID).Scan(&nonCancelledCount)
+			})
 			if nonCancelledCount == 0 {
-				_, _ = tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'cancelled', updated_at = now() WHERE id = $1;`, history.OrderID)
+				_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'cancelled', updated_at = now() WHERE id = $1;`, history.OrderID)
 			}
 		}
 

@@ -9,6 +9,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
@@ -47,7 +48,7 @@ func (r *Repository) AssignRowMatch(
 				reason := "مطابقة يدوية معتمدة من المستخدم"
 
 				// 1. Insert or update in catalog.match_decisions
-				_, _ = tx.Exec(txCtx, `
+				_ = database.SoftExec(txCtx, tx, `
 					INSERT INTO catalog.match_decisions (
 						organization_id, user_id, decision_key, norm_name, chosen_product_id,
 						confidence, reason, prompt_version, hit_count, created_at, last_used_at,
@@ -69,7 +70,7 @@ func (r *Repository) AssignRowMatch(
 				`, orgID, userID, decKey, normName, productID, reason)
 
 				// 2. Also register in catalog.customer_product_mappings
-				_, _ = tx.Exec(txCtx, `
+				_ = database.SoftExec(txCtx, tx, `
 					INSERT INTO catalog.customer_product_mappings (
 						organization_id, customer_org_id, raw_name, product_id,
 						source, status, is_active, created_at, updated_at
@@ -95,12 +96,7 @@ func (r *Repository) AssignRowMatch(
 			}
 		}
 
-		_, err := tx.Exec(txCtx, `
-			UPDATE ingest.catalog_imports
-			SET matched_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows WHERE import_id = $1 AND (is_manually_matched = true OR match_level IN ('barcode', 'code', 'exact', 'strong')) AND product_id IS NOT NULL AND product_id > 0),
-			    review_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows WHERE import_id = $1 AND NOT is_manually_matched AND match_level IN ('review', 'ambiguous')),
-			    unmatched_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows WHERE import_id = $1 AND NOT is_manually_matched AND (product_id IS NULL OR product_id = 0 OR match_level IN ('none', 'unmatched', '')) AND match_level NOT IN ('review', 'ambiguous', 'barcode', 'code', 'exact', 'strong'))
-			WHERE id = $1`, importID)
+		_, err := tx.Exec(txCtx, refreshCounts, importID)
 		return err
 	})
 }

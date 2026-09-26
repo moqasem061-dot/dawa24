@@ -292,7 +292,9 @@ func (r *Repository) AcceptAndOnboardApplicant(ctx context.Context, in hr.Accept
 		if app.ApplicantUserID != nil && *app.ApplicantUserID > 0 {
 			uid = *app.ApplicantUserID
 		} else if strings.TrimSpace(app.ApplicantEmail) != "" {
-			_ = tx.QueryRow(txCtx, `SELECT id FROM identity.users WHERE lower(email) = lower($1) AND deleted_at IS NULL LIMIT 1;`, strings.TrimSpace(app.ApplicantEmail)).Scan(&uid)
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `SELECT id FROM identity.users WHERE lower(email) = lower($1) AND deleted_at IS NULL LIMIT 1;`, strings.TrimSpace(app.ApplicantEmail)).Scan(&uid)
+			})
 		}
 
 		if uid > 0 {

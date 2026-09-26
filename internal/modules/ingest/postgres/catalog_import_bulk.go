@@ -23,6 +23,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // refreshCounts recomputes an import's three match counters.
@@ -32,27 +33,28 @@ import (
 // the calculation is surprisingly delicate: a row whose score is high enough to
 // need no review is UNMATCHED if the catalogue has no product for it, and
 // counting it by score alone made fifty empty rows look like fifty matches.
+// The review screen's three tabs, defined once.
+//
+// They partition the import: every row is in exactly one, so matched + review
+// + unmatched is always the "All" count. They used to be written out four
+// times — the tab filter, these counters, the manual-match counters and the
+// recovery tally — and no two agreed: a row whose level said "strong" but whose
+// product had been removed belonged to no tab at all, and the tabs summed to
+// two fewer than "All".
+const (
+	rowIsMatched = `((COALESCE(r.is_manually_matched, false) OR COALESCE(r.match_level, '') IN ('barcode', 'code', 'exact', 'strong'))
+	      AND COALESCE(r.product_id, 0) > 0)`
+	rowIsReview = `(NOT COALESCE(r.is_manually_matched, false) AND COALESCE(r.match_level, '') IN ('review', 'ambiguous')
+	      AND NOT ` + rowIsMatched + `)`
+	rowIsUnmatched = `(NOT ` + rowIsMatched + ` AND NOT ` + rowIsReview + `)`
+)
+
+// refreshCounts recomputes an import's tab counters from its rows.
 const refreshCounts = `
 UPDATE ingest.catalog_imports
-SET matched_rows = (
-	    SELECT COUNT(*) FROM ingest.catalog_import_rows
-	    WHERE import_id = $1
-	      AND (is_manually_matched = true OR match_level IN ('barcode', 'code', 'exact', 'strong'))
-	      AND product_id IS NOT NULL AND product_id > 0
-    ),
-    review_rows = (
-	    SELECT COUNT(*) FROM ingest.catalog_import_rows
-	    WHERE import_id = $1
-	      AND NOT is_manually_matched
-	      AND match_level IN ('review', 'ambiguous')
-    ),
-    unmatched_rows = (
-	    SELECT COUNT(*) FROM ingest.catalog_import_rows
-	    WHERE import_id = $1
-	      AND NOT is_manually_matched
-	      AND (product_id IS NULL OR product_id = 0 OR match_level IN ('none', 'unmatched', ''))
-	      AND match_level NOT IN ('review', 'ambiguous', 'barcode', 'code', 'exact', 'strong')
-    )
+SET matched_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows r WHERE r.import_id = $1 AND ` + rowIsMatched + `),
+    review_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows r WHERE r.import_id = $1 AND ` + rowIsReview + `),
+    unmatched_rows = (SELECT COUNT(*) FROM ingest.catalog_import_rows r WHERE r.import_id = $1 AND ` + rowIsUnmatched + `)
 WHERE id = $1;`
 
 // ConfirmRowMatches records the vendor accepting the engine's suggestion on
@@ -90,7 +92,7 @@ func (r *Repository) ConfirmRowMatches(
 		}
 
 		// Save confirmed matches to match_decisions
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO catalog.match_decisions (
 				organization_id, user_id, decision_key, norm_name, chosen_product_id,
 				confidence, reason, prompt_version, hit_count, created_at, last_used_at,
@@ -114,7 +116,7 @@ func (r *Repository) ConfirmRowMatches(
 		`, importID, rowIDs, userID)
 
 		// Register in customer_product_mappings
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO catalog.customer_product_mappings (
 				organization_id, customer_org_id, raw_name, product_id,
 				source, status, is_active, created_at, updated_at
@@ -252,11 +254,11 @@ func rowsWhere(importID int64, filter ingest.RowFilter) (string, []any) {
 	}
 	switch filter.MatchLevel {
 	case "matched":
-		where = append(where, "((r.is_manually_matched = true OR r.match_level IN ('barcode', 'code', 'exact', 'strong')) AND r.product_id IS NOT NULL AND r.product_id > 0)")
+		where = append(where, rowIsMatched)
 	case "review":
-		where = append(where, "(NOT r.is_manually_matched AND r.match_level IN ('review', 'ambiguous'))")
+		where = append(where, rowIsReview)
 	case "unmatched":
-		where = append(where, "(NOT r.is_manually_matched AND (r.product_id IS NULL OR r.product_id = 0 OR r.match_level IN ('none', 'unmatched', '')) AND r.match_level NOT IN ('review', 'ambiguous', 'barcode', 'code', 'exact', 'strong'))")
+		where = append(where, rowIsUnmatched)
 	case "new", "insert", "جديد":
 		where = append(where, "((r.variant_id IS NULL OR r.variant_id = 0) AND NOT EXISTS (SELECT 1 FROM catalog.product_variants pv WHERE pv.organization_id = r.organization_id AND pv.product_id = r.product_id AND pv.deleted_at IS NULL))")
 	case "update", "existing", "تحديث":

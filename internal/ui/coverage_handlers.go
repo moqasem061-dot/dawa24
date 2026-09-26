@@ -76,7 +76,7 @@ func (h *UIHandler) VendorCoveragePage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := pages.VendorCoveragePage(data, lang, dir).Render(ctx, w); err != nil {
+	if err := pages.VendorCoveragePage(data, lang, dir).Render(renderContext(ctx), w); err != nil {
 		h.log.ErrorContext(ctx, "render vendor coverage", "error", err)
 		h.renderError(w, r, err)
 	}

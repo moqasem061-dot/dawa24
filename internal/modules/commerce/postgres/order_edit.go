@@ -51,9 +51,11 @@ func (r *Repository) UpdateCustomerPendingOrder(
 
 		// Get primary shipment ID and vendor organization ID if existing
 		var defaultShipmentID, defaultOrgID int64
-		_ = tx.QueryRow(txCtx, `
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `
 			SELECT id, organization_id FROM commerce.order_shipments WHERE order_id = $1 ORDER BY id ASC LIMIT 1;
 		`, order.ID).Scan(&defaultShipmentID, &defaultOrgID)
+		})
 
 		if defaultOrgID == 0 && order.OrganizationID != nil {
 			defaultOrgID = *order.OrganizationID
@@ -72,7 +74,9 @@ func (r *Repository) UpdateCustomerPendingOrder(
 
 		// 3. Count remaining active lines
 		var remainingCount int
-		_ = tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_lines WHERE order_id = $1;`, order.ID).Scan(&remainingCount)
+		_ = database.Soft(txCtx, tx, func() error {
+			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_lines WHERE order_id = $1;`, order.ID).Scan(&remainingCount)
+		})
 		if remainingCount == 0 {
 			return apperr.Validation("order.empty", i18n.TDefault("w4_mod.w4str_157_157"), nil)
 		}
@@ -212,7 +216,7 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		if changedByUserID > 0 {
 			userPtr = &changedByUserID
 		}
-		_, _ = tx.Exec(txCtx, historyQuery, order.ID, shipmentIDPtr, currentStatus, currentStatus, i18n.TDefault("w4_mod.s_361_361"), userPtr)
+		_ = database.SoftExec(txCtx, tx, historyQuery, order.ID, shipmentIDPtr, currentStatus, currentStatus, i18n.TDefault("w4_mod.s_361_361"), userPtr)
 
 		// 6. Audit logs for customer and vendor(s)
 		orderIDStr := strconv.FormatInt(order.ID, 10)

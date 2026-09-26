@@ -167,7 +167,7 @@ func (r *Repository) DeleteVariant(ctx context.Context, id int64) error {
 		}
 
 		// Cascade soft-delete to associated warehouse stocks
-		_, _ = tx.Exec(txCtx, `UPDATE inventory.stocks SET deleted_at = now() WHERE product_variant_id = $1 AND deleted_at IS NULL;`, id)
+		_ = database.SoftExec(txCtx, tx, `UPDATE inventory.stocks SET deleted_at = now() WHERE product_variant_id = $1 AND deleted_at IS NULL;`, id)
 
 		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 			Action:     "catalog.variant.delete",

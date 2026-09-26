@@ -127,10 +127,10 @@ func (r *Repository) AcceptNegotiation(ctx context.Context, orderID int64, actor
 		}
 
 		// Also update shipments
-		_, _ = tx.Exec(txCtx, `UPDATE commerce.order_shipments SET status = 'confirmed', updated_at = now() WHERE order_id = $1;`, orderID)
+		_ = database.SoftExec(txCtx, tx, `UPDATE commerce.order_shipments SET status = 'confirmed', updated_at = now() WHERE order_id = $1;`, orderID)
 
 		// Record in history
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO commerce.order_status_history (order_id, to_status, notes, changed_by_user_id)
 			VALUES ($1, 'confirmed', 'تم قبول السعر المتفاوض عليه واعتماد الطلب من قبل المورد', $2);
 		`, orderID, actorID)
@@ -203,10 +203,10 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 		}
 
 		// Also update shipments
-		_, _ = tx.Exec(txCtx, `UPDATE commerce.order_shipments SET status = 'cancelled', updated_at = now() WHERE order_id = $1;`, orderID)
+		_ = database.SoftExec(txCtx, tx, `UPDATE commerce.order_shipments SET status = 'cancelled', updated_at = now() WHERE order_id = $1;`, orderID)
 
 		// Record in history
-		_, _ = tx.Exec(txCtx, `
+		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO commerce.order_status_history (order_id, to_status, notes, changed_by_user_id)
 			VALUES ($1, 'cancelled', $2, $3);
 		`, orderID, reason, actorID)
