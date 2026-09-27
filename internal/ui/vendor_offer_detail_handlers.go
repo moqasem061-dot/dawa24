@@ -295,6 +295,25 @@ func (h *UIHandler) VendorOfferEditSubmit(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	offerTitle := in.TitleAr
+	if offerTitle == "" {
+		offerTitle = in.TitleEn
+	}
+	if offerTitle == "" {
+		offerTitle = existing.Title.Get(i18n.AR)
+	}
+
+	h.safeGo("dispatch-offer-updated-notif", func() {
+		h.dispatchInAppNotification(context.Background(), actor.UserID, &actor.OrganizationID, "vendor.offer.view",
+			i18n.T(lang, "vendor.offer.updated_notification_title"),
+			fmt.Sprintf(i18n.T(lang, "vendor.offer.updated_notification_body"), offerTitle))
+		if in.Status != "draft" {
+			h.notifyAdminsSpecialOfferUpdated(context.Background(), actor.OrganizationID, offerTitle)
+		}
+	})
+
+	h.log.InfoContext(ctx, "special offer updated",
+		"offer_id", existing.ID, "organization_id", actor.OrganizationID, "products", len(in.Products))
 	h.redirectWithNotice(w, r, "/vendor/offers", "success", i18n.T(lang, "vendor.offer.updated_success"))
 }
 

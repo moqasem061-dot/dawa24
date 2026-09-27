@@ -218,7 +218,7 @@ func (r *Repository) UpdateSpecialOffer(ctx context.Context, o *promo.SpecialOff
 			    expires_at = COALESCE($9, expires_at),
 			    is_active = (COALESCE($10, 'active') = 'active'),
 			    is_draft = (COALESCE($10, 'active') = 'draft'),
-			    admin_status = 'pending',
+			    admin_status = 'pending', admin_notes = '', approved_at = NULL, approved_by = NULL, rejected_at = NULL,
 			    image = CASE WHEN $11 <> '' THEN $11 ELSE image END,
 			    updated_at = now()
 			WHERE id = $12 AND organization_id = $13;

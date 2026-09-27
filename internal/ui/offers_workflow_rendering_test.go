@@ -223,6 +223,7 @@ func TestVendorOfferEditAndAdminModerationWorkflow(t *testing.T) {
 
 	r := chi.NewRouter()
 	r.Get("/vendor/offers/{id}/edit", handler.VendorOfferEditPage)
+	r.Post("/vendor/offers/{id}/edit", handler.VendorOfferEditSubmit)
 	r.Post("/admin/offers/{id}/request-changes", handler.AdminOfferRequestChangesSubmit)
 	r.Post("/admin/offers/{id}/reject", handler.AdminOfferRejectSubmit)
 	r.Post("/admin/offers/{id}/approve", handler.AdminOfferApproveSubmit)
@@ -297,6 +298,41 @@ func TestVendorOfferEditAndAdminModerationWorkflow(t *testing.T) {
 	}
 	if mockRepo.spec.AdminStatus != "approved" {
 		t.Fatalf("expected AdminStatus approved, got %s", mockRepo.spec.AdminStatus)
+	}
+
+	// 5. Vendor edits the already approved offer: POST /vendor/offers/101/edit
+	formEdit := url.Values{}
+	formEdit.Set("title_ar", "عرض الصيف المعدل")
+	formEdit.Set("title_en", "Summer Offer Updated")
+	formEdit.Set("status", "active")
+	formEdit.Set("total_price", "420.00")
+	formEdit.Set("discount_percentage", "25")
+	formEdit.Set("selected_variants", "26643")
+	formEdit.Set("qty_26643", "5")
+	formEdit.Set("custom_price_26643", "84.00")
+
+	reqVendorEdit := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/offers/101/edit", strings.NewReader(formEdit.Encode()))
+	reqVendorEdit.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	reqVendorEdit = reqVendorEdit.WithContext(authctx.WithActor(reqVendorEdit.Context(), vendorActor))
+	recVendorEdit := httptest.NewRecorder()
+	r.ServeHTTP(recVendorEdit, reqVendorEdit)
+	if recVendorEdit.Code != http.StatusSeeOther {
+		t.Fatalf("expected status 303 for vendor edit submit, got %d", recVendorEdit.Code)
+	}
+	if mockRepo.spec.AdminStatus != "pending" {
+		t.Fatalf("expected AdminStatus to reset to pending after vendor edit, got %s", mockRepo.spec.AdminStatus)
+	}
+
+	// 6. Admin re-approves the updated offer: POST /admin/offers/101/approve
+	reqReApprove := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/offers/101/approve", nil)
+	reqReApprove = reqReApprove.WithContext(authctx.WithActor(reqReApprove.Context(), adminActor))
+	recReApprove := httptest.NewRecorder()
+	r.ServeHTTP(recReApprove, reqReApprove)
+	if recReApprove.Code != http.StatusSeeOther {
+		t.Fatalf("expected status 303 for admin re-approve, got %d", recReApprove.Code)
+	}
+	if mockRepo.spec.AdminStatus != "approved" {
+		t.Fatalf("expected AdminStatus approved after re-approval, got %s", mockRepo.spec.AdminStatus)
 	}
 }
 func (m *mockPromoRepo) ListCreditAccounts(context.Context, string, int, int) ([]*promo.CreditAccount, int, error) {

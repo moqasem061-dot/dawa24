@@ -26,10 +26,11 @@ const (
 	EventNegotiationDecision      EventKey = "negotiation.decision"
 
 	// Promotions, Ads & Sponsorships
-	EventSpecialOfferStatus EventKey = "special_offer.status"
-	EventAdminSpecialOffer  EventKey = "admin.special_offer.submitted"
-	EventSponsorshipStatus  EventKey = "sponsorship.status"
-	EventAdStatus           EventKey = "ad.status"
+	EventSpecialOfferStatus       EventKey = "special_offer.status"
+	EventAdminSpecialOffer        EventKey = "admin.special_offer.submitted"
+	EventAdminSpecialOfferUpdated EventKey = "admin.special_offer.updated"
+	EventSponsorshipStatus        EventKey = "sponsorship.status"
+	EventAdStatus                 EventKey = "ad.status"
 
 	// Smart Order & Imports
 	EventSmartOrderRunFinished EventKey = "smart_order.run_finished"

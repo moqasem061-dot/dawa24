@@ -276,6 +276,10 @@ func (m *mockPromoRepo) AdminToggleAd(ctx context.Context, id int64) (*promo.Ad,
 	return &promo.Ad{ID: id, IsActive: true}, nil
 }
 func (m *mockPromoRepo) UpdateSpecialOffer(ctx context.Context, o *promo.SpecialOffer) error {
+	if m.spec != nil && m.spec.ID == o.ID {
+		m.spec = o
+		m.spec.AdminStatus = "pending"
+	}
 	return nil
 }
 func (m *mockPromoRepo) ListAdminOfferLocations(ctx context.Context, filter promo.OfferLocationsFilter) ([]*promo.OfferLocationAdminRow, promo.OfferLocationsStats, int, error) {

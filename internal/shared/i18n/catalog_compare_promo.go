@@ -67,6 +67,8 @@ func loadCompareAndPromoKeys(e *engine) {
 	addKey(e, "vendor.offer.city_required", "vendor", "يرجى تحديد المدينة أو المركز المستهدف للتغطية.", "Please select a target city for coverage.", "Validation error")
 	addKey(e, "vendor.offer.city_mismatch", "vendor", "المدينة المحددة لا تنتمي إلى المحافظة المختارة.", "Selected city does not belong to the chosen governorate.", "Validation error")
 	addKey(e, "vendor.offer.deleted_success", "vendor", "تم حذف العرض الخاص بنجاح.", "Special offer deleted successfully.", "Success notice")
+	addKey(e, "vendor.offer.updated_notification_title", "vendor", "تحديث العرض الخاص بانتظار المراجعة", "Special Offer Updated", "Notification title")
+	addKey(e, "vendor.offer.updated_notification_body", "vendor", "تم إرسال تعديلات العرض الخاص «%s» للمراجعة والاعتماد من قِبل الإدارة.", "Special offer '%s' updates were submitted for administrative review and approval.", "Notification body")
 	addKey(e, "vendor.offer.updated_success", "vendor", "تم تحديث بيانات العرض بنجاح وإرساله للمراجعة والاعتماد الإداري.", "Offer updated successfully and submitted for administrative review.", "Success notice")
 	addKey(e, "vendor.offer.created_review_success", "vendor", "تم إنشاء العرض بنجاح وإرساله للمراجعة والاعتماد من قِبل الإدارة.", "Offer created successfully and submitted for administrative review.", "Success notice")
 	addKey(e, "vendor.offer.forbidden", "vendor", "العرض غير موجود أو ليس لديك صلاحية لتعديله.", "Offer not found, or you are not allowed to edit it.", "Authorization error")
