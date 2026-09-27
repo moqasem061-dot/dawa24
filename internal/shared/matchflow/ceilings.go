@@ -71,16 +71,21 @@ type Ceilings struct {
 
 	// MinPlausible is the retrieval score below which a row is not sent at all.
 	//
-	// This is the one ceiling that saves most of the money, and it was missing.
-	// On a live smart order — run 43, 8,790 rows — the deterministic engine left
-	// 7,626 unmatched because the file was cosmetics the catalogue does not
-	// stock. All 7,939 residual lines were sent anyway: thirty requests, the
-	// ceiling hit, 345 seconds of wall clock against 1.6 seconds of
-	// deterministic work, and 156 rows improved. No model could have answered
-	// the rest, because the answer was not in the catalogue.
+	// It is zero in every profile (2026-09-27, at the client's direction): every
+	// row — مطابق to be checked, يحتاج المراجعة and غير مطابق to be resolved — is
+	// put to the model whenever retrieval found ANY candidate. A floor of 0.15–
+	// 0.40 used to drop exactly the unmatched and needs-review rows whose names
+	// were written most differently from the catalogue, which are the rows a
+	// model is best at and a scorer worst at.
 	//
-	// A row whose best retrieved candidate scores below this has no plausible
-	// answer to choose between, and "unmatched" is already the honest result.
+	// Asking a weak row costs budget, never correctness: an answer is applied
+	// only above MinApplyConfidence, after the identity screen and the pair
+	// check, so "none of these" or a refusal leaves the row as it was. When a
+	// huge file outruns the budget, Plan spends it in risk order — ambiguous,
+	// then unresolved, then settled — so the cut falls on the safest tail.
+	//
+	// A row with NO candidate is still not sent: the model may only answer with
+	// a product it was shown, and an empty window has nothing to choose from.
 	MinPlausible float64
 }
 
@@ -143,7 +148,7 @@ func For(p Profile) Ceilings {
 		MaxConcurrent:      8,
 		MaxWallClock:       12 * time.Minute,
 		MinApplyConfidence: 0.80,
-		MinPlausible:       0.30,
+		MinPlausible:       0,
 	}
 
 	switch p {
@@ -158,7 +163,6 @@ func For(p Profile) Ceilings {
 	case ProfileSaving:
 		base.RecallLimit = 12
 		base.MaxRequestsPerRun = 150
-		base.MinPlausible = 0.15
 
 	case ProfileVendor:
 		// Long, repetitive files. Two hundred requests of sixty is twelve
@@ -175,7 +179,6 @@ func For(p Profile) Ceilings {
 		base.MaxItemsPerRequest = 50
 		base.MaxConcurrent = 6
 		base.MinApplyConfidence = 0.90
-		base.MinPlausible = 0.40
 	}
 	return base
 }

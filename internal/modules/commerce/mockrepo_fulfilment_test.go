@@ -100,6 +100,14 @@ func (m *mockCommerceRepo) RejectNegotiation(_ context.Context, orderID int64, r
 	return nil
 }
 
+func (m *mockCommerceRepo) UpdateVendorPendingShipment(_ context.Context, order *Order, _ int64, _ []OrderLineEditItem, _ int64) (*Order, error) {
+	o, ok := m.orders[order.ID]
+	if !ok {
+		return nil, apperr.NotFound("order")
+	}
+	return o, nil
+}
+
 func (m *mockCommerceRepo) UpdateCustomerPendingOrder(_ context.Context, order *Order, lines []OrderLineEditItem, changedByUserID int64) (*Order, error) {
 	o, ok := m.orders[order.ID]
 	if !ok {

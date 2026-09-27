@@ -20,6 +20,16 @@ The `promo` bounded context handles promotional campaigns, vendor discount confi
 2. **Impression & Click Auditing:** Views and click counters are updated atomically without blocking customer reads.
 3. **Tenant Row Level Security:** Vendor offers and sponsorships are isolated with `FORCE ROW LEVEL SECURITY`.
 
+4. **Special offers are soft-deleted (2026-09-27):** a vendor delete sets
+   `deleted_at` and clears `is_active`. The old hard `DELETE` failed for any
+   offer that had been ordered (`commerce.orders.offer_id` is `ON DELETE
+   RESTRICT`). Every read path filters `deleted_at`; the admin trash restores it.
+5. **Offer moderation notifications:** admins holding `promo.offer.view` are
+   notified when a vendor adds a special offer (`admin.special_offer.submitted`);
+   the vendor is notified on approve/reject/request-changes. The admin handlers
+   load the offer under `database.AsSystem`, without which RLS hid it and the
+   vendor notification never fired.
+
 ## Endpoints
 
 - `GET /api/v1/promo/offers` — List all running promotions across the marketplace.

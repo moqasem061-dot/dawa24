@@ -9,6 +9,7 @@ type VendorOrderDetailData struct {
 	Shipment   *commerce.OrderShipment
 	History    []*commerce.OrderStatusHistory
 	CanAssign  bool
+	CanEdit    bool // supplier may still edit lines: shipment pending and vendor.order.update held
 	Couriers   []DeliveryCourierOption
 	NoticeType string
 	NoticeMsg  string
@@ -178,4 +179,19 @@ func computeVendorShipmentFinancialSummary(sh *commerce.OrderShipment) VendorShi
 		TotalProfit:      money.FromMinor(profitMinor),
 		MarginPct:        marginPct,
 	}
+}
+
+// shipmentLinesNet is the net of the shipment's lines, excluding shipping —
+// the figure the edit form's live total recomputes.
+func shipmentLinesNet(sh *commerce.OrderShipment) money.Amount {
+	total := money.Zero
+	if sh == nil {
+		return total
+	}
+	for _, l := range sh.Lines {
+		if l != nil {
+			total, _ = total.Add(l.TotalPrice)
+		}
+	}
+	return total
 }

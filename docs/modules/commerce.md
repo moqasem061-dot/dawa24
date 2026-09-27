@@ -28,6 +28,19 @@ The `commerce` bounded context handles shopping carts, checkout processing, immu
    - The domain layer computes the exact 2-decimal scalar average of the three review criteria (`org.review_criteria`: representative rating, speed rating, quality rating) via `commerce.CalculateAverageRating`.
    - **Guards:** An order can only be rated if its status is `delivered` (or `completed`), and an order cannot be re-rated once `rated_at` is set.
 
+## Supplier edits before acceptance (2026-09-27)
+
+A supplier can change quantities or remove lines of its own shipment while
+that shipment is `pending` (`POST /vendor/orders/{shipmentID}/edit`, permission
+`vendor.order.update`). It shares the buyer edit's repository path
+(`editPendingOrder`), so prices, discounts, stock, offer limits, quotas and
+order/shipment totals are recomputed the same way. Differences from the buyer
+edit: the supplier's shipment row is locked and must be `pending` (the order's
+summary status may already reflect another supplier's acceptance); every line
+id must belong to that shipment; the shipment cannot be emptied — a supplier
+that can supply nothing rejects the order. Lines cannot be added. The wallet is
+debited on acceptance, so it charges the edited total. The buyer is notified.
+
 ## Percentages applied to money
 
 Cost discounts and an edited order's tax are computed exactly: percentages are

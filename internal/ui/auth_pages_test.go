@@ -120,14 +120,19 @@ func TestAuthRegisterPage_Render(t *testing.T) {
 	if !strings.Contains(html, `data-require-email="false"`) {
 		t.Errorf("Expected data-require-email=\"false\" when RequireEmailVerification is false")
 	}
-	if !strings.Contains(html, "تأكيد البريد (اختياري)") {
-		t.Errorf("Expected 'تأكيد البريد (اختياري)' when RequireEmailVerification is false")
+	// With verification off its UI is not rendered at all.
+	for _, id := range []string{`id="email-send-otp-btn"`, `id="email-otp-box"`, `id="verified-email-token"`, "تأكيد البريد"} {
+		if strings.Contains(html, id) {
+			t.Errorf("email verification UI %q rendered while RequireEmailVerification is false", id)
+		}
 	}
 	if !strings.Contains(html, `data-require-phone="false"`) {
 		t.Errorf("Expected data-require-phone=\"false\" when RequirePhoneVerification is false")
 	}
-	if !strings.Contains(html, "تأكيد Telegram (اختياري)") {
-		t.Errorf("Expected 'تأكيد Telegram (اختياري)' when RequirePhoneVerification is false")
+	for _, id := range []string{`id="tg-send-otp-btn"`, `id="tg-otp-box"`, `id="verified-phone-token"`, "تأكيد Telegram"} {
+		if strings.Contains(html, id) {
+			t.Errorf("phone verification UI %q rendered while RequirePhoneVerification is false", id)
+		}
 	}
 
 	// Test required verification rendering
@@ -151,6 +156,11 @@ func TestAuthRegisterPage_Render(t *testing.T) {
 	}
 	if !strings.Contains(htmlReq, "تأكيد Telegram مطلوب") {
 		t.Errorf("Expected 'تأكيد Telegram مطلوب' when RequirePhoneVerification is true")
+	}
+	for _, id := range []string{`id="email-send-otp-btn"`, `id="email-otp-box"`, `id="tg-send-otp-btn"`, `id="tg-otp-box"`} {
+		if !strings.Contains(htmlReq, id) {
+			t.Errorf("verification UI %q missing while verification is required", id)
+		}
 	}
 }
 

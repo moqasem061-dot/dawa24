@@ -95,8 +95,10 @@ func (r *Runner) Execute(ctx context.Context, run *smartorder.Run, cfg *smartord
 	r.emit(ctx, run, smartorder.StageInitialDone, len(lines)-len(reviews), len(lines),
 		i18n.TDefault("w4_mod.s_430_430"), "Initial matching completed")
 
-	// Stage 4 — AI enhancement, on exactly the lines the engine left as
-	// غير مطابق or مطلوب للمراجعة, and on nothing else.
+	// Stage 4 — AI enhancement: the lines the engine left as غير مطابق or
+	// مطلوب للمراجعة are resolved, and the lines it matched on a name (مطابق)
+	// are checked. Only identifier matches — barcode, SKU, the buyer's own
+	// confirmed mapping — are not sent; a model cannot improve on them.
 	//
 	// The results are NOT released to the buyer while this runs: the run stays
 	// in `processing` until the whole pipeline finishes, so what they finally
@@ -162,6 +164,11 @@ func (r *Runner) enhance(ctx context.Context, run *smartorder.Run, cfg *smartord
 	// the catalogue could plausibly settle at all; the rest keep the honest
 	// deterministic outcome and are never sent.
 	askable := matcher.Retrieve(reviews)
+	// And the lines it settled on a name, to be checked. Verify was written for
+	// this and never called, so a smart order was the one tool whose مطابق rows
+	// nothing ever looked at twice. The two sets are disjoint: Retrieve holds
+	// lines below the cutoff, Verify lines at or above it.
+	askable = append(askable, matcher.Verify(lines)...)
 
 	total := len(askable)
 	if total == 0 {
@@ -174,7 +181,7 @@ func (r *Runner) enhance(ctx context.Context, run *smartorder.Run, cfg *smartord
 	// buyer watching a still number through the slowest minute of the run.
 	enh.OnProgress = func(done int) {
 		r.emit(ctx, run, smartorder.StageAIEnhance, done, total,
-			i18n.TDefault("w4_mod.s_431_431"), "AI is improving uncertain matches")
+			i18n.TDefault("w4_mod.s_431_431"), "AI is reviewing all items and improving matches")
 	}
 	enh.Run(ctx, askable)
 

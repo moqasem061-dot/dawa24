@@ -158,13 +158,10 @@ func (s *Service) resolveSimilarMatches(
 		return stats
 	}
 
-	unresolved := 0
 	for _, p := range forAI {
 		if p.settled {
 			stats.Verified++
-			continue
 		}
-		unresolved++
 	}
 
 	// The cache answers first. An administrator re-uploading the same registry
@@ -173,12 +170,18 @@ func (s *Service) resolveSimilarMatches(
 	// answers to and filed in the very same table.
 	forAI = s.applyMatchMemory(ctx, index, prods, matches, forAI, &stats, session)
 
+	// capToAdjudicationCeiling has already counted every unresolved row as
+	// unmatched, asked or not; only the ones the AI (fresh or remembered)
+	// resolved come off. Adding the asked rows again here counted them twice.
 	if s.adjudicator == nil {
-		stats.Unmatched += unresolved - stats.AI
+		stats.Unmatched -= stats.AI
+		if stats.Unmatched < 0 {
+			stats.Unmatched = 0
+		}
 		return stats
 	}
 	s.adjudicateMatches(ctx, session, prods, matches, forAI, &stats, progress)
-	stats.Unmatched += unresolved - stats.AI
+	stats.Unmatched -= stats.AI
 	if stats.Unmatched < 0 {
 		stats.Unmatched = 0
 	}

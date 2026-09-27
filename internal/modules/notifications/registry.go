@@ -27,6 +27,7 @@ const (
 
 	// Promotions, Ads & Sponsorships
 	EventSpecialOfferStatus EventKey = "special_offer.status"
+	EventAdminSpecialOffer  EventKey = "admin.special_offer.submitted"
 	EventSponsorshipStatus  EventKey = "sponsorship.status"
 	EventAdStatus           EventKey = "ad.status"
 

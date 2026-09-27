@@ -163,6 +163,7 @@ func (h *UIHandler) VendorOrderDetailPage(w http.ResponseWriter, r *http.Request
 		Shipment:   shipment,
 		History:    history,
 		CanAssign:  canAssign,
+		CanEdit:    shipment.Status == commerce.StatusPending && actor.Can("vendor.order.update"),
 		Couriers:   couriers,
 		NoticeType: noticeType,
 		NoticeMsg:  noticeMsg,

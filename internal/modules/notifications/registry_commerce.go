@@ -115,6 +115,15 @@ func init() {
 		BodyEn:             "Special offer '{offer_title}' has been {status}. {reason}",
 	})
 	registerEvent(EventDefinition{
+		Key:                EventAdminSpecialOffer,
+		DefaultChannels:    []Channel{ChannelInApp},
+		RequiredPermission: "promo.offer.view",
+		TitleAr:            "عرض خاص جديد بانتظار المراجعة",
+		TitleEn:            "New special offer awaiting review",
+		BodyAr:             "أضاف المورد {org_name} العرض الخاص '{offer_title}' وهو بانتظار المراجعة والاعتماد.",
+		BodyEn:             "Supplier {org_name} added the special offer '{offer_title}', awaiting review.",
+	})
+	registerEvent(EventDefinition{
 		Key:                EventSponsorshipStatus,
 		DefaultChannels:    []Channel{ChannelInApp},
 		RequiredPermission: "vendor.offer_package.view",

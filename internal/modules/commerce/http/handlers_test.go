@@ -70,6 +70,10 @@ func (r stubRepo) UpdateOrderPaymentStatus(ctx context.Context, orderID int64, p
 	r.fail("UpdateOrderPaymentStatus")
 	return nil
 }
+func (stubRepo) UpdateVendorPendingShipment(context.Context, *commerce.Order, int64, []commerce.OrderLineEditItem, int64) (*commerce.Order, error) {
+	return nil, nil
+}
+
 func (r stubRepo) UpdateCustomerPendingOrder(ctx context.Context, order *commerce.Order, lines []commerce.OrderLineEditItem, changedByUserID int64) (*commerce.Order, error) {
 	r.fail("UpdateCustomerPendingOrder")
 	return nil, nil

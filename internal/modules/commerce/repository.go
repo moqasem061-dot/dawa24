@@ -27,6 +27,7 @@ type Repository interface {
 	UpdateOrderStatus(ctx context.Context, orderID int64, toStatus OrderStatus, history OrderStatusHistory) error
 	UpdateOrderPaymentStatus(ctx context.Context, orderID int64, paymentStatus PaymentStatus) error
 	UpdateCustomerPendingOrder(ctx context.Context, order *Order, lines []OrderLineEditItem, changedByUserID int64) (*Order, error)
+	UpdateVendorPendingShipment(ctx context.Context, order *Order, vendorOrgID int64, lines []OrderLineEditItem, changedByUserID int64) (*Order, error)
 	ListOrdersByCustomer(ctx context.Context, customerID int64, limit, offset int) ([]*Order, error)
 	ListOrdersByCustomerWithTotal(ctx context.Context, customerID int64, limit, offset int) ([]*Order, int, error)
 	CountOrders(ctx context.Context) (int, error)

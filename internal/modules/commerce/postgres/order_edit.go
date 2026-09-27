@@ -20,6 +20,38 @@ func (r *Repository) UpdateCustomerPendingOrder(
 	lines []commerce.OrderLineEditItem,
 	changedByUserID int64,
 ) (*commerce.Order, error) {
+	return r.editPendingOrder(ctx, order, lines, changedByUserID, 0)
+}
+
+// UpdateVendorPendingShipment lets a supplier change quantities or remove
+// lines of its own shipment before accepting it. Only lines of that supplier's
+// shipment may be touched, the shipment must still be pending, and it cannot
+// be emptied — a supplier that can supply nothing rejects the order instead.
+// Totals are recomputed exactly as for a buyer edit.
+func (r *Repository) UpdateVendorPendingShipment(
+	ctx context.Context,
+	order *commerce.Order,
+	vendorOrgID int64,
+	lines []commerce.OrderLineEditItem,
+	changedByUserID int64,
+) (*commerce.Order, error) {
+	if vendorOrgID <= 0 {
+		return nil, apperr.Forbidden("order.unauthorized", i18n.TDefault("vendor.orders.unauthorized_order_management"))
+	}
+	return r.editPendingOrder(ctx, order, lines, changedByUserID, vendorOrgID)
+}
+
+// editPendingOrder is the edit shared by buyers (vendorOrgID 0: the order must
+// be pending) and suppliers (their shipment must be pending, and only its
+// lines are in scope).
+func (r *Repository) editPendingOrder(
+	ctx context.Context,
+	order *commerce.Order,
+	lines []commerce.OrderLineEditItem,
+	changedByUserID int64,
+	vendorOrgID int64,
+) (*commerce.Order, error) {
+	isVendor := vendorOrgID > 0
 	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// 1. Lock the order row and verify status is still pending
 		var currentStatus string
@@ -37,7 +69,30 @@ func (r *Repository) UpdateCustomerPendingOrder(
 			return err
 		}
 
-		if commerce.OrderStatus(currentStatus) != commerce.StatusPending {
+		// The supplier's own shipment, locked so an accept cannot race the edit.
+		var vendorShipmentID int64
+		if isVendor {
+			var shipmentStatus string
+			err := tx.QueryRow(txCtx, `
+				SELECT id, status FROM commerce.order_shipments
+				WHERE order_id = $1 AND organization_id = $2
+				ORDER BY id ASC LIMIT 1 FOR UPDATE;
+			`, order.ID, vendorOrgID).Scan(&vendorShipmentID, &shipmentStatus)
+			if err != nil {
+				if database.IsNotFound(err) {
+					return apperr.Forbidden("order.unauthorized", i18n.TDefault("vendor.orders.unauthorized_order_management"))
+				}
+				return err
+			}
+			if commerce.OrderStatus(shipmentStatus) != commerce.StatusPending {
+				return apperr.Forbidden("order.locked", fmt.Sprintf(i18n.TDefault("w4_mod.s_151"), shipmentStatus))
+			}
+			switch commerce.OrderStatus(currentStatus) {
+			case commerce.StatusPending, commerce.StatusProcessing, commerce.StatusConfirmed, commerce.StatusOnHold:
+			default:
+				return apperr.Forbidden("order.locked", fmt.Sprintf(i18n.TDefault("w4_mod.s_151"), currentStatus))
+			}
+		} else if commerce.OrderStatus(currentStatus) != commerce.StatusPending {
 			return apperr.Forbidden("order.locked", fmt.Sprintf(i18n.TDefault("w4_mod.s_151"), currentStatus))
 		}
 
@@ -60,10 +115,26 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		if defaultOrgID == 0 && order.OrganizationID != nil {
 			defaultOrgID = *order.OrganizationID
 		}
+		if isVendor {
+			defaultShipmentID, defaultOrgID = vendorShipmentID, vendorOrgID
+		}
 
 		for _, l := range lines {
 			if !l.IsDeleted && l.ID <= 0 {
 				return apperr.Validation("order.line_not_editable", i18n.TDefault("customer.order.no_manual_lines"), nil)
+			}
+			if isVendor && l.ID > 0 {
+				var owned bool
+				if err := tx.QueryRow(txCtx, `
+					SELECT EXISTS (SELECT 1 FROM commerce.order_lines
+					WHERE id = $1 AND order_id = $2
+					  AND (shipment_id = $3 OR (shipment_id IS NULL AND organization_id = $4)));
+				`, l.ID, order.ID, vendorShipmentID, vendorOrgID).Scan(&owned); err != nil {
+					return fmt.Errorf("check line %d ownership: %w", l.ID, err)
+				}
+				if !owned {
+					return apperr.Forbidden("order.line_not_owned", i18n.TDefault("vendor.order.edit_line_not_owned"))
+				}
 			}
 		}
 
@@ -79,6 +150,18 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		})
 		if remainingCount == 0 {
 			return apperr.Validation("order.empty", i18n.TDefault("w4_mod.w4str_157_157"), nil)
+		}
+		if isVendor {
+			var shipmentLines int
+			if err := tx.QueryRow(txCtx, `
+				SELECT COUNT(*) FROM commerce.order_lines
+				WHERE order_id = $1 AND (shipment_id = $2 OR (shipment_id IS NULL AND organization_id = $3));
+			`, order.ID, vendorShipmentID, vendorOrgID).Scan(&shipmentLines); err != nil {
+				return fmt.Errorf("count shipment lines: %w", err)
+			}
+			if shipmentLines == 0 {
+				return apperr.Validation("order.shipment_empty", i18n.TDefault("vendor.order.edit_shipment_empty"), nil)
+			}
 		}
 
 		// 3b. The per-branch quota, re-measured against the edited quantities.
@@ -216,7 +299,13 @@ func (r *Repository) UpdateCustomerPendingOrder(
 		if changedByUserID > 0 {
 			userPtr = &changedByUserID
 		}
-		_ = database.SoftExec(txCtx, tx, historyQuery, order.ID, shipmentIDPtr, currentStatus, currentStatus, i18n.TDefault("w4_mod.s_361_361"), userPtr)
+		editNote, auditAction := i18n.TDefault("w4_mod.s_361_361"), "order.updated"
+		historyStatus := currentStatus
+		if isVendor {
+			editNote, auditAction = i18n.TDefault("vendor.order.edit_history_note"), "order.updated_by_vendor"
+			historyStatus = string(commerce.StatusPending)
+		}
+		_ = database.SoftExec(txCtx, tx, historyQuery, order.ID, shipmentIDPtr, historyStatus, historyStatus, editNote, userPtr)
 
 		// 6. Audit logs for customer and vendor(s)
 		orderIDStr := strconv.FormatInt(order.ID, 10)
@@ -224,7 +313,7 @@ func (r *Repository) UpdateCustomerPendingOrder(
 			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 				OrganizationID: order.OrganizationID,
 				ActorUserID:    changedByUserID,
-				Action:         "order.updated",
+				Action:         auditAction,
 				EntityType:     "order",
 				EntityID:       orderIDStr,
 				Before: map[string]any{
@@ -232,7 +321,7 @@ func (r *Repository) UpdateCustomerPendingOrder(
 				},
 				After: map[string]any{
 					"edited_lines": len(lines),
-					"notes":        i18n.TDefault("w4_mod.s_361_361"),
+					"notes":        editNote,
 				},
 			})
 		}
@@ -246,12 +335,12 @@ func (r *Repository) UpdateCustomerPendingOrder(
 					_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
 						OrganizationID: &vOrgID,
 						ActorUserID:    changedByUserID,
-						Action:         "order.updated",
+						Action:         auditAction,
 						EntityType:     "order",
 						EntityID:       orderIDStr,
 						After: map[string]any{
 							"edited_lines": len(lines),
-							"notes":        i18n.TDefault("w4_mod.s_361_361"),
+							"notes":        editNote,
 						},
 					})
 				}

@@ -53,7 +53,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.deposit_title"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 30, Col: 49}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 30, Col: 49}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -74,7 +74,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var3 templ.SafeURL
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(ternary(data.IsVendor, "/vendor/wallet/deposit", "/customer/wallet/deposit")))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 38, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 38, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -95,7 +95,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.deposit_info_alert"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 51, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 51, Col: 55}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -108,7 +108,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step1_platform"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 56, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 56, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -128,7 +128,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 					var templ_7745c5c3_Var6 string
 					templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(ppm.ID)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 67, Col: 32}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 67, Col: 32}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
 					if templ_7745c5c3_Err != nil {
@@ -142,7 +142,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 						var templ_7745c5c3_Var7 string
 						templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(ppm.Name.Get(i18n.EN))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 69, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 69, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 						if templ_7745c5c3_Err != nil {
@@ -152,7 +152,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 						var templ_7745c5c3_Var8 string
 						templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(ppm.Name.Get(i18n.AR))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 71, Col: 35}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 71, Col: 35}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 						if templ_7745c5c3_Err != nil {
@@ -173,7 +173,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var9 string
 		templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.account_holder"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 93, Col: 91}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 93, Col: 91}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 		if templ_7745c5c3_Err != nil {
@@ -186,7 +186,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var10 string
 		templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.bank_name"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 99, Col: 86}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 99, Col: 86}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 		if templ_7745c5c3_Err != nil {
@@ -199,7 +199,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var11 string
 		templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.account_number"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 106, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 106, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 		if templ_7745c5c3_Err != nil {
@@ -220,7 +220,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var12 string
 		templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.iban"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 123, Col: 82}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 123, Col: 82}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 		if templ_7745c5c3_Err != nil {
@@ -241,7 +241,7 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		var templ_7745c5c3_Var13 string
 		templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.instapay_label"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 140, Col: 92}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 140, Col: 92}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 		if templ_7745c5c3_Err != nil {
@@ -255,20 +255,33 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.phone_number\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template><template x-if=\"selectedPlatform.phone_number\"><div class=\"p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center\"><div><span class=\"text-2xs text-muted d-block\" x-show=\"selectedPlatform.provider_type === 'instapay'\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var14 string
-		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.wallet_phone"))
+		templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.instapay_phone"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 157, Col: 90}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 157, Col: 147}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var14))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.phone_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"$copy(selectedPlatform.phone_number)\" title=\"Copy\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, ":</span> <span class=\"text-2xs text-muted d-block\" x-show=\"selectedPlatform.provider_type !== 'instapay'\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var15 string
+		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.wallet_phone"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 158, Col: 145}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, ":</span> <span class=\"font-mono font-bold text-primary select-all text-xs\" dir=\"ltr\" x-text=\"selectedPlatform.phone_number\"></span></div><button type=\"button\" class=\"btn btn-ghost btn-xs text-brand font-bold py-1 px-2\" @click=\"$copy(selectedPlatform.phone_number)\" title=\"Copy\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -276,111 +289,111 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template></div><template x-if=\"selectedPlatform.description\"><div class=\"text-2xs text-secondary mt-2 pt-1.5 border-t border-subtle\" x-text=\"selectedPlatform.description\"></div></template></div></template><!-- Step 2: Sender Payment Details --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><div class=\"flex-between items-center mb-1\"><label class=\"form-label text-2xs font-bold m-0 text-primary\">")
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		var templ_7745c5c3_Var15 string
-		templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step2_sender"))
-		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 182, Col: 107}
-		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"[isDepositModalOpen = false, isAddPaymentModalOpen = true, paymentEditID = 0]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span x-text=\"$t('common.copy', 'نسخ')\">نسخ</span></button></div></template></div><template x-if=\"selectedPlatform.description\"><div class=\"text-2xs text-secondary mt-2 pt-1.5 border-t border-subtle\" x-text=\"selectedPlatform.description\"></div></template></div></template><!-- Step 2: Sender Payment Details --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><div class=\"flex-between items-center mb-1\"><label class=\"form-label text-2xs font-bold m-0 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var16 string
-		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.add_method_btn"))
+		templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step2_sender"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 188, Col: 48}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 183, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</button></div><select id=\"deposit-sender-select\" x-ref=\"senderSelect\" name=\"sender_payment_method_id\" x-model=\"selectedSenderPMID\" @change=\"onSenderMethodChange()\" class=\"form-select form-select-sm w-full\"><option value=\"manual\">-- Manual / Other --</option></select></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</label> <button type=\"button\" class=\"btn-link text-2xs font-bold text-brand\" @click=\"[isDepositModalOpen = false, isAddPaymentModalOpen = true, paymentEditID = 0]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var17 string
-		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step2_account"))
+		templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.add_method_btn"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 203, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 189, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</label> <input type=\"text\" x-model=\"senderAccount\" required class=\"form-input form-input-sm w-full font-mono\" placeholder=\"010... / EG...\"></div></div><!-- Step 3: Transfer Amount & Reference --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "</button></div><select id=\"deposit-sender-select\" x-ref=\"senderSelect\" name=\"sender_payment_method_id\" x-model=\"selectedSenderPMID\" @change=\"onSenderMethodChange()\" class=\"form-select form-select-sm w-full\"><option value=\"manual\">-- Manual / Other --</option></select></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var18 string
-		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step3_amount"))
+		templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step2_account"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 217, Col: 107}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 204, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</label> <input type=\"number\" name=\"amount\" step=\"0.01\" min=\"1\" required class=\"form-input form-input-sm font-bold w-full tabular-nums\" placeholder=\"5000\"></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "</label> <input type=\"text\" x-model=\"senderAccount\" required class=\"form-input form-input-sm w-full font-mono\" placeholder=\"010... / EG...\"></div></div><!-- Step 3: Transfer Amount & Reference --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-2.5\"><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var19 string
-		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step3_ref"))
+		templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step3_amount"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 229, Col: 104}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 218, Col: 107}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</label> <input type=\"text\" name=\"reference_number\" required class=\"form-input form-input-sm font-mono w-full\" placeholder=\"TXN-984321\"></div></div><!-- Step 4: Receipt & Notes --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-1\"><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</label> <input type=\"number\" name=\"amount\" step=\"0.01\" min=\"1\" required class=\"form-input form-input-sm font-bold w-full tabular-nums\" placeholder=\"5000\"></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var20 string
-		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step4_receipt"))
+		templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step3_ref"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 243, Col: 108}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 230, Col: 104}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</label> <input type=\"file\" name=\"receipt\" accept=\"image/*,application/pdf\" class=\"form-input form-input-sm w-full text-2xs\"></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "</label> <input type=\"text\" name=\"reference_number\" required class=\"form-input form-input-sm font-mono w-full\" placeholder=\"TXN-984321\"></div></div><!-- Step 4: Receipt & Notes --><div class=\"grid grid-cols-1 sm:grid-cols-2 gap-2.5 mb-1\"><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var21 string
-		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step4_notes"))
+		templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step4_receipt"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 252, Col: 106}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 244, Col: 108}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</label> <input type=\"text\" name=\"notes\" class=\"form-input form-input-sm w-full\" placeholder=\"...\"></div></div></div><div class=\"modal-footer deposit-modal-footer flex-between items-center py-2.5 px-4 bg-surface-raised border-t\"><button type=\"button\" class=\"btn btn-secondary btn-sm font-bold\" @click=\"isDepositModalOpen = false\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</label> <input type=\"file\" name=\"receipt\" accept=\"image/*,application/pdf\" class=\"form-input form-input-sm w-full text-2xs\"></div><div><label class=\"form-label text-2xs font-bold mb-1 text-primary\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var22 string
-		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.cancel"))
+		templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.step4_notes"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 265, Col: 37}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 253, Col: 106}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-bold gap-1.5 shadow-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</label> <input type=\"text\" name=\"notes\" class=\"form-input form-input-sm w-full\" placeholder=\"...\"></div></div></div><div class=\"modal-footer deposit-modal-footer flex-between items-center py-2.5 px-4 bg-surface-raised border-t\"><button type=\"button\" class=\"btn btn-secondary btn-sm font-bold\" @click=\"isDepositModalOpen = false\">")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var23 string
+		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.cancel"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 266, Col: 37}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "</button> <button type=\"submit\" class=\"btn btn-primary btn-sm font-bold gap-1.5 shadow-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -388,20 +401,20 @@ func WalletModalDeposit(data WalletViewData, langOpt ...string) templ.Component 
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 31, "<span>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "<span>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		var templ_7745c5c3_Var23 string
-		templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.confirm_deposit_btn"))
+		var templ_7745c5c3_Var24 string
+		templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "wallet.confirm_deposit_btn"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `wallet_modal_deposit.templ`, Line: 269, Col: 56}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/wallet_modal_deposit.templ`, Line: 270, Col: 56}
 		}
-		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 32, "</span></button></div></form></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 33, "</span></button></div></form></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

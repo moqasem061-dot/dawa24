@@ -210,6 +210,18 @@ func loadFrontendUIKeysA(e *engine) {
 	addKey(e, "customer.order.negotiate_success", "customer", "تم إرسال طلب التفاوض على السعر إلى المورد بنجاح وهو الآن قيد المراجعة.", "Price negotiation request sent to supplier and is now under review.", "Negotiation submitted")
 	addKey(e, "customer.order.edit_notification_title", "commerce", "تعديل على الطلب #%s", "Edit to order #%s", "Notification title for order edit")
 	addKey(e, "customer.order.edit_notification_body", "commerce", "قامت صيدلية %s بتعديل كميات وأصناف الطلب #%s بقيمة جديدة %s ج.م.", "Pharmacy %s edited quantities and items of order #%s with new total %s EGP", "Notification body for order edit")
+	addKey(e, "vendor.order.edit_success", "vendor", "تم حفظ تعديلات أصناف الطلب وإعادة احتساب الإجماليات بنجاح.", "Order items updated and totals recalculated successfully.", "Vendor order edit success")
+	addKey(e, "vendor.order.edit_error", "vendor", "تعذر تعديل الطلب: %s", "Could not edit the order: %s", "Vendor order edit error")
+	addKey(e, "vendor.order.edit_line_not_owned", "vendor", "لا يمكنك تعديل صنف لا يتبع شحنتك في هذا الطلب.", "You can only edit items of your own shipment in this order.", "Vendor order edit ownership error")
+	addKey(e, "vendor.order.edit_shipment_empty", "vendor", "لا يمكن حذف جميع الأصناف. إذا تعذر توريد الطلب بالكامل، استخدم رفض الطلب بدلاً من ذلك.", "You cannot remove every item. If you cannot supply the order at all, reject it instead.", "Vendor order edit empty shipment")
+	addKey(e, "vendor.order.edit_history_note", "vendor", "قام المورد بتعديل كميات وأصناف الطلب قبل قبوله وتمت إعادة احتساب الإجماليات", "The supplier edited item quantities before accepting and totals were recalculated", "Vendor order edit history note")
+	addKey(e, "vendor.order.edit_notification_title", "commerce", "قام المورد بتعديل طلبك #%s", "Supplier edited your order #%s", "Vendor order edit notification title")
+	addKey(e, "vendor.order.edit_notification_body", "commerce", "قام المورد %s بتعديل كميات أو أصناف الطلب #%s قبل قبوله. الإجمالي الجديد %s ج.م.", "Supplier %s edited quantities or items of order #%s before accepting it. New total %s EGP.", "Vendor order edit notification body")
+	addKey(e, "vendor.order.edit_title", "vendor", "تعديل أصناف وكميات الطلب قبل القبول", "Edit items and quantities before accepting", "Vendor order edit panel title")
+	addKey(e, "vendor.order.edit_open_btn", "vendor", "تعديل الأصناف والكميات", "Edit items & quantities", "Vendor order edit button")
+	addKey(e, "vendor.order.edit_notice", "vendor", "يمكنك تعديل الكميات أو حذف صنف قبل قبول الطلب. سيتم إشعار الصيدلية بالتعديل.", "You can change quantities or remove an item before accepting. The pharmacy will be notified.", "Vendor order edit notice")
+	addKey(e, "vendor.order.edit_save_btn", "vendor", "حفظ التعديلات", "Save changes", "Vendor order edit save")
+	addKey(e, "vendor.order.edit_items_net", "vendor", "صافي الأصناف:", "Items net:", "Vendor order edit items net label")
 
 	// --- Days of Week & Coverage ---
 	addKey(e, "day.sunday", "common", "الأحد", "Sunday", "Day of week")

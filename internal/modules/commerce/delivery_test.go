@@ -52,6 +52,10 @@ func (m *deliveryMockRepo) UpdateOrderStatus(_ context.Context, _ int64, _ comme
 func (m *deliveryMockRepo) UpdateOrderPaymentStatus(_ context.Context, _ int64, _ commerce.PaymentStatus) error {
 	return nil
 }
+func (*deliveryMockRepo) UpdateVendorPendingShipment(context.Context, *commerce.Order, int64, []commerce.OrderLineEditItem, int64) (*commerce.Order, error) {
+	return nil, nil
+}
+
 func (m *deliveryMockRepo) UpdateCustomerPendingOrder(_ context.Context, _ *commerce.Order, _ []commerce.OrderLineEditItem, _ int64) (*commerce.Order, error) {
 	return nil, nil
 }

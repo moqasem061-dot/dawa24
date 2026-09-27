@@ -384,14 +384,12 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 							<div class="form-group mb-0">
 								<div class="d-flex items-center justify-between mb-1">
 									<label class="form-label font-semibold text-xs m-0" for="reg-email">البريد الإلكتروني الرسمي *</label>
-									<span class="text-2xs text-secondary d-flex items-center gap-1">
-										@components.IconMail("icon-2xs text-brand")
-										if form.RequireEmailVerification {
+									if form.RequireEmailVerification {
+										<span class="text-2xs text-secondary d-flex items-center gap-1">
+											@components.IconMail("icon-2xs text-brand")
 											<span>تأكيد البريد مطلوب</span>
-										} else {
-											<span>تأكيد البريد (اختياري)</span>
-										}
-									</span>
+										</span>
+									}
 								</div>
 								<div class="input-group">
 									<input
@@ -405,61 +403,63 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 											readonly="readonly"
 										}
 									/>
-									<button
-										type="button"
-										id="email-send-otp-btn"
-										class={ "btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3", templ.KV("s-hidden-init", form.EmailVerified) }
+									if form.RequireEmailVerification {
+										<button
+											type="button"
+											id="email-send-otp-btn"
+											class={ "btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3", templ.KV("s-hidden-init", form.EmailVerified) }
+										>
+											@components.IconMail("icon-xs text-brand")
+											<span id="email-send-btn-text">{ i18n.T(lang, "auth.email.send_otp") }</span>
+										</button>
+									}
+								</div>
+								if form.RequireEmailVerification {
+									<input type="hidden" id="verified-email-token" name="verified_email_token" value={ form.VerifiedEmailToken } />
+
+									<!-- Verified Email Badge -->
+									<div
+										id="email-verified-badge"
+										class={ "badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5", templ.KV("s-hidden-init", !form.EmailVerified) }
 									>
-										@components.IconMail("icon-xs text-brand")
-										<span id="email-send-btn-text">{ i18n.T(lang, "auth.email.send_otp") }</span>
-									</button>
-								</div>
-								<input type="hidden" id="verified-email-token" name="verified_email_token" value={ form.VerifiedEmailToken } />
-
-								<!-- Verified Email Badge -->
-								<div
-									id="email-verified-badge"
-									class={ "badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5", templ.KV("s-hidden-init", !form.EmailVerified) }
-								>
-									@components.IconCheck("icon-xs")
-									<span>{ i18n.T(lang, "auth.email.verified") }</span>
-									<button type="button" id="email-change-btn" class="btn-link text-2xs underline text-secondary mr-2 s-btn-bare">
-										{ i18n.T(lang, "auth.email.change_email") }
-									</button>
-								</div>
-
-								<!-- Email OTP Drawer -->
-								<div id="email-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle s-hidden-init">
-									<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
-										<span id="email-otp-hint" class="font-medium">{ i18n.T(lang, "auth.email.enter_code") }</span>
-										<span id="email-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
-									</div>
-									<div class="d-flex items-center gap-2">
-										<input type="text" id="email-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input" placeholder="••••••" />
-										<button type="button" id="email-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
-											{ i18n.T(lang, "auth.email.verify_code") }
-										</button>
-										<button type="button" id="email-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted s-hidden-init">
-											{ i18n.T(lang, "auth.email.resend_otp") }
+										@components.IconCheck("icon-xs")
+										<span>{ i18n.T(lang, "auth.email.verified") }</span>
+										<button type="button" id="email-change-btn" class="btn-link text-2xs underline text-secondary mr-2 s-btn-bare">
+											{ i18n.T(lang, "auth.email.change_email") }
 										</button>
 									</div>
-									<div id="email-otp-feedback" class="text-2xs font-medium mt-1.5 s-hidden-init"></div>
-								</div>
+
+									<!-- Email OTP Drawer -->
+									<div id="email-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle s-hidden-init">
+										<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
+											<span id="email-otp-hint" class="font-medium">{ i18n.T(lang, "auth.email.enter_code") }</span>
+											<span id="email-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+										</div>
+										<div class="d-flex items-center gap-2">
+											<input type="text" id="email-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input" placeholder="••••••" />
+											<button type="button" id="email-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
+												{ i18n.T(lang, "auth.email.verify_code") }
+											</button>
+											<button type="button" id="email-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted s-hidden-init">
+												{ i18n.T(lang, "auth.email.resend_otp") }
+											</button>
+										</div>
+										<div id="email-otp-feedback" class="text-2xs font-medium mt-1.5 s-hidden-init"></div>
+									</div>
+								}
 							</div>
 							<div class="form-group mb-0">
 								<div class="d-flex items-center justify-between mb-1">
 									<label class="form-label font-semibold text-xs m-0" for="reg-phone">رقم الهاتف / الواتساب *</label>
-									<span class="text-2xs text-secondary d-flex items-center gap-1">
-										<svg class="icon-2xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<path d="m22 2-7 20-4-9-9-4Z"></path>
-											<path d="M22 2 11 13"></path>
-										</svg>
-										if form.RequirePhoneVerification {
+									if form.RequirePhoneVerification {
+										<span class="text-2xs text-secondary d-flex items-center gap-1">
+											<svg class="icon-2xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path d="m22 2-7 20-4-9-9-4Z"></path>
+												<path d="M22 2 11 13"></path>
+											</svg>
 											<span>تأكيد Telegram مطلوب</span>
-										} else {
-											<span>تأكيد Telegram (اختياري)</span>
-										}
-									</span>
+										</span>
+									}
 								</div>
 								<div class="input-group">
 									<input
@@ -473,49 +473,53 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 											readonly="readonly"
 										}
 									/>
-									<button
-										type="button"
-										id="tg-send-otp-btn"
-										class={ "btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3", templ.KV("s-hidden-init", form.PhoneVerified) }
+									if form.RequirePhoneVerification {
+										<button
+											type="button"
+											id="tg-send-otp-btn"
+											class={ "btn btn-secondary text-xs font-semibold d-inline-flex items-center gap-1.5 px-3", templ.KV("s-hidden-init", form.PhoneVerified) }
+										>
+											<svg class="icon-xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+												<path d="m22 2-7 20-4-9-9-4Z"></path>
+												<path d="M22 2 11 13"></path>
+											</svg>
+											<span id="tg-send-btn-text">{ i18n.T(lang, "auth.telegram.send_otp") }</span>
+										</button>
+									}
+								</div>
+								if form.RequirePhoneVerification {
+									<input type="hidden" id="verified-phone-token" name="verified_phone_token" value={ form.VerifiedPhoneToken } />
+
+									<!-- Verified Phone Badge -->
+									<div
+										id="tg-verified-badge"
+										class={ "badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5", templ.KV("s-hidden-init", !form.PhoneVerified) }
 									>
-										<svg class="icon-xs text-teal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-											<path d="m22 2-7 20-4-9-9-4Z"></path>
-											<path d="M22 2 11 13"></path>
-										</svg>
-										<span id="tg-send-btn-text">{ i18n.T(lang, "auth.telegram.send_otp") }</span>
-									</button>
-								</div>
-								<input type="hidden" id="verified-phone-token" name="verified_phone_token" value={ form.VerifiedPhoneToken } />
-
-								<!-- Verified Phone Badge -->
-								<div
-									id="tg-verified-badge"
-									class={ "badge badge-emerald d-inline-flex items-center gap-1.5 py-1 px-2.5 text-xs font-semibold mt-1.5", templ.KV("s-hidden-init", !form.PhoneVerified) }
-								>
-									@components.IconCheck("icon-xs")
-									<span>{ i18n.T(lang, "auth.telegram.verified") }</span>
-									<button type="button" id="tg-change-phone-btn" class="btn-link text-2xs underline text-secondary mr-2 s-btn-bare">
-										{ i18n.T(lang, "auth.telegram.change_phone") }
-									</button>
-								</div>
-
-								<!-- Telegram OTP Drawer -->
-								<div id="tg-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle s-hidden-init">
-									<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
-										<span id="tg-otp-hint" class="font-medium">{ i18n.T(lang, "auth.telegram.enter_code") }</span>
-										<span id="tg-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
-									</div>
-									<div class="d-flex items-center gap-2">
-										<input type="text" id="tg-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input" placeholder="••••••" />
-										<button type="button" id="tg-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
-											{ i18n.T(lang, "auth.telegram.verify_code") }
-										</button>
-										<button type="button" id="tg-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted s-hidden-init">
-											{ i18n.T(lang, "auth.telegram.resend_otp") }
+										@components.IconCheck("icon-xs")
+										<span>{ i18n.T(lang, "auth.telegram.verified") }</span>
+										<button type="button" id="tg-change-phone-btn" class="btn-link text-2xs underline text-secondary mr-2 s-btn-bare">
+											{ i18n.T(lang, "auth.telegram.change_phone") }
 										</button>
 									</div>
-									<div id="tg-otp-feedback" class="text-2xs font-medium mt-1.5 s-hidden-init"></div>
-								</div>
+
+									<!-- Telegram OTP Drawer -->
+									<div id="tg-otp-box" class="tg-otp-card mt-2 p-2.5 rounded-lg border bg-surface-subtle s-hidden-init">
+										<div class="d-flex items-center justify-between mb-1.5 text-2xs text-secondary">
+											<span id="tg-otp-hint" class="font-medium">{ i18n.T(lang, "auth.telegram.enter_code") }</span>
+											<span id="tg-cooldown-timer" class="font-mono text-muted tabular-nums"></span>
+										</div>
+										<div class="d-flex items-center gap-2">
+											<input type="text" id="tg-otp-code" maxlength="6" inputmode="numeric" autocomplete="one-time-code" class="form-input text-center font-mono font-bold tracking-widest text-base tabular-nums py-1.5 s-otp-input" placeholder="••••••" />
+											<button type="button" id="tg-verify-btn" class="btn btn-primary btn-sm font-semibold px-3">
+												{ i18n.T(lang, "auth.telegram.verify_code") }
+											</button>
+											<button type="button" id="tg-resend-btn" class="btn btn-ghost btn-sm text-2xs text-muted s-hidden-init">
+												{ i18n.T(lang, "auth.telegram.resend_otp") }
+											</button>
+										</div>
+										<div id="tg-otp-feedback" class="text-2xs font-medium mt-1.5 s-hidden-init"></div>
+									</div>
+								}
 							</div>
 						</div>
 

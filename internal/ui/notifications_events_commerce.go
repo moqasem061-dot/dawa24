@@ -262,6 +262,15 @@ func (h *UIHandler) notifySpecialOfferStatus(ctx context.Context, vendorOrgID in
 	h.dispatchOrgEvent(ctx, notifications.EventSpecialOfferStatus, vendorOrgID, vars)
 }
 
+// notifyAdminsSpecialOfferSubmitted alerts platform staff that a supplier
+// added a special offer that needs moderation.
+func (h *UIHandler) notifyAdminsSpecialOfferSubmitted(ctx context.Context, vendorOrgID int64, offerTitle string) {
+	h.dispatchAdminEvent(ctx, notifications.EventAdminSpecialOffer, map[string]string{
+		"org_name":    h.resolveOrgName(ctx, vendorOrgID),
+		"offer_title": offerTitle,
+	})
+}
+
 // notifySponsorshipStatus dispatches notification when a sponsorship package request is approved or rejected.
 func (h *UIHandler) notifySponsorshipStatus(ctx context.Context, vendorOrgID int64, pkgTitle string, approved bool, reason string) {
 	if vendorOrgID <= 0 {

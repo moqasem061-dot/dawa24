@@ -207,9 +207,18 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 		})
 	}
 
-	if n := h.enhanceSaving(database.AsSystem(ctx), useAI, matchEngine, stagedItems); n > 0 {
-		matchedCount += n
-		unlinkedCount -= n
+	// Recount from the rows rather than adjusting by the number changed: the
+	// AI stage also checks linked rows, and a disputed one is UNLINKED while a
+	// confirmed one changes label but not state — neither is a new match.
+	if h.enhanceSaving(database.AsSystem(ctx), useAI, matchEngine, stagedItems) > 0 {
+		matchedCount, unlinkedCount = 0, 0
+		for _, it := range stagedItems {
+			if it.ProductID != nil {
+				matchedCount++
+			} else {
+				unlinkedCount++
+			}
+		}
 	}
 
 	globalSavingImportSessionStore.CompleteProcessing(

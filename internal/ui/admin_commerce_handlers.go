@@ -213,7 +213,7 @@ func (h *UIHandler) AdminOfferApproveSubmit(w http.ResponseWriter, r *http.Reque
 
 	actor, _ := authctx.From(ctx)
 	if h.promoSvc != nil {
-		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(database.AsSystem(ctx), id)
 		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "approved", i18n.T(lang, "admin.commerce.approved_by_admin"), actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))
@@ -251,7 +251,7 @@ func (h *UIHandler) AdminOfferRejectSubmit(w http.ResponseWriter, r *http.Reques
 	}
 
 	if h.promoSvc != nil {
-		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(database.AsSystem(ctx), id)
 		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "rejected", notes, actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))
@@ -289,7 +289,7 @@ func (h *UIHandler) AdminOfferRequestChangesSubmit(w http.ResponseWriter, r *htt
 	}
 
 	if h.promoSvc != nil {
-		off, loadErr := h.promoSvc.GetSpecialOffer(ctx, id)
+		off, loadErr := h.promoSvc.GetSpecialOffer(database.AsSystem(ctx), id)
 		h.logLoadErr(ctx, "promoSvc.GetSpecialOffer", loadErr)
 		if err := h.promoSvc.UpdateSpecialOfferAdminStatus(ctx, id, "changes_requested", notes, actor.UserID); err != nil {
 			h.redirectWithNotice(w, r, "/admin/offers", "error", h.safeMessage(err, lang))

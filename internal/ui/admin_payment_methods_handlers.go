@@ -65,6 +65,7 @@ func (h *UIHandler) AdminPlatformPaymentMethodSubmit(w http.ResponseWriter, r *h
 		IsCheckoutEnabled: r.PostFormValue("is_checkout_enabled") == "1" || r.PostFormValue("is_checkout_enabled") == "true",
 		DisplayOrder:      displayOrder,
 	}
+	pm.ScopeFieldsToProvider()
 
 	if h.billSvc != nil {
 		if err := h.billSvc.SavePlatformPaymentMethod(ctx, pm); err != nil {

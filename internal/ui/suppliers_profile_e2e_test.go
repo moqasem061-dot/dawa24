@@ -94,6 +94,10 @@ func (m *mockCommerceRepoForSupplierCartTest) UpdateOrderStatus(ctx context.Cont
 func (m *mockCommerceRepoForSupplierCartTest) UpdateOrderPaymentStatus(ctx context.Context, id int64, paymentStatus commerce.PaymentStatus) error {
 	return nil
 }
+func (*mockCommerceRepoForSupplierCartTest) UpdateVendorPendingShipment(context.Context, *commerce.Order, int64, []commerce.OrderLineEditItem, int64) (*commerce.Order, error) {
+	return nil, nil
+}
+
 func (m *mockCommerceRepoForSupplierCartTest) UpdateCustomerPendingOrder(ctx context.Context, order *commerce.Order, lines []commerce.OrderLineEditItem, changedByUserID int64) (*commerce.Order, error) {
 	return nil, nil
 }

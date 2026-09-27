@@ -187,6 +187,9 @@ func platformMethodsJSON(ppms []*billing.PlatformPaymentMethod) string {
 		if p == nil || !p.IsActive || !p.IsDepositEnabled {
 			continue
 		}
+		scoped := *p
+		scoped.ScopeFieldsToProvider()
+		p = &scoped
 		list = append(list, platformMethodClientItem{
 			ID:            p.ID,
 			Name:          p.Name.Get("ar"),

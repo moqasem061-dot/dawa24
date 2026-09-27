@@ -66,3 +66,22 @@ func TestOrderEditRefusesManuallyAddedLines(t *testing.T) {
 		t.Error("a line with no id is not refused with a reason")
 	}
 }
+
+// A supplier edit is confined to its own pending shipment. Every line id is
+// checked against that shipment before anything is written, the shipment row
+// is locked so an accept cannot race the edit, and the shipment cannot be
+// emptied — a supplier that can supply nothing rejects the order instead.
+func TestVendorOrderEditIsScopedToItsOwnPendingShipment(t *testing.T) {
+	src := orderEditSource(t)
+
+	for _, want := range []string{
+		"WHERE order_id = $1 AND organization_id = $2\n\t\t\t\tORDER BY id ASC LIMIT 1 FOR UPDATE;",
+		"commerce.OrderStatus(shipmentStatus) != commerce.StatusPending",
+		`apperr.Forbidden("order.line_not_owned"`,
+		`apperr.Validation("order.shipment_empty"`,
+	} {
+		if !strings.Contains(src, want) {
+			t.Errorf("vendor edit guard missing: %q", want)
+		}
+	}
+}

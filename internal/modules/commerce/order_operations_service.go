@@ -39,6 +39,42 @@ func (s *Service) UpdateCustomerPendingOrder(ctx context.Context, actor authctx.
 	return s.repo.UpdateCustomerPendingOrder(ctx, order, input.Lines, actor.UserID)
 }
 
+// UpdateVendorPendingShipment lets a supplier edit quantities or remove lines
+// of its own shipment strictly before accepting it. The repository re-checks
+// ownership and the pending state under a row lock.
+func (s *Service) UpdateVendorPendingShipment(ctx context.Context, actor authctx.Actor, input UpdateCustomerOrderInput) (*Order, error) {
+	if input.OrderID <= 0 {
+		return nil, apperr.Validation("order.invalid_id", i18n.TDefault("w4_mod.s_356_356"), nil)
+	}
+	if actor.OrganizationID <= 0 {
+		return nil, apperr.Forbidden("order.unauthorized", i18n.TDefault("vendor.orders.unauthorized_order_management"))
+	}
+
+	order, err := s.repo.GetOrderByID(ctx, input.OrderID)
+	if err != nil {
+		return nil, err
+	}
+	if order == nil {
+		return nil, apperr.NotFound("order")
+	}
+
+	var shipment *OrderShipment
+	for _, sh := range order.Shipments {
+		if sh != nil && sh.OrganizationID == actor.OrganizationID {
+			shipment = sh
+			break
+		}
+	}
+	if shipment == nil {
+		return nil, apperr.Forbidden("order.unauthorized", i18n.TDefault("vendor.orders.unauthorized_order_management"))
+	}
+	if shipment.Status != StatusPending {
+		return nil, apperr.Forbidden("order.locked", i18n.TDefault("w4_mod.w4str_144_144")+string(shipment.Status)+")")
+	}
+
+	return s.repo.UpdateVendorPendingShipment(ctx, order, actor.OrganizationID, input.Lines, actor.UserID)
+}
+
 // CountOrders returns the platform-wide order total, for admin dashboards.
 func (s *Service) CountOrders(ctx context.Context) (int, error) {
 	return s.repo.CountOrders(ctx)

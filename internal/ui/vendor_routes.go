@@ -262,6 +262,7 @@ func (h *UIHandler) registerVendorCommerceRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("vendor.order.update"))
 		g.Post("/vendor/orders/{id}/status", h.VendorOrderStatusSubmit)
+		g.Post("/vendor/orders/{id}/edit", h.VendorOrderEditSubmit)
 	})
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("vendor.order.negotiate"))

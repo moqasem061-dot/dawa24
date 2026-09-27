@@ -154,7 +154,8 @@ templ WalletModalDeposit(data WalletViewData, langOpt ...string) {
 								<template x-if="selectedPlatform.phone_number">
 									<div class="p-2 rounded-lg bg-surface-raised border border-subtle flex-between items-center">
 										<div>
-											<span class="text-2xs text-muted d-block">{ i18n.T(lang, "wallet.wallet_phone") }:</span>
+											<span class="text-2xs text-muted d-block" x-show="selectedPlatform.provider_type === 'instapay'">{ i18n.T(lang, "wallet.instapay_phone") }:</span>
+											<span class="text-2xs text-muted d-block" x-show="selectedPlatform.provider_type !== 'instapay'">{ i18n.T(lang, "wallet.wallet_phone") }:</span>
 											<span class="font-mono font-bold text-primary select-all text-xs" dir="ltr" x-text="selectedPlatform.phone_number"></span>
 										</div>
 										<button

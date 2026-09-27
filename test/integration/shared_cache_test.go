@@ -117,8 +117,14 @@ func TestSmartOrderAndVendorShareTheEnhancerContract(t *testing.T) {
 	if matchflow.For(matchflow.ProfileOrder).MinApplyConfidence <= 0 {
 		t.Error("the order profile has no apply floor")
 	}
-	if matchflow.For(matchflow.ProfileVendor).MinPlausible <= 0 {
-		t.Error("the vendor profile has no plausibility floor")
+	// Every row with a candidate is asked (2026-09-27): no plausibility floor
+	// drops the unmatched and needs-review rows. The apply floor is what keeps
+	// a weak row from being matched wrongly.
+	if matchflow.For(matchflow.ProfileVendor).MinPlausible != 0 {
+		t.Error("the vendor profile drops weak rows before the model")
+	}
+	if matchflow.For(matchflow.ProfileVendor).MinApplyConfidence <= 0 {
+		t.Error("the vendor profile has no apply floor")
 	}
 }
 

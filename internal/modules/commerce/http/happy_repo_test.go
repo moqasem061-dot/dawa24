@@ -152,6 +152,10 @@ func (happyRepo) RejectNegotiation(ctx context.Context, orderID int64, reason st
 func (happyRepo) ListVendorNegotiationOrdersWithTotal(ctx context.Context, vendorOrgID int64, status string, limit, offset int) ([]*commerce.Order, int, error) {
 	return nil, 0, nil
 }
+func (happyRepo) UpdateVendorPendingShipment(context.Context, *commerce.Order, int64, []commerce.OrderLineEditItem, int64) (*commerce.Order, error) {
+	return nil, nil
+}
+
 func (happyRepo) UpdateCustomerPendingOrder(ctx context.Context, order *commerce.Order, lines []commerce.OrderLineEditItem, changedByUserID int64) (*commerce.Order, error) {
 	return order, nil
 }

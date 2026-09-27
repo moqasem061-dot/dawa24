@@ -211,7 +211,7 @@ func loadPharmacySmartOrderKeys(e *engine) {
 	addKey(e, "smart_order.progress_page_title", "smart_order", "جارٍ المطابقة", "Matching in Progress", "Page title")
 	addKey(e, "smart_order.progress_title", "smart_order", "جارٍ تجهيز الطلب", "Preparing Order", "Title")
 	addKey(e, "smart_order.progress_failed", "smart_order", "تعذّر إكمال المطابقة", "Failed to Complete Matching", "Alert")
-	addKey(e, "smart_order.progress_ai_note", "smart_order", "اكتملت المطابقة المبدئية، ويجري الآن تحسين الأصناف غير المطابقة أو التي تحتاج مراجعة. ستظهر النتائج النهائية بعد انتهاء هذه المرحلة.", "Initial matching complete; now enhancing unmatched or review-needed items. Final results will appear after this phase.", "Note")
+	addKey(e, "smart_order.progress_ai_note", "smart_order", "اكتملت المطابقة المبدئية، ويجري الآن تحسين الأصناف غير المطابقة والتي تحتاج مراجعة والتحقق من الأصناف المطابقة. ستظهر النتائج النهائية بعد انتهاء هذه المرحلة.", "Initial matching complete; now enhancing unmatched and review-needed items and verifying matched ones. Final results will appear after this phase.", "Note")
 	addKey(e, "smart_order.progress_bg_note", "smart_order", "يمكنك إغلاق الصفحة والعودة لاحقًا — تستمر المعالجة في الخلفية.", "You may close this page and return later — processing continues in the background.", "Note")
 }
 

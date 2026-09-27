@@ -58,11 +58,11 @@ func (s *Service) classifyScored(
 	stats *MatchStats,
 	opts classifyOptions,
 ) []askable {
-	// Settled rows are asked about first. A settled row is one the similarity
-	// tier has just applied to the shared catalogue, and the model is being
-	// asked to CHECK it — the one question here whose answer prevents a wrong
-	// overwrite rather than merely adding a match. An unresolved row only
-	// stands to gain one.
+	// Every row goes to the model: settled rows to be CHECKED (the answer can
+	// prevent a wrong overwrite of the shared catalogue), unresolved rows —
+	// needs-review and unmatched — to be resolved. When the budget cannot cover
+	// both, capToAdjudicationCeiling keeps the unresolved rows, as the shared
+	// planner's risk order does.
 	var settled, unresolved []askable
 
 	for n, i := range residual {
@@ -96,7 +96,13 @@ func adjudicationCeiling() int {
 }
 
 // capToAdjudicationCeiling trims the rows to what the run can afford to ask
-// about, settled ones first, and accounts for what it dropped.
+// about, unresolved ones first, and accounts for what it dropped.
+//
+// Unresolved first, matching matchflow.Plan's risk order: a settled row that
+// is not checked keeps a match the similarity tier already stands behind; an
+// unresolved row that is not asked keeps nothing. It used to keep settled rows
+// first, so on a file over the ceiling the needs-review and unmatched rows were
+// exactly the ones never sent.
 //
 // A dropped row keeps its deterministic outcome, which is what it would have
 // kept anyway: a settled row keeps its applied match, an unresolved one keeps
@@ -114,11 +120,11 @@ func capToAdjudicationCeiling(settled, unresolved []askable, stats *MatchStats) 
 	}
 
 	stats.CeilingHit = true
-	kept := settled
-	if len(kept) > ceiling {
-		return kept[:ceiling]
+	if len(unresolved) >= ceiling {
+		return append([]askable(nil), unresolved[:ceiling]...)
 	}
-	return append(kept, unresolved[:min(ceiling-len(kept), len(unresolved))]...)
+	kept := append(append([]askable(nil), unresolved...), settled...)
+	return kept[:ceiling]
 }
 
 // retrieveForAI builds the shortlists for the chosen rows, and only those.

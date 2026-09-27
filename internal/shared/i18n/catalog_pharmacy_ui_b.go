@@ -28,6 +28,7 @@ func loadPharmacyUIKeysB(e *engine) {
 	addKey(e, "wallet.instapay_label", "wallet", "عنوان الدفع اللحظي (IPA) أو رقم الهاتف *", "Instant Payment Address (IPA) or Phone Number *", "Form label")
 	addKey(e, "wallet.wallet_provider", "wallet", "مشغّل المحفظة", "Wallet Provider", "Form label")
 	addKey(e, "wallet.wallet_provider_select", "wallet", "-- اختر مشغّل المحفظة --", "-- Select Wallet Provider --", "Placeholder option")
+	addKey(e, "wallet.instapay_phone", "wallet", "رقم الهاتف المسجل على إنستاباي", "InstaPay Registered Phone", "Form label")
 	addKey(e, "wallet.wallet_phone", "wallet", "رقم المحفظة الإلكترونية *", "Mobile Wallet Number *", "Form label")
 	addKey(e, "wallet.card_brand", "wallet", "نوع البطاقة", "Card Brand", "Form label")
 	addKey(e, "wallet.card_number_full", "wallet", "رقم البطاقة (أدخله كاملاً لتحديثه)", "Card Number (enter full number to update)", "Form label")

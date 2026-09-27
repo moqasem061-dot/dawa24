@@ -24,6 +24,13 @@ The `billing` bounded context manages user and tenant wallets with an append-onl
 4. **Entitlement Resolution:** Application features verify access via `billing.Service.CheckEntitlement(ctx, userID, featureKey)`.
 5. **Direct money moves need `billing.admin` (security fix 2026-09-24):** REST direct deposit, withdrawal, subscription activation and invoice settlement no longer accept "any staff"; the actor must hold `billing.admin`.
 
+- **Platform payment channels show only their own credentials (2026-09-27):**
+  `PlatformPaymentMethod.ScopeFieldsToProvider` keeps bank fields for `bank`,
+  the IPA handle and phone for `instapay`, the phone for `wallet`, and nothing
+  for `card`/`cash`. It runs on admin save and again before the wallet top-up
+  modal renders, because the admin form only hid the other types' inputs and
+  stored their values.
+
 ## Endpoints
 
 - `GET /api/v1/billing/wallet` — Inspect user balance.

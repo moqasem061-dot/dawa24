@@ -1,0 +1,130 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	"github.com/moqasem061-dot/dawa24/internal/shared/format"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// VendorOrderEditLines lets the supplier change quantities or remove lines of
+// its shipment before accepting it. Rows share the buyer edit form's data-*
+// contract, so CustomerOrderDetailScript drives the live totals.
+templ VendorOrderEditLines(sh *commerce.OrderShipment, lang string) {
+	<div class="glass-panel p-6 mb-6" id="order-lines-container" x-data="{ editing: false }">
+		<div class="flex-between items-center flex-wrap gap-3">
+			<div class="d-flex items-center gap-2">
+				@components.IconPackage("icon-xs text-brand")
+				<h2 class="text-base font-black text-primary m-0">{ i18n.T(lang, "vendor.order.edit_title") }</h2>
+			</div>
+			<button type="button" class="btn btn-secondary btn-sm font-bold" x-show="!editing" @click="editing = true">
+				{ i18n.T(lang, "vendor.order.edit_open_btn") }
+			</button>
+		</div>
+		<form
+			method="POST"
+			action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/edit", sh.ID)) }
+			class="stack-md mt-4"
+			x-show="editing"
+			x-cloak
+		>
+			<div class="alert alert-info text-xs">{ i18n.T(lang, "vendor.order.edit_notice") }</div>
+			<div class="table-container m-0">
+				<table class="data-table m-0">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "orders.th_medicine") }</th>
+							<th class="text-center">{ i18n.T(lang, "orders.th_qty_ordered") }</th>
+							<th class="text-end">{ i18n.T(lang, "orders.th_public_price") }</th>
+							<th class="text-center">{ i18n.T(lang, "orders.th_discount_pct") }</th>
+							<th class="text-end">{ i18n.T(lang, "orders.th_net_total") }</th>
+							<th class="text-center"></th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, l := range sh.Lines {
+							if l != nil {
+								@vendorEditableLineRow(l, lang)
+							}
+						}
+					</tbody>
+				</table>
+			</div>
+			<div class="flex-between items-center flex-wrap gap-3">
+				<span class="text-brand font-black text-xs tabular-nums">
+					{ i18n.T(lang, "vendor.order.edit_items_net") } <span id="form-bar-total">{ format.Money(shipmentLinesNet(sh), lang) }</span>
+				</span>
+				<div class="d-flex items-center gap-2">
+					<button type="button" class="btn btn-secondary btn-sm font-bold" @click="editing = false">
+						{ i18n.T(lang, "common.cancel") }
+					</button>
+					<button type="submit" class="btn btn-primary btn-sm font-bold gap-2">
+						@components.IconCheck("icon-xs")
+						<span>{ i18n.T(lang, "vendor.order.edit_save_btn") }</span>
+					</button>
+				</div>
+			</div>
+		</form>
+		@CustomerOrderDetailScript()
+	</div>
+}
+
+templ vendorEditableLineRow(l *commerce.OrderLine, lang string) {
+	<tr
+		class="order-table-row"
+		data-line-id={ fmt.Sprintf("%d", l.ID) }
+		data-unit-price-minor={ fmt.Sprintf("%d", linePublicPrice(l).Minor()) }
+		data-unit-discount-minor={ fmt.Sprintf("%d", unitDiscountMinor(l)) }
+		data-min-qty={ fmt.Sprintf("%d", minAllowedQty(l)) }
+		data-max-qty={ fmt.Sprintf("%d", maxAllowedQty(l)) }
+	>
+		<td>
+			<strong class="text-primary text-xs d-block">{ l.ProductName.Get(i18n.Lang(lang)) }</strong>
+			if l.VariantName.Get(i18n.Lang(lang)) != "" {
+				<span class="text-muted text-2xs">{ l.VariantName.Get(i18n.Lang(lang)) }</span>
+			}
+			<input type="hidden" name="line_id[]" value={ fmt.Sprintf("%d", l.ID) }/>
+			<input type="hidden" name="product_name[]" value={ l.ProductName.Get(i18n.Lang(lang)) }/>
+			<input type="hidden" name="is_deleted[]" value="0" class="row-deleted-input"/>
+		</td>
+		<td class="text-center align-middle">
+			<div class="order-qty-stepper">
+				<button type="button" class="btn btn-secondary btn-icon btn-sm font-bold qty-step-btn" data-on-click="stepRowQty(this, -1)">−</button>
+				<input
+					type="number"
+					name="quantity[]"
+					value={ fmt.Sprintf("%d", l.Quantity) }
+					min={ fmt.Sprintf("%d", minAllowedQty(l)) }
+					if maxAllowedQty(l) < 99999 {
+						max={ fmt.Sprintf("%d", maxAllowedQty(l)) }
+					}
+					required
+					class="form-input row-qty-input font-bold"
+					data-on-input="recalcRowTotal(this)"
+				/>
+				<button type="button" class="btn btn-secondary btn-icon btn-sm font-bold qty-step-btn" data-on-click="stepRowQty(this, 1)">+</button>
+			</div>
+		</td>
+		<td class="text-end tabular-nums font-bold text-xs text-primary">
+			{ format.Money(linePublicPrice(l), lang) }
+		</td>
+		<td class="text-center tabular-nums">
+			{{ discPct := lineDiscountPercent(l) }}
+			if discPct > 0 {
+				<span class="badge badge-emerald text-xs font-bold tabular-nums">{ formatDiscount(discPct) }%</span>
+			} else {
+				<span class="text-xs text-muted">0%</span>
+			}
+		</td>
+		<td class="text-end tabular-nums font-black text-brand text-xs">
+			<span class="row-total-display">{ format.Money(l.TotalPrice, lang) }</span>
+		</td>
+		<td class="col-actions">
+			<button type="button" class="btn btn-secondary btn-icon btn-sm text-danger" data-on-click="deleteRowLine(this)">
+				@components.IconX("icon-sm")
+			</button>
+		</td>
+	</tr>
+}

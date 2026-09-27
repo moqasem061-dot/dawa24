@@ -358,6 +358,10 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 				</div>
 			</div>
 
+			if data.CanEdit {
+				@VendorOrderEditLines(sh, lang)
+			}
+
 			<!-- Comprehensive Line Items Table -->
 			@VendorOrderDetailItemsTable(sh, fin, lang)
 

@@ -36,74 +36,7 @@ func (h *UIHandler) CustomerOrderEditSubmit(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	_ = r.ParseForm()
-
-	lineIDs := r.PostForm["line_id[]"]
-	productNames := r.PostForm["product_name[]"]
-	quantities := r.PostForm["quantity[]"]
-	unitPrices := r.PostForm["unit_price[]"]
-	discountAmounts := r.PostForm["discount_amount[]"]
-	isDeletedList := r.PostForm["is_deleted[]"]
-
-	lineCount := len(lineIDs)
-	if len(productNames) > lineCount {
-		lineCount = len(productNames)
-	}
-	if len(quantities) > lineCount {
-		lineCount = len(quantities)
-	}
-
-	var lines []commerce.OrderLineEditItem
-	for i := 0; i < lineCount; i++ {
-		var lineID int64
-		if i < len(lineIDs) {
-			lineID, _ = strconv.ParseInt(lineIDs[i], 10, 64)
-		}
-
-		pName := ""
-		if i < len(productNames) {
-			pName = strings.TrimSpace(productNames[i])
-		}
-
-		qty := 1
-		if i < len(quantities) {
-			if qVal, err := strconv.Atoi(quantities[i]); err == nil && qVal > 0 {
-				qty = qVal
-			}
-		}
-
-		uPrice := money.Zero
-		if i < len(unitPrices) {
-			if parsed, err := money.Parse(unitPrices[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
-				uPrice = parsed
-			}
-		}
-
-		dAmount := money.Zero
-		if i < len(discountAmounts) {
-			if parsed, err := money.Parse(discountAmounts[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
-				dAmount = parsed
-			}
-		}
-
-		isDel := false
-		if i < len(isDeletedList) {
-			isDel = isDeletedList[i] == "true" || isDeletedList[i] == "1"
-		}
-
-		if lineID <= 0 && pName == "" && !isDel {
-			continue
-		}
-
-		lines = append(lines, commerce.OrderLineEditItem{
-			ID:             lineID,
-			ProductName:    pName,
-			Quantity:       qty,
-			UnitPrice:      uPrice,
-			DiscountAmount: dAmount,
-			IsDeleted:      isDel,
-		})
-	}
+	lines := parseOrderLineEdits(r)
 
 	input := commerce.UpdateCustomerOrderInput{
 		OrderID: id,
@@ -315,3 +248,77 @@ func (h *UIHandler) cancelBuyerOrder(ctx context.Context, actor authctx.Actor, l
 }
 
 // ReviewSubmit handles customer feedback submissions with multi-criteria rating.
+
+// parseOrderLineEdits reads the editable order-lines form shared by the buyer
+// and supplier order pages.
+func parseOrderLineEdits(r *http.Request) []commerce.OrderLineEditItem {
+	_ = r.ParseForm()
+
+	lineIDs := r.PostForm["line_id[]"]
+	productNames := r.PostForm["product_name[]"]
+	quantities := r.PostForm["quantity[]"]
+	unitPrices := r.PostForm["unit_price[]"]
+	discountAmounts := r.PostForm["discount_amount[]"]
+	isDeletedList := r.PostForm["is_deleted[]"]
+
+	lineCount := len(lineIDs)
+	if len(productNames) > lineCount {
+		lineCount = len(productNames)
+	}
+	if len(quantities) > lineCount {
+		lineCount = len(quantities)
+	}
+
+	var lines []commerce.OrderLineEditItem
+	for i := 0; i < lineCount; i++ {
+		var lineID int64
+		if i < len(lineIDs) {
+			lineID, _ = strconv.ParseInt(lineIDs[i], 10, 64)
+		}
+
+		pName := ""
+		if i < len(productNames) {
+			pName = strings.TrimSpace(productNames[i])
+		}
+
+		qty := 1
+		if i < len(quantities) {
+			if qVal, err := strconv.Atoi(quantities[i]); err == nil && qVal > 0 {
+				qty = qVal
+			}
+		}
+
+		uPrice := money.Zero
+		if i < len(unitPrices) {
+			if parsed, err := money.Parse(unitPrices[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
+				uPrice = parsed
+			}
+		}
+
+		dAmount := money.Zero
+		if i < len(discountAmounts) {
+			if parsed, err := money.Parse(discountAmounts[i]); err == nil { // nolint:errswallow: optional input; an unparseable value leaves the default
+				dAmount = parsed
+			}
+		}
+
+		isDel := false
+		if i < len(isDeletedList) {
+			isDel = isDeletedList[i] == "true" || isDeletedList[i] == "1"
+		}
+
+		if lineID <= 0 && pName == "" && !isDel {
+			continue
+		}
+
+		lines = append(lines, commerce.OrderLineEditItem{
+			ID:             lineID,
+			ProductName:    pName,
+			Quantity:       qty,
+			UnitPrice:      uPrice,
+			DiscountAmount: dAmount,
+			IsDeleted:      isDel,
+		})
+	}
+	return lines
+}

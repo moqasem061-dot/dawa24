@@ -9,7 +9,6 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
-	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
@@ -200,16 +199,17 @@ func (r *Repository) ListSpecialOffersByOrg(ctx context.Context, orgID int64) ([
 	return list, err
 }
 
-// DeleteSpecialOffer deletes a special offer (cascades to its products and
-// location covers through the offers family) and deletes its media file.
+// DeleteSpecialOffer soft-deletes a special offer. A hard DELETE failed for
+// any offer that had ever been ordered (commerce.orders.offer_id is ON DELETE
+// RESTRICT), so the row is trashed instead: every read path filters
+// deleted_at, order history keeps its offer link, and the admin trash can
+// restore it. The media file is kept for the same reason.
 func (r *Repository) DeleteSpecialOffer(ctx context.Context, id, orgID int64) error {
-	var image string
-	_ = r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(txCtx, `SELECT image FROM promo.offers WHERE id = $1 AND organization_id = $2;`, id, orgID).Scan(&image)
-	})
-
-	err := r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		tag, err := tx.Exec(txCtx, `DELETE FROM promo.offers WHERE id = $1 AND organization_id = $2;`, id, orgID)
+	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		tag, err := tx.Exec(txCtx, `
+			UPDATE promo.offers
+			   SET deleted_at = now(), is_active = false, updated_at = now()
+			 WHERE id = $1 AND organization_id = $2 AND deleted_at IS NULL;`, id, orgID)
 		if err != nil {
 			return err
 		}
@@ -218,10 +218,6 @@ func (r *Repository) DeleteSpecialOffer(ctx context.Context, id, orgID int64) er
 		}
 		return nil
 	})
-	if err == nil && image != "" {
-		_ = storage.DeleteUploadedMedia(ctx, image, nil)
-	}
-	return err
 }
 
 // AddSpecialOfferLocation inserts a geographic coverage entry for an offer.
