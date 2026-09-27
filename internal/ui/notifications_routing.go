@@ -80,6 +80,12 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 	// 6. Wallet & Financials (Deposits, Withdrawals, Refunds)
 	if isWalletNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.IsStaff {
+			if strings.Contains(combined, "سحب") || strings.Contains(combined, "withdrawal") {
+				return "/admin/finance/withdrawals"
+			}
+			if strings.Contains(combined, "إيداع") || strings.Contains(combined, "شحن") || strings.Contains(combined, "deposit") {
+				return "/admin/finance/deposits"
+			}
 			return "/admin/finance/wallets"
 		}
 		if isVendor(actor) {
@@ -143,6 +149,12 @@ func (h *UIHandler) ResolveNotificationDestination(ctx context.Context, actor au
 	// 12. Promotions, Sponsorships, Offers & Ads
 	if isPromoNotification(combined, notif.RequiredPermission) {
 		if actor.IsSuperAdmin() || actor.IsStaff {
+			if strings.Contains(combined, "عرض خاص") || strings.Contains(combined, "special_offer") || strings.Contains(combined, "special offer") || notif.RequiredPermission == "promo.offer.view" {
+				if strings.Contains(combined, "بانتظار") || strings.Contains(combined, "pending") || strings.Contains(combined, "مراجعة") {
+					return "/admin/offers?status=pending"
+				}
+				return "/admin/offers"
+			}
 			if strings.Contains(combined, "إعلان") || strings.Contains(combined, "ad.") {
 				return "/admin/offers-packages?tab=ads"
 			}

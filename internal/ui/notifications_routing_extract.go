@@ -177,6 +177,7 @@ func isCatalogImportNotification(text string) bool {
 
 func isPromoNotification(text, perm string) bool {
 	return perm == "vendor.offer.view" || perm == "vendor.offer_package.view" || perm == "vendor.ad.view" ||
+		perm == "promo.offer.view" || perm == "promo.offer_package.view" || perm == "promo.ad.view" ||
 		strings.Contains(text, "عرض خاص") || strings.Contains(text, "باقة رعاية") ||
 		strings.Contains(text, "إعلان") || strings.Contains(text, "sponsorship") ||
 		strings.Contains(text, "special_offer") || strings.Contains(text, "ad.status")

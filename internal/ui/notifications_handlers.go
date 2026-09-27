@@ -205,6 +205,9 @@ func inferNotificationPermission(title, body string) string {
 		return "vendor.delivery.view"
 	}
 	// Offers / Ads
+	if strings.Contains(combined, "عرض خاص جديد") || strings.Contains(combined, "بانتظار المراجعة") {
+		return "promo.offer.view"
+	}
 	if strings.Contains(combined, "عرض خاص") {
 		return "vendor.offer.view"
 	}

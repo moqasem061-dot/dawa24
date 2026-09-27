@@ -138,6 +138,30 @@ func TestResolveNotificationDestination(t *testing.T) {
 			expected: "/vendor/offers-packages/sponsorships",
 		},
 		{
+			name:     "Admin special offer awaiting review notification",
+			actor:    adminActor,
+			notif:    &notifications.NotificationLog{Title: "عرض خاص جديد بانتظار المراجعة", Body: "أضاف المورد Dawa24 Seller العرض الخاص 'خصم 20% على أدوية ومستلزمات الموسم' وهو بانتظار المراجعة والاعتماد.", RequiredPermission: "promo.offer.view"},
+			expected: "/admin/offers?status=pending",
+		},
+		{
+			name:     "Admin general special offer notification",
+			actor:    adminActor,
+			notif:    &notifications.NotificationLog{Title: "عرض خاص", Body: "تم تحديث بيانات العرض الخاص", RequiredPermission: "promo.offer.view"},
+			expected: "/admin/offers",
+		},
+		{
+			name:     "Admin withdrawal request notification",
+			actor:    adminActor,
+			notif:    &notifications.NotificationLog{Title: "طلب سحب رصيد جديد بحاجة لموافقة", Body: "قدمت منشأة (Dawa24 Seller) طلب سحب بقيمة 10000 ج.م", RequiredPermission: "billing.payment.view"},
+			expected: "/admin/finance/withdrawals",
+		},
+		{
+			name:     "Admin deposit request notification",
+			actor:    adminActor,
+			notif:    &notifications.NotificationLog{Title: "طلب شحن رصيد جديد", Body: "قدمت صيدلية طلب شحن رصيد محفظة", RequiredPermission: "billing.payment.view"},
+			expected: "/admin/finance/deposits",
+		},
+		{
 			name:     "Document notification for admin",
 			actor:    adminActor,
 			notif:    &notifications.NotificationLog{Title: "مستند ترخيص جديد", Body: "تم رفع رخصة صيدلية جديدة"},
