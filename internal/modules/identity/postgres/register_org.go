@@ -61,12 +61,16 @@ func (r *Repository) RegisterOrganization(ctx context.Context, u *identity.User,
 		// begins (Rebuild V2 §4.1).
 		orgStatus := "pending"
 
+		taxNumber := strings.TrimSpace(orgIn.TaxNumber)
+		commercialRegister := strings.TrimSpace(orgIn.CommercialRegister)
+		pharmacistLicense := strings.TrimSpace(orgIn.PharmacistLicense)
+
 		var status string
 		err = tx.QueryRow(txCtx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status, pharmacist_license, branch_count, owner_id)`+
-			`VALUES (jsonb_build_object('ar', $1::text, 'en', $1::text), $1, $2, NULLIF($3, ''), NULLIF($4, ''), $5, $6, NULLIF($7, ''), $8, $9)`+
+			`VALUES (jsonb_build_object('ar', $1::text, 'en', $1::text), $1, $2, COALESCE($3, ''), COALESCE($4, ''), $5, $6, COALESCE($7, ''), $8, $9)`+
 			`RETURNING id, public_id, type, status;`,
-			orgIn.LegalName, tradeName, orgIn.TaxNumber, orgIn.CommercialRegister,
-			orgIn.Type, orgStatus, orgIn.PharmacistLicense, orgIn.BranchCount, u.ID,
+			orgIn.LegalName, tradeName, taxNumber, commercialRegister,
+			orgIn.Type, orgStatus, pharmacistLicense, orgIn.BranchCount, u.ID,
 		).Scan(&result.OrganizationID, &result.OrganizationPublicID, &result.OrganizationType, &status)
 		if err != nil {
 			if database.IsUniqueViolation(err) {

@@ -359,3 +359,38 @@ func TestRegisterOrganizationLive(t *testing.T) {
 	}
 	t.Logf("Registered Org successfully: OrgID=%d, UserID=%d, Type=%s, Status=%s", res.OrganizationID, u.ID, res.OrganizationType, res.OrganizationStatus)
 }
+
+func TestRegisterOrganization_EmptyOptionalFields(t *testing.T) {
+	db := getTestDB(t)
+	repo := postgres.NewRepository(db)
+	ctx := context.Background()
+
+	u := &identity.User{
+		Email:        fmt.Sprintf("test-empty-tax-%d@example.com", time.Now().UnixNano()),
+		PasswordHash: "$2a$10$abcdefghijklmnopqrstuvwxyz123456",
+		Name:         i18n.New("د. محمد", "Dr. Mohamed"),
+		Role:         "user",
+		Status:       identity.StatusActive,
+		Language:     i18n.Lang("ar"),
+		Timezone:     "Africa/Cairo",
+		Phone:        "01098765432",
+	}
+
+	orgIn := identity.RegisterOrgInput{
+		Type:               "customer",
+		LegalName:          "صيدلية بدون رقم ضريبي",
+		TradeNameAr:        "صيدلية النور",
+		CommercialRegister: fmt.Sprintf("CR-EMPTY-%d", time.Now().UnixNano()),
+		TaxNumber:          "",
+		PharmacistLicense:  "",
+	}
+
+	res, err := repo.RegisterOrganization(ctx, u, orgIn)
+	if err != nil {
+		t.Fatalf("RegisterOrganization with empty tax_number failed: %+v", err)
+	}
+	if res.OrganizationID <= 0 {
+		t.Fatalf("Expected valid OrganizationID, got %d", res.OrganizationID)
+	}
+}
+
