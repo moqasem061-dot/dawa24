@@ -235,3 +235,46 @@ func TestAuthPasswordRecoveryPages_Render(t *testing.T) {
 		t.Errorf("Expected ResetPasswordPage to render properly")
 	}
 }
+
+func TestAuthRegisterPage_ErrorAndCoordPreservation(t *testing.T) {
+	ctx := context.Background()
+
+	// 1. Without error: reg-form-error should not be rendered
+	formClean := pages.RegisterFormData{}
+	var bufClean bytes.Buffer
+	if err := pages.RegisterPage("ar", "rtl", formClean, nil, nil).Render(ctx, &bufClean); err != nil {
+		t.Fatalf("RegisterPage render failed: %v", err)
+	}
+	cleanHTML := bufClean.String()
+	if strings.Contains(cleanHTML, `id="reg-form-error"`) {
+		t.Errorf("Expected clean register page not to have reg-form-error")
+	}
+
+	// 2. With error: reg-form-error must be rendered with error text
+	formErr := pages.RegisterFormData{
+		Error:     "بيانات السجل التجاري غير صحيحة",
+		Latitude:  "30.08123400",
+		Longitude: "31.32123400",
+	}
+	var bufErr bytes.Buffer
+	if err := pages.RegisterPage("ar", "rtl", formErr, nil, nil).Render(ctx, &bufErr); err != nil {
+		t.Fatalf("RegisterPage with error render failed: %v", err)
+	}
+	errHTML := bufErr.String()
+	if !strings.Contains(errHTML, `id="reg-form-error"`) {
+		t.Errorf("Expected register page with error to render id=\"reg-form-error\"")
+	}
+	if !strings.Contains(errHTML, "بيانات السجل التجاري غير صحيحة") {
+		t.Errorf("Expected error text to be displayed in register page")
+	}
+	// Coordinates must be passed to MapPicker
+	if !strings.Contains(errHTML, "30.08123400") || !strings.Contains(errHTML, "31.32123400") {
+		t.Errorf("Expected coordinates to be passed to MapPicker")
+	}
+	// Check back buttons
+	for _, btnID := range []string{"reg-back-to-step-1", "reg-step-2-back", "reg-step-3-back", "reg-step-3-back-btn"} {
+		if !strings.Contains(errHTML, `id="`+btnID+`"`) {
+			t.Errorf("Expected back button %s to exist in page", btnID)
+		}
+	}
+}

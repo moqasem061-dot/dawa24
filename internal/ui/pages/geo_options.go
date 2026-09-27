@@ -155,3 +155,15 @@ func geoAltName(name i18n.Text, lang string) string {
 	}
 	return ""
 }
+
+// ParseGeoCoord parses a decimal coordinate string into a *float64 pointer for MapPicker.
+func ParseGeoCoord(s string) *float64 {
+	if s == "" {
+		return nil
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil || f == 0 {
+		return nil
+	}
+	return &f
+}

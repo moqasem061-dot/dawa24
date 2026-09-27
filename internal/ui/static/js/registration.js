@@ -84,7 +84,113 @@
 
   if (!step1 || !step2) return;
 
-  function showStep(stepNum) {
+  const DRAFT_KEY = 'dawa24_reg_draft';
+
+  function saveFormDraft() {
+    try {
+      const draft = {
+        account_type: hiddenInput ? hiddenInput.value : 'customer',
+        legal_name: (document.getElementById('reg-legal-name') || {}).value || '',
+        trade_name_ar: (document.getElementById('reg-trade-ar') || {}).value || '',
+        trade_name_en: (document.getElementById('reg-trade-en') || {}).value || '',
+        commercial_register: (document.getElementById('reg-cr') || {}).value || '',
+        tax_number: (document.getElementById('reg-tax') || {}).value || '',
+        pharmacist_license: (document.getElementById('reg-license') || {}).value || '',
+        address: (document.getElementById('reg-address') || {}).value || '',
+        branch_governorate_id: window.dawaComboboxValue ? window.dawaComboboxValue('branch_governorate_id') : '',
+        branch_city_id: window.dawaComboboxValue ? window.dawaComboboxValue('branch_city_id') : '',
+        branch_lat: (document.querySelector('input[name="branch_lat"]') || {}).value || '',
+        branch_lon: (document.querySelector('input[name="branch_lon"]') || {}).value || '',
+        branch_google_maps_url: (document.querySelector('input[name="branch_google_maps_url"]') || {}).value || '',
+        specialisation: (document.getElementById('reg-specialisation') || {}).value || '',
+        years_experience: (document.getElementById('reg-years-exp') || {}).value || '',
+        governorate_id: window.dawaComboboxValue ? window.dawaComboboxValue('governorate_id') : '',
+        city_id: window.dawaComboboxValue ? window.dawaComboboxValue('city_id') : '',
+        expected_salary: (document.getElementById('reg-expected-salary') || {}).value || '',
+        bio: (document.getElementById('reg-bio') || {}).value || '',
+        name: (document.getElementById('reg-name') || {}).value || '',
+        email: (document.getElementById('reg-email') || {}).value || '',
+        phone: (document.getElementById('reg-phone') || {}).value || '',
+        verified_email_token: (document.getElementById('verified-email-token') || {}).value || '',
+        verified_phone_token: (document.getElementById('verified-phone-token') || {}).value || ''
+      };
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch (e) {}
+  }
+
+  function restoreFormDraft() {
+    try {
+      const raw = sessionStorage.getItem(DRAFT_KEY);
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (!draft || typeof draft !== 'object') return;
+
+      const urlParams = new URLSearchParams(window.location.search);
+      const hasUrlType = urlParams.has('type') || urlParams.has('role') || urlParams.has('account_type');
+      if (!hasUrlType && draft.account_type) {
+        selectAccountType(draft.account_type);
+      }
+
+      function restoreField(id, val) {
+        if (!val) return;
+        const el = document.getElementById(id);
+        if (el && !el.value) {
+          el.value = val;
+        }
+      }
+
+      restoreField('reg-legal-name', draft.legal_name);
+      restoreField('reg-trade-ar', draft.trade_name_ar);
+      restoreField('reg-trade-en', draft.trade_name_en);
+      restoreField('reg-cr', draft.commercial_register);
+      restoreField('reg-tax', draft.tax_number);
+      restoreField('reg-license', draft.pharmacist_license);
+      restoreField('reg-address', draft.address);
+
+      restoreField('reg-specialisation', draft.specialisation);
+      restoreField('reg-years-exp', draft.years_experience);
+      restoreField('reg-expected-salary', draft.expected_salary);
+      restoreField('reg-bio', draft.bio);
+
+      restoreField('reg-name', draft.name);
+      restoreField('reg-email', draft.email);
+      restoreField('reg-phone', draft.phone);
+
+      restoreField('verified-email-token', draft.verified_email_token);
+      restoreField('verified-phone-token', draft.verified_phone_token);
+
+      setTimeout(() => {
+        if (typeof window.dawaComboboxSet === 'function') {
+          if (draft.branch_governorate_id) window.dawaComboboxSet('branch_governorate_id', draft.branch_governorate_id);
+          if (draft.branch_city_id) window.dawaComboboxSet('branch_city_id', draft.branch_city_id);
+          if (draft.governorate_id) window.dawaComboboxSet('governorate_id', draft.governorate_id);
+          if (draft.city_id) window.dawaComboboxSet('city_id', draft.city_id);
+        }
+        if (draft.branch_lat && draft.branch_lon) {
+          const mapContainer = document.querySelector('[data-map-picker]');
+          if (mapContainer && typeof setMapLocationHelper === 'function') {
+            setMapLocationHelper(mapContainer, parseFloat(draft.branch_lat), parseFloat(draft.branch_lon), 14);
+          }
+        }
+      }, 150);
+    } catch (e) {}
+  }
+
+  let draftSaveTimer = null;
+  function scheduleSaveDraft() {
+    clearTimeout(draftSaveTimer);
+    draftSaveTimer = setTimeout(saveFormDraft, 300);
+  }
+  if (form) {
+    form.addEventListener('input', scheduleSaveDraft);
+    form.addEventListener('change', scheduleSaveDraft);
+  }
+  window.addEventListener('combobox-change', scheduleSaveDraft);
+
+  function showStep(stepNum, updateHistory) {
+    if (stepNum < 1) stepNum = 1;
+    if (stepNum > 3) stepNum = 3;
+
     const steps = [step1, step2, step3];
     steps.forEach((s, idx) => {
       if (!s) return;
@@ -113,10 +219,16 @@
       }
     });
 
+    if (updateHistory !== false && window.history && window.history.pushState) {
+      const hash = '#step-' + stepNum;
+      if (window.location.hash !== hash) {
+        window.history.pushState({ step: stepNum }, '', hash);
+      }
+    }
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
 
-    // Invalidate Leaflet maps on step change with multiple safety timeouts
-    if (typeof L !== 'undefined') {
+    if (stepNum === 2 && typeof L !== 'undefined') {
       [50, 150, 300, 600].forEach((delay) => {
         setTimeout(() => {
           document.querySelectorAll('[data-map-picker] .map-canvas, [data-map-picker], .leaflet-container').forEach((c) => {
@@ -126,6 +238,12 @@
         }, delay);
       });
     }
+
+    if (stepNum === 3 && typeof updatePasswordStrength === 'function') {
+      updatePasswordStrength();
+    }
+
+    saveFormDraft();
   }
 
   // Account Type Selection Cards
@@ -134,6 +252,7 @@
       const type = card.getAttribute('data-account-type');
       if (type) {
         selectAccountType(type);
+        saveFormDraft();
       }
     });
 
@@ -143,6 +262,7 @@
         const type = card.getAttribute('data-account-type');
         if (type) {
           selectAccountType(type);
+          saveFormDraft();
         }
       }
     });
@@ -152,6 +272,7 @@
       radio.addEventListener('change', () => {
         if (radio.checked) {
           selectAccountType(radio.value);
+          saveFormDraft();
         }
       });
     }
@@ -166,21 +287,53 @@
     });
   });
 
+  // Browser back/forward button history handling
+  window.addEventListener('popstate', (e) => {
+    if (e.state && typeof e.state.step === 'number') {
+      showStep(e.state.step, false);
+    } else if (window.location.hash) {
+      const match = window.location.hash.match(/step-(\d)/);
+      if (match) {
+        showStep(parseInt(match[1], 10), false);
+      } else {
+        showStep(1, false);
+      }
+    } else {
+      showStep(1, false);
+    }
+  });
+
   // Initial step and visibility setup
   const initialType = hiddenInput ? (hiddenInput.value || 'customer') : 'customer';
   selectAccountType(initialType);
 
-  // If returning with an error alert, auto-advance to step 3 so the user stays on their filled form
-  const errorAlert = document.querySelector('.alert-danger');
-  if (errorAlert && errorAlert.textContent.trim()) {
-    const errText = errorAlert.textContent.trim();
+  // Initial step setup:
+  // ONLY if there is an explicit top-level registration form error (from a POST submit),
+  // decide whether to route to step 2 or step 3 based on the error content.
+  const formErrorAlert = document.getElementById('reg-form-error');
+  if (formErrorAlert && formErrorAlert.textContent.trim()) {
+    const errText = formErrorAlert.textContent.trim();
     if (errText.includes('محافظة') || errText.includes('مدينة') || errText.includes('سجل') || errText.includes('منشأة') || errText.includes('ترخيص')) {
-      showStep(2);
+      showStep(2, false);
     } else {
-      showStep(3);
+      showStep(3, false);
     }
   } else {
-    showStep(1);
+    // Normal visit (clicking "انضمام للمنصة", "إنشاء حساب"): ALWAYS start on Step 1!
+    showStep(1, false);
+    if (window.history && window.history.replaceState && !window.location.hash) {
+      window.history.replaceState({ step: 1 }, '', window.location.pathname + window.location.search);
+    }
+  }
+
+  // Restore draft entered previously
+  restoreFormDraft();
+
+  const addressInput = document.getElementById('reg-address');
+  if (addressInput) {
+    addressInput.addEventListener('input', () => {
+      addressInput.dataset.manualEdited = 'true';
+    });
   }
 
   if (gotoStep2Btn) gotoStep2Btn.addEventListener('click', () => showStep(2));
@@ -242,59 +395,62 @@
     });
   }
 
-  if (pwdInput) {
-    pwdInput.addEventListener('input', () => {
-      const val = pwdInput.value;
-      const hasLen = val.length >= 8;
-      const hasUpper = /[A-Z]/.test(val);
-      const hasLower = /[a-z]/.test(val);
-      const hasCasing = hasUpper && hasLower;
-      const hasNum = /[0-9]/.test(val);
-      const hasSpec = /[^A-Za-z0-9]/.test(val);
+  function updatePasswordStrength() {
+    if (!pwdInput) return;
+    const val = pwdInput.value;
+    const hasLen = val.length >= 8;
+    const hasUpper = /[A-Z]/.test(val);
+    const hasLower = /[a-z]/.test(val);
+    const hasCasing = hasUpper && hasLower;
+    const hasNum = /[0-9]/.test(val);
+    const hasSpec = /[^A-Za-z0-9]/.test(val);
 
-      function updateRule(el, pass) {
-        if (!el) return;
-        const icon = el.querySelector('.rule-icon');
-        if (pass) {
-          el.className = 'pwd-checklist-item valid';
-          if (icon) icon.textContent = '✓';
-        } else {
-          el.className = 'pwd-checklist-item';
-          if (icon) icon.textContent = '●';
-        }
-      }
-
-      updateRule(ruleLen, hasLen);
-      updateRule(ruleCase, hasCasing);
-      updateRule(ruleNum, hasNum);
-      updateRule(ruleSpec, hasSpec);
-
-      let score = 0;
-      if (hasLen) score++;
-      if (hasCasing) score++;
-      if (hasNum) score++;
-      if (hasSpec) score++;
-
-      const colors = ['#ef4444', '#f97316', '#eab308', '#10b981'];
-      const labels = ['أدخل كلمة المرور', 'ضعيفة جداً', 'ضعيفة', 'متوسطة', 'قوية ومطابقة للمعايير'];
-
-      if (val.length === 0) {
-        if (strengthLabel) {
-          strengthLabel.textContent = labels[0];
-          strengthLabel.style.color = 'var(--text-muted)';
-        }
-        barSegments.forEach((b) => { b.style.backgroundColor = 'var(--border)'; });
+    function updateRule(el, pass) {
+      if (!el) return;
+      const icon = el.querySelector('.rule-icon');
+      if (pass) {
+        el.className = 'pwd-checklist-item valid';
+        if (icon) icon.textContent = '✓';
       } else {
-        const color = colors[score - 1] || colors[0];
-        if (strengthLabel) {
-          strengthLabel.textContent = labels[score] || labels[1];
-          strengthLabel.style.color = color;
-        }
-        barSegments.forEach((b, idx) => {
-          b.style.backgroundColor = idx < score ? color : 'var(--border)';
-        });
+        el.className = 'pwd-checklist-item';
+        if (icon) icon.textContent = '●';
       }
-    });
+    }
+
+    updateRule(ruleLen, hasLen);
+    updateRule(ruleCase, hasCasing);
+    updateRule(ruleNum, hasNum);
+    updateRule(ruleSpec, hasSpec);
+
+    let score = 0;
+    if (hasLen) score++;
+    if (hasCasing) score++;
+    if (hasNum) score++;
+    if (hasSpec) score++;
+
+    const colors = ['#ef4444', '#f97316', '#eab308', '#10b981'];
+    const labels = ['أدخل كلمة المرور', 'ضعيفة جداً', 'ضعيفة', 'متوسطة', 'قوية ومطابقة للمعايير'];
+
+    if (val.length === 0) {
+      if (strengthLabel) {
+        strengthLabel.textContent = labels[0];
+        strengthLabel.style.color = 'var(--text-muted)';
+      }
+      barSegments.forEach((b) => { b.style.backgroundColor = 'var(--border)'; });
+    } else {
+      const color = colors[score - 1] || colors[0];
+      if (strengthLabel) {
+        strengthLabel.textContent = labels[score] || labels[1];
+        strengthLabel.style.color = color;
+      }
+      barSegments.forEach((b, idx) => {
+        b.style.backgroundColor = idx < score ? color : 'var(--border)';
+      });
+    }
+  }
+
+  if (pwdInput) {
+    pwdInput.addEventListener('input', updatePasswordStrength);
   }
 
   // --- Telegram Gateway OTP Phone Verification ---
@@ -755,6 +911,9 @@
           return;
         }
       }
+
+      // Valid submit: clear stored draft so future signups start clean
+      sessionStorage.removeItem('dawa24_reg_draft');
     });
   }
 }
@@ -788,9 +947,13 @@ function fetchDetailedAddressFromCoords(lat, lon) {
 
         const fullAddr = parts.filter(Boolean).join('، ');
         if (fullAddr) {
-          addressInput.value = fullAddr;
-          addressInput.dispatchEvent(new Event('input', { bubbles: true }));
-          addressInput.dispatchEvent(new Event('change', { bubbles: true }));
+          const isManual = addressInput.dataset.manualEdited === 'true';
+          if (!isManual && (!addressInput.value.trim() || addressInput.dataset.autoAddress === addressInput.value.trim())) {
+            addressInput.value = fullAddr;
+            addressInput.dataset.autoAddress = fullAddr;
+            addressInput.dispatchEvent(new Event('input', { bubbles: true }));
+            addressInput.dispatchEvent(new Event('change', { bubbles: true }));
+          }
           if (hint) hint.textContent = '📍 تم تحديث العنوان تلقائياً من الخريطة';
         }
       }
@@ -994,7 +1157,14 @@ function initRegistrationMapComboboxSync() {
           if (pos[2] && typeof window.dawaComboboxSet === 'function') {
             const curGov = window.dawaComboboxValue ? window.dawaComboboxValue('branch_governorate_id') : '';
             if (!curGov || curGov !== String(pos[2])) {
+              const savedCity = val;
+              const savedItem = item;
               window.dawaComboboxSet('branch_governorate_id', String(pos[2]));
+              // Setting parent governorate fires dependencyChanged() on branch_city_id which clears it.
+              // Re-set the city immediately to preserve the selected value.
+              if (savedCity && typeof window.dawaComboboxSet === 'function') {
+                window.dawaComboboxSet('branch_city_id', savedCity, savedItem && savedItem.label ? savedItem.label : '');
+              }
             }
           }
           setMapLocationHelper(mapContainer, pos[0], pos[1], 14);

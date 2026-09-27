@@ -57,7 +57,7 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 				</div>
 
 				if form.Error != "" {
-					<div class="alert alert-danger mb-5 d-flex items-center gap-3">
+					<div id="reg-form-error" class="alert alert-danger mb-5 d-flex items-center gap-3">
 						<div class="alert-icon flex-shrink-0">@components.IconAlert("icon-xs")</div>
 						<div class="alert-message text-sm font-semibold">{ form.Error }</div>
 					</div>
@@ -342,6 +342,8 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 								NamePrefix: "branch",
 								Label:      "تحديد الموقع الجغرافي والإحداثيات للفرع الرئيسي (GPS) *",
 								Cities:     cities,
+								Lat:        ParseGeoCoord(form.Latitude),
+								Lon:        ParseGeoCoord(form.Longitude),
 							})
 						</div>
 
