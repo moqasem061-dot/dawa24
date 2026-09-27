@@ -110,93 +110,130 @@ templ VendorProductsScript() {
 		}
 
 		var catSearchDebounce = null;
+		var catSearchAbort = null;
+		var catSearchRequest = 0;
+		var masterCatalogResults = [];
+
 		function searchMasterCatalogLive(query) {
-			clearTimeout(catSearchDebounce);
 			const dropdown = document.getElementById('cat-search-dropdown');
 			if (!dropdown) return;
-			if (!query || query.trim().length < 2) {
-				dropdown.style.display = 'none';
+			cancelMasterCatalogSearch();
+			const searchText = (query || '').trim();
+			if (Array.from(searchText).length < 2) {
+				dropdown.classList.add('d-none');
 				return;
 			}
-
-			catSearchDebounce = setTimeout(() => {
-				fetch('/vendor/catalog/search-json?q=' + encodeURIComponent(query.trim()))
-					.then(r => r.json())
-					.then(items => {
-						if (!items || items.length === 0) {
-							const isEn = document.documentElement.lang === 'en';
-							dropdown.innerHTML = dawaHTML.sanitize('<div class="p-3 text-muted text-xs text-center">' + (isEn ? 'No matching medications found in catalog' : 'لم يتم العثور على أدوية مطابقة بالكتالوج') + '</div>');
-							dropdown.style.display = 'block';
-							return;
-						}
-
-						let html = '';
-						const isEn = document.documentElement.lang === 'en';
-						// Catalogue fields are data: escaped, and the chosen item is
-						// looked up by index rather than spliced into code.
-						const esc = dawaHTML.escape;
-						items.forEach((it, idx) => {
-							const dosage = it.dosage_form ? ('<span class="badge badge-slate text-xs">' + esc(it.dosage_form) + '</span>') : '';
-							const priceBadge = it.price ? ('<span class="badge badge-sky text-xs">' + esc(it.price) + (isEn ? ' EGP' : ' ج.م') + '</span>') : '';
-							const selectLabel = isEn ? 'Select' : 'اختيار';
-							
-							html += '<div class="p-3 border-b cursor-pointer flex-between items-center transition-colors hover-bg-sunken" ' +
-								'data-pick-index="' + idx + '">' +
-								'<div class="stack-sm">' +
-									'<div class="font-extrabold text-primary text-sm">' + esc(isEn && it.name_en ? it.name_en : (it.name_ar || it.name_en)) + '</div>' +
-									'<div class="text-xs text-muted mt-0.5">' + esc(it.scientific_name || '') + '</div>' +
-								'</div>' +
-								'<div class="row-center-sm">' +
-									dosage + priceBadge +
-									'<span class="badge badge-emerald text-xs fw-800">' + selectLabel + '</span>' +
-								'</div>' +
-							'</div>';
-						});
-						dropdown.innerHTML = dawaHTML.sanitize(html);
-						dropdown.onclick = function (e) {
-							const pick = e.target.closest('[data-pick-index]');
-							if (!pick) return;
-							const it = items[parseInt(pick.dataset.pickIndex, 10)];
-							if (!it) return;
-							selectMasterProductForStaging(it.id, it.name_ar || it.name_en || '', it.scientific_name || '',
-								it.dosage_form || '', it.sku || '', it.price || '', it.unit || '');
-						};
-						dropdown.style.display = 'block';
-					})
-					.catch(() => {
-						dropdown.style.display = 'none';
-					});
-			}, 200);
+			showCatalogSearchMessage(dropdown, dropdown.dataset.loadingText || '');
+			const requestId = catSearchRequest;
+			catSearchDebounce = setTimeout(() => fetchMasterCatalog(searchText, requestId), 200);
 		}
 
-		function selectMasterProductForStaging(id, name, scientific, dosage, sku, price, unit) {
-			const isEn = document.documentElement.lang === 'en';
-			document.getElementById('cat-select-product-id').value = id;
-			document.getElementById('cat-select-name-ar').value = name;
-			document.getElementById('cat-select-sku').value = sku;
-			document.getElementById('cat-select-unit').value = unit;
+		function cancelMasterCatalogSearch() {
+			clearTimeout(catSearchDebounce);
+			if (catSearchAbort) catSearchAbort.abort();
+			catSearchAbort = null;
+			catSearchRequest++;
+		}
 
-			document.getElementById('cat-preview-name').textContent = name;
-			document.getElementById('cat-preview-scientific').textContent = scientific ? ((isEn ? 'Active Ingredient: ' : 'المادة الفعالة: ') + scientific) : '';
-			document.getElementById('cat-preview-dosage').textContent = dosage ? ((isEn ? 'Form: ' : 'الشكل: ') + dosage) : (isEn ? 'Standard Dosage Form' : 'شكل دوائي قياسي');
-			document.getElementById('cat-preview-sku').textContent = sku ? ('SKU: ' + sku) : '';
-			document.getElementById('cat-preview-price').textContent = price ? ((isEn ? 'Catalog Price: ' : 'السعر بالكتالوج: ') + price + (isEn ? ' EGP' : ' ج.م')) : '';
+		function fetchMasterCatalog(query, requestId) {
+			catSearchAbort = typeof AbortController === 'function' ? new AbortController() : null;
+			fetch('/vendor/catalog/search-json?q=' + encodeURIComponent(query), {
+				headers: { Accept: 'application/json' },
+				signal: catSearchAbort ? catSearchAbort.signal : undefined
+			})
+				.then(response => {
+					if (!response.ok) throw new Error('catalog search failed');
+					return response.json();
+				})
+				.then(products => {
+					if (requestId !== catSearchRequest) return;
+					masterCatalogResults = Array.isArray(products) ? products : [];
+					renderMasterCatalogResults();
+				})
+				.catch(error => {
+					if (requestId !== catSearchRequest || error.name === 'AbortError') return;
+					showCatalogSearchMessage(document.getElementById('cat-search-dropdown'),
+						document.getElementById('cat-search-dropdown').dataset.errorText || '');
+				});
+		}
 
-			if (price && price !== '') {
-				document.getElementById('cat-field-price').value = price;
+		function showCatalogSearchMessage(dropdown, message) {
+			dropdown.textContent = message;
+			dropdown.classList.remove('d-none');
+		}
+
+		function renderMasterCatalogResults() {
+			const dropdown = document.getElementById('cat-search-dropdown');
+			if (!dropdown) return;
+			if (masterCatalogResults.length === 0) {
+				showCatalogSearchMessage(dropdown, dropdown.dataset.emptyText || '');
+				return;
 			}
+			const isEnglish = document.documentElement.lang === 'en';
+			const markup = masterCatalogResults.map((product, index) => masterCatalogRow(product, index, isEnglish)).join('');
+			dropdown.innerHTML = dawaHTML.sanitize(markup);
+			dropdown.classList.remove('d-none');
+			dropdown.onclick = chooseMasterCatalogResult;
+		}
 
-			document.getElementById('cat-search-dropdown').style.display = 'none';
-			document.getElementById('cat-selected-preview').style.display = 'block';
-			document.getElementById('cat-vendor-fields').style.display = 'flex';
+		function masterCatalogRow(product, index, isEnglish) {
+			const escape = dawaHTML.escape;
+			const name = isEnglish && product.name_en ? product.name_en : (product.name_ar || product.name_en || '');
+			const dosage = product.dosage_form ? '<span class="badge badge-slate text-xs">' + escape(product.dosage_form) + '</span>' : '';
+			const price = product.price ? '<span class="badge badge-sky text-xs">' + escape(product.price) + (isEnglish ? ' EGP' : ' ج.م') + '</span>' : '';
+			return '<div class="p-3 border-b cursor-pointer flex-between items-center transition-colors hover-bg-sunken" data-pick-index="' + index + '">' +
+				'<div class="stack-sm"><div class="font-extrabold text-primary text-sm">' + escape(name) + '</div>' +
+				'<div class="text-xs text-muted mt-0.5">' + escape(product.scientific_name || '') + '</div></div>' +
+				'<div class="row-center-sm">' + dosage + price + '<span class="badge badge-emerald text-xs fw-800">' + (isEnglish ? 'Select' : 'اختيار') + '</span></div></div>';
+		}
+
+		function chooseMasterCatalogResult(event) {
+			const option = event.target.closest('[data-pick-index]');
+			if (!option) return;
+			const product = masterCatalogResults[Number(option.dataset.pickIndex)];
+			if (product) selectMasterProductForStaging(product);
+		}
+
+		function selectMasterProductForStaging(product) {
+			const isEnglish = document.documentElement.lang === 'en';
+			const nameAr = product.name_ar || product.name_en || '';
+			const nameEn = product.name_en || product.name_ar || '';
+			const displayName = isEnglish ? nameEn : nameAr;
+			setCatalogField('cat-select-product-id', product.id);
+			setCatalogField('cat-select-name-ar', nameAr);
+			setCatalogField('cat-select-name-en', nameEn);
+			setCatalogField('cat-select-sku', product.sku || '');
+			setCatalogField('cat-select-barcode', product.barcode || '');
+			setCatalogField('cat-select-unit', product.unit || '');
+			setCatalogField('cat-field-price', product.price || '');
+			showSelectedMasterProduct(displayName, product, isEnglish);
+		}
+
+		function setCatalogField(id, value) {
+			const field = document.getElementById(id);
+			if (field) field.value = value || '';
+		}
+
+		function showSelectedMasterProduct(name, product, isEnglish) {
+			document.getElementById('cat-preview-name').textContent = name;
+			document.getElementById('cat-preview-scientific').textContent = product.scientific_name ? ((isEnglish ? 'Active Ingredient: ' : 'المادة الفعالة: ') + product.scientific_name) : '';
+			document.getElementById('cat-preview-dosage').textContent = product.dosage_form || (isEnglish ? 'Standard Dosage Form' : 'شكل دوائي قياسي');
+			document.getElementById('cat-preview-sku').textContent = product.sku ? 'SKU: ' + product.sku : '';
+			document.getElementById('cat-preview-price').textContent = product.price ? ((isEnglish ? 'Catalog Price: ' : 'السعر بالكتالوج: ') + product.price + (isEnglish ? ' EGP' : ' ج.م')) : '';
+			document.getElementById('cat-search-dropdown').classList.add('d-none');
+			document.getElementById('cat-selected-preview').classList.remove('d-none');
+			document.getElementById('cat-vendor-fields').classList.remove('d-none');
 		}
 
 		function resetSelectedMasterProduct() {
-			document.getElementById('cat-select-product-id').value = '';
-			document.getElementById('cat-select-name-ar').value = '';
-			document.getElementById('cat-select-sku').value = '';
-			document.getElementById('cat-selected-preview').style.display = 'none';
-			document.getElementById('cat-vendor-fields').style.display = 'none';
+			cancelMasterCatalogSearch();
+			const form = document.getElementById('add-from-catalog-form');
+			if (form) form.reset();
+			masterCatalogResults = [];
+			['cat-select-product-id', 'cat-select-name-ar', 'cat-select-name-en', 'cat-select-sku', 'cat-select-barcode', 'cat-select-unit'].forEach(id => setCatalogField(id, ''));
+			document.getElementById('cat-search-dropdown').classList.add('d-none');
+			document.getElementById('cat-selected-preview').classList.add('d-none');
+			document.getElementById('cat-vendor-fields').classList.add('d-none');
 		}
 
 		function onAddVariantComboboxChange(e) {

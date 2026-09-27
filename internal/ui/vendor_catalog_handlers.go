@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,93 +14,12 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
-// VendorCatalogSearchJSON returns JSON autocomplete list of general catalog products.
-func (h *UIHandler) VendorCatalogSearchJSON(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-	_, ok := authctx.From(ctx)
-	if !ok {
-		http.Error(w, `{"error":"unauthorized"}`, http.StatusUnauthorized)
-		return
-	}
-
-	query := strings.TrimSpace(r.URL.Query().Get("q"))
-	if len(query) < 2 {
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
-		_ = json.NewEncoder(w).Encode([]any{})
-		return
-	}
-
-	type catalogResult struct {
-		ID             string `json:"id"`
-		Label          string `json:"label"`
-		Hint           string `json:"hint,omitempty"`
-		Badge          string `json:"badge,omitempty"`
-		RawID          int64  `json:"raw_id"`
-		NameAR         string `json:"name_ar"`
-		NameEN         string `json:"name_en"`
-		ScientificName string `json:"scientific_name"`
-		DosageForm     string `json:"dosage_form"`
-		Concentration  string `json:"concentration"`
-		Unit           string `json:"unit"`
-		SKU            string `json:"sku"`
-		Barcode        string `json:"barcode"`
-		Price          string `json:"price"`
-		Manufacturer   string `json:"manufacturer"`
-	}
-
-	var results []catalogResult
-	if h.catSvc != nil {
-		products, err := h.catSvc.Search(ctx, catalog.SearchParams{
-			Query: query,
-			Limit: 20,
-		})
-		if err != nil {
-			h.logLoadErr(ctx, "catSvc.Search", err)
-		} else {
-			for _, p := range products {
-				label := p.Name.Get(i18n.AR)
-				if label == "" {
-					label = p.Name.Get(i18n.EN)
-				}
-				if p.DosageForm != "" {
-					label += " — " + p.DosageForm
-				}
-				hint := p.ScientificName
-				if p.SKU != "" {
-					if hint != "" {
-						hint += " · "
-					}
-					hint += p.SKU
-				}
-				badge := p.Price.String() + " ج.م"
-				results = append(results, catalogResult{
-					ID:             fmt.Sprintf("%d", p.ID),
-					Label:          label,
-					Hint:           hint,
-					Badge:          badge,
-					RawID:          p.ID,
-					NameAR:         p.Name.Get(i18n.AR),
-					NameEN:         p.Name.Get(i18n.EN),
-					ScientificName: p.ScientificName,
-					DosageForm:     p.DosageForm,
-					Concentration:  p.Concentration,
-					Unit:           p.Unit,
-					SKU:            p.SKU,
-					Barcode:        p.Barcode,
-					Price:          p.Price.String(),
-					Manufacturer:   p.ManufacturingCompanies,
-				})
-			}
-		}
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	_ = json.NewEncoder(w).Encode(results)
-}
+const vendorCatalogSKUCreateRetries = 3
 
 // VendorProductDetailJSON returns detailed master product data by ID as JSON.
 func (h *UIHandler) VendorProductDetailJSON(w http.ResponseWriter, r *http.Request) {
@@ -152,6 +72,7 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 		http.Redirect(w, r, "/auth/login?redirect=/vendor/products", http.StatusSeeOther)
 		return
 	}
+	ctx = database.WithTenant(ctx, actor.OrganizationID)
 
 	if err := r.ParseForm(); err != nil {
 		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.invalid_form_data"))
@@ -163,26 +84,38 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "vendor.catalog.select_master_product_first"))
 		return
 	}
-
-	nameAr := strings.TrimSpace(r.FormValue("name_ar"))
-	nameEn := strings.TrimSpace(r.FormValue("name_en"))
-	if nameAr == "" && nameEn == "" {
-		if h.catSvc != nil {
-			if mp, _, err := h.catSvc.GetProduct(database.AsSystem(ctx), productID); err == nil && mp != nil {
-				nameAr = mp.Name.Get(i18n.AR)
-				nameEn = mp.Name.Get(i18n.EN)
-			}
-		}
+	if h.catSvc == nil {
+		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.catalog_service_unavailable"))
+		return
 	}
+
+	masterProduct, _, err := h.catSvc.GetProduct(database.AsSystem(ctx), productID)
+	if err != nil || masterProduct == nil {
+		if err != nil {
+			h.logLoadErr(ctx, "catSvc.GetProduct", err)
+		}
+		if err == nil || apperr.KindOf(err) == apperr.KindNotFound {
+			h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "vendor.catalog.select_master_product_first"))
+		} else {
+			h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.catalog_service_unavailable"))
+		}
+		return
+	}
+	nameAr := masterProduct.Name.Get(i18n.AR)
+	nameEn := masterProduct.Name.Get(i18n.EN)
 	if nameAr == "" && nameEn == "" {
 		nameAr = i18n.T("ar", "vendor.catalog.default_variant_name")
 		nameEn = i18n.T("en", "vendor.catalog.default_variant_name")
+	} else if nameAr == "" {
+		nameAr = nameEn
+	} else if nameEn == "" {
+		nameEn = nameAr
 	}
 
 	batch := strings.TrimSpace(r.FormValue("batch_number"))
-	sku := strings.TrimSpace(r.FormValue("sku"))
-	barcode := strings.TrimSpace(r.FormValue("barcode"))
-	unit := strings.TrimSpace(r.FormValue("unit"))
+	sku := strings.TrimSpace(masterProduct.SKU)
+	barcode := strings.TrimSpace(masterProduct.Barcode)
+	unit := strings.TrimSpace(masterProduct.Unit)
 	if unit == "" {
 		unit = "item"
 	}
@@ -261,12 +194,40 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 		Status:                 catalog.StatusActive,
 	}
 
-	if h.catSvc == nil {
+	if existing, lookupErr := h.catSvc.GetVariantByProductAndOrg(ctx, actor.OrganizationID, productID); lookupErr == nil && existing != nil {
+		h.redirectWithNotice(w, r, "/vendor/products", "success", i18n.T(langOf(r), "vendor.catalog.variant_already_added"))
+		return
+	} else if lookupErr != nil && apperr.KindOf(lookupErr) != apperr.KindNotFound {
+		h.logLoadErr(ctx, "catSvc.GetVariantByProductAndOrg", lookupErr)
 		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.catalog_service_unavailable"))
 		return
 	}
 
-	created, err := h.catSvc.CreateVariant(ctx, variant)
+	if sku != "" {
+		if existing, lookupErr := h.catSvc.GetVariantBySKUOrBarcode(ctx, actor.OrganizationID, sku, ""); lookupErr == nil && existing != nil {
+			if existing.ProductID == productID {
+				h.redirectWithNotice(w, r, "/vendor/products", "success", i18n.T(langOf(r), "vendor.catalog.variant_already_added"))
+				return
+			}
+			sku, lookupErr = h.uniqueVendorCatalogSKU(ctx, actor.OrganizationID, productID)
+			if lookupErr != nil {
+				h.logLoadErr(ctx, "resolve catalog product sku collision", lookupErr)
+				h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.catalog_service_unavailable"))
+				return
+			}
+			variant.SKU = sku
+		} else if lookupErr != nil && apperr.KindOf(lookupErr) != apperr.KindNotFound {
+			h.logLoadErr(ctx, "catSvc.GetVariantBySKUOrBarcode", lookupErr)
+			h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "common.catalog_service_unavailable"))
+			return
+		}
+	}
+
+	created, alreadyAdded, err := h.createVendorCatalogVariant(ctx, actor.OrganizationID, variant)
+	if alreadyAdded {
+		h.redirectWithNotice(w, r, "/vendor/products", "success", i18n.T(langOf(r), "vendor.catalog.variant_already_added"))
+		return
+	}
 	if err != nil {
 		h.log.ErrorContext(ctx, "add variant from catalog error", "error", err)
 		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "vendor.catalog.add_variant_error_prefix")+h.safeMessage(err, langOf(r)))
@@ -278,6 +239,67 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 	}
 
 	h.redirectWithNotice(w, r, "/vendor/products", "success", i18n.T(langOf(r), "vendor.catalog.variant_added_success"))
+}
+
+func (h *UIHandler) createVendorCatalogVariant(
+	ctx context.Context, organizationID int64, variant *catalog.ProductVariant,
+) (*catalog.ProductVariant, bool, error) {
+	for attempt := 0; attempt < vendorCatalogSKUCreateRetries; attempt++ {
+		created, err := h.catSvc.CreateVariant(ctx, variant)
+		if err == nil || !isDuplicateVendorCatalogSKU(err) {
+			return created, false, err
+		}
+
+		sku, existing, err := h.nextVendorCatalogSKU(ctx, organizationID, variant.ProductID)
+		if err != nil {
+			return nil, false, err
+		}
+		if existing != nil {
+			return existing, true, nil
+		}
+		variant.SKU = sku
+	}
+	return nil, false, apperr.Conflict("vendor.catalog.duplicate_sku", i18n.TDefault("vendor.catalog.duplicate_sku"))
+}
+
+func (h *UIHandler) nextVendorCatalogSKU(
+	ctx context.Context, organizationID, productID int64,
+) (string, *catalog.ProductVariant, error) {
+	existing, err := h.catSvc.GetVariantByProductAndOrg(ctx, organizationID, productID)
+	if err == nil && existing != nil {
+		return "", existing, nil
+	}
+	if err != nil && apperr.KindOf(err) != apperr.KindNotFound {
+		return "", nil, err
+	}
+	sku, err := h.uniqueVendorCatalogSKU(ctx, organizationID, productID)
+	return sku, nil, err
+}
+
+func isDuplicateVendorCatalogSKU(err error) bool {
+	appErr, ok := apperr.As(err)
+	return ok && appErr.Code == "vendor.catalog.duplicate_sku"
+}
+
+func (h *UIHandler) uniqueVendorCatalogSKU(ctx context.Context, organizationID, productID int64) (string, error) {
+	base := fmt.Sprintf("D24-%d", productID)
+	for suffix := 1; suffix <= 100; suffix++ {
+		candidate := base
+		if suffix > 1 {
+			candidate = fmt.Sprintf("%s-%d", base, suffix)
+		}
+		existing, err := h.catSvc.GetVariantBySKUOrBarcode(ctx, organizationID, candidate, "")
+		if err != nil {
+			if apperr.KindOf(err) == apperr.KindNotFound {
+				return candidate, nil
+			}
+			return "", err
+		}
+		if existing != nil && existing.ProductID == productID {
+			return candidate, nil
+		}
+	}
+	return "", fmt.Errorf("catalog product %d has no available vendor SKU", productID)
 }
 
 // VendorCatalogSelectPage permanently redirects legacy route to /vendor/products.

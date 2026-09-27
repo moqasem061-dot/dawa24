@@ -41,6 +41,10 @@ id must belong to that shipment; the shipment cannot be emptied — a supplier
 that can supply nothing rejects the order. Lines cannot be added. The wallet is
 debited on acceptance, so it charges the edited total. The buyer is notified.
 
+Shipment organization rows are read and closed before per-vendor audit writes
+start. pgx cannot issue another query on that transaction connection while
+those rows remain open; leaving them open caused `conn busy` at commit.
+
 ## Percentages applied to money
 
 Cost discounts and an edited order's tax are computed exactly: percentages are

@@ -2,15 +2,18 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // CreateVariant inserts a product variant.
@@ -37,6 +40,9 @@ func (r *Repository) CreateVariant(ctx context.Context, v *catalog.ProductVarian
 		).Scan(&v.ID, &v.PublicID, &v.CreatedAt, &v.UpdatedAt)
 
 		if err != nil {
+			if duplicateVariantSKU(err) {
+				return apperr.Conflict("vendor.catalog.duplicate_sku", i18n.TDefault("vendor.catalog.duplicate_sku"))
+			}
 			return fmt.Errorf("catalog postgres: create variant: %w", err)
 		}
 		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
@@ -48,6 +54,11 @@ func (r *Repository) CreateVariant(ctx context.Context, v *catalog.ProductVarian
 		})
 		return nil
 	})
+}
+
+func duplicateVariantSKU(err error) bool {
+	var pgErr *pgconn.PgError
+	return errors.As(err, &pgErr) && pgErr.Code == "23505" && pgErr.ConstraintName == "product_variants_org_sku_key"
 }
 
 // GetVariantByID retrieves a variant by ID.

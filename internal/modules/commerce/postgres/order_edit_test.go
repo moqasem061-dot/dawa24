@@ -85,3 +85,23 @@ func TestVendorOrderEditIsScopedToItsOwnPendingShipment(t *testing.T) {
 		}
 	}
 }
+
+func TestShipmentAuditRunsAfterOrganizationRowsClose(t *testing.T) {
+	src := orderEditSource(t)
+	queryAt := strings.Index(src, "vRows, err := tx.Query(")
+	if queryAt < 0 {
+		t.Fatal("shipment audit organizations are not loaded")
+	}
+	auditAt := strings.Index(src[queryAt:], "database.WriteAudit")
+	if auditAt < 0 {
+		t.Fatal("vendor shipment audits are not written")
+	}
+	auditAt += queryAt
+	closeAt := strings.LastIndex(src[queryAt:auditAt], "vRows.Close()") + queryAt
+	if closeAt < queryAt || closeAt >= auditAt {
+		t.Fatal("shipment organization rows must close before a write uses the same transaction connection")
+	}
+	if !strings.Contains(src[queryAt:auditAt], "vRows.Err()") {
+		t.Fatal("shipment organization query iteration errors are not checked")
+	}
+}

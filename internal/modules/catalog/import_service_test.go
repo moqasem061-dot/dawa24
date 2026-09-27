@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -16,6 +17,7 @@ import (
 // check that it is actually an abstraction and not a description of one
 // PostgreSQL schema.
 type memoryImportStore struct {
+	mu       sync.Mutex
 	session  *catalog.ImportSession
 	file     []byte
 	rows     []*catalog.StagingRow
@@ -38,28 +40,36 @@ func newMemoryStore() *memoryImportStore {
 }
 
 func (m *memoryImportStore) CreateImportSession(_ context.Context, s *catalog.ImportSession, file []byte) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	s.ID, s.PublicID = 1, "11111111-1111-1111-1111-111111111111"
-	m.session, m.file = s, file
+	m.session, m.file = cloneImportSessionForTest(s), file
 	return nil
 }
 
 func (m *memoryImportStore) GetImportSession(_ context.Context, publicID string) (*catalog.ImportSession, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.session == nil || m.session.PublicID != publicID {
 		return nil, fmt.Errorf("no such session %q", publicID)
 	}
-	return m.session, nil
+	return cloneImportSessionForTest(m.session), nil
 }
 
 func (m *memoryImportStore) UpdateImportSession(
 	_ context.Context, s *catalog.ImportSession, _ ...catalog.SessionStatus,
 ) error {
-	m.session = s
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.session = cloneImportSessionForTest(s)
 	return nil
 }
 
 func (m *memoryImportStore) SaveImportProgress(
 	_ context.Context, _ string, p catalog.ImportProgress,
 ) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.session != nil {
 		m.session.Progress = p
 	}
@@ -69,6 +79,8 @@ func (m *memoryImportStore) SaveImportProgress(
 func (m *memoryImportStore) ClaimImportSessionForCommit(
 	_ context.Context, publicID string,
 ) (*catalog.ImportSession, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
 	if m.session == nil || m.session.PublicID != publicID {
 		return nil, fmt.Errorf("no such session %q", publicID)
 	}
@@ -76,7 +88,15 @@ func (m *memoryImportStore) ClaimImportSessionForCommit(
 		return nil, fmt.Errorf("session %s is not reviewable (status %s)", publicID, m.session.Status)
 	}
 	m.session.Status = catalog.SessionCommitting
-	return m.session, nil
+	return cloneImportSessionForTest(m.session), nil
+}
+
+func cloneImportSessionForTest(session *catalog.ImportSession) *catalog.ImportSession {
+	if session == nil {
+		return nil
+	}
+	cloned := *session
+	return &cloned
 }
 
 func (m *memoryImportStore) ImportSourceFile(context.Context, int64) ([]byte, error) {

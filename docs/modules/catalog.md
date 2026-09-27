@@ -44,6 +44,19 @@ The `catalog` bounded context manages pharmaceutical products, packaging variant
 8. **Asynchronous Read Model Synchronization:**
    - Background updates are dispatched as River worker jobs (`catalog.reindex` via `internal/modules/catalog/jobs/reindex.go`) on product/variant/stock/branch mutations.
    - Batch full-rebuilds are executed via `dawa24 cli reindex` or `RebuildProductIndex`.
+
+## Fixed 2026-09-27: vendor central-catalog picker
+
+- If a complete multi-word query has no direct matches, catalogue search retries
+  the distinct words and ranks products by how many words matched. Search
+  filters and master-catalogue visibility stay in force.
+- The vendor picker cancels stale requests, reports search failures distinctly,
+  and copies both canonical names plus SKU, barcode, and unit from the selected
+  master product. Changing the selection clears its hidden fields.
+- A repeated add for a master product already carried by that vendor is
+  idempotent. If another vendor item owns the master SKU, the new variant gets
+  a deterministic vendor SKU based on the master product ID, avoiding the
+  organization-wide unique-index collision.
 5. **Arabic Trigram & Fulltext Search:** Indexed with `pg_trgm` GIN indexes over `search_simple` (generated via `internal/shared/arabic.Normalize`) and Postgres `tsvector` over `(search_text, search_simple)`.
 6. **Monetary Precision:** All prices and discounts are stored and computed via `money.Amount` (minor unit integer arithmetic).
 7. **Saving Products Decision (Task 0.6.1):** `catalog.saving_products` is reinstated as a distinct customer/vendor-owned list of products with quantity and price used for savings tracking and procurement optimization, distinct from time-boxed promotional discount offers.

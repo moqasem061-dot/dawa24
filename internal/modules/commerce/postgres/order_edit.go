@@ -326,25 +326,38 @@ func (r *Repository) editPendingOrder(
 			})
 		}
 
-		vRows, qErr := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, order.ID)
-		if qErr == nil {
-			defer vRows.Close()
-			for vRows.Next() {
-				var vOrgID int64
-				if err := vRows.Scan(&vOrgID); err == nil && vOrgID > 0 {
-					_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
-						OrganizationID: &vOrgID,
-						ActorUserID:    changedByUserID,
-						Action:         auditAction,
-						EntityType:     "order",
-						EntityID:       orderIDStr,
-						After: map[string]any{
-							"edited_lines": len(lines),
-							"notes":        editNote,
-						},
-					})
-				}
+		vRows, err := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, order.ID)
+		if err != nil {
+			return fmt.Errorf("query shipment audit organizations: %w", err)
+		}
+		vendorOrgIDs := make([]int64, 0)
+		for vRows.Next() {
+			var vendorOrgID int64
+			if err := vRows.Scan(&vendorOrgID); err != nil {
+				vRows.Close()
+				return fmt.Errorf("scan shipment audit organization: %w", err)
 			}
+			if vendorOrgID > 0 {
+				vendorOrgIDs = append(vendorOrgIDs, vendorOrgID)
+			}
+		}
+		if err := vRows.Err(); err != nil {
+			vRows.Close()
+			return fmt.Errorf("iterate shipment audit organizations: %w", err)
+		}
+		vRows.Close()
+		for _, vendorOrgID := range vendorOrgIDs {
+			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: &vendorOrgID,
+				ActorUserID:    changedByUserID,
+				Action:         auditAction,
+				EntityType:     "order",
+				EntityID:       orderIDStr,
+				After: map[string]any{
+					"edited_lines": len(lines),
+					"notes":        editNote,
+				},
+			})
 		}
 
 		return nil

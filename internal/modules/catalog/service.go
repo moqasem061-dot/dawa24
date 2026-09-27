@@ -263,7 +263,11 @@ func (s *Service) Search(ctx context.Context, params SearchParams) ([]*Product, 
 	if err := s.scopeInstitutional(ctx, &params); err != nil {
 		return nil, err
 	}
-	return s.repo.SearchProducts(ctx, params)
+	products, err := s.repo.SearchProducts(ctx, params)
+	if err != nil || len(products) > 0 {
+		return products, err
+	}
+	return s.searchByTerms(ctx, params)
 }
 
 // Count returns the total count of products matching search filters.

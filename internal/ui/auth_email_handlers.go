@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -11,6 +12,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
@@ -54,19 +56,24 @@ func (h *UIHandler) SendEmailOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if this email is already registered in the system
-	if h.idSvc != nil {
-		sysCtx := database.AsSystem(ctx)
-		existingUser, err := h.idSvc.GetUserByEmail(sysCtx, cleanEmail)
-		if err == nil && existingUser != nil {
-			w.WriteHeader(http.StatusConflict)
-			_ = json.NewEncoder(w).Encode(sendEmailOTPResp{
-				OK:      false,
-				Error:   "already_registered",
-				Message: i18n.T(lang, "auth.email.already_registered"),
-			})
-			return
-		}
+	if h.idSvc == nil {
+		writeSendEmailOTPUnavailable(w, lang)
+		return
+	}
+	registered, err := h.emailAlreadyRegistered(ctx, cleanEmail)
+	if err != nil {
+		h.log.ErrorContext(ctx, "failed to check registration email", "error", err)
+		writeSendEmailOTPUnavailable(w, lang)
+		return
+	}
+	if registered {
+		w.WriteHeader(http.StatusConflict)
+		_ = json.NewEncoder(w).Encode(sendEmailOTPResp{
+			OK:      false,
+			Error:   "already_registered",
+			Message: i18n.T(lang, "auth.email.already_registered"),
+		})
+		return
 	}
 
 	engine := h.EmailOTP()
@@ -236,4 +243,22 @@ func isProductionEnv() bool {
 func devShowMockOTP() bool {
 	v := strings.ToLower(strings.TrimSpace(os.Getenv("DEV_SHOW_MOCK_OTP")))
 	return v == "true" || v == "1" || v == "yes"
+}
+
+func (h *UIHandler) emailAlreadyRegistered(ctx context.Context, email string) (bool, error) {
+	user, err := h.idSvc.GetUserByEmail(database.AsSystem(ctx), email)
+	if err == nil {
+		return user != nil, nil
+	}
+	if apperr.KindOf(err) == apperr.KindNotFound {
+		return false, nil
+	}
+	return false, err
+}
+
+func writeSendEmailOTPUnavailable(w http.ResponseWriter, lang string) {
+	w.WriteHeader(http.StatusServiceUnavailable)
+	_ = json.NewEncoder(w).Encode(sendEmailOTPResp{
+		OK: false, Error: "service_unavailable", Message: i18n.T(lang, "common.service_unavailable"),
+	})
 }

@@ -3,6 +3,7 @@ package catalog_test
 import (
 	"context"
 	"testing"
+	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 )
@@ -28,6 +29,7 @@ func TestCancelImport_WhileProcessing(t *testing.T) {
 	if err := svc.CancelImport(ctx, session.PublicID); err != nil {
 		t.Fatalf("cancel import while processing failed: %v", err)
 	}
+	waitForImportPreparationToStop(t, svc, session.PublicID)
 
 	// Verify session is marked cancelled
 	got, err := svc.GetImportSession(ctx, session.PublicID)
@@ -36,5 +38,16 @@ func TestCancelImport_WhileProcessing(t *testing.T) {
 	}
 	if got.Status != catalog.SessionCancelled {
 		t.Errorf("session status = %v, want %v", got.Status, catalog.SessionCancelled)
+	}
+}
+
+func waitForImportPreparationToStop(t *testing.T, service *catalog.Service, publicID string) {
+	t.Helper()
+	deadline := time.Now().Add(10 * time.Second)
+	for service.EnricherRunning(publicID) {
+		if time.Now().After(deadline) {
+			t.Fatal("cancelled import preparation did not stop")
+		}
+		time.Sleep(10 * time.Millisecond)
 	}
 }

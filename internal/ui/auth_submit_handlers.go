@@ -183,6 +183,22 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 		h.renderPage(ctx, w, "render register page validation error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
 		return
 	}
+	if h.idSvc == nil {
+		http.Redirect(w, r, "/auth/register?error=service_unavailable", http.StatusSeeOther)
+		return
+	}
+	registered, lookupErr := h.emailAlreadyRegistered(ctx, cleanEmail)
+	if lookupErr != nil {
+		h.log.ErrorContext(ctx, "failed to check registration email", "error", lookupErr)
+		form.Error = i18n.T(lang, "common.service_unavailable")
+		h.renderPage(ctx, w, "render register page email lookup error", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+		return
+	}
+	if registered {
+		form.Error = i18n.T(lang, "auth.email.already_registered")
+		h.renderPage(ctx, w, "render register page duplicate email", pages.RegisterPage(lang, dir, form, h.listCities(ctx), h.listGovernorates(ctx)))
+		return
+	}
 
 	if h.requireEmailVerification {
 		isEmailVerified, emailVerifyErr := mailer.VerifyEmailToken(verifiedEmailToken, cleanEmail, h.phoneSecret())
@@ -244,11 +260,6 @@ func (h *UIHandler) RegisterSubmit(w http.ResponseWriter, r *http.Request) {
 	branchCount := 1
 	if bc, err := strconv.Atoi(r.PostFormValue("branch_count")); err == nil && bc > 1 {
 		branchCount = bc
-	}
-
-	if h.idSvc == nil {
-		http.Redirect(w, r, "/auth/register?error=service_unavailable", http.StatusSeeOther)
-		return
 	}
 
 	// 1. If Job Seeker, create direct user + job seeker profile

@@ -39,7 +39,13 @@ templ VendorProductsAddFromCatalogModal(data VendorVariantsData, lang string) {
 					</div>
 
 					<!-- Dropdown Results in flow -->
-					<div id="cat-search-dropdown" class="d-none max-h-72 overflow-y-auto bg-surface-sunken border rounded-2xl shadow-xl mt-2"></div>
+					<div
+						id="cat-search-dropdown"
+						class="d-none max-h-72 overflow-y-auto bg-surface-sunken border rounded-2xl shadow-xl mt-2"
+						data-loading-text={ i18n.T(lang, "vendor_products.catalog_searching") }
+						data-empty-text={ i18n.T(lang, "vendor_products.catalog_search_empty") }
+						data-error-text={ i18n.T(lang, "vendor_products.catalog_search_failed") }
+					></div>
 				</div>
 
 				<!-- Selected Product Info Card Preview -->

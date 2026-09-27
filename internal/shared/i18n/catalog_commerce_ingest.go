@@ -98,10 +98,14 @@ func loadCommerceAndIngestKeys(e *engine) {
 
 	// --- Vendor Catalog Operations ---
 	addKey(e, "vendor.catalog.select_master_product_first", "vendor", "يرجى اختيار صنف من الكتالوج العام أولاً.", "Please select an item from the master catalog first.", "Validation error")
+	addKey(e, "vendor.catalog.variant_already_added", "vendor", "هذا الصنف موجود بالفعل ضمن أصناف التوريد لديك.", "This item is already in your supply list.", "Notice")
 	addKey(e, "vendor.catalog.default_variant_name", "vendor", "صنف توريد معتمد", "Verified Supply Item", "Default variant name")
 	addKey(e, "common.catalog_service_unavailable", "common", "خدمة الكتالوج غير متاحة حالياً.", "Catalog service is currently unavailable.", "Service error")
 	addKey(e, "vendor.catalog.add_variant_error_prefix", "vendor", "حدث خطأ أثناء إضافة الصنف: ", "An error occurred while adding the item: ", "Error prefix")
 	addKey(e, "vendor.catalog.variant_added_success", "vendor", "تمت إضافة الصنف من الكتالوج العام ونشره في قائمة أصناف التوريد بنجاح.", "Item added from master catalog and published to your supply list successfully.", "Success notice")
+	addKey(e, "vendor_products.catalog_searching", "vendor_products", "جارٍ البحث في الكتالوج المركزي...", "Searching the central catalog...", "Search state")
+	addKey(e, "vendor_products.catalog_search_empty", "vendor_products", "لم يتم العثور على صنف مطابق في الكتالوج المركزي.", "No matching item was found in the central catalog.", "Search state")
+	addKey(e, "vendor_products.catalog_search_failed", "vendor_products", "تعذر تحميل نتائج البحث. حاول مرة أخرى بعد قليل.", "Search results could not be loaded. Please try again shortly.", "Search state")
 	addKey(e, "vendor.catalog.invalid_variant_id", "vendor", "معرف الصنف غير صالح.", "Invalid item ID.", "Validation error")
 	addKey(e, "vendor.catalog.invalid_price", "vendor", "قيمة سعر غير صالحة. استخدم أرقاماً فقط، مثال: 125.50", "Invalid price. Use digits only, for example 125.50", "Validation error")
 	addKey(e, "vendor.catalog.invalid_discount", "vendor", "نسبة الخصم يجب أن تكون بين 0 و 100.", "The discount must be between 0 and 100.", "Validation error")

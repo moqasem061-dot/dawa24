@@ -30,6 +30,7 @@ The `identity` bounded context manages user accounts, authentication, password v
 7. **Staff targets need the owner (security fix 2026-09-24):** admin password reset, MFA reset, suspend, reactivate, detail edit and role assignment on a staff account (`admin_guard.go`) require an active `super_admin` actor; granting `super_admin` requires one too; nobody changes their own role.
 8. **MFA (security fix 2026-09-24):** the `dawa24_mfa_pending` cookie is signed with a key derived from `SESSION_SECRET` (was a constant in source), and failed codes count toward the same per-account lockout as passwords.
 9. **Tenant switch rebuilds the actor (security fix 2026-09-24):** `ResolveTenant` applies the full RBAC grant of the requested organization (`tenant_switch.go`); it used to swap only `Permissions`, leaving the previous organization's permission set, owner flag and branch in force.
+10. **Registration rejects existing email addresses before OTP and account creation:** `/auth/email/send-otp` and the registration submit check the normalized address across tenants. A lookup error stops registration rather than issuing an OTP; the database unique index remains the race-safe final guard.
 
 ## Endpoints
 
