@@ -61,6 +61,10 @@ func processOrderLineEditsTx(
 		if dbProductName == "" {
 			dbProductName = l.ProductName
 		}
+		if order.OfferID > 0 && dbProductID == nil && dbVariantID == nil && l.Quantity != dbOldQty {
+			return apperr.Validation("cart.offer_quantity_locked",
+				i18n.TDefault("customer.offer.quantity_locked"), nil)
+		}
 
 		if dbOfferProductID != nil && *dbOfferProductID > 0 {
 			var offerCustomQty, maxQtyPerOrder int

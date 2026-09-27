@@ -34,6 +34,9 @@ func TestSendEmailOTPRejectsAlreadyRegisteredAddress(t *testing.T) {
 	if !strings.Contains(response.Body.String(), `"already_registered"`) {
 		t.Fatalf("response = %s, want already_registered error", response.Body.String())
 	}
+	if !strings.Contains(response.Body.String(), "مسجل بالفعل") {
+		t.Fatalf("response = %s, want a readable duplicate-email message", response.Body.String())
+	}
 }
 
 func TestSendEmailOTPStopsWhenRegistrationLookupFails(t *testing.T) {

@@ -105,3 +105,42 @@ func TestShipmentAuditRunsAfterOrganizationRowsClose(t *testing.T) {
 		t.Fatal("shipment organization query iteration errors are not checked")
 	}
 }
+
+func TestEditingStandaloneOfferCannotChangeItsUnitQuantity(t *testing.T) {
+	body, err := os.ReadFile("order_edit_calc.go")
+	if err != nil {
+		t.Fatalf("read order_edit_calc.go: %v", err)
+	}
+	source := string(body)
+	if !strings.Contains(source, "order.OfferID > 0 && dbProductID == nil && dbVariantID == nil && l.Quantity != dbOldQty") {
+		t.Fatal("editing a standalone offer line can still change its quantity")
+	}
+}
+
+func TestOrderEditLoadsOfferQuantityBounds(t *testing.T) {
+	body, err := os.ReadFile("orders_query_repo.go")
+	if err != nil {
+		t.Fatalf("read orders_query_repo.go: %v", err)
+	}
+	source := string(body)
+	for _, want := range []string{
+		"COALESCE(NULLIF(op.custom_qty, 0), 1)",
+		"WHEN o.offer_id IS NOT NULL AND l.product_id IS NULL AND l.product_variant_id IS NULL THEN 1",
+		"COALESCE(op.max_qty_per_order, 0)",
+	} {
+		if !strings.Contains(source, want) {
+			t.Errorf("order edit metadata missing %q", want)
+		}
+	}
+}
+
+func TestVendorOrderEditLoadsOfferQuantityBounds(t *testing.T) {
+	body, err := os.ReadFile("shipment_detail.go")
+	if err != nil {
+		t.Fatalf("read shipment_detail.go: %v", err)
+	}
+	source := string(body)
+	if !strings.Contains(source, "orderLineQuantityBoundsProjection") || !strings.Contains(source, "l.offer_product_id") {
+		t.Fatal("vendor shipment lines do not load offer identifiers and quantity bounds")
+	}
+}

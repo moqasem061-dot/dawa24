@@ -12,6 +12,7 @@ func loadEmailAuthKeys(e *engine) {
 	addKey(e, "auth.email.email_required", ns, "يرجى تأكيد البريد الإلكتروني للمتابعة", "Please verify your email to proceed", "Validation error")
 	addKey(e, "auth.email.invalid_email", ns, "البريد الإلكتروني غير صالح، يرجى كتابته بشكل صحيح", "Invalid email address, please enter a valid email", "Validation error")
 	addKey(e, "auth.email.already_registered", ns, "هذا البريد الإلكتروني مسجل بالفعل، يرجى تسجيل الدخول أو استخدام بريد آخر", "This email is already registered, please sign in or use another email", "Validation error")
+	addKey(e, "auth.email.sign_in", ns, "تسجيل الدخول", "Sign in", "Link to sign in after duplicate email")
 	addKey(e, "auth.email.invalid_code", ns, "رمز التأكيد غير صحيح أو منتهي الصلاحية", "Invalid or expired verification code", "Validation error")
 	addKey(e, "auth.email.code_sent", ns, "تم إرسال رمز التأكيد إلى بريدك الإلكتروني بنجاح", "Verification code sent to your email successfully", "Success notice")
 	addKey(e, "auth.email.cooldown", ns, "يرجى الانتظار قبل طلب رمز تأكيد جديد", "Please wait before requesting a new code", "Cooldown notice")

@@ -40,6 +40,10 @@ summary status may already reflect another supplier's acceptance); every line
 id must belong to that shipment; the shipment cannot be emptied — a supplier
 that can supply nothing rejects the order. Lines cannot be added. The wallet is
 debited on acceptance, so it charges the edited total. The buyer is notified.
+Standalone offer lines have no product or variant reference and are sold as one
+unit; buyers and suppliers may remove the offer line but cannot change its
+quantity. Product lines sold under an offer keep that offer's minimum and
+maximum quantity rules in both edit forms and server validation.
 
 Shipment organization rows are read and closed before per-vendor audit writes
 start. pgx cannot issue another query on that transaction connection while

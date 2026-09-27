@@ -12,6 +12,16 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
+const orderLineQuantityBoundsProjection = `
+	CASE
+	    WHEN o.offer_id IS NOT NULL AND l.product_id IS NULL AND l.product_variant_id IS NULL THEN 1
+	    ELSE GREATEST(COALESCE(pv.min_order_qty, 1), COALESCE(NULLIF(op.custom_qty, 0), 1))
+	END as min_order_qty,
+	CASE
+	    WHEN o.offer_id IS NOT NULL AND l.product_id IS NULL AND l.product_variant_id IS NULL THEN 1
+	    ELSE COALESCE(op.max_qty_per_order, 0)
+	END as max_qty_per_order`
+
 // PERF OPTIMIZATION NOTE (Priority 10):
 // hydrateOrderDetails executes 3 queries per order (customer org/branch, shipments, order lines).
 // When invoked in loops (e.g. ListVendorNegotiationOrdersWithTotal for 25 orders), this triggers
@@ -107,9 +117,9 @@ func hydrateOrderDetails(txCtx context.Context, tx pgx.Tx, o *commerce.Order) er
 			       l.list_price, l.original_price, l.original_discount,
 			       l.is_negotiated, COALESCE(l.proposed_unit_price, 0) as proposed_unit_price, l.rating,
 			       COALESCE(stk.available_stock, 0) as available_stock,
-			       COALESCE(pv.min_order_qty, 1) as min_order_qty,
-			       COALESCE(op.max_qty_per_order, 0) as max_qty_per_order
+			       ` + orderLineQuantityBoundsProjection + `
 			FROM commerce.order_lines l
+			JOIN commerce.orders o ON o.id = l.order_id
 			LEFT JOIN catalog.product_variants pv ON pv.id = l.product_variant_id AND pv.deleted_at IS NULL
 			LEFT JOIN promo.offer_products op ON op.id = l.offer_product_id
 			LEFT JOIN LATERAL (

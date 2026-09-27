@@ -195,7 +195,7 @@ func loadFrontendUIKeysA(e *engine) {
 	addKey(e, "vendor.ingest.ai_not_activated", "vendor", "لم يتم تفعيل الذكاء الاصطناعي لمؤسستك بعد. تواصل مع الإدارة لتفعيله.", "AI has not been enabled for your organization yet. Contact administration to enable it.", "AI not activated")
 
 	// --- Customer: Orders ---
-	addKey(e, "customer.offer.quantity_locked", "customer", "كمية العرض ثابتة ولا يمكن تعديلها. يمكنك حذف العرض من السلة بدلاً من ذلك.", "An offer's quantity is fixed and cannot be changed. Remove the offer from the cart instead.", "Offer quantity lock")
+	addKey(e, "customer.offer.quantity_locked", "customer", "كمية العرض ثابتة ولا يمكن تغييرها. يمكنك حذف العرض بالكامل بدلاً من ذلك.", "An offer's quantity is fixed and cannot be changed. Remove the entire offer instead.", "Offer quantity lock")
 	addKey(e, "customer.order.no_manual_lines", "customer", "لا يمكن إضافة صنف جديد للطلب. يمكنك تعديل الكميات أو حذف صنف فقط، ثم تقديم طلب جديد للأصناف الإضافية.", "Items cannot be added to an existing order. Change quantities or remove a line, then place a new order for anything extra.", "Order edit restriction")
 	addKey(e, "customer.order.invalid_id", "customer", "معرف الطلب غير صالح.", "Invalid order ID.", "Order ID validation")
 	addKey(e, "customer.order.service_unavailable", "customer", "خدمة إدارة الطلبات غير متوفرة حالياً.", "Order management service is currently unavailable.", "Service unavailable")

@@ -122,13 +122,18 @@ func (r *Repository) shipmentLines(ctx context.Context, shipmentIDs []int64) (ma
 	}
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		const query = `
-			SELECT id, order_id, shipment_id, organization_id, product_id, product_variant_id,
-			       product_name, variant_name, sku, unit_price, quantity, discount_amount, total_price,
-			       cost_price, COALESCE(cost_discount_percentage, 0.00),
-			       COALESCE(list_price, 0), COALESCE(original_price, 0), COALESCE(original_discount, 0)
-			FROM commerce.order_lines
-			WHERE shipment_id = ANY($1)
-			ORDER BY shipment_id ASC, id ASC;
+			SELECT l.id, l.order_id, l.shipment_id, l.organization_id, l.product_id, l.product_variant_id,
+			       l.product_name, l.variant_name, l.sku, l.offer_product_id, l.unit_price,
+			       l.quantity, l.discount_amount, l.total_price,
+			       l.cost_price, COALESCE(l.cost_discount_percentage, 0.00),
+			       COALESCE(l.list_price, 0), COALESCE(l.original_price, 0), COALESCE(l.original_discount, 0),
+			       ` + orderLineQuantityBoundsProjection + `
+			FROM commerce.order_lines l
+			JOIN commerce.orders o ON o.id = l.order_id
+			LEFT JOIN catalog.product_variants pv ON pv.id = l.product_variant_id AND pv.deleted_at IS NULL
+			LEFT JOIN promo.offer_products op ON op.id = l.offer_product_id
+			WHERE l.shipment_id = ANY($1)
+			ORDER BY l.shipment_id ASC, l.id ASC;
 		`
 		rows, err := tx.Query(txCtx, query, shipmentIDs)
 		if err != nil {
@@ -139,9 +144,9 @@ func (r *Repository) shipmentLines(ctx context.Context, shipmentIDs []int64) (ma
 			var l commerce.OrderLine
 			if err := rows.Scan(
 				&l.ID, &l.OrderID, &l.ShipmentID, &l.OrganizationID, &l.ProductID, &l.ProductVariantID,
-				&l.ProductName, &l.VariantName, &l.SKU, &l.UnitPrice, &l.Quantity, &l.DiscountAmount, &l.TotalPrice,
+				&l.ProductName, &l.VariantName, &l.SKU, &l.OfferProductID, &l.UnitPrice, &l.Quantity, &l.DiscountAmount, &l.TotalPrice,
 				&l.CostPrice, &l.CostDiscountPercentage,
-				&l.ListPrice, &l.OriginalPrice, &l.OriginalDiscount,
+				&l.ListPrice, &l.OriginalPrice, &l.OriginalDiscount, &l.MinOrderQty, &l.MaxQtyPerOrder,
 			); err != nil {
 				return err
 			}

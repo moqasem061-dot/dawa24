@@ -148,6 +148,23 @@ func TestAuthRegisterPage_Render(t *testing.T) {
 	if !strings.Contains(htmlReq, `data-require-email="true"`) {
 		t.Errorf("Expected data-require-email=\"true\" when RequireEmailVerification is true")
 	}
+	for _, id := range []string{
+		`id="email-otp-feedback"`,
+		`id="email-otp-feedback-message"`,
+		`id="email-already-registered-login"`,
+	} {
+		if !strings.Contains(htmlReq, id) {
+			t.Errorf("duplicate-email feedback UI %q missing", id)
+		}
+	}
+	if !strings.Contains(htmlReq, "تسجيل الدخول") {
+		t.Error("duplicate-email feedback is missing its sign-in action")
+	}
+	feedbackIndex := strings.Index(htmlReq, `id="email-otp-feedback"`)
+	otpPanelIndex := strings.Index(htmlReq, `id="email-otp-box"`)
+	if feedbackIndex < 0 || otpPanelIndex < 0 || feedbackIndex > otpPanelIndex {
+		t.Error("duplicate-email feedback must render outside the hidden OTP panel")
+	}
 	if !strings.Contains(htmlReq, "تأكيد البريد مطلوب") {
 		t.Errorf("Expected 'تأكيد البريد مطلوب' when RequireEmailVerification is true")
 	}

@@ -494,23 +494,38 @@
   const emailResendBtn = document.getElementById('email-resend-btn');
   const emailCooldownTimer = document.getElementById('email-cooldown-timer');
   const emailFeedback = document.getElementById('email-otp-feedback');
+  const emailFeedbackMessage = document.getElementById('email-otp-feedback-message');
+  const emailAlreadyRegisteredLogin = document.getElementById('email-already-registered-login');
   const emailVerifiedBadge = document.getElementById('email-verified-badge');
   const emailChangeBtn = document.getElementById('email-change-btn');
   const verifiedEmailTokenInput = document.getElementById('verified-email-token');
 
   let emailCooldownInterval = null;
 
-  function showEmailFeedback(msg, isError) {
-    if (!emailFeedback) return;
-    emailFeedback.style.display = 'block';
-    emailFeedback.style.color = isError ? '#ef4444' : '#10b981';
-    emailFeedback.textContent = msg;
+  function showEmailFeedback(msg, isError, showLoginLink = false) {
+    if (!emailFeedback || !emailFeedbackMessage) return;
+    emailFeedback.classList.remove('s-hidden-init');
+    emailFeedback.classList.toggle('alert-danger', isError);
+    emailFeedback.classList.toggle('alert-success', !isError);
+    emailFeedback.style.display = 'flex';
+    emailFeedbackMessage.textContent = msg;
+    if (emailAlreadyRegisteredLogin) {
+      emailAlreadyRegisteredLogin.classList.toggle('s-hidden-init', !showLoginLink);
+    }
   }
 
   function clearEmailFeedback() {
     if (emailFeedback) {
-      emailFeedback.style.display = 'none';
-      emailFeedback.textContent = '';
+      emailFeedback.classList.add('s-hidden-init');
+      emailFeedback.classList.remove('alert-success');
+      emailFeedback.classList.add('alert-danger');
+      emailFeedback.style.removeProperty('display');
+    }
+    if (emailFeedbackMessage) {
+      emailFeedbackMessage.textContent = '';
+    }
+    if (emailAlreadyRegisteredLogin) {
+      emailAlreadyRegisteredLogin.classList.add('s-hidden-init');
     }
   }
 
@@ -555,7 +570,8 @@
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: 'email=' + encodeURIComponent(email)
       });
-      const data = await resp.json();
+      const parsedResponse = await resp.json().catch(() => ({}));
+      const data = parsedResponse && typeof parsedResponse === 'object' ? parsedResponse : {};
 
       if (resp.ok && data.ok) {
         if (emailOtpBox) emailOtpBox.style.display = 'block';
@@ -568,7 +584,16 @@
         startEmailCooldown(data.cooldown || 60);
         if (emailOtpCode) emailOtpCode.focus();
       } else {
-        showEmailFeedback(data.message || 'تعذر إرسال الرمز، يرجى المحاولة بعد قليل', true);
+        const alreadyRegistered = resp.status === 409 || data.error === 'already_registered';
+        if (alreadyRegistered) {
+          if (emailOtpBox) emailOtpBox.style.display = 'none';
+          if (emailOtpCode) emailOtpCode.value = '';
+          if (verifiedEmailTokenInput) verifiedEmailTokenInput.value = '';
+        }
+        const fallbackMessage = alreadyRegistered && emailFeedback
+          ? emailFeedback.dataset.emailAlreadyRegisteredMessage
+          : 'تعذر إرسال الرمز، يرجى المحاولة بعد قليل';
+        showEmailFeedback(data.message || fallbackMessage, true, alreadyRegistered);
         if (data.cooldown) {
           startEmailCooldown(data.cooldown);
         } else if (sendEmailBtn) {
@@ -617,6 +642,7 @@
         if (sendEmailBtn) sendEmailBtn.style.display = 'none';
         if (emailOtpBox) emailOtpBox.style.display = 'none';
         if (emailVerifiedBadge) emailVerifiedBadge.style.display = 'inline-flex';
+        clearEmailFeedback();
         clearInterval(emailCooldownInterval);
       } else {
         showEmailFeedback(data.message || 'رمز التأكيد غير صحيح، حاول مجدداً', true);

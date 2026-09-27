@@ -414,6 +414,12 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 										</button>
 									}
 								</div>
+								<div id="email-otp-feedback" data-email-already-registered-message={ i18n.T(lang, "auth.email.already_registered") } class="alert alert-danger d-flex items-center justify-between gap-3 mt-2 s-hidden-init" role="alert" aria-live="polite">
+									<span id="email-otp-feedback-message"></span>
+									<a id="email-already-registered-login" href="/auth/login" class="font-bold text-accent text-xs underline s-hidden-init">
+										{ i18n.T(lang, "auth.email.sign_in") }
+									</a>
+								</div>
 								if form.RequireEmailVerification {
 									<input type="hidden" id="verified-email-token" name="verified_email_token" value={ form.VerifiedEmailToken } />
 
@@ -444,7 +450,6 @@ templ RegisterPage(lang, dir string, form RegisterFormData, cities []*platformad
 												{ i18n.T(lang, "auth.email.resend_otp") }
 											</button>
 										</div>
-										<div id="email-otp-feedback" class="text-2xs font-medium mt-1.5 s-hidden-init"></div>
 									</div>
 								}
 							</div>
