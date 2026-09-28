@@ -453,7 +453,11 @@
         var targetEl = (info.id && document.getElementById(info.id)) ||
                        (info.name && document.querySelector('input[name="' + info.name + '"]'));
         if (targetEl && typeof targetEl.focus === 'function') {
-          targetEl.focus();
+          try {
+            targetEl.focus({ preventScroll: true });
+          } catch (_) {
+            targetEl.focus();
+          }
           if (info.pos !== null && typeof targetEl.setSelectionRange === 'function') {
             targetEl.setSelectionRange(info.pos, info.pos);
           }

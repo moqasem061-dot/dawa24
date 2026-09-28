@@ -31,6 +31,8 @@
   htmx.config.historyCacheSize = 0;
   htmx.config.refreshOnHistoryMiss = true;
   htmx.config.scrollIntoViewOnBoost = false;
+  htmx.config.defaultFocusScroll = false;
+  htmx.config.scrollBehavior = 'instant';
   // htmx "settles" class/style from an old element onto a new one with the same
   // id and then restores the server's values ~20ms later. Alpine has already
   // hidden the new element with x-show (style="display: none") by then, so the
@@ -360,17 +362,45 @@
     });
   }
 
+  function resetScrollToTop() {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      var main = document.getElementById(MAIN_ID);
+      if (main) main.scrollTop = 0;
+      var pc = document.querySelector('.page-container');
+      if (pc) pc.scrollTop = 0;
+      var vic = document.querySelector('.vendor-ingest-container');
+      if (vic) vic.scrollTop = 0;
+    } catch (_) {}
+  }
+
   // -- 4. After the swap -------------------------------------------------------
   document.addEventListener('htmx:afterSettle', function (evt) {
     if (!evt.detail || !evt.detail.boosted) return;
     endNav();
     syncPublicNav();
-    if (navFrom !== null && navFrom !== window.location.pathname) {
-      window.scrollTo({ top: 0, behavior: 'instant' });
+
+    var preserve = evt.detail.elt && (
+      evt.detail.elt.hasAttribute('data-preserve-scroll') ||
+      evt.detail.elt.hasAttribute('data-keep-scroll')
+    );
+
+    if (!preserve) {
+      resetScrollToTop();
       var main = document.getElementById(MAIN_ID);
       if (main) {
         main.setAttribute('tabindex', '-1');
-        main.focus({ preventScroll: true });
+        try {
+          main.focus({ preventScroll: true });
+        } catch (_) {
+          try { main.focus(); } catch (__) {}
+        }
+        resetScrollToTop();
+      }
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(resetScrollToTop);
       }
     }
     navFrom = null;

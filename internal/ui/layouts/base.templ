@@ -90,16 +90,28 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 					var isDark = t === 'dark' || (t === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 					document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 
+					if ('scrollRestoration' in history) {
+						try { history.scrollRestoration = 'manual'; } catch (_) {}
+					}
 					// Early scroll restoration, before first paint.
 					try {
-						var raw = sessionStorage.getItem('dawa24_scroll_pos');
+						var key = 'dawa24_scroll_' + window.location.pathname;
+						var raw = sessionStorage.getItem(key);
+						sessionStorage.removeItem('dawa24_scroll_pos');
 						if (raw) {
+							sessionStorage.removeItem(key);
 							var data = JSON.parse(raw);
-							if (data && typeof data.y === 'number' && (Date.now() - data.time < 20000)) {
+							if (data && data.path === window.location.pathname && typeof data.y === 'number' && (Date.now() - data.time < 30000)) {
 								window.scrollTo(0, data.y);
+							} else {
+								window.scrollTo(0, 0);
 							}
+						} else {
+							window.scrollTo(0, 0);
 						}
-					} catch (e) {}
+					} catch (e) {
+						window.scrollTo(0, 0);
+					}
 				})();
 			</script>
 			// Asset leaves an uploaded favicon URL alone and hashes a bundled one.

@@ -16,6 +16,10 @@ window.getCookie = getCookie;
 // Restore the scroll position across a post/redirect/get on list screens.
 // Keyed by pathname so two tabs on different screens do not fight.
 (function() {
+  if ('scrollRestoration' in history) {
+    try { history.scrollRestoration = 'manual'; } catch (_) {}
+  }
+
   function getStorageKey(pathname) {
     return 'dawa24_scroll_' + (pathname || window.location.pathname);
   }
@@ -31,35 +35,55 @@ window.getCookie = getCookie;
     } catch(e) {}
   }
 
+  function ensureScrollTop() {
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      if (document.documentElement) document.documentElement.scrollTop = 0;
+      if (document.body) document.body.scrollTop = 0;
+      var main = document.getElementById('main-content');
+      if (main) main.scrollTop = 0;
+      var pc = document.querySelector('.page-container');
+      if (pc) pc.scrollTop = 0;
+      var vic = document.querySelector('.vendor-ingest-container');
+      if (vic) vic.scrollTop = 0;
+    } catch (_) {}
+  }
+
   function restoreScroll() {
     try {
       var key = getStorageKey(window.location.pathname);
       var raw = sessionStorage.getItem(key);
-      if (!raw) return;
-      var data = JSON.parse(raw);
-      sessionStorage.removeItem(key);
-      if (data && data.path === window.location.pathname && typeof data.y === 'number' && (Date.now() - data.time < 30000)) {
-        window.scrollTo({ top: data.y, behavior: 'instant' });
-        setTimeout(function() {
-          if (Math.abs(window.scrollY - data.y) > 10) {
-            window.scrollTo({ top: data.y, behavior: 'instant' });
-          }
-        }, 50);
-        setTimeout(function() {
-          if (Math.abs(window.scrollY - data.y) > 10) {
-            window.scrollTo({ top: data.y, behavior: 'instant' });
-          }
-        }, 150);
+      if (raw) {
+        sessionStorage.removeItem(key);
+        var data = JSON.parse(raw);
+        if (data && data.path === window.location.pathname && typeof data.y === 'number' && (Date.now() - data.time < 30000)) {
+          window.scrollTo({ top: data.y, behavior: 'instant' });
+          setTimeout(function() {
+            if (Math.abs(window.scrollY - data.y) > 10) {
+              window.scrollTo({ top: data.y, behavior: 'instant' });
+            }
+          }, 50);
+          setTimeout(function() {
+            if (Math.abs(window.scrollY - data.y) > 10) {
+              window.scrollTo({ top: data.y, behavior: 'instant' });
+            }
+          }, 150);
+          return;
+        }
       }
     } catch(e) {}
+
+    // On fresh entry or navigation without intentional restore, guarantee top of page.
+    ensureScrollTop();
   }
 
   document.addEventListener('submit', function(e) {
+    if (e.target && e.target.hasAttribute && e.target.hasAttribute('data-no-scroll')) return;
     saveScroll();
   }, true);
 
   document.addEventListener('click', function(e) {
-    var btn = e.target.closest('button[type="submit"], a.btn, [data-keep-scroll], [data-preserve-scroll]');
+    var btn = e.target.closest('button[type="submit"], [data-keep-scroll], [data-preserve-scroll]');
     if (btn) {
       saveScroll();
     }
@@ -70,7 +94,9 @@ window.getCookie = getCookie;
   } else {
     restoreScroll();
   }
-  window.addEventListener('pageshow', restoreScroll);
+  window.addEventListener('pageshow', function() {
+    restoreScroll();
+  });
 
   document.addEventListener('htmx:beforeRequest', function(evt) {
     if (evt.detail && evt.detail.boosted) return;

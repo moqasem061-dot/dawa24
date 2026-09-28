@@ -134,7 +134,7 @@ func Nonce(ctx context.Context) string {
 }
 
 // htmxConfig is the <meta name="htmx-config"> payload. See base.templ.
-const htmxConfig = `{"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0}`
+const htmxConfig = `{"allowEval":false,"includeIndicatorStyles":false,"selfRequestsOnly":true,"historyCacheSize":0,"defaultFocusScroll":false,"scrollBehavior":"instant"}`
 
 // jsonLD returns a page's structured data for templ.JSONScript, or false when
 // there is none or it is not valid JSON (which would fail the whole render).

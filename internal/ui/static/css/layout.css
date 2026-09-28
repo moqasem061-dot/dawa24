@@ -25,6 +25,7 @@
   flex-direction: column;
   background-color: var(--bg-app);
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .page-container {
