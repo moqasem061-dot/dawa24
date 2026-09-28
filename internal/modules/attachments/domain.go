@@ -239,16 +239,16 @@ type Requirement struct {
 func RequirementsFor(orgType string) []Requirement {
 	if rbac.NormalizeOrgType(orgType) == rbac.OrgTypeVendor {
 		return []Requirement{
-			{DocCommercialRegister, false},
+			{DocCommercialRegister, true},
+			{DocPharmacyLicense, true},
 			{DocTaxCard, false},
-			{DocPharmacyLicense, false},
 			{DocAuthorizationLetter, false},
 		}
 	}
 	return []Requirement{
-		{DocCommercialRegister, false},
+		{DocCommercialRegister, true},
+		{DocPharmacyLicense, true},
 		{DocTaxCard, false},
-		{DocPharmacyLicense, false},
 		{DocPharmacistLicense, false},
 		{DocAuthorizationLetter, false},
 	}

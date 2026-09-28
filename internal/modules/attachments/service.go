@@ -30,9 +30,9 @@ func NewService(repo Repository, storage *storage.Client, log *slog.Logger) *Ser
 	}
 }
 
-// MissingRequiredDocuments returns missing document indicator if the
-// organization has no verified copy of any document, or nil when the org can trade.
-// An organization requires at least one active/approved document to trade.
+// MissingRequiredDocuments returns missing mandatory documents if the
+// organization does not have verified copies of all required document types
+// (Commercial Register and EDA/Pharmacy License), or nil when the org can trade.
 func (s *Service) MissingRequiredDocuments(ctx context.Context, orgID int64, orgType string) ([]DocumentType, error) {
 	if orgID <= 0 {
 		return nil, apperr.Unauthorized()
@@ -43,17 +43,22 @@ func (s *Service) MissingRequiredDocuments(ctx context.Context, orgID int64, org
 		return nil, fmt.Errorf("attachments.MissingRequiredDocuments: %w", err)
 	}
 
-	verifiedCount := 0
+	verifiedTypes := make(map[DocumentType]bool)
 	for _, d := range docs {
 		if d != nil && d.Status == StatusVerified && d.DeletedAt == nil {
-			verifiedCount++
+			verifiedTypes[d.DocumentType] = true
 		}
 	}
 
-	if verifiedCount == 0 {
-		return []DocumentType{DocCommercialRegister}, nil
+	reqs := RequirementsFor(orgType)
+	var missing []DocumentType
+	for _, r := range reqs {
+		if r.Required && !verifiedTypes[r.DocType] {
+			missing = append(missing, r.DocType)
+		}
 	}
-	return nil, nil
+
+	return missing, nil
 }
 
 // RegisterUpload records a document that was already uploaded through the

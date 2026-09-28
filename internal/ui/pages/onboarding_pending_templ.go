@@ -60,7 +60,7 @@ func OnboardingPending(lang, dir, state string) templ.Component {
 				var templ_7745c5c3_Var3 string
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.LogoURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `onboarding_pending.templ`, Line: 16, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding_pending.templ`, Line: 16, Col: 29}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 				if templ_7745c5c3_Err != nil {
@@ -73,7 +73,7 @@ func OnboardingPending(lang, dir, state string) templ.Component {
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.SiteName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `onboarding_pending.templ`, Line: 16, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding_pending.templ`, Line: 16, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 				if templ_7745c5c3_Err != nil {
@@ -91,7 +91,7 @@ func OnboardingPending(lang, dir, state string) templ.Component {
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.SiteName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `onboarding_pending.templ`, Line: 18, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding_pending.templ`, Line: 18, Col: 57}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 				if templ_7745c5c3_Err != nil {
@@ -166,7 +166,7 @@ func OnboardingPending(lang, dir, state string) templ.Component {
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><h1 class=\"status-title\">حسابك قيد التدقيق والفحص</h1><p class=\"status-desc\">يقوم فريق العمليات بمطابقة التراخيص والسجل التجاري لمؤسستك حالياً. يمكنك تزويدنا بأي مستندات إضافية لتسريع الاعتماد.</p><div class=\"status-steps\"><div class=\"status-steps-title\">الإجراءات الجارية</div><ul class=\"status-steps-list\"><li>التحقق من صحة السجل التجاري والبطاقة الضريبية</li><li>مطابقة ترخيص مزاولة المهنة والموقع الجغرافي</li><li>تفعيل صلاحيات التوريد والطلبات الذكية فور المطابقة</li></ul></div><div class=\"status-actions\"><a href=\"/documents\" class=\"btn btn-primary\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</div><h1 class=\"status-title\">حسابك قيد التدقيق والفحص</h1><p class=\"status-desc\">يقوم فريق العمليات بمطابقة التراخيص والسجل التجاري لمؤسستك حالياً. يمكنك تزويدنا بأي مستندات إضافية لتسريع الاعتماد.</p><div class=\"status-steps\"><div class=\"status-steps-title\">الإجراءات الجارية</div><ul class=\"status-steps-list\"><li>التحقق من صحة السجل التجاري وترخيص هيئة الدواء المصرية</li><li>مطابقة ترخيص مزاولة المهنة والموقع الجغرافي</li><li>تفعيل صلاحيات التوريد والطلبات الذكية فور المطابقة</li></ul></div><div class=\"status-actions\"><a href=\"/documents\" class=\"btn btn-primary\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

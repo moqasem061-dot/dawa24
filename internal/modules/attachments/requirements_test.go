@@ -15,7 +15,11 @@ func TestRequirementsFor(t *testing.T) {
 		reqs := RequirementsFor("customer")
 		assert.Len(t, reqs, 5)
 		for _, r := range reqs {
-			assert.False(t, r.Required, "all document types should be individually optional")
+			if r.DocType == DocCommercialRegister || r.DocType == DocPharmacyLicense {
+				assert.True(t, r.Required, "commercial register and pharmacy license must be mandatory")
+			} else {
+				assert.False(t, r.Required, "other document types should be optional")
+			}
 		}
 	})
 
@@ -24,7 +28,11 @@ func TestRequirementsFor(t *testing.T) {
 		assert.Len(t, reqs, 4)
 		for _, r := range reqs {
 			assert.NotEqual(t, DocPharmacistLicense, r.DocType)
-			assert.False(t, r.Required, "all document types should be individually optional")
+			if r.DocType == DocCommercialRegister || r.DocType == DocPharmacyLicense {
+				assert.True(t, r.Required, "commercial register and pharmacy license must be mandatory")
+			} else {
+				assert.False(t, r.Required, "other document types should be optional")
+			}
 		}
 	})
 
@@ -67,36 +75,56 @@ func TestService_MissingRequiredDocuments(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "one verified document clears",
+			name:    "both mandatory verified documents clear",
+			orgID:   77,
+			orgType: "customer",
+			docs: []*Document{
+				doc(DocCommercialRegister, StatusVerified, false),
+				doc(DocPharmacyLicense, StatusVerified, false),
+			},
+		},
+		{
+			name:    "no verified documents fails with both required",
+			orgID:   77,
+			orgType: "customer",
+			docs:    []*Document{},
+			want:    []DocumentType{DocCommercialRegister, DocPharmacyLicense},
+		},
+		{
+			name:    "only commercial register verified leaves pharmacy license missing",
 			orgID:   77,
 			orgType: "customer",
 			docs: []*Document{
 				doc(DocCommercialRegister, StatusVerified, false),
 			},
+			want: []DocumentType{DocPharmacyLicense},
 		},
 		{
-			name:    "no verified documents fails",
-			orgID:   77,
-			orgType: "customer",
-			docs:    []*Document{},
-			want:    []DocumentType{DocCommercialRegister},
-		},
-		{
-			name:    "pending does not satisfy when no verified docs exist",
+			name:    "only pharmacy license verified leaves commercial register missing",
 			orgID:   77,
 			orgType: "customer",
 			docs: []*Document{
-				doc(DocCommercialRegister, StatusPending, false),
-				doc(DocTaxCard, StatusPending, false),
+				doc(DocPharmacyLicense, StatusVerified, false),
 			},
 			want: []DocumentType{DocCommercialRegister},
 		},
 		{
-			name:    "rejected does not satisfy when no verified docs exist",
+			name:    "pending does not satisfy mandatory requirement",
+			orgID:   77,
+			orgType: "customer",
+			docs: []*Document{
+				doc(DocCommercialRegister, StatusVerified, false),
+				doc(DocPharmacyLicense, StatusPending, false),
+			},
+			want: []DocumentType{DocPharmacyLicense},
+		},
+		{
+			name:    "rejected does not satisfy mandatory requirement",
 			orgID:   77,
 			orgType: "customer",
 			docs: []*Document{
 				doc(DocCommercialRegister, StatusRejected, false),
+				doc(DocPharmacyLicense, StatusVerified, false),
 			},
 			want: []DocumentType{DocCommercialRegister},
 		},
@@ -106,16 +134,18 @@ func TestService_MissingRequiredDocuments(t *testing.T) {
 			orgType: "customer",
 			docs: []*Document{
 				doc(DocCommercialRegister, StatusVerified, true),
+				doc(DocPharmacyLicense, StatusVerified, false),
 			},
 			want: []DocumentType{DocCommercialRegister},
 		},
 		{
-			name:    "at least one verified among mixed docs clears",
+			name:    "tax card optional and does not block when mandatory are verified",
 			orgID:   77,
 			orgType: "customer",
 			docs: []*Document{
-				doc(DocCommercialRegister, StatusPending, false),
-				doc(DocTaxCard, StatusVerified, false),
+				doc(DocCommercialRegister, StatusVerified, false),
+				doc(DocPharmacyLicense, StatusVerified, false),
+				doc(DocTaxCard, StatusPending, false),
 			},
 		},
 	}

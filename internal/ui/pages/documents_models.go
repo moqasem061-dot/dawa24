@@ -24,16 +24,16 @@ func docRequirements(vendor bool) []DocRequirement {
 				Required:    true,
 			},
 			{
-				DocType:     attachments.DocTaxCard,
-				TitleAr:     i18n.T("ar", "doc.req.vendor_tax_title"),
-				Description: i18n.T("ar", "doc.req.vendor_tax_desc"),
-				Required:    true,
-			},
-			{
 				DocType:     attachments.DocPharmacyLicense,
 				TitleAr:     i18n.T("ar", "doc.req.vendor_license_title"),
 				Description: i18n.T("ar", "doc.req.vendor_license_desc"),
 				Required:    true,
+			},
+			{
+				DocType:     attachments.DocTaxCard,
+				TitleAr:     i18n.T("ar", "doc.req.vendor_tax_title"),
+				Description: i18n.T("ar", "doc.req.vendor_tax_desc"),
+				Required:    false,
 			},
 			{
 				DocType:     attachments.DocAuthorizationLetter,
@@ -46,27 +46,27 @@ func docRequirements(vendor bool) []DocRequirement {
 
 	return []DocRequirement{
 		{
+			DocType:     attachments.DocCommercialRegister,
+			TitleAr:     i18n.T("ar", "doc.req.pharm_cr_title"),
+			Description: i18n.T("ar", "doc.req.pharm_cr_desc"),
+			Required:    true,
+		},
+		{
 			DocType:     attachments.DocPharmacyLicense,
 			TitleAr:     i18n.T("ar", "doc.req.pharm_license_title"),
 			Description: i18n.T("ar", "doc.req.pharm_license_desc"),
 			Required:    true,
 		},
 		{
-			DocType:     attachments.DocPharmacistLicense,
-			TitleAr:     i18n.T("ar", "doc.req.pharmacist_title"),
-			Description: i18n.T("ar", "doc.req.pharmacist_desc"),
-			Required:    true,
-		},
-		{
-			DocType:     attachments.DocCommercialRegister,
-			TitleAr:     i18n.T("ar", "doc.req.pharm_cr_title"),
-			Description: i18n.T("ar", "doc.req.pharm_cr_desc"),
-			Required:    false,
-		},
-		{
 			DocType:     attachments.DocTaxCard,
 			TitleAr:     i18n.T("ar", "doc.req.vendor_tax_title"),
 			Description: i18n.T("ar", "doc.req.pharm_tax_desc"),
+			Required:    false,
+		},
+		{
+			DocType:     attachments.DocPharmacistLicense,
+			TitleAr:     i18n.T("ar", "doc.req.pharmacist_title"),
+			Description: i18n.T("ar", "doc.req.pharmacist_desc"),
 			Required:    false,
 		},
 		{
@@ -98,17 +98,13 @@ func BuildOrganizationDocumentsData(docs []*attachments.Document, requests []*at
 	}
 	data.Requirements = docRequirements(vendor)
 
-	hasVerified := false
-	for _, d := range docs {
-		if d != nil && d.Status == attachments.StatusVerified && d.DeletedAt == nil {
-			hasVerified = true
-			break
+	for _, req := range data.Requirements {
+		if !req.Required {
+			continue
 		}
-	}
-
-	if !hasVerified {
-		data.Missing = []DocRequirement{
-			{TitleAr: i18n.TDefault("w4_ui.w4str_44_44")},
+		doc := data.LatestFor(req.DocType)
+		if doc == nil || doc.Status != attachments.StatusVerified {
+			data.Missing = append(data.Missing, req)
 		}
 	}
 	return data

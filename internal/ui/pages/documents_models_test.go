@@ -18,13 +18,13 @@ func doc(id int64, t attachments.DocumentType, status attachments.DocumentStatus
 
 func TestBuildOrganizationDocumentsData_Missing(t *testing.T) {
 	customer := BuildOrganizationDocumentsData(nil, nil, false)
-	if len(customer.Missing) != 1 {
-		t.Fatalf("customer with no docs: want 1 missing requirement, got %d", len(customer.Missing))
+	if len(customer.Missing) != 2 {
+		t.Fatalf("customer with no docs: want 2 missing requirements, got %d", len(customer.Missing))
 	}
 
 	vendor := BuildOrganizationDocumentsData(nil, nil, true)
-	if len(vendor.Missing) != 1 {
-		t.Fatalf("vendor with no docs: want 1 missing requirement, got %d", len(vendor.Missing))
+	if len(vendor.Missing) != 2 {
+		t.Fatalf("vendor with no docs: want 2 missing requirements, got %d", len(vendor.Missing))
 	}
 }
 
@@ -32,19 +32,22 @@ func TestBuildOrganizationDocumentsData_VerifiedClearsMissing(t *testing.T) {
 	now := time.Now()
 	docs := []*attachments.Document{
 		doc(1, attachments.DocCommercialRegister, attachments.StatusVerified, now),
-		doc(2, attachments.DocTaxCard, attachments.StatusPending, now),
+		doc(2, attachments.DocPharmacyLicense, attachments.StatusVerified, now),
+		doc(3, attachments.DocTaxCard, attachments.StatusPending, now),
 	}
 	customer := BuildOrganizationDocumentsData(docs, nil, false)
 	if len(customer.Missing) != 0 {
-		t.Fatalf("want 0 missing when at least one doc is verified, got %d", len(customer.Missing))
+		t.Fatalf("want 0 missing when both mandatory docs are verified, got %d", len(customer.Missing))
 	}
 
 	docsPendingOnly := []*attachments.Document{
-		doc(2, attachments.DocTaxCard, attachments.StatusPending, now),
+		doc(1, attachments.DocCommercialRegister, attachments.StatusVerified, now),
+		doc(2, attachments.DocPharmacyLicense, attachments.StatusPending, now),
+		doc(3, attachments.DocTaxCard, attachments.StatusVerified, now),
 	}
 	customerPending := BuildOrganizationDocumentsData(docsPendingOnly, nil, false)
 	if len(customerPending.Missing) != 1 {
-		t.Fatalf("pending doc alone still requires verified doc: got %d missing", len(customerPending.Missing))
+		t.Fatalf("pending mandatory doc still requires verified doc: got %d missing", len(customerPending.Missing))
 	}
 	if got := customerPending.MissingTitles(); got == "" {
 		t.Fatal("MissingTitles must not be empty with a missing requirement")
