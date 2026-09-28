@@ -149,8 +149,24 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 		return nil, err
 	}
 
+	// Summarise what the model said for diagnosis.
+	var withID, withNull, highConf, lowConf int
+	for _, d := range decisions {
+		if d.ProductID != nil && *d.ProductID > 0 {
+			withID++
+			if d.Confidence >= 0.80 {
+				highConf++
+			} else {
+				lowConf++
+			}
+		} else {
+			withNull++
+		}
+	}
 	s.log.InfoContext(ctx, "match enhancement resolved",
 		"items", len(req.Items), "catalog", len(req.Catalog), "decisions", len(decisions),
+		"with_product", withID, "with_null", withNull,
+		"high_conf", highConf, "low_conf", lowConf,
 		"req_id", resp.RequestID, "model", resp.Model,
 		"in_tok", resp.InputTok, "out_tok", resp.OutputTok)
 	return decisions, nil

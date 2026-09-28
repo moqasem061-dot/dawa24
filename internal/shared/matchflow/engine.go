@@ -120,6 +120,16 @@ type RunStats struct {
 	CheckUnsure   int  `json:"check_unsure"`
 	Unasked       int  `json:"unasked"`
 	CeilingHit    bool `json:"ceiling_hit"`
+
+	// Diagnostic counters for proposal outcomes — they answer "why was
+	// nothing applied?" when the model replies successfully but nothing
+	// changes. Every item the model answered flows through exactly one of:
+	//   Emitted (directly without check) + Checked (sent to pair check) = total answered
+	ProposedNull int `json:"proposed_null"` // model said "none of these"
+	ProposedLow  int `json:"proposed_low"`  // confidence below the floor
+	Screened     int `json:"screened"`      // identity guard refused before pair check
+	NotOffered   int `json:"not_offered"`   // product not in the window (hallucination)
+	Emitted      int `json:"emitted"`       // sent directly to the caller without pair check
 }
 
 // Run asks every question it can inside the ceilings and hands back answers.

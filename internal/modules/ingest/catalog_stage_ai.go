@@ -91,7 +91,18 @@ func (r *stagingRun) enhance(ctx context.Context) {
 		"requests", enh.Stats.Requests, "improved", enh.Stats.Improved,
 		"abstained", enh.Stats.Abstained, "rejected", enh.Stats.Rejected,
 		"verified", enh.Stats.Verified, "disputed", enh.Stats.Disputed,
-		"ceiling_hit", enh.Stats.CeilingHit)
+		"ceiling_hit", enh.Stats.CeilingHit,
+		"engine_proposed_null", enh.Stats.Engine.ProposedNull,
+		"engine_proposed_low", enh.Stats.Engine.ProposedLow,
+		"engine_screened", enh.Stats.Engine.Screened,
+		"engine_not_offered", enh.Stats.Engine.NotOffered,
+		"engine_emitted", enh.Stats.Engine.Emitted,
+		"engine_checked", enh.Stats.Engine.Checked,
+		"engine_check_accepted", enh.Stats.Engine.CheckAccepted,
+		"engine_check_rejected", enh.Stats.Engine.CheckRejected,
+		"engine_check_unsure", enh.Stats.Engine.CheckUnsure,
+		"engine_failed", enh.Stats.Engine.Failed,
+		"engine_split", enh.Stats.Engine.Split)
 }
 
 // recount moves every AI-settled row out of the counter it was tallied under.

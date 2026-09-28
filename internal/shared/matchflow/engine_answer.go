@@ -35,6 +35,7 @@ func (r *runner) handle(ctx context.Context, req Request) {
 			checks = append(checks, pending{answer: a, item: it, target: target})
 			continue
 		}
+		r.count(func(s *RunStats) { s.Emitted++ })
 		r.emit(a)
 	}
 	if len(checks) == 0 {
@@ -69,9 +70,13 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 	}
 	d := a.Decision
 	if d.Confidence < r.floor || d.Confidence > 1 {
+		if d.ProductID != nil {
+			r.count(func(s *RunStats) { s.ProposedLow++ })
+		}
 		return 0, false
 	}
 	if d.ProductID != nil && !a.Offered {
+		r.count(func(s *RunStats) { s.NotOffered++ })
 		return 0, false
 	}
 
@@ -86,9 +91,11 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 	}
 
 	if d.ProductID == nil {
+		r.count(func(s *RunStats) { s.ProposedNull++ })
 		return 0, false
 	}
 	if r.spec.Screen != nil && !r.spec.Screen(a.Key, *d.ProductID) {
+		r.count(func(s *RunStats) { s.Screened++ })
 		return 0, false
 	}
 	return *d.ProductID, true
@@ -98,13 +105,20 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 func (r *runner) resolve(p pending, chk Check, ok bool) Answer {
 	a := p.answer
 	if !ok {
-		// The check did not come back. An unsettled row is not changed on an
-		// unverified word; a settled row keeps the dispute, which sends it to
-		// a person — the conservative end of both.
-		if !p.item.Settled {
-			a.Decision = Decision{Ref: a.Decision.Ref, Confidence: 0,
-				Reason: "unverified"}
-		}
+		// The check did not come back. On a settled row the dispute stands
+		// and goes to a person — that is the conservative end.
+		//
+		// On an unsettled row the proposal is passed through unverified
+		// (Checked = false). Verdict allows unverified proposals when the
+		// model names a DIFFERENT product than the engine's guess — those
+		// are not forced matches (the whole reason the pair check exists).
+		// When the model agrees with the engine, Verdict already requires
+		// Verified=true for OutcomeApply, so the unverified proposal
+		// correctly becomes OutcomeKeep.
+		//
+		// Zeroing the confidence here used to discard every proposal
+		// whenever the verification service was unavailable or slow, which
+		// turned a partial outage into a total one for this stage.
 		return a
 	}
 	a.Checked = true

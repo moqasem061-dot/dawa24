@@ -233,9 +233,11 @@ func TestADisputeTheCheckUpholdsGoesToReview(t *testing.T) {
 	}
 }
 
-// When the pair check cannot be asked, an unresolved row is not changed on an
-// unverified word.
-func TestAnUnverifiableProposalIsNotApplied(t *testing.T) {
+// When the pair check cannot be asked, an unresolved row where the model names
+// a product the engine has no opinion on is still applied — the pair check
+// exists to catch forced matches (the list bias), not to veto a model that
+// independently found something the engine could not.
+func TestAnUnverifiableProposalOnAnUnresolvedRowIsApplied(t *testing.T) {
 	ai := &fakeAI{
 		propose: func(matchflow.Item) *matchflow.Decision {
 			return &matchflow.Decision{ProductID: id(7), Confidence: 0.99}
@@ -243,11 +245,31 @@ func TestAnUnverifiableProposalIsNotApplied(t *testing.T) {
 		checkErr: errors.New("gateway down"),
 	}
 	a := run(t, ai, question("k", "x", false, nil, 7))["k"]
-	if a.Decision.ProductID != nil {
-		t.Fatalf("applied %d without verification", *a.Decision.ProductID)
+	if a.Decision.ProductID == nil || *a.Decision.ProductID != 7 {
+		t.Fatalf("unverified proposal discarded: %v, want 7", a.Decision.ProductID)
 	}
-	if a.Decision.Confidence >= matchflow.MinMemoryConfidence {
-		t.Error("an unverified non-answer must not be remembered")
+	j := matchflow.Judgement{Offered: a.Offered, Verified: a.Verified(),
+		Confidence: a.Decision.Confidence, Floor: 0.8}
+	if v := matchflow.Verdict(j, a.Decision.ProductID); v != matchflow.OutcomeApply {
+		t.Errorf("verdict %v, want apply for an unresolved row", v)
+	}
+}
+
+// But when the model agrees with the engine's own guess, an unverified
+// agreement is not enough — OutcomeApply requires Verified=true for that path,
+// because two methods agreeing is only meaningful when verified independently.
+func TestAnUnverifiableConfirmationIsNotApplied(t *testing.T) {
+	ai := &fakeAI{
+		propose: func(matchflow.Item) *matchflow.Decision {
+			return &matchflow.Decision{ProductID: id(7), Confidence: 0.99}
+		},
+		checkErr: errors.New("gateway down"),
+	}
+	a := run(t, ai, question("k", "x", false, id(7), 7))["k"]
+	j := matchflow.Judgement{Current: id(7), Offered: a.Offered, Verified: a.Verified(),
+		Confidence: a.Decision.Confidence, Floor: 0.8}
+	if v := matchflow.Verdict(j, a.Decision.ProductID); v != matchflow.OutcomeKeep {
+		t.Errorf("verdict %v, want keep for an unverified confirmation", v)
 	}
 }
 

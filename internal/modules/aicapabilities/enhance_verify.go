@@ -178,8 +178,22 @@ func (s *Service) Verify(ctx context.Context, batch matchflow.CheckBatch) ([]mat
 			"pairs", len(batch.Pairs), "err", err)
 		return nil, err
 	}
+
+	// Summarise the pair check verdicts for diagnosis.
+	var vSame, vDiff, vUnsure int
+	for _, c := range checks {
+		switch c.Verdict {
+		case matchflow.CheckSame:
+			vSame++
+		case matchflow.CheckDifferent:
+			vDiff++
+		default:
+			vUnsure++
+		}
+	}
 	s.log.InfoContext(ctx, "match verification resolved",
 		"pairs", len(batch.Pairs), "checks", len(checks),
+		"v_same", vSame, "v_different", vDiff, "v_unsure", vUnsure,
 		"req_id", resp.RequestID, "model", resp.Model,
 		"in_tok", resp.InputTok, "out_tok", resp.OutputTok)
 	return checks, nil
