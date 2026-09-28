@@ -31,6 +31,8 @@ templ OrganizationDocumentsModals() {
 						id="modal-doc-tab"
 						href="/documents"
 						target="_blank"
+						rel="noopener noreferrer"
+						data-no-boost="true"
 						class="btn btn-secondary btn-sm font-bold gap-1"
 					>
 						@components.IconExternalLink("icon-xs")
@@ -49,11 +51,17 @@ templ OrganizationDocumentsModals() {
 
 			<!-- Dynamic Interactive Viewer Viewport -->
 			<div class="doc-viewer-viewport" id="modal-doc-viewport">
-				<!-- Mode 1: PDF Viewer Iframe -->
+				<!-- Loading State Spinner -->
+				<div id="modal-doc-loader" class="doc-viewer-loader">
+					<span class="spinner"></span>
+					<span class="text-xs font-bold">جاري تحميل المستند...</span>
+				</div>
+
+				<!-- Mode 1: PDF / Document Viewer Iframe -->
 				<iframe
 					id="modal-doc-iframe"
 					src="about:blank"
-					class="doc-viewer-iframe"
+					class="doc-viewer-iframe hidden"
 					loading="lazy"
 				></iframe>
 
@@ -65,6 +73,25 @@ templ OrganizationDocumentsModals() {
 						alt="معاينة المستند"
 						class="doc-viewer-img"
 					/>
+				</div>
+
+				<!-- Error Fallback State -->
+				<div id="modal-doc-error" class="doc-viewer-error hidden">
+					<div class="text-danger mb-2">
+						@components.IconAlert("icon-lg mx-auto")
+					</div>
+					<p class="text-sm font-bold text-primary m-0">تعذر عرض معاينة هذا المستند مباشرة</p>
+					<p class="text-xs text-muted m-0">يمكنك استخدام زر "فتح في نافذة جديدة" أو زر "تحميل الملف" لمعاينة المستند على جهازك.</p>
+					<div class="d-flex justify-center gap-2 mt-3 flex-wrap">
+						<a id="modal-doc-error-newtab" href="#" target="_blank" rel="noopener noreferrer" data-no-boost="true" class="btn btn-secondary btn-sm font-bold gap-1">
+							@components.IconExternalLink("icon-xs")
+							<span>فتح في نافذة جديدة ↗</span>
+						</a>
+						<a id="modal-doc-error-download" href="#" class="btn btn-primary btn-sm font-bold gap-1">
+							@components.IconDownload("icon-xs")
+							<span>تحميل المستند</span>
+						</a>
+					</div>
 				</div>
 			</div>
 
@@ -173,8 +200,16 @@ templ OrganizationDocumentsModals() {
 		}
 
 		function openDocViewer(docId, title, docType, originalName, status, rawUrl) {
-			const viewUrl = '/documents/' + docId + '/view';
-			const downloadUrl = '/documents/' + docId + '/download';
+			let viewUrl = '/documents/' + docId + '/view';
+			let downloadUrl = '/documents/' + docId + '/download';
+			const path = window.location.pathname || '';
+			if (path.startsWith('/vendor/documents')) {
+				viewUrl = '/vendor/documents/' + docId + '/view';
+				downloadUrl = '/vendor/documents/' + docId + '/download';
+			} else if (path.startsWith('/customer/documents')) {
+				viewUrl = '/customer/documents/' + docId + '/view';
+				downloadUrl = '/customer/documents/' + docId + '/download';
+			}
 
 			const titleEl = document.getElementById('modal-doc-title');
 			const filenameEl = document.getElementById('modal-doc-filename');
@@ -183,19 +218,26 @@ templ OrganizationDocumentsModals() {
 			const iframe = document.getElementById('modal-doc-iframe');
 			const imgContainer = document.getElementById('modal-doc-img-container');
 			const img = document.getElementById('modal-doc-img');
+			const loader = document.getElementById('modal-doc-loader');
+			const errBox = document.getElementById('modal-doc-error');
+			const errNewTab = document.getElementById('modal-doc-error-newtab');
+			const errDownload = document.getElementById('modal-doc-error-download');
 			const modal = document.getElementById('doc-viewer-modal');
 
-			if (titleEl) titleEl.textContent = title;
+			if (titleEl) titleEl.textContent = title || 'معاينة المستند';
 			if (filenameEl) filenameEl.textContent = originalName || ('Document #' + docId);
 			if (tabBtn) tabBtn.href = viewUrl;
 			if (downloadBtn) downloadBtn.href = downloadUrl;
+			if (errNewTab) errNewTab.href = viewUrl;
+			if (errDownload) errDownload.href = downloadUrl;
 
-			// Sniff image-vs-PDF from the original filename first, then the
-			// stored URL (registration-era rows were saved with an empty
-			// original name, but their URL still carries the extension).
+			// Sniff image-vs-PDF from the original filename first, then the stored URL
 			const sniffSrc = ((originalName || '') !== '' ? originalName : (rawUrl || '')).split('?')[0];
 			const ext = (sniffSrc.split('.').pop() || '').toLowerCase();
 			const isImage = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'].includes(ext);
+
+			if (errBox) errBox.classList.add('hidden');
+			if (loader) loader.classList.remove('hidden');
 
 			if (isImage) {
 				if (iframe) {
@@ -203,14 +245,37 @@ templ OrganizationDocumentsModals() {
 					iframe.src = 'about:blank';
 				}
 				if (img && imgContainer) {
+					imgContainer.classList.add('hidden');
+					img.onload = function () {
+						if (loader) loader.classList.add('hidden');
+						if (errBox) errBox.classList.add('hidden');
+						imgContainer.classList.remove('hidden');
+					};
+					img.onerror = function () {
+						if (loader) loader.classList.add('hidden');
+						imgContainer.classList.add('hidden');
+						// Fallback to iframe so DocumentUnavailablePage or browser handler renders
+						if (iframe) {
+							iframe.src = viewUrl;
+							iframe.classList.remove('hidden');
+						} else if (errBox) {
+							errBox.classList.remove('hidden');
+						}
+					};
 					img.src = viewUrl;
-					imgContainer.classList.remove('hidden');
 				}
 			} else {
-				if (imgContainer) {
-					imgContainer.classList.add('hidden');
-				}
+				if (imgContainer) imgContainer.classList.add('hidden');
+				if (img) img.src = '';
 				if (iframe) {
+					iframe.onload = function () {
+						if (loader) loader.classList.add('hidden');
+					};
+					iframe.onerror = function () {
+						if (loader) loader.classList.add('hidden');
+						iframe.classList.add('hidden');
+						if (errBox) errBox.classList.remove('hidden');
+					};
 					iframe.src = viewUrl;
 					iframe.classList.remove('hidden');
 				}
@@ -226,12 +291,21 @@ templ OrganizationDocumentsModals() {
 			const modal = document.getElementById('doc-viewer-modal');
 			const iframe = document.getElementById('modal-doc-iframe');
 			const img = document.getElementById('modal-doc-img');
+			const imgContainer = document.getElementById('modal-doc-img-container');
+			const loader = document.getElementById('modal-doc-loader');
+			const errBox = document.getElementById('modal-doc-error');
 			if (modal) {
 				if (typeof modal.close === 'function') modal.close();
 				else modal.removeAttribute('open');
 			}
-			if (iframe) iframe.src = 'about:blank';
+			if (iframe) {
+				iframe.src = 'about:blank';
+				iframe.classList.add('hidden');
+			}
 			if (img) img.src = '';
+			if (imgContainer) imgContainer.classList.add('hidden');
+			if (loader) loader.classList.add('hidden');
+			if (errBox) errBox.classList.add('hidden');
 		}
 
 		function openReplaceDocModal(docId, docType, titleAr, origName) {
@@ -261,5 +335,19 @@ templ OrganizationDocumentsModals() {
 				else modal.removeAttribute('open');
 			}
 		}
+
+		document.addEventListener('DOMContentLoaded', function () {
+			const modal = document.getElementById('doc-viewer-modal');
+			if (modal) {
+				modal.addEventListener('click', function (e) {
+					if (e.target === modal) {
+						closeDocViewer();
+					}
+				});
+				modal.addEventListener('cancel', function () {
+					closeDocViewer();
+				});
+			}
+		});
 	</script>
 }

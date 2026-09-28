@@ -139,8 +139,8 @@
     const target = e.target;
     if (!target) return;
 
-    // Do NOT intercept actions originating from inside the preview modal itself
-    if (target.closest('#universal-file-preview-modal')) {
+    // Do NOT intercept actions originating from inside preview modals
+    if (target.closest('#universal-file-preview-modal') || target.closest('#doc-viewer-modal')) {
       return;
     }
 

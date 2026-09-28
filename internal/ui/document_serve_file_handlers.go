@@ -81,18 +81,17 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 	if rawURL == "" {
 		rawURL = strings.TrimSpace(doc.StorageKey)
 	}
+	if rawURL == "" {
+		rawURL = strings.TrimSpace(doc.OriginalName)
+	}
 
-	// 1. Sanitize the URL / Storage Key (NEVER redirect to localhost / private network endpoints)
+	// 1. Sanitize the URL / Storage Key (extract clean path from any absolute URL)
 	cleanKey := rawURL
 	if strings.Contains(cleanKey, "://") {
 		if u, parseErr := url.Parse(cleanKey); parseErr == nil {
-			host := strings.ToLower(u.Hostname())
-			if host == "localhost" || host == "127.0.0.1" || host == "minio" || host == "0.0.0.0" ||
-				strings.HasPrefix(host, "192.168.") || strings.HasPrefix(host, "10.") || strings.HasPrefix(host, "172.") {
-				p := u.Path
-				p = strings.TrimPrefix(p, "/dawa24")
-				cleanKey = p
-			}
+			p := u.Path
+			p = strings.TrimPrefix(p, "/dawa24")
+			cleanKey = p
 		}
 	}
 
@@ -105,24 +104,89 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 	}
 	baseName := filepath.Base(cleanKey)
 
-	// 2. Check all local disk locations
+	origName := strings.TrimSpace(doc.OriginalName)
+	for strings.HasPrefix(origName, "/") {
+		origName = strings.TrimPrefix(origName, "/")
+	}
+	origBaseName := filepath.Base(origName)
+	storageKeyClean := strings.TrimPrefix(strings.TrimSpace(doc.StorageKey), "/")
+
+	// 2. Check all local disk locations respecting UPLOAD_DIR and DATA_DIR
+	baseDir := GetUploadBaseDir()
 	candidates := []string{
-		filepath.Join(UploadBaseDir, cleanPath),
-		filepath.Join(UploadBaseDir, cleanKey),
-		filepath.Join(UploadBaseDir, "documents", baseName),
-		filepath.Join(UploadBaseDir, "licenses", baseName),
+		filepath.Join(baseDir, cleanPath),
+		filepath.Join(baseDir, cleanKey),
+		filepath.Join(baseDir, "documents", baseName),
+		filepath.Join(baseDir, "licenses", baseName),
+		filepath.Join(baseDir, string(doc.DocumentType), baseName),
+		filepath.Join(baseDir, baseName),
 		filepath.Join("data", "uploads", cleanPath),
 		filepath.Join("data", "uploads", cleanKey),
 		filepath.Join("data", "uploads", "documents", baseName),
 		filepath.Join("data", "uploads", "licenses", baseName),
+		filepath.Join("data", "uploads", string(doc.DocumentType), baseName),
 		filepath.Join("internal", "ui", "data", "uploads", cleanPath),
 		filepath.Join("internal", "ui", "data", "uploads", "documents", baseName),
+		filepath.Join("internal", "ui", "data", "uploads", "licenses", baseName),
 		filepath.Join("cmd", "server", "data", "uploads", cleanPath),
 		filepath.Join("cmd", "server", "data", "uploads", "documents", baseName),
+		filepath.Join("cmd", "server", "data", "uploads", "licenses", baseName),
 		filepath.Join("data", cleanPath),
 		filepath.Join("data", cleanKey),
 		cleanKey,
 		cleanPath,
+	}
+
+	if origName != "" {
+		candidates = append(candidates,
+			filepath.Join(baseDir, origName),
+			filepath.Join(baseDir, "documents", origName),
+			filepath.Join(baseDir, "licenses", origName),
+			filepath.Join(baseDir, string(doc.DocumentType), origName),
+			filepath.Join(baseDir, origBaseName),
+			filepath.Join(baseDir, "documents", origBaseName),
+			filepath.Join(baseDir, "licenses", origBaseName),
+			filepath.Join("data", "uploads", origName),
+			filepath.Join("data", "uploads", "documents", origName),
+			filepath.Join("data", "uploads", "licenses", origName),
+			filepath.Join("data", "uploads", origBaseName),
+			filepath.Join("data", "uploads", "documents", origBaseName),
+			filepath.Join("data", "uploads", "licenses", origBaseName),
+			filepath.Join("internal", "ui", "data", "uploads", origName),
+			filepath.Join("internal", "ui", "data", "uploads", "documents", origName),
+			filepath.Join("cmd", "server", "data", "uploads", origName),
+			filepath.Join("cmd", "server", "data", "uploads", "documents", origName),
+			origName,
+		)
+	}
+
+	if storageKeyClean != "" && storageKeyClean != cleanKey {
+		candidates = append(candidates,
+			filepath.Join(baseDir, storageKeyClean),
+			filepath.Join(baseDir, "documents", filepath.Base(storageKeyClean)),
+			filepath.Join(baseDir, "licenses", filepath.Base(storageKeyClean)),
+			filepath.Join("data", "uploads", storageKeyClean),
+			storageKeyClean,
+		)
+	}
+
+	if doc.OrganizationID != nil && *doc.OrganizationID > 0 {
+		orgPfx := fmt.Sprintf("orgs/%d", *doc.OrganizationID)
+		candidates = append(candidates,
+			filepath.Join(baseDir, orgPfx, cleanPath),
+			filepath.Join(baseDir, orgPfx, baseName),
+			filepath.Join(baseDir, orgPfx, string(doc.DocumentType), baseName),
+			filepath.Join("data", "uploads", orgPfx, cleanPath),
+			filepath.Join("data", "uploads", orgPfx, baseName),
+		)
+		if origName != "" {
+			candidates = append(candidates,
+				filepath.Join(baseDir, orgPfx, origName),
+				filepath.Join(baseDir, orgPfx, string(doc.DocumentType), origName),
+				filepath.Join(baseDir, orgPfx, origBaseName),
+				filepath.Join("data", "uploads", orgPfx, origName),
+			)
+		}
 	}
 
 	for _, cand := range candidates {
@@ -135,24 +199,7 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 			if openErr == nil {
 				defer f.Close()
 
-				mimeType := doc.MimeType
-				ext := strings.ToLower(filepath.Ext(cand))
-				if mimeType == "" || mimeType == "application/octet-stream" {
-					switch ext {
-					case ".pdf":
-						mimeType = "application/pdf"
-					case ".png":
-						mimeType = "image/png"
-					case ".jpg", ".jpeg":
-						mimeType = "image/jpeg"
-					case ".webp":
-						mimeType = "image/webp"
-					case ".svg":
-						mimeType = "image/svg+xml"
-					default:
-						mimeType = "application/pdf"
-					}
-				}
+				mimeType := resolveDocumentMime(doc.MimeType, cand, doc.OriginalName, cleanKey)
 
 				filename := doc.OriginalName
 				if filename == "" {
@@ -178,17 +225,38 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 		storageKeys := []string{
 			cleanKey,
 			cleanPath,
-			doc.StorageKey,
+			storageKeyClean,
 			fmt.Sprintf("documents/%s", baseName),
 			fmt.Sprintf("uploads/documents/%s", baseName),
 			fmt.Sprintf("licenses/%s", baseName),
+			fmt.Sprintf("uploads/licenses/%s", baseName),
+			fmt.Sprintf("%s/%s", doc.DocumentType, baseName),
 			fmt.Sprintf("uploads/%s", cleanPath),
+		}
+		if origName != "" {
+			storageKeys = append(storageKeys,
+				origName,
+				origBaseName,
+				fmt.Sprintf("documents/%s", origName),
+				fmt.Sprintf("licenses/%s", origName),
+				fmt.Sprintf("uploads/documents/%s", origName),
+				fmt.Sprintf("uploads/licenses/%s", origName),
+				fmt.Sprintf("%s/%s", doc.DocumentType, origName),
+			)
 		}
 		if doc.OrganizationID != nil && *doc.OrganizationID > 0 {
 			storageKeys = append(storageKeys,
 				fmt.Sprintf("orgs/%d/%s", *doc.OrganizationID, cleanPath),
 				fmt.Sprintf("orgs/%d/documents/%s", *doc.OrganizationID, baseName),
+				fmt.Sprintf("orgs/%d/licenses/%s", *doc.OrganizationID, baseName),
+				fmt.Sprintf("orgs/%d/%s/%s", *doc.OrganizationID, doc.DocumentType, baseName),
 			)
+			if origName != "" {
+				storageKeys = append(storageKeys,
+					fmt.Sprintf("orgs/%d/%s", *doc.OrganizationID, origName),
+					fmt.Sprintf("orgs/%d/%s/%s", *doc.OrganizationID, doc.DocumentType, origName),
+				)
+			}
 		}
 
 		for _, sKey := range storageKeys {
@@ -199,27 +267,7 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 			if sErr == nil && body != nil {
 				defer body.Close()
 
-				mimeType := cType
-				if mimeType == "" || mimeType == "application/octet-stream" {
-					mimeType = doc.MimeType
-				}
-				if mimeType == "" || mimeType == "application/octet-stream" {
-					ext := strings.ToLower(filepath.Ext(baseName))
-					switch ext {
-					case ".pdf":
-						mimeType = "application/pdf"
-					case ".png":
-						mimeType = "image/png"
-					case ".jpg", ".jpeg":
-						mimeType = "image/jpeg"
-					case ".webp":
-						mimeType = "image/webp"
-					case ".svg":
-						mimeType = "image/svg+xml"
-					default:
-						mimeType = "application/pdf"
-					}
-				}
+				mimeType := resolveDocumentMime(cType, doc.MimeType, sKey, doc.OriginalName, baseName)
 
 				filename := doc.OriginalName
 				if filename == "" {
@@ -242,4 +290,28 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 
 	// 4. If file is unavailable anywhere, render the clear, polished Document Unavailable Error Page
 	h.renderMissingDocError(w, r, doc, i18n.T(lang, "docs.serve.file_missing"), lang, dir)
+}
+
+func resolveDocumentMime(docMime string, filenames ...string) string {
+	for _, fn := range filenames {
+		ext := strings.ToLower(filepath.Ext(strings.TrimSpace(fn)))
+		switch ext {
+		case ".png":
+			return "image/png"
+		case ".jpg", ".jpeg":
+			return "image/jpeg"
+		case ".webp":
+			return "image/webp"
+		case ".svg":
+			return "image/svg+xml"
+		case ".gif":
+			return "image/gif"
+		case ".pdf":
+			return "application/pdf"
+		}
+	}
+	if docMime != "" && docMime != "application/octet-stream" && docMime != "binary/octet-stream" {
+		return docMime
+	}
+	return "application/pdf"
 }
