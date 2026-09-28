@@ -15,8 +15,8 @@ import (
 // Gateway, and it is the only place in the repository that knows that shape.
 //
 // Two of the fields here exist because of what the Gateway publishes rather than
-// what the Store wants. `response_format` requests JSON output when the caller
-// supplies a schema, and `reasoning` switches off a reasoning model chain of
+// what the Store wants. `response_format` carries a JSON schema when the caller
+// supplies one, and `reasoning` switches off a reasoning model chain of
 // thought — both are optional upstream features that some models honour and
 // others ignore, so both are written defensively and neither is required for a
 // call to succeed.
@@ -92,7 +92,8 @@ func (c *HTTPClient) do(ctx context.Context, req Request, b budget) (*Response, 
 	}
 	if req.Schema != nil {
 		payload.ResponseFormat = map[string]any{
-			"type": "json_object",
+			"type":        "json_schema",
+			"json_schema": req.Schema,
 		}
 	}
 	if !b.think {
