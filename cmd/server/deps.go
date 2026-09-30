@@ -9,6 +9,7 @@ import (
 	"time"
 
 	dbfs "github.com/moqasem061-dot/dawa24/db"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/platform/cache"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -42,19 +43,23 @@ type dependencies struct {
 	// orders lets the API's commerce service announce orders through the UI
 	// handler built after it. See order_announce_wiring.go.
 	orders *lateOrderAnnouncer
+	// matching provides the unified product matching service.
+	matching matching.Service
 }
 
 func newDependencies(ctx context.Context) *dependencies {
+	db := database.New()
 	return &dependencies{
 		ctx: ctx,
 		// The handle exists from the start and gains its pool when dialling
 		// succeeds. Routes are mounted before the database is up, so
 		// repositories must be handed a pointer that becomes usable later
 		// rather than one that is nil at mount time and nil forever after.
-		db:       database.New(),
+		db:       db,
 		cache:    nil, // set in connect once the environment is known
 		dbErr:    errNotConnectedYet,
 		cacheErr: errNotConnectedYet,
+		matching: newMatchingService(db),
 	}
 }
 
@@ -102,6 +107,16 @@ func (d *dependencies) setDBErr(err error) {
 // before the pool is dialled. Callers that need to know whether it is usable
 // yet ask DB() instead.
 func (d *dependencies) Handle() *database.DB { return d.db }
+
+// Matching returns the singleton matching service instance.
+func (d *dependencies) Matching() matching.Service {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+	if d.matching == nil && d.db != nil {
+		d.matching = newMatchingService(d.db)
+	}
+	return d.matching
+}
 
 // setCacheErr records connection state. The handle itself never changes.
 func (d *dependencies) setCacheErr(err error) {

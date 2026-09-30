@@ -137,3 +137,16 @@ func (l *Loader) Load(ctx context.Context, opts ...LoaderOptions) ([]productmatc
 
 	return products, stats, nil
 }
+
+// NewDefaultIndexBuilder returns an IndexBuilderFunc that loads products via Loader.
+func NewDefaultIndexBuilder(loader *Loader) IndexBuilderFunc {
+	return func(ctx context.Context, scope string, revision int64, normVer string) (*productmatch.Index, error) {
+		products, _, err := loader.Load(ctx)
+		if err != nil {
+			return nil, err
+		}
+		idx := productmatch.NewIndex(products)
+		idx.WithCatalogRevision(revision)
+		return idx, nil
+	}
+}

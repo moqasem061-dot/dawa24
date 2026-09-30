@@ -154,7 +154,7 @@ description: "Executable task list for the Product Matching Rework"
   
   On a catalogue load error it returns every row as `unavailable` with `catalog_unavailable`. `Rematch` must not rebuild the index.
   - Tests in `internal/modules/catalog/matching/service_test.go`: dedup, panic isolation, catalogue unavailable ≠ no candidate, counts reconcile to the row count.
-- [ ] T036 Construct `matching.Service` once and expose it to the dependency container in `cmd/server/wire_matching.go`. Worker processes do the same in `cmd/worker/main.go`.
+- [X] T036 Construct `matching.Service` once and expose it to the dependency container in `cmd/server/wire_matching.go`. Worker processes do the same in `cmd/worker/main.go`.
 
 **Checkpoint**: the engine gate is live for all existing callers (through `Index.Match`), the baseline is recorded, and the service exists. No consumer uses the service yet.
 

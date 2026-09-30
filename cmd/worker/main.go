@@ -18,6 +18,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
 	catalogJobs "github.com/moqasem061-dot/dawa24/internal/modules/catalog/jobs"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	matchingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching/postgres"
 	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
@@ -144,6 +146,12 @@ func run() error {
 	catSvcWorker := catalog.NewService(catRepo, log)
 	river.AddWorker(workers, importjobs.NewStageWorker(db, importRunRepo, catSvcWorker, log))
 	river.AddWorker(workers, importjobs.NewCommitWorker(db, importRunRepo, catSvcWorker, log))
+
+	matchingRepo := matchingPostgres.NewRepository(db)
+	matchingLoader := matching.NewLoader(db)
+	matchingCache := matching.NewIndexCache(matching.NewDefaultIndexBuilder(matchingLoader))
+	matchingSvc := matching.NewService(matchingRepo, matchingCache, matchingLoader)
+	_ = matchingSvc
 
 	queueClient, err := queue.New(db, workers, cfg.Worker, log)
 	if err != nil {
