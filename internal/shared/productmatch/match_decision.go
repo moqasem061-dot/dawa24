@@ -176,7 +176,11 @@ func makeRowDecision(
 	flags []string,
 ) matchflow.RowDecision {
 	var prodPtr *int64
-	if productID > 0 {
+	if verdict.State != matchflow.StateNoCandidate &&
+		verdict.State != matchflow.StateUnavailable &&
+		verdict.State != matchflow.StateInvalidInput &&
+		verdict.State != matchflow.StateExcluded &&
+		productID > 0 {
 		id := productID
 		prodPtr = &id
 	}

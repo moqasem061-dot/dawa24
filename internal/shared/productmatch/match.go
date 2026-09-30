@@ -206,7 +206,7 @@ func (idx *Index) Match(row *Row, opts MatchOptions) MatchResult {
 	var prodID int64
 	if cols.MatchedProductID != nil {
 		prodID = *cols.MatchedProductID
-	} else if dec.ProductID != nil {
+	} else if dec.ProductID != nil && cols.MatchLevel != "none" {
 		prodID = *dec.ProductID
 	}
 

@@ -85,6 +85,14 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 		}
 	}
 
+	if p.Path == PathSimilarity && p.Score < pol.MinReview {
+		return Verdict{
+			Eligible: false,
+			State:    matchflow.StateNoCandidate,
+			Reasons:  []Reason{{Code: ReasonNoCandidate}},
+		}
+	}
+
 	prodFacts := prod.Facts()
 	comp := CompareFacts(rowFacts, prodFacts)
 
@@ -174,6 +182,13 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 	// Rule 7: Threshold and Path qualification
 	switch p.Path {
 	case PathSimilarity:
+		if p.Score < pol.MinReview {
+			return Verdict{
+				Eligible: false,
+				State:    matchflow.StateNoCandidate,
+				Reasons:  []Reason{{Code: ReasonNoCandidate}},
+			}
+		}
 		if p.Score < pol.MinStrong {
 			return Verdict{
 				Eligible: true,

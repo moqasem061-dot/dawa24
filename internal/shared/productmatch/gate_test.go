@@ -248,6 +248,16 @@ func TestGate_Rule7_ThresholdsAndQualifications(t *testing.T) {
 		Strengths: []productmatch.Strength{{Value: "5", Unit: "mg"}},
 	}
 
+	// Score < MinReview (0.25) -> StateNoCandidate
+	vBelowMinReview := gate.Evaluate(rowFacts, productmatch.Proposal{
+		Path:      productmatch.PathSimilarity,
+		ProductID: 100,
+		Score:     0.20,
+	}, pol)
+	if vBelowMinReview.State != matchflow.StateNoCandidate || !hasReason(vBelowMinReview.Reasons, productmatch.ReasonNoCandidate) {
+		t.Errorf("expected StateNoCandidate for score < MinReview, got %+v", vBelowMinReview)
+	}
+
 	// Score < MinStrong (0.60)
 	vLowScore := gate.Evaluate(rowFacts, productmatch.Proposal{
 		Path:      productmatch.PathSimilarity,

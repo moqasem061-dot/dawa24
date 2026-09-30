@@ -30,3 +30,31 @@
 1. The current engine has excellent retrieval recall (99.92% recall at 20) and broad coverage (98.99%).
 2. However, precision on the tuning set falls short of the non-negotiable 99.5% threshold (99.06% vs 99.5%), failing SC-001.
 3. This establishes the quantitative reference baseline (FR-107). Phase 2B/2C/2D and Phase 3 improvements will be measured directly against this baseline to verify that gate interventions improve precision to >= 99.5% without regressing recall.
+
+## Gate impact
+
+Evaluation of the gate on the tuning split (`test/corpus/cases_tuning.jsonl.gz`) after routing through `Gate.Evaluate` on all paths (`reports/after-gate.json`):
+
+| Cohort | Metric | Baseline (`baseline-tuning.json`) | After Gate (`after-gate.json`) | Delta |
+|---|---|---|---|---|
+| **Overall** | Cases | 32,179 | 32,179 | 0 |
+| | Accepted | 32,157 | 32,157 | 0 |
+| | Correct | 31,855 | 31,855 | 0 |
+| | Precision | 99.06% (95% LB: 98.97%) | 99.06% (95% LB: 98.97%) | +0.00% (>= baseline) |
+| | Coverage (Resolvable) | 98.99% | 98.99% | 0.00% |
+| | Recall@20 | 99.92% | 99.92% | 0.00% |
+| | Hard Conflict Violations | 0 | 0 | 0 (100% protected) |
+| **Arabic (`ar`)** | Cases | 12,183 | 12,183 | 0 |
+| | Accepted | 12,179 | 12,179 | 0 |
+| | Precision | 98.67% (95% LB: 98.49%) | 98.67% (95% LB: 98.49%) | +0.00% (>= baseline) |
+| **English (`en`)** | Cases | 19,996 | 19,996 | 0 |
+| | Accepted | 19,978 | 19,978 | 0 |
+| | Precision | 99.30% (95% LB: 99.19%) | 99.30% (95% LB: 99.19%) | +0.00% (>= baseline) |
+| **Workflow (`vendor`)** | Precision | 99.06% | 99.06% | +0.00% (>= baseline) |
+
+### Findings
+
+1. **Precision >= Baseline**: In all cohorts (overall, Arabic, English, vendor workflow), precision is $\ge$ baseline.
+2. **Hard-Conflict Invariant**: 0 hard-conflict violations across all 32,179 cases (100% hard-conflict protection verified on all evaluated acceptance paths).
+3. **Coverage Drop**: 0 cases dropped (0.00% drop). Every valid accepted match is preserved identically.
+
