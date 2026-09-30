@@ -37,6 +37,14 @@ func (idx *Index) decide(q *query, scored []scoredProduct, opts MatchOptions) Ma
 		best.score-scored[1].score < tieMargin &&
 		!idx.separated(q, best.product, scored[1].product)
 
+	hasHardConflict := false
+	if q.row != nil {
+		rowFacts := ExtractRowFacts(q.row, nil)
+		bestFacts := best.product.Facts()
+		comp := CompareFacts(rowFacts, bestFacts)
+		hasHardConflict = len(comp.Hard) > 0
+	}
+
 	switch {
 	case best.score < opts.MinReview:
 		// Everything found contradicts the row badly enough that none of it can
@@ -53,6 +61,12 @@ func (idx *Index) decide(q *query, scored []scoredProduct, opts MatchOptions) Ma
 			"صنفان في الكتالوج بنفس درجة التطابق (%d%%) ولا يوجد في الصف ما يفرّق بينهما؛ "+
 				"يلزم اختيار الصحيح يدوياً.",
 			int(best.score*100))
+	case hasHardConflict:
+		// A candidate with any hard conflict can never be MatchStrong or MatchExact (T024).
+		res.Level = MatchReview
+		res.Reason = fmt.Sprintf(
+			"%s (%d%%) — تعارض في الخصائص الجوهرية؛ يلزم التأكيد",
+			best.describeReason(), int(best.score*100))
 	case !best.settleable():
 		// The letters line up and no word does. Offered, never applied — see
 		// scoredProduct.settleable.
