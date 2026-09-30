@@ -91,6 +91,9 @@ jobs:
       - name: Run Quality Gates
         run: make gates
 
+      - name: Run Adversarial Matching Evaluation
+        run: make match-eval-adversarial
+
       - name: Build Production Binaries
         run: go build -trimpath -o bin/ ./cmd/server ./cmd/worker ./cmd/cli ./cmd/etl ./cmd/dbcheck
 
