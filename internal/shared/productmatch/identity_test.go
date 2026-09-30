@@ -136,12 +136,12 @@ func TestSpellingAndSpacingVariantsStillMatch(t *testing.T) {
 	mustAllow(t, idx, &Row{Name: "اكوابلس", DosageForm: "شراب"}, 42)
 }
 
-// Pharmacies use اقراص and كبسول interchangeably for any solid oral form, so
-// that difference must not veto. Every other route still does.
-func TestSolidOralFormsDoNotVetoButOtherRoutesDo(t *testing.T) {
+// An explicit tablet vs explicit capsule is a hard conflict.
+func TestExplicitTabletVsCapsuleConflicts(t *testing.T) {
 	idx := identityIndex()
 
-	mustAllow(t, idx, &Row{Name: "افودارت", DosageForm: "اقراص", Concentration: "0.5 مجم"}, 50)
+	mustRefuse(t, idx, &Row{Name: "افودارت", DosageForm: "اقراص", Concentration: "0.5 مجم"}, 50, "form")
+	mustAllow(t, idx, &Row{Name: "افودارت", Concentration: "0.5 مجم"}, 50)
 	mustRefuse(t, idx, &Row{Name: "ازارجا", DosageForm: "اقراص"}, 40, "form")
 }
 

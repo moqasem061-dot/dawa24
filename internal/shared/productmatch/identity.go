@@ -339,14 +339,8 @@ func gluedTo(tok, word string) bool {
 // A row that names no form is silent, not agreeable: pharmacy lines routinely
 // omit it. But a row that says شراب has said something, and a tablet is not it.
 //
-// Tablets and capsules are one class here, and that is a concession to how
-// pharmacies actually write. Measured on the live catalogue, "افودارت اقراص"
-// against "افودارت 0.5مجم 30 كبسولة" and "اورسوفالك 20كبسولة" against
-// "اورسوفالك 250مجم 20 قرص" are both the same product written loosely — the
-// word for the solid oral form is used interchangeably by the person typing the
-// order. Vetoing on it refused more correct matches than it prevented wrong
-// ones. Every other form stays distinct: a syrup, an injection and a cream are
-// never each other.
+// Explicit tablet vs explicit capsule is a hard conflict. Either side unstated
+// is unstated. A curated fact may override. Ordinary vs ODT/dissolving stays a conflict.
 func formsConflict(row *Row, p *MasterProduct) bool {
 	rowForm := vetoableForm(formKeyOf(row.Name + " " + row.NameEN + " " + row.DosageForm))
 	prodForm := vetoableForm(p.formKey)
@@ -359,23 +353,12 @@ func formsConflict(row *Row, p *MasterProduct) bool {
 // vetoableForm maps a form key onto the class the veto compares, and returns ""
 // for the one key that must never veto.
 //
-// Tablets and capsules collapse together, because the person typing the order
-// uses اقراص and كبسول interchangeably for any solid oral form: "افودارت اقراص"
-// and the catalogue's "افودارت 0.5مجم 30 كبسولة" are the same product, and
-// vetoing on that difference refused more correct matches than it prevented
-// wrong ones.
-//
 // "wash" alone is neutral, because it describes a USE rather than a form and
-// overlaps every other word: "الكا مصر اكياس" and "الكا-مصر غسول قلوي بودرة 12
-// اكياس" are one product named once by its packaging and once by what it is for.
+// overlaps every other word.
 //
-// Everything else vetoes, sachets included. A sachet of granules is not a
-// tablet — "ادويفلام 50 مجم 2 شريط" is two strips of tablets and not the
-// ten-sachet product, and letting that through was a real wrong match.
+// Everything else vetoes, including tablets vs capsules and sachets.
 func vetoableForm(key string) string {
 	switch key {
-	case "tablet", "capsule":
-		return "solid_oral"
 	case "wash":
 		return ""
 	}

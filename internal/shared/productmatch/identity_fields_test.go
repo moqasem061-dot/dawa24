@@ -50,11 +50,11 @@ func TestDiscriminateSeparatesStrengths(t *testing.T) {
 			separate: true,
 		},
 		{
-			// The whole reason the form check is the weakest of the three.
-			name:     "tablets and capsules are one class",
+			// Explicit tablets vs capsules conflict.
+			name:     "tablets and capsules conflict",
 			a:        ProductFields{NameAR: "افودارت", DosageForm: "اقراص"},
 			b:        ProductFields{NameAR: "افودارت", DosageForm: "كبسولات"},
-			separate: false,
+			separate: true,
 		},
 		{
 			name:     "identical rows",

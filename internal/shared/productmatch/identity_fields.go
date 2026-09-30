@@ -99,8 +99,8 @@ func Discriminate(a, b ProductFields) MatchConflict {
 func Separable(a, b ProductFields) bool { return !Discriminate(a, b).None() }
 
 // fieldFormsConflict compares two pharmaceutical forms under the same
-// collapsing rules the indexed comparison uses: tablets and capsules are one
-// class, a wash never vetoes, and a form neither side names cannot disagree.
+// rules the indexed comparison uses: explicit tablets vs capsules conflict,
+// a wash never vetoes, and a form neither side names cannot disagree.
 func fieldFormsConflict(a, b ProductFields) bool {
 	aForm := vetoableForm(formKeyOf(a.formText()))
 	bForm := vetoableForm(formKeyOf(b.formText()))

@@ -52,6 +52,11 @@ func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
 	if row.DosageForm != "" && facts.FormFamily == "" {
 		facts.FormFamily = FormFamily(strings.ToLower(strings.TrimSpace(row.DosageForm)))
 	}
+	if facts.FormFamily == "" {
+		if k := formKeyOf(cleanName); k != "" {
+			facts.FormFamily = FormFamily(k)
+		}
+	}
 	if row.Concentration != "" {
 		parseStrengthText(&facts, row.Concentration)
 	}
@@ -112,6 +117,11 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 
 	if p.DosageForm != "" && facts.FormFamily == "" {
 		facts.FormFamily = FormFamily(strings.ToLower(strings.TrimSpace(p.DosageForm)))
+	}
+	if facts.FormFamily == "" {
+		if k := formKeyOf(name + " " + p.NameEN); k != "" {
+			facts.FormFamily = FormFamily(k)
+		}
 	}
 	if p.Concentration != "" {
 		if facts.Concentration == nil {

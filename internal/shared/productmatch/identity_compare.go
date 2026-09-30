@@ -178,6 +178,11 @@ func compareForm(row, prod IdentityFacts, comp *Comparison) {
 	normR := normalizeForm(string(row.FormFamily))
 	normP := normalizeForm(string(prod.FormFamily))
 
+	if normR == "wash" || normP == "wash" {
+		comp.Attributes["form"] = OutcomeUnstated
+		return
+	}
+
 	if normR == normP {
 		comp.Attributes["form"] = OutcomeAgree
 	} else {

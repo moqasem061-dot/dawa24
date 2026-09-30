@@ -155,3 +155,8 @@ as the admin likes.
   long silent stretch can no longer look orphaned to another replica.
 - **Screen.** The step list follows live snapshots (it stayed on the phase the
   page was rendered in), and the failed card shows the recorded reason.
+
+## Product identity rules
+
+- **Tablet vs Capsule Conflict (US2 / SC-002):** Explicit tablet vs explicit capsule is a hard conflict (`ConflictForm`). Previously, tablets and capsules were collapsed onto `solid_oral`. This is an intentional behaviour change to keep distinct pharmaceutical forms separated. When form is unstated on either side, it is treated as `unstated` (not a conflict). Curated identity overrides can resolve specific catalogue items where necessary. Ordinary vs ODT/dissolving remains a conflict.
+
