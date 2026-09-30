@@ -109,8 +109,10 @@ func (s *Service) StageImport(ctx context.Context, session *Session) error {
 	// nothing is published here that would jump backwards over it. What this
 	// marks is the deterministic pass finishing, which is the point a vendor
 	// with AI switched off sees the run reach.
-	s.note(ctx, session, 45, i18n.TDefault("w4_mod.s_388_388"))
-	run.enhance(ctx)
+	if session.Settings.UseAI && s.AIAvailable() {
+		s.note(ctx, session, 45, i18n.TDefault("w4_mod.s_388_388"))
+		run.enhance(ctx)
+	}
 
 	session.Stats = result.Stats
 	session.Findings = result.Issues

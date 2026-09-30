@@ -37,7 +37,7 @@ func verifiable(level productmatch.MatchLevel) bool {
 // review screen says what the stage managed rather than pretending it ran.
 func (r *stagingRun) enhance(ctx context.Context) {
 	s := r.svc
-	if !r.session.Settings.UseAI || s.enhancer == nil {
+	if !r.session.Settings.UseAI || s == nil || s.enhancer == nil || !s.AIAvailable() {
 		return
 	}
 	if len(r.open) == 0 {
