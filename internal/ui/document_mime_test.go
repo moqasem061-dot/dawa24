@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -64,3 +65,12 @@ func TestResolveDocumentMime(t *testing.T) {
 		})
 	}
 }
+
+func TestSandboxDocumentContent_PDF(t *testing.T) {
+	rec := httptest.NewRecorder()
+	sandboxDocumentContent(rec, "application/pdf")
+	csp := rec.Header().Get("Content-Security-Policy")
+	assert.Contains(t, csp, "object-src 'self' blob:")
+	assert.Contains(t, csp, "frame-ancestors 'self'")
+}
+

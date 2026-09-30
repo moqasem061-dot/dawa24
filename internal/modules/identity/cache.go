@@ -3,6 +3,8 @@ package identity
 import (
 	"context"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 const userCacheMaxEntries = 4096
@@ -21,17 +23,16 @@ func (s *Service) SetUserCacheTTL(d time.Duration) {
 
 // isUserActive reports whether the user is active, using a short-lived cache (30s)
 // to eliminate repetitive database hits during session validation on every request.
-func (s *Service) isUserActive(ctx context.Context, userID int64) bool {
+func (s *Service) isUserActive(ctx context.Context, userID int64) (bool, error) {
 	if s.repo == nil {
-		return true
+		return true, nil
 	}
 	s.userCacheMu.RLock()
 	ttl := s.userCacheTTL
 	s.userCacheMu.RUnlock()
 
 	if ttl <= 0 {
-		user, err := s.repo.GetUserByID(ctx, userID)
-		return err == nil && user != nil && user.DeletedAt == nil && user.Status == StatusActive
+		return s.loadUserActive(ctx, userID)
 	}
 
 	now := time.Now()
@@ -41,17 +42,25 @@ func (s *Service) isUserActive(ctx context.Context, userID int64) bool {
 	s.userCacheMu.RUnlock()
 
 	if ok && now.Before(entry.expiresAt) {
-		return entry.active
+		return entry.active, nil
 	}
 
-	user, err := s.repo.GetUserByID(ctx, userID)
-	active := err == nil && user != nil && user.DeletedAt == nil && user.Status == StatusActive
+	active, err := s.loadUserActive(ctx, userID)
+	if err != nil {
+		return false, err
+	}
 
 	s.userCacheMu.Lock()
 	if len(s.userCache) >= userCacheMaxEntries {
 		for k, v := range s.userCache {
 			if now.After(v.expiresAt) {
 				delete(s.userCache, k)
+			}
+		}
+		if len(s.userCache) >= userCacheMaxEntries {
+			for k := range s.userCache {
+				delete(s.userCache, k)
+				break
 			}
 		}
 	}
@@ -61,7 +70,18 @@ func (s *Service) isUserActive(ctx context.Context, userID int64) bool {
 	}
 	s.userCacheMu.Unlock()
 
-	return active
+	return active, nil
+}
+
+func (s *Service) loadUserActive(ctx context.Context, userID int64) (bool, error) {
+	user, err := s.repo.GetUserByID(ctx, userID)
+	if err != nil {
+		if apperr.KindOf(err) == apperr.KindNotFound {
+			return false, nil
+		}
+		return false, apperr.Unavailable("database", err)
+	}
+	return user != nil && user.DeletedAt == nil && user.Status == StatusActive, nil
 }
 
 // InvalidateUserCache clears the cached active status for a user.

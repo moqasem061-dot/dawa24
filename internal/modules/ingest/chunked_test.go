@@ -153,6 +153,8 @@ func TestChunkedUploadFullFlow(t *testing.T) {
 	repo := newMockIngestRepo()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := ingest.NewService(repo, logger)
+	storage := &recordingChunkStorage{}
+	svc.SetStorage(storage)
 
 	ctx := database.WithTenant(context.Background(), 10)
 	userID := int64(100)
@@ -193,6 +195,9 @@ func TestChunkedUploadFullFlow(t *testing.T) {
 	}
 	if res1.FileUploadID <= 0 {
 		t.Errorf("expected file upload ID to be generated")
+	}
+	if string(storage.payload) != string(chunk0)+string(chunk1) {
+		t.Fatal("stored upload does not contain all chunks in order")
 	}
 }
 

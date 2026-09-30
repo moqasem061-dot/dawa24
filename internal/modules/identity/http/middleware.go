@@ -64,6 +64,10 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 			// so it must not keep the session alive past the idle timeout.
 			sess, err := validateForRequest(service, r, token)
 			if err != nil {
+				if apperr.KindOf(err) != apperr.KindUnauthorized {
+					httpx.Error(w, r, log, err)
+					return
+				}
 				// Expired/invalid session: clear cookie
 				http.SetCookie(w, &http.Cookie{
 					Name:     cookieName,
@@ -94,7 +98,7 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 					http.Redirect(w, r, "/auth/login?"+q.Encode(), http.StatusSeeOther)
 					return
 				}
-				httpx.Error(w, r, log, apperr.Unauthorized())
+				httpx.Error(w, r, log, err)
 				return
 			}
 
@@ -189,6 +193,10 @@ func OptionalAuth(service *identity.Service, resolver *rbac.Resolver, cookieName
 			// so it must not keep the session alive past the idle timeout.
 			sess, err := validateForRequest(service, r, token)
 			if err != nil {
+				if apperr.KindOf(err) != apperr.KindUnauthorized {
+					httpx.Error(w, r, log, err)
+					return
+				}
 				// Expired or invalid session: clear cookie so browser stops sending dead token
 				http.SetCookie(w, &http.Cookie{
 					Name:     cookieName,

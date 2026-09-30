@@ -234,6 +234,8 @@ function deleteFileConfirm(id) {
 }
 
 let searchTimeout = null;
+let searchAbort = null;
+let searchRevision = 0;
 
 function setSearchMessage(container, cls, text) {
 	container.replaceChildren(compareEl('div', cls, text));
@@ -360,7 +362,10 @@ function renderSearchItem(item) {
 
 function filterSearchLocal(query) {
 	clearTimeout(searchTimeout);
+	if (searchAbort) searchAbort.abort();
+	const revision = ++searchRevision;
 	const resultsContainer = document.getElementById('instant-search-results');
+	if (!resultsContainer) return;
 	if (!query || query.trim().length < 2) {
 		setSearchMessage(resultsContainer, 'stack-sm', 'اكتب اسم الصنف للبحث المباشر عبر جميع كشوف الموردين المرفوعة ومقارنة الخصومات فورياً.');
 		return;
@@ -374,32 +379,43 @@ function filterSearchLocal(query) {
 		if (orgInput && orgInput.value) {
 			searchUrl += '&org_id=' + encodeURIComponent(orgInput.value);
 		}
-		fetch(searchUrl, {
-			headers: { 'Accept': 'application/json' }
-		})
-		.then(r => {
-			if (!r.ok) throw new Error('Search failed');
-			return r.json();
-		})
-		.then(data => {
-			const items = data.items || [];
-			if (items.length === 0) {
-				setSearchMessage(resultsContainer, 'stack-sm', 'لم يتم العثور على أصناف مطابقة لـ "' + query + '".');
-				return;
-			}
-
-			const summary = compareEl('div', 'stack-sm');
-			const found = compareEl('span', '', 'تم العثور على ');
-			found.append(compareEl('strong', '', String(items.length)), ' صنف');
-			summary.append(found, compareEl('span', '',
-				'بالكتالوج: ' + (data.in_catalog_count || 0) + ' | أصناف موردين: ' + (data.custom_items_count || 0)));
-
-			resultsContainer.replaceChildren(summary, ...items.slice(0, 15).map(renderSearchItem));
-		})
-		.catch(err => {
-			setSearchMessage(resultsContainer, 'stat-card-label', 'حدث خطأ أثناء البحث. يرجى المحاولة بكلمة بحث أخرى.');
-		});
+		if (revision === searchRevision && resultsContainer.isConnected) {
+			fetchCompareSearch(searchUrl, query, resultsContainer, revision);
+		}
 	}, 250);
+}
+
+function fetchCompareSearch(url, query, container, revision) {
+	searchAbort = typeof AbortController === 'function' ? new AbortController() : null;
+	fetch(url, {
+		headers: { 'Accept': 'application/json' },
+		signal: searchAbort ? searchAbort.signal : undefined
+	})
+	.then(response => {
+		if (!response.ok) throw new Error('Search failed');
+		return response.json();
+	})
+	.then(reply => {
+		if (revision === searchRevision && container.isConnected) renderCompareSearchResults(container, query, reply);
+	})
+	.catch(err => {
+		if (revision !== searchRevision || !container.isConnected || err.name === 'AbortError') return;
+		setSearchMessage(container, 'stat-card-label', 'حدث خطأ أثناء البحث. يرجى المحاولة بكلمة بحث أخرى.');
+	});
+}
+
+function renderCompareSearchResults(container, query, reply) {
+	const items = reply.items || [];
+	if (items.length === 0) {
+		setSearchMessage(container, 'stack-sm', 'لم يتم العثور على أصناف مطابقة لـ "' + query + '".');
+		return;
+	}
+	const summary = compareEl('div', 'stack-sm');
+	const found = compareEl('span', '', 'تم العثور على ');
+	found.append(compareEl('strong', '', String(items.length)), ' صنف');
+	summary.append(found, compareEl('span', '',
+		'بالكتالوج: ' + (reply.in_catalog_count || 0) + ' | أصناف موردين: ' + (reply.custom_items_count || 0)));
+	container.replaceChildren(summary, ...items.slice(0, 15).map(renderSearchItem));
 }
 
 let isModalLoading = false;

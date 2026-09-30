@@ -13,6 +13,21 @@ function getCsrfToken() {
 window.getCsrfToken = getCsrfToken;
 window.getCookie = getCookie;
 
+// Browser privacy settings can block persistence; preferences still work for this page.
+const pagePreferences = Object.create(null);
+function getBrowserPreference(key) {
+  if (key in pagePreferences) return pagePreferences[key];
+  try { return localStorage.getItem(key); }
+  catch (_) { return null; }
+}
+
+function setBrowserPreference(key, preference) {
+  try {
+    localStorage.setItem(key, preference);
+    delete pagePreferences[key];
+  } catch (_) { pagePreferences[key] = preference; }
+}
+
 // Restore the scroll position across a post/redirect/get on list screens.
 // Keyed by pathname so two tabs on different screens do not fight.
 (function() {
@@ -197,7 +212,7 @@ function initHtmxBusyGuards() {
 // 5. Protect native HTML form double-submissions
 document.addEventListener('submit', (e) => {
   const form = e.target;
-  if (form && form.tagName === 'FORM' && !form.hasAttribute('hx-post') && !form.hasAttribute('hx-get')) {
+  if (form && form.tagName === 'FORM' && (form.getAttribute('method') || 'GET').toUpperCase() !== 'GET' && !form.hasAttribute('hx-post') && !form.hasAttribute('hx-get')) {
     if (form.dataset.submitting === 'true') {
       e.preventDefault();
       return;
@@ -476,7 +491,7 @@ function initThemeSystem() {
   // The URL value is deliberately not persisted: it styles this view, it does
   // not change what the reader chose.
   const urlTheme = new URLSearchParams(window.location.search).get('theme');
-  const stored = localStorage.getItem('dawa24-theme') || 'system';
+  const stored = getBrowserPreference('dawa24-theme') || 'system';
   const currentTheme = (urlTheme === 'light' || urlTheme === 'dark') ? urlTheme : stored;
   applyTheme(currentTheme, false);
 
@@ -491,7 +506,7 @@ function initThemeSystem() {
 
   if (window.matchMedia) {
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-      if ((localStorage.getItem('dawa24-theme') || 'system') === 'system') {
+      if ((getBrowserPreference('dawa24-theme') || 'system') === 'system') {
         applyTheme('system', false);
       }
     });
@@ -500,7 +515,7 @@ function initThemeSystem() {
 
 function applyTheme(theme, persist = false) {
   if (persist) {
-    localStorage.setItem('dawa24-theme', theme);
+    setBrowserPreference('dawa24-theme', theme);
   }
   let isDark = false;
   if (theme === 'dark') {
@@ -529,7 +544,7 @@ function initSidebarToggle() {
   if (!sidebar) return;
 
   // Persisted Desktop Collapsed State (above 1024px)
-  const savedState = localStorage.getItem('dawa24-sidebar-collapsed');
+  const savedState = getBrowserPreference('dawa24-sidebar-collapsed');
   if (savedState === 'true' && window.innerWidth >= 1024) {
     sidebar.classList.add('collapsed');
     document.body.classList.add('sidebar-collapsed');
@@ -577,7 +592,7 @@ function initSidebarToggle() {
       e.preventDefault();
       const isCollapsed = sidebar.classList.toggle('collapsed');
       document.body.classList.toggle('sidebar-collapsed', isCollapsed);
-      localStorage.setItem('dawa24-sidebar-collapsed', isCollapsed ? 'true' : 'false');
+      setBrowserPreference('dawa24-sidebar-collapsed', isCollapsed ? 'true' : 'false');
       return;
     }
 
@@ -618,7 +633,7 @@ function initSidebarToggle() {
 
     if (isDesktop) {
       setDrawerOpen(false);
-      const collapsed = localStorage.getItem('dawa24-sidebar-collapsed') === 'true';
+      const collapsed = getBrowserPreference('dawa24-sidebar-collapsed') === 'true';
       sidebar.classList.toggle('collapsed', collapsed);
       document.body.classList.toggle('sidebar-collapsed', collapsed);
     } else {
@@ -712,7 +727,8 @@ function initSidebarNav() {
     if (!nav.dataset.scrollBound) {
       nav.dataset.scrollBound = 'true';
       nav.addEventListener('scroll', () => {
-        sessionStorage.setItem('dawa_sidebar_scroll_top', nav.scrollTop);
+        try { sessionStorage.setItem('dawa_sidebar_scroll_top', nav.scrollTop); }
+        catch (_) { /* Scroll persistence is optional when storage is blocked. */ }
       }, { passive: true });
     }
   } catch (e) {}
@@ -904,7 +920,7 @@ function switchTab(tabId, specificList) {
   if (targetBtn) targetBtn.classList.add('active');
 
   try {
-    history.replaceState(null, null, '#' + cleanId);
+    history.replaceState(history.state, '', '#' + cleanId);
   } catch (_) {}
 }
 
@@ -956,7 +972,7 @@ function showNoticeFromQuery() {
   params.delete('notice');
   params.delete('msg');
   const qs = params.toString();
-  window.history.replaceState({}, '', window.location.pathname + (qs ? '?' + qs : ''));
+  window.history.replaceState(window.history.state, '', window.location.pathname + (qs ? '?' + qs : '') + window.location.hash);
 }
 
 function messageForStatus(status) {
@@ -1007,6 +1023,8 @@ function showToast(message, type = 'info') {
 
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
+  toast.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  toast.setAttribute('aria-atomic', 'true');
   
   const text = document.createElement('span');
   text.textContent = message;
@@ -1017,7 +1035,9 @@ function showToast(message, type = 'info') {
   closeBtn.type = 'button';
   closeBtn.className = 'toast-close';
   closeBtn.textContent = '×';
-  closeBtn.setAttribute('aria-label', 'Close');
+  closeBtn.setAttribute('aria-label', typeof window.dawaT === 'function'
+    ? window.dawaT('common.close', document.documentElement.lang === 'en' ? 'Close' : 'إغلاق')
+    : (document.documentElement.lang === 'en' ? 'Close' : 'إغلاق'));
   closeBtn.onclick = () => {
     toast.remove();
   };
@@ -1064,80 +1084,6 @@ function initScrollReveal() {
     observer.observe(el);
   });
 }
-
-// Universal Session Idle Timeout Watchdog
-(function() {
-  var path = window.location.pathname;
-  if (path.startsWith('/auth/login') || path.startsWith('/auth/register') || path.startsWith('/auth/forgot') || path.startsWith('/auth/reset')) {
-    return;
-  }
-
-  var sessionCookie = getCookie('dawa24_session') || getCookie('session');
-  if (!sessionCookie) return;
-
-  var metaTimeout = document.querySelector('meta[name="session-idle-timeout-mins"]');
-  var timeoutMins = metaTimeout ? parseInt(metaTimeout.getAttribute('content'), 10) : 30;
-  if (!timeoutMins || isNaN(timeoutMins) || timeoutMins <= 0) {
-    timeoutMins = 30;
-  }
-
-  var idleLimitMs = timeoutMins * 60 * 1000;
-  var lastActivityKey = 'dawa24_last_user_activity';
-  var lastRecordedTime = 0;
-
-  function recordActivity() {
-    var now = Date.now();
-    if (now - lastRecordedTime < 3000) return; // Throttle to once every 3s to prevent UI thread lock
-    lastRecordedTime = now;
-    try {
-      localStorage.setItem(lastActivityKey, now.toString());
-    } catch(e) {}
-  }
-
-  recordActivity();
-
-  var events = ['mousedown', 'keydown', 'scroll', 'touchstart', 'click'];
-  events.forEach(function(evt) {
-    window.addEventListener(evt, recordActivity, { passive: true, capture: true });
-  });
-
-  var idleLogoutKey = 'dawa24_idle_logged_out';
-
-  function redirectIdle() {
-    try {
-      localStorage.setItem(idleLogoutKey, Date.now().toString());
-    } catch(e) {}
-    localStorage.removeItem(lastActivityKey);
-    var curPath = window.location.pathname + window.location.search;
-    window.location.href = '/auth/login?reason=idle_timeout&redirect=' + encodeURIComponent(curPath);
-  }
-
-  function checkIdle() {
-    try {
-      // Another tab already logged out for idleness: follow immediately so no
-      // tab stays on an authenticated screen with a dead session.
-      if (localStorage.getItem(idleLogoutKey)) {
-        localStorage.removeItem(lastActivityKey);
-        var curPath2 = window.location.pathname + window.location.search;
-        window.location.href = '/auth/login?reason=idle_timeout&redirect=' + encodeURIComponent(curPath2);
-        return;
-      }
-      var stored = localStorage.getItem(lastActivityKey);
-      var last = stored ? parseInt(stored, 10) : Date.now();
-      var elapsed = Date.now() - last;
-      if (elapsed >= idleLimitMs) {
-        redirectIdle();
-      }
-    } catch(e) {}
-  }
-
-  // A fresh login clears a stale cross-tab logout flag from a previous session.
-  try {
-    localStorage.removeItem(idleLogoutKey);
-  } catch(e) {}
-
-  setInterval(checkIdle, 10000);
-})();
 
 // maps.js and the combobox reach for the toast through window; a top-level
 // function declaration is already a window property in a classic script, but

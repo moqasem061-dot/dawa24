@@ -146,21 +146,23 @@ func NewUIHandler(
 		log = slog.Default()
 	}
 	return &UIHandler{
-		catSvc:   catSvc,
-		orgSvc:   orgSvc,
-		ingSvc:   ingSvc,
-		commSvc:  commSvc,
-		invSvc:   invSvc,
-		idSvc:    idSvc,
-		notifSvc: notifSvc,
-		promoSvc: promoSvc,
-		adminSvc: adminSvc,
-		billSvc:  billSvc,
-		chatSvc:  chatSvc,
-		wfSvc:    wfSvc,
-		hrSvc:    hrSvc,
-		attSvc:   attSvc,
-		log:      log,
+		catSvc:          catSvc,
+		orgSvc:          orgSvc,
+		ingSvc:          ingSvc,
+		commSvc:         commSvc,
+		invSvc:          invSvc,
+		idSvc:           idSvc,
+		notifSvc:        notifSvc,
+		promoSvc:        promoSvc,
+		adminSvc:        adminSvc,
+		billSvc:         billSvc,
+		chatSvc:         chatSvc,
+		wfSvc:           wfSvc,
+		hrSvc:           hrSvc,
+		attSvc:          attSvc,
+		log:             log,
+		tgGatewayClient: telegramgateway.New(telegramgateway.Config{MockMode: true, Log: log}),
+		tgLimiter:       telegramgateway.NewLimiter(),
 	}
 }
 

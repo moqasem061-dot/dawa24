@@ -118,12 +118,11 @@ func (h *UIHandler) AdminProductImagesUploadSubmit(w http.ResponseWriter, r *htt
 	sampleRows := make([][]string, sampleCount)
 	copy(sampleRows, dataRows[:sampleCount])
 
-	session := globalAdminImageImportSessionStore.NewSession(actor.OrganizationID, actor.UserID, header.Filename, len(dataRows))
-	session.Headers = headers
-	session.DetectedSKUCol = skuCol
-	session.DetectedURLCol = urlCol
-	session.SampleRows = sampleRows
-	session.RawDataRows = dataRows
+	session := globalAdminImageImportSessionStore.NewSession(AdminImageImportSession{
+		OrgID: actor.OrganizationID, UserID: actor.UserID, Filename: header.Filename,
+		TotalRows: len(dataRows), Headers: headers, DetectedSKUCol: skuCol,
+		DetectedURLCol: urlCol, SampleRows: sampleRows, RawDataRows: dataRows,
+	})
 
 	http.Redirect(w, r, fmt.Sprintf("/admin/products/images/import/%s", session.ID), http.StatusSeeOther)
 }
@@ -187,7 +186,7 @@ func (h *UIHandler) AdminProductImagesSessionPage(w http.ResponseWriter, r *http
 func (h *UIHandler) AdminProductImagesMappingSubmit(w http.ResponseWriter, r *http.Request) {
 	lang := langOf(r)
 	sessionID := chi.URLParam(r, "id")
-	session, ok := globalAdminImageImportSessionStore.GetSession(sessionID)
+	_, ok := globalAdminImageImportSessionStore.GetSession(sessionID)
 	if !ok {
 		h.redirectWithNotice(w, r, "/admin/products/images/import", "error", i18n.T(lang, "admin.image_import.session_not_found"))
 		return
@@ -210,9 +209,10 @@ func (h *UIHandler) AdminProductImagesMappingSubmit(w http.ResponseWriter, r *ht
 	if idType != "barcode" {
 		idType = "sku"
 	}
-	session.IdentifierType = idType
-	session.DetectedSKUCol = skuCol
-	session.DetectedURLCol = urlCol
+	if !globalAdminImageImportSessionStore.SetMapping(sessionID, idType, skuCol, urlCol) {
+		h.redirectWithNotice(w, r, "/admin/products/images/import", "error", i18n.T(lang, "admin.image_import.session_not_found"))
+		return
+	}
 
 	go func() {
 		defer func() {

@@ -61,6 +61,14 @@ The `catalog` bounded context manages pharmaceutical products, packaging variant
 6. **Monetary Precision:** All prices and discounts are stored and computed via `money.Amount` (minor unit integer arithmetic).
 7. **Saving Products Decision (Task 0.6.1):** `catalog.saving_products` is reinstated as a distinct customer/vendor-owned list of products with quantity and price used for savings tracking and procurement optimization, distinct from time-boxed promotional discount offers.
 
+## Image import stability (2026-09-30)
+
+Product-image uploads publish fully initialized sessions. Column-mapping changes
+use the session store lock; progress polling and session listings receive
+snapshots rather than live pointers. Concurrent image workers publish copies of
+their completed-row slice, so readers cannot race with later worker updates.
+The existing SKU and barcode upload flows pass with the race detector enabled.
+
 ## Endpoints
 
 - `GET /api/v1/catalog/search?q={query}&category_id={id}&brand_id={id}` — Fuzzy Arabic product search.

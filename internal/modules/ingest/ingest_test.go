@@ -7,6 +7,7 @@ import (
 	"sort"
 	"testing"
 
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
@@ -243,7 +244,7 @@ func TestColumnDetection(t *testing.T) {
 }
 
 func TestDeterministicProductMatcherAndSessionLifecycle(t *testing.T) {
-	ctx := database.WithTenant(context.Background(), 10)
+	ctx := database.WithTenant(authctx.WithActor(context.Background(), authctx.Actor{UserID: 100, OrgID: 10}), 10)
 	repo := newMockIngestRepo()
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	svc := NewService(repo, logger)
@@ -251,7 +252,7 @@ func TestDeterministicProductMatcherAndSessionLifecycle(t *testing.T) {
 	// 1. Register Upload
 	upload, err := svc.RegisterUpload(ctx, &FileUpload{
 		Filename:      "stock.xlsx",
-		StorageKey:    "uploads/stock.xlsx",
+		StorageKey:    "orgs/10/uploads/stock.xlsx",
 		MimeType:      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 		FileSizeBytes: 1024,
 	})

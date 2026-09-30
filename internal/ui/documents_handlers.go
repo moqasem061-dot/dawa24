@@ -89,8 +89,15 @@ func (h *UIHandler) OrganizationDocumentsUploadSubmit(w http.ResponseWriter, r *
 	var uploadErr error
 
 	for _, k := range formKeys {
-		fileURL, originalName, uploadErr = saveUploadedFileMeta(r, k, "documents")
-		if uploadErr == nil && fileURL != "" {
+		u, name, err := saveUploadedFileMeta(r, k, "documents")
+		if err == nil && u != "" {
+			fileURL = u
+			originalName = name
+			uploadErr = nil
+			break
+		}
+		if err != nil && !noFileSent(err) {
+			uploadErr = err
 			break
 		}
 	}
@@ -182,15 +189,11 @@ func (h *UIHandler) OrganizationDocumentDeleteSubmit(w http.ResponseWriter, r *h
 // saveUploadedFileMeta saves a multipart file and returns its public URL and
 // the client-side file name (for the documents registry).
 func saveUploadedFileMeta(r *http.Request, formKey, category string) (url, name string, err error) {
-	url, err = saveUploadedFile(r, formKey, category)
-	if err != nil || url == "" {
-		return url, "", err
+	meta, err := saveUploadedFileFull(r, formKey, category)
+	if err != nil {
+		return "", "", err
 	}
-	if file, header, ferr := r.FormFile(formKey); ferr == nil { // nolint:errswallow: only the original filename is read here; the upload itself was checked above
-		defer file.Close()
-		name = header.Filename
-	}
-	return url, name, nil
+	return meta.URL, meta.OriginalName, nil
 }
 
 func docTypeLabelAr(docType attachments.DocumentType) string {

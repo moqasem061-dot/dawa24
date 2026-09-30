@@ -1,6 +1,11 @@
 package telegram
 
-import "testing"
+import (
+	"context"
+	"encoding/base64"
+	"strings"
+	"testing"
+)
 
 func TestIsTelegramFileURL(t *testing.T) {
 	cases := map[string]bool{
@@ -17,5 +22,17 @@ func TestIsTelegramFileURL(t *testing.T) {
 		if got := isTelegramFileURL(raw); got != want {
 			t.Errorf("isTelegramFileURL(%q) = %v; want %v", raw, got, want)
 		}
+	}
+}
+
+func TestDownloadFileBoundsInlineData(t *testing.T) {
+	svc := &Service{}
+	oversized := strings.Repeat("A", base64.StdEncoding.EncodedLen(maxTelegramFileSize)+1)
+	if _, err := svc.DownloadFile(context.Background(), "", "", oversized); err == nil {
+		t.Fatal("oversized inline attachment accepted")
+	}
+	content, err := svc.DownloadFile(context.Background(), "", "", base64.StdEncoding.EncodeToString([]byte("fixture")))
+	if err != nil || string(content) != "fixture" {
+		t.Fatalf("valid inline content=%q err=%v", content, err)
 	}
 }

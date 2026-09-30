@@ -37,6 +37,15 @@ templ UniversalFilePreviewModal(langOpt ...string) {
 						@IconExternalLink("icon-xs")
 						<span>{ i18n.T(lang, "preview.modal.newtab") }</span>
 					</a>
+					<a
+						id="universal-preview-download"
+						href="#"
+						class="btn btn-secondary btn-xs font-bold gap-1"
+						title={ i18n.T(lang, "preview.modal.download_tooltip") }
+					>
+						@IconDownload("icon-xs")
+						<span>{ i18n.T(lang, "preview.modal.download") }</span>
+					</a>
 					<button
 						type="button"
 						class="btn btn-ghost btn-xs btn-icon"
@@ -55,7 +64,6 @@ templ UniversalFilePreviewModal(langOpt ...string) {
 						id="universal-preview-iframe"
 						src="about:blank"
 						class="doc-viewer-iframe hidden"
-						loading="lazy"
 					></iframe>
 
 					<!-- Image Viewport -->

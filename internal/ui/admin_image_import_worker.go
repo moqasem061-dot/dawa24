@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"time"
@@ -222,7 +223,7 @@ func runConcurrentImageImport(
 						curSess.SuccessRows = successCount
 						curSess.NotFoundRows = notFoundCount
 						curSess.ErrorRows = errorCount
-						curSess.Rows = outRows
+						curSess.Rows = slices.Clone(outRows)
 					}
 					store.mu.Unlock()
 				}
@@ -250,7 +251,7 @@ feedJobs:
 		curSess.SuccessRows = successCount
 		curSess.NotFoundRows = notFoundCount
 		curSess.ErrorRows = errorCount
-		curSess.Rows = outRows
+		curSess.Rows = slices.Clone(outRows)
 	}
 	store.mu.Unlock()
 }

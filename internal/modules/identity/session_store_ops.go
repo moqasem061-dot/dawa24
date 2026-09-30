@@ -56,6 +56,9 @@ func (s *SessionStore) get(ctx context.Context, token string, touch bool) (*Sess
 					return nil, ErrSessionIdleTimeout
 				}
 			}
+			if s.cache != nil {
+				return nil, err
+			}
 			return nil, apperr.Unauthorized()
 		}
 
@@ -85,7 +88,9 @@ func (s *SessionStore) get(ctx context.Context, token string, touch bool) (*Sess
 		if touch && now.Sub(lastActive) >= 15*time.Second {
 			sess.LastActiveAt = now
 		}
-		return sess, nil
+		copy := *sess
+		copy.Permissions = append([]string(nil), sess.Permissions...)
+		return &copy, nil
 	}
 
 	val, err := rdb.Get(ctx, sessionKey(token)).Bytes()
@@ -120,8 +125,13 @@ func (s *SessionStore) get(ctx context.Context, token string, touch bool) (*Sess
 
 	// Enforce Idle Timeout
 	if idleLimit > 0 && time.Since(lastActive) > idleLimit {
-		_ = s.Delete(ctx, token)
-		_ = rdb.Set(ctx, sessionEvictedKey(token), "idle_timeout", 24*time.Hour).Err()
+		deleted, err := expireRedisSession(ctx, rdb, &sess, val)
+		if err != nil {
+			return nil, err
+		}
+		if !deleted {
+			return nil, apperr.Unavailable("session", errors.New("session changed during idle check; retry"))
+		}
 		return nil, ErrSessionIdleTimeout
 	}
 
@@ -129,13 +139,8 @@ func (s *SessionStore) get(ctx context.Context, token string, touch bool) (*Sess
 	now := time.Now().UTC()
 	if touch && now.Sub(lastActive) >= 15*time.Second {
 		sess.LastActiveAt = now
-		if data, mErr := json.Marshal(&sess); mErr == nil {
-			remTTL, tErr := rdb.TTL(ctx, sessionKey(token)).Result()
-			if tErr == nil && remTTL > 0 {
-				_ = rdb.Set(ctx, sessionKey(token), data, remTTL).Err()
-			} else {
-				_ = rdb.Set(ctx, sessionKey(token), data, s.ttl).Err()
-			}
+		if err := touchRedisSession(ctx, rdb, &sess, val); err != nil {
+			return nil, err
 		}
 	}
 
@@ -165,18 +170,19 @@ func (s *SessionStore) Delete(ctx context.Context, token string) error {
 		return nil
 	}
 
-	sess, err := s.Get(ctx, token)
-	if err == nil && sess != nil {
-		rdb.SRem(ctx, userSessionsKey(sess.UserID), token)
-		if sess.ActiveOrgID > 0 {
-			rdb.SRem(ctx, orgSessionsKey(sess.ActiveOrgID), token)
-		}
-	}
-
-	if err := rdb.Del(ctx, sessionKey(token)).Err(); err != nil {
+	// Deletion must not validate or touch the session: expiry calls this path too.
+	blob, err := rdb.Get(ctx, sessionKey(token)).Bytes()
+	if err != nil && !errors.Is(err, redis.Nil) {
 		return apperr.Unavailable("redis", err)
 	}
-	return nil
+	if errors.Is(err, redis.Nil) {
+		return nil
+	}
+	var sess Session
+	if err := json.Unmarshal(blob, &sess); err != nil {
+		return fmt.Errorf("session: unmarshal for deletion: %w", err)
+	}
+	return deleteRedisSession(ctx, rdb, &sess)
 }
 
 // DeleteAllForUser invalidates all active sessions for a given user.

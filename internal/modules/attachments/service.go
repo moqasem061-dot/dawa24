@@ -223,16 +223,9 @@ func (s *Service) PresignUpload(ctx context.Context, actor authctx.Actor, req Pr
 
 // ConfirmUpload verifies with MinIO/S3 that the object actually exists, records real file size, and marks status.
 func (s *Service) ConfirmUpload(ctx context.Context, actor authctx.Actor, id int64) (*Document, error) {
-	doc, err := s.repo.GetByID(ctx, id)
+	doc, err := s.GetDocumentByID(ctx, actor, id)
 	if err != nil {
 		return nil, err
-	}
-
-	// Verify actor ownership
-	if !actor.IsPlatformAdmin() {
-		if doc.UserID != nil && *doc.UserID != actor.UserID && (doc.OrganizationID == nil || *doc.OrganizationID != actor.OrgID) {
-			return nil, apperr.Forbidden("document.access_denied", i18n.TDefault("w4_mod.s_233_233"))
-		}
 	}
 
 	if s.storage != nil {

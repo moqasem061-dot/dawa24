@@ -117,19 +117,7 @@ const maxSourcePixels = 100 * 1000 * 1000
 // decode is the expensive half, and doing it three times was the shape of the
 // obvious implementation.
 func Derive(src []byte) ([]Derivative, error) {
-	cfg, format, err := image.DecodeConfig(bytes.NewReader(src))
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrUnsupported, err)
-	}
-	if cfg.Width <= 0 || cfg.Height <= 0 {
-		return nil, ErrUnsupported
-	}
-	if cfg.Width*cfg.Height > maxSourcePixels {
-		return nil, fmt.Errorf("media: image is %dx%d, past the %d-pixel ceiling",
-			cfg.Width, cfg.Height, maxSourcePixels)
-	}
-
-	img, _, err := image.Decode(bytes.NewReader(src))
+	img, format, err := Decode(src)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", ErrUnsupported, err)
 	}

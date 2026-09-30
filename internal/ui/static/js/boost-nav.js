@@ -273,11 +273,28 @@
     document.documentElement.classList.remove('is-navigating');
   }
 
+  function preserveFilterInput(form, incomingForm, xhr) {
+    var active = document.activeElement;
+    if (!form.contains(active) || active.tagName !== 'INPUT' || !/^(search|text)$/.test(active.type)) return;
+    var replacement = incomingForm.elements.namedItem(active.name);
+    if (!replacement || replacement.tagName !== 'INPUT') return;
+    if (!active.id) active.id = 'dawa-filter-input-' + Array.prototype.indexOf.call(document.forms, form) + '-' + Array.prototype.indexOf.call(form.elements, active);
+    replacement.id = active.id;
+    // Alpine-bound controls need their new parent's scope; plain search inputs can stay intact.
+    var bound = active.getAttributeNames().some(function (name) { return /^(x-|:|@)/.test(name); });
+    if (!bound) replacement.setAttribute('hx-preserve', 'true');
+    xhr.__dawaFilterFocus = { input: active, id: active.id, start: active.selectionStart, end: active.selectionEnd, direction: active.selectionDirection };
+  }
+
   document.addEventListener('htmx:beforeRequest', function (evt) {
     if (!evt.detail || !evt.detail.boosted) return;
     navFrom = window.location.pathname;
     document.documentElement.classList.add('is-navigating');
     if (evt.detail.elt && evt.detail.elt.tagName === 'FORM') evt.detail.elt.__dawaInFlight = true;
+    var form = evt.detail.elt;
+    if (form && form.__dawaFilter) {
+      evt.detail.xhr.__dawaFilterSnapshot = new URLSearchParams(new FormData(form)).toString();
+    }
   });
   document.addEventListener('htmx:afterRequest', function (evt) {
     if (!evt.detail || !evt.detail.boosted) return;
@@ -303,6 +320,21 @@
     var requested = pathOf((d.pathInfo && d.pathInfo.finalRequestPath) || window.location.href);
     var landed = pathOf(xhr.responseURL || '') || requested;
     var redirected = !!(requested && landed && requested.href !== landed.href);
+
+    var form = d.requestConfig && d.requestConfig.elt;
+    // Detached forms and edited queries must not replace a newer page or update its history.
+    if (form && form.__dawaFilter && (!form.isConnected || xhr.__dawaFilterSnapshot !== new URLSearchParams(new FormData(form)).toString())) {
+      d.shouldSwap = false;
+      endNav();
+      return;
+    }
+
+    // A dependency outage must leave the current screen usable, without reload loops.
+    if (xhr.status >= 500 || xhr.status === 429) {
+      d.shouldSwap = false;
+      endNav();
+      return;
+    }
 
     function fullLoad() {
       d.shouldSwap = false;
@@ -335,6 +367,15 @@
         incoming.getAttribute('data-shell') !== current.getAttribute('data-shell') ||
         doc.documentElement.getAttribute('lang') !== document.documentElement.getAttribute('lang')) {
       return fullLoad();
+    }
+
+    if (form && form.__dawaFilter && requested && landed && requested.pathname === window.location.pathname && landed.pathname === requested.pathname) {
+      var forms = current.querySelectorAll('form');
+      var index = Array.prototype.indexOf.call(forms, form);
+      var incomingForm = incoming.querySelectorAll('form')[index];
+      if (incomingForm && incomingForm.getAttribute('action') === form.getAttribute('action')) {
+        preserveFilterInput(form, incomingForm, xhr);
+      }
     }
 
     // A dialog removed while open never fires "close", so app.js would keep
@@ -382,10 +423,18 @@
     endNav();
     syncPublicNav();
 
-    var preserve = evt.detail.elt && (
+    var focus = evt.detail.xhr && evt.detail.xhr.__dawaFilterFocus;
+    var input = focus && (focus.input.isConnected ? focus.input : document.getElementById(focus.id));
+    if (input) {
+      input.focus({ preventScroll: true });
+      if (focus.start !== null) input.setSelectionRange(focus.start, focus.end, focus.direction);
+    }
+
+    var preserve = (evt.detail.xhr && typeof evt.detail.xhr.__dawaFilterSnapshot === 'string') || (evt.detail.elt && (
+      evt.detail.elt.__dawaFilter ||
       evt.detail.elt.hasAttribute('data-preserve-scroll') ||
       evt.detail.elt.hasAttribute('data-keep-scroll')
-    );
+    ));
 
     if (!preserve) {
       resetScrollToTop();

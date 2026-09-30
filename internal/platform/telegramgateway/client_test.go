@@ -146,25 +146,15 @@ func TestMockClientSendAndCheck(t *testing.T) {
 func TestLimiterCooldown(t *testing.T) {
 	limiter := NewLimiter()
 	phone := "+201012345678"
-
-	inCd, _ := limiter.CheckSendCooldown(phone)
-	if inCd {
-		t.Fatal("Expected no cooldown initially")
+	if _, err := limiter.ReserveSend(phone); err != nil {
+		t.Fatal(err)
 	}
-
-	limiter.RecordSend(phone, 2*time.Second)
-
-	inCd, remaining := limiter.CheckSendCooldown(phone)
-	if !inCd || remaining <= 0 {
-		t.Fatalf("Expected in cooldown, got inCd=%v, remaining=%d", inCd, remaining)
+	if remaining, err := limiter.ReserveSend(phone); !errors.Is(err, ErrRateLimited) || remaining <= 0 {
+		t.Fatalf("cooldown not reserved: remaining=%d err=%v", remaining, err)
 	}
-
-	// Max hourly sends
-	for i := 0; i < 4; i++ {
-		limiter.RecordSend(phone, 2*time.Second)
-	}
-	exceeded := limiter.CheckHourlySendLimit(phone, 5)
-	if !exceeded {
-		t.Fatal("Expected hourly limit exceeded after 5 sends")
+	limiter.hourlySends[phone] = []time.Time{time.Now(), time.Now(), time.Now(), time.Now(), time.Now()}
+	delete(limiter.cooldowns, phone)
+	if _, err := limiter.ReserveSend(phone); !errors.Is(err, ErrRateLimited) {
+		t.Fatal("five hourly sends must be refused")
 	}
 }

@@ -11,21 +11,15 @@ import (
 )
 
 func (h *UIHandler) telegramGateway() telegramgateway.Client {
-	if h.tgGatewayClient != nil {
-		return h.tgGatewayClient
-	}
-	h.tgGatewayClient = telegramgateway.New(telegramgateway.Config{
-		MockMode: true,
-		Log:      h.log,
-	})
 	return h.tgGatewayClient
 }
 
 func (h *UIHandler) telegramLimiter() *telegramgateway.OTPRateLimiter {
-	if h.tgLimiter == nil {
-		h.tgLimiter = telegramgateway.NewLimiter()
-	}
 	return h.tgLimiter
+}
+
+func (h *UIHandler) telegramVerificationAvailable() bool {
+	return h.tgGatewayClient != nil && (!isProductionEnv() || !h.tgGatewayClient.IsMock())
 }
 
 func (h *UIHandler) phoneSecret() string {
@@ -66,6 +60,11 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.telegramVerificationAvailable() {
+		writeJSON(w, http.StatusServiceUnavailable, sendOTPResp{Error: "service_unavailable", Message: i18n.T(lang, "common.service_unavailable")})
+		return
+	}
 
 	normPhone, err := telegramgateway.NormalizePhone(rawPhone)
 	if err != nil {
@@ -79,23 +78,13 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	limiter := h.telegramLimiter()
-	if inCooldown, remaining := limiter.CheckSendCooldown(normPhone); inCooldown {
+	if remaining, err := limiter.ReserveSend(normPhone); err != nil {
 		w.WriteHeader(http.StatusTooManyRequests)
 		_ = json.NewEncoder(w).Encode(sendOTPResp{
 			OK:       false,
 			Error:    "cooldown",
 			Cooldown: remaining,
 			Message:  i18n.T(lang, "auth.telegram.cooldown"),
-		})
-		return
-	}
-
-	if limiter.CheckHourlySendLimit(normPhone, 5) {
-		w.WriteHeader(http.StatusTooManyRequests)
-		_ = json.NewEncoder(w).Encode(sendOTPResp{
-			OK:      false,
-			Error:   "rate_limited",
-			Message: i18n.T(lang, "auth.telegram.rate_limit"),
 		})
 		return
 	}
@@ -112,8 +101,6 @@ func (h *UIHandler) SendTelegramOTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	limiter.RecordSend(normPhone, 60*time.Second)
 
 	mockCode := ""
 	if !isProductionEnv() && devShowMockOTP() {
@@ -166,6 +153,11 @@ func (h *UIHandler) VerifyTelegramOTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
+	if !h.telegramVerificationAvailable() {
+		writeJSON(w, http.StatusServiceUnavailable, verifyOTPResp{Error: "service_unavailable", Message: i18n.T(lang, "common.service_unavailable")})
+		return
+	}
 
 	normPhone, err := telegramgateway.NormalizePhone(rawPhone)
 	if err != nil {
@@ -212,7 +204,8 @@ func (h *UIHandler) VerifyTelegramOTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !result.Valid {
+	verifiedPhone, phoneErr := telegramgateway.NormalizePhone(result.PhoneNumber)
+	if !result.Valid || phoneErr != nil || verifiedPhone != normPhone || !limiter.ConsumeRequest(requestID) {
 		w.WriteHeader(http.StatusBadRequest)
 		_ = json.NewEncoder(w).Encode(verifyOTPResp{
 			OK:      false,
@@ -221,8 +214,6 @@ func (h *UIHandler) VerifyTelegramOTP(w http.ResponseWriter, r *http.Request) {
 		})
 		return
 	}
-
-	limiter.ClearRequest(requestID)
 
 	token, err := telegramgateway.SignPhoneToken(normPhone, h.phoneSecret(), 30*time.Minute)
 	if err != nil {

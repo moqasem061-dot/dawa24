@@ -46,7 +46,7 @@ func (h *UIHandler) SettingsTelegramCard(w http.ResponseWriter, r *http.Request)
 			data.Notice, data.NoticeKind = i18n.T(lang, "settings.tg_error"), "danger"
 		}
 		data.Link = link
-		if until, err := strconv.ParseInt(r.URL.Query().Get("until"), 10, 64); err == nil &&
+		if until, parseErr := strconv.ParseInt(r.URL.Query().Get("until"), 10, 64); parseErr == nil && err == nil &&
 			link == nil && time.Now().Before(time.Unix(until, 0)) {
 			w.WriteHeader(http.StatusNoContent)
 			return

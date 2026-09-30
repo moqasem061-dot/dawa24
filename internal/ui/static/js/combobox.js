@@ -75,6 +75,7 @@
 			active: -1,
 			_timer: null,
 			_abort: null,
+			_searchRevision: 0,
 			_uid: 'cb-' + Math.random().toString(36).slice(2, 9),
 
 			init() {
@@ -88,6 +89,7 @@
 			},
 
 			_cancel() {
+				this._searchRevision++;
 				if (this._timer) { clearTimeout(this._timer); this._timer = null; }
 				if (this._abort) { this._abort.abort(); this._abort = null; }
 			},
@@ -154,6 +156,7 @@
 
 			_fetch(q) {
 				var self = this;
+				var revision = this._searchRevision;
 				var url = this.url
 					.replace('{q}', encodeURIComponent(q))
 					.replace(/\{([a-z_]+)\}/gi, function (_, key) {
@@ -173,12 +176,13 @@
 						return res.json();
 					})
 					.then(function (data) {
+						if (revision !== self._searchRevision) return;
 						self.loading = false;
 						self.results = Array.isArray(data) ? data.slice(0, 50) : [];
 						self.active = self.results.length ? 0 : -1;
 					})
 					.catch(function (err) {
-						if (err && err.name === 'AbortError') return;
+						if (revision !== self._searchRevision || (err && err.name === 'AbortError')) return;
 						self.loading = false;
 						self.results = [];
 						self.failed = true;
@@ -187,6 +191,8 @@
 
 			/** choose commits an option. Called from mousedown, not click. */
 			choose(item) {
+				this._cancel();
+				this.loading = false;
 				this.selected = { id: item.id, label: item.label, item: item };
 				this.query = item.label;
 				this.open = false;
@@ -195,6 +201,9 @@
 			},
 
 			clear(focus) {
+				this._cancel();
+				this.loading = false;
+				this.failed = false;
 				this.selected = null;
 				this.query = '';
 				this.results = this.url ? [] : this.options.slice(0, 50);

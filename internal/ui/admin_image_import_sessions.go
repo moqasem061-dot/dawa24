@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"slices"
 	"sort"
 	"sync"
 	"time"
@@ -56,7 +57,7 @@ func init() {
 	}()
 }
 
-func (s *AdminImageImportSessionStore) NewSession(orgID, userID int64, filename string, totalRows int) *AdminImageImportSession {
+func (s *AdminImageImportSessionStore) NewSession(initial AdminImageImportSession) *AdminImageImportSession {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -66,22 +67,25 @@ func (s *AdminImageImportSessionStore) NewSession(orgID, userID int64, filename 
 
 	sess := &AdminImageImportSession{
 		ID:             id,
-		OrgID:          orgID,
-		UserID:         userID,
-		Filename:       filename,
+		OrgID:          initial.OrgID,
+		UserID:         initial.UserID,
+		Filename:       initial.Filename,
 		Phase:          AdminImagePhaseMapping,
 		Progress:       0,
 		ProgressNote:   i18n.T("ar", "ops.image.awaiting_columns"),
-		TotalRows:      totalRows,
+		TotalRows:      initial.TotalRows,
 		IdentifierType: "sku",
-		DetectedSKUCol: -1,
-		DetectedURLCol: -1,
-		Rows:           make([]*AdminImageImportRow, 0, totalRows),
+		Headers:        initial.Headers,
+		DetectedSKUCol: initial.DetectedSKUCol,
+		DetectedURLCol: initial.DetectedURLCol,
+		SampleRows:     initial.SampleRows,
+		RawDataRows:    initial.RawDataRows,
+		Rows:           make([]*AdminImageImportRow, 0, initial.TotalRows),
 		CreatedAt:      time.Now(),
 		ExpiresAt:      time.Now().Add(4 * time.Hour),
 	}
 	s.sessions[id] = sess
-	return sess
+	return snapshotAdminImageSession(sess)
 }
 
 func (s *AdminImageImportSessionStore) GetSession(id string) (*AdminImageImportSession, bool) {
@@ -91,7 +95,7 @@ func (s *AdminImageImportSessionStore) GetSession(id string) (*AdminImageImportS
 	if !ok || time.Now().After(sess.ExpiresAt) {
 		return nil, false
 	}
-	return sess, true
+	return snapshotAdminImageSession(sess), true
 }
 
 func (s *AdminImageImportSessionStore) ListSessions() []*AdminImageImportSession {
@@ -102,13 +106,33 @@ func (s *AdminImageImportSessionStore) ListSessions() []*AdminImageImportSession
 	now := time.Now()
 	for _, sess := range s.sessions {
 		if now.Before(sess.ExpiresAt) {
-			list = append(list, sess)
+			list = append(list, snapshotAdminImageSession(sess))
 		}
 	}
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].CreatedAt.After(list[j].CreatedAt)
 	})
 	return list
+}
+
+// Sheet data and completed rows are immutable; progress and row slices are snapshots.
+func snapshotAdminImageSession(sess *AdminImageImportSession) *AdminImageImportSession {
+	snapshot := *sess
+	snapshot.Rows = slices.Clone(sess.Rows)
+	return &snapshot
+}
+
+func (s *AdminImageImportSessionStore) SetMapping(id, identifierType string, skuCol, urlCol int) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	sess, ok := s.sessions[id]
+	if !ok || time.Now().After(sess.ExpiresAt) {
+		return false
+	}
+	sess.IdentifierType = identifierType
+	sess.DetectedSKUCol = skuCol
+	sess.DetectedURLCol = urlCol
+	return true
 }
 
 func (s *AdminImageImportSessionStore) DeleteSession(id string) bool {

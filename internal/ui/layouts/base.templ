@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
+	identityhttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
@@ -40,6 +41,10 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 			<meta name="color-scheme" content="light dark"/>
 			<meta name="session-idle-timeout-mins" content={ fmt.Sprintf("%d", site.SessionIdleTimeoutMinutes) }/>
+			if sess, ok := identityhttp.SessionFrom(ctx); ok {
+				<meta name="session-instance" content={ fmt.Sprintf("%d-%d", sess.UserID, sess.CreatedAt.UnixNano()) }/>
+				<meta name="session-last-active" content={ fmt.Sprintf("%d", sess.LastActiveAt.UnixMilli()) }/>
+			}
 			<title>{ seo.Title } | { site.SiteName }</title>
 			<meta name="description" content={ seo.MetaDescription }/>
 			if seo.Keywords != "" {
@@ -86,7 +91,9 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			<script nonce={ Nonce(ctx) }>
 				(function() {
 					var urlTheme =new URLSearchParams(window.location.search).get('theme');
-					var t = urlTheme || localStorage.getItem('dawa24-theme') || 'system';
+					var savedTheme;
+					try { savedTheme = localStorage.getItem('dawa24-theme'); } catch (_) {}
+					var t = urlTheme || savedTheme || 'system';
 					var isDark = t === 'dark' || (t === 'system' && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
 					document.documentElement.setAttribute('data-theme', isDark ? 'dark' : 'light');
 
@@ -195,6 +202,7 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			// scripts/alpine-csp/check.cjs for the subset it understands.
 			<script defer src={ Asset("/static/vendor/alpine-csp-3.17.3.min.js") }></script>
 			<script defer src={ Asset("/static/js/app.js") }></script>
+			<script defer src={ Asset("/static/js/session-activity.js") }></script>
 			// maps.js defines ensureLeaflet + initMapPickers. It is ~9 KB and self
 			// -contained; Leaflet itself (the ~200 KB payload) is still fetched on
 			// demand by ensureLeaflet only when a map element is present. Loading

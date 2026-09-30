@@ -268,6 +268,9 @@ func serveStaticUpload(w http.ResponseWriter, r *http.Request, fullPath string) 
 		w.Header().Set("Content-Type", "video/webm")
 	case ".mov":
 		w.Header().Set("Content-Type", "video/quicktime")
+	case ".pdf":
+		w.Header().Set("Content-Type", "application/pdf")
+		w.Header().Set("Content-Security-Policy", "default-src 'none'; object-src 'self' blob:; frame-ancestors 'self'; style-src 'unsafe-inline'; font-src 'self' data:")
 	default:
 		w.Header().Set("Content-Security-Policy", "default-src 'none'; sandbox")
 	}

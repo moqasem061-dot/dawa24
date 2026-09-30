@@ -67,7 +67,7 @@ func OrganizationDocumentsModals() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>تحميل الملف</span></a></div></div><!-- Dynamic Interactive Viewer Viewport --><div class=\"doc-viewer-viewport\" id=\"modal-doc-viewport\"><!-- Loading State Spinner --><div id=\"modal-doc-loader\" class=\"doc-viewer-loader\"><span class=\"spinner\"></span> <span class=\"text-xs font-bold\">جاري تحميل المستند...</span></div><!-- Mode 1: PDF / Document Viewer Iframe --><iframe id=\"modal-doc-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\" loading=\"lazy\"></iframe><!-- Mode 2: Image Viewer --><div id=\"modal-doc-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"modal-doc-img\" src=\"\" alt=\"معاينة المستند\" class=\"doc-viewer-img\"></div><!-- Error Fallback State --><div id=\"modal-doc-error\" class=\"doc-viewer-error hidden\"><div class=\"text-danger mb-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span>تحميل الملف</span></a></div></div><!-- Dynamic Interactive Viewer Viewport --><div class=\"doc-viewer-viewport\" id=\"modal-doc-viewport\"><!-- Loading State Spinner --><div id=\"modal-doc-loader\" class=\"doc-viewer-loader\"><span class=\"spinner\"></span> <span class=\"text-xs font-bold\">جاري تحميل المستند...</span></div><!-- Mode 1: PDF / Document Viewer Iframe --><iframe id=\"modal-doc-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\"></iframe><!-- Mode 2: Image Viewer --><div id=\"modal-doc-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"modal-doc-img\" src=\"\" alt=\"معاينة المستند\" class=\"doc-viewer-img\"></div><!-- Error Fallback State --><div id=\"modal-doc-error\" class=\"doc-viewer-error hidden\"><div class=\"text-danger mb-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -144,7 +144,7 @@ func OrganizationDocumentsModals() templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/organization_documents_modals.templ`, Line: 181, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/organization_documents_modals.templ`, Line: 180, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {

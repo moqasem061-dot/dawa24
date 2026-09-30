@@ -3,9 +3,9 @@ package ui
 import (
 	"fmt"
 	"io"
+	"mime"
 	"net/http"
 	"net/url"
-	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -59,7 +59,7 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 	}
 
 	// Verify tenant authorization if not platform admin/staff
-	if !actor.IsPlatformAdmin() && !actor.IsStaff {
+	if !actor.IsPlatformAdmin() && !(actor.IsStaff && actor.Can("hr.document.view")) {
 		orgID := actor.OrganizationID
 		if orgID <= 0 {
 			orgID = actor.OrgID
@@ -99,6 +99,9 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 		cleanKey = strings.TrimPrefix(cleanKey, "/")
 	}
 	cleanPath := strings.TrimPrefix(cleanKey, "uploads/")
+	for strings.HasPrefix(cleanPath, "uploads/") {
+		cleanPath = strings.TrimPrefix(cleanPath, "uploads/")
+	}
 	for strings.HasPrefix(cleanPath, "/") {
 		cleanPath = strings.TrimPrefix(cleanPath, "/")
 	}
@@ -110,6 +113,14 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 	}
 	origBaseName := filepath.Base(origName)
 	storageKeyClean := strings.TrimPrefix(strings.TrimSpace(doc.StorageKey), "/")
+	if !documentStorageKeyAllowed(doc, cleanPath) {
+		h.renderMissingDocError(w, r, doc, i18n.T(lang, "docs.serve.file_missing"), lang, dir)
+		return
+	}
+	scopedKey := ""
+	if strings.HasPrefix(cleanPath, "orgs/") || strings.HasPrefix(cleanPath, "users/") {
+		scopedKey = cleanPath
+	}
 
 	// 2. Check all local disk locations respecting UPLOAD_DIR and DATA_DIR
 	baseDir := GetUploadBaseDir()
@@ -189,14 +200,19 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 		}
 	}
 
+	// Namespaced keys are minted for one tenant/user. A basename or original
+	// filename fallback would let caller-supplied metadata alias legacy private files.
+	if scopedKey != "" {
+		candidates = scopedDocumentPaths(scopedKey)
+	}
 	for _, cand := range candidates {
 		if cand == "" || cand == "." || cand == "/" {
 			continue
 		}
-		info, statErr := os.Stat(cand)
-		if statErr == nil && !info.IsDir() {
-			f, openErr := os.Open(cand)
-			if openErr == nil {
+		f, openErr := openDocumentUpload(cand)
+		if openErr == nil {
+			info, statErr := f.Stat()
+			if statErr == nil && info.Mode().IsRegular() {
 				defer f.Close()
 
 				mimeType := resolveDocumentMime(doc.MimeType, cand, doc.OriginalName, cleanKey)
@@ -212,11 +228,13 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 				}
 
 				w.Header().Set("Content-Type", mimeType)
-				w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, filename))
+				w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": filename}))
+				sandboxDocumentContent(w, mimeType)
 				w.Header().Set("Cache-Control", "private, max-age=3600")
 				http.ServeContent(w, r, filename, info.ModTime(), f)
 				return
 			}
+			_ = f.Close()
 		}
 	}
 
@@ -259,8 +277,11 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 			}
 		}
 
+		if scopedKey != "" {
+			storageKeys = []string{scopedKey, "uploads/" + scopedKey}
+		}
 		for _, sKey := range storageKeys {
-			if sKey == "" {
+			if !documentStorageKeyAllowed(doc, sKey) {
 				continue
 			}
 			body, cType, sErr := h.storage.Get(ctx, sKey)
@@ -280,7 +301,8 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 				}
 
 				w.Header().Set("Content-Type", mimeType)
-				w.Header().Set("Content-Disposition", fmt.Sprintf(`%s; filename="%s"`, disposition, filename))
+				w.Header().Set("Content-Disposition", mime.FormatMediaType(disposition, map[string]string{"filename": filename}))
+				sandboxDocumentContent(w, mimeType)
 				w.Header().Set("Cache-Control", "private, max-age=3600")
 				_, _ = io.Copy(w, body)
 				return

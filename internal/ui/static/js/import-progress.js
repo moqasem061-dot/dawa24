@@ -59,6 +59,14 @@
 		this.percentEl = opts.percent || null;
 		this.countEl = opts.count || null;
 		this.onDone = opts.onDone || function () {};
+		this.owner = this.fill || this.labelEl || this.percentEl || this.countEl;
+		this.source = null;
+		this.pollTimer = null;
+		this.graceTimer = null;
+		this.completionTimer = null;
+		this.pollAbort = null;
+		this.pollRevision = 0;
+		this.stopped = false;
 
 		// shown is what the user sees; target is the last value the server
 		// confirmed. shown drifts toward target and stops short of it.
@@ -98,6 +106,7 @@
 
 	/** update applies a server snapshot. */
 	ImportProgress.prototype.update = function (snapshot) {
+		if (!this.isAttached()) { this.stop(); return; }
 		if (!snapshot) return;
 		var pct = typeof snapshot.percent === 'number' ? snapshot.percent : snapshot.progress;
 		if (typeof pct === 'number' && pct >= 0) {
@@ -126,7 +135,10 @@
 		if (snapshot.failed || snapshot.status === 'failed' || snapshot.phase === 'failed') {
 			this.fail(snapshot.message || 'تعذرت معالجة الملف');
 			if (this.onDone) {
-				setTimeout(this.onDone, 800);
+				var self = this;
+				this.completionTimer = setTimeout(function () {
+					if (self.isAttached()) self.onDone();
+				}, 800);
 			}
 			return;
 		}
@@ -142,6 +154,7 @@
 
 	/** finish is the only path to 100. */
 	ImportProgress.prototype.finish = function () {
+		if (!this.isAttached()) { this.stop(); return; }
 		if (this.done) return;
 		this.done = true;
 		this.shown = 100;
@@ -160,9 +173,11 @@
 
 	/** start begins the drift animation. */
 	ImportProgress.prototype.start = function () {
-		if (this.timer) return;
+		if (this.timer || this.done) return;
+		this.stopped = false;
 		var self = this;
 		this.timer = setInterval(function () {
+			if (!self.isAttached()) { self.stop(); return; }
 			if (self.done) return;
 			var idle = (Date.now() - self.lastServerAt) / 1000;
 			var gap = self.target - self.shown;
@@ -203,10 +218,21 @@
 	};
 
 	ImportProgress.prototype.stop = function () {
+		this.stopped = true;
+		this.pollRevision++;
+		clearTimeout(this.pollTimer);
+		clearTimeout(this.graceTimer);
+		clearTimeout(this.completionTimer);
+		if (this.pollAbort) { this.pollAbort.abort(); this.pollAbort = null; }
+		if (this.source) { this.source.close(); this.source = null; }
 		if (this.timer) {
 			clearInterval(this.timer);
 			this.timer = null;
 		}
+	};
+
+	ImportProgress.prototype.isAttached = function () {
+		return !this.owner || this.owner.isConnected;
 	};
 
 	/**
@@ -221,28 +247,39 @@
 		var failures = 0;
 		var pollInterval = intervalMs || 500;
 		this.start();
+		var revision = ++this.pollRevision;
 		var tick = function () {
-			fetch(url, { headers: { Accept: 'application/json' } })
+			if (revision !== self.pollRevision) return;
+			if (self.stopped || !self.isAttached()) { self.stop(); return; }
+			self.pollAbort = typeof AbortController === 'function' ? new AbortController() : null;
+			fetch(url, {
+				headers: { Accept: 'application/json', 'X-Dawa-Background': '1' },
+				signal: self.pollAbort ? self.pollAbort.signal : undefined
+			})
 				.then(function (res) {
 					if (!res.ok) throw new Error('HTTP ' + res.status);
 					return res.json();
 				})
 				.then(function (data) {
+					if (revision !== self.pollRevision) return;
+					if (!self.isAttached()) { self.stop(); return; }
 					failures = 0;
 					self.update(data);
 					// The same hook the stream calls. A client that fell back to
 					// polling must still hear about the states it reacts to, or
 					// the fallback is a fallback in name only.
-					if (self.onSnapshot) self.onSnapshot(data);
-					if (!self.done) setTimeout(tick, pollInterval);
+					if (self.isAttached() && self.onSnapshot) self.onSnapshot(data);
+					if (!self.done && !self.stopped) self.pollTimer = setTimeout(tick, pollInterval);
 				})
-				.catch(function () {
+				.catch(function (err) {
+					if (revision !== self.pollRevision || (err && err.name === 'AbortError')) return;
+					if (!self.isAttached()) { self.stop(); return; }
 					failures++;
 					if (failures >= 8) {
 						self.fail('تعذّر الاتصال بالخادم لمتابعة التقدم. المعالجة قد تكون مستمرة في الخلفية — أعد تحميل الصفحة.');
 						return;
 					}
-					setTimeout(tick, pollInterval * 2);
+					self.pollTimer = setTimeout(tick, pollInterval * 2);
 				});
 		};
 		tick();
@@ -267,11 +304,12 @@
 	 * pollUrl    JSON endpoint, used if the stream cannot be established
 	 */
 	ImportProgress.prototype.follow = function (streamUrl, pollUrl, pollIntervalMs, onSnapshot) {
+		if (!this.isAttached()) { this.stop(); return; }
 		var self = this;
 		var notify = onSnapshot || function () {};
+		this.onSnapshot = notify;
 
 		if (typeof window.EventSource !== 'function' || !streamUrl) {
-			this.onSnapshot = notify;
 			this.poll(pollUrl, pollIntervalMs);
 			return;
 		}
@@ -281,16 +319,18 @@
 		var source;
 
 		var fallBack = function () {
+			if (!self.isAttached() || self.stopped) { self.stop(); return; }
 			if (fellBack) return;
 			fellBack = true;
-			if (source) {
-				try { source.close(); } catch (e) { /* already closed */ }
-			}
+			clearTimeout(self.graceTimer);
+			if (source) source.close();
+			self.source = null;
 			if (!self.done) self.poll(pollUrl, pollIntervalMs);
 		};
 
 		try {
 			source = new EventSource(streamUrl);
+			this.source = source;
 		} catch (e) {
 			this.poll(pollUrl, pollIntervalMs);
 			return;
@@ -302,11 +342,13 @@
 		// stream. Generous enough to cover a slow first query, short enough
 		// that nobody watches a still bar wondering.
 		var GRACE_MS = 4000;
-		var grace = setTimeout(function () {
+		this.graceTimer = setTimeout(function () {
 			if (!gotFirst) fallBack();
 		}, GRACE_MS);
 
 		var apply = function (event) {
+			if (self.source !== source || self.stopped) return;
+			if (!self.isAttached()) { self.stop(); return; }
 			var data;
 			try {
 				data = JSON.parse(event.data);
@@ -314,12 +356,12 @@
 				return;
 			}
 			gotFirst = true;
-			clearTimeout(grace);
+			clearTimeout(self.graceTimer);
 			self.update(data);
-			notify(data);
-			if (data && data.error) self.fail(data.error);
+			if (self.isAttached()) notify(data);
+			if (data && data.error && !self.stopped) self.fail(data.error);
 			if (self.done || (data && data.error)) {
-				try { source.close(); } catch (e) { /* already closed */ }
+				source.close();
 			}
 		};
 
@@ -332,11 +374,12 @@
 		source.addEventListener('timeout', function () { fallBack(); });
 
 		source.onerror = function () {
+			if (!self.isAttached()) { self.stop(); return; }
 			// EventSource retries by itself, which is right while the run is
 			// live. It is wrong once we have finished, and wrong if we never
 			// connected at all — those are the two cases handled here.
 			if (self.done) {
-				try { source.close(); } catch (e) { /* already closed */ }
+				source.close();
 				return;
 			}
 			if (!gotFirst) fallBack();

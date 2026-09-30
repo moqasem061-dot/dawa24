@@ -28,15 +28,7 @@ func Compress(src []byte, maxEdge int) (out []byte, ext string, contentType stri
 		maxEdge = DefaultMaxEdge
 	}
 
-	cfg, format, err := image.DecodeConfig(bytes.NewReader(src))
-	if err != nil || cfg.Width <= 0 || cfg.Height <= 0 {
-		return src, "", "", false
-	}
-	if cfg.Width*cfg.Height > maxSourcePixels {
-		return src, "", "", false
-	}
-
-	img, _, err := image.Decode(bytes.NewReader(src))
+	img, format, err := Decode(src)
 	if err != nil {
 		return src, "", "", false
 	}

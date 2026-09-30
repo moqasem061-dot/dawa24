@@ -12,6 +12,8 @@ import (
 	"math"
 	"strings"
 	"sync"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/media"
 )
 
 //go:embed assets/logo.png
@@ -109,9 +111,9 @@ func ApplyWatermark(imgData []byte, ext string) ([]byte, error) {
 		return imgData, nil
 	}
 
-	src, _, err := image.Decode(bytes.NewReader(imgData))
+	src, _, err := media.Decode(imgData)
 	if err != nil {
-		return imgData, nil
+		return imgData, err
 	}
 
 	logo := getPlatformLogo()

@@ -488,17 +488,31 @@ templ AdminOrgReviewModal(o *org.Organization, docs []*attachments.Document) {
 											/>
 										} else {
 											<div class="text-center p-3">
-												<div class="text-2xl mb-1">@components.IconFileText("icon-lg")</div>
+												<div class="text-2xl mb-1 text-primary">@components.IconFileText("icon-lg")</div>
 												<div class="text-xs font-bold text-slate-800 truncate max-w-[180px]">{ doc.OriginalName }</div>
 												<div class="text-2xs text-slate-500 mt-0.5">ملف رسمي (PDF)</div>
-												<a
-													href={ templ.SafeURL(fmt.Sprintf("/documents/%d/view", doc.ID)) }
-													target="_blank"
-													rel="noopener"
-													class="btn btn-secondary btn-xs font-bold mt-2"
-												>
-													فتح الملف للمراجعة ↗
-												</a>
+												<div class="d-flex items-center justify-center gap-1.5 mt-2">
+													<button
+														type="button"
+														data-preview-file={ fmt.Sprintf("/documents/%d/view", doc.ID) }
+														data-title={ docTypeLabelAr(string(doc.DocumentType)) }
+														data-filename={ doc.OriginalName }
+														class="btn btn-primary btn-xs font-bold gap-1"
+													>
+														@components.IconEye("icon-2xs")
+														<span>معاينة</span>
+													</button>
+													<a
+														href={ templ.SafeURL(fmt.Sprintf("/documents/%d/view", doc.ID)) }
+														target="_blank"
+														rel="noopener noreferrer"
+														data-no-preview="true"
+														class="btn btn-secondary btn-xs font-bold"
+														title="فتح في نافذة مستقلة"
+													>
+														↗
+													</a>
+												</div>
 											</div>
 										}
 									</div>

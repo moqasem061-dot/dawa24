@@ -111,7 +111,7 @@ func (happyRepo) CreateFileUpload(ctx context.Context, f *ingest.FileUpload) err
 	return nil
 }
 func (happyRepo) GetFileUploadByID(ctx context.Context, id int64) (*ingest.FileUpload, error) {
-	return &ingest.FileUpload{ID: id, Filename: "catalog.xlsx", StorageKey: "uploads/1.xlsx"}, nil
+	return &ingest.FileUpload{ID: id, Filename: "catalog.xlsx", StorageKey: "orgs/1/uploads/1.xlsx"}, nil
 }
 func (happyRepo) CreateImportSession(ctx context.Context, s *ingest.ImportSession) error {
 	s.ID = 1
@@ -296,7 +296,7 @@ func TestIngestHandler_HappyPaths(t *testing.T) {
 		body       string
 		wantStatus int
 	}{
-		{"RegisterUpload", http.MethodPost, "/api/v1/ingest/uploads", `{"filename":"catalog.xlsx","storage_key":"uploads/1.xlsx","file_size_bytes":1024,"mime_type":"application/vnd.ms-excel"}`, http.StatusCreated},
+		{"RegisterUpload", http.MethodPost, "/api/v1/ingest/uploads", `{"filename":"catalog.xlsx","storage_key":"orgs/1/uploads/1.xlsx","file_size_bytes":1024,"mime_type":"application/vnd.ms-excel"}`, http.StatusCreated},
 		{"StartSession", http.MethodPost, "/api/v1/ingest/sessions", `{"file_upload_id":1,"headers":["name","price","sku"],"min_score":0.7}`, http.StatusCreated},
 		{"ListSessions", http.MethodGet, "/api/v1/ingest/sessions?limit=10&offset=0", "", http.StatusOK},
 		{"GetSession", http.MethodGet, "/api/v1/ingest/sessions/1", "", http.StatusOK},

@@ -62,6 +62,13 @@ The UI wizard strictly reflects the server session state:
 - **Step 4 (Commit):** Transactional commit into catalog inventory (`POST /vendor/ingest/{id}/commit`).
 - **Resumability:** Accessing `/vendor/ingest/{sessionID}` loads the exact step corresponding to the session's database state.
 
+### Stability and upload ownership (2026-09-30)
+
+- Upload metadata is bound to the authenticated user and current organization. Registered object keys must remain under `orgs/<organizationID>/uploads/`; filenames cannot contain paths. A forged import document can no longer authorize a server-file download or another tenant's object.
+- Chunk uploads enforce 10 MB per chunk and 200 MB total before writing. Reassembly streams through a temporary file instead of a whole-file memory buffer. Locks cover one upload, so a slow object-storage request does not block unrelated uploads.
+- Completion requires working object storage and a successful metadata write. Storage failures retain all chunks for retry and return an error; chunks are removed only after success. Regression tests cover ordered assembly, failed-storage recovery, cumulative limits and independent uploads.
+- Watermarking now uses the same header-first, overflow-safe pixel ceiling as compression and renditions. A valid oversized image header is refused before pixel allocation, covered by a crafted PNG regression fixture.
+
 ---
 
 ## 4. AI Match Enhancement (vendor catalogue import)

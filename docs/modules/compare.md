@@ -79,6 +79,23 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
 - `GET /compare/head-to-head` — Head-to-head comparison view between two suppliers.
 - `GET /market-discounts` — Market-wide approved discounts and supplier comparison.
 
+## Search stability (2026-09-30)
+
+Market-discount and other GET filter searches wait 450 ms after typing pauses.
+Each form owns its debounce timer, composition input waits until committed, and
+editing or submitting cancels pending search work. Select controls with
+`data-autosubmit` issue one request rather than also triggering the generic filter
+submit. Short queries retain the existing three-character minimum; clearing the
+query refreshes the unfiltered results.
+
+Boosted filter responses preserve the active search input, focus, selection and
+scroll position. Older responses are discarded when the form values have changed,
+so a slow search cannot replace newer input or update the URL with an old query.
+GET filters do not inherit the eight-second mutation submit lock. A server outage
+or rate limit leaves the current screen usable without repeatedly reloading it.
+The browser regressions in `scripts/test-session-search.cjs` exercise these flows
+with the real HTMX, CSP/Trusted Types, Alpine and shared application scripts.
+
 
 ## Shared Matching (2026-08-25)
 
@@ -95,3 +112,20 @@ the scorer, not the retrieval.
 The engine itself was promoted from `modules/ingest/engine` to
 `internal/shared/productmatch` so `ingest`, `compare` and `smartorder` all use
 one implementation. See `docs/modules/smartorder.md`.
+
+## Shared UI reliability (2026-09-30)
+
+Remote comboboxes and the comparison tool's instant search invalidate pending
+responses when input, selection, dependent filters or the owning page changes.
+Aborting a request is an optimization; a request revision is the final guard
+when cancellation is unavailable or the response has already arrived.
+
+Flash notices and tab changes preserve HTMX history state. Mobile notifications
+fit narrow RTL viewports, provide readable semantic borders, a 44px dismiss
+target, and screen-reader status/alert announcements. The malformed half-step
+margin utility no longer hides neighboring CSS declarations.
+
+Import progress stores its snapshot callback before opening SSE, so failed
+streams retain polling callbacks. Polls carry `X-Dawa-Background: 1`; detached
+progress bars close their stream and cancel polling, drift and completion
+callbacks. `scripts/test-ui-stability.cjs` contains the regression fixtures.

@@ -137,6 +137,23 @@ with a Telegram Trigger on the same bot — Telegram allows one webhook per bot.
 
 ## Invariants and traps
 
+- **Gateway phone verification (2026-09-30):** read Telegram's
+  `verification_status.status` and `phone_number`, and require the verified
+  phone to match the submitted normalized phone before signing a token or
+  updating a profile. The previous parser rejected real successful codes;
+  the previous handlers could certify a different phone using a valid request.
+  Mock verification is refused in production and accepts only issued,
+  unexpired, unspent mock requests in development. Send reservations and
+  successful request consumption are atomic within a server process; the
+  bounded attempt cache expires entries rather than growing indefinitely.
+  Telegram still enforces its own verification attempts across server instances.
+- Gateway metadata reads are capped at 64 KiB and no longer log raw response
+  bodies. Unused monetary response fields were removed. Inline and downloaded
+  bot attachments share the 10 MiB limit; Bot API file identifiers are query
+  escaped and request errors do not expose URLs containing the bot token.
+- Settings polling displays dependency errors instead of silently returning
+  204 while the user waits for a pending link.
+
 - **Never** give the bot an answer path that skips `resolveActor` → `Allowed` →
   `Ask`. `Ask` re-applies the gate itself; `TestAskRefusesCallersTheBrowserWouldRefuse`.
 - Authority changes must bump `identity.rbac_version` or the resolver serves a

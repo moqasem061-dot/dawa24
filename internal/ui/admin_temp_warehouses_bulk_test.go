@@ -29,21 +29,29 @@ func (m *mockBulkCompareRepo) CreateFile(ctx context.Context, f *compare.Compare
 	defer m.mu.Unlock()
 	f.ID = m.nextID
 	m.nextID++
-	m.files[f.ID] = f
+	m.files[f.ID] = snapshotBulkCompareFile(f)
 	return nil
 }
 
 func (m *mockBulkCompareRepo) UpdateFile(ctx context.Context, f *compare.CompareFile) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	m.files[f.ID] = f
+	m.files[f.ID] = snapshotBulkCompareFile(f)
 	return nil
 }
 
 func (m *mockBulkCompareRepo) GetFileByID(ctx context.Context, id int64) (*compare.CompareFile, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	return m.files[id], nil
+	return snapshotBulkCompareFile(m.files[id]), nil
+}
+
+func snapshotBulkCompareFile(file *compare.CompareFile) *compare.CompareFile {
+	if file == nil {
+		return nil
+	}
+	snapshot := *file
+	return &snapshot
 }
 
 func (m *mockBulkCompareRepo) ListFiles(ctx context.Context, userID int64, orgID *int64, status *compare.CompareFileStatus) ([]*compare.CompareFile, error) {
@@ -59,7 +67,7 @@ func (m *mockBulkCompareRepo) ListFiles(ctx context.Context, userID int64, orgID
 			continue
 		}
 		if (orgID != nil && f.OrganizationID != nil && *f.OrganizationID == *orgID) || (f.OrganizationID == nil && f.UserID == userID) {
-			list = append(list, f)
+			list = append(list, snapshotBulkCompareFile(f))
 		}
 	}
 	return list, nil
@@ -70,7 +78,7 @@ func (m *mockBulkCompareRepo) ListAllFiles(ctx context.Context, query string, st
 	defer m.mu.Unlock()
 	var out []*compare.CompareFile
 	for _, f := range m.files {
-		out = append(out, f)
+		out = append(out, snapshotBulkCompareFile(f))
 	}
 	return out, nil
 }

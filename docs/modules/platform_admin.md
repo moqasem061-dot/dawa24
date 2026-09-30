@@ -28,3 +28,9 @@ The `platform_admin` bounded context provides global administrative configuratio
 4. **Error Log Porting Decision:**
    - Laravel's `full_error_logs` table had 69 columns. The Go version retains all operational diagnostic fields (`error_level`, `error_message`, `exception_class`, `stack_trace`, `file_path`, `line_number`, `http_method`, `url_path`, `ip_address`, `user_agent`, `request_payload`, `status`, `developer_notes`, `fixed_by`, `fixed_at`), while dropping PHP/Laravel framework-specific columns (`php_version`, `laravel_version`, `composer_lock_hash`, etc.).
 
+### Document access hardening (2026-09-30)
+
+Documents in `platform_admin.documents` are accessible to their owning user or organization; platform staff need `hr.document.view` for cross-organization downloads, including the shared `/documents/{id}` routes. Document confirmation applies the same ownership check even when `user_id` is null, before storage checks or deletion.
+
+Local document resolution retains legacy upload-directory fallbacks, but every file opens through `os.OpenRoot` confined to an upload directory. Metadata paths and symlinks cannot grant access to server configuration or other files outside those roots. Namespaced organization/user records resolve only their own canonical key: caller-supplied original filenames cannot alias a different user's flat legacy upload. Existing flat records created by local uploads or migration keep their directory fallbacks. Object-storage keys reject traversal and foreign organization/user namespaces. Regression tests cover malformed metadata, escaping symlinks, namespace-to-legacy aliasing, ordinary downloads, restricted staff and documents without uploader ownership.
+

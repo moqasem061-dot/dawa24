@@ -87,7 +87,11 @@ func (s *Service) ValidateSession(ctx context.Context, token string) (*Session, 
 		return nil, err
 	}
 	if s.repo != nil {
-		if !s.isUserActive(ctx, sess.UserID) {
+		active, err := s.isUserActive(ctx, sess.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if !active {
 			_ = s.sessionStore.Delete(ctx, token)
 			return nil, apperr.Unauthorized()
 		}
@@ -107,7 +111,11 @@ func (s *Service) ValidateSessionWithoutTouch(ctx context.Context, token string)
 		return nil, err
 	}
 	if s.repo != nil {
-		if !s.isUserActive(ctx, sess.UserID) {
+		active, err := s.isUserActive(ctx, sess.UserID)
+		if err != nil {
+			return nil, err
+		}
+		if !active {
 			_ = s.sessionStore.Delete(ctx, token)
 			return nil, apperr.Unauthorized()
 		}

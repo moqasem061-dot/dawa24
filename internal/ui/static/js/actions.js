@@ -387,7 +387,12 @@
     if (el.hasAttribute('data-autosubmit')) {
       var id = el.getAttribute('data-autosubmit');
       var form = id ? document.getElementById(id) : (el.form || el.closest('form'));
-      if (form) form.submit();
+      if (form) {
+        cancelFilterSearch(form);
+        form.__dawaFilter = isFilterForm(form);
+        form.submit();
+      }
+      return;
     }
     if (el.hasAttribute('data-navigate-on-change') && el.value) {
       if (window.dawaNavigate) window.dawaNavigate(el.value);
@@ -401,13 +406,33 @@
     if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
 
     if (tag === 'select' || type === 'checkbox' || type === 'radio' || type === 'date' || type === 'number') {
+      cancelFilterSearch(parentForm);
+      parentForm.__dawaFilter = true;
       if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
       else parentForm.submit();
     }
   });
 
-  var searchDebounceTimer = null;
-  document.addEventListener('input', function (evt) {
+  var searchTimers = new WeakMap();
+  function cancelFilterSearch(form) {
+    clearTimeout(searchTimers.get(form));
+    searchTimers.delete(form);
+    if (form.__dawaFilter && window.htmx) window.htmx.trigger(form, 'htmx:abort');
+  }
+
+  document.addEventListener('submit', function (evt) {
+    if (!isFilterForm(evt.target)) return;
+    cancelFilterSearch(evt.target);
+    evt.target.__dawaFilter = true;
+  }, true);
+
+  document.addEventListener('compositionstart', function (evt) {
+    if (evt.target.form) cancelFilterSearch(evt.target.form);
+  });
+  document.addEventListener('compositionend', queueFilterSearch);
+  document.addEventListener('input', queueFilterSearch);
+
+  function queueFilterSearch(evt) {
     var el = evt.target;
     if (!el || !el.tagName) return;
     var tag = el.tagName.toLowerCase();
@@ -421,15 +446,19 @@
     if (!parentForm || !isFilterForm(parentForm)) return;
     if (el.hasAttribute('hx-trigger') || el.hasAttribute('data-hx-trigger')) return;
 
+    cancelFilterSearch(parentForm);
+    parentForm.__dawaFilter = true;
+    if (evt.isComposing) return;
+
     var minChars = el.hasAttribute('data-min-chars') ? parseInt(el.getAttribute('data-min-chars'), 10) : 3;
     var val = (el.value || '').trim();
     if (val.length > 0 && val.length < minChars) {
-      clearTimeout(searchDebounceTimer);
       return;
     }
 
-    clearTimeout(searchDebounceTimer);
-    searchDebounceTimer = setTimeout(function () {
+    searchTimers.set(parentForm, setTimeout(function () {
+      searchTimers.delete(parentForm);
+      if (!parentForm.isConnected || !el.isConnected) return;
       try {
         if (window.sessionStorage) {
           window.sessionStorage.setItem('dawa_last_filter_focus', JSON.stringify({
@@ -441,8 +470,8 @@
       } catch (_) {}
       if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
       else parentForm.submit();
-    }, 380);
-  });
+    }, 450));
+  }
 
   document.addEventListener('DOMContentLoaded', function () {
     try {

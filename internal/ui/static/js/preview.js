@@ -48,13 +48,7 @@
       els.newtabBtn.setAttribute('target', '_blank');
       els.newtabBtn.setAttribute('rel', 'noopener noreferrer');
       els.newtabBtn.setAttribute('data-no-boost', 'true');
-      els.newtabBtn.onclick = function (e) {
-        e.stopPropagation();
-        if (url && url !== '#') {
-          window.open(url, '_blank');
-          e.preventDefault();
-        }
-      };
+      els.newtabBtn.onclick = null;
     }
     if (els.errBox) {
       els.errBox.classList.add('hidden');
@@ -84,6 +78,12 @@
         els.img.src = '';
       }
       if (els.iframe) {
+        els.iframe.onload = function () {
+          if (els.errBox) els.errBox.classList.add('hidden');
+        };
+        els.iframe.onerror = function () {
+          if (els.errBox) els.errBox.classList.remove('hidden');
+        };
         els.iframe.classList.remove('hidden');
         els.iframe.src = url;
       }
@@ -164,6 +164,9 @@
     // 2. Standard document view routes: /documents/{id}/view, /admin/documents/{id}/view, /customer/documents/{id}/view, /vendor/documents/{id}/view
     const docLink = target.closest('a[href*="/documents/"][href*="/view"]');
     if (docLink) {
+      if (docLink.hasAttribute('data-no-preview') || docLink.getAttribute('data-native') === 'true' || e.ctrlKey || e.metaKey || e.shiftKey) {
+        return;
+      }
       const href = docLink.getAttribute('href');
       if (href) {
         e.preventDefault();

@@ -1,23 +1,19 @@
 package ingest
 
 import (
-	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
-	"sync"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 var safeUUIDRe = regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-
-var chunkMutex sync.Mutex
 
 // maxUploadChunks bounds one chunked upload: 200 MB in chunks of at least a
 // few MB never needs more.
@@ -60,19 +56,34 @@ func (s *Service) UploadChunk(
 	if len(chunkData) == 0 {
 		return nil, apperr.Validation("chunk.empty", "Chunk data cannot be empty", nil)
 	}
+	if len(chunkData) > maxChunkBytes {
+		return nil, apperr.Validation("chunk.too_large", i18n.TDefault("chunk.too_large"), nil)
+	}
+	if filename == "" {
+		filename = "upload.csv"
+	}
+	if err := validateUploadFilename(filename); err != nil {
+		return nil, err
+	}
+	putter, ok := s.storage.(chunkStorage)
+	if !ok {
+		return nil, apperr.Unavailable("storage", nil)
+	}
 
 	tempDir := filepath.Join(os.TempDir(), "dawa24_chunks", fmt.Sprintf("org_%d", orgID), fileUUID)
+	unlock := lockChunkUpload(tempDir)
+	defer unlock()
 	if err := os.MkdirAll(tempDir, 0755); err != nil {
 		return nil, fmt.Errorf("create temp chunk dir: %w", err)
 	}
 
 	chunkPath := filepath.Join(tempDir, fmt.Sprintf("chunk_%d", chunkIndex))
+	if err := checkChunkUploadSize(tempDir, chunkPath, int64(len(chunkData))); err != nil {
+		return nil, err
+	}
 	if err := os.WriteFile(chunkPath, chunkData, 0644); err != nil {
 		return nil, fmt.Errorf("write chunk file: %w", err)
 	}
-
-	chunkMutex.Lock()
-	defer chunkMutex.Unlock()
 
 	// Check if all chunks (0..totalChunks-1) exist
 	allPresent := true
@@ -93,41 +104,25 @@ func (s *Service) UploadChunk(
 		}, nil
 	}
 
-	// All chunks present: Reassemble into a combined byte buffer / stream
-	var combined bytes.Buffer
-	for i := 0; i < totalChunks; i++ {
-		p := filepath.Join(tempDir, fmt.Sprintf("chunk_%d", i))
-		data, err := os.ReadFile(p)
-		if err != nil {
-			return nil, fmt.Errorf("read chunk %d: %w", i, err)
-		}
-		combined.Write(data)
+	combined, size, err := assembleUploadChunks(tempDir, totalChunks)
+	if err != nil {
+		return nil, err
 	}
-
-	// Clean up temporary chunks directory
-	_ = os.RemoveAll(tempDir)
-
-	cleanFilename := filename
-	if cleanFilename == "" {
-		cleanFilename = "upload.csv"
-	}
-	key := fmt.Sprintf("orgs/%d/uploads/%d_%s", orgID, time.Now().UnixNano(), cleanFilename)
-
-	// If storage backend is configured, upload the reassembled object
-	if s.storage != nil {
-		if putter, ok := s.storage.(interface {
-			Put(ctx context.Context, key string, body io.Reader, size int64, contentType string) error
-		}); ok {
-			_ = putter.Put(ctx, key, bytes.NewReader(combined.Bytes()), int64(combined.Len()), "application/octet-stream")
-		}
+	defer func() {
+		_ = combined.Close()
+		_ = os.Remove(combined.Name())
+	}()
+	key := fmt.Sprintf("orgs/%d/uploads/%d_%s", orgID, time.Now().UnixNano(), filename)
+	if err := putter.Put(ctx, key, combined, size, "application/octet-stream"); err != nil {
+		return nil, fmt.Errorf("store chunked upload: %w", err)
 	}
 
 	f := &FileUpload{
 		OrganizationID: orgID,
 		UserID:         userID,
-		Filename:       cleanFilename,
+		Filename:       filename,
 		StorageKey:     key,
-		FileSizeBytes:  int64(combined.Len()),
+		FileSizeBytes:  size,
 		MimeType:       "application/octet-stream",
 		CreatedAt:      time.Now().UTC(),
 	}
@@ -135,8 +130,12 @@ func (s *Service) UploadChunk(
 	if err := s.repo.CreateFileUpload(ctx, f); err != nil {
 		return nil, err
 	}
+	_ = combined.Close()
+	if err := os.RemoveAll(tempDir); err != nil {
+		s.log.WarnContext(ctx, "completed upload chunk cleanup failed", "error", err)
+	}
 
-	s.log.InfoContext(ctx, "chunked upload complete and reassembled", "upload_id", f.ID, "total_chunks", totalChunks, "bytes", combined.Len())
+	s.log.InfoContext(ctx, "chunked upload complete and reassembled", "upload_id", f.ID, "total_chunks", totalChunks, "bytes", size)
 
 	return &ChunkUploadResult{
 		Completed:    true,
@@ -144,7 +143,7 @@ func (s *Service) UploadChunk(
 		TotalChunks:  totalChunks,
 		FileUploadID: f.ID,
 		PublicID:     f.PublicID,
-		Filename:     cleanFilename,
+		Filename:     filename,
 		StorageKey:   key,
 	}, nil
 }

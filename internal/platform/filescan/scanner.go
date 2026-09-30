@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"unicode/utf8"
 )
@@ -48,6 +49,8 @@ var (
 	sigGIF87 = []byte("GIF87a")
 	sigGIF89 = []byte("GIF89a")
 	sigZIP   = []byte("PK\x03\x04")
+
+	reDangerousPDFAction = regexp.MustCompile(`(?i)/(?:s\s*/(?:javascript|launch)|type\s*/action[\s\S]{0,128}/(?:s\s*/(?:javascript|launch)|js\s*[<(])|names\s*<<[\s\S]{0,128}/javascript)`)
 )
 
 // Scan analyzes the provided byte slice, filename, and declared MIME type
@@ -147,24 +150,23 @@ func scanPDF(data []byte, detectedMIME string) Result {
 		}
 	}
 
-	// Scan for active execution objects in PDF
 	contentLower := bytes.ToLower(data)
-	dangerousPDFTokens := [][]byte{
-		[]byte("/javascript"),
-		[]byte("/js "),
-		[]byte("/js<"),
-		[]byte("/js("),
-		[]byte("/launch"),
-		[]byte("/embeddedfiles"),
+
+	// Fast-path: if neither "javascript" nor "launch" nor "/js" appears anywhere,
+	// active execution scripts cannot be present.
+	if !bytes.Contains(contentLower, []byte("javascript")) &&
+		!bytes.Contains(contentLower, []byte("launch")) &&
+		!bytes.Contains(contentLower, []byte("/js")) {
+		return Result{Passed: true, Verdict: VerdictClean, DetectedMIME: "application/pdf"}
 	}
-	for _, tok := range dangerousPDFTokens {
-		if bytes.Contains(contentLower, tok) {
-			return Result{
-				Passed:       false,
-				Verdict:      VerdictEmbeddedScript,
-				Reason:       fmt.Sprintf("active PDF action token %q detected", string(tok)),
-				DetectedMIME: detectedMIME,
-			}
+
+	// Deep check for active execution objects in PDF (/S /JavaScript, /S /Launch, /Names << /JavaScript)
+	if match := reDangerousPDFAction.Find(data); len(match) > 0 {
+		return Result{
+			Passed:       false,
+			Verdict:      VerdictEmbeddedScript,
+			Reason:       fmt.Sprintf("active PDF action token %q detected", string(match)),
+			DetectedMIME: detectedMIME,
 		}
 	}
 

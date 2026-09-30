@@ -6,22 +6,16 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"strings"
-	"sync"
 	"time"
 )
 
 var (
-	ErrInvalidPhone        = errors.New("telegramgateway: invalid phone number")
-	ErrInvalidCode         = errors.New("telegramgateway: verification code is invalid")
-	ErrExpiredCode         = errors.New("telegramgateway: verification code has expired")
-	ErrMaxAttemptsExceeded = errors.New("telegramgateway: maximum verification attempts exceeded")
-	ErrRateLimited         = errors.New("telegramgateway: rate limited")
-	ErrServiceUnavailable  = errors.New("telegramgateway: service unavailable")
+	ErrInvalidPhone       = errors.New("telegramgateway: invalid phone number")
+	ErrRateLimited        = errors.New("telegramgateway: rate limited")
+	ErrServiceUnavailable = errors.New("telegramgateway: service unavailable")
 )
 
 // Client defines the interface for interacting with Telegram Gateway or its mock.
@@ -41,9 +35,10 @@ type SendResult struct {
 
 // CheckResult holds the outcome of a checkVerificationStatus call.
 type CheckResult struct {
-	Valid  bool   `json:"valid"`
-	Status string `json:"status"` // "code_valid", "code_invalid", "expired", etc.
-	Error  string `json:"error,omitempty"`
+	Valid       bool   `json:"valid"`
+	Status      string `json:"status"` // "code_valid", "code_invalid", "expired", etc.
+	Error       string `json:"error,omitempty"`
+	PhoneNumber string `json:"phone_number,omitempty"`
 }
 
 // Config configures the Telegram Gateway client.
@@ -108,10 +103,8 @@ type tgSendResp struct {
 	Error       string `json:"error,omitempty"`
 	Description string `json:"description,omitempty"`
 	Result      struct {
-		RequestID      string  `json:"request_id"`
-		PhoneNumber    string  `json:"phone_number"`
-		RequestCost    float64 `json:"request_cost"`
-		RemainingBal   float64 `json:"remaining_balance"`
+		RequestID      string `json:"request_id"`
+		PhoneNumber    string `json:"phone_number"`
 		DeliveryStatus struct {
 			Status string `json:"status"`
 		} `json:"delivery_status"`
@@ -148,14 +141,14 @@ func (c *liveClient) SendVerification(ctx context.Context, rawPhone string) (*Se
 	}
 	defer resp.Body.Close()
 
-	respBytes, err := io.ReadAll(resp.Body)
+	respBytes, err := readGatewayResponse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	var tgResp tgSendResp
 	if err := json.Unmarshal(respBytes, &tgResp); err != nil {
-		c.log.ErrorContext(ctx, "telegram gateway send parse error", "status", resp.StatusCode, "body", string(respBytes))
+		c.log.ErrorContext(ctx, "telegram gateway send parse error", "status", resp.StatusCode)
 		return nil, fmt.Errorf("%w: failed to parse response", ErrServiceUnavailable)
 	}
 
@@ -169,6 +162,9 @@ func (c *liveClient) SendVerification(ctx context.Context, rawPhone string) (*Se
 		default:
 			return nil, fmt.Errorf("telegram gateway: %s (%s)", tgResp.Error, tgResp.Description)
 		}
+	}
+	if tgResp.Result.RequestID == "" {
+		return nil, ErrServiceUnavailable
 	}
 
 	return &SendResult{
@@ -188,10 +184,11 @@ type tgCheckResp struct {
 	Error       string `json:"error,omitempty"`
 	Description string `json:"description,omitempty"`
 	Result      struct {
-		RequestID string `json:"request_id"`
-		Status    struct {
+		RequestID   string `json:"request_id"`
+		PhoneNumber string `json:"phone_number"`
+		Status      struct {
 			Status string `json:"status"`
-		} `json:"status"`
+		} `json:"verification_status"`
 	} `json:"result"`
 }
 
@@ -225,14 +222,14 @@ func (c *liveClient) CheckVerification(ctx context.Context, requestID, code stri
 	}
 	defer resp.Body.Close()
 
-	respBytes, err := io.ReadAll(resp.Body)
+	respBytes, err := readGatewayResponse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	var tgResp tgCheckResp
 	if err := json.Unmarshal(respBytes, &tgResp); err != nil {
-		c.log.ErrorContext(ctx, "telegram gateway check parse error", "status", resp.StatusCode, "body", string(respBytes))
+		c.log.ErrorContext(ctx, "telegram gateway check parse error", "status", resp.StatusCode)
 		return nil, fmt.Errorf("%w: failed to parse response", ErrServiceUnavailable)
 	}
 
@@ -244,150 +241,16 @@ func (c *liveClient) CheckVerification(ctx context.Context, requestID, code stri
 			Error:  tgResp.Description,
 		}, nil
 	}
+	if tgResp.Result.RequestID != requestID {
+		return nil, ErrServiceUnavailable
+	}
 
 	status := strings.ToLower(tgResp.Result.Status.Status)
 	isValid := status == "code_valid"
 
 	return &CheckResult{
-		Valid:  isValid,
-		Status: status,
+		Valid:       isValid,
+		Status:      status,
+		PhoneNumber: tgResp.Result.PhoneNumber,
 	}, nil
-}
-
-// --- Mock Telegram Gateway Client ---
-
-type mockRequest struct {
-	phone     string
-	code      string
-	expiresAt time.Time
-}
-
-type mockClient struct {
-	log      *slog.Logger
-	mu       sync.Mutex
-	requests map[string]mockRequest
-}
-
-func (m *mockClient) IsMock() bool { return true }
-
-func (m *mockClient) SendVerification(ctx context.Context, rawPhone string) (*SendResult, error) {
-	normPhone, err := NormalizePhone(rawPhone)
-	if err != nil {
-		return nil, fmt.Errorf("%w: %w", ErrInvalidPhone, err)
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	reqID := fmt.Sprintf("mock_req_%d", time.Now().UnixNano())
-	code := "123456"
-
-	m.requests[reqID] = mockRequest{
-		phone:     normPhone,
-		code:      code,
-		expiresAt: time.Now().Add(5 * time.Minute),
-	}
-
-	m.log.InfoContext(ctx, "[TELEGRAM GATEWAY MOCK] Verification OTP issued",
-		"phone", normPhone,
-		"code", code,
-		"request_id", reqID,
-	)
-
-	return &SendResult{
-		RequestID:   reqID,
-		PhoneNumber: normPhone,
-		ExpiresIn:   300,
-		MockCode:    code,
-	}, nil
-}
-
-func (m *mockClient) CheckVerification(ctx context.Context, requestID, code string) (*CheckResult, error) {
-	requestID = strings.TrimSpace(requestID)
-	code = strings.TrimSpace(code)
-
-	if requestID == "" || code == "" {
-		return &CheckResult{Valid: false, Status: "code_invalid", Error: "missing code or request_id"}, nil
-	}
-
-	m.mu.Lock()
-	defer m.mu.Unlock()
-
-	req, ok := m.requests[requestID]
-	if !ok {
-		// In mock mode, also accept default mock code 123456 for any mock prefix
-		if strings.HasPrefix(requestID, "mock_") && code == "123456" {
-			return &CheckResult{Valid: true, Status: "code_valid"}, nil
-		}
-		return &CheckResult{Valid: false, Status: "code_invalid", Error: "request not found or expired"}, nil
-	}
-
-	if time.Now().After(req.expiresAt) {
-		delete(m.requests, requestID)
-		return &CheckResult{Valid: false, Status: "expired", Error: "code expired"}, nil
-	}
-
-	if code == req.code || code == "123456" {
-		delete(m.requests, requestID)
-		return &CheckResult{Valid: true, Status: "code_valid"}, nil
-	}
-
-	return &CheckResult{Valid: false, Status: "code_invalid"}, nil
-}
-
-// --- Phone Number Normalization ---
-
-// NormalizePhone converts Egyptian and international numbers into canonical E.164 format (+201...).
-func NormalizePhone(input string) (string, error) {
-	input = strings.TrimSpace(input)
-	if input == "" {
-		return "", errors.New("empty phone number")
-	}
-
-	// 1. Convert Arabic-Indic digits (٠١٢٣٤٥٦٧٨٩) to standard ASCII digits (0-9)
-	var sb strings.Builder
-	for _, r := range input {
-		switch {
-		case r >= '٠' && r <= '٩':
-			sb.WriteRune('0' + (r - '٠'))
-		case r >= '0' && r <= '9':
-			sb.WriteRune(r)
-		case r == '+':
-			if sb.Len() == 0 {
-				sb.WriteRune('+')
-			}
-		}
-	}
-	clean := sb.String()
-
-	// 2. Remove leading "00" and replace with "+"
-	if strings.HasPrefix(clean, "00") {
-		clean = "+" + clean[2:]
-	}
-
-	// 3. Handle Egyptian national format: e.g. 01012345678, 011..., 012..., 015... (11 digits)
-	egyptianNational := regexp.MustCompile(`^0(1[0125]\d{8})$`)
-	if m := egyptianNational.FindStringSubmatch(clean); len(m) > 1 {
-		return "+20" + m[1], nil
-	}
-
-	// 4. Handle Egyptian with country code without plus: 201012345678 (12 digits)
-	egyptianNoPlus := regexp.MustCompile(`^20(1[0125]\d{8})$`)
-	if m := egyptianNoPlus.FindStringSubmatch(clean); len(m) > 1 {
-		return "+20" + m[1], nil
-	}
-
-	// 5. Handle Egyptian with country code with plus: +201012345678 (13 chars)
-	egyptianPlus := regexp.MustCompile(`^\+20(1[0125]\d{8})$`)
-	if m := egyptianPlus.FindStringSubmatch(clean); len(m) > 1 {
-		return "+20" + m[1], nil
-	}
-
-	// 6. Generic international E.164: + followed by 8 to 15 digits
-	e164Regex := regexp.MustCompile(`^\+[1-9]\d{6,14}$`)
-	if e164Regex.MatchString(clean) {
-		return clean, nil
-	}
-
-	return "", fmt.Errorf("unsupported phone format: %q", input)
 }

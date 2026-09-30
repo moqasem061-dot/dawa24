@@ -204,9 +204,14 @@ func (h *UIHandler) SettingsProfileVerifyEmailOTP(w http.ResponseWriter, r *http
 func (h *UIHandler) SettingsProfileSendPhoneOTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
+	w.Header().Set("Cache-Control", "no-store")
 	actor, ok := authctx.From(ctx)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, sendOTPResp{OK: false, Error: "unauthorized"})
+		return
+	}
+	if !h.telegramVerificationAvailable() {
+		writeJSON(w, http.StatusServiceUnavailable, sendOTPResp{Error: "service_unavailable", Message: i18n.T(lang, "common.service_unavailable")})
 		return
 	}
 
@@ -231,13 +236,8 @@ func (h *UIHandler) SettingsProfileSendPhoneOTP(w http.ResponseWriter, r *http.R
 	}
 
 	limiter := h.telegramLimiter()
-	if inCooldown, remaining := limiter.CheckSendCooldown(normPhone); inCooldown {
+	if remaining, err := limiter.ReserveSend(normPhone); err != nil {
 		writeJSON(w, http.StatusTooManyRequests, sendOTPResp{OK: false, Error: "cooldown", Cooldown: remaining, Message: i18n.T(lang, "auth.telegram.cooldown")})
-		return
-	}
-
-	if limiter.CheckHourlySendLimit(normPhone, 5) {
-		writeJSON(w, http.StatusTooManyRequests, sendOTPResp{OK: false, Error: "rate_limited", Message: i18n.T(lang, "auth.telegram.rate_limit")})
 		return
 	}
 
@@ -248,14 +248,17 @@ func (h *UIHandler) SettingsProfileSendPhoneOTP(w http.ResponseWriter, r *http.R
 		return
 	}
 
-	limiter.RecordSend(normPhone, 60*time.Second)
+	mockCode := ""
+	if !isProductionEnv() && devShowMockOTP() {
+		mockCode = result.MockCode
+	}
 	writeJSON(w, http.StatusOK, sendOTPResp{
 		OK:        true,
 		RequestID: result.RequestID,
 		Phone:     result.PhoneNumber,
 		ExpiresIn: result.ExpiresIn,
 		Cooldown:  60,
-		MockCode:  result.MockCode,
+		MockCode:  mockCode,
 		Message:   i18n.T(lang, "auth.telegram.code_sent"),
 	})
 }
@@ -264,9 +267,14 @@ func (h *UIHandler) SettingsProfileSendPhoneOTP(w http.ResponseWriter, r *http.R
 func (h *UIHandler) SettingsProfileVerifyPhoneOTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
+	w.Header().Set("Cache-Control", "no-store")
 	actor, ok := authctx.From(ctx)
 	if !ok {
 		writeJSON(w, http.StatusUnauthorized, verifyOTPResp{OK: false, Error: "unauthorized"})
+		return
+	}
+	if !h.telegramVerificationAvailable() {
+		writeJSON(w, http.StatusServiceUnavailable, verifyOTPResp{Error: "service_unavailable", Message: i18n.T(lang, "common.service_unavailable")})
 		return
 	}
 
@@ -312,12 +320,11 @@ func (h *UIHandler) SettingsProfileVerifyPhoneOTP(w http.ResponseWriter, r *http
 		return
 	}
 
-	if !result.Valid {
+	verifiedPhone, phoneErr := telegramgateway.NormalizePhone(result.PhoneNumber)
+	if !result.Valid || phoneErr != nil || verifiedPhone != normPhone || !limiter.ConsumeRequest(requestID) {
 		writeJSON(w, http.StatusBadRequest, verifyOTPResp{OK: false, Error: "invalid_code", Message: i18n.T(lang, "auth.telegram.invalid_code")})
 		return
 	}
-
-	limiter.ClearRequest(requestID)
 
 	if h.idSvc != nil {
 		if err := h.idSvc.VerifyUserPhone(ctx, actor.UserID, normPhone); err != nil {

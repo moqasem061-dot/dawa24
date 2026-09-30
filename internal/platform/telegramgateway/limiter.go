@@ -5,138 +5,104 @@ import (
 	"time"
 )
 
-// OTPRateLimiter manages cooldowns and attempt counts for phone OTP operations.
-type OTPRateLimiter struct {
-	mu          sync.Mutex
-	cooldowns   map[string]time.Time   // normalized phone -> cooldown expiry
-	hourlySends map[string][]time.Time // normalized phone -> timestamps of sends
-	attempts    map[string]int         // requestID -> failed attempt count
-	lastCleaned time.Time
+const maxOTPEntries = 4096
+
+type verifyAttempts struct {
+	count     int
+	expiresAt time.Time
 }
 
-// NewLimiter creates a new in-memory OTPRateLimiter.
+// OTPRateLimiter keeps send reservations and verification attempts bounded.
+type OTPRateLimiter struct {
+	mu          sync.Mutex
+	cooldowns   map[string]time.Time
+	hourlySends map[string][]time.Time
+	attempts    map[string]verifyAttempts
+}
+
 func NewLimiter() *OTPRateLimiter {
 	return &OTPRateLimiter{
 		cooldowns:   make(map[string]time.Time),
 		hourlySends: make(map[string][]time.Time),
-		attempts:    make(map[string]int),
-		lastCleaned: time.Now(),
+		attempts:    make(map[string]verifyAttempts),
 	}
 }
 
-// CheckSendCooldown checks if a phone number is currently in cooldown.
-// Returns (inCooldown, remainingSeconds).
-func (l *OTPRateLimiter) CheckSendCooldown(normPhone string) (bool, int) {
+// ReserveSend atomically reserves one of five hourly sends and its cooldown.
+// Failed upstream calls retain the reservation to avoid retry storms during outages.
+func (l *OTPRateLimiter) ReserveSend(phone string) (int, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	l.maybeClean()
-
-	expiry, ok := l.cooldowns[normPhone]
-	if !ok {
-		return false, 0
-	}
-
-	remaining := time.Until(expiry)
-	if remaining <= 0 {
-		delete(l.cooldowns, normPhone)
-		return false, 0
-	}
-
-	return true, int(remaining.Seconds()) + 1
-}
-
-// CheckHourlySendLimit checks if phone has sent too many OTPs in the last hour.
-// Max 5 sends per hour.
-func (l *OTPRateLimiter) CheckHourlySendLimit(normPhone string, maxPerHour int) bool {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-	l.maybeClean()
-
-	if maxPerHour <= 0 {
-		maxPerHour = 5
-	}
-
-	cutoff := time.Now().Add(-1 * time.Hour)
-	timestamps := l.hourlySends[normPhone]
-
-	valid := make([]time.Time, 0, len(timestamps))
-	for _, t := range timestamps {
-		if t.After(cutoff) {
-			valid = append(valid, t)
-		}
-	}
-	l.hourlySends[normPhone] = valid
-
-	return len(valid) >= maxPerHour
-}
-
-// RecordSend records a successful OTP send, starting a 60s cooldown and incrementing the hourly count.
-func (l *OTPRateLimiter) RecordSend(normPhone string, cooldownDuration time.Duration) {
-	l.mu.Lock()
-	defer l.mu.Unlock()
-
-	if cooldownDuration <= 0 {
-		cooldownDuration = 60 * time.Second
-	}
-
 	now := time.Now()
-	l.cooldowns[normPhone] = now.Add(cooldownDuration)
-	l.hourlySends[normPhone] = append(l.hourlySends[normPhone], now)
+	l.clean(now)
+	if expiry := l.cooldowns[phone]; expiry.After(now) {
+		return int(expiry.Sub(now).Seconds()) + 1, ErrRateLimited
+	}
+	if len(l.hourlySends[phone]) >= 5 || (l.hourlySends[phone] == nil && len(l.hourlySends) >= maxOTPEntries) {
+		return 0, ErrRateLimited
+	}
+	l.cooldowns[phone] = now.Add(time.Minute)
+	l.hourlySends[phone] = append(l.hourlySends[phone], now)
+	return 0, nil
 }
 
-// CheckAndRecordVerifyAttempt checks if verification attempts for requestID have exceeded maxAttempts (default 5).
-// Returns true if attempts are still allowed, false if limit exceeded.
 func (l *OTPRateLimiter) CheckAndRecordVerifyAttempt(requestID string, maxAttempts int) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-
+	now := time.Now()
+	l.clean(now)
+	entry, exists := l.attempts[requestID]
+	if !exists {
+		if len(l.attempts) >= maxOTPEntries {
+			return false
+		}
+		entry.expiresAt = now.Add(10 * time.Minute)
+	}
 	if maxAttempts <= 0 {
 		maxAttempts = 5
 	}
-
-	curr := l.attempts[requestID]
-	if curr >= maxAttempts {
+	if entry.count >= maxAttempts {
 		return false
 	}
-
-	l.attempts[requestID] = curr + 1
+	entry.count++
+	l.attempts[requestID] = entry
 	return true
 }
 
-// ClearRequest removes a requestID from tracking on successful verification.
-func (l *OTPRateLimiter) ClearRequest(requestID string) {
+// ConsumeRequest retains a spent request until its verification window expires.
+func (l *OTPRateLimiter) ConsumeRequest(requestID string) bool {
 	l.mu.Lock()
 	defer l.mu.Unlock()
-	delete(l.attempts, requestID)
+	entry, exists := l.attempts[requestID]
+	if !exists || entry.count > 5 || !entry.expiresAt.After(time.Now()) {
+		return false
+	}
+	entry.count = 6
+	l.attempts[requestID] = entry
+	return true
 }
 
-func (l *OTPRateLimiter) maybeClean() {
-	now := time.Now()
-	if now.Sub(l.lastCleaned) < 10*time.Minute {
-		return
-	}
-	l.lastCleaned = now
-
-	// Clean expired cooldowns
-	for phone, exp := range l.cooldowns {
-		if now.After(exp) {
+func (l *OTPRateLimiter) clean(now time.Time) {
+	for phone, expiry := range l.cooldowns {
+		if !expiry.After(now) {
 			delete(l.cooldowns, phone)
 		}
 	}
-
-	// Clean old hourly sends
-	cutoff := now.Add(-1 * time.Hour)
-	for phone, times := range l.hourlySends {
-		valid := make([]time.Time, 0, len(times))
-		for _, t := range times {
-			if t.After(cutoff) {
-				valid = append(valid, t)
-			}
+	cutoff := now.Add(-time.Hour)
+	for phone, sends := range l.hourlySends {
+		first := 0
+		for first < len(sends) && !sends[first].After(cutoff) {
+			first++
 		}
-		if len(valid) == 0 {
+		if first == len(sends) {
 			delete(l.hourlySends, phone)
 		} else {
-			l.hourlySends[phone] = valid
+			l.hourlySends[phone] = sends[first:]
+		}
+	}
+	for id, entry := range l.attempts {
+		if !entry.expiresAt.After(now) {
+			delete(l.attempts, id)
 		}
 	}
 }

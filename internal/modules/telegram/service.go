@@ -11,6 +11,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
@@ -30,6 +31,7 @@ type Config struct {
 }
 
 const (
+	maxTelegramFileSize = 10 << 20
 	// linkCodeTTL bounds how long a link code is worth anything.
 	linkCodeTTL = 10 * time.Minute
 	// confirmTTL bounds how long a pending link waits for the browser.
@@ -192,7 +194,13 @@ func hashCode(code string) []byte {
 // It tries fileData (base64) first, then fileURL (HTTP GET), then Telegram Bot API if BotToken is configured.
 func (s *Service) DownloadFile(ctx context.Context, fileID, fileURL, fileData string) ([]byte, error) {
 	if fileData != "" {
+		if len(fileData) > base64.StdEncoding.EncodedLen(maxTelegramFileSize) {
+			return nil, errors.New("file exceeds maximum size of 10MB")
+		}
 		data, err := base64.StdEncoding.DecodeString(fileData)
+		if err == nil && len(data) > maxTelegramFileSize {
+			return nil, errors.New("file exceeds maximum size of 10MB")
+		}
 		if err == nil && len(data) > 0 {
 			return data, nil
 		}
@@ -235,10 +243,10 @@ type getFileResponse struct {
 }
 
 func (s *Service) getTelegramFilePath(ctx context.Context, fileID string) (string, error) {
-	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", s.cfg.BotToken, fileID)
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/getFile?file_id=%s", s.cfg.BotToken, url.QueryEscape(fileID))
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
-		return "", err
+		return "", errors.New("telegram: invalid getFile request")
 	}
 
 	resp, err := telegramFileClient.Do(req)
@@ -253,7 +261,7 @@ func (s *Service) getTelegramFilePath(ctx context.Context, fileID string) (strin
 	}
 
 	var res getFileResponse
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+	if err := json.NewDecoder(io.LimitReader(resp.Body, 64<<10)).Decode(&res); err != nil {
 		return "", fmt.Errorf("decode getFile response: %w", err)
 	}
 	if !res.OK || res.Result.FilePath == "" {
@@ -265,7 +273,7 @@ func (s *Service) getTelegramFilePath(ctx context.Context, fileID string) (strin
 func (s *Service) fetchURL(ctx context.Context, url string) ([]byte, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, errors.New("telegram: invalid file request")
 	}
 
 	resp, err := telegramFileClient.Do(req)
@@ -281,7 +289,6 @@ func (s *Service) fetchURL(ctx context.Context, url string) ([]byte, error) {
 	}
 
 	// 10 MB max attachment size
-	const maxTelegramFileSize = 10 << 20
 	content, err := io.ReadAll(io.LimitReader(resp.Body, maxTelegramFileSize+1))
 	if err != nil {
 		return nil, err

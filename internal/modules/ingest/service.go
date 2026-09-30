@@ -8,6 +8,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
@@ -82,6 +83,9 @@ func (s *Service) PresignUpload(ctx context.Context, userID int64, filename, mim
 	if cleanFilename == "" {
 		cleanFilename = "upload.csv"
 	}
+	if err := validateUploadFilename(cleanFilename); err != nil {
+		return nil, err
+	}
 	key := fmt.Sprintf("orgs/%d/uploads/%d_%s", orgID, time.Now().UnixNano(), cleanFilename)
 
 	uploadURL, err := s.storage.PresignPut(ctx, key, mimeType, 15*time.Minute)
@@ -119,9 +123,16 @@ func (s *Service) RegisterUpload(ctx context.Context, f *FileUpload) (*FileUploa
 		return nil, database.ErrNoTenant
 	}
 	f.OrganizationID = orgID
-
-	if f.Filename == "" || f.StorageKey == "" {
-		return nil, apperr.Validation("upload.invalid", "Filename and storage key are required.", nil)
+	userID, err := authctx.UserID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	f.UserID = userID
+	if err := validateUploadFilename(f.Filename); err != nil {
+		return nil, err
+	}
+	if err := validateUploadStorageKey(orgID, f.StorageKey); err != nil {
+		return nil, err
 	}
 
 	if err := s.repo.CreateFileUpload(ctx, f); err != nil {
