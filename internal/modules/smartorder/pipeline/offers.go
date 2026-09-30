@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
@@ -96,7 +97,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		// outcome set, or the results screen reports a blank status for every
 		// row rather than "not found in the catalogue".
 		for _, l := range lines {
-			if !l.Matched() {
+			if !isIdentified(l) {
 				l.Outcome = smartorder.OutcomeUnmatched
 				l.OfferState = ""
 			}
@@ -129,7 +130,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		var gateLines []smartorder.GateLine
 		seen := make(map[int64]bool)
 		for _, l := range lines {
-			if !l.Matched() || l.EffectiveQty <= 0 {
+			if !isIdentified(l) || l.EffectiveQty <= 0 {
 				continue
 			}
 			qty := int(l.EffectiveQty)
@@ -164,7 +165,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		if runID == 0 {
 			runID = l.RunID
 		}
-		if !l.Matched() {
+		if !isIdentified(l) {
 			l.Outcome = smartorder.OutcomeUnmatched
 			l.OfferState = ""
 			continue
@@ -210,6 +211,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		sel, ok := smartorder.Select(s.cfg, l.ID, written)
 		if !ok {
 			l.Outcome = smartorder.OutcomeNoSupplier
+			l.OfferState = smartorder.OfferStateIdentifiedNoOffer
 			continue
 		}
 		chosen := findCandidate(written, sel.CandidateID)
@@ -327,11 +329,24 @@ func (s *Supplier) buildCandidatesWithGate(ctx context.Context, l *smartorder.Li
 	return out, nil
 }
 
+func isIdentified(l *smartorder.Line) bool {
+	if !l.Matched() {
+		return false
+	}
+	if l.MatchState != "" {
+		return l.MatchState == string(matchflow.StateAccepted) || l.MatchState == string(matchflow.StateConfirmed)
+	}
+	if l.MatchConfidence > 0 && l.MatchConfidence < Cutoff {
+		return false
+	}
+	return true
+}
+
 func matchedProductIDs(lines []*smartorder.Line) []int64 {
 	seen := make(map[int64]bool)
 	var out []int64
 	for _, l := range lines {
-		if !l.Matched() {
+		if !isIdentified(l) {
 			continue
 		}
 		id := *l.MatchedProductID

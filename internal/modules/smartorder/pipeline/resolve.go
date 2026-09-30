@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -318,6 +319,20 @@ func setMatch(l *smartorder.Line, productID int64, method smartorder.MatchMethod
 	l.MatchedProductID = &productID
 	l.MatchMethod = method
 	l.MatchConfidence = confidence
+	if confidence >= Cutoff {
+		l.MatchState = string(matchflow.StateAccepted)
+		l.MatchGranularity = string(matchflow.GranularityPack)
+		switch method {
+		case smartorder.MethodBarcode, smartorder.MethodSKU:
+			l.MatchBasis = string(matchflow.BasisIdentifier)
+		case smartorder.MethodExactName:
+			l.MatchBasis = string(matchflow.BasisExact)
+		case smartorder.MethodLearnedMapping, smartorder.MethodSavingProduct:
+			l.MatchBasis = string(matchflow.BasisKnowledgeHuman)
+		default:
+			l.MatchBasis = string(matchflow.BasisSimilarity)
+		}
+	}
 }
 
 // Unresolved returns the lines still below the cutoff — the only ones the fuzzy

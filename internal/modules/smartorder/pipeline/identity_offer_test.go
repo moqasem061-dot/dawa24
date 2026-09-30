@@ -212,7 +212,110 @@ func TestIdentifiedNoOffer_DistinctFromUnmatchedAndOffered(t *testing.T) {
 func newTestSupplierWithRepo(repo smartorder.Repository, gate smartorder.AvailabilityGate, buyerOrgID, buyerBranchID int64) *Supplier {
 	s := NewSupplier(repo, stubCoverage{}, nil,
 		&smartorder.Config{OrganizationID: buyerOrgID},
-		BranchLocation{BranchID: buyerBranchID, Lat: 30.04, Lng: 31.23, HasCoord: true,})
+		BranchLocation{BranchID: buyerBranchID, Lat: 30.04, Lng: 31.23, HasCoord: true})
 	s.SetAvailabilityGate(gate)
 	return s
+}
+
+func TestOfferSelection_OnlyReceivesAcceptedOrConfirmedProducts(t *testing.T) {
+	ctx := context.Background()
+	const prodAccepted = int64(101)
+	const prodNeedsReview = int64(102)
+	const prodConfirmed = int64(103)
+
+	branchID := int64(68)
+	repo := &mockOfferRepo{
+		offers: map[int64][]smartorder.Offer{
+			prodAccepted: {
+				{
+					ProductID:       prodAccepted,
+					VariantID:       901,
+					VendorOrgID:     188,
+					BranchID:        &branchID,
+					VariantBranchID: &branchID,
+					PriceMinor:      4500,
+					MinOrderQty:     1,
+					StockQty:        500,
+					VendorActive:    true,
+					ProductActive:   true,
+				},
+			},
+			prodNeedsReview: {
+				{
+					ProductID:       prodNeedsReview,
+					VariantID:       902,
+					VendorOrgID:     188,
+					BranchID:        &branchID,
+					VariantBranchID: &branchID,
+					PriceMinor:      3000,
+					MinOrderQty:     1,
+					StockQty:        500,
+					VendorActive:    true,
+					ProductActive:   true,
+				},
+			},
+			prodConfirmed: {
+				{
+					ProductID:       prodConfirmed,
+					VariantID:       903,
+					VendorOrgID:     188,
+					BranchID:        &branchID,
+					VariantBranchID: &branchID,
+					PriceMinor:      2000,
+					MinOrderQty:     1,
+					StockQty:        500,
+					VendorActive:    true,
+					ProductActive:   true,
+				},
+			},
+		},
+	}
+
+	gate := &recordingGate{}
+	supplier := newTestSupplierWithRepo(repo, gate, 186, 65)
+
+	l1 := matchedLine(1, prodAccepted, 5)
+	l1.MatchState = "accepted"
+
+	l2 := matchedLine(2, prodNeedsReview, 5)
+	l2.MatchState = "needs_review" // unaccepted candidate
+
+	l3 := matchedLine(3, prodConfirmed, 2)
+	l3.MatchState = "confirmed"
+
+	lines := []*smartorder.Line{l1, l2, l3}
+	_, err := supplier.Resolve(ctx, lines)
+	if err != nil {
+		t.Fatalf("Resolve failed: %v", err)
+	}
+
+	// repo.LoadOffers should only have been queried for prodAccepted (101) and prodConfirmed (103), NOT prodNeedsReview (102)
+	if len(repo.queriedProducts) == 0 {
+		t.Fatalf("expected LoadOffers call")
+	}
+	queried := repo.queriedProducts[0]
+	for _, pid := range queried {
+		if pid == prodNeedsReview {
+			t.Errorf("offer selection loaded offers for unaccepted product %d", prodNeedsReview)
+		}
+	}
+
+	// Line 2 outcome must be unmatched, OfferState empty, product ID unchanged
+	if l2.Outcome != smartorder.OutcomeUnmatched {
+		t.Errorf("unaccepted line outcome: got %s, want unmatched", l2.Outcome)
+	}
+	if l2.OfferState != "" {
+		t.Errorf("unaccepted line offer_state: got %s, want empty", l2.OfferState)
+	}
+	if l2.MatchedProductID == nil || *l2.MatchedProductID != prodNeedsReview {
+		t.Errorf("l2 MatchedProductID changed unexpectedly: %v", l2.MatchedProductID)
+	}
+
+	// Line 1 and 3 are ordered
+	if l1.OfferState != smartorder.OfferStateOffered {
+		t.Errorf("l1 OfferState: got %s, want offered", l1.OfferState)
+	}
+	if l3.OfferState != smartorder.OfferStateOffered {
+		t.Errorf("l3 OfferState: got %s, want offered", l3.OfferState)
+	}
 }
