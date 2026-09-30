@@ -124,7 +124,7 @@ description: "Executable task list for the Product Matching Rework"
   - Change `Index.Match` (in `match.go`) to call `Decide` and convert back to `MatchResult`, so existing callers keep compiling. The Arabic `Reason` strings in `MatchResult` stay only for legacy screens.
   - Done when: `go test ./internal/shared/productmatch/...` passes, and the new test `match_decision_test.go` proves that a unique barcode hit whose name states a different strength is **not** accepted.
 - [X] T024 Change `decide` in `internal/shared/productmatch/match_decide.go` so a best candidate with any `Hard` conflict (from T016) can never be `MatchStrong`/`MatchExact`. It becomes `MatchReview`, keeping the candidate in the shortlist. Ranking order (`mass`, `score`, `ID`) stays unchanged.
-- [ ] T025 [P] Implement `QuestionSignature(rowFacts IdentityFacts, normName string, normalizerVersion string) string` (sha256 hex, `\x1f`-separated canonical form per research R8), and `const NormalizerVersion = "n1"`, in `internal/shared/productmatch/signature.go`.
+- [X] T025 [P] Implement `QuestionSignature(rowFacts IdentityFacts, normName string, normalizerVersion string) string` (sha256 hex, `\x1f`-separated canonical form per research R8), and `const NormalizerVersion = "n1"`, in `internal/shared/productmatch/signature.go`.
   - Test: the same raw name with structured strength 10 mg vs 20 mg gives different signatures.
 - [ ] T026 Add a determinism property test: shuffle 500 fixture rows, run `MatchAll` with workers 1, 4 and 16, and assert byte-identical `RowDecision` JSON per row. Write it in `internal/shared/productmatch/determinism_test.go`.
 - [ ] T027 Re-run T013's command with `--out reports/after-gate.json`, then compare against `reports/baseline-tuning.json`.
