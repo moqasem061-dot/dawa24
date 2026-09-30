@@ -140,12 +140,29 @@ func (l *Loader) Load(ctx context.Context, opts ...LoaderOptions) ([]productmatc
 
 // NewDefaultIndexBuilder returns an IndexBuilderFunc that loads products via Loader.
 func NewDefaultIndexBuilder(loader *Loader) IndexBuilderFunc {
+	return NewDefaultIndexBuilderWithCuration(loader, nil)
+}
+
+// NewDefaultIndexBuilderWithCuration returns an IndexBuilderFunc that loads products via Loader and applies active curations.
+func NewDefaultIndexBuilderWithCuration(loader *Loader, curatedRepo CuratedRepository) IndexBuilderFunc {
 	return func(ctx context.Context, scope string, revision int64, normVer string) (*productmatch.Index, error) {
 		products, _, err := loader.Load(ctx)
 		if err != nil {
 			return nil, err
 		}
-		idx := productmatch.NewIndex(products)
+
+		var facts map[int64][]productmatch.CuratedFact
+		var rels map[int64][]productmatch.PackRelationship
+		if curatedRepo != nil {
+			facts, rels, _ = curatedRepo.ListActive(ctx)
+		}
+
+		var idx *productmatch.Index
+		if len(facts) > 0 || len(rels) > 0 {
+			idx = productmatch.NewIndexWithCuration(products, facts, rels)
+		} else {
+			idx = productmatch.NewIndex(products)
+		}
 		idx.WithCatalogRevision(revision)
 		return idx, nil
 	}

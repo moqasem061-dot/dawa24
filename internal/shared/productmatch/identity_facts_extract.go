@@ -98,6 +98,9 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 		facts.Cert = CertUncertain
 		return facts
 	}
+	if p.curatedFacts != nil {
+		return *p.curatedFacts
+	}
 
 	facts.Prov = ProvOriginal
 	facts.Cert = CertExplicit

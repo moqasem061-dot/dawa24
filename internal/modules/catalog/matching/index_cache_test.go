@@ -136,3 +136,58 @@ func TestIndexCache_Singleflight_Concurrent20(t *testing.T) {
 		t.Errorf("buildCount under %d concurrent callers = %d; want exactly 1", callers, count)
 	}
 }
+
+type mockCuratedRepo struct {
+	facts map[int64][]productmatch.CuratedFact
+	rels  map[int64][]productmatch.PackRelationship
+}
+
+func (m *mockCuratedRepo) ListActive(ctx context.Context) (map[int64][]productmatch.CuratedFact, map[int64][]productmatch.PackRelationship, error) {
+	return m.facts, m.rels, nil
+}
+
+func TestIndexCache_BuilderWithCuration(t *testing.T) {
+	ctx := context.Background()
+
+	curatedRepo := &mockCuratedRepo{
+		facts: map[int64][]productmatch.CuratedFact{
+			1: {
+				{
+					ProductID: 1,
+					Attribute: "strength",
+					Value:     []byte(`"1000 mg"`),
+				},
+			},
+		},
+	}
+
+	builder := matching.IndexBuilderFunc(func(ctx context.Context, scope string, revision int64, normVer string) (*productmatch.Index, error) {
+		prods := []productmatch.MasterProduct{
+			{ID: 1, NameAR: "بانادول 500 مجم", Concentration: "500 mg"},
+		}
+		facts, rels, _ := curatedRepo.ListActive(ctx)
+		idx := productmatch.NewIndexWithCuration(prods, facts, rels)
+		idx.WithCatalogRevision(revision)
+		return idx, nil
+	})
+
+	cache := matching.NewIndexCache(builder)
+
+	idx, err := cache.Get(ctx, "master", 1)
+	if err != nil {
+		t.Fatalf("cache.Get failed: %v", err)
+	}
+
+	p, ok := idx.Lookup(1)
+	if !ok {
+		t.Fatal("expected product 1 in index")
+	}
+
+	f := p.Facts()
+	if len(f.Strengths) == 0 || f.Strengths[0].Value != "1000" {
+		t.Errorf("expected curated strength 1000, got %+v", f.Strengths)
+	}
+	if f.Strengths[0].Prov != productmatch.ProvCorrected {
+		t.Errorf("expected ProvCorrected, got %s", f.Strengths[0].Prov)
+	}
+}

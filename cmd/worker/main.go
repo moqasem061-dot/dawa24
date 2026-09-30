@@ -148,8 +148,9 @@ func run() error {
 	river.AddWorker(workers, importjobs.NewCommitWorker(db, importRunRepo, catSvcWorker, log))
 
 	matchingRepo := matchingPostgres.NewRepository(db)
+	matchingCuratedRepo := matchingPostgres.NewCuratedRepository(db)
 	matchingLoader := matching.NewLoader(db)
-	matchingCache := matching.NewIndexCache(matching.NewDefaultIndexBuilder(matchingLoader))
+	matchingCache := matching.NewIndexCache(matching.NewDefaultIndexBuilderWithCuration(matchingLoader, matchingCuratedRepo))
 	matchingSvc := matching.NewService(matchingRepo, matchingCache, matchingLoader)
 	_ = matchingSvc
 

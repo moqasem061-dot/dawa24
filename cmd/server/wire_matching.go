@@ -9,7 +9,8 @@ import (
 // newMatchingService constructs the singleton matching.Service for the platform.
 func newMatchingService(db *database.DB) matching.Service {
 	repo := matchingPostgres.NewRepository(db)
+	curatedRepo := matchingPostgres.NewCuratedRepository(db)
 	loader := matching.NewLoader(db)
-	cache := matching.NewIndexCache(matching.NewDefaultIndexBuilder(loader))
+	cache := matching.NewIndexCache(matching.NewDefaultIndexBuilderWithCuration(loader, curatedRepo))
 	return matching.NewService(repo, cache, loader)
 }
