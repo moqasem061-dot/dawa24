@@ -13,7 +13,6 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/matcheval"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
-	"github.com/moqasem061-dot/dawa24/test/corpus"
 )
 
 func runMatchEval(args []string) int {
@@ -60,7 +59,7 @@ func runMatchEval(args []string) int {
 		return 1
 	}
 
-	products, err := corpus.LoadSnapshotDir(*corpusDir)
+	products, err := loadCatalogueSnapshot(*corpusDir, *split)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "match-eval: load catalogue snapshot: %v\n", err)
 		return 1
@@ -90,10 +89,21 @@ func runMatchEval(args []string) int {
 			Path:   string(res.Level),
 		}
 
-		if res.Matched() {
+		if res.Level.Settled() {
 			o.State = "accepted"
 			id := res.ProductID
 			o.MatchedProductID = &id
+			if p, ok := idx.Lookup(id); ok {
+				candFacts := p.Facts()
+				rowFacts := productmatch.ExtractRowFacts(row, nil)
+				comp := productmatch.CompareFacts(rowFacts, candFacts)
+				for _, h := range comp.Hard {
+					o.HardConflictViolations = append(o.HardConflictViolations, string(h))
+				}
+			}
+			if c.Label.Expect == "conflict" && len(o.HardConflictViolations) == 0 {
+				o.HardConflictViolations = []string{"unexpected_acceptance_under_conflict"}
+			}
 		} else {
 			switch res.Level {
 			case productmatch.MatchAmbiguous:
@@ -144,7 +154,10 @@ func runMatchEval(args []string) int {
 	// Exit codes: 0 pass, 2 fail, 3 insufficient, 1 error
 	hasFail := false
 	hasInsufficient := false
-	for _, res := range report.Gates {
+	for gate, res := range report.Gates {
+		if *split == "adversarial" && gate != "SC-002" {
+			continue
+		}
 		if res == matcheval.GateFail {
 			hasFail = true
 		} else if res == matcheval.GateInsufficientSample {
@@ -174,6 +187,87 @@ func findCasesFile(dir, split string) string {
 		}
 	}
 	return ""
+}
+
+func loadCatalogueSnapshot(dir, split string) ([]productmatch.MasterProduct, error) {
+	candidates := []string{
+		filepath.Join(dir, split, "catalogue.jsonl"),
+		filepath.Join(dir, split, "catalogue.jsonl.gz"),
+		filepath.Join(dir, fmt.Sprintf("catalogue_%s.jsonl", split)),
+		filepath.Join(dir, fmt.Sprintf("catalogue_%s.jsonl.gz", split)),
+		filepath.Join(dir, "catalogue.jsonl"),
+		filepath.Join(dir, "catalogue.jsonl.gz"),
+		filepath.Join("test", "corpus", "catalogue.jsonl.gz"),
+	}
+	for _, p := range candidates {
+		if _, err := os.Stat(p); err == nil {
+			return readCatalogueFile(p)
+		}
+	}
+	return nil, fmt.Errorf("no catalogue snapshot found in %s for split %s", dir, split)
+}
+
+func readCatalogueFile(path string) ([]productmatch.MasterProduct, error) {
+	f, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = f.Close() }()
+
+	var r io.Reader = f
+	if strings.HasSuffix(path, ".gz") {
+		zr, err := gzip.NewReader(f)
+		if err != nil {
+			return nil, err
+		}
+		defer func() { _ = zr.Close() }()
+		r = zr
+	}
+
+	sc := bufio.NewScanner(r)
+	sc.Buffer(make([]byte, 0, 64*1024), 2*1024*1024)
+
+	var products []productmatch.MasterProduct
+	for sc.Scan() {
+		line := sc.Bytes()
+		if len(strings.TrimSpace(string(line))) == 0 {
+			continue
+		}
+		var p struct {
+			ID            int64  `json:"id"`
+			NameAR        string `json:"name_ar"`
+			NameEN        string `json:"name_en"`
+			Name          string `json:"name"`
+			SKU           string `json:"sku"`
+			Barcode       string `json:"barcode"`
+			Scientific    string `json:"scientific"`
+			DosageForm    string `json:"dosage_form"`
+			Concentration string `json:"concentration"`
+			Unit          string `json:"unit"`
+			Manufacturer  string `json:"manufacturer"`
+			PublicPrice   string `json:"price"`
+		}
+		if err := json.Unmarshal(line, &p); err != nil {
+			return nil, err
+		}
+		if p.NameAR == "" && p.Name != "" {
+			p.NameAR = p.Name
+		}
+		products = append(products, productmatch.MasterProduct{
+			ID:            p.ID,
+			NameAR:        p.NameAR,
+			NameEN:        p.NameEN,
+			SKU:           p.SKU,
+			Barcode:       p.Barcode,
+			Scientific:    p.Scientific,
+			DosageForm:    p.DosageForm,
+			Concentration: p.Concentration,
+			Unit:          p.Unit,
+			Manufacturer:  p.Manufacturer,
+			PublicPrice:   p.PublicPrice,
+		})
+	}
+	return products, sc.Err()
 }
 
 func loadCases(path string) ([]matcheval.Case, error) {

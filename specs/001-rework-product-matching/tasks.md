@@ -170,7 +170,7 @@ description: "Executable task list for the Product Matching Rework"
 
 ### Tests for US2
 
-- [ ] T037 [P] [US2] Create the adversarial fixture set: one JSONL case per row of spec.md §Edge Cases and §Normative identity examples (≥ 60 cases), with `split="adversarial"`, a small synthetic catalogue in `testdata/matching/adversarial/catalogue.jsonl`, and the cases in `testdata/matching/adversarial/cases.jsonl`. Use synthetic brand names only ("Brand A", "براند أ").
+- [X] T037 [P] [US2] Create the adversarial fixture set: one JSONL case per row of spec.md §Edge Cases and §Normative identity examples (≥ 60 cases), with `split="adversarial"`, a small synthetic catalogue in `testdata/matching/adversarial/catalogue.jsonl`, and the cases in `testdata/matching/adversarial/cases.jsonl`. Use synthetic brand names only ("Brand A", "براند أ").
 - [ ] T038 [P] [US2] Add a CI job step that runs `make match-eval-adversarial` in `.github/workflows/` (the existing CI workflow file; find it with `ls .github/workflows`).
 
 ### Implementation for US2
