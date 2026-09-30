@@ -246,9 +246,34 @@ func readCatalogueFile(path string) ([]productmatch.MasterProduct, error) {
 			Unit          string `json:"unit"`
 			Manufacturer  string `json:"manufacturer"`
 			PublicPrice   string `json:"price"`
+
+			I int64  `json:"i"`
+			A string `json:"a"`
+			E string `json:"e"`
+			K string `json:"k"`
+			B string `json:"b"`
+			S string `json:"s"`
+			F string `json:"f"`
+			C string `json:"c"`
+			U string `json:"u"`
+			M string `json:"m"`
+			P string `json:"p"`
 		}
 		if err := json.Unmarshal(line, &p); err != nil {
 			return nil, err
+		}
+		if p.ID == 0 && p.I != 0 {
+			p.ID = p.I
+			p.NameAR = p.A
+			p.NameEN = p.E
+			p.SKU = p.K
+			p.Barcode = p.B
+			p.Scientific = p.S
+			p.DosageForm = p.F
+			p.Concentration = p.C
+			p.Unit = p.U
+			p.Manufacturer = p.M
+			p.PublicPrice = p.P
 		}
 		if p.NameAR == "" && p.Name != "" {
 			p.NameAR = p.Name

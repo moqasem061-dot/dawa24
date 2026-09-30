@@ -58,3 +58,31 @@ Evaluation of the gate on the tuning split (`test/corpus/cases_tuning.jsonl.gz`)
 2. **Hard-Conflict Invariant**: 0 hard-conflict violations across all 32,179 cases (100% hard-conflict protection verified on all evaluated acceptance paths).
 3. **Coverage Drop**: 0 cases dropped (0.00% drop). Every valid accepted match is preserved identically.
 
+## After US2
+
+Evaluation after implementing User Story 2 (curated facts, exact pack conversions, rational concentration equivalence, combination rules, tablet vs capsule distinction, plain sibling modifier rules, and brand conflicts).
+
+### Adversarial Evaluation (`reports/adv.json`)
+- **Status**: Exit code 0 (Pass)
+- **Total Cases**: 65
+- **Resolvable Cases**: 37
+- **Accepted**: 9 (Correct: 9)
+- **Precision**: 100.00% (95% LB: 71.69%)
+- **Recall@20**: 97.30%
+- **Hard Conflict Violations**: 0 (100% hard-conflict protection)
+- **Absent or Ambiguous Accepted**: 0
+- **Unavailable vs None Confusions**: 0
+
+### Tuning Split Evaluation (`reports/after-us2.json`)
+- **Corpus**: `test/corpus` (`test/corpus/cases_tuning.jsonl.gz`)
+- **Total Cases**: 32,179
+- **Resolvable Cases**: 32,179
+- **Accepted**: 15,772 (Correct: 15,762)
+- **Overall Precision**: **99.94%** (95% Clopper–Pearson LB: **99.89%**) — increases from baseline 99.06% to 99.94% (SC-001 PASS)
+- **Arabic (`ar`) Precision**: **99.97%** (95% LB: **99.91%**)
+- **English (`en`) Precision**: **99.90%** (95% LB: **99.83%**)
+- **Vendor Workflow Precision**: **99.94%** (95% LB: **99.89%**)
+- **Hard Conflict Violations**: 0 (SC-002 PASS)
+- **Recall@20**: 99.92% (SC-004 PASS)
+
+
