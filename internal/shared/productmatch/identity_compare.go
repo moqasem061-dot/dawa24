@@ -156,36 +156,38 @@ func compareForm(row, prod IdentityFacts, comp *Comparison) {
 		return
 	}
 
-	rF := string(row.FormFamily)
-	pF := string(prod.FormFamily)
+	normR := normalizeForm(string(row.FormFamily))
+	normP := normalizeForm(string(prod.FormFamily))
 
-	// Explicit tablet vs explicit capsule
-	if (strings.Contains(rF, "tablet") || strings.Contains(rF, "قرص") || strings.Contains(rF, "أقراص")) &&
-		(strings.Contains(pF, "capsule") || strings.Contains(pF, "كبسول")) {
-		comp.Attributes["form"] = OutcomeConflict
-		comp.Hard = append(comp.Hard, ConflictForm)
-		return
-	}
-	if (strings.Contains(pF, "tablet") || strings.Contains(pF, "قرص") || strings.Contains(pF, "أقراص")) &&
-		(strings.Contains(rF, "capsule") || strings.Contains(rF, "كبسول")) {
-		comp.Attributes["form"] = OutcomeConflict
-		comp.Hard = append(comp.Hard, ConflictForm)
-		return
-	}
-
-	// Cream vs gel
-	if (strings.Contains(rF, "cream") || strings.Contains(rF, "كريم")) &&
-		(strings.Contains(pF, "gel") || strings.Contains(pF, "جيل")) {
-		comp.Attributes["form"] = OutcomeConflict
-		comp.Hard = append(comp.Hard, ConflictForm)
-		return
-	}
-
-	if rF == pF {
+	if normR == normP {
 		comp.Attributes["form"] = OutcomeAgree
 	} else {
 		comp.Attributes["form"] = OutcomeConflict
 		comp.Hard = append(comp.Hard, ConflictForm)
+	}
+}
+
+func normalizeForm(f string) string {
+	f = strings.ToLower(strings.TrimSpace(f))
+	switch {
+	case strings.Contains(f, "tablet") || strings.Contains(f, "tab") || strings.Contains(f, "قرص") || strings.Contains(f, "أقراص") || strings.Contains(f, "اقراص"):
+		return "tablet"
+	case strings.Contains(f, "capsule") || strings.Contains(f, "cap") || strings.Contains(f, "كبسول"):
+		return "capsule"
+	case strings.Contains(f, "cream") || strings.Contains(f, "كريم"):
+		return "cream"
+	case strings.Contains(f, "gel") || strings.Contains(f, "جيل") || strings.Contains(f, "جل"):
+		return "gel"
+	case strings.Contains(f, "ointment") || strings.Contains(f, "مرهم") || strings.Contains(f, "oint"):
+		return "ointment"
+	case strings.Contains(f, "syrup") || strings.Contains(f, "شراب") || strings.Contains(f, "susp") || strings.Contains(f, "معلق"):
+		return "syrup"
+	case strings.Contains(f, "drop") || strings.Contains(f, "نقط") || strings.Contains(f, "قطر"):
+		return "drop"
+	case strings.Contains(f, "inj") || strings.Contains(f, "حقن") || strings.Contains(f, "امبول") || strings.Contains(f, "ampoule") || strings.Contains(f, "vial") || strings.Contains(f, "فيال"):
+		return "injection"
+	default:
+		return f
 	}
 }
 

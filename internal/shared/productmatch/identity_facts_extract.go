@@ -261,7 +261,10 @@ func parseStrengthText(facts *IdentityFacts, text string) {
 	}
 
 	seen := make(map[string]bool)
-	compIdx := 0
+	for _, s := range facts.Strengths {
+		seen[s.Value+s.Unit] = true
+	}
+	compIdx := len(facts.Strengths)
 
 	for _, loc := range locs {
 		sub := norm[loc[0]:loc[1]]
