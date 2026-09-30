@@ -30,6 +30,7 @@ type MasterProduct struct {
 	Manufacturer  string
 	PublicPrice   string
 	curatedFacts  *IdentityFacts
+	packRels      []PackRelationship
 
 	// Derived once at index time. Everything the scorer needs is precomputed
 	// here rather than per comparison: a nine-thousand-row file scores three
@@ -165,4 +166,19 @@ func prepare(p *MasterProduct) {
 	// holds both — because the query may be written in either script and the
 	// skeleton is the same either way.
 	p.skeleton = skeletonOf(append(append([]string{}, p.coreAR...), p.coreEN...))
+}
+
+// PackRelationships returns curated pack relationships for this product.
+func (p *MasterProduct) PackRelationships() []PackRelationship {
+	if p == nil {
+		return nil
+	}
+	return p.packRels
+}
+
+// SetPackRelationships sets the curated pack relationships for this product.
+func (p *MasterProduct) SetPackRelationships(rels []PackRelationship) {
+	if p != nil {
+		p.packRels = rels
+	}
 }

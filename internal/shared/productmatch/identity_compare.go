@@ -302,6 +302,19 @@ func comparePack(row, prod IdentityFacts, comp *Comparison) {
 		return
 	}
 
+	if (row.Pack.Multiplier > 1) != (prod.Pack.Multiplier > 1) {
+		comp.Attributes["pack"] = OutcomeConflict
+		return
+	}
+	if row.Pack.Multiplier > 1 && prod.Pack.Multiplier > 1 {
+		if row.Pack.Multiplier == prod.Pack.Multiplier && row.Pack.SubCount == prod.Pack.SubCount {
+			comp.Attributes["pack"] = OutcomeAgree
+		} else {
+			comp.Attributes["pack"] = OutcomeConflict
+		}
+		return
+	}
+
 	if row.Pack.Count == prod.Pack.Count {
 		comp.Attributes["pack"] = OutcomeAgree
 	} else {

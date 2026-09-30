@@ -59,11 +59,13 @@ type Ratio struct {
 
 // PackFacts defines package count, subunit, and container without collapsing multi-packs.
 type PackFacts struct {
-	Count     int    `json:"count"`
-	SubUnit   string `json:"sub_unit,omitempty"`   // strip, blister, ampoule, sachet, etc.
-	Container string `json:"container,omitempty"` // box, bottle, vial, etc.
-	Prov      Prov   `json:"prov,omitempty"`
-	Cert      Cert   `json:"cert,omitempty"`
+	Count      int    `json:"count"`
+	Multiplier int    `json:"multiplier,omitempty"` // e.g. 2 for 2x10
+	SubCount   int    `json:"sub_count,omitempty"`  // e.g. 10 for 2x10
+	SubUnit    string `json:"sub_unit,omitempty"`   // strip, blister, ampoule, sachet, etc.
+	Container  string `json:"container,omitempty"` // box, bottle, vial, etc.
+	Prov       Prov   `json:"prov,omitempty"`
+	Cert       Cert   `json:"cert,omitempty"`
 }
 
 // Identifier records an explicit barcode, supplier code, or catalogue code.

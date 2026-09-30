@@ -228,10 +228,12 @@ func extractNameFacts(facts *IdentityFacts, text string) {
 		}
 
 		facts.Pack = &PackFacts{
-			Count:   multCount * unitCount,
-			SubUnit: fmt.Sprintf("%d", unitCount),
-			Prov:    ProvOriginal,
-			Cert:    cert,
+			Count:      multCount * unitCount,
+			Multiplier: multCount,
+			SubCount:   unitCount,
+			SubUnit:    fmt.Sprintf("%d", unitCount),
+			Prov:       ProvOriginal,
+			Cert:       cert,
 		}
 	} else {
 		// Single pack quantities
@@ -239,7 +241,7 @@ func extractNameFacts(facts *IdentityFacts, text string) {
 		if len(q.counts) > 0 {
 			facts.Pack = &PackFacts{
 				Count:   int(q.counts[0].value),
-				SubUnit: q.counts[0].class,
+				SubUnit: strings.TrimPrefix(q.counts[0].class, "\x00"),
 				Prov:    ProvOriginal,
 				Cert:    CertParsed,
 			}

@@ -37,24 +37,22 @@ type Proposal struct {
 	KnowledgeStale   bool
 }
 
-// PackOutcome indicates the result of comparing pack units and quantities.
-type PackOutcome string
-
 const (
-	PackOutcomeAgree             PackOutcome = "agree"
-	PackOutcomeConflict          PackOutcome = "conflict"
-	PackOutcomeUnstated          PackOutcome = "unstated"
-	PackOutcomeNeedsRelationship PackOutcome = "needs_relationship"
+	PackOutcomeAgree             = matchflow.PackOutcomeAgree
+	PackOutcomeConflict          = matchflow.PackOutcomeConflict
+	PackOutcomeUnstated          = matchflow.PackOutcomeUnstated
+	PackOutcomeNeedsRelationship = matchflow.PackOutcomeNeedsRelationship
 )
 
 // Verdict is the definitive acceptance decision returned by the Gate.
 type Verdict struct {
-	Eligible bool
-	State    matchflow.State
-	Achieved Granularity
-	Pack     PackOutcome
-	Hard     []ConflictKind
-	Reasons  []Reason
+	Eligible       bool
+	State          matchflow.State
+	Achieved       Granularity
+	Pack           matchflow.PackOutcome
+	RelationshipID *int64
+	Hard           []ConflictKind
+	Reasons        []Reason
 }
 
 // ProductLookup retrieves catalogue products by ID.
@@ -133,6 +131,10 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 
 	// Rule 4: Uniqueness / Ambiguity across eligible siblings
 	if len(p.Siblings) > 0 {
+		var rPF PackFacts
+		if rowFacts.Pack != nil {
+			rPF = *rowFacts.Pack
+		}
 		for _, sibID := range p.Siblings {
 			if sibID == p.ProductID {
 				continue
@@ -143,7 +145,15 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 			}
 			sibFacts := sib.Facts()
 			sibComp := CompareFacts(rowFacts, sibFacts)
-			if len(sibComp.Hard) > 0 || sibComp.Attributes["pack"] == OutcomeConflict {
+			if len(sibComp.Hard) > 0 {
+				continue
+			}
+			var sibPF PackFacts
+			if sibFacts.Pack != nil {
+				sibPF = *sibFacts.Pack
+			}
+			sibPackOutcome, _ := PackOutcome(rPF, sibPF, sib.PackRelationships())
+			if sibPackOutcome == "conflict" {
 				continue
 			}
 			// Sibling is also eligible and indistinguishable on row's stated facts
@@ -226,11 +236,29 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 	// Rule 8: Granularity
 	achieved := GranularityProduct
 	packOutcome := PackOutcomeUnstated
+	var relIDPtr *int64
 
-	if comp.Attributes["pack"] == OutcomeAgree {
+	var rowPF, prodPF PackFacts
+	if rowFacts.Pack != nil {
+		rowPF = *rowFacts.Pack
+	}
+	if prodFacts.Pack != nil {
+		prodPF = *prodFacts.Pack
+	}
+	var rels []PackRelationship
+	if prod != nil {
+		rels = prod.PackRelationships()
+	}
+
+	po, relID := PackOutcome(rowPF, prodPF, rels)
+	switch po {
+	case "agree":
 		achieved = GranularityPack
 		packOutcome = PackOutcomeAgree
-	} else if comp.Attributes["pack"] == OutcomeConflict {
+		if relID > 0 {
+			relIDPtr = &relID
+		}
+	case "conflict":
 		packOutcome = PackOutcomeConflict
 		if g.PackBridge != nil && rowFacts.Pack != nil && prodFacts.Pack != nil {
 			if factor, bOk := g.PackBridge(rowFacts.Pack.SubUnit, prodFacts.Pack.SubUnit); bOk && factor > 0 {
@@ -238,19 +266,26 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 				packOutcome = PackOutcomeAgree
 			}
 		}
+	case "needs_relationship":
+		packOutcome = PackOutcomeNeedsRelationship
+	case "unstated":
+		packOutcome = PackOutcomeUnstated
 	}
 
 	if pol.Required == GranularityPack && achieved < GranularityPack {
 		reasonCode := ReasonPackUnresolved
 		if packOutcome == PackOutcomeConflict {
 			reasonCode = ReasonPackConflict
+		} else if packOutcome == PackOutcomeNeedsRelationship {
+			reasonCode = ReasonPackNeedsRelationship
 		}
 		return Verdict{
-			Eligible: true,
-			State:    matchflow.StateNeedsReview,
-			Achieved: achieved,
-			Pack:     packOutcome,
-			Reasons:  []Reason{{Code: reasonCode}},
+			Eligible:       true,
+			State:          matchflow.StateNeedsReview,
+			Achieved:       achieved,
+			Pack:           packOutcome,
+			RelationshipID: relIDPtr,
+			Reasons:        []Reason{{Code: reasonCode}},
 		}
 	}
 
@@ -261,11 +296,12 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 	}
 
 	return Verdict{
-		Eligible: true,
-		State:    finalState,
-		Achieved: achieved,
-		Pack:     packOutcome,
-		Reasons:  defaultReasonsForPath(p.Path),
+		Eligible:       true,
+		State:          finalState,
+		Achieved:       achieved,
+		Pack:           packOutcome,
+		RelationshipID: relIDPtr,
+		Reasons:        defaultReasonsForPath(p.Path),
 	}
 }
 

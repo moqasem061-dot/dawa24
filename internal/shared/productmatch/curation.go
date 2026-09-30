@@ -114,6 +114,7 @@ func NewIndexWithCuration(
 			f := p.Facts()
 			ApplyCuration(&f, pCurations, pRels)
 			p.curatedFacts = &f
+			p.packRels = pRels
 		}
 	}
 
