@@ -190,7 +190,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T046 [US2] `modifier_unstated_in_row` becomes hard **only if** the index contains a plain sibling (same brand stem, no modifier). Add `(*Index).hasPlainSibling(p)` in `internal/shared/productmatch/identity_siblings.go` and use it in `CompareFacts`.
 - [X] T047 [US2] Brand conflict: when the row and the candidate each carry a distinct identifiable brand token (a rare token, `df` ≤ 3, not a maker word) and they differ, that is a `brand` hard conflict. Implement it in `internal/shared/productmatch/identity_brand.go` with tests for "Product A, alternative to Product B".
 - [X] T048 [US2] Run `make match-eval-adversarial`, fix until exit code 0, and run the T027 comparison again. Record the new numbers in `docs/modules/matching-baseline.md` §"After US2".
-- [ ] T049 [US2] Document the identity rules (hard vs soft, granularity, curated overrides, tablet/capsule change) in `docs/modules/catalog.md` §"Product identity rules".
+- [X] T049 [US2] Document the identity rules (hard vs soft, granularity, curated overrides, tablet/capsule change) in `docs/modules/catalog.md` §"Product identity rules".
 
 **Checkpoint**: the shared engine meets SC-002 on synthetic and adversarial data.
 

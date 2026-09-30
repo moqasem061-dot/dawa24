@@ -158,5 +158,38 @@ as the admin likes.
 
 ## Product identity rules
 
-- **Tablet vs Capsule Conflict (US2 / SC-002):** Explicit tablet vs explicit capsule is a hard conflict (`ConflictForm`). Previously, tablets and capsules were collapsed onto `solid_oral`. This is an intentional behaviour change to keep distinct pharmaceutical forms separated. When form is unstated on either side, it is treated as `unstated` (not a conflict). Curated identity overrides can resolve specific catalogue items where necessary. Ordinary vs ODT/dissolving remains a conflict.
+1. **Hard vs Soft Conflicts (contracts/identity-gate.md, SC-002):**
+   - **Hard Conflicts**: Unconditionally veto candidate acceptance on every path (including identifier, exact, similarity, and human reviewer until corrected). Any hard conflict yields `Eligible=false` and state `needs_review`:
+     - `strength`: different active ingredient dosage (e.g. 500 mg vs 1000 mg).
+     - `strength_component`: combination components evaluated by position when component association is known.
+     - `combination`: multi-component medicine differences (a row with fewer components is unstated, row with more is a hard conflict).
+     - `modifier`: differing product line modifiers (e.g. Extra vs Plus).
+     - `modifier_unstated_in_row`: row omits a line extension that the candidate product possesses. **Hard only when a plain sibling exists in the index**; if the extended product is the sole family member in the catalogue, it remains `unstated`.
+     - `form`: differing pharmaceutical forms (e.g. syrup vs tablet, ointment vs cream).
+     - `route`: differing administration routes (e.g. eye drops vs ear drops).
+     - `release`: modified release profile (e.g. SR/XR/CR/retard) vs immediate release.
+     - `letter`: distinguishing product suffix letters (e.g. Betnovate N vs Betnovate C).
+     - `concentration`: exact rational fraction mismatch (`math/big.Rat`) for concentrations (mg↔g and mL↔L conversions normalized; percent and IU never converted).
+     - `dimension`: device size or physical dimension mismatch.
+     - `brand`: differing rare brand tokens (`df` <= 3); alternative mentions ("Product A, alternative to Product B") are never accepted as substitutions.
+     - `identifier_vs_description`: an identifier pointing to a product whose identity attributes contradict the description.
+     - `pack`: package count/structure conflict (enforced as a hard conflict only when `RequiredGranularity == Pack`).
+   - **Soft Statuses**: `unstated` indicates missing information and never counts as agreement. Agreement requires positive corroboration.
+
+2. **Required Granularity (`product` vs `pack`):**
+   - `RequiredGranularity = Product`: Validates molecular identity, strength, form, release, route, and brand. Packaging count differences are soft.
+   - `RequiredGranularity = Pack`: Requires both product identity and exact packaging alignment (`Count`, `Multiplier`, `SubCount`, `SubUnit`).
+   - Structured multi-packs (e.g. `2×10` vs `20`) yield `needs_relationship` unless an explicit entry exists in `catalog.pack_relationships`. Pack conversion (`Convert`) uses exact integer arithmetic only.
+
+3. **Curated Identity Overrides:**
+   - Platform-curated facts in `catalog.curated_identity_facts` override parsed facts with `Prov=corrected`.
+   - Applied at index construction (`NewIndexWithCuration`).
+   - Statement triggers on `catalog.curated_identity_facts` and `catalog.pack_relationships` increment `catalog.catalog_revisions`, ensuring zero-downtime, automated singleflight cache invalidation.
+
+4. **Tablet vs Capsule Distinction (Intentional Behaviour Change):**
+   - Explicit tablet (`tablet`, `tab`, `أقراص`, `قرص`) vs explicit capsule (`capsule`, `cap`, `كبسول`, `كبسولات`) is an intentional hard conflict (`ConflictForm`).
+   - Previously collapsed into `solid_oral`; separated to preserve clinical accuracy in B2B orders.
+   - Either side omitting the form is treated as `unstated` (not a conflict).
+   - Ordinary tablets vs Orally Disintegrating Tablets (ODT / discmelt / ذائبة) remains an unconditional conflict.
+
 
