@@ -1,0 +1,6 @@
+{
+  "baseline_sha": "1ec88e4f53f9d5a86511a74e79d6830013d90fd9",
+  "catalogue_sha256": "e3f3befa6f7fc5bbeefafe698b7a752acfa24ce2447bbda75d7c0742fbf666b6",
+  "tuning_cases_sha256": "371ba01168c183938972b8a4ddf94a0a1dfba6af18a4b7956bc92fe8c772b409",
+  "heldout_manifest": null
+}
