@@ -135,13 +135,14 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 			}
 			sibFacts := sib.Facts()
 			sibComp := CompareFacts(rowFacts, sibFacts)
-			if len(sibComp.Hard) == 0 {
-				// Sibling is also eligible and indistinguishable on row's stated facts
-				return Verdict{
-					Eligible: true,
-					State:    matchflow.StateAmbiguous,
-					Reasons:  []Reason{{Code: ReasonAmbiguousSiblings}},
-				}
+			if len(sibComp.Hard) > 0 || sibComp.Attributes["pack"] == OutcomeConflict {
+				continue
+			}
+			// Sibling is also eligible and indistinguishable on row's stated facts
+			return Verdict{
+				Eligible: true,
+				State:    matchflow.StateAmbiguous,
+				Reasons:  []Reason{{Code: ReasonAmbiguousSiblings}},
 			}
 		}
 	}

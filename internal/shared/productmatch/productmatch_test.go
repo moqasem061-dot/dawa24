@@ -222,7 +222,7 @@ func TestMatchingSeparatesTwoPackSizes(t *testing.T) {
 
 func TestBarcodeMatchIsDecisiveWhenTheUserSaysTheColumnIsABarcode(t *testing.T) {
 	idx := NewIndex([]MasterProduct{
-		{ID: 7, NameAR: "لا يشبه الاسم المطلوب إطلاقاً", Barcode: "6221234567890"},
+		{ID: 7, NameAR: "بانادول إكسترا أقراص", Barcode: "6221234567890"},
 	})
 	opts := DefaultMatchOptions().WithIdentifiers(
 		MappedColumns{Barcode: true},
@@ -241,7 +241,7 @@ func TestBarcodeMatchIsDecisiveWhenTheUserSaysTheColumnIsABarcode(t *testing.T) 
 // link a row to a medicine that shares nothing with it but a figure.
 func TestBarcodeIsIgnoredUntilTheUserOptsIn(t *testing.T) {
 	idx := NewIndex([]MasterProduct{
-		{ID: 7, NameAR: "لا يشبه الاسم المطلوب إطلاقاً", Barcode: "6221234567890"},
+		{ID: 7, NameAR: "بانادول إكسترا أقراص", Barcode: "6221234567890"},
 	})
 
 	res := idx.Match(&Row{Name: "بانادول إكسترا", Barcode: "6221234567890"}, DefaultMatchOptions())

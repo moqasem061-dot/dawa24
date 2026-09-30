@@ -22,7 +22,8 @@ import (
 
 // Index is the in-memory catalogue, keyed several ways.
 type Index struct {
-	products  []*MasterProduct
+	catalogRevision int64
+	products        []*MasterProduct
 	byID      map[int64]*MasterProduct
 	byBarcode map[string][]*MasterProduct
 	bySKU     map[string][]*MasterProduct
@@ -249,6 +250,26 @@ func (idx *Index) Lookup(id int64) (*MasterProduct, bool) {
 	}
 	p, ok := idx.byID[id]
 	return p, ok
+}
+
+// Revision returns the catalogue revision number and normalizer version of this index.
+func (idx *Index) Revision() (catalog int64, normalizer string) {
+	if idx == nil {
+		return 0, "n1"
+	}
+	rev := idx.catalogRevision
+	if rev <= 0 {
+		rev = 1
+	}
+	return rev, "n1"
+}
+
+// WithCatalogRevision sets the revision number for this index.
+func (idx *Index) WithCatalogRevision(rev int64) *Index {
+	if idx != nil {
+		idx.catalogRevision = rev
+	}
+	return idx
 }
 
 // maxIDF is the weight of a token no catalogue product carries — the ceiling

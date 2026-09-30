@@ -21,6 +21,7 @@ import (
 // query is one row reduced to its matching signals, with the scratch space the
 // scorer reuses across every candidate so a comparison allocates nothing.
 type query struct {
+	row    *Row
 	tokens []string
 	// weights is the inverse document frequency of each distinct query token,
 	// parallel to tokens; pos indexes back into both.
@@ -93,7 +94,8 @@ type query struct {
 	dims   []string
 	// priceMinor is the printed public price the row states, in minor units.
 	// See evidence_price.go.
-	priceMinor int64
+	priceMinor    int64
+	poolTruncated bool
 }
 
 func (idx *Index) newQuery(row *Row) *query {
@@ -106,6 +108,7 @@ func (idx *Index) newQuery(row *Row) *query {
 	full := name + " " + nameEN
 	nameTokens := coreTokens(full)
 	q := &query{
+		row:        row,
 		tokens:     coreTokens(full + " " + row.Scientific),
 		tri:        sortedTrigrams(nameTokens),
 		skeleton:   skeletonOf(nameTokens),

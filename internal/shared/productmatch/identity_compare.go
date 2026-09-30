@@ -2,6 +2,8 @@ package productmatch
 
 import (
 	"strings"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Outcome represents a 4-valued attribute comparison verdict.
@@ -118,9 +120,23 @@ func filterBrandTokens(tokens []Token) []string {
 	var out []string
 	for _, t := range tokens {
 		txt := strings.ToLower(strings.TrimSpace(t.Text))
-		if txt != "" && !isNoiseOrMakerWord(txt) {
-			out = append(out, txt)
+		if txt == "" || hasDigit(txt) || isNumericLiteral(txt) {
+			continue
 		}
+		key := sheet.NormalizeKey(txt)
+		if _, ok := unitWords[key]; ok {
+			continue
+		}
+		if _, ok := formWords[key]; ok {
+			continue
+		}
+		if noiseWords[txt] || noiseWords[key] || isNoiseOrMakerWord(txt) {
+			continue
+		}
+		if len([]rune(txt)) < 2 {
+			continue
+		}
+		out = append(out, txt)
 	}
 	return out
 }
@@ -129,6 +145,9 @@ func isNoiseOrMakerWord(w string) bool {
 	noise := map[string]bool{
 		"شركة": true, "مستحضر": true, "دواء": true, "علاج": true,
 		"co": true, "pharma": true, "lab": true, "inc": true,
+		"باكت": true, "باكيت": true, "علبة": true, "علبه": true,
+		"شريط": true, "كرتونة": true, "كرتونه": true, "pack": true,
+		"strip": true, "box": true,
 	}
 	return noise[w]
 }

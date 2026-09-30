@@ -3,6 +3,7 @@ package productmatch
 import (
 	"sort"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
@@ -192,24 +193,44 @@ func (idx *Index) Match(row *Row, opts MatchOptions) MatchResult {
 		opts.MaxCandidates = 5
 	}
 
-	q := idx.newQuery(row)
+	pol := DefaultPolicy()
+	pol.MinStrong = opts.MinStrong
+	pol.MinReview = opts.MinReview
+	pol.Identifiers.AllowGTIN = opts.TrustBarcode
+	pol.Identifiers.AllowSupplierCode = opts.TrustSupplierCode
+	pol.Identifiers.AllowCatalogCode = opts.CodeIsAuthoritative
 
-	if opts.TrustBarcode {
-		if res, ok := idx.matchByBarcode(row); ok {
-			return res
-		}
-	}
-	if opts.TrustSupplierCode {
-		if res, ok := idx.matchByCode(row, q, opts); ok {
-			return res
-		}
+	dec, scored := idx.decideRow(row, pol, opts)
+	cols := matchflow.Columns(dec)
+
+	var prodID int64
+	if cols.MatchedProductID != nil {
+		prodID = *cols.MatchedProductID
+	} else if dec.ProductID != nil {
+		prodID = *dec.ProductID
 	}
 
-	scored := idx.score(q, opts)
-	if len(scored) == 0 {
-		return MatchResult{Level: MatchNone, Reason: "لم يتم العثور على صنف مشابه في الكتالوج المركزي"}
+	score := 0.0
+	if len(scored) > 0 {
+		score = scored[0].score
+	} else if dec.State == matchflow.StateAccepted && dec.Basis == matchflow.BasisIdentifier {
+		score = 1.0
 	}
-	return idx.decide(q, scored, opts)
+
+	reason := MatchLevel(cols.MatchLevel).Label()
+	if dec.State == matchflow.StateAmbiguous {
+		reason = "صنفان في الكتالوج بنفس درجة التطابق ولا يوجد في الصف ما يفرّق بينهما؛ يلزم اختيار الصحيح يدوياً."
+	} else if dec.State == matchflow.StateNoCandidate {
+		reason = "لم يتم العثور على صنف مشابه في الكتالوج المركزي"
+	}
+
+	return MatchResult{
+		ProductID:  prodID,
+		Level:      MatchLevel(cols.MatchLevel),
+		Score:      score,
+		Reason:     reason,
+		Candidates: describe(scored, opts.MaxCandidates),
+	}
 }
 
 // matchByBarcode resolves the one identifier that means the same package.
@@ -332,6 +353,9 @@ const blindNearIdentical = 0.90
 // score rates every plausible catalogue product for one query.
 func (idx *Index) score(q *query, opts MatchOptions) []scoredProduct {
 	pool := idx.candidatePoolWithKeys(q.tokens, q.keys, opts.PoolLimit)
+	if opts.PoolLimit > 0 && len(pool) >= opts.PoolLimit {
+		q.poolTruncated = true
+	}
 	if q.nameKey != "" {
 		pool = append(pool, idx.byName[q.nameKey]...)
 	}
