@@ -233,11 +233,8 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 
 		var variantID *int64
 		inWarehouse := false
-		if r.variantIdx != nil {
-			pID := int64(0)
-			if productID != nil {
-				pID = *productID
-			}
+		if r.variantIdx != nil && productID != nil {
+			pID := *productID
 			if vID, _ := r.variantIdx.resolve(row, pID, nil); vID > 0 {
 				variantID = &vID
 				inWarehouse = r.variantIdx.inWarehouse != nil && r.variantIdx.inWarehouse[vID]

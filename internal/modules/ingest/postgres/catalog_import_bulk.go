@@ -75,6 +75,8 @@ func (r *Repository) ConfirmRowMatches(
 			SET is_manually_matched = true,
 			    is_excluded = false,
 			    outcome = 'staged',
+			    match_state = 'confirmed',
+			    match_basis = 'reviewer',
 			    message = 'مطابقة معتمدة من المستخدم بعد المراجعة'
 			WHERE import_id = $1
 			  AND id = ANY($2::bigint[])
@@ -176,9 +178,12 @@ func (r *Repository) ClearRowMatches(
 		tag, err := tx.Exec(txCtx, `
 			UPDATE ingest.catalog_import_rows
 			SET product_id = NULL,
+			    variant_id = NULL,
 			    match_level = 'none',
 			    match_score = 0.0000,
 			    is_manually_matched = false,
+			    match_state = 'needs_review',
+			    match_basis = '',
 			    outcome = 'staged',
 			    message = 'تم إلغاء الربط بالكتالوج'
 			WHERE import_id = $1 AND id = ANY($2::bigint[]);`, importID, rowIDs)
@@ -209,7 +214,7 @@ func (r *Repository) PendingRowIDs(ctx context.Context, importID int64, limit in
 			FROM ingest.catalog_import_rows
 			WHERE import_id = $1 AND NOT is_excluded AND NOT is_manually_matched
 			  AND (variant_id IS NULL OR variant_id = 0)
-			  AND match_level NOT IN ('barcode','code','exact','strong')`
+			  AND (product_id IS NULL OR product_id = 0 OR (COALESCE(match_state, '') NOT IN ('accepted', 'confirmed') AND match_level NOT IN ('barcode','code','exact','strong')))`
 		if err := tx.QueryRow(txCtx, `SELECT count(*) `+pending, importID).Scan(&total); err != nil {
 			return err
 		}

@@ -79,8 +79,27 @@ func (m *mockCommitImportStore) ToggleRowExclude(_ context.Context, _, _ int64) 
 func (m *mockCommitImportStore) ConfirmRowMatches(_ context.Context, _ int64, _ []int64) (int, error) {
 	return 0, nil
 }
-func (m *mockCommitImportStore) ClearRowMatches(_ context.Context, _ int64, _ []int64) (int, error) {
-	return 0, nil
+func (m *mockCommitImportStore) ClearRowMatches(_ context.Context, _ int64, rowIDs []int64) (int, error) {
+	cleared := 0
+	target := make(map[int64]bool, len(rowIDs))
+	for _, id := range rowIDs {
+		target[id] = true
+	}
+	var remaining []*RowOutcome
+	for _, r := range m.stagedRows {
+		if target[r.ID] {
+			r.ProductID = nil
+			r.VariantID = nil
+			r.MatchState = "needs_review"
+			r.MatchLevel = "none"
+			r.IsManuallyMatched = false
+			cleared++
+		} else {
+			remaining = append(remaining, r)
+		}
+	}
+	m.stagedRows = remaining
+	return cleared, nil
 }
 func (m *mockCommitImportStore) SetRowsExcluded(_ context.Context, _ int64, _ []int64, _ bool) (int, error) {
 	return 0, nil

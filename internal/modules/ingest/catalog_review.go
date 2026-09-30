@@ -47,7 +47,8 @@ func (s *Service) ConfirmRowMatches(
 	return ReviewBulk{Requested: len(rowIDs), Applied: n, Skipped: len(rowIDs) - n}, nil
 }
 
-// ClearRowMatches unlinks a list of rows.
+// ClearRowMatches unlinks a list of rows, setting matched_product_id=NULL and
+// variant_id=NULL to invalidate any stale downstream stock and price preview.
 func (s *Service) ClearRowMatches(
 	ctx context.Context, publicID string, rowIDs []int64,
 ) (ReviewBulk, error) {

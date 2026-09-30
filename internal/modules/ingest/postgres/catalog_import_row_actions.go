@@ -29,6 +29,8 @@ func (r *Repository) AssignRowMatch(
 				    match_score = 1.0000,
 				    outcome = 'staged',
 				    is_manually_matched = true,
+				    match_state = 'confirmed',
+				    match_basis = 'reviewer',
 				    message = 'مطابقة يدوية معتمدة من المستخدم'
 				WHERE id = $1 AND import_id = $2
 				RETURNING display_name, organization_id`,
@@ -85,10 +87,13 @@ func (r *Repository) AssignRowMatch(
 			if _, err := tx.Exec(txCtx, `
 				UPDATE ingest.catalog_import_rows
 				SET product_id = NULL,
+				    variant_id = NULL,
 				    match_level = 'none',
 				    match_score = 0.0000,
 				    outcome = 'staged',
 				    is_manually_matched = false,
+				    match_state = 'needs_review',
+				    match_basis = '',
 				    message = 'تم إلغاء الربط بالكتالوج'
 				WHERE id = $1 AND import_id = $2`,
 				rowID, importID); err != nil {
@@ -141,11 +146,8 @@ func (r *Repository) StagedRowsForCommit(ctx context.Context, importID int64) ([
 			LEFT JOIN catalog.products p ON p.id = r.product_id
 			WHERE r.import_id = $1
 			  AND r.is_excluded = false
-			  AND (
-			       (r.product_id IS NOT NULL AND r.product_id > 0
-			        AND (r.is_manually_matched OR r.match_level IN ('barcode', 'code', 'exact', 'strong') OR r.match_state IN ('accepted', 'confirmed')))
-			       OR (r.variant_id IS NOT NULL AND r.variant_id > 0)
-			      )
+			  AND r.product_id IS NOT NULL AND r.product_id > 0
+			  AND (r.is_manually_matched OR r.match_level IN ('barcode', 'code', 'exact', 'strong') OR r.match_state IN ('accepted', 'confirmed'))
 			ORDER BY r.source_row`, importID)
 		if err != nil {
 			return err
