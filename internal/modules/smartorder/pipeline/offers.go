@@ -6,6 +6,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // Supplier resolution.
@@ -53,6 +54,7 @@ type Supplier struct {
 	cfg           *smartorder.Config
 	branch        BranchLocation
 	now           func() time.Time
+	packRels      map[int64][]productmatch.PackRelationship
 }
 
 // NewSupplier constructs the supplier stage.
@@ -67,6 +69,14 @@ func NewSupplier(repo smartorder.Repository, cov CoverageGate, inst Institutiona
 // SetAvailabilityGate wires the unified purchase availability gate.
 func (s *Supplier) SetAvailabilityGate(gate smartorder.AvailabilityGate) {
 	s.gate = gate
+}
+
+// SetPackRelationships sets preloaded packaging relationships for pack conversion.
+func (s *Supplier) SetPackRelationships(rels []productmatch.PackRelationship) {
+	s.packRels = make(map[int64][]productmatch.PackRelationship)
+	for _, r := range rels {
+		s.packRels[r.ProductID] = append(s.packRels[r.ProductID], r)
+	}
 }
 
 // Resolve loads offers for every matched line, evaluates eligibility, selects a
@@ -177,6 +187,8 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		if outcome == smartorder.OutcomeOrdered {
 			l.OfferState = smartorder.OfferStateOffered
 			orderable = append(orderable, l)
+		} else if outcome == smartorder.OutcomeBlockedPack || reason == smartorder.ReasonBlockedPack {
+			l.OfferState = smartorder.OfferStateBlockedPack
 		} else {
 			l.OfferState = smartorder.OfferStateIdentifiedNoOffer
 		}
@@ -202,7 +214,11 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		}
 		chosen := findCandidate(written, sel.CandidateID)
 		if chosen != nil {
-			net, err := smartorder.LineNet(chosen.NetUnitPrice, l.EffectiveQty)
+			qty := l.EffectiveQty
+			if chosen.ConvertedQty > 0 {
+				qty = float64(chosen.ConvertedQty)
+			}
+			net, err := smartorder.LineNet(chosen.NetUnitPrice, qty)
 			if err != nil {
 				return money.Amount{}, err
 			}
@@ -272,6 +288,20 @@ func (s *Supplier) buildCandidatesWithGate(ctx context.Context, l *smartorder.Li
 			return nil, err
 		}
 		c.NetUnitPrice = net
+
+		// Pack conversion (T072, T076):
+		var rels []productmatch.PackRelationship
+		if l.MatchedProductID != nil && s.packRels != nil {
+			rels = s.packRels[*l.MatchedProductID]
+		}
+		convertedQty, packEligible, packReason := convertCandidatePack(l, o, rels)
+		if !packEligible {
+			c.Eligible = false
+			c.IneligibleReason = packReason
+			out = append(out, c)
+			continue
+		}
+		c.ConvertedQty = convertedQty
 
 		// The purchase rule lives in commerce.CheckAvailability and reaches
 		// smart ordering only through the gate. There is deliberately no second

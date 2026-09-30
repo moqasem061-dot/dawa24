@@ -35,6 +35,8 @@ func EvaluateReason(reason string) IneligibleReason {
 		return ReasonMinQty
 	case "quota_exhausted", "quota_exceeded", "quota":
 		return ReasonQuota
+	case "blocked_pack", "pack_unresolved", "pack_blocked":
+		return ReasonBlockedPack
 	default:
 		return IneligibleReason(reason)
 	}
@@ -69,6 +71,7 @@ func OutcomeFor(matched bool, effectiveQty float64, candidates []Candidate) (Out
 		reason  IneligibleReason
 		outcome Outcome
 	}{
+		{ReasonBlockedPack, OutcomeBlockedPack},
 		{ReasonMinQty, OutcomeBelowMinQty},
 		{ReasonStock, OutcomeOutOfStock},
 		{ReasonQuota, OutcomeQuotaBlocked},
