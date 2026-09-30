@@ -16,3 +16,8 @@ type Repository interface {
 	SetState(ctx context.Context, runID int64, state string, finished bool) error
 	Heartbeat(ctx context.Context, runID int64) error
 }
+
+// CuratedRepository defines data access for platform-curated identity facts and pack relationships.
+type CuratedRepository interface {
+	ListActive(ctx context.Context) (map[int64][]productmatch.CuratedFact, map[int64][]productmatch.PackRelationship, error)
+}

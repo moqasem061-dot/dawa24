@@ -14,3 +14,8 @@ type Repository struct {
 func NewRepository(db *database.DB) matching.Repository {
 	return &Repository{db: db}
 }
+
+// NewCuratedRepository creates a PostgreSQL curated facts and pack relationships repository.
+func NewCuratedRepository(db *database.DB) matching.CuratedRepository {
+	return &Repository{db: db}
+}
