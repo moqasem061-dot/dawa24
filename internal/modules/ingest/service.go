@@ -54,6 +54,13 @@ type Service struct {
 	// for every question instead of reusing answers bought earlier — by this
 	// vendor, by another, or by a pharmacy's smart order.
 	memory MatchMemory
+	// matcher executes deterministic matching, rematching, and commit revalidation.
+	matcher Matcher
+}
+
+// SetMatcher configures the product matching port for the ingest service.
+func (s *Service) SetMatcher(m Matcher) {
+	s.matcher = m
 }
 
 // NewService creates a new ingest service.

@@ -4,8 +4,11 @@ import (
 	"context"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // ingestCatalogPort adapts the catalog service to the import pipeline. The
@@ -170,4 +173,21 @@ func (p ingestInventoryPort) ClearWarehouseStocks(ctx context.Context, warehouse
 
 func (p ingestInventoryPort) VariantIDsInWarehouse(ctx context.Context, warehouseID int64) (map[int64]bool, error) {
 	return p.svc.VariantIDsInWarehouse(ctx, warehouseID)
+}
+
+// ingestMatcherPort adapts matching.Service to the ingest.Matcher interface.
+type ingestMatcherPort struct {
+	svc matching.Service
+}
+
+func (p ingestMatcherPort) Prepare(ctx context.Context, req productmatch.PrepareRequest) (productmatch.PrepareResult, error) {
+	return p.svc.Prepare(ctx, req)
+}
+
+func (p ingestMatcherPort) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
+	return p.svc.Rematch(ctx, s, row, rev)
+}
+
+func (p ingestMatcherPort) Revalidate(ctx context.Context, s productmatch.Scope, ref productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+	return p.svc.Revalidate(ctx, s, ref, d)
 }

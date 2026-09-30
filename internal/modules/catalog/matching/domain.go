@@ -12,47 +12,27 @@ import (
 var ErrNotImplemented = errors.New("matching: method not implemented")
 
 // Workflow names the matching consumer workflow.
-type Workflow string
+type Workflow = productmatch.Workflow
 
 const (
-	WorkflowVendor     Workflow = "vendor"
-	WorkflowSavings    Workflow = "savings"
-	WorkflowSmartOrder Workflow = "smartorder"
-	WorkflowCatalog    Workflow = "catalog"
-	WorkflowCompare    Workflow = "compare"
+	WorkflowVendor     = productmatch.WorkflowVendor
+	WorkflowSavings    = productmatch.WorkflowSavings
+	WorkflowSmartOrder = productmatch.WorkflowSmartOrder
+	WorkflowCatalog    = productmatch.WorkflowCatalog
+	WorkflowCompare    = productmatch.WorkflowCompare
 )
 
 // Scope defines the tenant, workflow, and actor boundary for a matching operation.
-type Scope struct {
-	EffectiveOrg    int64    `json:"effective_org"`
-	ActorUserID     int64    `json:"actor_user_id"`
-	SourceNamespace string   `json:"source_namespace"`
-	Workflow        Workflow `json:"workflow"`
-	EntryPoint      string   `json:"entry_point"`
-}
+type Scope = productmatch.Scope
 
 // PrepareRequest carries source rows into the deterministic preparation stage.
-type PrepareRequest struct {
-	Scope       Scope
-	ConsumerRef string
-	SourceRev   int
-	Rows        []productmatch.Row
-	Required    productmatch.Granularity
-}
+type PrepareRequest = productmatch.PrepareRequest
 
 // PrepareResult holds the outcomes and summary of a Prepare operation.
-type PrepareResult struct {
-	RunID     int64
-	Decisions []matchflow.RowDecision
-	Summary   matchflow.RunCounts
-}
+type PrepareResult = productmatch.PrepareResult
 
 // RowRef identifies an individual row across consumer tables.
-type RowRef struct {
-	ID        int64  `json:"id"`
-	Table     string `json:"table"`
-	RowNumber int    `json:"row_number"`
-}
+type RowRef = productmatch.RowRef
 
 // ReviewAction captures human review decisions.
 type ReviewAction struct {

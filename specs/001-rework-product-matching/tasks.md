@@ -214,7 +214,7 @@ description: "Executable task list for the Product Matching Rework"
 
 - [X] T053 [US1] Write a migration that adds the consumer columns from data-model §3.10 to `ingest.catalog_import_rows`, plus a partial index `(import_id, match_state)`. Files: `db/migrations/234_ingest_match_decision.up.sql` / `.down.sql`.
 - [X] T054 [P] [US1] Write an isolation test for the new columns in `test/integration/ingest_match_decision_isolation_test.go`.
-- [ ] T055 [US1] Declare the ingest port in `internal/modules/ingest/matching_port.go`: `type Matcher interface{ Prepare(...); Rematch(...); Revalidate(...) }` using only `productmatch`/`matchflow` types. Add the adapter from `matching.Service` in `cmd/server/ingest_ports.go`.
+- [X] T055 [US1] Declare the ingest port in `internal/modules/ingest/matching_port.go`: `type Matcher interface{ Prepare(...); Rematch(...); Revalidate(...) }` using only `productmatch`/`matchflow` types. Add the adapter from `matching.Service` in `cmd/server/ingest_ports.go`.
 - [ ] T056 [US1] In `internal/modules/ingest/catalog_stage_run.go`, replace the direct `productmatch.MatchAll` call with `Matcher.Prepare`. Persist each `RowDecision` JSON, write the projections from `matchflow.Columns` (T019) in the same statement as the existing columns, set `baseline_decision` once, and increment `match_revision` on rerun. Update the `matching.EntryPoints` entry (T003).
 - [ ] T057 [US1] Identifier namespace declaration:
   - Extend the vendor mapping settings (`settings.identifierChoices()` in `internal/modules/ingest/catalog_stage.go`) with a namespace per mapped identifier column. The defaults are `supplier_code` for code and `gtin` for barcode.

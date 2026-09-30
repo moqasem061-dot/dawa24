@@ -198,6 +198,7 @@ func buildUIHandler(
 	catSvcUI.SetMatchMemory(sharedMatchMemory)
 	ingSvcUI.SetCatalogPort(ingestCatalogPort{catSvcUI})
 	ingSvcUI.SetInventoryPort(ingestInventoryPort{invSvcUI})
+	ingSvcUI.SetMatcher(ingestMatcherPort{svc: newMatchingService(db)})
 
 	// A subscription bought or assigned here has to move the tenant's AI quota
 	// with it, which is what the sync port does. Without it an upgrade changed
