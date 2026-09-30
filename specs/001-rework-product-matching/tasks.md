@@ -141,7 +141,7 @@ description: "Executable task list for the Product Matching Rework"
   - `runs.go`: `CreateRun`, `UpdateCounts`, `SetState`, `Heartbeat`
   
   All tenant queries go in `db.InTx`/`InReadTx`.
-- [ ] T032 [P] Write an isolation test for `catalog.match_runs` in `test/integration/match_runs_isolation_test.go` (rule 9 above).
+- [X] T032 [P] Write an isolation test for `catalog.match_runs` in `test/integration/match_runs_isolation_test.go` (rule 9 above).
 - [ ] T033 [P] Implement a full paginated master-catalogue loader: keyset pagination by `id`, page size 5000, no total cap, and a `LoaderStats{Rows, Pages, Truncated bool}` return. `Truncated` is true only if a configured hard ceiling (default 500,000) was hit. Write it in `internal/modules/catalog/matching/loader.go`.
 - [ ] T034 Implement the index cache: an LRU keyed by `(scope, revision, productmatch.NormalizerVersion)`, max 2 entries per scope, with `singleflight` so concurrent requests build once. Put it in `internal/modules/catalog/matching/index_cache.go`, with tests in `index_cache_test.go` (hit, miss on a revision bump, single build under 20 concurrent callers).
 - [ ] T035 Implement `Service` with only `Prepare`, `MarkReviewable`, `Rematch` and `Revalidate` (signatures from contracts/matching-service-port.md; the other methods return `ErrNotImplemented` for now) in `internal/modules/catalog/matching/service.go`. `Prepare` does this:
