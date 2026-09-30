@@ -17,38 +17,62 @@ Spec: `specs/001-smart-ordering-system/`.
 - **PostgreSQL schema:** `smartorder`
 - **Migrations:** `123_drop_automation_requests`, `124_smartorder`,
   `125_match_decisions`, `126_product_index_variant_stock`,
-  `127_smartorder_files`, `132_smartorder_ai_enhance`
+  `127_smartorder_files`, `132_smartorder_ai_enhance`,
+  `236_smartorder_match_decision`
 - **Tables owned:**
   - `smartorder.runs` — one end-to-end execution, its counters and totals.
   - `smartorder.run_config` — the configuration snapshot the run executed under.
   - `smartorder.column_mappings` — file columns to target fields, with the
     automatic guess kept alongside the confirmed mapping.
-  - `smartorder.run_lines` — one row per imported spreadsheet row.
+  - `smartorder.run_lines` — one row per imported spreadsheet row, including
+    consumer decision fields and `offer_state`.
   - `smartorder.line_candidates` — every vendor offer considered, **including the
     rejected ones and why**.
   - `smartorder.line_selections` — the chosen candidate and what decided it.
   - `smartorder.run_events` — append-only progress and audit.
   - `smartorder.criteria_profiles` — the buyer's remembered defaults.
 - **Tables shared with `catalog`:** `catalog.match_decisions` (AI decision
-  cache), `catalog.product_aliases` (learned alias channel). Both are catalogue
-  knowledge rather than buyer data, and are deliberately **not** tenant-scoped.
+  cache), `catalog.product_aliases` (learned alias channel),
+  `catalog.pack_relationships` (pack conversion).
 
 ## Invariants & Rules
 
-1. **Availability is never read from `catalog.product_index`.** Supplier offers
+1. **Identity is decoupled from offers.** Product identity resolution is strictly
+   independent of supplier offer availability. Once a row is matched to a
+   catalogue product (`matched_product_id`), the offer stage never alters or
+   clears the product ID, and never substitutes an in-stock sibling product.
+   If an identified product has no eligible offers, it is marked as
+   `offer_state: identified_no_offer` and retained for review.
+   Offer states are strictly partitioned: `offered`, `identified_no_offer`, and
+   `blocked_pack`. Offer selection only receives accepted or confirmed matches.
+
+2. **Pack conversion requires explicit relationships.** When a requested unit or
+   pack differs from a supplier's offered pack, conversion is permitted only if
+   an explicit entry exists in `catalog.pack_relationships` via
+   `productmatch.Convert`. Without a certified relationship, the offer cannot
+   be converted automatically and the line is marked `offer_state: blocked_pack`
+   and `outcome: blocked_pack`. Converted quantities are exact integer units;
+   money is always exact `money.Amount`.
+
+3. **Match memory and corrections are tenant-scoped.** When a buyer corrects a
+   product match (`CorrectMatch`), learned mappings are saved scoped to that
+   buyer's `organization_id`. Alias generation tracks the verified source and
+   never bleeds cross-tenant intent.
+
+4. **Availability is never read from `catalog.product_index`.** Supplier offers
    come from `catalog.product_variants` joined to `inventory.stocks`. The read
    model's `variant_id` and `stock_quantity` were the literal NULL and 0 for all
    28,786 rows in production, so every query filtering on them returned nothing —
    silently, for every product. Migration 126 and `catalog/jobs/reindex_sql.go`
    fix the read model; this module still reads the authoritative tables.
 
-2. **No stage issues a query per row.** Each deterministic tier is one query for
+5. **No stage issues a query per row.** Each deterministic tier is one query for
    the whole file; supplier offers for every matched product are one query. A
    ten-thousand-row import must stay inside five minutes, and per-row work is the
    single easiest way to lose that. `pipeline/retrieval` asserts the query count
    does not scale with row count.
 
-3. **The deterministic engine is primary; AI only enhances what it left.**
+6. **The deterministic engine is primary; AI only enhances what it left.**
    The engine runs to completion over the whole file first. What reaches the AI
    stage is exactly the two populations the buyer would otherwise see as
    `غير مطابق` and `مطلوب للمراجعة`: no match at all, or a match below the
@@ -56,7 +80,7 @@ Spec: `specs/001-smart-ordering-system/`.
    overwritten. With AI off the run still completes and produces a finalisable
    order.
 
-4. **Retrieval for AI is separate from, and wider than, the scorer's shortlist.**
+7. **Retrieval for AI is separate from, and wider than, the scorer's shortlist.**
    `productmatch.Recall` unions three strategies — shared distinctive words,
    shared character trigrams, and the molecule — with the scorer's disqualifying
    penalties removed. This is the change that made the stage worth running:
@@ -66,7 +90,7 @@ Spec: `specs/001-smart-ordering-system/`.
    and puts products like `ابيليفاي 10مجم` in front of a line typed `ابليفاى
    10مجم` that shares no whole word with it.
 
-5. **One catalogue window per request, shared by every item in it.** Each item
+8. **One catalogue window per request, shared by every item in it.** Each item
    names its own shortlist by id, but the model may answer with any id in the
    window — the correct product is often present because it was retrieved for a
    different line. De-duplicating the union is what makes a whole file fit in one
@@ -74,13 +98,13 @@ Spec: `specs/001-smart-ordering-system/`.
    that 1,473-row file goes from fifteen requests to eight. Ordinary files take
    one.
 
-6. **The AI stage is bounded, cached and re-checked.** At most 200 items per
+9. **The AI stage is bounded, cached and re-checked.** At most 200 items per
    request, 12 requests and 8 minutes per run, 4 in flight; duplicate lines are
    collapsed into one question. Every decision is cached on
    `sha256(normalised text ‖ sorted candidate ids ‖ prompt version)`, so a
    recurring file costs almost nothing the second time.
 
-7. **Nothing the model says is applied unchecked.** `productmatch.IdentityConflict`
+10. **Nothing the model says is applied unchecked.** `productmatch.IdentityConflict`
    re-derives, from the catalogue's own record, whether the two things can be the
    same product at all — and refuses the answer if they cannot. It exists because
    the reported failure was not hallucination but plausibility: brand families in
@@ -104,19 +128,19 @@ Spec: `specs/001-smart-ordering-system/`.
    strength 42, line extension 47, evidence 39, form 5. A refusal costs one line
    of manual work; a false acceptance ships the wrong medicine.
 
-8. **The confidence floor is 0.80, and it is the model's own judgement.** Its
+11. **The confidence floor is 0.80, and it is the model's own judgement.** Its
    confidence is sharply bimodal on real data — 0.95 for what it is sure of — and
    the answers in the seventies were the ones sharing only a category suffix
    (ديرم, بيد). Taking it at its word removes that class for almost no loss.
 
-9. **The prompt is generated, never authored by a model.**
+12. **The prompt is generated, never authored by a model.**
    `aicapabilities.RenderEnhanceInput` is a pure function of the request — no
    clock, no map iteration, no randomness — because the decision cache keys on
    the question asked. The answer is strict JSON with a JSON-schema response
    format where the Gateway supports one, and a prompt that specifies the same
    shape in full where it does not.
 
-10. **Chain-of-thought is switched off for this capability.** The default model
+13. **Chain-of-thought is switched off for this capability.** The default model
     is a reasoning model: its `reasoning` output is billed and drawn from the
     same `max_tokens` budget as the answer. Two hundred product matches reasoned
     through individually exceed any output ceiling, and when they do the model
@@ -124,37 +148,40 @@ Spec: `specs/001-smart-ordering-system/`.
     failure that looks like a model with nothing to say. `gateway.budget.think`
     is false for everything except the human-facing chat.
 
-11. **Supplier selection is strict priority within a tolerance band.** The
+14. **Supplier selection is strict priority within a tolerance band.** The
    highest-priority enabled criterion decides, but only among candidates within
    the tolerance (default 5%) of the cheapest eligible net price. When the band
    rejects a criterion's winner, the line names the skipped supplier and by how
    much it missed. Ties break deterministically, ending in `vendor_org_id`, so
    re-running an unchanged file selects the same suppliers.
 
-12. **Eligibility checks are ordered, and the order is the design.** own_org →
+15. **Eligibility checks are ordered, and the order is the design.** own_org →
    inactive → institutional → coverage → stock → min_qty. The **first** failure
    is reported, because it is the most actionable: an offer both out of stock and
    outside coverage is a coverage problem, and saying "out of stock" sends the
    buyer hunting for a supplier they did not need to find.
 
-13. **Nothing is silently substituted or dropped.** Finalisation re-verifies every
-   line; a line that changed blocks the whole order and is named. Quantity cells
-   that cannot be read (`"2-3"`, negatives, garbage) produce no quantity and a
-   note, never a guess.
+16. **Nothing is silently substituted or dropped.** Finalisation re-verifies every
+   line: `Matcher.Revalidate` checks product match against current catalogue
+   revision, ensuring state remains accepted/confirmed and granularity satisfies
+   pack. Any catalogue change, revision drift, or changed supplier stock/coverage
+   halts order placement and returns the changed lines to review (`stale`). Quantity
+   cells that cannot be read (`"2-3"`, negatives, garbage) produce no quantity and
+   a note, never a guess.
 
-14. **The review cart is not the shopping cart.** No path in this module reads or
+17. **The review cart is not the shopping cart.** No path in this module reads or
    writes `commerce.carts` or `commerce.cart_items`. An abandoned import must not
    leave items in a cart the buyer believes is empty.
 
-15. **One order path.** Finalisation goes through `commerce.Service.Checkout`, so
+18. **One order path.** Finalisation goes through `commerce.Service.Checkout`, so
    multi-vendor shipment partitioning, order numbering, status history and the
    documents gate are identical to an ordinary order.
 
-16. **Money is `money.Amount` throughout.** Net prices, bands and line totals are
+19. **Money is `money.Amount` throughout.** Net prices, bands and line totals are
     integer minor-unit arithmetic. The one exception is `runs.ai_cost_estimate`,
     which is USD telemetry and deliberately not `money.Amount`.
 
-17. **Row level security** on all seven tenant-owned tables via
+20. **Row level security** on all seven tenant-owned tables via
     `platform.tenant_visible(organization_id)`. Cross-tenant catalogue reads use
     `database.AsSystem` with the marketplace justification stated at the call
     site. A run belonging to another organisation is Not Found, never Forbidden.
