@@ -33,8 +33,15 @@ func compareStrength(row, prod IdentityFacts, comp *Comparison) {
 	pLen := len(prod.Strengths)
 
 	if rLen > 1 || pLen > 1 {
-		if rLen != pLen {
+		if rLen < pLen {
+			// A row with one component against a multi-component product is unstated, never agree
 			comp.Attributes["strength"] = OutcomeUnstated
+			return
+		}
+		if rLen > pLen {
+			// Row stated more components than candidate product
+			comp.Attributes["strength"] = OutcomeConflict
+			comp.Hard = append(comp.Hard, ConflictCombination)
 			return
 		}
 
@@ -42,6 +49,18 @@ func compareStrength(row, prod IdentityFacts, comp *Comparison) {
 		for i := 0; i < rLen; i++ {
 			rS := row.Strengths[i]
 			pS := prod.Strengths[i]
+
+			// Compare strength components by position only when Component is known
+			if rS.Component < 0 || pS.Component < 0 {
+				comp.Attributes["strength"] = OutcomeUnstated
+				return
+			}
+			if rS.Component != pS.Component {
+				allAgree = false
+				comp.Hard = append(comp.Hard, ConflictStrengthComponent)
+				break
+			}
+
 			if !strengthsEqual(rS, pS) {
 				allAgree = false
 				comp.Hard = append(comp.Hard, ConflictStrengthComponent)
