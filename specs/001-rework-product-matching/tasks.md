@@ -175,7 +175,7 @@ description: "Executable task list for the Product Matching Rework"
 
 ### Implementation for US2
 
-- [ ] T039 [US2] Write a migration that creates `catalog.curated_identity_facts` and `catalog.pack_relationships` (data-model §3.2, §3.3; platform-owned, no RLS; factor INT > 0). Files: `db/migrations/NNN_curated_identity.up.sql` / `.down.sql`. Extend the T028 trigger function so these tables also bump the revision.
+- [X] T039 [US2] Write a migration that creates `catalog.curated_identity_facts` and `catalog.pack_relationships` (data-model §3.2, §3.3; platform-owned, no RLS; factor INT > 0). Files: `db/migrations/233_curated_identity.up.sql` / `.down.sql`. Extend the T028 trigger function so these tables also bump the revision.
 - [ ] T040 [P] [US2] Add a curated facts and pack relationships repository (`ListActive(ctx)` returns everything; used at index build) in `internal/modules/catalog/matching/postgres/curated.go`.
 - [ ] T041 [US2] Apply curated overrides when building the index: add `NewIndexWithCuration(products, facts map[int64][]CuratedFact, rels map[int64][]PackRelationship)`, where the curated fact replaces the parsed fact with `Prov=corrected`. Write it in `internal/shared/productmatch/curation.go`, and have `index_cache.go` (T034) use it.
 - [ ] T042 [US2] Implement pack logic in `internal/shared/productmatch/pack.go`:
