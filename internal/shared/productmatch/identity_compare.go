@@ -2,8 +2,6 @@ package productmatch
 
 import (
 	"strings"
-
-	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 // Outcome represents a 4-valued attribute comparison verdict.
@@ -61,112 +59,6 @@ func CompareFacts(row, prod IdentityFacts) Comparison {
 	compareIdentifiers(row, prod, &comp)
 
 	return comp
-}
-
-func compareBrand(row, prod IdentityFacts, comp *Comparison) {
-	if len(row.Brand) == 0 || len(prod.Brand) == 0 {
-		comp.Attributes["brand"] = OutcomeUnstated
-		return
-	}
-
-	rowTokens := filterBrandTokens(row.Brand)
-	prodTokens := filterBrandTokens(prod.Brand)
-
-	if len(rowTokens) == 0 || len(prodTokens) == 0 {
-		comp.Attributes["brand"] = OutcomeUnstated
-		return
-	}
-
-	if len(rowTokens) == 1 && len(prodTokens) == 1 {
-		if brandsMatch(rowTokens[0], prodTokens[0]) {
-			comp.Attributes["brand"] = OutcomeAgree
-		} else {
-			comp.Attributes["brand"] = OutcomeConflict
-			comp.Hard = append(comp.Hard, ConflictBrand)
-		}
-		return
-	}
-
-	joinedRow := strings.Join(rowTokens, " ")
-	joinedProd := strings.Join(prodTokens, " ")
-	if brandsMatch(joinedRow, joinedProd) {
-		comp.Attributes["brand"] = OutcomeAgree
-		return
-	}
-
-	matches := 0
-	for _, rt := range rowTokens {
-		matched := false
-		for _, pt := range prodTokens {
-			if brandsMatch(rt, pt) {
-				matched = true
-				break
-			}
-		}
-		if matched {
-			matches++
-		}
-	}
-
-	if matches == len(rowTokens) || matches == len(prodTokens) {
-		comp.Attributes["brand"] = OutcomeAgree
-	} else {
-		comp.Attributes["brand"] = OutcomeConflict
-		comp.Hard = append(comp.Hard, ConflictBrand)
-	}
-}
-
-func filterBrandTokens(tokens []Token) []string {
-	var out []string
-	for _, t := range tokens {
-		txt := strings.ToLower(strings.TrimSpace(t.Text))
-		if txt == "" || hasDigit(txt) || isNumericLiteral(txt) {
-			continue
-		}
-		key := sheet.NormalizeKey(txt)
-		if _, ok := unitWords[key]; ok {
-			continue
-		}
-		if _, ok := formWords[key]; ok {
-			continue
-		}
-		if noiseWords[txt] || noiseWords[key] || isNoiseOrMakerWord(txt) {
-			continue
-		}
-		if len([]rune(txt)) < 2 {
-			continue
-		}
-		out = append(out, txt)
-	}
-	return out
-}
-
-func isNoiseOrMakerWord(w string) bool {
-	noise := map[string]bool{
-		"شركة": true, "مستحضر": true, "دواء": true, "علاج": true,
-		"co": true, "pharma": true, "lab": true, "inc": true,
-		"باكت": true, "باكيت": true, "علبة": true, "علبه": true,
-		"شريط": true, "كرتونة": true, "كرتونه": true, "pack": true,
-		"strip": true, "box": true,
-	}
-	return noise[w]
-}
-
-func brandsMatch(a, b string) bool {
-	if a == b {
-		return true
-	}
-	normA := foldAlef(a)
-	normB := foldAlef(b)
-	if normA == normB {
-		return true
-	}
-	skA := Skeleton(a)
-	skB := Skeleton(b)
-	if skA != "" && skB != "" && skA == skB {
-		return true
-	}
-	return false
 }
 
 func compareForm(row, prod IdentityFacts, comp *Comparison) {

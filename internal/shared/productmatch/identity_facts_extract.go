@@ -34,7 +34,8 @@ func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
 	facts.Cert = CertExplicit
 
 	rawName := strings.TrimSpace(row.Name)
-	cleanName := StripTradeAnnotations(rawName)
+	cleanName := StripAlternativeClause(rawName)
+	cleanName = StripTradeAnnotations(cleanName)
 
 	// Check if annotation contains price/money evidence
 	if len(rawName) > len(cleanName) {

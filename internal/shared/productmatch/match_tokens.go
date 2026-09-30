@@ -165,6 +165,7 @@ var noiseWords = map[string]bool{
 	"جملة": true, "نص": true, "بسعر": true, "قديم": true, "القديم": true,
 	"bonus": true, "gift": true, "promo": true, "special": true, "sale": true,
 	"original": true, "orig": true, "old": true, "discount": true,
+	"alternative": true, "substitute": true, "alt": true, "to": true, "for": true,
 }
 
 // formKeyOf collapses the many ways a form is written onto one token, so
