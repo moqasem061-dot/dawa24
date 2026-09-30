@@ -97,6 +97,40 @@ func (r *Repository) LoadOffers(ctx context.Context, buyerOrgID int64, productID
 	return out, err
 }
 
+// LoadPackRelationships loads active pack relationships for the given products in ONE query.
+func (r *Repository) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]smartorder.PackRelationship, error) {
+	if len(productIDs) == 0 {
+		return nil, nil
+	}
+
+	var out []smartorder.PackRelationship
+	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		rows, err := tx.Query(txCtx, `
+			SELECT id, product_id, from_unit, to_unit, factor, created_at, revoked_at
+			FROM catalog.pack_relationships
+			WHERE product_id = ANY($1::bigint[])
+			  AND revoked_at IS NULL;
+		`, productIDs)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var rel smartorder.PackRelationship
+			if err := rows.Scan(
+				&rel.ID, &rel.ProductID, &rel.FromUnit, &rel.ToUnit,
+				&rel.Factor, &rel.CreatedAt, &rel.RevokedAt,
+			); err != nil {
+				return err
+			}
+			out = append(out, rel)
+		}
+		return rows.Err()
+	})
+	return out, err
+}
+
 // matchableStatuses is which catalogue products the matcher may resolve to.
 //
 // Live products, plus the legacy 'pending' rows. The catalogue no longer has a

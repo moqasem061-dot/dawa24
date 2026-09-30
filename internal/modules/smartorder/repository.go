@@ -118,6 +118,9 @@ type Repository interface {
 	// stock, follow state and the institutional restriction, in ONE query.
 	LoadOffers(ctx context.Context, buyerOrgID int64, productIDs []int64) ([]Offer, error)
 
+	// LoadPackRelationships loads active pack relationships for the given products.
+	LoadPackRelationships(ctx context.Context, productIDs []int64) ([]PackRelationship, error)
+
 	ReplaceCandidates(ctx context.Context, lineID int64, candidates []Candidate) error
 	// ReplaceRunCandidates rewrites the candidate sets of a whole run in one
 	// pass and returns them with their assigned ids, ordered eligible-first then

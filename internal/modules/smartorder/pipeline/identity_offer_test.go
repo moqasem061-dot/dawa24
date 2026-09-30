@@ -27,6 +27,10 @@ func (m *mockOfferRepo) LoadOffers(_ context.Context, _ int64, productIDs []int6
 	return out, nil
 }
 
+func (m *mockOfferRepo) LoadPackRelationships(_ context.Context, _ []int64) ([]smartorder.PackRelationship, error) {
+	return nil, nil
+}
+
 func (m *mockOfferRepo) ReplaceRunCandidates(_ context.Context, _ int64, byLine map[int64][]smartorder.Candidate) (map[int64][]smartorder.Candidate, error) {
 	m.storedCandidates = make(map[int64][]smartorder.Candidate)
 	out := make(map[int64][]smartorder.Candidate)

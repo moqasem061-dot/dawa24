@@ -112,3 +112,14 @@ type Event struct {
 	Level          string    `json:"level"`
 	CreatedAt      time.Time `json:"created_at"`
 }
+
+// PackRelationship models an approved conversion relationship between units.
+type PackRelationship struct {
+	ID        int64      `json:"id"`
+	ProductID int64      `json:"product_id"`
+	FromUnit  string     `json:"from_unit"`
+	ToUnit    string     `json:"to_unit"`
+	Factor    int        `json:"factor"`
+	CreatedAt time.Time  `json:"created_at"`
+	RevokedAt *time.Time `json:"revoked_at,omitempty"`
+}

@@ -115,6 +115,26 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		byProduct[o.ProductID] = append(byProduct[o.ProductID], o)
 	}
 
+	// Pack conversion relationships (T072, T076):
+	// Load active relationships for all matched products in the file if not already set.
+	if s.packRels == nil && s.repo != nil {
+		if rels, err := s.repo.LoadPackRelationships(ctx, productIDs); err == nil && len(rels) > 0 {
+			pmRels := make([]productmatch.PackRelationship, len(rels))
+			for i, r := range rels {
+				pmRels[i] = productmatch.PackRelationship{
+					ID:        r.ID,
+					ProductID: r.ProductID,
+					FromUnit:  r.FromUnit,
+					ToUnit:    r.ToUnit,
+					Factor:    r.Factor,
+					CreatedAt: r.CreatedAt,
+					RevokedAt: r.RevokedAt,
+				}
+			}
+			s.SetPackRelationships(pmRels)
+		}
+	}
+
 	// Coverage and institutional verdicts are cached per vendor: a file with ten
 	// thousand lines typically touches a few dozen vendors, and asking the same
 	// question once per line would undo the batching everywhere else.
