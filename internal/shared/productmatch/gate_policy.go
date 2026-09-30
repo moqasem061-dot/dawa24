@@ -38,24 +38,46 @@ func (g Granularity) MatchflowGranularity() matchflow.Granularity {
 	}
 }
 
+// MarshalJSON serializes Granularity as a string.
+func (g Granularity) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + g.String() + `"`), nil
+}
+
+// UnmarshalJSON deserializes Granularity from string or int.
+func (g *Granularity) UnmarshalJSON(b []byte) error {
+	s := string(b)
+	if len(s) >= 2 && s[0] == '"' && s[len(s)-1] == '"' {
+		s = s[1 : len(s)-1]
+	}
+	switch s {
+	case "product", "1":
+		*g = GranularityProduct
+	case "pack", "2":
+		*g = GranularityPack
+	default:
+		*g = GranularityNone
+	}
+	return nil
+}
+
 // IdentifierPolicy configures declared namespaces per column and enabled lookup tiers.
 type IdentifierPolicy struct {
-	DeclaredNamespaces map[int]string // column index -> namespace
-	AllowGTIN          bool
-	AllowCatalogCode   bool
-	AllowSupplierCode  bool
+	DeclaredNamespaces map[int]string `json:"declared_namespaces,omitempty"` // column index -> namespace
+	AllowGTIN          bool           `json:"allow_gtin"`
+	AllowCatalogCode   bool           `json:"allow_catalog_code"`
+	AllowSupplierCode  bool           `json:"allow_supplier_code"`
 }
 
 // Policy governs acceptance thresholds, required granularity, and identifier tiers.
 type Policy struct {
-	Version            string
-	MinStrong          float64 // minimum score for strong acceptance
-	MinReview          float64 // minimum score to be considered for review
-	TieMargin          float64 // score margin to separate ambiguous siblings
-	BlindNearIdentical float64 // threshold for letters-only / blind similarity
-	Required           Granularity
-	AllowOmittedAttrs  bool             // allow unstated attributes only when uniquely identified
-	Identifiers        IdentifierPolicy // namespaces declared and user choices
+	Version            string           `json:"version"`
+	MinStrong          float64          `json:"min_strong"` // minimum score for strong acceptance
+	MinReview          float64          `json:"min_review"` // minimum score to be considered for review
+	TieMargin          float64          `json:"tie_margin"` // score margin to separate ambiguous siblings
+	BlindNearIdentical float64          `json:"blind_near_identical"` // threshold for letters-only / blind similarity
+	Required           Granularity      `json:"required"`
+	AllowOmittedAttrs  bool             `json:"allow_omitted_attrs"` // allow unstated attributes only when uniquely identified
+	Identifiers        IdentifierPolicy `json:"identifiers"` // namespaces declared and user choices
 }
 
 // DefaultPolicy provides baseline configuration copying production numbers with identifier tiers off.

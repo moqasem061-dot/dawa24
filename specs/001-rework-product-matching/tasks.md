@@ -135,7 +135,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T028 Write a migration that creates `catalog.catalog_revisions` (data-model §3.1). Seed a `('master', 1)` row. Add a statement-level trigger on `catalog.products` that increments the revision on INSERT, DELETE, or UPDATE of `name, sku, barcode, dosage_form, scientific_name, active, concentration, unit, units, small_unit, volume, status, deleted_at`. Files: `db/migrations/230_catalog_revisions.up.sql` / `.down.sql`.
 - [X] T029 Write a migration that creates `catalog.match_policies` and `catalog.match_policy_assignments` plus `catalog.match_policy_assignment_log` (data-model §3.5). Seed policy version `pm-legacy-1`, whose `body` equals `DefaultPolicy()` from T020 with AI enabled flags copied from today's behaviour, and assign it to all 5 workflows with cohort `'*'`. Files: `db/migrations/231_match_policies.up.sql` / `.down.sql`.
 - [X] T030 Write a migration that creates `catalog.match_runs` (data-model §3.7) with FORCE RLS and a `tenant_visible` policy. Files: `db/migrations/232_match_runs.up.sql` / `.down.sql`.
-- [ ] T031 [P] Add repositories in `internal/modules/catalog/matching/postgres/`:
+- [X] T031 [P] Add repositories in `internal/modules/catalog/matching/postgres/`:
   - `revisions.go`: `CurrentRevision(ctx, scope)`
   - `policies.go`: `ActivePolicy(ctx, workflow, orgID)` resolves an org-specific cohort first, then `'*'`
   - `runs.go`: `CreateRun`, `UpdateCounts`, `SetState`, `Heartbeat`
