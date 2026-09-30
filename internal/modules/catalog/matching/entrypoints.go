@@ -44,6 +44,20 @@ var EntryPoints = []EntryPoint{
 		AIEligible: false,
 	},
 	{
+		ID:         "savings_matching_svc",
+		Workflow:   "savings",
+		File:       "internal/modules/catalog/saving_matching.go",
+		Profile:    "savings_import",
+		AIEligible: false,
+	},
+	{
+		ID:         "savings_commit_revalidate",
+		Workflow:   "savings",
+		File:       "internal/ui/saving_products_import_commit.go",
+		Profile:    "savings_commit",
+		AIEligible: false,
+	},
+	{
 		ID:         "savings_ai",
 		Workflow:   "savings",
 		File:       "internal/ui/saving_products_ai.go",

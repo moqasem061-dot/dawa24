@@ -247,7 +247,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T067 [US3] Effective organization: all savings service calls take `Scope.EffectiveOrg` from the import target (admin path: the target org ID from the route), never from the session org. Change `internal/ui/admin_org_import_saving_handlers.go`, `admin_org_import_saving_items_handlers.go` and `admin_org_import_saving_steps_handlers.go`.
 - [X] T068 [US3] Pre-commit change preview: for rows updating an existing saving entry, show old/new product, pack/unit, quantity and money (`money.Amount` formatted) before commit, in `internal/ui/pages/saving_import_review.templ` plus its view model in `internal/ui/pages/saving_import_types.go`.
 - [X] T069 [US3] Commit revalidation (same rule as T060) in `internal/ui/saving_products_import_commit.go`, calling the catalog service.
-- [ ] T070 [US3] Update `docs/modules/catalog.md` §Savings import and the entry-point registry (T003).
+- [X] T070 [US3] Update `docs/modules/catalog.md` §Savings import and the entry-point registry (T003).
 
 ---
 

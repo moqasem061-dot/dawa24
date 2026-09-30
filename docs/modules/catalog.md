@@ -192,4 +192,35 @@ as the admin likes.
    - Either side omitting the form is treated as `unstated` (not a conflict).
    - Ordinary tablets vs Orally Disintegrating Tablets (ODT / discmelt / ذائبة) remains an unconditional conflict.
 
+## Savings import
+
+The savings products import (`catalog.saving_products`) enables pharmacies, vendors, and administrators (acting on behalf of target organisations) to import wishlists and deficit lists with pricing and quantity.
+
+### Architecture & Matching Flow
+
+1. **In-Module Catalog Matching Engine (`internal/modules/catalog/saving_matching.go`, `saving_match_engine.go`):**
+   - Matching logic lives inside the `catalog` module rather than the UI layer. `internal/ui` delegates matching to `catSvc.MatchSavingsRows`.
+   - Delegates directly to `matching.Service.Prepare` when available, with deterministic fallback to `SavingProductMatchEngine` (in-memory candidate index).
+   - Identifiers come strictly from declared column mappings: a mapped column is never simultaneously assigned to both SKU and barcode tiers. Disambiguation (`isBarcodeCandidate`) routes pure GTINs to barcode and alphanumeric codes to SKU.
+
+2. **Effective Organization Scoping:**
+   - Every savings operation (upload, column mapping, matching, manual review linking, item toggles, and commit) derives `Scope.EffectiveOrg` from the target organization being imported for.
+   - On administrator-assisted paths (`/admin/organizations/import/{orgID}/...`), `Scope.EffectiveOrg` is strictly the target `{orgID}` from the URL route, never the administrator's own session organization (`actor.OrganizationID`).
+   - Tenant isolation tests (`TestAdminAssistedScope`, `TestSavingProductsConsistency_EqualContextAcrossEntryPoints`) prove zero-leakage between admin org X and target org Y.
+
+3. **Pre-Commit Change Preview:**
+   - Staged rows updating existing `catalog.saving_products` records attach a `SavingChangePreview` delta view model (`internal/ui/pages/saving_import_types.go`).
+   - The review screen (`saving_import_review.templ`) displays old vs new product names, pack/unit changes (`OldPackUnit` → `NewPackUnit`), quantity adjustments, and exact monetary delta (`money.Amount` formatted, zero `float64`).
+
+4. **Commit Revalidation (`internal/ui/saving_products_import_commit.go`):**
+   - Before writing to `catalog.saving_products`, `RevalidateSavingItems` calls `catSvc.RevalidateSavingDecision` for every row.
+   - Rows whose `match_revision` changed, whose decision state is unconfirmed or not accepted, or whose granularity is below `pack` or `product` are rejected before committing.
+
+5. **Entry-Point Registry (`internal/modules/catalog/matching/entrypoints.go`):**
+   - `savings_matching`: `internal/modules/catalog/saving_match_engine.go`
+   - `savings_matching_svc`: `internal/modules/catalog/saving_matching.go`
+   - `savings_commit_revalidate`: `internal/ui/saving_products_import_commit.go`
+   - `savings_ai`: `internal/ui/saving_products_ai.go`
+
+
 
