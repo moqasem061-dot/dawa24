@@ -183,6 +183,7 @@ func (h *UIHandler) handleSavingProductsImportSessionPage(w http.ResponseWriter,
 	}
 
 	rows, total := globalSavingImportSessionStore.FilterItems(session, filter)
+	h.attachSavingChangePreviews(ctx, session.OrgID, rows)
 
 	noticeType := r.URL.Query().Get("notice_type")
 	noticeMsg := r.URL.Query().Get("notice")

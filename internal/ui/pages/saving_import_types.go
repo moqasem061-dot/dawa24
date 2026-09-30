@@ -37,20 +37,38 @@ type SavingDetectedCols struct {
 	ProductIDCol int `json:"product_id_col"`
 }
 
+// SavingChangePreview details the delta between an existing saving product entry and an incoming staged update.
+type SavingChangePreview struct {
+	IsUpdate       bool         `json:"is_update"`
+	ExistingID     int64        `json:"existing_id,omitempty"`
+	OldProductID   *int64       `json:"old_product_id,omitempty"`
+	OldProductName string       `json:"old_product_name,omitempty"`
+	NewProductID   *int64       `json:"new_product_id,omitempty"`
+	NewProductName string       `json:"new_product_name,omitempty"`
+	OldPackUnit    string       `json:"old_pack_unit,omitempty"`
+	NewPackUnit    string       `json:"new_pack_unit,omitempty"`
+	OldQuantity    float64      `json:"old_quantity"`
+	NewQuantity    float64      `json:"new_quantity"`
+	OldPrice       money.Amount `json:"old_price"`
+	NewPrice       money.Amount `json:"new_price"`
+}
+
 // StagedSavingItem represents a single parsed row in memory during review.
 type StagedSavingItem struct {
-	Index             int          `json:"index"`
-	NameProduct       string       `json:"name_product"`
-	SKU               string       `json:"sku"`
-	Quantity          float64      `json:"quantity"`
-	Price             money.Amount `json:"price"`
-	TotalValue        money.Amount `json:"total_value"`
-	ProductID         *int64       `json:"product_id,omitempty"`
-	MasterProductName string       `json:"master_product_name,omitempty"`
-	MasterProductSKU  string       `json:"master_product_sku,omitempty"`
-	MatchType         string       `json:"match_type"`
-	Confidence        float64      `json:"confidence"`
-	Included          bool         `json:"included"`
+	Index             int                  `json:"index"`
+	NameProduct       string               `json:"name_product"`
+	SKU               string               `json:"sku"`
+	Quantity          float64              `json:"quantity"`
+	Price             money.Amount         `json:"price"`
+	TotalValue        money.Amount         `json:"total_value"`
+	ProductID         *int64               `json:"product_id,omitempty"`
+	MasterProductName string               `json:"master_product_name,omitempty"`
+	MasterProductSKU  string               `json:"master_product_sku,omitempty"`
+	PackUnit          string               `json:"pack_unit,omitempty"`
+	MatchType         string               `json:"match_type"`
+	Confidence        float64              `json:"confidence"`
+	Included          bool                 `json:"included"`
+	ChangePreview     *SavingChangePreview `json:"change_preview,omitempty"`
 }
 
 // SavingImportSession represents an active or historical import session.

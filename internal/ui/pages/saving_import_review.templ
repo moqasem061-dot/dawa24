@@ -448,6 +448,16 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 					</button>
 				</div>
 			}
+			if row.ChangePreview != nil && row.ChangePreview.IsUpdate {
+				<div class="mt-1 pt-1 border-t border-dashed text-2xs">
+					if row.ChangePreview.OldProductName != "" && row.ChangePreview.OldProductName != row.MasterProductName {
+						<span class="text-muted block">السابق: <del>{ row.ChangePreview.OldProductName }</del></span>
+					}
+					if row.ChangePreview.OldPackUnit != "" || row.ChangePreview.NewPackUnit != "" {
+						<span class="text-secondary block font-bold">العبوة: { row.ChangePreview.OldPackUnit } ← { row.ChangePreview.NewPackUnit }</span>
+					}
+				</div>
+			}
 		</td>
 
 		<!-- 4. Match Status Badge -->
@@ -463,6 +473,9 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 			} else {
 				<span class="badge badge-rose text-xs font-bold">غير مرتبط</span>
 			}
+			if row.ChangePreview != nil && row.ChangePreview.IsUpdate {
+				<span class="badge badge-sky text-2xs font-bold block mt-1" title="تحديث صنف مسجل مسبقاً في القائمة">تعديل صنف حالي</span>
+			}
 		</td>
 
 		<!-- 5. Quantity Input -->
@@ -474,6 +487,11 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 					@components.IconCheck("icon-sm")
 				</button>
 			</form>
+			if row.ChangePreview != nil && row.ChangePreview.IsUpdate && row.ChangePreview.OldQuantity != row.Quantity {
+				<div class="text-2xs text-muted mt-0.5" title="الكمية السابقة">
+					السابق: <del>{ fmt.Sprintf("%.0f", row.ChangePreview.OldQuantity) }</del>
+				</div>
+			}
 		</td>
 
 		<!-- 6. Public Price Input -->
@@ -485,6 +503,11 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 					@components.IconCheck("icon-sm")
 				</button>
 			</form>
+			if row.ChangePreview != nil && row.ChangePreview.IsUpdate && row.ChangePreview.OldPrice != row.Price {
+				<div class="text-2xs text-muted mt-0.5" title="السعر السابق">
+					السابق: <del>{ row.ChangePreview.OldPrice.String() } ج.م</del>
+				</div>
+			}
 		</td>
 
 		<!-- 7. Total Value -->

@@ -309,6 +309,7 @@ func (h *UIHandler) AdminOrgImportSavingReviewPage(w http.ResponseWriter, r *htt
 	}
 
 	rows, total := globalSavingImportSessionStore.FilterItems(session, filter)
+	h.attachSavingChangePreviews(ctx, orgID, rows)
 	sysCtx := database.AsSystem(ctx)
 	targetOrgName, targetOrgType := h.resolveTargetOrgInfo(sysCtx, orgID)
 
