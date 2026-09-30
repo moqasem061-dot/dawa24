@@ -74,6 +74,22 @@ type CandidateDecision struct {
 	Reasons   []string          `json:"reasons,omitempty"`
 }
 
+// CandidateView represents an evaluated candidate product for review screens (FR-044/045).
+type CandidateView struct {
+	ProductID     int64             `json:"product_id"`
+	NameAR        string            `json:"name_ar"`
+	NameEN        string            `json:"name_en"`
+	DosageForm    string            `json:"dosage_form"`
+	Concentration string            `json:"concentration"`
+	Unit          string            `json:"unit"`
+	Manufacturer  string            `json:"manufacturer"`
+	PublicPrice   string            `json:"public_price"`
+	Score         float64           `json:"score"`
+	Eligible      bool              `json:"eligible"`
+	HardConflicts []string          `json:"hard_conflicts,omitempty"`
+	Diff          map[string]string `json:"diff,omitempty"`
+}
+
 // Reason explains a gate action or decision finding.
 type Reason struct {
 	Code   string            `json:"code"`

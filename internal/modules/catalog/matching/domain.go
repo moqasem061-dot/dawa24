@@ -1,10 +1,125 @@
 package matching
 
 import (
+	"errors"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
+
+// ErrNotImplemented is returned for port methods not yet implemented in Phase 2D.
+var ErrNotImplemented = errors.New("matching: method not implemented")
+
+// Workflow names the matching consumer workflow.
+type Workflow string
+
+const (
+	WorkflowVendor     Workflow = "vendor"
+	WorkflowSavings    Workflow = "savings"
+	WorkflowSmartOrder Workflow = "smartorder"
+	WorkflowCatalog    Workflow = "catalog"
+	WorkflowCompare    Workflow = "compare"
+)
+
+// Scope defines the tenant, workflow, and actor boundary for a matching operation.
+type Scope struct {
+	EffectiveOrg    int64    `json:"effective_org"`
+	ActorUserID     int64    `json:"actor_user_id"`
+	SourceNamespace string   `json:"source_namespace"`
+	Workflow        Workflow `json:"workflow"`
+	EntryPoint      string   `json:"entry_point"`
+}
+
+// PrepareRequest carries source rows into the deterministic preparation stage.
+type PrepareRequest struct {
+	Scope       Scope
+	ConsumerRef string
+	SourceRev   int
+	Rows        []productmatch.Row
+	Required    productmatch.Granularity
+}
+
+// PrepareResult holds the outcomes and summary of a Prepare operation.
+type PrepareResult struct {
+	RunID     int64
+	Decisions []matchflow.RowDecision
+	Summary   matchflow.RunCounts
+}
+
+// RowRef identifies an individual row across consumer tables.
+type RowRef struct {
+	ID        int64  `json:"id"`
+	Table     string `json:"table"`
+	RowNumber int    `json:"row_number"`
+}
+
+// ReviewAction captures human review decisions.
+type ReviewAction struct {
+	Action      string                 `json:"action"` // select, correct, reject, exclude, undo
+	TargetID    int64                  `json:"target_id"`
+	Corrections []matchflow.Correction `json:"corrections,omitempty"`
+	Reason      string                 `json:"reason,omitempty"`
+}
+
+// BulkPreview provides impact metrics for a review action across multiple rows.
+type BulkPreview struct {
+	Total    int `json:"total"`
+	Affected int `json:"affected"`
+}
+
+// EnhanceRow pairs a row with its decision for AI enhancement.
+type EnhanceRow struct {
+	RowRef   RowRef
+	Decision matchflow.RowDecision
+	Row      productmatch.Row
+}
+
+// EnhanceHandle tracks an active asynchronous AI enhancement session.
+type EnhanceHandle struct {
+	RunID     int64     `json:"run_id"`
+	StartedAt time.Time `json:"started_at"`
+}
+
+// KnowledgeWrite stores an association or rejection in match_knowledge.
+type KnowledgeWrite struct {
+	SourceNamespace   string `json:"source_namespace"`
+	QuestionSignature string `json:"question_signature"`
+	Kind              string `json:"kind"`
+	TargetProductID   *int64 `json:"target_product_id,omitempty"`
+	TargetGranularity string `json:"target_granularity,omitempty"`
+	PolicyVersion     string `json:"policy_version"`
+	NormalizerVersion string `json:"normalizer_version"`
+	DisplayText       string `json:"display_text"`
+}
+
+// KnowledgeFilter specifies criteria for querying match knowledge.
+type KnowledgeFilter struct {
+	Namespace string `json:"namespace"`
+	Search    string `json:"search"`
+	Limit     int    `json:"limit"`
+	Offset    int    `json:"offset"`
+}
+
+// Knowledge represents a persisted match knowledge record.
+type Knowledge struct {
+	ID                int64     `json:"id"`
+	OrganizationID    *int64    `json:"organization_id,omitempty"`
+	SourceNamespace   string    `json:"source_namespace"`
+	QuestionSignature string    `json:"question_signature"`
+	Kind              string    `json:"kind"`
+	TargetProductID   *int64    `json:"target_product_id,omitempty"`
+	TargetGranularity string    `json:"target_granularity,omitempty"`
+	DisplayText       string    `json:"display_text"`
+	Status            string    `json:"status"`
+	CreatedAt         time.Time `json:"created_at"`
+}
+
+// Page represents a paginated list of items.
+type Page[T any] struct {
+	Items []T `json:"items"`
+	Total int `json:"total"`
+}
 
 // MatchRun tracks a match execution run against the catalog.
 type MatchRun struct {
