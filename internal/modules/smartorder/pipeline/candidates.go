@@ -2,8 +2,11 @@ package pipeline
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -20,36 +23,37 @@ import (
 // uses. Its strength veto matters more here than anywhere: a 500 mg row matched
 // to a 1 g product is not a ranking inaccuracy, it is the wrong medicine.
 
-// Matcher scores unresolved lines against the catalogue.
-type Matcher struct {
-	repo  smartorder.Repository
-	index *productmatch.Index
-	opts  productmatch.MatchOptions
+// CandidateMatcher scores unresolved lines against the catalogue using Matcher.
+type CandidateMatcher struct {
+	repo    smartorder.Repository
+	service Matcher
+	index   *productmatch.Index
+	opts    productmatch.MatchOptions
 }
 
-// NewMatcher constructs the fuzzy stage.
-//
-// minScore is the buyer's أقل نسبة مطابقة, the same control and the same 50%
-// default as the three import tools. It decides what the scorer will offer at
-// all — below it a candidate is not shown, not reviewed and not sent to the AI
-// tier. It is emphatically NOT Cutoff, which decides what is bought without
-// asking, stays at 0.850 and is not the buyer's to lower: the cost of a wrong
-// confident match here is the wrong medicine on a pharmacy's shelf.
-func NewMatcher(repo smartorder.Repository, minScore float64) *Matcher {
+// NewCandidateMatcher constructs the candidate matching stage.
+func NewCandidateMatcher(repo smartorder.Repository, minScore float64) *CandidateMatcher {
 	opts := productmatch.DefaultMatchOptions()
-	// TrustSupplierCode stays off. A pharmacy's internal code coinciding with a
-	// catalogue code is more often accident than design, and the SKU tier has
-	// already had its chance at genuine codes.
-	opts.MaxCandidates = 5 // the shortlist the review screen shows the buyer
+	opts.MaxCandidates = 5
 	if minScore > 0 {
 		opts.MinStrong = min(max(minScore, productmatch.DefaultMinReview), 1)
 		opts.MinReview = min(productmatch.DefaultMinReview, opts.MinStrong)
 	}
-	return &Matcher{repo: repo, opts: opts}
+	return &CandidateMatcher{repo: repo, opts: opts}
+}
+
+// NewMatcher constructs the fuzzy stage.
+func NewMatcher(repo smartorder.Repository, minScore float64) *CandidateMatcher {
+	return NewCandidateMatcher(repo, minScore)
+}
+
+// SetService wires the smartorder Matcher port.
+func (m *CandidateMatcher) SetService(matcher Matcher) {
+	m.service = matcher
 }
 
 // Load builds the in-memory catalogue index for this run.
-func (m *Matcher) Load(ctx context.Context) error {
+func (m *CandidateMatcher) Load(ctx context.Context) error {
 	products, err := m.repo.LoadMatchIndex(ctx)
 	if err != nil {
 		return err
@@ -76,7 +80,7 @@ func (m *Matcher) Load(ctx context.Context) error {
 // Size reports how many catalogue products are indexed, for telemetry and for
 // the "is the catalogue empty?" check that otherwise looks like "nothing
 // matched".
-func (m *Matcher) Size() int {
+func (m *CandidateMatcher) Size() int {
 	if m.index == nil {
 		return 0
 	}
@@ -86,22 +90,16 @@ func (m *Matcher) Size() int {
 // Index exposes the loaded catalogue to the AI stage, which needs it for two
 // things the shortlist cannot supply: the English name of a candidate, and the
 // deterministic strength re-check that validates an answer before it is written.
-func (m *Matcher) Index() *productmatch.Index { return m.index }
+func (m *CandidateMatcher) Index() *productmatch.Index { return m.index }
 
 // Score matches every unresolved line and returns those still needing help.
-//
-// Lines that clear the cutoff are marked resolved here and are then off-limits
-// to AI — FR-018 forbids overwriting a confident deterministic result. What
-// comes back is exactly the two populations the buyer sees as غير مطابق and
-// مطلوب للمراجعة: nothing matched at all, or matched but below the cutoff.
-func (m *Matcher) Score(lines []*smartorder.Line) []Review {
-	if m.index == nil || m.index.Size() == 0 {
-		// An empty index is not "nothing matched": it is a broken run, and
-		// reporting it as unmatched lines would send the buyer hunting for
-		// products that are in fact right there.
-		return nil
-	}
+func (m *CandidateMatcher) Score(lines []*smartorder.Line) []Review {
+	return m.ScoreWithContext(context.Background(), 0, 0, lines)
+}
 
+// ScoreWithContext matches unresolved lines using Matcher.Prepare if available,
+// falling back to in-memory Index matching.
+func (m *CandidateMatcher) ScoreWithContext(ctx context.Context, orgID, runID int64, lines []*smartorder.Line) []Review {
 	// The rows are decomposed first — strength, form and pack move into the
 	// structured fields the scorer compares separately, and therapeutic prose is
 	// dropped (see query.go) — and then scored together, across every core.
@@ -114,6 +112,92 @@ func (m *Matcher) Score(lines []*smartorder.Line) []Review {
 		open = append(open, l)
 		rows = append(rows, BuildRow(l))
 	}
+	if len(open) == 0 {
+		return nil
+	}
+
+	if m.service != nil {
+		reqRows := make([]productmatch.Row, len(rows))
+		for i, r := range rows {
+			reqRows[i] = *r
+		}
+		consumerRef := ""
+		if runID > 0 {
+			consumerRef = fmt.Sprintf("smartorder.runs:%d", runID)
+		}
+		prepReq := productmatch.PrepareRequest{
+			Scope: productmatch.Scope{
+				EffectiveOrg: orgID,
+				Workflow:     productmatch.WorkflowSmartOrder,
+				EntryPoint:   "smartorder_pipeline",
+			},
+			ConsumerRef: consumerRef,
+			SourceRev:   1,
+			Rows:        reqRows,
+			Required:    productmatch.GranularityPack,
+		}
+		prepRes, err := m.service.Prepare(ctx, prepReq)
+		if err == nil && len(prepRes.Decisions) == len(open) {
+			var reviews []Review
+			for i, l := range open {
+				row := rows[i]
+				dec := prepRes.Decisions[i]
+				cols := matchflow.Columns(dec)
+				l.MatchState = cols.MatchState
+				l.MatchBasis = cols.MatchBasis
+				l.MatchGranularity = cols.MatchGranularity
+				l.MatchRevision = dec.Revision
+				l.AIState = cols.AIState
+				if decBytes, err := json.Marshal(dec); err == nil {
+					l.MatchDecision = decBytes
+				}
+				if prepRes.RunID > 0 {
+					rID := prepRes.RunID
+					l.MatchRunID = &rID
+				}
+
+				cands := make([]productmatch.MatchCandidate, 0, len(dec.Candidates))
+				for _, c := range dec.Candidates {
+					mc := productmatch.MatchCandidate{
+						ProductID: c.ProductID,
+						Score:     1.0,
+					}
+					if m.index != nil {
+						if p, ok := m.index.Lookup(c.ProductID); ok && p != nil {
+							mc.Name = p.NameAR
+							if mc.Name == "" {
+								mc.Name = p.NameEN
+							}
+							mc.Scientific = p.Scientific
+							mc.DosageForm = p.DosageForm
+							mc.Concentration = p.Concentration
+							mc.Manufacturer = p.Manufacturer
+						}
+					}
+					cands = append(cands, mc)
+				}
+
+				ambiguous := dec.State == matchflow.StateAmbiguous
+				switch {
+				case (dec.State == matchflow.StateAccepted || dec.State == matchflow.StateConfirmed) && cols.MatchedProductID != nil:
+					setMatch(l, *cols.MatchedProductID, smartorder.MatchMethod(cols.MatchLevel), 1.0)
+				default:
+					reviews = append(reviews, Review{
+						Line:       l,
+						Row:        row,
+						Candidates: cands,
+						Ambiguous:  ambiguous,
+					})
+				}
+			}
+			return reviews
+		}
+	}
+
+	if m.index == nil || m.index.Size() == 0 {
+		return nil
+	}
+
 	results := productmatch.MatchAll(m.index, rows, m.opts, 0)
 
 	var reviews []Review
@@ -167,7 +251,7 @@ func (m *Matcher) Score(lines []*smartorder.Line) []Review {
 //
 // Returned rather than filtered in place, so the caller keeps the full review
 // set for the screen and sends only the answerable subset.
-func (m *Matcher) Retrieve(reviews []Review) []Review {
+func (m *CandidateMatcher) Retrieve(reviews []Review) []Review {
 	if m.index == nil {
 		return nil
 	}
@@ -208,7 +292,7 @@ func (m *Matcher) Retrieve(reviews []Review) []Review {
 // Retrieval runs here as it does for the unresolved rows, because a check is
 // only useful if the alternatives are on the table: "is this the 20-tablet pack
 // or the 200?" cannot be answered from the 20-tablet pack alone.
-func (m *Matcher) Verify(lines []*smartorder.Line) []Review {
+func (m *CandidateMatcher) Verify(lines []*smartorder.Line) []Review {
 	if m.index == nil || m.index.Size() == 0 {
 		return nil
 	}

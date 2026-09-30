@@ -16,6 +16,7 @@ type Runner struct {
 	institutional InstitutionalGate
 	gate          smartorder.AvailabilityGate
 	ai            Enhancer
+	matcher       Matcher
 	log           *slog.Logger
 }
 
@@ -28,6 +29,11 @@ func NewRunner(repo smartorder.Repository, cov CoverageGate, inst InstitutionalG
 // SetAvailabilityGate wires the unified purchase availability gate.
 func (r *Runner) SetAvailabilityGate(gate smartorder.AvailabilityGate) {
 	r.gate = gate
+}
+
+// SetMatcher wires the product matching port.
+func (r *Runner) SetMatcher(matcher Matcher) {
+	r.matcher = matcher
 }
 
 // Execute runs every stage for one smart order.
@@ -72,6 +78,9 @@ func (r *Runner) Execute(ctx context.Context, run *smartorder.Run, cfg *smartord
 
 	// Stage 3 — score what is left against an in-memory catalogue.
 	matcher := NewMatcher(r.repo, cfg.MinMatchScore)
+	if r.matcher != nil {
+		matcher.SetService(r.matcher)
+	}
 	if err := matcher.Load(ctx); err != nil {
 		return err
 	}
@@ -82,7 +91,7 @@ func (r *Runner) Execute(ctx context.Context, run *smartorder.Run, cfg *smartord
 		r.log.ErrorContext(ctx, "catalogue index is empty; every line will be unmatched",
 			"run_id", run.ID)
 	}
-	reviews := matcher.Score(residual)
+	reviews := matcher.ScoreWithContext(ctx, run.OrganizationID, run.ID, residual)
 	r.emit(ctx, run, smartorder.StageCandidates, len(lines)-len(reviews), len(lines),
 		i18n.TDefault("w4_mod.s_429_429"), "Matching remaining items")
 
@@ -154,7 +163,7 @@ func (r *Runner) Execute(ctx context.Context, run *smartorder.Run, cfg *smartord
 // fail the run: the deterministic outcome is always there to fall back to, which
 // is what lets a pharmacy order when the Gateway is down.
 func (r *Runner) enhance(ctx context.Context, run *smartorder.Run, cfg *smartorder.Config,
-	matcher *Matcher, lines []*smartorder.Line, reviews []Review) {
+	matcher *CandidateMatcher, lines []*smartorder.Line, reviews []Review) {
 	if !cfg.UseAIMatching || r.ai == nil || len(lines) == 0 {
 		return
 	}

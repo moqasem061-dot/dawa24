@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
@@ -15,7 +16,9 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/shared/timeutil"
 	"github.com/moqasem061-dot/dawa24/internal/ui"
 )
@@ -267,4 +270,21 @@ func (rv *reverifier) Recheck(ctx context.Context, buyerOrgID, branchID int64,
 	}
 
 	return false, smartorder.EvaluateReason(verdict.Reason), nil
+}
+
+// smartOrderMatcherPort adapts matching.Service to the smartorder pipeline.Matcher port.
+type smartOrderMatcherPort struct {
+	svc matching.Service
+}
+
+func (p smartOrderMatcherPort) Prepare(ctx context.Context, req productmatch.PrepareRequest) (productmatch.PrepareResult, error) {
+	return p.svc.Prepare(ctx, req)
+}
+
+func (p smartOrderMatcherPort) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
+	return p.svc.Rematch(ctx, s, row, rev)
+}
+
+func (p smartOrderMatcherPort) Revalidate(ctx context.Context, s productmatch.Scope, ref productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+	return p.svc.Revalidate(ctx, s, ref, d)
 }

@@ -78,6 +78,9 @@ func inlineSmartOrderRunner(
 	if commSvc != nil {
 		runner.SetAvailabilityGate(newCommerceAvailabilityGate(commSvc))
 	}
+	if db != nil {
+		runner.SetMatcher(smartOrderMatcherPort{svc: newMatchingService(db)})
+	}
 
 	return func(_ context.Context, runID, orgID int64) error {
 		go func() {

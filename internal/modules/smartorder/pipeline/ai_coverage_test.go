@@ -13,7 +13,7 @@ import (
 // an unmatched or needs-review line with a weak shortlist is still asked, as
 // long as there is any candidate to choose from.
 func TestRetrieveAsksWeakUnresolvedLines(t *testing.T) {
-	m := &Matcher{index: testIndex()}
+	m := &CandidateMatcher{index: testIndex()}
 	weak := reviewFor(1, "ابلفاي")
 	weak.Candidates = []productmatch.MatchCandidate{{ProductID: 101, Score: 0.10}}
 
@@ -26,7 +26,7 @@ func TestRetrieveAsksWeakUnresolvedLines(t *testing.T) {
 // The مطابق lines the engine settled on a NAME are checked; identifier
 // matches are not, because a model cannot improve on a barcode.
 func TestVerifyOffersNameSettledLinesOnly(t *testing.T) {
-	m := &Matcher{index: testIndex()}
+	m := &CandidateMatcher{index: testIndex()}
 	line := func(id int64, method smartorder.MatchMethod) *smartorder.Line {
 		l := &smartorder.Line{ID: id, RowNumber: int(id), RawName: "ابيليفاي 10مجم"}
 		Normalize([]*smartorder.Line{l})

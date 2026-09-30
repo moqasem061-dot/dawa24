@@ -9,6 +9,8 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	matchingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching/postgres"
 	catalogPG "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	commercePG "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
@@ -23,6 +25,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // registerSmartOrderWorker wires the smart ordering pipeline into the worker.
@@ -64,10 +68,34 @@ func registerSmartOrderWorker(
 		log,
 	)
 	runner.SetAvailabilityGate(newWorkerAvailabilityGate(commSvc))
+	if db != nil {
+		mRepo := matchingPostgres.NewRepository(db)
+		mCuratedRepo := matchingPostgres.NewCuratedRepository(db)
+		mLoader := matching.NewLoader(db)
+		mCache := matching.NewIndexCache(matching.NewDefaultIndexBuilderWithCuration(mLoader, mCuratedRepo))
+		mSvc := matching.NewService(mRepo, mCache, mLoader)
+		runner.SetMatcher(workerMatcherPort{svc: mSvc})
+	}
 
 	river.AddWorker(workers, smartorderJobs.NewRunWorker(
 		repo, runner, branchResolver(orgSvc), log,
 	))
+}
+
+type workerMatcherPort struct {
+	svc matching.Service
+}
+
+func (p workerMatcherPort) Prepare(ctx context.Context, req productmatch.PrepareRequest) (productmatch.PrepareResult, error) {
+	return p.svc.Prepare(ctx, req)
+}
+
+func (p workerMatcherPort) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
+	return p.svc.Rematch(ctx, s, row, rev)
+}
+
+func (p workerMatcherPort) Revalidate(ctx context.Context, s productmatch.Scope, ref productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+	return p.svc.Revalidate(ctx, s, ref, d)
 }
 
 type workerAvailabilityGate struct {
