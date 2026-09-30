@@ -68,19 +68,15 @@ func (idx *Index) decideRow(row *Row, pol Policy, opts MatchOptions) (matchflow.
 		}
 	}
 
-	// 2. Try Catalog Code / Supplier Code if available and allowed
-	if (pol.Identifiers.AllowCatalogCode || pol.Identifiers.AllowSupplierCode) && row.SKU != "" {
+	// 2. Try Catalog Code if available and allowed
+	if pol.Identifiers.AllowCatalogCode && row.SKU != "" {
 		key := sheet.NormalizeCode(row.SKU)
 		if hits := idx.bySKU[key]; len(hits) > 0 {
 			unique := len(hits) == 1
-			ns := NamespaceCatalogCode
-			if pol.Identifiers.AllowSupplierCode {
-				ns = NamespaceSupplierCode
-			}
 			prop := Proposal{
 				Path:             PathIdentifier,
 				ProductID:        hits[0].ID,
-				Namespace:        string(ns),
+				Namespace:        string(NamespaceCatalogCode),
 				IdentifierValid:  len(key) >= 4,
 				IdentifierUnique: unique,
 			}
