@@ -77,9 +77,16 @@ func (c *commitRun) amend(sr *RowOutcome, note string) {
 // commitNotice is the one sentence the results screen leads with when something
 // about the run needs saying.
 func commitNotice(run *commitRun, retirement string) string {
+	msg := ""
 	if run.errors > 0 {
-		return appendMessage(
-			fmt.Sprintf(i18n.TDefault("ingest.commit.row_errors_format"), run.errors), retirement)
+		msg = fmt.Sprintf(i18n.TDefault("ingest.commit.row_errors_format"), run.errors)
+	}
+	if run.revalidatedRejections > 0 {
+		revalMsg := fmt.Sprintf("تم استبعاد %d صنف لم تعد مطابقة بعد التحقق", run.revalidatedRejections)
+		msg = appendMessage(msg, revalMsg)
+	}
+	if msg != "" {
+		return appendMessage(msg, retirement)
 	}
 	return retirement
 }

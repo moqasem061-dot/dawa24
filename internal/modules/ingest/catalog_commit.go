@@ -38,6 +38,7 @@ type commitRun struct {
 	updated  int
 	skipped  int
 	errors   int
+	revalidatedRejections int
 	// stocked counts the warehouse balances actually written, which is the
 	// number a vendor checks when they ask "did the quantities land?".
 	stocked int
@@ -112,6 +113,8 @@ func (s *Service) commit(ctx context.Context, session *Session) (*Session, error
 	if err != nil {
 		return nil, err
 	}
+
+	staged = run.revalidateRows(ctx, staged)
 
 	for start := 0; start < len(staged); start += commitBatchSize {
 		end := min(start+commitBatchSize, len(staged))
