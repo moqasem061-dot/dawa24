@@ -59,7 +59,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T004 Write the entry-point guard test. It parses Go files under `internal/` (skip `_test.go`) with `go/parser` and finds calls to `.Match(`, `productmatch.MatchAll(`, `matchflow.Run(`, `NewIndex(`. It fails if a file with such a call is not listed in `matching.EntryPoints[*].File` or in an explicit `allowlist` (for the engine itself and `test/corpus`). Write it in `test/matching_entrypoints_test.go`.
   - Done when: `go test ./test -run MatchingEntrypoints` passes on the current tree.
 - [X] T005 [P] Add i18n keys `match.reason.<code>` in Arabic and English for every reason code listed in contracts/identity-gate.md §Reason codes, and `match.state.<state>` for the 8 states in data-model.md §1.3, in `internal/shared/i18n/catalog_matching.go`. Follow the existing structure of `internal/shared/i18n/catalog_compare_promo.go`.
-- [ ] T006 [P] Create `specs/001-rework-product-matching/followups.md` with a heading and an empty list.
+- [X] T006 [P] Create `specs/001-rework-product-matching/followups.md` with a heading and an empty list.
 - [ ] T007 Add Makefile targets:
   - `match-eval-adversarial`: `go run ./cmd/cli match-eval --corpus testdata/matching --split adversarial --engine current --out reports/adv.json`
   - `match-baseline`: `git worktree add` at the SHA in `testdata/matching/corpus.lock` and `go build -o bin/match-baseline ./cmd/cli` there
