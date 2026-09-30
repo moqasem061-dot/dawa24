@@ -21,6 +21,8 @@ package productmatch
 import (
 	"runtime"
 	"sync"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // MatchAll scores every row against the index, in parallel, preserving order.
@@ -187,4 +189,81 @@ func (idx *Index) safeRecall(row *Row, opts RecallOptions) (out []MatchCandidate
 		}
 	}()
 	return idx.Recall(row, opts)
+}
+
+// DecideAll evaluates every row against the index in parallel under the given policy, preserving order.
+func DecideAll(idx *Index, rows []*Row, pol Policy, workers int) []matchflow.RowDecision {
+	out := make([]matchflow.RowDecision, len(rows))
+	if idx == nil || len(rows) == 0 {
+		return out
+	}
+	if workers <= 0 {
+		workers = runtime.NumCPU()
+	}
+	if workers > len(rows) {
+		workers = len(rows)
+	}
+	if workers <= 1 {
+		for i, row := range rows {
+			if row != nil {
+				out[i] = idx.safeDecide(row, pol)
+			}
+		}
+		return out
+	}
+
+	const block = 64
+	var (
+		wg     sync.WaitGroup
+		cursor int
+		mu     sync.Mutex
+	)
+	for w := 0; w < workers; w++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for {
+				mu.Lock()
+				start := cursor
+				cursor += block
+				mu.Unlock()
+				if start >= len(rows) {
+					return
+				}
+				end := start + block
+				if end > len(rows) {
+					end = len(rows)
+				}
+				for i := start; i < end; i++ {
+					if rows[i] != nil {
+						out[i] = idx.safeDecide(rows[i], pol)
+					}
+				}
+			}
+		}()
+	}
+	wg.Wait()
+	return out
+}
+
+func (idx *Index) safeDecide(row *Row, pol Policy) (dec matchflow.RowDecision) {
+	defer func() {
+		if p := recover(); p != nil {
+			catalogRev, normalizerVer := idx.Revision()
+			dec = matchflow.RowDecision{
+				V:       1,
+				State:   matchflow.StateUnavailable,
+				Basis:   matchflow.BasisSimilarity,
+				Reasons: []matchflow.Reason{{Code: string(ReasonCatalogUnavailable)}},
+				Versions: matchflow.Versions{
+					Policy:          pol.Version,
+					Normalizer:      normalizerVer,
+					CatalogRevision: catalogRev,
+				},
+				Revision: 1,
+				AI:       matchflow.AIDecision{State: matchflow.AIStateOff},
+			}
+		}
+	}()
+	return idx.Decide(row, pol)
 }

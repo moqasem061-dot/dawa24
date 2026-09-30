@@ -126,7 +126,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T024 Change `decide` in `internal/shared/productmatch/match_decide.go` so a best candidate with any `Hard` conflict (from T016) can never be `MatchStrong`/`MatchExact`. It becomes `MatchReview`, keeping the candidate in the shortlist. Ranking order (`mass`, `score`, `ID`) stays unchanged.
 - [X] T025 [P] Implement `QuestionSignature(rowFacts IdentityFacts, normName string, normalizerVersion string) string` (sha256 hex, `\x1f`-separated canonical form per research R8), and `const NormalizerVersion = "n1"`, in `internal/shared/productmatch/signature.go`.
   - Test: the same raw name with structured strength 10 mg vs 20 mg gives different signatures.
-- [ ] T026 Add a determinism property test: shuffle 500 fixture rows, run `MatchAll` with workers 1, 4 and 16, and assert byte-identical `RowDecision` JSON per row. Write it in `internal/shared/productmatch/determinism_test.go`.
+- [X] T026 Add a determinism property test: shuffle 500 fixture rows, run `MatchAll` with workers 1, 4 and 16, and assert byte-identical `RowDecision` JSON per row. Write it in `internal/shared/productmatch/determinism_test.go`.
 - [ ] T027 Re-run T013's command with `--out reports/after-gate.json`, then compare against `reports/baseline-tuning.json`.
   - Done when: precision is **≥ baseline** in every cohort, and any coverage drop is listed with 10 example case IDs in `docs/modules/matching-baseline.md` §"Gate impact".
 
