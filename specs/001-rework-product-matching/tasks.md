@@ -225,7 +225,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T058 [US1] Rerun clearing: when a rerun produces a non-accepted state, set `matched_product_id=NULL` (through `Columns`) and invalidate the stale downstream stock/price preview for that row. Change `internal/modules/ingest/catalog_stage_run.go` and `catalog_review.go`.
 - [X] T059 [US1] AI-off path: in `internal/modules/ingest/catalog_stage_ai.go`, when the active policy has AI disabled or the gateway is unconfigured, skip the AI stage entirely. There is no waiting state, and the run goes straight to `reviewable`.
 - [X] T060 [US1] Commit revalidation: in `internal/modules/ingest/catalog_commit.go`, before writing stock/price call `Matcher.Revalidate` for each row. Reject rows whose `match_revision` changed, whose state is not accepted/confirmed, or whose granularity is below `pack`. Report them in the commit summary.
-- [ ] T061 [US1] Update `docs/modules/ingest.md` §Matching: the service, namespaces, decision states, AI-off behaviour, and the removal of the old ceiling prose (FR-114).
+- [X] T061 [US1] Update `docs/modules/ingest.md` §Matching: the service, namespaces, decision states, AI-off behaviour, and the removal of the old ceiling prose (FR-114).
 
 **Checkpoint (MVP)**: the vendor import is correct and complete with AI off. Deployable.
 
