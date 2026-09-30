@@ -305,23 +305,14 @@ func (s *SavingImportSessionStore) CommitSession(ctx context.Context, id string,
 		return 0, 0, fmt.Errorf("%s", i18n.TDefault("w4_ui.s_96_96"))
 	}
 
-	itemsToCommit := make([]*catalog.SavingProduct, 0, len(sess.Items))
-	for _, it := range sess.Items {
-		if !it.Included {
-			continue
-		}
-		itemsToCommit = append(itemsToCommit, &catalog.SavingProduct{
-			OrganizationID: orgID,
-			UserID:         &userID,
-			ProductID:      it.ProductID,
-			NameProduct:    it.NameProduct,
-			SKU:            it.SKU,
-			Quantity:       it.Quantity,
-			Price:          it.Price,
-		})
-	}
+	itemsSnapshot := make([]*StagedSavingItem, len(sess.Items))
+	copy(itemsSnapshot, sess.Items)
 	s.mu.Unlock()
 
+	itemsToCommit, _, err := RevalidateSavingItems(ctx, orgID, userID, itemsSnapshot, catSvc)
+	if err != nil {
+		return 0, 0, err
+	}
 	if len(itemsToCommit) == 0 {
 		return 0, 0, fmt.Errorf("%s", i18n.TDefault("w4_ui.s_97_97"))
 	}

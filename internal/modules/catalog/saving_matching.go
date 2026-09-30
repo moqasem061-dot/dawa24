@@ -162,3 +162,16 @@ func (s *Service) MatchSavingsRows(
 
 	return items, engine, nil
 }
+
+// RevalidateSavingDecision checks a saving product decision prior to commit against matching.Service.
+func (s *Service) RevalidateSavingDecision(
+	ctx context.Context,
+	scope productmatch.Scope,
+	rowRef productmatch.RowRef,
+	dec matchflow.RowDecision,
+) (matchflow.RowDecision, error) {
+	if s.matchingSvc == nil {
+		return dec, nil
+	}
+	return s.matchingSvc.Revalidate(ctx, scope, rowRef, dec)
+}
