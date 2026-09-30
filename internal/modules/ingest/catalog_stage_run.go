@@ -18,6 +18,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -190,6 +191,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			Candidates:        m.Candidates,
 			Issues:            row.Issues,
 			Message:           m.Reason,
+			AIState:           string(matchflow.AIStateOff),
 		})
 	}
 

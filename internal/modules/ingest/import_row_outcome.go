@@ -1,6 +1,7 @@
 package ingest
 
 import (
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -25,6 +26,17 @@ type RowOutcome struct {
 	Candidates         []productmatch.MatchCandidate `json:"candidates,omitempty"`
 	Issues             []productmatch.Issue          `json:"issues,omitempty"`
 	Message            string                        `json:"message"`
+
+	// Consumer row columns (Phase 4 / data-model §3.10)
+	MatchState       string                 `json:"match_state,omitempty"`
+	MatchBasis       string                 `json:"match_basis,omitempty"`
+	MatchGranularity string                 `json:"match_granularity,omitempty"`
+	MatchRevision    int                    `json:"match_revision"`
+	HumanLocked      bool                   `json:"human_locked"`
+	AIState          string                 `json:"ai_state,omitempty"`
+	MatchRunID       *int64                 `json:"match_run_id,omitempty"`
+	MatchDecision    *matchflow.RowDecision `json:"match_decision,omitempty"`
+	BaselineDecision *matchflow.RowDecision `json:"baseline_decision,omitempty"`
 }
 
 // EffectiveVariantName returns the custom variant name if set, or original row name.

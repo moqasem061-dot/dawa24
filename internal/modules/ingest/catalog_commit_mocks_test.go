@@ -102,6 +102,7 @@ func (m *mockCommitImportStore) Sweep(_ context.Context) error { return nil }
 
 // mockCommitCatalogPort mocks CatalogPort for testing.
 type mockCommitCatalogPort struct {
+	products          []MatchProduct
 	keys              []VariantKey
 	writtenVariants   []VariantWriteRow
 	deactivatedExcept []int64
@@ -110,7 +111,7 @@ type mockCommitCatalogPort struct {
 }
 
 func (m *mockCommitCatalogPort) ListMatchProducts(_ context.Context) ([]MatchProduct, error) {
-	return nil, nil
+	return m.products, nil
 }
 func (m *mockCommitCatalogPort) ImportVocabulary(_ context.Context, _ int64) (Vocabulary, error) {
 	return Vocabulary{}, nil

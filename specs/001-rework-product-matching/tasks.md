@@ -206,7 +206,7 @@ description: "Executable task list for the Product Matching Rework"
 
 ### Tests for US1
 
-- [ ] T050 [P] [US1] Gateway-disabled vendor test: stage plus commit with the AI enhancer nil. Assert 0 enhancer calls, `ai_state=off` on every row, run state `reviewable` without an AI waiting stage, and commit succeeds. Write it in `internal/modules/ingest/catalog_ai_off_test.go`.
+- [X] T050 [P] [US1] Gateway-disabled vendor test: stage plus commit with the AI enhancer nil. Assert 0 enhancer calls, `ai_state=off` on every row, run state `reviewable` without an AI waiting stage, and commit succeeds. Write it in `internal/modules/ingest/catalog_ai_off_test.go`.
 - [ ] T051 [P] [US1] Supplier-code collision test: a supplier code equal to an unrelated catalogue `sku`, with the column declared `supplier_code` and no confirmed supplier-code knowledge ⇒ the row's `basis` is NOT `identifier`, and the unrelated product is not accepted. Write it in `internal/modules/ingest/catalog_identifier_test.go`.
 - [ ] T052 [P] [US1] Malformed-rows test: a 50,000-row generated file with 1% malformed lines (bad numbers, huge values, blank, header repeats). Every row gets exactly one primary state and no worker panics. Write it in `internal/modules/ingest/catalog_malformed_test.go`, skipped under `-short`.
 
