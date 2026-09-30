@@ -148,6 +148,15 @@ templ smartOrderResultRow(data SmartOrderResultsData, l *smartorder.Line) {
 			<span class={ outcomeChip(l.Outcome) }>
 				{ SmartOrderOutcomeLabel(l.Outcome) }
 			</span>
+			if l.OfferState == smartorder.OfferStateIdentifiedNoOffer {
+				<span class="badge badge-warning ms-1">
+					{ SmartOrderOfferStateLabel(l.OfferState) }
+				</span>
+			} else if l.OfferState == smartorder.OfferStateBlockedPack && l.Outcome != smartorder.OutcomeBlockedPack {
+				<span class="badge badge-rose ms-1">
+					{ SmartOrderOfferStateLabel(l.OfferState) }
+				</span>
+			}
 		</td>
 	</tr>
 }

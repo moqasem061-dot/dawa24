@@ -266,7 +266,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T075 [US4] Separate identity from offers in `internal/modules/smartorder/pipeline/resolve.go` and `offers.go`. Offer selection receives only accepted/confirmed product IDs and never changes `product_id`. Record `offer_state ∈ {offered, identified_no_offer, blocked_pack}`.
 - [X] T076 [US4] Pack conversion: in `offers.go`, use `productmatch.Convert` (T042). No relationship means `blocked_pack`. Quantities are integers and prices are `money.Amount`.
 - [X] T077 [US4] Finalize revalidation: before creating order items (find the finalize function with `grep -n "func .*Finali" internal/modules/smartorder -r`), call `Revalidate` per line and re-check stock/eligibility under the existing order rules. Lines that changed return to review.
-- [ ] T078 [US4] Show `identified_no_offer` and `blocked_pack` distinctly (i18n keys) in `internal/ui/pages/smart_order_results.templ`.
+- [X] T078 [US4] Show `identified_no_offer` and `blocked_pack` distinctly (i18n keys) in `internal/ui/pages/smart_order_results.templ`.
 - [ ] T079 [US4] Update `docs/modules/smartorder.md` (identity vs offer, memory scope correction, pack rule).
 
 ---

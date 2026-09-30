@@ -193,7 +193,8 @@ func isLineOutcome(key string) bool {
 		smartorder.OutcomeInstitutionalBlocked, smartorder.OutcomeOutOfStock,
 		smartorder.OutcomeBelowMinQty, smartorder.OutcomeZeroQty,
 		smartorder.OutcomeQuotaBlocked,
-		smartorder.OutcomeRemoved:
+		smartorder.OutcomeRemoved,
+		smartorder.OutcomeBlockedPack:
 		return true
 	}
 	return false

@@ -177,14 +177,17 @@ type BlockedCounts struct {
 	ZeroQty              int `json:"zero_qty"`
 	Removed              int `json:"removed"`
 	QuotaBlocked         int `json:"quota_blocked"`
+	BlockedPack          int `json:"blocked_pack"`
+	IdentifiedNoOffer    int `json:"identified_no_offer"`
 }
 
 // Total is every line that will not be ordered, excluding the ones the buyer
 // removed on purpose — those are not a problem to be solved.
 func (b BlockedCounts) Total() int {
 	return b.Unmatched + b.NoSupplier + b.CoverageBlocked + b.InstitutionalBlocked +
-		b.OutOfStock + b.BelowMinQty + b.ZeroQty + b.QuotaBlocked
+		b.OutOfStock + b.BelowMinQty + b.ZeroQty + b.QuotaBlocked + b.BlockedPack
 }
+
 
 // AIUsage is telemetry, not commerce.
 //

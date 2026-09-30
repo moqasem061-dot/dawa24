@@ -159,12 +159,16 @@ func (r *Repository) ListLines(ctx context.Context, runID int64, f smartorder.Li
 			case "ready_to_order", "matched_available", "ordered":
 				where = append(where, "(outcome = 'ordered')")
 			case "review":
-				where = append(where, "(outcome IN ('no_supplier', 'coverage_blocked', 'institutional_blocked', 'out_of_stock', 'below_min_qty', 'zero_qty'))")
+				where = append(where, "(outcome IN ('no_supplier', 'coverage_blocked', 'institutional_blocked', 'out_of_stock', 'below_min_qty', 'zero_qty', 'blocked_pack'))")
 			case "blocked":
 				// Everything the buyer is not getting, whatever the reason —
 				// what the collapsed section on the results screen holds.
 				// 'removed' is excluded: that is a decision, not a problem.
 				where = append(where, "(outcome NOT IN ('ordered', 'removed'))")
+			case "identified_no_offer":
+				where = append(where, "(offer_state = 'identified_no_offer')")
+			case "blocked_pack":
+				where = append(where, "(offer_state = 'blocked_pack' OR outcome = 'blocked_pack')")
 			}
 		}
 

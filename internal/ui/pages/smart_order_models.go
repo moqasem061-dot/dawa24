@@ -120,8 +120,36 @@ func SmartOrderOutcomeLabel(o smartorder.Outcome, langOpt ...string) string {
 			return "Removed"
 		}
 		return "تم حذفه"
+	case smartorder.OutcomeBlockedPack:
+		if isEn {
+			return "Pack Incompatible"
+		}
+		return "عبوة غير متوافقة"
 	}
 	return string(o)
+}
+
+// SmartOrderOfferStateLabel returns a human-readable offer state label in the requested language.
+func SmartOrderOfferStateLabel(s smartorder.OfferState, langOpt ...string) string {
+	isEn := len(langOpt) > 0 && langOpt[0] == "en"
+	switch s {
+	case smartorder.OfferStateOffered:
+		if isEn {
+			return "Offered"
+		}
+		return "يوجد عرض"
+	case smartorder.OfferStateIdentifiedNoOffer:
+		if isEn {
+			return "Identified (No Offer)"
+		}
+		return "مطابق دون عرض"
+	case smartorder.OfferStateBlockedPack:
+		if isEn {
+			return "Pack Incompatible"
+		}
+		return "عبوة غير متوافقة"
+	}
+	return string(s)
 }
 
 func MatchMethodLabel(m smartorder.MatchMethod, langOpt ...string) string {
@@ -185,7 +213,7 @@ func outcomeChip(o smartorder.Outcome) string {
 	switch o {
 	case smartorder.OutcomeOrdered:
 		return "outcome-chip outcome-chip-success"
-	case smartorder.OutcomeUnmatched:
+	case smartorder.OutcomeUnmatched, smartorder.OutcomeBlockedPack:
 		return "outcome-chip outcome-chip-danger"
 	case smartorder.OutcomeNoSupplier:
 		return "outcome-chip outcome-chip-warning"

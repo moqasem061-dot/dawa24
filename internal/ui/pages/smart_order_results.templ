@@ -133,6 +133,12 @@ templ SmartOrderResultsPage(lang, dir string, data SmartOrderResultsData) {
 					@soFilterTab(data, "matched_product", i18n.T(lang, "smart_order.tab_matched_product"), data.Counts.MatchedProduct)
 					@soFilterTab(data, "ready_to_order", i18n.T(lang, "smart_order.tab_ready"), data.Counts.ReadyToOrder)
 					@soFilterTab(data, "blocked", i18n.T(lang, "smart_order.tab_blocked"), data.Blocked.Total())
+					if data.Blocked.IdentifiedNoOffer > 0 {
+						@soFilterTab(data, "identified_no_offer", i18n.T(lang, "smart_order.tab_identified_no_offer"), data.Blocked.IdentifiedNoOffer)
+					}
+					if data.Blocked.BlockedPack > 0 {
+						@soFilterTab(data, "blocked_pack", i18n.T(lang, "smart_order.tab_blocked_pack"), data.Blocked.BlockedPack)
+					}
 					@soFilterTab(data, "matched_supplier", i18n.T(lang, "smart_order.tab_has_supplier"), data.Counts.MatchedSupplier)
 					@soFilterTab(data, "available_stock", i18n.T(lang, "smart_order.tab_in_stock"), data.Counts.AvailableStock)
 					@soFilterTab(data, "covered_branch", i18n.T(lang, "smart_order.tab_covered"), data.Counts.CoveredBranch)
@@ -261,22 +267,26 @@ templ soBlockedPanel(data SmartOrderResultsData, lang string) {
 				</span>
 			</summary>
 			<div class="so-blocked-body">
-				@soBlockedRow(data, "unmatched", "لم يُطابَق بالكتالوج", blocked.Unmatched,
-					"اربط الصنف يدوياً بالكتالوج المركزي ليصبح قابلاً للطلب.", lang)
-				@soBlockedRow(data, "no_supplier", "لا يوجد مورد", blocked.NoSupplier,
-					"الصنف مطابق لكن لا يعرضه أي مورد حالياً.", lang)
-				@soBlockedRow(data, "out_of_stock", "غير متوفر بالمخزون", blocked.OutOfStock,
-					"العرض موجود لكن رصيده صفر لدى المورد.", lang)
-				@soBlockedRow(data, "coverage_blocked", "خارج نطاق التغطية", blocked.CoverageBlocked,
-					"المورد لا يغطي فرع التسليم المختار.", lang)
-				@soBlockedRow(data, "institutional_blocked", "غير متاح مؤسسياً", blocked.InstitutionalBlocked,
-					"العمل المؤسسي لفرع الاستلام غير متصل بالأعمال المؤسسية لفروع هذا المورد، وهو نفس الشرط الذي يطبَّق عند الشراء العادي ومن الكتالوج.", lang)
-				@soBlockedRow(data, "quota_blocked", "تجاوز الكوتة المتاحة", blocked.QuotaBlocked,
-					"تجاوزت الكمية المطلوبة الحصة المتاحة لفرعك من هذا المورد.", lang)
-				@soBlockedRow(data, "below_min_qty", "أقل من الحد الأدنى للطلب", blocked.BelowMinQty,
-					"ارفع الكمية إلى الحد الأدنى الذي يشترطه المورد.", lang)
-				@soBlockedRow(data, "zero_qty", "الكمية صفر", blocked.ZeroQty,
-					"لم يُقرأ للصنف كمية من الملف؛ أدخلها يدوياً.", lang)
+				@soBlockedRow(data, "unmatched", i18n.T(lang, "smart_order.blocked_unmatched"), blocked.Unmatched,
+					i18n.T(lang, "smart_order.blocked_unmatched_hint"), lang)
+				@soBlockedRow(data, "identified_no_offer", i18n.T(lang, "smart_order.blocked_identified_no_offer"), blocked.IdentifiedNoOffer,
+					i18n.T(lang, "smart_order.blocked_identified_no_offer_hint"), lang)
+				@soBlockedRow(data, "blocked_pack", i18n.T(lang, "smart_order.blocked_pack"), blocked.BlockedPack,
+					i18n.T(lang, "smart_order.blocked_pack_hint"), lang)
+				@soBlockedRow(data, "no_supplier", i18n.T(lang, "smart_order.blocked_no_supplier"), blocked.NoSupplier,
+					i18n.T(lang, "smart_order.blocked_no_supplier_hint"), lang)
+				@soBlockedRow(data, "out_of_stock", i18n.T(lang, "smart_order.blocked_out_of_stock"), blocked.OutOfStock,
+					i18n.T(lang, "smart_order.blocked_out_of_stock_hint"), lang)
+				@soBlockedRow(data, "coverage_blocked", i18n.T(lang, "smart_order.blocked_coverage"), blocked.CoverageBlocked,
+					i18n.T(lang, "smart_order.blocked_coverage_hint"), lang)
+				@soBlockedRow(data, "institutional_blocked", i18n.T(lang, "smart_order.blocked_institutional"), blocked.InstitutionalBlocked,
+					i18n.T(lang, "smart_order.blocked_institutional_hint"), lang)
+				@soBlockedRow(data, "quota_blocked", i18n.T(lang, "smart_order.blocked_quota"), blocked.QuotaBlocked,
+					i18n.T(lang, "smart_order.blocked_quota_hint"), lang)
+				@soBlockedRow(data, "below_min_qty", i18n.T(lang, "smart_order.blocked_below_min"), blocked.BelowMinQty,
+					i18n.T(lang, "smart_order.blocked_below_min_hint"), lang)
+				@soBlockedRow(data, "zero_qty", i18n.T(lang, "smart_order.blocked_zero_qty"), blocked.ZeroQty,
+					i18n.T(lang, "smart_order.blocked_zero_qty_hint"), lang)
 			</div>
 		</details>
 	}

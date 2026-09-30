@@ -99,11 +99,14 @@ func (r *Repository) BlockedCounts(ctx context.Context, runID int64) (smartorder
 				COUNT(*) FILTER (WHERE outcome = 'below_min_qty'),
 				COUNT(*) FILTER (WHERE outcome = 'zero_qty'),
 				COUNT(*) FILTER (WHERE outcome = 'removed'),
-				COUNT(*) FILTER (WHERE outcome = 'quota_blocked')
+				COUNT(*) FILTER (WHERE outcome = 'quota_blocked'),
+				COUNT(*) FILTER (WHERE outcome = 'blocked_pack' OR offer_state = 'blocked_pack'),
+				COUNT(*) FILTER (WHERE offer_state = 'identified_no_offer')
 			FROM smartorder.run_lines
 			WHERE run_id = $1;`, runID).Scan(
 			&bc.Unmatched, &bc.NoSupplier, &bc.CoverageBlocked, &bc.InstitutionalBlocked,
-			&bc.OutOfStock, &bc.BelowMinQty, &bc.ZeroQty, &bc.Removed, &bc.QuotaBlocked)
+			&bc.OutOfStock, &bc.BelowMinQty, &bc.ZeroQty, &bc.Removed, &bc.QuotaBlocked,
+			&bc.BlockedPack, &bc.IdentifiedNoOffer)
 	})
 	return bc, err
 }
