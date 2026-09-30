@@ -46,6 +46,20 @@ migrate: ## Apply pending migrations
 migrate-status: ## List migrations and show how many are pending
 	go run ./cmd/cli migrate-status
 
+.PHONY: match-eval-adversarial
+match-eval-adversarial: ## Run matching evaluation against adversarial split
+	go run ./cmd/cli match-eval --corpus testdata/matching --split adversarial --engine current --out reports/adv.json
+
+.PHONY: match-baseline
+match-baseline: ## Build baseline CLI binary at the SHA recorded in corpus.lock
+	@mkdir -p bin
+	@sha=$$(grep -o '"baseline_sha": "[^"]*"' testdata/matching/corpus.lock 2>/dev/null | cut -d'"' -f4); \
+	if [ -z "$$sha" ]; then echo "baseline_sha not found in testdata/matching/corpus.lock"; exit 1; fi; \
+	tmpdir=$$(mktemp -d); \
+	git worktree add "$$tmpdir" "$$sha" && \
+	(cd "$$tmpdir" && go build -o "$(CURDIR)/bin/match-baseline" ./cmd/cli) && \
+	git worktree remove --force "$$tmpdir"
+
 # --- quality gates -------------------------------------------------------
 # These are exactly what CI runs. A green `make check` locally means a green
 # pipeline, so failures are found before a push rather than after one.

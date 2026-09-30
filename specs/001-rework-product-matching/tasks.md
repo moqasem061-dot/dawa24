@@ -60,7 +60,7 @@ description: "Executable task list for the Product Matching Rework"
   - Done when: `go test ./test -run MatchingEntrypoints` passes on the current tree.
 - [X] T005 [P] Add i18n keys `match.reason.<code>` in Arabic and English for every reason code listed in contracts/identity-gate.md §Reason codes, and `match.state.<state>` for the 8 states in data-model.md §1.3, in `internal/shared/i18n/catalog_matching.go`. Follow the existing structure of `internal/shared/i18n/catalog_compare_promo.go`.
 - [X] T006 [P] Create `specs/001-rework-product-matching/followups.md` with a heading and an empty list.
-- [ ] T007 Add Makefile targets:
+- [X] T007 Add Makefile targets:
   - `match-eval-adversarial`: `go run ./cmd/cli match-eval --corpus testdata/matching --split adversarial --engine current --out reports/adv.json`
   - `match-baseline`: `git worktree add` at the SHA in `testdata/matching/corpus.lock` and `go build -o bin/match-baseline ./cmd/cli` there
   
