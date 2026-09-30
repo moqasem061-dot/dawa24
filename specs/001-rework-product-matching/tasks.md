@@ -109,7 +109,7 @@ description: "Executable task list for the Product Matching Rework"
     - a reviewer proposal with a hard conflict and no correction ⇒ not eligible
     - two indistinguishable siblings ⇒ `ambiguous`
     - pack unstated with `Required=Pack` ⇒ `needs_review` + `pack_unresolved`
-- [ ] T022 [P] Implement identifier namespaces in `internal/shared/productmatch/identifiers_ns.go`:
+- [X] T022 [P] Implement identifier namespaces in `internal/shared/productmatch/identifiers_ns.go`:
   - `Namespace` (`gtin`, `supplier_code`, `catalog_code`)
   - `ValidGTIN(s string) bool` (lengths 8/12/13/14 plus mod-10 check digit)
   - `SuspectIdentifier(s string, modalLen int) (reason ReasonCode, bad bool)`, which detects `E+`, a decimal point, or a shorter length than the column's modal length
