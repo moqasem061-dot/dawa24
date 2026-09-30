@@ -28,24 +28,36 @@ const lineColumns = `
 	match_corrected_by_user, outcome,
 	COALESCE(outcome_reason, '')  AS outcome_reason,
 	consolidated_into_line_id,
+	COALESCE(match_state, '')     AS match_state,
+	COALESCE(match_basis, '')     AS match_basis,
+	COALESCE(match_granularity, '') AS match_granularity,
+	match_revision, human_locked,
+	COALESCE(ai_state, '')        AS ai_state,
+	match_run_id, match_decision, baseline_decision,
+	COALESCE(offer_state, '')     AS offer_state,
 	created_at, updated_at`
 
 func scanLine(row pgx.Row) (*smartorder.Line, error) {
 	var l smartorder.Line
 	var raw []byte
-	var method, outcome string
+	var method, outcome, offerState string
 	if err := row.Scan(
 		&l.ID, &l.RunID, &l.OrganizationID, &l.RowNumber, &raw,
 		&l.RawName, &l.RawSKU, &l.RawBarcode,
 		&l.ImportedQty, &l.QtyParseNote, &l.EditedQty, &l.EffectiveQty,
 		&l.NormName, &l.IdentityKey, &l.MatchedProductID, &method, &l.MatchConfidence,
 		&l.CorrectedByUser, &outcome, &l.OutcomeReason, &l.ConsolidatedInto,
+		&l.MatchState, &l.MatchBasis, &l.MatchGranularity,
+		&l.MatchRevision, &l.HumanLocked, &l.AIState,
+		&l.MatchRunID, &l.MatchDecision, &l.BaselineDecision,
+		&offerState,
 		&l.CreatedAt, &l.UpdatedAt,
 	); err != nil {
 		return nil, err
 	}
 	l.MatchMethod = smartorder.MatchMethod(method)
 	l.Outcome = smartorder.Outcome(outcome)
+	l.OfferState = smartorder.OfferState(offerState)
 	if len(raw) > 0 {
 		_ = json.Unmarshal(raw, &l.Raw)
 	}
@@ -273,6 +285,16 @@ func (r *Repository) UpdateLines(ctx context.Context, lines []*smartorder.Line) 
 			quantities := make([]float64, len(batch))
 			normNames := make([]string, len(batch))
 			identityKeys := make([]string, len(batch))
+			matchStates := make([]*string, len(batch))
+			matchBases := make([]*string, len(batch))
+			matchGrans := make([]*string, len(batch))
+			matchRevs := make([]int, len(batch))
+			humanLockeds := make([]bool, len(batch))
+			aiStates := make([]*string, len(batch))
+			matchRunIDs := make([]*int64, len(batch))
+			matchDecs := make([][]byte, len(batch))
+			baseDecs := make([][]byte, len(batch))
+			offerStates := make([]*string, len(batch))
 
 			for i, l := range batch {
 				ids[i] = l.ID
@@ -284,6 +306,16 @@ func (r *Repository) UpdateLines(ctx context.Context, lines []*smartorder.Line) 
 				quantities[i] = l.EffectiveQty
 				normNames[i] = l.NormName
 				identityKeys[i] = l.IdentityKey
+				if l.MatchState != "" { s := l.MatchState; matchStates[i] = &s }
+				if l.MatchBasis != "" { b := l.MatchBasis; matchBases[i] = &b }
+				if l.MatchGranularity != "" { g := l.MatchGranularity; matchGrans[i] = &g }
+				matchRevs[i] = l.MatchRevision
+				humanLockeds[i] = l.HumanLocked
+				if l.AIState != "" { a := l.AIState; aiStates[i] = &a }
+				matchRunIDs[i] = l.MatchRunID
+				if len(l.MatchDecision) > 0 { matchDecs[i] = l.MatchDecision }
+				if len(l.BaselineDecision) > 0 { baseDecs[i] = l.BaselineDecision }
+				if l.OfferState != "" { o := string(l.OfferState); offerStates[i] = &o }
 			}
 
 			_, err := tx.Exec(txCtx, `
@@ -295,16 +327,34 @@ func (r *Repository) UpdateLines(ctx context.Context, lines []*smartorder.Line) 
 					outcome_reason     = u.reason,
 					effective_qty      = u.qty,
 					norm_name          = u.norm_name,
-					identity_key       = u.identity_key
+					identity_key       = u.identity_key,
+					match_state        = COALESCE(u.match_state, l.match_state),
+					match_basis        = COALESCE(u.match_basis, l.match_basis),
+					match_granularity  = COALESCE(u.match_granularity, l.match_granularity),
+					match_revision     = u.match_revision,
+					human_locked       = u.human_locked,
+					ai_state           = COALESCE(u.ai_state, l.ai_state),
+					match_run_id       = COALESCE(u.match_run_id, l.match_run_id),
+					match_decision     = COALESCE(u.match_decision::jsonb, l.match_decision),
+					baseline_decision  = COALESCE(u.baseline_decision::jsonb, l.baseline_decision),
+					offer_state        = COALESCE(u.offer_state, l.offer_state)
 				FROM (
 					SELECT * FROM unnest(
 						$1::bigint[], $2::bigint[], $3::text[], $4::numeric[],
-						$5::text[], $6::text[], $7::numeric[], $8::text[], $9::text[]
-					) AS t(id, product_id, method, confidence, outcome, reason, qty, norm_name, identity_key)
+						$5::text[], $6::text[], $7::numeric[], $8::text[], $9::text[],
+						$10::text[], $11::text[], $12::text[], $13::int[],
+						$14::boolean[], $15::text[], $16::bigint[],
+						$17::jsonb[], $18::jsonb[], $19::text[]
+					) AS t(id, product_id, method, confidence, outcome, reason, qty, norm_name, identity_key,
+					       match_state, match_basis, match_granularity, match_revision,
+					       human_locked, ai_state, match_run_id, match_decision, baseline_decision, offer_state)
 				) AS u
 				WHERE l.id = u.id;`,
 				ids, productIDs, methods, confidences, outcomes, reasons,
-				quantities, normNames, identityKeys)
+				quantities, normNames, identityKeys,
+				matchStates, matchBases, matchGrans, matchRevs,
+				humanLockeds, aiStates, matchRunIDs,
+				matchDecs, baseDecs, offerStates)
 			if err != nil {
 				return fmt.Errorf("update lines %d-%d: %w", start, end, err)
 			}
