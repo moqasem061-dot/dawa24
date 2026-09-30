@@ -82,28 +82,28 @@ type Column struct {
 
 // Conflict is something the vendor must look at before the import runs.
 type Conflict struct {
-	Kind     ConflictKind `json:"kind"`
-	Field    Field        `json:"field,omitempty"`
-	Column   int          `json:"column"`
-	Severity Severity     `json:"severity"`
-	Message  string       `json:"message"`
+	Kind     MappingConflictKind `json:"kind"`
+	Field    Field               `json:"field,omitempty"`
+	Column   int                 `json:"column"`
+	Severity Severity            `json:"severity"`
+	Message  string              `json:"message"`
 }
 
-// ConflictKind classifies why a binding was flagged.
-type ConflictKind string
+// MappingConflictKind classifies why a binding was flagged.
+type MappingConflictKind string
 
 const (
 	// ConflictHeaderValue means the header names one field and the values look
 	// like another. This is the finding that saves imports.
-	ConflictHeaderValue ConflictKind = "header_value"
+	ConflictHeaderValue MappingConflictKind = "header_value"
 	// ConflictAmbiguous means two readings scored too close to separate.
-	ConflictAmbiguous ConflictKind = "ambiguous"
+	ConflictAmbiguous MappingConflictKind = "ambiguous"
 	// ConflictDuplicateHeader means two columns carry the same title.
-	ConflictDuplicateHeader ConflictKind = "duplicate_header"
+	ConflictDuplicateHeader MappingConflictKind = "duplicate_header"
 	// ConflictMissing means a field the import depends on found no column.
-	ConflictMissing ConflictKind = "missing"
+	ConflictMissing MappingConflictKind = "missing"
 	// ConflictInconsistent comes from the cross-column arithmetic checks.
-	ConflictInconsistent ConflictKind = "inconsistent"
+	ConflictInconsistent MappingConflictKind = "inconsistent"
 )
 
 // Mapping is the resolved reading of a sheet's columns.

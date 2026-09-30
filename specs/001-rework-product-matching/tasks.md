@@ -93,7 +93,7 @@ description: "Executable task list for the Product Matching Rework"
   - numeric parse is bounded to ≤12 significant digits and ≤3 multiplication factors; anything else becomes `Cert=uncertain`
   - never panic
   - Done when: `internal/shared/productmatch/identity_facts_extract_test.go` has table cases for every edge-case row in spec.md §Edge Cases that concerns numbers, digits and scripts (Arabic-Indic digits, `500 mg`/`0.5 g`, `250 mg/5 mL`, `5/10 mg`, `2 × 10`, a price annotation, and a huge number).
-- [ ] T016 Implement `CompareFacts(row, product IdentityFacts) Comparison`. It gives a 4-valued outcome per attribute plus a `Hard []ConflictKind` list, following contracts/identity-gate.md §Hard conflict kinds. Pack is **not** added to `Hard` here; the gate decides that by granularity. Write it in `internal/shared/productmatch/identity_compare.go`.
+- [X] T016 Implement `CompareFacts(row, product IdentityFacts) Comparison`. It gives a 4-valued outcome per attribute plus a `Hard []ConflictKind` list, following contracts/identity-gate.md §Hard conflict kinds. Pack is **not** added to `Hard` here; the gate decides that by granularity. Write it in `internal/shared/productmatch/identity_compare.go`.
   - Done when: `internal/shared/productmatch/identity_compare_test.go` contains one named test per row of spec.md §Normative identity examples, and all pass.
 - [ ] T017 [P] Define `type ReasonCode string`, constants for every code in contracts/identity-gate.md, and `type Reason struct{Code ReasonCode; Params map[string]string}` in `internal/shared/productmatch/reasons.go`. Add test `internal/shared/productmatch/reasons_test.go`, which fails if any constant lacks an `ar` or `en` i18n key from T005.
 
