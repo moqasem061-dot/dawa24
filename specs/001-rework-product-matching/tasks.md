@@ -99,7 +99,7 @@ description: "Executable task list for the Product Matching Rework"
 
 ### 2C. Decision record, policy and gate
 
-- [ ] T018 [P] Implement `RowDecision` (JSON v1 per contracts/decision-record.md), `State` (8 values), `Basis`, `AIState`, `Granularity` string enums, `MarshalJSON`, and `ParseRowDecision` (reject `v` ≠ 1) in `internal/shared/matchflow/row_decision.go`.
+- [X] T018 [P] Implement `RowDecision` (JSON v1 per contracts/decision-record.md), `State` (8 values), `Basis`, `AIState`, `Granularity` string enums, `MarshalJSON`, and `ParseRowDecision` (reject `v` ≠ 1) in `internal/shared/matchflow/row_decision.go`.
   - Tests in `internal/shared/matchflow/row_decision_test.go`: round-trip, and unknown version → error.
 - [ ] T019 [P] Implement `Columns(d RowDecision) ColumnProjection{MatchState, MatchBasis, MatchGranularity, MatchedProductID *int64, MatchLevel string, AIState}`. It uses the legacy `match_level` mapping table in contracts/decision-record.md. `MatchedProductID` is non-nil **only** for `accepted`/`confirmed`. Write it in `internal/shared/matchflow/row_decision_columns.go`, with a table test.
 - [ ] T020 [P] Define `Policy`, `Granularity`, `IdentifierPolicy` (declared namespace per identifier column plus user choices) and `DefaultPolicy()`. The default copies today's numbers: `MinStrong=0.60`, `MinReview=0.25`, `TieMargin=0.06`, `BlindNearIdentical=0.90`, all identifier tiers off. Write it in `internal/shared/productmatch/gate_policy.go`.
