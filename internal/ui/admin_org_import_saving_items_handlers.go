@@ -26,7 +26,16 @@ func (h *UIHandler) AdminOrgImportSavingItemUpdateSubmit(w http.ResponseWriter, 
 		return
 	}
 
-	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", session.OrgID, sessionID)
+	targetOrgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
+	if targetOrgID <= 0 {
+		targetOrgID = session.OrgID
+	}
+	if session.OrgID != targetOrgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", "جلسة الاستيراد غير موجودة أو غير مطابقة للمؤسسة")
+		return
+	}
+
+	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", targetOrgID, sessionID)
 	if r.URL.RawQuery != "" {
 		redirectURI += "?" + r.URL.RawQuery
 	}
@@ -48,7 +57,7 @@ func (h *UIHandler) AdminOrgImportSavingItemUpdateSubmit(w http.ResponseWriter, 
 			qtyPtr = &q
 		}
 	}
-	if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, session.OrgID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
+	if err := globalSavingImportSessionStore.UpdateStagedItem(sessionID, targetOrgID, itemIndex, name, pricePtr, qtyPtr, nil); err != nil {
 		h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
 		return
 	}
@@ -70,7 +79,16 @@ func (h *UIHandler) AdminOrgImportSavingItemMatchSubmit(w http.ResponseWriter, r
 		return
 	}
 
-	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", session.OrgID, sessionID)
+	targetOrgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
+	if targetOrgID <= 0 {
+		targetOrgID = session.OrgID
+	}
+	if session.OrgID != targetOrgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", "جلسة الاستيراد غير موجودة أو غير مطابقة للمؤسسة")
+		return
+	}
+
+	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", targetOrgID, sessionID)
 	if r.URL.RawQuery != "" {
 		redirectURI += "?" + r.URL.RawQuery
 	}
@@ -83,7 +101,7 @@ func (h *UIHandler) AdminOrgImportSavingItemMatchSubmit(w http.ResponseWriter, r
 	productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
 	masterName := strings.TrimSpace(r.FormValue("master_name"))
 	masterSKU := strings.TrimSpace(r.FormValue("master_sku"))
-	if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, session.OrgID, itemIndex, productID, masterName, masterSKU); err != nil {
+	if err := globalSavingImportSessionStore.AssignStagedItemMatch(sessionID, targetOrgID, itemIndex, productID, masterName, masterSKU); err != nil {
 		h.redirectWithNotice(w, r, redirectURI, "error", h.safeMessage(err, langOf(r)))
 		return
 	}
@@ -108,9 +126,18 @@ func (h *UIHandler) AdminOrgImportSavingItemToggleSubmit(w http.ResponseWriter, 
 		return
 	}
 
-	_, _ = globalSavingImportSessionStore.ToggleStagedItem(sessionID, session.OrgID, itemIndex)
+	targetOrgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
+	if targetOrgID <= 0 {
+		targetOrgID = session.OrgID
+	}
+	if session.OrgID != targetOrgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", "جلسة الاستيراد غير موجودة أو غير مطابقة للمؤسسة")
+		return
+	}
 
-	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", session.OrgID, sessionID)
+	_, _ = globalSavingImportSessionStore.ToggleStagedItem(sessionID, targetOrgID, itemIndex)
+
+	redirectURI := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", targetOrgID, sessionID)
 	if r.URL.RawQuery != "" {
 		redirectURI += "?" + r.URL.RawQuery
 	}

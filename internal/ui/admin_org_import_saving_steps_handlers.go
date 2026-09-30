@@ -37,6 +37,10 @@ func (h *UIHandler) AdminOrgImportSavingMappingPage(w http.ResponseWriter, r *ht
 	if orgID <= 0 {
 		orgID = session.OrgID
 	}
+	if session.OrgID != orgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(lang, "customer.saving.import.session_not_found"))
+		return
+	}
 
 	if session.Phase == SavingPhaseReview {
 		http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", orgID, runID), http.StatusSeeOther)
@@ -80,6 +84,10 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 	}
 	if orgID <= 0 {
 		orgID = session.OrgID
+	}
+	if session.OrgID != orgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(lang, "saving.import.session_not_found"))
+		return
 	}
 
 	mappingURL := fmt.Sprintf("/admin/organizations/import/%d/saving/%s/mapping", orgID, runID)
@@ -166,9 +174,9 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 	}
 
 	scope := productmatch.Scope{
-		EffectiveOrg:    session.OrgID,
+		EffectiveOrg:    orgID,
 		ActorUserID:     actor.UserID,
-		SourceNamespace: fmt.Sprintf("org:%d", session.OrgID),
+		SourceNamespace: fmt.Sprintf("org:%d", orgID),
 		Workflow:        productmatch.WorkflowSavings,
 		EntryPoint:      "savings_matching",
 	}
@@ -212,6 +220,27 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 					Included:          true,
 				})
 			}
+		}
+	}
+	if len(stagedItems) == 0 && len(matchRows) > 0 {
+		for _, mr := range matchRows {
+			rowTotal, _ := mr.Price.MulQuantity(mr.Quantity)
+			rowTotalMinor := rowTotal.Minor()
+			totalQty += mr.Quantity
+			totalValMinor += rowTotalMinor
+			unlinkedCount++
+
+			stagedItems = append(stagedItems, &StagedSavingItem{
+				Index:       mr.Index,
+				NameProduct: mr.Name,
+				SKU:         mr.SKU,
+				Quantity:    mr.Quantity,
+				Price:       mr.Price,
+				TotalValue:  money.FromMinor(rowTotalMinor),
+				MatchType:   "unlinked",
+				Confidence:  0.0,
+				Included:    true,
+			})
 		}
 	}
 
@@ -260,6 +289,10 @@ func (h *UIHandler) AdminOrgImportSavingReviewPage(w http.ResponseWriter, r *htt
 	if orgID <= 0 {
 		orgID = session.OrgID
 	}
+	if session.OrgID != orgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(lang, "customer.saving.import.session_not_found"))
+		return
+	}
 
 	if session.Phase == SavingPhaseMapping {
 		http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/saving/%s/mapping", orgID, runID), http.StatusSeeOther)
@@ -302,6 +335,7 @@ func (h *UIHandler) AdminOrgImportSavingCommitSubmit(w http.ResponseWriter, r *h
 	lang := langOf(r)
 	actor, _ := authctx.From(ctx)
 
+	orgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
 	runID := chi.URLParam(r, "runID")
 	if runID == "" {
 		runID = chi.URLParam(r, "id")
@@ -312,17 +346,24 @@ func (h *UIHandler) AdminOrgImportSavingCommitSubmit(w http.ResponseWriter, r *h
 		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(lang, "saving.import.session_not_found"))
 		return
 	}
-
-	added, updated, err := globalSavingImportSessionStore.CommitSession(database.AsSystem(ctx), runID, session.OrgID, actor.UserID, h.catSvc)
-	if err != nil {
-		h.log.ErrorContext(ctx, "failed to commit saving products session", "error", err, "run_id", runID, "target_org_id", session.OrgID)
-		h.notifyImportRunFailed(ctx, actor.UserID, session.OrgID, 0, err.Error())
-		h.redirectWithNotice(w, r, fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", session.OrgID, runID), "error", h.safeMessage(err, lang))
+	if orgID <= 0 {
+		orgID = session.OrgID
+	}
+	if session.OrgID != orgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(lang, "saving.import.session_not_found"))
 		return
 	}
 
-	h.log.InfoContext(ctx, "admin committed saving products for organization", "actor_id", actor.UserID, "target_org_id", session.OrgID, "added", added, "updated", updated)
-	h.notifyImportRunFinished(ctx, actor.UserID, session.OrgID, 0, added+updated)
+	added, updated, err := globalSavingImportSessionStore.CommitSession(database.AsSystem(ctx), runID, orgID, actor.UserID, h.catSvc)
+	if err != nil {
+		h.log.ErrorContext(ctx, "failed to commit saving products session", "error", err, "run_id", runID, "target_org_id", orgID)
+		h.notifyImportRunFailed(ctx, actor.UserID, orgID, 0, err.Error())
+		h.redirectWithNotice(w, r, fmt.Sprintf("/admin/organizations/import/%d/saving/%s/review", orgID, runID), "error", h.safeMessage(err, lang))
+		return
+	}
+
+	h.log.InfoContext(ctx, "admin committed saving products for organization", "actor_id", actor.UserID, "target_org_id", orgID, "added", added, "updated", updated)
+	h.notifyImportRunFinished(ctx, actor.UserID, orgID, 0, added+updated)
 
 	successMsg := fmt.Sprintf(i18n.T(lang, "customer.saving.import.commit_success"), added+updated, added, updated)
 	h.redirectWithNotice(w, r, "/admin/organizations/import?tab=pharmacy", "success", successMsg)
@@ -330,28 +371,43 @@ func (h *UIHandler) AdminOrgImportSavingCommitSubmit(w http.ResponseWriter, r *h
 
 // AdminOrgImportSavingCancelSubmit cancels an import session.
 func (h *UIHandler) AdminOrgImportSavingCancelSubmit(w http.ResponseWriter, r *http.Request) {
+	orgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
 	runID := chi.URLParam(r, "runID")
 	if runID == "" {
 		runID = chi.URLParam(r, "id")
 	}
 	if session, ok := globalSavingImportSessionStore.GetSessionForAdmin(runID); ok {
-		globalSavingImportSessionStore.CancelSession(runID, session.OrgID)
+		targetOrgID := orgID
+		if targetOrgID <= 0 {
+			targetOrgID = session.OrgID
+		}
+		if session.OrgID == targetOrgID {
+			globalSavingImportSessionStore.CancelSession(runID, targetOrgID)
+		}
 	}
 	h.redirectWithNotice(w, r, "/admin/organizations/import", "info", i18n.T(langOf(r), "saving.import.cancelled_success"))
 }
 
 // AdminOrgImportSavingSessionPage provides backwards-compatible redirect to persistent step URLs.
 func (h *UIHandler) AdminOrgImportSavingSessionPage(w http.ResponseWriter, r *http.Request) {
+	orgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
 	sessionID := chi.URLParam(r, "id")
 	session, ok := globalSavingImportSessionStore.GetSessionForAdmin(sessionID)
 	if !ok {
 		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(langOf(r), "customer.saving.import.session_not_found"))
 		return
 	}
-
-	if session.Phase == SavingPhaseReview {
-		http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/runs/%s/review", session.OrgID, sessionID), http.StatusSeeOther)
+	if orgID <= 0 {
+		orgID = session.OrgID
+	}
+	if session.OrgID != orgID {
+		h.redirectWithNotice(w, r, "/admin/organizations/import", "error", i18n.T(langOf(r), "customer.saving.import.session_not_found"))
 		return
 	}
-	http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/runs/%s/mapping", session.OrgID, sessionID), http.StatusSeeOther)
+
+	if session.Phase == SavingPhaseReview {
+		http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/runs/%s/review", orgID, sessionID), http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, fmt.Sprintf("/admin/organizations/import/%d/runs/%s/mapping", orgID, sessionID), http.StatusSeeOther)
 }
