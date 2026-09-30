@@ -245,4 +245,4 @@ volumes:
 
 networks:
   default:
-    name: dawa24-net
+    name: ${DOCKER_NETWORK_NAME:-dawa24-net}

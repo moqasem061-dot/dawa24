@@ -1,26 +1,3 @@
-// Labelled matching benchmarks.
-//
-// Everything else in this package measures how MUCH the engine matched.
-// Nothing measured whether it matched the RIGHT thing, and those are different
-// questions that pull in opposite directions: loosening a floor raises the
-// settled rate and lowers the share of settled rows that are correct. A change
-// argued from the settled rate alone is a change nobody can evaluate.
-//
-// So this file supplies labels — rows whose correct catalogue product is known
-// independently of the matcher — and the harness that scores against them.
-//
-// Two label sources, because each answers a different question:
-//
-//   - CrossScriptLabels takes the 19,996-row administrative file whose supplier
-//     names are Latin and whose catalogue entries are Arabic, blanks the
-//     catalogue's English column so no answer can be read off it, and asks the
-//     engine to bridge the two alphabets. The item-code column supplies the
-//     truth and is then removed from the row.
-//   - SiblingLabels renders a catalogue product's own Arabic name the way a
-//     supplier writes it and asks the engine to find it again — among the
-//     brand's other strengths, sizes and line extensions. That is the failure
-//     this whole exercise is about: the right product is in the catalogue and a
-//     sibling is chosen instead.
 package corpus
 
 import (
@@ -54,7 +31,21 @@ type Labelled struct {
 // blanked, one intact — and re-reading four megabytes of gzip for each is
 // wasted work.
 func LoadSnapshot() ([]productmatch.MasterProduct, error) {
-	f, err := os.Open(filepath.Join(Dir, "catalogue.jsonl.gz"))
+	return LoadSnapshotDir(Dir)
+}
+
+// LoadSnapshotDir reads the catalogue snapshot from the specified directory.
+// If not found, it falls back to test/corpus.
+func LoadSnapshotDir(dir string) ([]productmatch.MasterProduct, error) {
+	path := filepath.Join(dir, "catalogue.jsonl.gz")
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		fallback := filepath.Join("test", "corpus", "catalogue.jsonl.gz")
+		if _, err2 := os.Stat(fallback); err2 == nil {
+			path = fallback
+		}
+	}
+
+	f, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +125,14 @@ func CrossScriptLabels(products []productmatch.MasterProduct) ([]Labelled, error
 	family := familySizes(products)
 
 	const file = "admin-198.xlsx"
-	content, err := os.ReadFile(filepath.Join(Dir, "files", file))
+	path := filepath.Join(Dir, "files", file)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		fallback := filepath.Join("test", "corpus", "files", file)
+		if _, err2 := os.Stat(fallback); err2 == nil {
+			path = fallback
+		}
+	}
+	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
@@ -211,20 +209,11 @@ func SiblingLabels(products []productmatch.MasterProduct) []Labelled {
 
 // supplierise rewrites a catalogue name the way an Egyptian price list writes
 // it: noise appended, spacing lost, letters substituted.
-//
-// Deterministic in the product's own position so the benchmark is repeatable —
-// a randomised corpus would move the number every run and prove nothing. The
-// perturbations are drawn from what the live files actually do, and none of
-// them removes an identifying attribute: the strength, the size and the line
-// extension all survive, because the question being asked is whether the engine
-// keeps them.
 func supplierise(name string, seed int) string {
 	s := strings.TrimSpace(name)
 	switch seed % 5 {
 	case 0:
-		// Untouched. A share of every real file is written exactly as the
-		// catalogue has it, and a benchmark without that case is not a
-		// benchmark of a real file.
+		// Untouched
 	case 1:
 		s += " سعر جديد"
 	case 2:

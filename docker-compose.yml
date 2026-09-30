@@ -28,7 +28,7 @@ services:
       - ADMIN_EMAIL=${ADMIN_EMAIL:-admin@dawa24.net}
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-}
     volumes:
-      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/${COMPOSE_PROJECT_NAME:-dawa24}/data}:/app/data
     networks:
       - postgresql-psr0_default
 
@@ -44,16 +44,16 @@ services:
     restart: unless-stopped
     labels:
       - traefik.enable=true
-      - traefik.http.routers.dawa24.rule=Host(`test.dawa24.com`) || Host(`dawa24.com`) || Host(`srv1986270.hstgr.cloud`)
-      - traefik.http.routers.dawa24.entrypoints=web,websecure
-      - traefik.http.routers.dawa24.tls.certresolver=letsencrypt
-      - traefik.http.services.dawa24.loadbalancer.server.port=8070
+      - traefik.http.routers.${TRAEFIK_ROUTER_NAME:-dawa24}.rule=${TRAEFIK_HOST_RULE:-Host(`${APP_DOMAIN:-dawa24.com}`) || Host(`srv1986270.hstgr.cloud`)}
+      - traefik.http.routers.${TRAEFIK_ROUTER_NAME:-dawa24}.entrypoints=web,websecure
+      - traefik.http.routers.${TRAEFIK_ROUTER_NAME:-dawa24}.tls.certresolver=letsencrypt
+      - traefik.http.services.${TRAEFIK_ROUTER_NAME:-dawa24}.loadbalancer.server.port=8070
     ports:
       - "127.0.0.1::8070"
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}
-      - APP_BASE_URL=${APP_BASE_URL:-https://test.dawa24.com}
+      - APP_BASE_URL=${APP_BASE_URL:-https://${APP_DOMAIN:-dawa24.com}}
       - PORT=8070
       - TRUSTED_PROXIES=${TRUSTED_PROXIES:-}
       # The server and worker connect as the least-privilege dawa24_app role only.
@@ -67,7 +67,7 @@ services:
       - DB_STATEMENT_TIMEOUT=30s
       - DATA_DIR=/app/data
       - SESSION_SECRET=${SESSION_SECRET:?Set SESSION_SECRET (64 hex characters)}
-      - SESSION_COOKIE_NAME=dawa24_session
+      - SESSION_COOKIE_NAME=${SESSION_COOKIE_NAME:-dawa24_session}
       - SESSION_TTL=720h
       - SESSION_SECURE=true
       - GOMEMLIMIT=1400MiB
@@ -113,11 +113,12 @@ services:
       - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
       - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/${COMPOSE_PROJECT_NAME:-dawa24}/data}:/app/data
     dns:
       - 1.1.1.1
       - 8.8.8.8
     networks:
+      - default
       - postgresql-psr0_default
     depends_on:
       migrate:
@@ -141,7 +142,7 @@ services:
     environment:
       - APP_ENV=${APP_ENV:-prod}
       - APP_NAME=${APP_NAME:-Dawa24}
-      - APP_BASE_URL=${APP_BASE_URL:-https://test.dawa24.com}
+      - APP_BASE_URL=${APP_BASE_URL:-https://${APP_DOMAIN:-dawa24.com}}
       - PORT=8070
       # The server and worker connect as the least-privilege dawa24_app role only.
       # They refuse to start on a superuser, BYPASSRLS or table-owner connection
@@ -180,8 +181,9 @@ services:
       - STORAGE_USE_PATH_STYLE=${STORAGE_USE_PATH_STYLE:-true}
       - STORAGE_PUBLIC_BASE_URL=${STORAGE_PUBLIC_BASE_URL:-}
     volumes:
-      - ${DATA_VOLUME_PATH:-/var/dawa24/data}:/app/data
+      - ${DATA_VOLUME_PATH:-/var/${COMPOSE_PROJECT_NAME:-dawa24}/data}:/app/data
     networks:
+      - default
       - postgresql-psr0_default
     depends_on:
       migrate:
@@ -191,17 +193,17 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: dawa24-redis
     restart: unless-stopped
     command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD}", "--maxmemory", "512mb", "--maxmemory-policy", "allkeys-lru"]
-    ports:
-      - "${REDIS_HOST_PORT:-127.0.0.1:6379}:6379"
+    expose:
+      - "6379"
     volumes:
       - redis-data:/data
     networks:
-      - postgresql-psr0_default
+      - default
 
 networks:
+  default:
   postgresql-psr0_default:
     external: true
 
