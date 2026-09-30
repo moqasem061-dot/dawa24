@@ -6,6 +6,20 @@ import (
 )
 
 func compareStrength(row, prod IdentityFacts, comp *Comparison) {
+	// Concentration ratio agreement overrides raw strength comparison
+	if row.Concentration != nil && prod.Concentration != nil {
+		cOutcome := CompareConcentrations(row.Concentration, prod.Concentration)
+		if cOutcome == OutcomeAgree {
+			comp.Attributes["strength"] = OutcomeAgree
+			return
+		}
+		if cOutcome == OutcomeConflict {
+			comp.Attributes["strength"] = OutcomeConflict
+			comp.Hard = append(comp.Hard, ConflictStrength)
+			return
+		}
+	}
+
 	if len(row.Strengths) == 0 && len(prod.Strengths) == 0 {
 		comp.Attributes["strength"] = OutcomeUnstated
 		return
@@ -90,45 +104,4 @@ func toMilligrams(val float64, unit string) float64 {
 	default:
 		return -1
 	}
-}
-
-func compareConcentration(row, prod IdentityFacts, comp *Comparison) {
-	if row.Concentration == nil && prod.Concentration == nil {
-		comp.Attributes["concentration"] = OutcomeUnstated
-		return
-	}
-	if row.Concentration == nil || prod.Concentration == nil {
-		comp.Attributes["concentration"] = OutcomeUnstated
-		return
-	}
-
-	rRatio := concentrationValue(*row.Concentration)
-	pRatio := concentrationValue(*prod.Concentration)
-
-	if rRatio > 0 && pRatio > 0 {
-		if math.Abs(rRatio-pRatio) < 1e-4 {
-			comp.Attributes["concentration"] = OutcomeAgree
-		} else {
-			comp.Attributes["concentration"] = OutcomeConflict
-			comp.Hard = append(comp.Hard, ConflictConcentration)
-		}
-	} else {
-		comp.Attributes["concentration"] = OutcomeUncertain
-	}
-}
-
-func concentrationValue(r Ratio) float64 {
-	val, err := strconv.ParseFloat(r.Num.Value, 64)
-	if err != nil || r.Den.Value <= 0 {
-		return -1
-	}
-	mg := toMilligrams(val, r.Num.Unit)
-	if mg <= 0 {
-		mg = val
-	}
-	mL := r.Den.Value
-	if r.Den.Unit == "l" {
-		mL *= 1000.0
-	}
-	return mg / mL
 }

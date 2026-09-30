@@ -15,7 +15,6 @@ var (
 	packMultiplyPattern = regexp.MustCompile(`(?i)(\d{1,4})\s*[×x*X]\s*(\d{1,4})`)
 	hugeNumberPattern   = regexp.MustCompile(`\d{13,}`)
 	moneyAnnotationRe   = regexp.MustCompile(`(?i)(?:س\.?ج\.?|سعر|السعر|بسعر|جنيه|ج|س)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:س\.?ج\.?|جنيه|ج\b)`)
-	concentrationRe     = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(mg|مجم|ملجم|g|جم|mcg|ميكروجرام)\s*/\s*(\d+(?:\.\d+)?)\s*(ml|مل|l|لتر)`)
 )
 
 // ExtractRowFacts extracts structured identity evidence from a Row.
@@ -115,6 +114,9 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 		facts.FormFamily = FormFamily(strings.ToLower(strings.TrimSpace(p.DosageForm)))
 	}
 	if p.Concentration != "" {
+		if facts.Concentration == nil {
+			facts.Concentration = extractConcentrationRatio(p.Concentration)
+		}
 		parseStrengthText(&facts, p.Concentration)
 	}
 	if p.Scientific != "" {
@@ -186,30 +188,9 @@ func extractNameFacts(facts *IdentityFacts, text string) {
 		facts.Modifiers = modList
 	}
 
-	// Concentration check: e.g. 250 mg / 5 mL
-	if concMatches := concentrationRe.FindStringSubmatch(norm); len(concMatches) == 5 {
-		numVal := concMatches[1]
-		numUnit := normalizeUnit(concMatches[2])
-		denVal, _ := strconv.ParseFloat(concMatches[3], 64)
-		denUnit := normalizeUnit(concMatches[4])
-
-		facts.Concentration = &Ratio{
-			Num: Strength{
-				Value:     numVal,
-				Unit:      numUnit,
-				Component: 0,
-				Prov:      ProvOriginal,
-				Cert:      CertParsed,
-			},
-			Den: Quantity{
-				Value: denVal,
-				Unit:  denUnit,
-				Prov:  ProvOriginal,
-				Cert:  CertParsed,
-			},
-			Prov: ProvOriginal,
-			Cert: CertParsed,
-		}
+	// Concentration check: e.g. 250 mg / 5 mL or 50 mg/mL
+	if conc := extractConcentrationRatio(norm); conc != nil {
+		facts.Concentration = conc
 	}
 
 	// Strengths: parse in written order
