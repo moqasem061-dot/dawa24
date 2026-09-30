@@ -6,7 +6,9 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // Finalisation.
@@ -73,16 +75,27 @@ type Reverifier interface {
 	Recheck(ctx context.Context, buyerOrgID, branchID int64, c Candidate, qty float64) (bool, IneligibleReason, error)
 }
 
+// MatchRevalidator checks if a match decision is still valid at finalisation.
+type MatchRevalidator interface {
+	Revalidate(ctx context.Context, s productmatch.Scope, ref productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error)
+}
+
 // Finalizer turns a reviewed run into an order.
 type Finalizer struct {
 	repo    Repository
 	placer  OrderPlacer
 	recheck Reverifier
+	reval   MatchRevalidator
 }
 
 // NewFinalizer constructs the finalisation use case.
 func NewFinalizer(repo Repository, placer OrderPlacer, recheck Reverifier) *Finalizer {
 	return &Finalizer{repo: repo, placer: placer, recheck: recheck}
+}
+
+// SetRevalidator wires match decision revalidation into finalisation.
+func (f *Finalizer) SetRevalidator(rev MatchRevalidator) {
+	f.reval = rev
 }
 
 // Finalize re-verifies every orderable line and places the order.
@@ -116,10 +129,106 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 
 	orderLines := make([]PlaceOrderLine, 0, len(lines))
 	total := money.Amount{}
+	var changed []*Line
 
 	for _, l := range lines {
+		// 1. Revalidate match decision per line (T077)
+		if f.reval != nil {
+			sc := productmatch.Scope{
+				EffectiveOrg: run.OrganizationID,
+				Workflow:     productmatch.WorkflowSmartOrder,
+				EntryPoint:   "smartorder_finalize",
+			}
+			ref := productmatch.RowRef{
+				ID:        l.ID,
+				Table:     "smartorder.run_lines",
+				RowNumber: l.RowNumber,
+			}
+			var dec matchflow.RowDecision
+			if len(l.MatchDecision) > 0 {
+				if parsed, err := matchflow.ParseRowDecision(l.MatchDecision); err == nil {
+					dec = parsed
+				}
+			}
+			if dec.State == "" {
+				dec = matchflow.RowDecision{
+					V:        1,
+					State:    matchflow.State(l.MatchState),
+					Basis:    matchflow.Basis(l.MatchBasis),
+					Revision: l.MatchRevision,
+					Granularity: matchflow.GranularityPair{
+						Required: matchflow.GranularityPack,
+						Achieved: matchflow.Granularity(l.MatchGranularity),
+					},
+				}
+				if l.MatchedProductID != nil {
+					dec.ProductID = l.MatchedProductID
+				}
+			}
+			revalDec, err := f.reval.Revalidate(ctx, sc, ref, dec)
+			if err != nil {
+				l.Outcome = OutcomeUnmatched
+				l.OfferState = ""
+				changed = append(changed, l)
+				stale = append(stale, StaleLine{
+					LineID: l.ID, RawName: l.RawName,
+					Detail: i18n.New("فشل التحقق من مطابقة هذا الصنف.",
+						"failed to revalidate product match"),
+				})
+				continue
+			}
+
+			hasCatalogChanged := false
+			for _, flag := range revalDec.Flags {
+				if flag == "catalog_changed" {
+					hasCatalogChanged = true
+					break
+				}
+			}
+
+			if (l.MatchRevision > 0 && revalDec.Revision != l.MatchRevision) || hasCatalogChanged {
+				l.Outcome = OutcomeUnmatched
+				l.OfferState = ""
+				changed = append(changed, l)
+				stale = append(stale, StaleLine{
+					LineID: l.ID, RawName: l.RawName,
+					Detail: i18n.New("تغير الكتالوج منذ إنشاء هذا الطلب.",
+						"catalogue changed since this order was generated"),
+				})
+				continue
+			}
+
+			if revalDec.State != matchflow.StateAccepted && revalDec.State != matchflow.StateConfirmed {
+				l.Outcome = OutcomeUnmatched
+				l.OfferState = ""
+				changed = append(changed, l)
+				stale = append(stale, StaleLine{
+					LineID: l.ID, RawName: l.RawName,
+					Detail: i18n.New("المطابقة لهذا الصنف لم تعد مؤكدة.",
+						"match is no longer confirmed"),
+				})
+				continue
+			}
+
+			if revalDec.Granularity.Achieved != "" && revalDec.Granularity.Achieved != matchflow.GranularityPack {
+				l.Outcome = OutcomeBlockedPack
+				l.OfferState = OfferStateBlockedPack
+				changed = append(changed, l)
+				stale = append(stale, StaleLine{
+					LineID: l.ID, RawName: l.RawName,
+					Detail: i18n.New("مستوى تفاصيل المطابقة أقل من العبوة.",
+						"match granularity is below pack"),
+				})
+				continue
+			}
+		}
+
+		// 2. Re-check stock / supplier eligibility
 		sel, ok := selections[l.ID]
 		if !ok {
+			l.Outcome = OutcomeNoSupplier
+			l.OfferState = OfferStateIdentifiedNoOffer
+			changed = append(changed, l)
 			stale = append(stale, StaleLine{
 				LineID: l.ID, RawName: l.RawName,
 				Detail: i18n.New("لم يعد هناك مورد مختار لهذا الصنف.",
@@ -129,6 +238,9 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 		}
 		candidate, err := f.repo.GetCandidate(ctx, run.OrganizationID, sel.CandidateID)
 		if err != nil {
+			l.Outcome = OutcomeNoSupplier
+			l.OfferState = OfferStateIdentifiedNoOffer
+			changed = append(changed, l)
 			stale = append(stale, StaleLine{
 				LineID: l.ID, RawName: l.RawName,
 				Detail: i18n.New("لم يعد عرض المورد المختار موجوداً.",
@@ -142,6 +254,13 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 			return 0, nil, err
 		}
 		if !fresh {
+			l.Outcome = outcomeForIneligible(reason)
+			if reason == ReasonBlockedPack {
+				l.OfferState = OfferStateBlockedPack
+			} else {
+				l.OfferState = OfferStateIdentifiedNoOffer
+			}
+			changed = append(changed, l)
 			stale = append(stale, StaleLine{
 				LineID: l.ID, RawName: l.RawName, Reason: reason,
 				Detail: staleDetail(reason),
@@ -168,8 +287,10 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 		})
 	}
 
-	// Any stale line blocks the whole order. Placing the good lines and leaving
-	// the rest would split one decision into two without asking.
+	// Any stale line blocks the whole order and returns changed lines to review.
+	if len(changed) > 0 {
+		_ = f.repo.UpdateLines(ctx, changed)
+	}
 	if len(stale) > 0 {
 		return 0, stale, nil
 	}
@@ -237,3 +358,24 @@ func staleDetail(reason IneligibleReason) i18n.Text {
 			"this line is no longer available as generated")
 	}
 }
+
+// outcomeForIneligible maps a recheck rejection reason to the corresponding line Outcome.
+func outcomeForIneligible(reason IneligibleReason) Outcome {
+	switch reason {
+	case ReasonBlockedPack:
+		return OutcomeBlockedPack
+	case ReasonMinQty:
+		return OutcomeBelowMinQty
+	case ReasonStock:
+		return OutcomeOutOfStock
+	case ReasonQuota:
+		return OutcomeQuotaBlocked
+	case ReasonNoLocation, ReasonCoverage:
+		return OutcomeCoverageBlocked
+	case ReasonInstitutional:
+		return OutcomeInstitutionalBlocked
+	default:
+		return OutcomeNoSupplier
+	}
+}
+

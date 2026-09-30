@@ -66,11 +66,15 @@ func wireSmartOrder(
 	uiHandler.SetSmartOrder(svc, inlineSmartOrderRunner(db, orgSvc, commSvc, ai, publisher, log))
 
 	if commSvc != nil {
-		uiHandler.SetFinalizer(smartorder.NewFinalizer(
+		fin := smartorder.NewFinalizer(
 			repo,
 			placeSmartOrder(commSvc, orgSvc, wfCoverage, log),
 			&reverifier{gate: gate},
-		))
+		)
+		if db != nil {
+			fin.SetRevalidator(smartOrderMatcherPort{svc: newMatchingService(db)})
+		}
+		uiHandler.SetFinalizer(fin)
 	}
 	return svc
 }

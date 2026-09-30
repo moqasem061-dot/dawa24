@@ -12,12 +12,13 @@ import (
 // stubRepo implements just enough of Repository for finalisation.
 type stubRepo struct {
 	Repository
-	lines       []*Line
-	selections  map[int64]*Selection
-	candidates  map[int64]*Candidate
-	finalized   int
-	statusCalls []RunStatus
-	failFinal   error
+	lines        []*Line
+	selections   map[int64]*Selection
+	candidates   map[int64]*Candidate
+	finalized    int
+	statusCalls  []RunStatus
+	updatedLines []*Line
+	failFinal    error
 }
 
 func (s *stubRepo) ListLines(_ context.Context, _ int64, _ LineFilter) ([]*Line, int, error) {
@@ -44,6 +45,11 @@ func (s *stubRepo) GetCandidate(_ context.Context, _, candidateID int64) (*Candi
 
 func (s *stubRepo) UpdateRunStatus(_ context.Context, _ int64, status RunStatus, _ int, _ string) error {
 	s.statusCalls = append(s.statusCalls, status)
+	return nil
+}
+
+func (s *stubRepo) UpdateLines(_ context.Context, lines []*Line) error {
+	s.updatedLines = append(s.updatedLines, lines...)
 	return nil
 }
 
