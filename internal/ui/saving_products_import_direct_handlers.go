@@ -12,6 +12,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
@@ -87,17 +88,7 @@ func (h *UIHandler) handleSavingProductsImportSubmit(w http.ResponseWriter, r *h
 
 	matchChoice := ParseMatchChoice(r)
 
-	var matchEngine *SavingProductMatchEngine
-	if h.catSvc != nil {
-		if catalogSources, err := h.catSvc.ListMatchProducts(ctx); err == nil && len(catalogSources) > 0 {
-			matchEngine = NewSavingProductMatchEngine(catalogSources)
-		}
-	}
-
-	var parsedItems []*catalog.SavingProduct
-	var matchedCount int
-	var unlinkedCount int
-
+	matchRows := make([]catalog.SavingMatchRow, 0, len(rawRows))
 	for i := 1; i < len(rawRows); i++ {
 		row := rawRows[i]
 		if IsJunkOrEmptyRow(row) {
@@ -142,28 +133,49 @@ func (h *UIHandler) handleSavingProductsImportSubmit(w http.ResponseWriter, r *h
 			}
 		}
 
-		if matchEngine != nil {
-			matchRes := matchEngine.MatchUnified(matchChoice, productID, sku, name)
-			if matchRes.ProductID != nil {
-				productID = matchRes.ProductID
+		matchRows = append(matchRows, catalog.SavingMatchRow{
+			Index:     len(matchRows) + 1,
+			Name:      name,
+			SKU:       sku,
+			ProductID: productID,
+			Quantity:  qty,
+			Price:     price,
+		})
+	}
+
+	scope := productmatch.Scope{
+		EffectiveOrg:    actor.OrganizationID,
+		ActorUserID:     actor.UserID,
+		SourceNamespace: fmt.Sprintf("org:%d", actor.OrganizationID),
+		Workflow:        productmatch.WorkflowSavings,
+		EntryPoint:      "savings_matching",
+	}
+
+	var parsedItems []*catalog.SavingProduct
+	var matchedCount int
+	var unlinkedCount int
+
+	if h.catSvc != nil {
+		matchItems, _, mErr := h.catSvc.MatchSavingsRows(ctx, scope, matchChoice, matchRows)
+		if mErr == nil {
+			for i, mi := range matchItems {
+				mr := matchRows[i]
+				if mi.ProductID != nil {
+					matchedCount++
+				} else {
+					unlinkedCount++
+				}
+				parsedItems = append(parsedItems, &catalog.SavingProduct{
+					OrganizationID: actor.OrganizationID,
+					UserID:         &actor.UserID,
+					ProductID:      mi.ProductID,
+					NameProduct:    mr.Name,
+					SKU:            mr.SKU,
+					Quantity:       mr.Quantity,
+					Price:          mr.Price,
+				})
 			}
 		}
-
-		if productID != nil {
-			matchedCount++
-		} else {
-			unlinkedCount++
-		}
-
-		parsedItems = append(parsedItems, &catalog.SavingProduct{
-			OrganizationID: actor.OrganizationID,
-			UserID:         &actor.UserID,
-			ProductID:      productID,
-			NameProduct:    name,
-			SKU:            sku,
-			Quantity:       qty,
-			Price:          price,
-		})
 	}
 
 	if len(parsedItems) == 0 {

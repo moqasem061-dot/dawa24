@@ -37,17 +37,10 @@ var EntryPoints = []EntryPoint{
 
 	// Savings
 	{
-		ID:         "savings_matcher",
+		ID:         "savings_matching",
 		Workflow:   "savings",
-		File:       "internal/ui/saving_products_matcher.go",
+		File:       "internal/modules/catalog/saving_match_engine.go",
 		Profile:    "savings_import",
-		AIEligible: false,
-	},
-	{
-		ID:         "savings_match_choice",
-		Workflow:   "savings",
-		File:       "internal/ui/saving_products_match_choice.go",
-		Profile:    "savings_choice",
 		AIEligible: false,
 	},
 	{

@@ -204,6 +204,9 @@ func mountAuthenticatedModules(
 	if cacheHandle := deps.CacheHandle(); cacheHandle != nil {
 		catSvc.SetCache(cacheHandle)
 	}
+	if deps.Matching() != nil {
+		catSvc.SetMatchingService(deps.Matching())
+	}
 	moduleAPI(func() { catalogHttp.NewHandler(catSvc, log).RegisterRoutes(r) })
 
 	// 3. Inventory

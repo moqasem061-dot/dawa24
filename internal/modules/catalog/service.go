@@ -7,12 +7,12 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
-
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // Cache represents the key-value cache contract used for high-frequency catalog reads.
@@ -49,6 +49,13 @@ type Service struct {
 	// sheets holds decoded workbooks for the length of a mapping session, so
 	// correcting a column mapping does not re-read and re-decode the upload.
 	sheets *sheetCache
+	// matchingSvc is the unified product matching service.
+	matchingSvc matching.Service
+}
+
+// SetMatchingService attaches the matching engine service.
+func (s *Service) SetMatchingService(m matching.Service) {
+	s.matchingSvc = m
 }
 
 // SetInstitutionalGate installs the institutional work filter gate.

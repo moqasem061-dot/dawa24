@@ -132,6 +132,9 @@ func buildUIHandler(
 	if cacheHandle := deps.CacheHandle(); cacheHandle != nil {
 		catSvcUI.SetCache(cacheHandle)
 	}
+	if deps.Matching() != nil {
+		catSvcUI.SetMatchingService(deps.Matching())
+	}
 
 	commSvcUI := commerce.NewService(commRepoUI, log)
 	commSvcUI.SetRequiredDocsChecker(docsGate)

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -15,6 +16,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // startSavingImportRun coordinates asynchronous processing of saving products imports.
@@ -157,28 +159,6 @@ func (h *UIHandler) startSavingImportRun(
 		phaseLoading := i18n.T(l, "customer.saving.import.progress_loading_catalog")
 		publishProgress(15, phaseLoading, 0)
 
-		var matchEngine *SavingProductMatchEngine
-		if h.catSvc != nil {
-			catalogSources, err := h.catSvc.ListMatchProducts(bgCtx)
-			switch {
-			case err != nil:
-				// Every row would come back unlinked, and the screen would
-				// blame the pharmacy's file for it. Fail the run instead: a
-				// stated failure is recoverable, a silent one is a support
-				// ticket that starts "nothing matched".
-				h.log.ErrorContext(bgCtx, "saving products import could not load the catalogue",
-					"session_id", sessID, "run_id", runID, "error", err)
-				h.failSavingImportRun(bgCtx, runID, sessID, total,
-					i18n.T(l, "customer.saving.import.catalog_unavailable"))
-				return
-			case len(catalogSources) == 0:
-				h.log.ErrorContext(bgCtx, "saving products import found an empty catalogue",
-					"session_id", sessID, "run_id", runID)
-			default:
-				matchEngine = NewSavingProductMatchEngine(catalogSources)
-			}
-		}
-
 		stagedItems := make([]*StagedSavingItem, 0, total)
 		var dbRows []importrun.Row
 		matchedCount := 0
@@ -189,6 +169,7 @@ func (h *UIHandler) startSavingImportRun(
 		phaseMatching := i18n.T(l, "customer.saving.import.progress_matching")
 		publishProgress(30, phaseMatching, 0)
 
+		matchRows := make([]catalog.SavingMatchRow, 0, len(rows))
 		for i, row := range rows {
 			if IsJunkOrEmptyRow(row) {
 				continue
@@ -232,57 +213,69 @@ func (h *UIHandler) startSavingImportRun(
 				}
 			}
 
-			matchType := "unlinked"
-			confidence := 0.0
-			if matchEngine != nil {
-				res := matchEngine.MatchUnified(ch, productID, sku, name)
-				if res.ProductID != nil {
-					productID = res.ProductID
-					matchType = res.MatchType
-					confidence = res.Confidence
-				}
-			}
-
-			masterName := ""
-			masterSKU := ""
-			if productID != nil {
-				matchedCount++
-				if matchEngine != nil {
-					masterName, masterSKU = matchEngine.Describe(*productID)
-				}
-			} else {
-				unlinkedCount++
-			}
-
-			rowTotal, _ := price.MulQuantity(qty) // nolint:errswallow: overflow needs a quantity beyond any sheet; the row counts as 0
-			rowTotalMinor := rowTotal.Minor()
-			totalQty += qty
-			totalValMinor += rowTotalMinor
-
-			item := &StagedSavingItem{
-				Index:             len(stagedItems) + 1,
-				NameProduct:       name,
-				SKU:               sku,
-				Quantity:          qty,
-				Price:             price,
-				TotalValue:        money.FromMinor(rowTotalMinor),
-				ProductID:         productID,
-				MasterProductName: masterName,
-				MasterProductSKU:  masterSKU,
-				MatchType:         matchType,
-				Confidence:        confidence,
-				Included:          true,
-			}
-			stagedItems = append(stagedItems, item)
+			matchRows = append(matchRows, catalog.SavingMatchRow{
+				Index:     len(matchRows) + 1,
+				Name:      name,
+				SKU:       sku,
+				ProductID: productID,
+				Quantity:  qty,
+				Price:     price,
+			})
 
 			if i%100 == 0 || i == total-1 {
 				publishRowProgress(i)
 			}
 		}
-		// The loop above reports from inside the body, so a file whose last
-		// rows are blank or a totals line never reached its final report and
-		// the bar stopped short of the matching stage's end.
 		publishRowProgress(total - 1)
+
+		scope := productmatch.Scope{
+			EffectiveOrg:    orgID,
+			ActorUserID:     userID,
+			SourceNamespace: fmt.Sprintf("org:%d", orgID),
+			Workflow:        productmatch.WorkflowSavings,
+			EntryPoint:      "savings_matching",
+		}
+
+		var matchEngine *catalog.SavingProductMatchEngine
+		if h.catSvc != nil {
+			matchItems, engine, mErr := h.catSvc.MatchSavingsRows(bgCtx, scope, ch, matchRows)
+			if mErr != nil {
+				h.log.ErrorContext(bgCtx, "saving products matching failed",
+					"session_id", sessID, "run_id", runID, "error", mErr)
+				h.failSavingImportRun(bgCtx, runID, sessID, total,
+					i18n.T(l, "customer.saving.import.catalog_unavailable"))
+				return
+			}
+			matchEngine = engine
+			for i, mi := range matchItems {
+				mr := matchRows[i]
+				rowTotal, _ := mr.Price.MulQuantity(mr.Quantity)
+				rowTotalMinor := rowTotal.Minor()
+				totalQty += mr.Quantity
+				totalValMinor += rowTotalMinor
+
+				if mi.ProductID != nil {
+					matchedCount++
+				} else {
+					unlinkedCount++
+				}
+
+				stagedItems = append(stagedItems, &StagedSavingItem{
+					Index:             mi.Index,
+					NameProduct:       mr.Name,
+					SKU:               mr.SKU,
+					Quantity:          mr.Quantity,
+					Price:             mr.Price,
+					TotalValue:        money.FromMinor(rowTotalMinor),
+					ProductID:         mi.ProductID,
+					MasterProductName: mi.MasterProductName,
+					MasterProductSKU:  mi.MasterProductSKU,
+					MatchType:         mi.MatchType,
+					Confidence:        mi.Confidence,
+					Included:          true,
+				})
+			}
+		}
 
 		if aiOn {
 			publishProgress(68, i18n.T(l, "customer.saving.import.progress_matching"), total)

@@ -8,11 +8,13 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
@@ -62,6 +64,7 @@ func (h *UIHandler) AdminOrgImportSavingMappingPage(w http.ResponseWriter, r *ht
 func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
+	actor, _ := authctx.From(ctx)
 
 	orgID, _ := strconv.ParseInt(chi.URLParam(r, "orgID"), 10, 64)
 	runID := chi.URLParam(r, "runID")
@@ -117,19 +120,7 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 		return
 	}
 
-	var matchEngine *SavingProductMatchEngine
-	if h.catSvc != nil {
-		if catalogSources, err := h.catSvc.ListMatchProducts(database.AsSystem(ctx)); err == nil && len(catalogSources) > 0 {
-			matchEngine = NewSavingProductMatchEngine(catalogSources)
-		}
-	}
-
-	stagedItems := make([]*StagedSavingItem, 0, len(session.RawDataRows))
-	matchedCount := 0
-	unlinkedCount := 0
-	var totalQty float64
-	var totalValMinor int64
-
+	matchRows := make([]catalog.SavingMatchRow, 0, len(session.RawDataRows))
 	for _, row := range session.RawDataRows {
 		if IsJunkOrEmptyRow(row) {
 			continue
@@ -165,46 +156,63 @@ func (h *UIHandler) AdminOrgImportSavingMappingSubmit(w http.ResponseWriter, r *
 			price, _ = ParseFlexibleMoney(row[pCol])
 		}
 
-		var productID *int64
-		matchType := "unlinked"
-		confidence := 0.0
-		masterName, masterSKU := "", ""
+		matchRows = append(matchRows, catalog.SavingMatchRow{
+			Index:    len(matchRows) + 1,
+			Name:     name,
+			SKU:      sku,
+			Quantity: qty,
+			Price:    price,
+		})
+	}
 
-		if matchEngine != nil {
-			res := matchEngine.MatchUnified(matchChoice, nil, sku, name)
-			if res.ProductID != nil {
-				productID = res.ProductID
-				matchType = res.MatchType
-				confidence = res.Confidence
-				masterName, masterSKU = matchEngine.Describe(*productID)
+	scope := productmatch.Scope{
+		EffectiveOrg:    session.OrgID,
+		ActorUserID:     actor.UserID,
+		SourceNamespace: fmt.Sprintf("org:%d", session.OrgID),
+		Workflow:        productmatch.WorkflowSavings,
+		EntryPoint:      "savings_matching",
+	}
+
+	stagedItems := make([]*StagedSavingItem, 0, len(matchRows))
+	matchedCount := 0
+	unlinkedCount := 0
+	var totalQty float64
+	var totalValMinor int64
+	var matchEngine *catalog.SavingProductMatchEngine
+
+	if h.catSvc != nil {
+		matchItems, engine, mErr := h.catSvc.MatchSavingsRows(database.AsSystem(ctx), scope, matchChoice, matchRows)
+		if mErr == nil {
+			matchEngine = engine
+			for i, mi := range matchItems {
+				mr := matchRows[i]
+				rowTotal, _ := mr.Price.MulQuantity(mr.Quantity)
+				rowTotalMinor := rowTotal.Minor()
+				totalQty += mr.Quantity
+				totalValMinor += rowTotalMinor
+
+				if mi.ProductID != nil {
+					matchedCount++
+				} else {
+					unlinkedCount++
+				}
+
+				stagedItems = append(stagedItems, &StagedSavingItem{
+					Index:             mi.Index,
+					NameProduct:       mr.Name,
+					SKU:               mr.SKU,
+					Quantity:          mr.Quantity,
+					Price:             mr.Price,
+					TotalValue:        money.FromMinor(rowTotalMinor),
+					ProductID:         mi.ProductID,
+					MasterProductName: mi.MasterProductName,
+					MasterProductSKU:  mi.MasterProductSKU,
+					MatchType:         mi.MatchType,
+					Confidence:        mi.Confidence,
+					Included:          true,
+				})
 			}
 		}
-
-		if productID != nil {
-			matchedCount++
-		} else {
-			unlinkedCount++
-		}
-
-		rowTotal, _ := price.MulQuantity(qty) // nolint:errswallow: overflow needs a quantity beyond any sheet; the row counts as 0
-		rowTotalMinor := rowTotal.Minor()
-		totalQty += qty
-		totalValMinor += rowTotalMinor
-
-		stagedItems = append(stagedItems, &StagedSavingItem{
-			Index:             len(stagedItems) + 1,
-			NameProduct:       name,
-			SKU:               sku,
-			Quantity:          qty,
-			Price:             price,
-			TotalValue:        money.FromMinor(rowTotalMinor),
-			ProductID:         productID,
-			MasterProductName: masterName,
-			MasterProductSKU:  masterSKU,
-			MatchType:         matchType,
-			Confidence:        confidence,
-			Included:          true,
-		})
 	}
 
 	// Recount from the rows rather than adjusting by the number changed: the

@@ -1,6 +1,7 @@
 package catalog
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
@@ -354,6 +355,17 @@ type SavingProduct struct {
 	CreatedAt      time.Time    `json:"created_at"`
 	UpdatedAt      time.Time    `json:"updated_at"`
 	DeletedAt      *time.Time   `json:"deleted_at,omitempty"`
+
+	// Matching consumer fields (migration 235)
+	MatchState       string          `json:"match_state,omitempty"`
+	MatchBasis       string          `json:"match_basis,omitempty"`
+	MatchGranularity string          `json:"match_granularity,omitempty"`
+	MatchRevision    int             `json:"match_revision,omitempty"`
+	HumanLocked      bool            `json:"human_locked,omitempty"`
+	AIState          string          `json:"ai_state,omitempty"`
+	MatchRunID       *int64          `json:"match_run_id,omitempty"`
+	MatchDecision    json.RawMessage `json:"match_decision,omitempty"`
+	BaselineDecision json.RawMessage `json:"baseline_decision,omitempty"`
 }
 
 // SavingProductEnriched represents a saving product with its resolved parent catalog product and supplier counts.

@@ -113,11 +113,11 @@ func enhanceSavingItemsWithProgress(
 	log *slog.Logger,
 	onProgress SavingAIProgressFunc,
 ) (improved int) {
-	if enhancer == nil || engine == nil || engine.index == nil || len(items) == 0 {
+	if enhancer == nil || engine == nil || engine.Index == nil || len(items) == 0 {
 		return 0
 	}
 
-	asked := planSavingQuestions(engine.index, items)
+	asked := planSavingQuestions(engine.Index, items)
 	if len(asked) == 0 {
 		return 0
 	}
@@ -178,10 +178,10 @@ func enhanceSavingItemsWithProgress(
 			mu.Lock()
 			q, ok := asked[key]
 			mu.Unlock()
-			return ok && engine.index.IdentityConflict(q.row, productID).None()
+			return ok && engine.Index.IdentityConflict(q.row, productID).None()
 		},
 		Describe: func(id int64) (matchflow.CatalogEntry, bool) {
-			p, ok := engine.index.Lookup(id)
+			p, ok := engine.Index.Lookup(id)
 			if !ok {
 				return matchflow.CatalogEntry{}, false
 			}
@@ -202,7 +202,7 @@ func enhanceSavingItemsWithProgress(
 			j := savingJudgement(engine, q, d.Confidence, d.ProductID)
 			// The engine checked the answer against the request's shared window,
 			// which is wider than this row's own shortlist.
-			if d.ProductID != nil && a.Offered && engine.known[*d.ProductID] {
+			if d.ProductID != nil && a.Offered && engine.Known[*d.ProductID] {
 				j.Offered = true
 			}
 			j.Verified = a.Verified()
@@ -253,8 +253,8 @@ func savingJudgement(engine *SavingProductMatchEngine, q *savingQuestion,
 	if proposed == nil || *proposed <= 0 {
 		return j
 	}
-	j.Offered = engine.known[*proposed] && q.offers(*proposed)
-	j.Conflicts = !engine.index.IdentityConflict(q.row, *proposed).None()
+	j.Offered = engine.Known[*proposed] && q.offers(*proposed)
+	j.Conflicts = !engine.Index.IdentityConflict(q.row, *proposed).None()
 	return j
 }
 
@@ -349,8 +349,8 @@ func applySavingMemory(ctx context.Context, memory matchflow.Memory,
 			Floor:      savingAICeilings.MinApplyConfidence,
 		}
 		if d.ChosenProductID != nil && *d.ChosenProductID > 0 {
-			j.Offered = engine.known[*d.ChosenProductID]
-			j.Conflicts = !engine.index.IdentityConflict(q.row, *d.ChosenProductID).None()
+			j.Offered = engine.Known[*d.ChosenProductID]
+			j.Conflicts = !engine.Index.IdentityConflict(q.row, *d.ChosenProductID).None()
 		}
 		// Answers under this prompt version are remembered only after the
 		// pair check.
