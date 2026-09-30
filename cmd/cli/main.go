@@ -28,6 +28,10 @@ import (
 )
 
 func main() {
+	if len(os.Args) >= 2 && os.Args[1] == "match-eval" {
+		code := runMatchEval(os.Args[2:])
+		os.Exit(code)
+	}
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -38,6 +42,7 @@ func usage() string {
 	return `dawa24 cli
 
 Usage:
+  cli match-eval        Evaluate matching accuracy and quality gates against a corpus
   cli migrate           Apply all pending migrations
   cli migrate-status    Show applied and pending migrations
   cli seed              Seed default platform reference data
