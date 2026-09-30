@@ -50,6 +50,7 @@ func loadCatalogDefaults(e *engine) {
 	loadUploadSecurityKeys(e)
 	loadEmailAuthKeys(e)
 	loadMissingCatalogKeys(e)
+	loadCatalogMatchingKeys(e)
 }
 
 func addKey(e *engine, key, namespace, textAR, textEN, desc string) {
