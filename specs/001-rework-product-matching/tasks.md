@@ -259,7 +259,7 @@ description: "Executable task list for the Product Matching Rework"
 
 **Context**: spec.md US4; `docs/modules/smartorder.md`. Read `internal/modules/smartorder/pipeline/candidates.go`, `resolve.go`, `offers.go`, `run.go`.
 
-- [ ] T071 [P] [US4] Test: an identified product with no eligible offer ⇒ the line state is `identified_no_offer` (shown distinctly), and it is never switched to an in-stock sibling. Write it in `internal/modules/smartorder/pipeline/identity_offer_test.go`.
+- [X] T071 [P] [US4] Test: an identified product with no eligible offer ⇒ the line state is `identified_no_offer` (shown distinctly), and it is never switched to an in-stock sibling. Write it in `internal/modules/smartorder/pipeline/identity_offer_test.go`.
 - [ ] T072 [P] [US4] Test: requested pack 30 vs an offered unit of 10 without a relationship ⇒ the line is blocked for review; with a relationship factor 3 ⇒ the converted quantity is exact. Write it in `internal/modules/smartorder/pipeline/pack_convert_test.go`.
 - [ ] T073 [US4] Write a migration that adds the consumer columns (data-model §3.10) plus `offer_state TEXT` to `smartorder.run_lines`. Files: `db/migrations/NNN_smartorder_match_decision.up.sql` / `.down.sql`. Add an isolation test in `test/integration/smartorder_match_decision_isolation_test.go`.
 - [ ] T074 [US4] Declare the smartorder port in `internal/modules/smartorder/pipeline/matching_port.go`, add the adapter in `cmd/server/smartorder.go`, and replace `productmatch.MatchAll` in `candidates.go` with `Matcher.Prepare` (required granularity `pack`).

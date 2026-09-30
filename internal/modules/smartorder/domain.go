@@ -14,6 +14,7 @@
 package smartorder
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -91,6 +92,15 @@ const (
 	ReasonStock         IneligibleReason = "stock"
 	ReasonMinQty        IneligibleReason = "min_qty"
 	ReasonQuota         IneligibleReason = "quota"
+)
+
+// OfferState records the offer resolution state for an identified line.
+type OfferState string
+
+const (
+	OfferStateOffered           OfferState = "offered"
+	OfferStateIdentifiedNoOffer OfferState = "identified_no_offer"
+	OfferStateBlockedPack       OfferState = "blocked_pack"
 )
 
 // Run is one end-to-end execution.
@@ -253,8 +263,20 @@ type Line struct {
 	// resolves it for whatever page is being rendered.
 	MatchedProductName string `json:"matched_product_name,omitempty"`
 
-	Outcome       Outcome `json:"outcome"`
-	OutcomeReason string  `json:"outcome_reason,omitempty"`
+	Outcome       Outcome    `json:"outcome"`
+	OutcomeReason string     `json:"outcome_reason,omitempty"`
+	OfferState    OfferState `json:"offer_state,omitempty"`
+
+	// Matching consumer fields (migration 236)
+	MatchState       string          `json:"match_state,omitempty"`
+	MatchBasis       string          `json:"match_basis,omitempty"`
+	MatchGranularity string          `json:"match_granularity,omitempty"`
+	MatchRevision    int             `json:"match_revision,omitempty"`
+	HumanLocked      bool            `json:"human_locked,omitempty"`
+	AIState          string          `json:"ai_state,omitempty"`
+	MatchRunID       *int64          `json:"match_run_id,omitempty"`
+	MatchDecision    json.RawMessage `json:"match_decision,omitempty"`
+	BaselineDecision json.RawMessage `json:"baseline_decision,omitempty"`
 
 	ConsolidatedInto *int64 `json:"consolidated_into_line_id,omitempty"`
 

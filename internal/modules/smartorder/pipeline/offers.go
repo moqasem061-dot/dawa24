@@ -88,6 +88,7 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		for _, l := range lines {
 			if !l.Matched() {
 				l.Outcome = smartorder.OutcomeUnmatched
+				l.OfferState = ""
 			}
 		}
 		return money.Amount{}, nil
@@ -155,10 +156,12 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		}
 		if !l.Matched() {
 			l.Outcome = smartorder.OutcomeUnmatched
+			l.OfferState = ""
 			continue
 		}
 		if l.EffectiveQty <= 0 {
 			l.Outcome = smartorder.OutcomeZeroQty
+			l.OfferState = ""
 			continue
 		}
 
@@ -172,7 +175,10 @@ func (s *Supplier) Resolve(ctx context.Context, lines []*smartorder.Line) (money
 		l.Outcome = outcome
 		l.OutcomeReason = string(reason)
 		if outcome == smartorder.OutcomeOrdered {
+			l.OfferState = smartorder.OfferStateOffered
 			orderable = append(orderable, l)
+		} else {
+			l.OfferState = smartorder.OfferStateIdentifiedNoOffer
 		}
 	}
 
