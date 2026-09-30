@@ -164,6 +164,7 @@ func NewIndex(products []MasterProduct) *Index {
 		p.wAR, p.totAR = idx.tokenWeights(p.coreAR)
 		p.wEN, p.totEN = idx.tokenWeights(p.coreEN)
 	}
+	idx.annotateSiblings()
 	return idx
 }
 

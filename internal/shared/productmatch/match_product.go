@@ -29,8 +29,9 @@ type MasterProduct struct {
 	Unit          string
 	Manufacturer  string
 	PublicPrice   string
-	curatedFacts  *IdentityFacts
-	packRels      []PackRelationship
+	curatedFacts    *IdentityFacts
+	packRels        []PackRelationship
+	hasPlainSibling bool
 
 	// Derived once at index time. Everything the scorer needs is precomputed
 	// here rather than per comparison: a nine-thousand-row file scores three

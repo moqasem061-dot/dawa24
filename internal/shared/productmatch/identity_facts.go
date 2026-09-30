@@ -103,6 +103,8 @@ type IdentityFacts struct {
 	Identifiers   []Identifier `json:"identifiers,omitempty"`
 	MoneyEvidence []string     `json:"money_evidence,omitempty"`
 
+	HasPlainSibling bool `json:"has_plain_sibling,omitempty"`
+
 	Prov Prov `json:"prov,omitempty"`
 	Cert Cert `json:"cert,omitempty"`
 }

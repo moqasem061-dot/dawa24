@@ -332,7 +332,7 @@ func conflictToReasonCode(k ConflictKind) ReasonCode {
 		return ReasonComponentConflict
 	case ConflictCombination:
 		return ReasonCombinationConflict
-	case ConflictModifier:
+	case ConflictModifier, ConflictModifierUnstatedInRow:
 		return ReasonModifierConflict
 	case ConflictForm:
 		return ReasonFormConflict

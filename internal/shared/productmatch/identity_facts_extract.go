@@ -103,7 +103,9 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 		return facts
 	}
 	if p.curatedFacts != nil {
-		return *p.curatedFacts
+		facts = *p.curatedFacts
+		facts.HasPlainSibling = p.hasPlainSibling
+		return facts
 	}
 
 	facts.Prov = ProvOriginal
@@ -155,6 +157,7 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 		})
 	}
 
+	facts.HasPlainSibling = p.hasPlainSibling
 	return facts
 }
 

@@ -273,6 +273,9 @@ func compareModifiers(row, prod IdentityFacts, comp *Comparison) {
 
 	if len(row.Modifiers) == 0 && len(prod.Modifiers) > 0 {
 		comp.Attributes["modifier"] = OutcomeUnstated
+		if prod.HasPlainSibling {
+			comp.Hard = append(comp.Hard, ConflictModifierUnstatedInRow)
+		}
 		return
 	}
 

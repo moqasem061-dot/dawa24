@@ -118,5 +118,6 @@ func NewIndexWithCuration(
 		}
 	}
 
+	idx.annotateSiblings()
 	return idx
 }
