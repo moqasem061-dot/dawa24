@@ -1,0 +1,356 @@
+package productmatch
+
+import (
+	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
+	"strings"
+	"unicode"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
+)
+
+var (
+	packMultiplyPattern = regexp.MustCompile(`(?i)(\d{1,4})\s*[×x*X]\s*(\d{1,4})`)
+	hugeNumberPattern   = regexp.MustCompile(`\d{13,}`)
+	moneyAnnotationRe   = regexp.MustCompile(`(?i)(?:س\.?ج\.?|سعر|السعر|بسعر|جنيه|ج|س)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:س\.?ج\.?|جنيه|ج\b)`)
+	concentrationRe     = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(mg|مجم|ملجم|g|جم|mcg|ميكروجرام)\s*/\s*(\d+(?:\.\d+)?)\s*(ml|مل|l|لتر)`)
+)
+
+// ExtractRowFacts extracts structured identity evidence from a Row.
+func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
+	defer func() {
+		if r := recover(); r != nil {
+			facts.Cert = CertUncertain
+		}
+	}()
+
+	if row == nil {
+		facts.Cert = CertUncertain
+		return facts
+	}
+
+	facts.Prov = ProvOriginal
+	facts.Cert = CertExplicit
+
+	rawName := strings.TrimSpace(row.Name)
+	cleanName := StripTradeAnnotations(rawName)
+
+	// Check if annotation contains price/money evidence
+	if len(rawName) > len(cleanName) {
+		tail := strings.TrimSpace(rawName[len(cleanName):])
+		if matches := moneyAnnotationRe.FindAllString(tail, -1); len(matches) > 0 {
+			for _, m := range matches {
+				facts.MoneyEvidence = append(facts.MoneyEvidence, strings.TrimSpace(m))
+			}
+		}
+	}
+
+	extractNameFacts(&facts, cleanName)
+
+	// Additional structured row fields
+	if row.DosageForm != "" && facts.FormFamily == "" {
+		facts.FormFamily = FormFamily(strings.ToLower(strings.TrimSpace(row.DosageForm)))
+	}
+	if row.Concentration != "" {
+		parseStrengthText(&facts, row.Concentration)
+	}
+	if row.Scientific != "" {
+		facts.Ingredients = append(facts.Ingredients, strings.TrimSpace(row.Scientific))
+	}
+	if row.Manufacturer != "" {
+		facts.Manufacturer = strings.TrimSpace(row.Manufacturer)
+	}
+
+	if row.Barcode != "" {
+		facts.Identifiers = append(facts.Identifiers, Identifier{
+			Namespace: "gtin",
+			Value:     strings.TrimSpace(row.Barcode),
+			Valid:     true,
+			Prov:      ProvOriginal,
+			Cert:      CertExplicit,
+		})
+	}
+	if row.SKU != "" {
+		facts.Identifiers = append(facts.Identifiers, Identifier{
+			Namespace: "supplier_code",
+			Value:     strings.TrimSpace(row.SKU),
+			Valid:     true,
+			Prov:      ProvOriginal,
+			Cert:      CertExplicit,
+		})
+	}
+
+	applyCorrections(&facts, corrections)
+	return facts
+}
+
+// Facts extracts structured identity evidence from a MasterProduct.
+func (p *MasterProduct) Facts() (facts IdentityFacts) {
+	defer func() {
+		if r := recover(); r != nil {
+			facts.Cert = CertUncertain
+		}
+	}()
+
+	if p == nil {
+		facts.Cert = CertUncertain
+		return facts
+	}
+
+	facts.Prov = ProvOriginal
+	facts.Cert = CertExplicit
+
+	name := p.NameAR
+	if strings.TrimSpace(name) == "" {
+		name = p.NameEN
+	}
+	extractNameFacts(&facts, name)
+
+	if p.DosageForm != "" && facts.FormFamily == "" {
+		facts.FormFamily = FormFamily(strings.ToLower(strings.TrimSpace(p.DosageForm)))
+	}
+	if p.Concentration != "" {
+		parseStrengthText(&facts, p.Concentration)
+	}
+	if p.Scientific != "" {
+		facts.Ingredients = append(facts.Ingredients, strings.TrimSpace(p.Scientific))
+	}
+	if p.Manufacturer != "" {
+		facts.Manufacturer = strings.TrimSpace(p.Manufacturer)
+	}
+
+	if p.Barcode != "" {
+		facts.Identifiers = append(facts.Identifiers, Identifier{
+			Namespace: "gtin",
+			Value:     strings.TrimSpace(p.Barcode),
+			Valid:     true,
+			Prov:      ProvOriginal,
+			Cert:      CertExplicit,
+		})
+	}
+	if p.SKU != "" {
+		facts.Identifiers = append(facts.Identifiers, Identifier{
+			Namespace: "catalog_code",
+			Value:     strings.TrimSpace(p.SKU),
+			Valid:     true,
+			Prov:      ProvOriginal,
+			Cert:      CertExplicit,
+		})
+	}
+
+	return facts
+}
+
+func extractNameFacts(facts *IdentityFacts, text string) {
+	if text == "" {
+		return
+	}
+
+	// Guard against huge numbers or overflow
+	if hugeNumberPattern.MatchString(text) {
+		facts.Cert = CertUncertain
+	}
+
+	norm := sheet.NormalizeDigits(text)
+	norm = FoldDoseText(norm)
+
+	// Brand tokens
+	tokens := strings.Fields(sheet.NormalizeName(text))
+	for _, tok := range tokens {
+		script := "en"
+		for _, r := range tok {
+			if unicode.Is(unicode.Arabic, r) {
+				script = "ar"
+				break
+			}
+		}
+		facts.Brand = append(facts.Brand, Token{
+			Text:   tok,
+			Script: script,
+		})
+	}
+
+	// Modifiers
+	mods := modifiersIn(norm)
+	if len(mods) > 0 {
+		modList := make([]string, 0, len(mods))
+		for m := range mods {
+			modList = append(modList, m)
+		}
+		sort.Strings(modList)
+		facts.Modifiers = modList
+	}
+
+	// Concentration check: e.g. 250 mg / 5 mL
+	if concMatches := concentrationRe.FindStringSubmatch(norm); len(concMatches) == 5 {
+		numVal := concMatches[1]
+		numUnit := normalizeUnit(concMatches[2])
+		denVal, _ := strconv.ParseFloat(concMatches[3], 64)
+		denUnit := normalizeUnit(concMatches[4])
+
+		facts.Concentration = &Ratio{
+			Num: Strength{
+				Value:     numVal,
+				Unit:      numUnit,
+				Component: 0,
+				Prov:      ProvOriginal,
+				Cert:      CertParsed,
+			},
+			Den: Quantity{
+				Value: denVal,
+				Unit:  denUnit,
+				Prov:  ProvOriginal,
+				Cert:  CertParsed,
+			},
+			Prov: ProvOriginal,
+			Cert: CertParsed,
+		}
+	}
+
+	// Strengths: parse in written order
+	parseStrengthText(facts, norm)
+
+	// Pack extraction (check multi-pack: e.g. 2 × 10)
+	if m := packMultiplyPattern.FindStringSubmatch(norm); len(m) == 3 {
+		multCount, _ := strconv.Atoi(m[1])
+		unitCount, _ := strconv.Atoi(m[2])
+
+		// Bound check: multiplication factors <= 3
+		factors := strings.Count(norm, "x") + strings.Count(norm, "X") + strings.Count(norm, "*") + strings.Count(norm, "×")
+		cert := CertParsed
+		if factors > 3 {
+			cert = CertUncertain
+		}
+
+		facts.Pack = &PackFacts{
+			Count:   multCount * unitCount,
+			SubUnit: fmt.Sprintf("%d", unitCount),
+			Prov:    ProvOriginal,
+			Cert:    cert,
+		}
+	} else {
+		// Single pack quantities
+		q := readQuantities(norm)
+		if len(q.counts) > 0 {
+			facts.Pack = &PackFacts{
+				Count:   int(q.counts[0].value),
+				SubUnit: q.counts[0].class,
+				Prov:    ProvOriginal,
+				Cert:    CertParsed,
+			}
+		}
+	}
+
+	// Letter check: e.g. بتنوفيت ان or betnovate n
+	letter := extractDistinguishingLetter(norm)
+	if letter != "" {
+		facts.Letter = letter
+	}
+}
+
+func parseStrengthText(facts *IdentityFacts, text string) {
+	norm := sheet.NormalizeDigits(text)
+	norm = FoldDoseText(norm)
+
+	// Find combination like 5/10 mg or 10-160 mg
+	locs := strengthPattern.FindAllStringIndex(norm, -1)
+	if len(locs) == 0 {
+		return
+	}
+
+	seen := make(map[string]bool)
+	compIdx := 0
+
+	for _, loc := range locs {
+		sub := norm[loc[0]:loc[1]]
+		numParts := numericComponents(sub)
+		unit := extractUnit(sub)
+
+		for _, n := range numParts {
+			valStr := strconv.FormatFloat(n, 'f', -1, 64)
+			key := valStr + unit
+			if seen[key] {
+				continue
+			}
+			seen[key] = true
+
+			cert := CertParsed
+			if len(valStr) > 12 {
+				cert = CertUncertain
+			}
+
+			facts.Strengths = append(facts.Strengths, Strength{
+				Value:     valStr,
+				Unit:      unit,
+				Component: compIdx,
+				Prov:      ProvOriginal,
+				Cert:      cert,
+			})
+			compIdx++
+		}
+	}
+}
+
+func extractDistinguishingLetter(text string) string {
+	words := strings.Fields(text)
+	for _, w := range words {
+		if len(w) == 1 {
+			r := rune(w[0])
+			if unicode.IsLetter(r) {
+				return string(r)
+			}
+		}
+		// Arabic letter words
+		switch w {
+		case "ان", "ن":
+			return "n"
+		case "سي", "س":
+			return "c"
+		case "دي", "د":
+			return "d"
+		}
+	}
+	return ""
+}
+
+func extractUnit(text string) string {
+	t := strings.ToLower(text)
+	switch {
+	case strings.Contains(t, "مجم") || strings.Contains(t, "ملجم") || strings.Contains(t, "mg"):
+		return "mg"
+	case strings.Contains(t, "ميكروجرام") || strings.Contains(t, "mcg"):
+		return "mcg"
+	case strings.Contains(t, "جم") || strings.Contains(t, "g"):
+		return "g"
+	case strings.Contains(t, "iu") || strings.Contains(t, "وحدة") || strings.Contains(t, "وحده"):
+		return "iu"
+	case strings.Contains(t, "%"):
+		return "%"
+	case strings.Contains(t, "مل") || strings.Contains(t, "ml"):
+		return "ml"
+	}
+	return ""
+}
+
+func normalizeUnit(u string) string {
+	return extractUnit(u)
+}
+
+func applyCorrections(facts *IdentityFacts, corrections []Correction) {
+	for _, c := range corrections {
+		switch c.Attribute {
+		case "strength":
+			facts.Strengths = []Strength{
+				{Value: c.Value, Prov: ProvCorrected, Cert: CertExplicit},
+			}
+		case "form":
+			facts.FormFamily = FormFamily(c.Value)
+			facts.Prov = ProvCorrected
+		case "pack":
+			count, _ := strconv.Atoi(c.Value)
+			facts.Pack = &PackFacts{Count: count, Prov: ProvCorrected, Cert: CertExplicit}
+		}
+	}
+}

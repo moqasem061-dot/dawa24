@@ -87,7 +87,7 @@ description: "Executable task list for the Product Matching Rework"
 ### 2B. Identity facts and comparison
 
 - [X] T014 [P] Define `IdentityFacts`, `Strength`, `Ratio`, `Quantity`, `PackFacts`, `Identifier`, `Prov` (`original|corrected|inferred`) and `Cert` (`explicit|parsed|uncertain`) exactly as in data-model.md §1.1 in `internal/shared/productmatch/identity_facts.go`. Types only, no logic.
-- [ ] T015 Implement `ExtractRowFacts(row *Row, corrections []Correction) IdentityFacts` and `(*MasterProduct).Facts() IdentityFacts` by **calling the existing extractors** (`strength_set.go`, `quantity.go`, `identity_words.go`, `shape.go`, `annotations.go`, `evidence_money.go`) in `internal/shared/productmatch/identity_facts_extract.go`. Rules:
+- [X] T015 Implement `ExtractRowFacts(row *Row, corrections []Correction) IdentityFacts` and `(*MasterProduct).Facts() IdentityFacts` by **calling the existing extractors** (`strength_set.go`, `quantity.go`, `identity_words.go`, `shape.go`, `annotations.go`, `evidence_money.go`) in `internal/shared/productmatch/identity_facts_extract.go`. Rules:
   - strengths are kept in written order
   - `س.ج 141ج`-style numbers become money evidence, not strength
   - numeric parse is bounded to ≤12 significant digits and ≤3 multiplication factors; anything else becomes `Cert=uncertain`
