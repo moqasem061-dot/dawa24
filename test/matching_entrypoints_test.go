@@ -31,6 +31,7 @@ func TestMatchingEntrypoints(t *testing.T) {
 	allowlistPrefixes := []string{
 		"internal/shared/productmatch/",
 		"internal/shared/matchflow/",
+		"internal/modules/catalog/matching/",
 		"test/corpus/",
 	}
 

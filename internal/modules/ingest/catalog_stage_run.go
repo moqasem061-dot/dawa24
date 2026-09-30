@@ -15,6 +15,7 @@ package ingest
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -50,13 +51,60 @@ type stagingRun struct {
 func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error {
 	staged := make([]RowOutcome, 0, len(batch))
 
-	// The whole batch is scored at once, across every core.
-	//
-	// Matching is pure CPU over a read-only index, so it divides perfectly, and
-	// on the twenty-five-thousand-row price lists this importer exists for the
-	// difference is most of the wall clock: measured on a twelve-core machine,
-	// twelve thousand rows a second against eight thousand.
-	results := productmatch.MatchAll(r.index, batch, r.match, 0)
+	actorID := int64(0)
+	if r.session.CreatedBy != nil {
+		actorID = *r.session.CreatedBy
+	}
+	rev := r.session.MatchRevision
+	if rev <= 0 {
+		rev = 1
+	}
+
+	var decisions []matchflow.RowDecision
+	var matchRunID *int64
+
+	if r.svc.matcher != nil {
+		reqRows := make([]productmatch.Row, len(batch))
+		for i, row := range batch {
+			reqRows[i] = *row
+		}
+		prepReq := productmatch.PrepareRequest{
+			Scope: productmatch.Scope{
+				EffectiveOrg:    r.session.OrganizationID,
+				ActorUserID:     actorID,
+				SourceNamespace: fmt.Sprintf("supplier:%d", r.session.OrganizationID),
+				Workflow:        productmatch.WorkflowVendor,
+				EntryPoint:      "vendor_stage_run",
+			},
+			ConsumerRef: fmt.Sprintf("ingest.catalog_imports:%d", r.session.ID),
+			SourceRev:   rev,
+			Rows:        reqRows,
+			Required:    productmatch.GranularityProduct,
+		}
+		prepRes, err := r.svc.matcher.Prepare(ctx, prepReq)
+		if err == nil && len(prepRes.Decisions) == len(batch) {
+			decisions = prepRes.Decisions
+			if prepRes.RunID > 0 {
+				id := prepRes.RunID
+				matchRunID = &id
+			}
+		}
+	}
+
+	// Fallback to in-process index Decide if matcher is unset or failed
+	if len(decisions) != len(batch) {
+		pol := productmatch.DefaultPolicy()
+		pol.MinStrong = r.match.MinStrong
+		pol.MinReview = r.match.MinReview
+		pol.Identifiers.AllowGTIN = r.match.TrustBarcode
+		pol.Identifiers.AllowSupplierCode = r.match.TrustSupplierCode
+		pol.Identifiers.AllowCatalogCode = r.session.Settings.CodeIsCatalogCode
+		decisions = make([]matchflow.RowDecision, len(batch))
+		for i, row := range batch {
+			decisions[i] = r.index.Decide(row, pol)
+			decisions[i].Revision = rev
+		}
+	}
 
 	if r.svc.memory != nil && len(batch) > 0 {
 		lookupKeys := make([]string, 0, len(batch)*4)
@@ -78,7 +126,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			lookupCtx := database.WithTenant(ctx, r.session.OrganizationID)
 			if decs, err := r.svc.memory.LookupDecisions(lookupCtx, lookupKeys); err == nil && len(decs) > 0 {
 				for i, row := range batch {
-					if results[i].Level == productmatch.MatchBarcode {
+					if decisions[i].Basis == matchflow.BasisIdentifier {
 						continue
 					}
 					name := row.DisplayName()
@@ -95,38 +143,11 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 						dec = &d
 					}
 
-					// Only a person's confirmed mapping is honoured by name. An AI
-					// answer is reused only through its versioned question key, in
-					// the AI stage, where the identity guard re-checks it; applied
-					// here by name it was an unverified guess — from any prompt
-					// version, against any shortlist — promoted to an exact match.
 					if dec != nil && dec.Source == "manual" && dec.ChosenProductID != nil && *dec.ChosenProductID > 0 {
-						{
-							if p, ok := r.index.Lookup(*dec.ChosenProductID); ok && p != nil {
-								reason := "مطابقة يدوية معتمدة من ذاكرة القرارات"
-								pName := p.NameAR
-								if pName == "" {
-									pName = p.NameEN
-								}
-								results[i] = productmatch.MatchResult{
-									ProductID: p.ID,
-									Level:     productmatch.MatchExact,
-									Score:     1.0,
-									Reason:    reason,
-									Candidates: []productmatch.MatchCandidate{
-										{
-											ProductID:     p.ID,
-											Name:          pName,
-											Scientific:    p.Scientific,
-											DosageForm:    p.DosageForm,
-											Concentration: p.Concentration,
-											Manufacturer:  p.Manufacturer,
-											Score:         1.0,
-											Reason:        reason,
-										},
-									},
-								}
-							}
+						if p, ok := r.index.Lookup(*dec.ChosenProductID); ok && p != nil {
+							decisions[i].ProductID = dec.ChosenProductID
+							decisions[i].State = matchflow.StateAccepted
+							decisions[i].Basis = matchflow.BasisKnowledgeHuman
 						}
 					}
 				}
@@ -135,7 +156,51 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 	}
 
 	for i, row := range batch {
-		m := results[i]
+		dec := decisions[i]
+		cols := matchflow.Columns(dec)
+
+		productID := cols.MatchedProductID
+		matchLevel := productmatch.MatchLevel(cols.MatchLevel)
+
+		score := 0.0
+		if cols.MatchedProductID != nil {
+			score = 1.0
+		}
+
+		cands := make([]productmatch.MatchCandidate, 0, len(dec.Candidates))
+		for _, c := range dec.Candidates {
+			pName, pSci, pForm, pConc, pMfr := "", "", "", "", ""
+			if p, ok := r.index.Lookup(c.ProductID); ok && p != nil {
+				pName = p.NameAR
+				if pName == "" {
+					pName = p.NameEN
+				}
+				pSci = p.Scientific
+				pForm = p.DosageForm
+				pConc = p.Concentration
+				pMfr = p.Manufacturer
+			}
+			cands = append(cands, productmatch.MatchCandidate{
+				ProductID:     c.ProductID,
+				Name:          pName,
+				Scientific:    pSci,
+				DosageForm:    pForm,
+				Concentration: pConc,
+				Manufacturer:  pMfr,
+				Score:         1.0,
+			})
+		}
+
+		m := productmatch.MatchResult{
+			ProductID:  0,
+			Level:      matchLevel,
+			Score:      score,
+			Candidates: cands,
+		}
+		if productID != nil {
+			m.ProductID = *productID
+		}
+
 		bucket := bucketOf(m)
 		r.count(bucket, 1)
 		r.bucketOf[row.Number] = bucket
@@ -146,25 +211,12 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			r.counts.errors++
 		}
 
-		// A row the reader rejected is not worth asking about: it will not be
-		// committed whatever the answer, and paying for it is pure waste.
-		//
-		// Everything else is remembered, settled or not. A settled row is asked
-		// a different question — "is this right?" rather than "what is this?" —
-		// and the planner spends the run's budget on the uncertain rows first,
-		// so putting the whole file in front of the model costs the confident
-		// rows only what is left over.
 		if outcome != OutcomeError {
 			r.remember(row, m)
 		}
 
-		var productID *int64
 		var variantID *int64
 		inWarehouse := false
-		if m.ProductID > 0 {
-			id := m.ProductID
-			productID = &id
-		}
 		if r.variantIdx != nil {
 			pID := int64(0)
 			if productID != nil {
@@ -176,10 +228,11 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			}
 		}
 
+		baselineDec := dec
 		staged = append(staged, RowOutcome{
 			SourceRow:         row.Number,
 			Outcome:           outcome,
-			MatchLevel:        string(m.Level),
+			MatchLevel:        cols.MatchLevel,
 			MatchScore:        m.Score,
 			ProductID:         productID,
 			VariantID:         variantID,
@@ -191,7 +244,15 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			Candidates:        m.Candidates,
 			Issues:            row.Issues,
 			Message:           m.Reason,
-			AIState:           string(matchflow.AIStateOff),
+			MatchState:        cols.MatchState,
+			MatchBasis:        cols.MatchBasis,
+			MatchGranularity:  cols.MatchGranularity,
+			MatchRevision:     dec.Revision,
+			HumanLocked:       false,
+			AIState:           cols.AIState,
+			MatchRunID:        matchRunID,
+			MatchDecision:     &dec,
+			BaselineDecision:  &baselineDec,
 		})
 	}
 

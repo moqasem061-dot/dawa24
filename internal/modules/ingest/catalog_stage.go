@@ -38,6 +38,7 @@ var maxOpenQuestions = ceilings.MaxRequestsPerRun * ceilings.MaxItemsPerRequest
 // the model about what is left, and stages the result for the vendor to review.
 // Nothing reaches live variants or stocks until they confirm.
 func (s *Service) StageImport(ctx context.Context, session *Session) error {
+	session.MatchRevision++
 	analysis, err := s.analyse(ctx, session)
 	if err != nil {
 		return err

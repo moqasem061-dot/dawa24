@@ -345,6 +345,7 @@ type Session struct {
 	AI AIStats `json:"ai"`
 
 	TotalRows     int `json:"total_rows"`
+	MatchRevision int `json:"match_revision"`
 	InsertedRows  int `json:"inserted_rows"`
 	UpdatedRows   int `json:"updated_rows"`
 	SkippedRows   int `json:"skipped_rows"`

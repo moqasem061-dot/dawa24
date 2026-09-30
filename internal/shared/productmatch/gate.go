@@ -295,13 +295,25 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 		finalState = matchflow.StateConfirmed
 	}
 
+	reasons := defaultReasonsForPath(p.Path)
+	if p.Path == PathIdentifier {
+		switch p.Namespace {
+		case string(NamespaceCatalogCode):
+			reasons = []Reason{{Code: ReasonIdentifierCatalogCode}}
+		case string(NamespaceSupplierCode):
+			reasons = []Reason{{Code: ReasonIdentifierSupplierCode}}
+		default:
+			reasons = []Reason{{Code: ReasonIdentifierGTIN}}
+		}
+	}
+
 	return Verdict{
 		Eligible:       true,
 		State:          finalState,
 		Achieved:       achieved,
 		Pack:           packOutcome,
 		RelationshipID: relIDPtr,
-		Reasons:        defaultReasonsForPath(p.Path),
+		Reasons:        reasons,
 	}
 }
 

@@ -133,14 +133,17 @@ func (r *Repository) StagedRowsForCommit(ctx context.Context, importID int64) ([
 			SELECT r.id, r.source_row, r.outcome, r.match_level, r.match_score, r.product_id,
 			       COALESCE(p.name->>'ar', p.name->>'en', ''), COALESCE(p.sku, ''),
 			       r.variant_id, r.display_name, r.source_code, r.custom_variant_name,
-			       r.is_excluded, r.is_manually_matched, r.payload, r.candidates, r.issues, r.message
+			       r.is_excluded, r.is_manually_matched, r.payload, r.candidates, r.issues, r.message,
+			       COALESCE(r.match_state, ''), COALESCE(r.match_basis, ''), COALESCE(r.match_granularity, ''),
+			       r.match_revision, r.human_locked, COALESCE(r.ai_state, ''), r.match_run_id,
+			       r.match_decision, r.baseline_decision
 			FROM ingest.catalog_import_rows r
 			LEFT JOIN catalog.products p ON p.id = r.product_id
 			WHERE r.import_id = $1
 			  AND r.is_excluded = false
 			  AND (
 			       (r.product_id IS NOT NULL AND r.product_id > 0
-			        AND (r.is_manually_matched OR r.match_level IN ('barcode', 'code', 'exact', 'strong')))
+			        AND (r.is_manually_matched OR r.match_level IN ('barcode', 'code', 'exact', 'strong') OR r.match_state IN ('accepted', 'confirmed')))
 			       OR (r.variant_id IS NOT NULL AND r.variant_id > 0)
 			      )
 			ORDER BY r.source_row`, importID)
@@ -150,16 +153,24 @@ func (r *Repository) StagedRowsForCommit(ctx context.Context, importID int64) ([
 		defer rows.Close()
 		for rows.Next() {
 			var o ingest.RowOutcome
-			var payload, candidates, issues []byte
+			var payload, candidates, issues, matchDecBytes, baseDecBytes []byte
 			if err := rows.Scan(&o.ID, &o.SourceRow, &o.Outcome, &o.MatchLevel,
 				&o.MatchScore, &o.ProductID, &o.MatchedProductName, &o.MatchedProductSKU,
 				&o.VariantID, &o.DisplayName, &o.SourceCode, &o.CustomVariantName,
-				&o.IsExcluded, &o.IsManuallyMatched, &payload, &candidates, &issues, &o.Message); err != nil {
+				&o.IsExcluded, &o.IsManuallyMatched, &payload, &candidates, &issues, &o.Message,
+				&o.MatchState, &o.MatchBasis, &o.MatchGranularity, &o.MatchRevision,
+				&o.HumanLocked, &o.AIState, &o.MatchRunID, &matchDecBytes, &baseDecBytes); err != nil {
 				return err
 			}
 			_ = json.Unmarshal(payload, &o.Payload)
 			_ = json.Unmarshal(candidates, &o.Candidates)
 			_ = json.Unmarshal(issues, &o.Issues)
+			if len(matchDecBytes) > 0 {
+				_ = json.Unmarshal(matchDecBytes, &o.MatchDecision)
+			}
+			if len(baseDecBytes) > 0 {
+				_ = json.Unmarshal(baseDecBytes, &o.BaselineDecision)
+			}
 			out = append(out, &o)
 		}
 		return rows.Err()

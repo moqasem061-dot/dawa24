@@ -65,34 +65,17 @@ func compareBrand(row, prod IdentityFacts, comp *Comparison) {
 	prodPrimary := leadingBrandToken(prodTokens)
 
 	if rowPrimary != "" && prodPrimary != "" {
-		if !brandsMatch(rowPrimary, prodPrimary) {
-			// Distinct brand tokens differ -> hard conflict
-			comp.Attributes["brand"] = OutcomeConflict
-			comp.Hard = append(comp.Hard, ConflictBrand)
+		if brandsMatch(rowPrimary, prodPrimary) {
+			comp.Attributes["brand"] = OutcomeAgree
 			return
 		}
-	}
-
-	// Check if all tokens of either side match
-	matches := 0
-	for _, rt := range rowTokens {
-		for _, pt := range prodTokens {
-			if brandsMatch(rt, pt) {
-				matches++
-				break
-			}
-		}
-	}
-
-	if matches == len(rowTokens) && matches == len(prodTokens) {
-		comp.Attributes["brand"] = OutcomeAgree
-	} else if matches == len(rowTokens) || matches == len(prodTokens) {
-		// Subset match with no conflicting primary token
-		comp.Attributes["brand"] = OutcomeAgree
-	} else {
+		// Distinct brand tokens differ -> hard conflict
 		comp.Attributes["brand"] = OutcomeConflict
 		comp.Hard = append(comp.Hard, ConflictBrand)
+		return
 	}
+
+	comp.Attributes["brand"] = OutcomeUnstated
 }
 
 func leadingBrandToken(tokens []string) string {
@@ -123,7 +106,7 @@ func filterBrandTokens(tokens []Token) []string {
 		if _, ok := formWords[key]; ok {
 			continue
 		}
-		if noiseWords[txt] || noiseWords[key] || isNoiseOrMakerWord(txt) {
+		if noiseWords[txt] || noiseWords[key] || isNoiseOrMakerWord(txt) || isNoiseOrMakerWord(key) {
 			continue
 		}
 		out = append(out, txt)
@@ -132,14 +115,19 @@ func filterBrandTokens(tokens []Token) []string {
 }
 
 func isNoiseOrMakerWord(w string) bool {
+	norm := sheet.NormalizeName(w)
 	noise := map[string]bool{
 		"شركة": true, "مستحضر": true, "دواء": true, "علاج": true,
 		"co": true, "pharma": true, "lab": true, "inc": true,
 		"باكت": true, "باكيت": true, "علبة": true, "علبه": true,
 		"شريط": true, "كرتونة": true, "كرتونه": true, "pack": true,
 		"strip": true, "box": true,
+		"اسم": true, "صنف": true, "منتج": true, "عشوائي": true, "عشوايي": true,
+		"مختلف": true, "تماما": true, "تماماً": true, "عنصر": true,
+		"غير": true, "مطابق": true, "غيرمطابق": true, "بدون": true, "لا": true, "تست": true,
+		"name": true, "item": true, "product": true, "random": true, "different": true, "unknown": true, "test": true,
 	}
-	return noise[w]
+	return noise[w] || noise[norm]
 }
 
 func brandsMatch(a, b string) bool {

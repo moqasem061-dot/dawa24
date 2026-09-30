@@ -4,14 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"math"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
-	"github.com/moqasem061-dot/dawa24/internal/shared/money"
-	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // clampScore keeps a match score inside what match_score NUMERIC(5,4) accepts.
@@ -50,12 +47,44 @@ func (r *Repository) AppendRows(
 		if err != nil || row.Issues == nil {
 			issues = []byte(`[]`)
 		}
+
+		var matchDecisionJSON, baselineDecisionJSON []byte
+		if row.MatchDecision != nil {
+			matchDecisionJSON, _ = json.Marshal(row.MatchDecision)
+		}
+		if row.BaselineDecision != nil {
+			baselineDecisionJSON, _ = json.Marshal(row.BaselineDecision)
+		}
+
+		var matchState, matchBasis, matchGranularity, aiState any
+		if row.MatchState != "" {
+			matchState = row.MatchState
+		}
+		if row.MatchBasis != "" {
+			matchBasis = row.MatchBasis
+		}
+		if row.MatchGranularity != "" {
+			matchGranularity = row.MatchGranularity
+		}
+		if row.AIState != "" {
+			aiState = row.AIState
+		}
+		var matchDecVal, baselineDecVal any
+		if len(matchDecisionJSON) > 0 {
+			matchDecVal = matchDecisionJSON
+		}
+		if len(baselineDecisionJSON) > 0 {
+			baselineDecVal = baselineDecisionJSON
+		}
+
 		records = append(records, []any{
 			importID, orgID, row.SourceRow, row.Outcome, row.MatchLevel,
 			clampScore(row.MatchScore), row.ProductID, row.VariantID,
 			trimTo(row.DisplayName, 300), trimTo(row.SourceCode, 100),
 			trimTo(row.CustomVariantName, 300), row.IsExcluded, row.IsManuallyMatched,
 			payload, candidates, issues, trimTo(row.Message, 500),
+			matchState, matchBasis, matchGranularity, row.MatchRevision,
+			row.HumanLocked, aiState, row.MatchRunID, matchDecVal, baselineDecVal,
 		})
 	}
 
@@ -67,6 +96,8 @@ func (r *Repository) AppendRows(
 				"match_score", "product_id", "variant_id", "display_name",
 				"source_code", "custom_variant_name", "is_excluded", "is_manually_matched",
 				"payload", "candidates", "issues", "message",
+				"match_state", "match_basis", "match_granularity", "match_revision",
+				"human_locked", "ai_state", "match_run_id", "match_decision", "baseline_decision",
 			},
 			pgx.CopyFromRows(records))
 		if err != nil {
@@ -153,7 +184,10 @@ func (r *Repository) Rows(
 			SELECT r.id, r.source_row, r.outcome, r.match_level, r.match_score, r.product_id,
 			       COALESCE(p.name->>'ar', p.name->>'en', ''), COALESCE(p.sku, ''),
 			       r.variant_id, r.display_name, r.source_code, r.custom_variant_name,
-			       r.is_excluded, r.is_manually_matched, r.payload, r.candidates, r.issues, r.message
+			       r.is_excluded, r.is_manually_matched, r.payload, r.candidates, r.issues, r.message,
+			       COALESCE(r.match_state, ''), COALESCE(r.match_basis, ''), COALESCE(r.match_granularity, ''),
+			       r.match_revision, r.human_locked, COALESCE(r.ai_state, ''), r.match_run_id,
+			       r.match_decision, r.baseline_decision
 			FROM ingest.catalog_import_rows r
 			LEFT JOIN catalog.products p ON p.id = r.product_id
 			WHERE %s
@@ -166,16 +200,24 @@ func (r *Repository) Rows(
 
 		for rows.Next() {
 			var o ingest.RowOutcome
-			var payload, candidates, issues []byte
+			var payload, candidates, issues, matchDecBytes, baseDecBytes []byte
 			if err := rows.Scan(&o.ID, &o.SourceRow, &o.Outcome, &o.MatchLevel,
 				&o.MatchScore, &o.ProductID, &o.MatchedProductName, &o.MatchedProductSKU,
 				&o.VariantID, &o.DisplayName, &o.SourceCode, &o.CustomVariantName,
-				&o.IsExcluded, &o.IsManuallyMatched, &payload, &candidates, &issues, &o.Message); err != nil {
+				&o.IsExcluded, &o.IsManuallyMatched, &payload, &candidates, &issues, &o.Message,
+				&o.MatchState, &o.MatchBasis, &o.MatchGranularity, &o.MatchRevision,
+				&o.HumanLocked, &o.AIState, &o.MatchRunID, &matchDecBytes, &baseDecBytes); err != nil {
 				return fmt.Errorf("ingest postgres: scan import row: %w", err)
 			}
 			_ = json.Unmarshal(payload, &o.Payload)
 			_ = json.Unmarshal(candidates, &o.Candidates)
 			_ = json.Unmarshal(issues, &o.Issues)
+			if len(matchDecBytes) > 0 {
+				_ = json.Unmarshal(matchDecBytes, &o.MatchDecision)
+			}
+			if len(baseDecBytes) > 0 {
+				_ = json.Unmarshal(baseDecBytes, &o.BaselineDecision)
+			}
 			out = append(out, &o)
 		}
 		return rows.Err()
@@ -211,140 +253,4 @@ func (r *Repository) RowCounts(ctx context.Context, importID int64) (map[string]
 		return nil, err
 	}
 	return counts, nil
-}
-
-// UpdateRow updates fields on a staged row before commit.
-func (r *Repository) UpdateRow(
-	ctx context.Context, importID, rowID int64,
-	displayName, customVariantName string,
-	price, discount, costPrice, costDiscount *float64, quantity *int, isExcluded *bool,
-) error {
-	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		var payload []byte
-		var currName, currVarName string
-		var currExcluded bool
-		err := tx.QueryRow(txCtx, `
-			SELECT display_name, custom_variant_name, is_excluded, payload
-			FROM ingest.catalog_import_rows
-			WHERE id = $1 AND import_id = $2`, rowID, importID).Scan(&currName, &currVarName, &currExcluded, &payload)
-		if err != nil {
-			return err
-		}
-
-		var rowData productmatch.Row
-		_ = json.Unmarshal(payload, &rowData)
-
-		if displayName != "" {
-			currName = displayName
-			rowData.Name = displayName
-		}
-		if customVariantName != "" {
-			currVarName = customVariantName
-		}
-		if isExcluded != nil {
-			currExcluded = *isExcluded
-		}
-		if price != nil {
-			m := money.FromMinor(int64(math.Round(*price * 100)))
-			rowData.PublicPrice = m
-			if rowData.DiscountBps > 0 {
-				disc := m.ApplyPercent(rowData.DiscountBps)
-				if net, subErr := m.Sub(disc); subErr == nil && net.Minor() >= 0 {
-					rowData.NetPrice = net
-				} else {
-					rowData.NetPrice = m
-				}
-			} else {
-				rowData.NetPrice = m
-			}
-			if rowData.CostDiscountBps > 0 {
-				disc := m.ApplyPercent(rowData.CostDiscountBps)
-				if cost, subErr := m.Sub(disc); subErr == nil && cost.Minor() >= 0 {
-					rowData.CostPrice = cost
-				}
-			}
-		}
-		if discount != nil {
-			bps := int64(math.Round(*discount * 100))
-			rowData.DiscountBps = bps
-			if rowData.PublicPrice.IsPositive() {
-				disc := rowData.PublicPrice.ApplyPercent(bps)
-				if net, subErr := rowData.PublicPrice.Sub(disc); subErr == nil && net.Minor() >= 0 {
-					rowData.NetPrice = net
-				}
-			}
-		}
-		if costPrice != nil {
-			rowData.CostPrice = money.FromMinor(int64(math.Round(*costPrice * 100)))
-		}
-		if costDiscount != nil {
-			bps := int64(math.Round(*costDiscount * 100))
-			rowData.CostDiscountBps = bps
-			if rowData.PublicPrice.IsPositive() {
-				disc := rowData.PublicPrice.ApplyPercent(bps)
-				if cost, subErr := rowData.PublicPrice.Sub(disc); subErr == nil && cost.Minor() >= 0 {
-					rowData.CostPrice = cost
-				}
-			}
-		}
-		if quantity != nil {
-			rowData.Quantity = *quantity
-			rowData.HasQuantity = true
-		}
-
-		newPayload, _ := json.Marshal(rowData)
-
-		_, err = tx.Exec(txCtx, `
-			UPDATE ingest.catalog_import_rows
-			SET display_name = $3, custom_variant_name = $4, is_excluded = $5, payload = $6
-			WHERE id = $1 AND import_id = $2`,
-			rowID, importID, currName, currVarName, currExcluded, newPayload)
-		return err
-	})
-}
-
-// SetBatchQuantity applies a uniform quantity to all staged rows of an import.
-func (r *Repository) SetBatchQuantity(ctx context.Context, importID int64, quantity int) error {
-	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		rows, err := tx.Query(txCtx, `
-			SELECT id, payload
-			FROM ingest.catalog_import_rows
-			WHERE import_id = $1`, importID)
-		if err != nil {
-			return err
-		}
-		defer rows.Close()
-
-		type rowPayloadItem struct {
-			id      int64
-			payload []byte
-		}
-		var items []rowPayloadItem
-		for rows.Next() {
-			var it rowPayloadItem
-			if err := rows.Scan(&it.id, &it.payload); err != nil {
-				return err
-			}
-			items = append(items, it)
-		}
-		if err := rows.Err(); err != nil {
-			return err
-		}
-		rows.Close()
-
-		for _, it := range items {
-			var rowData productmatch.Row
-			_ = json.Unmarshal(it.payload, &rowData)
-			rowData.Quantity = quantity
-			rowData.HasQuantity = true
-			newPayload, _ := json.Marshal(rowData)
-			if _, err := tx.Exec(txCtx, `
-				UPDATE ingest.catalog_import_rows
-				SET payload = $2
-				WHERE id = $1 AND import_id = $3`, it.id, newPayload, importID); err != nil {
-				return err
-			}
-		}
-		return nil
-	})
 }
