@@ -53,7 +53,7 @@ description: "Executable task list for the Product Matching Rework"
 **Context**: plan.md §Project Structure; research.md R1, R12; contracts/match-eval-cli.md.
 
 - [X] T001 [P] Create package `internal/shared/matcheval` with `doc.go` (package comment: offline evaluation metrics; imports only stdlib, `internal/shared/productmatch` and `internal/shared/matchflow`) in `internal/shared/matcheval/doc.go`
-- [ ] T002 [P] Implement `ClopperPearsonLower(successes, n int, confidence float64) float64` and `Wilson(successes, n int, z float64) (lo, hi float64)` using the regularized incomplete beta function (no third-party libs) in `internal/shared/matcheval/stats.go`
+- [X] T002 [P] Implement `ClopperPearsonLower(successes, n int, confidence float64) float64` and `Wilson(successes, n int, z float64) (lo, hi float64)` using the regularized incomplete beta function (no third-party libs) in `internal/shared/matcheval/stats.go`
   - Done when: table tests in `internal/shared/matcheval/stats_test.go` pass. Cases: (995,1000,0.95) → ≈0.98942 (±1e-4); (0,10) → 0; (10,10) → 0.7411 (±1e-4); n=0 → 0.
 - [ ] T003 [P] Create the entry-point registry `var EntryPoints = []EntryPoint{{ID, Workflow, File, Profile, AIEligible}}` listing every row of research.md R1 (use the exact file paths shown there) in `internal/modules/catalog/matching/entrypoints.go`
 - [ ] T004 Write the entry-point guard test. It parses Go files under `internal/` (skip `_test.go`) with `go/parser` and finds calls to `.Match(`, `productmatch.MatchAll(`, `matchflow.Run(`, `NewIndex(`. It fails if a file with such a call is not listed in `matching.EntryPoints[*].File` or in an explicit `allowlist` (for the engine itself and `test/corpus`). Write it in `test/matching_entrypoints_test.go`.
