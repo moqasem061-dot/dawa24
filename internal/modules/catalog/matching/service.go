@@ -57,6 +57,9 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 	if req.Required != productmatch.GranularityNone {
 		pol.Required = req.Required
 	}
+	if req.Identifiers != nil {
+		pol.Identifiers = *req.Identifiers
+	}
 
 	// 2. Get revision & index (cache)
 	catRev, err := s.repo.CurrentRevision(ctx, "master")

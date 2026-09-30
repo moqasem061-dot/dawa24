@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -62,6 +63,8 @@ func (h *UIHandler) AdminOrgImportVendorIngestSettingsSubmit(w http.ResponseWrit
 	settings.TrustSupplierCode = checked(r, "trust_supplier_code")
 	settings.CodeIsCatalogCode = checked(r, "code_is_catalog_code")
 	settings.TrustBarcode = checked(r, "trust_barcode")
+	settings.CodeNamespace = strings.TrimSpace(r.PostFormValue("code_namespace"))
+	settings.BarcodeNamespace = strings.TrimSpace(r.PostFormValue("barcode_namespace"))
 	settings.BlankQuantityIsZero = checked(r, "blank_quantity_is_zero")
 	settings.RejectExpired = checked(r, "reject_expired")
 	settings.MarkNegotiable = checked(r, "mark_negotiable")

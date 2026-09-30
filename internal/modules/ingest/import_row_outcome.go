@@ -92,9 +92,22 @@ type RowFilter struct {
 // identifierChoices is what the vendor switched on, in the shared engine's
 // vocabulary. The engine drops any choice whose column was never mapped.
 func (s Settings) identifierChoices() productmatch.IdentifierChoices {
+	codeNS := productmatch.NamespaceSupplierCode
+	if s.CodeNamespace == string(productmatch.NamespaceCatalogCode) || s.CodeIsCatalogCode {
+		codeNS = productmatch.NamespaceCatalogCode
+	}
+	barcodeNS := productmatch.NamespaceGTIN
+	if s.BarcodeNamespace != "" {
+		barcodeNS = productmatch.Namespace(s.BarcodeNamespace)
+	}
+
 	return productmatch.IdentifierChoices{
 		ByCode:            s.TrustSupplierCode,
 		ByBarcode:         s.TrustBarcode,
-		CodeIsCatalogCode: s.CodeIsCatalogCode,
+		CodeIsCatalogCode: codeNS == productmatch.NamespaceCatalogCode,
+		Namespaces: map[productmatch.Field]productmatch.Namespace{
+			productmatch.FieldSKU:     codeNS,
+			productmatch.FieldBarcode: barcodeNS,
+		},
 	}
 }

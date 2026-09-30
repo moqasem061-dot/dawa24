@@ -244,10 +244,24 @@ templ importSettingsStage(view VendorImportView, lang string) {
 						view.Session.Settings.TrustSupplierCode)
 					@vendorImportSwitch("code_is_catalog_code", "", i18n.T(lang, "vendor_ingest.settings.code_is_catalog"), "",
 						view.Session.Settings.CodeIsCatalogCode)
+					<div class="mt-2 mb-3">
+						<label class="form-label text-xs">{ i18n.T(lang, "vendor_ingest.settings.code_namespace_lbl") }</label>
+						<select name="code_namespace" class="form-input text-xs">
+							<option value="supplier_code" selected?={ view.Session.Settings.CodeNamespace != "catalog_code" && !view.Session.Settings.CodeIsCatalogCode }>{ i18n.T(lang, "vendor_ingest.namespace.supplier_code") }</option>
+							<option value="catalog_code" selected?={ view.Session.Settings.CodeNamespace == "catalog_code" || view.Session.Settings.CodeIsCatalogCode }>{ i18n.T(lang, "vendor_ingest.namespace.catalog_code") }</option>
+						</select>
+					</div>
 				}
 				if view.MappedIdentifiers().Barcode {
 					@vendorImportSwitch("trust_barcode", "", i18n.T(lang, "vendor_ingest.settings.trust_barcode"), "",
 						view.Session.Settings.TrustBarcode)
+					<div class="mt-2 mb-3">
+						<label class="form-label text-xs">{ i18n.T(lang, "vendor_ingest.settings.barcode_namespace_lbl") }</label>
+						<select name="barcode_namespace" class="form-input text-xs">
+							<option value="gtin" selected?={ view.Session.Settings.BarcodeNamespace != "supplier_code" }>{ i18n.T(lang, "vendor_ingest.namespace.gtin") }</option>
+							<option value="supplier_code" selected?={ view.Session.Settings.BarcodeNamespace == "supplier_code" }>{ i18n.T(lang, "vendor_ingest.namespace.supplier_code") }</option>
+						</select>
+					</div>
 				}
 				if !view.MappedIdentifiers().Code && !view.MappedIdentifiers().Barcode {
 					<p class="text-xs text-muted m-0">{ i18n.T(lang, "vendor_ingest.settings.no_ids_mapped") }</p>

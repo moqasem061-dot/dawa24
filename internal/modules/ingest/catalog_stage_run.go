@@ -63,6 +63,23 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 	var decisions []matchflow.RowDecision
 	var matchRunID *int64
 
+	choices := r.session.Settings.identifierChoices()
+	identPolicy := productmatch.IdentifierPolicy{
+		AllowGTIN:         r.match.TrustBarcode,
+		AllowSupplierCode: r.match.TrustSupplierCode,
+		AllowCatalogCode:  choices.CodeIsCatalogCode,
+		DeclaredNamespaces: make(map[int]string),
+	}
+	if r.session.Mapping != nil {
+		for _, col := range r.session.Mapping.Columns {
+			if col.Field == productmatch.FieldSKU {
+				identPolicy.DeclaredNamespaces[col.Index] = string(choices.Namespaces[productmatch.FieldSKU])
+			} else if col.Field == productmatch.FieldBarcode {
+				identPolicy.DeclaredNamespaces[col.Index] = string(choices.Namespaces[productmatch.FieldBarcode])
+			}
+		}
+	}
+
 	if r.svc.matcher != nil {
 		reqRows := make([]productmatch.Row, len(batch))
 		for i, row := range batch {
@@ -80,6 +97,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			SourceRev:   rev,
 			Rows:        reqRows,
 			Required:    productmatch.GranularityProduct,
+			Identifiers: &identPolicy,
 		}
 		prepRes, err := r.svc.matcher.Prepare(ctx, prepReq)
 		if err == nil && len(prepRes.Decisions) == len(batch) {
@@ -96,9 +114,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 		pol := productmatch.DefaultPolicy()
 		pol.MinStrong = r.match.MinStrong
 		pol.MinReview = r.match.MinReview
-		pol.Identifiers.AllowGTIN = r.match.TrustBarcode
-		pol.Identifiers.AllowSupplierCode = r.match.TrustSupplierCode
-		pol.Identifiers.AllowCatalogCode = r.session.Settings.CodeIsCatalogCode
+		pol.Identifiers = identPolicy
 		decisions = make([]matchflow.RowDecision, len(batch))
 		for i, row := range batch {
 			decisions[i] = r.index.Decide(row, pol)

@@ -237,6 +237,11 @@ type Settings struct {
 	// accepted without the name agreeing too.
 	CodeIsCatalogCode bool `json:"trust_supplier_code"`
 
+	// CodeNamespace is the declared namespace for the code column (e.g. "supplier_code" or "catalog_code").
+	CodeNamespace string `json:"code_namespace,omitempty"`
+	// BarcodeNamespace is the declared namespace for the barcode column (e.g. "gtin").
+	BarcodeNamespace string `json:"barcode_namespace,omitempty"`
+
 	BlankQuantityIsZero bool `json:"blank_quantity_is_zero"`
 	RejectExpired       bool `json:"reject_expired"`
 

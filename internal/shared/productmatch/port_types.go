@@ -31,6 +31,7 @@ type PrepareRequest struct {
 	SourceRev   int
 	Rows        []Row
 	Required    Granularity
+	Identifiers *IdentifierPolicy
 }
 
 // PrepareResult holds the outcomes and summary of a Prepare operation.

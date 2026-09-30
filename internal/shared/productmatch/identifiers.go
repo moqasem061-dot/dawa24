@@ -52,6 +52,8 @@ type IdentifierChoices struct {
 	// own codes rather than the file owner's internal numbering. Only then is a
 	// code hit accepted without the name agreeing as well.
 	CodeIsCatalogCode bool
+	// Namespaces declares the namespace per identifier field (FieldSKU -> supplier_code / catalog_code, FieldBarcode -> gtin).
+	Namespaces map[Field]Namespace
 }
 
 // WithIdentifiers applies the user's identifier choices, honouring what they
@@ -67,7 +69,11 @@ func (o MatchOptions) WithIdentifiers(mapped MappedColumns, chosen IdentifierCho
 	o.TrustBarcode = mapped.Barcode && chosen.ByBarcode
 	// Authority is a claim about the code column, so it cannot outlive the
 	// tier it qualifies.
-	o.CodeIsAuthoritative = o.TrustSupplierCode && chosen.CodeIsCatalogCode
+	codeIsCat := chosen.CodeIsCatalogCode
+	if chosen.Namespaces != nil && chosen.Namespaces[FieldSKU] == NamespaceCatalogCode {
+		codeIsCat = true
+	}
+	o.CodeIsAuthoritative = o.TrustSupplierCode && codeIsCat
 	return o
 }
 
