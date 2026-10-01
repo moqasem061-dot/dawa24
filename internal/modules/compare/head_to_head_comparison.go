@@ -35,6 +35,25 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		return nil, err
 	}
 
+	var productIDs []int64
+	seenProd := make(map[int64]bool)
+	for _, r := range sourceRows {
+		if r.MatchedProductID != nil && *r.MatchedProductID > 0 && !seenProd[*r.MatchedProductID] {
+			productIDs = append(productIDs, *r.MatchedProductID)
+			seenProd[*r.MatchedProductID] = true
+		}
+	}
+	for _, r := range targetRows {
+		if r.MatchedProductID != nil && *r.MatchedProductID > 0 && !seenProd[*r.MatchedProductID] {
+			productIDs = append(productIDs, *r.MatchedProductID)
+			seenProd[*r.MatchedProductID] = true
+		}
+	}
+	var rels []productmatch.PackRelationship
+	if len(productIDs) > 0 {
+		rels, _ = s.repo.LoadPackRelationships(ctx, productIDs)
+	}
+
 	// Index target rows
 	targetBySKU := make(map[string]*CompareFileRow)
 	targetByBarcode := make(map[string]*CompareFileRow)
@@ -216,7 +235,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		}
 
 		if tr != nil {
-			grouped, groupBasis, notComparable := isEquivalentOrCanonical(sr, tr, nil)
+			grouped, groupBasis, notComparable := isEquivalentOrCanonical(sr, tr, rels)
 			if !grouped {
 				continue
 			}
@@ -235,9 +254,18 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 				tNet = CalculatePriceAfterDiscount(price, tr.Discount)
 			}
 
+			srFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: sr.RawName, SKU: sr.SKU}, nil)
+			trFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: tr.RawName, SKU: tr.SKU}, nil)
+
+			convertedTNet, convertible := convertEquivalentPrice(tNet, srFacts, trFacts, rels)
+			if !convertible || notComparable {
+				notComparable = true
+				groupBasis = "not_comparable"
+			}
+
 			if !notComparable {
 				sourceTotal, _ = sourceTotal.Add(sNet)
-				targetTotal, _ = targetTotal.Add(tNet)
+				targetTotal, _ = targetTotal.Add(convertedTNet)
 			}
 
 			var outcome HeadToHeadOutcome
@@ -261,12 +289,17 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 					compDiff = math.Round((tr.Discount-sr.Discount)*100.0) / 100.0
 					competitorBetterCount++
 				}
-				savingsDiff, _ = tNet.Sub(sNet)
+				savingsDiff, _ = convertedTNet.Sub(sNet)
 			}
 
 			var prodID *int64
 			if sr.MatchedProductID != nil && tr.MatchedProductID != nil && *sr.MatchedProductID == *tr.MatchedProductID {
 				prodID = sr.MatchedProductID
+			}
+
+			competitorNet := tNet
+			if !notComparable && convertible {
+				competitorNet = convertedTNet
 			}
 
 			row := &HeadToHeadRow{
@@ -277,7 +310,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 				YourDiscount:       sr.Discount,
 				YourNetPrice:       sNet,
 				CompetitorDiscount: tr.Discount,
-				CompetitorNetPrice: tNet,
+				CompetitorNetPrice: competitorNet,
 				Outcome:            outcome,
 				BetterDiff:         betterDiff,
 				CompetitorDiff:     compDiff,

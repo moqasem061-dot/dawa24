@@ -9,6 +9,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func (r *Repository) FindCandidateProducts(ctx context.Context, orgID *int64, query, sku string, limit int) ([]*compare.CandidateProduct, error) {
@@ -294,3 +295,38 @@ func (r *Repository) PurgeArchivedTempWarehouses(ctx context.Context, olderThanD
 	})
 	return keys, fileCount, rowCount, err
 }
+
+// LoadPackRelationships loads active pack relationships for the given products.
+func (r *Repository) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {
+	if len(productIDs) == 0 {
+		return nil, nil
+	}
+
+	var out []productmatch.PackRelationship
+	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		rows, err := tx.Query(txCtx, `
+			SELECT id, product_id, from_unit, to_unit, factor, created_at, revoked_at
+			FROM catalog.pack_relationships
+			WHERE product_id = ANY($1::bigint[])
+			  AND revoked_at IS NULL;
+		`, productIDs)
+		if err != nil {
+			return err
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var rel productmatch.PackRelationship
+			if err := rows.Scan(
+				&rel.ID, &rel.ProductID, &rel.FromUnit, &rel.ToUnit,
+				&rel.Factor, &rel.CreatedAt, &rel.RevokedAt,
+			); err != nil {
+				return err
+			}
+			out = append(out, rel)
+		}
+		return rows.Err()
+	})
+	return out, err
+}
+

@@ -7,6 +7,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 type mockCompareRepo struct {
@@ -20,6 +21,7 @@ type mockCompareRepo struct {
 	files         map[int64]*compare.CompareFile
 	fileRows      map[int64][]*compare.CompareFileRow
 	savedMappings map[string]int64
+	packRels      []productmatch.PackRelationship
 	nextID        int64
 }
 

@@ -110,7 +110,8 @@ func Convert(qty int, fromUnit, toUnit string, rels []PackRelationship) (int, bo
 	return 0, false
 }
 
-func findBridgingRel(qtyFrom int, fromUnit string, qtyTo int, toUnit string, rels []PackRelationship) int64 {
+// FindBridgingRel locates an active pack relationship bridging two quantities and units.
+func FindBridgingRel(qtyFrom int, fromUnit string, qtyTo int, toUnit string, rels []PackRelationship) int64 {
 	from := normalizePackUnit(fromUnit)
 	to := normalizePackUnit(toUnit)
 
@@ -196,7 +197,7 @@ func PackOutcome(row, product PackFacts, rels []PackRelationship) (outcome strin
 	if rUnit != "" && pUnit != "" && rUnit != pUnit && rUnit != "unit" && pUnit != "unit" {
 		if conv, ok := Convert(row.Count, rUnit, pUnit, rels); ok {
 			if conv == product.Count {
-				bridgingID := findBridgingRel(row.Count, rUnit, product.Count, pUnit, rels)
+				bridgingID := FindBridgingRel(row.Count, rUnit, product.Count, pUnit, rels)
 				return "agree", bridgingID
 			}
 			return "conflict", 0
@@ -210,7 +211,7 @@ func PackOutcome(row, product PackFacts, rels []PackRelationship) (outcome strin
 	}
 
 	// Count differs: check if active rels bridge the difference
-	if bridgingID := findBridgingRel(row.Count, rUnit, product.Count, pUnit, rels); bridgingID > 0 {
+	if bridgingID := FindBridgingRel(row.Count, rUnit, product.Count, pUnit, rels); bridgingID > 0 {
 		return "agree", bridgingID
 	}
 
@@ -220,3 +221,27 @@ func PackOutcome(row, product PackFacts, rels []PackRelationship) (outcome strin
 
 	return "conflict", 0
 }
+
+// extractContainerFromWords extracts a packaging container classification from text.
+func extractContainerFromWords(text string) string {
+	for _, w := range strings.Fields(text) {
+		wClean := strings.ToLower(strings.TrimSpace(w))
+		if stripWords[wClean] {
+			return "strip"
+		}
+		switch wClean {
+		case "علبة", "علبه", "علب", "box", "carton", "كرتونة", "pack", "package", "باكت":
+			return "box"
+		case "زجاجة", "ازازة", "قارورة", "bottle":
+			return "bottle"
+		case "امبول", "أمبول", "امبولات", "ampoule", "amp":
+			return "ampoule"
+		case "فيال", "فيالات", "vial":
+			return "vial"
+		case "كيس", "اكياس", "أكياس", "sachet":
+			return "sachet"
+		}
+	}
+	return ""
+}
+

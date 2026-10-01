@@ -8,6 +8,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // T087 [US6]: Test: a shared prefix or manufacturer only => separate groups.
@@ -248,3 +249,107 @@ func TestGrouping_SameProductAbsentFromCatalog_SourceEquivalence(t *testing.T) {
 		t.Errorf("expected multi-supplier GroupBasis='source_equivalence', got %q", multiRow.GroupBasis)
 	}
 }
+
+// T091 [US6]: Strip vs box with active pack relationship => convert unit prices only through productmatch.Convert.
+// Assert exact money values without float comparisons.
+func TestGrouping_StripVsBoxWithValidRelationship_ConvertedExactPrice(t *testing.T) {
+	ctx := context.Background()
+	repo := newMockCompareRepo()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := compare.NewService(repo, logger)
+
+	f1 := &compare.CompareFile{SupplierName: "المورد الأول", Status: compare.FileReady}
+	f2 := &compare.CompareFile{SupplierName: "المورد الثاني", Status: compare.FileReady}
+	_ = repo.CreateFile(ctx, f1)
+	_ = repo.CreateFile(ctx, f2)
+
+	prodID := int64(700)
+	// Active pack relationship: 1 box = 2 strips (Factor 2)
+	repo.packRels = []productmatch.PackRelationship{
+		{
+			ID:        101,
+			ProductID: prodID,
+			FromUnit:  "علبة",
+			ToUnit:    "شريط",
+			Factor:    2,
+		},
+	}
+
+	p1 := money.FromMajor(50) // 50 EGP for 1 box
+	p2 := money.FromMajor(30) // 30 EGP for 1 strip
+
+	// Supplier 1 sells 1 box with 10% discount => net 45.00 EGP
+	sRow := &compare.CompareFileRow{
+		FileID:             f1.ID,
+		RowNumber:          1,
+		RawName:            "كونجستال 20 قرص علبة",
+		NormalizedName:     "كونجستال 20 قرص علبة",
+		Price:              p1,
+		Discount:           10.0,
+		PriceAfterDiscount: compare.CalculatePriceAfterDiscount(p1, 10.0),
+		MatchedProductID:   &prodID,
+	}
+	// Supplier 2 sells 1 strip with 20% discount => net 24.00 EGP per strip
+	// Converted to box (2 strips) => 24.00 * 2 = 48.00 EGP
+	tRow := &compare.CompareFileRow{
+		FileID:             f2.ID,
+		RowNumber:          1,
+		RawName:            "كونجستال 10 اقراص شريط",
+		NormalizedName:     "كونجستال 10 اقراص شريط",
+		Price:              p2,
+		Discount:           20.0,
+		PriceAfterDiscount: compare.CalculatePriceAfterDiscount(p2, 20.0),
+		MatchedProductID:   &prodID,
+	}
+
+	_ = repo.InsertFileRows(ctx, []*compare.CompareFileRow{sRow})
+	_ = repo.InsertFileRows(ctx, []*compare.CompareFileRow{tRow})
+
+	// 1. Head-to-Head test
+	res, err := svc.RunSupplierVsSupplierDetailed(ctx, compare.HeadToHeadFilter{
+		SourceFileID: f1.ID,
+		TargetFileID: f2.ID,
+	})
+	if err != nil {
+		t.Fatalf("head-to-head failed: %v", err)
+	}
+
+	if res.TotalShared != 1 {
+		t.Fatalf("expected 1 shared item, got %d", res.TotalShared)
+	}
+
+	row := res.Rows[0]
+	if row.NotComparable {
+		t.Errorf("expected NotComparable=false with valid relationship")
+	}
+
+	expectedYourNet := money.FromMajor(45)       // 45.00 EGP
+	expectedCompNet := money.FromMajor(48)       // 24.00 * 2 = 48.00 EGP
+	expectedSavings, _ := expectedCompNet.Sub(expectedYourNet) // 3.00 EGP
+
+	if row.YourNetPrice != expectedYourNet {
+		t.Errorf("expected YourNetPrice=%v, got %v", expectedYourNet, row.YourNetPrice)
+	}
+	if row.CompetitorNetPrice != expectedCompNet {
+		t.Errorf("expected CompetitorNetPrice=%v, got %v", expectedCompNet, row.CompetitorNetPrice)
+	}
+	if row.SavingsDifference != expectedSavings {
+		t.Errorf("expected SavingsDifference=%v, got %v", expectedSavings, row.SavingsDifference)
+	}
+	if res.TotalSavings != expectedSavings {
+		t.Errorf("expected TotalSavings=%v, got %v", expectedSavings, res.TotalSavings)
+	}
+
+	// 2. Multi-supplier test
+	multiRes, err := svc.RunMultiSupplierComparison(ctx, []int64{f1.ID, f2.ID})
+	if err != nil {
+		t.Fatalf("multi-supplier failed: %v", err)
+	}
+	if multiRes.Summary.TotalProducts != 1 {
+		t.Fatalf("expected 1 product group, got %d", multiRes.Summary.TotalProducts)
+	}
+	if multiRes.Rows[0].NotComparable {
+		t.Errorf("expected multi-supplier row to be comparable")
+	}
+}
+

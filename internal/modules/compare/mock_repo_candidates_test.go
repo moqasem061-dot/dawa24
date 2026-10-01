@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func (m *mockCompareRepo) FindCandidateProducts(ctx context.Context, orgID *int64, query, sku string, limit int) ([]*compare.CandidateProduct, error) {
@@ -70,3 +71,11 @@ func (m *mockCompareRepo) ListDistinctSuppliers(ctx context.Context) ([]string, 
 	sort.Strings(suppliers)
 	return suppliers, nil
 }
+
+func (m *mockCompareRepo) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {
+	if len(m.packRels) > 0 {
+		return m.packRels, nil
+	}
+	return nil, nil
+}
+

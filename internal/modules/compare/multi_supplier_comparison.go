@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -45,13 +46,37 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 	supplierBestCounts := make(map[string]int)
 	var suppliersList []string
 
+	type fileWithRows struct {
+		file *CompareFile
+		rows []*CompareFileRow
+	}
+	var loadedFiles []fileWithRows
+	var productIDs []int64
+	seenProd := make(map[int64]bool)
+
 	for _, f := range files {
 		suppliersList = append(suppliersList, f.SupplierName)
 		rows, err := s.repo.ListFileRows(ctx, f.ID, 100000, 0)
 		if err != nil {
 			return nil, err
 		}
+		loadedFiles = append(loadedFiles, fileWithRows{file: f, rows: rows})
+		for _, r := range rows {
+			if r != nil && r.MatchedProductID != nil && *r.MatchedProductID > 0 && !seenProd[*r.MatchedProductID] {
+				productIDs = append(productIDs, *r.MatchedProductID)
+				seenProd[*r.MatchedProductID] = true
+			}
+		}
+	}
 
+	var rels []productmatch.PackRelationship
+	if len(productIDs) > 0 {
+		rels, _ = s.repo.LoadPackRelationships(ctx, productIDs)
+	}
+
+	for _, fw := range loadedFiles {
+		f := fw.file
+		rows := fw.rows
 		for _, r := range rows {
 			if r == nil || !IsValidProductRow(r.RawName, r.SKU, r.Price, r.Discount) {
 				continue
@@ -69,7 +94,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 1. Match across vendor files by master catalog product ID (exact 100% catalog match)
 			if r.MatchedProductID != nil && *r.MatchedProductID > 0 {
 				if candidate := byProductID[*r.MatchedProductID]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -78,7 +103,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 2. Match across vendor files by clean barcode (8 to 14 digits)
 			if compRow == nil && cleanSKU != "" && isBarcode(cleanSKU) {
 				if candidate := byBarcode[cleanSKU]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -87,7 +112,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 3. Match across vendor files by clean SKU
 			if compRow == nil && cleanSKU != "" {
 				if candidate := bySKU[cleanSKU]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -95,7 +120,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 4. Match across vendor files by exact normalized Arabic/English name
 			if compRow == nil && normText != "" {
 				if candidate := byNorm[normText]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -103,7 +128,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 5. Match across vendor files by core drug phonetic/noise-free key
 			if compRow == nil && coreKey != "" {
 				if candidate := byCore[coreKey]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -111,7 +136,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			// 6. Match across vendor files by bag-of-words sorted key
 			if compRow == nil && sortedKey != "" {
 				if candidate := bySorted[sortedKey]; candidate != nil {
-					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+					if ok, _, _ := canGroupWithProductRow(r, candidate, rels); ok {
 						compRow = candidate
 					}
 				}
@@ -122,7 +147,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 				if baseKey != "" {
 					candidates := byBaseCore[baseKey]
 					for _, c := range candidates {
-						if ok, _, _ := canGroupWithProductRow(r, c.compRow); ok {
+						if ok, _, _ := canGroupWithProductRow(r, c.compRow, rels); ok {
 							if hasCount && c.hasCount {
 								if math.Abs(pCount-c.packCount) < 0.01 {
 									compRow = c.compRow
@@ -150,13 +175,29 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			}
 
 			if compRow != nil {
-				_, groupBasis, notComparable := canGroupWithProductRow(r, compRow)
+				_, groupBasis, notComparable := canGroupWithProductRow(r, compRow, rels)
 				if compRow.GroupBasis == "" {
 					compRow.GroupBasis = groupBasis
 				}
 				if notComparable {
 					compRow.NotComparable = true
 					compRow.GroupBasis = "not_comparable"
+				}
+
+				rFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: r.RawName, SKU: r.SKU}, nil)
+				compFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: compRow.ProductName, SKU: compRow.SKU}, nil)
+				convertedNet, convertible := convertEquivalentPrice(netPrice, compFacts, rFacts, rels)
+				if !convertible {
+					compRow.NotComparable = true
+					compRow.GroupBasis = "not_comparable"
+				} else if !compRow.NotComparable {
+					offer.PriceAfterDiscount = convertedNet
+					if convertedNet.Minor() < compRow.BestNetPrice.Minor() || (convertedNet.Minor() == compRow.BestNetPrice.Minor() && r.Discount > compRow.BestDiscount) {
+						compRow.BestNetPrice = convertedNet
+						compRow.BestPrice = r.Price
+						compRow.BestDiscount = r.Discount
+						compRow.BestSupplier = f.SupplierName
+					}
 				}
 			}
 
@@ -275,12 +316,38 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 		avgDiscount = math.Round((totalDiscountSum/float64(discountCount))*100.0) / 100.0
 	}
 
+	var totalPotentialSaving money.Amount
+	for _, row := range resultRows {
+		if row.NotComparable || len(row.Offers) <= 1 {
+			continue
+		}
+		var minNet, maxNet money.Amount
+		first := true
+		for _, off := range row.Offers {
+			if first {
+				minNet = off.PriceAfterDiscount
+				maxNet = off.PriceAfterDiscount
+				first = false
+			} else {
+				if off.PriceAfterDiscount.Minor() < minNet.Minor() {
+					minNet = off.PriceAfterDiscount
+				}
+				if off.PriceAfterDiscount.Minor() > maxNet.Minor() {
+					maxNet = off.PriceAfterDiscount
+				}
+			}
+		}
+		saving, _ := maxNet.Sub(minNet)
+		totalPotentialSaving, _ = totalPotentialSaving.Add(saving)
+	}
+
 	summary := ComparisonSummary{
 		TotalProducts:        len(resultRows),
 		TotalSuppliers:       len(files),
 		SuppliersList:        suppliersList,
 		AverageDiscount:      avgDiscount,
 		BestOffersBySupplier: supplierBestCounts,
+		TotalPotentialSaving: totalPotentialSaving,
 	}
 
 	return &ComparisonResultSet{
@@ -289,58 +356,3 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 	}, nil
 }
 
-// RunSupplierVsSupplier executes head-to-head comparison between two suppliers (Plan V5 Phase 2 §2.5.1).
-func (s *Service) RunSupplierVsSupplier(ctx context.Context, sourceFileID, targetFileID int64) ([]*HeadToHeadItem, *HeadToHeadStats, error) {
-	detailed, err := s.RunSupplierVsSupplierDetailed(ctx, HeadToHeadFilter{
-		SourceFileID: sourceFileID,
-		TargetFileID: targetFileID,
-	})
-	if err != nil {
-		return nil, nil, err
-	}
-
-	var items []*HeadToHeadItem
-	for _, r := range detailed.Rows {
-		items = append(items, &HeadToHeadItem{
-			ProductName:    r.ProductName,
-			SKU:            r.SKU,
-			SourcePrice:    r.Price,
-			SourceDiscount: r.YourDiscount,
-			SourceNet:      r.YourNetPrice,
-			TargetPrice:    r.Price,
-			TargetDiscount: r.CompetitorDiscount,
-			TargetNet:      r.CompetitorNetPrice,
-			IsBetter:       r.Outcome == OutcomeYourBetter || r.Outcome == OutcomeEqual,
-			PriceDiff:      r.SavingsDifference,
-		})
-	}
-
-	stats := &HeadToHeadStats{
-		SharedCount:  detailed.TotalShared,
-		BetterCount:  detailed.YourBetterCount + detailed.EqualCount,
-		SourceTotal:  detailed.SourceTotal,
-		TargetTotal:  detailed.TargetTotal,
-		QualityScore: detailed.WinRatePercent,
-		TotalSavings: detailed.TotalSavings,
-	}
-
-	return items, stats, nil
-}
-
-func isBarcode(s string) bool {
-	if len(s) < 8 || len(s) > 14 {
-		return false
-	}
-	for _, c := range s {
-		if c < '0' || c > '9' {
-			return false
-		}
-	}
-	return true
-}
-
-type multiCompBaseEntry struct {
-	compRow   *ProductComparisonRow
-	packCount float64
-	hasCount  bool
-}

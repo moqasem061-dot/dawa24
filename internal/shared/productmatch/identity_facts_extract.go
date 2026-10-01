@@ -261,6 +261,13 @@ func extractNameFacts(facts *IdentityFacts, text string) {
 				Cert:    CertParsed,
 			}
 		}
+		if c := extractContainerFromWords(norm); c != "" {
+			if facts.Pack == nil {
+				facts.Pack = &PackFacts{Count: 1, SubUnit: c, Container: c, Prov: ProvOriginal, Cert: CertParsed}
+			} else if facts.Pack.Container == "" {
+				facts.Pack.Container = c
+			}
+		}
 	}
 
 	// Letter check: e.g. بتنوفيت ان or betnovate n

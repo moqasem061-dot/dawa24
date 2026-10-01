@@ -1,6 +1,7 @@
 package compare
 
 import (
+	"context"
 	"math"
 	"sort"
 	"strings"
@@ -162,3 +163,42 @@ func getSortedWordsKey(name string) string {
 	sort.Strings(words)
 	return strings.Join(words, " ")
 }
+
+// RunSupplierVsSupplier executes head-to-head comparison between two suppliers (Plan V5 Phase 2 §2.5.1).
+func (s *Service) RunSupplierVsSupplier(ctx context.Context, sourceFileID, targetFileID int64) ([]*HeadToHeadItem, *HeadToHeadStats, error) {
+	detailed, err := s.RunSupplierVsSupplierDetailed(ctx, HeadToHeadFilter{
+		SourceFileID: sourceFileID,
+		TargetFileID: targetFileID,
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var items []*HeadToHeadItem
+	for _, r := range detailed.Rows {
+		items = append(items, &HeadToHeadItem{
+			ProductName:    r.ProductName,
+			SKU:            r.SKU,
+			SourcePrice:    r.Price,
+			SourceDiscount: r.YourDiscount,
+			SourceNet:      r.YourNetPrice,
+			TargetPrice:    r.Price,
+			TargetDiscount: r.CompetitorDiscount,
+			TargetNet:      r.CompetitorNetPrice,
+			IsBetter:       r.Outcome == OutcomeYourBetter || r.Outcome == OutcomeEqual,
+			PriceDiff:      r.SavingsDifference,
+		})
+	}
+
+	stats := &HeadToHeadStats{
+		SharedCount:  detailed.TotalShared,
+		BetterCount:  detailed.YourBetterCount + detailed.EqualCount,
+		SourceTotal:  detailed.SourceTotal,
+		TargetTotal:  detailed.TargetTotal,
+		QualityScore: detailed.WinRatePercent,
+		TotalSavings: detailed.TotalSavings,
+	}
+
+	return items, stats, nil
+}
+

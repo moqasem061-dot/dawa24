@@ -2,6 +2,8 @@ package compare
 
 import (
 	"context"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // Repository defines the persistence operations for compare plans, subscriptions, and sessions.
@@ -92,6 +94,7 @@ type Repository interface {
 	GetSavedProductMapping(ctx context.Context, orgID *int64, rawName string) (*int64, error)
 	FindCandidateProducts(ctx context.Context, orgID *int64, query, sku string, limit int) ([]*CandidateProduct, error)
 	ListCatalogMatchProducts(ctx context.Context, limit int) ([]*CandidateProduct, error)
+	LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error)
 
 	// Search across files
 	SearchFileRows(ctx context.Context, userID int64, orgID *int64, query string, limit int) ([]*CompareFileRowWithSupplier, error)
