@@ -1,6 +1,7 @@
 package compare
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -317,10 +318,21 @@ type CompareFileRow struct {
 	Discount           float64        `json:"discount"`
 	PriceAfterDiscount money.Amount   `json:"price_after_discount"`
 	MatchedProductID   *int64         `json:"matched_product_id,omitempty"`
-	MatchConfidence    float64        `json:"match_confidence"`
-	MatchMethod        MatchMethod    `json:"match_method"`
-	Meta               map[string]any `json:"meta,omitempty"`
-	CreatedAt          time.Time      `json:"created_at"`
+	MatchConfidence    float64         `json:"match_confidence"`
+	MatchMethod        MatchMethod     `json:"match_method"`
+	MatchState         string          `json:"match_state,omitempty"`
+	MatchBasis         string          `json:"match_basis,omitempty"`
+	MatchGranularity   string          `json:"match_granularity,omitempty"`
+	MatchRevision      int             `json:"match_revision,omitempty"`
+	HumanLocked        bool            `json:"human_locked,omitempty"`
+	AIState            string          `json:"ai_state,omitempty"`
+	MatchRunID         *int64          `json:"match_run_id,omitempty"`
+	MatchDecision      json.RawMessage `json:"match_decision,omitempty"`
+	BaselineDecision   json.RawMessage `json:"baseline_decision,omitempty"`
+	GroupBasis         string          `json:"group_basis,omitempty"`
+	NotComparable      bool            `json:"not_comparable,omitempty"`
+	Meta               map[string]any  `json:"meta,omitempty"`
+	CreatedAt          time.Time       `json:"created_at"`
 }
 
 // CompareFileRowWithSupplier embeds CompareFileRow with its parent supplier name.

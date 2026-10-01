@@ -9,6 +9,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
@@ -142,7 +143,7 @@ func (s *Service) MatchLadder(ctx context.Context, orgID *int64, rawName string,
 	// import do: the same rarity weighting, the same dose and form and
 	// line-extension discrimination, the same refusal to choose between two
 	// products the row cannot separate.
-	if res, ok := s.matchAgainst(rawName, cleanSKU, cleanBarcode, candidates); ok {
+	if res, ok := s.matchAgainst(ctx, orgID, rawName, cleanSKU, cleanBarcode, candidates); ok {
 		return res, nil
 	}
 
@@ -198,8 +199,41 @@ func normalizeProductText(s string) string { return productmatch.NormalizeText(s
 // index once and use productmatch.MatchAll; this exists so the per-row entry
 // point cannot answer differently from the rest of the platform.
 func (s *Service) matchAgainst(
-	rawName, sku, barcode string, candidates []*CandidateProduct,
+	ctx context.Context,
+	orgID *int64,
+	rawName, sku, barcode string,
+	candidates []*CandidateProduct,
 ) (*MatchResult, bool) {
+	if s.matcher != nil {
+		var effOrg int64
+		if orgID != nil {
+			effOrg = *orgID
+		}
+		scope := productmatch.Scope{
+			EffectiveOrg: effOrg,
+			Workflow:     productmatch.WorkflowCompare,
+			EntryPoint:   "compare_match_ladder",
+		}
+		row := productmatch.Row{
+			Name:    strings.TrimSpace(rawName),
+			SKU:     strings.TrimSpace(sku),
+			Barcode: strings.TrimSpace(barcode),
+		}
+		dec, err := s.matcher.Rematch(ctx, scope, row, 1)
+		if err == nil && (dec.State == matchflow.StateAccepted || dec.State == matchflow.StateConfirmed) && dec.ProductID != nil {
+			cols := matchflow.Columns(dec)
+			confidence := 100.0
+			method, label := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
+			return &MatchResult{
+				ProductID:   dec.ProductID,
+				Confidence:  confidence,
+				Method:      method,
+				MethodLabel: label,
+			}, true
+		}
+		return nil, false
+	}
+
 	if len(candidates) == 0 {
 		return nil, false
 	}
@@ -281,87 +315,4 @@ func compareMethodFor(level productmatch.MatchLevel, confidence float64) (MatchM
 	default:
 		return MatchMethodFuzzy, fmt.Sprintf(i18n.TDefault("w4_mod.d_162"), int(confidence))
 	}
-}
-
-// MatchFileRowsToCatalog resolves a batch of extracted rows against the catalog using productmatch.Index.
-// It populates MatchedProductID, MatchConfidence, and MatchMethod on each row, and persists them via BulkUpdateFileRowMatches
-// if row IDs are already assigned.
-func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows []*CompareFileRow) error {
-	if len(rows) == 0 {
-		return nil
-	}
-	candidates, err := s.repo.ListCatalogMatchProducts(ctx, 50000)
-	if err != nil || len(candidates) == 0 {
-		return err
-	}
-
-	masters := make([]productmatch.MasterProduct, 0, len(candidates))
-	for _, c := range candidates {
-		if c == nil || c.ID <= 0 {
-			continue
-		}
-		masters = append(masters, productmatch.MasterProduct{
-			ID:            c.ID,
-			NameAR:        c.NameAr,
-			NameEN:        c.NameEn,
-			SKU:           c.SKU,
-			Barcode:       c.Barcode,
-			Scientific:    c.ScientificName,
-			Manufacturer:  c.ManufacturingCompanies,
-			DosageForm:    c.DosageForm,
-			Concentration: c.Concentration,
-			Unit:          c.Unit,
-		})
-	}
-	if len(masters) == 0 {
-		return nil
-	}
-
-	idx := productmatch.NewIndex(masters)
-	matchRows := make([]*productmatch.Row, len(rows))
-	for i, r := range rows {
-		cleanSKU := strings.TrimSpace(r.SKU)
-		matchRows[i] = &productmatch.Row{
-			Name:    strings.TrimSpace(r.RawName),
-			SKU:     cleanSKU,
-			Barcode: cleanSKU,
-		}
-	}
-
-	opts := productmatch.DefaultMatchOptions()
-	results := productmatch.MatchAll(idx, matchRows, opts, 0)
-
-	for i, res := range results {
-		if res.Matched() && res.Level.Settled() {
-			confidence := math.Round(res.Score * 100.0)
-			method, _ := compareMethodFor(res.Level, confidence)
-			prodID := res.ProductID
-			rows[i].MatchedProductID = &prodID
-			rows[i].MatchConfidence = confidence
-			rows[i].MatchMethod = method
-		}
-	}
-
-	// The shared AI stage, when it is wired: the rows the engine could not
-	// settle are resolved, and the ones it settled on a name are checked.
-	if s.enhancer != nil {
-		s.refineWithAI(ctx, idx, rows, matchRows, results)
-	}
-
-	var matches []RowMatch
-	for _, r := range rows {
-		if r.ID > 0 && r.MatchedProductID != nil {
-			matches = append(matches, RowMatch{
-				RowID:      r.ID,
-				ProductID:  r.MatchedProductID,
-				Confidence: r.MatchConfidence,
-				Method:     r.MatchMethod,
-			})
-		}
-	}
-
-	if len(matches) > 0 {
-		return s.repo.BulkUpdateFileRowMatches(ctx, fileID, matches)
-	}
-	return nil
 }

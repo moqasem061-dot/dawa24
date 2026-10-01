@@ -36,6 +36,7 @@ type Service struct {
 	repo     Repository
 	log      *slog.Logger
 	enhancer matchflow.Enhancer
+	matcher  Matcher
 	storage  *storage.Client
 	// cache holds the market board's total and supplier list. Nil is a
 	// supported state: every read falls through to the database.
