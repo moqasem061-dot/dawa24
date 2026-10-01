@@ -220,15 +220,25 @@ func (s *Service) matchAgainst(
 			Barcode: strings.TrimSpace(barcode),
 		}
 		dec, err := s.matcher.Rematch(ctx, scope, row, 1)
-		if err == nil && (dec.State == matchflow.StateAccepted || dec.State == matchflow.StateConfirmed) && dec.ProductID != nil {
+		if err == nil {
 			cols := matchflow.Columns(dec)
 			confidence := 100.0
-			method, label := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
+			if cols.MatchedProductID != nil {
+				method, label := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
+				return &MatchResult{
+					ProductID:   cols.MatchedProductID,
+					Confidence:  confidence,
+					Method:      method,
+					MethodLabel: label,
+				}, true
+			}
+			// When rematch yields a non-accepted state (FR-041), cols.MatchedProductID is nil,
+			// clearing any stale product ID link.
 			return &MatchResult{
-				ProductID:   dec.ProductID,
-				Confidence:  confidence,
-				Method:      method,
-				MethodLabel: label,
+				ProductID:   nil,
+				Confidence:  0.0,
+				Method:      MatchMethodUnmatched,
+				MethodLabel: i18n.TDefault("w4_mod.s_364_364"),
 			}, true
 		}
 		return nil, false

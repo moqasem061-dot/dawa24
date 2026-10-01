@@ -68,12 +68,15 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 				method, _ := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
 				rows[i].MatchConfidence = confidence
 				rows[i].MatchMethod = method
+			} else {
+				rows[i].MatchConfidence = 0.0
+				rows[i].MatchMethod = MatchMethodUnmatched
 			}
 		}
 
 		var matches []RowMatch
 		for _, r := range rows {
-			if r.ID > 0 && r.MatchedProductID != nil {
+			if r.ID > 0 {
 				matches = append(matches, RowMatch{
 					RowID:      r.ID,
 					ProductID:  r.MatchedProductID,

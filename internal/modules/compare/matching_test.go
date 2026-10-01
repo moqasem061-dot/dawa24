@@ -7,6 +7,8 @@ import (
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 func TestMatchLadder_AllStrategies(t *testing.T) {
@@ -212,3 +214,93 @@ func TestManualCorrectionPersistenceAndReuse(t *testing.T) {
 		t.Errorf("expected 100%% confidence on reused correction, got %f", nextMatch.Confidence)
 	}
 }
+
+type fakeCompareMatcher struct {
+	dec matchflow.RowDecision
+	err error
+}
+
+func (f *fakeCompareMatcher) Prepare(ctx context.Context, req productmatch.PrepareRequest) (productmatch.PrepareResult, error) {
+	return productmatch.PrepareResult{
+		Decisions: []matchflow.RowDecision{f.dec},
+	}, f.err
+}
+
+func (f *fakeCompareMatcher) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
+	return f.dec, f.err
+}
+
+func (f *fakeCompareMatcher) Revalidate(ctx context.Context, s productmatch.Scope, ref productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+	return f.dec, f.err
+}
+
+// T092 [US6]: Rerun clears stale links (FR-041) through Columns.
+func TestRematch_NonAcceptedState_ClearsStaleLink_FR041(t *testing.T) {
+	ctx := context.Background()
+	repo := newMockCompareRepo()
+	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
+	svc := compare.NewService(repo, logger)
+
+	prodID := int64(777)
+	fake := &fakeCompareMatcher{
+		dec: matchflow.RowDecision{
+			State:     matchflow.StateAccepted,
+			Basis:     matchflow.BasisExact,
+			ProductID: &prodID,
+			Revision:  1,
+		},
+	}
+	svc.SetMatcher(fake)
+
+	orgID := int64(10)
+	rawName := "كونجستال 20 قرص"
+
+	// 1. Initial match succeeds and returns accepted link
+	res1, err := svc.MatchLadder(ctx, &orgID, rawName, "", "", nil)
+	if err != nil {
+		t.Fatalf("unexpected error on match 1: %v", err)
+	}
+	if res1.ProductID == nil || *res1.ProductID != prodID {
+		t.Fatalf("expected accepted product ID %d, got %v", prodID, res1.ProductID)
+	}
+
+	// 2. Rerun / rematch produces a non-accepted state (needs_review / pack conflict)
+	fake.dec = matchflow.RowDecision{
+		State:     matchflow.StateNeedsReview,
+		Basis:     matchflow.BasisSimilarity,
+		ProductID: &prodID, // Suggested target lives only in JSON decision, not in MatchedProductID
+		Revision:  2,
+	}
+
+	res2, err := svc.MatchLadder(ctx, &orgID, rawName, "", "", nil)
+	if err != nil {
+		t.Fatalf("unexpected error on match 2: %v", err)
+	}
+	if res2.ProductID != nil {
+		t.Errorf("FR-041 violation: expected ProductID=nil on non-accepted rerun, got %v", *res2.ProductID)
+	}
+	if res2.Method != compare.MatchMethodUnmatched {
+		t.Errorf("expected Method=unmatched, got %s", res2.Method)
+	}
+
+	// 3. Batch file matching: row previously having MatchedProductID has it cleared to nil
+	existingProdID := prodID
+	row := &compare.CompareFileRow{
+		ID:               1001,
+		FileID:           5,
+		RowNumber:        1,
+		RawName:          rawName,
+		MatchedProductID: &existingProdID,
+	}
+	err = svc.MatchFileRowsToCatalog(ctx, 5, []*compare.CompareFileRow{row})
+	if err != nil {
+		t.Fatalf("MatchFileRowsToCatalog failed: %v", err)
+	}
+	if row.MatchedProductID != nil {
+		t.Errorf("FR-041 violation: expected row.MatchedProductID=nil after non-accepted match, got %v", *row.MatchedProductID)
+	}
+	if row.MatchState != string(matchflow.StateNeedsReview) {
+		t.Errorf("expected MatchState=needs_review, got %s", row.MatchState)
+	}
+}
+

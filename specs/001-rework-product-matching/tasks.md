@@ -308,7 +308,7 @@ description: "Executable task list for the Product Matching Rework"
 - [X] T089 [US6] Declare the compare port in `internal/modules/compare/matching_port.go` and its adapter in `cmd/server/wire_matching.go`. Replace both `NewIndex` + `Match`/`MatchAll` call sites in `internal/modules/compare/matching.go` (lines ~246 and ~320). Delete the `ListCatalogMatchProducts(ctx, 50000)` cap usage and the `cleanSKU → Barcode` assignment.
 - [X] T090 [US6] Grouping gate: add `productmatch.SameSellableItem(a, b IdentityFacts, rels) (same bool, basis string)` in `internal/shared/productmatch/equivalence.go`. It requires no hard conflict and pack agreement, or a relationship. In `head_to_head_comparison.go`, `head_to_head_short_brand.go` and `multi_supplier_comparison.go`, only group rows when both have the same accepted product ID at pack granularity, **or** `SameSellableItem` returns true (then `group_basis='source_equivalence'`). Short-brand grouping alone must never group.
 - [X] T091 [US6] Price comparability: convert unit prices only through `productmatch.Convert`. Otherwise mark `not_comparable` and exclude the row from savings totals. Money uses `money.Amount` with exact tests. Change `internal/modules/compare/head_to_head_comparison.go` and `multi_supplier_comparison.go`.
-- [ ] T092 [US6] Rerun clears stale links (FR-041) in `internal/modules/compare/matching.go` through `Columns`.
+- [X] T092 [US6] Rerun clears stale links (FR-041) in `internal/modules/compare/matching.go` through `Columns`.
 - [ ] T093 [US6] Show `group_basis` and "not directly comparable" labels in `internal/ui/pages/compare_head_to_head.templ` and `compare_results.templ`. Update `docs/modules/compare.md`.
 
 ---
