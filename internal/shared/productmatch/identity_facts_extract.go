@@ -350,9 +350,7 @@ func extractUnit(text string) string {
 	switch {
 	case strings.Contains(t, "ميكروجرام") || strings.Contains(t, "مكجم") || strings.Contains(t, "mcg"):
 		return "mcg"
-	case strings.Contains(t, "مليجرام") || strings.Contains(t, "ملجرام") || strings.Contains(t, "ملجم") ||
-		strings.Contains(t, "مجم") || strings.Contains(t, "محم") || strings.Contains(t, "مج") ||
-		strings.Contains(t, "مغ") || strings.Contains(t, "mg"):
+	case strings.Contains(t, "مليجرام") || strings.Contains(t, "ملجرام") || strings.Contains(t, "ملجم") || strings.Contains(t, "مجم") || strings.Contains(t, "محم") || strings.Contains(t, "مج") || strings.Contains(t, "مغ") || strings.Contains(t, "mg"):
 		return "mg"
 	case strings.Contains(t, "جرام") || strings.Contains(t, "جم") || strings.Contains(t, "gm") || strings.Contains(t, "g"):
 		return "g"
@@ -368,23 +366,32 @@ func extractUnit(text string) string {
 	return ""
 }
 
-func normalizeUnit(u string) string {
-	return extractUnit(u)
-}
+func normalizeUnit(u string) string { return extractUnit(u) }
 
 func applyCorrections(facts *IdentityFacts, corrections []Correction) {
 	for _, c := range corrections {
 		switch c.Attribute {
 		case "strength":
-			facts.Strengths = []Strength{
-				{Value: c.Value, Prov: ProvCorrected, Cert: CertExplicit},
+			var temp IdentityFacts
+			parseStrengthText(&temp, c.Value)
+			if len(temp.Strengths) > 0 {
+				for i := range temp.Strengths {
+					temp.Strengths[i].Prov = ProvCorrected
+					temp.Strengths[i].Cert = CertExplicit
+				}
+				facts.Strengths = temp.Strengths
+			} else {
+				facts.Strengths = []Strength{{Value: c.Value, Prov: ProvCorrected, Cert: CertExplicit}}
 			}
-		case "form":
+		case "form", "dosage_form":
 			facts.FormFamily = FormFamily(c.Value)
 			facts.Prov = ProvCorrected
 		case "pack":
 			count, _ := strconv.Atoi(c.Value)
 			facts.Pack = &PackFacts{Count: count, Prov: ProvCorrected, Cert: CertExplicit}
+		case "brand":
+			facts.Brand = []Token{{Text: sheet.NormalizeName(c.Value)}}
+			facts.Prov = ProvCorrected
 		}
 	}
 }

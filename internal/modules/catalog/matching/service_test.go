@@ -321,13 +321,7 @@ func TestService_UnimplementedMethods(t *testing.T) {
 			t.Errorf("%s expected ErrNotImplemented, got %v", name, err)
 		}
 	}
-	_, err := svc.Search(ctx, sc, "q", productmatch.Row{}, 5)
-	check("Search", err)
-	_, err = svc.Review(ctx, sc, ReviewAction{})
-	check("Review", err)
-	_, err = svc.PreviewBulk(ctx, sc, ReviewAction{}, nil)
-	check("PreviewBulk", err)
-	_, err = svc.StartEnhancement(ctx, 1, nil)
+	_, err := svc.StartEnhancement(ctx, 1, nil)
 	check("StartEnhancement", err)
 	check("StopEnhancement", svc.StopEnhancement(ctx, 1))
 	check("Remember", svc.Remember(ctx, sc, KnowledgeWrite{}))

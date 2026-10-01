@@ -321,7 +321,7 @@ description: "Executable task list for the Product Matching Rework"
 
 **Context**: spec.md US7, FR-043–050; research R12; ADR 0014, 0017, 0018 in `docs/adr/decisions.md`; Makefile UI gates (`check-inline-styles`, `check-breakpoints`, `check-physical-properties`, `check-alpine-csp`).
 
-- [ ] T094 [US7] Implement `Service.Search`, `Service.Review` (select/correct/reject/exclude/undo) and `Service.PreviewBulk` in `internal/modules/catalog/matching/review.go`:
+- [X] T094 [US7] Implement `Service.Search`, `Service.Review` (select/correct/reject/exclude/undo) and `Service.PreviewBulk` in `internal/modules/catalog/matching/review.go`:
   - `Review` rejects `select` on a candidate with hard conflicts unless the same action carries a fact correction that removes the conflict.
   - Every write uses the optimistic `match_revision` check. A mismatch returns `ErrRevisionConflict`.
   - `PreviewBulk` includes only rows with an equal `QuestionSignature` and excludes explicitly rejected rows.

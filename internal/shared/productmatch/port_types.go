@@ -43,7 +43,10 @@ type PrepareResult struct {
 
 // RowRef identifies an individual row across consumer tables.
 type RowRef struct {
-	ID        int64  `json:"id"`
-	Table     string `json:"table"`
-	RowNumber int    `json:"row_number"`
+	ID                 int64  `json:"id"`
+	Table              string `json:"table"`
+	RowNumber          int    `json:"row_number"`
+	QuestionSignature  string `json:"question_signature,omitempty"`
+	State              string `json:"state,omitempty"`
+	ExplicitlyRejected bool   `json:"explicitly_rejected,omitempty"`
 }

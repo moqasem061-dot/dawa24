@@ -269,18 +269,6 @@ func (s *serviceImpl) Revalidate(ctx context.Context, sc Scope, ref RowRef, d ma
 	return d, nil
 }
 
-func (s *serviceImpl) Search(ctx context.Context, sc Scope, q string, row productmatch.Row, limit int) ([]matchflow.CandidateView, error) {
-	return nil, ErrNotImplemented
-}
-
-func (s *serviceImpl) Review(ctx context.Context, sc Scope, a ReviewAction) (matchflow.RowDecision, error) {
-	return matchflow.RowDecision{}, ErrNotImplemented
-}
-
-func (s *serviceImpl) PreviewBulk(ctx context.Context, sc Scope, a ReviewAction, rows []RowRef) (BulkPreview, error) {
-	return BulkPreview{}, ErrNotImplemented
-}
-
 func (s *serviceImpl) StartEnhancement(ctx context.Context, runID int64, rows []EnhanceRow) (EnhanceHandle, error) {
 	return EnhanceHandle{}, ErrNotImplemented
 }

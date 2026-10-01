@@ -11,6 +11,12 @@ import (
 // ErrNotImplemented is returned for port methods not yet implemented in Phase 2D.
 var ErrNotImplemented = errors.New("matching: method not implemented")
 
+// ErrRevisionConflict is returned when a review write encounters an optimistic revision mismatch.
+var ErrRevisionConflict = errors.New("matching: revision conflict")
+
+// ErrHardConflict is returned when a reviewer attempts to select a candidate with unresolved hard conflicts.
+var ErrHardConflict = errors.New("matching: candidate has unresolved hard conflicts")
+
 // Workflow names the matching consumer workflow.
 type Workflow = productmatch.Workflow
 
@@ -36,10 +42,14 @@ type RowRef = productmatch.RowRef
 
 // ReviewAction captures human review decisions.
 type ReviewAction struct {
+	RowRef      RowRef                 `json:"row_ref"`
+	ExpectedRev int                    `json:"expected_rev"`
 	Action      string                 `json:"action"` // select, correct, reject, exclude, undo
 	TargetID    int64                  `json:"target_id"`
 	Corrections []matchflow.Correction `json:"corrections,omitempty"`
 	Reason      string                 `json:"reason,omitempty"`
+	Row         productmatch.Row       `json:"row,omitempty"`
+	CurrentDec  matchflow.RowDecision  `json:"current_dec,omitempty"`
 }
 
 // BulkPreview provides impact metrics for a review action across multiple rows.
