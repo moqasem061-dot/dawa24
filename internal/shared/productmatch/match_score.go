@@ -51,10 +51,14 @@ func corroborationFactor(name float64) float64 {
 // rate scores one catalogue product against one row.
 func (idx *Index) rate(q *query, p *MasterProduct) (scoredProduct, bool) {
 	ev := idx.nameEvidenceOf(q, p)
-	if !ev.sufficient(q) {
+	isAlias := idx.isAliasMatch(q, p)
+	if !ev.sufficient(q) && !isAlias {
 		return scoredProduct{}, false
 	}
 	name := ev.similarity
+	if isAlias && name < 0.85 {
+		name = 0.85
+	}
 
 	conflicts := idx.conflictsOf(q, p)
 	mass := conflictMass(conflicts)
@@ -116,7 +120,7 @@ func (idx *Index) rate(q *query, p *MasterProduct) (scoredProduct, bool) {
 		name:      name,
 		agreed:    agreed,
 		exact:     exact,
-		blind:     ev.distinctHits == 0,
+		blind:     ev.distinctHits == 0 && !isAlias,
 	}, true
 }
 

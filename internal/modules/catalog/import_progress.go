@@ -151,7 +151,11 @@ func (p ImportProgress) PercentAt(now time.Time) int {
 	if !ok {
 		return 0
 	}
-	return importprogress.Percent(band, p.Current, p.Total, p.PhaseElapsedAt(now))
+	pct := importprogress.Percent(band, p.Current, p.Total, p.PhaseElapsedAt(now))
+	if pct >= importprogress.Complete {
+		pct = importprogress.Complete - 1
+	}
+	return pct
 }
 
 // PhaseElapsed is how long the run has been in its current phase, as of now.

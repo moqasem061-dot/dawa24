@@ -7,6 +7,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
@@ -56,8 +57,21 @@ func (m *mockRepository) CreateRun(ctx context.Context, run *MatchRun) error {
 	defer m.mu.Unlock()
 	m.nextRunID++
 	run.ID = m.nextRunID
+	if run.HeartbeatAt.IsZero() {
+		run.HeartbeatAt = time.Now()
+	}
 	m.runs[run.ID] = run
+	m.runStates[run.ID] = run.State
 	return nil
+}
+
+func (m *mockRepository) GetRun(ctx context.Context, runID int64) (*MatchRun, error) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if run, ok := m.runs[runID]; ok {
+		return run, nil
+	}
+	return nil, fmt.Errorf("run not found: %d", runID)
 }
 
 func (m *mockRepository) UpdateCounts(ctx context.Context, runID int64, counts matchflow.RunCounts) error {
@@ -75,11 +89,55 @@ func (m *mockRepository) SetState(ctx context.Context, runID int64, state string
 	defer m.mu.Unlock()
 	m.runStates[runID] = state
 	m.runFinished[runID] = finished
+	if run, ok := m.runs[runID]; ok {
+		run.State = state
+		if finished {
+			now := time.Now()
+			run.FinishedAt = &now
+		}
+	}
 	return nil
 }
 
 func (m *mockRepository) Heartbeat(ctx context.Context, runID int64) error {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if run, ok := m.runs[runID]; ok {
+		run.HeartbeatAt = time.Now()
+	}
 	return nil
+}
+
+func (m *mockRepository) ListRunRows(ctx context.Context, runID int64, workflow string, limit int) ([]DiagnosticRowData, error) {
+	return nil, nil
+}
+
+func (m *mockRepository) LookupOrg(ctx context.Context, sigs []string) ([]Knowledge, error) {
+	return nil, nil
+}
+
+func (m *mockRepository) LookupPlatform(ctx context.Context, sigs []string, orgID int64) ([]Knowledge, error) {
+	return nil, nil
+}
+
+func (m *mockRepository) Upsert(ctx context.Context, k Knowledge) error {
+	return nil
+}
+
+func (m *mockRepository) Revoke(ctx context.Context, id int64, revokedBy string) error {
+	return nil
+}
+
+func (m *mockRepository) MarkStale(ctx context.Context, ids []int64) error {
+	return nil
+}
+
+func (m *mockRepository) List(ctx context.Context, f KnowledgeFilter) (Page[Knowledge], error) {
+	return Page[Knowledge]{}, nil
+}
+
+func (m *mockRepository) LoadAliases(ctx context.Context, orgID int64) (map[string][]int64, error) {
+	return nil, nil
 }
 
 func testMasterIndex(rev int64) *productmatch.Index {
@@ -313,7 +371,7 @@ func TestService_Rematch_And_Revalidate(t *testing.T) {
 
 func TestService_UnimplementedMethods(t *testing.T) {
 	ctx := context.Background()
-	svc := NewService(newMockRepository(), NewIndexCache(nil), nil)
+	svc := NewService(nil, NewIndexCache(nil), nil)
 	sc := Scope{EffectiveOrg: 1}
 
 	check := func(name string, err error) {

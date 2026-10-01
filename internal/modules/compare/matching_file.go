@@ -87,7 +87,12 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 		}
 
 		if len(matches) > 0 {
-			return s.repo.BulkUpdateFileRowMatches(ctx, fileID, matches)
+			if err := s.repo.BulkUpdateFileRowMatches(ctx, fileID, matches); err != nil {
+				return err
+			}
+		}
+		if res.RunID > 0 {
+			_ = s.matcher.MarkReviewable(ctx, res.RunID)
 		}
 		return nil
 	}

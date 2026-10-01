@@ -29,6 +29,10 @@ func (a *compareMatcherAdapter) Prepare(ctx context.Context, req productmatch.Pr
 	return a.svc.Prepare(ctx, req)
 }
 
+func (a *compareMatcherAdapter) MarkReviewable(ctx context.Context, runID int64) error {
+	return a.svc.MarkReviewable(ctx, runID)
+}
+
 func (a *compareMatcherAdapter) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
 	return a.svc.Rematch(ctx, s, row, rev)
 }

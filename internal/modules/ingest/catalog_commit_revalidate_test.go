@@ -17,6 +17,10 @@ func (m *mockCommitMatcher) Prepare(_ context.Context, _ productmatch.PrepareReq
 	return productmatch.PrepareResult{}, nil
 }
 
+func (m *mockCommitMatcher) MarkReviewable(_ context.Context, _ int64) error {
+	return nil
+}
+
 func (m *mockCommitMatcher) Rematch(_ context.Context, _ productmatch.Scope, _ productmatch.Row, _ int) (matchflow.RowDecision, error) {
 	return matchflow.RowDecision{}, nil
 }

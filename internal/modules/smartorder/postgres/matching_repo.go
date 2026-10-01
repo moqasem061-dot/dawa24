@@ -8,7 +8,6 @@ import (
 
 	"github.com/jackc/pgx/v5"
 
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
 )
@@ -199,48 +198,19 @@ func (r *Repository) ResolveByContains(ctx context.Context, names []string, matc
 	return out, nil
 }
 
-// SaveLearnedMapping records a buyer correction (FR-016, FR-040) into customer_product_mappings AND match_decisions.
+// SaveLearnedMapping records a buyer correction (FR-016, FR-040) into customer_product_mappings.
+// Legacy catalog.match_decisions is read-only (US8 T114); writes route through matching.Service.
 func (r *Repository) SaveLearnedMapping(ctx context.Context, orgID int64, rawName string, productID int64) error {
-	normName := strings.ToLower(strings.TrimSpace(rawName))
-	decKey := "manual:" + normName
-	var userID *int64
-	if actor, ok := authctx.From(ctx); ok && actor.UserID > 0 {
-		userID = &actor.UserID
-	}
-
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if !isDecisionMemoryEnabled(txCtx, tx) {
 			return nil
 		}
-		// 1. Insert into catalog.customer_product_mappings
+		// Insert into catalog.customer_product_mappings (catalog.match_decisions is read-only)
 		_, err := tx.Exec(txCtx, `
 			INSERT INTO catalog.customer_product_mappings (
 				organization_id, customer_org_id, raw_name, product_id, source, status, is_active, created_at, updated_at
 			) VALUES ($1, $1, $2, $3, 'manual', 'processed', true, now(), now())
 			ON CONFLICT DO NOTHING;`, orgID, rawName, productID)
-		if err != nil {
-			return err
-		}
-
-		// 2. Also record in catalog.match_decisions
-		if normName != "" && productID > 0 {
-			_, err = tx.Exec(txCtx, `
-				INSERT INTO catalog.match_decisions (
-					organization_id, user_id, decision_key, norm_name, chosen_product_id,
-					confidence, reason, prompt_version, hit_count, created_at, last_used_at
-				) VALUES (
-					$1, $2, $3, $4, $5,
-					1.000, 'قرار تصحيح يدوي من الطلب الذكي', 'manual:v1', 1, now(), now()
-				)
-				ON CONFLICT (COALESCE(organization_id, 0), decision_key)
-				DO UPDATE SET
-					chosen_product_id = EXCLUDED.chosen_product_id,
-					confidence = 1.000,
-					user_id = COALESCE(EXCLUDED.user_id, catalog.match_decisions.user_id),
-					hit_count = catalog.match_decisions.hit_count + 1,
-					last_used_at = now();
-			`, orgID, userID, decKey, normName, productID)
-		}
 		return err
 	})
 }

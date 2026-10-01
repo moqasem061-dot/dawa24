@@ -90,6 +90,10 @@ func (p workerMatcherPort) Prepare(ctx context.Context, req productmatch.Prepare
 	return p.svc.Prepare(ctx, req)
 }
 
+func (p workerMatcherPort) MarkReviewable(ctx context.Context, runID int64) error {
+	return p.svc.MarkReviewable(ctx, runID)
+}
+
 func (p workerMatcherPort) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
 	return p.svc.Rematch(ctx, s, row, rev)
 }

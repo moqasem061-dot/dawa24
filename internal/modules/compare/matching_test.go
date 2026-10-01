@@ -226,6 +226,10 @@ func (f *fakeCompareMatcher) Prepare(ctx context.Context, req productmatch.Prepa
 	}, f.err
 }
 
+func (f *fakeCompareMatcher) MarkReviewable(ctx context.Context, runID int64) error {
+	return f.err
+}
+
 func (f *fakeCompareMatcher) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
 	return f.dec, f.err
 }

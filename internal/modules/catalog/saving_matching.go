@@ -137,6 +137,9 @@ func (s *Service) MatchSavingsRows(
 				}
 				items[i] = item
 			}
+			if prepRes.RunID > 0 {
+				_ = s.matchingSvc.MarkReviewable(ctx, prepRes.RunID)
+			}
 			return items, engine, nil
 		}
 	}

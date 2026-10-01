@@ -22,7 +22,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
@@ -87,37 +86,7 @@ func (r *Repository) ConfirmRowMatches(
 		}
 		confirmed = int(tag.RowsAffected())
 
-		var userID *int64
-		if actor, ok := authctx.From(ctx); ok && actor.UserID > 0 {
-			uid := actor.UserID
-			userID = &uid
-		}
-
-		// Save confirmed matches to match_decisions
-		_ = database.SoftExec(txCtx, tx, `
-			INSERT INTO catalog.match_decisions (
-				organization_id, user_id, decision_key, norm_name, chosen_product_id,
-				confidence, reason, prompt_version, hit_count, created_at, last_used_at,
-				scope, source
-			)
-			SELECT r.organization_id, $3, ('manual:' || lower(trim(r.display_name))), lower(trim(r.display_name)), r.product_id,
-			       1.000, 'تأكيد مطابقة من مراجعة الاستيراد', 'manual:v1', 1, now(), now(),
-			       'org', 'manual'
-			FROM ingest.catalog_import_rows r
-			WHERE r.import_id = $1
-			  AND r.id = ANY($2::bigint[])
-			  AND r.product_id IS NOT NULL AND r.product_id > 0
-			  AND trim(r.display_name) <> ''
-			ON CONFLICT (COALESCE(organization_id, 0), decision_key)
-			DO UPDATE SET
-				chosen_product_id = EXCLUDED.chosen_product_id,
-				confidence = 1.000,
-				hit_count = catalog.match_decisions.hit_count + 1,
-				last_used_at = now(),
-				source = 'manual';
-		`, importID, rowIDs, userID)
-
-		// Register in customer_product_mappings
+		// Register in customer_product_mappings (catalog.match_decisions is read-only)
 		_ = database.SoftExec(txCtx, tx, `
 			INSERT INTO catalog.customer_product_mappings (
 				organization_id, customer_org_id, raw_name, product_id,

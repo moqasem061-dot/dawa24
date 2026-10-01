@@ -24,6 +24,15 @@ type mockCommitMatchingSvc struct {
 func (m *mockCommitMatchingSvc) Prepare(context.Context, matching.PrepareRequest) (matching.PrepareResult, error) {
 	return matching.PrepareResult{}, nil
 }
+func (m *mockCommitMatchingSvc) GetRun(context.Context, int64) (*matching.MatchRun, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) ListRunRows(context.Context, matching.Scope, int64, int) ([]matching.DiagnosticRowData, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) Diagnose(context.Context, matching.Scope, int64, productmatch.Row, matchflow.RowDecision) (matching.DiagnosticRow, error) {
+	return matching.DiagnosticRow{}, nil
+}
 func (m *mockCommitMatchingSvc) MarkReviewable(context.Context, int64) error { return nil }
 func (m *mockCommitMatchingSvc) Rematch(context.Context, matching.Scope, productmatch.Row, int) (matchflow.RowDecision, error) {
 	return matchflow.RowDecision{}, nil

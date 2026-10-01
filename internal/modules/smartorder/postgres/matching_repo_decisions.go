@@ -2,7 +2,6 @@ package postgres
 
 import (
 	"context"
-	"strconv"
 	"strings"
 
 	"github.com/jackc/pgx/v5"
@@ -91,70 +90,9 @@ func (r *Repository) LookupDecisions(ctx context.Context, keys []string) (map[st
 }
 
 // SaveDecisions writes adjudication results to the cache.
+// Legacy catalog.match_decisions is read-only (US8 T114); writes route through matching.Service.
 func (r *Repository) SaveDecisions(ctx context.Context, decisions []smartorder.CachedDecision) error {
-	if len(decisions) == 0 {
-		return nil
-	}
-	var orgID int64
-	var userID int64
-	if actor, ok := authctx.From(ctx); ok {
-		orgID = actor.OrganizationID
-		userID = actor.UserID
-	} else if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {
-		orgID = tid
-	}
-
-	scope := "org"
-	if orgID <= 0 {
-		scope = "platform"
-	}
-
-	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		if !isDecisionMemoryEnabled(txCtx, tx) {
-			return nil // Global switch is OFF
-		}
-
-		const cols = 10
-		values := make([]string, 0, len(decisions))
-		args := make([]any, 0, len(decisions)*cols)
-		for i, d := range decisions {
-			base := i * cols
-			ph := make([]string, cols)
-			for j := 0; j < cols; j++ {
-				ph[j] = "$" + strconv.Itoa(base+j+1)
-			}
-			values = append(values, "("+strings.Join(ph, ",")+")")
-			src := d.Source
-			if src == "" {
-				src = "ai"
-			}
-			args = append(args,
-				sqlNullOrgID(orgID), sqlNullOrgID(userID),
-				d.Key, d.NormName, d.ChosenProductID,
-				d.Confidence, d.Reason, d.PromptVersion, scope, src)
-		}
-		_, err := tx.Exec(txCtx, `
-			INSERT INTO catalog.match_decisions (
-				organization_id, user_id, decision_key, norm_name, chosen_product_id,
-				confidence, reason, prompt_version, scope, source
-			) VALUES `+strings.Join(values, ",")+`
-			ON CONFLICT (COALESCE(organization_id, 0), decision_key)
-			DO UPDATE SET
-				chosen_product_id = EXCLUDED.chosen_product_id,
-				confidence = EXCLUDED.confidence,
-				reason = EXCLUDED.reason,
-				user_id = COALESCE(EXCLUDED.user_id, catalog.match_decisions.user_id),
-				hit_count = catalog.match_decisions.hit_count + 1,
-				last_used_at = now();`, args...)
-		return err
-	})
-}
-
-func sqlNullOrgID(id int64) *int64 {
-	if id <= 0 {
-		return nil
-	}
-	return &id
+	return nil
 }
 
 func isDecisionMemoryEnabled(ctx context.Context, tx pgx.Tx) bool {

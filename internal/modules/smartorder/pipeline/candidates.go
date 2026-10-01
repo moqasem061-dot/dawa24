@@ -190,6 +190,9 @@ func (m *CandidateMatcher) ScoreWithContext(ctx context.Context, orgID, runID in
 					})
 				}
 			}
+			if prepRes.RunID > 0 {
+				_ = m.service.MarkReviewable(ctx, prepRes.RunID)
+			}
 			return reviews
 		}
 	}

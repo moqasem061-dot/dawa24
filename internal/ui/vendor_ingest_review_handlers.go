@@ -302,11 +302,11 @@ func (h *UIHandler) VendorIngestProgress(w http.ResponseWriter, r *http.Request)
 	// that reports 99 and then writes for another twenty seconds is a bar the
 	// vendor watches sitting at "finished" while nothing has finished.
 	percent := session.ProgressPercent
-	running := session.Phase == ingest.PhaseProcessing
-	if running && percent >= importprogress.Complete {
+	isReviewable := session.Phase == ingest.PhaseReview || session.Phase == ingest.PhaseConfirm || session.Phase == ingest.PhaseCompleted
+	if !isReviewable && percent >= importprogress.Complete {
 		percent = importprogress.Complete - 1
 	}
-	if !running {
+	if isReviewable {
 		percent = importprogress.Complete
 	}
 

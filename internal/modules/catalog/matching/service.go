@@ -2,6 +2,7 @@ package matching
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
@@ -10,6 +11,9 @@ import (
 // Service defines the orchestrating interface for matching operations.
 type Service interface {
 	Prepare(ctx context.Context, req PrepareRequest) (PrepareResult, error)
+	GetRun(ctx context.Context, runID int64) (*MatchRun, error)
+	ListRunRows(ctx context.Context, sc Scope, runID int64, limit int) ([]DiagnosticRowData, error)
+	Diagnose(ctx context.Context, sc Scope, runID int64, row productmatch.Row, dec matchflow.RowDecision) (DiagnosticRow, error)
 	MarkReviewable(ctx context.Context, runID int64) error
 	Rematch(ctx context.Context, s Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error)
 	Search(ctx context.Context, s Scope, q string, row productmatch.Row, limit int) ([]matchflow.CandidateView, error)
@@ -108,6 +112,12 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 		}, nil
 	}
 
+	if s.repo != nil {
+		if aliases, aErr := s.repo.LoadAliases(ctx, req.Scope.EffectiveOrg); aErr == nil && len(aliases) > 0 {
+			idx = idx.WithAliases(aliases)
+		}
+	}
+
 	// 3. Group rows by QuestionSignature (In-run dedup, FR-034)
 	type sigGroup struct {
 		repRow productmatch.Row
@@ -135,21 +145,7 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 
 	summary.DistinctQuestions = len(sigOrder)
 
-	// 4 & 5. Call Index.Decide once per signature, with panic recovery, fan out to rows
-	for _, sig := range sigOrder {
-		grp := sigMap[sig]
-		repRow := grp.repRow
-
-		dec := s.decideWithRecover(idx, &repRow, pol, req.SourceRev, catRev)
-
-		for _, rowIdx := range grp.rowIdx {
-			rowDec := dec
-			decisions[rowIdx] = rowDec
-			summary.AddState(rowDec.State)
-		}
-	}
-
-	// 6. Create a match_runs row with counts
+	// 4. Create match_runs row in 'preparing' state and start heartbeat ticker (US12 T102)
 	run := &MatchRun{
 		OrganizationID:    req.Scope.EffectiveOrg,
 		Workflow:          string(req.Scope.Workflow),
@@ -160,9 +156,44 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 		CatalogRevision:   catRev,
 		NormalizerVersion: productmatch.NormalizerVersion,
 		State:             "preparing",
-		Counts:            summary,
 	}
-	_ = s.repo.CreateRun(ctx, run)
+	if s.repo != nil {
+		_ = s.repo.CreateRun(ctx, run)
+	}
+	if run.ID > 0 {
+		stopHB := StartHeartbeat(ctx, s.repo, run.ID, DefaultHeartbeatInterval)
+		defer stopHB()
+	}
+
+	// 5. Look up knowledge first; fallback to Index.Decide once per signature, with panic recovery, fan out to rows
+	kr := NewKnowledgeResolver(s.repo)
+	for _, sig := range sigOrder {
+		grp := sigMap[sig]
+		repRow := grp.repRow
+
+		var dec matchflow.RowDecision
+		if kDec, ok, kErr := kr.Resolve(ctx, req.Scope, &repRow, sig, idx, pol, nil); kErr == nil && ok && kDec != nil {
+			dec = *kDec
+			dec.Revision = req.SourceRev
+			if dec.State == matchflow.StateAccepted {
+				summary.KnowledgeReuse++
+			}
+		} else {
+			dec = s.decideWithRecover(idx, &repRow, pol, req.SourceRev, catRev)
+		}
+
+		for _, rowIdx := range grp.rowIdx {
+			rowDec := dec
+			decisions[rowIdx] = rowDec
+			summary.AddState(rowDec.State)
+		}
+	}
+
+	// 6. Update counts on match_runs
+	run.Counts = summary
+	if s.repo != nil && run.ID > 0 {
+		_ = s.repo.UpdateCounts(ctx, run.ID, summary)
+	}
 
 	return PrepareResult{
 		RunID:     run.ID,
@@ -205,6 +236,29 @@ func (s *serviceImpl) decideWithRecover(
 	dec = decFn(idx, row, pol)
 	dec.Revision = sourceRev
 	return dec
+}
+
+// GetRun retrieves a match run by ID.
+func (s *serviceImpl) GetRun(ctx context.Context, runID int64) (*MatchRun, error) {
+	if s.repo == nil {
+		return nil, ErrNotImplemented
+	}
+	return s.repo.GetRun(ctx, runID)
+}
+
+// ListRunRows lists rows associated with a match run for diagnostics.
+func (s *serviceImpl) ListRunRows(ctx context.Context, sc Scope, runID int64, limit int) ([]DiagnosticRowData, error) {
+	if s.repo == nil {
+		return nil, ErrNotImplemented
+	}
+	run, err := s.repo.GetRun(ctx, runID)
+	if err != nil {
+		return nil, fmt.Errorf("list run rows: run %d: %w", runID, err)
+	}
+	if sc.EffectiveOrg > 0 && run.OrganizationID != sc.EffectiveOrg {
+		return nil, fmt.Errorf("list run rows: forbidden: run belongs to org %d", run.OrganizationID)
+	}
+	return s.repo.ListRunRows(ctx, runID, run.Workflow, limit)
 }
 
 // MarkReviewable marks a match run as ready for review.
@@ -274,21 +328,5 @@ func (s *serviceImpl) StartEnhancement(ctx context.Context, runID int64, rows []
 }
 
 func (s *serviceImpl) StopEnhancement(ctx context.Context, runID int64) error {
-	return ErrNotImplemented
-}
-
-func (s *serviceImpl) Remember(ctx context.Context, sc Scope, k KnowledgeWrite) error {
-	return ErrNotImplemented
-}
-
-func (s *serviceImpl) ListKnowledge(ctx context.Context, sc Scope, f KnowledgeFilter) (Page[Knowledge], error) {
-	return Page[Knowledge]{}, ErrNotImplemented
-}
-
-func (s *serviceImpl) RevokeKnowledge(ctx context.Context, sc Scope, id int64) error {
-	return ErrNotImplemented
-}
-
-func (s *serviceImpl) PromoteKnowledge(ctx context.Context, sc Scope, id int64) error {
 	return ErrNotImplemented
 }

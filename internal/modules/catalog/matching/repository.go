@@ -12,9 +12,24 @@ type Repository interface {
 	CurrentRevision(ctx context.Context, scope string) (int64, error)
 	ActivePolicy(ctx context.Context, workflow string, orgID int64) (productmatch.Policy, error)
 	CreateRun(ctx context.Context, run *MatchRun) error
+	GetRun(ctx context.Context, runID int64) (*MatchRun, error)
+	ListRunRows(ctx context.Context, runID int64, workflow string, limit int) ([]DiagnosticRowData, error)
 	UpdateCounts(ctx context.Context, runID int64, counts matchflow.RunCounts) error
 	SetState(ctx context.Context, runID int64, state string, finished bool) error
 	Heartbeat(ctx context.Context, runID int64) error
+
+	KnowledgeRepository
+}
+
+// KnowledgeRepository defines data access for scoped match knowledge (US8 T108).
+type KnowledgeRepository interface {
+	LookupOrg(ctx context.Context, sigs []string) ([]Knowledge, error)
+	LookupPlatform(ctx context.Context, sigs []string, orgID int64) ([]Knowledge, error)
+	Upsert(ctx context.Context, k Knowledge) error
+	Revoke(ctx context.Context, id int64, revokedBy string) error
+	MarkStale(ctx context.Context, ids []int64) error
+	List(ctx context.Context, f KnowledgeFilter) (Page[Knowledge], error)
+	LoadAliases(ctx context.Context, orgID int64) (map[string][]int64, error)
 }
 
 // CuratedRepository defines data access for platform-curated identity facts and pack relationships.

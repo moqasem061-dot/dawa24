@@ -240,6 +240,7 @@ func (h *UIHandler) RegisterAdminRoutes(r chi.Router) {
 
 	// Modular Area Routes with granular permission gates
 	h.registerAdminCatalogRoutes(r)
+	h.registerAdminMatchingRoutes(r)
 	h.registerAdminOrgRoutes(r)
 	h.registerAdminIdentityRoutes(r)
 	h.registerAdminCommerceRoutes(r)

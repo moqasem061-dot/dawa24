@@ -56,6 +56,7 @@ Usage:
   cli corpus-export     Copy every retained import file into test/corpus
   cli ai-identities [--apply] [--org N]   Give every منشأة a Gateway user and key
   cli imports-recover [--apply]           Release imports wedged in 'processing'
+  cli match-knowledge-backfill [--apply]  Backfill legacy match_decisions and aliases to match_knowledge
 `
 
 }
@@ -298,6 +299,9 @@ func run() error {
 	case "imports-recover":
 		apply := len(os.Args) > 2 && os.Args[2] == "--apply"
 		return importsRecover(ctx, db, log, apply)
+
+	case "match-knowledge-backfill":
+		return runMatchKnowledgeBackfill(ctx, db, log, os.Args[2:])
 
 	default:
 		fmt.Print(usage())

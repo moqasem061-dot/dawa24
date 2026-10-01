@@ -123,6 +123,10 @@ func (s *Service) StageImport(ctx context.Context, session *Session) error {
 	session.ErrorRows = run.counts.errors + result.Stats.Rejected
 	session.Phase = PhaseReview
 
+	if s.matcher != nil && run.matchRunID != nil && *run.matchRunID > 0 {
+		_ = s.matcher.MarkReviewable(ctx, *run.matchRunID)
+	}
+
 	// FinishStaging, not SaveDraft: the session is in 'processing' and SaveDraft
 	// refuses that phase on purpose. Writing the outcome through it matched
 	// zero rows and wedged every import at 95% with the work already done.

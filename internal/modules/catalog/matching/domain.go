@@ -86,23 +86,37 @@ type KnowledgeWrite struct {
 // KnowledgeFilter specifies criteria for querying match knowledge.
 type KnowledgeFilter struct {
 	Namespace string `json:"namespace"`
+	Kind      string `json:"kind"`
+	Status    string `json:"status"`
+	Scope     string `json:"scope"`
 	Search    string `json:"search"`
 	Limit     int    `json:"limit"`
 	Offset    int    `json:"offset"`
 }
 
-// Knowledge represents a persisted match knowledge record.
+// Knowledge represents a persisted match knowledge record (data-model §3.4).
 type Knowledge struct {
-	ID                int64     `json:"id"`
-	OrganizationID    *int64    `json:"organization_id,omitempty"`
-	SourceNamespace   string    `json:"source_namespace"`
-	QuestionSignature string    `json:"question_signature"`
-	Kind              string    `json:"kind"`
-	TargetProductID   *int64    `json:"target_product_id,omitempty"`
-	TargetGranularity string    `json:"target_granularity,omitempty"`
-	DisplayText       string    `json:"display_text"`
-	Status            string    `json:"status"`
-	CreatedAt         time.Time `json:"created_at"`
+	ID                      int64      `json:"id"`
+	OrganizationID          *int64     `json:"organization_id,omitempty"`
+	SourceNamespace         string     `json:"source_namespace"`
+	QuestionSignature       string     `json:"question_signature"`
+	Kind                    string     `json:"kind"`
+	TargetProductID         *int64     `json:"target_product_id,omitempty"`
+	TargetGranularity       string     `json:"target_granularity,omitempty"`
+	TargetFactFingerprint   string     `json:"target_fact_fingerprint,omitempty"`
+	CandidateSetFingerprint *string    `json:"candidate_set_fingerprint,omitempty"`
+	PolicyVersion           string     `json:"policy_version"`
+	NormalizerVersion       string     `json:"normalizer_version"`
+	AIConfigID              *string    `json:"ai_config_id,omitempty"`
+	PromptVersion           *string    `json:"prompt_version,omitempty"`
+	DisplayText             string     `json:"display_text"`
+	Status                  string     `json:"status"`
+	Legacy                  bool       `json:"legacy"`
+	CreatedBy               string     `json:"created_by"`
+	CreatedAt               time.Time  `json:"created_at"`
+	RevokedBy               *string    `json:"revoked_by,omitempty"`
+	RevokedAt               *time.Time `json:"revoked_at,omitempty"`
+	LastUsedAt              *time.Time `json:"last_used_at,omitempty"`
 }
 
 // Page represents a paginated list of items.
@@ -130,4 +144,15 @@ type MatchRun struct {
 	CreatedBy         string              `json:"created_by"`
 	CreatedAt         time.Time           `json:"created_at"`
 	FinishedAt        *time.Time          `json:"finished_at"`
+}
+
+// DiagnosticRowData captures row decision data for diagnostics (US12 T105).
+type DiagnosticRowData struct {
+	Index       int                   `json:"index"`
+	DisplayName string                `json:"display_name"`
+	State       string                `json:"state"`
+	Basis       string                `json:"basis"`
+	Revision    int                   `json:"revision"`
+	ProductID   *int64                `json:"product_id,omitempty"`
+	Decision    matchflow.RowDecision `json:"decision"`
 }

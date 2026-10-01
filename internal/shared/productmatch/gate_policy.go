@@ -68,6 +68,14 @@ type IdentifierPolicy struct {
 	AllowSupplierCode  bool           `json:"allow_supplier_code"`
 }
 
+// AIPolicy configures AI enhancement thresholds, deadlines, and features.
+type AIPolicy struct {
+	Enabled    bool    `json:"enabled"`
+	ConfigID   string  `json:"config_id,omitempty"`
+	VerifyPass bool    `json:"verify_pass"`
+	AuditRate  float64 `json:"audit_rate"`
+}
+
 // Policy governs acceptance thresholds, required granularity, and identifier tiers.
 type Policy struct {
 	Version            string           `json:"version"`
@@ -78,6 +86,8 @@ type Policy struct {
 	Required           Granularity      `json:"required"`
 	AllowOmittedAttrs  bool             `json:"allow_omitted_attrs"` // allow unstated attributes only when uniquely identified
 	Identifiers        IdentifierPolicy `json:"identifiers"`         // namespaces declared and user choices
+	AI                 AIPolicy         `json:"ai"`
+	KnowledgeCompat    []string         `json:"knowledge_compat,omitempty"`
 }
 
 // DefaultPolicy provides baseline configuration copying production numbers with identifier tiers off.
@@ -95,6 +105,9 @@ func DefaultPolicy() Policy {
 			AllowGTIN:          false,
 			AllowCatalogCode:   false,
 			AllowSupplierCode:  false,
+		},
+		AI: AIPolicy{
+			Enabled: true,
 		},
 	}
 }

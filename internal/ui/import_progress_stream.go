@@ -201,8 +201,9 @@ func (h *UIHandler) AdminOrgImportVendorIngestProgressStream(w http.ResponseWrit
 func ingestSnapshot(s *ingest.Session) progress.Snapshot {
 	running := s.Phase == ingest.PhaseProcessing
 	percent := s.ProgressPercent
+	isReviewable := s.Phase == ingest.PhaseReview || s.Phase == ingest.PhaseConfirm || s.Phase == ingest.PhaseCompleted
 	switch {
-	case !running && s.Phase != ingest.PhaseFailed:
+	case isReviewable:
 		percent = 100
 	case percent >= 100:
 		percent = 99

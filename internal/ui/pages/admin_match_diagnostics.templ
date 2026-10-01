@@ -1,0 +1,271 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+type DiagnosticRowSummary struct {
+	Index       int
+	DisplayName string
+	State       string
+	Basis       string
+	Revision    int
+	ProductID   *int64
+}
+
+type AdminMatchDiagnosticsData struct {
+	Run          *matching.MatchRun
+	Rows         []DiagnosticRowSummary
+	SelectedRow  *matching.DiagnosticRow
+	RowIndex     int
+	ErrorMessage string
+}
+
+templ AdminMatchDiagnosticsPage(lang, dir string, data AdminMatchDiagnosticsData) {
+	@layouts.AdminShell("تشخيص المطابقة (Matching Diagnostics)", "matching_diagnose", lang, dir) {
+		<div class="stack-lg">
+			<!-- Header -->
+			<div class="page-header d-flex justify-between items-center flex-wrap gap-4 mb-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3">
+						<h1 class="page-title text-xl font-bold m-0">
+							تشخيص المطابقة والدعم الفني (Matching Diagnostics)
+						</h1>
+						if data.Run != nil {
+							<span class="badge badge-indigo">
+								{ data.Run.Workflow }
+							</span>
+							<span class="badge badge-slate">
+								<bdi>{ fmt.Sprintf("#%d", data.Run.ID) }</bdi>
+							</span>
+							switch data.Run.State {
+								case "reviewable":
+									<span class="badge badge-emerald">جاهز للمراجعة (Reviewable)</span>
+								case "preparing":
+									<span class="badge badge-amber">قيد التجهيز (Preparing)</span>
+								case "enhancing":
+									<span class="badge badge-sky">تحسين بالذكاء الاصطناعي (Enhancing)</span>
+								case "interrupted":
+									<span class="badge badge-rose">متوقف / تم إنقاذه (Interrupted)</span>
+								default:
+									<span class="badge badge-slate">{ data.Run.State }</span>
+							}
+						}
+					</div>
+					<p class="text-sm text-muted m-0">
+						فحص تفصيلي للحقائق، المرشحين المستبعدين وأسباب الاستبعاد، وإصدارات السياسة والمحاولات (FR-104)
+					</p>
+				</div>
+			</div>
+
+			if data.ErrorMessage != "" {
+				<div class="alert alert-rose mb-4" role="alert">
+					<p class="m-0 font-medium">{ data.ErrorMessage }</p>
+				</div>
+			}
+
+			if data.Run != nil {
+				<!-- Run Meta Overview -->
+				<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+					<div class="card p-4 stack-xs">
+						<span class="text-xs font-semibold text-muted uppercase">نقطة الدخول (Entry Point)</span>
+						<span class="text-sm font-bold font-mono"><bdi>{ data.Run.EntryPoint }</bdi></span>
+						<span class="text-xs text-muted"><bdi>{ data.Run.ConsumerRef }</bdi></span>
+					</div>
+					<div class="card p-4 stack-xs">
+						<span class="text-xs font-semibold text-muted uppercase">إصدارات السياسة (Versions)</span>
+						<div class="text-xs font-mono stack-xs">
+							<div>سياسة: <bdi>{ data.Run.PolicyVersion }</bdi></div>
+							<div>كتالوج: <bdi>{ fmt.Sprintf("r%d", data.Run.CatalogRevision) }</bdi></div>
+							<div>معاير: <bdi>{ data.Run.NormalizerVersion }</bdi></div>
+						</div>
+					</div>
+					<div class="card p-4 stack-xs">
+						<span class="text-xs font-semibold text-muted uppercase">النبضة الحية (Heartbeat)</span>
+						<span class="text-sm font-medium font-mono">
+							<bdi>{ data.Run.HeartbeatAt.Format("15:04:05") }</bdi>
+						</span>
+						<span class="text-xs text-muted">
+							إنشاء: <bdi>{ data.Run.CreatedAt.Format("2006-01-02 15:04") }</bdi>
+						</span>
+					</div>
+					<div class="card p-4 stack-xs">
+						<span class="text-xs font-semibold text-muted uppercase">إحصائيات القرارات (Counts)</span>
+						<div class="d-flex items-center gap-2 flex-wrap text-xs">
+							<span class="badge badge-emerald">مقبول: <bdi>{ fmt.Sprintf("%d", data.Run.Counts.Accepted) }</bdi></span>
+							<span class="badge badge-sky">مؤكد: <bdi>{ fmt.Sprintf("%d", data.Run.Counts.Confirmed) }</bdi></span>
+							<span class="badge badge-amber">مراجعة: <bdi>{ fmt.Sprintf("%d", data.Run.Counts.NeedsReview) }</bdi></span>
+							<span class="badge badge-rose">مستبعد: <bdi>{ fmt.Sprintf("%d", data.Run.Counts.Excluded) }</bdi></span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Main Diagnostic Split: Left Row Selector, Right Detailed Inspection -->
+				<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+					<!-- Row Selector List -->
+					<div class="card p-4 stack-md">
+						<div class="d-flex justify-between items-center border-b pb-2">
+							<h3 class="text-sm font-bold m-0">صفوف العملية (Run Rows)</h3>
+							<span class="text-xs text-muted"><bdi>{ fmt.Sprintf("%d صفوف", len(data.Rows)) }</bdi></span>
+						</div>
+						<div class="stack-xs overflow-y-auto max-h-96">
+							if len(data.Rows) == 0 {
+								<p class="text-xs text-muted p-2">لا توجد صفوف مسجلة في هذه العملية</p>
+							}
+							for _, r := range data.Rows {
+								<a
+									href={ templ.SafeURL(fmt.Sprintf("/admin/matching/runs/%d/diagnose?row_idx=%d", data.Run.ID, r.Index)) }
+									class={ "p-2 rounded text-xs d-flex justify-between items-center text-decoration-none border", templ.KV("bg-primary-subtle font-semibold border-primary", r.Index == data.RowIndex), templ.KV("hover-bg-subtle", r.Index != data.RowIndex) }
+								>
+									<span class="truncate max-w-xs">{ r.DisplayName }</span>
+									<span class="badge badge-slate text-xs"><bdi>{ r.State }</bdi></span>
+								</a>
+							}
+						</div>
+					</div>
+
+					<!-- Detailed Diagnostic Cards for Selected Row -->
+					<div class="lg:col-span-2 stack-md">
+						if data.SelectedRow == nil {
+							<div class="card p-8 text-center text-muted">
+								<p class="m-0">اختر صفاً من القائمة لمعاينة تشخيص المطابقة والأسباب</p>
+							</div>
+						} else {
+							<!-- Row Facts: Original vs Inferred vs Corrected -->
+							<div class="card p-4 stack-md">
+								<h3 class="text-sm font-bold m-0 border-b pb-2 d-flex justify-between items-center">
+									<span>1. الحقائق المستخرجة والمصححة (Identity Facts)</span>
+									<span class="badge badge-indigo text-xs">
+										إصدار القرار: <bdi>{ fmt.Sprintf("rev %d", data.SelectedRow.Decision.Revision) }</bdi>
+									</span>
+								</h3>
+								<div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+									<div class="p-3 bg-subtle rounded stack-xs">
+										<span class="font-bold text-muted">الحقائق الأصلية (Original)</span>
+										for k, v := range data.SelectedRow.OriginalFacts {
+											<div><span class="font-mono text-muted">{ k }:</span> <bdi>{ v }</bdi></div>
+										}
+									</div>
+									<div class="p-3 bg-subtle rounded stack-xs">
+										<span class="font-bold text-muted">الحقائق المستنتجة (Inferred)</span>
+										for k, v := range data.SelectedRow.InferredFacts {
+											<div><span class="font-mono text-muted">{ k }:</span> <bdi>{ v }</bdi></div>
+										}
+									</div>
+									<div class="p-3 bg-subtle rounded stack-xs">
+										<span class="font-bold text-muted">التصحيحات اليدوية (Corrected)</span>
+										if len(data.SelectedRow.CorrectedFacts) == 0 {
+											<span class="text-muted">لا توجد تصحيحات يدوية</span>
+										}
+										for _, c := range data.SelectedRow.CorrectedFacts {
+											<div><span class="font-mono text-muted">{ c.Attribute }:</span> <bdi>{ c.Value }</bdi></div>
+										}
+									</div>
+								</div>
+							</div>
+
+							<!-- Candidates: Evaluated with Rejection Reasons vs Never-Retrieved -->
+							<div class="card p-4 stack-md">
+								<h3 class="text-sm font-bold m-0 border-b pb-2">
+									2. المرشحون وأسباب الاستبعاد (Candidates & Rejection Reasons)
+								</h3>
+								if len(data.SelectedRow.Candidates) == 0 {
+									<p class="text-xs text-muted m-0 p-2">لم يتم ترشيح أي منتج من الكتالوج</p>
+								} else {
+									<div class="table-responsive">
+										<table class="table table-sm text-xs w-full">
+											<thead>
+												<tr class="border-b">
+													<th class="text-start p-2">المنتج (Product)</th>
+													<th class="text-start p-2">الدرجة (Score)</th>
+													<th class="text-start p-2">الأهلية (Status)</th>
+													<th class="text-start p-2">أسباب الاستبعاد (Rejection Reasons)</th>
+												</tr>
+											</thead>
+											<tbody>
+												for _, c := range data.SelectedRow.Candidates {
+													<tr class="border-b">
+														<td class="p-2">
+															<div class="font-medium">{ c.NameAR }</div>
+															<div class="text-muted text-xs">{ c.NameEN }</div>
+															<span class="text-muted font-mono"><bdi>{ fmt.Sprintf("#%d", c.ProductID) }</bdi></span>
+														</td>
+														<td class="p-2 font-mono"><bdi>{ fmt.Sprintf("%.2f", c.Score) }</bdi></td>
+														<td class="p-2">
+															if c.Eligible {
+																<span class="badge badge-emerald">مؤهل (Eligible)</span>
+															} else {
+																<span class="badge badge-rose">مستبعد (Rejected)</span>
+															}
+														</td>
+														<td class="p-2">
+															if len(c.Reasons) == 0 {
+																<span class="text-muted">—</span>
+															}
+															<div class="d-flex flex-wrap gap-1">
+																for _, r := range c.Reasons {
+																	<span class="badge badge-slate text-xs"><bdi>{ r }</bdi></span>
+																}
+															</div>
+														</td>
+													</tr>
+												}
+											</tbody>
+										</table>
+									</div>
+								}
+
+								<!-- Never Retrieved Section -->
+								if len(data.SelectedRow.NeverRetrieved) > 0 {
+									<div class="mt-3 p-3 border rounded bg-subtle stack-xs text-xs">
+										<span class="font-bold text-muted">منتجات لم يشملها الاسترجاع الأولي (Never Retrieved Targets)</span>
+										<ul class="m-0 p-inline-start-4 stack-xs">
+											for _, nr := range data.SelectedRow.NeverRetrieved {
+												<li>
+													<span class="font-medium">{ nr.NameAR }</span>
+													<span class="text-muted font-mono"><bdi> (#{ fmt.Sprintf("%d", nr.ProductID) })</bdi></span>
+													<span class="text-rose text-xs"> — { nr.Reason }</span>
+												</li>
+											}
+										</ul>
+									</div>
+								}
+							</div>
+
+							<!-- Revision History & AI Telemetry -->
+							<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+								<div class="card p-4 stack-sm">
+									<h4 class="text-xs font-bold text-muted uppercase m-0">سجل التعديلات (Revision History)</h4>
+									<div class="stack-xs text-xs">
+										for _, rev := range data.SelectedRow.RevisionHistory {
+											<div class="d-flex justify-between items-center p-2 rounded bg-subtle">
+												<span>إصدار <bdi>{ fmt.Sprintf("%d", rev.Revision) }</bdi> ({ rev.Action })</span>
+												<span class="text-muted"><bdi>{ rev.Actor }</bdi></span>
+											</div>
+										}
+									</div>
+								</div>
+								<div class="card p-4 stack-sm">
+									<h4 class="text-xs font-bold text-muted uppercase m-0">محاولات الذكاء الاصطناعي (AI Attempts)</h4>
+									if len(data.SelectedRow.AIAttempts) == 0 {
+										<p class="text-xs text-muted m-0">لم يتم تنفيذ أي استدعاء للذكاء الاصطناعي (AI Off / Fallback)</p>
+									}
+									<div class="stack-xs text-xs">
+										for _, a := range data.SelectedRow.AIAttempts {
+											<div class="d-flex justify-between items-center p-2 rounded bg-subtle">
+												<span>حالة: <bdi>{ a.State }</bdi></span>
+												<span class="badge badge-slate text-xs"><bdi>{ a.Outcome }</bdi></span>
+											</div>
+										}
+									</div>
+								</div>
+							</div>
+						}
+					</div>
+				</div>
+			}
+		</div>
+	}
+}

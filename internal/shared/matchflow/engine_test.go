@@ -76,8 +76,7 @@ func question(key, text string, settled bool, current *int64, window ...int64) m
 }
 
 func same(conf float64) *matchflow.Check {
-	return &matchflow.Check{Brand: "same", Strength: "same", Form: "unstated",
-		Variant: "same", Verdict: "same", Confidence: conf}
+	return &matchflow.Check{Brand: "same", Strength: "same", Form: "unstated", Variant: "same", Verdict: "same", Confidence: conf}
 }
 
 func run(t *testing.T, ai matchflow.Enhancer, qs ...matchflow.Question) map[string]matchflow.Answer {
@@ -85,8 +84,9 @@ func run(t *testing.T, ai matchflow.Enhancer, qs ...matchflow.Question) map[stri
 	var mu sync.Mutex
 	got := map[string]matchflow.Answer{}
 	matchflow.Run(context.Background(), ai, matchflow.Spec{
-		Profile:   matchflow.ProfileVendor,
-		Questions: qs,
+		Profile:    matchflow.ProfileVendor,
+		VerifyPass: true,
+		Questions:  qs,
 		OnAnswer: func(a matchflow.Answer) {
 			mu.Lock()
 			got[a.Key] = a
@@ -354,6 +354,7 @@ func TestEveryRequestIsAttributed(t *testing.T) {
 	}
 	matchflow.Run(context.Background(), ai, matchflow.Spec{
 		Profile:        matchflow.ProfileOrder,
+		VerifyPass:     true,
 		Questions:      []matchflow.Question{question("k", "x", false, nil, 7)},
 		Feature:        matchflow.FeatureSmartOrder,
 		OrganizationID: 42,

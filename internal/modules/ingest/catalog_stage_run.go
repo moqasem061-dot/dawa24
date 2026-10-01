@@ -45,6 +45,7 @@ type stagingRun struct {
 	bucketOf map[int]matchBucket
 	// ceilingHit records that the residue outgrew what one run may ask about.
 	ceilingHit bool
+	matchRunID *int64
 }
 
 // stage matches one batch of parsed rows and writes them to the staging table.
@@ -105,6 +106,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			if prepRes.RunID > 0 {
 				id := prepRes.RunID
 				matchRunID = &id
+				r.matchRunID = &id
 			}
 		}
 	}

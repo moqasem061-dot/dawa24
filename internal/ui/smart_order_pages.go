@@ -290,9 +290,14 @@ func (h *UIHandler) SmartOrderProgressJSON(w http.ResponseWriter, r *http.Reques
 	done := false
 	switch run.Status {
 	case smartorder.StatusCompleted, smartorder.StatusStale,
-		smartorder.StatusPlaced, smartorder.StatusFailed:
+		smartorder.StatusPlaced:
 		done = true
 		percent = importprogress.Complete
+	case smartorder.StatusFailed:
+		done = true
+		if percent >= importprogress.Complete {
+			percent = importprogress.Complete - 1
+		}
 	default:
 		if percent >= importprogress.Complete {
 			percent = importprogress.Complete - 1

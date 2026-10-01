@@ -59,12 +59,14 @@ type Index struct {
 	// spellings, one company, and no exact word in common — so a set of the raw
 	// words recognised nothing. The skeleton folds both scripts onto one key,
 	// which is the same mechanism the scorer's variant channel uses.
-	makerKeys map[string]bool
-	total     int
+	makerKeys     map[string]bool
+	total         int
 	// tri holds the trigram and scientific-name posting lists that only Recall
 	// needs, built lazily. Most runs never reach the AI stage, and an index
 	// nothing reads should not be paid for on every import.
-	tri recallIndex
+	tri           recallIndex
+	aliases       map[string][]int64
+	aliasVariants map[string][]int64
 }
 
 // NewIndex builds the matching index. Ownership of the slice passes to it.

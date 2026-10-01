@@ -197,7 +197,7 @@ func buildUIHandler(
 	// had none: the saving-list import and the administrator's master-catalogue
 	// import. Four tools, one table, one key — an answer bought by any of them
 	// is free to the other three.
-	sharedMatchMemory := newMatchMemory(ingRepoUI)
+	sharedMatchMemory := newMatchMemory(ingRepoUI, deps.Matching())
 	catSvcUI.SetMatchMemory(sharedMatchMemory)
 	ingSvcUI.SetCatalogPort(ingestCatalogPort{catSvcUI})
 	ingSvcUI.SetInventoryPort(ingestInventoryPort{invSvcUI})

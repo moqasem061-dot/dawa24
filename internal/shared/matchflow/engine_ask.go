@@ -1,7 +1,7 @@
 package matchflow
 
 // Asking the proposal question: one request, split when it fails, and
-// re-asked for what the model skipped.
+// re-asked for what the model skipped, strictly bounded by attempt counts and deadlines.
 
 import (
 	"context"
@@ -10,12 +10,24 @@ import (
 )
 
 // propose asks one batch, splitting it when it fails and re-asking what the
-// model skipped. The result is keyed by ref.
-func (r *runner) propose(ctx context.Context, batch Batch, depth int) map[int]Decision {
+// model skipped. Each question's attempts are counted and bounded by maxAttemptsPerQuestion (3).
+func (r *runner) propose(ctx context.Context, batch Batch, keys map[int]string, depth int) map[int]Decision {
 	out := make(map[int]Decision, len(batch.Items))
 	if len(batch.Items) == 0 || ctx.Err() != nil {
 		return out
 	}
+
+	var eligible []Item
+	for _, it := range batch.Items {
+		k := keys[it.Ref]
+		if r.recordAttempt(k) {
+			eligible = append(eligible, it)
+		}
+	}
+	if len(eligible) == 0 {
+		return out
+	}
+	batch.Items = eligible
 
 	ds, err := r.call(ctx, batch)
 	if err != nil {
@@ -23,16 +35,12 @@ func (r *runner) propose(ctx context.Context, batch Batch, depth int) map[int]De
 			return out
 		}
 		if len(batch.Items) >= splitMin && depth < maxDepth {
-			// The commonest failures — a truncated answer, an upstream that
-			// chokes on one malformed line, a request that ran long — all get
-			// better with a smaller batch, and none gets better by asking the
-			// same batch a third time.
 			r.count(func(s *RunStats) { s.Split++ })
 			half := len(batch.Items) / 2
-			for ref, d := range r.propose(ctx, subBatch(batch, batch.Items[:half]), depth+1) {
+			for ref, d := range r.propose(ctx, subBatch(batch, batch.Items[:half]), keys, depth+1) {
 				out[ref] = d
 			}
-			for ref, d := range r.propose(ctx, subBatch(batch, batch.Items[half:]), depth+1) {
+			for ref, d := range r.propose(ctx, subBatch(batch, batch.Items[half:]), keys, depth+1) {
 				out[ref] = d
 			}
 			return out
@@ -50,15 +58,12 @@ func (r *runner) propose(ctx context.Context, batch Batch, depth int) map[int]De
 			continue
 		}
 		if _, dup := out[d.Ref]; dup {
-			// Two answers for one ref: the first stands. A model that
-			// answered twice is not more sure the second time.
+			// Duplicate ref: first stands.
 			continue
 		}
 		if d.ProductID != nil && *d.ProductID <= 0 {
 			d.ProductID = nil
 		}
-		// An id outside the window is kept as an answer: handle marks it
-		// not-offered, Verdict refuses it, and the caller counts the refusal.
 		out[d.Ref] = d
 	}
 
@@ -69,12 +74,8 @@ func (r *runner) propose(ctx context.Context, batch Batch, depth int) map[int]De
 		}
 	}
 	if len(skipped) > 0 {
-		// Skipped items are re-asked once, and only when the model answered
-		// part of the batch — the signature of an answer that ran out of room.
-		// An empty result is not a partial skip: asking the same batch again
-		// buys the same nothing.
 		if depth == 0 && len(out) > 0 && ctx.Err() == nil {
-			for ref, d := range r.propose(ctx, subBatch(batch, skipped), depth+1) {
+			for ref, d := range r.propose(ctx, subBatch(batch, skipped), keys, depth+1) {
 				out[ref] = d
 			}
 		}
@@ -91,30 +92,18 @@ func (r *runner) propose(ctx context.Context, batch Batch, depth int) map[int]De
 	return out
 }
 
-// call makes one proposal request with its own timeout, retrying once.
+// call makes one proposal request with timeout calculated by AttemptDeadline.
 func (r *runner) call(ctx context.Context, batch Batch) ([]Decision, error) {
-	var lastErr error
-	for attempt := 0; attempt < 2; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(time.Duration(attempt) * 1500 * time.Millisecond):
-			}
-		}
-		rc, cancel := context.WithTimeout(ctx, requestTimeout)
-		atomic.AddInt64(&r.requests, 1)
-		ds, err := r.ai.Enhance(rc, batch)
-		cancel()
-		if err == nil {
-			return ds, nil
-		}
-		lastErr = err
-		if ctx.Err() != nil {
-			return nil, ctx.Err()
-		}
+	rem := r.runDeadline - time.Since(r.origin)
+	to := AttemptDeadline(rem)
+	if to <= 0 {
+		return nil, context.DeadlineExceeded
 	}
-	return nil, lastErr
+
+	rc, cancel := context.WithTimeout(ctx, to)
+	defer cancel()
+	atomic.AddInt64(&r.requests, 1)
+	return r.ai.Enhance(rc, batch)
 }
 
 // subBatch is a batch restricted to some of its items, carrying only the

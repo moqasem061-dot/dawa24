@@ -50,8 +50,6 @@ func (r *runner) verifyChunk(ctx context.Context, batch Batch, checks []pending,
 		ref := len(cb.Pairs) + 1
 		refTo[ref] = i
 		item := p.item
-		// The pair question is asked without the engine's guess and without
-		// the list: that is the whole point of asking it.
 		item.CurrentGuess, item.CurrentScore, item.Options, item.Settled = nil, 0, nil, false
 		item.Ref = ref
 		cb.Pairs = append(cb.Pairs, Pair{Ref: ref, Item: item, Product: product})
@@ -60,26 +58,17 @@ func (r *runner) verifyChunk(ctx context.Context, batch Batch, checks []pending,
 		return out
 	}
 
-	var (
-		got []Check
-		err error
-	)
-	for attempt := 0; attempt < 2; attempt++ {
-		if attempt > 0 {
-			select {
-			case <-ctx.Done():
-				return out
-			case <-time.After(1500 * time.Millisecond):
-			}
-		}
-		rc, cancel := context.WithTimeout(ctx, requestTimeout)
-		atomic.AddInt64(&r.checkRequests, 1)
-		got, err = r.verifier.Verify(rc, cb)
-		cancel()
-		if err == nil || ctx.Err() != nil {
-			break
-		}
+	rem := r.runDeadline - time.Since(r.origin)
+	to := AttemptDeadline(rem)
+	if to <= 0 {
+		return out
 	}
+
+	rc, cancel := context.WithTimeout(ctx, to)
+	defer cancel()
+	atomic.AddInt64(&r.checkRequests, 1)
+	got, err := r.verifier.Verify(rc, cb)
+
 	if err != nil {
 		if ctx.Err() == nil && len(idx) >= splitMin && depth < maxDepth {
 			half := len(idx) / 2
@@ -134,13 +123,4 @@ func minFloat(a, b float64) float64 {
 		return a
 	}
 	return b
-}
-
-func firstNonBlank(vals ...string) string {
-	for _, v := range vals {
-		if v != "" {
-			return v
-		}
-	}
-	return ""
 }

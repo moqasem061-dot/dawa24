@@ -133,4 +133,11 @@ var EntryPoints = []EntryPoint{
 		Profile:    "compare_h2h",
 		AIEligible: false,
 	},
+	{
+		ID:         "compare_matching_file",
+		Workflow:   "compare",
+		File:       "internal/modules/compare/matching_file.go",
+		Profile:    "compare_batch",
+		AIEligible: false,
+	},
 }

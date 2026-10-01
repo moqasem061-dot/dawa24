@@ -1,71 +1,34 @@
 package matchflow
 
-// The engine every importer's AI stage runs on.
-//
-// Four tools asked the model the same question — the smart order, the vendor
-// price list, the saving list and the master-catalogue import — and each had
-// its own loop around the call. The loops had drifted in exactly the places
-// that decide whether the AI helps at all:
-//
-//   - The per-request timeout was 20 seconds in one, 60 in another and absent
-//     in a third, against a Gateway that gives this capability 150. A batch
-//     of a hundred Arabic lines needs more than twenty seconds to answer, so
-//     on the master-catalogue import the stage timed out on essentially every
-//     request and reported "the AI found nothing".
-//   - A failed batch was simply dropped. One malformed or truncated response
-//     took two hundred rows back to their deterministic outcome, and nothing
-//     asked again.
-//   - An item the model skipped was silently unanswered.
-//   - Nothing checked a proposal before applying it, so the forced match —
-//     the model choosing the nearest thing on a list that did not contain the
-//     answer — went straight into the file.
-//
-// Run is the one loop. Callers bring questions and apply answers; everything
-// between — packing, concurrency, timeouts, splitting a failed batch,
-// re-asking skipped items, the pair check, the wall clock — happens here, the
-// same way for every tool.
-
 import (
 	"context"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
-// requestTimeout bounds one call. Slightly above the Gateway's own 150 s for
-// this capability, so the Gateway's classification of a slow upstream is the
-// one that surfaces rather than a bare context error.
-const requestTimeout = 170 * time.Second
-
-// hardWallClock is the stage's absolute ceiling whatever a profile says. The
-// product decision is that an import's AI stage finishes inside fifteen
-// minutes; a minute is left for the caller to persist what came back.
-const hardWallClock = 14 * time.Minute
-
-// proposeShare is the part of the wall clock new proposal requests may start
-// in. The rest is kept for the pair checks of requests already in flight: a
-// proposal that cannot be verified is not applied, so a run that spent its
-// whole budget proposing would have bought answers it then had to discard.
-const proposeShare = 0.8
+// proposeShare is the proportion of total run deadline within which new
+// attempts may be dispatched (85%). Enforced via DispatchShare.
+const proposeShare = DispatchShare
 
 // splitMin is the smallest batch that is split rather than given up on.
 const splitMin = 6
 
-// maxDepth bounds re-asking: a failed batch is halved at most this many
-// times, and skipped items are re-asked at most this many times.
+// maxDepth bounds re-asking: a failed batch is halved at most this many times.
 const maxDepth = 3
 
-// checkChunk is how many pairs one verification request carries. Pairs are
-// small — one line and one product — so this is bounded by answer length, not
-// input.
+// maxAttemptsPerQuestion bounds attempts per question across proposal, retry, split, and verify.
+const maxAttemptsPerQuestion = 3
+
+// checkChunk is how many pairs one verification request carries.
 const checkChunk = 40
 
-// Answer is one final decision, after the pair check.
+// Answer is one final decision, after pair check if verified.
 type Answer struct {
 	Key string
-	// Decision is what the caller should judge with Verdict. Its ProductID is
-	// nil where the model said "none", where the pair check refused the
-	// proposal, or where the proposal could not be verified.
+	// Decision is what the caller should judge with Verdict.
 	Decision Decision
 	// Offered says Decision.ProductID was in the window the model was shown.
 	Offered bool
@@ -77,9 +40,7 @@ type Answer struct {
 
 // Spec is one run.
 type Spec struct {
-	Profile Profile
-	// Rows is the size of the file, for the adaptive ceilings. Questions are
-	// usually far fewer, because identical rows collapse into one.
+	Profile   Profile
 	Rows      int
 	Questions []Question
 
@@ -87,27 +48,27 @@ type Spec struct {
 	OrganizationID int64
 	UserID         int64
 
-	// Screen, when set, reports whether a proposed product survives the
-	// caller's mechanical identity check (productmatch.Index.IdentityConflict).
-	// A proposal it refuses is not put to the pair check — Verdict refuses it
-	// anyway, and the check would be money spent confirming a refusal.
+	Budget            *Budget
+	MaxCostPerAttempt money.Amount
+	VerifyPass        bool
+	EnqueueTime       time.Time
+	Deadline          time.Duration
+	OnPublishTerminal func(RunStats)
+
+	// Screen, when set, reports whether a proposed product survives identity checks.
 	Screen func(key string, productID int64) bool
 
-	// Describe, when set, projects a product the windows do not carry — the
-	// engine's own settled answer, typically — so it can be put to the pair
-	// check.
+	// Describe projects a product the windows do not carry so it can be verified.
 	Describe func(productID int64) (CatalogEntry, bool)
 
-	// OnAnswer receives each final answer. It is called from several
-	// goroutines; the caller synchronises.
+	// OnAnswer receives each final answer progressively.
 	OnAnswer func(Answer)
-	// OnDone receives each request's question keys once the request is
-	// finished, answered or not, and finally the keys the budget never
-	// reached. Progress is counted from it.
+
+	// OnDone receives each request's question keys once finished.
 	OnDone func(keys []string)
 }
 
-// RunStats is what one run did.
+// RunStats captures comprehensive run metrics.
 type RunStats struct {
 	Requests      int  `json:"requests"`
 	CheckRequests int  `json:"check_requests"`
@@ -121,21 +82,21 @@ type RunStats struct {
 	Unasked       int  `json:"unasked"`
 	CeilingHit    bool `json:"ceiling_hit"`
 
-	// Diagnostic counters for proposal outcomes — they answer "why was
-	// nothing applied?" when the model replies successfully but nothing
-	// changes. Every item the model answered flows through exactly one of:
-	//   Emitted (directly without check) + Checked (sent to pair check) = total answered
+	// Diagnostic counters for proposal outcomes.
 	ProposedNull int `json:"proposed_null"` // model said "none of these"
 	ProposedLow  int `json:"proposed_low"`  // confidence below the floor
 	Screened     int `json:"screened"`      // identity guard refused before pair check
 	NotOffered   int `json:"not_offered"`   // product not in the window (hallucination)
-	Emitted      int `json:"emitted"`       // sent directly to the caller without pair check
+	Emitted      int `json:"emitted"`       // sent directly to caller
+
+	// Outcome categorization.
+	Unattempted int `json:"unattempted"`
+	Abstained   int `json:"abstained"`
+	Rejected    int `json:"rejected"`
+	AcceptedNew int `json:"accepted_new"`
 }
 
-// Run asks every question it can inside the ceilings and hands back answers.
-//
-// It never fails. Every failure degrades to "no answer" for the rows it
-// touched, which leaves those rows exactly as the deterministic engine did.
+// Run executes the AI matching stage within deadlines and budgets.
 func Run(ctx context.Context, ai Enhancer, spec Spec) RunStats {
 	var stats RunStats
 	if ai == nil || len(spec.Questions) == 0 {
@@ -147,20 +108,46 @@ func Run(ctx context.Context, ai Enhancer, spec Spec) RunStats {
 		rows = len(spec.Questions)
 	}
 	c := Adaptive(spec.Profile, rows)
-	wall := c.MaxWallClock
-	if wall <= 0 || wall > hardWallClock {
-		wall = hardWallClock
+
+	runDeadline := spec.Deadline
+	if runDeadline <= 0 {
+		runDeadline = DeadlineClass(len(spec.Questions))
 	}
-	start := time.Now()
-	runCtx, cancel := context.WithDeadline(ctx, start.Add(wall))
+	origin := spec.EnqueueTime
+	if origin.IsZero() {
+		origin = time.Now()
+	}
+	elapsed := time.Since(origin)
+	if elapsed < 0 {
+		elapsed = 0
+	}
+	wall := runDeadline - elapsed
+	if wall <= 0 {
+		stats.CeilingHit = true
+		stats.Unasked = len(spec.Questions)
+		stats.Unattempted = len(spec.Questions)
+		return stats
+	}
+
+	runCtx, cancel := context.WithDeadline(ctx, origin.Add(runDeadline))
 	defer cancel()
-	proposeBy := start.Add(time.Duration(float64(wall) * proposeShare))
+	proposeBy := origin.Add(time.Duration(float64(runDeadline) * DispatchShare))
 
 	requests, ceiling := Plan(spec.Questions, c)
 	stats.CeilingHit = ceiling
 
-	r := &runner{ai: ai, spec: spec, floor: c.MinApplyConfidence, stats: &stats}
-	r.verifier, _ = ai.(Verifier)
+	r := &runner{
+		ai:               ai,
+		spec:             spec,
+		floor:            c.MinApplyConfidence,
+		stats:            &stats,
+		origin:           origin,
+		runDeadline:      runDeadline,
+		questionAttempts: make(map[string]int),
+	}
+	if spec.VerifyPass {
+		r.verifier, _ = ai.(Verifier)
+	}
 	r.catalog = make(map[int64]CatalogEntry)
 	for _, q := range spec.Questions {
 		for _, e := range q.Window {
@@ -170,6 +157,20 @@ func Run(ctx context.Context, ai Enhancer, spec Spec) RunStats {
 		}
 	}
 
+	var terminalPublished int32
+	publishTerminal := func() {
+		if atomic.CompareAndSwapInt32(&terminalPublished, 0, 1) {
+			if spec.OnPublishTerminal != nil {
+				r.mu.Lock()
+				snap := *r.stats
+				r.mu.Unlock()
+				spec.OnPublishTerminal(snap)
+			}
+		}
+	}
+	terminalTimer := time.AfterFunc(runDeadline+TerminalPublishSlack-elapsed, publishTerminal)
+	defer terminalTimer.Stop()
+
 	asked := make(map[string]bool, len(spec.Questions))
 	var (
 		wg    sync.WaitGroup
@@ -177,20 +178,30 @@ func Run(ctx context.Context, ai Enhancer, spec Spec) RunStats {
 	)
 dispatch:
 	for _, req := range requests {
-		select {
-		case slots <- struct{}{}:
-		case <-runCtx.Done():
+		if time.Now().After(proposeBy) {
 			r.mu.Lock()
 			stats.CeilingHit = true
 			r.mu.Unlock()
 			break dispatch
 		}
-		if time.Now().After(proposeBy) {
-			<-slots
+		if spec.Budget != nil {
+			if !spec.Budget.Reserve(spec.MaxCostPerAttempt) {
+				r.mu.Lock()
+				stats.CeilingHit = true
+				r.mu.Unlock()
+				break dispatch
+			}
+		}
+		select {
+		case slots <- struct{}{}:
+		case <-runCtx.Done():
+			if spec.Budget != nil {
+				spec.Budget.Settle(spec.MaxCostPerAttempt, money.Zero, true)
+			}
 			r.mu.Lock()
 			stats.CeilingHit = true
 			r.mu.Unlock()
-			break
+			break dispatch
 		}
 		for _, k := range req.Keys {
 			asked[k] = true
@@ -199,9 +210,13 @@ dispatch:
 		go func(req Request) {
 			defer wg.Done()
 			defer func() { <-slots }()
+			defer func() {
+				if spec.Budget != nil {
+					spec.Budget.Settle(spec.MaxCostPerAttempt, spec.MaxCostPerAttempt, true)
+				}
+			}()
 			defer r.done(req)
 			defer func() {
-				// One batch must never take the import down with it.
 				if rec := recover(); rec != nil {
 					r.mu.Lock()
 					stats.Failed++
@@ -222,32 +237,54 @@ dispatch:
 		}
 	}
 	stats.Unasked = len(unasked)
+	stats.Unattempted = len(unasked)
 	if len(unasked) > 0 && spec.OnDone != nil {
 		spec.OnDone(unasked)
 	}
 	stats.Requests = int(atomic.LoadInt64(&r.requests))
 	stats.CheckRequests = int(atomic.LoadInt64(&r.checkRequests))
+
+	publishTerminal()
 	return stats
 }
 
 type runner struct {
-	ai       Enhancer
-	verifier Verifier
-	spec     Spec
-	floor    float64
-	catalog  map[int64]CatalogEntry
+	ai          Enhancer
+	verifier    Verifier
+	spec        Spec
+	floor       float64
+	catalog     map[int64]CatalogEntry
+	origin      time.Time
+	runDeadline time.Duration
 
 	requests      int64
 	checkRequests int64
 
-	mu    sync.Mutex
-	stats *RunStats
+	mu               sync.Mutex
+	stats            *RunStats
+	questionAttempts map[string]int
 }
 
 func (r *runner) count(fn func(*RunStats)) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	fn(r.stats)
+}
+
+func (r *runner) recordAttempt(key string) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	if r.questionAttempts[key] >= maxAttemptsPerQuestion {
+		return false
+	}
+	r.questionAttempts[key]++
+	return true
+}
+
+func (r *runner) attempts(key string) int {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	return r.questionAttempts[key]
 }
 
 func (r *runner) done(req Request) {

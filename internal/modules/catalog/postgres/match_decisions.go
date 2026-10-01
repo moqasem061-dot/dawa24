@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
@@ -208,36 +206,10 @@ func (r *Repository) SaveManualDecision(ctx context.Context, orgID, userID int64
 	if normName == "" || productID <= 0 || orgID <= 0 {
 		return nil
 	}
-	if reason == "" {
-		reason = i18n.TDefault("w4_mod.s_347_347")
-	}
-	decKey := "manual:" + normName
 
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		// 1. Insert or update in catalog.match_decisions
+		// Register in catalog.customer_product_mappings for deterministic lookup (catalog.match_decisions is read-only)
 		_, err := tx.Exec(txCtx, `
-			INSERT INTO catalog.match_decisions (
-				organization_id, user_id, decision_key, norm_name, chosen_product_id,
-				confidence, reason, prompt_version, hit_count, created_at, last_used_at
-			) VALUES (
-				$1, NULLIF($2, 0), $3, $4, $5,
-				1.000, $6, 'manual:v1', 1, now(), now()
-			)
-			ON CONFLICT (COALESCE(organization_id, 0), decision_key)
-			DO UPDATE SET
-				chosen_product_id = EXCLUDED.chosen_product_id,
-				confidence = 1.000,
-				reason = EXCLUDED.reason,
-				user_id = COALESCE(EXCLUDED.user_id, catalog.match_decisions.user_id),
-				hit_count = catalog.match_decisions.hit_count + 1,
-				last_used_at = now();
-		`, orgID, userID, decKey, normName, productID, reason)
-		if err != nil {
-			return err
-		}
-
-		// 2. Also register in catalog.customer_product_mappings for deterministic lookup
-		_, err = tx.Exec(txCtx, `
 			INSERT INTO catalog.customer_product_mappings (
 				organization_id, customer_org_id, raw_name, product_id,
 				source, status, is_active, created_at, updated_at

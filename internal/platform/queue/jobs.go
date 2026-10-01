@@ -135,3 +135,12 @@ func (DocumentScanArgs) Kind() string { return "security.document_scan" }
 func (DocumentScanArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 3}
 }
+
+// MatchReaperArgs defines parameters for sweeping stale match runs (US12 T103).
+type MatchReaperArgs struct{}
+
+func (MatchReaperArgs) Kind() string { return "catalog.matching.reaper" }
+func (MatchReaperArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 1}
+}
+

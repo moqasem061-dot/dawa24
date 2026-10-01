@@ -41,7 +41,7 @@ type Config struct {
 
 // New creates a new queue Client using the shared database connection pool.
 // If workers is nil, an empty worker registry is initialized.
-func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.Logger) (*Client, error) {
+func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.Logger, periodicJobs ...*river.PeriodicJob) (*Client, error) {
 	if workers == nil {
 		workers = river.NewWorkers()
 	}
@@ -54,10 +54,11 @@ func New(db *database.DB, workers *river.Workers, cfg config.Worker, log *slog.L
 	}
 
 	riverClient, err := river.NewClient(driver, &river.Config{
-		Queues:     queues,
-		Workers:    workers,
-		Logger:     log,
-		JobTimeout: DefaultJobTimeout,
+		Queues:       queues,
+		Workers:      workers,
+		PeriodicJobs: periodicJobs,
+		Logger:       log,
+		JobTimeout:   DefaultJobTimeout,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("queue: create river client: %w", err)

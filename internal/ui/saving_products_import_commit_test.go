@@ -23,6 +23,15 @@ type mockRevalidateMatchingSvc struct {
 func (m *mockRevalidateMatchingSvc) Prepare(_ context.Context, _ matching.PrepareRequest) (matching.PrepareResult, error) {
 	return matching.PrepareResult{}, nil
 }
+func (m *mockRevalidateMatchingSvc) GetRun(_ context.Context, _ int64) (*matching.MatchRun, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) ListRunRows(_ context.Context, _ matching.Scope, _ int64, _ int) ([]matching.DiagnosticRowData, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) Diagnose(_ context.Context, _ matching.Scope, _ int64, _ productmatch.Row, _ matchflow.RowDecision) (matching.DiagnosticRow, error) {
+	return matching.DiagnosticRow{}, nil
+}
 func (m *mockRevalidateMatchingSvc) MarkReviewable(_ context.Context, _ int64) error { return nil }
 func (m *mockRevalidateMatchingSvc) Rematch(_ context.Context, _ matching.Scope, _ productmatch.Row, _ int) (matchflow.RowDecision, error) {
 	return matchflow.RowDecision{}, nil

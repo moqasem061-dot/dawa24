@@ -113,9 +113,15 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 		ref := len(cur.Batch.Items) + 1
 		item := q.Item
 		item.Ref = ref
-		item.Options = item.Options[:0:0]
+		if len(q.Item.Options) > 0 {
+			item.Options = append([]int64(nil), q.Item.Options...)
+		} else {
+			item.Options = item.Options[:0:0]
+			for _, e := range q.Window {
+				item.Options = append(item.Options, e.ProductID)
+			}
+		}
 		for _, e := range q.Window {
-			item.Options = append(item.Options, e.ProductID)
 			if _, seen := cur.Offered[e.ProductID]; seen {
 				continue
 			}

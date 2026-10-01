@@ -1,6 +1,7 @@
 package matchflow
 
-// Turning a proposal and its pair check into one answer.
+// Turning a proposal and its pair check into one answer, enforcing per-row options
+// and progressive emission.
 
 import "context"
 
@@ -11,14 +12,14 @@ type pending struct {
 	target int64
 }
 
-// handle runs one request: propose, check, hand back.
+// handle runs one request: propose, check if configured, hand back progressively.
 func (r *runner) handle(ctx context.Context, req Request) {
 	batch := req.Batch
 	batch.Feature = r.spec.Feature
 	batch.OrganizationID = r.spec.OrganizationID
 	batch.UserID = r.spec.UserID
 
-	decided := r.propose(ctx, batch, 0)
+	decided := r.propose(ctx, batch, req.Keys, 0)
 
 	var checks []pending
 	for _, it := range batch.Items {
@@ -28,16 +29,70 @@ func (r *runner) handle(ctx context.Context, req Request) {
 		}
 		key := req.Keys[it.Ref]
 		a := Answer{Key: key, Decision: d, Proposed: d.ProductID, Offered: true}
+
 		if d.ProductID != nil {
-			_, a.Offered = req.Offered[*d.ProductID]
+			offeredInOptions := false
+			if len(it.Options) > 0 {
+				for _, opt := range it.Options {
+					if opt == *d.ProductID {
+						offeredInOptions = true
+						break
+					}
+				}
+			} else {
+				_, offeredInOptions = req.Offered[*d.ProductID]
+			}
+
+			if !offeredInOptions {
+				a.Offered = false
+				a.Decision.ProductID = nil
+				a.Decision.Reason = "ai_rejected_not_offered"
+				r.count(func(s *RunStats) {
+					s.NotOffered++
+					s.Rejected++
+				})
+				r.emit(a)
+				continue
+			}
+		} else {
+			// Model abstained / returned null
+			r.count(func(s *RunStats) {
+				s.ProposedNull++
+				s.Abstained++
+			})
+			r.emit(a)
+			continue
 		}
+
 		if target, ok := r.needsCheck(it, a); ok {
 			checks = append(checks, pending{answer: a, item: it, target: target})
 			continue
 		}
-		r.count(func(s *RunStats) { s.Emitted++ })
+
+		// Direct emission without verification check
+		if a.Decision.ProductID != nil && a.Offered {
+			if a.Decision.Confidence < r.floor || a.Decision.Confidence > 1 {
+				r.count(func(s *RunStats) {
+					s.ProposedLow++
+					s.Rejected++
+				})
+				a.Decision.ProductID = nil
+			} else if r.spec.Screen != nil && !r.spec.Screen(a.Key, *a.Decision.ProductID) {
+				r.count(func(s *RunStats) {
+					s.Screened++
+					s.Rejected++
+				})
+				a.Decision.ProductID = nil
+			} else {
+				r.count(func(s *RunStats) {
+					s.Emitted++
+					s.AcceptedNew++
+				})
+			}
+		}
 		r.emit(a)
 	}
+
 	if len(checks) == 0 {
 		return
 	}
@@ -55,17 +110,10 @@ func (r *runner) emit(a Answer) {
 	}
 }
 
-// needsCheck decides whether an answer is put to the pair check, and which
-// product is checked.
-//
-// Only answers that would change something are checked. A confirmation of the
-// engine's own settled match changes nothing; a "none" on an unsettled row
-// changes nothing; a proposal the confidence floor or the identity guard will
-// refuse changes nothing. What remains is the answers that would move a row —
-// an unsettled row gaining a product, or a settled row being taken off the
-// automatic path.
+// needsCheck decides whether an answer is put to the pair check.
+// Verification is gated by spec.VerifyPass (default off) and counts toward attempt limit.
 func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
-	if r.verifier == nil {
+	if !r.spec.VerifyPass || r.verifier == nil {
 		return 0, false
 	}
 	d := a.Decision
@@ -75,50 +123,48 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 		}
 		return 0, false
 	}
-	if d.ProductID != nil && !a.Offered {
-		r.count(func(s *RunStats) { s.NotOffered++ })
-		return 0, false
-	}
-
-	if it.Settled {
-		// The model disputes an applied match. Before a person is asked, the
-		// engine's own product is put to the pair check: a dispute that the
-		// check contradicts was the list talking, not the medicine.
-		if it.CurrentGuess == nil || sameID(it.CurrentGuess, d.ProductID) {
-			return 0, false
-		}
-		return *it.CurrentGuess, true
-	}
-
 	if d.ProductID == nil {
 		r.count(func(s *RunStats) { s.ProposedNull++ })
+		return 0, false
+	}
+	if !a.Offered {
+		r.count(func(s *RunStats) { s.NotOffered++ })
 		return 0, false
 	}
 	if r.spec.Screen != nil && !r.spec.Screen(a.Key, *d.ProductID) {
 		r.count(func(s *RunStats) { s.Screened++ })
 		return 0, false
 	}
+
+	if it.Settled {
+		if it.CurrentGuess == nil || sameID(it.CurrentGuess, d.ProductID) {
+			return 0, false
+		}
+		if !r.recordAttempt(a.Key) {
+			return 0, false
+		}
+		return *it.CurrentGuess, true
+	}
+
+	// Verify attempt counts toward the 3-attempt cap.
+	if !r.recordAttempt(a.Key) {
+		return 0, false
+	}
+
 	return *d.ProductID, true
+}
+
+func sameID(a, b *int64) bool {
+	if a == nil || b == nil {
+		return a == b
+	}
+	return *a == *b
 }
 
 // resolve combines a proposal with its pair check.
 func (r *runner) resolve(p pending, chk Check, ok bool) Answer {
 	a := p.answer
 	if !ok {
-		// The check did not come back. On a settled row the dispute stands
-		// and goes to a person — that is the conservative end.
-		//
-		// On an unsettled row the proposal is passed through unverified
-		// (Checked = false). Verdict allows unverified proposals when the
-		// model names a DIFFERENT product than the engine's guess — those
-		// are not forced matches (the whole reason the pair check exists).
-		// When the model agrees with the engine, Verdict already requires
-		// Verified=true for OutcomeApply, so the unverified proposal
-		// correctly becomes OutcomeKeep.
-		//
-		// Zeroing the confidence here used to discard every proposal
-		// whenever the verification service was unavailable or slow, which
-		// turned a partial outage into a total one for this stage.
 		return a
 	}
 	a.Checked = true
@@ -126,20 +172,30 @@ func (r *runner) resolve(p pending, chk Check, ok bool) Answer {
 	accepted := chk.Accepts(r.floor)
 	switch {
 	case accepted:
-		r.count(func(s *RunStats) { s.CheckAccepted++ })
+		r.count(func(s *RunStats) {
+			s.CheckAccepted++
+			s.AcceptedNew++
+		})
 	case chk.Rejects(r.floor):
-		r.count(func(s *RunStats) { s.CheckRejected++ })
+		r.count(func(s *RunStats) {
+			s.CheckRejected++
+			s.Rejected++
+		})
 	default:
-		r.count(func(s *RunStats) { s.CheckUnsure++ })
+		r.count(func(s *RunStats) {
+			s.CheckUnsure++
+		})
 	}
 
 	if p.item.Settled {
 		if accepted {
-			// The engine's match holds up on its own. Report it as a
-			// confirmation, so Verdict keeps it.
 			id := p.target
-			a.Decision = Decision{Ref: a.Decision.Ref, ProductID: &id,
-				Confidence: chk.Confidence, Reason: "confirmed by pair check"}
+			a.Decision = Decision{
+				Ref:        a.Decision.Ref,
+				ProductID:  &id,
+				Confidence: chk.Confidence,
+				Reason:     "confirmed by pair check",
+			}
 			a.Offered = true
 		}
 		return a
@@ -149,15 +205,12 @@ func (r *runner) resolve(p pending, chk Check, ok bool) Answer {
 	case accepted:
 		a.Decision.Confidence = minFloat(a.Decision.Confidence, chk.Confidence)
 	case chk.Rejects(r.floor):
-		// A confident "these are different products" is a real answer and is
-		// worth remembering as "none".
-		a.Decision = Decision{Ref: a.Decision.Ref, Confidence: chk.Confidence,
-			Reason: "pair check: " + firstNonBlank(chk.Reason, "different product")}
+		a.Decision.ProductID = nil
+		a.Decision.Reason = "rejected by pair check"
 	default:
-		// Unsure. Not applied, and not remembered — it is asked again next
-		// time, when the catalogue may have grown the product.
-		a.Decision = Decision{Ref: a.Decision.Ref, Confidence: 0,
-			Reason: "pair check unsure"}
+		a.Decision.ProductID = nil
+		a.Decision.Reason = "unconfirmed by pair check"
 	}
+
 	return a
 }

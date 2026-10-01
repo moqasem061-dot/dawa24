@@ -20,6 +20,10 @@ func (m *mockSmartOrderMatcher) Prepare(ctx context.Context, req productmatch.Pr
 	return productmatch.PrepareResult{}, nil
 }
 
+func (m *mockSmartOrderMatcher) MarkReviewable(ctx context.Context, runID int64) error {
+	return nil
+}
+
 func (m *mockSmartOrderMatcher) Rematch(ctx context.Context, s productmatch.Scope, row productmatch.Row, rev int) (matchflow.RowDecision, error) {
 	return matchflow.RowDecision{}, nil
 }

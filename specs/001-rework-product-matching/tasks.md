@@ -358,14 +358,14 @@ description: "Executable task list for the Product Matching Rework"
 
 **Context**: spec.md US12, FR-090–095, FR-104; research R13.
 
-- [ ] T101 [P] [US12] Tests in `internal/modules/catalog/matching/runs_recovery_test.go`:
+- [X] T101 [P] [US12] Tests in `internal/modules/catalog/matching/runs_recovery_test.go`:
   - A heartbeat older than 45 s ⇒ the reaper marks the run `interrupted`.
   - A repeated commit of the same `(row, revision)` ⇒ one effect.
   - Counts reconcile 1:1.
-- [ ] T102 [US12] Heartbeat: `Service` updates `match_runs.heartbeat_at` every 10 s while preparing or enhancing (a ticker goroutine stopped by the context). Write it in `internal/modules/catalog/matching/heartbeat.go`.
-- [ ] T103 [US12] Reaper: a River periodic job every 15 s that marks runs in `preparing|enhancing` with `heartbeat_at < now()-45s` as `interrupted`. Write it in `internal/modules/catalog/matching/jobs/reaper.go`, and register it where the other workers are registered in `cmd/worker/main.go`.
-- [ ] T104 [US12] Progress stages: `MarkReviewable` is the only path to `reviewable` and runs after the decisions commit. UI progress reads `match_runs.state` and never shows 100% before `reviewable`. Change the `internal/shared/importprogress` usage in each consumer's progress handler (find them with `grep -rn importprogress internal --include=*.go -l`).
-- [ ] T105 [US12] Diagnostics view for authorized support (permission `catalog.matching.diagnose`): for one row it shows facts (original/corrected/inferred), candidates with retrieved-but-rejected reasons vs never-retrieved, versions, revision history and AI attempts. It shows no other tenant's data. Build it in `internal/ui/admin_match_diagnostics_handlers.go` plus `internal/ui/pages/admin_match_diagnostics.templ`.
+- [X] T102 [US12] Heartbeat: `Service` updates `match_runs.heartbeat_at` every 10 s while preparing or enhancing (a ticker goroutine stopped by the context). Write it in `internal/modules/catalog/matching/heartbeat.go`.
+- [X] T103 [US12] Reaper: a River periodic job every 15 s that marks runs in `preparing|enhancing` with `heartbeat_at < now()-45s` as `interrupted`. Write it in `internal/modules/catalog/matching/jobs/reaper.go`, and register it where the other workers are registered in `cmd/worker/main.go`.
+- [X] T104 [US12] Progress stages: `MarkReviewable` is the only path to `reviewable` and runs after the decisions commit. UI progress reads `match_runs.state` and never shows 100% before `reviewable`. Change the `internal/shared/importprogress` usage in each consumer's progress handler (find them with `grep -rn importprogress internal --include=*.go -l`).
+- [X] T105 [US12] Diagnostics view for authorized support (permission `catalog.matching.diagnose`): for one row it shows facts (original/corrected/inferred), candidates with retrieved-but-rejected reasons vs never-retrieved, versions, revision history and AI attempts. It shows no other tenant's data. Build it in `internal/ui/admin_match_diagnostics_handlers.go` plus `internal/ui/pages/admin_match_diagnostics.templ`.
 
 ---
 
@@ -377,27 +377,27 @@ description: "Executable task list for the Product Matching Rework"
 
 **Context**: spec.md US8, FR-051–058; research R8; data-model §3.4. Read `internal/modules/catalog/postgres/match_decisions*.go`, `internal/shared/matchflow/memory.go`, `cachekey.go`, `cmd/server/match_memory.go`.
 
-- [ ] T106 [US8] Write a migration that creates `catalog.match_knowledge` (data-model §3.4) with FORCE RLS, the partial unique index, and a policy. Files: `db/migrations/NNN_match_knowledge.up.sql` / `.down.sql`.
-- [ ] T107 [P] [US8] Isolation tests in `test/integration/match_knowledge_isolation_test.go`:
+- [X] T106 [US8] Write a migration that creates `catalog.match_knowledge` (data-model §3.4) with FORCE RLS, the partial unique index, and a policy. Files: `db/migrations/NNN_match_knowledge.up.sql` / `.down.sql`.
+- [X] T107 [P] [US8] Isolation tests in `test/integration/match_knowledge_isolation_test.go`:
   - org A's rows are invisible to org B
   - a platform lookup returns only `organization_id IS NULL` rows and respects `decision_memory_preferences.use_platform_memory=false`
-- [ ] T108 [US8] Repository in `internal/modules/catalog/matching/postgres/knowledge.go`:
+- [X] T108 [US8] Repository in `internal/modules/catalog/matching/postgres/knowledge.go`:
   - `LookupOrg(ctx, sigs)` (InReadTx)
   - `LookupPlatform(ctx, sigs)`, the **only** place using `database.AsSystem`
   - `Upsert`, `Revoke`, `MarkStale`, `List(filter, page)`
-- [ ] T109 [US8] Knowledge resolution in `internal/modules/catalog/matching/knowledge.go`:
+- [X] T109 [US8] Knowledge resolution in `internal/modules/catalog/matching/knowledge.go`:
   - Precedence: `human_reject` > newer `human_confirm` > org curated > `platform_fact` > `ai_answer`.
   - Staleness: the target fact fingerprint differs from `(*MasterProduct).Facts()` hashed, the target is inactive or missing, or the policy's `knowledge_compat` excludes the entry's policy version.
   - A negative AI answer is valid only while the current candidates ⊆ its stored set.
   - `ai_answer` is ignored when the policy has AI off.
   - Every hit goes through `Gate.Evaluate` with `Path=Knowledge`.
   - Table tests in `knowledge_test.go` cover each rule.
-- [ ] T110 [US8] Integrate knowledge into `Prepare` (look up by signature before `Decide`; a hit becomes a `Proposal`) and into `Review` (a confirm or reject writes `human_confirm`/`human_reject` under `Scope`). Change `internal/modules/catalog/matching/service.go` and `review.go`.
-- [ ] T111 [US8] Alias retrieval channel: `productmatch.WithAliases(map[string][]int64)` adds curated and human-confirmed alias texts as a retrieval channel. It is a retrieval hint only; acceptance still goes through the gate. Write it in `internal/shared/productmatch/aliases.go`, and have the service pass in-scope aliases.
-- [ ] T112 [US8] Backfill command `match-knowledge-backfill --dry-run|--apply` (rules in research R8: manual/admin/import rows → `human_confirm` + `pending_revalidation`, then activate those that pass the gate now; `ai` rows → `ai_answer`, `legacy=true`). Migrate trusted `product_aliases` rows to `curated_alias`. Write it in `cmd/cli/match_knowledge_backfill.go` and register it in `cmd/cli/main.go`.
-- [ ] T113 [US8] Knowledge management UI: list, filter by kind, status and scope, revoke, and promote (privileged; the promotion copies only signature, target and kind, and strips `display_text` to normalized catalogue-safe text). Replace the data source of `internal/ui/pages/customer_decision_memory.templ` and `internal/ui/pages/admin_match_decisions.templ` with `Service.ListKnowledge`/`RevokeKnowledge`/`PromoteKnowledge`, and change `internal/ui/admin_decision_memory_handlers.go`.
-- [ ] T114 [US8] Stop writing `catalog.match_decisions`: `cmd/server/match_memory.go` and every `matchflow.Memory` implementation now read and write `match_knowledge` through the service. `match_decisions` becomes read-only (no code writes it). Add a test that fails if any `INSERT INTO catalog.match_decisions` remains outside migrations.
-- [ ] T115 [US8] SC-012 test in `internal/modules/catalog/matching/knowledge_repeat_test.go`:
+- [X] T110 [US8] Integrate knowledge into `Prepare` (look up by signature before `Decide`; a hit becomes a `Proposal`) and into `Review` (a confirm or reject writes `human_confirm`/`human_reject` under `Scope`). Change `internal/modules/catalog/matching/service.go` and `review.go`.
+- [X] T111 [US8] Alias retrieval channel: `productmatch.WithAliases(map[string][]int64)` adds curated and human-confirmed alias texts as a retrieval channel. It is a retrieval hint only; acceptance still goes through the gate. Write it in `internal/shared/productmatch/aliases.go`, and have the service pass in-scope aliases.
+- [X] T112 [US8] Backfill command `match-knowledge-backfill --dry-run|--apply` (rules in research R8: manual/admin/import rows → `human_confirm` + `pending_revalidation`, then activate those that pass the gate now; `ai` rows → `ai_answer`, `legacy=true`). Migrate trusted `product_aliases` rows to `curated_alias`. Write it in `cmd/cli/match_knowledge_backfill.go` and register it in `cmd/cli/main.go`.
+- [X] T113 [US8] Knowledge management UI: list, filter by kind, status and scope, revoke, and promote (privileged; the promotion copies only signature, target and kind, and strips `display_text` to normalized catalogue-safe text). Replace the data source of `internal/ui/pages/customer_decision_memory.templ` and `internal/ui/pages/admin_match_decisions.templ` with `Service.ListKnowledge`/`RevokeKnowledge`/`PromoteKnowledge`, and change `internal/ui/admin_decision_memory_handlers.go`.
+- [X] T114 [US8] Stop writing `catalog.match_decisions`: `cmd/server/match_memory.go` and every `matchflow.Memory` implementation now read and write `match_knowledge` through the service. `match_decisions` becomes read-only (no code writes it). Add a test that fails if any `INSERT INTO catalog.match_decisions` remains outside migrations.
+- [X] T115 [US8] SC-012 test in `internal/modules/catalog/matching/knowledge_repeat_test.go`:
   - an unchanged repeat file ⇒ ≥95% of human-confirmed questions resolve with 0 AI calls
   - revoke, target change, policy change and cross-org ⇒ blocked
 

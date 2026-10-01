@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
@@ -39,39 +38,8 @@ func (r *Repository) AssignRowMatch(
 				return err
 			}
 
-			normName := strings.ToLower(strings.TrimSpace(rawName))
-			if normName != "" && orgID > 0 {
-				var userID *int64
-				if actor, ok := authctx.From(ctx); ok && actor.UserID > 0 {
-					uid := actor.UserID
-					userID = &uid
-				}
-				decKey := "manual:" + normName
-				reason := "مطابقة يدوية معتمدة من المستخدم"
-
-				// 1. Insert or update in catalog.match_decisions
-				_ = database.SoftExec(txCtx, tx, `
-					INSERT INTO catalog.match_decisions (
-						organization_id, user_id, decision_key, norm_name, chosen_product_id,
-						confidence, reason, prompt_version, hit_count, created_at, last_used_at,
-						scope, source
-					) VALUES (
-						$1, $2, $3, $4, $5,
-						1.000, $6, 'manual:v1', 1, now(), now(),
-						'org', 'manual'
-					)
-					ON CONFLICT (COALESCE(organization_id, 0), decision_key)
-					DO UPDATE SET
-						chosen_product_id = EXCLUDED.chosen_product_id,
-						confidence = 1.000,
-						reason = EXCLUDED.reason,
-						user_id = COALESCE(EXCLUDED.user_id, catalog.match_decisions.user_id),
-						hit_count = catalog.match_decisions.hit_count + 1,
-						last_used_at = now(),
-						source = 'manual';
-				`, orgID, userID, decKey, normName, productID, reason)
-
-				// 2. Also register in catalog.customer_product_mappings
+			if orgID > 0 && strings.TrimSpace(rawName) != "" {
+				// Register in catalog.customer_product_mappings (catalog.match_decisions is read-only)
 				_ = database.SoftExec(txCtx, tx, `
 					INSERT INTO catalog.customer_product_mappings (
 						organization_id, customer_org_id, raw_name, product_id,
