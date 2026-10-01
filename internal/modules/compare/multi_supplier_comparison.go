@@ -164,6 +164,10 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			}
 
 			if compRow == nil {
+				groupBasis := "source_equivalence"
+				if r.MatchedProductID != nil && *r.MatchedProductID > 0 {
+					groupBasis = "canonical_pack"
+				}
 				compRow = &ProductComparisonRow{
 					ProductName:      r.RawName,
 					SKU:              r.SKU,
@@ -173,6 +177,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 					BestDiscount:     r.Discount,
 					BestNetPrice:     netPrice,
 					BestSupplier:     f.SupplierName,
+					GroupBasis:       groupBasis,
 				}
 				resultRows = append(resultRows, compRow)
 				keyOfRow[compRow] = coreKey

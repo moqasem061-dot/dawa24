@@ -33,6 +33,8 @@ type ProductComparisonRow struct {
 	TotalSuppliers     int                      `json:"total_suppliers"`
 	MissingSuppliers   []string                 `json:"missing_suppliers"`
 	AvailabilityStatus string                   `json:"availability_status"`
+	GroupBasis         string                   `json:"group_basis,omitempty"`
+	NotComparable      bool                     `json:"not_comparable,omitempty"`
 }
 
 // ComparisonSummary represents the aggregate metrics across all analyzed supplier files.

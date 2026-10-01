@@ -165,15 +165,17 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 		}
 	}
 
-	// Rule 5: Omitted attributes
-	isUnstated := comp.Attributes["strength"] == OutcomeUnstated ||
-		comp.Attributes["form"] == OutcomeUnstated ||
-		comp.Attributes["release"] == OutcomeUnstated
-	if isUnstated && !pol.AllowOmittedAttrs {
-		return Verdict{
-			Eligible: true,
-			State:    matchflow.StateNeedsReview,
-			Reasons:  []Reason{{Code: ReasonAttributeUnstated}},
+	// Rule 5: Omitted attributes (allowed on identifier path per FR-023 when unique and verified)
+	if p.Path != PathIdentifier {
+		isUnstated := comp.Attributes["strength"] == OutcomeUnstated ||
+			comp.Attributes["form"] == OutcomeUnstated ||
+			comp.Attributes["release"] == OutcomeUnstated
+		if isUnstated && !pol.AllowOmittedAttrs {
+			return Verdict{
+				Eligible: true,
+				State:    matchflow.StateNeedsReview,
+				Reasons:  []Reason{{Code: ReasonAttributeUnstated}},
+			}
 		}
 	}
 

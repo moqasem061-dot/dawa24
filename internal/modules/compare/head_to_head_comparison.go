@@ -216,6 +216,25 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		}
 
 		if tr != nil {
+			var groupBasis string
+			var notComparable bool
+			if sr.MatchedProductID != nil && tr.MatchedProductID != nil && *sr.MatchedProductID == *tr.MatchedProductID {
+				groupBasis = "canonical_pack"
+			} else {
+				groupBasis = "source_equivalence"
+			}
+
+			// Check pack comparability (e.g. strip vs box without conversion)
+			srFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: sr.RawName, SKU: sr.SKU}, nil)
+			trFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: tr.RawName, SKU: tr.SKU}, nil)
+			if srFacts.Pack != nil && trFacts.Pack != nil {
+				outcome, _ := productmatch.PackOutcome(*srFacts.Pack, *trFacts.Pack, nil)
+				if outcome == "conflict" || outcome == "needs_relationship" {
+					notComparable = true
+					groupBasis = "not_comparable"
+				}
+			}
+
 			price := sr.Price
 			if price.IsZero() && tr.Price.IsPositive() {
 				price = tr.Price
@@ -230,32 +249,38 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 				tNet = CalculatePriceAfterDiscount(price, tr.Discount)
 			}
 
-			sourceTotal, _ = sourceTotal.Add(sNet)
-			targetTotal, _ = targetTotal.Add(tNet)
+			if !notComparable {
+				sourceTotal, _ = sourceTotal.Add(sNet)
+				targetTotal, _ = targetTotal.Add(tNet)
+			}
 
 			var outcome HeadToHeadOutcome
 			betterDiff := 0.0
 			compDiff := 0.0
+			var savingsDiff money.Amount
 
-			discDiff := sr.Discount - tr.Discount
-			if math.Abs(discDiff) < 0.01 {
-				outcome = OutcomeEqual
-				equalCount++
-			} else if sr.Discount > tr.Discount {
-				outcome = OutcomeYourBetter
-				betterDiff = math.Round((sr.Discount-tr.Discount)*100.0) / 100.0
-				yourBetterCount++
+			if notComparable {
+				outcome = OutcomeNotComparable
 			} else {
-				outcome = OutcomeCompetitorBetter
-				compDiff = math.Round((tr.Discount-sr.Discount)*100.0) / 100.0
-				competitorBetterCount++
+				discDiff := sr.Discount - tr.Discount
+				if math.Abs(discDiff) < 0.01 {
+					outcome = OutcomeEqual
+					equalCount++
+				} else if sr.Discount > tr.Discount {
+					outcome = OutcomeYourBetter
+					betterDiff = math.Round((sr.Discount-tr.Discount)*100.0) / 100.0
+					yourBetterCount++
+				} else {
+					outcome = OutcomeCompetitorBetter
+					compDiff = math.Round((tr.Discount-sr.Discount)*100.0) / 100.0
+					competitorBetterCount++
+				}
+				savingsDiff, _ = tNet.Sub(sNet)
 			}
 
-			savingsDiff, _ := tNet.Sub(sNet)
-
-			prodID := sr.MatchedProductID
-			if prodID == nil || *prodID <= 0 {
-				prodID = tr.MatchedProductID
+			var prodID *int64
+			if sr.MatchedProductID != nil && tr.MatchedProductID != nil && *sr.MatchedProductID == *tr.MatchedProductID {
+				prodID = sr.MatchedProductID
 			}
 
 			row := &HeadToHeadRow{
@@ -271,6 +296,8 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 				BetterDiff:         betterDiff,
 				CompetitorDiff:     compDiff,
 				SavingsDifference:  savingsDiff,
+				GroupBasis:         groupBasis,
+				NotComparable:      notComparable,
 			}
 
 			// Apply in-memory filters
@@ -302,10 +329,11 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		}
 	}
 
-	totalShared := yourBetterCount + equalCount + competitorBetterCount
+	totalShared := len(allSharedRows)
+	comparableCount := yourBetterCount + equalCount + competitorBetterCount
 	winRate := 0.0
-	if totalShared > 0 {
-		winRate = math.Round((float64(yourBetterCount+equalCount)/float64(totalShared))*1000.0) / 10.0
+	if comparableCount > 0 {
+		winRate = math.Round((float64(yourBetterCount+equalCount)/float64(comparableCount))*1000.0) / 10.0
 	}
 	totalSavings, _ := targetTotal.Sub(sourceTotal)
 

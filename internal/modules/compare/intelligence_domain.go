@@ -4,6 +4,46 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
+// HeadToHeadOutcome defines comparison relation for a single product between your supplier and competitor.
+type HeadToHeadOutcome string
+
+const (
+	OutcomeYourBetter       HeadToHeadOutcome = "your_better"       // خصمك أفضل منهم
+	OutcomeEqual            HeadToHeadOutcome = "equal"             // نفس الخصم
+	OutcomeCompetitorBetter HeadToHeadOutcome = "competitor_better" // خصم أفضل منك
+	OutcomeNotComparable    HeadToHeadOutcome = "not_comparable"    // غير قابل للمقارنة المباشرة
+)
+
+// HeadToHeadFilter represents filters applied to supplier vs supplier comparison.
+type HeadToHeadFilter struct {
+	SourceFileID int64              `json:"source_file_id"`
+	TargetFileID int64              `json:"target_file_id"`
+	Query        string             `json:"query"`
+	MinPrice     *float64           `json:"min_price"`
+	MaxPrice     *float64           `json:"max_price"`
+	MinDiscount  *float64           `json:"min_discount"`
+	MaxDiscount  *float64           `json:"max_discount"`
+	Outcome      *HeadToHeadOutcome `json:"outcome"`
+}
+
+// HeadToHeadRow represents a product row formatted exactly as requested in the comparison UI.
+type HeadToHeadRow struct {
+	ProductID          *int64            `json:"product_id,omitempty"`
+	ProductName        string            `json:"product_name"`
+	SKU                string            `json:"sku,omitempty"`
+	Price              money.Amount      `json:"price"`
+	YourDiscount       float64           `json:"your_discount"`       // الخصم
+	YourNetPrice       money.Amount      `json:"your_net_price"`      // الصافي لك
+	CompetitorDiscount float64           `json:"competitor_discount"` // خصم المنافس
+	CompetitorNetPrice money.Amount      `json:"competitor_net_price"`
+	Outcome            HeadToHeadOutcome `json:"outcome"`
+	BetterDiff         float64           `json:"better_diff"`     // فرق الخصم لـ خصمك أفضل منهم
+	CompetitorDiff     float64           `json:"competitor_diff"` // فرق الخصم لـ خصم أفضل منك
+	SavingsDifference  money.Amount      `json:"savings_difference"`
+	GroupBasis         string            `json:"group_basis,omitempty"`
+	NotComparable      bool              `json:"not_comparable,omitempty"`
+}
+
 // HeadToHeadComparisonResult holds the full head-to-head analysis payload with stats.
 type HeadToHeadComparisonResult struct {
 	SourceSupplierName string           `json:"source_supplier_name"`
