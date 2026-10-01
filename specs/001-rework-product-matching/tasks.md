@@ -281,7 +281,7 @@ description: "Executable task list for the Product Matching Rework"
 
 - [X] T080 [P] [US5] Test: a near-identical sibling with an omitted attribute ⇒ `needs_review`, never `update`. An identifier-only row with a generated placeholder name contributes no name evidence. Write it in `internal/modules/catalog/import_classify_test.go`.
 - [X] T081 [US5] Write a migration that adds the consumer columns plus `proposal TEXT CHECK (proposal IN ('update','possible_new','duplicate','unresolved'))` to `catalog.import_staging_rows`. Files: `db/migrations/237_catalog_staging_match_decision.up.sql` / `.down.sql`. Add an isolation test if the table is tenant-owned (check its RLS in `db/migrations/115_catalog_import_sessions.up.sql`).
-- [ ] T082 [US5] Replace `MatchAll` in `internal/modules/catalog/import_match_chunks.go` with `matching.Service.Prepare` (same module, direct call), required granularity `product`.
+- [X] T082 [US5] Replace `MatchAll` in `internal/modules/catalog/import_match_chunks.go` with `matching.Service.Prepare` (same module, direct call), required granularity `product`.
 - [ ] T083 [US5] Classification in a new `internal/modules/catalog/import_classify.go`:
   - accepted ⇒ `update`
   - `no_candidate` ⇒ `possible_new` (labelled "possible new", not "new")

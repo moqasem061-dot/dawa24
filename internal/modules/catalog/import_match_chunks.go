@@ -5,6 +5,8 @@ import (
 	"log/slog"
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -30,9 +32,7 @@ import (
 //   - Each pass is timed and logged, so "it was slow" becomes a number naming
 //     which pass was slow.
 //
-// The parallelism is unchanged: a chunk is still handed to MatchAll, which
-// still spreads it across every core. The chunk only decides how often the loop
-// comes up for air.
+// The chunk only decides how often the loop comes up for air.
 
 // matchChunk is how many rows are scored between progress reports.
 //
@@ -50,7 +50,7 @@ const matchChunk = 500
 // the error, and the caller decides whether a partial answer is worth anything
 // (it is not — prepare stops).
 func scoreRows(
-	ctx context.Context, log *slog.Logger, index *productmatch.Index, rows []*productmatch.Row,
+	ctx context.Context, log *slog.Logger, matcher matching.Service, index *productmatch.Index, rows []*productmatch.Row,
 	opts productmatch.MatchOptions, done func(scored int),
 ) ([]productmatch.MatchResult, error) {
 	out := make([]productmatch.MatchResult, 0, len(rows))
@@ -61,7 +61,80 @@ func scoreRows(
 			return out, err
 		}
 		to := min(from+matchChunk, len(rows))
-		out = append(out, productmatch.MatchAll(index, rows[from:to], opts, 0)...)
+		chunk := rows[from:to]
+
+		if matcher != nil {
+			reqRows := make([]productmatch.Row, len(chunk))
+			for i, r := range chunk {
+				if r != nil {
+					reqRows[i] = *r
+				}
+			}
+			prepRes, err := matcher.Prepare(ctx, productmatch.PrepareRequest{
+				Scope: productmatch.Scope{
+					Workflow: productmatch.WorkflowCatalog,
+				},
+				Rows:     reqRows,
+				Required: productmatch.GranularityProduct,
+			})
+			if err != nil {
+				return out, err
+			}
+			for _, dec := range prepRes.Decisions {
+				cols := matchflow.Columns(dec)
+				var prodID int64
+				if cols.MatchedProductID != nil {
+					prodID = *cols.MatchedProductID
+				} else if dec.ProductID != nil && cols.MatchLevel != "none" {
+					prodID = *dec.ProductID
+				}
+
+				score := 0.0
+				switch dec.State {
+				case matchflow.StateAccepted, matchflow.StateConfirmed:
+					if dec.Basis == matchflow.BasisIdentifier || dec.Basis == matchflow.BasisExact {
+						score = 1.0
+					} else {
+						score = 0.9
+					}
+				case matchflow.StateNeedsReview:
+					score = 0.6
+				case matchflow.StateAmbiguous:
+					score = 0.5
+				}
+
+				reason := productmatch.MatchLevel(cols.MatchLevel).Label()
+				if dec.State == matchflow.StateAmbiguous {
+					reason = "صنفان في الكتالوج بنفس درجة التطابق ولا يوجد في الصف ما يفرّق بينهما؛ يلزم اختيار الصحيح يدوياً."
+				} else if dec.State == matchflow.StateNoCandidate {
+					reason = "لم يتم العثور على صنف مشابه في الكتالوج المركزي"
+				}
+
+				res := productmatch.MatchResult{
+					ProductID: prodID,
+					Level:     productmatch.MatchLevel(cols.MatchLevel),
+					Score:     score,
+					Reason:    reason,
+				}
+				if index != nil {
+					for _, c := range dec.Candidates {
+						if cp, ok := index.Lookup(c.ProductID); ok {
+							res.Candidates = append(res.Candidates, productmatch.MatchCandidate{
+								ProductID:     cp.ID,
+								Name:          cp.NameAR,
+								Scientific:    cp.Scientific,
+								DosageForm:    cp.DosageForm,
+								Concentration: cp.Concentration,
+								Manufacturer:  cp.Manufacturer,
+							})
+						}
+					}
+				}
+				out = append(out, res)
+			}
+		} else {
+			out = append(out, productmatch.MatchAll(index, chunk, opts, 0)...)
+		}
 		done(to)
 	}
 

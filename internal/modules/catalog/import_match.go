@@ -116,7 +116,7 @@ func (s *Service) resolveSimilarMatches(
 	}
 	settled := len(matches)
 
-	scored, err := scoreRows(ctx, s.log, index, rows, opts,
+	scored, err := scoreRows(ctx, s.log, s.matchingSvc, index, rows, opts,
 		matchingProgress(progress, settled, len(residual), len(prods), 0, passes))
 	if err != nil {
 		stats.Unmatched = len(residual)
