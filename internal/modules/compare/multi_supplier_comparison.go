@@ -68,83 +68,69 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 
 			// 1. Match across vendor files by master catalog product ID (exact 100% catalog match)
 			if r.MatchedProductID != nil && *r.MatchedProductID > 0 {
-				compRow = byProductID[*r.MatchedProductID]
-			}
-
-			// 2. Match across vendor files by clean barcode (8 to 14 digits)
-			if compRow == nil && cleanSKU != "" && isBarcode(cleanSKU) {
-				if candidate := byBarcode[cleanSKU]; candidate != nil {
-					existing := keyOfRow[candidate]
-					if existing == "" || coreKey == "" || existing == coreKey {
+				if candidate := byProductID[*r.MatchedProductID]; candidate != nil {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
 						compRow = candidate
 					}
 				}
 			}
 
-			// 3. Match across vendor files by clean SKU — but never against a
-			//    row that is demonstrably a different product.
+			// 2. Match across vendor files by clean barcode (8 to 14 digits)
+			if compRow == nil && cleanSKU != "" && isBarcode(cleanSKU) {
+				if candidate := byBarcode[cleanSKU]; candidate != nil {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+						compRow = candidate
+					}
+				}
+			}
+
+			// 3. Match across vendor files by clean SKU
 			if compRow == nil && cleanSKU != "" {
 				if candidate := bySKU[cleanSKU]; candidate != nil {
-					existing := keyOfRow[candidate]
-					if existing == "" || coreKey == "" || existing == coreKey {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
 						compRow = candidate
 					}
 				}
 			}
 			// 4. Match across vendor files by exact normalized Arabic/English name
 			if compRow == nil && normText != "" {
-				compRow = byNorm[normText]
+				if candidate := byNorm[normText]; candidate != nil {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+						compRow = candidate
+					}
+				}
 			}
 			// 5. Match across vendor files by core drug phonetic/noise-free key
 			if compRow == nil && coreKey != "" {
-				compRow = byCore[coreKey]
+				if candidate := byCore[coreKey]; candidate != nil {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+						compRow = candidate
+					}
+				}
 			}
 			// 6. Match across vendor files by bag-of-words sorted key
 			if compRow == nil && sortedKey != "" {
-				compRow = bySorted[sortedKey]
+				if candidate := bySorted[sortedKey]; candidate != nil {
+					if ok, _, _ := canGroupWithProductRow(r, candidate); ok {
+						compRow = candidate
+					}
+				}
 			}
 			// 7. Match across vendor files by Base Product Key with Pack Compatibility
 			if compRow == nil {
 				baseKey, pCount, hasCount := productmatch.ProductKeyParts(r.RawName)
 				if baseKey != "" {
 					candidates := byBaseCore[baseKey]
-					if len(candidates) == 1 {
-						c := candidates[0]
-						if hasCount && c.hasCount {
-							if math.Abs(pCount-c.packCount) < 0.01 {
-								compRow = c.compRow
-							}
-						} else {
-							if isPriceCompatible(r.Price, c.compRow.BestPrice) {
-								compRow = c.compRow
-							}
-						}
-					} else if len(candidates) > 1 {
-						if hasCount {
-							for _, c := range candidates {
-								if c.hasCount && math.Abs(pCount-c.packCount) < 0.01 {
+					for _, c := range candidates {
+						if ok, _, _ := canGroupWithProductRow(r, c.compRow); ok {
+							if hasCount && c.hasCount {
+								if math.Abs(pCount-c.packCount) < 0.01 {
 									compRow = c.compRow
 									break
 								}
-							}
-						}
-						if compRow == nil && r.Price.IsPositive() {
-							var bestC *ProductComparisonRow
-							minDiff := int64(math.MaxInt64)
-							for _, c := range candidates {
-								if c.compRow.BestPrice.IsPositive() {
-									diff := r.Price.Minor() - c.compRow.BestPrice.Minor()
-									if diff < 0 {
-										diff = -diff
-									}
-									if diff < minDiff && isPriceCompatible(r.Price, c.compRow.BestPrice) {
-										minDiff = diff
-										bestC = c.compRow
-									}
-								}
-							}
-							if bestC != nil {
-								compRow = bestC
+							} else if isPriceCompatible(r.Price, c.compRow.BestPrice) {
+								compRow = c.compRow
+								break
 							}
 						}
 					}
@@ -161,6 +147,17 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 				Price:              r.Price,
 				Discount:           r.Discount,
 				PriceAfterDiscount: netPrice,
+			}
+
+			if compRow != nil {
+				_, groupBasis, notComparable := canGroupWithProductRow(r, compRow)
+				if compRow.GroupBasis == "" {
+					compRow.GroupBasis = groupBasis
+				}
+				if notComparable {
+					compRow.NotComparable = true
+					compRow.GroupBasis = "not_comparable"
+				}
 			}
 
 			if compRow == nil {

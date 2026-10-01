@@ -15,7 +15,7 @@ func normalizePackUnit(u string) string {
 		return "tablet"
 	case u == "capsule" || u == "capsules" || u == "cap" || u == "caps" || u == "كبسول" || u == "كبسولات":
 		return "capsule"
-	case u == "box" || u == "علبة" || u == "علبه" || u == "علب" || u == "carton" || u == "كرتونة":
+	case u == "box" || u == "علبة" || u == "علبه" || u == "علب" || u == "carton" || u == "كرتونة" || u == "pack" || u == "package" || u == "باكت":
 		return "box"
 	case u == "bottle" || u == "زجاجة" || u == "ازازة" || u == "قارورة":
 		return "bottle"
@@ -193,7 +193,7 @@ func PackOutcome(row, product PackFacts, rels []PackRelationship) (outcome strin
 	pUnit := normalizePackUnit(product.SubUnit)
 
 	// Both have specific, distinct units that require relationship
-	if rUnit != "" && pUnit != "" && rUnit != pUnit {
+	if rUnit != "" && pUnit != "" && rUnit != pUnit && rUnit != "unit" && pUnit != "unit" {
 		if conv, ok := Convert(row.Count, rUnit, pUnit, rels); ok {
 			if conv == product.Count {
 				bridgingID := findBridgingRel(row.Count, rUnit, product.Count, pUnit, rels)

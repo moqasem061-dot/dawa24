@@ -42,5 +42,12 @@ func (p shortBrandPairs) pair(sr *CompareFileRow) *CompareFileRow {
 	if len(candidates) != 1 || !isPriceCompatible(sr.Price, candidates[0].Price) {
 		return nil
 	}
-	return candidates[0]
+	cand := candidates[0]
+	// Short-brand grouping alone must never group without SameSellableItem confirmation
+	srFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: sr.RawName, SKU: sr.SKU}, nil)
+	trFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: cand.RawName, SKU: cand.SKU}, nil)
+	if same, _ := productmatch.SameSellableItem(srFacts, trFacts, nil); !same {
+		return nil
+	}
+	return cand
 }

@@ -216,23 +216,9 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		}
 
 		if tr != nil {
-			var groupBasis string
-			var notComparable bool
-			if sr.MatchedProductID != nil && tr.MatchedProductID != nil && *sr.MatchedProductID == *tr.MatchedProductID {
-				groupBasis = "canonical_pack"
-			} else {
-				groupBasis = "source_equivalence"
-			}
-
-			// Check pack comparability (e.g. strip vs box without conversion)
-			srFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: sr.RawName, SKU: sr.SKU}, nil)
-			trFacts := productmatch.ExtractRowFacts(&productmatch.Row{Name: tr.RawName, SKU: tr.SKU}, nil)
-			if srFacts.Pack != nil && trFacts.Pack != nil {
-				outcome, _ := productmatch.PackOutcome(*srFacts.Pack, *trFacts.Pack, nil)
-				if outcome == "conflict" || outcome == "needs_relationship" {
-					notComparable = true
-					groupBasis = "not_comparable"
-				}
+			grouped, groupBasis, notComparable := isEquivalentOrCanonical(sr, tr, nil)
+			if !grouped {
+				continue
 			}
 
 			price := sr.Price
@@ -354,24 +340,3 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 	}, nil
 }
 
-type targetRowEntry struct {
-	row       *CompareFileRow
-	packCount float64
-	hasCount  bool
-}
-
-// isPriceCompatible checks whether two public prices are within a plausible ratio (0.35x to 2.85x)
-// to prevent matching different pack sizes (e.g. 20 tablets vs 200 tablets).
-// If either price is zero/unknown, it returns true.
-// Uses integer arithmetic on minor units (piastres) in accordance with Rule 1.
-func isPriceCompatible(p1, p2 money.Amount) bool {
-	if p1.IsZero() || p2.IsZero() {
-		return true
-	}
-	m1 := p1.Minor()
-	m2 := p2.Minor()
-	if m1 <= 0 || m2 <= 0 {
-		return true
-	}
-	return m1*100 >= m2*35 && m1*100 <= m2*285
-}
