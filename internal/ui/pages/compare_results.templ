@@ -319,9 +319,26 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 										<td>
 											<div class="d-flex items-center gap-2 flex-wrap mb-1">
 												<strong class="text-sm font-extrabold text-primary">{ row.ProductName }</strong>
+												if row.NotComparable || row.GroupBasis == "not_comparable" {
+													<span class="badge badge-amber text-2xs font-bold" title="غير قابل للمقارنة المباشرة لعدم وجود علاقة تحويل معتمدة (Not directly comparable)">
+														غير قابل للمقارنة المباشرة
+													</span>
+												} else if row.GroupBasis == "canonical_pack" {
+													<span class="badge badge-emerald text-2xs font-bold" title="مطابقة لعبوة الكتالوج المعتمد (Canonical pack)">
+														كتالوج معتمد
+													</span>
+												} else if row.GroupBasis == "source_equivalence" {
+													<span class="badge badge-slate text-2xs font-bold" title="تطابق بين ملفات المصدر دون ربط بالكتالوج (Source equivalence)">
+														تطابق مصادر
+													</span>
+												} else if row.GroupBasis == "relationship" {
+													<span class="badge badge-sky text-2xs font-bold" title="محول بواسطة علاقة عبوة معتمدة (Pack relationship)">
+														علاقة عبوة
+													</span>
+												}
 											</div>
 											if row.SKU != "" {
-												<span class="text-xs text-muted tabular-nums">كود: { row.SKU }</span>
+												<span class="text-xs text-muted tabular-nums">كود: <bdi>{ row.SKU }</bdi></span>
 											}
 										</td>
 
@@ -336,9 +353,13 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 
 										<!-- Best Discount -->
 										<td>
-											<span class="badge badge-emerald text-xs font-extrabold tabular-nums">
-												{ fmt.Sprintf("%.1f%%", row.BestDiscount) }
-											</span>
+											if row.NotComparable {
+												<span class="text-muted text-xs font-semibold">—</span>
+											} else {
+												<span class="badge badge-emerald text-xs font-extrabold tabular-nums">
+													{ fmt.Sprintf("%.1f%%", row.BestDiscount) }
+												</span>
+											}
 										</td>
 
 										<!-- Best Supplier -->

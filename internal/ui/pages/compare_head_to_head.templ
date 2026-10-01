@@ -444,11 +444,30 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 										<div class="font-extrabold text-primary text-sm">
 											{ r.ProductName }
 										</div>
-										if r.SKU != "" {
-											<span class="text-xs text-muted tabular-nums">
-												كود: { r.SKU }
-											</span>
-										}
+										<div class="d-flex items-center gap-1.5 flex-wrap mt-1">
+											if r.SKU != "" {
+												<span class="text-xs text-muted tabular-nums">
+													كود: <bdi>{ r.SKU }</bdi>
+												</span>
+											}
+											if r.NotComparable || r.GroupBasis == "not_comparable" {
+												<span class="badge badge-amber text-2xs font-bold" title="غير قابل للمقارنة المباشرة لعدم وجود علاقة تحويل معتمدة (Not directly comparable)">
+													غير قابل للمقارنة المباشرة
+												</span>
+											} else if r.GroupBasis == "canonical_pack" {
+												<span class="badge badge-emerald text-2xs font-bold" title="مطابقة لعبوة الكتالوج المعتمد (Canonical pack)">
+													كتالوج معتمد
+												</span>
+											} else if r.GroupBasis == "source_equivalence" {
+												<span class="badge badge-slate text-2xs font-bold" title="تطابق بين ملفات المصدر دون ربط بالكتالوج (Source equivalence)">
+													تطابق مصادر
+												</span>
+											} else if r.GroupBasis == "relationship" {
+												<span class="badge badge-sky text-2xs font-bold" title="محول بواسطة علاقة عبوة معتمدة (Pack relationship)">
+													علاقة عبوة
+												</span>
+											}
+										</div>
 									</td>
 
 									<!-- 2. السعر -->

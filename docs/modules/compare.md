@@ -129,3 +129,23 @@ Import progress stores its snapshot callback before opening SSE, so failed
 streams retain polling callbacks. Polls carry `X-Dawa-Background: 1`; detached
 progress bars close their stream and cancel polling, drift and completion
 callbacks. `scripts/test-ui-stability.cjs` contains the regression fixtures.
+
+## Product Matching Rework & Equivalence Grouping (2026-10-01)
+
+Per Product Matching Rework User Story 6 (FR-038, FR-040, FR-041):
+
+1. **Grouping Gate & Equivalence Basis (`group_basis`)**:
+   - Comparison grouping across head-to-head and multi-supplier analysis requires verified pack-level identity agreement.
+   - Rows group only when they share the same master catalogue product ID at pack granularity (`canonical_pack`), or when `productmatch.SameSellableItem` confirms identity equivalence across source files (`source_equivalence`).
+   - Shared prefix, manufacturer, or short brand alone never groups items into a comparison row.
+   - Items absent from the master catalogue group safely with `source_equivalence` without fabricating a canonical catalog link.
+
+2. **Price Comparability & Selling Units**:
+   - Differing pack sizes and commercial selling units (e.g. Strip vs Box) are comparable only through validated conversion relationships from `catalog.pack_relationships` via `productmatch.Convert`.
+   - Converted prices use exact rational arithmetic (`money.Amount.MulRatio`) without `float64`.
+   - Differing packs lacking an active bridging relationship are marked "not directly comparable" (`not_comparable = true`, `group_basis = 'not_comparable'`), and excluded from savings totals (`TotalSavings` and `TotalPotentialSaving`).
+   - The UI displays explicit bilingual badges for `group_basis` and marks non-comparable rows with "غير قابل للمقارنة المباشرة" (Not directly comparable).
+
+3. **Stale Link Invalidation (FR-041)**:
+   - Rerunning or rematching a row projects via `matchflow.Columns(d)`. When the latest outcome is non-accepted (`needs_review`, `ambiguous`, `unresolved`), `matched_product_id` is set to NULL, preventing stale associations from surviving.
+

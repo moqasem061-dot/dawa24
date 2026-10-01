@@ -8,6 +8,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // mockCompareRepoE2E is written from two goroutines now.
@@ -359,3 +360,8 @@ func (m *mockCompareRepoE2E) CountMarketDiscounts(ctx context.Context, filter co
 	}
 	return res.TotalCount, nil
 }
+
+func (m *mockCompareRepoE2E) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {
+	return nil, nil
+}
+
