@@ -3,11 +3,14 @@ package postgres
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // CreateRun inserts a new match_runs record under the active tenant transaction.
@@ -201,4 +204,140 @@ func (r *Repository) ListRunRows(ctx context.Context, runID int64, workflow stri
 	})
 
 	return out, err
+}
+
+// CountActiveAIRuns counts how many runs are currently in 'enhancing' state for the organization.
+func (r *Repository) CountActiveAIRuns(ctx context.Context, orgID int64) (int, error) {
+	var count int
+	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		query := `SELECT count(*) FROM catalog.match_runs WHERE organization_id = $1 AND state = 'enhancing';`
+		return tx.QueryRow(txCtx, query, orgID).Scan(&count)
+	})
+	return count, err
+}
+
+// UpdateAIRunCounters updates the AI counters JSON and refreshes heartbeat.
+func (r *Repository) UpdateAIRunCounters(ctx context.Context, runID int64, aiCounters map[string]any) error {
+	aiJSON, err := json.Marshal(aiCounters)
+	if err != nil {
+		return err
+	}
+	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		query := `
+			UPDATE catalog.match_runs
+			SET ai = $1, heartbeat_at = now()
+			WHERE id = $2;
+		`
+		_, execErr := tx.Exec(txCtx, query, aiJSON, runID)
+		return execErr
+	})
+}
+
+// RecordAIAttempt inserts a record into catalog.match_ai_attempts (T119, T125).
+func (r *Repository) RecordAIAttempt(ctx context.Context, a *matching.AIAttemptRecord) error {
+	var costStr *string
+	if a.Cost != nil {
+		s := a.Cost.String()
+		costStr = &s
+	}
+	answersJSON := a.Answers
+	if len(answersJSON) == 0 {
+		answersJSON = []byte("[]")
+	}
+
+	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		query := `
+			INSERT INTO catalog.match_ai_attempts (
+				run_id, organization_id, attempt_no, kind,
+				question_count, started_at, deadline_at, ended_at,
+				outcome, input_tokens, output_tokens, cost,
+				request_sha256, invalid_excerpt, answers, created_at
+			) VALUES (
+				$1, $2, $3, $4,
+				$5, $6, $7, $8,
+				$9, $10, $11, $12::numeric,
+				$13, $14, $15, now()
+			);
+		`
+		_, err := tx.Exec(txCtx, query,
+			a.RunID, a.OrganizationID, a.AttemptNo, a.Kind,
+			a.QuestionCount, a.StartedAt, a.DeadlineAt, a.EndedAt,
+			a.Outcome, a.InputTokens, a.OutputTokens, costStr,
+			a.RequestSHA256, a.InvalidExcerpt, answersJSON,
+		)
+		return err
+	})
+}
+
+// ListEnhanceRows retrieves all rows associated with a match run as EnhanceRows for AI processing.
+func (r *Repository) ListEnhanceRows(ctx context.Context, runID int64, workflow string) ([]matching.EnhanceRow, error) {
+	var out []matching.EnhanceRow
+	err := r.db.InReadTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+		var query string
+		switch workflow {
+		case "vendor":
+			query = `SELECT id, row_number, COALESCE(display_name, ''), match_decision, match_revision
+			         FROM ingest.catalog_import_rows WHERE match_run_id = $1 ORDER BY row_number;`
+		case "compare":
+			query = `SELECT id, row_number, COALESCE(raw_name, ''), match_decision, match_revision
+			         FROM compare.file_rows WHERE match_run_id = $1 ORDER BY row_number;`
+		case "smartorder":
+			query = `SELECT id, id, COALESCE(raw_name, ''), match_decision, match_revision
+			         FROM smartorder.run_lines WHERE match_run_id = $1 ORDER BY id;`
+		case "savings":
+			query = `SELECT id, id, COALESCE(raw_name, ''), match_decision, match_revision
+			         FROM platform.import_run_rows WHERE match_run_id = $1 ORDER BY id;`
+		default:
+			query = `SELECT id, id, COALESCE(raw_name, ''), match_decision, match_revision
+			         FROM catalog.import_staging_rows WHERE match_run_id = $1 ORDER BY id;`
+		}
+
+		rows, qErr := tx.Query(txCtx, query, runID)
+		if qErr != nil {
+			return qErr
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var id int64
+			var rowNum int
+			var name string
+			var decRaw []byte
+			var rev int
+			if err := rows.Scan(&id, &rowNum, &name, &decRaw, &rev); err != nil {
+				return err
+			}
+			var dec matchflow.RowDecision
+			if len(decRaw) > 0 {
+				_ = json.Unmarshal(decRaw, &dec)
+			}
+			dec.Revision = rev
+			out = append(out, matching.EnhanceRow{
+				RowRef:   matching.RowRef{ID: id, RowNumber: rowNum},
+				Row:      productmatch.Row{Name: name},
+				Decision: dec,
+			})
+		}
+		return nil
+	})
+	return out, err
+}
+
+// PurgeOldAIAttempts deletes match_ai_attempts rows older than maxAge across all tenants (US9 T129).
+// Uses database.AsSystem because it is a platform maintenance cleanup job.
+func (r *Repository) PurgeOldAIAttempts(ctx context.Context, maxAge time.Duration) (int64, error) {
+	if maxAge <= 0 {
+		maxAge = 30 * 24 * time.Hour
+	}
+	var count int64
+	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		query := `DELETE FROM catalog.match_ai_attempts WHERE created_at < now() - ($1 || ' seconds')::interval;`
+		tag, execErr := tx.Exec(txCtx, query, fmt.Sprintf("%d", int(maxAge.Seconds())))
+		if execErr != nil {
+			return execErr
+		}
+		count = tag.RowsAffected()
+		return nil
+	})
+	return count, err
 }

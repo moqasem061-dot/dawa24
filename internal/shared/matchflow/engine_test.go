@@ -376,8 +376,7 @@ func TestEveryRequestIsAttributed(t *testing.T) {
 }
 
 type attributionSpy struct {
-	enhance func(matchflow.Batch)
-	verify  func(matchflow.CheckBatch)
+	enhance func(matchflow.Batch); verify func(matchflow.CheckBatch)
 }
 
 func (s *attributionSpy) Enhance(_ context.Context, b matchflow.Batch) ([]matchflow.Decision, error) {
@@ -388,7 +387,6 @@ func (s *attributionSpy) Enhance(_ context.Context, b matchflow.Batch) ([]matchf
 	}
 	return out, nil
 }
-
 func (s *attributionSpy) Verify(_ context.Context, b matchflow.CheckBatch) ([]matchflow.Check, error) {
 	s.verify(b)
 	out := make([]matchflow.Check, len(b.Pairs))

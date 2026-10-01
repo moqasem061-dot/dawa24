@@ -22,6 +22,12 @@ func (m *mockScoreMatchingService) Prepare(ctx context.Context, req productmatch
 	return productmatch.PrepareResult{}, nil
 }
 
+func (m *mockScoreMatchingService) GetRun(context.Context, int64) (*matching.MatchRun, error) {
+	return nil, nil
+}
+func (m *mockScoreMatchingService) ListRunRows(context.Context, matching.Scope, int64, int) ([]matching.DiagnosticRowData, error) {
+	return nil, nil
+}
 func (m *mockScoreMatchingService) MarkReviewable(context.Context, int64) error { return nil }
 func (m *mockScoreMatchingService) Rematch(context.Context, matching.Scope, productmatch.Row, int) (matchflow.RowDecision, error) {
 	return matchflow.RowDecision{}, nil
@@ -54,6 +60,19 @@ func (m *mockScoreMatchingService) RevokeKnowledge(context.Context, matching.Sco
 func (m *mockScoreMatchingService) PromoteKnowledge(context.Context, matching.Scope, int64) error {
 	return nil
 }
+func (m *mockScoreMatchingService) Diagnose(context.Context, matching.Scope, int64, productmatch.Row, matchflow.RowDecision) (matching.DiagnosticRow, error) {
+	return matching.DiagnosticRow{}, nil
+}
+func (m *mockScoreMatchingService) RegisterApplier(matching.Workflow, matching.Applier) {}
+func (m *mockScoreMatchingService) GetApplier(matching.Workflow) matching.Applier       { return nil }
+func (m *mockScoreMatchingService) ListAIConfigurations(context.Context) ([]matching.AIConfiguration, error) { return nil, nil }
+func (m *mockScoreMatchingService) GetAIConfiguration(context.Context, string) (*matching.AIConfiguration, error) { return nil, nil }
+func (m *mockScoreMatchingService) UpdateAIConfigurationStatus(context.Context, string, string, string, string) error { return nil }
+func (m *mockScoreMatchingService) ListPolicies(context.Context) ([]matching.PolicyRecord, error) { return nil, nil }
+func (m *mockScoreMatchingService) ListAssignments(context.Context) ([]matching.PolicyAssignment, error) { return nil, nil }
+func (m *mockScoreMatchingService) UpdateAssignment(context.Context, string, string, string, *string, string, string) error { return nil }
+func (m *mockScoreMatchingService) RollbackAssignment(context.Context, string, string, string) error { return nil }
+
 
 func TestScoreRows_CallsMatchingServicePrepare(t *testing.T) {
 	ctx := context.Background()

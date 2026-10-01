@@ -3,10 +3,20 @@ package matching
 import (
 	"context"
 	"fmt"
+	"sync"
 
+	"github.com/riverqueue/river"
+	"github.com/riverqueue/river/rivertype"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
+
+// Enqueuer is an abstraction for enqueueing River background jobs.
+type Enqueuer interface {
+	Enqueue(ctx context.Context, args river.JobArgs, opts *river.InsertOpts) (*rivertype.JobInsertResult, error)
+}
 
 // Service defines the orchestrating interface for matching operations.
 type Service interface {
@@ -21,30 +31,64 @@ type Service interface {
 	PreviewBulk(ctx context.Context, s Scope, a ReviewAction, rows []RowRef) (BulkPreview, error)
 	StartEnhancement(ctx context.Context, runID int64, rows []EnhanceRow) (EnhanceHandle, error)
 	StopEnhancement(ctx context.Context, runID int64) error
+	RegisterApplier(w Workflow, a Applier)
+	GetApplier(w Workflow) Applier
 	Revalidate(ctx context.Context, s Scope, ref RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error)
 	Remember(ctx context.Context, s Scope, k KnowledgeWrite) error
 	ListKnowledge(ctx context.Context, s Scope, f KnowledgeFilter) (Page[Knowledge], error)
 	RevokeKnowledge(ctx context.Context, s Scope, id int64) error
 	PromoteKnowledge(ctx context.Context, s Scope, id int64) error
+	ListAIConfigurations(ctx context.Context) ([]AIConfiguration, error)
+	GetAIConfiguration(ctx context.Context, id string) (*AIConfiguration, error)
+	UpdateAIConfigurationStatus(ctx context.Context, id string, newStatus string, changedBy string, reason string) error
+	ListPolicies(ctx context.Context) ([]PolicyRecord, error)
+	ListAssignments(ctx context.Context) ([]PolicyAssignment, error)
+	UpdateAssignment(ctx context.Context, workflow, cohort, activeVersion string, shadowVersion *string, changedBy, reason string) error
+	RollbackAssignment(ctx context.Context, workflow, cohort, changedBy string) error
 }
 
+
 type serviceImpl struct {
-	repo       Repository
-	indexCache *IndexCache
-	loader     *Loader
-	decideFn   func(idx *productmatch.Index, row *productmatch.Row, pol productmatch.Policy) matchflow.RowDecision
+	repo         Repository
+	indexCache   *IndexCache
+	loader       *Loader
+	queueClient  Enqueuer
+	appliersMu   sync.RWMutex
+	appliers     map[Workflow]Applier
+	activeRowsMu sync.RWMutex
+	activeRows   map[int64][]EnhanceRow
+	shadowRowsMu sync.RWMutex
+	shadowRows   map[int64][]productmatch.Row
+	decideFn     func(idx *productmatch.Index, row *productmatch.Row, pol productmatch.Policy) matchflow.RowDecision
+}
+
+// Option configures serviceImpl.
+type Option func(*serviceImpl)
+
+// WithQueueClient sets the queue enqueuer for asynchronous enhancement.
+func WithQueueClient(q Enqueuer) Option {
+	return func(s *serviceImpl) {
+		s.queueClient = q
+	}
 }
 
 // NewService constructs a matching Service.
-func NewService(repo Repository, indexCache *IndexCache, loader *Loader) Service {
-	return &serviceImpl{
+func NewService(repo Repository, indexCache *IndexCache, loader *Loader, opts ...Option) Service {
+	s := &serviceImpl{
 		repo:       repo,
 		indexCache: indexCache,
 		loader:     loader,
+		appliers:   make(map[Workflow]Applier),
+		activeRows: make(map[int64][]EnhanceRow),
+		shadowRows: make(map[int64][]productmatch.Row),
 		decideFn: func(idx *productmatch.Index, row *productmatch.Row, pol productmatch.Policy) matchflow.RowDecision {
 			return idx.Decide(row, pol)
 		},
 	}
+	for _, opt := range opts {
+		opt(s)
+	}
+	return s
 }
 
 // Prepare executes deterministic matching on source rows, deduplicating by QuestionSignature.
@@ -53,10 +97,13 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 	var summary matchflow.RunCounts
 	decisions := make([]matchflow.RowDecision, n)
 
-	// 1. Resolve policy
-	pol, err := s.repo.ActivePolicy(ctx, string(req.Scope.Workflow), req.Scope.EffectiveOrg)
+	// 1. Resolve policy and optional shadow policy
+	var shadowVersion string
+	pol, sVer, err := s.repo.ResolvePolicyAssignment(ctx, string(req.Scope.Workflow), req.Scope.EffectiveOrg)
 	if err != nil || pol.Version == "" {
 		pol = productmatch.DefaultPolicy()
+	} else {
+		shadowVersion = sVer
 	}
 	if req.Required != productmatch.GranularityNone {
 		pol.Required = req.Required
@@ -195,6 +242,25 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 		_ = s.repo.UpdateCounts(ctx, run.ID, summary)
 	}
 
+	// 7. If assignment has a shadow_version, trigger shadow execution asynchronously (US13 T151)
+	if shadowVersion != "" && run.ID > 0 {
+		s.shadowRowsMu.Lock()
+		s.shadowRows[run.ID] = req.Rows
+		s.shadowRowsMu.Unlock()
+
+		if s.queueClient != nil {
+			_, _ = s.queueClient.Enqueue(ctx, queue.MatchShadowArgs{
+				RunID:          run.ID,
+				OrganizationID: run.OrganizationID,
+				ShadowVersion:  shadowVersion,
+			}, nil)
+		} else {
+			go func(rID, oID int64, sv string) {
+				_ = s.RunShadow(context.Background(), rID, oID, sv)
+			}(run.ID, run.OrganizationID, shadowVersion)
+		}
+	}
+
 	return PrepareResult{
 		RunID:     run.ID,
 		Decisions: decisions,
@@ -321,12 +387,4 @@ func (s *serviceImpl) Revalidate(ctx context.Context, sc Scope, ref RowRef, d ma
 	}
 
 	return d, nil
-}
-
-func (s *serviceImpl) StartEnhancement(ctx context.Context, runID int64, rows []EnhanceRow) (EnhanceHandle, error) {
-	return EnhanceHandle{}, ErrNotImplemented
-}
-
-func (s *serviceImpl) StopEnhancement(ctx context.Context, runID int64) error {
-	return ErrNotImplemented
 }

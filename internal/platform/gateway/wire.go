@@ -127,7 +127,11 @@ func (c *HTTPClient) do(ctx context.Context, req Request, b budget) (*Response, 
 	httpReq.Header.Set("X-Dawa-Org-ID", strconv.FormatInt(req.OrganizationID, 10))
 	httpReq.Header.Set("X-Dawa-User-ID", strconv.FormatInt(req.UserID, 10))
 	httpReq.Header.Set("X-Dawa-Capability", string(req.Capability))
+	if req.Route != "" {
+		httpReq.Header.Set("X-Dawa-Route", req.Route)
+	}
 	if req.IdempotencyKey != "" {
+
 		httpReq.Header.Set("Idempotency-Key", req.IdempotencyKey)
 	}
 	if tp := traceparentFrom(ctx); tp != "" {

@@ -1,0 +1,116 @@
+package matchreview
+
+import (
+	"fmt"
+)
+
+// AIStatusProps represents parameters for the AI enhancement status component (US9 T131).
+type AIStatusProps struct {
+	State       string // "enhancing", "completed", "stopped", "off", "failed"
+	RunID       int64
+	Current     int
+	Total       int
+	StopURL     string
+	ContinueURL string
+	CSRFToken   string
+	AcceptedNew int
+	Confirmed   int
+	Abstained   int
+	Rejected    int
+	Failed      int
+	Unattempted int
+}
+
+templ AIStatus(props AIStatusProps) {
+	<div class="rounded-xl border border-neutral-200 bg-white p-4 shadow-sm space-y-3" dir="rtl">
+		if props.State == "enhancing" {
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-3">
+					<span class="relative flex h-3 w-3">
+						<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary-400 opacity-75"></span>
+						<span class="relative inline-flex rounded-full h-3 w-3 bg-primary-600"></span>
+					</span>
+					<div>
+						<span class="text-sm font-semibold text-neutral-900">
+							جاري التحسين الذكي…
+							<span class="text-xs font-normal text-neutral-500">({ fmt.Sprintf("%d/%d", props.Current, props.Total) })</span>
+						</span>
+						<span class="block text-xs text-neutral-500">Enhancing… ({ fmt.Sprintf("%d/%d", props.Current, props.Total) })</span>
+					</div>
+				</div>
+				<div class="flex items-center gap-3">
+					if props.ContinueURL != "" {
+						<a
+							href={ templ.SafeURL(props.ContinueURL) }
+							class="text-xs font-medium text-primary-600 hover:text-primary-800 underline focus:outline-none"
+						>
+							متابعة بدون انتظار
+							<span class="block text-[10px] text-neutral-400">Continue without waiting</span>
+						</a>
+					}
+					if props.StopURL != "" {
+						<form method="POST" action={ templ.SafeURL(props.StopURL) } class="inline">
+							<input type="hidden" name="gorilla.csrf.Token" value={ props.CSRFToken }/>
+							<input type="hidden" name="run_id" value={ fmt.Sprintf("%d", props.RunID) }/>
+							<button
+								type="submit"
+								class="px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 hover:bg-red-100 rounded-lg border border-red-200 focus:outline-none transition-colors"
+							>
+								إيقاف
+								<span class="text-[10px] font-normal block">Stop</span>
+							</button>
+						</form>
+					}
+				</div>
+			</div>
+		} else {
+			<!-- AI Outcome Summary -->
+			<div class="flex items-center justify-between border-b border-neutral-100 pb-2">
+				<div class="flex items-center gap-2">
+					<span class="text-xs font-bold text-neutral-800">
+						نتائج التحسين الذكي
+						<span class="font-normal text-neutral-500">(AI Matching Summary)</span>
+					</span>
+				</div>
+				if props.AcceptedNew == 0 {
+					<span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-neutral-100 text-neutral-600">
+						لا يوجد تحسين (No improvement)
+					</span>
+				}
+			</div>
+
+			<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 text-center text-xs pt-1">
+				<div class="p-2 rounded-lg bg-emerald-50 border border-emerald-100">
+					<span class="text-emerald-800 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.AcceptedNew) }</bdi></span>
+					<span class="text-emerald-700 text-[11px] block">مطابقات مقبولة جديدة</span>
+					<span class="text-emerald-600 text-[10px] block">New Accepted</span>
+				</div>
+				<div class="p-2 rounded-lg bg-blue-50 border border-blue-100">
+					<span class="text-blue-800 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.Confirmed) }</bdi></span>
+					<span class="text-blue-700 text-[11px] block">تأكيدات</span>
+					<span class="text-blue-600 text-[10px] block">Confirmed</span>
+				</div>
+				<div class="p-2 rounded-lg bg-neutral-50 border border-neutral-100">
+					<span class="text-neutral-700 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.Abstained) }</bdi></span>
+					<span class="text-neutral-600 text-[11px] block">امتناع</span>
+					<span class="text-neutral-500 text-[10px] block">Abstained</span>
+				</div>
+				<div class="p-2 rounded-lg bg-amber-50 border border-amber-100">
+					<span class="text-amber-800 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.Rejected) }</bdi></span>
+					<span class="text-amber-700 text-[11px] block">مرفوضة</span>
+					<span class="text-amber-600 text-[10px] block">Rejected</span>
+				</div>
+				<div class="p-2 rounded-lg bg-red-50 border border-red-100">
+					<span class="text-red-800 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.Failed) }</bdi></span>
+					<span class="text-red-700 text-[11px] block">فشلت</span>
+					<span class="text-red-600 text-[10px] block">Failed</span>
+				</div>
+				<div class="p-2 rounded-lg bg-neutral-50 border border-neutral-100">
+					<span class="text-neutral-500 font-bold block text-sm"><bdi>{ fmt.Sprintf("%d", props.Unattempted) }</bdi></span>
+					<span class="text-neutral-500 text-[11px] block">لم تُطلب</span>
+					<span class="text-neutral-400 text-[10px] block">Unattempted</span>
+				</div>
+			</div>
+		}
+	</div>
+}

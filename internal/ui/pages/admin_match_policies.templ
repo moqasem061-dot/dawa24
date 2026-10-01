@@ -1,0 +1,209 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+type AdminMatchPoliciesData struct {
+	Policies     []matching.PolicyRecord
+	Assignments  []matching.PolicyAssignment
+	SuccessMsg   string
+	ErrorMessage string
+}
+
+templ AdminMatchPoliciesPage(lang, dir string, data AdminMatchPoliciesData) {
+	@layouts.AdminShell("سياسات المطابقة وتخصيص المسارات (Match Policies & Assignments)", "match_policies", lang, dir) {
+		<div class="stack-lg">
+			<!-- Header -->
+			<div class="page-header d-flex justify-between items-center flex-wrap gap-4 mb-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3">
+						<h1 class="page-title text-xl font-bold m-0">
+							سياسات المطابقة وتخصيص المسارات (Match Policies & Assignments)
+						</h1>
+					</div>
+					<p class="text-sm text-muted m-0">
+						إدارة السياسات الفعالة وسياسات الظل لكل مسار وشريحة مع سجل تدقيق واستعادة فورية (US13 T152, FR-107)
+					</p>
+				</div>
+			</div>
+
+			if data.SuccessMsg != "" {
+				<div class="alert alert-success mb-4">
+					{ data.SuccessMsg }
+				</div>
+			}
+			if data.ErrorMessage != "" {
+				<div class="alert alert-danger mb-4">
+					{ data.ErrorMessage }
+				</div>
+			}
+
+			<!-- Current Assignments Card -->
+			<div class="card p-4 mb-6">
+				<h2 class="text-lg font-bold mb-3">التخصيصات الحالية (Current Assignments)</h2>
+				<div class="table-responsive">
+					<table class="table w-full text-right" dir={ dir }>
+						<thead>
+							<tr class="bg-slate-50 border-b">
+								<th class="p-3">المسار (Workflow)</th>
+								<th class="p-3">الشريحة (Cohort)</th>
+								<th class="p-3">السياسة الفعالة (Active)</th>
+								<th class="p-3">سياسة الظل (Shadow)</th>
+								<th class="p-3">آخر تعديل (By)</th>
+								<th class="p-3">تاريخ التعديل (At)</th>
+								<th class="p-3">إجراءات (Actions)</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(data.Assignments) == 0 {
+								<tr>
+									<td colspan="7" class="p-6 text-center text-muted">
+										لا توجد تخصيصات مسجلة (No assignments found)
+									</td>
+								</tr>
+							}
+							for _, a := range data.Assignments {
+								<tr class="border-b hover:bg-slate-50">
+									<td class="p-3 font-semibold font-mono">
+										{ a.Workflow }
+									</td>
+									<td class="p-3 font-mono text-sm">
+										{ a.Cohort }
+									</td>
+									<td class="p-3 font-mono text-sm">
+										<span class="badge badge-emerald">{ a.ActiveVersion }</span>
+									</td>
+									<td class="p-3 font-mono text-sm">
+										if a.ShadowVersion != nil && *a.ShadowVersion != "" {
+											<span class="badge badge-amber">{ *a.ShadowVersion }</span>
+										} else {
+											<span class="text-muted">بدون ظل (None)</span>
+										}
+									</td>
+									<td class="p-3 text-xs text-muted">
+										{ a.ChangedBy }
+									</td>
+									<td class="p-3 text-xs text-muted">
+										{ a.ChangedAt.Format("2006-01-02 15:04:05") }
+									</td>
+									<td class="p-3">
+										<form method="POST" action="/admin/matching/policies/rollback" class="inline">
+											<input type="hidden" name="workflow" value={ a.Workflow }/>
+											<input type="hidden" name="cohort" value={ a.Cohort }/>
+											<button
+												type="submit"
+												class="btn btn-sm btn-outline-danger"
+												@click="if (!confirm('تأكيد التراجع واستعادة الإصدار السابق لهذا المسار؟')) $event.preventDefault()"
+											>
+												استعادة (Rollback)
+											</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+
+			<!-- Update Assignment Form Card -->
+			<div class="card p-4 mb-6">
+				<h2 class="text-lg font-bold mb-3">تعديل أو تعيين تخصيص (Update or Set Assignment)</h2>
+				<form method="POST" action="/admin/matching/policies/assign" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+					<div>
+						<label class="block text-sm font-medium mb-1">المسار (Workflow)</label>
+						<select name="workflow" class="form-select w-full" required>
+							<option value="vendor">vendor (استيراد الموردين)</option>
+							<option value="savings">savings (عروض التوفير)</option>
+							<option value="smartorder">smartorder (الطلب الذكي)</option>
+							<option value="catalog">catalog (إدارة الكتالوج)</option>
+							<option value="compare">compare (مقارنة الأسعار)</option>
+						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium mb-1">الشريحة (Cohort)</label>
+						<input type="text" name="cohort" class="form-input w-full" value="*" placeholder="* للكل أو معرف المؤسسة" required/>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium mb-1">السياسة الفعالة (Active Version)</label>
+						<select name="active_version" class="form-select w-full" required>
+							for _, p := range data.Policies {
+								<option value={ p.Version }>{ p.Version }</option>
+							}
+						</select>
+					</div>
+
+					<div>
+						<label class="block text-sm font-medium mb-1">سياسة الظل (Shadow Version)</label>
+						<select name="shadow_version" class="form-select w-full">
+							<option value="">-- بدون ظل (None) --</option>
+							for _, p := range data.Policies {
+								<option value={ p.Version }>{ p.Version }</option>
+							}
+						</select>
+					</div>
+
+					<div class="md:col-span-2">
+						<label class="block text-sm font-medium mb-1">سبب التغيير (Audit Reason)</label>
+						<input type="text" name="reason" class="form-input w-full" placeholder="سبب التغيير لتوثيق سجل التدقيق" required/>
+					</div>
+
+					<div class="md:col-span-3 flex justify-end">
+						<button type="submit" class="btn btn-primary">
+							حفظ التخصيص (Save Assignment)
+						</button>
+					</div>
+				</form>
+			</div>
+
+			<!-- Registered Policies List Card -->
+			<div class="card p-4">
+				<h2 class="text-lg font-bold mb-3">السياسات المسجلة غير القابلة للتعديل (Registered Policies)</h2>
+				<div class="table-responsive">
+					<table class="table w-full text-right" dir={ dir }>
+						<thead>
+							<tr class="bg-slate-50 border-b">
+								<th class="p-3">الإصدار (Version)</th>
+								<th class="p-3">أنشئ بواسطة (Created By)</th>
+								<th class="p-3">تاريخ الإنشاء (Created At)</th>
+								<th class="p-3">تفاصيل السياسة (Thresholds)</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(data.Policies) == 0 {
+								<tr>
+									<td colspan="4" class="p-6 text-center text-muted">
+										لا توجد سياسات مسجلة (No policies found)
+									</td>
+								</tr>
+							}
+							for _, p := range data.Policies {
+								<tr class="border-b hover:bg-slate-50">
+									<td class="p-3 font-mono font-semibold">
+										{ p.Version }
+									</td>
+									<td class="p-3 text-sm text-muted">
+										{ p.CreatedBy }
+									</td>
+									<td class="p-3 text-xs text-muted">
+										{ p.CreatedAt.Format("2006-01-02 15:04:05") }
+									</td>
+									<td class="p-3 text-xs">
+										<div>Strong: <bdi>{ fmt.Sprintf("%.2f", p.Body.MinStrong) }</bdi></div>
+										<div>Review: <bdi>{ fmt.Sprintf("%.2f", p.Body.MinReview) }</bdi></div>
+										<div>AI Enabled: <bdi>{ fmt.Sprintf("%t", p.Body.AI.Enabled) }</bdi></div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	}
+}

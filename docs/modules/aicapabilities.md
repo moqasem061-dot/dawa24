@@ -10,27 +10,34 @@ The `aicapabilities` bounded context exposes intelligent domain augmentation (ca
 2. **Deterministic Fallbacks:** When the AI gateway is disabled (`GATEWAY_ENABLED=false`) or encounters network timeouts/failures, the module instantly falls back to deterministic rule-based Arabic string normalization (`arabic.Similarity`) and keyword expansion.
 3. **Black-Hole Resiliency:** Tested against unroutable destination IPs (RFC 5737 TEST-NET-1), ensuring zero panics or user-facing errors during upstream AI service interruptions.
 
-## Every row goes to the AI (2026-09-27)
+## Unresolved Residue AI Enhancement (US9, US11, FR-060, FR-068)
 
-All five matching tools — smart order, vendor import, savings import, the
-master-catalogue import and the compare tool — now put every row to the model
-whenever retrieval found any catalogue candidate:
+AI enhancement operates strictly on the unresolved-but-resolvable residue following deterministic preparation across all five workflows (vendor import, savings import, smart order, catalog import, compare):
 
-- **غير مطابق / يحتاج المراجعة** are resolved. The plausibility floor
-  (`matchflow.Ceilings.MinPlausible`, 0.15–0.40) that dropped weak rows is 0 in
-  every profile.
-- **مطابق** rows matched on a name are checked. The smart order's
-  `Matcher.Verify` existed but was never called; it now feeds the AI stage.
-  Identifier matches (barcode, SKU, the buyer's own confirmed mapping) are not
-  sent — a model cannot improve on them.
-- A row with **no** candidate is not sent: the model may only answer with a
-  product it was shown.
+- **Eligible Population**: Rows in `needs_review` or `ambiguous` with available candidate options that are not human-locked and did not hit scoped knowledge.
+- **Settled Rows Excluded**: Previously accepted or confirmed rows (`StateAccepted`, `StateConfirmed`) are settled and excluded from AI dispatch during ordinary runs.
+- **Verification Pass**: Verification of settled rows is gated behind `Policy.AI.VerifyPass` (default `false`). When enabled, it counts toward the strict 3-attempt per question budget ceiling.
+- **Per-Item Options Enforcement (FR-062)**: Every item restricts the model's choices to its explicit candidate shortlist (`Item.Options`). Any answer outside the offered options is rejected with `not_offered_for_row`.
+- **Identity Gate Invariant**: All candidate answers must pass `Gate.Evaluate` (`Path = AI`). Hard conflicts (brand, form, concentration, release) are rejected.
+- **Deterministic Independence**: If the Gateway is disabled or unreachable, the run transitions cleanly to `reviewable` with `ai_state = "off"`, and users can review and commit without blocking.
 
-Safety is unchanged: an answer is applied only above the apply floor, after the
-identity screen and the pair check; a check the model will not confirm flags the
-row for manual review instead of replacing it. When a file outruns the budget,
-the risk order spends it on ambiguous, then unresolved, then settled rows — the
-catalogue import's pre-cap now follows the same order.
 
-Also fixed: the catalogue import counted unresolved rows as unmatched twice, and
-the admin saving import mis-counted disputed/confirmed rows as new matches.
+## Prompt v8 examples policy
+
+Prompt v8 incorporates 10 normative few-shot examples defined in `internal/modules/aicapabilities/prompt_examples_v8.go`. The policy governing these examples:
+
+1. **Synthetic and Leakage-Free:** All examples are completely synthetic. To prevent test set contamination, data leakage, and metric gaming, example product names, raw texts, and identifiers are forbidden from appearing in `testdata/matching/adversarial/cases.jsonl` or the held-out evaluation corpus. This invariant is enforced by automated unit tests (`TestPromptExamplesV8_NoLeakageInAdversarialOrHeldout`).
+2. **Deterministic & Stable:** Examples are statically compiled into the binary rather than retrieved dynamically, ensuring 100% byte-reproducible prompt rendering across runs and cache hits.
+3. **Comprehensive Category Coverage (FR-072):**
+   - **Arabic shorthand:** Real-world Egyptian trade shorthand with price noise (`س.ج 45ج`), pack tokens, and colloquial abbreviations.
+   - **Cross-script names:** Latin brand name matching an Arabic catalogue record.
+   - **Strength distinction:** Hard numerical strength boundaries (e.g. 5 mg vs 10 mg); never rounding or picking the nearest match.
+   - **Form distinction:** Critical pharmaceutical form divergence (cream vs ointment, tablet vs syrup).
+   - **Pack distinction:** Exact pack count agreement when granularity `need="pack"` is required.
+   - **Line extension:** Modifiers (Day/Night, Extra, Plus, Retard) indicate separate products.
+   - **Manufacturer trap:** Shared manufacturer or distributor is never evidence of product identity.
+   - **Prefix trap:** Shared leading prefixes (3–5 letters) do not justify conflating different brands.
+   - **Unstated / ambiguous:** When catalogue variants differ in attributes omitted by the row, the model must abstain with `ambiguous`.
+   - **Absent / no-candidate:** When the requested product is not represented in the catalogue window, the model must abstain with `absent`.
+4. **Structured Evidence & Abstention:** Examples teach the model to populate the compact evidence mapping (`e`) and output correct abstention reasons (`x`), proving that abstention is a first-class, expected response.
+

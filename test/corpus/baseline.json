@@ -35,13 +35,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 237,
-      "exact": 3691,
-      "none": 16,
-      "review": 39,
-      "strong": 16013
+      "ambiguous": 1489,
+      "exact": 3045,
+      "none": 15,
+      "review": 2799,
+      "strong": 12648
     },
-    "settled_pct": 98,
+    "settled_pct": 78,
     "matched_pct": 99
   },
   {
@@ -66,13 +66,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 418,
-      "exact": 34,
-      "none": 7480,
-      "review": 716,
-      "strong": 142
+      "ambiguous": 35,
+      "exact": 11,
+      "none": 7486,
+      "review": 1228,
+      "strong": 30
     },
-    "settled_pct": 2,
+    "settled_pct": 0,
     "matched_pct": 14
   },
   {
@@ -103,8 +103,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -132,8 +131,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -161,7 +159,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1
+      "review": 1
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -189,7 +187,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1
+      "review": 1
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -217,8 +215,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 1
+      "review": 2
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -251,8 +248,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -280,8 +276,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -309,8 +304,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -339,7 +333,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1
+      "review": 1
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -396,8 +390,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -427,8 +420,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -458,8 +450,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -490,8 +481,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 1,
-      "review": 2
+      "review": 3
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -517,7 +507,7 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 6
+      "review": 6
     },
     "settled_pct": 0,
     "matched_pct": 100
@@ -541,13 +531,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 61,
-      "exact": 150,
-      "none": 50,
-      "review": 73,
-      "strong": 134
+      "ambiguous": 89,
+      "exact": 83,
+      "none": 49,
+      "review": 176,
+      "strong": 71
     },
-    "settled_pct": 60,
+    "settled_pct": 32,
     "matched_pct": 89
   },
   {
@@ -574,13 +564,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 123,
-      "exact": 367,
-      "none": 367,
-      "review": 109,
-      "strong": 228
+      "ambiguous": 122,
+      "exact": 276,
+      "none": 366,
+      "review": 289,
+      "strong": 141
     },
-    "settled_pct": 49,
+    "settled_pct": 34,
     "matched_pct": 69
   },
   {
@@ -605,13 +595,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 28,
-      "exact": 168,
+      "ambiguous": 46,
+      "exact": 126,
       "none": 44,
-      "review": 37,
-      "strong": 85
+      "review": 97,
+      "strong": 49
     },
-    "settled_pct": 69,
+    "settled_pct": 48,
     "matched_pct": 87
   },
   {
@@ -633,13 +623,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 62,
-      "exact": 449,
+      "ambiguous": 101,
+      "exact": 341,
       "none": 155,
-      "review": 94,
-      "strong": 251
+      "review": 267,
+      "strong": 147
     },
-    "settled_pct": 69,
+    "settled_pct": 48,
     "matched_pct": 84
   },
   {
@@ -660,13 +650,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 46,
-      "exact": 99,
-      "none": 55,
-      "review": 75,
-      "strong": 106
+      "ambiguous": 45,
+      "exact": 53,
+      "none": 57,
+      "review": 172,
+      "strong": 54
     },
-    "settled_pct": 53,
+    "settled_pct": 28,
     "matched_pct": 85
   },
   {
@@ -688,14 +678,14 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 67,
-      "exact": 496,
-      "none": 170,
-      "review": 108,
-      "strong": 293
+      "ambiguous": 94,
+      "exact": 375,
+      "none": 171,
+      "review": 316,
+      "strong": 178
     },
-    "settled_pct": 69,
-    "matched_pct": 85
+    "settled_pct": 48,
+    "matched_pct": 84
   },
   {
     "entry": {
@@ -717,13 +707,13 @@
     "rejected": 0,
     "duplicates": 0,
     "levels": {
-      "ambiguous": 214,
-      "exact": 529,
+      "ambiguous": 243,
+      "exact": 340,
       "none": 201,
-      "review": 213,
-      "strong": 486
+      "review": 618,
+      "strong": 241
     },
-    "settled_pct": 61,
+    "settled_pct": 35,
     "matched_pct": 87
   }
 ]

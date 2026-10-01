@@ -210,3 +210,27 @@ func (s *Service) Enhance(ctx context.Context, batch matchflow.Batch) ([]matchfl
 func verifyMaxTokens(pairs int) int {
 	return min(pairs*110+2048, 32000)
 }
+
+func writeField(b *strings.Builder, v string) {
+	b.WriteByte('|')
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return
+	}
+	for _, r := range v {
+		switch r {
+		case '|', '\n', '\r', '\t':
+			b.WriteByte(' ')
+		default:
+			b.WriteRune(r)
+		}
+	}
+}
+
+func packField(n int) string {
+	if n <= 0 {
+		return ""
+	}
+	return strconv.Itoa(n)
+}
+

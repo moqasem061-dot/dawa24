@@ -1,10 +1,12 @@
 package matching
 
 import (
+	"context"
 	"errors"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -69,6 +71,33 @@ type EnhanceRow struct {
 type EnhanceHandle struct {
 	RunID     int64     `json:"run_id"`
 	StartedAt time.Time `json:"started_at"`
+}
+
+// Applier is implemented by each consumer so the service can apply AI results without
+// knowing the consumer's tables (matching-service-port.md).
+type Applier interface {
+	// ApplyAI applies an AI decision with a revision compare-and-set.
+	// It returns false when the row has been modified (obsolete) or human-locked.
+	ApplyAI(ctx context.Context, ref RowRef, expectedRev int, runID int64, d matchflow.RowDecision) (bool, error)
+}
+
+// AIAttemptRecord captures one AI matching attempt (data-model §3.8).
+type AIAttemptRecord struct {
+	RunID          int64           `json:"run_id"`
+	OrganizationID int64           `json:"organization_id"`
+	AttemptNo      int             `json:"attempt_no"`
+	Kind           string          `json:"kind"`
+	QuestionCount  int             `json:"question_count"`
+	StartedAt      time.Time       `json:"started_at"`
+	DeadlineAt     time.Time       `json:"deadline_at"`
+	EndedAt        *time.Time      `json:"ended_at,omitempty"`
+	Outcome        string          `json:"outcome"`
+	InputTokens    int             `json:"input_tokens"`
+	OutputTokens   int             `json:"output_tokens"`
+	Cost           *money.Amount   `json:"cost,omitempty"`
+	RequestSHA256  string          `json:"request_sha256"`
+	InvalidExcerpt *string         `json:"invalid_excerpt,omitempty"`
+	Answers        []byte          `json:"answers"`
 }
 
 // KnowledgeWrite stores an association or rejection in match_knowledge.
@@ -156,3 +185,32 @@ type DiagnosticRowData struct {
 	ProductID   *int64                `json:"product_id,omitempty"`
 	Decision    matchflow.RowDecision `json:"decision"`
 }
+
+// AIConfiguration represents a qualified AI model configuration (data-model §3.6, US10 T134).
+type AIConfiguration struct {
+	ID                     string        `json:"id"`
+	GatewayRoute           string        `json:"gateway_route"`
+	PromptVersion          string        `json:"prompt_version"`
+	ContractVersion        string        `json:"contract_version"`
+	NativeStructured       bool          `json:"native_structured"`
+	BytesPerToken          float64       `json:"bytes_per_token"`
+	MaxItemsPerAttempt     int           `json:"max_items_per_attempt"`
+	MaxInputTokens         int           `json:"max_input_tokens"`
+	MaxOutputTokens        int           `json:"max_output_tokens"`
+	MaxCostPerAttempt      money.Amount  `json:"max_cost_per_attempt"`
+	QualifiedCohorts       []CohortSpec  `json:"qualified_cohorts"`
+	Status                 string        `json:"status"` // candidate | shadow | qualified | disabled
+	QualificationReportURI *string       `json:"qualification_report_uri,omitempty"`
+	CreatedBy              string        `json:"created_by"`
+	CreatedAt              time.Time     `json:"created_at"`
+	UpdatedBy              *string       `json:"updated_by,omitempty"`
+	UpdatedAt              time.Time     `json:"updated_at"`
+}
+
+// CohortSpec identifies a workflow, language, and row type cohort (FR-068, US10 T137).
+type CohortSpec struct {
+	Workflow string `json:"workflow"`
+	Language string `json:"language"`
+	RowType  string `json:"row_type"`
+}
+

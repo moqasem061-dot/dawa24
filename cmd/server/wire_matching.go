@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	matchingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	smartorderPipeline "github.com/moqasem061-dot/dawa24/internal/modules/smartorder/pipeline"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
@@ -17,7 +20,16 @@ func newMatchingService(db *database.DB) matching.Service {
 	curatedRepo := matchingPostgres.NewCuratedRepository(db)
 	loader := matching.NewLoader(db)
 	cache := matching.NewIndexCache(matching.NewDefaultIndexBuilderWithCuration(loader, curatedRepo))
-	return matching.NewService(repo, cache, loader)
+	svc := matching.NewService(repo, cache, loader)
+
+	// Register the 5 consumer Appliers (T127)
+	svc.RegisterApplier(matching.WorkflowVendor, ingest.NewCatalogAIApplier(db))
+	svc.RegisterApplier(matching.WorkflowCompare, compare.NewCompareAIApplier(db))
+	svc.RegisterApplier(matching.WorkflowSmartOrder, smartorderPipeline.NewSmartOrderAIApplier(db))
+	svc.RegisterApplier(matching.WorkflowCatalog, catalog.NewCatalogImportAIApplier(db))
+	svc.RegisterApplier(matching.WorkflowSavings, catalog.NewSavingAIApplier(db))
+
+	return svc
 }
 
 // compareMatcherAdapter adapts matching.Service to compare.Matcher.

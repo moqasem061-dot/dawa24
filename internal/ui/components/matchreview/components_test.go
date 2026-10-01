@@ -207,3 +207,66 @@ func TestMatchReview_KeyboardComponent(t *testing.T) {
 		t.Errorf("expected <kbd> elements in keyboard shortcuts help")
 	}
 }
+
+func TestMatchReview_AIStatusComponent(t *testing.T) {
+	ctx := context.Background()
+
+	// 1. Enhancing state
+	enhancingProps := AIStatusProps{
+		State:       "enhancing",
+		RunID:       42,
+		Current:     10,
+		Total:       50,
+		StopURL:     "/catalog/matching/stop",
+		ContinueURL: "/catalog/matching/review",
+		CSRFToken:   "csrf-secret-123",
+	}
+
+	var buf bytes.Buffer
+	if err := AIStatus(enhancingProps).Render(ctx, &buf); err != nil {
+		t.Fatalf("AIStatus enhancing render failed: %v", err)
+	}
+
+	html := buf.String()
+	if !strings.Contains(html, "جاري التحسين الذكي") {
+		t.Errorf("expected Arabic enhancing title")
+	}
+	if !strings.Contains(html, "10/50") {
+		t.Errorf("expected 10/50 progress count")
+	}
+	if !strings.Contains(html, "/catalog/matching/stop") {
+		t.Errorf("expected stop button form action")
+	}
+	if !strings.Contains(html, "متابعة بدون انتظار") {
+		t.Errorf("expected continue without waiting link")
+	}
+
+	// 2. Completed state with zero improvement
+	completedProps := AIStatusProps{
+		State:       "completed",
+		RunID:       42,
+		AcceptedNew: 0,
+		Confirmed:   5,
+		Abstained:   2,
+		Rejected:    1,
+		Failed:      0,
+		Unattempted: 3,
+	}
+
+	buf.Reset()
+	if err := AIStatus(completedProps).Render(ctx, &buf); err != nil {
+		t.Fatalf("AIStatus completed render failed: %v", err)
+	}
+
+	html = buf.String()
+	if !strings.Contains(html, "لا يوجد تحسين (No improvement)") {
+		t.Errorf("expected No improvement badge when AcceptedNew == 0")
+	}
+	if !strings.Contains(html, "مطابقات مقبولة جديدة") {
+		t.Errorf("expected new accepted counter label")
+	}
+	if !strings.Contains(html, "New Accepted") {
+		t.Errorf("expected English subtitle for new accepted")
+	}
+}
+

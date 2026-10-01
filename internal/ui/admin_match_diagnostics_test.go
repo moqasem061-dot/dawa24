@@ -76,6 +76,31 @@ func (m *mockDiagnosticsMatchingSvc) RevokeKnowledge(context.Context, matching.S
 func (m *mockDiagnosticsMatchingSvc) PromoteKnowledge(context.Context, matching.Scope, int64) error {
 	return nil
 }
+func (m *mockDiagnosticsMatchingSvc) RegisterApplier(matching.Workflow, matching.Applier) {}
+func (m *mockDiagnosticsMatchingSvc) GetApplier(matching.Workflow) matching.Applier       { return nil }
+func (m *mockDiagnosticsMatchingSvc) ListAIConfigurations(context.Context) ([]matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockDiagnosticsMatchingSvc) GetAIConfiguration(context.Context, string) (*matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockDiagnosticsMatchingSvc) UpdateAIConfigurationStatus(context.Context, string, string, string, string) error {
+	return nil
+}
+func (m *mockDiagnosticsMatchingSvc) ListPolicies(context.Context) ([]matching.PolicyRecord, error) {
+	return nil, nil
+}
+func (m *mockDiagnosticsMatchingSvc) ListAssignments(context.Context) ([]matching.PolicyAssignment, error) {
+	return nil, nil
+}
+func (m *mockDiagnosticsMatchingSvc) UpdateAssignment(context.Context, string, string, string, *string, string, string) error {
+	return nil
+}
+func (m *mockDiagnosticsMatchingSvc) RollbackAssignment(context.Context, string, string, string) error {
+	return nil
+}
+
+
 
 func setupDiagnosticsHandler(matchingMock matching.Service) *UIHandler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))

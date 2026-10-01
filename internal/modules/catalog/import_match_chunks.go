@@ -103,11 +103,9 @@ func scoreRows(
 					score = 0.5
 				}
 
-				reason := productmatch.MatchLevel(cols.MatchLevel).Label()
-				if dec.State == matchflow.StateAmbiguous {
-					reason = "صنفان في الكتالوج بنفس درجة التطابق ولا يوجد في الصف ما يفرّق بينهما؛ يلزم اختيار الصحيح يدوياً."
-				} else if dec.State == matchflow.StateNoCandidate {
-					reason = "لم يتم العثور على صنف مشابه في الكتالوج المركزي"
+				reason := cols.MatchLevel
+				if len(dec.Reasons) > 0 {
+					reason = string(dec.Reasons[0].Code)
 				}
 
 				res := productmatch.MatchResult{

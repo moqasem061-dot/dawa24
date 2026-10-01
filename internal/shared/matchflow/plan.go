@@ -76,6 +76,18 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 		return collapsed[i].Key < collapsed[j].Key
 	})
 
+	maxItems := c.MaxItemsPerRequest
+	if c.Limits.MaxItems > 0 && (maxItems <= 0 || c.Limits.MaxItems < maxItems) {
+		maxItems = c.Limits.MaxItems
+	}
+
+	maxInputTok := c.MaxInputTokens
+	if c.Limits.MaxInputTokens > 0 && (maxInputTok <= 0 || c.Limits.MaxInputTokens < maxInputTok) {
+		maxInputTok = c.Limits.MaxInputTokens
+	}
+
+	bytesPerToken := c.BytesPerToken
+
 	var (
 		out     []Request
 		cur     = newRequest()
@@ -89,6 +101,14 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 		sort.SliceStable(cur.Batch.Catalog, func(i, j int) bool {
 			return cur.Batch.Catalog[i].ProductID < cur.Batch.Catalog[j].ProductID
 		})
+		cur.Batch.Route = c.Route
+		cur.Batch.Limits = c.Limits
+		if cur.Batch.Limits.MaxItems <= 0 {
+			cur.Batch.Limits.MaxItems = maxItems
+		}
+		if cur.Batch.Limits.MaxInputTokens <= 0 && maxInputTok > 0 {
+			cur.Batch.Limits.MaxInputTokens = maxInputTok
+		}
 		out = append(out, cur)
 		cur = newRequest()
 		size = 0
@@ -100,8 +120,17 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 			break
 		}
 		cost := questionCost(q, cur.Offered)
-		if len(cur.Batch.Items) > 0 &&
-			(size+cost > c.MaxInputBytes || len(cur.Batch.Items) >= c.MaxItemsPerRequest) {
+
+		exceedsBytes := c.MaxInputBytes > 0 && size+cost > c.MaxInputBytes
+		exceedsTokens := false
+		if bytesPerToken > 0 && maxInputTok > 0 {
+			if int(float64(size+cost)/bytesPerToken) > maxInputTok {
+				exceedsTokens = true
+			}
+		}
+		exceedsItems := maxItems > 0 && len(cur.Batch.Items) >= maxItems
+
+		if len(cur.Batch.Items) > 0 && (exceedsBytes || exceedsTokens || exceedsItems) {
 			flush()
 			if len(out) >= c.MaxRequestsPerRun {
 				ceiling = true
@@ -109,6 +138,7 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 			}
 			cost = questionCost(q, cur.Offered)
 		}
+
 
 		ref := len(cur.Batch.Items) + 1
 		item := q.Item

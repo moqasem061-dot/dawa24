@@ -35,25 +35,6 @@ const (
 	MatchNone MatchLevel = "none"
 )
 
-// Label renders a level in Arabic.
-func (l MatchLevel) Label() string {
-	switch l {
-	case MatchBarcode:
-		return "مطابقة بالباركود"
-	case MatchCode:
-		return "مطابقة بالكود"
-	case MatchExact:
-		return "مطابقة تامة للاسم"
-	case MatchStrong:
-		return "مطابقة قوية"
-	case MatchReview:
-		return "تحتاج مراجعة"
-	case MatchAmbiguous:
-		return "أكثر من صنف محتمل"
-	default:
-		return "غير مطابق"
-	}
-}
 
 // Settled reports whether the match may be applied without asking.
 func (l MatchLevel) Settled() bool {
@@ -216,11 +197,9 @@ func (idx *Index) Match(row *Row, opts MatchOptions) MatchResult {
 		score = 1.0
 	}
 
-	reason := MatchLevel(cols.MatchLevel).Label()
-	if dec.State == matchflow.StateAmbiguous {
-		reason = "صنفان في الكتالوج بنفس درجة التطابق ولا يوجد في الصف ما يفرّق بينهما؛ يلزم اختيار الصحيح يدوياً."
-	} else if dec.State == matchflow.StateNoCandidate {
-		reason = "لم يتم العثور على صنف مشابه في الكتالوج المركزي"
+	reason := cols.MatchLevel
+	if len(dec.Reasons) > 0 {
+		reason = string(dec.Reasons[0].Code)
 	}
 
 	return MatchResult{

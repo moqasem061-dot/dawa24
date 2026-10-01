@@ -43,6 +43,19 @@ type Ceilings struct {
 	// deterministic outcome.
 	MaxItemsPerRequest int
 
+	// Route is the gateway model route alias (US10 T135).
+	Route string
+
+	// Limits holds the limits for items and tokens (US10 T135).
+	Limits Limits
+
+	// BytesPerToken is the configuration's measured ratio of bytes to tokens (US10 T136).
+	BytesPerToken float64
+
+	// MaxInputTokens caps the estimated input tokens per request (US10 T136).
+	MaxInputTokens int
+
+
 	// MaxRequestsPerRun is the spend ceiling, and the one number here that is a
 	// business decision rather than a measurement. Rows past it keep their
 	// deterministic outcome and are reported as such rather than silently

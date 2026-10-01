@@ -85,7 +85,7 @@ templ BulkPreviewModal(props BulkPreviewProps) {
 		<div class="flex items-center justify-end gap-2 pt-2">
 			<button
 				type="button"
-				onclick="this.closest('dialog').close()"
+				@click="$el.closest('dialog').close()"
 				class="px-4 py-2 text-xs font-medium text-neutral-700 bg-neutral-100 hover:bg-neutral-200 rounded-lg transition-colors"
 			>
 				إلغاء (Cancel)

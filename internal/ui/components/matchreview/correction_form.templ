@@ -120,7 +120,7 @@ templ CorrectionForm(props CorrectionFormProps) {
 		<div class="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
 			<button
 				type="button"
-				onclick="this.closest('.correction-container').classList.add('hidden')"
+				@click="$el.closest('.correction-container').classList.add('hidden')"
 				class="px-3 py-1.5 text-xs font-medium text-neutral-600 hover:text-neutral-800 bg-neutral-100 rounded transition-colors"
 			>
 				إلغاء (Cancel)

@@ -135,7 +135,11 @@ func RoleForRequest(req Request) Role {
 	if req.Role != "" {
 		return req.Role
 	}
+	if req.Route != "" {
+		return Role(req.Route)
+	}
 	switch req.Feature {
+
 	case "variant_match", "vendor_import":
 		return RoleMatchVendorImport
 	case "savings_import", "saving_products":

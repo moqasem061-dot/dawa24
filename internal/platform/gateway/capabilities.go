@@ -31,22 +31,25 @@ type ModelCapabilities struct {
 	// ContextWindow and MaxOutputTokens size the turn assembler's token budget
 	// and the usage meter in the assistant UI. Zero means the Gateway did not
 	// say, and callers must fall back to their own conservative figure.
-	ContextWindow   int
-	MaxOutputTokens int
+	ContextWindow    int
+	MaxOutputTokens  int
+	StructuredOutput bool
 }
 
 // wireModel is one entry of the Gateway's /v1/models response.
 type wireModel struct {
-	ID                string   `json:"id"`
-	SupportsVision    bool     `json:"supports_vision"`
-	SupportsThinking  bool     `json:"supports_thinking"`
-	SupportsAudio     bool     `json:"supports_audio"`
-	SupportsVideo     bool     `json:"supports_video"`
-	SupportsDocuments bool     `json:"supports_documents"`
-	MaxAttachmentMB   int      `json:"max_attachment_mb"`
-	AcceptedMIMETypes []string `json:"accepted_mime_types"`
-	ContextWindow     int      `json:"context_window"`
-	MaxOutputTokens   int      `json:"max_output_tokens"`
+	ID                       string   `json:"id"`
+	SupportsVision           bool     `json:"supports_vision"`
+	SupportsThinking         bool     `json:"supports_thinking"`
+	SupportsAudio            bool     `json:"supports_audio"`
+	SupportsVideo            bool     `json:"supports_video"`
+	SupportsDocuments        bool     `json:"supports_documents"`
+	SupportsStructuredOutput bool     `json:"supports_structured_output"`
+	SupportsJSONSchema       bool     `json:"supports_json_schema"`
+	MaxAttachmentMB          int      `json:"max_attachment_mb"`
+	AcceptedMIMETypes        []string `json:"accepted_mime_types"`
+	ContextWindow            int      `json:"context_window"`
+	MaxOutputTokens          int      `json:"max_output_tokens"`
 }
 
 func (m wireModel) toCapabilities() ModelCapabilities {
@@ -60,8 +63,10 @@ func (m wireModel) toCapabilities() ModelCapabilities {
 		AcceptedMIMETypes: m.AcceptedMIMETypes,
 		ContextWindow:     m.ContextWindow,
 		MaxOutputTokens:   m.MaxOutputTokens,
+		StructuredOutput:  m.SupportsStructuredOutput || m.SupportsJSONSchema,
 	}
 }
+
 
 type cachedCapability struct {
 	caps      ModelCapabilities

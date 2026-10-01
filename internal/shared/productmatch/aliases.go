@@ -16,11 +16,22 @@ func (idx *Index) WithAliases(aliases map[string][]int64) *Index {
 	if idx == nil {
 		return nil
 	}
-	clone := *idx
+	clone := &Index{
+		catalogRevision: idx.catalogRevision,
+		products:        idx.products,
+		byID:            idx.byID,
+		byBarcode:       idx.byBarcode,
+		bySKU:           idx.bySKU,
+		byName:          idx.byName,
+		tokens:          idx.tokens,
+		keyTokens:       idx.keyTokens,
+		df:              idx.df,
+		makers:          idx.makers,
+		makerKeys:       idx.makerKeys,
+		total:           idx.total,
+	}
 	if len(aliases) == 0 {
-		clone.aliases = nil
-		clone.aliasVariants = nil
-		return &clone
+		return clone
 	}
 
 	clone.aliases = make(map[string][]int64, len(aliases))
@@ -46,7 +57,7 @@ func (idx *Index) WithAliases(aliases map[string][]int64) *Index {
 			clone.aliasVariants[vKey] = appendUniqueIDs(clone.aliasVariants[vKey], ids)
 		}
 	}
-	return &clone
+	return clone
 }
 
 // WithAliases returns an Index modifier that attaches aliases to an Index.

@@ -40,9 +40,9 @@ func TestRenderCarriesBothSectionsAndTheColumnKeys(t *testing.T) {
 	out := RenderEnhanceInput(sampleRequest())
 
 	for _, want := range []string{
-		"CATALOG\n", "\nITEMS\n",
-		"101|ابيليفاي 10مجم 10 اقراص|abilify 10 mg 10 tabs||tablet|10 mg|otsuka",
-		"1|new|ابليفاى 10مجم 10قرص|ابليفاى|10 مجم|أقراص|10||101@0.42|101,102",
+		"<<CATALOG pm8>>\n", "<<ITEMS pm8>>\n",
+		"101|ابيليفاي 10مجم 10 اقراص|abilify 10 mg 10 tabs|-|tablet|-|-|10 mg|-|-|otsuka",
+		"1|product|ابليفاى 10مجم 10قرص|brand=ابليفاى(o);strength=10 مجم(o);form=أقراص(o);pack=10(o)|101,102",
 	} {
 		if !strings.Contains(out, want) {
 			t.Errorf("rendered input is missing %q\n---\n%s", want, out)
@@ -50,18 +50,8 @@ func TestRenderCarriesBothSectionsAndTheColumnKeys(t *testing.T) {
 	}
 }
 
-// A product with no guess renders "-" rather than an empty cell, so the model
-// can tell "the engine had no opinion" from "the engine's opinion is missing".
-func TestRenderMarksAnAbsentGuess(t *testing.T) {
-	req := sampleRequest()
-	req.Items[0].CurrentGuess = nil
-	if !strings.Contains(RenderEnhanceInput(req), "|-|101,102") {
-		t.Errorf("an absent guess did not render as \"-\":\n%s", RenderEnhanceInput(req))
-	}
-}
-
 // 🚦 A pipe inside an Egyptian product name would silently shift every later
-// column of that row, and the model would read the manufacturer as the dose.
+// column of that row, so escaping replaces it with ¦.
 func TestRenderStripsTheDelimiterFromValues(t *testing.T) {
 	req := sampleRequest()
 	req.Catalog[1].NameAR = "منتج | به فاصل\nوسطر جديد"
@@ -71,8 +61,11 @@ func TestRenderStripsTheDelimiterFromValues(t *testing.T) {
 		if !strings.HasPrefix(line, "102|") {
 			continue
 		}
-		if n := strings.Count(line, "|"); n != 6 {
-			t.Fatalf("row has %d delimiters, want 6: %q", n, line)
+		if n := strings.Count(line, "|"); n != 10 {
+			t.Fatalf("row has %d delimiters, want 10: %q", n, line)
+		}
+		if !strings.Contains(line, "منتج ¦ به فاصل وسطر جديد") {
+			t.Fatalf("expected pipe to be replaced with ¦: %q", line)
 		}
 		return
 	}
@@ -138,16 +131,14 @@ func TestDecodeRejectsAResponseWithNoJSON(t *testing.T) {
 // so the overlap is asserted rather than assumed.
 func TestSystemPromptStatesTheRulesTheApplierEnforces(t *testing.T) {
 	for _, want := range []string{
-		"DIFFERENT STRENGTH",
-		"DIFFERENT LINE EXTENSION",
-		"DIFFERENT BRAND, SAME MOLECULE",
-		"SHARED COMPANY IS NOT SHARED IDENTITY",
-		"MUST NOT output an id that does not appear in the CATALOG section",
-		"below 0.80",
-		`{"results":[`,
+		"STRENGTH & COMPONENTS",
+		"LINE EXTENSIONS",
+		"DIFFERENT BRANDS",
+		"UNSTATED IS NOT AGREEMENT",
+		`{"a":[`,
 	} {
-		if !strings.Contains(enhanceSystemPrompt, want) {
-			t.Errorf("system prompt no longer states %q", want)
+		if !strings.Contains(enhanceSystemPromptV8, want) {
+			t.Errorf("system prompt v8 no longer states %q", want)
 		}
 	}
 }

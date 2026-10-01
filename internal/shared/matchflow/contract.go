@@ -30,7 +30,7 @@ import "context"
 //
 // It is declared here and nowhere else. `make check-prompt-version` fails the
 // build if the literal appears outside this package.
-const PromptVersion = "sm-enh-v7"
+const PromptVersion = "sm-enh-v8"
 
 // CatalogEntry is one catalogue product as the model sees it.
 //
@@ -86,6 +86,13 @@ type Item struct {
 	Settled bool
 }
 
+// Limits defines resource and token ceilings for an AI batch request (US10 T135).
+type Limits struct {
+	MaxItems        int `json:"max_items"`
+	MaxInputTokens  int `json:"max_input_tokens"`
+	MaxOutputTokens int `json:"max_output_tokens"`
+}
+
 // Batch is one request: a de-duplicated catalogue window and the items to
 // resolve against it.
 //
@@ -96,6 +103,11 @@ type Item struct {
 type Batch struct {
 	Catalog []CatalogEntry
 	Items   []Item
+
+	// Route is an opaque gateway alias (US10 T135).
+	Route string
+	// Limits defines the batch limits configured for this model (US10 T135).
+	Limits Limits
 
 	// Feature names the tool that asked, for the AI usage ledger. It is not
 	// sent to the model and takes no part in the prompt or the cache key — a
@@ -108,6 +120,7 @@ type Batch struct {
 	OrganizationID int64
 	UserID         int64
 }
+
 
 // The features that spend AI budget, in the vocabulary the usage screens use.
 //
@@ -162,3 +175,12 @@ const (
 type Enhancer interface {
 	Enhance(ctx context.Context, batch Batch) ([]Decision, error)
 }
+
+// EnhancerFunc adapts a function to the Enhancer interface.
+type EnhancerFunc func(ctx context.Context, batch Batch) ([]Decision, error)
+
+// Enhance calls the underlying function.
+func (f EnhancerFunc) Enhance(ctx context.Context, batch Batch) ([]Decision, error) {
+	return f(ctx, batch)
+}
+

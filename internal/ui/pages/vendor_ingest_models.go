@@ -266,10 +266,6 @@ func OutcomeLabel(outcome string, langOpt ...string) string {
 	return i18n.T(lang, "ingest.outcome.skipped")
 }
 
-// MatchLevelLabel renders a match level in Arabic.
-func MatchLevelLabel(level string) string {
-	return productmatch.MatchLevel(level).Label()
-}
 
 // MatchLevelBadgeClass maps a match level to a badge tone.
 func MatchLevelBadgeClass(level string) string {

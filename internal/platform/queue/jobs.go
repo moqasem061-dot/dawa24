@@ -144,3 +144,35 @@ func (MatchReaperArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 1}
 }
 
+// MatchEnhanceArgs defines parameters for asynchronous AI matching enhancement (US9 T125).
+type MatchEnhanceArgs struct {
+	RunID          int64     `json:"run_id"`
+	OrganizationID int64     `json:"organization_id"`
+	EnqueuedAt     time.Time `json:"enqueued_at"`
+}
+
+func (MatchEnhanceArgs) Kind() string { return "catalog.matching.enhance" }
+func (MatchEnhanceArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "ai", MaxAttempts: 1}
+}
+
+// MatchPurgeAttemptsArgs defines parameters for purging match_ai_attempts older than 30 days (US9 T129).
+type MatchPurgeAttemptsArgs struct{}
+
+func (MatchPurgeAttemptsArgs) Kind() string { return "catalog.matching.purge_attempts" }
+func (MatchPurgeAttemptsArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 1}
+}
+
+// MatchShadowArgs defines parameters for asynchronous shadow policy execution (US13 T151).
+type MatchShadowArgs struct {
+	RunID          int64  `json:"run_id"`
+	OrganizationID int64  `json:"organization_id"`
+	ShadowVersion  string `json:"shadow_version"`
+}
+
+func (MatchShadowArgs) Kind() string { return "catalog.matching.shadow" }
+func (MatchShadowArgs) InsertOpts() river.InsertOpts {
+	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 2}
+}
+

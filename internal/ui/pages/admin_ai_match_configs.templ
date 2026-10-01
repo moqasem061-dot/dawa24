@@ -1,0 +1,134 @@
+package pages
+
+import (
+	"fmt"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+type AdminAIMatchConfigsData struct {
+	Configs      []matching.AIConfiguration
+	SuccessMsg   string
+	ErrorMessage string
+}
+
+templ AdminAIMatchConfigsPage(lang, dir string, data AdminAIMatchConfigsData) {
+	@layouts.AdminShell("إعدادات نماذج الذكاء الاصطناعي (AI Matching Configurations)", "ai_match_configs", lang, dir) {
+		<div class="stack-lg">
+			<!-- Header -->
+			<div class="page-header d-flex justify-between items-center flex-wrap gap-4 mb-4">
+				<div class="stack-sm">
+					<div class="d-flex items-center gap-3">
+						<h1 class="page-title text-xl font-bold m-0">
+							إعدادات نماذج الذكاء الاصطناعي للمطابقة (AI Match Configurations)
+						</h1>
+					</div>
+					<p class="text-sm text-muted m-0">
+						سجل النماذج المؤهلة وإدارتها وتغيير حالاتها وسجل التدقيق (US10 T134, FR-076)
+					</p>
+				</div>
+			</div>
+
+			if data.SuccessMsg != "" {
+				<div class="alert alert-success mb-4">
+					{ data.SuccessMsg }
+				</div>
+			}
+			if data.ErrorMessage != "" {
+				<div class="alert alert-danger mb-4">
+					{ data.ErrorMessage }
+				</div>
+			}
+
+			<!-- Configurations Table -->
+			<div class="card p-0 overflow-hidden">
+				<div class="table-responsive">
+					<table class="table w-full text-right" dir={ dir }>
+						<thead>
+							<tr class="bg-slate-50 border-b">
+								<th class="p-3">المعرف (Config ID)</th>
+								<th class="p-3">المسار (Gateway Route)</th>
+								<th class="p-3">الإصدارات (Versions)</th>
+								<th class="p-3">الهيكلة (Native JSON)</th>
+								<th class="p-3">الحدود (Limits)</th>
+								<th class="p-3">الحالة (Status)</th>
+								<th class="p-3">تغيير الحالة (Actions)</th>
+							</tr>
+						</thead>
+						<tbody>
+							if len(data.Configs) == 0 {
+								<tr>
+									<td colspan="7" class="p-6 text-center text-muted">
+										لا توجد إعدادات مسجلة حالياً (No configurations found)
+									</td>
+								</tr>
+							}
+							for _, cfg := range data.Configs {
+								<tr class="border-b hover:bg-slate-50">
+									<td class="p-3 font-semibold">
+										{ cfg.ID }
+										if cfg.QualificationReportURI != nil && *cfg.QualificationReportURI != "" {
+											<div class="text-xs text-muted">
+												<a href={ templ.SafeURL(*cfg.QualificationReportURI) } target="_blank" class="text-indigo-600 hover:underline">
+													تقرير التأهيل (Report)
+												</a>
+											</div>
+										}
+									</td>
+									<td class="p-3 font-mono text-sm">
+										{ cfg.GatewayRoute }
+									</td>
+									<td class="p-3 text-xs">
+										<div>Prompt: <bdi class="font-mono">{ cfg.PromptVersion }</bdi></div>
+										<div>Contract: <bdi class="font-mono">{ cfg.ContractVersion }</bdi></div>
+									</td>
+									<td class="p-3">
+										if cfg.NativeStructured {
+											<span class="badge badge-emerald">مدعوم (Native)</span>
+										} else {
+											<span class="badge badge-amber">تطبيق (Fallback)</span>
+										}
+									</td>
+									<td class="p-3 text-xs">
+										<div>عناصر: <bdi>{ fmt.Sprintf("%d", cfg.MaxItemsPerAttempt) }</bdi></div>
+										<div>إدخال: <bdi>{ fmt.Sprintf("%d tok", cfg.MaxInputTokens) }</bdi></div>
+										<div>إخراج: <bdi>{ fmt.Sprintf("%d tok", cfg.MaxOutputTokens) }</bdi></div>
+										<div>تكلفة: <bdi>{ cfg.MaxCostPerAttempt.String() } EGP</bdi></div>
+									</td>
+									<td class="p-3">
+										switch cfg.Status {
+											case "qualified":
+												<span class="badge badge-emerald">مؤهل (Qualified)</span>
+											case "candidate":
+												<span class="badge badge-sky">مرشح (Candidate)</span>
+											case "shadow":
+												<span class="badge badge-indigo">ظل (Shadow)</span>
+											case "disabled":
+												<span class="badge badge-rose">معطل (Disabled)</span>
+											default:
+												<span class="badge badge-slate">{ cfg.Status }</span>
+										}
+									</td>
+									<td class="p-3">
+										<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/matching/ai-configs/%s/status", cfg.ID)) } class="d-flex items-center gap-2">
+											<select name="status" class="form-select form-select-sm text-xs">
+												<option value="candidate" selected?={ cfg.Status == "candidate" }>مرشح (Candidate)</option>
+												<option value="shadow" selected?={ cfg.Status == "shadow" }>ظل (Shadow)</option>
+												<option value="qualified" selected?={ cfg.Status == "qualified" }>مؤهل (Qualified)</option>
+												<option value="disabled" selected?={ cfg.Status == "disabled" }>معطل (Disabled)</option>
+											</select>
+											<input type="text" name="reason" placeholder="سبب التغيير (Reason)" class="form-input form-input-sm text-xs w-32" required />
+											<button type="submit" class="btn btn-sm btn-primary text-xs">
+												حفظ
+											</button>
+										</form>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	}
+}

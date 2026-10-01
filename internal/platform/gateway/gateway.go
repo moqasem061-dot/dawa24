@@ -166,10 +166,12 @@ func modelFor(s Settings, b budget) string {
 type Request struct {
 	Capability     Capability
 	Role           Role           // optional specific role override (WO-39)
+	Route          string         // optional route alias (US10 T135)
 	System         string         // prompt template, versioned in this repo
 	Input          string         // rendered user content
 	Schema         map[string]any // optional JSON schema for structured output
 	OrganizationID int64          // cost attribution and per-tenant quota
+
 	UserID         int64
 	// Feature names the screen or tool that asked, in the tenant's own
 	// vocabulary — "الطلب الذكي", "استيراد أصناف المورد". The capability is

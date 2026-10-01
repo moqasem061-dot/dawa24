@@ -18,9 +18,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/importjobs"
 	catalogJobs "github.com/moqasem061-dot/dawa24/internal/modules/catalog/jobs"
-	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
-	matchingJobs "github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching/jobs"
-	matchingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching/postgres"
 	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
@@ -148,24 +145,9 @@ func run() error {
 	river.AddWorker(workers, importjobs.NewStageWorker(db, importRunRepo, catSvcWorker, log))
 	river.AddWorker(workers, importjobs.NewCommitWorker(db, importRunRepo, catSvcWorker, log))
 
-	matchingRepo := matchingPostgres.NewRepository(db)
-	matchingCuratedRepo := matchingPostgres.NewCuratedRepository(db)
-	matchingLoader := matching.NewLoader(db)
-	matchingCache := matching.NewIndexCache(matching.NewDefaultIndexBuilderWithCuration(matchingLoader, matchingCuratedRepo))
-	matchingSvc := matching.NewService(matchingRepo, matchingCache, matchingLoader)
-	_ = matchingSvc
+	matchingPeriodicJobs := registerMatchingWorkers(workers, db, ai, log)
 
-	river.AddWorker(workers, matchingJobs.NewMatchReaperWorker(db, log))
-
-	reaperPeriodicJob := river.NewPeriodicJob(
-		river.PeriodicInterval(15*time.Second),
-		func() (river.JobArgs, *river.InsertOpts) {
-			return queue.MatchReaperArgs{}, nil
-		},
-		nil,
-	)
-
-	queueClient, err := queue.New(db, workers, cfg.Worker, log, reaperPeriodicJob)
+	queueClient, err := queue.New(db, workers, cfg.Worker, log, matchingPeriodicJobs...)
 	if err != nil {
 		return err
 	}

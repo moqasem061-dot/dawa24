@@ -2,7 +2,6 @@ package matching
 
 import (
 	"context"
-	"sync"
 	"testing"
 	"time"
 
@@ -12,76 +11,19 @@ import (
 )
 
 type repeatTestRepo struct {
-	mu         sync.Mutex
-	revisions  map[string]int64
-	policies   map[string]productmatch.Policy
+	*mockRepository
 	knowledge  map[int64]Knowledge
-	runs       map[int64]*MatchRun
 	currentOrg int64
 	nextID     int64
 }
 
 func newRepeatTestRepo() *repeatTestRepo {
 	return &repeatTestRepo{
-		revisions: make(map[string]int64),
-		policies:  make(map[string]productmatch.Policy),
-		knowledge: make(map[int64]Knowledge),
-		runs:      make(map[int64]*MatchRun),
-		nextID:    1,
+		mockRepository: newMockRepository(),
+		knowledge:      make(map[int64]Knowledge),
+		nextID:         1,
 	}
 }
-
-func (r *repeatTestRepo) CurrentRevision(ctx context.Context, scope string) (int64, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if rev, ok := r.revisions[scope]; ok {
-		return rev, nil
-	}
-	return 1, nil
-}
-
-func (r *repeatTestRepo) ActivePolicy(ctx context.Context, workflow string, orgID int64) (productmatch.Policy, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if pol, ok := r.policies[workflow]; ok {
-		return pol, nil
-	}
-	return productmatch.DefaultPolicy(), nil
-}
-
-func (r *repeatTestRepo) CreateRun(ctx context.Context, run *MatchRun) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	run.ID = r.nextID
-	r.nextID++
-	r.runs[run.ID] = run
-	return nil
-}
-
-func (r *repeatTestRepo) GetRun(ctx context.Context, runID int64) (*MatchRun, error) {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	return r.runs[runID], nil
-}
-
-func (r *repeatTestRepo) ListRunRows(ctx context.Context, runID int64, workflow string, limit int) ([]DiagnosticRowData, error) {
-	return nil, nil
-}
-
-func (r *repeatTestRepo) UpdateCounts(ctx context.Context, runID int64, counts matchflow.RunCounts) error {
-	r.mu.Lock()
-	defer r.mu.Unlock()
-	if run, ok := r.runs[runID]; ok {
-		run.Counts = counts
-	}
-	return nil
-}
-
-func (r *repeatTestRepo) SetState(ctx context.Context, runID int64, state string, finished bool) error {
-	return nil
-}
-
-func (r *repeatTestRepo) Heartbeat(ctx context.Context, runID int64) error { return nil }
 
 func (r *repeatTestRepo) effectiveOrg(ctx context.Context) int64 {
 	if tid, ok := database.TenantFrom(ctx); ok && tid > 0 {

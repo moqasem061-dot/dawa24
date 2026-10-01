@@ -22,14 +22,54 @@ import (
 
 // DecodeEnhanceResponse parses a response into decisions.
 //
-// It is tolerant of the packaging models add — a markdown fence, a sentence
-// before the JSON — and intolerant of everything else. Exported because the
-// parsing contract is the part of this file most worth testing directly.
+// It supports both prompt v8 format {"a": [...]} and legacy format {"results": [...]}.
+// It is tolerant of packaging models add (markdown fences, sentences before/after).
 func DecodeEnhanceResponse(content string) ([]EnhanceDecision, error) {
 	clean := extractJSONObject(content)
 	if clean == "" {
 		return nil, errors.New("aicapabilities: no JSON object in enhancement response")
 	}
+
+	// Try v8 format first ({"a": [...]})
+	var v8Wrapper struct {
+		Answers []struct {
+			Ref        int               `json:"r"`
+			Selected   *int64            `json:"s"`
+			Abstain    string            `json:"x"`
+			Evidence   map[string]string `json:"e"`
+			Confidence string            `json:"c"`
+		} `json:"a"`
+	}
+	if err := json.Unmarshal([]byte(clean), &v8Wrapper); err == nil && len(v8Wrapper.Answers) > 0 {
+		decisions := make([]EnhanceDecision, len(v8Wrapper.Answers))
+		for i, ans := range v8Wrapper.Answers {
+			conf := 0.85
+			switch ans.Confidence {
+			case "hi":
+				conf = 0.95
+			case "mid":
+				conf = 0.85
+			case "lo":
+				conf = 0.70
+			default:
+				if ans.Selected == nil {
+					conf = 0.0
+				}
+			}
+			decisions[i] = EnhanceDecision{
+				Ref:        ans.Ref,
+				ProductID:  ans.Selected,
+				Confidence: conf,
+				Reason:     ans.Abstain,
+			}
+		}
+		sort.SliceStable(decisions, func(i, j int) bool {
+			return decisions[i].Ref < decisions[j].Ref
+		})
+		return decisions, nil
+	}
+
+	// Fallback to legacy v7 format ({"results": [...]})
 	var wrapper struct {
 		Results []EnhanceDecision `json:"results"`
 	}

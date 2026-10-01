@@ -32,6 +32,18 @@ func main() {
 		code := runMatchEval(os.Args[2:])
 		os.Exit(code)
 	}
+	if len(os.Args) >= 2 && os.Args[1] == "match-corpus-export" {
+		code := runMatchCorpusExport(os.Args[2:])
+		os.Exit(code)
+	}
+	if len(os.Args) >= 2 && os.Args[1] == "match-corpus-split" {
+		code := runMatchCorpusSplit(os.Args[2:])
+		os.Exit(code)
+	}
+	if len(os.Args) >= 2 && os.Args[1] == "match-bench" {
+		code := runMatchBench(os.Args[2:])
+		os.Exit(code)
+	}
 	if err := run(); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
@@ -43,6 +55,9 @@ func usage() string {
 
 Usage:
   cli match-eval        Evaluate matching accuracy and quality gates against a corpus
+  cli match-bench       Benchmark matching throughput and reviewable latency
+  cli match-corpus-export Export de-identified regression cases to external directory
+  cli match-corpus-split Split cases family-disjointly into tuning and heldout
   cli migrate           Apply all pending migrations
   cli migrate-status    Show applied and pending migrations
   cli seed              Seed default platform reference data
@@ -58,7 +73,6 @@ Usage:
   cli imports-recover [--apply]           Release imports wedged in 'processing'
   cli match-knowledge-backfill [--apply]  Backfill legacy match_decisions and aliases to match_knowledge
 `
-
 }
 
 func run() error {

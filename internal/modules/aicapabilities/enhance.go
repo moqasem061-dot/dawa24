@@ -65,29 +65,28 @@ type EnhanceRequest = matchflow.Batch
 type EnhanceDecision = matchflow.Decision
 
 // enhanceSchema constrains the response at the protocol level where the Gateway
-// supports it. It is a belt to the prompt's braces: the prompt still specifies
-// the shape in full, because a Gateway or model that ignores the schema must
-// still produce something parseable.
+// supports it (v8 pm-answer-1 contract).
 func enhanceSchema() map[string]any {
 	return map[string]any{
-		"name":   "dawa24_match_enhancement",
+		"name":   "dawa24_match_enhancement_v8",
 		"strict": true,
 		"schema": map[string]any{
 			"type":                 "object",
 			"additionalProperties": false,
-			"required":             []string{"results"},
+			"required":             []string{"a"},
 			"properties": map[string]any{
-				"results": map[string]any{
+				"a": map[string]any{
 					"type": "array",
 					"items": map[string]any{
 						"type":                 "object",
 						"additionalProperties": false,
-						"required":             []string{"ref", "product_id", "confidence"},
+						"required":             []string{"r", "s"},
 						"properties": map[string]any{
-							"ref":        map[string]any{"type": "integer"},
-							"product_id": map[string]any{"type": []string{"integer", "null"}},
-							"confidence": map[string]any{"type": "number"},
-							"reason":     map[string]any{"type": "string"},
+							"r": map[string]any{"type": "integer"},
+							"s": map[string]any{"type": []string{"integer", "null"}},
+							"x": map[string]any{"type": "string"},
+							"e": map[string]any{"type": "object"},
+							"c": map[string]any{"type": "string"},
 						},
 					},
 				},
@@ -117,16 +116,33 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 
 	orgID, userID, vKey := s.attribution(ctx, req.OrganizationID, req.UserID)
 
+	// Check capability support for native structured output (US10 T135)
+	role := gateway.Role(req.Route)
+	if role == "" {
+		role = gateway.RoleMatching
+	}
+	var schema map[string]any
+	if caps, err := s.gw.Capabilities(ctx, role); err == nil && caps.StructuredOutput {
+		schema = enhanceSchema()
+	}
+
+	maxTokens := req.Limits.MaxOutputTokens
+	if maxTokens <= 0 {
+		maxTokens = enhanceMaxTokens(len(req.Items))
+	}
+
 	gwReq := gateway.Request{
 		Capability:     gateway.CapMatchEnhance,
-		System:         enhanceSystemPrompt,
+		Route:          req.Route,
+		Role:           role,
+		System:         enhanceSystemPromptV8,
 		Input:          RenderEnhanceInput(req),
-		Schema:         enhanceSchema(),
+		Schema:         schema,
 		OrganizationID: orgID,
 		UserID:         userID,
 		VirtualKey:     vKey,
 		Feature:        req.Feature,
-		MaxTokens:      enhanceMaxTokens(len(req.Items)),
+		MaxTokens:      maxTokens,
 	}
 
 	// Do not retry the same logical batch with a different wire format. The
@@ -148,6 +164,22 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 			"items", len(req.Items), "err", err)
 		return nil, err
 	}
+
+	// Filter out decisions with unknown refs (FR-074, US10 T138)
+	validRefs := make(map[int]struct{}, len(req.Items))
+	for _, it := range req.Items {
+		validRefs[it.Ref] = struct{}{}
+	}
+	var filteredDecisions []EnhanceDecision
+	for _, d := range decisions {
+		if _, ok := validRefs[d.Ref]; ok {
+			filteredDecisions = append(filteredDecisions, d)
+		} else {
+			s.log.WarnContext(ctx, "enhancement returned unknown ref, rejected", "ref", d.Ref)
+		}
+	}
+	decisions = filteredDecisions
+
 
 	// Summarise what the model said for diagnosis.
 	var withID, withNull, highConf, lowConf int

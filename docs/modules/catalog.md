@@ -256,5 +256,16 @@ The savings products import (`catalog.saving_products`) enables pharmacies, vend
    - `savings_commit_revalidate`: `internal/ui/saving_products_import_commit.go`
    - `savings_ai`: `internal/ui/saving_products_ai.go`
 
+## Matching Data Retention & Purge Policy (US9 T129, US13 T157, research R14)
+
+1. **30-Day Retention for AI Attempts and Shadow Outcomes:**
+   - Detailed execution records in `catalog.match_ai_attempts` (token counts, request SHA-256 hashes, diagnostic excerpts, and compact answers) and `catalog.match_shadow_outcomes` (shadow policy comparisons) are retained for **30 calendar days**.
+   - A daily automated River maintenance job (`catalog.matching.purge_attempts` / `matchingJobs.NewPurgeAttemptsWorker`) runs system-wide (`database.AsSystem`) to purge rows older than 30 days.
+   - Long-term decision outcomes, human reviewer corrections, and audit logs (`catalog.match_policy_assignment_log`, `catalog.match_knowledge`) are preserved permanently as compliance records.
+
+2. **Production Shadow Mode Sign-off:**
+   - **Requirement**: Do NOT enable shadow matching mode in production environments until formal approval is signed below.
+   - Product owner approval: ____________________ date ____________________
+
 
 

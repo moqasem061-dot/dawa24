@@ -45,7 +45,6 @@ func (r *runner) handle(ctx context.Context, req Request) {
 
 			if !offeredInOptions {
 				a.Offered = false
-				a.Decision.ProductID = nil
 				a.Decision.Reason = "ai_rejected_not_offered"
 				r.count(func(s *RunStats) {
 					s.NotOffered++
@@ -76,13 +75,12 @@ func (r *runner) handle(ctx context.Context, req Request) {
 					s.ProposedLow++
 					s.Rejected++
 				})
-				a.Decision.ProductID = nil
 			} else if r.spec.Screen != nil && !r.spec.Screen(a.Key, *a.Decision.ProductID) {
 				r.count(func(s *RunStats) {
 					s.Screened++
 					s.Rejected++
 				})
-				a.Decision.ProductID = nil
+				a.Decision.Reason = "ai_rejected_conflict"
 			} else {
 				r.count(func(s *RunStats) {
 					s.Emitted++
@@ -154,12 +152,6 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 	return *d.ProductID, true
 }
 
-func sameID(a, b *int64) bool {
-	if a == nil || b == nil {
-		return a == b
-	}
-	return *a == *b
-}
 
 // resolve combines a proposal with its pair check.
 func (r *runner) resolve(p pending, chk Check, ok bool) Answer {

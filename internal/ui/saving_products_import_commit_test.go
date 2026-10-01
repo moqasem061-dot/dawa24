@@ -67,6 +67,31 @@ func (m *mockRevalidateMatchingSvc) RevokeKnowledge(_ context.Context, _ matchin
 func (m *mockRevalidateMatchingSvc) PromoteKnowledge(_ context.Context, _ matching.Scope, _ int64) error {
 	return nil
 }
+func (m *mockRevalidateMatchingSvc) RegisterApplier(matching.Workflow, matching.Applier) {}
+func (m *mockRevalidateMatchingSvc) GetApplier(matching.Workflow) matching.Applier       { return nil }
+func (m *mockRevalidateMatchingSvc) ListAIConfigurations(context.Context) ([]matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) GetAIConfiguration(context.Context, string) (*matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) UpdateAIConfigurationStatus(context.Context, string, string, string, string) error {
+	return nil
+}
+func (m *mockRevalidateMatchingSvc) ListPolicies(context.Context) ([]matching.PolicyRecord, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) ListAssignments(context.Context) ([]matching.PolicyAssignment, error) {
+	return nil, nil
+}
+func (m *mockRevalidateMatchingSvc) UpdateAssignment(context.Context, string, string, string, *string, string, string) error {
+	return nil
+}
+func (m *mockRevalidateMatchingSvc) RollbackAssignment(context.Context, string, string, string) error {
+	return nil
+}
+
+
 
 func TestRevalidateSavingItems_Success(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))

@@ -40,27 +40,23 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
    - Scans leading spreadsheet rows (`FindBestHeaderRow`) to automatically detect table headers when files contain banners or metadata rows.
    - Validation requires `product_name` and at least one of `price` or `discount` to be mapped.
    - Persists user-confirmed mappings via `POST /compare/files/{id}/mapping`.
-9. **Deterministic Match Ladder (Task 2.4 / Laravel ProductMatcher Parity):**
-   - Resolves uploaded rows against `catalog.product_index` (with fallback to `catalog.products`) in strict ladder order:
-     - **Strategy 0**: Saved Customer Product Mappings (`catalog.customer_product_mappings`) $\to$ 100% confidence (`saved_mapping`).
-     - **Strategy 1**: SKU / Barcode direct match $\to$ 100% confidence (`sku` / `barcode`).
-     - **Strategy 2**: Exact normalized name match (Arabic/English) $\to$ 100% confidence (`exact_name`).
-     - **Strategy 3**: Trigram / fuzzy candidate similarity (matching name, scientific name, manufacturer, pharmacology) $\to \ge 90\%$ (`fuzzy`), $\ge 60\%$ (`partial`).
-     - **Strategy 4**: Token-subset / First meaningful word candidate expansion $\to \ge 55\%$ (`partial`).
-     - **Strategy 5**: Below $55\% \to$ `unmatched` (0% confidence).
-   - **Manual Correction Persistence**: Users can override/set matches via `POST /compare/rows/{id}/match`; corrections persist immediately to `catalog.customer_product_mappings` (`source='manual'`, `status='processed'`) and automatically auto-match future uploads.
-   - **AI Gateway Independence (Rule R3)**: Deterministic matching runs 100% locally with no external AI dependency.
+9. **Deterministic Matching Engine & Knowledge Scoping:**
+   - Resolves uploaded spreadsheet rows against master catalogue products using the unified matching architecture (`matching.Service` via `compare.Matcher`, scoped to `WorkflowCompare`).
+   - In offline test environments where `compare.Matcher` is unwired, gracefully falls back to deterministic in-memory indexing (`productmatch.MatchAll`).
+   - Match decisions project canonical columns via `matchflow.Columns(dec)` (`matched_product_id`, `match_state`, `match_basis`, `match_revision`). `matched_product_id` is set if and only if the decision is accepted/confirmed; for any other state (`needs_review`, `ambiguous`, `no_candidate`), it is reset to `NULL`.
+   - **Knowledge Scoping & Manual Corrections**: Reviewer confirmations and manual row links persist to `catalog.match_knowledge` scoped to the organization (`Scope.EffectiveOrg`), auto-resolving future uploads with identical row fingerprints without cross-tenant data leakage.
+   - **AI Gateway Independence (Rule R3)**: Deterministic matching runs 100% locally with zero external AI dependency.
 10. **Multi-Supplier & Head-to-Head Comparison (Task 2.5):**
     - Multi-supplier analysis over 1 to 10 files computes best price, best discount, best net price after discount, and best supplier per item.
     - Aggregated metrics include total unique products, average discount, and potential savings.
     - Head-to-head comparison between two suppliers computes shared product count, better count, quality score (`better/shared * 100`), source total, target total, and net savings.
     - 5 Market comparison filter modes (`all`, `lower_discount_than_market`, `equal_to_market`, `higher_discount_than_market`, `exclusives`).
     - Integrated into Customer sidebar (item 6 "مقارنة الخصومات") and Vendor sidebar (items 24 "مقارنة الخصومات" and 25 "خصومات السوق").
-11. **Wave B — AI Enhancement (Task 2.6):**
-    - AI matching capability (`CapProductMatch` via `aicapabilities.Service`) is invoked **only** for rows left below the deterministic confidence cutoff ($< 55\%$) when `Entitlement.AIMatchingEnabled` is active.
-    - High-confidence deterministic matches are never overwritten by AI (efficiency and accuracy rules §2.6.3).
-    - AI matches are tagged with `match_method='ai'` and their confidence score for clear UI auditability.
-    - If the AI Gateway is unavailable or returns unrecognized candidates, matching gracefully falls back to deterministic unmatched without crashing or halting execution.
+11. **AI Enhancement Integration (US9, T127):**
+    - Asynchronous AI enhancement is routed through `matching.Service.StartEnhancement` on unresolved-but-resolvable residue rows via `compare.AIApplier` when `Entitlement.AIMatchingEnabled` is active.
+    - Settled deterministic rows are excluded from AI dispatch; high-confidence deterministic matches are never overwritten.
+    - AI proposals are strictly validated through the product identity gate (`Gate.Evaluate`, path `AI`) and applied using revision compare-and-set. Answers outside a row's declared candidate options are rejected.
+    - Strict deadline classes (30s/90s/180s) and cost budgets are enforced. If the AI Gateway is unavailable or timed out, file matching remains 100% functional with deterministic outcomes.
 
 ## Endpoints & Routes
 
