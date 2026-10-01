@@ -187,7 +187,6 @@ func detectRowType(row productmatch.Row) string {
 	return "standard"
 }
 
-
 func isCohortQualified(cohorts []CohortSpec, workflow, language, rowType string) bool {
 	if len(cohorts) == 0 {
 		return false

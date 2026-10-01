@@ -54,6 +54,7 @@ func (e *Enhancement) questions(rows []*openRow) []matchflow.Question {
 				CurrentGuess: r.guess,
 				CurrentScore: r.score,
 				Settled:      r.settled,
+				Loose:        r.loose,
 			},
 			Risk: matchflow.Risk(r.settled, r.ambiguous, r.score),
 		})

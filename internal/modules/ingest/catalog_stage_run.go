@@ -300,6 +300,7 @@ func (r *stagingRun) remember(row *productmatch.Row, m productmatch.MatchResult)
 		normName:   key,
 		score:      m.Score,
 		settled:    m.Level.Settled() && verifiable(m.Level),
+		loose:      m.Loose,
 		ambiguous:  m.Level == productmatch.MatchAmbiguous,
 	}
 	if m.ProductID > 0 {

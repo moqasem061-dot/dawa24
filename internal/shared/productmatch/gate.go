@@ -35,6 +35,16 @@ type Proposal struct {
 	IdentifierValid  bool
 	IdentifierUnique bool
 	KnowledgeStale   bool
+
+	// Hard is the candidate's hard conflicts as the scorer's model computed
+	// them, when the caller already has them (HardKnown). Otherwise Row lets the
+	// gate ask the index itself. Only when neither is available does it fall
+	// back to comparing extracted facts.
+	Hard      []ConflictKind
+	HardKnown bool
+	Row       *Row
+	// PackClash says the scorer saw the row's count contradict this product's.
+	PackClash bool
 }
 
 const (
@@ -93,11 +103,12 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 
 	prodFacts := prod.Facts()
 	comp := CompareFacts(rowFacts, prodFacts)
+	hard := g.hardFor(rowFacts, p, prodFacts)
 
 	// Rule 2: Hard conflicts
-	if len(comp.Hard) > 0 {
-		reasons := make([]Reason, 0, len(comp.Hard)+1)
-		for _, h := range comp.Hard {
+	if len(hard) > 0 {
+		reasons := make([]Reason, 0, len(hard)+1)
+		for _, h := range hard {
 			reasons = append(reasons, Reason{Code: conflictToReasonCode(h)})
 		}
 		if p.Path == PathIdentifier {
@@ -106,7 +117,7 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 		return Verdict{
 			Eligible: false,
 			State:    matchflow.StateNeedsReview,
-			Hard:     comp.Hard,
+			Hard:     hard,
 			Reasons:  reasons,
 		}
 	}
@@ -144,8 +155,7 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 				continue
 			}
 			sibFacts := sib.Facts()
-			sibComp := CompareFacts(rowFacts, sibFacts)
-			if len(sibComp.Hard) > 0 {
+			if len(g.hardFor(rowFacts, Proposal{ProductID: sibID, Row: p.Row}, sibFacts)) > 0 {
 				continue
 			}
 			var sibPF PackFacts
@@ -253,6 +263,9 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 	}
 
 	po, relID := PackOutcome(rowPF, prodPF, rels)
+	if p.PackClash && po != "agree" {
+		po = "conflict"
+	}
 	switch po {
 	case "agree":
 		achieved = GranularityPack

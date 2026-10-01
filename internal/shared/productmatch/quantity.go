@@ -211,6 +211,12 @@ func countClassOf(word string) string {
 		return classStrip
 	}
 	if key := formKeyOf(word); key != "" {
+		// Tablets and capsules are one solid oral class to an Egyptian
+		// pharmacist, so "90 كبسولة" and "4 اقراص" are two counts of one thing
+		// and they disagree. See formClass.
+		if key == "capsule" {
+			return "tablet"
+		}
 		return key
 	}
 	if _, ok := formWords[word]; ok {

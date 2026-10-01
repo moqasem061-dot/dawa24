@@ -59,8 +59,8 @@ type Index struct {
 	// spellings, one company, and no exact word in common — so a set of the raw
 	// words recognised nothing. The skeleton folds both scripts onto one key,
 	// which is the same mechanism the scorer's variant channel uses.
-	makerKeys     map[string]bool
-	total         int
+	makerKeys map[string]bool
+	total     int
 	// tri holds the trigram and scientific-name posting lists that only Recall
 	// needs, built lazily. Most runs never reach the AI stage, and an index
 	// nothing reads should not be paid for on every import.
@@ -208,6 +208,15 @@ func (idx *Index) isCompanyWord(token string) bool {
 	}
 	if idx.makers[token] {
 		return true
+	}
+	// A word no product name in the catalogue carries is matched against the
+	// company vocabulary by spelling only, never by skeleton. Skeletons are
+	// loose, and an unseen word is far more often a brand this catalogue does
+	// not stock than a company: "سيتريم" and "ميوكسيبن" each folded onto some
+	// manufacturer's consonants, and were demoted to company names — which
+	// switched off the brand check for exactly the rows it exists for.
+	if idx.df[token] == 0 {
+		return false
 	}
 	key := variantKeyOf(token)
 	return key != "" && idx.makerKeys[key]

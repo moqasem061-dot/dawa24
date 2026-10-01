@@ -135,7 +135,13 @@ func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 	case dosesConflict:
 		out = append(out, conflict{"strength", massDose})
 	case dosesPartsDiffer:
-		out = append(out, conflict{"dose_parts", massDoseParts})
+		// A pharmacy names a combination by its line word and the first
+		// component's dose — "اتاكاند بلس 16" for 16/12.5 — so where the row
+		// carries the combination word the product also carries, the missing
+		// component is abbreviation, not another product.
+		if !namesCombination(q.mods, p.modifiers()) {
+			out = append(out, conflict{"dose_parts", massDoseParts})
+		}
 	}
 
 	// Everything below is asked of each spelling separately and answered by the
@@ -193,6 +199,14 @@ func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 		func(f *nameFacts) bool { return f.subForm != "" },
 		func(f *nameFacts) bool { return q.subForm != f.subForm }):
 		out = append(out, conflict{"sub_form", massSubForm})
+	case formClass(q.formKey) != "external" && conflictsOnStatingSide(p,
+		func(f *nameFacts) bool { return p.formOf(f) == "" && topicalOnly(f.subForm) },
+		func(*nameFacts) bool { return true }):
+		// The product names no main form, only a topical one — "زيت للشعر",
+		// "سيروم", "شامبو" — and the row asks for tablets, an injection or a
+		// syrup. The main-form comparison above never saw it, because one side
+		// was silent; this is the hair oil that was accepted for a tablet.
+		out = append(out, conflict{"form", massForm})
 	}
 
 	// An intravenous vial is not an intramuscular one; a 2.5 cm dressing is
@@ -224,6 +238,25 @@ func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 		// Only when the names did not already say so, or the same difference
 		// would be charged twice.
 		out = append(out, conflict{"pack", massPack})
+	}
+	if c, ok := idx.brandConflict(q, p); ok {
+		out = append(out, c)
+	}
+	if q.injForm != "" && conflictsOnStatingSide(p,
+		func(f *nameFacts) bool { return f.injForm != "" },
+		func(f *nameFacts) bool { return f.injForm != q.injForm }) {
+		out = append(out, conflict{"container", massContainer})
+	}
+	if len(q.volumes) > 0 && conflictsOnStatingSide(p,
+		func(f *nameFacts) bool { return len(f.volumes) > 0 },
+		func(f *nameFacts) bool { return volumesDisagree(q.volumes, f.volumes) }) {
+		out = append(out, conflict{"volume", massVolume})
+	}
+	if c, ok := idx.wordConflict(q, p); ok {
+		out = append(out, c)
+	}
+	if c, ok := idx.makerConflict(q, p); ok {
+		out = append(out, c)
 	}
 	return out
 }

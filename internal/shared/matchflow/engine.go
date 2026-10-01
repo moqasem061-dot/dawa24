@@ -40,9 +40,12 @@ type Answer struct {
 
 // Spec is one run.
 type Spec struct {
-	Profile   Profile
-	Rows      int
-	Questions []Question
+	// AuditSettled puts every settled question to the model, loose or not.
+	// Off in ordinary runs; see worthAsking.
+	AuditSettled bool
+	Profile      Profile
+	Rows         int
+	Questions    []Question
 
 	Feature        string
 	OrganizationID int64
@@ -94,12 +97,36 @@ type RunStats struct {
 	Abstained   int `json:"abstained"`
 	Rejected    int `json:"rejected"`
 	AcceptedNew int `json:"accepted_new"`
+	// SettledSkipped counts settled questions not asked: matched on an exact
+	// brand, nothing for a model to add.
+	SettledSkipped int `json:"settled_skipped"`
+}
+
+// worthAsking drops the settled questions a model has nothing to add to.
+func worthAsking(qs []Question, audit bool) ([]Question, int) {
+	if audit {
+		return qs, 0
+	}
+	out := qs[:0:0]
+	skipped := 0
+	for _, q := range qs {
+		if q.Item.Settled && !q.Item.Loose {
+			skipped++
+			continue
+		}
+		out = append(out, q)
+	}
+	return out, skipped
 }
 
 // Run executes the AI matching stage within deadlines and budgets.
 func Run(ctx context.Context, ai Enhancer, spec Spec) RunStats {
 	var stats RunStats
 	if ai == nil || len(spec.Questions) == 0 {
+		return stats
+	}
+	spec.Questions, stats.SettledSkipped = worthAsking(spec.Questions, spec.AuditSettled)
+	if len(spec.Questions) == 0 {
 		return stats
 	}
 

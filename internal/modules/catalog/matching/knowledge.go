@@ -90,7 +90,51 @@ func KnowledgeKindRank(kind string, isOrg bool) int {
 	}
 }
 
-// Resolve looks up knowledge matching the signature and applies precedence, staleness, and Gate rules.
+// Resolution is what scoped knowledge says about one question.
+type Resolution struct {
+	// Decision is the highest-precedence remembered answer, evaluated by the
+	// gate against the current catalogue. Nil when no entry applies.
+	Decision *matchflow.RowDecision
+	// Accepted says Decision passed the gate and may be applied as it stands.
+	// A stale or now-contradicted memory is returned unaccepted: the caller
+	// re-decides, and keeps the memory only as a suggestion.
+	Accepted bool
+	// Rejected are the products a person rejected for this question. They are
+	// vetoed, for this question only, whatever else proposes them.
+	Rejected []int64
+	// RejectAll says a person stated that no catalogue product is this row.
+	RejectAll bool
+}
+
+// knowledgeFetchChunk bounds one lookup query.
+const knowledgeFetchChunk = 500
+
+// Fetch loads every applicable knowledge entry for a set of questions in a
+// few queries, rather than two per question.
+func (kr *KnowledgeResolver) Fetch(ctx context.Context, sc Scope, sigs []string) (map[string][]Knowledge, error) {
+	out := make(map[string][]Knowledge, len(sigs))
+	if kr == nil || kr.repo == nil || len(sigs) == 0 {
+		return out, nil
+	}
+	for start := 0; start < len(sigs); start += knowledgeFetchChunk {
+		chunk := sigs[start:min(start+knowledgeFetchChunk, len(sigs))]
+		org, err := kr.repo.LookupOrg(ctx, chunk)
+		if err != nil {
+			return out, err
+		}
+		plat, err := kr.repo.LookupPlatform(ctx, chunk, sc.EffectiveOrg)
+		if err != nil {
+			return out, err
+		}
+		for _, k := range append(org, plat...) {
+			out[k.QuestionSignature] = append(out[k.QuestionSignature], k)
+		}
+	}
+	return out, nil
+}
+
+// Resolve looks up and evaluates the knowledge for one question. Kept for
+// callers that ask about a single row; Prepare uses Fetch and Evaluate.
 func (kr *KnowledgeResolver) Resolve(
 	ctx context.Context,
 	sc Scope,
@@ -103,174 +147,176 @@ func (kr *KnowledgeResolver) Resolve(
 	if kr == nil || kr.repo == nil || sig == "" {
 		return nil, false, nil
 	}
-
-	// 1. Fetch org knowledge (RLS-scoped)
-	orgItems, err := kr.repo.LookupOrg(ctx, []string{sig})
+	items, err := kr.Fetch(ctx, sc, []string{sig})
 	if err != nil {
 		return nil, false, err
 	}
-
-	// 2. Fetch platform knowledge (database.AsSystem, respecting opt-out)
-	platItems, err := kr.repo.LookupPlatform(ctx, []string{sig}, sc.EffectiveOrg)
-	if err != nil {
-		return nil, false, err
+	res := kr.Evaluate(sc, row, items[sig], idx, pol, candidateIDs)
+	switch {
+	case res.RejectAll:
+		dec := rejectAllDecision(pol)
+		return &dec, true, nil
+	case res.Decision != nil:
+		return res.Decision, true, nil
 	}
+	return nil, false, nil
+}
 
-	all := make([]Knowledge, 0, len(orgItems)+len(platItems))
-	all = append(all, orgItems...)
-	all = append(all, platItems...)
-
-	if len(all) == 0 {
-		return nil, false, nil
+func rejectAllDecision(pol productmatch.Policy) matchflow.RowDecision {
+	return matchflow.RowDecision{
+		V:        1,
+		State:    matchflow.StateNoCandidate,
+		Basis:    matchflow.BasisKnowledgeHuman,
+		Reasons:  []matchflow.Reason{{Code: string(productmatch.ReasonKnowledgeRejected)}},
+		Versions: matchflow.Versions{Policy: pol.Version, Normalizer: productmatch.NormalizerVersion},
+		AI:       matchflow.AIDecision{State: matchflow.AIStateOff},
 	}
+}
 
-	// 3. Filter by compatible scope & sort by precedence
+// Evaluate applies scope, precedence, staleness and the gate to the entries
+// remembered for one question.
+func (kr *KnowledgeResolver) Evaluate(
+	sc Scope,
+	row *productmatch.Row,
+	items []Knowledge,
+	idx *productmatch.Index,
+	pol productmatch.Policy,
+	candidateIDs []int64,
+) Resolution {
+	var res Resolution
 	var compatible []Knowledge
-	for _, k := range all {
-		// Namespace compatibility
+	for _, k := range items {
 		if k.SourceNamespace != "*" && k.SourceNamespace != string(sc.Workflow) && k.SourceNamespace != sc.EntryPoint {
 			continue
 		}
 		compatible = append(compatible, k)
 	}
-
 	if len(compatible) == 0 {
-		return nil, false, nil
+		return res
 	}
-
 	sort.SliceStable(compatible, func(i, j int) bool {
 		rankI := KnowledgeKindRank(compatible[i].Kind, compatible[i].OrganizationID != nil)
 		rankJ := KnowledgeKindRank(compatible[j].Kind, compatible[j].OrganizationID != nil)
 		if rankI != rankJ {
 			return rankI > rankJ
 		}
-		// Newer entries win ties
 		return compatible[i].CreatedAt.After(compatible[j].CreatedAt)
 	})
 
-	// 4. Evaluate top applicable entry
-	for _, k := range compatible {
-		// Rule: AI answer ignored when AI is disabled in policy (FR-057)
-		if k.Kind == "ai_answer" && !pol.AI.Enabled {
-			continue
-		}
-
-		// Rule: Negative AI answer valid only while current candidates are a subset of stored candidates
-		if k.Kind == "ai_answer" && (k.TargetProductID == nil || *k.TargetProductID <= 0) {
-			if k.CandidateSetFingerprint != nil && *k.CandidateSetFingerprint != "" {
-				currentFP := CandidateSetFingerprint(candidateIDs)
-				if currentFP != *k.CandidateSetFingerprint {
-					continue
-				}
+	// Rejections first. A rejection naming a product vetoes that product; one
+	// naming none says no catalogue product is this row, unless a person has
+	// confirmed a product for this question more recently.
+	var newestConfirm, newestRejectAll *Knowledge
+	for i := range compatible {
+		k := &compatible[i]
+		switch {
+		case k.Kind == "human_reject" && k.TargetProductID != nil && *k.TargetProductID > 0:
+			res.Rejected = append(res.Rejected, *k.TargetProductID)
+		case k.Kind == "human_reject":
+			if newestRejectAll == nil || k.CreatedAt.After(newestRejectAll.CreatedAt) {
+				newestRejectAll = k
 			}
-		}
-
-		// Staleness check
-		isStale := false
-		var targetProduct *productmatch.MasterProduct
-		if k.TargetProductID != nil && *k.TargetProductID > 0 {
-			if idx != nil {
-				prod, ok := idx.Lookup(*k.TargetProductID)
-				if !ok || prod == nil {
-					isStale = true
-				} else {
-					targetProduct = prod
-					if k.TargetFactFingerprint != "" && ProductFactFingerprint(prod) != k.TargetFactFingerprint {
-						isStale = true
-					}
-				}
+		case k.Kind == "human_confirm":
+			if newestConfirm == nil || k.CreatedAt.After(newestConfirm.CreatedAt) {
+				newestConfirm = k
 			}
-		}
-
-		// Policy compatibility check
-		if len(pol.KnowledgeCompat) > 0 && k.PolicyVersion != "" {
-			compat := false
-			for _, cv := range pol.KnowledgeCompat {
-				if cv == k.PolicyVersion {
-					compat = true
-					break
-				}
-			}
-			if !compat {
-				isStale = true
-			}
-		}
-
-		// If human_reject
-		if k.Kind == "human_reject" {
-			dec := matchflow.RowDecision{
-				V:        1,
-				State:    matchflow.StateNoCandidate,
-				Basis:    matchflow.BasisKnowledgeHuman,
-				Reasons:  []matchflow.Reason{{Code: "human_reject"}},
-				Revision: row.Number,
-				Versions: matchflow.Versions{
-					Policy:          pol.Version,
-					Normalizer:      productmatch.NormalizerVersion,
-					CatalogRevision: 1,
-				},
-				AI: matchflow.AIDecision{State: matchflow.AIStateOff},
-			}
-			return &dec, true, nil
-		}
-
-		// If target product is specified, evaluate with Gate
-		if targetProduct != nil {
-			gate := productmatch.NewGate(idx)
-			prop := productmatch.Proposal{
-				Path:           productmatch.PathKnowledge,
-				ProductID:      targetProduct.ID,
-				KnowledgeStale: isStale,
-			}
-			verdict := gate.Evaluate(productmatch.ExtractRowFacts(row, nil), prop, pol)
-
-			basis := matchflow.BasisKnowledgeHuman
-			switch k.Kind {
-			case "curated_alias", "curated_relationship", "supplier_code":
-				basis = matchflow.BasisKnowledgeCurated
-			case "platform_fact":
-				basis = matchflow.BasisKnowledgePlatform
-			case "ai_answer":
-				basis = matchflow.BasisAI
-			}
-
-			reasons := make([]matchflow.Reason, len(verdict.Reasons))
-			for idxR, vr := range verdict.Reasons {
-				reasons[idxR] = matchflow.Reason{Code: string(vr.Code)}
-			}
-
-			gran := matchflow.GranularityPair{
-				Required: matchflow.Granularity(pol.Required),
-				Achieved: matchflow.Granularity(verdict.Achieved),
-			}
-
-			dec := matchflow.RowDecision{
-				V:           1,
-				State:       verdict.State,
-				Basis:       basis,
-				ProductID:   &targetProduct.ID,
-				Granularity: gran,
-				Pack: matchflow.PackDecision{
-					Outcome:        verdict.Pack,
-					RelationshipID: verdict.RelationshipID,
-				},
-				Reasons:  reasons,
-				Revision: row.Number,
-				Versions: matchflow.Versions{
-					Policy:          pol.Version,
-					Normalizer:      productmatch.NormalizerVersion,
-					CatalogRevision: 1,
-				},
-				AI: matchflow.AIDecision{State: matchflow.AIStateOff},
-			}
-
-			if isStale {
-				dec.Flags = append(dec.Flags, "stale_knowledge")
-			}
-
-			return &dec, true, nil
 		}
 	}
+	if newestRejectAll != nil && (newestConfirm == nil || newestRejectAll.CreatedAt.After(newestConfirm.CreatedAt)) {
+		res.RejectAll = true
+		return res
+	}
 
-	return nil, false, nil
+	for _, k := range compatible {
+		if k.Kind == "human_reject" {
+			continue
+		}
+		if k.Kind == "ai_answer" && !pol.AI.Enabled {
+			continue // FR-057: AI-only memory has no effect with AI off
+		}
+		if k.TargetProductID == nil || *k.TargetProductID <= 0 {
+			continue // a remembered "none of these" from a model is not applied
+		}
+		if containsID(res.Rejected, *k.TargetProductID) || idx == nil {
+			continue
+		}
+		target, ok := idx.Lookup(*k.TargetProductID)
+		if !ok || target == nil {
+			continue // the product is gone; nothing to apply or suggest
+		}
+
+		stale := k.TargetFactFingerprint != "" && ProductFactFingerprint(target) != k.TargetFactFingerprint
+		if len(pol.KnowledgeCompat) > 0 && k.PolicyVersion != "" && !compatVersion(pol.KnowledgeCompat, k.PolicyVersion) {
+			stale = true
+		}
+
+		verdict := productmatch.NewGate(idx).Evaluate(productmatch.ExtractRowFacts(row, nil), productmatch.Proposal{
+			Path:           productmatch.PathKnowledge,
+			ProductID:      target.ID,
+			KnowledgeStale: stale,
+			Row:            row,
+		}, pol)
+
+		basis := matchflow.BasisKnowledgeHuman
+		switch k.Kind {
+		case "curated_alias", "curated_relationship", "supplier_code":
+			basis = matchflow.BasisKnowledgeCurated
+		case "platform_fact":
+			basis = matchflow.BasisKnowledgePlatform
+		case "ai_answer":
+			basis = matchflow.BasisAI
+		}
+		reasons := make([]matchflow.Reason, len(verdict.Reasons))
+		for i, vr := range verdict.Reasons {
+			reasons[i] = matchflow.Reason{Code: string(vr.Code)}
+		}
+		achieved := verdict.Achieved
+		if achieved == productmatch.GranularityNone && verdict.State == matchflow.StateAccepted {
+			achieved = productmatch.GranularityProduct
+		}
+		id := target.ID
+		dec := matchflow.RowDecision{
+			V:         1,
+			State:     verdict.State,
+			Basis:     basis,
+			ProductID: &id,
+			Granularity: matchflow.GranularityPair{
+				Required: pol.Required.MatchflowGranularity(),
+				Achieved: achieved.MatchflowGranularity(),
+			},
+			Pack:    matchflow.PackDecision{Outcome: verdict.Pack, RelationshipID: verdict.RelationshipID},
+			Reasons: reasons,
+			Versions: matchflow.Versions{
+				Policy:     pol.Version,
+				Normalizer: productmatch.NormalizerVersion,
+				Target:     ProductFactFingerprint(target),
+			},
+			AI: matchflow.AIDecision{State: matchflow.AIStateOff},
+		}
+		if stale {
+			dec.Flags = append(dec.Flags, "stale_knowledge")
+		}
+		res.Decision = &dec
+		res.Accepted = verdict.State == matchflow.StateAccepted
+		return res
+	}
+	return res
+}
+
+func containsID(ids []int64, id int64) bool {
+	for _, x := range ids {
+		if x == id {
+			return true
+		}
+	}
+	return false
+}
+
+func compatVersion(allowed []string, v string) bool {
+	for _, a := range allowed {
+		if a == v || a == "*" {
+			return true
+		}
+	}
+	return false
 }

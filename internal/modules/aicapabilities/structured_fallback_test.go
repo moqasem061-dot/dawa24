@@ -108,4 +108,3 @@ func TestStructuredFallback_FencedAndProseResponses(t *testing.T) {
 	assert.Nil(t, decisions[1].ProductID)
 	assert.Equal(t, "ambiguous", decisions[1].Reason)
 }
-

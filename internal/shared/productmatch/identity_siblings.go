@@ -71,4 +71,11 @@ func (idx *Index) annotateSiblings() {
 	for _, p := range idx.products {
 		p.hasPlainSibling = idx.hasPlainSibling(p)
 	}
+	// Facts depend on the sibling flag and on curation, so they are cached
+	// last, and recomputed whenever this runs again after curation.
+	for _, p := range idx.products {
+		f := p.computeFacts()
+		p.facts = &f
+		p.nameMakers = idx.nameCompanies(p.NameAR + " " + p.NameEN)
+	}
 }

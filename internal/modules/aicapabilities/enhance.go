@@ -180,7 +180,6 @@ func (s *Service) EnhanceMatches(ctx context.Context, req EnhanceRequest) ([]Enh
 	}
 	decisions = filteredDecisions
 
-
 	// Summarise what the model said for diagnosis.
 	var withID, withNull, highConf, lowConf int
 	for _, d := range decisions {

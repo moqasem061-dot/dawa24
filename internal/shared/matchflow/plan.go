@@ -139,7 +139,6 @@ func Plan(questions []Question, c Ceilings) ([]Request, bool) {
 			cost = questionCost(q, cur.Offered)
 		}
 
-
 		ref := len(cur.Batch.Items) + 1
 		item := q.Item
 		item.Ref = ref

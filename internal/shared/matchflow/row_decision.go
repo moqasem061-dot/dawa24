@@ -69,6 +69,7 @@ type PackDecision struct {
 type CandidateDecision struct {
 	ProductID int64             `json:"product_id"`
 	Rank      int               `json:"rank"`
+	Score     float64           `json:"score,omitempty"`
 	Eligible  bool              `json:"eligible"`
 	Diff      map[string]string `json:"diff,omitempty"`
 	Reasons   []string          `json:"reasons,omitempty"`
@@ -103,6 +104,10 @@ type Versions struct {
 	CatalogRevision int64  `json:"catalog_revision"`
 	Prompt          string `json:"prompt,omitempty"`
 	AIConfig        string `json:"ai_config,omitempty"`
+	// Target fingerprints the chosen product's identity facts at decision
+	// time, so a commit can tell whether THAT product changed rather than
+	// whether anything in the catalogue did.
+	Target string `json:"target,omitempty"`
 }
 
 // AIState represents the lifecycle of AI enhancement for a row.

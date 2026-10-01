@@ -47,7 +47,6 @@ type Service interface {
 	RollbackAssignment(ctx context.Context, workflow, cohort, changedBy string) error
 }
 
-
 type serviceImpl struct {
 	repo         Repository
 	indexCache   *IndexCache
@@ -212,27 +211,18 @@ func (s *serviceImpl) Prepare(ctx context.Context, req PrepareRequest) (PrepareR
 		defer stopHB()
 	}
 
-	// 5. Look up knowledge first; fallback to Index.Decide once per signature, with panic recovery, fan out to rows
-	kr := NewKnowledgeResolver(s.repo)
-	for _, sig := range sigOrder {
-		grp := sigMap[sig]
-		repRow := grp.repRow
-
-		var dec matchflow.RowDecision
-		if kDec, ok, kErr := kr.Resolve(ctx, req.Scope, &repRow, sig, idx, pol, nil); kErr == nil && ok && kDec != nil {
-			dec = *kDec
-			dec.Revision = req.SourceRev
-			if dec.State == matchflow.StateAccepted {
-				summary.KnowledgeReuse++
-			}
-		} else {
-			dec = s.decideWithRecover(idx, &repRow, pol, req.SourceRev, catRev)
-		}
-
-		for _, rowIdx := range grp.rowIdx {
-			rowDec := dec
-			decisions[rowIdx] = rowDec
-			summary.AddState(rowDec.State)
+	// 5. Answer each distinct question once — knowledge where it applies, the
+	// engine otherwise, in parallel — and fan the answer out to its rows.
+	repRows := make([]productmatch.Row, len(sigOrder))
+	for i, sig := range sigOrder {
+		repRows[i] = sigMap[sig].repRow
+	}
+	answers, reused := s.decideQuestions(ctx, req.Scope, sigOrder, repRows, idx, pol, req.SourceRev, catRev)
+	summary.KnowledgeReuse += reused
+	for i, sig := range sigOrder {
+		for _, rowIdx := range sigMap[sig].rowIdx {
+			decisions[rowIdx] = answers[i]
+			summary.AddState(answers[i].State)
 		}
 	}
 
@@ -364,27 +354,4 @@ func (s *serviceImpl) Rematch(ctx context.Context, sc Scope, row productmatch.Ro
 	dec := idx.Decide(&row, pol)
 	dec.Revision = rev
 	return dec, nil
-}
-
-// Revalidate checks if a decision made under an older revision needs revalidation.
-func (s *serviceImpl) Revalidate(ctx context.Context, sc Scope, ref RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
-	catRev, err := s.repo.CurrentRevision(ctx, "master")
-	if err != nil {
-		catRev = 1
-	}
-
-	if d.Versions.CatalogRevision != catRev {
-		hasFlag := false
-		for _, f := range d.Flags {
-			if f == "catalog_changed" {
-				hasFlag = true
-				break
-			}
-		}
-		if !hasFlag {
-			d.Flags = append(d.Flags, "catalog_changed")
-		}
-	}
-
-	return d, nil
 }

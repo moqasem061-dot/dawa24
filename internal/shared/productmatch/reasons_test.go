@@ -9,8 +9,8 @@ import (
 
 func TestReasonCodes_HaveI18nKeys(t *testing.T) {
 	codes := productmatch.AllReasonCodes()
-	if len(codes) != 46 {
-		t.Fatalf("expected 46 reason codes, got %d", len(codes))
+	if len(codes) != 55 {
+		t.Fatalf("expected 55 reason codes, got %d", len(codes))
 	}
 
 	for _, code := range codes {

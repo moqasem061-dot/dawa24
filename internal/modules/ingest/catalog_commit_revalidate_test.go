@@ -33,11 +33,12 @@ func (m *mockCommitMatcher) Revalidate(ctx context.Context, s productmatch.Scope
 }
 
 // TestCommitRevalidate tests that before writing stock/price, Matcher.Revalidate is called
-// and rejects rows whose match_revision changed, state is not accepted/confirmed, or granularity is below pack.
+// and rejects rows whose product changed in the catalogue, whose state is no longer
+// accepted/confirmed, or whose achieved granularity is below what the decision required.
 func TestCommitRevalidate(t *testing.T) {
 	ctx := context.Background()
 
-	t.Run("revision changed is rejected", func(t *testing.T) {
+	t.Run("revision bumped by review or AI still commits", func(t *testing.T) {
 		p1 := int64(101)
 		row := stagedRow(1, &p1, "SKU-1", "Row 1", 5, true)
 		row.MatchRevision = 1
@@ -53,7 +54,8 @@ func TestCommitRevalidate(t *testing.T) {
 		svc, cat, _, _ := commitFixture(sess, []*RowOutcome{row}, keys, map[int64]bool{501: true})
 		matcher := &mockCommitMatcher{
 			revalidateFunc: func(_ context.Context, _ productmatch.Scope, _ productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
-				// Simulate revision increment/mismatch
+				// The decision record and the row's revision column disagree,
+				// as they do after the AI applier or a review action.
 				d.Revision = 2
 				return d, nil
 			},
@@ -64,17 +66,70 @@ func TestCommitRevalidate(t *testing.T) {
 		if err != nil {
 			t.Fatalf("CommitImport failed: %v", err)
 		}
-		if res.InsertedRows != 0 || res.UpdatedRows != 0 {
-			t.Fatalf("expected 0 written rows, got inserted=%d updated=%d", res.InsertedRows, res.UpdatedRows)
+		if res.SkippedRows != 0 || res.UpdatedRows != 1 {
+			t.Fatalf("a revision bump alone must not skip the row: skipped=%d updated=%d", res.SkippedRows, res.UpdatedRows)
 		}
-		if res.SkippedRows != 1 {
-			t.Fatalf("expected 1 skipped row, got %d", res.SkippedRows)
+		if len(cat.writtenVariants) != 1 {
+			t.Fatalf("expected 1 written variant, got %d", len(cat.writtenVariants))
 		}
-		if len(cat.writtenVariants) != 0 {
-			t.Fatalf("expected 0 written variants in catalog, got %d", len(cat.writtenVariants))
+	})
+
+	t.Run("product changed in the catalogue is rejected", func(t *testing.T) {
+		p1 := int64(101)
+		row := stagedRow(1, &p1, "SKU-1", "Row 1", 5, true)
+		row.MatchRevision = 1
+		row.MatchState = string(matchflow.StateAccepted)
+
+		keys := []VariantKey{{ID: 501, ProductID: p1, SKU: "SKU-1", Active: true}}
+		st := DefaultSettings()
+		st.WarehouseID = 1
+		sess := session("imp-product-changed", st)
+		sess.Phase = PhaseReview
+
+		svc, cat, _, _ := commitFixture(sess, []*RowOutcome{row}, keys, map[int64]bool{501: true})
+		svc.SetMatcher(&mockCommitMatcher{
+			revalidateFunc: func(_ context.Context, _ productmatch.Scope, _ productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+				d.Flags = append(d.Flags, "catalog_changed")
+				d.State = matchflow.StateNeedsReview
+				return d, nil
+			},
+		})
+
+		res, err := svc.CommitImport(ctx, sess.PublicID)
+		if err != nil {
+			t.Fatalf("CommitImport failed: %v", err)
+		}
+		if res.SkippedRows != 1 || len(cat.writtenVariants) != 0 {
+			t.Fatalf("expected the row skipped, got skipped=%d written=%d", res.SkippedRows, len(cat.writtenVariants))
 		}
 		if !strings.Contains(res.ErrorMessage, "تم استبعاد 1 صنف") {
 			t.Errorf("expected commit notice to report revalidation rejection, got %q", res.ErrorMessage)
+		}
+	})
+
+	t.Run("vendor confirmation in the row columns overrides the stale decision record", func(t *testing.T) {
+		p1 := int64(101)
+		row := stagedRow(1, &p1, "SKU-1", "Row 1", 5, true)
+		row.MatchState = string(matchflow.StateConfirmed)
+		row.MatchBasis = string(matchflow.BasisReviewer)
+		// The record still says what matching said before the vendor chose.
+		row.MatchDecision = &matchflow.RowDecision{State: matchflow.StateNeedsReview}
+
+		keys := []VariantKey{{ID: 501, ProductID: p1, SKU: "SKU-1", Active: true}}
+		st := DefaultSettings()
+		st.WarehouseID = 1
+		sess := session("imp-vendor-confirmed", st)
+		sess.Phase = PhaseReview
+
+		svc, cat, _, _ := commitFixture(sess, []*RowOutcome{row}, keys, map[int64]bool{501: true})
+		svc.SetMatcher(&mockCommitMatcher{})
+
+		res, err := svc.CommitImport(ctx, sess.PublicID)
+		if err != nil {
+			t.Fatalf("CommitImport failed: %v", err)
+		}
+		if res.SkippedRows != 0 || len(cat.writtenVariants) != 1 {
+			t.Fatalf("a vendor-confirmed row was skipped: skipped=%d written=%d", res.SkippedRows, len(cat.writtenVariants))
 		}
 	})
 
@@ -115,7 +170,7 @@ func TestCommitRevalidate(t *testing.T) {
 		}
 	})
 
-	t.Run("granularity below pack is rejected", func(t *testing.T) {
+	t.Run("granularity below a required pack is rejected", func(t *testing.T) {
 		p1 := int64(101)
 		row := stagedRow(1, &p1, "SKU-1", "Row 1", 5, true)
 		row.MatchRevision = 1
@@ -131,6 +186,7 @@ func TestCommitRevalidate(t *testing.T) {
 		svc, cat, _, _ := commitFixture(sess, []*RowOutcome{row}, keys, map[int64]bool{501: true})
 		matcher := &mockCommitMatcher{
 			revalidateFunc: func(_ context.Context, _ productmatch.Scope, _ productmatch.RowRef, d matchflow.RowDecision) (matchflow.RowDecision, error) {
+				d.Granularity.Required = matchflow.GranularityPack
 				d.Granularity.Achieved = matchflow.GranularityProduct
 				return d, nil
 			},

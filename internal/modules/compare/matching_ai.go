@@ -106,6 +106,7 @@ func (s *Service) refineWithAI(ctx context.Context, idx *productmatch.Index,
 				CurrentGuess: current,
 				CurrentScore: res.Score,
 				Settled:      settled,
+				Loose:        res.Loose,
 			},
 			Risk: matchflow.Risk(settled, res.Level == productmatch.MatchAmbiguous, res.Score),
 		})

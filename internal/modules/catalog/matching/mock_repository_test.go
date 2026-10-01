@@ -230,4 +230,3 @@ func (m *mockRepository) RecordShadowOutcomes(ctx context.Context, outcomes []Sh
 func (m *mockRepository) ListShadowOutcomes(ctx context.Context, runID int64) ([]ShadowOutcome, error) {
 	return nil, nil
 }
-

@@ -41,27 +41,40 @@ func DecodeEnhanceResponse(content string) ([]EnhanceDecision, error) {
 		} `json:"a"`
 	}
 	if err := json.Unmarshal([]byte(clean), &v8Wrapper); err == nil && len(v8Wrapper.Answers) > 0 {
-		decisions := make([]EnhanceDecision, len(v8Wrapper.Answers))
-		for i, ans := range v8Wrapper.Answers {
-			conf := 0.85
-			switch ans.Confidence {
-			case "hi":
-				conf = 0.95
-			case "mid":
-				conf = 0.85
-			case "lo":
-				conf = 0.70
-			default:
-				if ans.Selected == nil {
-					conf = 0.0
-				}
-			}
-			decisions[i] = EnhanceDecision{
+		byRef := make(map[int]EnhanceDecision, len(v8Wrapper.Answers))
+		contradicted := make(map[int]bool)
+		for _, ans := range v8Wrapper.Answers {
+			d := EnhanceDecision{
 				Ref:        ans.Ref,
 				ProductID:  ans.Selected,
-				Confidence: conf,
+				Confidence: v8Confidence(ans.Selected, ans.Confidence),
 				Reason:     ans.Abstain,
 			}
+			// The model's own evidence is binding: a selection it says
+			// contradicts the row on an identity attribute is not an answer,
+			// however confidently it was given.
+			if d.ProductID != nil {
+				if attr, bad := selfContradicted(ans.Evidence); bad {
+					d.Confidence = 0
+					d.Reason = "ai_self_conflict:" + attr
+				}
+			}
+			if prev, dup := byRef[ans.Ref]; dup {
+				// The same ref answered twice. Identical answers are one
+				// answer; different ones cancel each other (pm-answer-1).
+				if !sameSelection(prev.ProductID, d.ProductID) {
+					contradicted[ans.Ref] = true
+				}
+				continue
+			}
+			byRef[ans.Ref] = d
+		}
+		decisions := make([]EnhanceDecision, 0, len(byRef))
+		for ref, d := range byRef {
+			if contradicted[ref] {
+				continue
+			}
+			decisions = append(decisions, d)
 		}
 		sort.SliceStable(decisions, func(i, j int) bool {
 			return decisions[i].Ref < decisions[j].Ref
@@ -124,4 +137,44 @@ func extractJSONObject(s string) string {
 		}
 	}
 	return ""
+}
+
+// v8Confidence maps the answer's optional confidence bucket. A selection with
+// no bucket is read as mid: the bucket is not what decides acceptance — the
+// identity screen and the qualification of the configuration are — and a
+// model that omits an optional field has not said it is unsure.
+func v8Confidence(selected *int64, bucket string) float64 {
+	if selected == nil {
+		return 0
+	}
+	switch bucket {
+	case "hi":
+		return 0.95
+	case "lo":
+		return 0.70
+	default:
+		return 0.85
+	}
+}
+
+// identityEvidence are the attributes whose contradiction makes a different
+// product.
+var identityEvidence = map[string]bool{"st": true, "fm": true, "rl": true, "md": true, "br": true, "rt": true}
+
+// selfContradicted reports an identity attribute the model itself marked as
+// conflicting with the row.
+func selfContradicted(evidence map[string]string) (string, bool) {
+	for attr, v := range evidence {
+		if identityEvidence[attr] && (v == "c" || v == "conflict") {
+			return attr, true
+		}
+	}
+	return "", false
+}
+
+func sameSelection(a, b *int64) bool {
+	if a == nil || b == nil {
+		return a == nil && b == nil
+	}
+	return *a == *b
 }

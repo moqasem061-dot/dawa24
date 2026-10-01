@@ -35,11 +35,18 @@ import (
 // one. A name that is nothing but short tokens has no brand for them to be
 // modifying, and a leading article is not an identity.
 func identityMarks(text string) map[string]struct{} {
+	var out map[string]struct{}
+	// Numbers that belong to the brand — كيو-90, 50+, B12. See identity_egypt.go.
+	for _, m := range brandNumberMarks(text) {
+		if out == nil {
+			out = make(map[string]struct{}, 2)
+		}
+		out[m] = struct{}{}
+	}
 	words := strings.Fields(sheet.NormalizeName(text))
 	if len(words) < 2 {
-		return nil
+		return out
 	}
-	var out map[string]struct{}
 	seenWord := false
 	for i := 0; i < len(words); i++ {
 		w := words[i]

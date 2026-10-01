@@ -121,6 +121,7 @@ func (idx *Index) rate(q *query, p *MasterProduct) (scoredProduct, bool) {
 		agreed:    agreed,
 		exact:     exact,
 		blind:     ev.distinctHits == 0 && !isAlias,
+		brandLink: brandLinkOf(q, p),
 	}, true
 }
 
@@ -140,6 +141,7 @@ const (
 	agreedMaker
 	agreedMolecule
 	agreedPrice
+	agreedCount
 )
 
 // describeReason renders why a candidate scored what it did, for the review
@@ -180,7 +182,13 @@ func (idx *Index) corroboration(q *query, p *MasterProduct, agreed *agreements) 
 
 	if agree, comparable := compareStrengths(q.strengths, p.strengths); comparable && agree {
 		bonus += doseBonus(q.strengths, p.strengths)
-		*agreed |= agreedDose
+		// A bottle size agreeing is content, not strength: "شراب 120 مل" on
+		// both sides confirms a size, which many products share.
+		if statesMass(q.strengths) {
+			*agreed |= agreedDose
+		} else {
+			*agreed |= agreedCount
+		}
 	}
 
 	// The form. The guard on name similarity is there because catalogue
@@ -220,6 +228,7 @@ func (idx *Index) corroboration(q *query, p *MasterProduct, agreed *agreements) 
 
 	for i, n := 0, p.sideCount(); i < n; i++ {
 		if countsAgree(q.qty.counts, p.sideAt(i).qty.counts) {
+			*agreed |= agreedCount
 			bonus += 0.06
 			break
 		}

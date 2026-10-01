@@ -96,6 +96,21 @@ type query struct {
 	// See evidence_price.go.
 	priceMinor    int64
 	poolTruncated bool
+	// brand is the row's lead brand word and brandJoined it joined to the
+	// next word. See identity_brand_guard.go.
+	brand       string
+	brandJoined string
+	// typoSlots are the weight slots of the row's distinctive words that the
+	// catalogue has never seen as written — the misspellings. See typo.go.
+	typoSlots []int
+	// nameTokens are the row's name words alone, without the molecule column.
+	nameTokens []string
+	// nameMakers are companies written into the row's name before any slash.
+	nameMakers []string
+	// injForm is the injection container the row states.
+	injForm string
+	// volumes are the total contents the row states.
+	volumes []float64
 }
 
 func (idx *Index) newQuery(row *Row) *query {
@@ -103,7 +118,7 @@ func (idx *Index) newQuery(row *Row) *query {
 	// See annotations.go: what follows them is a price and a carton count, and
 	// read as part of the product they are an identity letter and a stray
 	// figure that no catalogue entry can agree with.
-	name := StripTradeAnnotations(row.Name)
+	name := StripTradeAnnotations(ExpandShorthand(row.Name))
 	nameEN := StripTradeAnnotations(row.NameEN)
 	full := name + " " + nameEN
 	nameTokens := coreTokens(full)
@@ -132,6 +147,12 @@ func (idx *Index) newQuery(row *Row) *query {
 	if q.packSize == 0 {
 		q.packSize = InferPackSize(full)
 	}
+	q.brand, q.brandJoined = idx.leadBrand(nameTokens)
+	idx.typoModifiers(nameTokens, q.mods)
+	q.nameTokens = nameTokens
+	q.nameMakers = idx.nameCompanies(full)
+	q.injForm = injContainerOf(full)
+	q.volumes = totalVolumes(full)
 
 	// A row that is nothing but company names has no other vocabulary to fall
 	// back on, so the demotion below is suspended for it: demoting every word
@@ -207,6 +228,7 @@ func (idx *Index) newQuery(row *Row) *query {
 		}
 	}
 	q.stamp = make([]int32, len(q.weights))
+	q.typoSlots = idx.typoSlots(q)
 	q.keyPos = buildKeyPos(q.pos)
 	q.keys = variantKeys(q.tokens)
 	return q

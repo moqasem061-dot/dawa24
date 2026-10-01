@@ -18,18 +18,25 @@ import (
 // matching actually reads. Holding thirty thousand of these costs a few
 // megabytes; holding thirty thousand full products would not.
 type MasterProduct struct {
-	ID              int64
-	NameAR          string
-	NameEN          string
-	SKU             string
-	Barcode         string
-	Scientific      string
-	DosageForm      string
-	Concentration   string
-	Unit            string
-	Manufacturer    string
-	PublicPrice     string
-	curatedFacts    *IdentityFacts
+	ID            int64
+	NameAR        string
+	NameEN        string
+	SKU           string
+	Barcode       string
+	Scientific    string
+	DosageForm    string
+	Concentration string
+	Unit          string
+	Manufacturer  string
+	PublicPrice   string
+	curatedFacts  *IdentityFacts
+	// facts caches Facts(), computed once when the index is built. Facts are
+	// read for every candidate the gate evaluates, and extracting them is
+	// regular-expression work: recomputing them per comparison was the whole of
+	// a 30x slowdown on large candidate pools.
+	facts *IdentityFacts
+	// nameMakers are the companies written into the name. See makerConflict.
+	nameMakers      []string
 	packRels        []PackRelationship
 	hasPlainSibling bool
 

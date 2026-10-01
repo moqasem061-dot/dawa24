@@ -39,6 +39,15 @@ const (
 	ReasonConcentrationConflict ReasonCode = "concentration_conflict"
 	ReasonDimensionConflict     ReasonCode = "dimension_conflict"
 	ReasonBrandConflict         ReasonCode = "brand_conflict"
+	ReasonBrandUnverified       ReasonCode = "brand_unverified"
+	ReasonBrandUncorroborated   ReasonCode = "brand_uncorroborated"
+	ReasonContainerConflict     ReasonCode = "container_conflict"
+	ReasonWordUnverified        ReasonCode = "word_unverified"
+	ReasonWordMismatch          ReasonCode = "word_mismatch"
+	ReasonMakerConflict         ReasonCode = "maker_conflict"
+	ReasonFigureConflict        ReasonCode = "figure_conflict"
+	ReasonModifierUnstated      ReasonCode = "modifier_unstated"
+	ReasonLetterUnstated        ReasonCode = "letter_unstated"
 
 	ReasonAttributeUnstated      ReasonCode = "attribute_unstated"
 	ReasonPackUnresolved         ReasonCode = "pack_unresolved"
@@ -97,6 +106,15 @@ func AllReasonCodes() []ReasonCode {
 		ReasonConcentrationConflict,
 		ReasonDimensionConflict,
 		ReasonBrandConflict,
+		ReasonBrandUnverified,
+		ReasonBrandUncorroborated,
+		ReasonContainerConflict,
+		ReasonWordUnverified,
+		ReasonWordMismatch,
+		ReasonMakerConflict,
+		ReasonFigureConflict,
+		ReasonModifierUnstated,
+		ReasonLetterUnstated,
 		ReasonAttributeUnstated,
 		ReasonPackUnresolved,
 		ReasonPackConflict,

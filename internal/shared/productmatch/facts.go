@@ -43,6 +43,10 @@ type nameFacts struct {
 	// states. See identity_refine.go.
 	routes map[string]struct{}
 	dims   []string
+	// injForm is the injection container the name states. See identity_egypt.go.
+	injForm string
+	// volumes are the total contents the name states.
+	volumes []float64
 }
 
 // factsOf reduces one name.
@@ -59,6 +63,8 @@ func factsOf(name string) nameFacts {
 		strengths: strengthSet(name),
 		routes:    routesIn(name),
 		dims:      dimensionsIn(name),
+		injForm:   injContainerOf(name),
+		volumes:   totalVolumes(name),
 	}
 }
 

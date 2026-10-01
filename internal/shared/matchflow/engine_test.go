@@ -68,7 +68,7 @@ func id(v int64) *int64 { return &v }
 
 func question(key, text string, settled bool, current *int64, window ...int64) matchflow.Question {
 	q := matchflow.Question{Key: key, Item: matchflow.Item{
-		Text: text, Settled: settled, CurrentGuess: current}}
+		Text: text, Settled: settled, Loose: settled, CurrentGuess: current}}
 	for _, w := range window {
 		q.Window = append(q.Window, matchflow.CatalogEntry{ProductID: w, NameAR: "p"})
 	}
@@ -376,7 +376,8 @@ func TestEveryRequestIsAttributed(t *testing.T) {
 }
 
 type attributionSpy struct {
-	enhance func(matchflow.Batch); verify func(matchflow.CheckBatch)
+	enhance func(matchflow.Batch)
+	verify  func(matchflow.CheckBatch)
 }
 
 func (s *attributionSpy) Enhance(_ context.Context, b matchflow.Batch) ([]matchflow.Decision, error) {

@@ -321,7 +321,7 @@ func setMatch(l *smartorder.Line, productID int64, method smartorder.MatchMethod
 	l.MatchConfidence = confidence
 	if confidence >= Cutoff {
 		l.MatchState = string(matchflow.StateAccepted)
-		l.MatchGranularity = string(matchflow.GranularityPack)
+		l.MatchGranularity = string(matchflow.GranularityProduct)
 		switch method {
 		case smartorder.MethodBarcode, smartorder.MethodSKU:
 			l.MatchBasis = string(matchflow.BasisIdentifier)

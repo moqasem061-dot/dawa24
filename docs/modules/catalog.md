@@ -192,39 +192,16 @@ as the admin likes.
 
 ## Product identity rules
 
-1. **Hard vs Soft Conflicts (contracts/identity-gate.md, SC-002):**
-   - **Hard Conflicts**: Unconditionally veto candidate acceptance on every path (including identifier, exact, similarity, and human reviewer until corrected). Any hard conflict yields `Eligible=false` and state `needs_review`:
-     - `strength`: different active ingredient dosage (e.g. 500 mg vs 1000 mg).
-     - `strength_component`: combination components evaluated by position when component association is known.
-     - `combination`: multi-component medicine differences (a row with fewer components is unstated, row with more is a hard conflict).
-     - `modifier`: differing product line modifiers (e.g. Extra vs Plus).
-     - `modifier_unstated_in_row`: row omits a line extension that the candidate product possesses. **Hard only when a plain sibling exists in the index**; if the extended product is the sole family member in the catalogue, it remains `unstated`.
-     - `form`: differing pharmaceutical forms (e.g. syrup vs tablet, ointment vs cream).
-     - `route`: differing administration routes (e.g. eye drops vs ear drops).
-     - `release`: modified release profile (e.g. SR/XR/CR/retard) vs immediate release.
-     - `letter`: distinguishing product suffix letters (e.g. Betnovate N vs Betnovate C).
-     - `concentration`: exact rational fraction mismatch (`math/big.Rat`) for concentrations (mg↔g and mL↔L conversions normalized; percent and IU never converted).
-     - `dimension`: device size or physical dimension mismatch.
-     - `brand`: differing rare brand tokens (`df` <= 3); alternative mentions ("Product A, alternative to Product B") are never accepted as substitutions.
-     - `identifier_vs_description`: an identifier pointing to a product whose identity attributes contradict the description.
-     - `pack`: package count/structure conflict (enforced as a hard conflict only when `RequiredGranularity == Pack`).
-   - **Soft Statuses**: `unstated` indicates missing information and never counts as agreement. Agreement requires positive corroboration.
+One conflict model decides identity: `conflictsOf` (`internal/shared/productmatch/discriminate.go`), extended for Egyptian naming in `identity_egypt.go`, `identity_brand_guard.go`, `shorthand.go` and `typo.go`. The scorer ranks with it and the gate (`hard_conflicts.go`) accepts with it, so the two cannot disagree. Every acceptance path uses it: identifier, knowledge, reviewer and AI (`IdentityConflict`).
 
-2. **Required Granularity (`product` vs `pack`):**
-   - `RequiredGranularity = Product`: Validates molecular identity, strength, form, release, route, and brand. Packaging count differences are soft.
-   - `RequiredGranularity = Pack`: Requires both product identity and exact packaging alignment (`Count`, `Multiplier`, `SubCount`, `SubUnit`).
-   - Structured multi-packs (e.g. `2×10` vs `20`) yield `needs_relationship` unless an explicit entry exists in `catalog.pack_relationships`. Pack conversion (`Convert`) uses exact integer arithmetic only.
+- **Hard (never accepted):** strength, combination components, line extension, form or sub-form, identity letter (including brand numbers such as كيو-90, 50+, B12), route, size, and a known brand the candidate does not carry.
+- **Soft (ranks the right candidate first, sends an only-candidate to review):** count, bottle volume, unstated extension or letter, an unknown brand word, a container difference (امبول/فيال, tie-break only), a word mismatch, a different company inside a generic's name.
+- **Tablets and capsules are one solid-oral class.** Egyptian pharmacists write them interchangeably; tablet and capsule counts are compared as one class.
+- **Shorthand** (ق، ك، ش، ف، امب، اق) is expanded before matching.
+- **Loose brand links** (typo, sound-alike, cross-script) need corroboration from the row's dose, form, count, company, molecule or price. Cross-script links need one strong confirmation or two weak ones. Accepted loose links are flagged `loose_brand` and are what the AI stage re-checks.
+- **Barcodes** must pass the GTIN check digit. Supplier codes must be corroborated by the name.
 
-3. **Curated Identity Overrides:**
-   - Platform-curated facts in `catalog.curated_identity_facts` override parsed facts with `Prov=corrected`.
-   - Applied at index construction (`NewIndexWithCuration`).
-   - Statement triggers on `catalog.curated_identity_facts` and `catalog.pack_relationships` increment `catalog.catalog_revisions`, ensuring zero-downtime, automated singleflight cache invalidation.
-
-4. **Tablet vs Capsule Distinction (Intentional Behaviour Change):**
-   - Explicit tablet (`tablet`, `tab`, `أقراص`, `قرص`) vs explicit capsule (`capsule`, `cap`, `كبسول`, `كبسولات`) is an intentional hard conflict (`ConflictForm`).
-   - Previously collapsed into `solid_oral`; separated to preserve clinical accuracy in B2B orders.
-   - Either side omitting the form is treated as `unstated` (not a conflict).
-   - Ordinary tablets vs Orally Disintegrating Tablets (ODT / discmelt / ذائبة) remains an unconditional conflict.
+Measured results and the evaluation method: `docs/modules/matching-baseline.md` (`go run ./cmd/cli match-eval --split egypt|tuning --explain <file>`).
 
 ## Savings import
 
@@ -248,7 +225,7 @@ The savings products import (`catalog.saving_products`) enables pharmacies, vend
 
 4. **Commit Revalidation (`internal/ui/saving_products_import_commit.go`):**
    - Before writing to `catalog.saving_products`, `RevalidateSavingItems` calls `catSvc.RevalidateSavingDecision` for every row.
-   - Rows whose `match_revision` changed, whose decision state is unconfirmed or not accepted, or whose granularity is below `pack` or `product` are rejected before committing.
+   - Rows are rejected only when their chosen product changed in the catalogue, their state is no longer accepted or confirmed, or their granularity is below what the decision required.
 
 5. **Entry-Point Registry (`internal/modules/catalog/matching/entrypoints.go`):**
    - `savings_matching`: `internal/modules/catalog/saving_match_engine.go`

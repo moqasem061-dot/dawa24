@@ -152,7 +152,6 @@ func (r *runner) needsCheck(it Item, a Answer) (int64, bool) {
 	return *d.ProductID, true
 }
 
-
 // resolve combines a proposal with its pair check.
 func (r *runner) resolve(p pending, chk Check, ok bool) Answer {
 	a := p.answer

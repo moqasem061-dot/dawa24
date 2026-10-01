@@ -176,3 +176,33 @@ func (idx *Index) exactWordHits(q *query, p *MasterProduct) int {
 	}
 	return hits
 }
+
+// topicalOnly reports a sub-form that can only be applied to the body: a
+// product named by one of these is never a tablet, an injection or a syrup.
+// Powder is left out, because oral powders and sachets are written the same
+// way.
+func topicalOnly(sub string) bool {
+	switch sub {
+	case "cream", "ointment", "gel", "paste", "foam", "balm", "oil", "serum",
+		"wash", "shampoo", "soap", "mouthwash":
+		return true
+	}
+	return false
+}
+
+// combinationWords are the line words that name a combination product.
+var combinationWords = map[string]bool{"plus": true, "comb": true, "duo": true, "trio": true}
+
+// namesCombination reports a row and a product that share a combination line
+// word.
+func namesCombination(row, prod map[string]struct{}) bool {
+	for m := range row {
+		if !combinationWords[m] {
+			continue
+		}
+		if _, ok := prod[m]; ok {
+			return true
+		}
+	}
+	return false
+}

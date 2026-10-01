@@ -108,6 +108,9 @@ type openRow struct {
 	// row is the parsed spreadsheet row this question was built from, which the
 	// identity guard re-reads.
 	row *productmatch.Row
+	// loose says the settled match rests on a loose brand link and is worth a
+	// second opinion. See matchflow.Item.Loose.
+	loose bool
 	// sourceRows are the row numbers as the vendor sees them in Excel's gutter.
 	// They are how an accepted answer finds its staged rows again, and they are
 	// never sent to a model.

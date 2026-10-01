@@ -221,21 +221,35 @@ func TestService_Rematch_And_Revalidate(t *testing.T) {
 		}
 	}
 
-	// Revalidate: older revision -> catalog_changed flag added
+	// Revalidate: the catalogue moved on but THIS product did not -> no flag.
 	decOlder := dec
 	decOlder.Versions.CatalogRevision = 3
 	revOld, err := svc.Revalidate(ctx, sc, RowRef{ID: 2}, decOlder)
 	if err != nil {
 		t.Fatalf("Revalidate older failed: %v", err)
 	}
-	found := false
 	for _, f := range revOld.Flags {
+		if f == "catalog_changed" {
+			t.Errorf("catalog_changed must not be set when the chosen product is unchanged")
+		}
+	}
+
+	// Revalidate: the chosen product's facts changed since the decision -> flag.
+	decDrift := dec
+	decDrift.Versions.CatalogRevision = 3
+	decDrift.Versions.Target = "fingerprint-of-an-older-version"
+	revDrift, err := svc.Revalidate(ctx, sc, RowRef{ID: 3}, decDrift)
+	if err != nil {
+		t.Fatalf("Revalidate drift failed: %v", err)
+	}
+	found := false
+	for _, f := range revDrift.Flags {
 		if f == "catalog_changed" {
 			found = true
 		}
 	}
-	if !found {
-		t.Errorf("expected catalog_changed flag when revision differs")
+	if !found || revDrift.State == matchflow.StateAccepted {
+		t.Errorf("expected catalog_changed and no acceptance when the product changed, got %v %s", revDrift.Flags, revDrift.State)
 	}
 }
 

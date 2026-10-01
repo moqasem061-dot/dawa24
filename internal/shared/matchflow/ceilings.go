@@ -55,7 +55,6 @@ type Ceilings struct {
 	// MaxInputTokens caps the estimated input tokens per request (US10 T136).
 	MaxInputTokens int
 
-
 	// MaxRequestsPerRun is the spend ceiling, and the one number here that is a
 	// business decision rather than a measurement. Rows past it keep their
 	// deterministic outcome and are reported as such rather than silently
@@ -153,12 +152,20 @@ const (
 // fifth of the wall clock, which is why proposals stop starting at eighty per
 // cent of it.
 func For(p Profile) Ceilings {
+	// Batches are sized to answer inside the per-attempt deadline (see
+	// deadline.go): fifteen seconds, enforced. Output is generated serially,
+	// so the answer length decides the latency, and a sixty-item batch of
+	// Arabic lines was still writing when the attempt was cut off — the stage
+	// timed out, split, timed out again and reported that the model found
+	// nothing. Sixteen items is a few hundred output tokens. The throughput
+	// lost to smaller batches is bought back with concurrency, and every
+	// attempt still counts against the run's request and cost ceilings.
 	base := Ceilings{
 		RecallLimit:        16,
 		MaxInputBytes:      220_000,
-		MaxItemsPerRequest: 60,
-		MaxRequestsPerRun:  120,
-		MaxConcurrent:      8,
+		MaxItemsPerRequest: 16,
+		MaxRequestsPerRun:  300,
+		MaxConcurrent:      10,
 		MaxWallClock:       12 * time.Minute,
 		MinApplyConfidence: 0.80,
 		MinPlausible:       0,
@@ -167,30 +174,27 @@ func For(p Profile) Ceilings {
 	switch p {
 	case ProfileOrder:
 		// A person is watching the bar. Small batches answer fastest.
-		base.MaxItemsPerRequest = 30
+		base.MaxItemsPerRequest = 12
 		base.RecallLimit = 12
 		base.MaxInputBytes = 120_000
-		base.MaxRequestsPerRun = 120
+		base.MaxRequestsPerRun = 200
 		base.MaxWallClock = 8 * time.Minute
 
 	case ProfileSaving:
 		base.RecallLimit = 12
-		base.MaxRequestsPerRun = 150
 
 	case ProfileVendor:
-		// Long, repetitive files. Two hundred requests of sixty is twelve
-		// thousand distinct questions — the largest file this system has seen,
-		// after de-duplication — and the risk ordering spends the wall clock on
+		// Long, repetitive files. The risk ordering spends the deadline on
 		// the ambiguous rows first when it runs out.
-		base.MaxRequestsPerRun = 200
-		base.MaxConcurrent = 10
+		base.MaxRequestsPerRun = 400
+		base.MaxConcurrent = 12
 		base.MaxWallClock = 14 * time.Minute
 
 	case ProfileCatalog:
 		// The master catalogue is the one place a wrong match is not
 		// recoverable by looking at the result, so it applies the least.
-		base.MaxItemsPerRequest = 50
-		base.MaxConcurrent = 6
+		base.MaxItemsPerRequest = 12
+		base.MaxConcurrent = 8
 		base.MinApplyConfidence = 0.90
 	}
 	return base
@@ -198,12 +202,11 @@ func For(p Profile) Ceilings {
 
 // Adaptive tunes the ceilings to the file. A small file gets small batches,
 // because its whole residue fits in a few requests either way and small ones
-// come back sooner. Nothing here ever raises the batch size: larger batches
-// buy throughput with attention, and attention is what the answers are made of.
+// come back sooner. Nothing here ever raises the batch size.
 func Adaptive(p Profile, totalItems int) Ceilings {
 	c := For(p)
-	if totalItems > 0 && totalItems <= 100 && c.MaxItemsPerRequest > 20 {
-		c.MaxItemsPerRequest = 20
+	if totalItems > 0 && totalItems <= 100 && c.MaxItemsPerRequest > 10 {
+		c.MaxItemsPerRequest = 10
 	}
 	return c
 }

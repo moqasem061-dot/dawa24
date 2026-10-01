@@ -30,7 +30,7 @@ import "context"
 //
 // It is declared here and nowhere else. `make check-prompt-version` fails the
 // build if the literal appears outside this package.
-const PromptVersion = "sm-enh-v8"
+const PromptVersion = "sm-enh-v9"
 
 // CatalogEntry is one catalogue product as the model sees it.
 //
@@ -84,6 +84,12 @@ type Item struct {
 	// replaces a guess, and overruling a verification replaces a decision the
 	// engine was confident enough to apply.
 	Settled bool
+
+	// Loose says a Settled item's match rests on a loose brand link. Settled
+	// items are put to the model only when Loose: re-confirming an exact brand
+	// match was most of what the stage spent, and it bought nothing, while the
+	// loose links are where nearly every remaining wrong match is.
+	Loose bool
 }
 
 // Limits defines resource and token ceilings for an AI batch request (US10 T135).
@@ -120,7 +126,6 @@ type Batch struct {
 	OrganizationID int64
 	UserID         int64
 }
-
 
 // The features that spend AI budget, in the vocabulary the usage screens use.
 //
@@ -183,4 +188,3 @@ type EnhancerFunc func(ctx context.Context, batch Batch) ([]Decision, error)
 func (f EnhancerFunc) Enhance(ctx context.Context, batch Batch) ([]Decision, error) {
 	return f(ctx, batch)
 }
-

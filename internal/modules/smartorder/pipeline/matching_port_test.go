@@ -32,7 +32,7 @@ func (m *mockSmartOrderMatcher) Revalidate(ctx context.Context, s productmatch.S
 	return d, nil
 }
 
-func TestCandidateMatcher_UsesPrepareWithPackGranularity(t *testing.T) {
+func TestCandidateMatcher_UsesPrepareWithProductGranularity(t *testing.T) {
 	var capturedReq productmatch.PrepareRequest
 	targetPID := int64(999)
 
@@ -78,8 +78,8 @@ func TestCandidateMatcher_UsesPrepareWithPackGranularity(t *testing.T) {
 	if capturedReq.Scope.Workflow != productmatch.WorkflowSmartOrder {
 		t.Errorf("expected WorkflowSmartOrder, got %s", capturedReq.Scope.Workflow)
 	}
-	if capturedReq.Required != productmatch.GranularityPack {
-		t.Errorf("expected GranularityPack, got %s", capturedReq.Required)
+	if capturedReq.Required != productmatch.GranularityProduct {
+		t.Errorf("expected GranularityProduct, got %s", capturedReq.Required)
 	}
 	if capturedReq.Scope.EffectiveOrg != 1001 {
 		t.Errorf("expected EffectiveOrg 1001, got %d", capturedReq.Scope.EffectiveOrg)
@@ -91,8 +91,8 @@ func TestCandidateMatcher_UsesPrepareWithPackGranularity(t *testing.T) {
 	if line.MatchState != "accepted" {
 		t.Errorf("expected MatchState accepted, got %s", line.MatchState)
 	}
-	if line.MatchGranularity != "pack" {
-		t.Errorf("expected MatchGranularity pack, got %s", line.MatchGranularity)
+	if line.MatchGranularity != "product" {
+		t.Errorf("expected MatchGranularity product, got %s", line.MatchGranularity)
 	}
 	if line.MatchRunID == nil || *line.MatchRunID != 42 {
 		t.Errorf("expected MatchRunID 42, got %v", line.MatchRunID)

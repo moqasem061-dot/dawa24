@@ -221,17 +221,54 @@ func TestMatchingSeparatesTwoPackSizes(t *testing.T) {
 }
 
 func TestBarcodeMatchIsDecisiveWhenTheUserSaysTheColumnIsABarcode(t *testing.T) {
+	// 6221234567891 carries a valid GTIN-13 check digit.
 	idx := NewIndex([]MasterProduct{
-		{ID: 7, NameAR: "بانادول إكسترا أقراص", Barcode: "6221234567890"},
+		{ID: 7, NameAR: "بانادول إكسترا أقراص", Barcode: "6221234567891"},
 	})
 	opts := DefaultMatchOptions().WithIdentifiers(
 		MappedColumns{Barcode: true},
 		IdentifierChoices{ByBarcode: true},
 	)
 
-	res := idx.Match(&Row{Name: "بانادول إكسترا", Barcode: "6221234567890"}, opts)
+	res := idx.Match(&Row{Name: "بانادول إكسترا", Barcode: "6221234567891"}, opts)
 	if res.ProductID != 7 || res.Level != MatchBarcode {
 		t.Fatalf("barcode match gave %d/%s, want 7/barcode", res.ProductID, res.Level)
+	}
+}
+
+// A value that fails the GTIN check digit is a file's own numbering mapped into
+// the barcode column. It has no authority even when the user switched the tier
+// on: the row is matched by its name instead, and an unrelated product sharing
+// the number is never linked.
+func TestInvalidCheckDigitIsNotABarcode(t *testing.T) {
+	idx := NewIndex([]MasterProduct{
+		{ID: 7, NameAR: "بانادول إكسترا أقراص", Barcode: "12345678"},
+		{ID: 8, NameAR: "كونكور 5 مجم 30 قرص", Barcode: "87654321"},
+	})
+	opts := DefaultMatchOptions().WithIdentifiers(
+		MappedColumns{Barcode: true},
+		IdentifierChoices{ByBarcode: true},
+	)
+	res := idx.Match(&Row{Name: "بانادول إكسترا", Barcode: "87654321"}, opts)
+	if res.Level == MatchBarcode {
+		t.Fatalf("an invalid GTIN settled a match: %+v", res)
+	}
+	if res.ProductID == 8 {
+		t.Fatalf("an invalid GTIN linked an unrelated product: %+v", res)
+	}
+}
+
+// A valid barcode whose product contradicts the row's own description is not
+// applied: the identifier and the name disagree, and a person must see it.
+func TestBarcodeContradictingTheDescriptionGoesToReview(t *testing.T) {
+	idx := NewIndex([]MasterProduct{
+		{ID: 7, NameAR: "بانادول 500 مجم 24 قرص", Barcode: "6221234567891"},
+	})
+	pol := DefaultPolicy()
+	pol.Identifiers.AllowGTIN = true
+	d := idx.Decide(&Row{Name: "بانادول 1000 مجم 24 قرص", Barcode: "6221234567891"}, pol)
+	if d.State == "accepted" {
+		t.Fatalf("a barcode overruled a contradicted strength: %+v", d)
 	}
 }
 

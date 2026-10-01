@@ -63,6 +63,11 @@ func (q *query) containment(side nameSide) (ratio, distinct float64, hits int) {
 		if !ok && len(q.keyPos) > 0 && j < len(side.keys) && side.keys[j] != "" {
 			slot, ok = q.keyPos[side.keys[j]]
 		}
+		typo := false
+		if !ok && len(q.typoSlots) > 0 {
+			slot, ok = q.typoSlot(t)
+			typo = ok
+		}
 		if !ok {
 			continue
 		}
@@ -79,7 +84,10 @@ func (q *query) containment(side nameSide) (ratio, distinct float64, hits int) {
 		// A word that had to be folded to meet its counterpart is weaker
 		// evidence than one that matched letter for letter. See variants.go.
 		w := q.weights[slot]
-		if !exact {
+		switch {
+		case typo:
+			w *= typoWeight
+		case !exact:
 			w *= variantWeight
 		}
 		matched += w

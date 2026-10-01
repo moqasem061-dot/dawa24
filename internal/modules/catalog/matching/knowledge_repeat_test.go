@@ -119,7 +119,9 @@ func (r *repeatTestRepo) List(ctx context.Context, f KnowledgeFilter) (Page[Know
 	return Page[Knowledge]{Items: items, Total: len(items)}, nil
 }
 
-func (r *repeatTestRepo) LoadAliases(ctx context.Context, orgID int64) (map[string][]int64, error) { return nil, nil }
+func (r *repeatTestRepo) LoadAliases(ctx context.Context, orgID int64) (map[string][]int64, error) {
+	return nil, nil
+}
 
 func repeatCatalogueIndex() *productmatch.Index {
 	prods := []productmatch.MasterProduct{
@@ -270,8 +272,11 @@ func TestRepeatFileKnowledge_SC012(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Prepare after drift failed: %v", err)
 	}
-	if resDrift.Decisions[1].State == matchflow.StateAccepted {
-		t.Errorf("row 2: drifted target fact fingerprint must block acceptance")
+	// The drifted memory must not be what the row is accepted on. The engine
+	// may still accept the same product on its own evidence — that is the
+	// revalidation FR-055 asks for — but not because it was remembered.
+	if d := resDrift.Decisions[1]; d.State == matchflow.StateAccepted && d.Basis == matchflow.BasisKnowledgeHuman {
+		t.Errorf("row 2: drifted knowledge was applied as knowledge: %+v", d)
 	}
 	hasStaleFlag := false
 	for _, f := range resDrift.Decisions[1].Flags {
@@ -294,8 +299,8 @@ func TestRepeatFileKnowledge_SC012(t *testing.T) {
 		t.Fatalf("Prepare after policy change failed: %v", err)
 	}
 	// With policy incompatibility, remaining rows must not be accepted as fresh knowledge
-	if resPol.Decisions[2].State == matchflow.StateAccepted {
-		t.Errorf("row 3: incompatible policy version must block acceptance")
+	if d := resPol.Decisions[2]; d.State == matchflow.StateAccepted && d.Basis == matchflow.BasisKnowledgeHuman {
+		t.Errorf("row 3: incompatible knowledge was applied as knowledge: %+v", d)
 	}
 	hasStaleFlag3 := false
 	for _, f := range resPol.Decisions[2].Flags {

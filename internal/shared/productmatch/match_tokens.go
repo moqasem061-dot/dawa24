@@ -270,11 +270,11 @@ var formGroups = []struct {
 	{"topical", []string{"كريم", "مرهم", "جل", "جيل", "لوسيون", "دهان", "معجون",
 		"cream", "oint", "ointment", "gel", "lotion", "paste"}},
 	{"injectable", []string{"حقن", "حقنه", "امبول", "امبوله", "امبولات", "فيال",
-		"amp", "amps", "vial", "inj", "injection"}},
+		"amp", "amps", "vial", "inj", "injection", "inf", "infusion"}},
 	{"sachet", []string{"فوار", "كيس", "اكياس", "ساشيه", "اكياس", "sachet", "eff", "sachets"}},
-	{"capsule", []string{"كبسول", "كبسوله", "cap", "caps", "capsule"}},
+	{"capsule", []string{"كبسول", "كبسوله", "cap", "caps", "capsule", "softgel", "softgels", "سوفتجل"}},
 	{"tablet", []string{"اقراص", "قرص", "قرصين", "شريط", "كابلت", "tab", "tabs", "tablet", "caplet"}},
-	{"liquid", []string{"شراب", "معلق", "محلول", "syr", "syrup", "susp", "solution", "suspension"}},
+	{"liquid", []string{"شراب", "معلق", "محلول", "syr", "syrup", "susp", "solution", "suspension", "sol", "soln", "liquid"}},
 }
 
 // doseUnits normalises the strength units onto a common base: milligrams for

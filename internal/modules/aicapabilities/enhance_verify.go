@@ -233,4 +233,3 @@ func packField(n int) string {
 	}
 	return strconv.Itoa(n)
 }
-

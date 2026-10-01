@@ -36,7 +36,7 @@ func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
 		return facts
 	}
 
-	rawName := strings.TrimSpace(row.Name)
+	rawName := strings.TrimSpace(ExpandShorthand(row.Name))
 	var cleanName string
 	if IsPlaceholderName(rawName) {
 		facts.Prov = ProvInferred
@@ -116,6 +116,19 @@ func (p *MasterProduct) Facts() (facts IdentityFacts) {
 		facts.Cert = CertUncertain
 		return facts
 	}
+	if p.facts != nil {
+		return *p.facts
+	}
+	return p.computeFacts()
+}
+
+// computeFacts extracts a product's facts without consulting the cache.
+func (p *MasterProduct) computeFacts() (facts IdentityFacts) {
+	defer func() {
+		if r := recover(); r != nil {
+			facts.Cert = CertUncertain
+		}
+	}()
 	if p.curatedFacts != nil {
 		facts = *p.curatedFacts
 		facts.HasPlainSibling = p.hasPlainSibling
@@ -344,29 +357,6 @@ func extractDistinguishingLetter(text string) string {
 	}
 	return ""
 }
-
-func extractUnit(text string) string {
-	t := strings.ToLower(strings.TrimSpace(text))
-	switch {
-	case strings.Contains(t, "ميكروجرام") || strings.Contains(t, "مكجم") || strings.Contains(t, "mcg"):
-		return "mcg"
-	case strings.Contains(t, "مليجرام") || strings.Contains(t, "ملجرام") || strings.Contains(t, "ملجم") || strings.Contains(t, "مجم") || strings.Contains(t, "محم") || strings.Contains(t, "مج") || strings.Contains(t, "مغ") || strings.Contains(t, "mg"):
-		return "mg"
-	case strings.Contains(t, "جرام") || strings.Contains(t, "جم") || strings.Contains(t, "gm") || strings.Contains(t, "g"):
-		return "g"
-	case strings.Contains(t, "وحدة") || strings.Contains(t, "وحده") || strings.Contains(t, "iu"):
-		return "iu"
-	case strings.Contains(t, "%"):
-		return "%"
-	case strings.Contains(t, "مللي") || strings.Contains(t, "ملي") || strings.Contains(t, "مل") || strings.Contains(t, "ml"):
-		return "ml"
-	case strings.Contains(t, "لتر") || strings.Contains(t, "l"):
-		return "l"
-	}
-	return ""
-}
-
-func normalizeUnit(u string) string { return extractUnit(u) }
 
 func applyCorrections(facts *IdentityFacts, corrections []Correction) {
 	for _, c := range corrections {

@@ -283,6 +283,11 @@ var variantModifiers = map[string]string{
 	"sr": "sr", "cr": "cr", "xr": "xr", "mr": "mr", "xl": "xl", "la": "la",
 	"er": "er", "od": "od",
 	"ممتد": "sr", "المفعول": "sr",
+	// The English release words. "alfuzosine 10 mg prolonged release cap" is the
+	// catalogue's "الفيوزوسين 10 مجم كبسول ممتد المفعول"; without these the
+	// English line stated no release and the Arabic record read as a line
+	// extension the row had left out.
+	"prolonged": "sr", "sustained": "sr", "extended": "sr", "modified": "sr",
 
 	// Population — the paediatric line is a different product.
 	//
@@ -302,6 +307,7 @@ var variantModifiers = map[string]string{
 	"وومن": "women", "women": "women", "woman": "women", "وومان": "women",
 	"womens": "women", "ويمن": "women", "حريمي": "women", "للسيدات": "women",
 	"السيدات": "women", "سيدات": "women", "نسائي": "women", "للنساء": "women",
+	"feminine": "women", "female": "women", "lady": "women", "ladies": "women",
 
 	// Route and presentation lines sold beside the ordinary one
 	"للمضغ": "chew", "مضغ": "chew", "للمص": "chew", "chewable": "chew", "chew": "chew",
@@ -310,7 +316,7 @@ var variantModifiers = map[string]string{
 	// Formulation families sold side by side
 	"دوو": "duo", "duo": "duo",
 	"تريو": "trio", "trio": "trio",
-	"كومب": "comb", "comb": "comb", "combi": "comb",
+	"كومب": "comb", "comb": "comb", "combi": "comb", "comp": "comb",
 	"زيرو": "zero", "zero": "zero",
 	"لايت": "light", "light": "light",
 	"جولد": "gold", "gold": "gold",

@@ -6,7 +6,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
@@ -116,7 +115,6 @@ func TestStartEnhancement_CohortRestriction(t *testing.T) {
 	// Verify unqualified count was reported
 	assert.Equal(t, 1, origRepo.aiCounters[run.ID]["unqualified_cohort"])
 }
-
 
 type mockRepoWithSpecificConfig struct {
 	*mockRepository

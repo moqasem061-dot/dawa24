@@ -35,7 +35,6 @@ const (
 	MatchNone MatchLevel = "none"
 )
 
-
 // Settled reports whether the match may be applied without asking.
 func (l MatchLevel) Settled() bool {
 	switch l {
@@ -65,6 +64,11 @@ type MatchResult struct {
 	Score      float64          `json:"score"`
 	Reason     string           `json:"reason"`
 	Candidates []MatchCandidate `json:"candidates,omitempty"`
+	// Loose says an applied match rests on a brand word the candidate carries
+	// only by sound, by a typo-sized difference or in the other alphabet. It is
+	// where almost every remaining wrong match is, and so it is what a second
+	// opinion is worth spending on. See matchflow.Item.Loose.
+	Loose bool `json:"loose,omitempty"`
 }
 
 // Matched reports whether a product was tied to the row at all.
@@ -208,6 +212,7 @@ func (idx *Index) Match(row *Row, opts MatchOptions) MatchResult {
 		Score:      score,
 		Reason:     reason,
 		Candidates: describe(scored, opts.MaxCandidates),
+		Loose:      hasFlag(dec.Flags, FlagLooseBrand),
 	}
 }
 
@@ -238,6 +243,9 @@ type scoredProduct struct {
 	// from a wordless channel — character trigrams, or the cross-script
 	// consonant skeleton. See settleable.
 	blind bool
+	// brandLink is how firmly the candidate carries the row's brand word.
+	// See identity_brand_guard.go and evidenced.
+	brandLink int
 }
 
 // settleable reports whether a candidate may be APPLIED rather than merely
@@ -292,6 +300,7 @@ func (idx *Index) score(q *query, opts MatchOptions) []scoredProduct {
 	if len(idx.aliases) > 0 {
 		pool = append(pool, idx.aliasCandidates(q)...)
 	}
+	pool = append(pool, idx.typoCandidates(q)...)
 	if len(pool) == 0 {
 		return nil
 	}
@@ -318,6 +327,13 @@ func (idx *Index) score(q *query, opts MatchOptions) []scoredProduct {
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].mass != out[j].mass {
 			return out[i].mass < out[j].mass
+		}
+		// Among candidates that contradict the row equally, the one that
+		// carries the row's brand word as written outranks one that only
+		// sounds like it: "جوينتون" is not "هاينوتون" because the two share a
+		// consonant skeleton.
+		if out[i].brandLink != out[j].brandLink {
+			return out[i].brandLink > out[j].brandLink
 		}
 		if out[i].score != out[j].score {
 			return out[i].score > out[j].score

@@ -166,7 +166,7 @@ func TestEngine_SeparateCounters(t *testing.T) {
 	// Items 4..25 form a second batch that exceeds budget.MaxRequests=1 and remain unattempted.
 	var questions []matchflow.Question
 	responses := map[int]matchflow.Decision{
-		1: {Ref: 1, ProductID: int64Ptr(101), Confidence: 0.95}, // accepted
+		1: {Ref: 1, ProductID: int64Ptr(101), Confidence: 0.95},  // accepted
 		2: {Ref: 2, ProductID: nil, Confidence: 0.95},            // abstained
 		3: {Ref: 3, ProductID: int64Ptr(9999), Confidence: 0.95}, // rejected (not offered)
 	}
@@ -202,8 +202,10 @@ func TestEngine_SeparateCounters(t *testing.T) {
 	if stats.Rejected != 1 {
 		t.Errorf("expected rejected=1, got %d", stats.Rejected)
 	}
-	if stats.Unattempted != 5 {
-		t.Errorf("expected unattempted=5, got %d", stats.Unattempted)
+	// One request carries one batch; everything after it is unattempted.
+	wantUnattempted := len(questions) - matchflow.Adaptive(matchflow.ProfileVendor, len(questions)).MaxItemsPerRequest
+	if stats.Unattempted != wantUnattempted {
+		t.Errorf("expected unattempted=%d, got %d", wantUnattempted, stats.Unattempted)
 	}
 }
 

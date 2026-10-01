@@ -134,7 +134,13 @@ func (m *CandidateMatcher) ScoreWithContext(ctx context.Context, orgID, runID in
 			ConsumerRef: consumerRef,
 			SourceRev:   1,
 			Rows:        reqRows,
-			Required:    productmatch.GranularityPack,
+			// Product level. Each catalogue record is already a specific pack,
+			// so a pharmacy line that names the product names its pack; a
+			// line whose count CONTRADICTS the record is caught by the count
+			// check, and a product sold in two packs by the ambiguity rule.
+			// Requiring the row to restate the pack sent every terse order
+			// line — "كونكور 5" — to review.
+			Required: productmatch.GranularityProduct,
 		}
 		prepRes, err := m.service.Prepare(ctx, prepReq)
 		if err == nil && len(prepRes.Decisions) == len(open) {

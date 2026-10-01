@@ -153,17 +153,26 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 			if dec.State == "" {
 				dec = matchflow.RowDecision{
 					V:        1,
-					State:    matchflow.State(l.MatchState),
-					Basis:    matchflow.Basis(l.MatchBasis),
 					Revision: l.MatchRevision,
 					Granularity: matchflow.GranularityPair{
-						Required: matchflow.GranularityPack,
+						Required: matchflow.GranularityProduct,
 						Achieved: matchflow.Granularity(l.MatchGranularity),
 					},
 				}
-				if l.MatchedProductID != nil {
-					dec.ProductID = l.MatchedProductID
+			}
+			// The line's columns are what a buyer's own rematch writes, so they
+			// are the latest word on the state and the product.
+			if l.MatchState != "" {
+				dec.State = matchflow.State(l.MatchState)
+			}
+			if l.MatchBasis != "" {
+				dec.Basis = matchflow.Basis(l.MatchBasis)
+			}
+			if l.MatchedProductID != nil {
+				if dec.ProductID == nil || *dec.ProductID != *l.MatchedProductID {
+					dec.Versions.Target = ""
 				}
+				dec.ProductID = l.MatchedProductID
 			}
 			revalDec, err := f.reval.Revalidate(ctx, sc, ref, dec)
 			if err != nil {
@@ -186,7 +195,10 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 				}
 			}
 
-			if (l.MatchRevision > 0 && revalDec.Revision != l.MatchRevision) || hasCatalogChanged {
+			// Only the product this line is tied to changing matters; the
+			// decision record's revision is not compared with the line's,
+			// which every edit bumps.
+			if hasCatalogChanged {
 				l.Outcome = OutcomeUnmatched
 				l.OfferState = ""
 				changed = append(changed, l)
@@ -210,7 +222,8 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 				continue
 			}
 
-			if revalDec.Granularity.Achieved != "" && revalDec.Granularity.Achieved != matchflow.GranularityPack {
+			if revalDec.Granularity.Required == matchflow.GranularityPack &&
+				revalDec.Granularity.Achieved != "" && revalDec.Granularity.Achieved != matchflow.GranularityPack {
 				l.Outcome = OutcomeBlockedPack
 				l.OfferState = OfferStateBlockedPack
 				changed = append(changed, l)

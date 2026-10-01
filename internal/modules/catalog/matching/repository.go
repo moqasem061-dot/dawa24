@@ -64,4 +64,3 @@ type KnowledgeRepository interface {
 type CuratedRepository interface {
 	ListActive(ctx context.Context) (map[int64][]productmatch.CuratedFact, map[int64][]productmatch.PackRelationship, error)
 }
-

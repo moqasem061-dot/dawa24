@@ -10,16 +10,16 @@ import (
 func TestSavingMatchingEngine(t *testing.T) {
 	catalogItems := []MatchProduct{
 		{
-			ID: 101, SKU: "PAN-24", Barcode: "6221234567890",
+			ID: 101, SKU: "PAN-24", Barcode: "6221234567891",
 			NameAR: "بانادول إكسترا 24 قرص", NameEN: "Panadol Extra 24 Tablets",
 			DosageForm: "أقراص",
 		},
 		{
-			ID: 102, SKU: "20203380", Barcode: "20203380",
+			ID: 102, SKU: "20203382", Barcode: "20203382",
 			NameAR: "ليدي سبيد ستيك مزيل عرق 65 جرام", NameEN: "Lady Speed Stick Deodorant 65g",
 		},
 		{
-			ID: 103, SKU: "AUG-1G", Barcode: "6229876543210",
+			ID: 103, SKU: "AUG-1G", Barcode: "6229876543211",
 			NameAR: "أوجمنتين 1 جم 14 قرص", NameEN: "Augmentin 1g 14 Tablets",
 			DosageForm: "أقراص", Concentration: "1g",
 		},
@@ -56,7 +56,7 @@ func TestSavingMatchingEngine(t *testing.T) {
 	t.Run("Barcode Match when enabled", func(t *testing.T) {
 		choice := DefaultSavingMatchChoice()
 		choice.ByBarcode = true
-		res := engine.MatchUnified(choice, nil, "6221234567890", "")
+		res := engine.MatchUnified(choice, nil, "6221234567891", "")
 		if res.ProductID == nil || *res.ProductID != 101 {
 			t.Fatalf("expected Barcode match 101, got %v", res.ProductID)
 		}
@@ -73,7 +73,7 @@ func TestSavingMatchingEngine(t *testing.T) {
 		choice.CodeIsCatalogCode = true
 
 		// GTIN binds to barcode
-		resGTIN := engine.MatchUnified(choice, nil, "6221234567890", "")
+		resGTIN := engine.MatchUnified(choice, nil, "6221234567891", "")
 		if resGTIN.ProductID == nil || *resGTIN.ProductID != 101 || resGTIN.MatchType != "barcode" {
 			t.Errorf("expected GTIN to bind to barcode, got %v (%s)", resGTIN.ProductID, resGTIN.MatchType)
 		}

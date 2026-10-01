@@ -10,21 +10,21 @@ import (
 func TestSavingProductMatchEngine(t *testing.T) {
 	catalogItems := []catalog.MatchProduct{
 		{
-			ID: 101, SKU: "PAN-24", Barcode: "6221234567890",
+			ID: 101, SKU: "PAN-24", Barcode: "6221234567891",
 			NameAR: "بانادول إكسترا 24 قرص", NameEN: "Panadol Extra 24 Tablets",
 			DosageForm: "أقراص",
 		},
 		{
-			ID: 102, SKU: "20203380", Barcode: "20203380",
+			ID: 102, SKU: "20203382", Barcode: "20203382",
 			NameAR: "ليدي سبيد ستيك مزيل عرق 65 جرام", NameEN: "Lady Speed Stick Deodorant 65g",
 		},
 		{
-			ID: 103, SKU: "AUG-1G", Barcode: "6229876543210",
+			ID: 103, SKU: "AUG-1G", Barcode: "6229876543211",
 			NameAR: "أوجمنتين 1 جم 14 قرص", NameEN: "Augmentin 1g 14 Tablets",
 			DosageForm: "أقراص", Concentration: "1g",
 		},
 		{
-			ID: 104, SKU: "FEM-250", Barcode: "5010724524221",
+			ID: 104, SKU: "FEM-250", Barcode: "5010724524220",
 			NameAR: "فيم فريش غسول يومي للمناطق الحساسة 250 مل", NameEN: "Femfresh Daily Intimate Wash 250ml",
 		},
 	}
@@ -61,7 +61,7 @@ func TestSavingProductMatchEngine(t *testing.T) {
 	})
 
 	t.Run("Cleaned Barcode with .0 and spaces", func(t *testing.T) {
-		res := barcodeEngine.Match(StrategySmartAuto, nil, " 6221234567890.0 ", "")
+		res := barcodeEngine.Match(StrategySmartAuto, nil, " 6221234567891.0 ", "")
 		if res.ProductID == nil || *res.ProductID != 101 {
 			t.Fatalf("expected product 101, got %v", res.ProductID)
 		}
@@ -71,11 +71,11 @@ func TestSavingProductMatchEngine(t *testing.T) {
 	})
 
 	t.Run("Scientific notation barcode expansion", func(t *testing.T) {
-		sanitized := SanitizeSKUCode("2.020338e+07")
-		if sanitized != "20203380" {
-			t.Fatalf("expected 20203380, got %s", sanitized)
+		sanitized := SanitizeSKUCode("2.0203382e+07")
+		if sanitized != "20203382" {
+			t.Fatalf("expected 20203382, got %s", sanitized)
 		}
-		res := barcodeEngine.Match(StrategySmartAuto, nil, "2.020338e+07", "")
+		res := barcodeEngine.Match(StrategySmartAuto, nil, "2.0203382e+07", "")
 		if res.ProductID == nil || *res.ProductID != 102 {
 			t.Fatalf("expected product 102, got %v", res.ProductID)
 		}
@@ -149,7 +149,7 @@ func TestSavingProductMatchEngine(t *testing.T) {
 		}
 		byBarcode := DefaultMatchChoice()
 		byBarcode.ByBarcode = true
-		if res := engine.MatchUnified(byBarcode, nil, "6221234567890", ""); res.ProductID == nil || *res.ProductID != 101 {
+		if res := engine.MatchUnified(byBarcode, nil, "6221234567891", ""); res.ProductID == nil || *res.ProductID != 101 {
 			t.Fatalf("barcode tier did not run once switched on: %v", res.ProductID)
 		}
 	})
@@ -184,7 +184,7 @@ func TestSavingProductMatchEngine(t *testing.T) {
 	})
 
 	t.Run("Strategy: Barcode Only mode", func(t *testing.T) {
-		res := barcodeEngine.Match(StrategyBarcodeOnly, nil, "6221234567890", "اسم مختلف غير مطابق")
+		res := barcodeEngine.Match(StrategyBarcodeOnly, nil, "6221234567891", "اسم مختلف غير مطابق")
 		if res.ProductID == nil || *res.ProductID != 101 {
 			t.Fatalf("expected product 101 in BarcodeOnly mode, got %v", res.ProductID)
 		}
@@ -223,7 +223,7 @@ func TestSavingProductMatchEngine(t *testing.T) {
 			t.Errorf("code settled a match with the tier off: product %v", *res.ProductID)
 		}
 		// A real GTIN, with no name at all.
-		if res := engine.Match(StrategySmartAuto, nil, "6221234567890", ""); res.ProductID != nil {
+		if res := engine.Match(StrategySmartAuto, nil, "6221234567891", ""); res.ProductID != nil {
 			t.Errorf("barcode settled a match with the tier off: product %v", *res.ProductID)
 		}
 	})
@@ -232,9 +232,9 @@ func TestSavingProductMatchEngine(t *testing.T) {
 	// must reach one tier. A pharmacy's internal item number that happens to be
 	// eight digits must not be tried as a GTIN.
 	t.Run("A code column is not also offered to the barcode tier", func(t *testing.T) {
-		// 20203380 is product 102's barcode AND its SKU in this fixture, so the
+		// 20203382 is product 102's barcode AND its SKU in this fixture, so the
 		// two tiers would agree — use a value that is only ever a barcode.
-		res := codeEngine.Match(StrategySmartAuto, nil, "6221234567890", "")
+		res := codeEngine.Match(StrategySmartAuto, nil, "6221234567891", "")
 		if res.ProductID != nil && res.MatchType == "barcode" {
 			t.Errorf("a mapped CODE column reached the barcode tier and matched product %v", *res.ProductID)
 		}

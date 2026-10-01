@@ -36,14 +36,13 @@ func (idx *Index) decide(q *query, scored []scoredProduct, opts MatchOptions) Ma
 	tied := len(scored) > 1 &&
 		best.score-scored[1].score < tieMargin &&
 		!idx.separated(q, best.product, scored[1].product)
+	// A brand carried only loosely, with another product carrying it as well,
+	// is a spelling question two products could answer. See brandContested.
+	tied = tied || brandContested(scored, opts.MaxCandidates)
 
-	hasHardConflict := false
-	if q.row != nil {
-		rowFacts := ExtractRowFacts(q.row, nil)
-		bestFacts := best.product.Facts()
-		comp := CompareFacts(rowFacts, bestFacts)
-		hasHardConflict = len(comp.Hard) > 0
-	}
+	// A candidate the row contradicts on identity is never applied, however
+	// well it is spelled. Read from the same conflict model that ranked it.
+	hasHardConflict := len(hardOf(best.conflicts)) > 0
 
 	switch {
 	case best.score < opts.MinReview:
@@ -73,6 +72,13 @@ func (idx *Index) decide(q *query, scored []scoredProduct, opts MatchOptions) Ma
 		res.Level = MatchReview
 		res.Reason = fmt.Sprintf(
 			"%s (%d%%) — التشابه في حروف الاسم فقط، ولا تتطابق أي كلمة مميزة؛ يلزم التأكيد",
+			best.describeReason(), int(best.score*100))
+	case !best.evidenced(q):
+		// The name links to this product only by sound or by a typo-sized
+		// difference, and nothing the row states confirms it. Offered, not
+		// applied — see scoredProduct.evidenced.
+		res.Level = MatchReview
+		res.Reason = fmt.Sprintf("%s (%d%%) — يحتاج تأكيداً",
 			best.describeReason(), int(best.score*100))
 	case best.exact:
 		res.Level = MatchExact
