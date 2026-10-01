@@ -86,8 +86,20 @@ func TestSavingMatchingEngine(t *testing.T) {
 	})
 }
 
+type stubImportBackend struct {
+	Repository
+	ImportBackend
+	products []MatchProduct
+}
+
+func (s *stubImportBackend) ListMatchProducts(_ context.Context) ([]MatchProduct, error) {
+	return s.products, nil
+}
+
 func TestMatchSavingsRows_Fallback(t *testing.T) {
-	svc := &Service{}
+	svc := &Service{
+		repo: &stubImportBackend{},
+	}
 	scope := productmatch.Scope{
 		EffectiveOrg:    10,
 		Workflow:        productmatch.WorkflowSavings,

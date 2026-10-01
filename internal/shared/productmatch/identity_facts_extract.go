@@ -17,6 +17,12 @@ var (
 	moneyAnnotationRe   = regexp.MustCompile(`(?i)(?:س\.?ج\.?|سعر|السعر|بسعر|جنيه|ج|س)\s*(\d+(?:\.\d+)?)|(\d+(?:\.\d+)?)\s*(?:س\.?ج\.?|جنيه|ج\b)`)
 )
 
+// IsPlaceholderName reports whether a name was synthetically generated from an identifier.
+func IsPlaceholderName(name string) bool {
+	trimmed := strings.TrimSpace(name)
+	return strings.HasPrefix(trimmed, "صنف دوائي #")
+}
+
 // ExtractRowFacts extracts structured identity evidence from a Row.
 func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
 	defer func() {
@@ -30,24 +36,31 @@ func ExtractRowFacts(row *Row, corrections []Correction) (facts IdentityFacts) {
 		return facts
 	}
 
-	facts.Prov = ProvOriginal
-	facts.Cert = CertExplicit
-
 	rawName := strings.TrimSpace(row.Name)
-	cleanName := StripAlternativeClause(rawName)
-	cleanName = StripTradeAnnotations(cleanName)
+	var cleanName string
+	if IsPlaceholderName(rawName) {
+		facts.Prov = ProvInferred
+		facts.Cert = CertUncertain
+		// Placeholder name contributes no name evidence
+	} else {
+		facts.Prov = ProvOriginal
+		facts.Cert = CertExplicit
 
-	// Check if annotation contains price/money evidence
-	if len(rawName) > len(cleanName) {
-		tail := strings.TrimSpace(rawName[len(cleanName):])
-		if matches := moneyAnnotationRe.FindAllString(tail, -1); len(matches) > 0 {
-			for _, m := range matches {
-				facts.MoneyEvidence = append(facts.MoneyEvidence, strings.TrimSpace(m))
+		cleanName = StripAlternativeClause(rawName)
+		cleanName = StripTradeAnnotations(cleanName)
+
+		// Check if annotation contains price/money evidence
+		if len(rawName) > len(cleanName) {
+			tail := strings.TrimSpace(rawName[len(cleanName):])
+			if matches := moneyAnnotationRe.FindAllString(tail, -1); len(matches) > 0 {
+				for _, m := range matches {
+					facts.MoneyEvidence = append(facts.MoneyEvidence, strings.TrimSpace(m))
+				}
 			}
 		}
-	}
 
-	extractNameFacts(&facts, cleanName)
+		extractNameFacts(&facts, cleanName)
+	}
 
 	// Additional structured row fields
 	if row.DosageForm != "" && facts.FormFamily == "" {

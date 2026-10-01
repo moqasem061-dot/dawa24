@@ -279,7 +279,7 @@ description: "Executable task list for the Product Matching Rework"
 
 **Context**: spec.md US5; `docs/modules/catalog.md`. Read `internal/modules/catalog/import_match.go`, `import_match_chunks.go`, `importjobs/commit_worker.go`.
 
-- [ ] T080 [P] [US5] Test: a near-identical sibling with an omitted attribute ⇒ `needs_review`, never `update`. An identifier-only row with a generated placeholder name contributes no name evidence. Write it in `internal/modules/catalog/import_classify_test.go`.
+- [X] T080 [P] [US5] Test: a near-identical sibling with an omitted attribute ⇒ `needs_review`, never `update`. An identifier-only row with a generated placeholder name contributes no name evidence. Write it in `internal/modules/catalog/import_classify_test.go`.
 - [ ] T081 [US5] Write a migration that adds the consumer columns plus `proposal TEXT CHECK (proposal IN ('update','possible_new','duplicate','unresolved'))` to `catalog.import_staging_rows`. Files: `db/migrations/NNN_catalog_staging_match_decision.up.sql` / `.down.sql`. Add an isolation test if the table is tenant-owned (check its RLS in `db/migrations/115_catalog_import_sessions.up.sql`).
 - [ ] T082 [US5] Replace `MatchAll` in `internal/modules/catalog/import_match_chunks.go` with `matching.Service.Prepare` (same module, direct call), required granularity `product`.
 - [ ] T083 [US5] Classification in a new `internal/modules/catalog/import_classify.go`:
