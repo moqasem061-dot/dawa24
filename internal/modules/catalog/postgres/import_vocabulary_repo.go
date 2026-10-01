@@ -249,6 +249,13 @@ const stagingRowSelect = `
 	       r.matched_product_id, r.match_reason, r.payload, r.issues, r.ai_changes,
 	       COALESCE(NULLIF(p.name->>'ar', ''), NULLIF(p.name->>'en', ''), '') AS matched_name,
 	       COALESCE(p.sku, '') AS matched_sku,
+	       COALESCE(p.barcode, '') AS matched_barcode,
+	       COALESCE(p.scientific_name, '') AS matched_scientific,
+	       COALESCE(p.dosage_form, '') AS matched_dosage_form,
+	       COALESCE(p.concentration, '') AS matched_strength,
+	       COALESCE(p.unit, '') AS matched_unit,
+	       COALESCE(p.manufacturing_companies, '') AS matched_manufacturer,
+	       COALESCE((SELECT count(*) FROM catalog.product_variants pv WHERE pv.product_id = r.matched_product_id AND pv.deleted_at IS NULL), 0) AS associations_count,
 	       COALESCE(r.match_state, ''), COALESCE(r.match_basis, ''),
 	       COALESCE(r.match_granularity, ''), r.match_revision, r.human_locked,
 	       COALESCE(r.ai_state, ''), r.match_run_id, r.match_decision,
@@ -263,11 +270,15 @@ func scanStagingRow(cursor pgx.Rows) (*catalog.StagingRow, error) {
 	var payload, issues, changes []byte
 	var matchState, matchBasis, matchGranularity, aiState, proposal string
 	var matchDecision, baselineDecision []byte
+	var matchedBarcode, matchedScientific, matchedDosageForm, matchedStrength, matchedUnit, matchedManufacturer string
+	var associationsCount int
 
 	if err := cursor.Scan(
 		&row.ID, &row.SessionID, &row.SourceRow, &row.Block, &action, &row.Included,
 		&row.MatchedProductID, &matchReason, &payload, &issues, &changes,
 		&row.MatchedProductName, &row.MatchedProductSKU,
+		&matchedBarcode, &matchedScientific, &matchedDosageForm, &matchedStrength, &matchedUnit, &matchedManufacturer,
+		&associationsCount,
 		&matchState, &matchBasis, &matchGranularity, &row.MatchRevision, &row.HumanLocked,
 		&aiState, &row.MatchRunID, &matchDecision, &baselineDecision, &proposal,
 	); err != nil {
@@ -276,6 +287,13 @@ func scanStagingRow(cursor pgx.Rows) (*catalog.StagingRow, error) {
 
 	row.Action = catalog.RowAction(action)
 	row.MatchReason = catalog.MatchReason(matchReason)
+	row.MatchedProductBarcode = matchedBarcode
+	row.MatchedProductScientific = matchedScientific
+	row.MatchedProductDosageForm = matchedDosageForm
+	row.MatchedProductStrength = matchedStrength
+	row.MatchedProductUnit = matchedUnit
+	row.MatchedProductManufacturer = matchedManufacturer
+	row.AffectedAssociationsCount = associationsCount
 	row.MatchState = matchState
 	row.MatchBasis = matchBasis
 	row.MatchGranularity = matchGranularity

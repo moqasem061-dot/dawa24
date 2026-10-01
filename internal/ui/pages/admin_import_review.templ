@@ -415,6 +415,9 @@ templ ImportRowLine(view ImportReviewView, row *catalog.StagingRow) {
 		<td class="tabular-nums text-center">{ fmt.Sprintf("%d", row.SourceRow) }</td>
 		<td>
 			<span class={ "badge", RowActionBadge(row.Action) }>{ row.Action.Label() }</span>
+			if row.Proposal != "" {
+				<div class="text-xxs text-secondary mt-0.5">{ row.Proposal.Label() }</div>
+			}
 		</td>
 		<td>
 			<div class="wiz-row-name">{ row.DisplayName() }</div>
@@ -431,7 +434,22 @@ templ ImportRowLine(view ImportReviewView, row *catalog.StagingRow) {
 					if row.MatchedProductSKU != "" {
 						<span class="wiz-row-meta">({ row.MatchedProductSKU })</span>
 					}
+					if row.Action == catalog.ActionUpdate {
+						<span class="badge badge-slate text-xxs font-normal ml-2 mr-2">
+							{ fmt.Sprintf("الارتباطات المتأثرة: %d", row.AffectedAssociationsCount) }
+						</span>
+					}
 				</div>
+				if row.Action == catalog.ActionUpdate {
+					for _, diff := range RowIdentityDiffs(row) {
+						<div class="wiz-row-meta text-xs text-amber d-flex items-center gap-1 mt-0.5">
+							<span class="font-bold">{ diff.Field }:</span>
+							<span class="text-secondary line-through">{ diff.Old }</span>
+							<span>&larr;</span>
+							<span class="font-bold text-primary">{ diff.New }</span>
+						</div>
+					}
+				}
 			}
 			if row.MatchReason != "" {
 				<div class="wiz-row-meta">{ catalog.MatchLabels[row.MatchReason] }</div>

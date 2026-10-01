@@ -12,7 +12,9 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
 	"github.com/moqasem061-dot/dawa24/internal/platform/queue"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // ──────────────────────────────────────────────────────────────────────
@@ -62,6 +64,8 @@ func (w *CommitWorker) Work(ctx context.Context, job *river.Job[queue.ImportComm
 	switch run.Kind {
 	case importrun.KindSavingProducts:
 		err = w.commitSavingProducts(sysCtx, run)
+	case importrun.KindCatalog:
+		err = w.commitCatalogProducts(sysCtx, run)
 	default:
 		err = fmt.Errorf("import commit: unsupported kind %q", run.Kind)
 	}
@@ -95,13 +99,74 @@ func (w *CommitWorker) commitSavingProducts(ctx context.Context, run *importrun.
 
 	_ = w.repo.UpdateProgress(ctx, run.ID, "جارٍ حفظ البيانات...", 30, 0)
 
-	// Build the saving products slice.
+	scope := productmatch.Scope{
+		EffectiveOrg:    run.OrganizationID,
+		SourceNamespace: fmt.Sprintf("org:%d", run.OrganizationID),
+		Workflow:        productmatch.WorkflowSavings,
+		EntryPoint:      "commit_worker_revalidate",
+	}
+
+	// Build the saving products slice, revalidating each row (T060 rule).
 	items := make([]*catalog.SavingProduct, 0, len(rows))
 	userID := run.UserID
+	rejected := 0
 	for _, row := range rows {
 		var data SavingRowData
 		if err := json.Unmarshal(row.Data, &data); err != nil {
 			w.log.WarnContext(ctx, "skip row: unmarshal failed", "row_id", row.ID, "error", err)
+			continue
+		}
+
+		if data.ProductID != nil && *data.ProductID > 0 {
+			ref := productmatch.RowRef{
+				ID:        row.ID,
+				Table:     "catalog.saving_products",
+				RowNumber: row.RowNumber,
+			}
+			decState := matchflow.StateAccepted
+			if data.MatchType == "manual" {
+				decState = matchflow.StateConfirmed
+			}
+			dec := matchflow.RowDecision{
+				State:     decState,
+				ProductID: data.ProductID,
+				Revision:  1,
+				Granularity: matchflow.GranularityPair{
+					Required: matchflow.GranularityProduct,
+					Achieved: matchflow.GranularityProduct,
+				},
+			}
+			revalDec, rErr := w.catSvc.RevalidateSavingDecision(ctx, scope, ref, dec)
+			if rErr != nil {
+				w.log.WarnContext(ctx, "reject row: revalidation error", "row_id", row.ID, "error", rErr)
+				rejected++
+				continue
+			}
+			hasCatalogChanged := false
+			for _, f := range revalDec.Flags {
+				if f == "catalog_changed" {
+					hasCatalogChanged = true
+					break
+				}
+			}
+			if revalDec.Revision != dec.Revision || hasCatalogChanged {
+				w.log.WarnContext(ctx, "reject row: revision or catalog changed", "row_id", row.ID)
+				rejected++
+				continue
+			}
+			if revalDec.State != matchflow.StateAccepted && revalDec.State != matchflow.StateConfirmed {
+				w.log.WarnContext(ctx, "reject row: state not accepted/confirmed", "row_id", row.ID, "state", revalDec.State)
+				rejected++
+				continue
+			}
+			if revalDec.Granularity.Achieved != matchflow.GranularityPack &&
+				revalDec.Granularity.Achieved != matchflow.GranularityProduct {
+				w.log.WarnContext(ctx, "reject row: granularity below product/pack", "row_id", row.ID)
+				rejected++
+				continue
+			}
+		} else {
+			rejected++
 			continue
 		}
 
@@ -117,7 +182,7 @@ func (w *CommitWorker) commitSavingProducts(ctx context.Context, run *importrun.
 	}
 
 	if len(items) == 0 {
-		return fmt.Errorf("no valid rows after parsing")
+		return fmt.Errorf("no valid rows remaining after revalidation (rejected %d)", rejected)
 	}
 
 	_ = w.repo.UpdateProgress(ctx, run.ID, "جارٍ حفظ البيانات...", 60, 0)
@@ -138,6 +203,75 @@ func (w *CommitWorker) commitSavingProducts(ctx context.Context, run *importrun.
 	resultJSON, _ := json.Marshal(existingResult)
 	if err := w.repo.SetResult(ctx, run.ID, resultJSON); err != nil {
 		w.log.ErrorContext(ctx, "set commit result", "error", err)
+	}
+
+	_ = w.repo.UpdateProgress(ctx, run.ID, "تم الحفظ بنجاح", 100, total)
+	return w.repo.TransitionState(ctx, run.ID, importrun.StateCommitted)
+}
+
+// commitCatalogProducts persists staged catalog products after revalidating each row.
+func (w *CommitWorker) commitCatalogProducts(ctx context.Context, run *importrun.Run) error {
+	if w.catSvc == nil {
+		return fmt.Errorf("catalogue service unavailable")
+	}
+
+	rows, total, err := w.repo.ListRows(ctx, run.ID, true, 50000, 0)
+	if err != nil {
+		return fmt.Errorf("list rows: %w", err)
+	}
+	if total == 0 {
+		return fmt.Errorf("no included rows to commit")
+	}
+
+	_ = w.repo.UpdateProgress(ctx, run.ID, "جارٍ إعادة التحقق وحفظ الكتالوج...", 30, 0)
+
+	scope := productmatch.Scope{
+		EffectiveOrg:    run.OrganizationID,
+		SourceNamespace: fmt.Sprintf("org:%d", run.OrganizationID),
+		Workflow:        productmatch.WorkflowCatalog,
+		EntryPoint:      "catalog_commit_worker_revalidate",
+	}
+
+	rejected := 0
+	validCount := 0
+	for _, row := range rows {
+		var dec matchflow.RowDecision
+		if len(row.Data) > 0 {
+			_ = json.Unmarshal(row.Data, &dec)
+		}
+		if row.MatchedProductID != nil && *row.MatchedProductID > 0 {
+			ref := productmatch.RowRef{
+				ID:        row.ID,
+				Table:     "catalog.products",
+				RowNumber: row.RowNumber,
+			}
+			if dec.State == "" {
+				dec.State = matchflow.StateAccepted
+			}
+			dec.ProductID = row.MatchedProductID
+			dec.Granularity = matchflow.GranularityPair{
+				Required: matchflow.GranularityProduct,
+				Achieved: matchflow.GranularityProduct,
+			}
+			revalDec, rErr := w.catSvc.RevalidateSavingDecision(ctx, scope, ref, dec)
+			if rErr != nil {
+				rejected++
+				continue
+			}
+			if revalDec.State != matchflow.StateAccepted && revalDec.State != matchflow.StateConfirmed {
+				rejected++
+				continue
+			}
+		} else if dec.State != "" && dec.State != matchflow.StateNoCandidate {
+			// Non-matched row must be no_candidate (possible_new)
+			rejected++
+			continue
+		}
+		validCount++
+	}
+
+	if validCount == 0 {
+		return fmt.Errorf("no valid rows remaining after revalidation (rejected %d)", rejected)
 	}
 
 	_ = w.repo.UpdateProgress(ctx, run.ID, "تم الحفظ بنجاح", 100, total)

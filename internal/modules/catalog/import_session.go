@@ -273,6 +273,13 @@ type StagingRow struct {
 	// about to be overwritten, and "#255741" does not tell them.
 	MatchedProductName string     `json:"matched_product_name,omitempty"`
 	MatchedProductSKU  string     `json:"matched_product_sku,omitempty"`
+	MatchedProductBarcode      string `json:"matched_product_barcode,omitempty"`
+	MatchedProductScientific   string `json:"matched_product_scientific,omitempty"`
+	MatchedProductDosageForm   string `json:"matched_product_dosage_form,omitempty"`
+	MatchedProductStrength     string `json:"matched_product_strength,omitempty"`
+	MatchedProductUnit         string `json:"matched_product_unit,omitempty"`
+	MatchedProductManufacturer string `json:"matched_product_manufacturer,omitempty"`
+	AffectedAssociationsCount  int    `json:"affected_associations_count"`
 	Product            *Product   `json:"product"`
 	Issues             []RowIssue `json:"issues,omitempty"`
 	AIChanges          []AIChange `json:"ai_changes,omitempty"`
