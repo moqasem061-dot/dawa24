@@ -188,3 +188,22 @@ func TestMatchReview_SearchComponent(t *testing.T) {
 		t.Errorf("expected combobox input with name search_target_5")
 	}
 }
+
+func TestMatchReview_KeyboardComponent(t *testing.T) {
+	ctx := context.Background()
+	var buf bytes.Buffer
+	if err := Keyboard(KeyboardProps{Class: "my-custom-class"}).Render(ctx, &buf); err != nil {
+		t.Fatalf("Keyboard render failed: %v", err)
+	}
+
+	html := buf.String()
+	if !strings.Contains(html, "dawaMatchReviewKeyboard()") {
+		t.Errorf("expected x-data=dawaMatchReviewKeyboard() in keyboard component")
+	}
+	if !strings.Contains(html, "اختصارات لوحة المفاتيح") {
+		t.Errorf("expected Arabic keyboard shortcuts title")
+	}
+	if !strings.Contains(html, "<kbd") {
+		t.Errorf("expected <kbd> elements in keyboard shortcuts help")
+	}
+}

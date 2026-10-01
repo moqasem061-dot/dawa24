@@ -335,7 +335,7 @@ description: "Executable task list for the Product Matching Rework"
   - `search.templ`: reuse `components/combobox.templ`
   
   Rules: RTL-first, logical CSS properties only, `<bdi>` around identifiers and numbers, and `aria-live="polite"` on counts.
-- [ ] T096 [US7] Keyboard navigation: j/k or arrow keys to move between rows, Enter to open, 1–5 to choose a candidate, `x` to exclude. Implement it as Alpine CSP-compatible code in `internal/ui/components/matchreview/keyboard.templ`, and document the shortcuts in the component's help text (i18n).
+- [X] T096 [US7] Keyboard navigation: j/k or arrow keys to move between rows, Enter to open, 1–5 to choose a candidate, `x` to exclude. Implement it as Alpine CSP-compatible code in `internal/ui/components/matchreview/keyboard.templ`, and document the shortcuts in the component's help text (i18n).
 - [ ] T097 [US7] Wire the components into each workflow's review page, one sub-step per file:
   - `internal/ui/pages/saving_import_review.templ`
   - `internal/ui/pages/admin_import_review.templ`

@@ -1,0 +1,52 @@
+package matchreview
+
+type KeyboardProps struct {
+	Class string
+}
+
+templ KeyboardShortcutsHelp() {
+	<div class="flex flex-wrap items-center gap-3 text-xs text-neutral-500 bg-neutral-50 p-2.5 rounded-lg border border-neutral-200/80" dir="rtl">
+		<span class="font-semibold text-neutral-700 flex items-center gap-1">
+			<svg class="w-4 h-4 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+				<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/>
+			</svg>
+			<span>اختصارات لوحة المفاتيح (Keyboard Shortcuts):</span>
+		</span>
+		<div class="flex items-center gap-1">
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">j</kbd>
+			<span>/</span>
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">↓</kbd>
+			<span class="ms-1">الصف التالي (Next)</span>
+		</div>
+		<div class="flex items-center gap-1">
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">k</kbd>
+			<span>/</span>
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">↑</kbd>
+			<span class="ms-1">الصف السابق (Prev)</span>
+		</div>
+		<div class="flex items-center gap-1">
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">Enter</kbd>
+			<span class="ms-1">فتح التفاصيل (Open)</span>
+		</div>
+		<div class="flex items-center gap-1">
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">1</kbd>
+			<span>–</span>
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">5</kbd>
+			<span class="ms-1">اختيار المرشح (Choose candidate)</span>
+		</div>
+		<div class="flex items-center gap-1">
+			<kbd class="px-1.5 py-0.5 text-[10px] font-semibold text-neutral-800 bg-white border border-neutral-300 rounded shadow-xs">x</kbd>
+			<span class="ms-1">استبعاد الصف (Exclude row)</span>
+		</div>
+	</div>
+}
+
+templ Keyboard(props KeyboardProps) {
+	<div
+		class={ props.Class }
+		x-data="dawaMatchReviewKeyboard()"
+		@keydown.window="handleKey($event)"
+	>
+		@KeyboardShortcutsHelp()
+	</div>
+}
