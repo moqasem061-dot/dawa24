@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // The staged import.
@@ -275,6 +276,18 @@ type StagingRow struct {
 	Product            *Product   `json:"product"`
 	Issues             []RowIssue `json:"issues,omitempty"`
 	AIChanges          []AIChange `json:"ai_changes,omitempty"`
+
+	// Match decision consumer columns
+	MatchState       string                 `json:"match_state,omitempty"`
+	MatchBasis       string                 `json:"match_basis,omitempty"`
+	MatchGranularity string                 `json:"match_granularity,omitempty"`
+	MatchRevision    int                    `json:"match_revision"`
+	HumanLocked      bool                   `json:"human_locked"`
+	AIState          string                 `json:"ai_state,omitempty"`
+	MatchRunID       *int64                 `json:"match_run_id,omitempty"`
+	MatchDecision    *matchflow.RowDecision `json:"match_decision,omitempty"`
+	BaselineDecision *matchflow.RowDecision `json:"baseline_decision,omitempty"`
+	Proposal         ImportProposal         `json:"proposal,omitempty"`
 }
 
 // MatchedLabel is how the review table names the product a row would update.

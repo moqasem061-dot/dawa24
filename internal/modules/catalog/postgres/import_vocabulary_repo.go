@@ -14,6 +14,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 // ImportVocabulary reads the taxonomy an enrichment pass must choose within.
@@ -247,7 +248,11 @@ const stagingRowSelect = `
 	SELECT r.id, r.session_id, r.source_row, r.block_index, r.action, r.included,
 	       r.matched_product_id, r.match_reason, r.payload, r.issues, r.ai_changes,
 	       COALESCE(NULLIF(p.name->>'ar', ''), NULLIF(p.name->>'en', ''), '') AS matched_name,
-	       COALESCE(p.sku, '') AS matched_sku
+	       COALESCE(p.sku, '') AS matched_sku,
+	       COALESCE(r.match_state, ''), COALESCE(r.match_basis, ''),
+	       COALESCE(r.match_granularity, ''), r.match_revision, r.human_locked,
+	       COALESCE(r.ai_state, ''), r.match_run_id, r.match_decision,
+	       r.baseline_decision, COALESCE(r.proposal, '')
 	FROM catalog.import_staging_rows r
 	LEFT JOIN catalog.products p ON p.id = r.matched_product_id
 `
@@ -256,17 +261,39 @@ func scanStagingRow(cursor pgx.Rows) (*catalog.StagingRow, error) {
 	var row catalog.StagingRow
 	var action, matchReason string
 	var payload, issues, changes []byte
+	var matchState, matchBasis, matchGranularity, aiState, proposal string
+	var matchDecision, baselineDecision []byte
 
 	if err := cursor.Scan(
 		&row.ID, &row.SessionID, &row.SourceRow, &row.Block, &action, &row.Included,
 		&row.MatchedProductID, &matchReason, &payload, &issues, &changes,
 		&row.MatchedProductName, &row.MatchedProductSKU,
+		&matchState, &matchBasis, &matchGranularity, &row.MatchRevision, &row.HumanLocked,
+		&aiState, &row.MatchRunID, &matchDecision, &baselineDecision, &proposal,
 	); err != nil {
 		return nil, fmt.Errorf("catalog postgres: scan staging row: %w", err)
 	}
 
 	row.Action = catalog.RowAction(action)
 	row.MatchReason = catalog.MatchReason(matchReason)
+	row.MatchState = matchState
+	row.MatchBasis = matchBasis
+	row.MatchGranularity = matchGranularity
+	row.AIState = aiState
+	row.Proposal = catalog.ImportProposal(proposal)
+
+	if len(matchDecision) > 0 {
+		var dec matchflow.RowDecision
+		if err := json.Unmarshal(matchDecision, &dec); err == nil {
+			row.MatchDecision = &dec
+		}
+	}
+	if len(baselineDecision) > 0 {
+		var dec matchflow.RowDecision
+		if err := json.Unmarshal(baselineDecision, &dec); err == nil {
+			row.BaselineDecision = &dec
+		}
+	}
 
 	var product catalog.Product
 	if err := json.Unmarshal(payload, &product); err != nil {

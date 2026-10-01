@@ -15,6 +15,39 @@ const (
 	ProposalUnresolved  ImportProposal = "unresolved"
 )
 
+// Label returns the Arabic user-facing label for the proposal.
+// Specifically, ProposalPossibleNew is labelled "جديد محتمل" ("possible new"), not "new".
+func (p ImportProposal) Label() string {
+	switch p {
+	case ProposalUpdate:
+		return "تحديث"
+	case ProposalPossibleNew:
+		return "جديد محتمل"
+	case ProposalDuplicate:
+		return "مكرر"
+	case ProposalUnresolved:
+		return "غير محسوم"
+	default:
+		return string(p)
+	}
+}
+
+// LabelEN returns the English user-facing label for the proposal.
+func (p ImportProposal) LabelEN() string {
+	switch p {
+	case ProposalUpdate:
+		return "Update"
+	case ProposalPossibleNew:
+		return "Possible New"
+	case ProposalDuplicate:
+		return "Duplicate"
+	case ProposalUnresolved:
+		return "Unresolved"
+	default:
+		return string(p)
+	}
+}
+
 // ClassifyProposal evaluates an imported row decision and returns the proposal.
 //
 // Rules:

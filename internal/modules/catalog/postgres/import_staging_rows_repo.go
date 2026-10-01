@@ -41,6 +41,9 @@ func (r *Repository) ReplaceStagingRows(ctx context.Context, sessionID int64, ro
 				"session_id", "source_row", "block_index", "action", "included",
 				"matched_product_id", "match_reason", "payload", "issues", "ai_changes",
 				"search_name", "search_code", "has_error", "has_warning", "has_ai",
+				"match_state", "match_basis", "match_granularity", "match_revision",
+				"human_locked", "ai_state", "match_run_id", "match_decision",
+				"baseline_decision", "proposal",
 			},
 			source)
 		if err != nil {
@@ -77,12 +80,48 @@ func newStagingCopySource(sessionID int64, rows []*catalog.StagingRow) (pgx.Copy
 			}
 		}
 
+		var matchDecisionJSON, baselineDecisionJSON any
+		if row.MatchDecision != nil {
+			bytes, err := json.Marshal(row.MatchDecision)
+			if err != nil {
+				return nil, fmt.Errorf("catalog postgres: encode match_decision (row %d): %w", row.SourceRow, err)
+			}
+			matchDecisionJSON = string(bytes)
+		}
+		if row.BaselineDecision != nil {
+			bytes, err := json.Marshal(row.BaselineDecision)
+			if err != nil {
+				return nil, fmt.Errorf("catalog postgres: encode baseline_decision (row %d): %w", row.SourceRow, err)
+			}
+			baselineDecisionJSON = string(bytes)
+		}
+
+		var matchState, matchBasis, matchGranularity, aiState, proposal any
+		if row.MatchState != "" {
+			matchState = row.MatchState
+		}
+		if row.MatchBasis != "" {
+			matchBasis = row.MatchBasis
+		}
+		if row.MatchGranularity != "" {
+			matchGranularity = row.MatchGranularity
+		}
+		if row.AIState != "" {
+			aiState = row.AIState
+		}
+		if row.Proposal != "" {
+			proposal = string(row.Proposal)
+		}
+
 		values = append(values, []any{
 			sessionID, row.SourceRow, row.Block, string(row.Action), row.Included,
 			row.MatchedProductID, string(row.MatchReason),
 			string(payload), string(issues), string(changes),
 			row.DisplayName(), stagingSearchCode(row),
 			hasError, hasWarning, len(row.AIChanges) > 0,
+			matchState, matchBasis, matchGranularity, row.MatchRevision,
+			row.HumanLocked, aiState, row.MatchRunID, matchDecisionJSON,
+			baselineDecisionJSON, proposal,
 		})
 	}
 	return pgx.CopyFromRows(values), nil
