@@ -78,10 +78,44 @@ The existing SKU and barcode upload flows pass with the race detector enabled.
 - `GET /api/v1/catalog/categories` — List taxonomy categories.
 - `GET /api/v1/catalog/brands` — List manufacturers and brands.
 
-## The master-catalogue import wizard
+## Master import
 
-`/admin/products/import` — four steps, in `internal/ui/admin_import_*.go`,
+The master catalogue import wizard (`/admin/products/import`) protects canonical catalogue data by staging rows, classifying mutations, and enforcing human review before any commit. Four steps, in `internal/ui/admin_import_*.go`,
 `internal/ui/pages/admin_import_*.templ`, and `internal/modules/catalog/import_*.go`.
+
+### Architecture & Matching Flow
+
+1. **Deterministic Preparation (`internal/modules/catalog/import_match_chunks.go`):**
+   - Matching delegates directly to `matching.Service.Prepare` (`WorkflowCatalog`, required granularity `product`).
+   - Staging table `catalog.import_staging_rows` stores consumer columns (migration `237_catalog_staging_match_decision.up.sql`): `match_state`, `match_basis`, `match_granularity`, `match_revision`, `human_locked`, `ai_state`, `match_run_id`, `match_decision`, `baseline_decision`, and `proposal`.
+
+2. **Classification Logic (`internal/modules/catalog/import_classify.go`):**
+   - `accepted` => proposal `update`: matches an existing canonical product with verified product identity.
+   - `no_candidate` => proposal `possible_new`: no match found; labelled explicitly as "possible new" (never "new") to indicate unreviewed status.
+   - $\ge 2$ catalogue candidates with identical identity facts => proposal `duplicate`: signals multiple identical records in the master catalogue requiring administrative resolution.
+   - Otherwise => proposal `unresolved`: partial matches, soft/hard conflicts, or omitted attributes (`needs_review`) require manual operator attention.
+
+3. **Placeholder Name Guard:**
+   - Rows lacking a product name are assigned a placeholder (`صنف دوائي #<code>`).
+   - Placeholder names are marked `Prov=inferred` and stripped of name evidence during matching to prevent phantom cross-row matches based on generic labels.
+
+4. **Rerun Superseding:**
+   - Any column-mapping change or prepare rerun increments `session.Options.MatchRevision`.
+   - The prepare pipeline replaces all staging rows via `ReplaceStagingRows`, overwriting previous decisions at the new revision.
+   - The canonical master catalogue (`catalog.products`) remains completely untouched across reruns until explicit commit.
+
+5. **Pre-Commit Review & Diff Inspection:**
+   - The review UI (`internal/ui/pages/admin_import_review.templ`) highlights proposed actions and proposal badges.
+   - For `update` rows, the review interface renders:
+     - Canonical identity diffs: side-by-side comparison of old vs new values for barcode, scientific name, dosage form, concentration/strength, unit, and manufacturer (`RowIdentityDiffs`).
+     - Affected associations count: displays the count of active variants (`catalog.product_variants`) linked to the product being overwritten.
+
+6. **Commit Worker Revalidation:**
+   - Commit worker (`internal/modules/catalog/importjobs/commit_worker.go`) performs pre-commit revalidation (T060 rule) for every row before persisting:
+     - Rows must have state `accepted` or `confirmed` with achieved granularity `product` or `pack`.
+     - Rows with revision mismatches, unconfirmed states, or `catalog_changed` flags are refused from the commit batch.
+
+### Steps
 
 | Step | Route | What it does | Writes |
 |---|---|---|---|
