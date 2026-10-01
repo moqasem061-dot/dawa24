@@ -7,8 +7,11 @@ import (
 // buildStagingRows decides what each parsed product would do under the chosen
 // mode, and packages it for review.
 func buildStagingRows(
-	parsed *ParseResult, matches map[int]ExistingMatch, mode ImportMode,
+	parsed *ParseResult, matches map[int]ExistingMatch, mode ImportMode, revision int,
 ) []*StagingRow {
+	if revision <= 0 {
+		revision = 1
+	}
 	issuesByRow := groupIssuesByRow(parsed.Issues)
 	rows := make([]*StagingRow, 0, len(parsed.Products))
 
@@ -19,10 +22,11 @@ func buildStagingRows(
 		}
 
 		row := &StagingRow{
-			SourceRow: sourceRow,
-			Product:   product,
-			Included:  true,
-			Issues:    issuesByRow[sourceRow],
+			SourceRow:     sourceRow,
+			Product:       product,
+			Included:      true,
+			Issues:        issuesByRow[sourceRow],
+			MatchRevision: revision,
 		}
 		if match, matched := matches[i]; matched {
 			id := match.ProductID
@@ -48,6 +52,7 @@ func buildStagingRows(
 					Required: matchflow.GranularityProduct,
 					Achieved: matchflow.GranularityProduct,
 				},
+				Revision: revision,
 			}
 			row.MatchDecision = &dec
 			row.BaselineDecision = &dec
@@ -59,6 +64,7 @@ func buildStagingRows(
 				Granularity: matchflow.GranularityPair{
 					Required: matchflow.GranularityProduct,
 				},
+				Revision: revision,
 			}
 			row.MatchState = string(matchflow.StateNoCandidate)
 			row.MatchDecision = &dec

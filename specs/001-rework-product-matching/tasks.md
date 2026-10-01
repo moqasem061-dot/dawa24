@@ -289,7 +289,7 @@ description: "Executable task list for the Product Matching Rework"
   - otherwise `unresolved`
   
   Placeholder names (find their generator with `grep -rn placeholder internal/modules/catalog/import_*.go`) are flagged `Prov=inferred` and excluded from name evidence.
-- [ ] T084 [US5] Rerun supersedes: a mapping or policy change increments `match_revision` and overwrites the decisions. The catalogue is untouched. Change `internal/modules/catalog/import_pipeline.go`.
+- [X] T084 [US5] Rerun supersedes: a mapping or policy change increments `match_revision` and overwrites the decisions. The catalogue is untouched. Change `internal/modules/catalog/import_pipeline.go`.
 - [ ] T085 [US5] Commit review: before commit, show old/new canonical identity fields and the count of affected associations per `update` row, in `internal/ui/pages/admin_import_review.templ` plus `admin_import_review_view.go`. `internal/modules/catalog/importjobs/commit_worker.go` revalidates each row (T060 rule) and refuses rows whose state is not accepted/confirmed.
 - [ ] T086 [US5] Update `docs/modules/catalog.md` §Master import.
 

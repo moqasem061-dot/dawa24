@@ -142,7 +142,13 @@ func (s *Service) prepare(
 	from := session.Status
 
 	session.Mode = settings.Mode
+	prevRev := session.Options.MatchRevision
 	session.Options = settings.Options
+	if prevRev <= 0 {
+		session.Options.MatchRevision = 1
+	} else {
+		session.Options.MatchRevision = prevRev + 1
+	}
 
 	// Request one: which column is which field. It runs before parsing because
 	// its whole purpose is to change how the sheet is read.
@@ -215,7 +221,7 @@ func (s *Service) prepare(
 	}
 
 	progress.report(ImportPhaseStaging, 0, len(parsed.Products))
-	rows := buildStagingRows(parsed, matches, session.Mode)
+	rows := buildStagingRows(parsed, matches, session.Mode, session.Options.MatchRevision)
 	applyRowStats(session, rows)
 	session.NewBrands = collectNewBrands(parsed.Products, matches)
 	if err := s.imports.ReplaceStagingRows(ctx, session.ID, rows); err != nil {

@@ -46,6 +46,8 @@ type ImportOptions struct {
 	// that engine's own result first. AI is turned on deliberately, for the
 	// file that needs it.
 	UseAI bool `json:"use_ai"`
+	// MatchRevision tracks the revision of matching decisions across reruns for optimistic locking.
+	MatchRevision int `json:"match_revision,omitempty"`
 	// DefaultCategoryID is applied to every product that ends without one,
 	// including when AI is off. Zero leaves the column null.
 	DefaultCategoryID int64 `json:"default_category_id,omitempty"`
