@@ -326,7 +326,7 @@ description: "Executable task list for the Product Matching Rework"
   - Every write uses the optimistic `match_revision` check. A mismatch returns `ErrRevisionConflict`.
   - `PreviewBulk` includes only rows with an equal `QuestionSignature` and excludes explicitly rejected rows.
   - Tests in `review_test.go`.
-- [ ] T095 [P] [US7] Build the templ components in `internal/ui/components/matchreview/`:
+- [X] T095 [P] [US7] Build the templ components in `internal/ui/components/matchreview/`:
   - `candidates.templ`: a candidate diff table showing the original value vs each candidate per attribute, marking conflict, unstated and agree with icons plus text, not colour only
   - `reasons.templ`: reason chips from i18n keys
   - `filters.templ`: state, conflict, basis, AI outcome, pack unresolved

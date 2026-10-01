@@ -1,0 +1,282 @@
+package matchreview
+
+import (
+	"fmt"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
+)
+
+type CandidatesProps struct {
+	RowID         int64
+	Row           productmatch.Row
+	Candidates    []matchflow.CandidateView
+	SelectedID    *int64
+	PostSelectURL string
+	CSRFToken     string
+	ExpectedRev   int
+}
+
+templ Candidates(props CandidatesProps) {
+	<div class="space-y-4" dir="rtl">
+		<div class="flex items-center justify-between">
+			<h4 class="text-sm font-semibold text-neutral-900">
+				المرشحون للمطابقة ومقارنة الخصائص
+				<span class="text-xs font-normal text-neutral-500 ms-2">(Candidate Comparison)</span>
+			</h4>
+			<span class="text-xs text-neutral-500" aria-live="polite">
+				عدد المرشحين: <bdi>{ fmt.Sprintf("%d", len(props.Candidates)) }</bdi>
+			</span>
+		</div>
+		if len(props.Candidates) == 0 {
+			<div class="p-4 rounded-lg bg-neutral-50 border border-neutral-200 text-center text-sm text-neutral-600">
+				لا يوجد مرشحون مقترحون لهذا الصنف. يمكنك البحث في الكتالوج لاختيار مرشح يدوياً.
+			</div>
+		} else {
+			<div class="overflow-x-auto border border-neutral-200 rounded-lg">
+				<table class="min-w-full divide-y divide-neutral-200 text-start text-xs">
+					<thead class="bg-neutral-50">
+						<tr>
+							<th scope="col" class="py-2.5 ps-3 pe-3 text-start font-semibold text-neutral-700">
+								الخاصية (Attribute)
+							</th>
+							<th scope="col" class="py-2.5 ps-3 pe-3 text-start font-semibold text-neutral-900 bg-neutral-100/60">
+								القيمة الأصلية (Original Row)
+							</th>
+							for _, c := range props.Candidates {
+								<th scope="col" class="py-2.5 ps-3 pe-3 text-start font-semibold text-neutral-900">
+									<div class="space-y-1">
+										<div class="flex items-center justify-between gap-1">
+											<span class="text-neutral-500"><bdi>#{ fmt.Sprintf("%d", c.ProductID) }</bdi></span>
+											if c.Eligible {
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-100 text-emerald-800">
+													مؤهل
+												</span>
+											} else {
+												<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-100 text-rose-800">
+													تعارض
+												</span>
+											}
+										</div>
+										<div class="text-[11px] font-normal text-neutral-500">
+											درجة التطابق: <bdi>{ fmt.Sprintf("%.0f%%", c.Score * 100) }</bdi>
+										</div>
+									</div>
+								</th>
+							}
+						</tr>
+					</thead>
+					<tbody class="divide-y divide-neutral-200 bg-white">
+						<!-- Name -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">الاسم (Name)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-900 bg-neutral-50/50">
+								<bdi>{ props.Row.Name }</bdi>
+							</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									<div class="space-y-1">
+										<div><bdi>{ c.NameAR }</bdi></div>
+										if c.NameEN != "" {
+											<div class="text-[11px] text-neutral-500"><bdi>{ c.NameEN }</bdi></div>
+										}
+										@DiffBadge(c.Diff["name"])
+									</div>
+								</td>
+							}
+						</tr>
+						<!-- Strength / Concentration -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">التركيز (Strength)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-900 bg-neutral-50/50">
+								if props.Row.Concentration != "" {
+									<bdi>{ props.Row.Concentration }</bdi>
+								} else {
+									<span class="text-neutral-400">-</span>
+								}
+							</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									<div class="space-y-1">
+										<div>
+											if c.Concentration != "" {
+												<bdi>{ c.Concentration }</bdi>
+											} else {
+												<span class="text-neutral-400">-</span>
+											}
+										</div>
+										@DiffBadge(c.Diff["strength"])
+									</div>
+								</td>
+							}
+						</tr>
+						<!-- Dosage Form -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">الشكل الدوائي (Form)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-900 bg-neutral-50/50">
+								if props.Row.DosageForm != "" {
+									<bdi>{ props.Row.DosageForm }</bdi>
+								} else {
+									<span class="text-neutral-400">-</span>
+								}
+							</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									<div class="space-y-1">
+										<div>
+											if c.DosageForm != "" {
+												<bdi>{ c.DosageForm }</bdi>
+											} else {
+												<span class="text-neutral-400">-</span>
+											}
+										</div>
+										@DiffBadge(c.Diff["form"])
+									</div>
+								</td>
+							}
+						</tr>
+						<!-- Unit / Pack -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">الوحدة / العبوة (Pack)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-900 bg-neutral-50/50">
+								if props.Row.Unit != "" {
+									<bdi>{ props.Row.Unit }</bdi>
+								} else if props.Row.PackSize > 0 {
+									<bdi>{ fmt.Sprintf("%d", props.Row.PackSize) }</bdi>
+								} else {
+									<span class="text-neutral-400">-</span>
+								}
+							</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									<div class="space-y-1">
+										<div>
+											if c.Unit != "" {
+												<bdi>{ c.Unit }</bdi>
+											} else {
+												<span class="text-neutral-400">-</span>
+											}
+										</div>
+										@DiffBadge(c.Diff["pack"])
+									</div>
+								</td>
+							}
+						</tr>
+						<!-- Manufacturer -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">الشركة (Manufacturer)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-900 bg-neutral-50/50">
+								if props.Row.Manufacturer != "" {
+									<bdi>{ props.Row.Manufacturer }</bdi>
+								} else {
+									<span class="text-neutral-400">-</span>
+								}
+							</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									<div class="space-y-1">
+										<div>
+											if c.Manufacturer != "" {
+												<bdi>{ c.Manufacturer }</bdi>
+											} else {
+												<span class="text-neutral-400">-</span>
+											}
+										</div>
+										@DiffBadge(c.Diff["brand"])
+									</div>
+								</td>
+							}
+						</tr>
+						<!-- Price -->
+						<tr>
+							<td class="py-2 ps-3 pe-3 font-medium text-neutral-700">السعر الرسمي (Public Price)</td>
+							<td class="py-2 ps-3 pe-3 text-neutral-400 bg-neutral-50/50">-</td>
+							for _, c := range props.Candidates {
+								<td class="py-2 ps-3 pe-3">
+									if c.PublicPrice != "" {
+										<span class="font-medium text-neutral-900"><bdi>{ c.PublicPrice }</bdi> ج.م</span>
+									} else {
+										<span class="text-neutral-400">-</span>
+									}
+								</td>
+							}
+						</tr>
+						<!-- Action Row -->
+						<tr class="bg-neutral-50/30">
+							<td class="py-3 ps-3 pe-3 font-medium text-neutral-700">الإجراء (Action)</td>
+							<td class="py-3 ps-3 pe-3 bg-neutral-50/50">-</td>
+							for _, c := range props.Candidates {
+								<td class="py-3 ps-3 pe-3">
+									if props.SelectedID != nil && *props.SelectedID == c.ProductID {
+										<span class="inline-flex items-center px-2 py-1 rounded text-xs font-semibold bg-emerald-600 text-white">
+											✓ تم الاختيار
+										</span>
+									} else if c.Eligible {
+										<button
+											type="button"
+											hx-post={ props.PostSelectURL }
+											hx-vals={ fmt.Sprintf(`{"action":"select","target_id":%d,"row_id":%d,"expected_rev":%d}`, c.ProductID, props.RowID, props.ExpectedRev) }
+											hx-target="closest tr.review-row"
+											hx-swap="outerHTML"
+											class="inline-flex items-center justify-center px-2.5 py-1 text-xs font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 rounded border border-primary-200 transition-colors"
+										>
+											اختيار المرشح
+										</button>
+									} else {
+										<div class="space-y-1">
+											<span class="text-[11px] text-rose-600 block font-medium">
+												تعارض غير قابل للتخطي دون تصحيح
+											</span>
+											<button
+												type="button"
+												class="inline-flex items-center justify-center px-2 py-1 text-[11px] font-medium text-neutral-400 bg-neutral-100 rounded border border-neutral-200 cursor-not-allowed"
+												disabled
+												title="يلزم تصحيح الخصائص المتعارضة أولاً قبل الاختيار"
+											>
+												اختيار غير متاح
+											</button>
+										</div>
+									}
+								</td>
+							}
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ DiffBadge(outcome string) {
+	switch outcome {
+		case "agree":
+			<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/60">
+				<svg class="w-3 h-3 text-emerald-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+				</svg>
+				<span>مطابق (Agree)</span>
+			</span>
+		case "conflict":
+			<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-rose-50 text-rose-700 border border-rose-200/60">
+				<svg class="w-3 h-3 text-rose-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+				</svg>
+				<span>تعارض (Conflict)</span>
+			</span>
+		case "unstated":
+			<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-neutral-50 text-neutral-600 border border-neutral-200/60">
+				<svg class="w-3 h-3 text-neutral-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/>
+				</svg>
+				<span>غير محدد (Unstated)</span>
+			</span>
+		case "uncertain":
+			<span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 border border-amber-200/60">
+				<svg class="w-3 h-3 text-amber-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+					<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+				</svg>
+				<span>غير مؤكد (Uncertain)</span>
+			</span>
+		default:
+			<span></span>
+	}
+}

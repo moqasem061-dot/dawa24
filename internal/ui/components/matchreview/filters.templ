@@ -1,0 +1,156 @@
+package matchreview
+
+import (
+	"fmt"
+)
+
+type FiltersProps struct {
+	CurrentState    string
+	CurrentConflict string
+	CurrentBasis    string
+	CurrentAI       string
+	PackUnresolved  bool
+	Counts          map[string]int
+	FilterURL       string
+	TargetSelector  string
+}
+
+func countOrZero(counts map[string]int, key string) int {
+	if counts == nil {
+		return 0
+	}
+	return counts[key]
+}
+
+templ Filters(props FiltersProps) {
+	<div class="p-4 bg-white border border-neutral-200 rounded-lg space-y-4 text-xs" dir="rtl">
+		<!-- State Filter Row -->
+		<div>
+			<label class="block text-xs font-semibold text-neutral-700 mb-1.5">
+				حالة المطابقة (Match State)
+			</label>
+			<div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="تصفية حسب الحالة">
+				@FilterChip(props, "state", "", "الكل (All)", countOrZero(props.Counts, "all"), props.CurrentState == "")
+				@FilterChip(props, "state", "needs_review", "تحتاج مراجعة (Needs Review)", countOrZero(props.Counts, "needs_review"), props.CurrentState == "needs_review")
+				@FilterChip(props, "state", "ambiguous", "أكثر من مرشح (Ambiguous)", countOrZero(props.Counts, "ambiguous"), props.CurrentState == "ambiguous")
+				@FilterChip(props, "state", "confirmed", "مؤكد يدويًا (Confirmed)", countOrZero(props.Counts, "confirmed"), props.CurrentState == "confirmed")
+				@FilterChip(props, "state", "accepted", "مطابق تلقائيًا (Accepted)", countOrZero(props.Counts, "accepted"), props.CurrentState == "accepted")
+				@FilterChip(props, "state", "no_candidate", "بدون مرشح (No Candidate)", countOrZero(props.Counts, "no_candidate"), props.CurrentState == "no_candidate")
+				@FilterChip(props, "state", "excluded", "مستبعد (Excluded)", countOrZero(props.Counts, "excluded"), props.CurrentState == "excluded")
+			</div>
+		</div>
+
+		<!-- Secondary Filters Grid -->
+		<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-neutral-100">
+			<!-- Conflict Filter -->
+			<div>
+				<label for="filter-conflict" class="block font-medium text-neutral-700 mb-1">
+					نوع التعارض (Conflict)
+				</label>
+				<select
+					id="filter-conflict"
+					name="conflict"
+					hx-get={ props.FilterURL }
+					hx-target={ props.TargetSelector }
+					hx-include="closest div[dir='rtl']"
+					class="w-full text-xs rounded border-neutral-300 focus:border-primary-500 focus:ring-primary-500 py-1.5 ps-2.5 pe-8 bg-neutral-50"
+				>
+					<option value="" selected?={ props.CurrentConflict == "" }>الكل (All Conflicts)</option>
+					<option value="strength" selected?={ props.CurrentConflict == "strength" }>تعارض في التركيز (Strength)</option>
+					<option value="form" selected?={ props.CurrentConflict == "form" }>تعارض في الشكل (Form)</option>
+					<option value="pack" selected?={ props.CurrentConflict == "pack" }>تعارض في العبوة (Pack)</option>
+					<option value="brand" selected?={ props.CurrentConflict == "brand" }>تعارض في العلامة/الشركة (Brand)</option>
+				</select>
+			</div>
+
+			<!-- Basis Filter -->
+			<div>
+				<label for="filter-basis" class="block font-medium text-neutral-700 mb-1">
+					مسار التطابق (Basis)
+				</label>
+				<select
+					id="filter-basis"
+					name="basis"
+					hx-get={ props.FilterURL }
+					hx-target={ props.TargetSelector }
+					hx-include="closest div[dir='rtl']"
+					class="w-full text-xs rounded border-neutral-300 focus:border-primary-500 focus:ring-primary-500 py-1.5 ps-2.5 pe-8 bg-neutral-50"
+				>
+					<option value="" selected?={ props.CurrentBasis == "" }>الكل (All Bases)</option>
+					<option value="identifier" selected?={ props.CurrentBasis == "identifier" }>معرف / باركود (Identifier)</option>
+					<option value="exact" selected?={ props.CurrentBasis == "exact" }>اسم مطابق تماماً (Exact)</option>
+					<option value="similarity" selected?={ props.CurrentBasis == "similarity" }>تشابه لغوي (Similarity)</option>
+					<option value="knowledge_human" selected?={ props.CurrentBasis == "knowledge_human" }>ذاكرة سابقة (Memory)</option>
+					<option value="reviewer" selected?={ props.CurrentBasis == "reviewer" }>مراجعة بشرية (Reviewer)</option>
+				</select>
+			</div>
+
+			<!-- AI Outcome Filter -->
+			<div>
+				<label for="filter-ai" class="block font-medium text-neutral-700 mb-1">
+					نتائج الذكاء الاصطناعي (AI Outcome)
+				</label>
+				<select
+					id="filter-ai"
+					name="ai_outcome"
+					hx-get={ props.FilterURL }
+					hx-target={ props.TargetSelector }
+					hx-include="closest div[dir='rtl']"
+					class="w-full text-xs rounded border-neutral-300 focus:border-primary-500 focus:ring-primary-500 py-1.5 ps-2.5 pe-8 bg-neutral-50"
+				>
+					<option value="" selected?={ props.CurrentAI == "" }>الكل (All AI States)</option>
+					<option value="proposed" selected?={ props.CurrentAI == "proposed" }>مقترح معتمد (Proposed)</option>
+					<option value="ineligible" selected?={ props.CurrentAI == "ineligible" }>غير مؤهل للذكاء (Ineligible)</option>
+					<option value="completed" selected?={ props.CurrentAI == "completed" }>مكتمل (Completed)</option>
+					<option value="off" selected?={ props.CurrentAI == "off" }>متوقف (AI Off)</option>
+				</select>
+			</div>
+
+			<!-- Pack Unresolved Checkbox -->
+			<div class="flex items-center pt-5">
+				<label class="relative flex items-center gap-2 cursor-pointer select-none">
+					<input
+						type="checkbox"
+						name="pack_unresolved"
+						value="true"
+						checked?={ props.PackUnresolved }
+						hx-get={ props.FilterURL }
+						hx-target={ props.TargetSelector }
+						hx-include="closest div[dir='rtl']"
+						class="rounded border-neutral-300 text-primary-600 focus:ring-primary-500 w-4 h-4"
+					/>
+					<span class="font-medium text-neutral-700">
+						عبوات غير محلولة فقط (Unresolved Packs)
+					</span>
+				</label>
+			</div>
+		</div>
+	</div>
+}
+
+templ FilterChip(props FiltersProps, name string, val string, label string, count int, active bool) {
+	<button
+		type="button"
+		hx-get={ fmt.Sprintf("%s?%s=%s", props.FilterURL, name, val) }
+		hx-target={ props.TargetSelector }
+		class={
+			"inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+			templ.KV("bg-primary-50 text-primary-700 border-primary-300 shadow-sm", active),
+			templ.KV("bg-neutral-50 text-neutral-600 border-neutral-200 hover:bg-neutral-100", !active),
+		}
+	>
+		<span>{ label }</span>
+		if count > 0 {
+			<span
+				class={
+					"px-1.5 py-0.2 rounded-full text-[10px]",
+					templ.KV("bg-primary-200 text-primary-800", active),
+					templ.KV("bg-neutral-200 text-neutral-700", !active),
+				}
+				aria-live="polite"
+			>
+				<bdi>{ fmt.Sprintf("%d", count) }</bdi>
+			</span>
+		}
+	</button>
+}

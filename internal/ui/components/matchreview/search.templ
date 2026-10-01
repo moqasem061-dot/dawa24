@@ -1,0 +1,38 @@
+package matchreview
+
+import (
+	"fmt"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+type SearchProps struct {
+	RowID         int64
+	ExpectedRev   int
+	SearchURL     string
+	PostSelectURL string
+	Placeholder   string
+	Class         string
+}
+
+templ Search(props SearchProps) {
+	<div class={ "space-y-2", props.Class } dir="rtl">
+		<div class="flex items-center justify-between">
+			<label class="block text-xs font-semibold text-neutral-800">
+				بحث يدوي في الكتالوج المركزي
+				<span class="text-xs font-normal text-neutral-500 ms-1">(Catalog Search)</span>
+			</label>
+			<span class="text-[11px] text-neutral-400">
+				ابحث بالاسم، التركيز، أو الباركود
+			</span>
+		</div>
+
+		@components.Combobox(components.ComboboxProps{
+			Name:        fmt.Sprintf("search_target_%d", props.RowID),
+			Placeholder: props.Placeholder,
+			URL:         props.SearchURL,
+			EmptyText:   "لم يتم العثور على أدوية مطابقة للبحث",
+			Help:        "استخدم الأسهم للتنقل و Enter للاختيار السريع",
+			Class:       "w-full text-xs",
+		})
+	</div>
+}
