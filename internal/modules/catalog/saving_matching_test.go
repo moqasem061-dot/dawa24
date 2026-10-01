@@ -101,9 +101,9 @@ func TestMatchSavingsRows_Fallback(t *testing.T) {
 		repo: &stubImportBackend{},
 	}
 	scope := productmatch.Scope{
-		EffectiveOrg:    10,
-		Workflow:        productmatch.WorkflowSavings,
-		EntryPoint:      "savings_matching",
+		EffectiveOrg: 10,
+		Workflow:     productmatch.WorkflowSavings,
+		EntryPoint:   "savings_matching",
 	}
 
 	rows := []SavingMatchRow{

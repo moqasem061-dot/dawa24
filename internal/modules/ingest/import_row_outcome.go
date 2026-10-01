@@ -37,6 +37,7 @@ type RowOutcome struct {
 	MatchRunID       *int64                 `json:"match_run_id,omitempty"`
 	MatchDecision    *matchflow.RowDecision `json:"match_decision,omitempty"`
 	BaselineDecision *matchflow.RowDecision `json:"baseline_decision,omitempty"`
+	ConflictNotice   string                 `json:"conflict_notice,omitempty"`
 }
 
 // EffectiveVariantName returns the custom variant name if set, or original row name.

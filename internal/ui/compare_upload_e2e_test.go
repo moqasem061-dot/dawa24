@@ -364,4 +364,3 @@ func (m *mockCompareRepoE2E) CountMarketDiscounts(ctx context.Context, filter co
 func (m *mockCompareRepoE2E) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {
 	return nil, nil
 }
-

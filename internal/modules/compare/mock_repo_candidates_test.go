@@ -78,4 +78,3 @@ func (m *mockCompareRepo) LoadPackRelationships(ctx context.Context, productIDs 
 	}
 	return nil, nil
 }
-

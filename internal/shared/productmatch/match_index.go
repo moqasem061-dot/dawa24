@@ -24,10 +24,10 @@ import (
 type Index struct {
 	catalogRevision int64
 	products        []*MasterProduct
-	byID      map[int64]*MasterProduct
-	byBarcode map[string][]*MasterProduct
-	bySKU     map[string][]*MasterProduct
-	byName    map[string][]*MasterProduct
+	byID            map[int64]*MasterProduct
+	byBarcode       map[string][]*MasterProduct
+	bySKU           map[string][]*MasterProduct
+	byName          map[string][]*MasterProduct
 	// tokens maps a significant word to the products whose name contains it.
 	tokens map[string][]*MasterProduct
 	// keyTokens maps a VARIANT key to the same products.

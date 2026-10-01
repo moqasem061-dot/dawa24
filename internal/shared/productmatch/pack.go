@@ -244,4 +244,3 @@ func extractContainerFromWords(text string) string {
 	}
 	return ""
 }
-

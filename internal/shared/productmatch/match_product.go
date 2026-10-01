@@ -18,17 +18,17 @@ import (
 // matching actually reads. Holding thirty thousand of these costs a few
 // megabytes; holding thirty thousand full products would not.
 type MasterProduct struct {
-	ID            int64
-	NameAR        string
-	NameEN        string
-	SKU           string
-	Barcode       string
-	Scientific    string
-	DosageForm    string
-	Concentration string
-	Unit          string
-	Manufacturer  string
-	PublicPrice   string
+	ID              int64
+	NameAR          string
+	NameEN          string
+	SKU             string
+	Barcode         string
+	Scientific      string
+	DosageForm      string
+	Concentration   string
+	Unit            string
+	Manufacturer    string
+	PublicPrice     string
 	curatedFacts    *IdentityFacts
 	packRels        []PackRelationship
 	hasPlainSibling bool

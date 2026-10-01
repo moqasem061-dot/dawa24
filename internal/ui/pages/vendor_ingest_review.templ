@@ -5,6 +5,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components/matchreview"
 )
 
 templ importReviewStage(view VendorImportView, langOpt ...string) {
@@ -192,9 +193,14 @@ templ importReviewStage(view VendorImportView, langOpt ...string) {
 
 	@reviewBulkBar(view, lang)
 
+	<!-- Keyboard Shortcuts Help -->
+	<div class="mb-4">
+		@matchreview.KeyboardShortcutsHelp()
+	</div>
+
 	<!-- Table -->
 	<div class="glass-panel p-0 mb-6 review-table-shell border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
-		<div class="review-table-scroll">
+		<div class="review-table-scroll" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.vendor-review-row', selectActionUrl: '' })">
 			<table class="data-table review-table m-0 w-full">
 				<thead>
 					<tr>
@@ -246,7 +252,7 @@ templ importReviewStage(view VendorImportView, langOpt ...string) {
 						</tr>
 					}
 					for _, row := range view.Rows {
-						@reviewTableRow(view, row, lang)
+						@VendorReviewTableRow(view, row, lang)
 					}
 				</tbody>
 			</table>

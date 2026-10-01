@@ -95,13 +95,13 @@ func TestAttachSavingChangePreviews(t *testing.T) {
 			Included:          true,
 		},
 		{
-			Index:             1,
-			NameProduct:       "كونجستال 20 قرص جديد",
-			SKU:               "CONG-NEW",
-			Quantity:          2,
-			Price:             newPrice,
-			TotalValue:        money.FromMinor(5100),
-			Included:          true,
+			Index:       1,
+			NameProduct: "كونجستال 20 قرص جديد",
+			SKU:         "CONG-NEW",
+			Quantity:    2,
+			Price:       newPrice,
+			TotalValue:  money.FromMinor(5100),
+			Included:    true,
 		},
 	}
 

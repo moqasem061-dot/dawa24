@@ -48,8 +48,12 @@ func (m *mockScoreMatchingService) Remember(context.Context, matching.Scope, mat
 func (m *mockScoreMatchingService) ListKnowledge(context.Context, matching.Scope, matching.KnowledgeFilter) (matching.Page[matching.Knowledge], error) {
 	return matching.Page[matching.Knowledge]{}, nil
 }
-func (m *mockScoreMatchingService) RevokeKnowledge(context.Context, matching.Scope, int64) error  { return nil }
-func (m *mockScoreMatchingService) PromoteKnowledge(context.Context, matching.Scope, int64) error { return nil }
+func (m *mockScoreMatchingService) RevokeKnowledge(context.Context, matching.Scope, int64) error {
+	return nil
+}
+func (m *mockScoreMatchingService) PromoteKnowledge(context.Context, matching.Scope, int64) error {
+	return nil
+}
 
 func TestScoreRows_CallsMatchingServicePrepare(t *testing.T) {
 	ctx := context.Background()

@@ -88,7 +88,7 @@ func (idx *Index) decideRow(row *Row, pol Policy, opts MatchOptions) (matchflow.
 			if verdict.Eligible && verdict.State == matchflow.StateAccepted {
 				return makeRowDecision(hits[0].ID, matchflow.BasisIdentifier, verdict, versions, pol, nil, nil), nil
 			}
-			if len(verdict.Hard) > 0 {
+			if pol.Identifiers.AllowCatalogCode && len(verdict.Hard) > 0 {
 				return makeRowDecision(hits[0].ID, matchflow.BasisIdentifier, verdict, versions, pol, nil, nil), nil
 			}
 		}

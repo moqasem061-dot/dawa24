@@ -8,13 +8,13 @@ import (
 // isEquivalentOrCanonical implements the grouping gate for compare (T090).
 //
 // Invariants:
-// - Only groups rows when both have the same accepted product ID at pack granularity,
-//   or SameSellableItem returns true (then group_basis='source_equivalence').
-// - If both have the same catalogue product ID, pack outcome is checked:
-//   if there is a conflict or needs_relationship without a bridging relationship,
-//   the rows are marked not_comparable and group_basis is 'not_comparable'.
-// - Strip vs Box or differing pack sizes without a relationship are never directly comparable.
-// - Returns grouped=true if they should group in comparison results, with the corresponding groupBasis.
+//   - Only groups rows when both have the same accepted product ID at pack granularity,
+//     or SameSellableItem returns true (then group_basis='source_equivalence').
+//   - If both have the same catalogue product ID, pack outcome is checked:
+//     if there is a conflict or needs_relationship without a bridging relationship,
+//     the rows are marked not_comparable and group_basis is 'not_comparable'.
+//   - Strip vs Box or differing pack sizes without a relationship are never directly comparable.
+//   - Returns grouped=true if they should group in comparison results, with the corresponding groupBasis.
 func isEquivalentOrCanonical(sr, tr *CompareFileRow, rels []productmatch.PackRelationship) (grouped bool, groupBasis string, notComparable bool) {
 	if sr == nil || tr == nil {
 		return false, "", false
@@ -185,5 +185,3 @@ type multiCompBaseEntry struct {
 	packCount float64
 	hasCount  bool
 }
-
-

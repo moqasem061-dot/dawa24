@@ -6,8 +6,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-templ smartOrderResultRow(data SmartOrderResultsData, l *smartorder.Line) {
-	<tr class="so-results-row">
+templ SmartOrderResultRow(data SmartOrderResultsData, l *smartorder.Line) {
+	<tr id={ fmt.Sprintf("line-%d", l.ID) } class="so-results-row so-line-row review-row">
 		<!-- Row Number -->
 		<td class="so-results-cell so-results-index tabular-nums">
 			{ fmt.Sprintf("%d", l.RowNumber) }
@@ -15,6 +15,14 @@ templ smartOrderResultRow(data SmartOrderResultsData, l *smartorder.Line) {
 
 		<!-- Raw Name & Details -->
 		<td class="so-results-cell so-results-item">
+			if l.ConflictNotice != "" {
+				<div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-1.5" role="alert">
+					<svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+					</svg>
+					<span>{ l.ConflictNotice }</span>
+				</div>
+			}
 			<div class="so-results-item-name">
 				{ l.RawName }
 			</div>

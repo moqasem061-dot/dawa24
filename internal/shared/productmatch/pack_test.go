@@ -128,12 +128,12 @@ func TestPackOutcome(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		row        productmatch.PackFacts
-		prod       productmatch.PackFacts
-		rels       []productmatch.PackRelationship
-		wantOut    string
-		wantRelID  int64
+		name      string
+		row       productmatch.PackFacts
+		prod      productmatch.PackFacts
+		rels      []productmatch.PackRelationship
+		wantOut   string
+		wantRelID int64
 	}{
 		{
 			name:      "unstated on row",

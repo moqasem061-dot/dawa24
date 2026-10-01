@@ -378,4 +378,3 @@ func outcomeForIneligible(reason IneligibleReason) Outcome {
 		return OutcomeNoSupplier
 	}
 }
-

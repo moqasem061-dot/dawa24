@@ -65,9 +65,9 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 
 	choices := r.session.Settings.identifierChoices()
 	identPolicy := productmatch.IdentifierPolicy{
-		AllowGTIN:         r.match.TrustBarcode,
-		AllowSupplierCode: r.match.TrustSupplierCode,
-		AllowCatalogCode:  choices.CodeIsCatalogCode,
+		AllowGTIN:          r.match.TrustBarcode,
+		AllowSupplierCode:  r.match.TrustSupplierCode,
+		AllowCatalogCode:   choices.CodeIsCatalogCode,
 		DeclaredNamespaces: make(map[int]string),
 	}
 	if r.session.Mapping != nil {

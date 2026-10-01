@@ -112,8 +112,6 @@ func applyDefaultCategory(prods []*Product, opts ImportOptions) {
 	}
 }
 
-
-
 // collectNewBrands lists manufacturers the catalogue has never seen, so the
 // review screen can show what the import would add to the brand list.
 func collectNewBrands(prods []*Product, matches map[int]ExistingMatch) []string {

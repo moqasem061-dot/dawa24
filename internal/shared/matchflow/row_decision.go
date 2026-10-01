@@ -121,10 +121,10 @@ const (
 
 // AIDecision records AI run status and outcome.
 type AIDecision struct {
-	State    AIState  `json:"state"`
-	Proposal *int64   `json:"proposal,omitempty"`
-	Outcome  string   `json:"outcome,omitempty"`
-	Attempts []int64  `json:"attempts,omitempty"`
+	State    AIState `json:"state"`
+	Proposal *int64  `json:"proposal,omitempty"`
+	Outcome  string  `json:"outcome,omitempty"`
+	Attempts []int64 `json:"attempts,omitempty"`
 }
 
 // DecisionActor captures human review authorship.

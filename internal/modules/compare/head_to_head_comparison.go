@@ -372,4 +372,3 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		TargetTotal:        targetTotal,
 	}, nil
 }
-

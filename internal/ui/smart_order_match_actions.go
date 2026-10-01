@@ -2,6 +2,7 @@ package ui
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
@@ -24,16 +26,33 @@ func (h *UIHandler) SmartOrderMatchSubmit(w http.ResponseWriter, r *http.Request
 	_ = r.ParseForm()
 
 	productID, _ := strconv.ParseInt(r.FormValue("product_id"), 10, 64)
+	if productID == 0 {
+		productID, _ = strconv.ParseInt(r.FormValue("target_id"), 10, 64)
+	}
+	expectedRev, _ := strconv.Atoi(r.FormValue("expected_rev"))
+
 	var updatedLine *smartorder.Line
+	var matchErr error
 	if h.smartOrderSvc != nil {
-		var err error
-		updatedLine, err = h.smartOrderSvc.CorrectMatch(r.Context(), run.OrganizationID, lineID, productID)
-		if err != nil {
-			h.log.WarnContext(r.Context(), "smart order manual match failed", "line_id", lineID, "error", err)
+		updatedLine, matchErr = h.smartOrderSvc.CorrectMatch(r.Context(), run.OrganizationID, lineID, productID)
+		if matchErr != nil {
+			h.log.WarnContext(r.Context(), "smart order manual match failed", "line_id", lineID, "error", matchErr)
 		}
 	}
 
 	h.smartOrderRecalculate(r, run)
+
+	if h.isHTMX(r) && updatedLine != nil {
+		if errors.Is(matchErr, matching.ErrRevisionConflict) || (expectedRev > 0 && updatedLine.MatchRevision > expectedRev) {
+			updatedLine.ConflictNotice = RevisionConflictNoticeBilingual
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		data := pages.SmartOrderResultsData{
+			Run: run,
+		}
+		_ = pages.SmartOrderResultRow(data, updatedLine).Render(r.Context(), w)
+		return
+	}
 
 	if strings.Contains(r.Header.Get("Accept"), "application/json") || r.Header.Get("X-Requested-With") == "XMLHttpRequest" {
 		w.Header().Set("Content-Type", "application/json; charset=utf-8")

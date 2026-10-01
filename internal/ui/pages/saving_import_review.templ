@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components/matchreview"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
@@ -25,6 +27,7 @@ templ savingReviewStage(view SavingImportView) {
 				</div>
 
 				<div class="d-flex items-center gap-2 flex-wrap">
+					@matchreview.KeyboardShortcutsHelp()
 					<form method="POST" action={ templ.SafeURL(fmt.Sprintf("%s/%s/cancel", view.ImportURL, sess.ID)) }
 						data-confirm="هل أنت متأكد من رغبتك في إلغاء هذه الجلسة والتراجع عن الاستيراد؟" class="m-0">
 						<button type="submit" class="btn btn-secondary btn-sm text-danger font-bold">
@@ -118,7 +121,7 @@ templ savingReviewStage(view SavingImportView) {
 
 		<!-- Table Container -->
 		<div class="glass-panel p-0 mb-6 overflow-hidden">
-			<div class="table-container m-0">
+			<div class="table-container m-0" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.saving-product-row', selectActionUrl: '' })">
 				<table class="data-table m-0">
 					<thead>
 						<tr>
@@ -140,7 +143,7 @@ templ savingReviewStage(view SavingImportView) {
 							</tr>
 						} else {
 							for _, row := range view.Rows {
-								@savingProductRow(view, row)
+								@SavingProductRow(view, row)
 							}
 						}
 					</tbody>
@@ -390,13 +393,13 @@ templ savingFilterTab(view SavingImportView, matchKey, label string) {
 	</a>
 }
 
-templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
+templ SavingProductRow(view SavingImportView, row *StagedSavingItem) {
 	{{
 		actionBase := fmt.Sprintf("%s/%s/items/%d", view.ImportURL, view.Session.ID, row.Index)
 		querySuffix := savingRowQuerySuffix(view)
 		searchURL := view.BaseURL + "/search-products"
 	}}
-	<tr id={ fmt.Sprintf("saving-row-%d", row.Index) } class={ templ.KV("opacity-50", !row.Included) }>
+	<tr id={ fmt.Sprintf("saving-row-%d", row.Index) } class={ "saving-product-row review-row", templ.KV("opacity-50", !row.Included) }>
 		<!-- 1. Selection & Index -->
 		<td class="saving-review-col-pick align-middle text-center">
 			<div class="d-flex items-center justify-center gap-1.5">
@@ -419,6 +422,17 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 			if row.SKU != "" {
 				<div class="mt-1 d-flex items-center gap-1">
 					<span class="badge badge-secondary text-2xs font-mono">كود: { row.SKU }</span>
+				</div>
+			}
+			if row.ConflictNotice != "" {
+				<div class="badge badge-amber text-xs font-bold p-1.5 my-1 d-flex items-center gap-1" role="alert">
+					@components.IconAlert("icon-2xs")
+					<bdi>{ row.ConflictNotice }</bdi>
+				</div>
+			}
+			if len(row.Reasons) > 0 {
+				<div class="my-1">
+					@matchreview.Reasons(matchreview.ReasonsProps{ Reasons: row.Reasons, Flags: row.Flags })
 				</div>
 			}
 		</td>
@@ -446,6 +460,18 @@ templ savingProductRow(view SavingImportView, row *StagedSavingItem) {
 						@components.IconPlus("icon-xxs")
 						<span>ربط بالكتالوج</span>
 					</button>
+				</div>
+			}
+			if len(row.Candidates) > 0 {
+				<div class="mt-2 p-2 bg-surface-sunken rounded border border-border">
+					@matchreview.Candidates(matchreview.CandidatesProps{
+						RowID: int64(row.Index),
+						Row: productmatch.Row{Number: row.Index + 1, Name: row.NameProduct, SKU: row.SKU},
+						Candidates: row.Candidates,
+						SelectedID: row.ProductID,
+						PostSelectURL: actionBase + "/match" + querySuffix,
+						ExpectedRev: int(row.MatchRevision),
+					})
 				</div>
 			}
 			if row.ChangePreview != nil && row.ChangePreview.IsUpdate {

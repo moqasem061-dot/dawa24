@@ -52,15 +52,15 @@ type HardConflictViolation struct {
 
 // AIStats records the net contribution and costs of the AI stage.
 type AIStats struct {
-	GainNewCorrect      int            `json:"gain_new_correct"`
-	NewWrong            int            `json:"new_wrong"`
-	LostCorrect         int            `json:"lost_correct"`
-	NetGainRate         float64        `json:"net_gain_rate"`
-	AIAddedPrecisionLB95 float64       `json:"ai_added_precision_lb95"`
-	Attempts            int            `json:"attempts"`
-	Tokens              int            `json:"tokens"`
-	Cost                float64        `json:"cost"`
-	CostKnown           bool           `json:"cost_known"`
-	CostPerVerifiedGain float64        `json:"cost_per_verified_gain"`
-	ZeroGainReasons     map[string]int `json:"zero_gain_reasons,omitempty"`
+	GainNewCorrect       int            `json:"gain_new_correct"`
+	NewWrong             int            `json:"new_wrong"`
+	LostCorrect          int            `json:"lost_correct"`
+	NetGainRate          float64        `json:"net_gain_rate"`
+	AIAddedPrecisionLB95 float64        `json:"ai_added_precision_lb95"`
+	Attempts             int            `json:"attempts"`
+	Tokens               int            `json:"tokens"`
+	Cost                 float64        `json:"cost"`
+	CostKnown            bool           `json:"cost_known"`
+	CostPerVerifiedGain  float64        `json:"cost_per_verified_gain"`
+	ZeroGainReasons      map[string]int `json:"zero_gain_reasons,omitempty"`
 }

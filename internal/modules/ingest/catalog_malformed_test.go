@@ -112,7 +112,7 @@ func TestMalformedRows_FiftyThousand(t *testing.T) {
 		string(matchflow.StateNeedsReview):  true,
 		string(matchflow.StateAmbiguous):    true,
 		string(matchflow.StateNoCandidate):  true,
-		string(matchflow.StateExcluded):    true,
+		string(matchflow.StateExcluded):     true,
 		string(matchflow.StateInvalidInput): true,
 		string(matchflow.StateUnavailable):  true,
 		"":                                  true, // legacy before state assigned

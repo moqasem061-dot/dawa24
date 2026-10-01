@@ -355,4 +355,3 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 		Summary: summary,
 	}, nil
 }
-

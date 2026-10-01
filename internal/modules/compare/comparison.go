@@ -36,6 +36,8 @@ type ProductComparisonRow struct {
 	AvailabilityStatus string                   `json:"availability_status"`
 	GroupBasis         string                   `json:"group_basis,omitempty"`
 	NotComparable      bool                     `json:"not_comparable,omitempty"`
+	ConflictNotice     string                   `json:"conflict_notice,omitempty"`
+	MatchRevision      int                      `json:"match_revision,omitempty"`
 }
 
 // ComparisonSummary represents the aggregate metrics across all analyzed supplier files.
@@ -201,4 +203,3 @@ func (s *Service) RunSupplierVsSupplier(ctx context.Context, sourceFileID, targe
 
 	return items, stats, nil
 }
-

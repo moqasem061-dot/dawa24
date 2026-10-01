@@ -34,10 +34,10 @@ type commitRun struct {
 	settings Settings
 	variants *variantIndex
 
-	inserted int
-	updated  int
-	skipped  int
-	errors   int
+	inserted              int
+	updated               int
+	skipped               int
+	errors                int
 	revalidatedRejections int
 	// stocked counts the warehouse balances actually written, which is the
 	// number a vendor checks when they ask "did the quantities land?".

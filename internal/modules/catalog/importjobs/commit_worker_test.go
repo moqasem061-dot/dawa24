@@ -53,8 +53,12 @@ func (m *mockCommitMatchingSvc) Remember(context.Context, matching.Scope, matchi
 func (m *mockCommitMatchingSvc) ListKnowledge(context.Context, matching.Scope, matching.KnowledgeFilter) (matching.Page[matching.Knowledge], error) {
 	return matching.Page[matching.Knowledge]{}, nil
 }
-func (m *mockCommitMatchingSvc) RevokeKnowledge(context.Context, matching.Scope, int64) error  { return nil }
-func (m *mockCommitMatchingSvc) PromoteKnowledge(context.Context, matching.Scope, int64) error { return nil }
+func (m *mockCommitMatchingSvc) RevokeKnowledge(context.Context, matching.Scope, int64) error {
+	return nil
+}
+func (m *mockCommitMatchingSvc) PromoteKnowledge(context.Context, matching.Scope, int64) error {
+	return nil
+}
 
 type mockCatalogRepoForCommit struct {
 	catalog.Repository

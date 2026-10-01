@@ -323,8 +323,8 @@ func TestGrouping_StripVsBoxWithValidRelationship_ConvertedExactPrice(t *testing
 		t.Errorf("expected NotComparable=false with valid relationship")
 	}
 
-	expectedYourNet := money.FromMajor(45)       // 45.00 EGP
-	expectedCompNet := money.FromMajor(48)       // 24.00 * 2 = 48.00 EGP
+	expectedYourNet := money.FromMajor(45)                     // 45.00 EGP
+	expectedCompNet := money.FromMajor(48)                     // 24.00 * 2 = 48.00 EGP
 	expectedSavings, _ := expectedCompNet.Sub(expectedYourNet) // 3.00 EGP
 
 	if row.YourNetPrice != expectedYourNet {
@@ -352,4 +352,3 @@ func TestGrouping_StripVsBoxWithValidRelationship_ConvertedExactPrice(t *testing
 		t.Errorf("expected multi-supplier row to be comparable")
 	}
 }
-

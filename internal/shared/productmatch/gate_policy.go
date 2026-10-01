@@ -71,13 +71,13 @@ type IdentifierPolicy struct {
 // Policy governs acceptance thresholds, required granularity, and identifier tiers.
 type Policy struct {
 	Version            string           `json:"version"`
-	MinStrong          float64          `json:"min_strong"` // minimum score for strong acceptance
-	MinReview          float64          `json:"min_review"` // minimum score to be considered for review
-	TieMargin          float64          `json:"tie_margin"` // score margin to separate ambiguous siblings
+	MinStrong          float64          `json:"min_strong"`           // minimum score for strong acceptance
+	MinReview          float64          `json:"min_review"`           // minimum score to be considered for review
+	TieMargin          float64          `json:"tie_margin"`           // score margin to separate ambiguous siblings
 	BlindNearIdentical float64          `json:"blind_near_identical"` // threshold for letters-only / blind similarity
 	Required           Granularity      `json:"required"`
 	AllowOmittedAttrs  bool             `json:"allow_omitted_attrs"` // allow unstated attributes only when uniquely identified
-	Identifiers        IdentifierPolicy `json:"identifiers"` // namespaces declared and user choices
+	Identifiers        IdentifierPolicy `json:"identifiers"`         // namespaces declared and user choices
 }
 
 // DefaultPolicy provides baseline configuration copying production numbers with identifier tiers off.

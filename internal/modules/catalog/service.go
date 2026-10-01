@@ -58,6 +58,11 @@ func (s *Service) SetMatchingService(m matching.Service) {
 	s.matchingSvc = m
 }
 
+// Matching returns the attached matching service, or nil if none is wired.
+func (s *Service) Matching() matching.Service {
+	return s.matchingSvc
+}
+
 // SetInstitutionalGate installs the institutional work filter gate.
 func (s *Service) SetInstitutionalGate(gate InstitutionalGate) {
 	s.instGate = gate

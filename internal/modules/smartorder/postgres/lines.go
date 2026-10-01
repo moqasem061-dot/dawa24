@@ -310,16 +310,35 @@ func (r *Repository) UpdateLines(ctx context.Context, lines []*smartorder.Line) 
 				quantities[i] = l.EffectiveQty
 				normNames[i] = l.NormName
 				identityKeys[i] = l.IdentityKey
-				if l.MatchState != "" { s := l.MatchState; matchStates[i] = &s }
-				if l.MatchBasis != "" { b := l.MatchBasis; matchBases[i] = &b }
-				if l.MatchGranularity != "" { g := l.MatchGranularity; matchGrans[i] = &g }
+				if l.MatchState != "" {
+					s := l.MatchState
+					matchStates[i] = &s
+				}
+				if l.MatchBasis != "" {
+					b := l.MatchBasis
+					matchBases[i] = &b
+				}
+				if l.MatchGranularity != "" {
+					g := l.MatchGranularity
+					matchGrans[i] = &g
+				}
 				matchRevs[i] = l.MatchRevision
 				humanLockeds[i] = l.HumanLocked
-				if l.AIState != "" { a := l.AIState; aiStates[i] = &a }
+				if l.AIState != "" {
+					a := l.AIState
+					aiStates[i] = &a
+				}
 				matchRunIDs[i] = l.MatchRunID
-				if len(l.MatchDecision) > 0 { matchDecs[i] = l.MatchDecision }
-				if len(l.BaselineDecision) > 0 { baseDecs[i] = l.BaselineDecision }
-				if l.OfferState != "" { o := string(l.OfferState); offerStates[i] = &o }
+				if len(l.MatchDecision) > 0 {
+					matchDecs[i] = l.MatchDecision
+				}
+				if len(l.BaselineDecision) > 0 {
+					baseDecs[i] = l.BaselineDecision
+				}
+				if l.OfferState != "" {
+					o := string(l.OfferState)
+					offerStates[i] = &o
+				}
 			}
 
 			_, err := tx.Exec(txCtx, `

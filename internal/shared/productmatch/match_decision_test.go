@@ -111,4 +111,3 @@ func TestDecide_BarcodeAgreedAccepted(t *testing.T) {
 		t.Errorf("expected legacy MatchLevel 'barcode', got %q", cols.MatchLevel)
 	}
 }
-

@@ -33,8 +33,8 @@ type Token struct {
 // Strength represents an active ingredient concentration or amount.
 // Invariant: strengths are kept in written order, never sorted.
 type Strength struct {
-	Value     string `json:"value"` // decimal string (e.g. "500", "0.5")
-	Unit      string `json:"unit"`  // mg, g, mcg, iu, %, etc.
+	Value     string `json:"value"`           // decimal string (e.g. "500", "0.5")
+	Unit      string `json:"unit"`            // mg, g, mcg, iu, %, etc.
 	Basis     string `json:"basis,omitempty"` // per_unit, per_volume
 	Component int    `json:"component"`       // -1 when association is unknown
 	Prov      Prov   `json:"prov,omitempty"`
@@ -63,7 +63,7 @@ type PackFacts struct {
 	Multiplier int    `json:"multiplier,omitempty"` // e.g. 2 for 2x10
 	SubCount   int    `json:"sub_count,omitempty"`  // e.g. 10 for 2x10
 	SubUnit    string `json:"sub_unit,omitempty"`   // strip, blister, ampoule, sachet, etc.
-	Container  string `json:"container,omitempty"` // box, bottle, vial, etc.
+	Container  string `json:"container,omitempty"`  // box, bottle, vial, etc.
 	Prov       Prov   `json:"prov,omitempty"`
 	Cert       Cert   `json:"cert,omitempty"`
 }

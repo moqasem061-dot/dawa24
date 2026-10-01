@@ -188,7 +188,6 @@ func (b BlockedCounts) Total() int {
 		b.OutOfStock + b.BelowMinQty + b.ZeroQty + b.QuotaBlocked + b.BlockedPack
 }
 
-
 // AIUsage is telemetry, not commerce.
 //
 // CostEstimate is USD with six decimals and deliberately not money.Amount:
@@ -283,6 +282,7 @@ type Line struct {
 	BaselineDecision json.RawMessage `json:"baseline_decision,omitempty"`
 
 	ConsolidatedInto *int64 `json:"consolidated_into_line_id,omitempty"`
+	ConflictNotice   string `json:"conflict_notice,omitempty"`
 
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
@@ -290,4 +290,3 @@ type Line struct {
 
 // Matched reports whether the line resolved to a catalogue product.
 func (l *Line) Matched() bool { return l.MatchedProductID != nil && *l.MatchedProductID > 0 }
-

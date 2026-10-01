@@ -73,4 +73,3 @@ func TestSandboxDocumentContent_PDF(t *testing.T) {
 	assert.Contains(t, csp, "object-src 'self' blob:")
 	assert.Contains(t, csp, "frame-ancestors 'self'")
 }
-

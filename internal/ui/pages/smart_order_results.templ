@@ -6,6 +6,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components/matchreview"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
@@ -181,9 +182,14 @@ templ SmartOrderResultsPage(lang, dir string, data SmartOrderResultsData) {
 				</form>
 			</div>
 
+			<!-- Keyboard Shortcuts Help -->
+			<div class="mb-3">
+				@matchreview.KeyboardShortcutsHelp()
+			</div>
+
 			<!-- Main Table Card -->
 			<div class="glass-panel so-results-table-card">
-				<div class="table-responsive">
+				<div class="table-responsive" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.so-line-row', selectActionUrl: '' })">
 					<table class="data-table so-results-table">
 						<thead>
 							<tr class="so-results-table-head">
@@ -220,7 +226,7 @@ templ SmartOrderResultsPage(lang, dir string, data SmartOrderResultsData) {
 								</tr>
 							}
 							for _, l := range data.Lines {
-								@smartOrderResultRow(data, l)
+								@SmartOrderResultRow(data, l)
 							}
 						</tbody>
 					</table>

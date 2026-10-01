@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,10 +11,13 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
@@ -210,7 +214,7 @@ func (h *UIHandler) importSessionGone(w http.ResponseWriter, r *http.Request, pu
 	}, http.StatusNotFound)
 }
 
-// AdminProductsImportRowToggle includes or excludes one staged row.
+// AdminProductsImportRowToggle includes or excludes one staged row, or applies a review action.
 func (h *UIHandler) AdminProductsImportRowToggle(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	publicID := chi.URLParam(r, "id")
@@ -228,19 +232,35 @@ func (h *UIHandler) AdminProductsImportRowToggle(w http.ResponseWriter, r *http.
 		return
 	}
 
-	included := r.PostFormValue("included") == "1"
-	if err := h.catSvc.SetRowIncluded(database.AsSystem(ctx), publicID, rowID, included); err != nil {
-		h.log.WarnContext(ctx, "could not toggle staged row", "session", publicID, "row", rowID, "error", err)
+	row, _ := h.catSvc.GetStagingRow(database.AsSystem(ctx), publicID, rowID)
+	if action := r.PostFormValue("action"); action != "" && row != nil {
+		curDec := matchflow.RowDecision{Revision: row.MatchRevision, ProductID: row.MatchedProductID}
+		if row.MatchDecision != nil {
+			curDec = *row.MatchDecision
+		}
+		act := parseReviewAction(r, productmatch.Row{Number: row.SourceRow}, curDec)
+		scope := productmatch.Scope{Workflow: productmatch.WorkflowCatalog, EntryPoint: "admin_catalog_review"}
+		newDec, rErr := executeReviewAction(ctx, h.catSvc.Matching(), scope, act)
+		if errors.Is(rErr, matching.ErrRevisionConflict) {
+			// T098: Revision conflict notice
+			row.ConflictNotice = RevisionConflictNoticeBilingual
+		} else if rErr == nil {
+			row.ConflictNotice = ""
+			row.MatchRevision, row.MatchDecision, row.MatchedProductID = newDec.Revision, &newDec, newDec.ProductID
+		}
+	} else {
+		included := r.PostFormValue("included") == "1"
+		if err := h.catSvc.SetRowIncluded(database.AsSystem(ctx), publicID, rowID, included); err != nil {
+			h.log.WarnContext(ctx, "could not toggle staged row", "session", publicID, "row", rowID, "error", err)
+		}
+		row, _ = h.catSvc.GetStagingRow(database.AsSystem(ctx), publicID, rowID)
 	}
 
-	if h.isHTMX(r) {
-		row, err := h.catSvc.GetStagingRow(database.AsSystem(ctx), publicID, rowID)
-		if err == nil && row != nil {
-			view := pages.ImportReviewView{Session: &catalog.ImportSession{PublicID: publicID}}
-			w.Header().Set("Content-Type", "text/html; charset=utf-8")
-			if err := pages.ImportRowLine(view, row).Render(renderContext(ctx), w); err == nil { // nolint:errswallow: a failed fragment render falls back to the full page below
-				return
-			}
+	if h.isHTMX(r) && row != nil {
+		view := pages.ImportReviewView{Session: &catalog.ImportSession{PublicID: publicID}}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		if err := pages.ImportRowLine(view, row).Render(renderContext(ctx), w); err == nil {
+			return
 		}
 	}
 

@@ -271,18 +271,18 @@ type StagingRow struct {
 	// staging time so they cannot go stale between preparing an import and
 	// reviewing it. An admin approving an update needs to see which product is
 	// about to be overwritten, and "#255741" does not tell them.
-	MatchedProductName string     `json:"matched_product_name,omitempty"`
-	MatchedProductSKU  string     `json:"matched_product_sku,omitempty"`
-	MatchedProductBarcode      string `json:"matched_product_barcode,omitempty"`
-	MatchedProductScientific   string `json:"matched_product_scientific,omitempty"`
-	MatchedProductDosageForm   string `json:"matched_product_dosage_form,omitempty"`
-	MatchedProductStrength     string `json:"matched_product_strength,omitempty"`
-	MatchedProductUnit         string `json:"matched_product_unit,omitempty"`
-	MatchedProductManufacturer string `json:"matched_product_manufacturer,omitempty"`
-	AffectedAssociationsCount  int    `json:"affected_associations_count"`
-	Product            *Product   `json:"product"`
-	Issues             []RowIssue `json:"issues,omitempty"`
-	AIChanges          []AIChange `json:"ai_changes,omitempty"`
+	MatchedProductName         string     `json:"matched_product_name,omitempty"`
+	MatchedProductSKU          string     `json:"matched_product_sku,omitempty"`
+	MatchedProductBarcode      string     `json:"matched_product_barcode,omitempty"`
+	MatchedProductScientific   string     `json:"matched_product_scientific,omitempty"`
+	MatchedProductDosageForm   string     `json:"matched_product_dosage_form,omitempty"`
+	MatchedProductStrength     string     `json:"matched_product_strength,omitempty"`
+	MatchedProductUnit         string     `json:"matched_product_unit,omitempty"`
+	MatchedProductManufacturer string     `json:"matched_product_manufacturer,omitempty"`
+	AffectedAssociationsCount  int        `json:"affected_associations_count"`
+	Product                    *Product   `json:"product"`
+	Issues                     []RowIssue `json:"issues,omitempty"`
+	AIChanges                  []AIChange `json:"ai_changes,omitempty"`
 
 	// Match decision consumer columns
 	MatchState       string                 `json:"match_state,omitempty"`
@@ -295,6 +295,7 @@ type StagingRow struct {
 	MatchDecision    *matchflow.RowDecision `json:"match_decision,omitempty"`
 	BaselineDecision *matchflow.RowDecision `json:"baseline_decision,omitempty"`
 	Proposal         ImportProposal         `json:"proposal,omitempty"`
+	ConflictNotice   string                 `json:"conflict_notice,omitempty"`
 }
 
 // MatchedLabel is how the review table names the product a row would update.

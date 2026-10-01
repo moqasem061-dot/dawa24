@@ -7,9 +7,14 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components/matchreview"
 )
 
 templ reviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...string) {
+	@VendorReviewTableRow(view, row, langOpt...)
+}
+
+templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...string) {
 	{{
 		lang := view.Lang
 		if len(langOpt) > 0 && langOpt[0] != "" {
@@ -19,7 +24,7 @@ templ reviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...s
 			lang = "ar"
 		}
 	}}
-	<tr id={ fmt.Sprintf("row-%d", row.ID) } class={ templ.KV("opacity-50", row.IsExcluded) }>
+	<tr id={ fmt.Sprintf("row-%d", row.ID) } class={ "vendor-review-row review-row", templ.KV("opacity-50", row.IsExcluded) }>
 		<!-- Bulk selection -->
 		<td class="text-center align-middle">
 			<input type="checkbox" name="row_ids" value={ fmt.Sprint(row.ID) }
@@ -40,6 +45,14 @@ templ reviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...s
 
 		<!-- File Product Name (Direct Editable in same cell) -->
 		<td class="review-col-name align-middle">
+			if row.ConflictNotice != "" {
+				<div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-1.5" role="alert">
+					<svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+					</svg>
+					<span>{ row.ConflictNotice }</span>
+				</div>
+			}
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="d-flex items-center gap-1 mb-1">
 				<input type="text" name="display_name" value={ row.DisplayName }
@@ -85,6 +98,14 @@ templ reviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOpt ...s
 								title={ aiRowTitle(row, lang) }>{ i18n.T(lang, "vendor_ingest.row.ai_badge") }</span>
 						}
 					</div>
+					if row.MatchDecision != nil && len(row.MatchDecision.Reasons) > 0 {
+						<div class="mt-1">
+							@matchreview.Reasons(matchreview.ReasonsProps{
+								Reasons: row.MatchDecision.Reasons,
+								Flags:   row.MatchDecision.Flags,
+							})
+						</div>
+					}
 					<button type="button"
 						data-row-id={ fmt.Sprint(row.ID) }
 						data-row-name={ row.DisplayName }

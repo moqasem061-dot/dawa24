@@ -336,7 +336,7 @@ description: "Executable task list for the Product Matching Rework"
   
   Rules: RTL-first, logical CSS properties only, `<bdi>` around identifiers and numbers, and `aria-live="polite"` on counts.
 - [X] T096 [US7] Keyboard navigation: j/k or arrow keys to move between rows, Enter to open, 1–5 to choose a candidate, `x` to exclude. Implement it as Alpine CSP-compatible code in `internal/ui/components/matchreview/keyboard.templ`, and document the shortcuts in the component's help text (i18n).
-- [ ] T097 [US7] Wire the components into each workflow's review page, one sub-step per file:
+- [X] T097 [US7] Wire the components into each workflow's review page, one sub-step per file:
   - `internal/ui/pages/saving_import_review.templ`
   - `internal/ui/pages/admin_import_review.templ`
   - `internal/ui/pages/smart_order_results.templ`
@@ -344,9 +344,9 @@ description: "Executable task list for the Product Matching Rework"
   - the vendor import review page (find it with `grep -rl catalog_import internal/ui/pages/*.templ`)
   
   Then add HTMX endpoints for review actions to each page's existing handler file.
-- [ ] T098 [US7] Revision conflict notice: on `ErrRevisionConflict`, re-render the row with a bilingual notice and the current saved decision. Preserve filters, focus and scroll through HTMX `hx-swap` targeting the row only. Change the handlers from T097.
-- [ ] T099 [US7] Run `make gates` and fix every UI gate failure the new components introduced.
-- [ ] T100 [P] [US7] Write the observation protocol for SC-006 (participants, tasks, metrics, keyboard-only and 360 px checks) in `docs/modules/matching-review-study.md`.
+- [X] T098 [US7] Revision conflict notice: on `ErrRevisionConflict`, re-render the row with a bilingual notice and the current saved decision. Preserve filters, focus and scroll through HTMX `hx-swap` targeting the row only. Change the handlers from T097.
+- [X] T099 [US7] Run `make gates` and fix every UI gate failure the new components introduced.
+- [X] T100 [P] [US7] Write the observation protocol for SC-006 (participants, tasks, metrics, keyboard-only and 360 px checks) in `docs/modules/matching-review-study.md`.
 
 ---
 

@@ -303,4 +303,3 @@ func TestRematch_NonAcceptedState_ClearsStaleLink_FR041(t *testing.T) {
 		t.Errorf("expected MatchState=needs_review, got %s", row.MatchState)
 	}
 }
-

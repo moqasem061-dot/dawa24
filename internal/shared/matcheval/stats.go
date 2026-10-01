@@ -75,7 +75,7 @@ func incBeta(x, a, b float64) float64 {
 	lnBetaAB, _ := math.Lgamma(a + b)
 	lnB := lnBeta + lnBetaB - lnBetaAB
 
-	front := math.Exp(a*math.Log(x) + b*math.Log(1.0-x) - lnB) / a
+	front := math.Exp(a*math.Log(x)+b*math.Log(1.0-x)-lnB) / a
 
 	// Continued fraction: Lentz's method
 	cf := betaCF(x, a, b)

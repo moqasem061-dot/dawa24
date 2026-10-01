@@ -144,4 +144,3 @@ func TestFinalize_Recheck_StockStale_ReturnsToReview(t *testing.T) {
 		t.Errorf("expected repo.UpdateLines to be called with OutcomeOutOfStock")
 	}
 }
-

@@ -3,6 +3,7 @@ package pages
 import (
 	"time"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
@@ -55,20 +56,26 @@ type SavingChangePreview struct {
 
 // StagedSavingItem represents a single parsed row in memory during review.
 type StagedSavingItem struct {
-	Index             int                  `json:"index"`
-	NameProduct       string               `json:"name_product"`
-	SKU               string               `json:"sku"`
-	Quantity          float64              `json:"quantity"`
-	Price             money.Amount         `json:"price"`
-	TotalValue        money.Amount         `json:"total_value"`
-	ProductID         *int64               `json:"product_id,omitempty"`
-	MasterProductName string               `json:"master_product_name,omitempty"`
-	MasterProductSKU  string               `json:"master_product_sku,omitempty"`
-	PackUnit          string               `json:"pack_unit,omitempty"`
-	MatchType         string               `json:"match_type"`
-	Confidence        float64              `json:"confidence"`
-	Included          bool                 `json:"included"`
-	ChangePreview     *SavingChangePreview `json:"change_preview,omitempty"`
+	Index             int                       `json:"index"`
+	NameProduct       string                    `json:"name_product"`
+	SKU               string                    `json:"sku"`
+	Quantity          float64                   `json:"quantity"`
+	Price             money.Amount              `json:"price"`
+	TotalValue        money.Amount              `json:"total_value"`
+	ProductID         *int64                    `json:"product_id,omitempty"`
+	MasterProductName string                    `json:"master_product_name,omitempty"`
+	MasterProductSKU  string                    `json:"master_product_sku,omitempty"`
+	PackUnit          string                    `json:"pack_unit,omitempty"`
+	MatchType         string                    `json:"match_type"`
+	Confidence        float64                   `json:"confidence"`
+	Included          bool                      `json:"included"`
+	ChangePreview     *SavingChangePreview      `json:"change_preview,omitempty"`
+	MatchRevision     int                       `json:"match_revision,omitempty"`
+	ConflictNotice    string                    `json:"conflict_notice,omitempty"`
+	Candidates        []matchflow.CandidateView `json:"candidates,omitempty"`
+	Reasons           []matchflow.Reason        `json:"reasons,omitempty"`
+	Flags             []string                  `json:"flags,omitempty"`
+	MatchDecision     *matchflow.RowDecision    `json:"match_decision,omitempty"`
 }
 
 // SavingImportSession represents an active or historical import session.

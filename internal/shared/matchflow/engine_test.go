@@ -12,12 +12,9 @@ import (
 
 // fakeAI is a proposal pass and a pair check with scripted answers.
 type fakeAI struct {
-	mu sync.Mutex
-	// propose answers one item; nil means "skip it".
-	propose func(it matchflow.Item) *matchflow.Decision
-	// failAbove fails any proposal batch with more items than this.
+	mu        sync.Mutex
+	propose   func(it matchflow.Item) *matchflow.Decision
 	failAbove int
-	// check answers one pair; nil means "skip it".
 	check     func(p matchflow.Pair) *matchflow.Check
 	checkErr  error
 	proposals int
@@ -384,20 +381,20 @@ type attributionSpy struct {
 
 func (s *attributionSpy) Enhance(_ context.Context, b matchflow.Batch) ([]matchflow.Decision, error) {
 	s.enhance(b)
-	out := make([]matchflow.Decision, 0, len(b.Items))
-	for _, it := range b.Items {
-		out = append(out, matchflow.Decision{Ref: it.Ref, ProductID: id(7), Confidence: 0.95})
+	out := make([]matchflow.Decision, len(b.Items))
+	for i, it := range b.Items {
+		out[i] = matchflow.Decision{Ref: it.Ref, ProductID: id(7), Confidence: 0.95}
 	}
 	return out, nil
 }
 
 func (s *attributionSpy) Verify(_ context.Context, b matchflow.CheckBatch) ([]matchflow.Check, error) {
 	s.verify(b)
-	out := make([]matchflow.Check, 0, len(b.Pairs))
-	for _, p := range b.Pairs {
+	out := make([]matchflow.Check, len(b.Pairs))
+	for i, p := range b.Pairs {
 		c := same(0.95)
 		c.Ref = p.Ref
-		out = append(out, *c)
+		out[i] = *c
 	}
 	return out, nil
 }

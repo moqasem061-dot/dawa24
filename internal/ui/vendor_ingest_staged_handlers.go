@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
+	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -180,9 +182,45 @@ func (h *UIHandler) VendorIngestRowMatchSubmit(w http.ResponseWriter, r *http.Re
 	}
 
 	productID, _ := strconv.ParseInt(r.PostFormValue("product_id"), 10, 64)
+	if productID == 0 {
+		productID, _ = strconv.ParseInt(r.PostFormValue("target_id"), 10, 64)
+	}
+	expectedRev, _ := strconv.Atoi(r.PostFormValue("expected_rev"))
 
-	if err := h.ingSvc.AssignStagedRowMatch(ctx, publicID, rowID, productID); err != nil {
-		h.redirectWithNotice(w, r, buildReviewRedirect(publicID, r), "error", h.safeMessage(err, langOf(r)))
+	matchErr := h.ingSvc.AssignStagedRowMatch(ctx, publicID, rowID, productID)
+	if matchErr != nil && !errors.Is(matchErr, matching.ErrRevisionConflict) && !h.isHTMX(r) {
+		h.redirectWithNotice(w, r, buildReviewRedirect(publicID, r), "error", h.safeMessage(matchErr, langOf(r)))
+		return
+	}
+
+	if h.isHTMX(r) {
+		session, _ := h.ingSvc.LoadImport(ctx, publicID)
+		view := pages.VendorImportView{
+			Session: session,
+			Lang:    langOf(r),
+		}
+		var targetRow *ingest.RowOutcome
+		if rows, _, err := h.ingSvc.ImportRows(ctx, publicID, ingest.RowFilter{Limit: 1, Search: fmt.Sprintf("%d", rowID)}); err == nil {
+			for _, ro := range rows {
+				if ro.ID == rowID {
+					targetRow = ro
+					break
+				}
+			}
+		}
+		if targetRow == nil {
+			targetRow = &ingest.RowOutcome{
+				ID: rowID,
+			}
+			if productID > 0 {
+				targetRow.ProductID = &productID
+			}
+		}
+		if errors.Is(matchErr, matching.ErrRevisionConflict) || (expectedRev > 0 && targetRow.MatchRevision > expectedRev) {
+			targetRow.ConflictNotice = RevisionConflictNoticeBilingual
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_ = pages.VendorReviewTableRow(view, targetRow, langOf(r)).Render(r.Context(), w)
 		return
 	}
 

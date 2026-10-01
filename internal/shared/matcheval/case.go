@@ -2,16 +2,16 @@ package matcheval
 
 // Case represents an evaluation case in the corpus.
 type Case struct {
-	ID                  string             `json:"id"`
-	Split               string             `json:"split"` // tuning | heldout | adversarial
-	TemplateFamily      string             `json:"template_family,omitempty"`
-	ExpressionFamily    string             `json:"expression_family,omitempty"`
-	Workflow            []string           `json:"workflow"`
-	Language            string             `json:"language"` // ar | en | mixed
-	Row                 CaseRow            `json:"row"`
-	RequiredGranularity string             `json:"required_granularity"` // product | pack
-	Label               Label              `json:"label"`
-	CatalogSnapshot     string             `json:"catalog_snapshot,omitempty"`
+	ID                  string   `json:"id"`
+	Split               string   `json:"split"` // tuning | heldout | adversarial
+	TemplateFamily      string   `json:"template_family,omitempty"`
+	ExpressionFamily    string   `json:"expression_family,omitempty"`
+	Workflow            []string `json:"workflow"`
+	Language            string   `json:"language"` // ar | en | mixed
+	Row                 CaseRow  `json:"row"`
+	RequiredGranularity string   `json:"required_granularity"` // product | pack
+	Label               Label    `json:"label"`
+	CatalogSnapshot     string   `json:"catalog_snapshot,omitempty"`
 }
 
 // CaseRow defines the row data, mapping, and identifier declarations.
@@ -51,8 +51,8 @@ type Outcome struct {
 	Reasons                []string `json:"reasons,omitempty"`
 
 	// AI specific diagnostics
-	AIAttempts int     `json:"ai_attempts,omitempty"`
-	AITokens   int     `json:"ai_tokens,omitempty"`
-	AICost     float64 `json:"ai_cost,omitempty"`
-	AICostKnown bool   `json:"ai_cost_known,omitempty"`
+	AIAttempts  int     `json:"ai_attempts,omitempty"`
+	AITokens    int     `json:"ai_tokens,omitempty"`
+	AICost      float64 `json:"ai_cost,omitempty"`
+	AICostKnown bool    `json:"ai_cost_known,omitempty"`
 }

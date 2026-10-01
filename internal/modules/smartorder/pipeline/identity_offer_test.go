@@ -10,10 +10,10 @@ import (
 // mockOfferRepo implements the minimal repository methods needed by Supplier.Resolve.
 type mockOfferRepo struct {
 	smartorder.Repository
-	offers          map[int64][]smartorder.Offer
+	offers           map[int64][]smartorder.Offer
 	storedCandidates map[int64][]smartorder.Candidate
-	upsertedSels    []*smartorder.Selection
-	queriedProducts [][]int64
+	upsertedSels     []*smartorder.Selection
+	queriedProducts  [][]int64
 }
 
 func (m *mockOfferRepo) LoadOffers(_ context.Context, _ int64, productIDs []int64) ([]smartorder.Offer, error) {

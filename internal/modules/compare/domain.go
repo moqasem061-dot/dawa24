@@ -307,17 +307,17 @@ type RowMatch struct {
 
 // CompareFileRow represents an individual drug/product item extracted from a spreadsheet.
 type CompareFileRow struct {
-	ID                 int64          `json:"id"`
-	FileID             int64          `json:"file_id"`
-	OrganizationID     *int64         `json:"organization_id,omitempty"`
-	RowNumber          int            `json:"row_number"`
-	RawName            string         `json:"raw_name"`
-	NormalizedName     string         `json:"normalized_name"`
-	SKU                string         `json:"sku,omitempty"`
-	Price              money.Amount   `json:"price"`
-	Discount           float64        `json:"discount"`
-	PriceAfterDiscount money.Amount   `json:"price_after_discount"`
-	MatchedProductID   *int64         `json:"matched_product_id,omitempty"`
+	ID                 int64           `json:"id"`
+	FileID             int64           `json:"file_id"`
+	OrganizationID     *int64          `json:"organization_id,omitempty"`
+	RowNumber          int             `json:"row_number"`
+	RawName            string          `json:"raw_name"`
+	NormalizedName     string          `json:"normalized_name"`
+	SKU                string          `json:"sku,omitempty"`
+	Price              money.Amount    `json:"price"`
+	Discount           float64         `json:"discount"`
+	PriceAfterDiscount money.Amount    `json:"price_after_discount"`
+	MatchedProductID   *int64          `json:"matched_product_id,omitempty"`
 	MatchConfidence    float64         `json:"match_confidence"`
 	MatchMethod        MatchMethod     `json:"match_method"`
 	MatchState         string          `json:"match_state,omitempty"`
