@@ -20,17 +20,17 @@ import (
 // are the same object.
 templ PublicShell(title string, lang string, dir string) {
 	{{ site := GetSiteSettings(ctx) }}
-	@Base(title, lang, dir, "/static/css/customer.css", "/static/css/public.css", "/static/css/marketing.css") {
+	@Base(title, lang, dir, "/static/css/public-shell.css") {
 		<div x-data="{ mobileNav: false }" class="public-shell-root" hx-boost="true">
 			<header class="nav-root nav-root--public" data-nav-scroll>
 				<div class="nav-inner">
 					<div class="nav-lead">
 						<a href="/" class="nav-brand" title={ site.SiteName }>
 							if site.LogoURL != "" {
-								<img src={ site.LogoURL } alt={ site.SiteName } class={ "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="next" data-fallback-display="inline-flex" />
+								<img src={ BrandLogoURL(site.LogoURL) } srcset={ BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="next" data-fallback-display="inline-flex" />
 							}
 							if site.LogoDarkURL != "" {
-								<img src={ site.LogoDarkURL } alt={ site.SiteName } class="nav-brand-logo logo-dark" data-img-fallback="next" data-fallback-display="inline-flex" />
+								<img src={ Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="nav-brand-logo logo-dark" data-img-fallback="next" data-fallback-display="inline-flex" />
 							}
 							if site.LogoURL == "" && site.LogoDarkURL == "" {
 								<span class="nav-brand-text">

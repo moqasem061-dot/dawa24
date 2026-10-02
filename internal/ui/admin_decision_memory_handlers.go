@@ -76,15 +76,15 @@ func (h *UIHandler) AdminMatchDecisionsPage(w http.ResponseWriter, r *http.Reque
 	isEnabled := h.catSvc.IsDecisionMemoryEnabled(ctx)
 
 	data := pages.AdminMatchDecisionsData{
-		Decisions:     decisions,
-		Total:         total,
-		Page:          page,
-		PerPage:       limit,
-		Search:        search,
-		IsEnabled:     isEnabled,
-		Scope:         scope,
-		Source:        kind,
-		QueryValues:   r.URL.Query(),
+		Decisions:   decisions,
+		Total:       total,
+		Page:        page,
+		PerPage:     limit,
+		Search:      search,
+		IsEnabled:   isEnabled,
+		Scope:       scope,
+		Source:      kind,
+		QueryValues: r.URL.Query(),
 	}
 
 	h.renderPage(ctx, w, "render AdminMatchDecisionsPage", pages.AdminMatchDecisionsPage(lang, dir, data))

@@ -100,8 +100,6 @@ func (m *mockDiagnosticsMatchingSvc) RollbackAssignment(context.Context, string,
 	return nil
 }
 
-
-
 func setupDiagnosticsHandler(matchingMock matching.Service) *UIHandler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	mockRepo := &mockCatalogMatchingRepo{mockCatalogImageRepo: newMockCatalogImageRepo()}

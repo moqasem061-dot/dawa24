@@ -29,7 +29,20 @@ func CapsuleAssistantMessages() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Messages Scroll Area (Canvas Style - Direct Text on Background) --><div id=\"capsule-messages-container\" class=\"capsule-messages-scroll\"><!-- Empty State / Clean Start Session with Quick Prompts --><div x-show=\"messages.length === 0\" class=\"d-flex flex-col items-center justify-center text-center p-6 gap-2.5 my-auto w-full\"><div class=\"capsule-empty-avatar\"><img src=\"/static/img/doctor-capsule.png\" alt=\"دكتور كبسولة\" class=\"w-full h-full object-cover rounded-full\"></div><div class=\"d-flex flex-col items-center text-center w-full\"><h4 class=\"m-0 mb-1 text-sm font-extrabold text-primary text-center\" x-text=\"agentLabel || $t('capsule.title', 'دكتور كبسولة')\"></h4><p class=\"m-0 text-xs text-secondary leading-relaxed max-w-xs text-center\">اسأل عن أي شيء في بيانات منشأتك: الطلبات، الإنفاق، الأسعار، المخزون، الفواتير. أقرأ ما تملك صلاحيته فقط، وأجهّز الإجراءات لتؤكدها أنت قبل تنفيذها.</p></div><!-- Interactive Quick Prompts --><div class=\"d-flex flex-col gap-1.5 w-full max-w-xs mt-2\"><button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('كم أنفقت على المشتريات آخر ٣٠ يوم، وما توزيعها حسب المورّد؟')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!-- Messages Scroll Area (Canvas Style - Direct Text on Background) --><div id=\"capsule-messages-container\" class=\"capsule-messages-scroll\"><!-- Empty State / Clean Start Session with Quick Prompts --><div x-show=\"messages.length === 0\" class=\"d-flex flex-col items-center justify-center text-center p-6 gap-2.5 my-auto w-full\"><div class=\"capsule-empty-avatar\"><img src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(Asset("/static/img/doctor-capsule-120.webp"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/capsule_assistant_messages.templ`, Line: 12, Col: 59}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" width=\"120\" height=\"120\" decoding=\"async\" alt=\"دكتور كبسولة\" class=\"w-full h-full object-cover rounded-full\"></div><div class=\"d-flex flex-col items-center text-center w-full\"><h4 class=\"m-0 mb-1 text-sm font-extrabold text-primary text-center\" x-text=\"agentLabel || $t('capsule.title', 'دكتور كبسولة')\"></h4><p class=\"m-0 text-xs text-secondary leading-relaxed max-w-xs text-center\">اسأل عن أي شيء في بيانات منشأتك: الطلبات، الإنفاق، الأسعار، المخزون، الفواتير. أقرأ ما تملك صلاحيته فقط، وأجهّز الإجراءات لتؤكدها أنت قبل تنفيذها.</p></div><!-- Interactive Quick Prompts --><div class=\"d-flex flex-col gap-1.5 w-full max-w-xs mt-2\"><button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('كم أنفقت على المشتريات آخر ٣٠ يوم، وما توزيعها حسب المورّد؟')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -37,7 +50,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<span class=\"text-truncate\">إنفاقي آخر ٣٠ يوم حسب المورّد</span></button> <button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('ما آخر خمس طلبات لدي وما حالتها الآن؟')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span class=\"text-truncate\">إنفاقي آخر ٣٠ يوم حسب المورّد</span></button> <button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('ما آخر خمس طلبات لدي وما حالتها الآن؟')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -45,7 +58,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<span class=\"text-truncate\">آخر طلباتي وحالتها</span></button> <button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('ما أكثر ٥ أصناف استهلاكاً لميزانيتي هذا الشهر؟')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span class=\"text-truncate\">آخر طلباتي وحالتها</span></button> <button type=\"button\" class=\"capsule-chip-btn\" @click=\"askChip('ما أكثر ٥ أصناف استهلاكاً لميزانيتي هذا الشهر؟')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -53,7 +66,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<span class=\"text-truncate\">أكثر الأصناف استهلاكاً للميزانية</span></button></div></div><!-- Message Stream --><template x-for=\"(msg, idx) in messages\" :key=\"idx\"><div><!-- User Message (Subtle Right-Aligned Pill) --><template x-if=\"msg.isUser\"><div class=\"d-flex justify-content-start mb-1\"><div class=\"max-w-[85%] d-flex flex-col items-start gap-1\"><!-- Attached Files Badges / Image Previews --><template x-if=\"msg.attachments && msg.attachments.length > 0\"><div class=\"d-flex flex-wrap gap-1.5 mb-1\"><template x-for=\"file in msg.attachments\" :key=\"file.handle || file.name || file.filename\"><div><template x-if=\"attachmentPreview(file)\"><a :href=\"attachmentPreview(file)\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"capsule-sent-thumb\"><img :src=\"attachmentPreview(file)\" alt=\"صورة مرفقة\" loading=\"lazy\"></a></template><template x-if=\"!attachmentPreview(file)\"><div class=\"capsule-sent-file\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span class=\"text-truncate\">أكثر الأصناف استهلاكاً للميزانية</span></button></div></div><!-- Message Stream --><template x-for=\"(msg, idx) in messages\" :key=\"idx\"><div><!-- User Message (Subtle Right-Aligned Pill) --><template x-if=\"msg.isUser\"><div class=\"d-flex justify-content-start mb-1\"><div class=\"max-w-[85%] d-flex flex-col items-start gap-1\"><!-- Attached Files Badges / Image Previews --><template x-if=\"msg.attachments && msg.attachments.length > 0\"><div class=\"d-flex flex-wrap gap-1.5 mb-1\"><template x-for=\"file in msg.attachments\" :key=\"file.handle || file.name || file.filename\"><div><template x-if=\"attachmentPreview(file)\"><a :href=\"attachmentPreview(file)\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"capsule-sent-thumb\"><img :src=\"attachmentPreview(file)\" alt=\"صورة مرفقة\" loading=\"lazy\"></a></template><template x-if=\"!attachmentPreview(file)\"><div class=\"capsule-sent-file\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -61,7 +74,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<span x-text=\"attachmentName(file)\" class=\"text-truncate\"></span></div></template></div></template></div></template><!-- User Text Bubble --><div dir=\"auto\" class=\"capsule-user-bubble\" x-text=\"msg.text\"></div></div></div></template><!-- Assistant Message (ChatGPT Style - Direct on Canvas) --><template x-if=\"!msg.isUser\"><div class=\"d-flex flex-col gap-1.5\"><!-- Collapsible Reasoning Block (Thinking...) --><template x-if=\"msg.reasoning\"><div x-data=\"{ open: false }\" class=\"my-1 border rounded-lg overflow-hidden bg-surface-sunken\"><button type=\"button\" @click=\"open = !open\" class=\"w-full px-2.5 py-1.5 bg-transparent border-0 d-flex justify-between items-center cursor-pointer text-2xs text-secondary font-bold\"><span class=\"d-flex items-center gap-1.5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span x-text=\"attachmentName(file)\" class=\"text-truncate\"></span></div></template></div></template></div></template><!-- User Text Bubble --><div dir=\"auto\" class=\"capsule-user-bubble\" x-text=\"msg.text\"></div></div></div></template><!-- Assistant Message (ChatGPT Style - Direct on Canvas) --><template x-if=\"!msg.isUser\"><div class=\"d-flex flex-col gap-1.5\"><!-- Collapsible Reasoning Block (Thinking...) --><template x-if=\"msg.reasoning\"><div x-data=\"{ open: false }\" class=\"my-1 border rounded-lg overflow-hidden bg-surface-sunken\"><button type=\"button\" @click=\"open = !open\" class=\"w-full px-2.5 py-1.5 bg-transparent border-0 d-flex justify-between items-center cursor-pointer text-2xs text-secondary font-bold\"><span class=\"d-flex items-center gap-1.5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -69,7 +82,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<span x-text=\"$t('capsule.clinical_reasoning', 'التحليل الصيدلي للاستفسار')\">التحليل الصيدلي للاستفسار</span></span> <span x-text=\"open ? '▲ إخفاء' : '▼ إظهار'\" class=\"text-2xs text-muted\"></span></button><div x-show=\"open\" class=\"p-2.5 text-2xs text-muted border-t whitespace-pre-wrap leading-relaxed\" x-text=\"msg.reasoning\"></div></div></template><!-- Assistant Response Body (Markdown Rendered with Auto Direction) --><div dir=\"auto\" class=\"capsule-prose\"><span x-safe-html=\"renderMarkdown(msg.text, msg.entities)\"></span><!-- Glowing Streaming Cursor --><span x-show=\"msg.isStreaming\" class=\"capsule-cursor\">▊</span></div><!-- Actions prepared for confirmation. The buttons send only the\n\t\t\t\t\t\t     proposal id; the server re-checks everything before acting. --><template x-for=\"ref in proposalsOf(msg)\" :key=\"'proposal:' + ref.id\"><div class=\"capsule-proposal\" :class=\"'is-' + ref.proposal.status\" data-capsule-no-link><div class=\"capsule-proposal-head\"><span class=\"capsule-proposal-title\" x-text=\"ref.proposal.preview.title\"></span> <span class=\"capsule-proposal-status\" x-text=\"proposalStatusLabel(ref.proposal)\"></span></div><p class=\"capsule-proposal-summary\" x-show=\"ref.proposal.preview.summary\" x-text=\"ref.proposal.preview.summary\"></p><dl class=\"capsule-proposal-details\" x-show=\"(ref.proposal.preview.details || []).length\"><template x-for=\"(d, i) in (ref.proposal.preview.details || [])\" :key=\"i\"><div class=\"capsule-proposal-row\"><dt x-text=\"d.label\"></dt><dd x-text=\"d.value\"></dd></div></template></dl><ul class=\"capsule-proposal-warnings\" x-show=\"ref.proposal.status === 'pending' && (ref.proposal.preview.warnings || []).length\"><template x-for=\"(w, i) in (ref.proposal.preview.warnings || [])\" :key=\"i\"><li x-text=\"w\"></li></template></ul><p class=\"capsule-proposal-result\" x-show=\"ref.resultMessage\" x-text=\"ref.resultMessage\"></p><a class=\"capsule-proposal-link\" x-show=\"ref.proposal.outcome && ref.proposal.outcome.url\" :href=\"ref.proposal.outcome ? ref.proposal.outcome.url : '#'\">عرض النتيجة</a><div class=\"capsule-proposal-actions\" x-show=\"ref.proposal.status === 'pending'\"><button type=\"button\" class=\"btn btn-primary btn-sm\" :disabled=\"ref.busy\" @click=\"decideProposal(ref, 'confirm')\">تأكيد</button> <button type=\"button\" class=\"btn btn-outline btn-sm\" :disabled=\"ref.busy\" @click=\"decideProposal(ref, 'cancel')\">إلغاء</button></div></div></template><!-- Records this answer refers to --><template x-if=\"!msg.isStreaming && recordsOf(msg).length\"><div class=\"capsule-refs\" data-capsule-no-link><div class=\"capsule-refs-label\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span x-text=\"$t('capsule.clinical_reasoning', 'التحليل الصيدلي للاستفسار')\">التحليل الصيدلي للاستفسار</span></span> <span x-text=\"open ? '▲ إخفاء' : '▼ إظهار'\" class=\"text-2xs text-muted\"></span></button><div x-show=\"open\" class=\"p-2.5 text-2xs text-muted border-t whitespace-pre-wrap leading-relaxed\" x-text=\"msg.reasoning\"></div></div></template><!-- Assistant Response Body (Markdown Rendered with Auto Direction) --><div dir=\"auto\" class=\"capsule-prose\"><span x-safe-html=\"renderMarkdown(msg.text, msg.entities)\"></span><!-- Glowing Streaming Cursor --><span x-show=\"msg.isStreaming\" class=\"capsule-cursor\">▊</span></div><!-- Actions prepared for confirmation. The buttons send only the\r\n\t\t\t\t\t\t     proposal id; the server re-checks everything before acting. --><template x-for=\"ref in proposalsOf(msg)\" :key=\"'proposal:' + ref.id\"><div class=\"capsule-proposal\" :class=\"'is-' + ref.proposal.status\" data-capsule-no-link><div class=\"capsule-proposal-head\"><span class=\"capsule-proposal-title\" x-text=\"ref.proposal.preview.title\"></span> <span class=\"capsule-proposal-status\" x-text=\"proposalStatusLabel(ref.proposal)\"></span></div><p class=\"capsule-proposal-summary\" x-show=\"ref.proposal.preview.summary\" x-text=\"ref.proposal.preview.summary\"></p><dl class=\"capsule-proposal-details\" x-show=\"(ref.proposal.preview.details || []).length\"><template x-for=\"(d, i) in (ref.proposal.preview.details || [])\" :key=\"i\"><div class=\"capsule-proposal-row\"><dt x-text=\"d.label\"></dt><dd x-text=\"d.value\"></dd></div></template></dl><ul class=\"capsule-proposal-warnings\" x-show=\"ref.proposal.status === 'pending' && (ref.proposal.preview.warnings || []).length\"><template x-for=\"(w, i) in (ref.proposal.preview.warnings || [])\" :key=\"i\"><li x-text=\"w\"></li></template></ul><p class=\"capsule-proposal-result\" x-show=\"ref.resultMessage\" x-text=\"ref.resultMessage\"></p><a class=\"capsule-proposal-link\" x-show=\"ref.proposal.outcome && ref.proposal.outcome.url\" :href=\"ref.proposal.outcome ? ref.proposal.outcome.url : '#'\">عرض النتيجة</a><div class=\"capsule-proposal-actions\" x-show=\"ref.proposal.status === 'pending'\"><button type=\"button\" class=\"btn btn-primary btn-sm\" :disabled=\"ref.busy\" @click=\"decideProposal(ref, 'confirm')\">تأكيد</button> <button type=\"button\" class=\"btn btn-outline btn-sm\" :disabled=\"ref.busy\" @click=\"decideProposal(ref, 'cancel')\">إلغاء</button></div></div></template><!-- Records this answer refers to --><template x-if=\"!msg.isStreaming && recordsOf(msg).length\"><div class=\"capsule-refs\" data-capsule-no-link><div class=\"capsule-refs-label\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -77,7 +90,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "<span x-text=\"$t('capsule.related_records', 'السجلات المرتبطة')\">السجلات المرتبطة</span></div><div class=\"capsule-refs-list\"><template x-for=\"ref in recordsOf(msg)\" :key=\"ref.kind + ':' + ref.id\"><div class=\"capsule-ref-card\"><a :href=\"ref.url\" class=\"capsule-ref-main\" :title=\"ref.title\"><span class=\"capsule-ref-kind\" x-text=\"entityKindLabel(ref.kind)\"></span> <span class=\"capsule-ref-title\" x-text=\"ref.title || ref.label\"></span> <span class=\"capsule-ref-sub\" x-show=\"ref.subtitle\" x-text=\"ref.subtitle\"></span></a><template x-for=\"action in (ref.actions || [])\" :key=\"action.url\"><a :href=\"action.url\" class=\"capsule-ref-action\" x-text=\"action.label\"></a></template></div></template></div></div></template><!-- Error Message Card --><template x-if=\"msg.error\"><div class=\"p-2.5 rounded-lg bg-danger-subtle text-danger text-xs d-flex items-center justify-between gap-2 border border-danger/20 my-1\"><div class=\"d-flex items-center gap-1.5\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span x-text=\"$t('capsule.related_records', 'السجلات المرتبطة')\">السجلات المرتبطة</span></div><div class=\"capsule-refs-list\"><template x-for=\"ref in recordsOf(msg)\" :key=\"ref.kind + ':' + ref.id\"><div class=\"capsule-ref-card\"><a :href=\"ref.url\" class=\"capsule-ref-main\" :title=\"ref.title\"><span class=\"capsule-ref-kind\" x-text=\"entityKindLabel(ref.kind)\"></span> <span class=\"capsule-ref-title\" x-text=\"ref.title || ref.label\"></span> <span class=\"capsule-ref-sub\" x-show=\"ref.subtitle\" x-text=\"ref.subtitle\"></span></a><template x-for=\"action in (ref.actions || [])\" :key=\"action.url\"><a :href=\"action.url\" class=\"capsule-ref-action\" x-text=\"action.label\"></a></template></div></template></div></div></template><!-- Error Message Card --><template x-if=\"msg.error\"><div class=\"p-2.5 rounded-lg bg-danger-subtle text-danger text-xs d-flex items-center justify-between gap-2 border border-danger/20 my-1\"><div class=\"d-flex items-center gap-1.5\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -85,7 +98,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span x-text=\"msg.error\"></span></div><button type=\"button\" @click=\"retryLastTurn()\" class=\"btn btn-outline-danger btn-xs font-bold whitespace-nowrap\" x-text=\"$t('capsule.retry', 'إعادة المحاولة')\">إعادة المحاولة</button></div></template><!-- Minimalist Icon-Only Copy Button with Feedback State --><div x-show=\"!msg.isStreaming && msg.text\" class=\"d-flex items-center gap-2 mt-1\"><button type=\"button\" @click=\"copyText(msg.text, $el)\" class=\"capsule-hdr-icon-btn\" :title=\"$t('capsule.copy_answer', 'نسخ الإجابة')\"><span class=\"copy-icon-default\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "<span x-text=\"msg.error\"></span></div><button type=\"button\" @click=\"retryLastTurn()\" class=\"btn btn-outline-danger btn-xs font-bold whitespace-nowrap\" x-text=\"$t('capsule.retry', 'إعادة المحاولة')\">إعادة المحاولة</button></div></template><!-- Minimalist Icon-Only Copy Button with Feedback State --><div x-show=\"!msg.isStreaming && msg.text\" class=\"d-flex items-center gap-2 mt-1\"><button type=\"button\" @click=\"copyText(msg.text, $el)\" class=\"capsule-hdr-icon-btn\" :title=\"$t('capsule.copy_answer', 'نسخ الإجابة')\"><span class=\"copy-icon-default\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -93,7 +106,7 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</span> <span class=\"copy-icon-success hidden text-emerald\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span> <span class=\"copy-icon-success hidden text-emerald\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -101,7 +114,20 @@ func CapsuleAssistantMessages() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</span></button></div></div></template></div></template><!-- Thinking Indicator: Single Breathing Glowing Avatar Icon --><div x-show=\"isStreaming && messages.length > 0 && !messages[messages.length-1].text\" class=\"capsule-thinking-row\"><div class=\"capsule-thinking\"><div class=\"capsule-breathing-icon\"><img src=\"/static/img/doctor-capsule.png\" alt=\"دكتور كبسولة\" class=\"w-full h-full object-cover rounded-full\"></div><span class=\"capsule-thinking-label\" x-text=\"statusMessage || $t('capsule.thinking', 'دكتور كبسولة يفكر ويحلل البيانات...')\"></span></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</span></button></div></div></template></div></template><!-- Thinking Indicator: Single Breathing Glowing Avatar Icon --><div x-show=\"isStreaming && messages.length > 0 && !messages[messages.length-1].text\" class=\"capsule-thinking-row\"><div class=\"capsule-thinking\"><div class=\"capsule-breathing-icon\"><img src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var3 string
+		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(Asset("/static/img/doctor-capsule-120.webp"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/capsule_assistant_messages.templ`, Line: 219, Col: 60}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "\" width=\"120\" height=\"120\" decoding=\"async\" alt=\"دكتور كبسولة\" class=\"w-full h-full object-cover rounded-full\"></div><span class=\"capsule-thinking-label\" x-text=\"statusMessage || $t('capsule.thinking', 'دكتور كبسولة يفكر ويحلل البيانات...')\"></span></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

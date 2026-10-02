@@ -1,0 +1,29 @@
+package layouts
+
+import "github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+
+// HomeCriticalCSS is generated from the public page and installed by ui.
+var HomeCriticalCSS func() string
+
+templ stylesheets(extraCSS []string) {
+	{{ critical := HomeCriticalCSS != nil && IsCurrentPath(ctx, "/") && authctx.FromContext(ctx).UserID == 0 }}
+	if critical {
+		@homeCriticalStyle()
+	}
+	for _, path := range append([]string{"/static/css/shell.css"}, extraCSS...) {
+		<link rel="stylesheet" data-clarity-unmask="true" href={ Asset(path) } if critical { media="print" data-deferred-css="true" }/>
+		if critical {
+			<noscript><link rel="stylesheet" data-clarity-unmask="true" href={ Asset(path) }/></noscript>
+		}
+	}
+	if critical {
+		<script nonce={ Nonce(ctx) }>
+			(function () {
+				document.querySelectorAll('link[data-deferred-css]').forEach(function (link) {
+					link.addEventListener('load', function () { link.media = 'all'; }, { once: true });
+					if (link.sheet) link.media = 'all';
+				});
+			})();
+		</script>
+	}
+}

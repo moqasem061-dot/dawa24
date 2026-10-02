@@ -28,7 +28,7 @@ import (
 //     The old ones had drifted: the stylesheets said 2026082903 and the script
 //     said 2026082901, so a CSS change could ship without its JavaScript.
 //
-// GetSiteSettings never returns nil — it falls back to a complete default — so
+// GetSiteSettings never returns nil; it falls back to a complete default, so
 // the nil check that used to wrap this entire template could not fire. It has
 // been removed rather than left to imply a failure mode that does not exist.
 templ Base(title string, lang string, dir string, extraCSS ...string) {
@@ -84,7 +84,7 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			// Trusted Types policies and the htmx swap gate. Synchronous and
 			// first: every later script, and every image that fails to load
 			// while the body is parsed, depends on it.
-			<script nonce={ Nonce(ctx) } src={ Asset("/static/js/security.js") }></script>
+			@SecurityScript()
 			// Microsoft Clarity, after security.js: the recorder's script.src is
 			// admitted by the default Trusted Types policy that file installs.
 			@ClarityScript()
@@ -124,64 +124,14 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			// Asset leaves an uploaded favicon URL alone and hashes a bundled one.
 			<link rel="icon" type="image/png" href={ Asset(site.FaviconURL) }/>
 			<link rel="apple-touch-icon" href={ Asset("/static/img/logo-icon.png") }/>
-			<link rel="preconnect" href="https://fonts.googleapis.com"/>
-			<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-			// The font stylesheet is fetched without blocking the first paint.
-			//
-			// As a plain <link rel="stylesheet"> it was render-blocking AND on a
-			// third-party host, so nothing at all appeared until two extra DNS
-			// lookups, two TLS handshakes and a round trip to Google had finished.
-			// On Egyptian mobile data that is most of the time to first paint, and
-			// it is time spent before the browser has even asked for a font file.
-			//
-			// media="print" makes the browser fetch the sheet at low priority
-			// without applying it; the onload flips it to all, at which point the
-			// faces apply. Combined with display=swap — already set below — text is
-			// painted immediately in the fallback face and re-rendered in Readex
-			// Pro when it arrives, instead of not being painted at all.
-			//
-			// The <noscript> copy keeps the fonts for a client with JavaScript
-			// disabled, which is the one case where onload never fires.
-			<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"/>
-			<link
-				id="google-fonts-sheet"
-				rel="stylesheet"
-				data-clarity-unmask="true"
-				href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"
-				media="print"
-			/>
-			<script nonce={ Nonce(ctx) }>
-				(function() {
-					var f = document.getElementById('google-fonts-sheet');
-					if (f) {
-						f.addEventListener('load', function() { f.media = 'all'; });
-						if (f.sheet) { f.media = 'all'; }
-					}
-				})();
-			</script>
-			<noscript>
-				<link rel="stylesheet" data-clarity-unmask="true" href="https://fonts.googleapis.com/css2?family=Readex+Pro:wght@300;400;500;600;700;800&family=Spline+Sans+Mono:wght@400;500;600;700&display=swap"/>
-			</noscript>
-			// data-clarity-unmask on every stylesheet: Clarity's masking has
-			// stripped the href of <link> tags whose URL carries a cache-busting
-			// hash (?v=...), and a replay without the href renders unstyled.
-			// A <link> has no content, so unmasking it reveals nothing.
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/tokens.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/base.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/layout.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/components.css") }/>
-			// nav.css carries the whole navigation visual system -- both bars, every
-			// popover, the mobile drawer. It loads on every page because the chrome
-			// is on every page, and it sits after components.css because it
-			// deliberately supersedes the header rules that used to live there.
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/nav.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/foundations.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/utilities.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/wizard.css") }/>
-			<link rel="stylesheet" data-clarity-unmask="true" href={ Asset("/static/css/app.css") }/>
-			for _, cssPath := range extraCSS {
-				<link rel="stylesheet" data-clarity-unmask="true" href={ Asset(cssPath) }/>
+			// The Arabic face is discovered with the document, without a remote
+			// font stylesheet. Optional display prevents a late font layout shift.
+			if lang == "ar" {
+				<link rel="preload" as="font" type="font/woff2" crossorigin="" href={ Asset("/static/fonts/readex-pro-arabic-v27.woff2") }/>
+			} else {
+				<link rel="preload" as="font" type="font/woff2" crossorigin="" href={ Asset("/static/fonts/readex-pro-latin-v27.woff2") }/>
 			}
+			@stylesheets(extraCSS)
 			@clientI18nScript(lang, dir)
 			<script defer src={ Asset("/static/vendor/htmx-1.9.10.min.js") }></script>
 			// In-place navigation for the dashboard shells. Must run after htmx and

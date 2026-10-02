@@ -219,11 +219,12 @@ func confirmTarget(
 	achieved := matchflow.GranularityProduct
 	packOutcome := matchflow.PackOutcomeAgree
 	if pol.Required == productmatch.GranularityPack {
-		if comp.Attributes["pack"] == productmatch.OutcomeAgree {
+		switch comp.Attributes["pack"] {
+		case productmatch.OutcomeAgree:
 			achieved = matchflow.GranularityPack
-		} else if comp.Attributes["pack"] == productmatch.OutcomeConflict {
+		case productmatch.OutcomeConflict:
 			packOutcome = matchflow.PackOutcomeConflict
-		} else {
+		default:
 			packOutcome = matchflow.PackOutcomeUnstated
 		}
 	}

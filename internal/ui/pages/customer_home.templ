@@ -204,7 +204,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 					<!-- Dr. Capsule Mascot Floating Card -->
 					<div class="hero-mascot-pill-card">
 						<div class="hero-mascot-img-box">
-							<img src="/static/img/doctor-capsule.png" alt="د. كبسولة المساعد الذكي" loading="lazy" decoding="async"/>
+							<img src={ layouts.Asset("/static/img/doctor-capsule-120.webp") } srcset={ layouts.Asset("/static/img/doctor-capsule-120.webp") + " 120w, " + layouts.Asset("/static/img/doctor-capsule-240.webp") + " 240w" } sizes="60px" width="120" height="120" alt="د. كبسولة المساعد الذكي" loading="lazy" decoding="async"/>
 						</div>
 						<div class="flex-1 min-w-0">
 							<div class="d-flex items-center gap-2">
@@ -688,7 +688,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 					@components.IconHeadphones("icon-md")
 				</div>
 				<div>
-					<h4 class="font-extrabold text-sm text-primary m-0">دعم مستمر 24/7</h4>
+					<h3 class="font-extrabold text-sm text-primary m-0">دعم مستمر 24/7</h3>
 					<p class="text-xs text-secondary m-0 mt-0.5">فريق دعم فني وصيدلي متخصص جاهز لمساعدتك وحل أي استفسارات لحظياً عبر الهاتف والواتساب.</p>
 				</div>
 			</div>
@@ -698,7 +698,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 					@components.IconShield("icon-md text-emerald")
 				</div>
 				<div>
-					<h4 class="font-extrabold text-sm text-primary m-0">آمن وموثوق 100%</h4>
+					<h3 class="font-extrabold text-sm text-primary m-0">آمن وموثوق 100%</h3>
 					<p class="text-xs text-secondary m-0 mt-0.5">موردون ومستودعات مرخصة وفواتير إلكترونية معتمدة لحماية كافة تعاملاتك التجارية.</p>
 				</div>
 			</div>
@@ -708,7 +708,7 @@ templ CustomerHome(featured []*catalog.Product, categories []*catalog.Category, 
 					@components.IconFlagEG("icon-md")
 				</div>
 				<div>
-					<h4 class="font-extrabold text-sm text-primary m-0">تغطية شاملة لمحافظات مصر</h4>
+					<h3 class="font-extrabold text-sm text-primary m-0">تغطية شاملة لمحافظات مصر</h3>
 					<p class="text-xs text-secondary m-0 mt-0.5">شبكة توزيع لوجستية وسلاسل تبريد مجهزة تربط كافة محافظات الجمهورية من القاهرة وحتى الصعيد.</p>
 				</div>
 			</div>

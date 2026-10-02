@@ -58,9 +58,9 @@ func canonicalFacts(facts IdentityFacts) string {
 
 	// Concentration
 	if facts.Concentration != nil {
-		b.WriteString(fmt.Sprintf("%s:%s/%v:%s",
+		fmt.Fprintf(&b, "%s:%s/%v:%s",
 			facts.Concentration.Num.Value, facts.Concentration.Num.Unit,
-			facts.Concentration.Den.Value, facts.Concentration.Den.Unit))
+			facts.Concentration.Den.Value, facts.Concentration.Den.Unit)
 	}
 	b.WriteByte('\x1f')
 
@@ -78,7 +78,7 @@ func canonicalFacts(facts IdentityFacts) string {
 
 	// Pack
 	if facts.Pack != nil {
-		b.WriteString(fmt.Sprintf("%d:%s", facts.Pack.Count, facts.Pack.SubUnit))
+		fmt.Fprintf(&b, "%d:%s", facts.Pack.Count, facts.Pack.SubUnit)
 	}
 	b.WriteByte('\x1f')
 

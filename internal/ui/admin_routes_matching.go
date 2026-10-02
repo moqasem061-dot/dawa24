@@ -23,4 +23,3 @@ func (h *UIHandler) registerAdminMatchingRoutes(r chi.Router) {
 		g.Post("/admin/matching/policies/rollback", h.AdminMatchPolicyRollback)
 	})
 }
-

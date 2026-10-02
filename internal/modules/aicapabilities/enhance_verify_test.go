@@ -33,7 +33,8 @@ func TestVerifyInputIsDeterministic(t *testing.T) {
 		{Ref: 1, Item: matchflow.Item{Text: "a"}, Product: matchflow.CatalogEntry{ProductID: 1}},
 		{Ref: 2, Item: matchflow.Item{Text: "b"}, Product: matchflow.CatalogEntry{ProductID: 2}},
 	}}
-	if RenderVerifyInput(b) != RenderVerifyInput(b) {
+	first, second := RenderVerifyInput(b), RenderVerifyInput(b)
+	if first != second {
 		t.Fatal("render is not deterministic")
 	}
 }

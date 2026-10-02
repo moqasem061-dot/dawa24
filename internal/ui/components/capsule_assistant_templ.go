@@ -33,7 +33,20 @@ func CapsuleAssistantTrigger() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"capsule-assistant-host\" x-data=\"capsuleAssistantManager()\" class=\"capsule-assistant-host\"><!-- Floating Trigger: Polished Circular Button (Positioned on the Left) --><button type=\"button\" x-show=\"!isOpen\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0 scale-90\" x-transition:enter-end=\"opacity-100 scale-100\" @click=\"openAssistant()\" class=\"capsule-circle-btn\" :title=\"usageTooltip()\"><img src=\"/static/img/doctor-capsule.png\" alt=\"دكتور كبسولة\" class=\"capsule-circle-btn-img\"><!-- Online Pulse Indicator --><span class=\"capsule-online-badge\"></span><template x-if=\"usagePercent() > 0\"><span class=\"capsule-usage-floating-pill\" x-text=\"usagePercent() + '%'\"></span></template></button>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div id=\"capsule-assistant-host\" x-data=\"capsuleAssistantManager()\" class=\"capsule-assistant-host\"><!-- Floating Trigger: Polished Circular Button (Positioned on the Left) --><button type=\"button\" x-show=\"!isOpen\" x-transition:enter=\"transition ease-out duration-200\" x-transition:enter-start=\"opacity-0 scale-90\" x-transition:enter-end=\"opacity-100 scale-100\" @click=\"openAssistant()\" class=\"capsule-circle-btn\" :title=\"usageTooltip()\"><img src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var2 string
+		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.ResolveAttributeValue(Asset("/static/img/doctor-capsule-120.webp"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/capsule_assistant.templ`, Line: 24, Col: 58}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var2)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\" width=\"120\" height=\"120\" decoding=\"async\" alt=\"دكتور كبسولة\" class=\"capsule-circle-btn-img\"><!-- Online Pulse Indicator --><span class=\"capsule-online-badge\"></span><template x-if=\"usagePercent() > 0\"><span class=\"capsule-usage-floating-pill\" x-text=\"usagePercent() + '%'\"></span></template></button>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -41,7 +54,7 @@ func CapsuleAssistantTrigger() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<!-- Assistant Core Logic -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- Assistant Core Logic -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -49,7 +62,7 @@ func CapsuleAssistantTrigger() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "</div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "</div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -73,9 +86,9 @@ func CapsuleAssistant() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var2 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var2 == nil {
-			templ_7745c5c3_Var2 = templ.NopComponent
+		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var3 == nil {
+			templ_7745c5c3_Var3 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
 		templ_7745c5c3_Err = CapsuleAssistantTrigger().Render(ctx, templ_7745c5c3_Buffer)
@@ -105,12 +118,12 @@ func CapsuleAssistantPanel() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var3 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var3 == nil {
-			templ_7745c5c3_Var3 = templ.NopComponent
+		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var4 == nil {
+			templ_7745c5c3_Var4 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div data-capsule-panel-noop></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div data-capsule-panel-noop></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -134,12 +147,12 @@ func capsuleDrawerBody() templ.Component {
 			}()
 		}
 		ctx = templ.InitializeContext(ctx)
-		templ_7745c5c3_Var4 := templ.GetChildren(ctx)
-		if templ_7745c5c3_Var4 == nil {
-			templ_7745c5c3_Var4 = templ.NopComponent
+		templ_7745c5c3_Var5 := templ.GetChildren(ctx)
+		if templ_7745c5c3_Var5 == nil {
+			templ_7745c5c3_Var5 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<div x-cloak><!-- ChatGPT-Style Chat Window (Positioned on the Left) --><div x-show=\"isOpen\" x-transition:enter=\"transition ease-out duration-250\" x-transition:enter-start=\"opacity-0 transform translate-y-6 scale-95\" x-transition:enter-end=\"opacity-100 transform translate-y-0 scale-100\" x-transition:leave=\"transition ease-in duration-200\" x-transition:leave-start=\"opacity-100 transform translate-y-0 scale-100\" x-transition:leave-end=\"opacity-0 transform translate-y-6 scale-95\" @dragenter.prevent=\"onDragEnter($event)\" @dragover.prevent=\"\" @dragleave.prevent=\"onDragLeave($event)\" @drop.prevent=\"onDrop($event)\" class=\"capsule-drawer\"><!-- Drag & Drop Overlay Zone --><div x-show=\"isDragging\" x-transition:enter=\"transition ease-out duration-150\" x-transition:enter-start=\"opacity-0 scale-95\" x-transition:enter-end=\"opacity-100 scale-100\" x-transition:leave=\"transition ease-in duration-100\" x-transition:leave-start=\"opacity-100 scale-100\" x-transition:leave-end=\"opacity-0 scale-95\" class=\"capsule-drag-zone\"><div class=\"w-12 h-12 rounded-full bg-white/20 flex-center border border-white/30\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<div x-cloak><!-- ChatGPT-Style Chat Window (Positioned on the Left) --><div x-show=\"isOpen\" x-transition:enter=\"transition ease-out duration-250\" x-transition:enter-start=\"opacity-0 transform translate-y-6 scale-95\" x-transition:enter-end=\"opacity-100 transform translate-y-0 scale-100\" x-transition:leave=\"transition ease-in duration-200\" x-transition:leave-start=\"opacity-100 transform translate-y-0 scale-100\" x-transition:leave-end=\"opacity-0 transform translate-y-6 scale-95\" @dragenter.prevent=\"onDragEnter($event)\" @dragover.prevent=\"\" @dragleave.prevent=\"onDragLeave($event)\" @drop.prevent=\"onDrop($event)\" class=\"capsule-drawer\"><!-- Drag & Drop Overlay Zone --><div x-show=\"isDragging\" x-transition:enter=\"transition ease-out duration-150\" x-transition:enter-start=\"opacity-0 scale-95\" x-transition:enter-end=\"opacity-100 scale-100\" x-transition:leave=\"transition ease-in duration-100\" x-transition:leave-start=\"opacity-100 scale-100\" x-transition:leave-end=\"opacity-0 scale-95\" class=\"capsule-drag-zone\"><div class=\"w-12 h-12 rounded-full bg-white/20 flex-center border border-white/30\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -147,7 +160,20 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "</div><div><div class=\"font-extrabold text-sm mb-1\" x-text=\"$t('capsule.drop_files', 'أفلت الملفات هنا للإرفاق')\">أفلت الملفات هنا للإرفاق</div><div class=\"text-xs opacity-90\" x-text=\"$t('capsule.drop_files_sub', 'يدعم الصور، الروشتات، وملفات PDF الدوائية')\">يدعم الصور، الروشتات، وملفات PDF الدوائية</div></div></div><!-- Sleek Minimal Header --><div class=\"capsule-header\"><div class=\"d-flex items-center gap-2.5\"><div class=\"capsule-avatar-icon\"><img src=\"/static/img/doctor-capsule.png\" alt=\"دكتور كبسولة\" class=\"capsule-header-avatar-img\"></div><div><div class=\"font-black text-xs text-primary d-flex items-center gap-1.5\"><span x-text=\"$t('capsule.title', 'دكتور كبسولة')\">دكتور كبسولة</span> <span class=\"w-1.5 h-1.5 rounded-full shadow-xs\" :class=\"connection === 'connected' ? 'bg-emerald' : (connection === 'degraded' ? 'bg-amber' : 'bg-muted')\" :title=\"connection === 'connected' ? 'متصل' : (connection === 'degraded' ? 'الخدمة غير مستقرة' : 'الخدمة غير مفعّلة')\"></span></div><div class=\"text-2xs text-muted leading-tight\" x-text=\"agentLabel || $t('capsule.subtitle', 'المساعد التحليلي الذكي')\"></div></div></div><!-- Header Action Buttons (Icon-Only, Clean & Minimalist) --><div class=\"d-flex items-center gap-1\"><!-- New Chat Button --><button type=\"button\" @click=\"startNewConversation()\" class=\"capsule-hdr-icon-btn\" :title=\"$t('capsule.new_chat', 'محادثة جديدة')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</div><div><div class=\"font-extrabold text-sm mb-1\" x-text=\"$t('capsule.drop_files', 'أفلت الملفات هنا للإرفاق')\">أفلت الملفات هنا للإرفاق</div><div class=\"text-xs opacity-90\" x-text=\"$t('capsule.drop_files_sub', 'يدعم الصور، الروشتات، وملفات PDF الدوائية')\">يدعم الصور، الروشتات، وملفات PDF الدوائية</div></div></div><!-- Sleek Minimal Header --><div class=\"capsule-header\"><div class=\"d-flex items-center gap-2.5\"><div class=\"capsule-avatar-icon\"><img src=\"")
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		var templ_7745c5c3_Var6 string
+		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(Asset("/static/img/doctor-capsule-120.webp"))
+		if templ_7745c5c3_Err != nil {
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/components/capsule_assistant.templ`, Line: 91, Col: 61}
+		}
+		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" width=\"120\" height=\"120\" decoding=\"async\" alt=\"دكتور كبسولة\" class=\"capsule-header-avatar-img\"></div><div><div class=\"font-black text-xs text-primary d-flex items-center gap-1.5\"><span x-text=\"$t('capsule.title', 'دكتور كبسولة')\">دكتور كبسولة</span> <span class=\"w-1.5 h-1.5 rounded-full shadow-xs\" :class=\"connection === 'connected' ? 'bg-emerald' : (connection === 'degraded' ? 'bg-amber' : 'bg-muted')\" :title=\"connection === 'connected' ? 'متصل' : (connection === 'degraded' ? 'الخدمة غير مستقرة' : 'الخدمة غير مفعّلة')\"></span></div><div class=\"text-2xs text-muted leading-tight\" x-text=\"agentLabel || $t('capsule.subtitle', 'المساعد التحليلي الذكي')\"></div></div></div><!-- Header Action Buttons (Icon-Only, Clean & Minimalist) --><div class=\"d-flex items-center gap-1\"><!-- New Chat Button --><button type=\"button\" @click=\"startNewConversation()\" class=\"capsule-hdr-icon-btn\" :title=\"$t('capsule.new_chat', 'محادثة جديدة')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -155,7 +181,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</button><!-- Memory Button --><button type=\"button\" @click=\"toggleMemoryDrawer()\" class=\"capsule-hdr-icon-btn\" :class=\"{ 'active': showMemoryDrawer }\" :title=\"$t('capsule.memory_title', 'ذاكرة المنشأة')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button><!-- Memory Button --><button type=\"button\" @click=\"toggleMemoryDrawer()\" class=\"capsule-hdr-icon-btn\" :class=\"{ 'active': showMemoryDrawer }\" :title=\"$t('capsule.memory_title', 'ذاكرة المنشأة')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -163,7 +189,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "</button><!-- History / Sessions Button --><button type=\"button\" @click=\"toggleSessionsDrawer()\" class=\"capsule-hdr-icon-btn\" :class=\"{ 'active': showSessionsDrawer }\" :title=\"$t('capsule.history_title', 'سجل المحادثات')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</button><!-- History / Sessions Button --><button type=\"button\" @click=\"toggleSessionsDrawer()\" class=\"capsule-hdr-icon-btn\" :class=\"{ 'active': showSessionsDrawer }\" :title=\"$t('capsule.history_title', 'سجل المحادثات')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -171,7 +197,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</button><!-- Close Button --><button type=\"button\" @click=\"closeAssistant()\" class=\"capsule-hdr-icon-btn\" :title=\"$t('common.close', 'إغلاق النافذة')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</button><!-- Close Button --><button type=\"button\" @click=\"closeAssistant()\" class=\"capsule-hdr-icon-btn\" :title=\"$t('common.close', 'إغلاق النافذة')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -179,7 +205,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</button></div></div><!-- Sessions & Memory Overlays -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "</button></div></div><!-- Sessions & Memory Overlays -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -187,7 +213,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<!-- Messages Scroll Area -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<!-- Messages Scroll Area -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -195,7 +221,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<!-- Pinned Bottom Controls (ChatGPT-Style Docked Prompt Capsule) --><div class=\"capsule-footer\"><div x-show=\"statusMessage && !isStreaming\" x-cloak class=\"capsule-composer-notice\" role=\"status\" aria-live=\"polite\"><span x-text=\"statusMessage\"></span></div><!-- Attached Files Preview Strip --><div x-show=\"attachedFiles.length > 0\" class=\"mb-2 d-flex gap-2 overflow-x-auto py-1 items-center\"><template x-for=\"(f, i) in attachedFiles\" :key=\"i\"><div class=\"capsule-attachment-thumb\"><template x-if=\"f.isImage && f.previewUrl\"><img :src=\"f.previewUrl\" class=\"capsule-thumb-img\" alt=\"مرفق\"></template><template x-if=\"!f.isImage || !f.previewUrl\"><div class=\"capsule-thumb-doc\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<!-- Pinned Bottom Controls (ChatGPT-Style Docked Prompt Capsule) --><div class=\"capsule-footer\"><div x-show=\"statusMessage && !isStreaming\" x-cloak class=\"capsule-composer-notice\" role=\"status\" aria-live=\"polite\"><span x-text=\"statusMessage\"></span></div><!-- Attached Files Preview Strip --><div x-show=\"attachedFiles.length > 0\" class=\"mb-2 d-flex gap-2 overflow-x-auto py-1 items-center\"><template x-for=\"(f, i) in attachedFiles\" :key=\"i\"><div class=\"capsule-attachment-thumb\"><template x-if=\"f.isImage && f.previewUrl\"><img :src=\"f.previewUrl\" class=\"capsule-thumb-img\" alt=\"مرفق\"></template><template x-if=\"!f.isImage || !f.previewUrl\"><div class=\"capsule-thumb-doc\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -203,7 +229,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<span class=\"text-2xs font-black uppercase mt-0.5\" x-text=\"(f.name.split('.').pop() || 'file').substring(0,4)\"></span></div></template><div x-show=\"f.uploading && !f.error\" class=\"capsule-thumb-overlay\"><span class=\"capsule-spinner\"></span></div><button type=\"button\" x-show=\"f.error\" @click=\"retryAttachment(i)\" class=\"capsule-thumb-overlay capsule-thumb-error\" :title=\"f.error + ' — اضغط لإعادة المحاولة'\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"text-2xs font-black uppercase mt-0.5\" x-text=\"(f.name.split('.').pop() || 'file').substring(0,4)\"></span></div></template><div x-show=\"f.uploading && !f.error\" class=\"capsule-thumb-overlay\"><span class=\"capsule-spinner\"></span></div><button type=\"button\" x-show=\"f.error\" @click=\"retryAttachment(i)\" class=\"capsule-thumb-overlay capsule-thumb-error\" :title=\"f.error + ' — اضغط لإعادة المحاولة'\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -211,7 +237,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "</button> <button type=\"button\" @click=\"removeAttachment(i)\" class=\"capsule-thumb-delete\" :title=\"$t('common.delete', 'حذف')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</button> <button type=\"button\" @click=\"removeAttachment(i)\" class=\"capsule-thumb-delete\" :title=\"$t('common.delete', 'حذف')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -219,7 +245,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "</button></div></template></div><!-- Voice Recording Active Bar --><div x-show=\"isRecordingVoice\" class=\"p-2 px-3 d-flex items-center justify-between gap-2 bg-surface-sunken border rounded-full mb-2\"><div class=\"d-flex items-center gap-2 ps-1\"><span class=\"w-2 h-2 rounded-full bg-danger animate-pulse\"></span> <span class=\"text-xs font-bold text-primary\" x-text=\"'جاري الاستماع... ' + formatDuration(recordingSeconds)\"></span></div><div class=\"d-flex gap-1.5\"><button type=\"button\" @click=\"cancelVoiceRecord()\" class=\"btn btn-secondary btn-xs py-1 px-2.5\" x-text=\"$t('common.cancel', 'إلغاء')\">إلغاء</button> <button type=\"button\" @click=\"finishVoiceRecord()\" class=\"btn btn-primary btn-xs py-1 px-2.5 font-bold\" x-text=\"$t('common.finish', 'إنهاء')\">إنهاء</button></div></div><!-- ChatGPT-Style Floating Input Capsule Form --><form x-show=\"!isRecordingVoice\" @submit.prevent=\"sendMessage()\" class=\"relative m-0 w-full\"><input type=\"file\" multiple :accept=\"attachAccept\" x-ref=\"fileInput\" @change=\"handleFileSelect($event)\" class=\"hidden\"><div class=\"capsule-input-capsule\"><!-- Attach File Button --><button type=\"button\" @click=\"$refs.fileInput.click()\" class=\"capsule-tool-btn\" :title=\"$t('capsule.attach_file', 'إرفاق ملف أو روشتة')\" :disabled=\"isStreaming\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</button></div></template></div><!-- Voice Recording Active Bar --><div x-show=\"isRecordingVoice\" class=\"p-2 px-3 d-flex items-center justify-between gap-2 bg-surface-sunken border rounded-full mb-2\"><div class=\"d-flex items-center gap-2 ps-1\"><span class=\"w-2 h-2 rounded-full bg-danger animate-pulse\"></span> <span class=\"text-xs font-bold text-primary\" x-text=\"'جاري الاستماع... ' + formatDuration(recordingSeconds)\"></span></div><div class=\"d-flex gap-1.5\"><button type=\"button\" @click=\"cancelVoiceRecord()\" class=\"btn btn-secondary btn-xs py-1 px-2.5\" x-text=\"$t('common.cancel', 'إلغاء')\">إلغاء</button> <button type=\"button\" @click=\"finishVoiceRecord()\" class=\"btn btn-primary btn-xs py-1 px-2.5 font-bold\" x-text=\"$t('common.finish', 'إنهاء')\">إنهاء</button></div></div><!-- ChatGPT-Style Floating Input Capsule Form --><form x-show=\"!isRecordingVoice\" @submit.prevent=\"sendMessage()\" class=\"relative m-0 w-full\"><input type=\"file\" multiple :accept=\"attachAccept\" x-ref=\"fileInput\" @change=\"handleFileSelect($event)\" class=\"hidden\"><div class=\"capsule-input-capsule\"><!-- Attach File Button --><button type=\"button\" @click=\"$refs.fileInput.click()\" class=\"capsule-tool-btn\" :title=\"$t('capsule.attach_file', 'إرفاق ملف أو روشتة')\" :disabled=\"isStreaming\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -227,7 +253,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "</button><!-- Voice Input Button --><button type=\"button\" @click=\"startVoiceRecord()\" class=\"capsule-tool-btn\" :title=\"$t('capsule.voice_input', 'تسجيل صوتي')\" :disabled=\"isStreaming\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</button><!-- Voice Input Button --><button type=\"button\" @click=\"startVoiceRecord()\" class=\"capsule-tool-btn\" :title=\"$t('capsule.voice_input', 'تسجيل صوتي')\" :disabled=\"isStreaming\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -235,7 +261,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "</button><!-- Auto-Expanding Textarea --><textarea x-ref=\"chatTextarea\" x-model=\"inputQuery\" @keydown=\"handleKeydown($event)\" @paste=\"handlePaste($event)\" @input=\"autoResizeTextarea()\" :placeholder=\"$t('capsule.ask_placeholder', 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...')\" rows=\"1\" class=\"capsule-textarea\" :disabled=\"isStreaming\" dir=\"auto\"></textarea><!-- Submit Send Button / Stop Button --><template x-if=\"!isStreaming\"><button type=\"submit\" class=\"capsule-send-btn\" :class=\"{ 'active': inputQuery.trim().length > 0 || attachedFiles.length }\" :disabled=\"!inputQuery.trim() && attachedFiles.length === 0\" :title=\"$t('capsule.send_tooltip', 'إرسال (Enter)')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</button><!-- Auto-Expanding Textarea --><textarea x-ref=\"chatTextarea\" x-model=\"inputQuery\" @keydown=\"handleKeydown($event)\" @paste=\"handlePaste($event)\" @input=\"autoResizeTextarea()\" :placeholder=\"$t('capsule.ask_placeholder', 'اسأل دكتور كبسولة عن أي دواء، صنف، أو توريد...')\" rows=\"1\" class=\"capsule-textarea\" :disabled=\"isStreaming\" dir=\"auto\"></textarea><!-- Submit Send Button / Stop Button --><template x-if=\"!isStreaming\"><button type=\"submit\" class=\"capsule-send-btn\" :class=\"{ 'active': inputQuery.trim().length > 0 || attachedFiles.length }\" :disabled=\"!inputQuery.trim() && attachedFiles.length === 0\" :title=\"$t('capsule.send_tooltip', 'إرسال (Enter)')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -243,7 +269,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</button></template><template x-if=\"isStreaming\"><button type=\"button\" @click=\"cancelStream()\" class=\"capsule-stop-btn\" :title=\"$t('capsule.stop_tooltip', 'إيقاف التوليد')\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "</button></template><template x-if=\"isStreaming\"><button type=\"button\" @click=\"cancelStream()\" class=\"capsule-stop-btn\" :title=\"$t('capsule.stop_tooltip', 'إيقاف التوليد')\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -251,7 +277,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "</button></template></div></form><!-- Polished Footer with Circular Usage Meter and Retention Indicator --><div class=\"capsule-footnote flex-between items-center px-1\"><div class=\"d-flex items-center gap-2\"><!-- Circular Usage Meter --><div class=\"capsule-usage-circle-wrap\" :title=\"usageTooltip()\"><svg class=\"capsule-usage-svg\" viewBox=\"0 0 36 36\"><path class=\"capsule-usage-circle-bg\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\"></path> <path class=\"capsule-usage-circle-fg\" :stroke-dasharray=\"usagePercent() + ', 100'\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\"></path></svg> <span class=\"capsule-usage-text tabular-nums\" x-text=\"usagePercent() + '%'\"></span></div><span class=\"text-2xs text-muted font-medium\" x-text=\"usedTokens ? (usedTokens.toLocaleString() + ' / ' + (contextWindow || 128000).toLocaleString() + ' توكن') : $t('capsule.context_ready', 'السياق جاهز')\"></span></div><div class=\"d-flex items-center gap-1 text-2xs text-muted\" :title=\"retentionNote()\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "</button></template></div></form><!-- Polished Footer with Circular Usage Meter and Retention Indicator --><div class=\"capsule-footnote flex-between items-center px-1\"><div class=\"d-flex items-center gap-2\"><!-- Circular Usage Meter --><div class=\"capsule-usage-circle-wrap\" :title=\"usageTooltip()\"><svg class=\"capsule-usage-svg\" viewBox=\"0 0 36 36\"><path class=\"capsule-usage-circle-bg\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\"></path> <path class=\"capsule-usage-circle-fg\" :stroke-dasharray=\"usagePercent() + ', 100'\" d=\"M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831\"></path></svg> <span class=\"capsule-usage-text tabular-nums\" x-text=\"usagePercent() + '%'\"></span></div><span class=\"text-2xs text-muted font-medium\" x-text=\"usedTokens ? (usedTokens.toLocaleString() + ' / ' + (contextWindow || 128000).toLocaleString() + ' توكن') : $t('capsule.context_ready', 'السياق جاهز')\"></span></div><div class=\"d-flex items-center gap-1 text-2xs text-muted\" :title=\"retentionNote()\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -259,7 +285,7 @@ func capsuleDrawerBody() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<span x-text=\"$t('capsule.auto_save', 'الحفظ التلقائي')\">الحفظ التلقائي</span></div></div></div></div></div>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span x-text=\"$t('capsule.auto_save', 'الحفظ التلقائي')\">الحفظ التلقائي</span></div></div></div></div></div>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

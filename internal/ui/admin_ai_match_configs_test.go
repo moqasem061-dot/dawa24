@@ -61,7 +61,7 @@ func TestAdminAIMatchConfigsPage(t *testing.T) {
 			{
 				ID:                 "pm-default-v8",
 				GatewayRoute:       "product.match.v8",
-				PromptVersion:      "sm-enh-v9",
+				PromptVersion:      "sm-enh-v10",
 				ContractVersion:    "v8",
 				NativeStructured:   true,
 				BytesPerToken:      4.0,

@@ -19,12 +19,12 @@ templ LoginPage(lang, dir, errorMsg, successMsg string, turnstileSiteKey ...stri
 				<div class="auth-header">
 					<a href="/" class="auth-brand-logo">
 						if site.LogoURL != "" {
-							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						} else {
-							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						}
 						if site.LogoDarkURL != "" {
-							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+							<img src={ layouts.Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
 						}
 					</a>
 					<h1 class="auth-title">منصة { site.SiteName }</h1>
@@ -126,12 +126,12 @@ templ ForgotPasswordPage(lang, dir string) {
 				<div class="auth-header">
 					<a href="/" class="auth-brand-logo">
 						if site.LogoURL != "" {
-							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						} else {
-							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						}
 						if site.LogoDarkURL != "" {
-							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+							<img src={ layouts.Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
 						}
 					</a>
 					<h1 class="auth-title">استعادة كلمة المرور</h1>
@@ -173,12 +173,12 @@ templ ResetPasswordPage(lang, dir, token string) {
 				<div class="auth-header">
 					<a href="/" class="auth-brand-logo">
 						if site.LogoURL != "" {
-							<img src={ site.LogoURL } alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						} else {
-							<img src="/static/img/logo.png" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+							<img src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "auth-logo-img logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 						}
 						if site.LogoDarkURL != "" {
-							<img src={ site.LogoDarkURL } alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
+							<img src={ layouts.Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="auth-logo-img logo-dark" data-img-fallback="hide" />
 						}
 					</a>
 					<h1 class="auth-title">تعيين كلمة المرور</h1>

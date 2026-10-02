@@ -172,7 +172,7 @@ type Request struct {
 	Schema         map[string]any // optional JSON schema for structured output
 	OrganizationID int64          // cost attribution and per-tenant quota
 
-	UserID         int64
+	UserID int64
 	// Feature names the screen or tool that asked, in the tenant's own
 	// vocabulary — "الطلب الذكي", "استيراد أصناف المورد". The capability is
 	// what the Gateway is asked for; the feature is what the pharmacy

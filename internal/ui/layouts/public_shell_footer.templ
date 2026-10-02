@@ -44,10 +44,10 @@ templ publicMobileNav(site *platformadmin.SiteSettings, langOpt ...string) {
 		<div class="nav-drawer-head">
 			<a href="/" class="nav-brand text-decoration-none d-flex items-center gap-2" @click="mobileNav = false">
 				if site.LogoURL != "" {
-					<img src={ site.LogoURL } alt={ site.SiteName } class={ "s-max-h-32", "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+					<img src={ BrandLogoURL(site.LogoURL) } srcset={ BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "s-max-h-32", "nav-brand-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 				}
 				if site.LogoDarkURL != "" {
-					<img src={ site.LogoDarkURL } alt={ site.SiteName } class="nav-brand-logo logo-dark s-max-h-32" data-img-fallback="hide" />
+					<img src={ Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="nav-brand-logo logo-dark s-max-h-32" data-img-fallback="hide" />
 				}
 				<span class="nav-brand-text">
 					<span class="nav-brand-name">{ site.SiteName }</span>
@@ -207,12 +207,12 @@ templ publicFooter(site *platformadmin.SiteSettings, langOpt ...string) {
 			<div class="stack-sm">
 				<div class="footer-brand">
 					if site.LogoURL != "" {
-						<img src={ site.LogoURL } alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						<img src={ BrandLogoURL(site.LogoURL) } srcset={ BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 					} else {
-						<img src="/static/img/logo.png" alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
+						<img src={ BrandLogoURL("") } srcset={ BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class={ "footer-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } data-img-fallback="hide" />
 					}
 					if site.LogoDarkURL != "" {
-						<img src={ site.LogoDarkURL } alt={ site.SiteName } class="footer-logo logo-dark" data-img-fallback="hide" />
+						<img src={ Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="footer-logo logo-dark" data-img-fallback="hide" />
 					}
 					<div class="stack-sm">
 						<div class="footer-brand-name">
@@ -262,9 +262,9 @@ templ publicFooter(site *platformadmin.SiteSettings, langOpt ...string) {
 
 			<!-- Quick Links -->
 			<div class="stack-sm">
-				<h4 class="footer-heading">
+				<h2 class="footer-heading">
 					{ i18n.T(lang, "footer.links_title") }
-				</h4>
+				</h2>
 				<ul class="footer-link-list">
 					<li><a href="/about">{ i18n.T(lang, "footer.about_link") }</a></li>
 					<li><a href="/how-it-works">{ i18n.T(lang, "footer.how_it_works") }</a></li>
@@ -281,9 +281,9 @@ templ publicFooter(site *platformadmin.SiteSettings, langOpt ...string) {
 
 			<!-- Contact & Support -->
 			<div class="stack-sm">
-				<h4 class="footer-heading">
+				<h2 class="footer-heading">
 					{ i18n.T(lang, "footer.support_heading") }
-				</h4>
+				</h2>
 				<ul class="footer-link-list footer-contact-list">
 					<li class="row-center-sm">
 						@components.IconMail("icon-sm")

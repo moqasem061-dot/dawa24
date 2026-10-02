@@ -70,14 +70,27 @@ func (m *mockCommitMatchingSvc) PromoteKnowledge(context.Context, matching.Scope
 }
 func (m *mockCommitMatchingSvc) RegisterApplier(matching.Workflow, matching.Applier) {}
 func (m *mockCommitMatchingSvc) GetApplier(matching.Workflow) matching.Applier       { return nil }
-func (m *mockCommitMatchingSvc) ListAIConfigurations(context.Context) ([]matching.AIConfiguration, error) { return nil, nil }
-func (m *mockCommitMatchingSvc) GetAIConfiguration(context.Context, string) (*matching.AIConfiguration, error) { return nil, nil }
-func (m *mockCommitMatchingSvc) UpdateAIConfigurationStatus(context.Context, string, string, string, string) error { return nil }
-func (m *mockCommitMatchingSvc) ListPolicies(context.Context) ([]matching.PolicyRecord, error) { return nil, nil }
-func (m *mockCommitMatchingSvc) ListAssignments(context.Context) ([]matching.PolicyAssignment, error) { return nil, nil }
-func (m *mockCommitMatchingSvc) UpdateAssignment(context.Context, string, string, string, *string, string, string) error { return nil }
-func (m *mockCommitMatchingSvc) RollbackAssignment(context.Context, string, string, string) error { return nil }
-
+func (m *mockCommitMatchingSvc) ListAIConfigurations(context.Context) ([]matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) GetAIConfiguration(context.Context, string) (*matching.AIConfiguration, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) UpdateAIConfigurationStatus(context.Context, string, string, string, string) error {
+	return nil
+}
+func (m *mockCommitMatchingSvc) ListPolicies(context.Context) ([]matching.PolicyRecord, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) ListAssignments(context.Context) ([]matching.PolicyAssignment, error) {
+	return nil, nil
+}
+func (m *mockCommitMatchingSvc) UpdateAssignment(context.Context, string, string, string, *string, string, string) error {
+	return nil
+}
+func (m *mockCommitMatchingSvc) RollbackAssignment(context.Context, string, string, string) error {
+	return nil
+}
 
 type mockCatalogRepoForCommit struct {
 	catalog.Repository

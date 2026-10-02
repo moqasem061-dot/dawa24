@@ -30,7 +30,7 @@ import "context"
 //
 // It is declared here and nowhere else. `make check-prompt-version` fails the
 // build if the literal appears outside this package.
-const PromptVersion = "sm-enh-v9"
+const PromptVersion = "sm-enh-v10"
 
 // CatalogEntry is one catalogue product as the model sees it.
 //
@@ -85,10 +85,10 @@ type Item struct {
 	// engine was confident enough to apply.
 	Settled bool
 
-	// Loose says a Settled item's match rests on a loose brand link. Settled
-	// items are put to the model only when Loose: re-confirming an exact brand
-	// match was most of what the stage spent, and it bought nothing, while the
-	// loose links are where nearly every remaining wrong match is.
+	// Loose says a Settled item's match rests on a loose brand link (a
+	// cross-script, phonetic or misspelt brand). Every settled item is put to
+	// the model — a full-score name match can still name a sibling product —
+	// and Loose only tells it where the engine's evidence is weakest.
 	Loose bool
 }
 

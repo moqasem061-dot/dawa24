@@ -9,7 +9,7 @@ templ CapsuleAssistantMessages() {
 		<!-- Empty State / Clean Start Session with Quick Prompts -->
 		<div x-show="messages.length === 0" class="d-flex flex-col items-center justify-center text-center p-6 gap-2.5 my-auto w-full">
 			<div class="capsule-empty-avatar">
-				<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
+				<img src={ Asset("/static/img/doctor-capsule-120.webp") } width="120" height="120" decoding="async" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
 			</div>
 			<div class="d-flex flex-col items-center text-center w-full">
 				<h4 class="m-0 mb-1 text-sm font-extrabold text-primary text-center" x-text="agentLabel || $t('capsule.title', 'دكتور كبسولة')"></h4>
@@ -216,7 +216,7 @@ templ CapsuleAssistantMessages() {
 		<div x-show="isStreaming && messages.length > 0 && !messages[messages.length-1].text" class="capsule-thinking-row">
 			<div class="capsule-thinking">
 				<div class="capsule-breathing-icon">
-					<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
+					<img src={ Asset("/static/img/doctor-capsule-120.webp") } width="120" height="120" decoding="async" alt="دكتور كبسولة" class="w-full h-full object-cover rounded-full" />
 				</div>
 				<span class="capsule-thinking-label" x-text="statusMessage || $t('capsule.thinking', 'دكتور كبسولة يفكر ويحلل البيانات...')"></span>
 			</div>

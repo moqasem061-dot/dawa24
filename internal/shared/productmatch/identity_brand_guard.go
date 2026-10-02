@@ -122,13 +122,6 @@ func (idx *Index) brandConflict(q *query, p *MasterProduct) (conflict, bool) {
 	return conflict{"brand_unverified", massBrandUnverified}, true
 }
 
-// brandContradicts is the hard half of brandConflict, for callers outside
-// scoring.
-func (idx *Index) brandContradicts(q *query, p *MasterProduct) bool {
-	c, ok := idx.brandConflict(q, p)
-	return ok && c.kind == "brand"
-}
-
 // knownVariant reports whether the catalogue carries the word under another
 // spelling, which makes it a known brand rather than an unseen one.
 func (idx *Index) knownVariant(word string) bool {

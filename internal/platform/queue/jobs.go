@@ -175,4 +175,3 @@ func (MatchShadowArgs) Kind() string { return "catalog.matching.shadow" }
 func (MatchShadowArgs) InsertOpts() river.InsertOpts {
 	return river.InsertOpts{Queue: "maintenance", MaxAttempts: 2}
 }
-

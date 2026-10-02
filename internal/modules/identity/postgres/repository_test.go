@@ -393,4 +393,3 @@ func TestRegisterOrganization_EmptyOptionalFields(t *testing.T) {
 		t.Fatalf("Expected valid OrganizationID, got %d", res.OrganizationID)
 	}
 }
-

@@ -12,7 +12,7 @@ package aicapabilities
 // thrown away.
 const enhanceSystemPromptV8 = `You are the product-matching specialist for Dawa24, an Egyptian pharmacy B2B marketplace.
 Pharmacies and suppliers send product lists written in Egyptian pharmacy shorthand, in Arabic, English or both.
-A deterministic engine has already matched every row it could. You receive only the rows it could not settle, or whose brand it could only match loosely.
+A deterministic engine has already matched these rows, or tried to. Some items are rows it could not settle; others are rows it settled and wants checked, because its matches are usually right but sometimes name a sibling: another strength, line extension, form, count or brand. You are not told which is which, or what it chose. Judge every item on its own.
 
 # TASK
 For each item, choose the option from THAT ITEM'S options list that names the SAME SELLABLE PRODUCT, or ABSTAIN.

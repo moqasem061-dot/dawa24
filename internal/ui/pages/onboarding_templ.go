@@ -57,51 +57,90 @@ func Onboarding() templ.Component {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var3 string
-				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.LogoURL)
+				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.BrandLogoURL(site.LogoURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 15, Col: 29}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 15, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" alt=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" srcset=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var4 string
-				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.SiteName)
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.BrandLogoSrcset(site.LogoURL))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 15, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 15, Col: 100}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" class=\"brand-logo mb-3\" data-img-fallback=\"hide\">")
-				if templ_7745c5c3_Err != nil {
-					return templ_7745c5c3_Err
-				}
-			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<img src=\"/static/img/logo.png\" alt=\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\" sizes=\"(max-width: 640px) 135px, 240px\" width=\"480\" height=\"164\" alt=\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 				var templ_7745c5c3_Var5 string
 				templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.SiteName)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 17, Col: 57}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 15, Col: 187}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\" class=\"brand-logo mb-3\" data-img-fallback=\"hide\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "\" class=\"brand-logo mb-3\" data-img-fallback=\"hide\">")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			} else {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "<img src=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var6 string
+				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.BrandLogoURL(""))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 17, Col: 41}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var6)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "\" srcset=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var7 string
+				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.BrandLogoSrcset(""))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 17, Col: 80}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" sizes=\"(max-width: 640px) 135px, 240px\" width=\"480\" height=\"164\" alt=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var8 string
+				templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(site.SiteName)
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/onboarding.templ`, Line: 17, Col: 167}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "\" class=\"brand-logo mb-3\" data-img-fallback=\"hide\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</a><h1 class=\"page-title font-bold text-xl m-0\">انضمام شريك توريد أو صيدلية</h1><p class=\"text-sm text-secondary m-0\">سجل بيانات مؤسستك للانضمام إلى شبكة التوزيع الدوائي الموحدة</p></div><form action=\"/onboarding\" method=\"POST\" class=\"stack-lg\"><div class=\"form-group mb-0\"><label class=\"form-label\">الاسم التجاري للمؤسسة / الصيدلية *</label> <input type=\"text\" name=\"tradeName\" placeholder=\"مثال: صيدلية الأمل الحديثة\" required class=\"form-input\"></div><div class=\"form-group mb-0\"><label class=\"form-label\">الاسم القانوني المسجل بالسجل التجاري *</label> <input type=\"text\" name=\"legalName\" placeholder=\"مثال: شركة الأمل لتجارة وتوزيع الأدوية ذ.م.م\" required class=\"form-input\"></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label\">رقم البطاقة الضريبية (اختياري)</label> <input type=\"text\" name=\"taxId\" placeholder=\"123-456-789\" class=\"form-input tabular-nums\"></div><div class=\"form-group mb-0\"><label class=\"form-label\">رقم السجل التجاري *</label> <input type=\"text\" name=\"crNumber\" placeholder=\"987654\" required class=\"form-input tabular-nums\"></div></div><div class=\"form-group mb-0\"><label class=\"form-label\">نوع الحساب</label> <select name=\"type\" class=\"form-select\"><option value=\"customer\">صيدلية مرخصة</option> <option value=\"vendor\">موزع / مورد أدوية معتمد</option></select></div><button type=\"submit\" class=\"btn btn-primary\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "</a><h1 class=\"page-title font-bold text-xl m-0\">انضمام شريك توريد أو صيدلية</h1><p class=\"text-sm text-secondary m-0\">سجل بيانات مؤسستك للانضمام إلى شبكة التوزيع الدوائي الموحدة</p></div><form action=\"/onboarding\" method=\"POST\" class=\"stack-lg\"><div class=\"form-group mb-0\"><label class=\"form-label\">الاسم التجاري للمؤسسة / الصيدلية *</label> <input type=\"text\" name=\"tradeName\" placeholder=\"مثال: صيدلية الأمل الحديثة\" required class=\"form-input\"></div><div class=\"form-group mb-0\"><label class=\"form-label\">الاسم القانوني المسجل بالسجل التجاري *</label> <input type=\"text\" name=\"legalName\" placeholder=\"مثال: شركة الأمل لتجارة وتوزيع الأدوية ذ.م.م\" required class=\"form-input\"></div><div class=\"form-grid-2\"><div class=\"form-group mb-0\"><label class=\"form-label\">رقم البطاقة الضريبية (اختياري)</label> <input type=\"text\" name=\"taxId\" placeholder=\"123-456-789\" class=\"form-input tabular-nums\"></div><div class=\"form-group mb-0\"><label class=\"form-label\">رقم السجل التجاري *</label> <input type=\"text\" name=\"crNumber\" placeholder=\"987654\" required class=\"form-input tabular-nums\"></div></div><div class=\"form-group mb-0\"><label class=\"form-label\">نوع الحساب</label> <select name=\"type\" class=\"form-select\"><option value=\"customer\">صيدلية مرخصة</option> <option value=\"vendor\">موزع / مورد أدوية معتمد</option></select></div><button type=\"submit\" class=\"btn btn-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -109,7 +148,7 @@ func Onboarding() templ.Component {
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "<span>تقديم طلب الاعتماد والتسجيل</span></button></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<span>تقديم طلب الاعتماد والتسجيل</span></button></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

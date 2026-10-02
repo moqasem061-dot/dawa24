@@ -57,7 +57,7 @@ func ValidateV8(raw []byte, req RequestView) ([]ValidAnswer, []Rejection, error)
 
 	var wrapper v8ResponseWrapper
 	if err := json.Unmarshal([]byte(clean), &wrapper); err != nil {
-		return nil, nil, fmt.Errorf("%w: %v", ErrMalformedV8Response, err)
+		return nil, nil, fmt.Errorf("%w: %w", ErrMalformedV8Response, err)
 	}
 
 	// 1. Group answers by ref to detect duplicates (FR-074, Step 2)

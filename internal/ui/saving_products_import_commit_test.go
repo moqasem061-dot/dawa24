@@ -91,8 +91,6 @@ func (m *mockRevalidateMatchingSvc) RollbackAssignment(context.Context, string, 
 	return nil
 }
 
-
-
 func TestRevalidateSavingItems_Success(t *testing.T) {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	const orgID int64 = 88

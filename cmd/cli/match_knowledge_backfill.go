@@ -90,7 +90,8 @@ func runMatchKnowledgeBackfill(ctx context.Context, db *database.DB, log *slog.L
 				effectiveOrg = orgID
 			}
 
-			if source == "manual" || source == "admin" || source == "import" {
+			switch source {
+			case "manual", "admin", "import":
 				counts.decisionsManualFound++
 				status := "pending_revalidation"
 				targetFP := ""
@@ -140,7 +141,7 @@ func runMatchKnowledgeBackfill(ctx context.Context, db *database.DB, log *slog.L
 					LastUsedAt:            lastUsedAt,
 				}
 				knowledgeToInsert = append(knowledgeToInsert, k)
-			} else if source == "ai" {
+			case "ai":
 				counts.decisionsAIFound++
 				targetFP := ""
 				if chosenProductID != nil && *chosenProductID > 0 {

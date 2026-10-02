@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
+	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -240,9 +241,9 @@ func TestEnhancementAsksOnceForDuplicateLines(t *testing.T) {
 	}
 }
 
-// A whole file's residue goes in one request when it fits. The previous design
-// sent twenty-five rows at a time and never finished; this is the property that
-// changed.
+// A file's residue goes in as few requests as the batch ceiling allows: one
+// per MaxItemsPerRequest distinct questions, each small enough to finish inside
+// the request deadline, and every one carrying a de-duplicated window.
 func TestEnhancementSendsOneRequestWhenItFits(t *testing.T) {
 	repo := newEnhanceRepo()
 	ai := &stubEnhancer{}
@@ -253,12 +254,17 @@ func TestEnhancementSendsOneRequestWhenItFits(t *testing.T) {
 	}
 	runEnhancement(t, repo, ai, reviews)
 
-	if len(ai.batches) != 1 {
-		t.Fatalf("requests = %d, want 1", len(ai.batches))
+	// 120 lines carry 20 distinct names: 20 questions.
+	per := matchflow.Adaptive(matchflow.ProfileOrder, len(reviews)).MaxItemsPerRequest
+	want := (20 + per - 1) / per
+	if len(ai.batches) != want {
+		t.Fatalf("requests = %d, want %d", len(ai.batches), want)
 	}
 	// The catalogue window carries each product once however many items cite it.
-	if got := len(ai.batches[0].Catalog); got != 3 {
-		t.Errorf("catalogue window = %d rows, want 3 — candidates were not de-duplicated", got)
+	for i, b := range ai.batches {
+		if got := len(b.Catalog); got != 3 {
+			t.Errorf("request %d: catalogue window = %d rows, want 3 — candidates were not de-duplicated", i, got)
+		}
 	}
 }
 

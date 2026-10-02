@@ -186,42 +186,43 @@ func writeMarkdownReport(path string, r matcheval.Report) error {
 		return err
 	}
 	var sb strings.Builder
-	sb.WriteString(fmt.Sprintf("# Evaluation Report: %s (%s split)\n\n", r.Engine, r.Split))
-	sb.WriteString(fmt.Sprintf("- **Corpus**: `%s`\n", r.Corpus))
-	sb.WriteString(fmt.Sprintf("- **Total Cases**: %d\n", r.Overall.NCases))
-	sb.WriteString(fmt.Sprintf("- **Resolvable Cases**: %d\n", r.Overall.NResolvable))
-	sb.WriteString(fmt.Sprintf("- **Accepted**: %d (Correct: %d)\n", r.Overall.Accepted, r.Overall.AcceptedCorrect))
-	sb.WriteString(fmt.Sprintf("- **Precision**: %.2f%% (95%% LB: %.2f%%)\n", r.Overall.Precision*100, r.Overall.PrecisionLB95*100))
-	sb.WriteString(fmt.Sprintf("- **Coverage (Resolvable)**: %.2f%%\n", r.Overall.CoverageResolvable*100))
-	sb.WriteString(fmt.Sprintf("- **Candidate Recall@20**: %.2f%%\n", r.Overall.RecallAt20*100))
-	sb.WriteString(fmt.Sprintf("- **Hard Conflict Violations**: %d\n\n", len(r.Overall.HardConflictViolations)))
+	fmt.Fprintf(&sb, "# Evaluation Report: %s (%s split)\n\n", r.Engine, r.Split)
+	fmt.Fprintf(&sb, "- **Corpus**: `%s`\n", r.Corpus)
+	fmt.Fprintf(&sb, "- **Total Cases**: %d\n", r.Overall.NCases)
+	fmt.Fprintf(&sb, "- **Resolvable Cases**: %d\n", r.Overall.NResolvable)
+	fmt.Fprintf(&sb, "- **Accepted**: %d (Correct: %d)\n", r.Overall.Accepted, r.Overall.AcceptedCorrect)
+	fmt.Fprintf(&sb, "- **Precision**: %.2f%% (95%% LB: %.2f%%)\n", r.Overall.Precision*100, r.Overall.PrecisionLB95*100)
+	fmt.Fprintf(&sb, "- **Coverage (Resolvable)**: %.2f%%\n", r.Overall.CoverageResolvable*100)
+	fmt.Fprintf(&sb, "- **Candidate Recall@20**: %.2f%%\n", r.Overall.RecallAt20*100)
+	fmt.Fprintf(&sb, "- **Hard Conflict Violations**: %d\n\n", len(r.Overall.HardConflictViolations))
 
 	if r.Overall.AI != nil {
 		sb.WriteString("## AI Enhancement Metrics\n\n")
-		sb.WriteString(fmt.Sprintf("- **Gain (New Correct)**: %d\n", r.Overall.AI.GainNewCorrect))
-		sb.WriteString(fmt.Sprintf("- **New Wrong**: %d\n", r.Overall.AI.NewWrong))
-		sb.WriteString(fmt.Sprintf("- **Lost Correct**: %d\n", r.Overall.AI.LostCorrect))
-		sb.WriteString(fmt.Sprintf("- **Net Gain Rate**: %.2f%%\n", r.Overall.AI.NetGainRate*100))
-		sb.WriteString(fmt.Sprintf("- **AI-Added Precision (95%% LB)**: %.2f%%\n", r.Overall.AI.AIAddedPrecisionLB95*100))
-		sb.WriteString(fmt.Sprintf("- **Attempts**: %d\n", r.Overall.AI.Attempts))
-		sb.WriteString(fmt.Sprintf("- **Tokens**: %d\n", r.Overall.AI.Tokens))
-		sb.WriteString(fmt.Sprintf("- **Cost**: $%.4f (Known: %t)\n", r.Overall.AI.Cost, r.Overall.AI.CostKnown))
-		sb.WriteString(fmt.Sprintf("- **Cost per Verified Gain**: $%.4f\n\n", r.Overall.AI.CostPerVerifiedGain))
+		fmt.Fprintf(&sb, "- **Gain (New Correct)**: %d\n", r.Overall.AI.GainNewCorrect)
+		fmt.Fprintf(&sb, "- **New Wrong**: %d\n", r.Overall.AI.NewWrong)
+		fmt.Fprintf(&sb, "- **Lost Correct**: %d\n", r.Overall.AI.LostCorrect)
+		fmt.Fprintf(&sb, "- **Net Gain Rate**: %.2f%%\n", r.Overall.AI.NetGainRate*100)
+		fmt.Fprintf(&sb, "- **AI-Added Precision (95%% LB)**: %.2f%%\n", r.Overall.AI.AIAddedPrecisionLB95*100)
+		fmt.Fprintf(&sb, "- **Attempts**: %d\n", r.Overall.AI.Attempts)
+		fmt.Fprintf(&sb, "- **Tokens**: %d\n", r.Overall.AI.Tokens)
+		fmt.Fprintf(&sb, "- **Cost**: $%.4f (Known: %t)\n", r.Overall.AI.Cost, r.Overall.AI.CostKnown)
+		fmt.Fprintf(&sb, "- **Cost per Verified Gain**: $%.4f\n\n", r.Overall.AI.CostPerVerifiedGain)
 	}
 
 	sb.WriteString("## Quality Gates\n\n")
 	sb.WriteString("| Gate | Description | Status |\n")
 	sb.WriteString("|---|---|---|\n")
 	for gate, res := range r.Gates {
-		statusText := string(res)
-		if res == matcheval.GatePass {
+		var statusText string
+		switch res {
+		case matcheval.GatePass:
 			statusText = "✓ PASS"
-		} else if res == matcheval.GateFail {
+		case matcheval.GateFail:
 			statusText = "✗ FAIL"
-		} else {
+		default:
 			statusText = "⚠ INSUFFICIENT SAMPLE"
 		}
-		sb.WriteString(fmt.Sprintf("| %s | Gate requirement | %s |\n", gate, statusText))
+		fmt.Fprintf(&sb, "| %s | Gate requirement | %s |\n", gate, statusText)
 	}
 
 	return os.WriteFile(path, []byte(sb.String()), 0644)

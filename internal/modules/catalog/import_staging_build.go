@@ -34,11 +34,12 @@ func buildStagingRows(
 			row.MatchReason = match.Reason
 			row.MatchState = string(matchflow.StateAccepted)
 			row.MatchBasis = string(matchflow.BasisSimilarity)
-			if match.Reason == MatchSKU || match.Reason == MatchBarcode {
+			switch match.Reason {
+			case MatchSKU, MatchBarcode:
 				row.MatchBasis = string(matchflow.BasisIdentifier)
-			} else if match.Reason == MatchName {
+			case MatchName:
 				row.MatchBasis = string(matchflow.BasisExact)
-			} else if match.Reason == MatchAI {
+			case MatchAI:
 				row.MatchBasis = string(matchflow.BasisAI)
 			}
 			row.MatchGranularity = string(matchflow.GranularityProduct)

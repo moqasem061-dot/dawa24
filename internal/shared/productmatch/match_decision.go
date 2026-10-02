@@ -294,17 +294,6 @@ func makeRowDecision(
 	}
 }
 
-func conflictKindsToStrings(conflicts []ConflictKind) []string {
-	if len(conflicts) == 0 {
-		return nil
-	}
-	out := make([]string, len(conflicts))
-	for i, c := range conflicts {
-		out[i] = string(c) + "_conflict"
-	}
-	return out
-}
-
 // FlagLooseBrand marks an accepted decision whose brand link is not exact.
 const FlagLooseBrand = "loose_brand"
 

@@ -233,7 +233,7 @@ func (h *UIHandler) loadOrgKnowledgeDecisions(ctx context.Context, orgID int64, 
 func (h *UIHandler) knowledgeToDecisionView(ctx context.Context, item matching.Knowledge) *catalog.MatchDecisionView {
 	d := &catalog.MatchDecisionView{
 		ID:              item.ID,
-		OrganizationID: item.OrganizationID,
+		OrganizationID:  item.OrganizationID,
 		NormName:        item.DisplayText,
 		ChosenProductID: item.TargetProductID,
 		Reason:          item.Status,
@@ -268,4 +268,3 @@ func (h *UIHandler) knowledgeToDecisionView(ctx context.Context, item matching.K
 	}
 	return d
 }
-

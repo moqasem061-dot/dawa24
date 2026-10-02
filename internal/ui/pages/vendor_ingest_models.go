@@ -266,7 +266,6 @@ func OutcomeLabel(outcome string, langOpt ...string) string {
 	return i18n.T(lang, "ingest.outcome.skipped")
 }
 
-
 // MatchLevelBadgeClass maps a match level to a badge tone.
 func MatchLevelBadgeClass(level string) string {
 	switch productmatch.MatchLevel(level) {

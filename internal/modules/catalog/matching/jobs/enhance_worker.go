@@ -208,12 +208,31 @@ func (w *EnhanceWorker) Work(ctx context.Context, job *river.Job[queue.MatchEnha
 				Manufacturer:  p.Manufacturer,
 			}, true
 		},
+		// The identity guard every live AI path uses: a model may not accept a
+		// product the deterministic engine's own conflict model refuses.
+		Screen: func(key string, productID int64) bool {
+			rows := qMap[key]
+			return idx != nil && len(rows) > 0 && idx.IdentityConflict(&rows[0].Row, productID).None()
+		},
 		OnAnswer: func(ans matchflow.Answer) {
-			if ans.Decision.ProductID == nil {
+			if ans.Decision.ProductID == nil || idx == nil {
 				return
 			}
 			targetID := *ans.Decision.ProductID
 			affectedRows := qMap[ans.Key]
+			if len(affectedRows) == 0 {
+				return
+			}
+			j := matchflow.Judgement{
+				Offered:    ans.Offered,
+				Confidence: ans.Decision.Confidence,
+				Floor:      enhanceCeilings.MinApplyConfidence,
+				Verified:   ans.Checked,
+				Conflicts:  !idx.IdentityConflict(&affectedRows[0].Row, targetID).None(),
+			}
+			if matchflow.Verdict(j, ans.Decision.ProductID) != matchflow.OutcomeApply {
+				return
+			}
 			for _, r := range affectedRows {
 				newDec := r.Decision
 				newDec.State = matchflow.StateAccepted
@@ -247,6 +266,9 @@ func (w *EnhanceWorker) Work(ctx context.Context, job *river.Job[queue.MatchEnha
 
 	return w.finishRun(ctx, runID, aiCounters)
 }
+
+// enhanceCeilings are the catalogue profile's limits, the floor among them.
+var enhanceCeilings = matchflow.For(matchflow.ProfileCatalog)
 
 func (w *EnhanceWorker) finishRun(ctx context.Context, runID int64, aiCounters map[string]any) error {
 	_ = w.repo.UpdateAIRunCounters(ctx, runID, aiCounters)

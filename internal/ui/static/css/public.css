@@ -1978,7 +1978,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
 
 .landing-hero-split-grid {
   display: grid;
-  grid-template-columns: 1.15fr 1fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
   gap: 2.5rem;
   align-items: center;
   margin-bottom: 2.5rem;
@@ -1986,7 +1986,7 @@ border: 1px solid rgba(255, 255, 255, 0.18);
 
 @media (max-width: 1024px) {
   .landing-hero-split-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     gap: 2rem;
   }
 }

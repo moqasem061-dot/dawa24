@@ -269,4 +269,3 @@ func TestMatchReview_AIStatusComponent(t *testing.T) {
 		t.Errorf("expected English subtitle for new accepted")
 	}
 }
-

@@ -187,9 +187,10 @@ func (r *Repository) List(ctx context.Context, f matching.KnowledgeFilter) (matc
 			args = append(args, f.Status)
 			argIdx++
 		}
-		if f.Scope == "platform" {
+		switch f.Scope {
+		case "platform":
 			conditions = append(conditions, "organization_id IS NULL")
-		} else if f.Scope == "org" {
+		case "org":
 			conditions = append(conditions, "organization_id IS NOT NULL")
 		}
 		if f.Search != "" {

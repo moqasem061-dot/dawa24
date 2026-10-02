@@ -67,7 +67,6 @@ func (m wireModel) toCapabilities() ModelCapabilities {
 	}
 }
 
-
 type cachedCapability struct {
 	caps      ModelCapabilities
 	expiresAt time.Time

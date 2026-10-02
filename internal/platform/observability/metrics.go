@@ -96,7 +96,7 @@ func percentile(sorted []float64, p float64) float64 {
 	if n == 0 {
 		return 0
 	}
-	idx := int(float64(n)*p + 0.999999) - 1
+	idx := int(float64(n)*p+0.999999) - 1
 	if idx < 0 {
 		idx = 0
 	}

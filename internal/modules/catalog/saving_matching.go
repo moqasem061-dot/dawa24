@@ -116,15 +116,16 @@ func (s *Service) MatchSavingsRows(
 				} else if (dec.State == matchflow.StateAccepted || dec.State == matchflow.StateConfirmed) && dec.ProductID != nil && *dec.ProductID > 0 {
 					item.ProductID = dec.ProductID
 					item.Confidence = 1.0
-					if dec.Basis == matchflow.BasisIdentifier {
+					switch dec.Basis {
+					case matchflow.BasisIdentifier:
 						if len(dec.Reasons) > 0 && strings.Contains(string(dec.Reasons[0].Code), "barcode") {
 							item.MatchType = "barcode"
 						} else {
 							item.MatchType = "exact_sku"
 						}
-					} else if dec.Basis == matchflow.BasisExact {
+					case matchflow.BasisExact:
 						item.MatchType = "exact_name"
-					} else {
+					default:
 						item.MatchType = "fuzzy_name"
 						item.Confidence = 0.85
 					}

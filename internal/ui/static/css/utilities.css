@@ -626,7 +626,7 @@
 
 
 /* ==========================================================================
-   Tint utilities (`bg-*/NN`, `border-*/NN`)
+   Tint utilities (background and border colours with an opacity suffix)
    The markup was written in a Tailwind-ish opacity shorthand that this
    hand-rolled system never implemented, so every element carrying one of these
    rendered with no background or no border at all — the "corrupted" panels,

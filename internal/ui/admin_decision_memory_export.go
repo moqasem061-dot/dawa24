@@ -152,4 +152,3 @@ func preserveDecisionReturnURL(r *http.Request) string {
 	}
 	return "/admin/match-decisions"
 }
-

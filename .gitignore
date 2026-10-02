@@ -46,3 +46,4 @@ coverage.html
 /*.csv
 .specify/extensions/.cache/
 .playwright-mcp/
+/scripts/pagespeed/node_modules/

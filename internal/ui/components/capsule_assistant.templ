@@ -21,7 +21,7 @@ templ CapsuleAssistantTrigger() {
 			class="capsule-circle-btn"
 			:title="usageTooltip()"
 		>
-			<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="capsule-circle-btn-img" />
+			<img src={ Asset("/static/img/doctor-capsule-120.webp") } width="120" height="120" decoding="async" alt="دكتور كبسولة" class="capsule-circle-btn-img" />
 			<!-- Online Pulse Indicator -->
 			<span class="capsule-online-badge"></span>
 			<template x-if="usagePercent() > 0">
@@ -88,7 +88,7 @@ templ capsuleDrawerBody() {
 			<div class="capsule-header">
 				<div class="d-flex items-center gap-2.5">
 					<div class="capsule-avatar-icon">
-						<img src="/static/img/doctor-capsule.png" alt="دكتور كبسولة" class="capsule-header-avatar-img" />
+						<img src={ Asset("/static/img/doctor-capsule-120.webp") } width="120" height="120" decoding="async" alt="دكتور كبسولة" class="capsule-header-avatar-img" />
 					</div>
 					<div>
 						<div class="font-black text-xs text-primary d-flex items-center gap-1.5">

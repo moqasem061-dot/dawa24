@@ -26,7 +26,7 @@ func (s *SavingImportSessionStore) UpdateProgress(id string, progress int, phase
 }
 
 // CompleteProcessing finalizes processing and marks session as ready.
-func (s *SavingImportSessionStore) CompleteProcessing(id string, items []*StagedSavingItem, matched, unlinked int, totalQty float64, totalVal money.Amount) {
+func (s *SavingImportSessionStore) CompleteProcessing(id string, items []*StagedSavingItem, _, _ int, totalQty float64, totalVal money.Amount) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
@@ -39,7 +39,7 @@ func (s *SavingImportSessionStore) CompleteProcessing(id string, items []*Staged
 		// The tab counters are counted from the items the tabs list, not
 		// taken on the caller's word: a count computed before the AI stage
 		// changed a match disagreed with the tab it labelled.
-		matched, unlinked = countSavingMatches(items)
+		matched, unlinked := countSavingMatches(items)
 		sess.MatchedRows = matched
 		sess.UnlinkedRows = unlinked
 		sess.TotalQuantity = totalQty

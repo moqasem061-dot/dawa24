@@ -8,24 +8,24 @@ import (
 func normalizePackUnit(u string) string {
 	u = strings.TrimSpace(strings.ToLower(u))
 	u = strings.TrimPrefix(u, "\x00")
-	switch {
-	case u == "strip" || u == "strips" || u == "blister" || u == "شريط" || u == "شرائط" || u == "شرايط" || u == "اشرطه" || u == "بليستر":
+	switch u {
+	case "strip", "strips", "blister", "شريط", "شرائط", "شرايط", "اشرطه", "بليستر":
 		return "strip"
-	case u == "tablet" || u == "tablets" || u == "tab" || u == "tabs" || u == "قرص" || u == "أقراص" || u == "اقراص":
+	case "tablet", "tablets", "tab", "tabs", "قرص", "أقراص", "اقراص":
 		return "tablet"
-	case u == "capsule" || u == "capsules" || u == "cap" || u == "caps" || u == "كبسول" || u == "كبسولات":
+	case "capsule", "capsules", "cap", "caps", "كبسول", "كبسولات":
 		return "capsule"
-	case u == "box" || u == "علبة" || u == "علبه" || u == "علب" || u == "carton" || u == "كرتونة" || u == "pack" || u == "package" || u == "باكت":
+	case "box", "علبة", "علبه", "علب", "carton", "كرتونة", "pack", "package", "باكت":
 		return "box"
-	case u == "bottle" || u == "زجاجة" || u == "ازازة" || u == "قارورة":
+	case "bottle", "زجاجة", "ازازة", "قارورة":
 		return "bottle"
-	case u == "ampoule" || u == "ampoules" || u == "amp" || u == "amps" || u == "أمبول" || u == "امبول" || u == "امبولات":
+	case "ampoule", "ampoules", "amp", "amps", "أمبول", "امبول", "امبولات":
 		return "ampoule"
-	case u == "vial" || u == "vials" || u == "فيال" || u == "فيالات":
+	case "vial", "vials", "فيال", "فيالات":
 		return "vial"
-	case u == "sachet" || u == "sachets" || u == "كيس" || u == "أكياس" || u == "اكياس":
+	case "sachet", "sachets", "كيس", "أكياس", "اكياس":
 		return "sachet"
-	case u == "unit" || u == "piece" || u == "pcs" || u == "وحدة":
+	case "unit", "piece", "pcs", "وحدة":
 		return "unit"
 	default:
 		return u

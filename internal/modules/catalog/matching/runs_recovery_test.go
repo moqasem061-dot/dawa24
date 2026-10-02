@@ -2,6 +2,7 @@ package matching
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"testing"
 	"time"
@@ -222,7 +223,7 @@ func TestRecovery_RepeatedCommit_IdempotentSingleEffect(t *testing.T) {
 	}
 
 	// Stale revision: rejected with ErrRevisionConflict
-	if err := commitRow(rowID, 0, targetProdID); err != ErrRevisionConflict {
+	if err := commitRow(rowID, 0, targetProdID); !errors.Is(err, ErrRevisionConflict) {
 		t.Fatalf("expected ErrRevisionConflict for stale rev 0, got %v", err)
 	}
 }

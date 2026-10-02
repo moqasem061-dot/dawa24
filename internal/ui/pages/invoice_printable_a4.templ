@@ -70,14 +70,14 @@ templ invoiceA4Header(data billing.PrintableInvoiceData) {
 		<div class="header-center">
 			if site.LogoURL != "" {
 				<img
-					src={ site.LogoURL }
+					src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164"
 					alt={ site.SiteName }
 					class="dawa-brand-logo"
 					data-img-fallback="hide"
 				/>
 			} else {
 				<img
-					src="/static/img/logo.png"
+					src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164"
 					alt={ site.SiteName }
 					class="dawa-brand-logo"
 					data-img-fallback="hide"

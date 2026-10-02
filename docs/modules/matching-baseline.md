@@ -86,3 +86,25 @@ Evaluation after implementing User Story 2 (curated facts, exact pack conversion
 - **Recall@20**: 99.92% (SC-004 PASS)
 
 
+
+## Rework for Egyptian naming (2026-10)
+
+The "After US2" figures above came from an evaluation that did not run the production decision path and that marked rows the engine declined as neither right nor wrong: its 99.94% precision was bought with coverage falling from 98.99% to 49%. The rework replaced it with `match-eval` running `Index.Decide` (the production path) on a per-case index, and added an Egyptian suite built from real catalogue names: shorthand (ق، ك، ش، امب), cross-script brands, typos, distributor suffixes and price noise, with one product in twenty withheld so that "not stocked" is tested.
+
+Each rule was kept only if it prevented more wrong matches than the correct matches it cost (ablation). Four were removed on that measure (stated-dose, fuzzy-dose, unverified-word and extra-word refusals, which traded 63–341 correct matches per wrong one prevented).
+
+| Suite | Coverage | Precision (95% LB) | Wrong accepted |
+|---|---|---|---|
+| Egypt, Arabic rows | 89.6% | 99.24% | |
+| Egypt, English rows | 87.3% | 99.29% | |
+| Egypt, overall (11,912 cases) | 88.44% | 99.27% (99.10%) | 65 |
+| Egypt, stocked products only | 99.90% (8,811 of 8,820) | | |
+| Egypt, withheld products | | | 56 of 1,914 accepted as something else |
+| Tuning split (32,179) | 64.83% | 99.85% (99.80%) | 31 |
+| Corpus sibling cases | | | 0 (11,813 right) |
+
+Worst-case speed: 4.2 ms per row.
+
+The tuning split's coverage is low by construction: its rows are catalogue names with the English blanked, so a cross-script brand has nothing to corroborate it and goes to review rather than being accepted on spelling alone. The remaining wrong matches are almost all loose brand links (sound-alike or cross-script). Those rows are flagged `loose_brand`, and every matched row except those answered by the decision memory or an identifier is sent to the AI to check.
+
+Reproduce: `go run ./cmd/cli match-eval --split egypt|tuning --out <file> [--explain <file>]`.

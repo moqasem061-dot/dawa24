@@ -48,15 +48,15 @@ func TestMalformedRows_FiftyThousand(t *testing.T) {
 			buf.WriteString("code,name,price,quantity\n")
 		case r < 0.0075: // 0.25% bad numbers
 			p := validProducts[rng.Intn(len(validProducts))]
-			buf.WriteString(fmt.Sprintf("SKU-%d,%s,BAD_PRICE,NOT_A_NUM\n", i, p))
+			fmt.Fprintf(&buf, "SKU-%d,%s,BAD_PRICE,NOT_A_NUM\n", i, p)
 		case r < 0.0100: // 0.25% huge values / overflow
 			p := validProducts[rng.Intn(len(validProducts))]
-			buf.WriteString(fmt.Sprintf("SKU-%d,%s,999999999999999999999999999999999999,999999999999999999999999999999999999\n", i, p))
+			fmt.Fprintf(&buf, "SKU-%d,%s,999999999999999999999999999999999999,999999999999999999999999999999999999\n", i, p)
 		default: // 99% valid rows
 			p := validProducts[rng.Intn(len(validProducts))]
 			price := rng.Intn(100) + 10
 			qty := rng.Intn(500) + 1
-			buf.WriteString(fmt.Sprintf("SKU-%d,%s,%d,%d\n", i, p, price, qty))
+			fmt.Fprintf(&buf, "SKU-%d,%s,%d,%d\n", i, p, price, qty)
 		}
 	}
 

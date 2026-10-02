@@ -1,23 +1,18 @@
 package ui
 
 import (
-	"bytes"
-	"compress/gzip"
 	"context"
 	"crypto/sha256"
 	"embed"
-	"encoding/hex"
 	"fmt"
-	"io/fs"
-	"mime"
 	"net/http"
-	"path/filepath"
 	"strings"
 	"sync"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
@@ -71,75 +66,6 @@ var (
 	assetCache = make(map[string]*staticAsset)
 	assetOnce  sync.Once
 )
-
-func initStaticAssetCache() {
-	_ = fs.WalkDir(staticFS, "static", func(path string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
-			return nil
-		}
-		data, err := staticFS.ReadFile(path)
-		if err != nil {
-			return nil
-		}
-		hash := sha256.Sum256(data)
-		etag := "\"" + hex.EncodeToString(hash[:16]) + "\""
-
-		ext := filepath.Ext(path)
-		cType := mime.TypeByExtension(ext)
-		if cType == "" {
-			switch ext {
-			case ".css":
-				cType = "text/css; charset=utf-8"
-			case ".js":
-				cType = "application/javascript; charset=utf-8"
-			case ".svg":
-				cType = "image/svg+xml"
-			case ".png":
-				cType = "image/png"
-			case ".jpg", ".jpeg":
-				cType = "image/jpeg"
-			case ".webp":
-				cType = "image/webp"
-			case ".woff2":
-				cType = "font/woff2"
-			case ".txt":
-				cType = "text/plain; charset=utf-8"
-			default:
-				cType = "application/octet-stream"
-			}
-		}
-
-		relPath := strings.TrimPrefix(path, "static")
-		if !strings.HasPrefix(relPath, "/") {
-			relPath = "/" + relPath
-		}
-
-		a := &staticAsset{
-			content:     data,
-			etag:        etag,
-			contentType: cType,
-		}
-		// Compress once, now. Level 9 rather than the middleware's 5: this runs
-		// a single time per process, so the slower setting costs nothing per
-		// request and buys a few per cent on every one of them.
-		if compressibleAsset(cType) {
-			var buf bytes.Buffer
-			zw, zErr := gzip.NewWriterLevel(&buf, gzip.BestCompression)
-			if zErr == nil {
-				if _, wErr := zw.Write(data); wErr == nil && zw.Close() == nil {
-					// Keep it only if it actually helped. A tiny file can come
-					// out larger than it went in once the gzip header is added.
-					if buf.Len() < len(data) {
-						a.gzipped = buf.Bytes()
-					}
-				}
-			}
-		}
-
-		assetCache[relPath] = a
-		return nil
-	})
-}
 
 // AssetURL returns the public URL for an embedded asset with its content hash
 // appended as a cache-busting query parameter.
@@ -277,6 +203,15 @@ func RegisterStaticRoutes(r chi.Router, siteURL func(*http.Request) string) {
 // here keeps the hash computation in one place.
 func init() {
 	layouts.Asset = AssetURL
+	components.Asset = AssetURL
+	layouts.SecurityScriptSource = func() string {
+		assetOnce.Do(initStaticAssetCache)
+		return string(assetCache["/js/security.js"].content)
+	}
+	layouts.HomeCriticalCSS = func() string {
+		assetOnce.Do(initStaticAssetCache)
+		return string(assetCache["/critical/home.css"].content)
+	}
 }
 
 // publicRobots removes the lines that name private areas.

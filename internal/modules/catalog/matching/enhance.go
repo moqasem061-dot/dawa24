@@ -33,7 +33,7 @@ func (s *serviceImpl) StartEnhancement(ctx context.Context, runID int64, rows []
 	}
 	run, err := s.repo.GetRun(ctx, runID)
 	if err != nil {
-		return EnhanceHandle{}, fmt.Errorf("%w: %v", ErrRunNotFound, err)
+		return EnhanceHandle{}, fmt.Errorf("%w: %w", ErrRunNotFound, err)
 	}
 
 	activeCount, err := s.repo.CountActiveAIRuns(ctx, run.OrganizationID)

@@ -215,7 +215,7 @@ func RenderExamplesV8(examples []PromptExampleV8) string {
 	var b strings.Builder
 	b.WriteString("# EXAMPLES\n")
 	for i, ex := range examples {
-		b.WriteString(fmt.Sprintf("\n### Example %d: %s (%s)\n", i+1, ex.Description, ex.Category))
+		fmt.Fprintf(&b, "\n### Example %d: %s (%s)\n", i+1, ex.Description, ex.Category)
 		b.WriteString(RenderEnhanceInputV8(ex.Catalog, []ItemV8{ex.Item}))
 		b.WriteString("Response:\n")
 

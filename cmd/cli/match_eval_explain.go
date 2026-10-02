@@ -15,7 +15,6 @@ import (
 // wrong acceptances (precision) and correct answers that were not accepted
 // (coverage), each grouped by the reason the engine gave.
 func writeExplain(path string, cases []matcheval.Case, decs []matchflow.RowDecision, ix *evalIndexes, perCat int) error {
-	type example struct{ line string }
 	wrong := map[string][]string{}
 	refused := map[string][]string{}
 	wrongN, refusedN := map[string]int{}, map[string]int{}

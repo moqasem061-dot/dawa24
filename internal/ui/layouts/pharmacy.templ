@@ -23,12 +23,12 @@ templ CustomerShell(title string, activeNav string, lang string, dir string, per
 					<div class="sidebar-header">
 						<a href="/customer/dashboard" class="sidebar-brand text-decoration-none">
 							if site.LogoURL != "" {
-								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src={ site.LogoURL } alt={ site.SiteName } data-img-fallback="hide" />
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src={ BrandLogoURL(site.LogoURL) } srcset={ BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } data-img-fallback="hide" />
 							} else {
-								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src="/static/img/logo.png" alt={ site.SiteName } data-img-fallback="hide" />
+								<img class={ "sidebar-logo logo-light", templ.KV("logo-always", site.LogoDarkURL == "") } src={ BrandLogoURL("") } srcset={ BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } data-img-fallback="hide" />
 							}
 							if site.LogoDarkURL != "" {
-								<img class="sidebar-logo logo-dark" src={ site.LogoDarkURL } alt={ site.SiteName } data-img-fallback="hide" />
+								<img class="sidebar-logo logo-dark" src={ Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } data-img-fallback="hide" />
 							}
 							<div class="sidebar-brand-copy">
 								<span class="sidebar-brand-name">{ site.SiteName }</span>

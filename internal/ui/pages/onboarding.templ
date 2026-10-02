@@ -12,9 +12,9 @@ templ Onboarding() {
 			<div class="stack-sm">
 				<a href="/">
 					if site.LogoURL != "" {
-						<img src={ site.LogoURL } alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
+						<img src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
 					} else {
-						<img src="/static/img/logo.png" alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
+						<img src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class="brand-logo mb-3" data-img-fallback="hide" />
 					}
 				</a>
 				<h1 class="page-title font-bold text-xl m-0">انضمام شريك توريد أو صيدلية</h1>

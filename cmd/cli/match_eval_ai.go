@@ -164,11 +164,12 @@ func runAIEvaluation(
 					}
 				}
 			} else {
-				if d.Reason == "ambiguous" {
+				switch d.Reason {
+				case "ambiguous":
 					targetOutcome.State = "ambiguous"
-				} else if d.Reason == "absent" {
+				case "absent":
 					targetOutcome.State = "no_candidate"
-				} else {
+				default:
 					targetOutcome.State = "needs_review"
 				}
 			}
@@ -194,11 +195,4 @@ func runAIEvaluation(
 	_ = strings.ToLower(promptVer)
 
 	return aiOutcomes, stats, nil
-}
-
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }

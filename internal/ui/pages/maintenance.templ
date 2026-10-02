@@ -35,12 +35,12 @@ templ MaintenancePage(data MaintenancePageView, lang, dir string) {
 			<div class="w-full max-w-2xl mx-auto d-flex items-center justify-between">
 				<a href={ templ.SafeURL(homeURL) } class="d-inline-flex items-center gap-2.5 text-decoration-none">
 					if site.LogoURL != "" {
-						<img src={ site.LogoURL } alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
+						<img src={ layouts.BrandLogoURL(site.LogoURL) } srcset={ layouts.BrandLogoSrcset(site.LogoURL) } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
 					} else {
-						<img src="/static/img/logo.png" alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
+						<img src={ layouts.BrandLogoURL("") } srcset={ layouts.BrandLogoSrcset("") } sizes="(max-width: 640px) 135px, 240px" width="480" height="164" alt={ site.SiteName } class="h-9 w-auto object-contain logo-light" data-img-fallback="hide" />
 					}
 					if site.LogoDarkURL != "" {
-						<img src={ site.LogoDarkURL } alt={ site.SiteName } class="h-9 w-auto object-contain logo-dark" data-img-fallback="hide" />
+						<img src={ layouts.Asset(site.LogoDarkURL) } width="480" height="164" alt={ site.SiteName } class="h-9 w-auto object-contain logo-dark" data-img-fallback="hide" />
 					}
 					<span class="text-base font-black text-primary tracking-tight">{ site.SiteName }</span>
 				</a>

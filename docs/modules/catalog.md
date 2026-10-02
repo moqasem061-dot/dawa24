@@ -198,7 +198,8 @@ One conflict model decides identity: `conflictsOf` (`internal/shared/productmatc
 - **Soft (ranks the right candidate first, sends an only-candidate to review):** count, bottle volume, unstated extension or letter, an unknown brand word, a container difference (امبول/فيال, tie-break only), a word mismatch, a different company inside a generic's name.
 - **Tablets and capsules are one solid-oral class.** Egyptian pharmacists write them interchangeably; tablet and capsule counts are compared as one class.
 - **Shorthand** (ق، ك، ش، ف، امب، اق) is expanded before matching.
-- **Loose brand links** (typo, sound-alike, cross-script) need corroboration from the row's dose, form, count, company, molecule or price. Cross-script links need one strong confirmation or two weak ones. Accepted loose links are flagged `loose_brand` and are what the AI stage re-checks.
+- **Loose brand links** (typo, sound-alike, cross-script) need corroboration from the row's dose, form, count, company, molecule or price. Cross-script links need one strong confirmation or two weak ones. Accepted loose links are flagged `loose_brand`.
+- **What the AI is asked.** Every row except those already answered by the Match Decision Memory (a person's, a curator's or the platform's earlier decision, or a reviewer's) or by a checked identifier: unresolved rows to resolve, and every name match, full-score ones included, to check. The model is not told the engine's choice, so it cannot echo it. If it names another product, or none, for a matched row, the row goes to review; a confident disagreement never silently swaps the product. Every AI answer passes the same identity screen (`IdentityConflict`) as the engine's own.
 - **Barcodes** must pass the GTIN check digit. Supplier codes must be corroborated by the name.
 
 Measured results and the evaluation method: `docs/modules/matching-baseline.md` (`go run ./cmd/cli match-eval --split egypt|tuning --explain <file>`).

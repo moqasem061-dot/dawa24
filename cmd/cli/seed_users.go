@@ -184,7 +184,7 @@ func runSeedUsers(ctx context.Context, db *database.DB, log *slog.Logger) error 
 // seedUsersSummary prints the credentials, since the whole point of the
 // command is to hand them to someone.
 func seedUsersSummary() string {
-	return fmt.Sprintf(`
+	return `
 Development sign-in accounts (password: the SEED_PASSWORD you set):
 
   admin@dawa24.test       super_admin   /admin/dashboard
@@ -193,5 +193,5 @@ Development sign-in accounts (password: the SEED_PASSWORD you set):
 
 Sign in at /auth/login. Re-running this command resets the passwords and
 clears any suspension applied while testing.
-`)
+`
 }

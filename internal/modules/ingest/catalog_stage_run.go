@@ -73,9 +73,10 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 	}
 	if r.session.Mapping != nil {
 		for _, col := range r.session.Mapping.Columns {
-			if col.Field == productmatch.FieldSKU {
+			switch col.Field {
+			case productmatch.FieldSKU:
 				identPolicy.DeclaredNamespaces[col.Index] = string(choices.Namespaces[productmatch.FieldSKU])
-			} else if col.Field == productmatch.FieldBarcode {
+			case productmatch.FieldBarcode:
 				identPolicy.DeclaredNamespaces[col.Index] = string(choices.Namespaces[productmatch.FieldBarcode])
 			}
 		}
@@ -214,6 +215,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			Level:      matchLevel,
 			Score:      score,
 			Candidates: cands,
+			Loose:      hasFlag(dec.Flags, productmatch.FlagLooseBrand),
 		}
 		if productID != nil {
 			m.ProductID = *productID
@@ -229,7 +231,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 			r.counts.errors++
 		}
 
-		if outcome != OutcomeError {
+		if outcome != OutcomeError && !answeredBeforeAI(dec.Basis) {
 			r.remember(row, m)
 		}
 
@@ -272,6 +274,21 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 	}
 
 	return r.svc.imports.AppendRows(ctx, r.session.ID, r.session.OrganizationID, staged)
+}
+
+// answeredBeforeAI reports a decision the model must not be asked about: the
+// Match Decision Memory already holds it (a person's or the platform's earlier
+// answer), or it rests on a checked identifier. Every other row — a 100% name
+// match included — goes to the model, because a name match can still pick a
+// sibling product.
+func answeredBeforeAI(b matchflow.Basis) bool {
+	switch b {
+	case matchflow.BasisIdentifier, matchflow.BasisKnowledgeHuman,
+		matchflow.BasisKnowledgeCurated, matchflow.BasisKnowledgePlatform,
+		matchflow.BasisReviewer:
+		return true
+	}
+	return false
 }
 
 // remember files an unsettled row under the question it asks.

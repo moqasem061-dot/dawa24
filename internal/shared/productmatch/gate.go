@@ -289,9 +289,10 @@ func (g *Gate) Evaluate(rowFacts IdentityFacts, p Proposal, pol Policy) Verdict 
 
 	if pol.Required == GranularityPack && achieved < GranularityPack {
 		reasonCode := ReasonPackUnresolved
-		if packOutcome == PackOutcomeConflict {
+		switch packOutcome {
+		case PackOutcomeConflict:
 			reasonCode = ReasonPackConflict
-		} else if packOutcome == PackOutcomeNeedsRelationship {
+		case PackOutcomeNeedsRelationship:
 			reasonCode = ReasonPackNeedsRelationship
 		}
 		return Verdict{
