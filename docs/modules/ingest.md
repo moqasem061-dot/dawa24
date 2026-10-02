@@ -62,6 +62,19 @@ The UI wizard strictly reflects the server session state:
 - **Step 4 (Commit):** Transactional commit into catalog inventory (`POST /vendor/ingest/{id}/commit`).
 - **Resumability:** Accessing `/vendor/ingest/{sessionID}` loads the exact step corresponding to the session's database state.
 
+### Review layout and explanations (2026-10-02)
+
+- All twelve review fields fit the available width. Wide layouts retain a table;
+  narrower containers reflow each record into labeled fields, with quantity and
+  its save action always visible. Sorting, selection and inline edits stay available.
+- Matching reasons use the bilingual matching catalog, including existing reason
+  aliases and localized parameter labels. Reasons sit below the catalog name;
+  unmatched rows also show their explanation. Unknown future codes receive a
+  readable localized fallback instead of leaking internal keys.
+- The local `/review` fixture and `scripts/pagespeed/review.test.cjs` exercise
+  both languages/themes at phone, tablet and desktop widths, plus edit and picker
+  interactions. `TestEveryMatchingReasonIsLocalized` covers every declared reason.
+
 ### Stability and upload ownership (2026-09-30)
 
 - Upload metadata is bound to the authenticated user and current organization. Registered object keys must remain under `orgs/<organizationID>/uploads/`; filenames cannot contain paths. A forged import document can no longer authorize a server-file download or another tenant's object.

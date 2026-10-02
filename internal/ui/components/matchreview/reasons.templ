@@ -1,94 +1,44 @@
 package matchreview
 
 import (
+	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
 )
 
 type ReasonsProps struct {
 	Reasons []matchflow.Reason
 	Flags   []string
-}
-
-func reasonText(code string) (ar string, en string) {
-	switch code {
-	case "name_exact":
-		return "تطابق تام للاسم", "Exact name match"
-	case "brand_agree":
-		return "تطابق العلامة التجارية", "Brand agreement"
-	case "strength_conflict":
-		return "تعارض في التركيز", "Strength conflict"
-	case "form_conflict":
-		return "تعارض في الشكل الدوائي", "Form conflict"
-	case "pack_conflict":
-		return "تعارض في العبوة", "Pack conflict"
-	case "brand_conflict":
-		return "تعارض في الشركة/العلامة", "Brand conflict"
-	case "candidate_ambiguous":
-		return "أكثر من صنف محتمل", "Ambiguous candidates"
-	case "no_candidate":
-		return "لم يتم العثور على صنف مطابق", "No candidate found"
-	case "catalog_unavailable":
-		return "الكتالوج المركزي غير متاح", "Catalog unavailable"
-	case "reviewer_selected":
-		return "اختيار يدوي من المراجع", "Selected by reviewer"
-	case "reviewer_corrected":
-		return "تصحيح يدوي للخصائص", "Corrected by reviewer"
-	case "reviewer_rejected":
-		return "مرفوض من المراجع", "Rejected by reviewer"
-	case "reviewer_excluded":
-		return "مستبعد من المطابقة", "Excluded by reviewer"
-	case "retrieval_incomplete":
-		return "استرجاع جزئي للمرشحين", "Partial candidate retrieval"
-	case "catalog_changed":
-		return "تغير في الكتالوج بعد المطابقة", "Catalog modified post-match"
-	case "numeric_uninterpretable":
-		return "قيمة رقمية غير صالحة", "Uninterpretable numeric value"
-	default:
-		return code, code
-	}
-}
-
-func reasonBadgeClass(code string) string {
-	switch code {
-	case "name_exact", "brand_agree", "reviewer_selected":
-		return "bg-emerald-50 text-emerald-800 border-emerald-200"
-	case "strength_conflict", "form_conflict", "pack_conflict", "brand_conflict", "reviewer_rejected", "reviewer_excluded":
-		return "bg-rose-50 text-rose-800 border-rose-200"
-	case "candidate_ambiguous", "retrieval_incomplete", "catalog_changed":
-		return "bg-amber-50 text-amber-800 border-amber-200"
-	default:
-		return "bg-neutral-50 text-neutral-700 border-neutral-200"
-	}
+	Lang    string
 }
 
 templ Reasons(props ReasonsProps) {
-	<div class="flex flex-wrap items-center gap-1.5" role="list" dir="rtl">
-		for _, r := range props.Reasons {
-			{{ ar, en := reasonText(r.Code) }}
-			<span
-				role="listitem"
-				class={ "inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium", reasonBadgeClass(r.Code) }
-				title={ en }
-			>
-				<span>{ ar }</span>
-				if len(r.Params) > 0 {
-					for k, v := range r.Params {
-						<span class="text-[10px] opacity-75">
-							(<bdi>{ k }</bdi>: <bdi>{ v }</bdi>)
-						</span>
+	{{
+		lang := httpx.LangFrom(ctx)
+		if props.Lang != "" {
+			lang = i18n.ParseLang(props.Lang)
+		}
+	}}
+	if len(props.Reasons) > 0 || len(props.Flags) > 0 {
+		<ul class="match-reasons" aria-label={ i18n.T(lang, "match.reasons.label") } dir={ lang.Dir() }>
+			for _, reason := range props.Reasons {
+				<li class={ "match-reason", reasonClass(reason.Code) } title={ reasonText(lang, reason.Code) }>
+					<span>{ reasonLabel(lang, reason.Code) }</span>
+					if len(reason.Params) > 0 {
+						<dl class="match-reason-params">
+							for _, key := range reasonParamKeys(reason.Params) {
+								<div>
+									<dt>{ reasonParamLabel(lang, key) }</dt>
+									<dd><bdi>{ reasonParamValue(lang, reason.Params[key]) }</bdi></dd>
+								</div>
+							}
+						</dl>
 					}
-				}
-			</span>
-		}
-		for _, f := range props.Flags {
-			{{ ar, en := reasonText(f) }}
-			<span
-				role="listitem"
-				class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs border font-medium bg-amber-50 text-amber-800 border-amber-200"
-				title={ en }
-			>
-				<span>{ ar }</span>
-			</span>
-		}
-	</div>
+				</li>
+			}
+			for _, flag := range uniqueReasonFlags(props) {
+				<li class="match-reason match-reason-warning" title={ reasonText(lang, flag) }>{ reasonLabel(lang, flag) }</li>
+			}
+		</ul>
+	}
 }

@@ -888,8 +888,8 @@ html:not([data-theme="dark"]) .logo-dark {
   .table-responsive,
   .card:has(table),
   .card:has(.data-table),
-  .glass-panel:has(table),
-  .glass-panel:has(.data-table) {
+  .glass-panel:has(table):not(.review-table-shell),
+  .glass-panel:has(.data-table):not(.review-table-shell) {
     max-inline-size: 100%;
     inline-size: 100%;
     overflow-x: auto;
@@ -898,12 +898,12 @@ html:not([data-theme="dark"]) .logo-dark {
     scrollbar-width: thin;
     scrollbar-color: var(--border-strong) transparent;
   }
-  .page-container table,
-  .table-container table,
-  .table-responsive table,
-  .card:has(table) table,
-  .glass-panel:has(table) table,
-  .data-table {
+  .page-container table:not(.review-table),
+  .table-container table:not(.review-table),
+  .table-responsive table:not(.review-table),
+  .card:has(table) table:not(.review-table),
+  .glass-panel:has(table) table:not(.review-table),
+  .data-table:not(.review-table) {
     inline-size: max-content;
     min-inline-size: 100%;
     max-inline-size: none;

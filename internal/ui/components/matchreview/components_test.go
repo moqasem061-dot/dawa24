@@ -84,11 +84,11 @@ func TestMatchReview_ReasonsComponent(t *testing.T) {
 	}
 
 	html := buf.String()
-	if !strings.Contains(html, "تطابق تام للاسم") {
+	if !strings.Contains(html, "تطابق تام في الاسم") {
 		t.Errorf("expected Arabic text for name_exact")
 	}
-	if !strings.Contains(html, "Exact name match") {
-		t.Errorf("expected English title for name_exact")
+	if !strings.Contains(html, "الخاصية") || !strings.Contains(html, "التركيز") {
+		t.Errorf("expected localized reason parameters")
 	}
 }
 

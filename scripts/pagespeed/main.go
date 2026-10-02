@@ -20,6 +20,7 @@ func main() {
 	r.Use(middleware.Compress(5))
 	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{}))
 	ui.RegisterStaticRoutes(r, func(*http.Request) string { return "http://" + *addr })
+	r.Get("/review", reviewFixture)
 	r.Get("/auth/login", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := pages.LoginPage("ar", "rtl", "", "").Render(layouts.WithPath(req.Context(), req.URL.Path), w); err != nil {

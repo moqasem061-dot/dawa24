@@ -26,25 +26,25 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 	}}
 	<tr id={ fmt.Sprintf("row-%d", row.ID) } class={ "vendor-review-row review-row", templ.KV("opacity-50", row.IsExcluded) }>
 		<!-- Bulk selection -->
-		<td class="text-center align-middle">
+		<td class="review-col-pick text-center align-middle" data-label={ i18n.T(lang, "vendor_ingest.table.pick_row") }>
 			<input type="checkbox" name="row_ids" value={ fmt.Sprint(row.ID) }
-				form="review-bulk" class="review-pick"/>
+				form="review-bulk" class="review-pick" aria-label={ i18n.T(lang, "vendor_ingest.table.th_pick") }/>
 		</td>
 
 		<!-- Checkbox Exclude/Include -->
-		<td class="text-center align-middle">
+		<td class="review-col-flag text-center align-middle" data-label={ i18n.T(lang, "vendor_ingest.table.th_import") }>
 			<form class="stack-md" method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "toggle")) }>
-				<input type="checkbox" checked?={ !row.IsExcluded } data-autosubmit/>
+				<input type="checkbox" aria-label={ i18n.T(lang, "vendor_ingest.table.th_import") } checked?={ !row.IsExcluded } data-autosubmit/>
 			</form>
 		</td>
 
 		<!-- Row Number -->
-		<td class="review-col-num text-center align-middle tabular-nums text-muted font-bold text-sm">
+		<td class="review-col-num text-center align-middle tabular-nums text-muted font-bold text-sm" data-label={ i18n.T(lang, "vendor_ingest.table.th_row_num") }>
 			{ fmt.Sprint(row.SourceRow) }
 		</td>
 
 		<!-- File Product Name (Direct Editable in same cell) -->
-		<td class="review-col-name align-middle">
+		<td class="review-col-name align-middle" data-label={ i18n.T(lang, "vendor_ingest.table.th_file_name") }>
 			if row.ConflictNotice != "" {
 				<div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-1.5" role="alert">
 					<svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,7 +55,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 			}
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="d-flex items-center gap-1 mb-1">
-				<input type="text" name="display_name" value={ row.DisplayName }
+				<input type="text" name="display_name" aria-label={ i18n.T(lang, "vendor_ingest.table.th_file_name") } value={ row.DisplayName }
 					class="form-input text-sm font-bold py-1 px-2.5 h-8"
 					placeholder={ i18n.T(lang, "vendor_ingest.row.name_placeholder") }/>
 				<button type="submit" class="btn btn-secondary btn-icon btn-xs h-8 w-8 flex-shrink-0" title={ i18n.T(lang, "vendor_ingest.row.save_name_title") }>
@@ -88,24 +88,16 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Matched Central Catalog Product (with In-Cell Dropdown) -->
-		<td class="review-col-catalog align-middle catalog-cell-container">
+		<td class="review-col-catalog align-middle catalog-cell-container" data-label={ i18n.T(lang, "vendor_ingest.table.th_catalog_name") }>
 			<div class="catalog-cell-match">
 				if row.ProductID != nil && *row.ProductID > 0 {
-					<div class="row-center-xs gap-xs flex-wrap">
+					<div class="stack-2xs">
 						<div class="font-bold text-sm">{ row.MatchedCatalogName() }</div>
 						if AIMatchedRow(row) {
 							<span class="badge badge-outline text-xs"
 								title={ aiRowTitle(row, lang) }>{ i18n.T(lang, "vendor_ingest.row.ai_badge") }</span>
 						}
 					</div>
-					if row.MatchDecision != nil && len(row.MatchDecision.Reasons) > 0 {
-						<div class="mt-1">
-							@matchreview.Reasons(matchreview.ReasonsProps{
-								Reasons: row.MatchDecision.Reasons,
-								Flags:   row.MatchDecision.Flags,
-							})
-						</div>
-					}
 					<button type="button"
 						data-row-id={ fmt.Sprint(row.ID) }
 						data-row-name={ row.DisplayName }
@@ -118,7 +110,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 					<div class="stack-2xs">
 						<span class="badge badge-rose text-xs">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
 						if len(row.Candidates) > 0 {
-							<span class="text-xs text-muted truncate max-w-xs">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.closest_prefix"), row.Candidates[0].Name) }</span>
+							<span class="text-xs text-muted">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.closest_prefix"), row.Candidates[0].Name) }</span>
 						}
 					</div>
 					<button type="button"
@@ -131,6 +123,14 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 					</button>
 				}
 			</div>
+
+			if row.MatchDecision != nil {
+				@matchreview.Reasons(matchreview.ReasonsProps{
+					Reasons: row.MatchDecision.Reasons,
+					Flags: row.MatchDecision.Flags,
+					Lang: lang,
+				})
+			}
 
 			<!-- In-Cell Dropdown Menu (Theme-Aware, Hidden by Default) -->
 			<div id={ fmt.Sprintf("catalog-dropdown-%d", row.ID) }
@@ -197,7 +197,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Match Score / Degree -->
-		<td class="review-col-score text-center align-middle">
+		<td class="review-col-score text-center align-middle" data-label={ i18n.T(lang, "vendor_ingest.table.th_score") }>
 			if row.ProductID != nil && *row.ProductID > 0 && row.IsManuallyMatched {
 				<span class="badge badge-emerald text-xs fw-800" title={ i18n.T(lang, "vendor_ingest.row.manual_match_hint") }>{ i18n.T(lang, "vendor_ingest.row.manual_match") }</span>
 			} else if row.ProductID != nil && *row.ProductID > 0 {
@@ -221,14 +221,14 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Public Price (Editable Inline) -->
-		<td class="review-col-price text-center align-middle tabular-nums">
+		<td class="review-col-price text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_public_price") }>
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="review-money-form">
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
 				if row.Payload != nil && row.Payload.HasQuantity {
 					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
 				}
-				<input type="number" name="price"
+				<input type="number" name="price" aria-label={ i18n.T(lang, "vendor_ingest.table.th_public_price") }
 					value={ rowPriceValue(row) }
 					step="0.01"
 					min="0"
@@ -241,11 +241,11 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Discount Percentage % (Editable Inline) -->
-		<td class="review-col-discount text-center align-middle tabular-nums">
+		<td class="review-col-discount text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_discount") }>
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="review-money-form">
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
-				<input type="number" name="discount"
+				<input type="number" name="discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_discount") }
 					value={ rowDiscountPercentValue(row) }
 					step="0.1"
 					min="0"
@@ -259,14 +259,14 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Net Price -->
-		<td class="review-col-net text-center align-middle tabular-nums">
+		<td class="review-col-net text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_net_price") }>
 			<span class="fw-800 text-primary text-sm whitespace-nowrap">
 				{ rowNetPriceValue(row) } <span class="text-xs text-muted font-semibold">{ i18n.T(lang, "common.currency_egp") }</span>
 			</span>
 		</td>
 
 		<!-- Cost Price (Editable Inline) -->
-		<td class="review-col-money text-center align-middle tabular-nums">
+		<td class="review-col-money text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }>
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="review-money-form">
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
@@ -282,7 +282,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 				if row.Payload != nil && row.Payload.CostDiscountBps > 0 {
 					<input type="hidden" name="cost_discount" value={ rowCostDiscountPercentValue(row) }/>
 				}
-				<input type="number" name="cost_price"
+				<input type="number" name="cost_price" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
 					value={ rowCostPriceValue(row) }
 					step="0.01"
 					min="0"
@@ -295,7 +295,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Cost Discount % (Editable Inline) -->
-		<td class="review-col-discount text-center align-middle tabular-nums">
+		<td class="review-col-discount text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }>
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="review-money-form">
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
@@ -311,7 +311,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 				if row.Payload != nil && row.Payload.CostPrice.IsPositive() {
 					<input type="hidden" name="cost_price" value={ rowCostPriceValue(row) }/>
 				}
-				<input type="number" name="cost_discount"
+				<input type="number" name="cost_discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
 					value={ rowCostDiscountPercentValue(row) }
 					step="0.1"
 					min="0"
@@ -325,7 +325,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 		</td>
 
 		<!-- Quantity (Editable Inline) -->
-		<td class="review-col-qty text-center align-middle tabular-nums">
+		<td class="review-col-qty text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_quantity") }>
 			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
 				class="review-money-form">
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
@@ -336,7 +336,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 						<input type="hidden" name="price" value={ row.Payload.PublicPrice.String() }/>
 					}
 				}
-				<input type="number" name="quantity"
+				<input type="number" name="quantity" aria-label={ i18n.T(lang, "vendor_ingest.table.th_quantity") }
 					value={ rowQuantityValue(row) }
 					step="1"
 					min="0"
@@ -345,10 +345,10 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_qty_title") }>
 					@components.IconCheck("icon-2xs")
 				</button>
-				if view.Session.Settings.StockMode == ingest.StockKeep {
-					<span class="text-3xs text-muted d-block mt-0.5" title={ i18n.T(lang, "vendor_ingest.row.ignore_qty_title") }>{ i18n.T(lang, "vendor_ingest.row.ignore_qty_note") }</span>
-				}
 			</form>
+			if view.Session.Settings.StockMode == ingest.StockKeep {
+				<span class="text-3xs text-muted d-block mt-0.5" title={ i18n.T(lang, "vendor_ingest.row.ignore_qty_title") }>{ i18n.T(lang, "vendor_ingest.row.ignore_qty_note") }</span>
+			}
 		</td>
 	</tr>
 }

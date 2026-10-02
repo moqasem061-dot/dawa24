@@ -52,6 +52,10 @@ npm test --prefix scripts/pagespeed
 
 The browser checks compare the homepage with and without the complete sheets,
 exercise navigation, and check mobile/desktop, both directions and both themes.
+The `/review` fixture also renders the vendor import review with representative
+reasons and large numeric values. Its browser checks verify every field fits
+without horizontal scrolling and that quantity editing, selection, sorting and
+the catalog picker remain usable.
 Lighthouse should also run against the deployed site: the fixture cannot measure
 database latency, CDN behavior, live advertisements, or analytics.
 

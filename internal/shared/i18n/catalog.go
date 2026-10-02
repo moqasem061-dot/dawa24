@@ -51,6 +51,7 @@ func loadCatalogDefaults(e *engine) {
 	loadEmailAuthKeys(e)
 	loadMissingCatalogKeys(e)
 	loadCatalogMatchingKeys(e)
+	loadMatchReviewKeys(e)
 }
 
 func addKey(e *engine, key, namespace, textAR, textEN, desc string) {

@@ -199,11 +199,11 @@ templ importReviewStage(view VendorImportView, langOpt ...string) {
 	</div>
 
 	<!-- Table -->
-	<div class="glass-panel p-0 mb-6 review-table-shell border border-slate-200/80 rounded-2xl shadow-xs overflow-hidden">
+	<div class="glass-panel p-0 mb-6 review-table-shell border border-slate-200/80 rounded-2xl shadow-xs">
 		<div class="review-table-scroll" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.vendor-review-row', selectActionUrl: '' })">
 			<table class="data-table review-table m-0 w-full">
 				<thead>
-					<tr>
+					<tr data-sort-label={ i18n.T(lang, "vendor_ingest.table.sort_label") }>
 						<th class="text-center review-col-pick">
 							<input type="checkbox" class="review-pick-all"
 								data-on-change="reviewToggleAll(this)"
