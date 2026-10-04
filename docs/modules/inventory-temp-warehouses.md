@@ -29,3 +29,34 @@ The Temporary Warehouses subsystem allows pharmacy customers and vendor supplier
 - `/admin/admins/temparte-warehouses`: Staff-managed temp warehouses.
 - `/admin/plan/temparte-warehouses`: Plans catalogue and subscription management.
 - `/admin/saving-products`: Saving products (منتجات التوفير) directory with org and user filters.
+
+## Matched temporary warehouses and market search (2026-10-04)
+
+Temporary warehouse imports, remapping and reprocessing resolve every extracted
+product row through the shared catalog matching service before publishing it.
+Accepted/confirmed decisions link to the catalog; ambiguous or unmatched rows
+retain the file name without inventing an association. Canonical decisions and
+run identifiers persist with the rows. Prices use exact decimal parsing.
+
+Row replacement and the ready state commit in one transaction. A concurrent
+rename, remap, archive or deletion rejects stale replacement. A failure preserves
+previous rows, and a late background failure cannot overwrite completed work.
+Stored uploads are located by their exact storage key, including the configured
+temporary warehouse directory; a missing source never selects another workbook.
+
+Market search uses public catalog matching candidates (no private organization
+aliases), a short candidate cache, a 500 ms context deadline, and normalized
+indexed text fallback. All query words must match a file or catalog name, in any
+order; SQL wildcards are literal input. Relevance is the default sorting mode.
+List and grid cards lead with the localized accepted catalog name and show the
+original supplier text beneath it. The source remains ready, active temporary
+warehouses only, never private comparison uploads.
+
+Resumable sessions require the uploader's identity and organization. Mapping
+requests must name a file belonging to that session; failed processing cannot
+report successful mapping or commit. These rules apply through the shared admin,
+my, team, user, plan and legacy warehouse route handlers.
+
+Migration 243 adds the raw-name/catalog-name trigram indexes and catalog-link
+index. Existing stored warehouses gain decisions when reprocessed/remapped;
+this change does not silently rematch production history during migration.

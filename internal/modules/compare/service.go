@@ -40,7 +40,8 @@ type Service struct {
 	storage  *storage.Client
 	// cache holds the market board's total and supplier list. Nil is a
 	// supported state: every read falls through to the database.
-	cache Cache
+	cache          Cache
+	marketSearcher MarketCatalogSearcher
 }
 
 // NewService creates a new compare service.

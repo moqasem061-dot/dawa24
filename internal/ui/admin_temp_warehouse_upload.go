@@ -117,16 +117,15 @@ func (h *UIHandler) AdminTempWarehouseUploadSubmit(w http.ResponseWriter, r *htt
 		baseSupplierName = cleanSupplierNameFromFilename(fileHeaders[0].Filename)
 	}
 
-	// Determine actor user ID / fallback
-	var userID int64 = 41
+	actor, ok := authctx.From(ctx)
+	if !ok || actor.UserID <= 0 {
+		http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
+		return
+	}
+	userID := actor.UserID
 	var orgID *int64
-	if actor, ok := authctx.From(ctx); ok {
-		if actor.UserID > 0 {
-			userID = actor.UserID
-		}
-		if actor.OrgID > 0 {
-			orgID = &actor.OrgID
-		}
+	if actor.OrganizationID > 0 {
+		orgID = &actor.OrganizationID
 	}
 
 	// High-speed parallel worker pool: concurrency bounded by CPU cores (e.g. 8-16 workers)

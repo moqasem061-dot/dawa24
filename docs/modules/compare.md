@@ -145,3 +145,41 @@ Per Product Matching Rework User Story 6 (FR-038, FR-040, FR-041):
 3. **Stale Link Invalidation (FR-041)**:
    - Rerunning or rematching a row projects via `matchflow.Columns(d)`. When the latest outcome is non-accepted (`needs_review`, `ambiguous`, `unresolved`), `matched_product_id` is set to NULL, preventing stale associations from surviving.
 
+
+## Matched temporary warehouses and market search (2026-10-04)
+
+Temporary warehouse imports, remapping and reprocessing resolve every extracted
+product row through the shared catalog matching service before publishing it.
+Accepted/confirmed decisions link to the catalog; ambiguous or unmatched rows
+retain the file name without inventing an association. Canonical decisions and
+run identifiers persist with the rows. Prices use exact decimal parsing.
+
+Row replacement and the ready state commit in one transaction. A concurrent
+rename, remap, archive or deletion rejects stale replacement. A failure preserves
+previous rows, and a late background failure cannot overwrite completed work.
+Stored uploads are located by their exact storage key, including the configured
+temporary warehouse directory; a missing source never selects another workbook.
+
+Market search uses public catalog matching candidates (no private organization
+aliases), a short candidate cache, a 500 ms context deadline, and normalized
+indexed text fallback. All query words must match a file or catalog name, in any
+order; SQL wildcards are literal input. Relevance is the default sorting mode.
+List and grid cards lead with the localized accepted catalog name and show the
+original supplier text beneath it. The source remains ready, active temporary
+warehouses only, never private comparison uploads.
+
+Resumable sessions require the uploader's identity and organization. Mapping
+requests must name a file belonging to that session; failed processing cannot
+report successful mapping or commit. These rules apply through the shared admin,
+my, team, user, plan and legacy warehouse route handlers.
+
+Migration 243 adds the raw-name/catalog-name trigram indexes and catalog-link
+index. Existing stored warehouses gain decisions when reprocessed/remapped;
+this change does not silently rematch production history during migration.
+
+The market board's identity and pagination unit is `compare.file_rows.id`, not
+`matched_product_id`. Several rows and warehouses may link to the same catalog
+product. Each remains a separate card with its own supplier, prices and discount;
+counts and pagination include every eligible offer. Unmatched offers remain
+visible, with no catalog button. Catalog candidate IDs are deduplicated only for
+search lookup; offer rows are never collapsed by product.

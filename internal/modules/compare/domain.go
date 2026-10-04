@@ -303,6 +303,9 @@ type RowMatch struct {
 	ProductID  *int64
 	Confidence float64
 	Method     MatchMethod
+	State      string
+	Decision   json.RawMessage
+	RunID      *int64
 }
 
 // CompareFileRow represents an individual drug/product item extracted from a spreadsheet.
@@ -358,13 +361,14 @@ const (
 // clause, and a filter that could name an organization would be the beginning
 // of a way to ask it for a supplier's private upload.
 type MarketDiscountsFilter struct {
-	Query       string   `json:"query"`
-	Supplier    string   `json:"supplier"`
-	MinPrice    *float64 `json:"min_price"`
-	MaxPrice    *float64 `json:"max_price"`
-	MinDiscount *float64 `json:"min_discount"`
-	MaxDiscount *float64 `json:"max_discount"`
-	SortBy      string   `json:"sort_by"` // "newest", "oldest", "discount_desc", "price_asc", "price_desc"
-	Page        int      `json:"page"`
-	Limit       int      `json:"limit"`
+	CatalogIDs  []int64       `json:"-"` // Ranked by the matching module, never bound from a request.
+	Query       string        `json:"query"`
+	Supplier    string        `json:"supplier"`
+	MinPrice    *money.Amount `json:"min_price"`
+	MaxPrice    *money.Amount `json:"max_price"`
+	MinDiscount *float64      `json:"min_discount"`
+	MaxDiscount *float64      `json:"max_discount"`
+	SortBy      string        `json:"sort_by"` // "newest", "oldest", "discount_desc", "price_asc", "price_desc"
+	Page        int           `json:"page"`
+	Limit       int           `json:"limit"`
 }

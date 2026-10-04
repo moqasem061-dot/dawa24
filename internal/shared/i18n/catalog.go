@@ -47,6 +47,7 @@ func loadCatalogDefaults(e *engine) {
 	loadVendorUIKeysJ(e)
 	loadTelegramKeys(e)
 	loadWhatsAppKeys(e)
+	loadMarketSearchKeys(e)
 	loadUploadSecurityKeys(e)
 	loadEmailAuthKeys(e)
 	loadMissingCatalogKeys(e)

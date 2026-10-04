@@ -7,8 +7,10 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/importrun"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
@@ -75,24 +77,28 @@ func (h *UIHandler) AdminTempWarehouseRunCommitSubmit(w http.ResponseWriter, r *
 		return
 	}
 
-	payload, _ := DecodeTempWarehousePayload(run.Payload)
-	sysCtx := database.AsSystem(ctx)
-
-	totalProcessed := 0
-	if h.compareSvc != nil {
-		for _, fid := range payload.FileIDs {
-			f, loadErr := h.compareSvc.GetFile(sysCtx, fid)
-			h.logLoadErr(ctx, "compareSvc.GetFile", loadErr)
-			if f != nil {
-				_ = h.compareSvc.ProcessCompareFile(sysCtx, fid)
-				totalProcessed += f.RowCount
-			}
-		}
+	payload, err := DecodeTempWarehousePayload(run.Payload)
+	if err != nil || payload == nil || len(payload.FileIDs) == 0 || h.compareSvc == nil || run.State == importrun.StateCancelled {
+		http.Error(w, i18n.T(langOf(r), "admin.temp_wh.invalid_id"), http.StatusBadRequest)
+		return
 	}
-
-	if h.importRunRepo != nil {
-		_ = h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseDone, 100, totalProcessed)
-		_ = h.importRunRepo.TransitionState(sysCtx, run.ID, importrun.StateCommitted)
+	sysCtx := database.AsSystem(ctx)
+	totalProcessed := 0
+	for _, fid := range payload.FileIDs {
+		file, err := h.compareSvc.GetFile(sysCtx, fid)
+		if err != nil || file == nil || file.UserID != run.UserID || !file.IsTempWarehouse || file.Status != compare.FileReady {
+			http.Error(w, i18n.T(langOf(r), "admin.temp_warehouse.insufficient_rows"), http.StatusConflict)
+			return
+		}
+		totalProcessed += file.RowCount
+	}
+	if err := h.importRunRepo.TransitionState(sysCtx, run.ID, importrun.StateCommitted); err != nil {
+		http.Error(w, i18n.T(langOf(r), "admin.temp_warehouse.insufficient_rows"), http.StatusConflict)
+		return
+	}
+	if err := h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseDone, 100, totalProcessed); err != nil {
+		http.Error(w, i18n.T(langOf(r), "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+		return
 	}
 
 	http.Redirect(w, r, fmt.Sprintf("%s/runs/%d/progress", base, run.ID), http.StatusSeeOther)

@@ -1,0 +1,12 @@
+const {test,before,after}=require('node:test');
+const assert=require('node:assert/strict');const fs=require('node:fs');const {chromium}=require('playwright');
+const origin=process.env.PAGESPEED_ORIGIN||'http://127.0.0.1:8097';let browser;
+before(async()=>{const executablePath=['C:/Program Files/Google/Chrome/Application/chrome.exe','C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(p=>fs.existsSync(p));browser=await chromium.launch({headless:true,...(executablePath?{executablePath}:{})});});after(async()=>{await browser?.close();});
+for(const width of [390,768,1467])for(const lang of ['ar','en'])for(const view of ['list','grid'])test(`market ${width}px ${lang} ${view}`,async()=>{const page=await browser.newPage({viewport:{width,height:1000}});try{const errors=[];page.on('pageerror',e=>errors.push(e.message));await page.goto(`${origin}/market-discounts?lang=${lang}&view=${view}`);const container=page.locator(view==='list'?'.market-list':'.market-grid');await container.waitFor({state:'visible'});const heading=container.locator('h3').first();assert.match(await heading.textContent(),lang==='ar'?/بانادول 500/:/Panadol 500/);assert.match(await container.locator('.market-source-name').first().textContent(),/اسم المورد في الملف/);assert.equal(await container.locator('a[href="/catalog/7"]').count(),2);assert.equal(await container.locator('article').count(),3,'each warehouse offer, including unmatched offers, has its own card');
+const cards=container.locator('article');
+assert.equal(await cards.nth(1).locator('a[href^="/catalog/"]').count(),0,'unmatched offer stays visible without a catalog button');
+assert.match(await cards.nth(2).textContent(),/150.00/);
+assert.match(await cards.nth(2).textContent(),/120.00/);
+assert.match(await cards.nth(2).textContent(),/مستودع العرض الثاني/);
+assert.equal(await cards.nth(0).locator('h3').textContent(),await cards.nth(2).locator('h3').textContent(),'same catalog product keeps two independent offers');
+const overflow=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1);assert.equal(overflow,false,'page fits viewport');assert.equal(await page.locator('#market-search-input').getAttribute('data-min-chars'),'2');assert.deepEqual(errors,[]);if(width===1467&&lang==='ar'&&view==='list')await page.screenshot({path:'tmp/market-discounts-preview.png',fullPage:true});}finally{await page.close();}});

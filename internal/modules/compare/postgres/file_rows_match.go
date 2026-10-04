@@ -54,22 +54,29 @@ func (r *Repository) BulkUpdateFileRowMatches(
 func writeMatchChunk(
 	ctx context.Context, tx pgx.Tx, fileID int64, chunk []compare.RowMatch,
 ) error {
-	const cols = 4
+	const cols = 7
 	values := make([]string, 0, len(chunk))
 	args := make([]any, 0, len(chunk)*cols+1)
 	args = append(args, fileID)
 	for i, m := range chunk {
 		base := i*cols + 1
-		values = append(values, fmt.Sprintf("($%d::bigint,$%d::bigint,$%d::text,$%d::numeric)",
-			base+1, base+2, base+3, base+4))
-		args = append(args, m.RowID, m.ProductID, toDBMatchMethod(m.Method), m.Confidence)
+		values = append(values, fmt.Sprintf("($%d::bigint,$%d::bigint,$%d::text,$%d::numeric,$%d::text,$%d::jsonb,$%d::bigint)",
+			base+1, base+2, base+3, base+4, base+5, base+6, base+7))
+		args = append(args, m.RowID, m.ProductID, toDBMatchMethod(m.Method), m.Confidence, nullableMatchText(m.State), nullableDecision(m.Decision), m.RunID)
 	}
 	_, err := tx.Exec(ctx, `
 		UPDATE compare.file_rows AS t
 		SET matched_product_id = v.product_id,
 		    match_method       = v.method,
-		    match_confidence   = v.confidence
-		FROM (VALUES `+strings.Join(values, ",")+`) AS v(row_id, product_id, method, confidence)
+		    match_confidence   = v.confidence,
+ match_state = COALESCE(v.state, CASE WHEN v.product_id IS NULL THEN 'no_candidate' ELSE 'accepted' END),
+ match_decision = v.decision,
+ match_run_id = v.run_id,
+ match_basis = v.decision->>'basis',
+ match_granularity = v.decision->'granularity'->>'achieved',
+ match_revision = COALESCE((v.decision->>'revision')::int,0),
+ ai_state = COALESCE(v.decision->'ai'->>'state','off')
+		FROM (VALUES `+strings.Join(values, ",")+`) AS v(row_id, product_id, method, confidence, state, decision, run_id)
 		WHERE t.file_id = $1 AND t.id = v.row_id;`, args...)
 	if err != nil {
 		return fmt.Errorf("compare postgres: write match chunk: %w", err)

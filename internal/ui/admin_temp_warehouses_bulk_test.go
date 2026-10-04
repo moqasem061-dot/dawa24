@@ -339,3 +339,25 @@ func (m *mockBulkCompareRepo) PurgeArchivedTempWarehouses(ctx context.Context, o
 	}
 	return keys, fileCount, rowCount, nil
 }
+
+func (m *mockBulkCompareRepo) ReplaceFileRows(ctx context.Context, file *compare.CompareFile, rows []*compare.CompareFileRow) error {
+	if err := m.DeleteFileRows(ctx, file.ID); err != nil {
+		return err
+	}
+	if err := m.InsertFileRows(ctx, rows); err != nil {
+		return err
+	}
+	return m.UpdateFile(ctx, file)
+}
+
+func (m *mockBulkCompareRepo) FailFileStaging(ctx context.Context, file *compare.CompareFile, message string) error {
+	current, err := m.GetFileByID(ctx, file.ID)
+	if err != nil {
+		return err
+	}
+	if current.Status != compare.FileProcessing {
+		return nil
+	}
+	current.Status, current.ErrorMessage = compare.FileFailed, message
+	return m.UpdateFile(ctx, current)
+}

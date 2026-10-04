@@ -217,19 +217,22 @@ func (s *Service) openStoredUpload(ctx context.Context, file *CompareFile) io.Re
 	}
 
 	uploadBase := storage.UploadBaseDir()
-	compareDir := filepath.Join(uploadBase, "compare")
+	category := "compare"
+	if file.IsTempWarehouse {
+		category = "temp_warehouses"
+	}
+	compareDir := filepath.Join(uploadBase, category)
 
 	// 2. The exact storage key on local disk, under configured base dir
 	if file.StorageKey != "" {
 		cleanKey := strings.TrimPrefix(filepath.FromSlash(file.StorageKey), string(filepath.Separator))
 		for _, cand := range []string{
 			file.StorageKey,
+			filepath.Join(uploadBase, filepath.FromSlash(strings.TrimPrefix(file.StorageKey, "/uploads/"))),
 			filepath.Join(uploadBase, cleanKey),
 			filepath.Join(compareDir, filepath.Base(file.StorageKey)),
-			filepath.Join(compareDir, filepath.Base(file.OriginalFilename)),
 			filepath.Join("data", cleanKey),
-			filepath.Join("data", "uploads", "compare", filepath.Base(file.StorageKey)),
-			filepath.Join("data", "uploads", "compare", filepath.Base(file.OriginalFilename)),
+			filepath.Join("data", "uploads", category, filepath.Base(file.StorageKey)),
 			"data" + file.StorageKey,
 		} {
 			if f, err := os.Open(cand); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
@@ -238,20 +241,6 @@ func (s *Service) openStoredUpload(ctx context.Context, file *CompareFile) io.Re
 		}
 	}
 
-	// 3. Last resort: scan the upload directory for something that looks like this file.
-	for _, dir := range []string{compareDir, filepath.Join("data", "uploads", "compare")} {
-		entries, _ := os.ReadDir(dir)
-		for _, entry := range entries {
-			if entry.IsDir() {
-				continue
-			}
-			if strings.Contains(entry.Name(), file.OriginalFilename) ||
-				strings.HasSuffix(entry.Name(), filepath.Ext(file.OriginalFilename)) {
-				if f, err := os.Open(filepath.Join(dir, entry.Name())); err == nil { // nolint:errswallow: probing candidate paths; a miss tries the next
-					return f
-				}
-			}
-		}
-	}
+	// A missing upload must not be substituted with another supplier's file.
 	return nil
 }

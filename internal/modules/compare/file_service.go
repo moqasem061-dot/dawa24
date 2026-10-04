@@ -9,6 +9,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
@@ -130,13 +131,7 @@ func (s *Service) SaveFileMapping(ctx context.Context, fileID int64, config Mapp
 	}
 
 	file.MappingConfig = config
-	file.Status = FileReady
-	if err := s.repo.UpdateFile(ctx, file); err != nil {
-		return err
-	}
-
-	// Automatically process the file after mapping is saved
-	return s.ProcessCompareFile(ctx, fileID)
+	return s.processMappedFile(ctx, file)
 }
 
 // UploadAndProcessCompareFile uploads a spreadsheet, detects columns, extracts rows, and stores them in compare.file_rows immediately.
@@ -240,26 +235,10 @@ func (s *Service) StageUploadedRows(ctx context.Context, file *CompareFile, file
 		}
 	}
 
-	if len(rows) > 0 {
-		_ = s.MatchFileRowsToCatalog(ctx, file.ID, rows)
-		_ = s.repo.DeleteFileRows(ctx, file.ID)
-		if insertErr := s.repo.InsertFileRows(ctx, rows); insertErr == nil {
-			file.RowCount = len(rows)
-			file.Status = FileReady
-			file.ErrorMessage = ""
-		} else {
-			s.log.ErrorContext(ctx, "failed to insert compare file rows", "error", insertErr, "file_id", file.ID)
-			file.Status = FileFailed
-			file.ErrorMessage = i18n.TDefault("w4_mod.s_376_376")
-		}
-	} else {
-		file.RowCount = 0
-		file.Status = FileUploaded
-		file.ErrorMessage = i18n.TDefault("w4_mod.s_377_377")
+	if len(rows) == 0 {
+		return fmt.Errorf("compare: no usable product rows")
 	}
-
-	_ = s.repo.UpdateFile(ctx, file)
-	return nil
+	return s.MatchAndReplaceFileRows(ctx, file, rows)
 }
 
 // ProcessCompareFile downloads the uploaded spreadsheet from storage or local disk, parses it using the
@@ -270,22 +249,20 @@ func (s *Service) ProcessCompareFile(ctx context.Context, fileID int64) error {
 		return err
 	}
 
+	return s.processMappedFile(ctx, file)
+}
+
+func (s *Service) processMappedFile(ctx context.Context, file *CompareFile) error {
+	fileID := file.ID
+
 	if file.MappingConfig.NameCol == nil {
 		return apperr.Validation("compare.no_mapping", "Column mapping not configured for this file.", nil)
 	}
 
 	reader := s.openStoredUpload(ctx, file)
 
-	// 4. If raw file is unavailable but rows were already extracted in DB, keep file ready without crashing
 	if reader == nil {
-		if existingRows, _ := s.repo.ListFileRows(ctx, fileID, 1000, 0); len(existingRows) > 0 {
-			file.RowCount = len(existingRows)
-			file.Status = FileReady
-			file.ErrorMessage = ""
-			_ = s.repo.UpdateFile(ctx, file)
-			return nil
-		}
-		return apperr.Internal(fmt.Errorf(i18n.TDefault("w4_mod.d_166"), fileID))
+		return apperr.Internal(fmt.Errorf("stored spreadsheet unavailable for file %d", fileID))
 	}
 	defer reader.Close()
 
@@ -293,36 +270,16 @@ func (s *Service) ProcessCompareFile(ctx context.Context, fileID int64) error {
 	// legacy BIFF .xls, HTML tables named .xls, and CSVs named .xlsx; the
 	// universal reader sniffs the real container, where excelize alone rejects
 	// everything that is not a true .xlsx.
-	var rows []*CompareFileRow
-	rows, err = s.parseSpreadsheet(reader, file)
+	rows, err := s.parseSpreadsheet(reader, file)
 	if err != nil {
-		file.Status = FileFailed
-		file.ErrorMessage = err.Error()
-		_ = s.repo.UpdateFile(ctx, file)
+
 		return fmt.Errorf("parse spreadsheet: %w", err)
 	}
 
-	// Delete any existing rows for this file (re-process case)
-	if err := s.repo.DeleteFileRows(ctx, fileID); err != nil {
-		return fmt.Errorf("delete old rows: %w", err)
+	if len(rows) == 0 {
+		return fmt.Errorf("compare: no usable product rows")
 	}
-
-	// Insert new extracted rows
-	if len(rows) > 0 {
-		_ = s.MatchFileRowsToCatalog(ctx, fileID, rows)
-		if err := s.repo.InsertFileRows(ctx, rows); err != nil {
-			file.Status = FileFailed
-			file.ErrorMessage = fmt.Sprintf("Failed to insert file rows: %v", err)
-			_ = s.repo.UpdateFile(ctx, file)
-			return fmt.Errorf("insert rows: %w", err)
-		}
-	}
-
-	// Update file with row count and status
-	file.RowCount = len(rows)
-	file.Status = FileReady
-	file.ErrorMessage = ""
-	return s.repo.UpdateFile(ctx, file)
+	return s.MatchAndReplaceFileRows(ctx, file, rows)
 }
 
 // parseSpreadsheet parses any supported workbook - .xlsx, legacy .xls, the XML
@@ -343,12 +300,19 @@ func (s *Service) parseSpreadsheet(reader io.Reader, file *CompareFile) ([]*Comp
 	}
 
 	headerRowIdx, _, _ := FindBestHeaderRow(allRows)
+	dataStart := headerRowIdx + 1
+	if file.IsTempWarehouse {
+		layout, _ := productmatch.AnalyzeLayout(allRows)
+		if layout.HeaderRow >= 0 && layout.FirstDataRow > 0 && layout.FirstDataRow <= len(allRows) {
+			headerRowIdx, dataStart = layout.HeaderRow, layout.FirstDataRow
+		}
+	}
 	headers := allRows[headerRowIdx]
 
 	var rows []*CompareFileRow
 	rowNumber := 1
 
-	for i := headerRowIdx + 1; i < len(allRows); i++ {
+	for i := dataStart; i < len(allRows); i++ {
 		columns := allRows[i]
 		if len(columns) == 0 {
 			continue

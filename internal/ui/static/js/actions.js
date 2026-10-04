@@ -470,7 +470,7 @@
       } catch (_) {}
       if (typeof parentForm.requestSubmit === 'function') parentForm.requestSubmit();
       else parentForm.submit();
-    }, 450));
+    }, Math.max(150, Math.min(1000, parseInt(el.getAttribute("data-debounce-ms"), 10) || 450))));
   }
 
   document.addEventListener('DOMContentLoaded', function () {

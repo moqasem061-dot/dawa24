@@ -18,8 +18,10 @@ type MarketDiscountRow struct {
 	// SupplierName is the warehouse's own name. A temporary warehouse is a
 	// moderator's upload and has no organization behind it, so there is no
 	// trade name to read.
-	SupplierName string `json:"supplier_name"`
-	ProductName  string `json:"product_name"`
+	SupplierName  string `json:"supplier_name"`
+	ProductName   string `json:"product_name"`
+	CatalogNameAR string `json:"catalog_name_ar"`
+	CatalogNameEN string `json:"catalog_name_en"`
 	// OriginalPrice is سعر الجمهور as the sheet quoted it, and the number the
 	// card leads with.
 	OriginalPrice      money.Amount `json:"original_price"`

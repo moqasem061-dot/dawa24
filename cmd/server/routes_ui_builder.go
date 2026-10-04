@@ -265,7 +265,9 @@ func buildUIHandler(
 
 	compareRepoUI := comparePostgres.NewRepository(db)
 	compareSvcUI := compare.NewService(compareRepoUI, log)
-	compareSvcUI.SetMatcher(newCompareMatcher(newMatchingService(db)))
+	compareMatcher := &compareMatcherAdapter{svc: newMatchingService(db)}
+	compareSvcUI.SetMatcher(compareMatcher)
+	compareSvcUI.SetMarketCatalogSearcher(compareMatcher)
 	// The public خصومات السوق board's total and supplier list. Without this the
 	// board still works and still uses its indexes — it just pays for the count
 	// on every page view instead of once a minute. See market_board_service.go.

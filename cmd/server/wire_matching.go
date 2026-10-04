@@ -53,6 +53,6 @@ func (a *compareMatcherAdapter) Revalidate(ctx context.Context, s productmatch.S
 	return a.svc.Revalidate(ctx, s, ref, d)
 }
 
-func newCompareMatcher(svc matching.Service) compare.Matcher {
-	return &compareMatcherAdapter{svc: svc}
+func (a *compareMatcherAdapter) SearchMarketCatalog(ctx context.Context, query string) ([]matchflow.CandidateView, error) {
+	return a.svc.Search(ctx, productmatch.Scope{Workflow: productmatch.WorkflowCompare}, query, productmatch.Row{Name: query}, 50)
 }

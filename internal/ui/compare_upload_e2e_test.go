@@ -364,3 +364,25 @@ func (m *mockCompareRepoE2E) CountMarketDiscounts(ctx context.Context, filter co
 func (m *mockCompareRepoE2E) LoadPackRelationships(ctx context.Context, productIDs []int64) ([]productmatch.PackRelationship, error) {
 	return nil, nil
 }
+
+func (m *mockCompareRepoE2E) ReplaceFileRows(ctx context.Context, file *compare.CompareFile, rows []*compare.CompareFileRow) error {
+	if err := m.DeleteFileRows(ctx, file.ID); err != nil {
+		return err
+	}
+	if err := m.InsertFileRows(ctx, rows); err != nil {
+		return err
+	}
+	return m.UpdateFile(ctx, file)
+}
+
+func (m *mockCompareRepoE2E) FailFileStaging(ctx context.Context, file *compare.CompareFile, message string) error {
+	current, err := m.GetFileByID(ctx, file.ID)
+	if err != nil {
+		return err
+	}
+	if current.Status != compare.FileProcessing {
+		return nil
+	}
+	current.Status, current.ErrorMessage = compare.FileFailed, message
+	return m.UpdateFile(ctx, current)
+}

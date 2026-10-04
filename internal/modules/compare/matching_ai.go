@@ -155,6 +155,9 @@ func (s *Service) refineWithAI(ctx context.Context, idx *productmatch.Index,
 					rows[i].MatchedProductID = &id
 					rows[i].MatchConfidence = math.Round(d.Confidence * 100)
 					rows[i].MatchMethod = MatchMethodAI
+					rows[i].MatchState = string(matchflow.StateAccepted)
+					rows[i].MatchBasis = string(matchflow.BasisAI)
+					rows[i].MatchGranularity = string(matchflow.GranularityProduct)
 				}
 			case matchflow.OutcomeReview:
 				// Two methods disagree about a match the engine applied. A
@@ -164,6 +167,7 @@ func (s *Service) refineWithAI(ctx context.Context, idx *productmatch.Index,
 					rows[i].MatchedProductID = nil
 					rows[i].MatchConfidence = 0
 					rows[i].MatchMethod = MatchMethodUnmatched
+					rows[i].MatchState = string(matchflow.StateNeedsReview)
 				}
 			}
 		},

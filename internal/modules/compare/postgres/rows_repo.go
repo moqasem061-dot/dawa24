@@ -4,8 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"strings"
 
 	"github.com/jackc/pgx/v5"
 
@@ -20,57 +18,7 @@ func (r *Repository) InsertFileRows(ctx context.Context, rows []*compare.Compare
 		return nil
 	}
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		cols := []string{
-			"file_id", "organization_id", "row_number", "raw_name", "normalized_name", "sku",
-			"price", "discount", "price_after_discount", "matched_product_id", "match_confidence", "match_method", "meta",
-		}
-
-		const chunkSize = 5000
-		for i := 0; i < len(rows); i += chunkSize {
-			end := i + chunkSize
-			if end > len(rows) {
-				end = len(rows)
-			}
-			chunk := rows[i:end]
-
-			copyRows := make([][]any, len(chunk))
-			for j, row := range chunk {
-				metaJSON, _ := json.Marshal(row.Meta)
-				dbMethod := toDBMatchMethod(row.MatchMethod)
-
-				var skuVal any
-				if strings.TrimSpace(row.SKU) != "" {
-					skuVal = strings.TrimSpace(row.SKU)
-				}
-
-				copyRows[j] = []any{
-					row.FileID,
-					row.OrganizationID,
-					row.RowNumber,
-					row.RawName,
-					row.NormalizedName,
-					skuVal,
-					row.Price.String(),
-					row.Discount,
-					row.PriceAfterDiscount.String(),
-					row.MatchedProductID,
-					row.MatchConfidence,
-					dbMethod,
-					metaJSON,
-				}
-			}
-
-			_, err := tx.CopyFrom(
-				txCtx,
-				pgx.Identifier{"compare", "file_rows"},
-				cols,
-				pgx.CopyFromRows(copyRows),
-			)
-			if err != nil {
-				return fmt.Errorf("CopyFrom chunk [%d:%d]: %w", i, end, err)
-			}
-		}
-		return nil
+		return insertFileRows(txCtx, tx, rows)
 	})
 }
 

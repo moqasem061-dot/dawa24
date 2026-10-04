@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // fakeCache is an in-memory stand-in for Redis that records what it was asked
@@ -96,11 +98,11 @@ func TestMarketTotalCacheKeySeparatesFilters(t *testing.T) {
 		"query":        {Query: "بانادول"},
 		"other query":  {Query: "كونجستال"},
 		"supplier":     {Supplier: "مخزن المتحدة"},
-		"min price":    {MinPrice: fp(10)},
-		"max price":    {MaxPrice: fp(10)},
+		"min price":    {MinPrice: priceBound("10")},
+		"max price":    {MaxPrice: priceBound("10")},
 		"min discount": {MinDiscount: fp(10)},
 		"max discount": {MaxDiscount: fp(10)},
-		"zero bound":   {MinPrice: fp(0)},
+		"zero bound":   {MinPrice: priceBound("0")},
 	} {
 		key := marketFilterFingerprint(f)
 		if prev, clash := seen[key]; clash {
@@ -167,3 +169,5 @@ func (r *countingMarketRepo) ListDistinctSuppliers(context.Context) ([]string, e
 	r.suppliers++
 	return []string{"مخزن المتحدة", "مخزن ابن سينا"}, nil
 }
+
+func priceBound(value string) *money.Amount { amount := money.MustParse(value); return &amount }

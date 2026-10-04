@@ -13,7 +13,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/filesecurity"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
@@ -117,7 +116,12 @@ func (h *UIHandler) registerTempWarehouseFile(
 
 	go func() {
 		defer cancel()
-		tempWarehouseStageQueue <- struct{}{}
+		select {
+		case tempWarehouseStageQueue <- struct{}{}:
+		case <-runCtx.Done():
+			h.failTempWarehouse(context.WithoutCancel(runCtx), &staged, i18n.T("ar", "admin.temp_warehouse.insufficient_rows"))
+			return
+		}
 		defer func() { <-tempWarehouseStageQueue }()
 		defer func() {
 			if p := recover(); p != nil {
@@ -212,20 +216,11 @@ func (h *UIHandler) stageTempWarehouseFile(
 	}
 
 	fileRows := buildTempWarehouseRows(file, dataRows, dataStart, codeCol, nameCol, priceCol, discountCol)
-	if len(fileRows) > 0 {
-		if err := h.compareSvc.InsertFileRows(database.AsSystem(ctx), fileRows); err != nil {
-			h.log.ErrorContext(ctx, "insert warehouse file rows", "error", err, "file_id", file.ID)
-			h.failTempWarehouse(ctx, file, i18n.T("ar", "admin.temp_warehouse.insufficient_rows"))
-			return
-		}
+	if err := h.compareSvc.MatchAndReplaceFileRows(ctx, file, fileRows); err != nil {
+		h.log.ErrorContext(ctx, "match and store warehouse rows", "error", err, "file_id", file.ID)
+		h.failTempWarehouse(ctx, file, i18n.T("ar", "admin.temp_warehouse.insufficient_rows"))
 	}
 
-	file.RowCount = len(fileRows)
-	file.Status = compare.FileReady
-	file.ErrorMessage = ""
-	if err := h.compareSvc.UpdateFile(database.AsSystem(ctx), file); err != nil {
-		h.log.ErrorContext(ctx, "temp warehouse: record completion", "error", err, "file_id", file.ID)
-	}
 }
 
 // buildTempWarehouseRows turns the sheet's data rows into storable rows.
@@ -250,11 +245,9 @@ func buildTempWarehouseRows(
 			sku = strings.TrimSpace(row[codeCol])
 		}
 
-		priceMinor := int64(0)
+		price := compare.ParseImportPrice("")
 		if priceCol >= 0 && priceCol < len(row) {
-			if p, err := parsePriceFloat(row[priceCol]); err == nil && p > 0 {
-				priceMinor = int64(math.Round(p * 100))
-			}
+			price = compare.ParseImportPrice(row[priceCol])
 		}
 		discountPct := 0.0
 		if discountCol >= 0 && discountCol < len(row) {
@@ -262,9 +255,9 @@ func buildTempWarehouseRows(
 				discountPct = math.Min(d, 100)
 			}
 		}
-		priceAfterMinor := int64(math.Round(float64(priceMinor) * (1.0 - (discountPct / 100.0))))
+		priceAfter := compare.CalculatePriceAfterDiscount(price, discountPct)
 
-		if !compare.IsValidProductRow(rawName, sku, money.FromMinor(priceMinor), discountPct) {
+		if !compare.IsValidProductRow(rawName, sku, price, discountPct) {
 			continue
 		}
 
@@ -275,9 +268,9 @@ func buildTempWarehouseRows(
 			RawName:            rawName,
 			NormalizedName:     strings.ToLower(rawName),
 			SKU:                sku,
-			Price:              money.FromMinor(priceMinor),
+			Price:              price,
 			Discount:           discountPct,
-			PriceAfterDiscount: money.FromMinor(priceAfterMinor),
+			PriceAfterDiscount: priceAfter,
 		})
 	}
 	return out
@@ -286,9 +279,9 @@ func buildTempWarehouseRows(
 // failTempWarehouse records that a staging pass ended badly, so the screen
 // stops waiting and says why.
 func (h *UIHandler) failTempWarehouse(ctx context.Context, file *compare.CompareFile, message string) {
-	file.Status = compare.FileFailed
-	file.ErrorMessage = message
-	if err := h.compareSvc.UpdateFile(database.AsSystem(ctx), file); err != nil {
+	failureCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	if err := h.compareSvc.FailFileStaging(failureCtx, file, message); err != nil {
 		h.log.ErrorContext(ctx, "temp warehouse: record failure", "error", err, "file_id", file.ID)
 	}
 }

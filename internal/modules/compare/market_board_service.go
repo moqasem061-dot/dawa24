@@ -6,11 +6,13 @@ import (
 	"encoding/hex"
 	"fmt"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
 // Assembling one page of خصومات السوق العامة, cheaply.
 //
-// The board is public, unauthenticated, and the busiest read on the platform.
+// The board is shared across authorized vendor and staff accounts.
 // It used to cost about 190 ms of database CPU per page view — three full
 // passes over compare.file_rows for a page that shows twenty-four cards:
 //
@@ -60,6 +62,8 @@ func (s *Service) SetCache(c Cache) {
 
 // ListMarketDiscounts returns one page of the public temporary-warehouse board.
 func (s *Service) ListMarketDiscounts(ctx context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
+	filter.Query = marketQuery(filter.Query)
+	filter.CatalogIDs = s.marketCatalogIDs(ctx, filter.Query)
 	result, err := s.repo.ListMarketDiscounts(ctx, filter)
 	if err != nil {
 		return nil, err
@@ -139,10 +143,10 @@ func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
 // arriving from a URL, and a raw one would put user input — colons, spaces,
 // newlines — into a Redis key namespace that uses ':' as its separator.
 func marketFilterFingerprint(f MarketDiscountsFilter) string {
-	raw := fmt.Sprintf("q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v",
+	raw := fmt.Sprintf("v2|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
 		f.Query, f.Supplier,
-		derefFloat(f.MinPrice), derefFloat(f.MaxPrice),
-		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount))
+		marketPriceBound(f.MinPrice), marketPriceBound(f.MaxPrice),
+		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs)
 	sum := sha256.Sum256([]byte(raw))
 	return hex.EncodeToString(sum[:12])
 }
@@ -154,4 +158,11 @@ func derefFloat(v *float64) string {
 		return "-"
 	}
 	return fmt.Sprintf("%g", *v)
+}
+
+func marketPriceBound(value *money.Amount) string {
+	if value == nil {
+		return "-"
+	}
+	return value.String()
 }

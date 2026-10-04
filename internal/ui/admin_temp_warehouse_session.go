@@ -119,12 +119,16 @@ func (h *UIHandler) ResolveTempWarehouseRun(ctx context.Context, runIDStr string
 	// Try numeric ID first
 	if id, err := strconv.ParseInt(runIDStr, 10, 64); err == nil && id > 0 {
 		if run, err := h.importRunRepo.GetRunByID(sysCtx, id); err == nil && run != nil {
-			return run, nil
+			return authorizeTempWarehouseRun(ctx, run)
 		}
 	}
 
 	// Try public UUID
-	return h.importRunRepo.GetRunByPublicIDSystem(sysCtx, runIDStr)
+	run, err := h.importRunRepo.GetRunByPublicIDSystem(sysCtx, runIDStr)
+	if err != nil {
+		return nil, err
+	}
+	return authorizeTempWarehouseRun(ctx, run)
 }
 
 // GetActiveTempWarehouseRun returns the most recent unfinished session for an admin actor.
@@ -141,4 +145,12 @@ func (h *UIHandler) GetActiveTempWarehouseRun(ctx context.Context, userID int64)
 		return nil, nil
 	}
 	return run, payload
+}
+
+func authorizeTempWarehouseRun(ctx context.Context, run *importrun.Run) (*importrun.Run, error) {
+	actor, ok := authctx.From(ctx)
+	if !ok || run == nil || run.Kind != importrun.KindTempWarehouse || actor.UserID <= 0 || run.UserID != actor.UserID || run.OrganizationID != actor.OrganizationID {
+		return nil, fmt.Errorf("warehouse session not found")
+	}
+	return run, nil
 }

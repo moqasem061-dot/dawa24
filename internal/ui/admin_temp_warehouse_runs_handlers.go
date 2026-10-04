@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -19,6 +20,9 @@ import (
 // resolveWarehouseRunBase extracts the current route prefix.
 func resolveWarehouseRunBase(r *http.Request) string {
 	path := r.URL.Path
+	if strings.HasPrefix(path, "/admin/temporary-warehouses") {
+		return "/admin/temporary-warehouses"
+	}
 	if strings.Contains(path, "/admin/my/") {
 		return "/admin/my/temparte-warehouses"
 	}
@@ -218,10 +222,10 @@ func (h *UIHandler) AdminTempWarehouseRunMappingSubmit(w http.ResponseWriter, r 
 	}
 
 	fileID, _ := strconv.ParseInt(r.FormValue("file_id"), 10, 64)
-	colName, _ := strconv.Atoi(r.FormValue("col_name"))
-	colCode, _ := strconv.Atoi(r.FormValue("col_code"))
-	colPrice, _ := strconv.Atoi(r.FormValue("col_price"))
-	colDiscount, _ := strconv.Atoi(r.FormValue("col_discount"))
+	colName := warehouseMappingColumn(r.FormValue("col_name"))
+	colCode := warehouseMappingColumn(r.FormValue("col_code"))
+	colPrice := warehouseMappingColumn(r.FormValue("col_price"))
+	colDiscount := warehouseMappingColumn(r.FormValue("col_discount"))
 	isAutosave := r.FormValue("is_autosave") == "1" || isJSONOrAJAX(r)
 	action := r.FormValue("action")
 
@@ -241,18 +245,29 @@ func (h *UIHandler) AdminTempWarehouseRunMappingSubmit(w http.ResponseWriter, r 
 
 	sysCtx := database.AsSystem(ctx)
 
-	if fileID > 0 && h.compareSvc != nil {
-		_ = h.compareSvc.SaveFileMapping(sysCtx, fileID, cfg)
+	payload, err := DecodeTempWarehousePayload(run.Payload)
+	if err != nil || payload == nil || !slices.Contains(payload.FileIDs, fileID) || h.compareSvc == nil || run.State == importrun.StateCancelled || run.State == importrun.StateCommitted {
+		http.Error(w, i18n.T(lang, "admin.temp_wh.invalid_id"), http.StatusBadRequest)
+		return
 	}
-
-	payload, _ := DecodeTempWarehousePayload(run.Payload)
+	file, err := h.compareSvc.GetFile(sysCtx, fileID)
+	if err != nil || file == nil || file.UserID != run.UserID || !file.IsTempWarehouse {
+		http.Error(w, i18n.T(lang, "admin.temp_wh.not_found"), http.StatusNotFound)
+		return
+	}
+	if err := h.compareSvc.SaveFileMapping(sysCtx, fileID, cfg); err != nil {
+		h.log.ErrorContext(ctx, "warehouse mapping failed", "file_id", fileID, "error", err)
+		http.Error(w, i18n.T(lang, "admin.temp_warehouse.insufficient_rows"), http.StatusUnprocessableEntity)
+		return
+	}
 	if payload.Mappings == nil {
 		payload.Mappings = make(map[int64]compare.MappingConfig)
 	}
 	payload.Mappings[fileID] = cfg
 	payloadBytes, _ := json.Marshal(payload)
-	if h.importRunRepo != nil {
-		_ = h.importRunRepo.UpdatePayload(sysCtx, run.ID, payloadBytes)
+	if err := h.importRunRepo.UpdatePayload(sysCtx, run.ID, payloadBytes); err != nil {
+		http.Error(w, i18n.T(lang, "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+		return
 	}
 
 	if isAutosave {
@@ -262,8 +277,9 @@ func (h *UIHandler) AdminTempWarehouseRunMappingSubmit(w http.ResponseWriter, r 
 	}
 
 	if action == "review" {
-		if h.importRunRepo != nil {
-			_ = h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseReview, 70, 0)
+		if err := h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseReview, 70, 0); err != nil {
+			http.Error(w, i18n.T(lang, "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+			return
 		}
 		http.Redirect(w, r, fmt.Sprintf("%s/runs/%d/review", base, run.ID), http.StatusSeeOther)
 		return
@@ -280,15 +296,17 @@ func (h *UIHandler) AdminTempWarehouseRunMappingSubmit(w http.ResponseWriter, r 
 	if nextFileID > 0 {
 		payload.CurrentFileID = nextFileID
 		pBytes, _ := json.Marshal(payload)
-		if h.importRunRepo != nil {
-			_ = h.importRunRepo.UpdatePayload(sysCtx, run.ID, pBytes)
+		if err := h.importRunRepo.UpdatePayload(sysCtx, run.ID, pBytes); err != nil {
+			http.Error(w, i18n.T(lang, "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+			return
 		}
 		http.Redirect(w, r, fmt.Sprintf("%s/runs/%d/mapping?file_id=%d", base, run.ID, nextFileID), http.StatusSeeOther)
 		return
 	}
 
-	if h.importRunRepo != nil {
-		_ = h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseReview, 80, 0)
+	if err := h.importRunRepo.UpdateProgress(sysCtx, run.ID, PhaseReview, 80, 0); err != nil {
+		http.Error(w, i18n.T(lang, "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+		return
 	}
 	h.redirectWithNotice(w, r, fmt.Sprintf("%s/runs/%d/review", base, run.ID), "success", i18n.T(lang, "admin.temp_wh.all_files_mapped_msg"))
 }
@@ -306,8 +324,17 @@ func (h *UIHandler) AdminTempWarehouseRunCancelSubmit(w http.ResponseWriter, r *
 	}
 
 	sysCtx := database.AsSystem(ctx)
-	if h.importRunRepo != nil {
-		_ = h.importRunRepo.TransitionState(sysCtx, run.ID, importrun.StateCancelled)
+	if err := h.importRunRepo.TransitionState(sysCtx, run.ID, importrun.StateCancelled); err != nil {
+		http.Error(w, i18n.T(langOf(r), "admin.temp_warehouse.insufficient_rows"), http.StatusInternalServerError)
+		return
 	}
 	h.redirectWithNotice(w, r, base, "success", "تم إلغاء جلسة الرفع")
+}
+
+func warehouseMappingColumn(raw string) int {
+	index, err := strconv.Atoi(raw)
+	if err != nil || index < 0 || index > 16383 {
+		return -1
+	}
+	return index
 }

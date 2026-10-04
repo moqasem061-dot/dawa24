@@ -76,6 +76,8 @@ type Repository interface {
 
 	// Compare File Rows
 	InsertFileRows(ctx context.Context, rows []*CompareFileRow) error
+	ReplaceFileRows(ctx context.Context, file *CompareFile, rows []*CompareFileRow) error
+	FailFileStaging(ctx context.Context, file *CompareFile, message string) error
 	ListFileRows(ctx context.Context, fileID int64, limit, offset int) ([]*CompareFileRow, error)
 	GetFileRowsPaginated(ctx context.Context, fileID int64, page, limit int) ([]*CompareFileRow, int64, error)
 	DeleteFileRows(ctx context.Context, fileID int64) error

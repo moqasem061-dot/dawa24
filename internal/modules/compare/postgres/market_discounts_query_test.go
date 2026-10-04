@@ -4,6 +4,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 )
 
@@ -24,7 +26,7 @@ func TestMarketDiscountsShowsOnlyTemporaryWarehouses(t *testing.T) {
 		{"no filters", compare.MarketDiscountsFilter{}},
 		{"search", compare.MarketDiscountsFilter{Query: "بانادول"}},
 		{"supplier", compare.MarketDiscountsFilter{Supplier: "مخزن المتحدة"}},
-		{"price range", compare.MarketDiscountsFilter{MinPrice: f(10), MaxPrice: f(90)}},
+		{"price range", compare.MarketDiscountsFilter{MinPrice: priceBound("10"), MaxPrice: priceBound("90")}},
 		{"discount range", compare.MarketDiscountsFilter{MinDiscount: f(5), MaxDiscount: f(50)}},
 		{"sort oldest", compare.MarketDiscountsFilter{SortBy: "oldest"}},
 		{"sort price asc", compare.MarketDiscountsFilter{SortBy: "price_asc"}},
@@ -32,7 +34,7 @@ func TestMarketDiscountsShowsOnlyTemporaryWarehouses(t *testing.T) {
 		{"sort discount", compare.MarketDiscountsFilter{SortBy: "discount_desc"}},
 		{"deep page", compare.MarketDiscountsFilter{Page: 97, Limit: 96}},
 		{"everything at once", compare.MarketDiscountsFilter{
-			Query: "x", Supplier: "y", MinPrice: f(1), MaxPrice: f(2),
+			Query: "x", Supplier: "y", MinPrice: priceBound("1"), MaxPrice: priceBound("2"),
 			MinDiscount: f(3), MaxDiscount: f(4), SortBy: "price_asc", Page: 5, Limit: 48,
 		}},
 	}
@@ -147,10 +149,10 @@ func TestMarketCountFiltersIdenticallyToListing(t *testing.T) {
 		{"no filters", compare.MarketDiscountsFilter{}},
 		{"search", compare.MarketDiscountsFilter{Query: "بانادول"}},
 		{"supplier", compare.MarketDiscountsFilter{Supplier: "مخزن المتحدة"}},
-		{"price range", compare.MarketDiscountsFilter{MinPrice: f(10), MaxPrice: f(90)}},
+		{"price range", compare.MarketDiscountsFilter{MinPrice: priceBound("10"), MaxPrice: priceBound("90")}},
 		{"discount range", compare.MarketDiscountsFilter{MinDiscount: f(5), MaxDiscount: f(50)}},
 		{"everything at once", compare.MarketDiscountsFilter{
-			Query: "x", Supplier: "y", MinPrice: f(1), MaxPrice: f(2),
+			Query: "x", Supplier: "y", MinPrice: priceBound("1"), MaxPrice: priceBound("2"),
 			MinDiscount: f(3), MaxDiscount: f(4), SortBy: "price_asc", Page: 5, Limit: 48,
 		}},
 	}
@@ -217,3 +219,5 @@ func TestMarketDefaultSortMatchesItsIndex(t *testing.T) {
 		t.Errorf("the default ordering no longer matches idx_compare_file_rows_market_sort.\nwant substring:\n%s\ngot:\n%s", want, sql)
 	}
 }
+
+func priceBound(value string) *money.Amount { amount := money.MustParse(value); return &amount }

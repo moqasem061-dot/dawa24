@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -68,14 +70,19 @@ func TestCompareWizard_MultiFileQueueProgression(t *testing.T) {
 	)
 	h.SetCompareService(compareSvc)
 
-	// Create 4 files in repository
+	// Persist each source workbook so remapping cannot succeed from stale extracted rows.
 	for _, id := range []int64{101, 102, 103, 104} {
+		source := filepath.Join(t.TempDir(), "warehouse.csv")
+		if err := os.WriteFile(source, []byte("name,price,discount\nPanadol,100,10\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
 		f := &compare.CompareFile{
 			ID:               id,
 			UserID:           100,
 			OrganizationID:   &[]int64{200}[0],
 			SupplierName:     fmt.Sprintf("مورد تجريبي %d", id),
-			OriginalFilename: fmt.Sprintf("file_%d.xlsx", id),
+			OriginalFilename: fmt.Sprintf("file_%d.csv", id),
+			StorageKey:       source,
 			Status:           compare.FileReady,
 		}
 		repo.files[id] = f

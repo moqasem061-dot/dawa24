@@ -40,6 +40,8 @@ import (
 const marketWarehouseFrom = `
 	FROM compare.file_rows r
 	JOIN compare.files f ON f.id = r.file_id
+	LEFT JOIN catalog.products p ON p.id = r.matched_product_id AND p.deleted_at IS NULL
+		AND (r.match_state IN ('accepted', 'confirmed') OR r.match_state IS NULL)
 	WHERE f.is_temp_warehouse = TRUE
 	  AND f.deleted_at IS NULL
 	  AND f.archived_at IS NULL
@@ -185,7 +187,7 @@ func (r *Repository) ListMarketDiscounts(
 			if err := rows.Scan(
 				&item.ID, &item.FileID, &item.SupplierName, &item.ProductName,
 				&item.OriginalPrice, &item.DiscountPercent, &item.PriceAfterDiscount,
-				&matchedID, &item.UploadedAt,
+				&matchedID, &item.UploadedAt, &item.CatalogNameAR, &item.CatalogNameEN,
 			); err != nil {
 				return err
 			}

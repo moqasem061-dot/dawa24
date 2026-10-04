@@ -14,18 +14,11 @@ import (
 // board: nothing here can reach is_temp_warehouse, which lives in the constant
 // FROM clause and is what keeps a supplier's private upload off a public board.
 func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, args []any) {
-	argIdx := 1
+	search, args := marketSearchFilter(filter)
+	argIdx := len(args) + 1
 	var where []string
-
-	if q := strings.TrimSpace(filter.Query); q != "" {
-		where = append(where, fmt.Sprintf(
-			`(r.raw_name ILIKE $%d
-			  OR platform.normalize_arabic(r.raw_name) ILIKE platform.normalize_arabic($%d)
-			  OR COALESCE(r.normalized_name, '') ILIKE $%d
-			  OR %s ILIKE $%d)`,
-			argIdx, argIdx, argIdx, marketWarehouseSupplierSQL, argIdx))
-		args = append(args, "%"+q+"%")
-		argIdx++
+	if search != "" {
+		where = append(where, search)
 	}
 
 	if sup := strings.TrimSpace(filter.Supplier); sup != "" {
@@ -36,12 +29,12 @@ func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, ar
 
 	if filter.MinPrice != nil {
 		where = append(where, fmt.Sprintf("r.price >= $%d", argIdx))
-		args = append(args, *filter.MinPrice)
+		args = append(args, filter.MinPrice.String())
 		argIdx++
 	}
 	if filter.MaxPrice != nil {
 		where = append(where, fmt.Sprintf("r.price <= $%d", argIdx))
-		args = append(args, *filter.MaxPrice)
+		args = append(args, filter.MaxPrice.String())
 		argIdx++
 	}
 	if filter.MinDiscount != nil {
@@ -107,12 +100,16 @@ func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string
 		orderBy = fmt.Sprintf("r.price DESC, (%s) DESC", marketWarehouseDiscountSQL)
 	case "discount_asc":
 		orderBy = fmt.Sprintf("(%s) ASC, (%s) ASC", marketWarehouseDiscountSQL, marketWarehouseNetSQL)
-	case "discount_desc", "":
+	case "discount_desc", "relevance", "":
 		// The clamped expression, not the raw column: ranking by a number the
 		// card refuses to print is how 6,182 rows showing "0%" reached the top
 		// of "الأعلى خصماً".
 		orderBy = fmt.Sprintf("(%s) DESC, (%s) ASC", marketWarehouseDiscountSQL, marketWarehouseNetSQL)
 	}
+	if filter.SortBy == "relevance" || filter.SortBy == "" {
+		orderBy = marketRelevanceOrder(filter) + orderBy
+	}
+	orderBy += ", r.id DESC"
 
 	sql = fmt.Sprintf(`
 		SELECT
@@ -123,8 +120,9 @@ func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string
 			r.price,
 			%s AS discount_percent,
 			%s AS price_after_discount,
-			r.matched_product_id,
-			f.created_at AS uploaded_at
+			p.id,
+			f.created_at AS uploaded_at,
+			COALESCE(p.name->>'ar', ''), COALESCE(p.name->>'en', '')
 		%s%s
 		ORDER BY %s
 		LIMIT $%d OFFSET $%d;`,

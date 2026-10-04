@@ -2,6 +2,7 @@ package compare
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math"
 	"strings"
@@ -17,6 +18,16 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 	if len(rows) == 0 {
 		return nil
 	}
+	for _, row := range rows {
+		row.MatchedProductID = nil
+		row.MatchMethod = MatchMethodUnmatched
+		row.MatchConfidence = 0
+		row.MatchState = string(matchflow.StateNoCandidate)
+		row.MatchDecision = nil
+		row.MatchBasis, row.MatchGranularity, row.AIState = "", "", "off"
+		row.MatchRunID = nil
+		row.MatchRevision = 0
+	}
 
 	if s.matcher != nil {
 		var effOrg int64
@@ -30,9 +41,10 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 		matchRows := make([]productmatch.Row, len(rows))
 		for i, r := range rows {
 			matchRows[i] = productmatch.Row{
-				Number: r.RowNumber,
-				Name:   strings.TrimSpace(r.RawName),
-				SKU:    strings.TrimSpace(r.SKU),
+				Number:      r.RowNumber,
+				Name:        strings.TrimSpace(r.RawName),
+				SKU:         strings.TrimSpace(r.SKU),
+				PublicPrice: r.Price,
 			}
 		}
 
@@ -50,10 +62,21 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 		if err != nil {
 			return fmt.Errorf("compare matching prepare: %w", err)
 		}
+		if len(res.Decisions) != len(rows) {
+			return fmt.Errorf("compare matching: received %d decisions for %d rows", len(res.Decisions), len(rows))
+		}
 
 		for i, dec := range res.Decisions {
-			if i >= len(rows) {
-				break
+			if dec.State == matchflow.StateUnavailable {
+				return fmt.Errorf("compare matching: catalog is unavailable")
+			}
+			decision, err := json.Marshal(dec)
+			if err != nil {
+				return fmt.Errorf("encode match decision: %w", err)
+			}
+			rows[i].MatchDecision = decision
+			if res.RunID > 0 {
+				rows[i].MatchRunID = &res.RunID
 			}
 			cols := matchflow.Columns(dec)
 			rows[i].MatchState = cols.MatchState
@@ -82,6 +105,7 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 					ProductID:  r.MatchedProductID,
 					Confidence: r.MatchConfidence,
 					Method:     r.MatchMethod,
+					State:      r.MatchState, Decision: r.MatchDecision, RunID: r.MatchRunID,
 				})
 			}
 		}
@@ -98,7 +122,7 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 	}
 
 	// Fallback when matcher is not wired (e.g. standalone tests)
-	candidates, err := s.repo.ListCatalogMatchProducts(ctx, 1000)
+	candidates, err := s.repo.ListCatalogMatchProducts(ctx, 500000)
 	if err != nil || len(candidates) == 0 {
 		return err
 	}
@@ -130,8 +154,9 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 	for i, r := range rows {
 		cleanSKU := strings.TrimSpace(r.SKU)
 		matchRows[i] = &productmatch.Row{
-			Name: strings.TrimSpace(r.RawName),
-			SKU:  cleanSKU,
+			Name:        strings.TrimSpace(r.RawName),
+			SKU:         cleanSKU,
+			PublicPrice: r.Price,
 		}
 	}
 
@@ -146,6 +171,8 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 			rows[i].MatchedProductID = &prodID
 			rows[i].MatchConfidence = confidence
 			rows[i].MatchMethod = method
+			rows[i].MatchState = string(matchflow.StateAccepted)
+			rows[i].MatchGranularity = string(matchflow.GranularityProduct)
 		}
 	}
 
@@ -155,12 +182,13 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 
 	var matches []RowMatch
 	for _, r := range rows {
-		if r.ID > 0 && r.MatchedProductID != nil {
+		if r.ID > 0 {
 			matches = append(matches, RowMatch{
 				RowID:      r.ID,
 				ProductID:  r.MatchedProductID,
 				Confidence: r.MatchConfidence,
 				Method:     r.MatchMethod,
+				State:      r.MatchState, Decision: r.MatchDecision, RunID: r.MatchRunID,
 			})
 		}
 	}

@@ -9544,3 +9544,9 @@ body.dark .upload-progress-note {
     object-fit: contain;
   }
 }
+
+/* Keep catalog identity and the supplier's wording together in both views. */
+.market-product-names { flex: 1 1 15rem; min-inline-size: 0; }
+.market-source-name { margin: .25rem 0 0; color: var(--text-muted); font-size: .8125rem; line-height: 1.6; overflow-wrap: anywhere; }
+.market-source-name span { font-weight: 500; }
+.market-card > .market-source-name { margin-block: -.5rem .75rem; }

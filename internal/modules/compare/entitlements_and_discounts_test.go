@@ -59,10 +59,10 @@ func (m *mockCompareRepo) ListMarketDiscounts(ctx context.Context, filter compar
 				netPrice = compare.CalculatePriceAfterDiscount(r.Price, r.Discount)
 			}
 
-			if filter.MinPrice != nil && float64(netPrice.Minor())/100.0 < *filter.MinPrice {
+			if filter.MinPrice != nil && netPrice.Minor() < filter.MinPrice.Minor() {
 				continue
 			}
-			if filter.MaxPrice != nil && float64(netPrice.Minor())/100.0 > *filter.MaxPrice {
+			if filter.MaxPrice != nil && netPrice.Minor() > filter.MaxPrice.Minor() {
 				continue
 			}
 			if filter.MinDiscount != nil && r.Discount < *filter.MinDiscount {

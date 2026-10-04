@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"testing"
@@ -30,7 +32,7 @@ func newMockCompareFileService() *mockCompareFileService {
 	}
 }
 
-func setupResumableTestHandler() (*ui.UIHandler, *mockImportRunRepo, *mockCompareFileService) {
+func setupResumableTestHandler(t *testing.T) (*ui.UIHandler, *mockImportRunRepo, *mockCompareFileService) {
 	log := slog.New(slog.NewTextHandler(io.Discard, nil))
 	runRepo := newMockImportRunRepo()
 	compMock := newMockCompareFileService()
@@ -39,13 +41,22 @@ func setupResumableTestHandler() (*ui.UIHandler, *mockImportRunRepo, *mockCompar
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, log,
 	)
 	handler.SetImportRunRepo(runRepo)
+	repo := newMockBulkCompareRepo()
+	for _, id := range []int64{201, 202, 301, 302} {
+		path := filepath.Join(t.TempDir(), "warehouse.csv")
+		if err := os.WriteFile(path, []byte("code,name,price,discount\nSKU1,Panadol 500 mg,120,10\n"), 0600); err != nil {
+			t.Fatal(err)
+		}
+		repo.files[id] = &compare.CompareFile{ID: id, UserID: 41, IsTempWarehouse: true, StorageKey: path, OriginalFilename: "warehouse.csv", Status: compare.FileReady, RowCount: 1}
+	}
+	handler.SetCompareService(compare.NewService(repo, log))
 
 	return handler, runRepo, compMock
 }
 
 func TestTempWarehouseRun_CreateAndResolve(t *testing.T) {
-	handler, _, _ := setupResumableTestHandler()
-	ctx := context.Background()
+	handler, _, _ := setupResumableTestHandler(t)
+	ctx := authctx.WithActor(context.Background(), authctx.Actor{UserID: 41})
 
 	actor := authctx.Actor{
 		UserID:         41,
@@ -74,6 +85,7 @@ func TestTempWarehouseRun_CreateAndResolve(t *testing.T) {
 		t.Errorf("expected initial phase %s, got: %s", ui.PhaseMapping, run.Phase)
 	}
 
+	ctx = authctx.WithActor(ctx, actor)
 	// Resolve by numeric ID
 	resolved, err := handler.ResolveTempWarehouseRun(ctx, strconv.FormatInt(run.ID, 10))
 	if err != nil || resolved == nil {
@@ -97,7 +109,7 @@ func TestTempWarehouseRun_CreateAndResolve(t *testing.T) {
 }
 
 func TestTempWarehouseRun_DispatcherPhases(t *testing.T) {
-	handler, runRepo, _ := setupResumableTestHandler()
+	handler, runRepo, _ := setupResumableTestHandler(t)
 
 	run := &importrun.Run{
 		UserID: 41,
@@ -119,7 +131,7 @@ func TestTempWarehouseRun_DispatcherPhases(t *testing.T) {
 
 	for _, tc := range tests {
 		run.Phase = tc.phase
-		r := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/user/temparte-warehouses/runs/1", nil)
+		r := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodGet, "/admin/user/temparte-warehouses/runs/1", nil)
 		rctx := chi.NewRouteContext()
 		rctx.URLParams.Add("runID", "1")
 		r = r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
@@ -136,8 +148,8 @@ func TestTempWarehouseRun_DispatcherPhases(t *testing.T) {
 }
 
 func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
-	handler, _, _ := setupResumableTestHandler()
-	ctx := context.Background()
+	handler, _, _ := setupResumableTestHandler(t)
+	ctx := authctx.WithActor(context.Background(), authctx.Actor{UserID: 41})
 
 	actor := authctx.Actor{UserID: 41, Role: "moderator"}
 	run, _ := handler.CreateTempWarehouseRun(ctx, actor, []int64{201, 202}, map[int64]string{201: "Supp A", 202: "Supp B"}, "/admin/user/temparte-warehouses")
@@ -151,7 +163,7 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	form.Set("col_discount", "3")
 	form.Set("is_autosave", "1")
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Accept", "application/json")
 	rctx := chi.NewRouteContext()
@@ -185,9 +197,10 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	formNext := url.Values{}
 	formNext.Set("file_id", "201")
 	formNext.Set("col_name", "1")
+	formNext.Set("col_price", "2")
 	formNext.Set("action", "next")
 
-	reqNext := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formNext.Encode()))
+	reqNext := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formNext.Encode()))
 	reqNext.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqNext = reqNext.WithContext(context.WithValue(reqNext.Context(), chi.RouteCtxKey, rctx))
 
@@ -202,9 +215,10 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 	formReview := url.Values{}
 	formReview.Set("file_id", "202")
 	formReview.Set("col_name", "1")
+	formReview.Set("col_price", "2")
 	formReview.Set("action", "review")
 
-	reqReview := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formReview.Encode()))
+	reqReview := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodPost, "/admin/user/temparte-warehouses/runs/1/mapping", strings.NewReader(formReview.Encode()))
 	reqReview.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	reqReview = reqReview.WithContext(context.WithValue(reqReview.Context(), chi.RouteCtxKey, rctx))
 
@@ -217,14 +231,14 @@ func TestTempWarehouseRun_AutosaveAndNavigation(t *testing.T) {
 }
 
 func TestTempWarehouseRun_CommitAndCancel(t *testing.T) {
-	handler, _, _ := setupResumableTestHandler()
-	ctx := context.Background()
+	handler, _, _ := setupResumableTestHandler(t)
+	ctx := authctx.WithActor(context.Background(), authctx.Actor{UserID: 41})
 
 	actor := authctx.Actor{UserID: 41, Role: "moderator"}
 	run, _ := handler.CreateTempWarehouseRun(ctx, actor, []int64{301}, map[int64]string{301: "Supp C"}, "/admin/my/temparte-warehouses")
 
 	// Test Commit
-	reqCommit := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/my/temparte-warehouses/runs/1/commit", nil)
+	reqCommit := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodPost, "/admin/my/temparte-warehouses/runs/1/commit", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("runID", strconv.FormatInt(run.ID, 10))
 	reqCommit = reqCommit.WithContext(context.WithValue(reqCommit.Context(), chi.RouteCtxKey, rctx))
@@ -247,7 +261,7 @@ func TestTempWarehouseRun_CommitAndCancel(t *testing.T) {
 
 	// Test Cancel on new run
 	run2, _ := handler.CreateTempWarehouseRun(ctx, actor, []int64{302}, map[int64]string{302: "Supp D"}, "/admin/my/temparte-warehouses")
-	reqCancel := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/my/temparte-warehouses/runs/2/cancel", nil)
+	reqCancel := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodPost, "/admin/my/temparte-warehouses/runs/2/cancel", nil)
 	rctx2 := chi.NewRouteContext()
 	rctx2.URLParams.Add("runID", strconv.FormatInt(run2.ID, 10))
 	reqCancel = reqCancel.WithContext(context.WithValue(reqCancel.Context(), chi.RouteCtxKey, rctx2))
@@ -262,7 +276,7 @@ func TestTempWarehouseRun_CommitAndCancel(t *testing.T) {
 }
 
 func TestTempWarehouseRun_ProgressPollingJSON(t *testing.T) {
-	handler, runRepo, _ := setupResumableTestHandler()
+	handler, runRepo, _ := setupResumableTestHandler(t)
 
 	run := &importrun.Run{
 		UserID:  41,
@@ -273,7 +287,7 @@ func TestTempWarehouseRun_ProgressPollingJSON(t *testing.T) {
 	}
 	_ = runRepo.CreateRun(context.Background(), run)
 
-	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/user/temparte-warehouses/runs/1/progress?poll=1", nil)
+	req := httptest.NewRequestWithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 41}), http.MethodGet, "/admin/user/temparte-warehouses/runs/1/progress?poll=1", nil)
 	rctx := chi.NewRouteContext()
 	rctx.URLParams.Add("runID", "1")
 	req = req.WithContext(context.WithValue(req.Context(), chi.RouteCtxKey, rctx))

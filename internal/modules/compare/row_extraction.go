@@ -3,7 +3,6 @@ package compare
 import (
 	"context"
 	"fmt"
-	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -34,19 +33,7 @@ func (s *Service) extractRowFromRecord(record []string, headers []string, file *
 		return nil // Skip rows without product name
 	}
 
-	// Parse price
-	priceStr := getValue(cfg.PriceCol)
-	price := money.Zero
-	if priceStr != "" {
-		if val, err := strconv.ParseFloat(priceStr, 64); err == nil { // nolint:errswallow: cell parse; tried as embedded number next
-			price = money.FromMinor(int64(math.Round(val * 100)))
-		} else {
-			// Try to extract number from string
-			if val, err := extractNumber(priceStr); err == nil { // nolint:errswallow: cell parse; an unreadable cell keeps the zero default
-				price = money.FromMinor(int64(math.Round(val * 100)))
-			}
-		}
-	}
+	price := ParseImportPrice(getValue(cfg.PriceCol))
 	// price and price_after_discount are numeric(12,2): ten integer digits.
 	// A barcode read as a price would overflow and fail the batch.
 	if price.Minor() < 0 || price.Minor() >= maxPriceMinor {

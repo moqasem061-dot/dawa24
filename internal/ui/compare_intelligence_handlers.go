@@ -10,6 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
@@ -143,7 +144,7 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 	supplier := strings.TrimSpace(r.URL.Query().Get("supplier"))
 	sortBy := strings.TrimSpace(r.URL.Query().Get("sort"))
 	if sortBy == "" {
-		sortBy = "discount_desc"
+		sortBy = "relevance"
 	}
 	currentView := strings.TrimSpace(r.URL.Query().Get("view"))
 	if currentView != "grid" {
@@ -162,14 +163,14 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	var minPricePtr, maxPricePtr *float64
+	var minPricePtr, maxPricePtr *money.Amount
 	if minPStr := strings.TrimSpace(r.URL.Query().Get("min_price")); minPStr != "" {
-		if val, err := strconv.ParseFloat(minPStr, 64); err == nil && val >= 0 {
+		if val, err := money.Parse(minPStr); err == nil && !val.IsNegative() {
 			minPricePtr = &val
 		}
 	}
 	if maxPStr := strings.TrimSpace(r.URL.Query().Get("max_price")); maxPStr != "" {
-		if val, err := strconv.ParseFloat(maxPStr, 64); err == nil && val >= 0 {
+		if val, err := money.Parse(maxPStr); err == nil && !val.IsNegative() {
 			maxPricePtr = &val
 		}
 	}
@@ -208,6 +209,8 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 		res, err := h.compareSvc.ListMarketDiscounts(database.AsSystem(ctx), filter)
 		if err != nil {
 			h.log.ErrorContext(ctx, "list market discounts error", "error", err)
+			http.Error(w, i18n.T(lang, "market.search.unavailable"), http.StatusServiceUnavailable)
+			return
 		} else {
 			result = res
 		}
