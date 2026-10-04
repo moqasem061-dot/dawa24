@@ -148,6 +148,24 @@ Per Product Matching Rework User Story 6 (FR-038, FR-040, FR-041):
 
 ## Matched temporary warehouses and market search (2026-10-04)
 
+Super admins can run `POST /admin/temporary-warehouses/review-all` to review and
+save columns and rematch every product in every non-deleted platform warehouse,
+including vendor uploads and archived files, independently of pagination and
+page filters. Saved mappings are retained; missing required columns use header
+detection, and uncertain mappings are reported for manual review. Each file's
+replacement is atomic and guarded against concurrent changes. Archived files
+retain their status, timestamp and reason. Matching uses the existing shared
+engine and deterministic fallback, without forcing unsafe catalog links.
+
+Progress and failed file IDs are stored in a separate `temp_warehouse_review`
+import run. Work runs sequentially in the server background; closing the browser
+does not cancel it. After a server restart, the initiating admin can press the
+button again to resume the saved checkpoint (stale runs recovered as failed can
+be rerun). Migration 244 permits organization-free platform review runs and
+prevents multiple active platform-wide review records. The active filter includes
+every non-archived status; searching preserves status, and summary counts ignore
+only status while retaining uploader, source and search filters.
+
 Temporary warehouse imports, remapping and reprocessing resolve every extracted
 product row through the shared catalog matching service before publishing it.
 Accepted/confirmed decisions link to the catalog; ambiguous or unmatched rows

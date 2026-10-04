@@ -15,7 +15,7 @@ import (
 func (r *Repository) ReplaceFileRows(ctx context.Context, file *compare.CompareFile, rows []*compare.CompareFileRow) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var updated time.Time
-		err := tx.QueryRow(txCtx, `SELECT updated_at FROM compare.files WHERE id=$1 AND deleted_at IS NULL AND archived_at IS NULL FOR UPDATE`, file.ID).Scan(&updated)
+		err := tx.QueryRow(txCtx, `SELECT updated_at FROM compare.files WHERE id=$1 AND deleted_at IS NULL FOR UPDATE`, file.ID).Scan(&updated)
 		if err != nil {
 			return err
 		}
@@ -32,7 +32,7 @@ func (r *Repository) ReplaceFileRows(ctx context.Context, file *compare.CompareF
 		if err := insertFileRows(txCtx, tx, rows); err != nil {
 			return err
 		}
-		return tx.QueryRow(txCtx, `UPDATE compare.files SET row_count=$2, status='ready', mapping_config=$3, error_message=NULL, updated_at=now() WHERE id=$1 RETURNING updated_at`, file.ID, len(rows), mapping).Scan(&file.UpdatedAt)
+		return tx.QueryRow(txCtx, `UPDATE compare.files SET row_count=$2, status=CASE WHEN status='archived' THEN 'archived' ELSE 'ready' END, mapping_config=$3, error_message=NULL, updated_at=now() WHERE id=$1 RETURNING updated_at`, file.ID, len(rows), mapping).Scan(&file.UpdatedAt)
 	})
 }
 

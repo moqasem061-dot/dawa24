@@ -39,7 +39,7 @@ func (r *Repository) CreateRun(ctx context.Context, run *importrun.Run) error {
 				organization_id, user_id, kind, audience, filename,
 				state, phase, percent, total_rows, processed_rows,
 				payload, result, error_message
-			) VALUES ($1,$2,$3,$4,$5, $6,$7,$8,$9,$10, $11,$12,$13)
+			) VALUES (NULLIF($1,0),$2,$3,$4,$5, $6,$7,$8,$9,$10, $11,$12,$13)
 			RETURNING id, public_id, created_at, updated_at
 		`,
 			run.OrganizationID, run.UserID, run.Kind, run.Audience, run.Filename,

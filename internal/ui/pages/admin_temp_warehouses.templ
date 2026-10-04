@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/url"
 	"time"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
@@ -39,6 +40,7 @@ type AdminTempWarehouseUploader struct {
 
 // AdminTempWarehousesData carries data for the temporary warehouses admin page.
 type AdminTempWarehousesData struct {
+	CanReviewAll bool
 	Items         []*AdminTempWarehouseItem
 	TotalCount    int
 	TotalRows     int64
@@ -793,6 +795,11 @@ templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
 								<span>مستودعات البائعين (أداة المقارنة)</span>
 							</a>
 						}
+						if data.CanReviewAll {
+							<form method="POST" action={ templ.SafeURL(data.Base + "/review-all") } class="m-0" hx-boost="false">
+								<button type="submit" class="btn btn-secondary btn-sm font-bold" title={ i18n.T(lang, "warehouse.review.scope") }>{ i18n.T(lang, "warehouse.review.button") }</button>
+							</form>
+						}
 						<a
 							href={ templ.SafeURL(data.PageURL + "/upload") }
 							class="btn btn-primary btn-sm inline-flex items-center gap-1.5 font-black px-5 py-2.5 rounded-lg text-decoration-none shadow-2xs"
@@ -868,6 +875,7 @@ templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
 			<!-- 3. Search & Status Tabs Bar -->
 			<div class="filter-bar">
 				<form method="GET" action={ templ.SafeURL(data.PageURL) } class="flex-between items-center flex-wrap gap-4 m-0">
+					<input type="hidden" name="status" value={ data.StatusFilter } />
 					if !data.MineOnly {
 						<input type="hidden" name="type" value={ data.SourceFilter } />
 					}
@@ -916,8 +924,8 @@ templ AdminTempWarehousesPage(data *AdminTempWarehousesData, lang, dir string) {
 					<div class="d-flex items-center gap-2">
 						<div class="d-flex bg-surface-sunken border rounded-lg p-0.5 gap-0.5">
 							<a
-								href={ templ.SafeURL(tempWarehouseFilterURL(data, "ready")) }
-								class={ "btn btn-sm px-3 py-1.5 text-xs rounded-md", templ.KV("btn-primary font-black", data.StatusFilter == "ready"), templ.KV("btn-ghost text-secondary", data.StatusFilter != "ready") }
+								href={ templ.SafeURL(tempWarehouseFilterURL(data, "active")) }
+								class={ "btn btn-sm px-3 py-1.5 text-xs rounded-md", templ.KV("btn-primary font-black", data.StatusFilter == "active"), templ.KV("btn-ghost text-secondary", data.StatusFilter != "active") }
 							>
 								<span>النشطة</span>
 							</a>

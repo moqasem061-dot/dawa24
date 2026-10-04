@@ -206,6 +206,7 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 			"inventory.team_temp_warehouse.view", "inventory.team_temp_warehouse.manage",
 		))
 		g.Get("/admin/temporary-warehouses", h.AdminTempWarehousesPage)
+		g.Get("/admin/temporary-warehouses/review-all/{runID}", h.AdminTempWarehouseReviewAllPage)
 		g.Get("/admin/temporary-warehouses/upload", h.AdminTempWarehouseUploadPage)
 		g.Get("/admin/temporary-warehouses/staging", h.CompareStagingStatus)
 		g.Get("/admin/temporary-warehouses/{id}/items-json", h.AdminTempWarehouseItemsJSON)
@@ -257,6 +258,7 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 		g.Post("/admin/user/temparte-warehouses/{id}/toggle-archive", h.AdminTempWarehouseToggleArchiveSubmit)
 
 		g.Post("/admin/temporary-warehouses/bulk", h.AdminTempWarehouseBulkSubmit)
+		g.Post("/admin/temporary-warehouses/review-all", h.AdminTempWarehouseReviewAllSubmit)
 		g.Post("/admin/user/temparte-warehouses/bulk", h.AdminTempWarehouseBulkSubmit)
 		registerTempWarehouseRunRoutes(g, "/admin/user/temparte-warehouses", h)
 		registerTempWarehouseRunRoutes(g, "/admin/temporary-warehouses", h)

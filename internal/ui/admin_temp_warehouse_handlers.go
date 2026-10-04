@@ -57,6 +57,9 @@ func (h *UIHandler) AdminTempWarehousesPage(w http.ResponseWriter, r *http.Reque
 	data := h.buildTempWarehousesData(ctx, filter, false, page, limit)
 	data.Base = tempWarehouseSuperBase
 	data.PageURL = tempWarehouseSuperPage
+	if actor, ok := authctx.From(ctx); ok {
+		data.CanReviewAll = actor.IsSuperAdmin()
+	}
 	data.NoticeMsg = strings.TrimSpace(r.URL.Query().Get("notice"))
 	data.NoticeType = strings.TrimSpace(r.URL.Query().Get("notice_type"))
 	if data.NoticeMsg == "" {

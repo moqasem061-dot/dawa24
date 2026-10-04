@@ -17,7 +17,7 @@ import (
 
 const runSelectSQL = `
 SELECT
-  r.id, r.public_id::text, r.organization_id, r.user_id,
+  r.id, r.public_id::text, COALESCE(r.organization_id, 0), r.user_id,
   r.kind, r.audience, r.filename,
   r.state, r.phase, r.percent,
   r.total_rows, r.processed_rows,

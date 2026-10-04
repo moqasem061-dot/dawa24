@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -34,9 +35,13 @@ func buildAdminTempWarehouseWhere(filter compare.AdminTempWarehouseFilter) ([]st
 	i := 1
 
 	if filter.Status != nil {
-		where = append(where, fmt.Sprintf("f.status = $%d", i))
-		args = append(args, string(*filter.Status))
-		i++
+		if *filter.Status == "active" {
+			where = append(where, "f.status != 'archived'")
+		} else {
+			where = append(where, fmt.Sprintf("f.status = $%d", i))
+			args = append(args, string(*filter.Status))
+			i++
+		}
 	}
 	if s := strings.TrimSpace(filter.Search); s != "" {
 		where = append(where, fmt.Sprintf("(f.supplier_name ILIKE $%d OR f.original_filename ILIKE $%d)", i, i))
@@ -64,7 +69,7 @@ func buildAdminTempWarehouseWhere(filter compare.AdminTempWarehouseFilter) ([]st
 	}
 	switch filter.Source {
 	case "moderator":
-		where = append(where, "f.is_temp_warehouse = TRUE")
+		where = append(where, "(f.is_temp_warehouse = TRUE AND f.organization_id IS NULL)")
 	case "vendor":
 		where = append(where, "(f.organization_id IS NOT NULL OR f.is_temp_warehouse = FALSE)")
 	}
@@ -187,6 +192,7 @@ func (r *Repository) ListAdminTempWarehousesWithTotal(ctx context.Context, filte
 
 // AdminTempWarehouseStats aggregates total rows, active count, and archived count for temp warehouses.
 func (r *Repository) AdminTempWarehouseStats(ctx context.Context, filter compare.AdminTempWarehouseFilter) (int64, int, int, error) {
+	filter.Status = nil
 	where, args := buildAdminTempWarehouseWhere(filter)
 	whereClause := strings.Join(where, " AND ")
 
@@ -250,6 +256,9 @@ func scanAdminTempWarehouse(row pgx.Row) (*compare.AdminTempWarehouse, error) {
 		return nil, err
 	}
 	f.Status = compare.CompareFileStatus(statusStr)
+	if err := json.Unmarshal(mappingBytes, &f.MappingConfig); err != nil {
+		return nil, fmt.Errorf("decode warehouse mapping: %w", err)
+	}
 	return &compare.AdminTempWarehouse{CompareFile: &f, UploaderName: uploaderName, OrgName: orgName}, nil
 }
 

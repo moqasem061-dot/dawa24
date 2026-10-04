@@ -19,7 +19,10 @@ func (s *Service) MatchAndReplaceFileRows(ctx context.Context, file *CompareFile
 	if err := s.MatchFileRowsToCatalog(ctx, file.ID, rows); err != nil {
 		return err
 	}
-	file.RowCount, file.Status, file.ErrorMessage = len(rows), FileReady, ""
+	file.RowCount, file.ErrorMessage = len(rows), ""
+	if file.Status != FileArchived {
+		file.Status = FileReady
+	}
 	return s.repo.ReplaceFileRows(ctx, file, rows)
 }
 
