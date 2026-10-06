@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -92,6 +93,10 @@ func (h *UIHandler) AdminCategoryCreateSubmit(w http.ResponseWriter, r *http.Req
 			parentIDPtr = &pid
 		}
 	}
+	if !validCategoryParent(readAdminCategories(ctx, h), parentIDPtr, 0) {
+		h.redirectWithNotice(w, r, "/admin/categories", "error", i18n.T(lang, "admin.categories.invalid_parent"))
+		return
+	}
 
 	cat := &catalog.Category{
 		ParentID:    parentIDPtr,
@@ -156,10 +161,12 @@ func (h *UIHandler) AdminCategoryEditSubmit(w http.ResponseWriter, r *http.Reque
 	var parentIDPtr *int64
 	if parentIDStr := strings.TrimSpace(r.FormValue("parent_id")); parentIDStr != "" {
 		if pid, err := strconv.ParseInt(parentIDStr, 10, 64); err == nil && pid > 0 {
-			if pid != catID { // category cannot be its own parent
-				parentIDPtr = &pid
-			}
+			parentIDPtr = &pid
 		}
+	}
+	if !validCategoryParent(readAdminCategories(ctx, h), parentIDPtr, catID) {
+		h.redirectWithNotice(w, r, "/admin/categories", "error", i18n.T(lang, "admin.categories.invalid_parent"))
+		return
 	}
 
 	cat.ParentID = parentIDPtr
@@ -175,6 +182,18 @@ func (h *UIHandler) AdminCategoryEditSubmit(w http.ResponseWriter, r *http.Reque
 	}
 
 	h.redirectWithNotice(w, r, "/admin/categories", "success", i18n.T(lang, "admin.categories.updated_success"))
+}
+
+func readAdminCategories(ctx context.Context, handler *UIHandler) []*catalog.Category {
+	if handler.catSvc == nil {
+		return nil
+	}
+	categories, err := handler.catSvc.ListCategories(database.AsSystem(ctx))
+	if err != nil {
+		handler.logLoadErr(ctx, "catSvc.ListCategories for category parent validation", err)
+		return nil
+	}
+	return categories
 }
 
 // AdminCategoryToggleSubmit toggles a category's active status.
@@ -217,6 +236,10 @@ func (h *UIHandler) AdminCategoryDeleteSubmit(w http.ResponseWriter, r *http.Req
 	h.logLoadErr(ctx, "catSvc.CountProductsInCategory", loadErr)
 	if count > 0 {
 		h.redirectWithNotice(w, r, "/admin/categories", "error", fmt.Sprintf(i18n.T(lang, "admin.categories.cannot_delete_has_products_format"), count))
+		return
+	}
+	if hasCategoryChildren(readAdminCategories(ctx, h), catID) {
+		h.redirectWithNotice(w, r, "/admin/categories", "error", i18n.T(lang, "admin.categories.has_children"))
 		return
 	}
 

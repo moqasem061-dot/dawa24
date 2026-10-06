@@ -32,6 +32,7 @@ func (h *UIHandler) registerCustomerDashboardRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("pharmacy.dashboard.view"))
 		g.Get("/customer/dashboard", h.PharmacyDashboardPage)
+		g.Get("/customer/tutorial", tutorialMap("pharmacy"))
 		// Legacy URLs kept as redirects so bookmarks survive the rename.
 		g.Get("/pharmacy/dashboard", func(w http.ResponseWriter, r *http.Request) {
 			http.Redirect(w, r, "/customer/dashboard", http.StatusFound)

@@ -34,6 +34,10 @@ templ PharmacyDashboard(lang, dir string, data PharmacyDashboardData, perms []st
 						<span>•</span>
 						<span>{ i18n.T(lang, "pharmacy.dashboard.today") } <strong class="tabular-nums text-primary">{ format.Date(time.Now(), lang) }</strong></span>
 					</div>
+					<a href="/customer/tutorial" class="btn btn-secondary btn-sm font-bold gap-1" aria-label={ i18n.T(lang, "tutorials.maps") }>
+						@components.Icon("map", "icon-xs")
+						<span>{ i18n.T(lang, "tutorials.maps") }</span>
+					</a>
 				</div>
 
 			</div>
@@ -107,6 +111,10 @@ templ PharmacyDashboard(lang, dir string, data PharmacyDashboardData, perms []st
 					</a>
 
 				</div>
+				<a href="/customer/tutorial" class="btn btn-secondary btn-sm font-bold gap-1" aria-label={ i18n.T(lang, "tutorials.maps") }>
+					@components.IconMapPin("icon-xs")
+					<span>{ i18n.T(lang, "tutorials.maps") }</span>
+				</a>
 			</div>
 
 			<!-- Main 2-Column Responsive Workspace Grid -->

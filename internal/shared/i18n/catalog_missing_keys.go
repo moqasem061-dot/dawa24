@@ -1,6 +1,10 @@
 package i18n
 
 func loadMissingCatalogKeys(e *engine) {
+	addKey(e, "tutorials.maps", "tutorials", "خرائط", "Maps", "Open the role-specific tutorial map")
+	addKey(e, "admin.temp_warehouse.mapping_invalid", "admin", "تعذر اعتماد الربط: اختر اسم الصنف وسعراً أو خصماً، واستخدم عموداً مختلفاً لكل حقل.", "Mapping cannot be saved: choose the product name and a price or discount, and use a different column for each field.", "Invalid temporary warehouse mapping")
+	addKey(e, "admin.categories.invalid_parent", "admin", "الفئة الرئيسية غير صالحة أو تؤدي إلى دورة في شجرة التصنيفات.", "The parent category is invalid or would create a cycle in the category tree.", "Invalid category parent")
+	addKey(e, "admin.categories.has_children", "admin", "انقل الفئات الفرعية إلى فئة أخرى قبل حذف هذه الفئة.", "Move this category's children before deleting it.", "Category still has children")
 	// Common & General
 	addKey(e, "common.egp", "common", "ج.م", "EGP", "Currency unit")
 	addKey(e, "common.items", "common", "أصناف", "Items", "Count label")
@@ -17,6 +21,7 @@ func loadMissingCatalogKeys(e *engine) {
 	addKey(e, "common.deleted", "common", "تم الحذف بنجاح", "Deleted successfully", "Notification")
 	addKey(e, "common.invalid_id", "common", "المعرف غير صالح", "Invalid ID", "Error message")
 	addKey(e, "common.action", "common", "الإجراء", "Action", "Table header")
+	addKey(e, "customer.cart.price_unavailable", "customer", "تغير هذا العرض أو تعذر التحقق من سعره. حدّث صفحة الصنف ثم حاول مرة أخرى.", "This supply or price has changed, or could not be verified. Refresh the product page and try again.", "Cart price verification failure")
 	addKey(e, "common.document", "common", "المستند", "Document", "Table header")
 	addKey(e, "common.approval", "common", "الموافقة", "Approval", "State label")
 	addKey(e, "common.accepted", "common", "مقبول", "Accepted", "Status badge")

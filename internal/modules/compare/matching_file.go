@@ -123,8 +123,11 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 
 	// Fallback when matcher is not wired (e.g. standalone tests)
 	candidates, err := s.repo.ListCatalogMatchProducts(ctx, 500000)
-	if err != nil || len(candidates) == 0 {
+	if err != nil {
 		return err
+	}
+	if len(candidates) == 0 {
+		return recordUnmatchedDecisions(rows)
 	}
 
 	masters := make([]productmatch.MasterProduct, 0, len(candidates))
@@ -146,6 +149,9 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 		})
 	}
 	if len(masters) == 0 {
+		if err := recordUnmatchedDecisions(rows); err != nil {
+			return err
+		}
 		return nil
 	}
 
@@ -164,6 +170,11 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 	results := productmatch.MatchAll(idx, matchRows, opts, 0)
 
 	for i, res := range results {
+		decision, err := json.Marshal(matchflow.Decision{Ref: rows[i].RowNumber, ProductID: matchedID(res), Confidence: math.Round(res.Score * 100)})
+		if err != nil {
+			return fmt.Errorf("encode fallback decision for row %d: %w", rows[i].RowNumber, err)
+		}
+		rows[i].MatchDecision = decision
 		if res.Matched() && res.Level.Settled() {
 			confidence := math.Round(res.Score * 100.0)
 			method, _ := compareMethodFor(res.Level, confidence)
@@ -195,6 +206,25 @@ func (s *Service) MatchFileRowsToCatalog(ctx context.Context, fileID int64, rows
 
 	if len(matches) > 0 {
 		return s.repo.BulkUpdateFileRowMatches(ctx, fileID, matches)
+	}
+	return nil
+}
+
+func matchedID(result productmatch.MatchResult) *int64 {
+	if !result.Matched() {
+		return nil
+	}
+	productID := result.ProductID
+	return &productID
+}
+
+func recordUnmatchedDecisions(rows []*CompareFileRow) error {
+	for _, row := range rows {
+		decision, err := json.Marshal(matchflow.Decision{Ref: row.RowNumber, Reason: "no_catalog_candidates"})
+		if err != nil {
+			return fmt.Errorf("encode unmatched decision for row %d: %w", row.RowNumber, err)
+		}
+		row.MatchDecision = decision
 	}
 	return nil
 }

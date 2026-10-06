@@ -242,6 +242,10 @@ func (h *UIHandler) AdminTempWarehouseRunMappingSubmit(w http.ResponseWriter, r 
 	if colDiscount >= 0 {
 		cfg.DiscountCol = &colDiscount
 	}
+	if hasDuplicateTempWarehouseColumns(cfg) || action == "review" && !validTempWarehouseMapping(cfg) {
+		http.Error(w, i18n.T(lang, "admin.temp_warehouse.mapping_invalid"), http.StatusUnprocessableEntity)
+		return
+	}
 
 	sysCtx := database.AsSystem(ctx)
 

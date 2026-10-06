@@ -95,6 +95,14 @@ templ VendorDeliveryPage(data VendorDeliveryData, lang, dir string) {
 							<span>{ i18n.T(lang, "vendor_delivery.btn_search") }</span>
 						</button>
 					</form>
+					<a href="/vendor/delivery/tutorial" class="btn btn-secondary btn-sm font-bold gap-1" aria-label={ i18n.T(lang, "tutorials.maps") }>
+						@components.IconMapPin("icon-xs")
+						<span>{ i18n.T(lang, "tutorials.maps") }</span>
+					</a>
+					<a href="/vendor/delivery/tutorial" class="btn btn-secondary btn-sm font-bold gap-1" aria-label={ i18n.T(lang, "tutorials.maps") }>
+						@components.Icon("map", "icon-xs")
+						<span>{ i18n.T(lang, "tutorials.maps") }</span>
+					</a>
 				</div>
 
 				if data.Counts.Mine > 0 {

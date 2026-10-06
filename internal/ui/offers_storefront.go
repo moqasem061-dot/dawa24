@@ -243,7 +243,7 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 			continue
 		}
 
-		listPrice := product.EffectivePrice()
+		listPrice := promoProductListPrice(product, variants, row.Product.VariantID)
 		price, bd := promo.EffectivePrice(listPrice, row.Product, row.Offer)
 
 		matchedExisting := false
@@ -255,6 +255,10 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 				continue
 			}
 			matchedExisting = true
+			if row.Product.VariantID == nil || *row.Product.VariantID <= 0 {
+				listPrice = promoProductListPrice(product, variants, &offers[i].VariantID)
+				price, bd = promo.EffectivePrice(listPrice, row.Product, row.Offer)
+			}
 
 			hasExistingDiscount := offers[i].DiscountBPS > 0 || offers[i].DiscountAmount.IsPositive()
 			isPromoDiscounted := bd.DiscountBPS > 0 || bd.DiscountAmount.IsPositive()
@@ -309,6 +313,10 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 					}
 				}
 			}
+			if varID > 0 && (row.Product.VariantID == nil || *row.Product.VariantID <= 0) {
+				listPrice = promoProductListPrice(product, variants, &varID)
+				price, bd = promo.EffectivePrice(listPrice, row.Product, row.Offer)
+			}
 			if varID <= 0 {
 				promoCanAdd = false
 				promoCovReason = "الصنف غير متوفر حالياً لدى المورد"
@@ -348,6 +356,17 @@ func (h *UIHandler) offersForProduct(ctx context.Context, product *catalog.Produ
 	sortSupplierOffers(offers)
 
 	return offers
+}
+
+func promoProductListPrice(product *catalog.Product, variants []*catalog.ProductVariant, variantID *int64) money.Amount {
+	if variantID != nil {
+		for _, variant := range variants {
+			if variant != nil && variant.ID == *variantID && variant.Price.IsPositive() {
+				return variant.Price
+			}
+		}
+	}
+	return product.EffectivePrice()
 }
 
 // orgName prefers the Arabic trade name, then the English one, then the

@@ -12,25 +12,25 @@ import (
 )
 
 templ CustomerProductDetail(product *catalog.Product, variants []*catalog.ProductVariant, offers []SupplierOffer, lang, dir string) {
-	@layouts.ShellFor(productTitle(product)+" | "+i18n.T(lang, "product.title_suffix"), "catalog", lang, dir, authctx.FromContext(ctx)) {
+	@layouts.ShellFor(localizedProductTitle(product, lang)+" | "+i18n.T(lang, "product.title_suffix"), "catalog", lang, dir, authctx.FromContext(ctx)) {
 		<div class="py-2">
-			
 			<!-- Breadcrumb Navigation -->
 			<nav class="d-flex items-center gap-2 text-xs text-muted mb-4 flex-wrap font-bold" aria-label={ i18n.T(lang, "nav.breadcrumb") }>
 				{{ actor := authctx.FromContext(ctx) }}
 				{{ dashboardURL := "/customer/dashboard" }}
-				{{ if actor.IsVendor() {
-					dashboardURL = "/vendor/dashboard"
-				} else if actor.IsStaff {
-					dashboardURL = "/admin/dashboard"
-				} }}
+				{{
+					if actor.IsVendor() {
+						dashboardURL = "/vendor/dashboard"
+					} else if actor.IsStaff {
+						dashboardURL = "/admin/dashboard"
+					}
+				}}
 				<a href={ templ.SafeURL(dashboardURL) } class="text-secondary transition-colors">{ i18n.T(lang, "nav.dashboard") }</a>
 				<span>/</span>
 				<a href="/catalog" class="text-secondary transition-colors">{ i18n.T(lang, "nav.catalog") }</a>
 				<span>/</span>
-				<span class="text-primary font-black">{ productTitle(product) }</span>
+				<span class="text-primary font-black">{ localizedProductTitle(product, lang) }</span>
 			</nav>
-
 			<!-- Sponsored Product Top Banner if offer is sponsored -->
 			if len(offers) > 0 && offers[0].IsSponsored {
 				<div class="product-detail-sponsored-banner mb-4 shadow-xs">
@@ -44,41 +44,33 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 					<span class="badge badge-amber text-xs font-extrabold shadow-2xs">{ i18n.T(lang, "product.sponsored_ad") }</span>
 				</div>
 			}
-
 			<!-- 1. Hero Product Showcase Grid (3 Columns B2B E-Commerce: Media, Specs, Buy Box) -->
-			<div class="b2b-customer-showcase grid grid-cols-1 lg:grid-cols-12 gap-6 items-start mb-6">
-				
-				<!-- Col 1 (Right in RTL): Product Media, Official Package & Trust Signals (Sticky) -->
-				<div class="b2b-product-gallery lg:col-span-4 xl:col-span-3 sticky top-6">
+			<div class="b2b-customer-showcase mb-6">
+				<!-- Product media -->
+				<div class="b2b-product-gallery">
 					<div class="b2b-product-media-card glass-panel p-4 min-h-[300px] md:min-h-[340px] relative group">
-						<div class="absolute top-3 start-3 z-1">
-							<span class="badge badge-emerald text-xs font-bold gap-1 shadow-2xs">
-								@components.IconCheck("icon-xs")
-								<span>{ i18n.T(lang, "product.certified_item") }</span>
-							</span>
-						</div>
-
 						if resolveProductImage(product) != "" {
 							<a
 								href={ templ.SafeURL(imageurl.Normalize(resolveProductImage(product))) }
 								data-preview-file={ imageurl.Normalize(resolveProductImage(product)) }
 								data-is-image="true"
-								data-title={ productTitle(product) }
+								data-title={ localizedProductTitle(product, lang) }
 								target="_blank"
+								rel="noopener noreferrer"
+								aria-label={ i18n.T(lang, "preview.modal.newtab_tooltip") }
 								class="w-full h-full flex flex-col items-center justify-center cursor-zoom-in relative group/img"
 								title={ i18n.T(lang, "preview.modal.newtab_tooltip") }
 							>
-								@components.ProductImage(imageurl.Full(resolveProductImage(product), productTitle(product), "b2b-product-img object-contain transition-transform duration-300 group-hover/img:scale-105 my-2"))
+								@components.ProductImage(imageurl.Full(resolveProductImage(product), localizedProductTitle(product, lang), "b2b-product-img object-contain transition-transform duration-300 group-hover/img:scale-105 my-2"))
 								<div class="product-img-fallback hidden flex-col items-center justify-center text-muted gap-2">
 									<div class="w-16 h-16 rounded-2xl bg-primary-subtle text-primary flex-center text-xl mb-1">
 										@components.IconPill("icon-md")
 									</div>
-									<div class="font-extrabold text-xs text-primary">{ i18n.T(lang, "product.official_package") }</div>
-									<span class="text-2xs text-muted">{ i18n.T(lang, "product.eda_compliant") }</span>
+									<div class="font-extrabold text-xs text-primary">{ i18n.T(lang, "product.image_unavailable") }</div>
 								</div>
 								<span class="absolute bottom-2 end-2 badge badge-slate text-2xs font-bold gap-1 shadow-xs opacity-80 group-hover/img:opacity-100 transition-opacity pointer-events-none">
 									@components.IconSearch("icon-2xs")
-									<span>تكبير</span>
+									<span>{ i18n.T(lang, "product.image_zoom") }</span>
 								</span>
 							</a>
 						} else {
@@ -86,27 +78,13 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 								<div class="w-16 h-16 rounded-2xl bg-primary-subtle text-primary flex-center text-xl mb-1">
 									@components.IconPill("icon-md")
 								</div>
-								<div class="font-extrabold text-xs text-primary">{ i18n.T(lang, "product.official_package") }</div>
-								<span class="text-2xs text-muted">{ i18n.T(lang, "product.eda_compliant") }</span>
+								<div class="font-extrabold text-xs text-primary">{ i18n.T(lang, "product.image_unavailable") }</div>
 							</div>
 						}
 					</div>
-
-					<!-- Pharmacist Trust Signals Under Image -->
-					<div class="b2b-trust-badges">
-						<div class="d-flex items-center gap-2 text-success font-bold">
-							@components.IconCheckCircle("icon-xs")
-							<span>{ i18n.T(lang, "product.trust_expiry_check") }</span>
-						</div>
-						<div class="d-flex items-center gap-2 text-primary font-bold">
-							@components.IconShield("icon-xs")
-							<span>{ i18n.T(lang, "product.trust_secure_supply") }</span>
-						</div>
-					</div>
 				</div>
-
 				<!-- Col 2 (Center in RTL): Product Info, Clinical Specifications, Variants & Indications -->
-				<div class="b2b-product-info-panel lg:col-span-5 xl:col-span-6">
+				<div class="b2b-product-info-panel">
 					<!-- Header Block -->
 					<div>
 						<div class="d-flex items-center gap-2 mb-2 flex-wrap">
@@ -122,22 +100,19 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 								</span>
 							}
 						</div>
-
 						<h1 class="text-2xl lg:text-3xl font-black text-primary m-0 mb-1 leading-tight">
-							{ productTitle(product) }
+							{ localizedProductTitle(product, lang) }
 						</h1>
-						
 						if product.Name["en"] != "" && product.Name["en"] != product.Name["ar"] {
 							<div class="text-sm text-muted font-mono mb-2 font-bold" dir="ltr">
 								{ product.Name["en"] }
 							</div>
 						}
 					</div>
-
 					<!-- Clinical Specifications Table (No nested card clutter) -->
 					<div class="pt-2">
 						<h2 class="text-xs font-extrabold text-muted uppercase tracking-wider mb-2">
-							المواصفات والبيانات الدوائية القياسية
+							{ i18n.T(lang, "product.specifications_title") }
 						</h2>
 						<table class="b2b-specs-table">
 							<tbody>
@@ -161,13 +136,13 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 								}
 								if product.Concentration != "" {
 									<tr>
-										<th>التركيز الدوائي</th>
+										<th>{ i18n.T(lang, "product.concentration") }</th>
 										<td><span>{ product.Concentration }</span></td>
 									</tr>
 								}
 								if product.Unit != "" {
 									<tr>
-										<th>وحدة التعبئة</th>
+										<th>{ i18n.T(lang, "product.packing_unit") }</th>
 										<td><span>{ product.Unit }</span></td>
 									</tr>
 								}
@@ -180,7 +155,6 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 							</tbody>
 						</table>
 					</div>
-
 					<!-- Variants Packaging Strip -->
 					if len(variants) > 0 {
 						<div class="pt-3 border-t">
@@ -207,11 +181,10 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 							</div>
 						</div>
 					}
-
 					<!-- Description / Indications if present -->
 					if product.Description["ar"] != "" || product.Description["en"] != "" {
 						<div class="pt-3 border-t">
-							<div class="text-xs font-bold text-muted mb-1.5">الوصف ودواعي الاستعمال:</div>
+							<div class="text-xs font-bold text-muted mb-1.5">{ i18n.T(lang, "product.description_title") }</div>
 							<div class="text-xs text-primary leading-relaxed">
 								if product.Description["ar"] != "" {
 									{ product.Description["ar"] }
@@ -222,20 +195,30 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 						</div>
 					}
 				</div>
-
 				<!-- Col 3 (Left in RTL): Primary Purchase Box / Special Sourcing Card (Sticky) -->
-				<div class="b2b-buybox-col lg:col-span-3 xl:col-span-3 sticky top-6">
+				<div class="b2b-buybox-col">
 					@CustomerProductDetailBuyBox(product, offers, lang, dir)
 				</div>
-
 			</div>
-
 			<!-- 2. Other Supplier Offers Comparison Table -->
 			@CustomerProductDetailOffersTable(product, offers, lang)
-
 		</div>
-
 		<script nonce={ layouts.Nonce(ctx) }>
+			function showProductImageFallback(image) {
+				image.style.display = 'none';
+				const fallback = image.closest('.b2b-product-media-card')?.querySelector('.product-img-fallback');
+				if (fallback) fallback.classList.remove('hidden');
+				const link = image.closest('a');
+				if (link) {
+					link.removeAttribute('href');
+					link.classList.remove('cursor-zoom-in');
+				}
+			}
+		document.querySelectorAll('.b2b-product-media-card img').forEach(image => {
+				if (image.complete && image.naturalWidth === 0) showProductImageFallback(image);
+				else image.addEventListener('error', () => showProductImageFallback(image), { once: true });
+			});
+
 			function stepCatalogQty(btn, delta) {
 				const form = btn.closest('form') || btn.closest('.product-detail-buy-box');
 				if (!form) return;
@@ -249,6 +232,73 @@ templ CustomerProductDetail(product *catalog.Product, variants []*catalog.Produc
 					if (val > max && max > 0) val = max;
 					input.value = val;
 				}
+			}
+
+			function updateProductOffer(select) {
+				const option = select.selectedOptions[0];
+				const buyBox = select.closest('.product-detail-buy-box');
+				updateProductOfferDisplay(buyBox, option.dataset);
+				updateProductCartForm(buyBox, option);
+				updateProductNegotiation(buyBox, option.dataset);
+			}
+
+			function updateProductOfferDisplay(buyBox, offer) {
+				buyBox.querySelector('[data-product-offer-price]').textContent = offer.price;
+				buyBox.querySelector('[data-product-offer-supplier]').textContent = offer.supplierName;
+				buyBox.querySelector('[data-product-offer-min]').textContent = offer.minQty;
+				const stock = buyBox.querySelector('[data-product-offer-stock]');
+				stock.textContent = Number(offer.stockCount) > 0 ? offer.stock : stock.dataset.outOfStock;
+				stock.classList.toggle('text-brand', Number(offer.stockCount) > 0);
+				stock.classList.toggle('text-danger', Number(offer.stockCount) <= 0);
+				const expiryRow = buyBox.querySelector('[data-product-offer-expiry-row]');
+				expiryRow.hidden = !offer.expiry;
+				buyBox.querySelector('[data-product-offer-expiry]').textContent = offer.expiry;
+				updateProductOfferCoverage(buyBox, offer);
+			}
+
+			function updateProductOfferCoverage(buyBox, offer) {
+				const coverage = buyBox.querySelector('[data-product-offer-coverage]');
+				const covered = offer.covered === 'true';
+				coverage.dataset.covered = offer.covered;
+				coverage.querySelector('[data-product-offer-covered-icon]').hidden = !covered;
+				coverage.querySelector('[data-product-offer-outside-icon]').hidden = covered;
+				const text = offer.coverageReason || (covered ? offer.coveredLabel : offer.outsideLabel);
+				coverage.querySelector('[data-product-offer-coverage-text]').textContent = text;
+			}
+
+			function updateProductCartForm(buyBox, option) {
+				const form = buyBox.querySelector('form[action="/cart/add"]');
+				if (!form) return;
+				const offer = option.dataset;
+				form.querySelector('[name="variant_id"]').value = offer.variantId;
+				form.querySelector('[name="offer_id"]').value = offer.offerId;
+				form.querySelector('[name="organization_id"]').value = offer.supplierId;
+				form.querySelector('[name="vendor_org_id"]').value = offer.supplierId;
+				form.querySelector('[name="offer_price"]').value = offer.price;
+				const quantity = form.querySelector('[name="qty"]');
+				const minimum = Number(offer.minQty);
+				const maximum = Math.max(minimum, Number(offer.maxQty));
+				quantity.min = minimum;
+				quantity.max = maximum;
+				quantity.value = Math.min(maximum, Math.max(minimum, Number(quantity.value) || minimum));
+				form.querySelector('[type="submit"]').disabled = offer.canAdd !== 'true';
+			}
+
+			function updateProductNegotiation(buyBox, offer) {
+				const negotiationBadge = buyBox.querySelector('[data-product-offer-negotiable]');
+				negotiationBadge.hidden = offer.negotiable !== 'true';
+				const button = buyBox.querySelector('[data-product-negotiation]');
+				if (!button) return;
+				button.hidden = offer.negotiable !== 'true';
+				button.dataset.variantId = offer.variantId;
+				button.dataset.vendorId = offer.supplierId;
+				button.dataset.currentPrice = offer.price;
+				button.dataset.minQty = offer.minQty;
+			}
+
+			const productOfferSelect = document.getElementById('product-offer-select');
+			if (productOfferSelect) {
+				productOfferSelect.addEventListener('change', () => updateProductOffer(productOfferSelect));
 			}
 		</script>
 		@CustomerNegotiationModal()

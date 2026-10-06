@@ -27,6 +27,12 @@ const (
 	FieldAlertDiscount TargetField = "alert_discount"
 )
 
+var detectionFieldOrder = []TargetField{
+	FieldProductID, FieldProductName, FieldDescription, FieldPrice, FieldCostPrice,
+	FieldDiscount, FieldQuantity, FieldSKU, FieldUniqueID, FieldBarcode,
+	FieldAlertPrice, FieldAlertDiscount,
+}
+
 // ArabicLabel returns human-readable Arabic name for a target field.
 func ArabicLabel(f TargetField) string {
 	switch f {
@@ -137,7 +143,8 @@ func findBestMatch(header string) *HeaderMatch {
 	var bestMatch *HeaderMatch
 	highestScore := 0.0
 
-	for field, aliases := range HeaderAliases {
+	for _, field := range detectionFieldOrder {
+		aliases := HeaderAliases[field]
 		for _, alias := range aliases {
 			normAlias := normalizeForComparison(alias)
 			score := calculateSimilarity(normHeader, normAlias)

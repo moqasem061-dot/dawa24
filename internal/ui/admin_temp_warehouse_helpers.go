@@ -2,9 +2,11 @@ package ui
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
@@ -34,54 +36,60 @@ func detectTempWarehouseCols(headers []string, customCode, customName, customPri
 		}
 	}
 
-	for i, h := range headers {
-		norm := strings.ToLower(strings.TrimSpace(h))
-		norm = strings.ReplaceAll(norm, "_", "")
-		norm = strings.ReplaceAll(norm, "-", "")
-		norm = strings.ReplaceAll(norm, " ", "")
-
-		if codeCol == -1 {
-			if strings.Contains(norm, i18n.TDefault("w4_ui.s_2_2")) || strings.Contains(norm, "code") || strings.Contains(norm, "sku") ||
-				strings.Contains(norm, i18n.TDefault("w4_ui.s_3_3")) || strings.Contains(norm, "barcode") || strings.Contains(norm, i18n.TDefault("w4_ui.s_29_29")) ||
-				strings.Contains(norm, "itemcode") {
-				codeCol = i
+	detected := compare.DetectColumns(headers)
+	used := map[int]bool{codeCol: codeCol >= 0, nameCol: nameCol >= 0, priceCol: priceCol >= 0, discountCol: discountCol >= 0}
+	for column := range headers {
+		field, ok := detected[column]
+		if !ok {
+			continue
+		}
+		if used[column] {
+			continue
+		}
+		switch field {
+		case compare.FieldSKU, compare.FieldBarcode, compare.FieldProductID:
+			if codeCol < 0 {
+				codeCol = column
+				used[column] = true
+			}
+		case compare.FieldProductName:
+			if nameCol < 0 {
+				nameCol = column
+				used[column] = true
+			}
+		case compare.FieldPrice:
+			if priceCol < 0 {
+				priceCol = column
+				used[column] = true
+			}
+		case compare.FieldDiscount:
+			if discountCol < 0 {
+				discountCol = column
+				used[column] = true
 			}
 		}
-
-		if nameCol == -1 {
-			if strings.Contains(norm, i18n.TDefault("w4_ui.s_30_30")) || strings.Contains(norm, "name") || strings.Contains(norm, i18n.TDefault("w4_ui.s_31_31")) ||
-				strings.Contains(norm, i18n.TDefault("w4_ui.s_32_32")) || strings.Contains(norm, "item") || strings.Contains(norm, "product") {
-				nameCol = i
-			}
-		}
-
-		if priceCol == -1 {
-			if (strings.Contains(norm, i18n.TDefault("w4_ui.s_33_33")) || strings.Contains(norm, "price") || strings.Contains(norm, i18n.TDefault("w4_ui.s_34_34")) || strings.Contains(norm, i18n.TDefault("w4_ui.s_35_35"))) && !strings.Contains(norm, i18n.TDefault("w4_ui.s_36_36")) && !strings.Contains(norm, i18n.TDefault("w4_ui.s_37_37")) {
-				priceCol = i
-			}
-		}
-
-		if discountCol == -1 {
-			if strings.Contains(norm, i18n.TDefault("w4_ui.s_36_36")) || strings.Contains(norm, "discount") || strings.Contains(norm, "%") || strings.Contains(norm, i18n.TDefault("w4_ui.s_38_38")) {
-				discountCol = i
-			}
-		}
-	}
-
-	if codeCol == -1 && numCols > 0 {
-		codeCol = 0
-	}
-	if nameCol == -1 && numCols > 1 {
-		nameCol = 1
-	}
-	if priceCol == -1 && numCols > 2 {
-		priceCol = 2
-	}
-	if discountCol == -1 && numCols > 3 {
-		discountCol = 3
 	}
 
 	return codeCol, nameCol, priceCol, discountCol
+}
+
+func validTempWarehouseMapping(cfg compare.MappingConfig) bool {
+	return cfg.NameCol != nil && *cfg.NameCol >= 0 &&
+		(cfg.PriceCol != nil || cfg.DiscountCol != nil) && !hasDuplicateTempWarehouseColumns(cfg)
+}
+
+func hasDuplicateTempWarehouseColumns(cfg compare.MappingConfig) bool {
+	used := make([]int, 0, 4)
+	for _, column := range []*int{cfg.CodeCol, cfg.NameCol, cfg.PriceCol, cfg.DiscountCol} {
+		if column == nil {
+			continue
+		}
+		if slices.Contains(used, *column) {
+			return true
+		}
+		used = append(used, *column)
+	}
+	return false
 }
 
 // parsePriceFloat parses a numeric string into float64, converting Arabic numerals and commas.

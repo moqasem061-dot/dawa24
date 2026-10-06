@@ -126,7 +126,10 @@ func (h *UIHandler) AddToCartSubmit(w http.ResponseWriter, r *http.Request) {
 		item.OfferID = &offerID
 	}
 
-	h.priceCartItem(ctx, item)
+	if err := h.priceCartItem(ctx, item); err != nil {
+		h.rejectCartPrice(w, r, back)
+		return
+	}
 
 	if _, err := h.commSvc.AddToCart(ctx, userID, buyerOrgID(ctx), item); err != nil {
 		h.log.ErrorContext(ctx, "add to cart", "error", err,
@@ -352,23 +355,4 @@ func (h *UIHandler) resolveCartLine(ctx context.Context, variantID, productID, v
 		}
 	}
 	return variantID, productID, vendorOrgID
-}
-
-// priceCartItem sets the line's price from the catalogue. Prices are never
-// client-controlled.
-func (h *UIHandler) priceCartItem(ctx context.Context, item *commerce.CartItem) {
-	if h.catSvc == nil {
-		return
-	}
-	if item.ProductVariantID > 0 {
-		if v, err := h.catSvc.GetVariant(database.AsSystem(ctx), item.ProductVariantID); err == nil && v != nil && !v.Price.IsZero() {
-			item.UnitPrice = v.EffectiveSellingPrice()
-		}
-	}
-	if item.UnitPrice.IsZero() && item.ProductID > 0 {
-		if prod, _, err := h.catSvc.GetProduct(database.AsSystem(ctx), item.ProductID); err == nil && prod != nil {
-			item.ProductName = prod.Name
-			item.UnitPrice = prod.EffectivePrice()
-		}
-	}
 }

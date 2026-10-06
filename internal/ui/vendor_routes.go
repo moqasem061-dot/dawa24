@@ -43,6 +43,7 @@ func (h *UIHandler) registerVendorDeliveryRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("vendor.delivery.view"))
 		g.Get("/vendor/delivery", h.VendorDeliveryPortalPage)
+		g.Get("/vendor/delivery/tutorial", tutorialMap("driver"))
 		// The planned round. Both sit above /{id} in the file for readability
 		// only — chi matches a static segment before a parameter regardless of
 		// registration order, so "route" can never be read as a shipment id.
@@ -68,6 +69,7 @@ func (h *UIHandler) registerVendorCompanyRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("vendor.dashboard.view"))
 		g.Get("/vendor/dashboard", h.VendorDashboardPage)
+		g.Get("/vendor/tutorial", tutorialMap("vendor"))
 	})
 
 	r.Group(func(g chi.Router) {

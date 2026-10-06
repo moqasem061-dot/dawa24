@@ -1,6 +1,7 @@
 package compare_test
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
@@ -105,6 +106,20 @@ func TestDetectColumns_RealWorldHeaders(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDetectColumns_TemporaryWarehouseOrderIsHeaderDriven(t *testing.T) {
+	headers := []string{"الخصم", "سعر الجمهور", "كود الصنف", "اسم الصنف"}
+	got := compare.DetectColumns(headers)
+	want := map[int]compare.TargetField{
+		0: compare.FieldDiscount,
+		1: compare.FieldPrice,
+		2: compare.FieldSKU,
+		3: compare.FieldProductName,
+	}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("detected mapping = %#v, want %#v", got, want)
 	}
 }
 

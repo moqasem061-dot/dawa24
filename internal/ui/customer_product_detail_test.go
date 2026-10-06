@@ -12,7 +12,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
 
-func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
+func TestCustomerProductDetailPage_B2BLayout(t *testing.T) {
 	prod := &catalog.Product{
 		ID:                     12345,
 		Name:                   i18n.Text{"ar": "بنادول إكسترا أقراص مسكنة", "en": "Panadol Extra Tablets"},
@@ -29,6 +29,7 @@ func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
 
 	offers := []pages.SupplierOffer{
 		{
+			OfferID:        11,
 			VariantID:      101,
 			SupplierID:     20,
 			SupplierName:   "شركة المتحدة للتوزيع الدوائي",
@@ -40,12 +41,13 @@ func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
 			MinOrderQty:    5,
 			ExpiryDate:     "2027-08",
 			IsCovered:      true,
-			CanAddToCart:   true,
+			CanAddToCart:   false,
 			IsVerified:     true,
 			SupplierRating: 4.9,
 			ReviewCount:    32,
 		},
 		{
+			OfferID:        12,
 			VariantID:      102,
 			SupplierID:     25,
 			SupplierName:   "مستودع ابن سينا فارما",
@@ -72,9 +74,9 @@ func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
 
 	html := buf.String()
 
-	// 1. Must contain Amazon-style 3-column layout grid
-	if !strings.Contains(html, "grid grid-cols-1 lg:grid-cols-12") {
-		t.Errorf("expected 12-column grid layout for Amazon-style showcase")
+	// The responsive grid is owned by the product-detail component styles.
+	if !strings.Contains(html, `class="b2b-customer-showcase mb-6"`) {
+		t.Errorf("expected product-detail layout without conflicting one-column utilities")
 	}
 
 	// 2. Must render product image and title
@@ -97,11 +99,19 @@ func TestCustomerProductDetailPage_AmazonLayout(t *testing.T) {
 	if !strings.Contains(html, "product-detail-buy-box") {
 		t.Errorf("expected product-detail-buy-box in HTML")
 	}
-	if !strings.Contains(html, "38.00") {
-		t.Errorf("expected winning offer price 38.00 in Buy Box")
+	if !strings.Contains(html, `data-product-offer-price`) || !strings.Contains(html, `name="offer_id" value="12"`) || !strings.Contains(html, `data-product-offer-supplier`) || !strings.Contains(html, "مستودع ابن سينا فارما") {
+		t.Errorf("buy box must select an orderable supplier when the first offer is unavailable")
 	}
 	if !strings.Contains(html, "شركة المتحدة للتوزيع الدوائي") {
 		t.Errorf("expected winning supplier name in Buy Box")
+	}
+	if !strings.Contains(html, `name="offer_id" value="12"`) {
+		t.Errorf("each cart action must preserve the selected promotion identity")
+	}
+	for _, unsupportedClaim := range []string{"100% Certified Item", "Delivery within 24 hours", "Compliant with Egyptian Drug Authority"} {
+		if strings.Contains(html, unsupportedClaim) {
+			t.Errorf("product detail must not claim unsupported assurance %q", unsupportedClaim)
+		}
 	}
 
 	// 5. Must render competing offers table

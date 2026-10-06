@@ -9343,15 +9343,27 @@ body.dark .upload-progress-note {
 
 .b2b-customer-showcase {
   display: grid;
-  grid-template-columns: 320px 1fr 320px;
+  grid-template-columns: minmax(0, 320px) minmax(0, 1fr) minmax(0, 320px);
   gap: 1.5rem;
   align-items: start;
   margin-block-end: 1.5rem;
 }
 
+.b2b-customer-showcase > * { min-inline-size: 0; }
+
+.product-offer-coverage[data-covered="true"] {
+  background: var(--color-emerald-50, #ecfdf5);
+  color: var(--color-emerald-700, #047857);
+}
+
+.product-offer-coverage[data-covered="false"] {
+  background: var(--color-danger-subtle, #fef2f2);
+  color: var(--color-danger, #b91c1c);
+}
+
 @media (max-width: 1280px) {
   .b2b-customer-showcase {
-    grid-template-columns: 300px 1fr;
+    grid-template-columns: minmax(0, 300px) minmax(0, 1fr);
   }
   .b2b-customer-showcase .b2b-buybox-col {
     grid-column: 1 / -1;

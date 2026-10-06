@@ -97,12 +97,12 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							autocomplete="off"
 						/>
 
-						<select name="supplier" class="form-select md-select" data-autosubmit aria-label="المستودع المؤقت">
-							<option value="">كافة المستودعات ({ fmt.Sprintf("%d", len(result.AvailableSuppliers)) })</option>
+						<input type="search" name="supplier" value={ filter.Supplier } list="market-warehouse-options" class="form-input md-select" placeholder={ i18n.T(lang, "market.search.warehouse") } aria-label={ i18n.T(lang, "market.search.warehouse") } autocomplete="off"/>
+						<datalist id="market-warehouse-options">
 							for _, sup := range result.AvailableSuppliers {
-								<option value={ sup } selected?={ filter.Supplier == sup }>{ sup }</option>
+								<option value={ sup }></option>
 							}
-						</select>
+						</datalist>
 
 						<select name="sort" class="form-select md-select" data-autosubmit aria-label="الترتيب">
 							<option value="relevance" selected?={ filter.SortBy == "" || filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
@@ -165,18 +165,18 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						<div class="md-range">
 							<span class="md-range-label">نطاق السعر (ج.م)</span>
 							<div class="md-range-pair">
-								<input type="number" step="0.5" name="min_price" value={ formatOptionalMoney(filter.MinPrice) } class="form-input" placeholder="من" aria-label="أقل سعر"/>
+								<input type="number" min="0" step="0.5" name="min_price" value={ formatOptionalMoney(filter.MinPrice) } class="form-input" placeholder="من" aria-label="أقل سعر"/>
 								<span class="md-range-dash">—</span>
-								<input type="number" step="0.5" name="max_price" value={ formatOptionalMoney(filter.MaxPrice) } class="form-input" placeholder="إلى" aria-label="أعلى سعر"/>
+								<input type="number" min="0" step="0.5" name="max_price" value={ formatOptionalMoney(filter.MaxPrice) } class="form-input" placeholder="إلى" aria-label="أعلى سعر"/>
 							</div>
 						</div>
 
 						<div class="md-range">
 							<span class="md-range-label">نسبة الخصم (%)</span>
 							<div class="md-range-pair">
-								<input type="number" step="1" name="min_discount" value={ formatOptionalFloat(filter.MinDiscount) } class="form-input" placeholder="من" aria-label="أقل خصم"/>
+								<input type="number" min="0" max="100" step="1" name="min_discount" value={ formatOptionalFloat(filter.MinDiscount) } class="form-input" placeholder="من" aria-label="أقل خصم"/>
 								<span class="md-range-dash">—</span>
-								<input type="number" step="1" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder="إلى" aria-label="أعلى خصم"/>
+								<input type="number" min="0" max="100" step="1" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder="إلى" aria-label="أعلى خصم"/>
 							</div>
 						</div>
 

@@ -3,6 +3,16 @@ package i18n
 func loadPharmacyUIKeysA(e *engine) {
 	// Product details page & breadcrumb
 	addKey(e, "product.title_suffix", "product", "تفاصيل عرض التوريد", "Supply Offer Details", "Page title suffix")
+	addKey(e, "product.specifications_title", "product", "المواصفات والبيانات المتاحة", "Available product details", "Product specification section")
+	addKey(e, "product.concentration", "product", "التركيز:", "Strength:", "Concentration label")
+	addKey(e, "product.packing_unit", "product", "وحدة التعبئة:", "Pack unit:", "Unit label")
+	addKey(e, "product.description_title", "product", "الوصف:", "Description:", "Description label")
+	addKey(e, "product.supplier_label", "product", "المورد:", "Supplier:", "Supplier label")
+	addKey(e, "product.image_unavailable", "product", "صورة الصنف غير متاحة", "Product image unavailable", "Missing image fallback")
+	addKey(e, "product.select_offer", "product", "اختر المورد والسعر", "Choose supplier and price", "Offer selection label")
+	addKey(e, "product.select_offer_help", "product", "يعرض الصندوق تفاصيل المورد الذي اخترته", "The purchase panel reflects the selected supplier", "Offer selection description")
+	addKey(e, "product.image_zoom", "product", "تكبير صورة الصنف في نافذة مستقلة", "Open product image in a new tab", "Product image zoom link")
+	addKey(e, "market.search.warehouse", "market", "ابحث باسم المستودع", "Search warehouses", "Warehouse search label")
 	addKey(e, "product.sponsored_banner_title", "product", "صنف برعاية ممولة / أولوية في سرعة التوريد والتوصيل", "Sponsored Product / Priority Supply & Rapid Delivery", "Sponsored banner title")
 	addKey(e, "product.sponsored_banner_desc", "product", "هذا العرض مقدم برعاية مورد معتمد لضمان وفرة المخزون وسرعة الشحن لصيدليتك", "This offer is sponsored by a certified supplier ensuring stock availability and rapid fulfillment to your pharmacy.", "Sponsored banner description")
 	addKey(e, "product.sponsored_ad", "product", "إعلان ممول", "Sponsored", "Sponsored ad badge")

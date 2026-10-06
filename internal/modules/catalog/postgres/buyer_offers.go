@@ -158,8 +158,10 @@ func (r *Repository) ListBuyerOffers(
 		userSort = "v.price DESC, v.id ASC"
 	case "newest":
 		userSort = "v.created_at DESC, v.id ASC"
-	case "discount":
+	case "discount", "discount_desc":
 		userSort = "v.discount DESC, v.id ASC"
+	case "name":
+		userSort = "COALESCE(NULLIF(p.name->>'ar', ''), p.name->>'en') ASC, v.id ASC"
 	default:
 		userSort = "p.sold_times DESC, v.id ASC"
 	}

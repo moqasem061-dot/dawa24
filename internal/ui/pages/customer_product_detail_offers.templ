@@ -23,7 +23,6 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 					<span class="badge badge-slate text-xs font-bold">{ fmt.Sprintf(i18n.T(lang, "product.suppliers_count"), len(offers)) }</span>
 				</h3>
 			</div>
-
 			<div class="table-container m-0 overflow-x-auto">
 				<table class="data-table m-0 text-xs w-full">
 					<thead>
@@ -44,9 +43,6 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 								<td>
 									<div class="font-bold text-primary text-xs d-flex items-center gap-1.5">
 										<span>{ off.SupplierName }</span>
-										if off.IsVerified {
-											<span class="badge badge-emerald text-2xs font-bold">{ i18n.T(lang, "product.badge_certified") }</span>
-										}
 									</div>
 									<div class="d-flex items-center gap-2 text-2xs text-muted mt-0.5">
 										if off.BranchName != "" {
@@ -69,7 +65,6 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 										}
 									</div>
 								</td>
-
 								<!-- Public Price -->
 								<td class="text-end tabular-nums font-bold text-xs text-primary">
 									if off.OldPrice.IsPositive() {
@@ -78,18 +73,16 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 										{ fmt.Sprintf("%s %s", off.Price.String(), i18n.T(lang, "common.currency_egp")) }
 									}
 								</td>
-
 								<!-- Discount Percentage -->
 								<td class="text-center">
 									if off.DiscountBPS > 0 {
 										<span class="badge badge-emerald text-xs font-black tabular-nums">
-											{ fmt.Sprintf("%d%%", int(float64(off.DiscountBPS)/100.0 + 0.5)) }
+											{ fmt.Sprintf("%d%%", int((off.DiscountBPS+50)/100)) }
 										</span>
 									} else {
 										<span class="text-xs text-muted font-medium">0%</span>
 									}
 								</td>
-
 								<!-- Net Price -->
 								<td class="text-end tabular-nums text-xs">
 									<div class="font-black text-brand">{ fmt.Sprintf("%s %s", off.Price.String(), i18n.T(lang, "common.currency_egp")) }</div>
@@ -97,7 +90,6 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 										<span class="badge badge-amber text-2xs font-bold mt-0.5">{ i18n.T(lang, "product.negotiable") }</span>
 									}
 								</td>
-
 								<!-- Stock -->
 								<td class="text-xs">
 									if off.AvailableStock > 0 {
@@ -106,7 +98,6 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 										<span class="text-danger font-bold">{ i18n.T(lang, "product.stock_depleted") }</span>
 									}
 								</td>
-
 								<!-- Coverage -->
 								<td class="text-center">
 									if off.IsCovered {
@@ -115,18 +106,18 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 										<span class="badge badge-rose text-xs font-bold">{ i18n.T(lang, "product.badge_not_covered") }</span>
 									}
 								</td>
-
 								<!-- Action -->
 								<td class="col-actions">
 									if off.CanAddToCart {
 										<div class="d-flex items-center justify-center gap-1">
 											<form method="POST" action="/cart/add" hx-post="/cart/add" hx-swap="none" class="d-flex items-center justify-center gap-1 m-0">
-												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", off.VariantID) } />
-												<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", product.ID) } />
-												<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", off.SupplierID) } />
-												<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", off.SupplierID) } />
-												<input type="hidden" name="offer_price" value={ off.Price.String() } />
-												<input type="hidden" name="qty" value={ fmt.Sprintf("%d", max(1, off.MinOrderQty)) } />
+												<input type="hidden" name="variant_id" value={ fmt.Sprintf("%d", off.VariantID) }/>
+												<input type="hidden" name="product_id" value={ fmt.Sprintf("%d", product.ID) }/>
+												<input type="hidden" name="offer_id" value={ fmt.Sprintf("%d", off.OfferID) }/>
+												<input type="hidden" name="organization_id" value={ fmt.Sprintf("%d", off.SupplierID) }/>
+												<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", off.SupplierID) }/>
+												<input type="hidden" name="offer_price" value={ off.Price.String() }/>
+												<input type="hidden" name="qty" value={ fmt.Sprintf("%d", max(1, off.MinOrderQty)) }/>
 												<button type="submit" class="btn btn-primary btn-xs font-bold px-3">
 													<span>{ i18n.T(lang, "product.btn_add_to_cart") }</span>
 												</button>
@@ -138,7 +129,7 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 													data-variant-id={ fmt.Sprintf("%d", off.VariantID) }
 													data-product-id={ fmt.Sprintf("%d", product.ID) }
 													data-vendor-id={ fmt.Sprintf("%d", off.SupplierID) }
-													data-product-name={ productTitle(product) }
+													data-product-name={ localizedProductTitle(product, lang) }
 													data-current-price={ off.Price.String() }
 													data-min-qty={ fmt.Sprintf("%d", max(1, off.MinOrderQty)) }
 													data-on-click="openNegotiationModal(this)"
@@ -158,7 +149,7 @@ templ CustomerProductDetailOffersTable(product *catalog.Product, offers []Suppli
 													data-variant-id={ fmt.Sprintf("%d", off.VariantID) }
 													data-product-id={ fmt.Sprintf("%d", product.ID) }
 													data-vendor-id={ fmt.Sprintf("%d", off.SupplierID) }
-													data-product-name={ productTitle(product) }
+													data-product-name={ localizedProductTitle(product, lang) }
 													data-current-price={ off.Price.String() }
 													data-min-qty={ fmt.Sprintf("%d", max(1, off.MinOrderQty)) }
 													data-on-click="openNegotiationModal(this)"
