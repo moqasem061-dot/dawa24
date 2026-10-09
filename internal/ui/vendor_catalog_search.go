@@ -60,7 +60,7 @@ func (h *UIHandler) VendorCatalogSearchJSON(w http.ResponseWriter, r *http.Reque
 }
 
 func (h *UIHandler) searchCentralCatalog(ctx context.Context, query, lang string) ([]vendorCatalogSearchResult, error) {
-	products, err := h.catSvc.Search(ctx, catalog.SearchParams{Query: query, Limit: 20})
+	products, err := h.catSvc.Search(ctx, catalog.SearchParams{Query: query, Limit: 20, SkipStockPriority: true})
 	if err != nil {
 		return nil, err
 	}

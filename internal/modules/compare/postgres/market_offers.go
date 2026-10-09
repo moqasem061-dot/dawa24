@@ -50,7 +50,7 @@ func (r *Repository) LoadMarketOffers(
 		WHERE f.deleted_at IS NULL
 		  AND f.status = 'ready'
 		  AND f.is_temp_warehouse = FALSE
-		  AND r.price > 0
+		  AND (r.price > 0 OR r.discount > 0)
 		  AND ($1::bigint IS NULL OR f.organization_id = $1)
 		  AND ($2::bigint IS NULL OR r.file_id <> $2)
 		  AND ($4::text IS NULL OR LOWER(TRIM(f.supplier_name)) <> LOWER(TRIM($4)))

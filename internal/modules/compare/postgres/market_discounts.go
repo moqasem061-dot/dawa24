@@ -54,20 +54,11 @@ const marketWarehouseFrom = `
 // no org.organizations row to read a trade name from.
 const marketWarehouseSupplierSQL = `COALESCE(NULLIF(TRIM(f.supplier_name), ''), f.original_filename)`
 
-// marketWarehouseDiscountSQL is the discount a card may show.
-//
-// It is clamped to 0 outside 0..100, and that is not defensive tidying: 6,182
-// of the 46,862 live rows carry exactly 100.00, which is a column that was
-// mapped to the wrong place rather than a supplier giving stock away. Those
-// rows are what produced the "46,000 lines at 100% خصم / 0.00 ج.م" this board
-// was once abandoned over.
-//
-// Every use goes through this — the column, the sort and the range filter — so
-// the board cannot rank by a number it refuses to print. Sorting by the raw
-// column put all 6,182 of them on page one of "الأعلى خصماً", each showing 0%.
+// marketWarehouseDiscountSQL preserves valid imported percentage points,
+// including zero and 100. Incorrect mappings must be fixed at import time.
 const marketWarehouseDiscountSQL = `
-	CASE WHEN COALESCE(r.discount, 0) > 0 AND COALESCE(r.discount, 0) < 100
-	     THEN r.discount ELSE 0 END`
+ CASE WHEN COALESCE(r.discount, 0) >= 0 AND COALESCE(r.discount, 0) <= 100
+      THEN COALESCE(r.discount, 0) ELSE 0 END`
 
 // marketWarehouseNetSQL is the price after the sheet's discount.
 //
@@ -76,8 +67,9 @@ const marketWarehouseDiscountSQL = `
 // columns were mapped before the mapping was corrected.
 const marketWarehouseNetSQL = `
 	CASE
+	  WHEN r.discount = 100 THEN 0
 	  WHEN COALESCE(r.price_after_discount, 0) > 0 THEN r.price_after_discount
-	  WHEN COALESCE(r.discount, 0) > 0 AND COALESCE(r.discount, 0) < 100
+	  WHEN COALESCE(r.discount, 0) > 0 AND COALESCE(r.discount, 0) <= 100
 	    THEN ROUND(r.price * (100.0 - r.discount) / 100.0, 2)
 	  ELSE r.price
 	END`

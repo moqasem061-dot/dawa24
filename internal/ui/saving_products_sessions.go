@@ -163,7 +163,7 @@ func (s *SavingImportSessionStore) ListSessions(orgID int64) []*SavingImportSess
 	var list []*SavingImportSession
 	for _, sess := range s.sessions {
 		if sess.OrgID == orgID && time.Now().Before(sess.ExpiresAt) {
-			list = append(list, sess)
+			list = append(list, savingSessionSnapshot(sess))
 		}
 	}
 	sort.Slice(list, func(i, j int) bool {
@@ -181,7 +181,7 @@ func (s *SavingImportSessionStore) GetSession(id string, orgID int64) (*SavingIm
 	if !ok || sess.OrgID != orgID || time.Now().After(sess.ExpiresAt) {
 		return nil, false
 	}
-	return sess, true
+	return savingSessionSnapshot(sess), true
 }
 
 // GetSessionForAdmin retrieves an active session by ID without tenant ownership restriction for platform staff.
@@ -193,7 +193,7 @@ func (s *SavingImportSessionStore) GetSessionForAdmin(id string) (*SavingImportS
 	if !ok || time.Now().After(sess.ExpiresAt) {
 		return nil, false
 	}
-	return sess, true
+	return savingSessionSnapshot(sess), true
 }
 
 func (s *SavingImportSessionStore) cleanupExpired() {

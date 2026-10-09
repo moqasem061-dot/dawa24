@@ -96,7 +96,7 @@ func inspectXLSX(content []byte, cfg Options) (err error) {
 			continue
 		}
 		for rows.Next() {
-			cols, cErr := rows.Columns()
+			cols, cErr := rows.Columns(excelize.Options{RawCellValue: true})
 			if cErr != nil {
 				break
 			}

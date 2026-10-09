@@ -210,3 +210,32 @@ product. Each remains a separate card with its own supplier, prices and discount
 counts and pagination include every eligible offer. Unmatched offers remain
 visible, with no catalog button. Catalog candidate IDs are deduplicated only for
 search lookup; offer rows are never collapsed by product.
+
+## Literal discount comparisons and bounded uploads (2026-10-09)
+
+Discount comparisons now rank by the imported percentage points, independently
+of list or net price. Head-to-head equality compares integer hundredths of a
+point, avoiding binary rounding that could hide a 0.01 difference. Multi-supplier
+winners use the highest discount; equal discounts use net price as a tie-breaker.
+Market benchmark counts and detail lists share one classification and choose
+one highest-discount offer per supplier, normalizing case and whitespace.
+
+XLSX comparison uploads, temporary warehouses, previews, remapping and review
+read stored cell values without Excel display formatting. A stored `0.25`
+remains `0.25`, including when its Excel style displays `25%`. Text `25%` means
+25 percentage points. Parsing is shared across both upload paths and supports
+Arabic digits and decimal separators. No fraction-to-percent rescaling occurs.
+Out-of-range or malformed cells retain the existing zero fallback rather than
+being clamped into fabricated 100% offers. Database precision remains two
+fraction digits; higher precision is rounded by the existing decimal parser.
+
+Valid 100% discounts remain visible on the market board. Discount benchmarking
+includes discount-only rows; monetary intelligence still excludes unusable
+zero-net offers from its price baseline. Percentage displays and market filter
+URLs preserve both fractional digits instead of rounding to one.
+
+Detached comparison parsing is bounded to four concurrent files across requests.
+Queued files get a fresh processing deadline after acquiring a slot. Late failure
+updates use the guarded repository operation and a separate short context, so
+completed/remapped/archived files cannot be overwritten by a stale failure.
+Mapping previews inspect at most 200 rows after the mandatory security scan.

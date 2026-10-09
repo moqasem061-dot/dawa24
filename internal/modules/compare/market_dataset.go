@@ -216,6 +216,16 @@ func (o MarketOffer) Usable() bool {
 
 // BuildMarketDataset groups a flat offer list by product.
 func BuildMarketDataset(offers []MarketOffer) *MarketDataset {
+	return buildMarketDataset(offers, false)
+}
+
+// Discount comparisons include discount-only rows and valid 100% values.
+// Price intelligence retains its positive net-price requirement.
+func buildDiscountDataset(offers []MarketOffer) *MarketDataset {
+	return buildMarketDataset(offers, true)
+}
+
+func buildMarketDataset(offers []MarketOffer, discountsOnly bool) *MarketDataset {
 	ds := &MarketDataset{
 		Products:           make(map[string]*MarketProduct),
 		RejectedBySupplier: map[string]int{},
@@ -226,7 +236,11 @@ func BuildMarketDataset(offers []MarketOffer) *MarketDataset {
 		if o.NetPrice.IsZero() && o.Price.IsPositive() {
 			o.NetPrice = CalculatePriceAfterDiscount(o.Price, o.Discount)
 		}
-		if !o.Usable() {
+		valid := o.Usable()
+		if discountsOnly {
+			valid = validDiscount(o.Discount)
+		}
+		if !valid {
 			ds.Rejected++
 			if s := strings.TrimSpace(o.SupplierName); s != "" {
 				ds.RejectedBySupplier[s]++

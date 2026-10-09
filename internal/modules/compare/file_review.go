@@ -36,7 +36,7 @@ func (s *Service) detectReviewColumns(ctx context.Context, file *CompareFile) er
 	if err != nil {
 		return err
 	}
-	rows, err := sheet.ReadRows(contents, file.OriginalFilename)
+	rows, err := sheet.ReadRows(contents, file.OriginalFilename, sheet.WithRawCellValues())
 	if err != nil {
 		return err
 	}

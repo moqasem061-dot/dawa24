@@ -3,7 +3,6 @@ package compare
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
@@ -26,25 +25,14 @@ import (
 // average: "the market averages 12%" tells a supplier nothing about whether
 // they are beaten by one outlier or by forty houses.
 
-// equalToleranceBPS is how close two net prices must be to count as the
-// same offer.
-//
-// Half a per cent. Pharmaceutical list prices are set to the piastre and
-// carried through discount arithmetic, so two suppliers quoting "the same"
-// price routinely differ by a few piastres of rounding. Treating that as a win
-// or a loss produces a comparison where nothing is ever equal.
-const equalToleranceBPS = 50 // 0.5%
-
-// Benchmark classifications. These are stated in terms of the net price a
-// pharmacy pays, not the discount percentage: a 40% discount off an inflated
-// list is not a better offer, and the old code classified on the discount alone.
+// Benchmark classifications use literal imported percentage points.
+// Prices and savings remain independent informational figures.
 const (
-	// BenchHigher — your price is above the market's best. This is the saving
-	// opportunity, and it is what أسعارك أعلى من السوق means.
+	// BenchHigher — the market offers a higher discount than yours.
 	BenchHigher = "higher"
-	// BenchEqual — your price sits within tolerance of the market's best.
+	// BenchEqual — your discount equals the market's best.
 	BenchEqual = "equal"
-	// BenchBetter — you are the cheapest offer in the market for this product.
+	// BenchBetter — your discount exceeds every competing discount.
 	BenchBetter = "better"
 	// BenchExclusive — nobody else in the market carries this product.
 	BenchExclusive = "exclusive"
@@ -65,12 +53,12 @@ type BenchmarkRow struct {
 	YourNet      money.Amount `json:"your_net"`
 
 	// BetterOffers, EqualOffers and WorseOffers count the market's offers
-	// against this row's own net price.
+	// against this row's own discount.
 	BetterOffers int `json:"better_offers"`
 	EqualOffers  int `json:"equal_offers"`
 	WorseOffers  int `json:"worse_offers"`
 
-	// BestSupplier and its figures are the market's cheapest offer for this
+	// BestSupplier and its figures are the market's highest-discount offer for this
 	// product, excluding the supplier's own file.
 	BestSupplier string       `json:"best_supplier,omitempty"`
 	BestNet      money.Amount `json:"best_net"`
@@ -163,7 +151,7 @@ func (s *Service) RunMarketBenchmark(
 	if err != nil {
 		return nil, fmt.Errorf("compare: load market offers: %w", err)
 	}
-	ds := BuildMarketDataset(offers)
+	ds := buildDiscountDataset(offers)
 
 	result := &BenchmarkResult{
 		FileID:          filter.FileID,
@@ -184,7 +172,7 @@ func (s *Service) RunMarketBenchmark(
 
 	all := make([]*BenchmarkRow, 0, len(mine))
 	for _, r := range mine {
-		if r == nil || !r.Price.IsPositive() {
+		if r == nil || !validDiscount(r.Discount) {
 			continue
 		}
 		row := benchmarkRow(r, ds, file.SupplierName)
@@ -246,27 +234,13 @@ func benchmarkRow(r *CompareFileRow, ds *MarketDataset, supplierName string) *Be
 		return row
 	}
 
-	tolerance := net.ApplyPercent(equalToleranceBPS).Minor()
-	seen := map[string]bool{}
 	var validOffers []MarketOffer
-	for _, o := range p.Offers {
-		// Never benchmark against the supplier itself
-		if supplierName != "" && strings.EqualFold(strings.TrimSpace(o.SupplierName), strings.TrimSpace(supplierName)) {
-			continue
-		}
-		// One vote per supplier: a house that uploaded the same list twice must
-		// not count as two better offers.
-		if o.SupplierName != "" {
-			if seen[o.SupplierName] {
-				continue
-			}
-			seen[o.SupplierName] = true
-		}
+	for _, o := range benchmarkCompetitors(p, supplierName) {
 		validOffers = append(validOffers, o)
-		switch d := o.NetPrice.Minor() - net.Minor(); {
-		case d < -tolerance:
+		switch discountBucket(o.Discount, r.Discount) {
+		case BucketBetter:
 			row.BetterOffers++
-		case d > tolerance:
+		case BucketWorse:
 			row.WorseOffers++
 		default:
 			row.EqualOffers++
@@ -281,7 +255,7 @@ func benchmarkRow(r *CompareFileRow, ds *MarketDataset, supplierName string) *Be
 	// Find best competitor offer
 	best := validOffers[0]
 	for _, o := range validOffers[1:] {
-		if cheaper(o, best) {
+		if o.Discount > best.Discount {
 			best = o
 		}
 	}

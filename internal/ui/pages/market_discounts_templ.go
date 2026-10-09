@@ -84,20 +84,20 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var3 string
 			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.ResolveAttributeValue(templ.GetNonce(ctx))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 41, Col: 37}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 41, Col: 37}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var3)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\n\t\t\tdawaData('marketDiscountsData', function (a0, a1) {\n\t\t\t\treturn { showMoreFilters: a0, currentView: a1, setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } };\n\t\t\t});\n\t\t</script> <div class=\"page-container\" x-data=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\r\n\t\t\t// Moved out of x-data: the CSP build of Alpine cannot parse methods.\r\n\t\t\tdawaData('marketDiscountsData', function (a0, a1) {\r\n\t\t\t\treturn { showMoreFilters: a0, currentView: a1, setView(v) { this.currentView = v; localStorage.setItem('d24_market_view', v); }, init() { const saved = localStorage.getItem('d24_market_view'); if (saved && (saved === 'list' || saved === 'grid')) { this.currentView = saved; } } };\r\n\t\t\t});\r\n\t\t</script> <div class=\"page-container\" x-data=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(components.AlpineCall("marketDiscountsData", (filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 49, Col: 179}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 49, Col: 179}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 			if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", result.TotalCount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 66, Col: 69}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 66, Col: 69}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -131,7 +131,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var6 string
 			templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%d", len(result.AvailableSuppliers)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 70, Col: 82}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 70, Col: 82}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 			if templ_7745c5c3_Err != nil {
@@ -144,7 +144,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscount(calculateMaxDiscount(result.Items)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 74, Col: 83}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 74, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 			if templ_7745c5c3_Err != nil {
@@ -157,7 +157,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(strconv.Itoa(marketDiscountsLimit(filter)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 83, Col: 89}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 83, Col: 89}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
@@ -170,7 +170,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.ResolveAttributeValue(filter.Query)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 90, Col: 27}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 90, Col: 27}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var9)
 			if templ_7745c5c3_Err != nil {
@@ -183,7 +183,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "market.search.placeholder"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 92, Col: 62}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 92, Col: 62}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var10)
 			if templ_7745c5c3_Err != nil {
@@ -196,7 +196,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var11 string
 			templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.ResolveAttributeValue(filter.Supplier)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 100, Col: 66}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 100, Col: 66}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var11)
 			if templ_7745c5c3_Err != nil {
@@ -209,7 +209,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var12 string
 			templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "market.search.warehouse"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 100, Col: 183}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 100, Col: 183}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var12)
 			if templ_7745c5c3_Err != nil {
@@ -222,7 +222,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "market.search.warehouse"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 100, Col: 238}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 100, Col: 238}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var13)
 			if templ_7745c5c3_Err != nil {
@@ -240,7 +240,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(sup)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 103, Col: 27}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 103, Col: 27}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 				if templ_7745c5c3_Err != nil {
@@ -268,7 +268,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "market.search.relevance"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 108, Col: 140}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 108, Col: 140}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -375,7 +375,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.ResolveAttributeValue(formatOptionalMoney(filter.MinPrice))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 168, Col: 109}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 168, Col: 109}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var16)
 			if templ_7745c5c3_Err != nil {
@@ -388,7 +388,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(formatOptionalMoney(filter.MaxPrice))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 170, Col: 109}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 170, Col: 109}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {
@@ -401,7 +401,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.ResolveAttributeValue(formatOptionalFloat(filter.MinDiscount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 177, Col: 123}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 177, Col: 123}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var18)
 			if templ_7745c5c3_Err != nil {
@@ -414,7 +414,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.ResolveAttributeValue(formatOptionalFloat(filter.MaxDiscount))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 179, Col: 123}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 179, Col: 123}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var19)
 			if templ_7745c5c3_Err != nil {
@@ -450,7 +450,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var20 string
 					templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(marketProductName(item, lang))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 210, Col: 73}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 210, Col: 73}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 					if templ_7745c5c3_Err != nil {
@@ -468,7 +468,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var21 string
 						templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "market.search.file_name"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 212, Col: 78}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 212, Col: 78}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 						if templ_7745c5c3_Err != nil {
@@ -481,7 +481,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var22 string
 						templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.JoinStringErrs(item.ProductName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 212, Col: 111}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 212, Col: 111}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var22))
 						if templ_7745c5c3_Err != nil {
@@ -499,7 +499,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var23 string
 					templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(item.SupplierName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 215, Col: 84}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 215, Col: 84}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 					if templ_7745c5c3_Err != nil {
@@ -512,7 +512,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var24 string
 					templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(item.UploadedAt.Format("2006-01-02"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 217, Col: 48}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 217, Col: 48}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 					if templ_7745c5c3_Err != nil {
@@ -530,7 +530,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var25 string
 						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.OriginalPrice))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 226, Col: 95}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 226, Col: 95}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 						if templ_7745c5c3_Err != nil {
@@ -563,7 +563,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 							var templ_7745c5c3_Var26 string
 							templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscount(item.DiscountPercent))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 236, Col: 100}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 236, Col: 100}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 							if templ_7745c5c3_Err != nil {
@@ -581,7 +581,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 							var templ_7745c5c3_Var27 string
 							templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscount(item.DiscountPercent))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 238, Col: 93}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 238, Col: 93}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 							if templ_7745c5c3_Err != nil {
@@ -609,7 +609,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var28 string
 						templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.PriceAfterDiscount))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 246, Col: 100}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 246, Col: 100}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 						if templ_7745c5c3_Err != nil {
@@ -627,7 +627,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var29 string
 						templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.OriginalPrice))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 248, Col: 95}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 248, Col: 95}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 						if templ_7745c5c3_Err != nil {
@@ -678,7 +678,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var30 string
 					templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(item.SupplierName)
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 269, Col: 83}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 269, Col: 83}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 					if templ_7745c5c3_Err != nil {
@@ -691,7 +691,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var31 string
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(item.UploadedAt.Format("2006-01-02"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 271, Col: 47}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 271, Col: 47}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 					if templ_7745c5c3_Err != nil {
@@ -704,7 +704,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 					var templ_7745c5c3_Var32 string
 					templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(marketProductName(item, lang))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 275, Col: 79}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 275, Col: 79}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 					if templ_7745c5c3_Err != nil {
@@ -722,7 +722,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var33 string
 						templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "market.search.file_name"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 277, Col: 78}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 277, Col: 78}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 						if templ_7745c5c3_Err != nil {
@@ -735,7 +735,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var34 string
 						templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(item.ProductName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 277, Col: 111}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 277, Col: 111}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 						if templ_7745c5c3_Err != nil {
@@ -758,7 +758,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var35 string
 						templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.OriginalPrice))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 285, Col: 127}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 285, Col: 127}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 						if templ_7745c5c3_Err != nil {
@@ -791,7 +791,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 							var templ_7745c5c3_Var36 string
 							templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscount(item.DiscountPercent))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 295, Col: 51}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 295, Col: 51}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 							if templ_7745c5c3_Err != nil {
@@ -809,7 +809,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 							var templ_7745c5c3_Var37 string
 							templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscount(item.DiscountPercent))
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 300, Col: 51}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 300, Col: 51}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 							if templ_7745c5c3_Err != nil {
@@ -837,7 +837,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var38 string
 						templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.PriceAfterDiscount))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 309, Col: 123}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 309, Col: 123}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 						if templ_7745c5c3_Err != nil {
@@ -855,7 +855,7 @@ func MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare.
 						var templ_7745c5c3_Var39 string
 						templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(formatDiscountPrice(item.OriginalPrice))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 311, Col: 118}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 311, Col: 118}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
 						if templ_7745c5c3_Err != nil {
@@ -965,7 +965,7 @@ func marketRowAction(item *compare.MarketDiscountRow) templ.Component {
 			var templ_7745c5c3_Var41 templ.SafeURL
 			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 351, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 351, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
 			if templ_7745c5c3_Err != nil {
@@ -1017,7 +1017,7 @@ func marketCardAction(item *compare.MarketDiscountRow) templ.Component {
 			var templ_7745c5c3_Var43 templ.SafeURL
 			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(fmt.Sprintf("/catalog/%d", *item.MatchedProductID)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `pages/market_discounts.templ`, Line: 364, Col: 75}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/market_discounts.templ`, Line: 364, Col: 75}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
 			if templ_7745c5c3_Err != nil {
@@ -1069,10 +1069,10 @@ func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) ur
 		q.Set("max_price", f.MaxPrice.String())
 	}
 	if f.MinDiscount != nil {
-		q.Set("min_discount", fmt.Sprintf("%.1f", *f.MinDiscount))
+		q.Set("min_discount", strconv.FormatFloat(*f.MinDiscount, 'f', -1, 64))
 	}
 	if f.MaxDiscount != nil {
-		q.Set("max_discount", fmt.Sprintf("%.1f", *f.MaxDiscount))
+		q.Set("max_discount", strconv.FormatFloat(*f.MaxDiscount, 'f', -1, 64))
 	}
 	if view != "" {
 		q.Set("view", view)
@@ -1084,7 +1084,7 @@ func formatOptionalFloat(val *float64) string {
 	if val == nil {
 		return ""
 	}
-	return fmt.Sprintf("%.1f", *val)
+	return strconv.FormatFloat(*val, 'f', -1, 64)
 }
 
 func formatDiscount(pct float64) string {

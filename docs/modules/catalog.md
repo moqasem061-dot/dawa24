@@ -274,3 +274,24 @@ The savings products import (`catalog.saving_products`) enables pharmacies, vend
 
 
 
+
+## Catalog query work (2026-10-09)
+
+Master-catalog administration and vendor linking opt out of stock-priority
+sorting: these screens manage or identify products, so they do not need a
+correlated stock existence check for every search result before pagination.
+Buyer browsing retains its availability behavior.
+
+Buyer catalog sponsorship ranking aggregates active, approved, unexpired
+promotions once by product/variant target. The two joins share that aggregate,
+using the highest applicable tier. Overlapping promotions cannot duplicate
+buyer offers or change pagination totals. The repository integration fixture
+covers duplicate variant promotions, a product promotion and an expired tier.
+This change preserves buyer coverage, institutional-work and tenant predicates.
+
+The admin import upload page fetches its category chooser and recent-session
+history concurrently, keeping these independent reads off each other's latency path.
+
+Saving-products import session reads return snapshots of mutable progress
+metadata and editable row fields under the store lock. This fixes a race between
+background completion and HTTP progress/review reads, detected by the race suite.

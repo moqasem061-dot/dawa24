@@ -82,6 +82,10 @@ func productFilterArgs(params catalog.SearchParams) []any {
 
 // productListSQL is the page: the filter, the ranking, then LIMIT $13 OFFSET $14.
 func productListSQL(params catalog.SearchParams) string {
+	prefix, suffix := searchOrderPrefix(params.Query, params.Sort), searchOrderSuffix(params.Query)
+	if params.SkipStockPriority {
+		prefix, suffix = "", ""
+	}
 	return `
 		SELECT id, public_id, organization_id, category_id, brand_id, branch_id,
 		       name, description, sku, barcode, price, discount, old_price, image,
@@ -92,7 +96,7 @@ func productListSQL(params catalog.SearchParams) string {
 		FROM catalog.products
 		WHERE ` + productFilterSQL + `
 		ORDER BY
-		  ` + searchOrderPrefix(params.Query, params.Sort) + `
+		  ` + prefix + `
 		  CASE
 		    WHEN $1::text = '' THEN 0
 		    WHEN platform.normalize_arabic(name->>'ar') ILIKE platform.normalize_arabic($1) || '%' THEN 1
@@ -109,7 +113,7 @@ func productListSQL(params catalog.SearchParams) string {
 		      OR strpos(lower(COALESCE(barcode, '')), lower($1)) > 0 THEN 10
 		    ELSE 11
 		  END,
-		  ` + searchOrderSuffix(params.Query) + catalogOrderBy(params.Sort) + `
+		  ` + suffix + catalogOrderBy(params.Sort) + `
 		LIMIT $13 OFFSET $14;`
 }
 

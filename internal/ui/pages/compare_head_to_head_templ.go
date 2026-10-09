@@ -974,9 +974,9 @@ func CompareHeadToHeadContent(data HeadToHeadPageData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var54 string
-					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", r.YourDiscount))
+					templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(formatBenchPercent(r.YourDiscount) + "%")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 482, Col: 51}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 482, Col: 54}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
 					if templ_7745c5c3_Err != nil {
@@ -1002,9 +1002,9 @@ func CompareHeadToHeadContent(data HeadToHeadPageData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var55 string
-					templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", r.CompetitorDiscount))
+					templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(formatBenchPercent(r.CompetitorDiscount) + "%")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 493, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 493, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 					if templ_7745c5c3_Err != nil {
@@ -1030,9 +1030,9 @@ func CompareHeadToHeadContent(data HeadToHeadPageData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var56 string
-					templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", r.CompetitorDiscount))
+					templ_7745c5c3_Var56, templ_7745c5c3_Err = templ.JoinStringErrs(formatBenchPercent(r.CompetitorDiscount) + "%")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 504, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 504, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var56))
 					if templ_7745c5c3_Err != nil {
@@ -1058,9 +1058,9 @@ func CompareHeadToHeadContent(data HeadToHeadPageData) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var57 string
-					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("%.1f%%", r.CompetitorDiscount))
+					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.JoinStringErrs(formatBenchPercent(r.CompetitorDiscount) + "%")
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 515, Col: 57}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/compare_head_to_head.templ`, Line: 515, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var57))
 					if templ_7745c5c3_Err != nil {
@@ -1113,7 +1113,7 @@ func CompareHeadToHeadContent(data HeadToHeadPageData) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\">\n\t\tfunction exportHeadToHeadToCSV() {\n\t\t\tvar table = document.getElementById(\"head-to-head-table\");\n\t\t\tif (!table) return;\n\t\t\tvar rows = table.querySelectorAll(\"tr\");\n\t\t\tvar csv = [];\n\t\t\tfor (var i = 0; i < rows.length; i++) {\n\t\t\t\tvar row = [], cols = rows[i].querySelectorAll(\"td, th\");\n\t\t\t\tfor (var j = 0; j < cols.length; j++) {\n\t\t\t\t\tvar data = cols[j].innerText.replace(/(\\r\\n|\\n|\\r)/gm, \" \").trim();\n\t\t\t\t\tdata = data.replace(/\"/g, '\"\"');\n\t\t\t\t\trow.push('\"' + data + '\"');\n\t\t\t\t}\n\t\t\t\tcsv.push(row.join(\",\"));\n\t\t\t}\n\t\t\tvar csvFile = new Blob([\"\\uFEFF\" + csv.join(\"\\n\")], { type: \"text/csv;charset=utf-8;\" });\n\t\t\tvar downloadLink = document.createElement(\"a\");\n\t\t\tdownloadLink.download = \"head_to_head_comparison.csv\";\n\t\t\tdownloadLink.href = window.URL.createObjectURL(csvFile);\n\t\t\tdownloadLink.style.display = \"none\";\n\t\t\tdocument.body.appendChild(downloadLink);\n\t\t\tdownloadLink.click();\n\t\t\tdocument.body.removeChild(downloadLink);\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "\">\r\n\t\tfunction exportHeadToHeadToCSV() {\r\n\t\t\tvar table = document.getElementById(\"head-to-head-table\");\r\n\t\t\tif (!table) return;\r\n\t\t\tvar rows = table.querySelectorAll(\"tr\");\r\n\t\t\tvar csv = [];\r\n\t\t\tfor (var i = 0; i < rows.length; i++) {\r\n\t\t\t\tvar row = [], cols = rows[i].querySelectorAll(\"td, th\");\r\n\t\t\t\tfor (var j = 0; j < cols.length; j++) {\r\n\t\t\t\t\tvar data = cols[j].innerText.replace(/(\\r\\n|\\n|\\r)/gm, \" \").trim();\r\n\t\t\t\t\tdata = data.replace(/\"/g, '\"\"');\r\n\t\t\t\t\trow.push('\"' + data + '\"');\r\n\t\t\t\t}\r\n\t\t\t\tcsv.push(row.join(\",\"));\r\n\t\t\t}\r\n\t\t\tvar csvFile = new Blob([\"\\uFEFF\" + csv.join(\"\\n\")], { type: \"text/csv;charset=utf-8;\" });\r\n\t\t\tvar downloadLink = document.createElement(\"a\");\r\n\t\t\tdownloadLink.download = \"head_to_head_comparison.csv\";\r\n\t\t\tdownloadLink.href = window.URL.createObjectURL(csvFile);\r\n\t\t\tdownloadLink.style.display = \"none\";\r\n\t\t\tdocument.body.appendChild(downloadLink);\r\n\t\t\tdownloadLink.click();\r\n\t\t\tdocument.body.removeChild(downloadLink);\r\n\t\t}\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

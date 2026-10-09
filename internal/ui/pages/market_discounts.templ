@@ -400,10 +400,10 @@ func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) ur
 		q.Set("max_price", f.MaxPrice.String())
 	}
 	if f.MinDiscount != nil {
-		q.Set("min_discount", fmt.Sprintf("%.1f", *f.MinDiscount))
+		q.Set("min_discount", strconv.FormatFloat(*f.MinDiscount, 'f', -1, 64))
 	}
 	if f.MaxDiscount != nil {
-		q.Set("max_discount", fmt.Sprintf("%.1f", *f.MaxDiscount))
+		q.Set("max_discount", strconv.FormatFloat(*f.MaxDiscount, 'f', -1, 64))
 	}
 	if view != "" {
 		q.Set("view", view)
@@ -415,7 +415,7 @@ func formatOptionalFloat(val *float64) string {
 	if val == nil {
 		return ""
 	}
-	return fmt.Sprintf("%.1f", *val)
+	return strconv.FormatFloat(*val, 'f', -1, 64)
 }
 
 func formatDiscount(pct float64) string {

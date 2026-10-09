@@ -169,14 +169,22 @@ func (s *Service) UploadAndProcessCompareFile(
 // on the file.
 func (s *Service) StageUploadedRows(ctx context.Context, file *CompareFile, fileBytes []byte) error {
 	// 1. Read all rows from file using universal spreadsheet reader
-	allRows, err := sheet.ReadRows(fileBytes, file.OriginalFilename)
+	allRows, err := sheet.ReadRows(fileBytes, file.OriginalFilename, sheet.WithRawCellValues())
 	if err != nil || len(allRows) == 0 {
-		file.Status = FileFailed
+		processing := file.Status == FileProcessing
 		file.ErrorMessage = i18n.TDefault("w4_mod.s_375_375")
 		if err != nil && strings.Contains(err.Error(), filesecurity.SecurityErrorMessage) {
 			file.ErrorMessage = filesecurity.SecurityErrorMessage
 		}
-		_ = s.repo.UpdateFile(ctx, file)
+		if processing {
+			s.failStaging(ctx, file, file.ErrorMessage)
+		} else {
+			file.Status = FileFailed
+			if updateErr := s.repo.UpdateFile(ctx, file); updateErr != nil {
+				return fmt.Errorf("compare: record parse failure: %w", updateErr)
+			}
+		}
+		file.Status = FileFailed
 		return err
 	}
 
@@ -291,7 +299,7 @@ func (s *Service) parseSpreadsheet(reader io.Reader, file *CompareFile) ([]*Comp
 		return nil, fmt.Errorf("read spreadsheet data: %w", err)
 	}
 
-	allRows, err := sheet.ReadRows(data, file.OriginalFilename)
+	allRows, err := sheet.ReadRows(data, file.OriginalFilename, sheet.WithRawCellValues())
 	if err != nil {
 		return nil, fmt.Errorf("read spreadsheet: %w", err)
 	}

@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"fmt"
-	"math"
 	"mime/multipart"
 	"os"
 	"strings"
@@ -130,7 +129,10 @@ func (h *UIHandler) registerTempWarehouseFile(
 				h.failTempWarehouse(runCtx, &staged, i18n.T("ar", "admin.temp_warehouse.insufficient_rows"))
 			}
 		}()
-		h.stageTempWarehouseFile(runCtx, &staged, customCode, customName, customPrice, customDiscount)
+		// Queue time must not consume the parsing deadline of a later file.
+		workCtx, stop := context.WithTimeout(context.WithoutCancel(runCtx), tempWarehouseStageTimeout)
+		defer stop()
+		h.stageTempWarehouseFile(workCtx, &staged, customCode, customName, customPrice, customDiscount)
 	}()
 
 	return tempWarehouseUploadResult{
@@ -184,7 +186,7 @@ func (h *UIHandler) stageTempWarehouseFile(
 		return
 	}
 
-	rawRows, err := sheet.ReadRows(fileBytes, file.OriginalFilename)
+	rawRows, err := sheet.ReadRows(fileBytes, file.OriginalFilename, sheet.WithRawCellValues())
 	if err != nil || len(rawRows) < 2 {
 		msg := i18n.T("ar", "admin.temp_warehouse.insufficient_rows")
 		if err != nil && strings.Contains(err.Error(), filesecurity.SecurityErrorMessage) {
@@ -251,9 +253,7 @@ func buildTempWarehouseRows(
 		}
 		discountPct := 0.0
 		if discountCol >= 0 && discountCol < len(row) {
-			if d, err := parsePriceFloat(row[discountCol]); err == nil && d >= 0 {
-				discountPct = math.Min(d, 100)
-			}
+			discountPct = compare.ParseImportDiscount(row[discountCol])
 		}
 		priceAfter := compare.CalculatePriceAfterDiscount(price, discountPct)
 

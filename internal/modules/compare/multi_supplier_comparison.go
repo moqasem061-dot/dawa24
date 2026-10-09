@@ -192,7 +192,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 					compRow.GroupBasis = "not_comparable"
 				} else if !compRow.NotComparable {
 					offer.PriceAfterDiscount = convertedNet
-					if convertedNet.Minor() < compRow.BestNetPrice.Minor() || (convertedNet.Minor() == compRow.BestNetPrice.Minor() && r.Discount > compRow.BestDiscount) {
+					if r.Discount > compRow.BestDiscount || (r.Discount == compRow.BestDiscount && convertedNet.Minor() < compRow.BestNetPrice.Minor()) {
 						compRow.BestNetPrice = convertedNet
 						compRow.BestPrice = r.Price
 						compRow.BestDiscount = r.Discount
@@ -256,8 +256,8 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 
 			compRow.Offers[f.SupplierName] = offer
 
-			// Update best offer if this supplier has a better (lower) net price or higher discount
-			if netPrice.Minor() < compRow.BestNetPrice.Minor() || (netPrice.Minor() == compRow.BestNetPrice.Minor() && r.Discount > compRow.BestDiscount) {
+			// Highest imported discount wins; net price breaks identical percentage ties.
+			if r.Discount > compRow.BestDiscount || (r.Discount == compRow.BestDiscount && netPrice.Minor() < compRow.BestNetPrice.Minor()) {
 				compRow.BestNetPrice = netPrice
 				compRow.BestPrice = r.Price
 				compRow.BestDiscount = r.Discount

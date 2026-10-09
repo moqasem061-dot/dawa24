@@ -29,8 +29,9 @@ const sheetUnzipLimit = 1 << 30
 const sheetProbeRows = 200
 
 type xlsxBook struct {
-	f     *excelize.File
-	sheet string
+	f             *excelize.File
+	sheet         string
+	rawCellValues bool
 }
 
 func (x *xlsxBook) close() error {
@@ -103,7 +104,7 @@ func (b *Book) openXLSX() (err error) {
 	b.source.Sheet = b.source.Sheets[best].Name
 	b.source.TotalRows = b.source.Sheets[best].Rows
 	b.source.Estimated = true
-	b.xlsx = &xlsxBook{f: f, sheet: b.source.Sheet}
+	b.xlsx = &xlsxBook{f: f, sheet: b.source.Sheet, rawCellValues: b.rawCellValues}
 	return nil
 }
 
@@ -120,7 +121,7 @@ func probeSheet(f *excelize.File, name string) (cells, width, seen int) {
 
 	for rows.Next() {
 		seen++
-		cols, cErr := rows.Columns()
+		cols, cErr := rows.Columns(excelize.Options{RawCellValue: true})
 		if cErr != nil {
 			break
 		}
@@ -160,7 +161,7 @@ func (x *xlsxBook) walk(fn RowFunc) (err error) {
 
 	index := 0
 	for rows.Next() {
-		cols, cErr := rows.Columns()
+		cols, cErr := rows.Columns(excelize.Options{RawCellValue: x.rawCellValues})
 		if cErr != nil {
 			return fmt.Errorf("تعذر قراءة الصف %d من ورقة العمل «%s»: %w", index+1, x.sheet, cErr)
 		}

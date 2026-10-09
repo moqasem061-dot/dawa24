@@ -479,7 +479,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 									<td class="text-center tabular-nums">
 										if r.YourDiscount > 0 {
 											<span class="text-sm font-black text-primary tabular-nums">
-												{ fmt.Sprintf("%.1f%%", r.YourDiscount) }
+												{ formatBenchPercent(r.YourDiscount) + "%" }
 											</span>
 										} else {
 											<span class="text-muted text-sm font-semibold">0%</span>
@@ -490,7 +490,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeCompetitorBetter {
 											<span class="text-danger font-black text-sm tabular-nums">
-												{ fmt.Sprintf("%.1f%%", r.CompetitorDiscount) }
+												{ formatBenchPercent(r.CompetitorDiscount) + "%" }
 											</span>
 										} else {
 											<span class="text-muted text-sm font-semibold">—</span>
@@ -501,7 +501,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeEqual {
 											<span class="text-sky-500 font-black text-sm tabular-nums">
-												{ fmt.Sprintf("%.1f%%", r.CompetitorDiscount) }
+												{ formatBenchPercent(r.CompetitorDiscount) + "%" }
 											</span>
 										} else {
 											<span class="text-muted text-sm font-semibold">—</span>
@@ -512,7 +512,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeYourBetter {
 											<span class="text-emerald-500 font-black text-sm tabular-nums">
-												{ fmt.Sprintf("%.1f%%", r.CompetitorDiscount) }
+												{ formatBenchPercent(r.CompetitorDiscount) + "%" }
 											</span>
 										} else {
 											<span class="text-muted text-sm font-semibold">—</span>

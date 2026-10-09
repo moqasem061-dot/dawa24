@@ -276,8 +276,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 			if notComparable {
 				outcome = OutcomeNotComparable
 			} else {
-				discDiff := sr.Discount - tr.Discount
-				if math.Abs(discDiff) < 0.01 {
+				if discountBucket(sr.Discount, tr.Discount) == BucketEqual {
 					outcome = OutcomeEqual
 					equalCount++
 				} else if sr.Discount > tr.Discount {

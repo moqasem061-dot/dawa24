@@ -44,6 +44,10 @@ import (
 // which cannot be read at all does not hold a goroutine for ever.
 const stageTimeout = 20 * time.Minute
 
+// Bound detached parsing across requests so a bulk upload cannot exhaust the
+// database pool and CPU needed by catalog and market searches.
+var compareStageQueue = make(chan struct{}, 4)
+
 // StagedFile is what the caller learns immediately about one uploaded file.
 type StagedFile struct {
 	File     *CompareFile
@@ -134,7 +138,16 @@ func (s *Service) RegisterAndStage(
 			}
 		}()
 
-		if err := s.StageUploadedRows(runCtx, &staging, bytes); err != nil {
+		select {
+		case compareStageQueue <- struct{}{}:
+		case <-runCtx.Done():
+			s.failStaging(runCtx, &staging, i18n.TDefault("w4_mod.s_375_375"))
+			return
+		}
+		defer func() { <-compareStageQueue }()
+		workCtx, stop := context.WithTimeout(context.WithoutCancel(runCtx), stageTimeout)
+		defer stop()
+		if err := s.StageUploadedRows(workCtx, &staging, bytes); err != nil {
 			s.log.ErrorContext(runCtx, "compare staging failed",
 				"file", staging.ID, "error", err)
 			// StageUploadedRows records its own failure on the row; this only
@@ -151,12 +164,12 @@ func (s *Service) RegisterAndStage(
 // failStaging records that a staging pass ended badly, so the screen stops
 // waiting and says why.
 func (s *Service) failStaging(ctx context.Context, file *CompareFile, message string) {
-	file.Status = FileFailed
-	file.ErrorMessage = message
-	if err := s.repo.UpdateFile(ctx, file); err != nil {
-		s.log.ErrorContext(ctx, "could not record compare staging failure",
-			"file", file.ID, "error", err)
+	failureCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), 10*time.Second)
+	defer cancel()
+	if err := s.repo.FailFileStaging(failureCtx, file, message); err != nil {
+		s.log.ErrorContext(failureCtx, "could not record compare staging failure", "file", file.ID, "error", err)
 	}
+
 }
 
 // StagingStatus is one file's readiness, for the screen waiting on a batch.

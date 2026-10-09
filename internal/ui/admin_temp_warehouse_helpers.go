@@ -1,13 +1,10 @@
 package ui
 
 import (
-	"fmt"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // detectTempWarehouseCols determines column indices based on header names or custom inputs.
@@ -90,56 +87,4 @@ func hasDuplicateTempWarehouseColumns(cfg compare.MappingConfig) bool {
 		used = append(used, *column)
 	}
 	return false
-}
-
-// parsePriceFloat parses a numeric string into float64, converting Arabic numerals and commas.
-func parsePriceFloat(raw string) (float64, error) {
-	s := strings.TrimSpace(raw)
-	if s == "" {
-		return 0, fmt.Errorf("empty string")
-	}
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_39_39"), "0")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_40_40"), "1")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_41_41"), "2")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_42_42"), "3")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_43_43"), "4")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_44_44"), "5")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_45_45"), "6")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_46_46"), "7")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_47_47"), "8")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_48_48"), "9")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_49_49"), ".")
-	s = strings.ReplaceAll(s, "%", "")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_50_50"), "")
-	s = strings.ReplaceAll(s, i18n.TDefault("w4_ui.s_51_51"), "")
-	s = strings.ReplaceAll(s, "EGP", "")
-	s = strings.ReplaceAll(s, "egp", "")
-	s = strings.ReplaceAll(s, "LE", "")
-	s = strings.ReplaceAll(s, "le", "")
-	s = strings.TrimSpace(s)
-
-	if strings.Contains(s, ",") && strings.Contains(s, ".") {
-		s = strings.ReplaceAll(s, ",", "")
-	} else if strings.Contains(s, ",") {
-		s = strings.ReplaceAll(s, ",", ".")
-	}
-
-	var numStr strings.Builder
-	hasDot := false
-	foundDigit := false
-	for _, r := range s {
-		if r >= '0' && r <= '9' {
-			numStr.WriteRune(r)
-			foundDigit = true
-		} else if r == '.' && !hasDot {
-			numStr.WriteRune(r)
-			hasDot = true
-		} else if foundDigit && r != ' ' && r != '\t' {
-			break
-		}
-	}
-	if !foundDigit {
-		return 0, fmt.Errorf("no digit found")
-	}
-	return strconv.ParseFloat(numStr.String(), 64)
 }

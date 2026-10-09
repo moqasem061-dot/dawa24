@@ -3,8 +3,10 @@ package pages
 import (
 	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
 // MarketBenchmarkPageData contains data for comparing list prices against the broader market.
@@ -153,12 +155,12 @@ func benchmarkTabClass(active, tab string) string {
 	return "tab-btn"
 }
 
-func benchmarkRowLabel(class string) string {
+func benchmarkRowLabel(class, lang string) string {
 	switch class {
 	case compare.BenchHigher:
-		return "سعرك أعلى"
+		return i18n.T(lang, "compare.discount.lower")
 	case compare.BenchBetter:
-		return "أنت الأفضل"
+		return i18n.T(lang, "compare.discount.higher")
 	case compare.BenchEqual:
 		return "مماثل للسوق"
 	}
@@ -168,10 +170,7 @@ func benchmarkRowLabel(class string) string {
 // formatBenchPercent strips unnecessary trailing decimal zeros so a clean
 // column of discounts reads as 20% and 12.5%, not 20.0% and 12.5%.
 func formatBenchPercent(pct float64) string {
-	if pct == float64(int64(pct)) {
-		return fmt.Sprintf("%d", int64(pct))
-	}
-	return fmt.Sprintf("%.1f", pct)
+	return strconv.FormatFloat(pct, 'f', -1, 64)
 }
 
 // benchmarkVerdictTone colours the one-word standing on the product name.

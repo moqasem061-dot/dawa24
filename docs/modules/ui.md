@@ -86,3 +86,10 @@ all eighteen existing UI/session browser tests passed. Repository lint/static
 gates still report unrelated existing issues: swallowed handler errors, an
 unsupported Alpine expression in `admin_match_policies.templ`, undefined class
 ratchets, and noctx/staticcheck findings outside the changed delivery code.
+
+## Discount display and previews (2026-10-09)
+
+Discount comparison labels describe percentage comparisons. Display helpers and
+market-discount filter URLs retain hundredths of a percentage point, including
+0.25 and 12.34. Warehouse mapping previews use a 200-row sample instead of
+materializing the entire sheet; full spreadsheet security checks remain enabled.

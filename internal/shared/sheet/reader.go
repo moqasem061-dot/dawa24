@@ -106,9 +106,10 @@ func looksLikeHTML(content []byte) bool {
 // its sheet index read, but no worksheet body is parsed until Peek or Walk asks
 // for one.
 type Book struct {
-	format  Format
-	content []byte
-	source  Source
+	format        Format
+	content       []byte
+	rawCellValues bool
+	source        Source
 
 	// xlsx holds the excelize handle for OOXML workbooks; nil otherwise.
 	xlsx *xlsxBook
@@ -120,7 +121,8 @@ type Book struct {
 
 // OpenConfig configures spreadsheet opening.
 type OpenConfig struct {
-	AllowEmails bool
+	AllowEmails   bool
+	RawCellValues bool
 	// AllowURLs is for the one importer whose file is a list of addresses.
 	// See filesecurity.Options.AllowURLs.
 	AllowURLs bool
@@ -142,6 +144,11 @@ func WithAllowEmails(allow bool) OpenOption {
 	return func(c *OpenConfig) {
 		c.AllowEmails = allow
 	}
+}
+
+// WithRawCellValues preserves stored numbers without Excel display formatting.
+func WithRawCellValues() OpenOption {
+	return func(c *OpenConfig) { c.RawCellValues = true }
 }
 
 // Open decodes a file's container and index.
@@ -184,7 +191,7 @@ func Open(content []byte, filename string, opts ...OpenOption) (book *Book, err 
 	}
 
 	detectedFormat := DetectWithFilename(actualContent, filename)
-	b := &Book{format: detectedFormat, content: actualContent}
+	b := &Book{format: detectedFormat, content: actualContent, rawCellValues: cfg.RawCellValues}
 	b.source.Format = b.format
 	b.source.SizeBytes = len(actualContent)
 

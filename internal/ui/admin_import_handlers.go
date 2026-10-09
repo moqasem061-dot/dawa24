@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"sync"
 
 	"github.com/go-chi/chi/v5"
 
@@ -71,11 +72,15 @@ func (h *UIHandler) renderImportConfigure(
 	ctx := r.Context()
 	lang, dir := h.localeAndDir(r)
 
-	view := pages.NewImportConfigureView(
-		h.importCategories(ctx),
-		h.recentImportSessions(ctx),
-		h.aiAvailable(ctx),
-	)
+	// Independent reads: import history must not delay loading the taxonomy.
+	var categories []catalog.TaxonomyOption
+	var sessions []*catalog.ImportSession
+	var reads sync.WaitGroup
+	reads.Add(2)
+	go func() { defer reads.Done(); categories = h.importCategories(ctx) }()
+	go func() { defer reads.Done(); sessions = h.recentImportSessions(ctx) }()
+	reads.Wait()
+	view := pages.NewImportConfigureView(categories, sessions, h.aiAvailable(ctx))
 	view.Fatal, view.FatalDetail = seed.Fatal, seed.FatalDetail
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")

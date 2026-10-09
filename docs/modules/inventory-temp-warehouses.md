@@ -60,3 +60,12 @@ my, team, user, plan and legacy warehouse route handlers.
 Migration 243 adds the raw-name/catalog-name trigram indexes and catalog-link
 index. Existing stored warehouses gain decisions when reprocessed/remapped;
 this change does not silently rematch production history during migration.
+
+## Upload processing and discount precision (2026-10-09)
+
+All admin temporary-warehouse upload variants share the literal discount parser
+and raw XLSX cell reader used by comparison imports. Invalid percentages above
+100 are no longer clamped to 100. Parsing deadlines begin afresh after waiting
+for a background worker slot, so earlier files cannot consume a later file's
+processing budget. Column previews stop after a bounded sample; file security
+validation still inspects the workbook before decoding it.

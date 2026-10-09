@@ -161,10 +161,10 @@ func ClassifyMarketComparison(supplierNet, marketNet money.Amount, supplierDisco
 	if !hasMarketOffer {
 		return MarketFilterExclusives
 	}
-	if supplierNet.Minor() < marketNet.Minor() || supplierDiscount > marketDiscount {
+	if discountBucket(supplierDiscount, marketDiscount) == BucketBetter {
 		return MarketFilterHigherDiscount
 	}
-	if supplierNet.Minor() > marketNet.Minor() || supplierDiscount < marketDiscount {
+	if discountBucket(supplierDiscount, marketDiscount) == BucketWorse {
 		return MarketFilterLowerDiscount
 	}
 	return MarketFilterEqualToMarket

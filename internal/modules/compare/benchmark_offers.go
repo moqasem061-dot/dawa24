@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
@@ -22,12 +21,11 @@ import (
 type BenchmarkBucket string
 
 const (
-	// BucketBetter — offers cheaper than yours. This is the column that matters:
-	// these are the suppliers a pharmacy would buy from instead of you.
+	// BucketBetter — offers with a larger discount than yours.
 	BucketBetter BenchmarkBucket = "better"
-	// BucketEqual — offers within the equality tolerance of your net price.
+	// BucketEqual — offers with the same imported discount.
 	BucketEqual BenchmarkBucket = "equal"
-	// BucketWorse — offers dearer than yours.
+	// BucketWorse — offers with a smaller discount.
 	BucketWorse BenchmarkBucket = "worse"
 )
 
@@ -126,39 +124,19 @@ func (s *Service) BenchmarkRowOffers(
 	if err != nil {
 		return nil, fmt.Errorf("compare: load market offers: %w", err)
 	}
-	ds := BuildMarketDataset(offers)
+	ds := buildDiscountDataset(offers)
 
 	p, ok := ds.Lookup(target.MatchedProductID, target.RawName)
 	if !ok || len(p.Offers) == 0 {
 		return out, nil
 	}
 
-	tolerance := net.ApplyPercent(equalToleranceBPS).Minor()
-	seen := map[string]bool{}
-	for _, o := range p.Offers {
-		if file.SupplierName != "" && strings.EqualFold(strings.TrimSpace(o.SupplierName), strings.TrimSpace(file.SupplierName)) {
-			continue
-		}
-		// One vote per supplier, exactly as the count was made.
-		if name := strings.TrimSpace(o.SupplierName); name != "" {
-			if seen[name] {
-				continue
-			}
-			seen[name] = true
-		}
+	for _, o := range benchmarkCompetitors(p, file.SupplierName) {
 		d := o.NetPrice.Minor() - net.Minor()
-		var in bool
-		switch {
-		case d < -tolerance:
-			in = bucket == BucketBetter
-		case d > tolerance:
-			in = bucket == BucketWorse
-		default:
-			in = bucket == BucketEqual
-		}
-		if !in {
+		if discountBucket(o.Discount, target.Discount) != bucket {
 			continue
 		}
+
 		out.Offers = append(out.Offers, BenchmarkOffer{
 			SupplierName: o.SupplierName,
 			ProductName:  o.ProductName,
@@ -171,12 +149,12 @@ func (s *Service) BenchmarkRowOffers(
 		})
 	}
 
-	// Cheapest first: whatever bucket this is, the reader is comparing prices.
+	// Highest discount first; net price breaks identical percentage ties.
 	sort.SliceStable(out.Offers, func(i, j int) bool {
-		if out.Offers[i].NetPrice.Minor() != out.Offers[j].NetPrice.Minor() {
-			return out.Offers[i].NetPrice.Minor() < out.Offers[j].NetPrice.Minor()
+		if out.Offers[i].Discount != out.Offers[j].Discount {
+			return out.Offers[i].Discount > out.Offers[j].Discount
 		}
-		return out.Offers[i].Discount > out.Offers[j].Discount
+		return out.Offers[i].NetPrice.Minor() < out.Offers[j].NetPrice.Minor()
 	})
 	return out, nil
 }

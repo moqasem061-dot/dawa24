@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"strconv"
+"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
@@ -17,7 +18,7 @@ import (
 // market discount tells a supplier nothing about whether one outlier or forty
 // houses are undercutting them, and the previous version of this page showed
 // only an average — over a market of a hundred rows.
-templ CompareMarketBenchmarkContent(data MarketBenchmarkPageData) {
+templ CompareMarketBenchmarkContent(data MarketBenchmarkPageData, lang string) {
 	<div class="page-container">
 		<!-- Admin Target Organization Banner -->
 		if data.IsAdmin {
@@ -58,9 +59,9 @@ templ CompareMarketBenchmarkContent(data MarketBenchmarkPageData) {
 				اختر إحدى قوائمك من القائمة أعلاه لبدء المقارنة مع السوق.
 			</div>
 		} else {
-			@benchmarkSummary(data.Result)
-			@benchmarkTabs(data)
-			@benchmarkTable(data)
+			@benchmarkSummary(data.Result, lang)
+			@benchmarkTabs(data, lang)
+			@benchmarkTable(data, lang)
 			@benchmarkCoverage(data.Result)
 		}
 		<!-- Where the offers modal is swapped in. Empty until a count is clicked. -->
@@ -177,7 +178,7 @@ templ benchmarkControls(data MarketBenchmarkPageData) {
 	</div>
 }
 
-templ benchmarkSummary(res *compare.BenchmarkResult) {
+templ benchmarkSummary(res *compare.BenchmarkResult, lang string) {
 	<div class="dashboard-stat-grid mb-6">
 		<div class="stat-card-3d">
 			<div class="stat-card-label">أصناف قائمتك</div>
@@ -185,9 +186,9 @@ templ benchmarkSummary(res *compare.BenchmarkResult) {
 			<span class="text-xs text-secondary mt-1 d-block">{ res.SupplierName }</span>
 		</div>
 		<div class="stat-card-3d">
-			<div class="stat-card-label text-danger">أسعارك أعلى من السوق</div>
+			<div class="stat-card-label text-danger">{ i18n.T(lang, "compare.discount.lower") }</div>
 			<div class="stat-card-value text-danger tabular-nums">{ fmt.Sprintf("%d", res.HigherCount) }</div>
-			<span class="text-xs text-secondary mt-1 d-block">فرص توفير لعملائك</span>
+			<span class="text-xs text-secondary mt-1 d-block">{ i18n.T(lang, "compare.discount.competitors") }</span>
 		</div>
 		<div class="stat-card-3d">
 			<div class="stat-card-label text-success">أنت الأفضل بالسوق</div>
@@ -206,13 +207,13 @@ templ benchmarkSummary(res *compare.BenchmarkResult) {
 	</div>
 }
 
-templ benchmarkTabs(data MarketBenchmarkPageData) {
+templ benchmarkTabs(data MarketBenchmarkPageData, lang string) {
 	<div class="tabs-nav mb-4">
 		<a href={ templ.SafeURL(benchmarkURL(data, "all", data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, "all") }>
 			الكل ({ fmt.Sprintf("%d", data.Result.Total) })
 		</a>
 		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchHigher, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchHigher) }>
-			أسعارك أعلى من السوق ({ fmt.Sprintf("%d", data.Result.HigherCount) })
+			{ i18n.T(lang, "compare.discount.lower") } ({ fmt.Sprintf("%d", data.Result.HigherCount) })
 		</a>
 		<a href={ templ.SafeURL(benchmarkURL(data, compare.BenchEqual, data.Sort)) } class={ benchmarkTabClass(data.ActiveTab, compare.BenchEqual) }>
 			مماثل للسوق ({ fmt.Sprintf("%d", data.Result.EqualCount) })
@@ -229,15 +230,15 @@ templ benchmarkTabs(data MarketBenchmarkPageData) {
 templ CompareMarketBenchmarkPage(lang, dir string, data MarketBenchmarkPageData) {
 	if data.IsAdmin {
 		@layouts.AdminShell("مقارنة مع موردي السوق | Dawa24", "org_imports", lang, dir) {
-			@CompareMarketBenchmarkContent(data)
+			@CompareMarketBenchmarkContent(data, lang)
 		}
 	} else if data.IsCustomer {
 		@layouts.ShellFor("مقارنة مع موردي السوق | Dawa24", "compare", lang, dir, authctx.FromContext(ctx)) {
-			@CompareMarketBenchmarkContent(data)
+			@CompareMarketBenchmarkContent(data, lang)
 		}
 	} else {
 		@layouts.VendorShell("مقارنة مع موردي السوق | Dawa24", "compare", lang, dir) {
-			@CompareMarketBenchmarkContent(data)
+			@CompareMarketBenchmarkContent(data, lang)
 		}
 	}
 }

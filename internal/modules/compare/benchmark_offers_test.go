@@ -10,20 +10,19 @@ import (
 // They are computed by two different code paths over the same data; if those
 // paths drift, a badge saying 3 opens a list of 4 and the screen is lying.
 func TestBucketPartitionMatchesTheCounts(t *testing.T) {
-	yourNet := money.FromMinor(10000) // 100.00
+	yourDiscount := 20.0
 
 	offers := []MarketOffer{
-		{SupplierName: "أرخص أ", NetPrice: money.FromMinor(8000)},
-		{SupplierName: "أرخص ب", NetPrice: money.FromMinor(9000)},
-		{SupplierName: "مماثل أ", NetPrice: money.FromMinor(10000)},
+		{SupplierName: "أرخص أ", Discount: 40, NetPrice: money.FromMinor(8000)},
+		{SupplierName: "أرخص ب", Discount: 30, NetPrice: money.FromMinor(9000)},
+		{SupplierName: "مماثل أ", Discount: 20, NetPrice: money.FromMinor(10000)},
 		{SupplierName: "أغلى أ", NetPrice: money.FromMinor(12000)},
 		{SupplierName: "أغلى ب", NetPrice: money.FromMinor(15000)},
 		{SupplierName: "أغلى ج", NetPrice: money.FromMinor(20000)},
 		// A duplicate upload from a supplier already counted: one vote each.
-		{SupplierName: "أرخص أ", NetPrice: money.FromMinor(7000)},
+		{SupplierName: "أرخص أ", Discount: 50, NetPrice: money.FromMinor(7000)},
 	}
 
-	tolerance := yourNet.ApplyPercent(equalToleranceBPS).Minor()
 	counts := map[BenchmarkBucket]int{}
 	seen := map[string]bool{}
 	for _, o := range offers {
@@ -31,10 +30,10 @@ func TestBucketPartitionMatchesTheCounts(t *testing.T) {
 			continue
 		}
 		seen[o.SupplierName] = true
-		switch d := o.NetPrice.Minor() - yourNet.Minor(); {
-		case d < -tolerance:
+		switch discountBucket(o.Discount, yourDiscount) {
+		case BucketBetter:
 			counts[BucketBetter]++
-		case d > tolerance:
+		case BucketWorse:
 			counts[BucketWorse]++
 		default:
 			counts[BucketEqual]++

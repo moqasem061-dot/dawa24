@@ -334,3 +334,26 @@ func TestCompare_RetentionAndPurge(t *testing.T) {
 		t.Errorf("expected only fresh file (202) to remain, got %d files", len(files))
 	}
 }
+
+func TestBestSupplierUsesDiscountEvenWhenNetPriceIsHigher(t *testing.T) {
+	repo := newMockCompareRepo()
+	svc := compare.NewService(repo, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	var ids []int64
+	for _, tc := range []struct{ name, price, discount string }{
+		{"low price", "10", "12.34"}, {"high discount", "100", "12.35"},
+	} {
+		csv := "sku,product_name,price,discount\n1,Panadol Extra 24 tablets," + tc.price + "," + tc.discount
+		file, _, err := svc.UploadAndProcessCompareFile(context.Background(), 1, nil, tc.name, "supplier.csv", "text/csv", int64(len(csv)), "k", []byte(csv))
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, file.ID)
+	}
+	result, err := svc.RunMultiSupplierComparison(context.Background(), ids)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(result.Rows) != 1 || result.Rows[0].BestSupplier != "high discount" || result.Rows[0].BestDiscount != 12.35 {
+		t.Fatalf("incorrect discount winner: %+v", result.Rows)
+	}
+}

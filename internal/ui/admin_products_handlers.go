@@ -68,15 +68,16 @@ func (h *UIHandler) AdminProductsPage(w http.ResponseWriter, r *http.Request) {
 	if h.catSvc != nil {
 		sysCtx := database.AsSystem(ctx)
 		prods, total, err := h.catSvc.SearchWithTotal(sysCtx, catalog.SearchParams{
-			Query:        q,
-			CategoryID:   catIDPtr,
-			BrandID:      brandIDPtr,
-			Manufacturer: manufacturer,
-			Status:       status,
-			DosageForm:   dosage,
-			Limit:        limit,
-			Offset:       offset,
-			Sort:         sort,
+			Query:             q,
+			SkipStockPriority: true,
+			CategoryID:        catIDPtr,
+			BrandID:           brandIDPtr,
+			Manufacturer:      manufacturer,
+			Status:            status,
+			DosageForm:        dosage,
+			Limit:             limit,
+			Offset:            offset,
+			Sort:              sort,
 		})
 		if err == nil { // nolint:errswallow: the else branch handles it
 			products = prods

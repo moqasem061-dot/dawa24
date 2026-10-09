@@ -194,7 +194,7 @@ func (r *Repository) ListBuyerOffers(
 			return nil
 		}
 
-		selectSQL := fmt.Sprintf(`
+		selectSQL := fmt.Sprintf(buyerSponsorshipCTE+`
 			SELECT
 				v.id,
 				v.product_id,
@@ -230,8 +230,8 @@ func (r *Repository) ListBuyerOffers(
 				v.expiry_date,
 				v.is_featured,
 				v.is_negotiable,
-				COALESCE(sp.tier, 0) > 0 AS is_sponsored,
-				COALESCE(sp.tier, 0) AS sponsored_tier,
+				GREATEST(COALESCE(sv.tier, 0), COALESCE(sprod.tier, 0)) > 0 AS is_sponsored,
+				GREATEST(COALESCE(sv.tier, 0), COALESCE(sprod.tier, 0)) AS sponsored_tier,
 				v.status
 			FROM catalog.product_variants v
 			JOIN catalog.products p ON p.id = v.product_id
@@ -241,22 +241,10 @@ func (r *Repository) ListBuyerOffers(
 			LEFT JOIN platform_admin.governorates gov ON gov.id = ci.governorate_id
 			LEFT JOIN catalog.brands br ON br.id = p.brand_id AND br.deleted_at IS NULL
 			`+stockRollup+`
-			LEFT JOIN LATERAL (
-				SELECT COALESCE(MAX(op.tier_level), 0) AS tier
-				FROM promo.offer_sponsorships sp
-				JOIN promo.offer_packages op ON op.id = sp.package_id
-				WHERE sp.status = 'active'
-				  AND sp.admin_status = 'approved'
-				  AND (sp.starts_at IS NULL OR sp.starts_at <= now())
-				  AND (sp.expires_at IS NULL OR sp.expires_at >= now())
-				  AND (
-				        (sp.item_type IN ('offer', 'variant') AND COALESCE(sp.item_id, sp.offer_id) = v.id)
-				     OR (sp.item_type = 'product' AND COALESCE(sp.item_id, sp.offer_id) = v.product_id)
-				  )
-			) sp ON true
+			`+buyerSponsorshipJoins+`
 			WHERE %s
 			ORDER BY
-				sp.tier DESC,
+				GREATEST(COALESCE(sv.tier, 0), COALESCE(sprod.tier, 0)) DESC,
 				st.qty > 0 DESC,
 				%s
 			LIMIT $%d OFFSET $%d

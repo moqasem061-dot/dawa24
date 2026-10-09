@@ -207,6 +207,8 @@ func TestListBuyerOffers_Integration(t *testing.T) {
 
 	repo := postgres.NewRepository(db)
 
+	seedBuyerSponsorships(t, db, supplierAOrgID, productID, variantA)
+
 	// Test 1: Buyer queries with AllowedWorkIDs containing only workConnectedID.
 	// Expected: Only variantA returned.
 	// - variantB excluded because supplierB holds workUnconnID.
@@ -230,6 +232,9 @@ func TestListBuyerOffers_Integration(t *testing.T) {
 	for _, o := range offers {
 		if o.VariantID == variantA {
 			foundA = true
+			if !o.IsSponsored || o.SponsoredTier != 3 {
+				t.Errorf("sponsored tier = %d, want 3", o.SponsoredTier)
+			}
 		}
 		if o.VariantID == variantB {
 			t.Errorf("expected variant B to be filtered out by institutional connection mismatch")

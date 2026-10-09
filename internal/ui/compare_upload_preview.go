@@ -80,9 +80,18 @@ func (h *UIHandler) parseFilePreview(reader io.Reader, filename string) ([]strin
 	if err != nil {
 		return nil, nil, err
 	}
-	allRows, err := sheet.ReadRows(data, filename)
-	if err != nil || len(allRows) == 0 {
-		return nil, nil, fmt.Errorf("empty or unparseable spreadsheet: %w", err)
+	book, err := sheet.Open(data, filename, sheet.WithRawCellValues())
+	if err != nil {
+		return nil, nil, err
+	}
+	defer book.Close()
+	sample, err := book.Peek(200)
+	if err != nil {
+		return nil, nil, err
+	}
+	allRows := sample.Rows
+	if len(allRows) == 0 {
+		return nil, nil, fmt.Errorf("empty spreadsheet")
 	}
 
 	headerRowIdx, _, _ := compare.FindBestHeaderRow(allRows)

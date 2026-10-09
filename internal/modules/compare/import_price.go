@@ -17,3 +17,17 @@ func ParseImportPrice(raw string) money.Amount {
 	}
 	return amount
 }
+
+// ParseImportDiscount reads literal percentage points without rescaling them.
+// Invalid cells cannot become a fabricated 100% discount.
+func ParseImportDiscount(raw string) float64 {
+	decimal, err := sheet.Coerce(raw)
+	if err != nil {
+		return 0
+	}
+	amount, err := money.Parse(decimal.Canonical)
+	if err != nil || amount.Minor() < 0 || amount.Minor() > 10000 {
+		return 0
+	}
+	return float64(amount.Minor()) / 100
+}

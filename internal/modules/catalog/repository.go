@@ -26,7 +26,9 @@ type SearchParams struct {
 	Offset         int
 	AllowedWorkIDs []int64
 	FilterMode     int // 0 = Simple (dashboard/catalog), 1 = WithConnections (purchase requests)
-	InStock        bool
+	// SkipStockPriority is for master catalog administration and linking.
+	SkipStockPriority bool
+	InStock           bool
 }
 
 // VariantSearchParams holds filters for searching product variants.
