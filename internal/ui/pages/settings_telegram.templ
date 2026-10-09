@@ -68,7 +68,7 @@ templ TelegramSettingsCard(data TelegramSettingsData, lang string) {
 					<li>{ i18n.T(lang, "settings.tg_step2") }</li>
 				</ol>
 				<div>
-					<button type="button" class="btn btn-primary font-black" hx-post="/settings/telegram/link" hx-target="#telegram-settings" hx-swap="outerHTML">
+					<button type="button" class="btn btn-primary font-black" data-telegram-connect="1" hx-post="/settings/telegram/link" hx-target="#telegram-settings" hx-swap="outerHTML">
 						@components.IconSend("icon-xs")
 						<span>{ i18n.T(lang, "settings.tg_connect") }</span>
 					</button>

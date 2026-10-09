@@ -49,6 +49,10 @@ type ImportSessionStore interface {
 	// similarity tier that runs on whatever the exact identifiers missed.
 	ListMatchProducts(ctx context.Context) ([]MatchProduct, error)
 	ImportVocabulary(ctx context.Context, orgID int64) (EnrichVocabulary, error)
+	// ImportCategories is the category chooser on the upload screen. It reads
+	// only the categories; ImportVocabulary also loads the brand and dosage
+	// vocabularies, which only the enrichment pass uses.
+	ImportCategories(ctx context.Context) ([]TaxonomyOption, error)
 	// BulkCommitProducts is the write side of commit as one transaction: an
 	// optional archive of the organisation's catalogue followed by the upsert,
 	// together or not at all. archiveOrg of zero skips the archive.

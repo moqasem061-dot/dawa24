@@ -12,8 +12,9 @@ import (
 )
 
 var (
-	categoriesCache = cache.NewL1[[]*catalog.Category]()
-	brandsCache     = cache.NewL1[[]*catalog.Brand]()
+	categoriesCache  = cache.NewL1[[]*catalog.Category]()
+	brandsCache      = cache.NewL1[[]*catalog.Brand]()
+	dosageFormsCache = cache.NewL1[[]string]()
 )
 
 // CreateCategory adds a category.

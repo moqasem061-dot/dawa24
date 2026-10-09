@@ -131,12 +131,12 @@ func (h *UIHandler) importCategories(ctx context.Context) []catalog.TaxonomyOpti
 	if h.catSvc == nil {
 		return nil
 	}
-	vocab, err := h.catSvc.ImportVocabulary(database.AsSystem(ctx), 0)
+	categories, err := h.catSvc.ImportCategories(database.AsSystem(ctx))
 	if err != nil {
 		h.log.DebugContext(ctx, "import categories unavailable", "error", err)
 		return nil
 	}
-	return vocab.Categories
+	return categories
 }
 
 // recentImportSessions backs the history panel on the upload screen.

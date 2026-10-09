@@ -124,11 +124,31 @@ func loadDosageForms(ctx context.Context, tx pgx.Tx) ([]string, error) {
 }
 
 // ListDosageForms returns distinct pharmaceutical dosage forms stored in the catalog.
+//
+// The admin catalogue page asks on every visit, and loadDosageForms groups the
+// whole products table to answer. It is cached for the same minute as the brand
+// and category lists, so a new form reaches the filter about a minute after it
+// is imported.
 func (r *Repository) ListDosageForms(ctx context.Context) ([]string, error) {
-	var out []string
+	return dosageFormsCache.Remember("all", 60*time.Second, func() ([]string, error) {
+		var out []string
+		err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+			var err error
+			out, err = loadDosageForms(txCtx, tx)
+			return err
+		})
+		return out, err
+	})
+}
+
+// ImportCategories reads the active categories the upload screen offers. Unlike
+// ImportVocabulary it does not load the brand and dosage-form vocabularies,
+// which only the enrichment pass uses and which scan the whole products table.
+func (r *Repository) ImportCategories(ctx context.Context) ([]catalog.TaxonomyOption, error) {
+	var out []catalog.TaxonomyOption
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var err error
-		out, err = loadDosageForms(txCtx, tx)
+		out, err = loadCategoryOptions(txCtx, tx)
 		return err
 	})
 	return out, err

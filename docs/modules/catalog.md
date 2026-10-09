@@ -61,6 +61,33 @@ The `catalog` bounded context manages pharmaceutical products, packaging variant
 6. **Monetary Precision:** All prices and discounts are stored and computed via `money.Amount` (minor unit integer arithmetic).
 7. **Saving Products Decision (Task 0.6.1):** `catalog.saving_products` is reinstated as a distinct customer/vendor-owned list of products with quantity and price used for savings tracking and procurement optimization, distinct from time-boxed promotional discount offers.
 
+## Admin catalogue search and import screens (2026-10-09)
+
+- **One filter for rows and total.** `/admin/products` ran two separately
+  written predicates: the page had the first-word branches and trigram operators,
+  the pager's count had a `regexp_replace` branch the page lacked. A total could
+  therefore count rows the pages never list, and the last pages came up empty.
+  `productFilterSQL` (`internal/modules/catalog/postgres/search.go`) is now the
+  only WHERE body; the page adds `LIMIT $13 OFFSET $14`. `search_test.go` pins
+  the placeholder contract (twelve values, same order).
+- **Literal text.** Raw admin input is matched with `strpos(lower(…), lower(…))`
+  rather than `ILIKE`, because in an `ILIKE` pattern the typed `%` and `_` are
+  wildcards and `%` listed the whole catalogue. Normalised Arabic keeps `ILIKE`,
+  since normalisation removes those characters.
+- **Barcode and SKU** match as substrings, as the count already did and as the
+  vendor search does. The page used to match them only exactly.
+- **Dosage-form filter** is cached for 60 seconds (`dosageFormsCache`), like the
+  brand and category lists. It groups the whole products table on each read.
+- **Import upload screen** reads only the categories (`ImportCategories`). It
+  previously loaded the brand and dosage vocabularies, which scan the products
+  table, and resolved the master organisation, which can create one. Only the
+  enrichment pass still uses `ImportVocabulary`.
+
+The changed SQL has not been run against a database in this change. It is
+covered by the placeholder and wildcard tests above. An `EXPLAIN ANALYZE` of the
+page and count against production-sized data is still needed before calling the
+admin listing fast.
+
 ## Image import stability (2026-09-30)
 
 Product-image uploads publish fully initialized sessions. Column-mapping changes

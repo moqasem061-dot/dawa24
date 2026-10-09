@@ -153,6 +153,9 @@ templ Base(title string, lang string, dir string, extraCSS ...string) {
 			<script defer src={ Asset("/static/vendor/alpine-csp-3.17.3.min.js") }></script>
 			<script defer src={ Asset("/static/js/app.js") }></script>
 			<script defer src={ Asset("/static/js/session-activity.js") }></script>
+			// Settings > Telegram: the connect click opens the bot in the same tab
+			// action, so the link needs no second click. See telegram-connect.js.
+			<script defer src={ Asset("/static/js/telegram-connect.js") }></script>
 			// maps.js defines ensureLeaflet + initMapPickers. It is ~9 KB and self
 			// -contained; Leaflet itself (the ~200 KB payload) is still fetched on
 			// demand by ensureLeaflet only when a map element is present. Loading

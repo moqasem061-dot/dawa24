@@ -10,9 +10,15 @@ import (
 const marketRowSearch = `lower(platform.normalize_arabic(r.raw_name))`
 const marketCatalogSearch = `lower(platform.normalize_arabic(COALESCE(cp.name->>'ar', '') || ' ' || COALESCE(cp.name->>'en', '')))`
 
-// Literal LIKE patterns use the same normalized expressions as migration 243.
-// Each word must occur, regardless of word order; '%' and '_' are not operators
-// when a pharmacist types them into the search box.
+// Each word must occur somewhere in the name, regardless of word order, and it
+// matches as a substring of the normalised text (same expressions as migration
+// 243).
+//
+// The wildcards sit outside platform.normalize_arabic. That function turns '%',
+// '_' and '\' into spaces, so a pattern normalised whole lost its wildcards and
+// matched only a name equal to the word. Normalising the word first removes
+// every LIKE metacharacter, so the word needs no escaping, and a pharmacist's
+// '%' or '_' is literal input.
 func marketSearchFilter(filter compare.MarketDiscountsFilter) (string, []any) {
 	query := strings.TrimSpace(filter.Query)
 	if query == "" {
@@ -21,9 +27,8 @@ func marketSearchFilter(filter compare.MarketDiscountsFilter) (string, []any) {
 	args := []any{query}
 	var rowTerms, catalogTerms []string
 	for _, word := range strings.Fields(query) {
-		pattern := "%" + strings.NewReplacer(`\`, `\\`, "%", `\%`, "_", `\_`).Replace(word) + "%"
-		args = append(args, pattern)
-		param := fmt.Sprintf("lower(platform.normalize_arabic($%d))", len(args))
+		args = append(args, word)
+		param := fmt.Sprintf("('%%' || lower(platform.normalize_arabic($%d)) || '%%')", len(args))
 		rowTerms = append(rowTerms, marketRowSearch+" LIKE "+param)
 		catalogTerms = append(catalogTerms, marketCatalogSearch+" LIKE "+param)
 	}

@@ -186,6 +186,15 @@ List and grid cards lead with the localized accepted catalog name and show the
 original supplier text beneath it. The source remains ready, active temporary
 warehouses only, never private comparison uploads.
 
+**Fixed 2026-10-09: word matching lost its wildcards.** The word pattern was
+normalised as a whole, and `platform.normalize_arabic` turns `%` into a space and
+trims it. Each word therefore became an exact match on the whole name, so a
+partial query such as one word of a longer product name found nothing. The
+wildcards now sit outside the normalisation, `'%' || lower(normalize_arabic(word)) || '%'`,
+and normalisation strips every LIKE metacharacter from the word itself, so no
+escaping is needed. Regression: `TestMarketSearchKeepsWordWildcardsOutsideNormalisation`
+(`internal/modules/compare/postgres/market_search_query_test.go`).
+
 Resumable sessions require the uploader's identity and organization. Mapping
 requests must name a file belonging to that session; failed processing cannot
 report successful mapping or commit. These rules apply through the shared admin,

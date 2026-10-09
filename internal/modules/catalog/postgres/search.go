@@ -24,25 +24,93 @@ const productHasStockSQL = `EXISTS (
 // stockFirstOrder puts orderable products ahead of the rest.
 const stockFirstOrder = "(" + productHasStockSQL + ") DESC"
 
-// productSearchPredicate is the text filter for SearchProducts, or the constant TRUE when there is no text to filter on.
-func productSearchPredicate(query string) string {
-	if strings.TrimSpace(query) == "" {
-		return "TRUE"
+// productMatchSQL is the text filter. $1 is the query and $11 its first word.
+//
+// The page and its pager both read this one predicate (productFilterSQL). They
+// used to carry two separately written copies: the page had the first-word
+// branches and the trigram operators, the count had a regexp branch and
+// different thresholds. A pager that counts other rows than the page lists
+// leads to pages that are empty or missing results.
+//
+// Raw text is matched with strpos over lower(), not ILIKE. In an ILIKE pattern
+// the admin's own '%' and '_' are wildcards, so typing "%" listed the whole
+// catalogue. Normalised Arabic has those characters removed, so ILIKE is safe
+// on it. The empty query is the first disjunct and matches every row cheaply.
+const productMatchSQL = `(
+		$1::text = ''
+		OR platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($1) || '%'
+		OR strpos(lower(name->>'en'), lower($1)) > 0
+		OR strpos(lower(COALESCE(scientific_name, '')), lower($1)) > 0
+		OR strpos(lower(COALESCE(active, '')), lower($1)) > 0
+		OR strpos(lower(COALESCE(manufacturing_companies, '')), lower($1)) > 0
+		OR strpos(lower(COALESCE(sku, '')), lower($1)) > 0
+		OR strpos(lower(COALESCE(barcode, '')), lower($1)) > 0
+		OR platform.normalize_arabic($1) <% platform.normalize_arabic(name->>'ar')
+		OR platform.normalize_arabic(name->>'ar') % platform.normalize_arabic($1)
+		OR regexp_replace(platform.normalize_arabic(name->>'ar'), '[اوي]', '', 'g')
+		   ILIKE '%' || regexp_replace(platform.normalize_arabic($1), '[اوي]', '', 'g') || '%'
+		OR ($11::text <> '' AND platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($11) || '%')
+		OR ($11::text <> '' AND strpos(lower(name->>'en'), lower($11)) > 0)
+	)`
+
+// productFilterSQL is the WHERE body of both the page and its total. It binds
+// $1 to $12, in the order productFilterArgs supplies them.
+const productFilterSQL = `deleted_at IS NULL
+  AND ` + productMatchSQL + `
+  AND ($2::bigint IS NULL OR category_id = $2)
+  AND ($3::bigint IS NULL OR brand_id = $3)
+  AND ($4::numeric IS NULL OR price >= $4)
+  AND ($5::numeric IS NULL OR price <= $5)
+  AND ($6::text = '' OR status = $6)
+  AND ($7::text = '' OR strpos(lower(COALESCE(dosage_form, '')), lower($7)) > 0)
+  AND ($12::text = '' OR strpos(lower(COALESCE(manufacturing_companies, '')), lower($12)) > 0)
+  AND (
+      ($8::int = 0 AND ($9::bigint[] IS NULL OR cardinality($9::bigint[]) = 0 OR cardinality(institutional_work_ids) = 0 OR institutional_work_ids && $9))
+      OR
+      ($8::int = 1 AND ($9::bigint[] IS NOT NULL AND cardinality($9::bigint[]) > 0 AND institutional_work_ids && $9))
+  )
+  AND ($10::boolean = false OR ` + productHasStockSQL + `)`
+
+// productFilterArgs binds the values productFilterSQL names, in the same order.
+func productFilterArgs(params catalog.SearchParams) []any {
+	return []any{
+		params.Query, params.CategoryID, params.BrandID, params.MinPrice, params.MaxPrice,
+		params.Status, params.DosageForm, params.FilterMode, params.AllowedWorkIDs,
+		params.InStock, params.FirstWord, params.Manufacturer,
 	}
-	return `(
-			       platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($1) || '%'
-			       OR name->>'en' ILIKE '%' || $1 || '%'
-			       OR (scientific_name <> '' AND scientific_name ILIKE '%' || $1 || '%')
-			       OR (active <> '' AND active ILIKE '%' || $1 || '%')
-			       OR (manufacturing_companies <> '' AND manufacturing_companies ILIKE '%' || $1 || '%')
-			       OR sku = $1
-			       OR barcode = $1
-			       OR platform.normalize_arabic($1) <% platform.normalize_arabic(name->>'ar')
-			       OR platform.normalize_arabic(name->>'ar') % platform.normalize_arabic($1)
-			       OR regexp_replace(platform.normalize_arabic(name->>'ar'), '[اوي]', '', 'g') ILIKE '%' || regexp_replace(platform.normalize_arabic($1), '[اوي]', '', 'g') || '%'
-			       OR ($13 <> '' AND platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($13) || '%')
-			       OR ($13 <> '' AND name->>'en' ILIKE '%' || $13 || '%')
-			  )`
+}
+
+// productListSQL is the page: the filter, the ranking, then LIMIT $13 OFFSET $14.
+func productListSQL(params catalog.SearchParams) string {
+	return `
+		SELECT id, public_id, organization_id, category_id, brand_id, branch_id,
+		       name, description, sku, barcode, price, discount, old_price, image,
+		       image_link, status, sold_times, is_featured, dosage_form,
+		       scientific_name, pharmacology, active, concentration, unit,
+		       manufacturing_companies, COALESCE(institutional_work_ids, '{}'::bigint[]),
+		       created_at, updated_at, deleted_at
+		FROM catalog.products
+		WHERE ` + productFilterSQL + `
+		ORDER BY
+		  ` + searchOrderPrefix(params.Query, params.Sort) + `
+		  CASE
+		    WHEN $1::text = '' THEN 0
+		    WHEN platform.normalize_arabic(name->>'ar') ILIKE platform.normalize_arabic($1) || '%' THEN 1
+		    WHEN strpos(lower(name->>'en'), lower($1)) = 1 THEN 2
+		    WHEN $11::text <> '' AND platform.normalize_arabic(name->>'ar') ILIKE platform.normalize_arabic($11) || '%' THEN 3
+		    WHEN $11::text <> '' AND strpos(lower(name->>'en'), lower($11)) = 1 THEN 4
+		    WHEN platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($1) || '%' THEN 5
+		    WHEN strpos(lower(name->>'en'), lower($1)) > 0 THEN 6
+		    WHEN $11::text <> '' AND platform.normalize_arabic(name->>'ar') ILIKE '% ' || platform.normalize_arabic($11) || '%' THEN 7
+		    WHEN strpos(lower(COALESCE(scientific_name, '')), lower($1)) > 0 THEN 8
+		    WHEN strpos(lower(COALESCE(active, '')), lower($1)) > 0
+		      OR strpos(lower(COALESCE(manufacturing_companies, '')), lower($1)) > 0 THEN 9
+		    WHEN strpos(lower(COALESCE(sku, '')), lower($1)) > 0
+		      OR strpos(lower(COALESCE(barcode, '')), lower($1)) > 0 THEN 10
+		    ELSE 11
+		  END,
+		  ` + searchOrderSuffix(params.Query) + catalogOrderBy(params.Sort) + `
+		LIMIT $13 OFFSET $14;`
 }
 
 // SearchProducts performs fuzzy Arabic search and filters including institutional works.
@@ -54,48 +122,6 @@ func (r *Repository) SearchProducts(ctx context.Context, params catalog.SearchPa
 				return fmt.Errorf("catalog postgres: set trigram thresholds: %w", err)
 			}
 		}
-		query := `
-			SELECT id, public_id, organization_id, category_id, brand_id, branch_id,
-			       name, description, sku, barcode, price, discount, old_price, image,
-			       image_link, status, sold_times, is_featured, dosage_form,
-			       scientific_name, pharmacology, active, concentration, unit,
-			       manufacturing_companies, COALESCE(institutional_work_ids, '{}'::bigint[]),
-			       created_at, updated_at, deleted_at
-			FROM catalog.products
-			WHERE deleted_at IS NULL
-			  AND ` + productSearchPredicate(params.Query) + `
-		  AND ($2::bigint IS NULL OR category_id = $2)
-		  AND ($3::bigint IS NULL OR brand_id = $3)
-		  AND ($6::numeric IS NULL OR price >= $6)
-		  AND ($7::numeric IS NULL OR price <= $7)
-		  AND ($10::text = '' OR status = $10)
-		  AND ($11::text = '' OR dosage_form ILIKE '%' || $11 || '%')
-		  AND ($14::text = '' OR COALESCE(manufacturing_companies, '') ILIKE '%' || $14 || '%')
-			  AND (
-			      ($8::int = 0 AND ($9::bigint[] IS NULL OR cardinality($9::bigint[]) = 0 OR cardinality(institutional_work_ids) = 0 OR institutional_work_ids && $9))
-			      OR
-			      ($8::int = 1 AND ($9::bigint[] IS NOT NULL AND cardinality($9::bigint[]) > 0 AND institutional_work_ids && $9))
-			  )
-			  AND ($12::boolean = false OR ` + productHasStockSQL + `)
-		ORDER BY
-			  ` + searchOrderPrefix(params.Query, params.Sort) + `
-		  CASE
-		    WHEN $1 = '' THEN 0
-		    WHEN platform.normalize_arabic(name->>'ar') ILIKE platform.normalize_arabic($1) || '%' THEN 1
-		    WHEN name->>'en' ILIKE $1 || '%' THEN 2
-		    WHEN $13 <> '' AND platform.normalize_arabic(name->>'ar') ILIKE platform.normalize_arabic($13) || '%' THEN 3
-		    WHEN $13 <> '' AND name->>'en' ILIKE $13 || '%' THEN 4
-		    WHEN platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($1) || '%' THEN 5
-		    WHEN name->>'en' ILIKE '%' || $1 || '%' THEN 6
-		    WHEN $13 <> '' AND platform.normalize_arabic(name->>'ar') ILIKE '% ' || platform.normalize_arabic($13) || '%' THEN 7
-		    WHEN COALESCE(scientific_name, '') ILIKE '%' || $1 || '%' THEN 8
-		    WHEN COALESCE(active, '') ILIKE '%' || $1 || '%' OR COALESCE(manufacturing_companies, '') ILIKE '%' || $1 || '%' THEN 9
-		    WHEN sku ILIKE '%' || $1 || '%' OR barcode ILIKE '%' || $1 || '%' THEN 10
-		    ELSE 11
-		  END,
-			  ` + searchOrderSuffix(params.Query) + catalogOrderBy(params.Sort) + `
-			LIMIT $4 OFFSET $5;
-		`
 		limit := params.Limit
 		if limit <= 0 {
 			limit = 50
@@ -103,12 +129,8 @@ func (r *Repository) SearchProducts(ctx context.Context, params catalog.SearchPa
 			limit = 1000
 		}
 
-		rows, err := tx.Query(txCtx, query,
-			params.Query, params.CategoryID, params.BrandID, limit, params.Offset,
-			params.MinPrice, params.MaxPrice, params.FilterMode, params.AllowedWorkIDs,
-			params.Status, params.DosageForm, params.InStock, params.FirstWord,
-			params.Manufacturer,
-		)
+		args := append(productFilterArgs(params), limit, params.Offset)
+		rows, err := tx.Query(txCtx, productListSQL(params), args...)
 		if err != nil {
 			return fmt.Errorf("catalog postgres: search products: %w", err)
 		}
@@ -139,46 +161,18 @@ func (r *Repository) SearchProducts(ctx context.Context, params catalog.SearchPa
 }
 
 // CountProducts returns the total count of products matching search filters.
+// It filters with the same predicate as SearchProducts, so the pager's total is
+// the number of rows the pages can show.
 func (r *Repository) CountProducts(ctx context.Context, params catalog.SearchParams) (int, error) {
 	var total int
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			SELECT COUNT(*)
-			FROM catalog.products
-			WHERE deleted_at IS NULL
-			  AND ($1 = '' 
-			       OR platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($1) || '%'
-			       OR name->>'en' ILIKE '%' || $1 || '%'
-			       OR sku ILIKE '%' || $1 || '%'
-			       OR barcode ILIKE '%' || $1 || '%'
-			       OR COALESCE(scientific_name, '') ILIKE '%' || $1 || '%'
-			       OR COALESCE(active, '') ILIKE '%' || $1 || '%'
-			       OR COALESCE(manufacturing_companies, '') ILIKE '%' || $1 || '%'
-		       OR word_similarity(platform.normalize_arabic($1), platform.normalize_arabic(name->>'ar')) >= 0.25
-		       OR similarity(platform.normalize_arabic(name->>'ar'), platform.normalize_arabic($1)) >= 0.15
-		       OR regexp_replace(platform.normalize_arabic(name->>'ar'), '[اوي]', '', 'g') ILIKE '%' || regexp_replace(platform.normalize_arabic($1), '[اوي]', '', 'g') || '%'
-		       OR ($11 <> '' AND platform.normalize_arabic(name->>'ar') ILIKE '%' || platform.normalize_arabic($11) || '%')
-		       OR ($11 <> '' AND name->>'en' ILIKE '%' || $11 || '%'))
-		  AND ($2::bigint IS NULL OR category_id = $2)
-		  AND ($3::bigint IS NULL OR brand_id = $3)
-		  AND ($4::numeric IS NULL OR price >= $4)
-		  AND ($5::numeric IS NULL OR price <= $5)
-		  AND ($6::text = '' OR status = $6)
-		  AND ($7::text = '' OR dosage_form ILIKE '%' || $7 || '%')
-		  AND ($12::text = '' OR COALESCE(manufacturing_companies, '') ILIKE '%' || $12 || '%')
-			  AND (
-			      ($8::int = 0 AND ($9::bigint[] IS NULL OR cardinality($9::bigint[]) = 0 OR cardinality(institutional_work_ids) = 0 OR institutional_work_ids && $9))
-			      OR
-			      ($8::int = 1 AND ($9::bigint[] IS NOT NULL AND cardinality($9::bigint[]) > 0 AND institutional_work_ids && $9))
-			  )
-			  AND ($10::boolean = false OR ` + productHasStockSQL + `);
-		`
-		return tx.QueryRow(txCtx, query,
-			params.Query, params.CategoryID, params.BrandID,
-			params.MinPrice, params.MaxPrice, params.Status, params.DosageForm,
-			params.FilterMode, params.AllowedWorkIDs, params.InStock, params.FirstWord,
-			params.Manufacturer,
-		).Scan(&total)
+		if strings.TrimSpace(params.Query) != "" {
+			if _, err := tx.Exec(txCtx, trgmThresholdsSQL); err != nil {
+				return fmt.Errorf("catalog postgres: set trigram thresholds: %w", err)
+			}
+		}
+		query := "SELECT COUNT(*) FROM catalog.products WHERE " + productFilterSQL + ";"
+		return tx.QueryRow(txCtx, query, productFilterArgs(params)...).Scan(&total)
 	})
 	return total, err
 }

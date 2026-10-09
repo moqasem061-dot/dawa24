@@ -223,6 +223,10 @@ func (m *memoryImportStore) ImportVocabulary(context.Context, int64) (catalog.En
 	return m.vocab, nil
 }
 
+func (m *memoryImportStore) ImportCategories(context.Context) ([]catalog.TaxonomyOption, error) {
+	return m.vocab.Categories, nil
+}
+
 func (m *memoryImportStore) BulkCommitProducts(
 	_ context.Context, prods []*catalog.Product, _ catalog.BulkWriteOptions, archiveOrg int64,
 ) (int64, catalog.BulkWriteResult, error) {

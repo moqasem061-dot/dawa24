@@ -179,6 +179,16 @@ func (s *Service) ImportVocabulary(ctx context.Context, orgID int64) (EnrichVoca
 	return s.imports.ImportVocabulary(ctx, orgID)
 }
 
+// ImportCategories is the category chooser on the upload screen. The categories
+// are catalogue-wide, so no organisation is resolved, and resolving one would
+// create the master catalogue organisation as a side effect of a page view.
+func (s *Service) ImportCategories(ctx context.Context) ([]TaxonomyOption, error) {
+	if s.imports == nil {
+		return nil, ErrImportUnavailable
+	}
+	return s.imports.ImportCategories(ctx)
+}
+
 // RecentImportSessions backs the history panel on the upload screen.
 func (s *Service) RecentImportSessions(ctx context.Context, orgID int64, limit int) ([]*ImportSession, error) {
 	if s.imports == nil {

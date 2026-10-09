@@ -11,7 +11,7 @@ func loadTelegramKeys(e *engine) {
 		"Card description")
 	addKey(e, "settings.tg_disabled", ns, "لم يُفعَّل بوت تيليجرام على المنصة بعد.", "The Telegram bot is not enabled on this platform yet.", "Integration off")
 	addKey(e, "settings.tg_connect", ns, "ربط تيليجرام", "Connect Telegram", "Start linking button")
-	addKey(e, "settings.tg_step1", ns, "افتح الرابط في تيليجرام واضغط «ابدأ» (Start).", "Open the link in Telegram and press Start.", "Step 1")
+	addKey(e, "settings.tg_step1", ns, "يُفتح تيليجرام تلقائياً في تبويب جديد؛ اضغط «ابدأ» (Start) هناك.", "Telegram opens automatically in a new tab; press Start there.", "Step 1")
 	addKey(e, "settings.tg_step2", ns, "ارجع إلى هذه الصفحة وأكّد أن حساب تيليجرام الظاهر هو حسابك.", "Come back to this page and confirm the Telegram account shown is yours.", "Step 2")
 	addKey(e, "settings.tg_open", ns, "فتح تيليجرام", "Open Telegram", "Deep link button")
 	addKey(e, "settings.tg_code_expires", ns, "الرابط يعمل مرة واحدة لمدة 10 دقائق. لا تشاركه مع أحد.", "The link works once, for 10 minutes. Do not share it.", "Link validity")

@@ -198,7 +198,7 @@ func TelegramSettingsCard(data TelegramSettingsData, lang string) templ.Componen
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</li></ol><div><button type=\"button\" class=\"btn btn-primary font-black\" hx-post=\"/settings/telegram/link\" hx-target=\"#telegram-settings\" hx-swap=\"outerHTML\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</li></ol><div><button type=\"button\" class=\"btn btn-primary font-black\" data-telegram-connect=\"1\" hx-post=\"/settings/telegram/link\" hx-target=\"#telegram-settings\" hx-swap=\"outerHTML\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

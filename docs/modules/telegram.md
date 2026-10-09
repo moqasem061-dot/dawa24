@@ -36,6 +36,14 @@ message in flight.
 1. Signed in, the user opens **Settings → تيليجرام → ربط تيليجرام**. Dawa24
    issues a one-time code: 32 random bytes, stored as SHA-256 only, valid 10
    minutes, a new code retires older ones, 5 codes per 10 minutes.
+   **One click (2026-10-09):** the click opens a blank tab inside the same
+   gesture, because a browser blocks a tab opened after an asynchronous answer.
+   The answer names the link in an `HX-Trigger: telegram-link` event
+   (`setTelegramLinkTrigger`), and `static/js/telegram-connect.js` points that
+   tab at it. An empty URL, a refused request or a non-`https://t.me/` link closes
+   the tab. If the browser blocks the tab anyway, the card keeps its
+   **فتح تيليجرام** link. Telegram may still show its own **Start** button in a
+   bot chat the user has never opened; that is Telegram's step, not Dawa24's.
 2. The deep link `t.me/<bot>?start=<code>` sends `/start <code>`. Dawa24 spends
    the code once and records a **pending** link. The bot reveals nothing about
    whose account it was.

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"encoding/json"
 	"errors"
 	"net/http"
 	"strconv"
@@ -55,7 +56,16 @@ func (h *UIHandler) SettingsTelegramCard(w http.ResponseWriter, r *http.Request)
 	h.renderTelegramCard(w, r, data)
 }
 
+// telegramLinkEvent is the browser event that carries the bot link back to the
+// page. static/js/telegram-connect.js listens for it.
+const telegramLinkEvent = "telegram-link"
+
 // SettingsTelegramLinkSubmit issues a one-time link code.
+//
+// The browser opens a blank tab inside the click, because a tab opened after
+// the answer arrives is blocked. This response names the link in an HX-Trigger
+// event so the page can point that tab at the bot straight away. An empty URL
+// means there is nothing to open, and the page closes the tab.
 func (h *UIHandler) SettingsTelegramLinkSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	actor, ok := authctx.From(ctx)
@@ -65,6 +75,7 @@ func (h *UIHandler) SettingsTelegramLinkSubmit(w http.ResponseWriter, r *http.Re
 	}
 	lang := langOf(r)
 	data := pages.TelegramSettingsData{Enabled: h.telegramEnabled()}
+	link := ""
 	if data.Enabled {
 		code, err := h.telegram.StartLink(ctx, actor)
 		switch {
@@ -75,9 +86,19 @@ func (h *UIHandler) SettingsTelegramLinkSubmit(w http.ResponseWriter, r *http.Re
 			data.Notice, data.NoticeKind = i18n.T(lang, "settings.tg_error"), "danger"
 		default:
 			data.DeepLink, data.ExpiresAt = code.DeepLink, code.ExpiresAt
+			link = code.DeepLink
 		}
 	}
+	setTelegramLinkTrigger(w, link)
 	h.renderTelegramCard(w, r, data)
+}
+
+// setTelegramLinkTrigger announces the link to the page. The JSON is encoded,
+// not formatted, so no character in the link can break the header.
+func setTelegramLinkTrigger(w http.ResponseWriter, link string) {
+	// A map of strings always encodes; the error path is unreachable.
+	raw, _ := json.Marshal(map[string]map[string]string{telegramLinkEvent: {"url": link}})
+	w.Header().Set("HX-Trigger", string(raw))
 }
 
 // SettingsTelegramConfirmSubmit confirms the user's own pending link.
