@@ -152,7 +152,7 @@ func (r *Repository) ListAuditLog(ctx context.Context, limit, offset int) ([]*pl
 				return err
 			}
 			e.IPAddress = ipAddr
-			e.Route = reqID
+			e.RequestID = reqID
 			list = append(list, &e)
 		}
 		return rows.Err()

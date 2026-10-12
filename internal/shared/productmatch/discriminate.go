@@ -130,6 +130,9 @@ func survival(cs []conflict) float64 {
 // would refuse the commonest correct match in the file.
 func (idx *Index) conflictsOf(q *query, p *MasterProduct) []conflict {
 	var out []conflict
+	if q.formContradiction {
+		out = append(out, conflict{"form", massForm})
+	}
 
 	switch doseVerdict(q, p) {
 	case dosesConflict:
@@ -278,6 +281,13 @@ func doseVerdict(q *query, p *MasterProduct) int {
 	verdict := dosesAgree
 	compared := false
 	for i, n := 0, p.sideCount(); i < n; i++ {
+		if ratioOutcome := doseConcentrationOutcome(q, p.sideAt(i)); ratioOutcome == OutcomeAgree || ratioOutcome == OutcomeConflict {
+			if ratioOutcome == OutcomeAgree {
+				return dosesAgree
+			}
+			verdict, compared = dosesConflict, true
+			continue
+		}
 		doses := p.dosesOf(p.sideAt(i))
 		agree, comparable := compareStrengths(q.strengths, doses)
 		if !comparable {
@@ -365,16 +375,6 @@ func sharesCountClass(a, b []countUnit) bool {
 //
 // Everything else stays distinct. A syrup is not an injection, and a sachet of
 // granules is not a strip of tablets.
-func formClass(key string) string {
-	switch key {
-	case "tablet", "capsule":
-		return "solid_oral"
-	case "topical", "wash":
-		return "external"
-	}
-	return key
-}
-
 // physicallyDistinct reports two topical sub-forms no supplier writes for one
 // another: a liquid oil or a dry powder against a semi-solid or a wash.
 func physicallyDistinct(a, b string) bool {

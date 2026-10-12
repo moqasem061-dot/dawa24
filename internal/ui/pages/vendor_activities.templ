@@ -12,6 +12,11 @@ import (
 
 func formatAuditAction(action, labelAr string, langOpt ...string) (string, string) {
 	isEn := len(langOpt) > 0 && langOpt[0] == "en"
+	if action == "http.operation" || action == "document.uploaded" {
+		lang := "ar"
+		if isEn { lang = "en" }
+		return i18n.T(lang, "audit.action."+action), "badge-sky"
+	}
 	if labelAr != "" && !isEn {
 		return labelAr, badgeClassForAction(action)
 	}
@@ -319,6 +324,10 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 										<span class={ "badge text-xs font-bold", badgeClass }>
 											{ actionLabel }
 										</span>
+										if e.Action == "http.operation" {
+											<div class="text-2xs font-mono text-secondary mt-1" dir="ltr">{ fmt.Sprint(e.After["method"]) } { e.Route }</div>
+											<div class="text-2xs text-muted mt-1">{ fmt.Sprint(e.After["status"]) } — { fmt.Sprint(e.After["outcome"]) }</div>
+										}
 									</td>
 
 									<!-- Entity Type -->

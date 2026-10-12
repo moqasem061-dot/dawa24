@@ -66,12 +66,13 @@ type query struct {
 
 	// keys are the query tokens' variant keys, used for retrieval. The
 	// comparison-side map is keyPos above; this is the list retrieval walks.
-	keys     []string
-	tri      []trigram
-	skeleton string
-	nums     []float64
-	nameKey  string
-	formKey  string
+	keys              []string
+	tri               []trigram
+	skeleton          string
+	nums              []float64
+	nameKey           string
+	formKey           string
+	formContradiction bool
 	// subForm separates the semi-solid topicals formKey groups together, so a
 	// row asking for a cream is not settled on the same brand's ointment. See
 	// topicalSubForm.
@@ -85,10 +86,11 @@ type query struct {
 	marks    map[string]struct{}
 	strength strength
 	// strengths is every dose the row states. See MasterProduct.strengths.
-	strengths []strength
-	packSize  int
-	makerKey  string
-	sciKey    string
+	strengths     []strength
+	concentration *Ratio
+	packSize      int
+	makerKey      string
+	sciKey        string
 	// routes and dims: see identity_refine.go.
 	routes map[string]struct{}
 	dims   []string
@@ -118,31 +120,33 @@ func (idx *Index) newQuery(row *Row) *query {
 	// See annotations.go: what follows them is a price and a carton count, and
 	// read as part of the product they are an identity letter and a stray
 	// figure that no catalogue entry can agree with.
-	name := StripTradeAnnotations(ExpandShorthand(row.Name))
-	nameEN := StripTradeAnnotations(row.NameEN)
+	name := StripTradeAnnotations(StripAlternativeClause(ExpandShorthand(row.Name)))
+	nameEN := StripTradeAnnotations(StripAlternativeClause(row.NameEN))
 	full := name + " " + nameEN
 	nameTokens := coreTokens(full)
 	q := &query{
-		row:        row,
-		tokens:     coreTokens(full + " " + row.Scientific),
-		tri:        sortedTrigrams(nameTokens),
-		skeleton:   skeletonOf(nameTokens),
-		nums:       numberSignature(full),
-		nameKey:    strings.Join(nameTokens, " "),
-		formKey:    rowFormKey(full, row.DosageForm),
-		subForm:    rowSubForm(full, row.DosageForm),
-		qty:        readQuantities(full),
-		marks:      identityMarks(full),
-		strength:   parseStrength(full + " " + row.Concentration),
-		strengths:  strengthSet(full + " " + row.Concentration),
-		packSize:   row.PackSize,
-		makerKey:   sheet.NormalizeKey(row.Manufacturer),
-		priceMinor: row.PublicPrice.Minor(),
-		sciKey:     sheet.NormalizeKey(row.Scientific),
-		mods:       modifiersIn(full),
-		rawName:    full,
-		routes:     routesIn(full),
-		dims:       dimensionsIn(full),
+		row:               row,
+		tokens:            coreTokens(full + " " + row.Scientific),
+		tri:               sortedTrigrams(nameTokens),
+		skeleton:          skeletonOf(nameTokens),
+		nums:              numberSignature(full),
+		nameKey:           strings.Join(nameTokens, " "),
+		formKey:           rowFormKey(full, row.DosageForm),
+		formContradiction: ambiguousFormComparison(full),
+		subForm:           rowSubForm(full, row.DosageForm),
+		qty:               readQuantities(full),
+		marks:             identityMarks(full),
+		strength:          parseStrength(full + " " + row.Concentration),
+		strengths:         strengthSet(full + " " + row.Concentration),
+		concentration:     statedConcentration(full + " " + row.Concentration),
+		packSize:          row.PackSize,
+		makerKey:          sheet.NormalizeKey(row.Manufacturer),
+		priceMinor:        row.PublicPrice.Minor(),
+		sciKey:            sheet.NormalizeKey(row.Scientific),
+		mods:              modifiersIn(full),
+		rawName:           full,
+		routes:            routesIn(full),
+		dims:              dimensionsIn(full),
 	}
 	if q.packSize == 0 {
 		q.packSize = InferPackSize(full)

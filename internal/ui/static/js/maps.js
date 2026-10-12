@@ -156,51 +156,62 @@ if (typeof window.syncCityDropdownsWithCoordinates === 'undefined') {
   };
 }
 
-let reverseGeocodeTimer = null;
-window.fetchDetailedAddressFromCoords = function (lat, lon) {
-  if (!lat || !lon) return;
-  clearTimeout(reverseGeocodeTimer);
-  reverseGeocodeTimer = setTimeout(async function () {
-    try {
-      const addressInputs = document.querySelectorAll(
-        '#reg-address, input[name="address"], input[name="branch_address"], [data-map-address], textarea[name="address"]'
-      );
-      if (!addressInputs.length) return;
+(function () {
+  let timer;
+  let request;
+  let revision = 0;
+  const messages = {
+    ar: { loading: 'جلب تفاصيل العنوان...', review: 'راجع العنوان وأضف رقم المبنى والدور وأقرب علامة مميزة قبل المتابعة.', failed: 'تعذر جلب العنوان. أدخل الشارع ورقم المبنى والعلامة المميزة يدوياً.' },
+    en: { loading: 'Loading address details...', review: 'Review the address and add the building number, floor and nearest landmark before continuing.', failed: 'Address lookup failed. Enter the street, building number and landmark manually.' }
+  };
 
-      const hint = document.getElementById('reg-address-hint') || document.querySelector('[data-address-hint]');
-      if (hint) hint.textContent = '⏳ جلب العنوان بالتفصيل...';
+  window.dawaDetailedAddress = function (response, lang) {
+    const address = response.address || {};
+    const street = [address.house_number, address.road || address.street || address.pedestrian].filter(Boolean).join(' ');
+    const parts = [address.building, street, address.neighbourhood, address.quarter,
+      address.suburb, address.city_district || address.borough,
+      address.city || address.town || address.village, address.county,
+      address.state_district, address.state, address.postcode, address.country];
+    const unique = [...new Set(parts.filter(part => typeof part === 'string' && part.trim()).map(part => part.trim()))];
+    return unique.length ? unique.join(lang === 'en' ? ', ' : '، ') : (response.display_name || '');
+  };
 
-      const resp = await fetch(
-        'https://nominatim.openstreetmap.org/reverse?format=json&lat=' + lat +
-        '&lon=' + lon + '&zoom=18&addressdetails=1&accept-language=ar',
-        { headers: { 'Accept': 'application/json' } }
-      );
-      if (!resp.ok) {
-        if (hint) hint.textContent = '📍 تم تحديد الموقع بنجاح';
-        return;
-      }
-      const data = await resp.json();
-      if (!data || !data.address) return;
-      const a = data.address;
-      const parts = [];
-      if (a.road || a.street) parts.push(a.road || a.street);
-      if (a.neighbourhood || a.suburb || a.quarter) parts.push(a.neighbourhood || a.suburb || a.quarter);
-      if (a.city || a.town || a.village || a.county) parts.push(a.city || a.town || a.village || a.county);
-      if (a.state) parts.push(a.state);
-      const fullAddr = parts.filter(Boolean).join('، ');
-      if (fullAddr) {
-        addressInputs.forEach(function (input) {
-          input.value = fullAddr;
+  window.fetchDetailedAddressFromCoords = function (lat, lon, source) {
+    if (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lon)) || Math.abs(Number(lat)) > 90 || Math.abs(Number(lon)) > 180) return;
+    clearTimeout(timer);
+    if (request) request.abort();
+    const currentRevision = ++revision;
+    const scope = source?.closest('form') || document;
+    const inputs = [...scope.querySelectorAll('#reg-address, input[name="address"], input[name="branch_address"], [data-map-address], textarea[name="address"]')];
+    const original = inputs.map(input => input.value);
+    timer = setTimeout(async function () {
+      if (!inputs.length) return;
+      const lang = document.documentElement.lang === 'en' ? 'en' : 'ar';
+      const hint = scope.querySelector('#reg-address-hint, [data-address-hint]');
+      if (hint) hint.textContent = messages[lang].loading;
+      request = new AbortController();
+      try {
+        const params = new URLSearchParams({ format: 'jsonv2', lat, lon, zoom: '18', addressdetails: '1', layer: 'address', 'accept-language': lang });
+        const response = await fetch('https://nominatim.openstreetmap.org/reverse?' + params, { signal: request.signal, headers: { Accept: 'application/json' } });
+        if (!response.ok) throw new Error('Address lookup: ' + response.status);
+        const fullAddress = window.dawaDetailedAddress(await response.json(), lang);
+        if (currentRevision !== revision) return;
+        if (!fullAddress) throw new Error('No address found');
+        inputs.forEach(function (input, index) {
+          if (!input.isConnected || input.value !== original[index] || input.dataset.manualEdited === 'true') return;
+          if (input.value.trim() && input.value !== input.dataset.autoAddress) return;
+          input.value = fullAddress;
+          input.dataset.autoAddress = fullAddress;
           input.dispatchEvent(new Event('input', { bubbles: true }));
           input.dispatchEvent(new Event('change', { bubbles: true }));
         });
-        if (hint) hint.textContent = '📍 تم تحديث العنوان تلقائياً من الخريطة';
+        if (hint) hint.textContent = messages[lang].review;
+      } catch (error) {
+        if (error.name !== 'AbortError' && currentRevision === revision && hint) hint.textContent = messages[lang].failed;
       }
-    } catch (e) {
-      console.warn('reverse geocoding:', e);
-    }
-  }, 350);
-};
+    }, 1000);
+  };
+})();
 
 let isMapSyncingCity = false;
 window.syncCityDropdownsWithCoordinates = function (lat, lon) {
@@ -462,7 +473,7 @@ function initMapPickers() {
             window.syncCityDropdownsWithCoordinates(fixedLat, fixedLon);
           }
           if (typeof window.fetchDetailedAddressFromCoords === 'function') {
-            window.fetchDetailedAddressFromCoords(fixedLat, fixedLon);
+            window.fetchDetailedAddressFromCoords(fixedLat, fixedLon, container);
           }
         }
       } finally {
@@ -804,7 +815,7 @@ window.setMapPickerLocation = dawaSetMapLocation;
       window.syncCityDropdownsWithCoordinates(lat, lon);
     }
     if (typeof window.fetchDetailedAddressFromCoords === 'function') {
-      window.fetchDetailedAddressFromCoords(lat, lon);
+      window.fetchDetailedAddressFromCoords(lat, lon, btn);
     }
     toast('تم تحديد موقعك الجغرافي وتحديث العنوان والمنطقة.', 'success');
   }

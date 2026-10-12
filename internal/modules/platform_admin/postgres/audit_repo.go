@@ -64,7 +64,7 @@ func (r *Repository) ListAuditLogByOrgWithTotal(ctx context.Context, orgID int64
 				return err
 			}
 			e.IPAddress = ipAddr
-			e.Route = reqID
+			e.RequestID = reqID
 			enrichAuditEntry(&e)
 			list = append(list, &e)
 		}
@@ -144,7 +144,7 @@ func (r *Repository) ListOrgStaffAuditLogWithTotal(ctx context.Context, orgID in
 				return err
 			}
 			e.IPAddress = ipAddr
-			e.Route = reqID
+			e.RequestID = reqID
 			enrichAuditEntry(&e)
 			list = append(list, &e)
 		}
@@ -267,7 +267,7 @@ func (r *Repository) ListAuditLogWithFilter(ctx context.Context, filter platform
 				return err
 			}
 			e.IPAddress = ipAddr
-			e.Route = reqID
+			e.RequestID = reqID
 			enrichAuditEntry(&e)
 			list = append(list, &e)
 		}

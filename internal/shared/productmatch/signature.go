@@ -9,7 +9,7 @@ import (
 )
 
 // NormalizerVersion defines the current revision of the row normalizer and fact extractor.
-const NormalizerVersion = "n1"
+const NormalizerVersion = "n2"
 
 // QuestionSignature produces a stable SHA-256 hex digest representing a row's identity question.
 // Identical rows with identical decisive facts hash to the same signature, enabling safe in-run deduplication.

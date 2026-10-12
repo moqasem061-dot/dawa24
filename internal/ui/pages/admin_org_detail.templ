@@ -7,6 +7,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/format"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
@@ -88,6 +90,11 @@ templ AdminOrganizationDetailPage(data AdminOrgDetailData, lang, dir string) {
 							<span>تعديل بيانات المنشأة</span>
 						</button>
 
+						if authctx.FromContext(ctx).Can("hr.document.view") {
+							<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d/documents", data.Organization.ID)) } class="btn btn-secondary btn-sm">
+								{ i18n.T(lang, "docs.admin_edit") }
+							</a>
+						}
 						if string(data.Organization.Status) == "pending" {
 							<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d/approve", data.Organization.ID)) } class="m-0" data-confirm="تأكيد اعتماد هذه المنشأة وتفعيل حسابها بالكامل؟">
 								<button type="submit" class="btn btn-primary btn-sm font-black px-4 py-2">

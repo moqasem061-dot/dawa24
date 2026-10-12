@@ -73,6 +73,9 @@ func TestCustomerProductDetailPage_B2BLayout(t *testing.T) {
 	}
 
 	html := buf.String()
+	if strings.Contains(html, `disabled="false"`) || strings.Contains(html, `selected="false"`) || strings.Contains(html, `hidden="false"`) {
+		t.Fatal("HTML boolean attributes must be absent when false")
+	}
 
 	// The responsive grid is owned by the product-detail component styles.
 	if !strings.Contains(html, `class="b2b-customer-showcase mb-6"`) {

@@ -5,6 +5,8 @@ import (
 	"net/url"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
@@ -262,6 +264,11 @@ templ AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) 
 											<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d", o.ID)) } class="btn btn-secondary btn-xs font-black">
 												<span>الملف الشامل ↗</span>
 											</a>
+											if authctx.FromContext(ctx).Can("hr.document.view") {
+												<a href={ templ.SafeURL(fmt.Sprintf("/admin/organizations/%d/documents", o.ID)) } class="btn btn-secondary btn-xs">
+													{ i18n.T(lang, "docs.admin_edit") }
+												</a>
+											}
 										</div>
 									</td>
 								</tr>

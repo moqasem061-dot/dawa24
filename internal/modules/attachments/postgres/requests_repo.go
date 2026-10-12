@@ -141,7 +141,15 @@ func (r *Repository) UpdateRequestStatus(ctx context.Context, id int64, status a
 		query := `
 			UPDATE platform_admin.document_requests
 			SET status = $1, submitted_doc_id = COALESCE($2, submitted_doc_id), updated_at = now()
-			WHERE id = $3;
+			WHERE id = $3
+			  AND ($1 <> 'submitted' OR (
+			    status IN ('pending', 'submitted') AND EXISTS (
+			      SELECT 1 FROM platform_admin.documents d
+			      WHERE d.id = $2 AND d.deleted_at IS NULL
+			        AND d.organization_id = platform_admin.document_requests.organization_id
+			        AND d.document_type = platform_admin.document_requests.document_type
+			    )
+			  ));
 		`
 		tag, err := tx.Exec(txCtx, query, string(status), submittedDocID, id)
 		if err != nil {

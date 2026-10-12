@@ -38,7 +38,8 @@ type nameFacts struct {
 	// concentration of 20 mg; "اكنيتون 5مجم/مل" under 15 mg/ml. Pooling the two
 	// gave every such product a second, wrong strength that contradicted every
 	// row asking for it, including a row that had copied the name exactly.
-	strengths []strength
+	strengths     []strength
+	concentration *Ratio
 	// routes and dims are the injection route and the physical size the name
 	// states. See identity_refine.go.
 	routes map[string]struct{}
@@ -55,16 +56,17 @@ func factsOf(name string) nameFacts {
 		return nameFacts{}
 	}
 	return nameFacts{
-		formKey:   formKeyOf(name),
-		subForm:   topicalSubForm(name),
-		mods:      modifiersIn(name),
-		marks:     identityMarks(name),
-		qty:       readQuantities(name),
-		strengths: strengthSet(name),
-		routes:    routesIn(name),
-		dims:      dimensionsIn(name),
-		injForm:   injContainerOf(name),
-		volumes:   totalVolumes(name),
+		formKey:       formKeyOf(name),
+		subForm:       topicalSubForm(name),
+		mods:          modifiersIn(name),
+		marks:         identityMarks(name),
+		qty:           readQuantities(name),
+		strengths:     strengthSet(name),
+		concentration: statedConcentration(name),
+		routes:        routesIn(name),
+		dims:          dimensionsIn(name),
+		injForm:       injContainerOf(name),
+		volumes:       totalVolumes(name),
 	}
 }
 

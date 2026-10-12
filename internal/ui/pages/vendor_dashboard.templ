@@ -133,10 +133,6 @@ templ VendorDashboard(lang, dir string, data VendorDashboardData, actor authctx.
 							@components.IconMapPin("icon-xs")
 							<span>{ i18n.T(lang, "tutorials.maps") }</span>
 						</a>
-						<a href="/vendor/tutorial" class="btn btn-secondary btn-sm font-bold gap-1 rounded-md" aria-label={ i18n.T(lang, "tutorials.maps") }>
-							@components.Icon("map", "icon-xs")
-							<span>{ i18n.T(lang, "tutorials.maps") }</span>
-						</a>
 						<!-- Subscription Pill -->
 						if data.Subscription != nil && data.Subscription.HasSubscription {
 							<div class="admin-status-pill">

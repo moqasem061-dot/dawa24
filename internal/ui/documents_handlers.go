@@ -19,6 +19,10 @@ import (
 // documentsRedirect returns the actor to their documents screen after a form
 // action, carrying the notice.
 func (h *UIHandler) documentsRedirect(w http.ResponseWriter, r *http.Request, kind, message string) {
+	if orgID, ok := r.Context().Value(documentTargetKey{}).(int64); ok {
+		h.redirectWithNotice(w, r, fmt.Sprintf("/admin/organizations/%d/documents", orgID), kind, message)
+		return
+	}
 	target := "/customer/documents"
 	if actor, ok := authctx.From(r.Context()); ok && actor.IsVendor() {
 		target = "/vendor/documents"
@@ -60,6 +64,9 @@ func (h *UIHandler) OrganizationDocumentsUploadSubmit(w http.ResponseWriter, r *
 	ctx := r.Context()
 	lang := langOf(r)
 	actor, ok := authctx.From(ctx)
+	if targetOrgID, targeted := ctx.Value(documentTargetKey{}).(int64); targeted {
+		actor.OrganizationID, actor.OrgID = targetOrgID, targetOrgID
+	}
 	orgID := actor.OrganizationID
 	if orgID <= 0 {
 		orgID = actor.OrgID
@@ -80,6 +87,10 @@ func (h *UIHandler) OrganizationDocumentsUploadSubmit(w http.ResponseWriter, r *
 	docType := attachments.DocumentType(docTypeStr)
 	if docType == "" {
 		h.documentsRedirect(w, r, "error", i18n.T(lang, "docs.type_required"))
+		return
+	}
+	if err := h.validateDocumentRequest(ctx, actor, docType, r.FormValue("request_id")); err != nil {
+		h.documentsRedirect(w, r, "error", h.safeMessage(err, lang))
 		return
 	}
 
@@ -111,7 +122,7 @@ func (h *UIHandler) OrganizationDocumentsUploadSubmit(w http.ResponseWriter, r *
 		return
 	}
 
-	sysCtx := database.AsSystem(ctx)
+	sysCtx := database.AsSystem(database.WithAuditActorID(ctx, actor.UserID))
 	uploadedDoc, err := h.attSvc.RegisterUpload(sysCtx, actor, docType, fileURL, originalName)
 	if err != nil {
 		h.log.ErrorContext(ctx, "failed to register document upload", "error", err)
@@ -122,15 +133,21 @@ func (h *UIHandler) OrganizationDocumentsUploadSubmit(w http.ResponseWriter, r *
 	// If replacement reason is provided, attach it as a note for platform admins
 	replacementReason := strings.TrimSpace(r.PostFormValue("replacement_reason"))
 	if replacementReason != "" && uploadedDoc != nil {
-		adminActor := authctx.Actor{IsStaff: true, Role: "admin"}
-		_ = h.attSvc.VerifyDocument(sysCtx, adminActor, uploadedDoc.ID, attachments.StatusPending, fmt.Sprintf(i18n.T(lang, "docs.replacement_reason_note"), replacementReason))
+		adminActor := authctx.Actor{UserID: actor.UserID, IsStaff: true, Role: "admin"}
+		if err := h.attSvc.VerifyDocument(sysCtx, adminActor, uploadedDoc.ID, attachments.StatusPending, fmt.Sprintf(i18n.T(lang, "docs.replacement_reason_note"), replacementReason)); err != nil {
+			h.documentsRedirect(w, r, "error", h.safeMessage(err, lang))
+			return
+		}
 	}
 
 	// If linked to an administrative document request, fulfill or submit it
 	reqIDStr := strings.TrimSpace(r.PostFormValue("request_id"))
 	if reqIDStr != "" && uploadedDoc != nil {
 		if reqID, err := strconv.ParseInt(reqIDStr, 10, 64); err == nil && reqID > 0 {
-			_ = h.attSvc.SubmitDocumentForRequest(sysCtx, reqID, uploadedDoc.ID)
+			if err := h.attSvc.SubmitDocumentForRequest(sysCtx, reqID, uploadedDoc.ID); err != nil {
+				h.documentsRedirect(w, r, "error", h.safeMessage(err, lang))
+				return
+			}
 		}
 	}
 

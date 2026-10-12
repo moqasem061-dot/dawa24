@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	concentrationRatioRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(mg|مجم|ملجم|g|جم|جرام|gm|mcg|ميكروجرام|iu|وحدة|وحده|%)\s*/\s*(\d+(?:\.\d+)?)?\s*(ml|مل|مللي|l|لتر)?`)
+	concentrationRatioRe = regexp.MustCompile(`(?i)(\d+(?:\.\d+)?)\s*(mg|مجم|ملجم|g|جم|جرام|gm|mcg|ميكروجرام|iu|وحدة|وحده|%)\s*/\s*(\d+(?:\.\d+)?)?\s*(ml|مللي|مل|لتر|l)?`)
 )
 
 // NormalizedConcentration represents an exact rational concentration.

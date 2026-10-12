@@ -182,7 +182,9 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 		matchLevel := productmatch.MatchLevel(cols.MatchLevel)
 
 		score := 0.0
-		if cols.MatchedProductID != nil {
+		if len(dec.Candidates) > 0 {
+			score = dec.Candidates[0].Score
+		} else if cols.MatchedProductID != nil {
 			score = 1.0
 		}
 
@@ -206,7 +208,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 				DosageForm:    pForm,
 				Concentration: pConc,
 				Manufacturer:  pMfr,
-				Score:         1.0,
+				Score:         c.Score,
 			})
 		}
 

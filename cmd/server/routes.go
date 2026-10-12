@@ -114,6 +114,7 @@ func mountModuleRoutes(
 		router.Use(httpx.CSRF(isProd))
 		router.Use(identityHttp.RequireAuth(idSvc, permissions, cfg.Session.CookieName, log))
 		router.Use(identityHttp.ResolveTenant(idSvc, log))
+		router.Use(uiHandler.ActivityMiddleware)
 		router.Use(uiHandler.SiteSettingsMiddleware)
 	}
 

@@ -32,6 +32,18 @@ The `org` bounded context manages organization tenants (suppliers, pharmacies, p
    - Cross-module resolution is mediated via `catalog.InstitutionalGate` and `promo.InstitutionalGate` without cyclic module imports.
 5. **One institutional work per pharmacy branch:** the customer branch form is a single choice among the pharmacy works, and `resolveCustomerInstitutionalWork` keeps the first submitted value (falling back to the pharmacy work when none is sent). Admin and vendor branch forms still accept several.
 
+## Admin documents and licenses (2026-10-12)
+
+The organizations list and detail link to `/admin/organizations/{id}/documents`.
+It renders the same requirements, upload, replacement, request and preview
+components used by the organization itself. `hr.document.view` grants a read-only
+page; `hr.document.update` grants uploads. The server resolves the target from
+the route, requires platform staff, and ignores posted organization IDs.
+It retains the real administrator as uploader/audit actor and never changes
+the administrator's session or grants a tenant role. New uploads remain pending.
+Document requests must belong to the target and match the uploaded document
+type; the repository also enforces that binding at write time.
+
 ## User-organization links
 
 Edit, delete, approve and reject address a link by id and run as system, so every handler first calls `Service.AuthorizeUserOrgLink`: the customer side must own the link (`user_id`), the vendor side must be its `vendor_org_id`. A link the caller does not own reads as not found (security fix 2026-09-24).

@@ -37,7 +37,7 @@ func TestQuestionSignature_DifferentiatesStrengths(t *testing.T) {
 	}
 
 	// Normalizer version sensitivity
-	sigV2 := productmatch.QuestionSignature(facts10, normName, "n2")
+	sigV2 := productmatch.QuestionSignature(facts10, normName, productmatch.NormalizerVersion+".next")
 	if sig10 == sigV2 {
 		t.Fatalf("expected different signature for different normalizer versions")
 	}

@@ -1,0 +1,19 @@
+package pages
+
+import (
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+templ AdminOrganizationDocuments(name, lang, dir string, data *OrganizationDocumentsData) {
+	@layouts.AdminShell(i18n.T(lang, "docs.admin_edit"), "organizations", lang, dir) {
+		<div class="stack-md">
+			<div class="glass-panel p-4 stack-sm">
+				<strong>{ name }</strong>
+				<p class="text-sm text-secondary">{ i18n.T(lang, "docs.admin_edit_notice") }</p>
+				<a href="/admin/organizations" class="btn btn-secondary btn-sm">{ i18n.T(lang, "nav.organizations_and_users") }</a>
+			</div>
+			@OrganizationDocumentsContent(lang, data)
+		</div>
+	}
+}

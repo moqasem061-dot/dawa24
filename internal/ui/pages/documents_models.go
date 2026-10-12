@@ -80,12 +80,21 @@ func docRequirements(vendor bool) []DocRequirement {
 
 // OrganizationDocumentsData backs the shared customer/vendor documents screen.
 type OrganizationDocumentsData struct {
+	ReadOnly     bool
+	UploadPath   string
 	IsVendor     bool
 	Requirements []DocRequirement
 	Docs         []*attachments.Document
 	Requests     []*attachments.DocumentRequest
 	Missing      []DocRequirement
 	Error        string
+}
+
+func (d *OrganizationDocumentsData) UploadAction() string {
+	if d != nil && d.UploadPath != "" {
+		return d.UploadPath
+	}
+	return "/documents/upload"
 }
 
 // BuildOrganizationDocumentsData groups the org's documents by requirement

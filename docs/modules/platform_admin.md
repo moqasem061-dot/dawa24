@@ -28,6 +28,22 @@ The `platform_admin` bounded context provides global administrative configuratio
 4. **Error Log Porting Decision:**
    - Laravel's `full_error_logs` table had 69 columns. The Go version retains all operational diagnostic fields (`error_level`, `error_message`, `exception_class`, `stack_trace`, `file_path`, `line_number`, `http_method`, `url_path`, `ip_address`, `user_agent`, `request_payload`, `status`, `developer_notes`, `fixed_by`, `fixed_at`), while dropping PHP/Laravel framework-specific columns (`php_version`, `laravel_version`, `composer_lock_hash`, etc.).
 
+### Expanded activity records (2026-10-12)
+
+All authenticated UI and API mutations now emit an operation-response record,
+including attempts denied by downstream permission gates. Records include the
+real actor, current organization, route pattern, entity identifier, HTTP method,
+response status/outcome, duration, trusted client IP, request correlation ID,
+user agent and bounded allowlisted form parameters. Passwords, tokens, arbitrary
+JSON, free-form notes and file contents are excluded. An HTTP response record
+does not claim that a business transaction committed; existing transactional
+before/after audits remain the authoritative mutation records.
+
+Document creation and status/type changes now write their structured audit in
+the same transaction as the document mutation. Activity screens distinguish
+the route/method/status and retain before/after details. Request correlation IDs
+are exposed separately from route URLs; audit-write failures are logged.
+
 ### Document access hardening (2026-09-30)
 
 Documents in `platform_admin.documents` are accessible to their owning user or organization; platform staff need `hr.document.view` for cross-organization downloads, including the shared `/documents/{id}` routes. Document confirmation applies the same ownership check even when `user_id` is null, before storage checks or deletion.

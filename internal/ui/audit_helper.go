@@ -9,6 +9,8 @@ import (
 // recordAudit emits an audit log entry via idSvc if available.
 func (h *UIHandler) recordAudit(ctx context.Context, e database.AuditEntry) {
 	if h.idSvc != nil {
-		_ = h.idSvc.RecordAudit(ctx, e)
+		if err := h.idSvc.RecordAudit(ctx, e); err != nil {
+			h.log.ErrorContext(ctx, "record activity audit", "action", e.Action, "entity", e.EntityID, "error", err)
+		}
 	}
 }

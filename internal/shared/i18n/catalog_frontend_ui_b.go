@@ -229,6 +229,8 @@ func loadFrontendUIKeysB(e *engine) {
 
 	// --- Organization Documents ---
 	addKey(e, "docs.load_failed", "docs", "تعذر تحميل المستندات، حاول مجدداً.", "Failed to load documents, please try again.", "Load error")
+	addKey(e, "docs.admin_edit", "docs", "المستندات والتراخيص", "Documents and licenses", "Organization document management")
+	addKey(e, "docs.admin_edit_notice", "docs", "تعديل مستندات المنشأة بصلاحيات الإدارة. تسجل العمليات باسمك وتخضع المستندات الجديدة للمراجعة المعتادة.", "Manage this organization's documents as an administrator. Actions retain your identity and new documents follow the usual review process.", "Admin document editing attribution")
 	addKey(e, "docs.org_auth_required", "docs", "يجب تسجيل الدخول لحساب منشأة معتمدة.", "You must log in with a verified organization account.", "Auth error")
 	addKey(e, "docs.service_unavailable", "docs", "خدمة المستندات غير متاحة حالياً.", "Documents service is currently unavailable.", "Service error")
 	addKey(e, "docs.type_required", "docs", "يرجى تحديد نوع المستند المراد رفعه.", "Please specify the document type to upload.", "Validation error")

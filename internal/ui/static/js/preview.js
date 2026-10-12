@@ -29,7 +29,7 @@
     const defaultDigitalFile = typeof window.dawaT === 'function' ? window.dawaT('preview.digital_file', 'ملف رقمي') : 'ملف رقمي';
     const filename = opts.filename || (opts.title && opts.title.includes('.') ? opts.title : clean.split('/').pop()) || defaultDigitalFile;
     const ext = (filename.split('.').pop() || clean.split('.').pop() || '').toLowerCase();
-    const isImage = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg'].includes(ext);
+    const isImage = opts.isImage === true || ['png', 'jpg', 'jpeg', 'webp', 'gif', 'svg', 'avif'].includes(ext);
 
     if (els.titleEl) {
       const defaultImgTitle = typeof window.dawaT === 'function' ? window.dawaT('preview.image', 'معاينة الصورة') : 'معاينة الصورة';
@@ -61,9 +61,12 @@
       }
       if (els.img && els.imgContainer) {
         els.img.onload = function () {
+          if (els.imgContainer) els.imgContainer.classList.remove('hidden');
           if (els.errBox) els.errBox.classList.add('hidden');
         };
         els.img.onerror = function () {
+          // An error from a cleared previous source may arrive during a new load.
+          if (!els.img.hasAttribute('src') || !els.img.complete || els.img.naturalWidth > 0) return;
           if (els.imgContainer) els.imgContainer.classList.add('hidden');
           if (els.errBox) els.errBox.classList.remove('hidden');
         };
@@ -75,7 +78,9 @@
         els.imgContainer.classList.add('hidden');
       }
       if (els.img) {
-        els.img.src = '';
+        els.img.onload = null;
+        els.img.onerror = null;
+        els.img.removeAttribute('src');
       }
       if (els.iframe) {
         els.iframe.onload = function () {
@@ -112,9 +117,23 @@
     } else {
       els.modal.removeAttribute('open');
     }
-    if (els.iframe) els.iframe.src = 'about:blank';
-    if (els.img) els.img.src = '';
+    clearClosedPreview(els);
   };
+
+  function clearClosedPreview(els) {
+    // Native close events are queued: an older close must not clear a new preview.
+    if (!els.modal || els.modal.open) return;
+    if (els.iframe) {
+      els.iframe.onload = null;
+      els.iframe.onerror = null;
+      els.iframe.src = 'about:blank';
+    }
+    if (els.img) {
+      els.img.onload = null;
+      els.img.onerror = null;
+      els.img.removeAttribute('src');
+    }
+  }
 
   // Close when clicking modal backdrop
   document.addEventListener('DOMContentLoaded', function () {
@@ -127,9 +146,7 @@
         }
       });
       modal.addEventListener('close', function () {
-        const els = getModalElements();
-        if (els.iframe) els.iframe.src = 'about:blank';
-        if (els.img) els.img.src = '';
+        clearClosedPreview(getModalElements());
       });
     }
   });
@@ -153,6 +170,7 @@
         e.stopPropagation();
         window.openFilePreview({
           url: url,
+          isImage: explicit.getAttribute('data-is-image') === 'true',
           title: explicit.getAttribute('data-title') || explicit.getAttribute('title') || explicit.textContent.trim(),
           filename: explicit.getAttribute('data-filename') || explicit.getAttribute('data-orig-name') || '',
           downloadUrl: explicit.getAttribute('data-download-url') || (url.includes('/view') ? url.replace(/\/view$/, '/download') : url)

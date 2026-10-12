@@ -81,7 +81,7 @@ func (s *Service) CreateDocumentRequest(ctx context.Context, actor authctx.Actor
 // ListDocumentRequests returns administrative document requests for a specific org or across the platform.
 func (s *Service) ListDocumentRequests(ctx context.Context, actor authctx.Actor, orgID *int64) ([]*DocumentRequest, error) {
 	if orgID != nil && *orgID > 0 {
-		if !actor.IsPlatformAdmin() && actor.OrgID != *orgID {
+		if (!actor.IsStaff || !actor.Can("hr.document.view")) && !actor.IsPlatformAdmin() && actor.OrgID != *orgID {
 			return nil, apperr.Forbidden("document.access_denied", i18n.TDefault("w4_mod.s_241_241"))
 		}
 		return s.repo.ListRequestsByOrg(ctx, *orgID)

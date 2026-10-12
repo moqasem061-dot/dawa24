@@ -1,11 +1,15 @@
 package productmatch
 
 import (
+	"regexp"
 	"strings"
 	"unicode"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
+
+// A dosage unit can be welded to the following pack count in supplier files.
+var weldedDosePack = regexp.MustCompile(`(?i)(مجم|ملجم|مج|جم|مل|mg|ml)([0-9]+)(اق|كبس|امب|ق|ك|ش|ف|ع)(\s|$)`)
 
 // Egyptian order-list shorthand.
 //
@@ -57,7 +61,10 @@ func ExpandShorthand(text string) string {
 	if text == "" {
 		return text
 	}
-	fields := strings.Fields(sheet.NormalizeDigits(text))
+	normalized := sheet.NormalizeDigits(text)
+	normalized = strings.ReplaceAll(normalized, "٫", ".")
+	normalized = weldedDosePack.ReplaceAllString(normalized, "${1} ${2}${3}${4}")
+	fields := strings.Fields(normalized)
 	out := make([]string, 0, len(fields)+4)
 	changed := false
 	prevFigure := false

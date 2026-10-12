@@ -49,6 +49,15 @@ Shipment organization rows are read and closed before per-vendor audit writes
 start. pgx cannot issue another query on that transaction connection while
 those rows remain open; leaving them open caused `conn busy` at commit.
 
+## Product-detail cart repair (2026-10-12)
+
+The purchase panel emitted `disabled="false"`, which HTML still treats as
+disabled. Conditional boolean attributes now use templ's `?=` syntax for the
+submit button, selected supplier and negotiation visibility. The page retains
+the catalog's `/cart/add` handler, authoritative availability/pricing checks,
+selected promotion, quantity limits, toast and `cartUpdated` event. A browser
+regression test actually submits the purchase panel and verifies its payload.
+
 ## Percentages applied to money
 
 Cost discounts and an edited order's tax are computed exactly: percentages are

@@ -62,6 +62,25 @@ The UI wizard strictly reflects the server session state:
 - **Step 4 (Commit):** Transactional commit into catalog inventory (`POST /vendor/ingest/{id}/commit`).
 - **Resumability:** Accessing `/vendor/ingest/{sessionID}` loads the exact step corresponding to the session's database state.
 
+### Matching audit repairs (2026-10-12)
+
+Staging previously replaced **every candidate score** with `1.0`. That made
+unsettled, conflicting suggestions appear to be 100% matches even though no
+product link was accepted. Staging now preserves canonical candidate scores;
+existing staged rows recover their display scores from the saved decision when
+read, without changing exclusions or reviewed links.
+
+The shared matcher now expands welded dose/count shorthand such as
+`2.5مجم30ق` before reading identity letters. Alternative-product clauses are
+removed consistently from scorer and fact extraction. Explicit comparisons of
+different forms require review. Typed concentration ratios participate in the
+production dose check: 100mg/2mL cannot match 100mg/5mL, and equal density does
+not make different vial amounts interchangeable. Normalizer signatures and
+index versions use the same version constant.
+
+See [the audit report](../reports/2026-10-12-product-matching-audit.md) for the
+baseline comparison, regression coverage and remaining quality-gate limits.
+
 ### Review layout and explanations (2026-10-02)
 
 - All twelve review fields fit the available width. Wide layouts retain a table;

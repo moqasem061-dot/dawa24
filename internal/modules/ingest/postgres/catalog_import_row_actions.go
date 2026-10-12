@@ -137,6 +137,7 @@ func (r *Repository) StagedRowsForCommit(ctx context.Context, importID int64) ([
 			_ = json.Unmarshal(issues, &o.Issues)
 			if len(matchDecBytes) > 0 {
 				_ = json.Unmarshal(matchDecBytes, &o.MatchDecision)
+				o.RestoreDecisionScores()
 			}
 			if len(baseDecBytes) > 0 {
 				_ = json.Unmarshal(baseDecBytes, &o.BaselineDecision)

@@ -13,6 +13,10 @@ func enrichAuditEntry(e *platformadmin.AuditEntry) {
 	if e == nil {
 		return
 	}
+	if e.Action == "http.operation" {
+		e.Route, _ = e.After["route"].(string)
+		e.UserAgent, _ = e.After["user_agent"].(string)
+	}
 
 	if e.ActorName == "" {
 		e.ActorName = i18n.TDefault("audit.actor.system_user")
@@ -82,6 +86,12 @@ func enrichAuditEntry(e *platformadmin.AuditEntry) {
 
 	act := strings.ToLower(e.Action)
 	switch {
+	case act == "http.operation":
+		e.Title = e.ActionLabelAr
+		e.Description = fmt.Sprintf(i18n.TDefault("audit.desc.operation"), e.After["method"], e.Route, e.After["status"], e.After["outcome"])
+		if e.After["outcome"] == "rejected" {
+			e.Severity = "warning"
+		}
 	case strings.Contains(act, "registered") || act == "org.registered":
 		if e.ActionLabelAr == "" {
 			e.ActionLabelAr = i18n.TDefault("audit.action.org_registered")

@@ -138,6 +138,7 @@ func mountModuleRoutesAPI(
 		preApproval.Use(httpx.CSRF(cfg.Env.IsProd()))
 		preApproval.Use(identityHttp.RequireAuth(idSvc, permissions, cfg.Session.CookieName, log))
 		preApproval.Use(identityHttp.ResolveTenant(idSvc, log))
+		preApproval.Use(authctx.ActivityAudit(idSvc.RecordAudit, cfg.HTTP.TrustedProxyHops, log))
 
 		// Attachments API (document uploads and confirmation for verification)
 		attachmentsHttp.NewHandler(attachSvc, log).RegisterRoutes(preApproval)
@@ -154,6 +155,7 @@ func mountModuleRoutesAPI(
 		approved.Use(httpx.CSRF(cfg.Env.IsProd()))
 		approved.Use(identityHttp.RequireAuth(idSvc, permissions, cfg.Session.CookieName, log))
 		approved.Use(identityHttp.ResolveTenant(idSvc, log))
+		approved.Use(authctx.ActivityAudit(idSvc.RecordAudit, cfg.HTTP.TrustedProxyHops, log))
 		approved.Use(authctx.RequireApproved(log))
 
 		mountAuthenticatedModules(approved, cfg, log, deps, ai, adminKeys, tenantKeys, storageClient, docsGate)

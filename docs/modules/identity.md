@@ -38,6 +38,18 @@ The `identity` bounded context manages user accounts, authentication, password v
 15. **Phone ownership (2026-09-30):** public and profile Telegram OTP handlers compare the phone returned by the Gateway with the requested phone, reject consumed requests, and refuse mock verification in production. Profile verification responses and public OTP responses are uncacheable.
 16. **Blocked browser storage (2026-09-30):** theme and sidebar preferences keep an in-memory fallback. Storage exceptions cannot interrupt initialization of mobile navigation, and early theme selection tolerates blocked storage.
 
+## Registration address repair (2026-10-12)
+
+The two browser geocoders declared the same global `let`, preventing the
+registration script from loading. Registration now uses the shared map lookup.
+Generated suggestions retain building/house number, street, neighborhood,
+quarter, suburb, district, city, governorate, postcode and country where the
+map data supplies them, with duplicate components removed. Lookups use the
+address layer and building detail, abort superseded requests and ignore late
+responses. They update only the originating form and preserve manual edits.
+The address hint asks the registrant to review and add building/floor/landmark
+details; reverse geocoding cannot supply details absent from map data.
+
 ## Endpoints
 
 - `POST /api/v1/auth/register` — Create new user account.

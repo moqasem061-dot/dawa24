@@ -6,7 +6,7 @@ import (
 )
 
 // OrganizationDocumentsModals renders the in-app document viewer and replacement modals.
-templ OrganizationDocumentsModals() {
+templ OrganizationDocumentsModals(uploadPath string) {
 	<!-- Dynamic In-App Document Viewer Modal (PDF + Image Responsive) -->
 	@components.Modal(components.ModalProps{
 		ID:       "doc-viewer-modal",
@@ -115,7 +115,7 @@ templ OrganizationDocumentsModals() {
 		Subtitle: "رفع نسخة جديدة مع توضيح سبب الاستبدال لإدارة المنصة",
 		Size:     "md",
 	}) {
-		<form class="stack-md" action="/documents/upload" method="POST" enctype="multipart/form-data" data-boost-upload>
+		<form class="stack-md" action={ templ.SafeURL(uploadPath) } method="POST" enctype="multipart/form-data" data-boost-upload>
 			<input type="hidden" name="document_type" id="replace-doc-type" value="" />
 			<input type="hidden" name="existing_doc_id" id="replace-existing-id" value="" />
 
@@ -202,7 +202,10 @@ templ OrganizationDocumentsModals() {
 			let viewUrl = '/documents/' + docId + '/view';
 			let downloadUrl = '/documents/' + docId + '/download';
 			const path = window.location.pathname || '';
-			if (path.startsWith('/vendor/documents')) {
+			if (path.startsWith('/admin/organizations/')) {
+				viewUrl = '/admin/documents/' + docId + '/view';
+				downloadUrl = '/admin/documents/' + docId + '/download';
+			} else if (path.startsWith('/vendor/documents')) {
 				viewUrl = '/vendor/documents/' + docId + '/view';
 				downloadUrl = '/vendor/documents/' + docId + '/download';
 			} else if (path.startsWith('/customer/documents')) {

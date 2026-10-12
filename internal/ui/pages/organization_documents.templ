@@ -186,8 +186,8 @@ templ OrganizationDocumentsContent(lang string, data *OrganizationDocumentsData)
 							</div>
 
 							<div class="stack-sm">
-								if req.Status == attachments.DocReqPending {
-									<form action="/documents/upload" method="POST" enctype="multipart/form-data" class="doc-upload-form">
+								if req.Status == attachments.DocReqPending && !data.ReadOnly {
+									<form action={ templ.SafeURL(data.UploadAction()) } method="POST" enctype="multipart/form-data" class="doc-upload-form">
 										<input type="hidden" name="request_id" value={ fmt.Sprintf("%d", req.ID) } />
 										<input type="hidden" name="document_type" value={ string(req.DocumentType) } />
 										<input type="file" name="file" accept=".pdf,.png,.jpg,.jpeg,.webp" required class="doc-file-input" />
@@ -238,7 +238,7 @@ templ OrganizationDocumentsContent(lang string, data *OrganizationDocumentsData)
 	</div>
 
 	<!-- Render Modals -->
-	@OrganizationDocumentsModals()
+	@OrganizationDocumentsModals(data.UploadAction())
 }
 
 templ DocumentRequirementCard(data *OrganizationDocumentsData, req DocRequirement) {
@@ -343,13 +343,14 @@ templ DocumentRequirementCard(data *OrganizationDocumentsData, req DocRequiremen
 					data-title={ req.TitleAr }
 					data-name={ doc.OriginalName }
 					data-on-click="openReplaceDocModalFromBtn(this)"
+					hidden?={ data.ReadOnly }
 					title="استبدال وتحديث هذا المستند"
 				>
 					<span>استبدال</span>
 				</button>
-			} else {
+			} else if !data.ReadOnly {
 				<!-- Initial Upload Form (When doc is not uploaded yet) -->
-				<form action="/documents/upload" method="POST" enctype="multipart/form-data" class="doc-upload-form">
+				<form action={ templ.SafeURL(data.UploadAction()) } method="POST" enctype="multipart/form-data" class="doc-upload-form">
 					<input type="hidden" name="document_type" value={ string(req.DocType) } />
 					<input
 						type="file"

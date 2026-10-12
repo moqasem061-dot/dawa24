@@ -65,12 +65,14 @@ func (h *UIHandler) registerAdminOrgRoutes(r chi.Router) {
 
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("hr.document.view"))
+		g.Get("/admin/organizations/{id}/documents", h.AdminOrganizationDocumentsPage)
 		g.Get("/admin/documents/{id}/view", h.DocumentViewHandler)
 		g.Get("/admin/documents/{id}/download", h.DocumentDownloadHandler)
 	})
 
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("hr.document.update"))
+		g.Post("/admin/organizations/{id}/documents/upload", h.AdminOrganizationDocumentsUploadSubmit)
 		g.Post("/admin/document-requests", h.AdminCreateDocumentRequestSubmit)
 		g.Post("/admin/document-requests/{id}/cancel", h.AdminCancelDocumentRequestSubmit)
 		g.Post("/admin/documents/{id}/verify", h.AdminVerifyUploadedDocSubmit)

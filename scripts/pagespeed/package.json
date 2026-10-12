@@ -1,5 +1,5 @@
 {
   "private": true,
-  "scripts": { "critical": "node critical.cjs", "test": "node --test browser.test.cjs review.test.cjs market.test.cjs product.test.cjs" },
+  "scripts": { "critical": "node critical.cjs", "test": "node --test browser.test.cjs review.test.cjs market.test.cjs product.test.cjs cart.test.cjs address.test.cjs preview.test.cjs" },
   "devDependencies": { "playwright": "1.63.0", "postcss": "8.5.28" }
 }

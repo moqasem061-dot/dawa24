@@ -20,7 +20,7 @@ templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOff
 						for _, offer := range offers {
 							<option
 								value={ fmt.Sprintf("%d", offer.VariantID) }
-								selected={ offer.VariantID == selectedOffer.VariantID }
+								selected?={ offer.VariantID == selectedOffer.VariantID }
 								data-offer-id={ fmt.Sprintf("%d", offer.OfferID) }
 								data-variant-id={ fmt.Sprintf("%d", offer.VariantID) }
 								data-supplier-id={ fmt.Sprintf("%d", offer.SupplierID) }
@@ -62,7 +62,7 @@ templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOff
 					<span class="text-xs font-black text-primary" data-product-offer-supplier>
 						{ selectedOffer.SupplierName }
 					</span>
-					<span class="badge badge-amber text-2xs font-extrabold gap-0.5" data-product-offer-negotiable hidden={ !selectedOffer.IsNegotiable }>
+					<span class="badge badge-amber text-2xs font-extrabold gap-0.5" data-product-offer-negotiable hidden?={ !selectedOffer.IsNegotiable }>
 						@components.IconTag("icon-2xs")
 						<span>{ i18n.T(lang, "product.negotiable") }</span>
 					</span>
@@ -144,14 +144,14 @@ templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOff
 								<button type="button" class="cart-stepper-btn" data-on-click="stepCatalogQty(this, 1)">+</button>
 							</div>
 						</div>
-						<button type="submit" disabled={ !selectedOffer.CanAddToCart } class="btn btn-primary font-black text-xs w-full py-2.5 gap-1.5 shadow-sm justify-center">
+						<button type="submit" disabled?={ !selectedOffer.CanAddToCart } class="btn btn-primary font-black text-xs w-full py-2.5 gap-1.5 shadow-sm justify-center">
 							@components.IconPlus("icon-xs")
 							<span>{ i18n.T(lang, "product.add_to_cart") }</span>
 						</button>
 						if hasNegotiableOffer(offers) {
 							<button
 								type="button"
-								hidden={ !selectedOffer.IsNegotiable }
+								hidden?={ !selectedOffer.IsNegotiable }
 								data-product-negotiation
 								class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300 justify-center"
 								data-variant-id={ fmt.Sprintf("%d", selectedOffer.VariantID) }
@@ -184,7 +184,7 @@ templ CustomerProductDetailBuyBox(product *catalog.Product, offers []SupplierOff
 						if hasNegotiableOffer(offers) {
 							<button
 								type="button"
-								hidden={ !selectedOffer.IsNegotiable }
+								hidden?={ !selectedOffer.IsNegotiable }
 								data-product-negotiation
 								class="btn btn-secondary text-amber-700 font-black text-xs w-full py-2.5 gap-1.5 shadow-2xs border-amber-300 justify-center"
 								data-variant-id={ fmt.Sprintf("%d", selectedOffer.VariantID) }

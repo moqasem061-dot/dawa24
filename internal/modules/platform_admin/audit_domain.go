@@ -18,6 +18,7 @@ type AuditEntry struct {
 	Severity         string         `json:"severity,omitempty"`    // info, warning, critical (الأهمية)
 	IPAddress        string         `json:"ip_address,omitempty"`  // IP address (عنوان IP)
 	Route            string         `json:"route,omitempty"`       // Route / URL path (المسار)
+	RequestID        string         `json:"request_id,omitempty"`
 	UserAgent        string         `json:"user_agent,omitempty"`
 	EntityType       string         `json:"entity_type"`
 	EntityTypeAr     string         `json:"entity_type_ar,omitempty"`

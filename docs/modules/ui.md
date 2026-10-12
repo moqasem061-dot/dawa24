@@ -1,5 +1,13 @@
 # UI and static asset delivery
 
+## Product image preview lifecycle (2026-10-12)
+
+The shared viewer respects explicit image metadata, including extensionless
+image URLs. Closing clears only the closed preview's media, removes image sources
+without requesting the current page, and ignores queued close events after a
+reopen. Browser coverage exercises both close buttons, Escape, backdrop clicks
+and immediate reopen while asserting product details and the buy box remain.
+
 The Arabic-first templ UI uses shared public, pharmacy, supplier, and admin
 shells. JavaScript runs under the nonce-based CSP and Trusted Types policy.
 
@@ -60,6 +68,12 @@ Lighthouse should also run against the deployed site: the fixture cannot measure
 database latency, CDN behavior, live advertisements, or analytics.
 
 ## October 2026 fixes
+
+The pharmacy, supplier and delivery dashboard headers now render one maps
+tutorial link each. Product purchase controls use proper conditional HTML
+boolean attributes. `scripts/pagespeed/cart.test.cjs` verifies real HTMX
+submission and cart update events; `address.test.cjs` covers geocoder script
+loading, detailed formatting, stale responses and preservation of manual edits.
 
 The homepage now uses sequential heading levels (including footer sections).
 The hero uses `minmax(0, ...)` tracks so its comparison table cannot push the

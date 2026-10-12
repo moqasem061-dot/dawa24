@@ -35,7 +35,7 @@ func (r *Repository) Create(ctx context.Context, doc *attachments.Document) (*at
 			RETURNING id, public_id, created_at, updated_at;
 		`
 		metaBytes := doc.MetaJSON()
-		return tx.QueryRow(txCtx, query,
+		if err := tx.QueryRow(txCtx, query,
 			doc.OrganizationID,
 			doc.UserID,
 			string(doc.DocumentType),
@@ -48,7 +48,15 @@ func (r *Repository) Create(ctx context.Context, doc *attachments.Document) (*at
 			string(doc.Status),
 			doc.ReviewNotes,
 			metaBytes,
-		).Scan(&doc.ID, &doc.PublicID, &doc.CreatedAt, &doc.UpdatedAt)
+		).Scan(&doc.ID, &doc.PublicID, &doc.CreatedAt, &doc.UpdatedAt); err != nil {
+			return err
+		}
+		return database.WriteAudit(txCtx, tx, database.AuditEntry{
+			ActorUserID:    documentUploaderID(doc),
+			OrganizationID: doc.OrganizationID, Action: "document.uploaded",
+			EntityType: "document", EntityID: fmt.Sprint(doc.ID),
+			After: map[string]any{"document_type": doc.DocumentType, "original_name": doc.OriginalName, "status": doc.Status, "uploader_user_id": doc.UserID},
+		})
 	})
 
 	if err != nil {
@@ -307,6 +315,10 @@ func (r *Repository) ListAll(ctx context.Context, filter attachments.DocumentFil
 
 func (r *Repository) UpdateStatus(ctx context.Context, id int64, status attachments.DocumentStatus, notes string, reviewedBy *int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		audit, err := documentChangeAudit(txCtx, tx, id)
+		if err != nil {
+			return err
+		}
 		query := `
 			UPDATE platform_admin.documents
 			SET status = $1, review_notes = $2, reviewed_by = $3, reviewed_at = now(), updated_at = now()
@@ -319,12 +331,17 @@ func (r *Repository) UpdateStatus(ctx context.Context, id int64, status attachme
 		if tag.RowsAffected() == 0 {
 			return apperr.NotFound("document")
 		}
-		return nil
+		audit.After = map[string]any{"status": status, "review_notes": notes, "reviewed_by": reviewedBy}
+		return database.WriteAudit(txCtx, tx, audit)
 	})
 }
 
 func (r *Repository) UpdateTypeAndStatus(ctx context.Context, id int64, docType attachments.DocumentType, status attachments.DocumentStatus, notes string, reviewedBy *int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		audit, err := documentChangeAudit(txCtx, tx, id)
+		if err != nil {
+			return err
+		}
 		query := `
 			UPDATE platform_admin.documents
 			SET document_type = $1, status = $2, review_notes = $3, reviewed_by = $4, reviewed_at = now(), updated_at = now()
@@ -337,6 +354,7 @@ func (r *Repository) UpdateTypeAndStatus(ctx context.Context, id int64, docType 
 		if tag.RowsAffected() == 0 {
 			return apperr.NotFound("document")
 		}
-		return nil
+		audit.After = map[string]any{"document_type": docType, "status": status, "review_notes": notes, "reviewed_by": reviewedBy}
+		return database.WriteAudit(txCtx, tx, audit)
 	})
 }

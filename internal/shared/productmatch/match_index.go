@@ -267,13 +267,13 @@ func (idx *Index) Lookup(id int64) (*MasterProduct, bool) {
 // Revision returns the catalogue revision number and normalizer version of this index.
 func (idx *Index) Revision() (catalog int64, normalizer string) {
 	if idx == nil {
-		return 0, "n1"
+		return 0, NormalizerVersion
 	}
 	rev := idx.catalogRevision
 	if rev <= 0 {
 		rev = 1
 	}
-	return rev, "n1"
+	return rev, NormalizerVersion
 }
 
 // WithCatalogRevision sets the revision number for this index.

@@ -331,8 +331,8 @@
 
   const addressInput = document.getElementById('reg-address');
   if (addressInput) {
-    addressInput.addEventListener('input', () => {
-      addressInput.dataset.manualEdited = 'true';
+    addressInput.addEventListener('input', (event) => {
+      if (event.isTrusted) addressInput.dataset.manualEdited = 'true';
     });
   }
 
@@ -918,52 +918,6 @@
   }
 }
 
-// Live Reverse Geocoding via OpenStreetMap Nominatim
-let reverseGeocodeTimer = null;
-function fetchDetailedAddressFromCoords(lat, lon) {
-  clearTimeout(reverseGeocodeTimer);
-  reverseGeocodeTimer = setTimeout(async () => {
-    try {
-      const addressInput = document.getElementById('reg-address') || document.querySelector('input[name="address"]');
-      const hint = document.getElementById('reg-address-hint');
-      if (!addressInput) return;
-
-      if (hint) hint.textContent = '⏳ جلب العنوان بالتفصيل...';
-      const resp = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=18&addressdetails=1&accept-language=ar`, {
-        headers: { 'Accept': 'application/json' }
-      });
-      if (!resp.ok) {
-        if (hint) hint.textContent = '📍 تم تحديد الإحداثيات بنجاح';
-        return;
-      }
-      const data = await resp.json();
-      if (data && data.address) {
-        const a = data.address;
-        const parts = [];
-        if (a.road || a.street) parts.push(a.road || a.street);
-        if (a.neighbourhood || a.suburb || a.quarter) parts.push(a.neighbourhood || a.suburb || a.quarter);
-        if (a.city || a.town || a.village || a.county) parts.push(a.city || a.town || a.village || a.county);
-        if (a.state) parts.push(a.state);
-
-        const fullAddr = parts.filter(Boolean).join('، ');
-        if (fullAddr) {
-          const isManual = addressInput.dataset.manualEdited === 'true';
-          if (!isManual && (!addressInput.value.trim() || addressInput.dataset.autoAddress === addressInput.value.trim())) {
-            addressInput.value = fullAddr;
-            addressInput.dataset.autoAddress = fullAddr;
-            addressInput.dispatchEvent(new Event('input', { bubbles: true }));
-            addressInput.dispatchEvent(new Event('change', { bubbles: true }));
-          }
-          if (hint) hint.textContent = '📍 تم تحديث العنوان تلقائياً من الخريطة';
-        }
-      }
-    } catch (e) {
-      console.warn('Reverse geocoding error:', e);
-    }
-  }, 350);
-}
-window.fetchDetailedAddressFromCoords = fetchDetailedAddressFromCoords;
-
 // Egyptian Cities Coordinates Reference Table
 const EGYPT_CITIES_COORDS = [
   { name: 'القاهرة', lat: 30.0444, lon: 31.2357 },
@@ -1133,7 +1087,7 @@ function initRegistrationMapComboboxSync() {
       if (pos && (pos[0] || pos[1])) {
         setMapLocationHelper(mapContainer, pos[0], pos[1], 11);
         if (typeof window.fetchDetailedAddressFromCoords === 'function') {
-          window.fetchDetailedAddressFromCoords(pos[0], pos[1]);
+          window.fetchDetailedAddressFromCoords(pos[0], pos[1], mapContainer);
         }
       }
     } else if (name === 'branch_city_id') {
@@ -1169,7 +1123,7 @@ function initRegistrationMapComboboxSync() {
           }
           setMapLocationHelper(mapContainer, pos[0], pos[1], 14);
           if (typeof window.fetchDetailedAddressFromCoords === 'function') {
-            window.fetchDetailedAddressFromCoords(pos[0], pos[1]);
+            window.fetchDetailedAddressFromCoords(pos[0], pos[1], mapContainer);
           }
         }
       } else {
