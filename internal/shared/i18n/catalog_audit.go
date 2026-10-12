@@ -1,6 +1,7 @@
 package i18n
 
 func loadAuditKeys(e *engine) {
+	loadTenantActivityKeys(e)
 	addKey(e, "audit.action.http.operation", "audit", "إجراء مستخدم", "User operation", "Authenticated mutation request")
 	addKey(e, "audit.action.document.uploaded", "audit", "رفع مستند", "Document uploaded", "Document mutation")
 	addKey(e, "audit.desc.operation", "audit", "%s — %s — استجابة %v (%s)", "%s — %s — response %v (%s)", "Operation method, route, status and outcome")

@@ -23,6 +23,8 @@ func main() {
 	r.Get("/review", reviewFixture)
 	r.Get("/market-discounts", marketFixture)
 	r.Get("/product", productFixture)
+	r.Get("/documents", documentsFixture)
+	r.Get("/activities", activitiesFixture)
 	r.Get("/auth/login", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := pages.LoginPage("ar", "rtl", "", "").Render(layouts.WithPath(req.Context(), req.URL.Path), w); err != nil {

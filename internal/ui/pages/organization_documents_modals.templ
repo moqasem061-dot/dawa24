@@ -186,7 +186,7 @@ templ OrganizationDocumentsModals(uploadPath string) {
 			const name = btn.getAttribute('data-name') || '';
 			const status = btn.getAttribute('data-status') || '';
 			const url = btn.getAttribute('data-url') || '';
-			openDocViewer(docId, title, docType, name, status, url);
+			openDocViewer(docId, title, docType, name, status, url, btn.getAttribute('data-mime') || '');
 		}
 
 		function openReplaceDocModalFromBtn(btn) {
@@ -198,7 +198,7 @@ templ OrganizationDocumentsModals(uploadPath string) {
 			openReplaceDocModal(docId, docType, title, name);
 		}
 
-		function openDocViewer(docId, title, docType, originalName, status, rawUrl) {
+		function openDocViewer(docId, title, docType, originalName, status, rawUrl, mimeType) {
 			let viewUrl = '/documents/' + docId + '/view';
 			let downloadUrl = '/documents/' + docId + '/download';
 			const path = window.location.pathname || '';
@@ -236,39 +236,42 @@ templ OrganizationDocumentsModals(uploadPath string) {
 			// Sniff image-vs-PDF from the original filename first, then the stored URL
 			const sniffSrc = ((originalName || '') !== '' ? originalName : (rawUrl || '')).split('?')[0];
 			const ext = (sniffSrc.split('.').pop() || '').toLowerCase();
-			const isImage = ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif'].includes(ext);
+			const isImage = (mimeType || '').startsWith('image/') || ['png', 'jpg', 'jpeg', 'webp', 'svg', 'gif', 'avif'].includes(ext);
 
 			if (errBox) errBox.classList.add('hidden');
 			if (loader) loader.classList.remove('hidden');
 
 			if (isImage) {
 				if (iframe) {
+					iframe.onload = null;
+					iframe.onerror = null;
 					iframe.classList.add('hidden');
 					iframe.src = 'about:blank';
 				}
 				if (img && imgContainer) {
 					imgContainer.classList.add('hidden');
 					img.onload = function () {
+						if (!img.complete || img.naturalWidth === 0) return;
 						if (loader) loader.classList.add('hidden');
 						if (errBox) errBox.classList.add('hidden');
 						imgContainer.classList.remove('hidden');
 					};
 					img.onerror = function () {
+						if (!img.hasAttribute('src') || !img.complete || img.naturalWidth > 0) return;
 						if (loader) loader.classList.add('hidden');
 						imgContainer.classList.add('hidden');
-						// Fallback to iframe so DocumentUnavailablePage or browser handler renders
-						if (iframe) {
-							iframe.src = viewUrl;
-							iframe.classList.remove('hidden');
-						} else if (errBox) {
-							errBox.classList.remove('hidden');
-						}
+						// Images must decode as images. An iframe fallback can silently stay blank.
+						if (errBox) errBox.classList.remove('hidden');
 					};
 					img.src = viewUrl;
 				}
 			} else {
 				if (imgContainer) imgContainer.classList.add('hidden');
-				if (img) img.src = '';
+				if (img) {
+					img.onload = null;
+					img.onerror = null;
+					img.removeAttribute('src');
+				}
 				if (iframe) {
 					iframe.onload = function () {
 						if (loader) loader.classList.add('hidden');
@@ -291,20 +294,32 @@ templ OrganizationDocumentsModals(uploadPath string) {
 
 		function closeDocViewer() {
 			const modal = document.getElementById('doc-viewer-modal');
+			if (modal) {
+				if (typeof modal.close === 'function') modal.close();
+				else modal.removeAttribute('open');
+			}
+			clearDocViewer();
+		}
+
+		function clearDocViewer() {
+			const modal = document.getElementById('doc-viewer-modal');
+			if (modal && modal.open) return;
 			const iframe = document.getElementById('modal-doc-iframe');
 			const img = document.getElementById('modal-doc-img');
 			const imgContainer = document.getElementById('modal-doc-img-container');
 			const loader = document.getElementById('modal-doc-loader');
 			const errBox = document.getElementById('modal-doc-error');
-			if (modal) {
-				if (typeof modal.close === 'function') modal.close();
-				else modal.removeAttribute('open');
-			}
 			if (iframe) {
+				iframe.onload = null;
+				iframe.onerror = null;
 				iframe.src = 'about:blank';
 				iframe.classList.add('hidden');
 			}
-			if (img) img.src = '';
+			if (img) {
+				img.onload = null;
+				img.onerror = null;
+				img.removeAttribute('src');
+			}
 			if (imgContainer) imgContainer.classList.add('hidden');
 			if (loader) loader.classList.add('hidden');
 			if (errBox) errBox.classList.add('hidden');
@@ -338,7 +353,7 @@ templ OrganizationDocumentsModals(uploadPath string) {
 			}
 		}
 
-		document.addEventListener('DOMContentLoaded', function () {
+		(function () {
 			const modal = document.getElementById('doc-viewer-modal');
 			if (modal) {
 				modal.addEventListener('click', function (e) {
@@ -349,7 +364,8 @@ templ OrganizationDocumentsModals(uploadPath string) {
 				modal.addEventListener('cancel', function () {
 					closeDocViewer();
 				});
+				modal.addEventListener('close', clearDocViewer);
 			}
-		});
+		})();
 	</script>
 }

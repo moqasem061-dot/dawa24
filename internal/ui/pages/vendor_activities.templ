@@ -10,195 +10,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-func formatAuditAction(action, labelAr string, langOpt ...string) (string, string) {
-	isEn := len(langOpt) > 0 && langOpt[0] == "en"
-	if action == "http.operation" || action == "document.uploaded" {
-		lang := "ar"
-		if isEn { lang = "en" }
-		return i18n.T(lang, "audit.action."+action), "badge-sky"
-	}
-	if labelAr != "" && !isEn {
-		return labelAr, badgeClassForAction(action)
-	}
-	switch strings.ToLower(action) {
-	case "org.registered", "user.registered":
-		if isEn {
-			return "New Registration", "badge-emerald"
-		}
-		return "تسجيل منشأة جديدة", "badge-emerald"
-	case "user.login":
-		if isEn {
-			return "User Login", "badge-sky"
-		}
-		return "تسجيل دخول", "badge-sky"
-	case "user.logout":
-		if isEn {
-			return "User Logout", "badge-slate"
-		}
-		return "تسجيل خروج", "badge-slate"
-	case "user.password_changed":
-		if isEn {
-			return "Password Changed", "badge-amber"
-		}
-		return "تغيير كلمة المرور", "badge-amber"
-	case "user.mfa_enabled":
-		if isEn {
-			return "MFA Enabled", "badge-emerald"
-		}
-		return "تفعيل MFA", "badge-emerald"
-	case "user.mfa_disabled":
-		if isEn {
-			return "MFA Disabled", "badge-rose"
-		}
-		return "تعطيل MFA", "badge-rose"
-	case "offer.created", "product.created":
-		if isEn {
-			return "Create Offer / Item", "badge-emerald"
-		}
-		return "إضافة صنف / عرض", "badge-emerald"
-	case "offer.updated", "product.updated":
-		if isEn {
-			return "Update Offer / Price", "badge-amber"
-		}
-		return "تحديث صنف / سعر", "badge-amber"
-	case "offer.deleted", "product.deleted":
-		if isEn {
-			return "Delete Offer / Item", "badge-rose"
-		}
-		return "حذف صنف / عرض", "badge-rose"
-	case "order.created":
-		if isEn {
-			return "Order Created", "badge-emerald"
-		}
-		return "إنشاء طلب جديد", "badge-emerald"
-	case "order.received":
-		if isEn {
-			return "Order Received", "badge-sky"
-		}
-		return "استلام طلب توريد", "badge-sky"
-	case "order.confirmed", "order.approved":
-		if isEn {
-			return "Order Confirmed", "badge-emerald"
-		}
-		return "قبول واعتماد الطلب", "badge-emerald"
-	case "order.processing":
-		if isEn {
-			return "Order Processing", "badge-indigo"
-		}
-		return "جاري تجهيز الطلب", "badge-indigo"
-	case "order.ready_for_pickup":
-		if isEn {
-			return "Ready for Pickup", "badge-indigo"
-		}
-		return "جاهز للاستلام", "badge-indigo"
-	case "order.shipped":
-		if isEn {
-			return "Order Shipped", "badge-indigo"
-		}
-		return "شحن الطلب", "badge-indigo"
-	case "order.delivered":
-		if isEn {
-			return "Order Delivered", "badge-emerald"
-		}
-		return "تم توصيل الطلب", "badge-emerald"
-	case "order.cancelled":
-		if isEn {
-			return "Order Cancelled", "badge-rose"
-		}
-		return "إلغاء الطلب", "badge-rose"
-	case "order.updated":
-		if isEn {
-			return "Order Updated", "badge-amber"
-		}
-		return "تعديل الطلب", "badge-amber"
-	case "order.negotiation_accepted":
-		if isEn {
-			return "Negotiation Accepted", "badge-emerald"
-		}
-		return "قبول التفاوض", "badge-emerald"
-	case "order.negotiation_rejected":
-		if isEn {
-			return "Negotiation Rejected", "badge-rose"
-		}
-		return "رفض التفاوض", "badge-rose"
-	case "member.created":
-		if isEn {
-			return "Add Staff Member", "badge-emerald"
-		}
-		return "إضافة موظف", "badge-emerald"
-	case "member.updated":
-		if isEn {
-			return "Update Staff Member", "badge-amber"
-		}
-		return "تعديل بيانات موظف", "badge-amber"
-	case "member.deleted":
-		if isEn {
-			return "Delete Staff Member", "badge-rose"
-		}
-		return "حذف موظف", "badge-rose"
-	case "invoice.created":
-		if isEn {
-			return "Issue Invoice", "badge-sky"
-		}
-		return "إصدار فاتورة", "badge-sky"
-	case "branch.created", "warehouse.created":
-		if isEn {
-			return "Add Branch / Warehouse", "badge-emerald"
-		}
-		return "إضافة فرع / مخزن", "badge-emerald"
-	default:
-		clean := strings.ReplaceAll(action, ".", " — ")
-		clean = strings.ReplaceAll(clean, "_", " ")
-		return clean, badgeClassForAction(action)
-	}
-}
-
-func formatEntityType(entityType, entityTypeAr string, langOpt ...string) string {
-	isEn := len(langOpt) > 0 && langOpt[0] == "en"
-	if entityTypeAr != "" && !isEn {
-		return entityTypeAr
-	}
-	switch strings.ToLower(entityType) {
-	case "organization", "org":
-		if isEn {
-			return "Organization"
-		}
-		return "المنشأة"
-	case "user":
-		if isEn {
-			return "Staff / User"
-		}
-		return "موظف / مستخدم"
-	case "offer", "variant":
-		if isEn {
-			return "Supply Offer"
-		}
-		return "عرض توريد"
-	case "product":
-		if isEn {
-			return "Drug Product"
-		}
-		return "منتج دوائي"
-	case "order":
-		if isEn {
-			return "Supply Order"
-		}
-		return "أمر توريد"
-	case "invoice":
-		if isEn {
-			return "Tax Invoice"
-		}
-		return "فاتورة ضريبية"
-	case "warehouse", "branch":
-		if isEn {
-			return "Warehouse / Branch"
-		}
-		return "مخزن / فرع"
-	default:
-		return entityType
-	}
-}
-
 func formatShortID(id string) string {
 	if len(id) > 12 {
 		return id[:8] + "…"
@@ -287,10 +98,11 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 						</thead>
 						<tbody class="divide-y divide-slate-100">
 							for _, e := range entries {
-								{{ actionLabel, badgeClass := formatAuditAction(e.Action, e.ActionLabelAr, lang) }}
+								{{ presentation := tenantActivity(e, lang); actionLabel, badgeClass := presentation.Action, badgeClassForAction(e.Action) }}
 								<tr
 									class="transition-colors"
-									x-show={ fmt.Sprintf("search === '' || '%s'.toLowerCase().includes(search.toLowerCase()) || '%s'.toLowerCase().includes(search.toLowerCase()) || '%s'.toLowerCase().includes(search.toLowerCase())", e.ActorName, actionLabel, e.EntityID) }
+									data-search={ strings.Join([]string{e.ActorName, actionLabel, presentation.Entity, e.EntityID}, " ") }
+x-show="search === '' || $el.dataset.search.toLowerCase().includes(search.toLowerCase())"
 								>
 									<!-- Actor Info -->
 									<td class="py-3 ps-4">
@@ -324,16 +136,13 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 										<span class={ "badge text-xs font-bold", badgeClass }>
 											{ actionLabel }
 										</span>
-										if e.Action == "http.operation" {
-											<div class="text-2xs font-mono text-secondary mt-1" dir="ltr">{ fmt.Sprint(e.After["method"]) } { e.Route }</div>
-											<div class="text-2xs text-muted mt-1">{ fmt.Sprint(e.After["status"]) } — { fmt.Sprint(e.After["outcome"]) }</div>
-										}
-									</td>
+										<div class="text-xs text-muted mt-1">{ presentation.Outcome }</div>
+</td>
 
 									<!-- Entity Type -->
 									<td class="py-3">
 										<span class="badge badge-slate text-xs font-bold">
-											{ formatEntityType(e.EntityType, e.EntityTypeAr, lang) }
+											{ presentation.Entity }
 										</span>
 									</td>
 
@@ -362,7 +171,7 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 
 									<!-- Timestamp -->
 									<td class="text-end tabular-nums text-xs text-secondary font-bold py-3">
-										{ e.CreatedAt.Format("2006-01-02 03:04:05 PM") }
+										{ e.CreatedAt.Format("2006-01-02 15:04:05") }
 									</td>
 
 									<!-- Actions -->
@@ -370,7 +179,7 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 										<button
 											type="button"
 											class="btn btn-secondary btn-xs font-bold gap-1 shadow-2xs"
-											@click={ fmt.Sprintf("[selectedEntry = %s, isDetailsOpen = true, $dispatch('open-modal', 'tenant-audit-details-modal')]", func() string { s, _ := templ.JSONString(e); return s }()) }
+											@click={ fmt.Sprintf("[selectedEntry = %s, isDetailsOpen = true, $dispatch('open-modal', 'tenant-audit-details-modal')]", func() string { s, _ := templ.JSONString(presentation); return s }()) }
 										>
 											@components.IconEye("icon-2xs")
 											<span>{ i18n.T(lang, "activities.btn_details") }</span>
@@ -397,114 +206,38 @@ templ tenantActivitiesBody(entries []*platformadmin.AuditEntry, orgType string, 
 				</div>
 			}
 
-			<!-- Details & JSON Diff Modal -->
 			@components.Modal(components.ModalProps{
-				ID:          "tenant-audit-details-modal",
-				Title:       func() string {
-					if lang == "en" {
-						return "Operation Details"
-					}
-					return "تفاصيل العملية والنشاط"
-				}(),
-				Icon:        "clock",
-				Size:        "lg",
-				AlpineClose: "isDetailsOpen = false",
-			}) {
-				<div class="flex-between items-center pb-3 mb-4 border-b border-slate-100">
-					<div class="d-flex items-center gap-2.5">
-						<div class="stack-sm">
-							<h3 class="text-base font-black text-primary m-0" x-text="(selectedEntry ? (selectedEntry.title || ('#' + selectedEntry.id)) : '')"></h3>
-							<p class="text-2xs text-secondary m-0 mt-0.5 font-medium" x-text="selectedEntry ? ((selectedEntry.action_label_ar || selectedEntry.action) + ' • ' + (selectedEntry.entity_type_ar || selectedEntry.entity_type)) : ''"></p>
-						</div>
-					</div>
-				</div>
-
-				<template x-if="selectedEntry">
-					<div class="d-flex flex-col gap-4">
-						<div class="d-grid grid-cols-2 gap-3 p-3.5 bg-surface-sunken rounded-xl border border-slate-200/80 text-xs">
-							<div class="stack-sm">
-								<span class="text-muted d-block text-2xs">
-									if lang == "en" {
-										Actor / Staff:
-									} else {
-										الموظف المنفذ:
-									}
-								</span>
-								<strong class="text-primary font-bold" x-text="selectedEntry.actor_name"></strong>
-							</div>
-							<div class="stack-sm">
-								<span class="text-muted d-block text-2xs">
-									if lang == "en" {
-										Organization:
-									} else {
-										المنشأة:
-									}
-								</span>
-								<strong class="text-primary font-bold" x-text="selectedEntry.organization_name"></strong>
-							</div>
-							<div class="stack-sm">
-								<span class="text-muted d-block text-2xs">
-									if lang == "en" {
-										IP Address:
-									} else {
-										عنوان IP:
-									}
-								</span>
-								<code class="font-mono text-secondary" x-text="selectedEntry.ip_address || 'داخلي'"></code>
-							</div>
-							<div class="stack-sm">
-								<span class="text-muted d-block text-2xs">
-									if lang == "en" {
-										Timestamp:
-									} else {
-										التوقيت والتاريخ:
-									}
-								</span>
-								<span class="tabular-nums font-bold text-secondary" x-text="selectedEntry.created_at"></span>
-							</div>
-						</div>
-
-						<!-- Description if present -->
-						<template x-if="selectedEntry.description">
-							<div class="p-3 bg-brand-50/50 rounded-xl border border-brand-100 text-xs text-primary font-medium" x-text="selectedEntry.description"></div>
-						</template>
-
-						<!-- Before / After JSON Payloads -->
-						<div class="d-grid grid-auto-fit-sm gap-3">
-							<div class="p-3 bg-rose-50/40 rounded-xl border border-rose-100">
-								<div class="text-2xs font-extrabold text-rose-800 mb-1.5">
-									if lang == "en" {
-										Previous Data (Before):
-									} else {
-										البيانات السابقة (Before):
-									}
-								</div>
-								<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-rose-200 overflow-x-auto text-slate-700" x-text="$json(selectedEntry.before || {})"></pre>
-							</div>
-							<div class="p-3 bg-emerald-50/40 rounded-xl border border-emerald-100">
-								<div class="text-2xs font-extrabold text-emerald-800 mb-1.5">
-									if lang == "en" {
-										Data After Action (After):
-									} else {
-										البيانات بعد العملية (After):
-									}
-								</div>
-								<pre class="text-2xs font-mono bg-white p-2.5 rounded-lg border border-emerald-200 overflow-x-auto text-slate-700" x-text="$json(selectedEntry.after || {})"></pre>
-							</div>
-						</div>
-					</div>
-				</template>
-
-				<div class="flex-between items-center pt-3 mt-4 border-t border-slate-100">
-					<span></span>
-					<button type="button" data-modal-close class="btn btn-secondary btn-sm font-bold px-6">
-						if lang == "en" {
-							Close
-						} else {
-							إغلاق
-						}
-					</button>
-				</div>
-			}
-		</div>
+ ID: "tenant-audit-details-modal",
+ Title: i18n.T(lang, "activity.details"),
+ Icon: "clock", Size: "lg", AlpineClose: "isDetailsOpen = false",
+}) {
+ <template x-if="selectedEntry">
+  <div class="stack-md">
+   <h3 class="text-base font-bold m-0" x-text="selectedEntry.action"></h3>
+   <p class="text-sm text-secondary" x-text="selectedEntry.outcome"></p>
+   <dl class="d-grid grid-cols-2 gap-3 text-sm">
+    <div><dt>{ i18n.T(lang,"activities.col_actor") }</dt><dd x-text="selectedEntry.actor"></dd></div>
+    <div><dt>{ i18n.T(lang,"activities.col_entity") }</dt><dd x-text="selectedEntry.entity"></dd></div>
+    <div><dt>{ i18n.T(lang,"activities.col_date") }</dt><dd x-text="selectedEntry.date"></dd></div>
+    <div><dt>{ i18n.T(lang,"activities.col_id") }</dt><dd x-text="selectedEntry.id"></dd></div>
+   </dl>
+   <template x-if="selectedEntry.changes.length === 0">
+    <p class="text-sm text-muted">{ i18n.T(lang,"activity.no_changes") }</p>
+   </template>
+   <template x-for="change in selectedEntry.changes" :key="change.label">
+    <div class="border rounded-xl p-3 stack-sm">
+     <strong x-text="change.label"></strong>
+     <div class="d-grid grid-cols-2 gap-3 text-sm">
+      <div><span class="text-muted">{ i18n.T(lang,"activity.before") }</span><p x-text="change.before"></p></div>
+      <div><span class="text-muted">{ i18n.T(lang,"activity.after") }</span><p x-text="change.after"></p></div>
+     </div>
+    </div>
+   </template>
+  </div>
+ </template>
+ <div class="modal-footer">
+  <button type="button" data-modal-close class="btn btn-secondary">{ i18n.T(lang,"preview.modal.close") }</button>
+ </div>
+}
+</div>
 }

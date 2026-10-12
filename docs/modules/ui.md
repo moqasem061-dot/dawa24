@@ -1,5 +1,22 @@
 # UI and static asset delivery
 
+## Official documents and tenant activity language (2026-10-12)
+
+The organization document viewer detaches old media callbacks before clearing
+sources, ignores stale image errors, and renders an explicit error instead of a
+blank iframe when an image cannot decode. MIME metadata supports filenames
+without extensions. Close and backdrop handlers bind after the modal markup,
+including when that markup arrives through navigation; queued close events
+cannot clear a reopened preview.
+
+Vendor and pharmacy activity lists use a bilingual presentation projection.
+Route patterns become business actions and sections; response outcomes become
+readable text. Details contain only translated, allowlisted before/after fields,
+not route URLs, request methods, machine action names or raw JSON. Unknown
+actions have a readable fallback. Full technical audit data remains available
+to administrators. Browser fixtures cover refresh, replacement metadata,
+repeated viewing, image failure, both languages, detail dialogs and search.
+
 ## Product image preview lifecycle (2026-10-12)
 
 The shared viewer respects explicit image metadata, including extensionless

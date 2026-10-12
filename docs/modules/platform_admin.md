@@ -30,6 +30,11 @@ The `platform_admin` bounded context provides global administrative configuratio
 
 ### Expanded activity records (2026-10-12)
 
+Tenant activity screens translate technical records through an allowlisted
+presentation model. The source audit retains routes, methods, outcomes and JSON;
+supplier/pharmacy users see localized business actions, sections, outcomes and
+field values. Generic fallbacks do not expose new machine codes.
+
 All authenticated UI and API mutations now emit an operation-response record,
 including attempts denied by downstream permission gates. Records include the
 real actor, current organization, route pattern, entity identifier, HTTP method,
