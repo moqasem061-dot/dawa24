@@ -176,9 +176,10 @@ func (r *Repository) RecordInvoicePayment(ctx context.Context, req billing.Recor
 		// 6. If linked to an order, keep order payment status updated
 		if orderID != nil {
 			orderPaymentStatus := "partially_paid"
-			if newStatus == "paid" {
+			switch newStatus {
+			case "paid":
 				orderPaymentStatus = "paid"
-			} else if newStatus == "issued" || newStatus == "draft" {
+			case "issued", "draft":
 				orderPaymentStatus = "unpaid"
 			}
 			if _, errExec := tx.Exec(txCtx, `

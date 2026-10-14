@@ -7,9 +7,19 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
 	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
+
+func vendorDashboardFixture(w http.ResponseWriter, r *http.Request) {
+	lang, dir := productFixtureLocale(r)
+	actor := authctx.Actor{UserID: 1, OrganizationID: 1, OrgID: 1, Role: "vendor", IsOwner: true}
+	ctx := authctx.WithActor(layouts.WithPath(r.Context(), "/vendor/dashboard"), actor)
+	if err := pages.VendorDashboard(lang, dir, pages.VendorDashboardData{}, actor).Render(ctx, w); err != nil {
+		log.Print(err)
+	}
+}
 
 func documentsFixture(w http.ResponseWriter, r *http.Request) {
 	lang, dir := productFixtureLocale(r)

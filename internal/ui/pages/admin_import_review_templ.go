@@ -1391,7 +1391,7 @@ func ImportRowLine(view ImportReviewView, row *catalog.StagingRow) templ.Compone
 				}
 			}
 			if row.Action == catalog.ActionUpdate {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<span class=\"badge badge-slate text-xxs font-normal ml-2 mr-2\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<span class=\"badge badge-slate text-xxs font-normal mx-2\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}

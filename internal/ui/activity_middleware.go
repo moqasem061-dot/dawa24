@@ -2,9 +2,10 @@ package ui
 
 import (
 	"context"
+	"net/http"
+
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
-	"net/http"
 )
 
 func (h *UIHandler) ActivityMiddleware(next http.Handler) http.Handler {

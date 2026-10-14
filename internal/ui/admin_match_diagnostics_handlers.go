@@ -40,7 +40,7 @@ func (h *UIHandler) AdminMatchDiagnosticsPage(w http.ResponseWriter, r *http.Req
 		data := pages.AdminMatchDiagnosticsData{
 			ErrorMessage: fmt.Sprintf("تعذر العثور على عملية المطابقة رقم %d (Run not found)", runID),
 		}
-		_ = pages.AdminMatchDiagnosticsPage(lang, dir, data).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminMatchDiagnosticsPage", pages.AdminMatchDiagnosticsPage(lang, dir, data))
 		return
 	}
 
@@ -70,7 +70,7 @@ func (h *UIHandler) AdminMatchDiagnosticsPage(w http.ResponseWriter, r *http.Req
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	_ = pages.AdminMatchDiagnosticsPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render AdminMatchDiagnosticsPage", pages.AdminMatchDiagnosticsPage(lang, dir, data))
 }
 
 // loadRunDiagnostics fetches consumer rows and constructs the diagnostic details for the selected row.

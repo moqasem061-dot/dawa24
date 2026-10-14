@@ -2,6 +2,7 @@ package observability
 
 import (
 	"bytes"
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -66,7 +67,7 @@ func TestMetrics_ExpositionAndHandler(t *testing.T) {
 	assert.Contains(t, out, "matching_spend_egp_total")
 	assert.Contains(t, out, "matching_spend_ceiling_egp")
 
-	req := httptest.NewRequest(http.MethodGet, "/metrics", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/metrics", nil)
 	rec := httptest.NewRecorder()
 	MetricsHandler().ServeHTTP(rec, req)
 

@@ -28,7 +28,7 @@ func (h *UIHandler) AdminMatchPoliciesPage(w http.ResponseWriter, r *http.Reques
 		data := pages.AdminMatchPoliciesData{
 			ErrorMessage: fmt.Sprintf("تعذر تحميل السياسات: %v", err),
 		}
-		_ = pages.AdminMatchPoliciesPage(lang, dir, data).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminMatchPoliciesPage", pages.AdminMatchPoliciesPage(lang, dir, data))
 		return
 	}
 
@@ -37,7 +37,7 @@ func (h *UIHandler) AdminMatchPoliciesPage(w http.ResponseWriter, r *http.Reques
 		data := pages.AdminMatchPoliciesData{
 			ErrorMessage: fmt.Sprintf("تعذر تحميل التخصيصات: %v", err),
 		}
-		_ = pages.AdminMatchPoliciesPage(lang, dir, data).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminMatchPoliciesPage", pages.AdminMatchPoliciesPage(lang, dir, data))
 		return
 	}
 
@@ -47,7 +47,7 @@ func (h *UIHandler) AdminMatchPoliciesPage(w http.ResponseWriter, r *http.Reques
 		SuccessMsg:   r.URL.Query().Get("msg"),
 		ErrorMessage: r.URL.Query().Get("err"),
 	}
-	_ = pages.AdminMatchPoliciesPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render AdminMatchPoliciesPage", pages.AdminMatchPoliciesPage(lang, dir, data))
 }
 
 // AdminMatchPolicyUpdateAssignment updates or sets active and shadow policy for a workflow cohort (US13 T152).

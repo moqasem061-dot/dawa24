@@ -146,9 +146,11 @@ func (f *Finalizer) Finalize(ctx context.Context, run *Run) (orderID int64, stal
 			}
 			var dec matchflow.RowDecision
 			if len(l.MatchDecision) > 0 {
-				if parsed, err := matchflow.ParseRowDecision(l.MatchDecision); err == nil {
-					dec = parsed
+				parsed, err := matchflow.ParseRowDecision(l.MatchDecision)
+				if err != nil {
+					return 0, nil, fmt.Errorf("parse match decision for line %d: %w", l.ID, err)
 				}
+				dec = parsed
 			}
 			if dec.State == "" {
 				dec = matchflow.RowDecision{

@@ -257,9 +257,12 @@ func (s *Service) selectFor(cfg *Config, l *Line, written []Candidate, keptVaria
 		}
 	}
 	if chosen != nil {
-		if net, err := LineNet(chosen.NetUnitPrice, l.EffectiveQty); err == nil {
-			sel.LineNet = net
+		net, err := LineNet(chosen.NetUnitPrice, l.EffectiveQty)
+		if err != nil {
+			s.log.Warn("smart order line amount unavailable", "line_id", l.ID, "error", err)
+			return nil
 		}
+		sel.LineNet = net
 	}
 	return sel
 }
@@ -317,7 +320,7 @@ func (s *Service) refreshLine(ctx context.Context, run *Run, line *Line, keptVar
 				"line_id", line.ID)
 		} else if len(offers) > 0 {
 			byProduct := map[int64][]Offer{*line.MatchedProductID: offers}
-			if vd, err := s.checkOffers(ctx, run, []*Line{line}, byProduct); err == nil {
+			if vd, err := s.checkOffers(ctx, run, []*Line{line}, byProduct); err == nil { // nolint:errswallow: errors are logged and leave the line unorderable below
 				verdicts = vd
 			} else {
 				s.log.WarnContext(ctx, "availability gate check failed; line left unorderable",

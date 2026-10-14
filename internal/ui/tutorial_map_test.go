@@ -13,7 +13,7 @@ func TestTutorialMapServesRoleSpecificHTML(t *testing.T) {
 	for _, role := range []string{"vendor", "pharmacy", "driver"} {
 		t.Run(role, func(t *testing.T) {
 			response := httptest.NewRecorder()
-			request := httptest.NewRequest("GET", "/tutorial", nil).WithContext(layouts.WithNonce(context.Background(), "test-csp-nonce"))
+			request := httptest.NewRequestWithContext(context.Background(), "GET", "/tutorial", nil).WithContext(layouts.WithNonce(context.Background(), "test-csp-nonce"))
 			tutorialMap(role).ServeHTTP(response, request)
 			if response.Code != 200 || !strings.Contains(response.Header().Get("Content-Type"), "text/html") || response.Body.Len() < 1000 {
 				t.Fatalf("tutorial response = %d %q %d bytes", response.Code, response.Header().Get("Content-Type"), response.Body.Len())

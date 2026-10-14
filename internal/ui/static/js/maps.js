@@ -184,6 +184,9 @@ if (typeof window.syncCityDropdownsWithCoordinates === 'undefined') {
     const scope = source?.closest('form') || document;
     const inputs = [...scope.querySelectorAll('#reg-address, input[name="address"], input[name="branch_address"], [data-map-address], textarea[name="address"]')];
     const original = inputs.map(input => input.value);
+    // Choosing another location explicitly requests a new address. Only edits
+    // made after this lookup starts should prevent its response replacing text.
+    inputs.forEach(input => { delete input.dataset.manualEdited; });
     timer = setTimeout(async function () {
       if (!inputs.length) return;
       const lang = document.documentElement.lang === 'en' ? 'en' : 'ar';
@@ -199,7 +202,6 @@ if (typeof window.syncCityDropdownsWithCoordinates === 'undefined') {
         if (!fullAddress) throw new Error('No address found');
         inputs.forEach(function (input, index) {
           if (!input.isConnected || input.value !== original[index] || input.dataset.manualEdited === 'true') return;
-          if (input.value.trim() && input.value !== input.dataset.autoAddress) return;
           input.value = fullAddress;
           input.dataset.autoAddress = fullAddress;
           input.dispatchEvent(new Event('input', { bubbles: true }));

@@ -64,6 +64,16 @@ The UI wizard strictly reflects the server session state:
 
 ### Matching audit repairs (2026-10-12)
 
+Repair 2026-10-14: the AI applier targeted a nonexistent `matched_product_id`
+column on `catalog_import_rows`, where the import link is actually `product_id`.
+It now persists that link, the chosen product's score and fresh candidates in
+one revision-checked transaction, clearing stale variants when the link changes.
+Migration 245 repairs inconsistent canonical links on uncommitted, unlocked,
+non-manual rows. Similarity for an unsettled candidate is labeled separately
+from accepted matching and is shown as needing review. A real PostgreSQL
+regression covers acceptance, clearing and obsolete responses; the deterministic
+AI-off staging tests remain in place.
+
 Staging previously replaced **every candidate score** with `1.0`. That made
 unsettled, conflicting suggestions appear to be 100% matches even though no
 product link was accepted. Staging now preserves canonical candidate scores;

@@ -1,5 +1,27 @@
 # UI and static asset delivery
 
+## Release gate repairs (2026-10-14)
+
+Embedded role guides declare a CSP nonce placeholder in their style tags; the
+handler replaces it with the current request's nonce before serving the page.
+The static markup gate and runtime guide checks now agree. Matching-policy
+rollback uses the shared bilingual `data-confirm` action instead of an Alpine
+expression unsupported by the CSP build.
+
+## Documents, map addresses and supplier guide (2026-10-14)
+
+Official document preview handlers live in a static script and resolve the
+current modal on every action, including after navigation swaps and history
+restoration. Each image load owns a fresh node so late callbacks cannot hide
+the next document. Native new-tab links bypass the universal preview handler.
+Configured shared-storage failures refuse official document uploads before
+registering metadata, rather than recording success with only a local copy.
+
+Moving the map pin regenerates the detailed address after previous manual edits;
+typing while the request is pending still protects that new text. The supplier
+dashboard places a large platform-guide button in its directory section and
+explains that it opens the usage instructions and workflow map.
+
 ## Official documents and tenant activity language (2026-10-12)
 
 The organization document viewer detaches old media callbacks before clearing

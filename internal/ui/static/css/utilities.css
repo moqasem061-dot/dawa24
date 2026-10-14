@@ -4,6 +4,7 @@
    ========================================================================== */
 
 @layer utilities {
+	.mx-2 { margin-inline: var(--space-sm); }
 /* ==========================================================================
    DAWA 24 DESIGN SYSTEM — ATOMIC UTILITIES (utilities.css)
    Flexbox, Grids, Spacing, Typography, Display, Sizing, Borders, Truncation

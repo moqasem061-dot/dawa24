@@ -56,3 +56,16 @@ func TestStoredDecisionRestoresOldCandidateScores(t *testing.T) {
 		t.Fatal("restoring a score linked an unsettled suggestion")
 	}
 }
+
+func TestDecisionScoreUsesAcceptedProductRatherThanFirstSuggestion(t *testing.T) {
+	id := int64(2)
+	dec := matchflow.RowDecision{State: matchflow.StateAccepted, ProductID: &id,
+		Candidates: []matchflow.CandidateDecision{{ProductID: 1, Score: 0.98}, {ProductID: 2, Score: 0.86}}}
+	if got := decisionMatchScore(dec); got != 0.86 {
+		t.Fatalf("accepted product score = %v, want 0.86", got)
+	}
+	dec.State = matchflow.StateNeedsReview
+	if got := decisionMatchScore(dec); got != 0.98 {
+		t.Fatalf("unsettled suggestion score = %v, want 0.98", got)
+	}
+}

@@ -129,10 +129,6 @@ templ VendorDashboard(lang, dir string, data VendorDashboardData, actor authctx.
 					</div>
 
 					<div class="d-flex items-center gap-2 flex-wrap">
-						<a href="/vendor/tutorial" class="btn btn-secondary btn-sm font-bold gap-1 rounded-md" aria-label={ i18n.T(lang, "tutorials.maps") }>
-							@components.IconMapPin("icon-xs")
-							<span>{ i18n.T(lang, "tutorials.maps") }</span>
-						</a>
 						<!-- Subscription Pill -->
 						if data.Subscription != nil && data.Subscription.HasSubscription {
 							<div class="admin-status-pill">
@@ -188,9 +184,10 @@ templ VendorDashboard(lang, dir string, data VendorDashboardData, actor authctx.
 						</div>
 					</div>
 					<div class="d-flex items-center gap-2">
-						<span class="badge badge-sky text-2xs font-bold px-2.5 py-1 rounded-md">
-							{ fmt.Sprintf(i18n.T(lang, "vendor_dashboard.active_portals_count"), len(vendorVisibleNav(actor))) }
-						</span>
+						<a href="/vendor/tutorial" class="btn btn-primary btn-lg font-bold gap-2" data-no-boost="true">
+							@components.IconFileText("icon-sm")
+							<span>{ i18n.T(lang, "tutorials.maps") }</span>
+						</a>
 					</div>
 				</div>
 			</div>

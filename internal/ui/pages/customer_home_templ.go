@@ -160,7 +160,7 @@ func CustomerHome(featured []*catalog.Product, categories []*catalog.Category, o
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span>تصفح الكتالوج</span></a></div></div><!-- Left Column in RTL: Live Pharmaceutical Comparison Board & Dr. Capsule Mascot --><div class=\"landing-hero-stage-col\"><div class=\"dashboard-preview-frame shadow-2xl\"><div class=\"preview-window-topbar\"><div class=\"preview-window-dots\"><span class=\"dot dot-red\"></span> <span class=\"dot dot-yellow\"></span> <span class=\"dot dot-green\"></span></div><div class=\"preview-window-title\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span>تصفح الكتالوج</span></a></div></div><!-- Left Column in RTL: Live Pharmaceutical Comparison Board & Dr. Capsule Mascot --><div class=\"min-w-0\"><div class=\"dashboard-preview-frame shadow-2xl\"><div class=\"preview-window-topbar\"><div class=\"preview-window-dots\"><span class=\"dot dot-red\"></span> <span class=\"dot dot-yellow\"></span> <span class=\"dot dot-green\"></span></div><div class=\"preview-window-title\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

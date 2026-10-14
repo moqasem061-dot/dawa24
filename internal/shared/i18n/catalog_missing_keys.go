@@ -1,7 +1,11 @@
 package i18n
 
 func loadMissingCatalogKeys(e *engine) {
-	addKey(e, "tutorials.maps", "tutorials", "خرائط", "Maps", "Open the role-specific tutorial map")
+	addKey(e, "admin.match_policies.rollback_confirm", "admin", "استعادة الإصدار السابق لسياسة المطابقة لهذا المسار؟", "Restore the previous matching policy version for this workflow?", "Matching policy rollback confirmation")
+	addKey(e, "tutorials.maps", "tutorials", "شرح المنصة وخريطة الاستخدام", "Platform guide and workflow map", "Open the role-specific tutorial map")
+	addKey(e, "vendor_ingest.row.review_candidate", "vendor_ingest", "مرشح يحتاج مراجعة", "Candidate needs review", "Unsettled catalog candidate")
+	addKey(e, "vendor_ingest.row.suggestion_score", "vendor_ingest", "تشابه الاقتراح", "Suggestion similarity", "Similarity does not confirm an import link")
+	addKey(e, "vendor_ingest.row.confirm_to_import", "vendor_ingest", "يلزم اعتماد الربط للاستيراد", "Confirm the link before importing", "An unsettled candidate requires approval")
 	addKey(e, "admin.temp_warehouse.mapping_invalid", "admin", "تعذر اعتماد الربط: اختر اسم الصنف وسعراً أو خصماً، واستخدم عموداً مختلفاً لكل حقل.", "Mapping cannot be saved: choose the product name and a price or discount, and use a different column for each field.", "Invalid temporary warehouse mapping")
 	addKey(e, "admin.categories.invalid_parent", "admin", "الفئة الرئيسية غير صالحة أو تؤدي إلى دورة في شجرة التصنيفات.", "The parent category is invalid or would create a cycle in the category tree.", "Invalid category parent")
 	addKey(e, "admin.categories.has_children", "admin", "انقل الفئات الفرعية إلى فئة أخرى قبل حذف هذه الفئة.", "Move this category's children before deleting it.", "Category still has children")

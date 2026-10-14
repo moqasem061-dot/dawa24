@@ -247,6 +247,10 @@ func rowsWhere(importID int64, filter ingest.RowFilter) (string, []any) {
 		args = append(args, "%"+q+"%")
 		where = append(where, fmt.Sprintf("(r.display_name ILIKE $%d OR r.source_code ILIKE $%d OR r.custom_variant_name ILIKE $%d OR COALESCE(p.name->>'ar', p.name->>'en', '') ILIKE $%d OR p.sku ILIKE $%d)", len(args), len(args), len(args), len(args), len(args)))
 	}
+	if filter.RowID > 0 {
+		args = append(args, filter.RowID)
+		where = append(where, fmt.Sprintf("r.id = $%d", len(args)))
+	}
 	return strings.Join(where, " AND "), args
 }
 

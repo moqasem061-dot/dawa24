@@ -218,7 +218,9 @@ func (h *UIHandler) planCartAdd(ctx context.Context, actor authctx.Actor, varian
 		return nil, refuseMessage(res.Message("ar"))
 	}
 	item := &commerce.CartItem{ProductID: productID, ProductVariantID: variantID, OrganizationID: vendorOrgID, Quantity: qty}
-	h.priceCartItem(bctx, item)
+	if err := h.priceCartItem(bctx, item); err != nil {
+		return nil, err
+	}
 	return &cartAddPlan{
 		ctx: bctx, item: item, branch: branch,
 		product:  h.productName(bctx, productID),

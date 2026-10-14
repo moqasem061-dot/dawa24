@@ -90,6 +90,11 @@ company's custom roles must be granted the new keys by hand in the role editor.
 
 ## Audits
 
+Assistant cart-add preparation propagates catalogue-price lookup failures
+(repair 2026-10-14). An unavailable price cannot create a confirmation card or
+an executable cart plan with a default zero price. A regression simulates a
+valid available listing whose subsequent price lookup fails.
+
 - `internal/ui/sidebar_route_sync_test.go` — every sidebar item, in every
   dashboard, requested through the real router by a caller holding its
   permission and by one holding everything else. This is what "the route and the

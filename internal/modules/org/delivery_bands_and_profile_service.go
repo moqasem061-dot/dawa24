@@ -292,7 +292,7 @@ func (s *Service) AuthorizeUserOrgLink(ctx context.Context, id, userID, vendorOr
 		return err
 	}
 	if link == nil ||
-		!((userID > 0 && link.UserID == userID) || (vendorOrgID > 0 && link.VendorOrgID == vendorOrgID)) {
+		((userID <= 0 || link.UserID != userID) && (vendorOrgID <= 0 || link.VendorOrgID != vendorOrgID)) {
 		return apperr.NotFound("user_organization")
 	}
 	return nil

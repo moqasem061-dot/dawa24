@@ -256,7 +256,12 @@ func saveUploadedFileFull(r *http.Request, fieldName, category string) (uploaded
 
 	if uploadStorageClient != nil {
 		s3Key := fmt.Sprintf("%s/%s", category, uniqueName)
-		_ = uploadStorageClient.Put(r.Context(), s3Key, bytes.NewReader(data), int64(len(data)), mimeType)
+		if err := uploadStorageClient.Put(r.Context(), s3Key, bytes.NewReader(data), int64(len(data)), mimeType); err != nil {
+			if category == "documents" || category == "licenses" {
+				return meta, fmt.Errorf("failed to persist official document: %w", err)
+			}
+			slog.WarnContext(r.Context(), "upload: object storage mirror failed", "key", s3Key, "error", err)
+		}
 	}
 
 	meta.URL = fmt.Sprintf("/uploads/%s/%s", category, uniqueName)

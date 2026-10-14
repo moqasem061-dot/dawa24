@@ -181,12 +181,7 @@ func (r *stagingRun) stage(ctx context.Context, batch []*productmatch.Row) error
 		productID := cols.MatchedProductID
 		matchLevel := productmatch.MatchLevel(cols.MatchLevel)
 
-		score := 0.0
-		if len(dec.Candidates) > 0 {
-			score = dec.Candidates[0].Score
-		} else if cols.MatchedProductID != nil {
-			score = 1.0
-		}
+		score := decisionMatchScore(dec)
 
 		cands := make([]productmatch.MatchCandidate, 0, len(dec.Candidates))
 		for _, c := range dec.Candidates {

@@ -81,6 +81,7 @@ const (
 
 // RowFilter narrows the results table.
 type RowFilter struct {
+	RowID      int64
 	Outcome    string
 	MatchLevel string
 	Search     string

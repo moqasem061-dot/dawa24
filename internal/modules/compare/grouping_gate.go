@@ -113,7 +113,7 @@ func convertEquivalentPrice(priceB money.Amount, factsA, factsB productmatch.Ide
 			// an active bridging relationship is strictly required.
 			if bridgingID := productmatch.FindBridgingRel(cA, uA, cB, uB, rels); bridgingID > 0 {
 				converted, err := priceB.MulRatio(int64(cA), int64(cB))
-				if err == nil {
+				if err == nil { // nolint:errswallow: overflow rejects the pack conversion below
 					return converted, true
 				}
 			}
@@ -121,13 +121,13 @@ func convertEquivalentPrice(priceB money.Amount, factsA, factsB productmatch.Ide
 		}
 		if convAInB, ok := productmatch.Convert(cA, uA, uB, rels); ok && convAInB > 0 {
 			converted, err := priceB.MulRatio(int64(convAInB), int64(cB))
-			if err == nil {
+			if err == nil { // nolint:errswallow: overflow rejects the pack conversion below
 				return converted, true
 			}
 		}
 		if convBInA, ok := productmatch.Convert(cB, uB, uA, rels); ok && convBInA > 0 {
 			converted, err := priceB.MulRatio(int64(cA), int64(convBInA))
-			if err == nil {
+			if err == nil { // nolint:errswallow: overflow rejects the pack conversion below
 				return converted, true
 			}
 		}

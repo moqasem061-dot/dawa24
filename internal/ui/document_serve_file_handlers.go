@@ -59,7 +59,7 @@ func (h *UIHandler) serveDocumentFile(w http.ResponseWriter, r *http.Request, do
 	}
 
 	// Verify tenant authorization if not platform admin/staff
-	if !actor.IsPlatformAdmin() && !(actor.IsStaff && actor.Can("hr.document.view")) {
+	if !actor.IsPlatformAdmin() && (!actor.IsStaff || !actor.Can("hr.document.view")) {
 		orgID := actor.OrganizationID
 		if orgID <= 0 {
 			orgID = actor.OrgID

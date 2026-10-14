@@ -117,7 +117,7 @@ templ VendorOfferFormPage(data VendorOfferFormData, lang, dir string) {
 						</div>
 					</div>
 				} else if data.Offer.AdminStatus == "changes_requested" {
-					<div class="glass-panel p-4 mb-0 border-s-4 border-s-amber-600 d-flex items-center gap-3">
+					<div class="glass-panel p-4 mb-0 border-s-4 border-warning d-flex items-center gap-3">
 						<span class="text-amber-600 shrink-0">@components.IconEdit("icon-sm")</span>
 						<div class="stack-2xs text-start">
 							<span class="text-xs font-bold text-amber-900">مطلوب تعديلات من الإدارة</span>
@@ -125,7 +125,7 @@ templ VendorOfferFormPage(data VendorOfferFormData, lang, dir string) {
 						</div>
 					</div>
 				} else if data.Offer.AdminStatus == "rejected" {
-					<div class="glass-panel p-4 mb-0 border-s-4 border-s-rose-500 d-flex items-center gap-3">
+					<div class="glass-panel p-4 mb-0 border-s-4 border-danger d-flex items-center gap-3">
 						<span class="text-rose-500 shrink-0">@components.IconAlert("icon-sm")</span>
 						<div class="stack-2xs text-start">
 							<span class="text-xs font-bold text-rose-900">تم رفض العرض سابقاً</span>

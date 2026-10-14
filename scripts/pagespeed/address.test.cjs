@@ -4,7 +4,7 @@ const fs = require('node:fs');
 const { chromium } = require('playwright');
 const origin = process.env.PAGESPEED_ORIGIN || 'http://127.0.0.1:8097';
 
-test('address lookup keeps detail, avoids duplicates, preserves edits and ignores stale responses', async () => {
+test('address lookup follows pins, preserves in-flight edits and ignores stale responses', async () => {
   const executablePath = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe'].find(fs.existsSync);
   const browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
   try {
@@ -39,7 +39,13 @@ test('address lookup keeps detail, avoids duplicates, preserves edits and ignore
     await page.waitForFunction(() => window.addressResponses.length === 3);
     await page.evaluate(() => window.addressResponses[2].resolve({ ok: true, json: async () => ({ address: { road: 'Another street' } }) }));
     await page.waitForFunction(() => document.getElementById('reg-address-hint').textContent.includes('راجع'));
-    assert.equal(await page.locator('#reg-address').inputValue(), 'My building, floor 3');
+    assert.equal(await page.locator('#reg-address').inputValue(), 'Another street');
+    await page.evaluate(() => window.fetchDetailedAddressFromCoords(33, 34));
+    await page.waitForFunction(() => window.addressResponses.length === 4);
+    await page.locator('#reg-address').fill('New manual edit while loading');
+    await page.evaluate(() => window.addressResponses[3].resolve({ ok: true, json: async () => ({ address: { road: 'Late street' } }) }));
+    await page.waitForFunction(() => document.getElementById('reg-address-hint').textContent.includes('راجع'));
+    assert.equal(await page.locator('#reg-address').inputValue(), 'New manual edit while loading');
     assert.deepEqual(errors, []);
   } finally { await browser.close(); }
 });

@@ -220,28 +220,29 @@ func (s *Service) matchAgainst(
 			Barcode: strings.TrimSpace(barcode),
 		}
 		dec, err := s.matcher.Rematch(ctx, scope, row, 1)
-		if err == nil {
-			cols := matchflow.Columns(dec)
-			confidence := 100.0
-			if cols.MatchedProductID != nil {
-				method, label := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
-				return &MatchResult{
-					ProductID:   cols.MatchedProductID,
-					Confidence:  confidence,
-					Method:      method,
-					MethodLabel: label,
-				}, true
-			}
-			// When rematch yields a non-accepted state (FR-041), cols.MatchedProductID is nil,
-			// clearing any stale product ID link.
+		if err != nil {
+			s.log.WarnContext(ctx, "comparison product rematch failed", "error", err)
+			return nil, false
+		}
+		cols := matchflow.Columns(dec)
+		confidence := 100.0
+		if cols.MatchedProductID != nil {
+			method, label := compareMethodFor(productmatch.MatchLevel(cols.MatchLevel), confidence)
 			return &MatchResult{
-				ProductID:   nil,
-				Confidence:  0.0,
-				Method:      MatchMethodUnmatched,
-				MethodLabel: i18n.TDefault("w4_mod.s_364_364"),
+				ProductID:   cols.MatchedProductID,
+				Confidence:  confidence,
+				Method:      method,
+				MethodLabel: label,
 			}, true
 		}
-		return nil, false
+		// When rematch yields a non-accepted state (FR-041), cols.MatchedProductID is nil,
+		// clearing any stale product ID link.
+		return &MatchResult{
+			ProductID:   nil,
+			Confidence:  0.0,
+			Method:      MatchMethodUnmatched,
+			MethodLabel: i18n.TDefault("w4_mod.s_364_364"),
+		}, true
 	}
 
 	if len(candidates) == 0 {

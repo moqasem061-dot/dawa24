@@ -45,8 +45,8 @@ templ SmartOrderReviewGroups(data SmartOrderReviewData, lang string) {
 				</div>
 				<div class="d-flex items-center gap-2">
 					<span class="text-xs text-secondary font-bold">{ i18n.T(lang, "smart_order.supplier_subtotal") }</span>
-					<span class="badge badge-emerald text-sm font-black tabular-nums py-1.5 px-3 group-subtotal-badge">
-						<span class="group-subtotal-val">{ g.Subtotal.String() }</span> { i18n.T(lang, "common.egp") }
+					<span class="badge badge-emerald text-sm font-black tabular-nums py-1.5 px-3">
+						<span data-group-subtotal>{ g.Subtotal.String() }</span> { i18n.T(lang, "common.egp") }
 					</span>
 				</div>
 			</div>

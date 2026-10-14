@@ -108,7 +108,11 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 					</button>
 				} else {
 					<div class="stack-2xs">
-						<span class="badge badge-rose text-xs">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+						if len(row.Candidates) > 0 {
+							<span class="badge badge-amber text-xs">{ i18n.T(lang, "vendor_ingest.row.review_candidate") }</span>
+						} else {
+							<span class="badge badge-rose text-xs">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+						}
 						if len(row.Candidates) > 0 {
 							<span class="text-xs text-muted">{ fmt.Sprintf(i18n.T(lang, "vendor_ingest.row.closest_prefix"), row.Candidates[0].Name) }</span>
 						}
@@ -205,14 +209,19 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 					{ PercentText(row.MatchScore) }
 				</span>
 			} else if len(row.Candidates) > 0 {
-				<span class={ "badge text-xs font-bold", matchScoreBadgeTone(row.Candidates[0].Score) } title={ i18n.T(lang, "vendor_ingest.row.candidate_unsettled_hint") }>
+				<div class="text-xs text-muted">{ i18n.T(lang, "vendor_ingest.row.suggestion_score") }</div>
+				<span class="badge badge-amber text-xs font-bold" title={ i18n.T(lang, "vendor_ingest.row.candidate_unsettled_hint") }>
 					{ PercentText(row.Candidates[0].Score) }
 				</span>
 			} else {
 				<span class="badge badge-rose text-xs">0%</span>
 			}
 			if !reviewRowWillImport(row) {
-				<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_ingest.row.will_not_import") }</div>
+				if !row.IsExcluded && (row.ProductID == nil || *row.ProductID <= 0) && len(row.Candidates) > 0 {
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_ingest.row.confirm_to_import") }</div>
+				} else {
+					<div class="text-xs text-muted mt-1">{ i18n.T(lang, "vendor_ingest.row.will_not_import") }</div>
+				}
 			} else if view.Session.Settings.Mode == ingest.ModeAddOnly && row.VariantID != nil && *row.VariantID > 0 {
 				<div class="text-2xs text-amber-600 font-bold mt-1" title={ i18n.T(lang, "vendor_ingest.row.will_skip_existing_title") }>{ i18n.T(lang, "vendor_ingest.row.will_skip_existing") }</div>
 			} else if view.Session.Settings.Mode == ingest.ModeUpdateOnly && (row.VariantID == nil || *row.VariantID == 0) {
@@ -363,7 +372,11 @@ templ reviewRowActionBadge(mode ingest.Mode, row *ingest.RowOutcome, langOpt ...
 	if row.IsExcluded {
 		<span class="badge badge-secondary text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.badge_excluded") }</span>
 	} else if row.ProductID == nil || *row.ProductID <= 0 {
-		<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+		if len(row.Candidates) > 0 {
+			<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.review_candidate") }</span>
+		} else {
+			<span class="badge badge-rose text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.unmatched_badge") }</span>
+		}
 	} else if !productmatch.MatchLevel(row.MatchLevel).Settled() && !row.IsManuallyMatched {
 		<span class="badge badge-amber text-2xs font-bold">{ i18n.T(lang, "vendor_ingest.row.badge_needs_confirm") }</span>
 	} else {

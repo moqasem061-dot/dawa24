@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -18,14 +19,14 @@ func TestUploadBudgetDoesNotLeakIntoLaterRequests(t *testing.T) {
 		}
 	}))
 
-	up := httptest.NewRequest(http.MethodPost, "/vendor/ingest/upload", nil)
+	up := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/vendor/ingest/upload", nil)
 	up.Header.Set("Content-Type", "multipart/form-data; boundary=x")
 	h.ServeHTTP(httptest.NewRecorder(), up)
 	if got < 5*time.Minute {
 		t.Fatalf("upload budget = %s, want the long upload budget", got)
 	}
 
-	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequest(http.MethodGet, "/vendor/ingest/x", nil))
+	h.ServeHTTP(httptest.NewRecorder(), httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/vendor/ingest/x", nil))
 	if got > 26*time.Second {
 		t.Fatalf("a plain request after an upload got %s; the upload budget leaked", got)
 	}

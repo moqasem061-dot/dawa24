@@ -260,7 +260,7 @@ templ SmartOrderReviewScript() {
 			if (!contextEl) return;
 			const card = contextEl.closest('.glass-panel');
 			if (!card) return;
-			const badgeValEl = card.querySelector('.group-subtotal-val');
+			const badgeValEl = card.querySelector('[data-group-subtotal]');
 			if (!badgeValEl) return;
 			let sum = 0;
 			card.querySelectorAll('tbody tr').forEach(r => {

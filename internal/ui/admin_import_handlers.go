@@ -2,7 +2,6 @@ package ui
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -252,21 +251,30 @@ func (h *UIHandler) AdminProductsImportRowToggle(w http.ResponseWriter, r *http.
 		} else if rErr == nil {
 			row.ConflictNotice = ""
 			row.MatchRevision, row.MatchDecision, row.MatchedProductID = newDec.Revision, &newDec, newDec.ProductID
+		} else {
+			h.renderError(w, r, rErr)
+			return
 		}
 	} else {
 		included := r.PostFormValue("included") == "1"
 		if err := h.catSvc.SetRowIncluded(database.AsSystem(ctx), publicID, rowID, included); err != nil {
 			h.log.WarnContext(ctx, "could not toggle staged row", "session", publicID, "row", rowID, "error", err)
+			h.renderError(w, r, err)
+			return
 		}
-		row, _ = h.catSvc.GetStagingRow(database.AsSystem(ctx), publicID, rowID)
+		refreshed, err := h.catSvc.GetStagingRow(database.AsSystem(ctx), publicID, rowID)
+		if err != nil {
+			h.renderError(w, r, err)
+			return
+		}
+		row = refreshed
 	}
 
 	if h.isHTMX(r) && row != nil {
 		view := pages.ImportReviewView{Session: &catalog.ImportSession{PublicID: publicID}}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if err := pages.ImportRowLine(view, row).Render(renderContext(ctx), w); err == nil {
-			return
-		}
+		h.renderPage(ctx, w, "render import row", pages.ImportRowLine(view, row))
+		return
 	}
 
 	http.Redirect(w, r, importPath(publicID, "")+querySuffix(r), http.StatusSeeOther)
@@ -351,49 +359,4 @@ func (h *UIHandler) AdminProductsImportCancel(w http.ResponseWriter, r *http.Req
 	}
 	h.redirectWithNotice(w, r, "/admin/products/import", "success",
 		i18n.T(langOf(r), "admin.import.cancelled_success"))
-}
-
-// AdminProductsImportProgress reports a run's state as JSON.
-//
-// The review screen polls it while a file is being processed. It reads the
-// session rather than a map in this process: progress held only in memory
-// reported "failed" for a healthy run after a restart, and reported nothing at
-// all for one started by another replica — which is how a completed import came
-// to render as an empty screen with no explanation.
-func (h *UIHandler) AdminProductsImportProgress(w http.ResponseWriter, r *http.Request) {
-	publicID := chi.URLParam(r, "id")
-
-	if !h.requirePlatformAdmin(w, r) {
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store")
-
-	if h.catSvc == nil {
-		http.Error(w, `{"phase":"failed","message":"catalog service unavailable"}`,
-			http.StatusServiceUnavailable)
-		return
-	}
-
-	progress, session, err := h.catSvc.SessionProgress(database.AsSystem(r.Context()), publicID)
-	if err != nil {
-		http.Error(w, `{"phase":"failed","message":"import session unavailable"}`, http.StatusNotFound)
-		return
-	}
-
-	payload := map[string]any{
-		"phase":   string(progress.Phase),
-		"message": progress.Message,
-		"current": progress.Current,
-		"total":   progress.Total,
-		"percent": progress.Percent(),
-		"done":    !session.IsProcessing(),
-		"failed":  progress.Phase == catalog.ImportPhaseFailed || session.Status == catalog.SessionFailed,
-		"status":  string(session.Status),
-		"elapsed": int(progress.Elapsed().Seconds()),
-	}
-	if err := json.NewEncoder(w).Encode(payload); err != nil {
-		h.log.WarnContext(r.Context(), "write import progress", "session", publicID, "error", err)
-	}
 }

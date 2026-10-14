@@ -133,7 +133,7 @@ func (h *UIHandler) handleSavingProductsImportItemMatchSubmit(w http.ResponseWri
 		if h.isHTMX(r) && item != nil && sess != nil {
 			w.Header().Set("Content-Type", "text/html; charset=utf-8")
 			view := pages.SavingImportView{Session: sess, ImportURL: fmt.Sprintf("/%s/saving-products/import", audience), BaseURL: h.baseURL}
-			_ = pages.SavingProductRow(view, item).Render(renderContext(ctx), w)
+			h.renderPage(renderContext(ctx), w, "render SavingProductRow", pages.SavingProductRow(view, item))
 			return
 		}
 		h.redirectWithNotice(w, r,
@@ -171,7 +171,7 @@ func (h *UIHandler) handleSavingProductsImportItemMatchSubmit(w http.ResponseWri
 	if h.isHTMX(r) && item != nil && sess != nil {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		view := pages.SavingImportView{Session: sess, ImportURL: fmt.Sprintf("/%s/saving-products/import", audience), BaseURL: h.baseURL}
-		_ = pages.SavingProductRow(view, item).Render(renderContext(ctx), w)
+		h.renderPage(renderContext(ctx), w, "render SavingProductRow", pages.SavingProductRow(view, item))
 		return
 	}
 
@@ -210,7 +210,7 @@ func (h *UIHandler) handleSavingProductsImportItemToggleSubmit(w http.ResponseWr
 				if it.Index == itemIndex {
 					w.Header().Set("Content-Type", "text/html; charset=utf-8")
 					view := pages.SavingImportView{Session: sess, ImportURL: fmt.Sprintf("/%s/saving-products/import", audience), BaseURL: h.baseURL}
-					_ = pages.SavingProductRow(view, it).Render(renderContext(ctx), w)
+					h.renderPage(renderContext(ctx), w, "render SavingProductRow", pages.SavingProductRow(view, it))
 					return
 				}
 			}

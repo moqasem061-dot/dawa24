@@ -20,7 +20,7 @@ func tutorialMap(name string) http.HandlerFunc {
 		}
 		rendered := strings.ReplaceAll(string(content), "https://dawa24.com", "")
 		rendered = strings.ReplaceAll(rendered, "http://dawa24.com", "")
-		rendered = strings.ReplaceAll(rendered, "<style>", `<style nonce="`+layouts.Nonce(r.Context())+`">`)
+		rendered = strings.ReplaceAll(rendered, "{{CSP_NONCE}}", layouts.Nonce(r.Context()))
 		content = []byte(rendered)
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Cache-Control", "private, no-cache")

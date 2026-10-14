@@ -26,7 +26,7 @@ func (h *UIHandler) AdminAIMatchConfigsPage(w http.ResponseWriter, r *http.Reque
 		data := pages.AdminAIMatchConfigsData{
 			ErrorMessage: fmt.Sprintf("تعذر تحميل الإعدادات: %v", err),
 		}
-		_ = pages.AdminAIMatchConfigsPage(lang, dir, data).Render(ctx, w)
+		h.renderPage(ctx, w, "render AdminAIMatchConfigsPage", pages.AdminAIMatchConfigsPage(lang, dir, data))
 		return
 	}
 
@@ -34,7 +34,7 @@ func (h *UIHandler) AdminAIMatchConfigsPage(w http.ResponseWriter, r *http.Reque
 		Configs:    configs,
 		SuccessMsg: r.URL.Query().Get("msg"),
 	}
-	_ = pages.AdminAIMatchConfigsPage(lang, dir, data).Render(ctx, w)
+	h.renderPage(ctx, w, "render AdminAIMatchConfigsPage", pages.AdminAIMatchConfigsPage(lang, dir, data))
 }
 
 // AdminAIMatchConfigUpdateStatus changes an AI configuration's status with an audit reason (US10 T134).

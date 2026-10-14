@@ -63,12 +63,12 @@ templ AdminProductsImportMapping(lang, dir string, view ImportMappingView) {
 			<script nonce={ layouts.Nonce(ctx) }>
 				(function() {
 					function initMappingSamples() {
-						document.querySelectorAll('.field-mapping-select').forEach(function(sel) {
+						document.querySelectorAll('[data-field-mapping-select]').forEach(function(sel) {
 							sel.addEventListener('change', function() {
 								var opt = this.options[this.selectedIndex];
 								var tr = this.closest('tr');
 								if (!tr) return;
-								var sampleCell = tr.querySelector('.field-sample-cell');
+								var sampleCell = tr.querySelector('[data-field-sample-cell]');
 								if (!sampleCell) return;
 								var sample = (opt && this.value !== '0') ? (opt.dataset.sample || '') : '';
 								if (sample) {
@@ -271,7 +271,7 @@ templ importFieldLine(view ImportMappingView, field ImportFieldRow) {
 			</div>
 		</td>
 		<td>
-			<select name={ fieldSelectName(field.Field) } class="form-select text-xs w-full field-mapping-select">
+			<select name={ fieldSelectName(field.Field) } class="form-select text-xs w-full" data-field-mapping-select>
 				<option value="0" data-sample="" selected?={ field.Column == 0 }>— لا تقرأ هذا الحقل —</option>
 				for _, option := range view.Options {
 					<option value={ fmt.Sprintf("%d", option.Value) } data-sample={ option.Sample } selected?={ option.Value == field.Column }>
@@ -280,7 +280,7 @@ templ importFieldLine(view ImportMappingView, field ImportFieldRow) {
 				}
 			</select>
 		</td>
-		<td class="text-xs text-secondary font-mono field-sample-cell">
+		<td class="text-xs text-secondary font-mono" data-field-sample-cell>
 			if field.Bound() && field.Sample != "" {
 				{ field.Sample }
 			} else {

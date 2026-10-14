@@ -50,7 +50,7 @@ func (h *UIHandler) SmartOrderMatchSubmit(w http.ResponseWriter, r *http.Request
 		data := pages.SmartOrderResultsData{
 			Run: run,
 		}
-		_ = pages.SmartOrderResultRow(data, updatedLine).Render(r.Context(), w)
+		h.renderPage(r.Context(), w, "render SmartOrderResultRow", pages.SmartOrderResultRow(data, updatedLine))
 		return
 	}
 

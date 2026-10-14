@@ -211,15 +211,19 @@ func (h *UIHandler) AdminMatchDecisionBulkSubmit(w http.ResponseWriter, r *http.
 		switch action {
 		case "promote":
 			for _, id := range ids {
-				if err := h.catSvc.Matching().PromoteKnowledge(ctx, sc, id); err == nil {
-					affected++
+				if err := h.catSvc.Matching().PromoteKnowledge(ctx, sc, id); err != nil {
+					h.renderError(w, r, err)
+					return
 				}
+				affected++
 			}
 		case "delete", "revoke":
 			for _, id := range ids {
-				if err := h.catSvc.Matching().RevokeKnowledge(ctx, sc, id); err == nil {
-					affected++
+				if err := h.catSvc.Matching().RevokeKnowledge(ctx, sc, id); err != nil {
+					h.renderError(w, r, err)
+					return
 				}
+				affected++
 			}
 		default:
 			h.redirectWithNotice(w, r, preserveDecisionReturnURL(r), "error", i18n.T(lang, "admin.decision_memory.bulk_error"))

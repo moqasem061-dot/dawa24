@@ -448,7 +448,7 @@ templ ImportRowLine(view ImportReviewView, row *catalog.StagingRow) {
 						<span class="wiz-row-meta">({ row.MatchedProductSKU })</span>
 					}
 					if row.Action == catalog.ActionUpdate {
-						<span class="badge badge-slate text-xxs font-normal ml-2 mr-2">
+						<span class="badge badge-slate text-xxs font-normal mx-2">
 							{ fmt.Sprintf("الارتباطات المتأثرة: %d", row.AffectedAssociationsCount) }
 						</span>
 					}

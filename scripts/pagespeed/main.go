@@ -24,6 +24,9 @@ func main() {
 	r.Get("/market-discounts", marketFixture)
 	r.Get("/product", productFixture)
 	r.Get("/documents", documentsFixture)
+	r.Get("/vendor/documents", documentsFixture)
+	r.Get("/vendor-dashboard", vendorDashboardFixture)
+	r.Get("/admin/organizations/{id}/documents", documentsFixture)
 	r.Get("/activities", activitiesFixture)
 	r.Get("/auth/login", func(w http.ResponseWriter, req *http.Request) {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")

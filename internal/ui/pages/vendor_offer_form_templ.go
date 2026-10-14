@@ -167,7 +167,7 @@ func VendorOfferFormPage(data VendorOfferFormData, lang, dir string) templ.Compo
 						return templ_7745c5c3_Err
 					}
 				} else if data.Offer.AdminStatus == "changes_requested" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"glass-panel p-4 mb-0 border-s-4 border-s-amber-600 d-flex items-center gap-3\"><span class=\"text-amber-600 shrink-0\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"glass-panel p-4 mb-0 border-s-4 border-warning d-flex items-center gap-3\"><span class=\"text-amber-600 shrink-0\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -193,7 +193,7 @@ func VendorOfferFormPage(data VendorOfferFormData, lang, dir string) templ.Compo
 						return templ_7745c5c3_Err
 					}
 				} else if data.Offer.AdminStatus == "rejected" {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"glass-panel p-4 mb-0 border-s-4 border-s-rose-500 d-flex items-center gap-3\"><span class=\"text-rose-500 shrink-0\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<div class=\"glass-panel p-4 mb-0 border-s-4 border-danger d-flex items-center gap-3\"><span class=\"text-rose-500 shrink-0\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

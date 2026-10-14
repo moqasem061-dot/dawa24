@@ -188,39 +188,42 @@ func (h *UIHandler) VendorIngestRowMatchSubmit(w http.ResponseWriter, r *http.Re
 	expectedRev, _ := strconv.Atoi(r.PostFormValue("expected_rev"))
 
 	matchErr := h.ingSvc.AssignStagedRowMatch(ctx, publicID, rowID, productID)
-	if matchErr != nil && !errors.Is(matchErr, matching.ErrRevisionConflict) && !h.isHTMX(r) {
-		h.redirectWithNotice(w, r, buildReviewRedirect(publicID, r), "error", h.safeMessage(matchErr, langOf(r)))
+	if matchErr != nil && !errors.Is(matchErr, matching.ErrRevisionConflict) {
+		h.renderError(w, r, matchErr)
 		return
 	}
 
 	if h.isHTMX(r) {
-		session, _ := h.ingSvc.LoadImport(ctx, publicID)
+		session, err := h.ingSvc.LoadImport(ctx, publicID)
+		if err != nil {
+			h.renderError(w, r, err)
+			return
+		}
 		view := pages.VendorImportView{
 			Session: session,
 			Lang:    langOf(r),
 		}
 		var targetRow *ingest.RowOutcome
-		if rows, _, err := h.ingSvc.ImportRows(ctx, publicID, ingest.RowFilter{Limit: 1, Search: fmt.Sprintf("%d", rowID)}); err == nil {
-			for _, ro := range rows {
-				if ro.ID == rowID {
-					targetRow = ro
-					break
-				}
+		rows, _, err := h.ingSvc.ImportRows(ctx, publicID, ingest.RowFilter{Limit: 1, RowID: rowID})
+		if err != nil {
+			h.renderError(w, r, err)
+			return
+		}
+		for _, ro := range rows {
+			if ro.ID == rowID {
+				targetRow = ro
+				break
 			}
 		}
 		if targetRow == nil {
-			targetRow = &ingest.RowOutcome{
-				ID: rowID,
-			}
-			if productID > 0 {
-				targetRow.ProductID = &productID
-			}
+			http.NotFound(w, r)
+			return
 		}
 		if errors.Is(matchErr, matching.ErrRevisionConflict) || (expectedRev > 0 && targetRow.MatchRevision > expectedRev) {
 			targetRow.ConflictNotice = RevisionConflictNoticeBilingual
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		_ = pages.VendorReviewTableRow(view, targetRow, langOf(r)).Render(r.Context(), w)
+		h.renderPage(r.Context(), w, "render VendorReviewTableRow", pages.VendorReviewTableRow(view, targetRow, langOf(r)))
 		return
 	}
 

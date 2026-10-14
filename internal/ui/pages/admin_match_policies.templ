@@ -3,6 +3,7 @@ package pages
 import (
 	"fmt"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog/matching"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
@@ -96,7 +97,7 @@ templ AdminMatchPoliciesPage(lang, dir string, data AdminMatchPoliciesData) {
 											<button
 												type="submit"
 												class="btn btn-sm btn-outline-danger"
-												@click="if (!confirm('تأكيد التراجع واستعادة الإصدار السابق لهذا المسار؟')) $event.preventDefault()"
+												data-confirm={ i18n.T(lang, "admin.match_policies.rollback_confirm") }
 											>
 												استعادة (Rollback)
 											</button>

@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"net/http/httptest"
 	"testing"
 )
@@ -8,7 +9,7 @@ import (
 func TestClientIPIgnoresForwardedHeadersFromUntrustedPeer(t *testing.T) {
 	t.Cleanup(func() { SetTrustedProxies(nil) })
 
-	req := httptest.NewRequest("GET", "/", nil)
+	req := httptest.NewRequestWithContext(context.Background(), "GET", "/", nil)
 	req.RemoteAddr = "203.0.113.9:4000"
 	req.Header.Set("X-Forwarded-For", "1.2.3.4")
 

@@ -247,7 +247,7 @@ func devShowMockOTP() bool {
 
 func (h *UIHandler) emailAlreadyRegistered(ctx context.Context, email string) (bool, error) {
 	user, err := h.idSvc.GetUserByEmail(database.AsSystem(ctx), email)
-	if err == nil {
+	if err == nil { // nolint:errswallow: not-found and dependency errors are handled below
 		return user != nil, nil
 	}
 	if apperr.KindOf(err) == apperr.KindNotFound {

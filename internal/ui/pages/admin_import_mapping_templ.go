@@ -152,7 +152,7 @@ func AdminProductsImportMapping(lang, dir string, view ImportMappingView) templ.
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">\n\t\t\t\t(function() {\n\t\t\t\t\tfunction initMappingSamples() {\n\t\t\t\t\t\tdocument.querySelectorAll('.field-mapping-select').forEach(function(sel) {\n\t\t\t\t\t\t\tsel.addEventListener('change', function() {\n\t\t\t\t\t\t\t\tvar opt = this.options[this.selectedIndex];\n\t\t\t\t\t\t\t\tvar tr = this.closest('tr');\n\t\t\t\t\t\t\t\tif (!tr) return;\n\t\t\t\t\t\t\t\tvar sampleCell = tr.querySelector('.field-sample-cell');\n\t\t\t\t\t\t\t\tif (!sampleCell) return;\n\t\t\t\t\t\t\t\tvar sample = (opt && this.value !== '0') ? (opt.dataset.sample || '') : '';\n\t\t\t\t\t\t\t\tif (sample) {\n\t\t\t\t\t\t\t\t\tsampleCell.textContent = sample;\n\t\t\t\t\t\t\t\t\tsampleCell.classList.remove('text-muted');\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tvar dash = document.createElement('span');\n\t\t\t\t\t\t\t\t\tdash.className = 'text-muted text-xs';\n\t\t\t\t\t\t\t\t\tdash.textContent = '—';\n\t\t\t\t\t\t\t\t\tsampleCell.replaceChildren(dash);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t\tif (document.readyState === 'loading') {\n\t\t\t\t\t\tdocument.addEventListener('DOMContentLoaded', initMappingSamples);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tinitMappingSamples();\n\t\t\t\t\t}\n\t\t\t\t})();\n\t\t\t</script></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\">\n\t\t\t\t(function() {\n\t\t\t\t\tfunction initMappingSamples() {\n\t\t\t\t\t\tdocument.querySelectorAll('[data-field-mapping-select]').forEach(function(sel) {\n\t\t\t\t\t\t\tsel.addEventListener('change', function() {\n\t\t\t\t\t\t\t\tvar opt = this.options[this.selectedIndex];\n\t\t\t\t\t\t\t\tvar tr = this.closest('tr');\n\t\t\t\t\t\t\t\tif (!tr) return;\n\t\t\t\t\t\t\t\tvar sampleCell = tr.querySelector('[data-field-sample-cell]');\n\t\t\t\t\t\t\t\tif (!sampleCell) return;\n\t\t\t\t\t\t\t\tvar sample = (opt && this.value !== '0') ? (opt.dataset.sample || '') : '';\n\t\t\t\t\t\t\t\tif (sample) {\n\t\t\t\t\t\t\t\t\tsampleCell.textContent = sample;\n\t\t\t\t\t\t\t\t\tsampleCell.classList.remove('text-muted');\n\t\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\t\tvar dash = document.createElement('span');\n\t\t\t\t\t\t\t\t\tdash.className = 'text-muted text-xs';\n\t\t\t\t\t\t\t\t\tdash.textContent = '—';\n\t\t\t\t\t\t\t\t\tsampleCell.replaceChildren(dash);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t\tif (document.readyState === 'loading') {\n\t\t\t\t\t\tdocument.addEventListener('DOMContentLoaded', initMappingSamples);\n\t\t\t\t\t} else {\n\t\t\t\t\t\tinitMappingSamples();\n\t\t\t\t\t}\n\t\t\t\t})();\n\t\t\t</script></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -575,7 +575,7 @@ func importFieldLine(view ImportMappingView, field ImportFieldRow) templ.Compone
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" class=\"form-select text-xs w-full field-mapping-select\"><option value=\"0\" data-sample=\"\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 42, "\" class=\"form-select text-xs w-full\" data-field-mapping-select><option value=\"0\" data-sample=\"\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -644,7 +644,7 @@ func importFieldLine(view ImportMappingView, field ImportFieldRow) templ.Compone
 				return templ_7745c5c3_Err
 			}
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</select></td><td class=\"text-xs text-secondary font-mono field-sample-cell\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 51, "</select></td><td class=\"text-xs text-secondary font-mono\" data-field-sample-cell>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

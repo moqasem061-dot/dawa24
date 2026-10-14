@@ -213,7 +213,9 @@ func (h *UIHandler) SmartOrderFinalizeSubmit(w http.ResponseWriter, r *http.Requ
 		h.smartOrderStale.put(run.PublicID, stale)
 		// And the lines themselves are brought up to date, so the screen that
 		// names what changed also shows each line's new supplier or outcome.
-		if fresh, err := h.smartOrderSvc.GetByID(ctx, run.OrganizationID, run.ID); err == nil {
+		fresh, loadErr := h.smartOrderSvc.GetByID(ctx, run.OrganizationID, run.ID)
+		h.logLoadErr(ctx, "smart order reload after stale finalize", loadErr)
+		if loadErr == nil && fresh != nil {
 			if err := h.smartOrderSvc.Refresh(ctx, fresh); err != nil {
 				h.log.WarnContext(ctx, "smart order refresh after stale finalize", "run_id", run.ID, "error", err)
 			}

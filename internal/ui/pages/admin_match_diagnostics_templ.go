@@ -145,7 +145,7 @@ func AdminMatchDiagnosticsPage(lang, dir string, data AdminMatchDiagnosticsData)
 				return templ_7745c5c3_Err
 			}
 			if data.ErrorMessage != "" {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"alert alert-rose mb-4\" role=\"alert\"><p class=\"m-0 font-medium\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<div class=\"alert alert-danger mb-4\" role=\"alert\"><p class=\"m-0 font-medium\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -660,7 +660,7 @@ func AdminMatchDiagnosticsPage(lang, dir string, data AdminMatchDiagnosticsData)
 						return templ_7745c5c3_Err
 					}
 					if len(data.SelectedRow.NeverRetrieved) > 0 {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"mt-3 p-3 border rounded bg-subtle stack-xs text-xs\"><span class=\"font-bold text-muted\">منتجات لم يشملها الاسترجاع الأولي (Never Retrieved Targets)</span><ul class=\"m-0 p-inline-start-4 stack-xs\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 67, "<div class=\"mt-3 p-3 border rounded bg-subtle stack-xs text-xs\"><span class=\"font-bold text-muted\">منتجات لم يشملها الاسترجاع الأولي (Never Retrieved Targets)</span><ul class=\"m-0 ps-4 stack-xs\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}

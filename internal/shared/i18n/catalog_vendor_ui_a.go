@@ -14,8 +14,8 @@ func loadVendorUIKeysA(e *engine) {
 	addKey(e, "vendor_dashboard.ai_budget_label", "vendor_dashboard", "الـ AI:", "AI:", "Label")
 	addKey(e, "vendor_dashboard.account_status_label", "vendor_dashboard", "حساب المورد:", "Supplier Account:", "Label")
 	addKey(e, "vendor_dashboard.account_active", "vendor_dashboard", "نشط ومعتمد", "Active & Verified", "Badge")
-	addKey(e, "vendor_dashboard.dir_title", "vendor_dashboard", "دليل وأرشيف بوابات المورّد الشامل", "Comprehensive Supplier Portals Directory", "Section title")
-	addKey(e, "vendor_dashboard.dir_sub", "vendor_dashboard", "خريطة متكاملة لكافة شاشات وأدوات إدارة المستودع، التوريد، والمالية، تتكيف فورياً وفق الصلاحيات", "Integrated map of all warehouse, supply, and finance management screens, adapting to your permissions", "Section sub")
+	addKey(e, "vendor_dashboard.dir_title", "vendor_dashboard", "دليل الاستخدام وأقسام منصة المورّد", "Supplier platform guide and sections", "Section title")
+	addKey(e, "vendor_dashboard.dir_sub", "vendor_dashboard", "افتح زر شرح المنصة لتتعرف على خطوات الاستخدام، أو اختر القسم المطلوب من الروابط أدناه.", "Open the platform guide for step-by-step instructions, or choose a section from the links below.", "Section sub")
 	addKey(e, "vendor_dashboard.active_portals_count", "vendor_dashboard", "%d بوابات نشطة", "%d Active Portals", "Badge")
 	addKey(e, "vendor_dashboard.pages_count", "vendor_dashboard", "%d صفحات", "%d Pages", "Badge")
 

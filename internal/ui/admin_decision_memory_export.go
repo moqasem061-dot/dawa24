@@ -128,17 +128,17 @@ func parseAdminDecisionFilter(r *http.Request) catalog.DecisionMemoryFilter {
 	if minH, err := strconv.ParseInt(q.Get("min_hits"), 10, 64); err == nil && minH >= 0 {
 		f.MinHitCount = &minH
 	}
-	if cf, err := time.Parse("2006-01-02", q.Get("created_from")); err == nil {
+	if cf, err := time.Parse("2006-01-02", q.Get("created_from")); err == nil { // nolint:errswallow: blank or invalid optional dates leave the filter unset
 		f.CreatedFrom = &cf
 	}
-	if ct, err := time.Parse("2006-01-02", q.Get("created_to")); err == nil {
+	if ct, err := time.Parse("2006-01-02", q.Get("created_to")); err == nil { // nolint:errswallow: blank or invalid optional dates leave the filter unset
 		endDay := ct.Add(24*time.Hour - time.Nanosecond)
 		f.CreatedTo = &endDay
 	}
-	if uf, err := time.Parse("2006-01-02", q.Get("used_from")); err == nil {
+	if uf, err := time.Parse("2006-01-02", q.Get("used_from")); err == nil { // nolint:errswallow: blank or invalid optional dates leave the filter unset
 		f.LastUsedFrom = &uf
 	}
-	if ut, err := time.Parse("2006-01-02", q.Get("used_to")); err == nil {
+	if ut, err := time.Parse("2006-01-02", q.Get("used_to")); err == nil { // nolint:errswallow: blank or invalid optional dates leave the filter unset
 		endDay := ut.Add(24*time.Hour - time.Nanosecond)
 		f.LastUsedTo = &endDay
 	}

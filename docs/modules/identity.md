@@ -46,7 +46,9 @@ Generated suggestions retain building/house number, street, neighborhood,
 quarter, suburb, district, city, governorate, postcode and country where the
 map data supplies them, with duplicate components removed. Lookups use the
 address layer and building detail, abort superseded requests and ignore late
-responses. They update only the originating form and preserve manual edits.
+responses. They update only the originating form and preserve edits made while
+a lookup is in flight. Selecting a new pin explicitly requests a fresh generated
+address, even after typing a previous address manually (repair 2026-10-14).
 The address hint asks the registrant to review and add building/floor/landmark
 details; reverse geocoding cannot supply details absent from map data.
 
