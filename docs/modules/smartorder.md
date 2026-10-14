@@ -2,6 +2,11 @@
 
 ## Overview
 
+Finalization rejects corrupt saved match decisions before order placement;
+refresh cannot keep a supplier selection whose exact line amount overflows
+(release hardening 2026-10-15). Missing legacy decisions still use the documented
+revalidation path. Regression tests cover corrupt JSON and exact amount overflow.
+
 A pharmacy uploads a spreadsheet of what it needs. The system resolves every row
 to a catalogue product, finds the vendors who can actually deliver it, picks one
 per line under the buyer's criteria, and hands back an order to review and place.

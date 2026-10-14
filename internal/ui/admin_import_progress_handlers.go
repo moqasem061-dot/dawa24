@@ -2,10 +2,11 @@ package ui
 
 import (
 	"encoding/json"
+	"net/http"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
-	"net/http"
 )
 
 // AdminProductsImportProgress reports a run's state as JSON.

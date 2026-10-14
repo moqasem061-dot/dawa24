@@ -2,6 +2,7 @@ package matching
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -15,6 +16,7 @@ type shadowMockRepo struct {
 	*mockRepository
 	recordedOutcomes []ShadowOutcome
 	shadowVersion    string
+	mu               sync.Mutex
 }
 
 func (s *shadowMockRepo) ResolvePolicyAssignment(ctx context.Context, workflow string, orgID int64) (productmatch.Policy, string, error) {
@@ -23,11 +25,15 @@ func (s *shadowMockRepo) ResolvePolicyAssignment(ctx context.Context, workflow s
 }
 
 func (s *shadowMockRepo) RecordShadowOutcomes(ctx context.Context, outcomes []ShadowOutcome) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	s.recordedOutcomes = append(s.recordedOutcomes, outcomes...)
 	return nil
 }
 
 func (s *shadowMockRepo) ListShadowOutcomes(ctx context.Context, runID int64) ([]ShadowOutcome, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	var res []ShadowOutcome
 	for _, o := range s.recordedOutcomes {
 		if o.RunID == runID {
@@ -69,10 +75,13 @@ func TestShadowExecution_TriggersAndRecordsOutcomes(t *testing.T) {
 	// Since queueClient is nil, Prepare invokes RunShadow in a background goroutine.
 	// Allow brief time for the goroutine to finish writing shadow outcomes.
 	require.Eventually(t, func() bool {
-		return len(shadowRepo.recordedOutcomes) == 2
+		outcomes, err := shadowRepo.ListShadowOutcomes(ctx, res.RunID)
+		return err == nil && len(outcomes) == 2
 	}, 1*time.Second, 20*time.Millisecond, "expected 2 shadow outcomes recorded")
 
-	for _, o := range shadowRepo.recordedOutcomes {
+	outcomes, err := shadowRepo.ListShadowOutcomes(ctx, res.RunID)
+	require.NoError(t, err)
+	for _, o := range outcomes {
 		assert.Equal(t, res.RunID, o.RunID)
 		assert.Equal(t, int64(42), o.OrganizationID)
 		assert.Equal(t, "pm-shadow-v2", o.ShadowPolicyVersion)
@@ -109,5 +118,7 @@ func TestShadowExecution_NoShadowWhenVersionEmpty(t *testing.T) {
 	assert.True(t, res.RunID > 0)
 
 	time.Sleep(50 * time.Millisecond)
-	assert.Empty(t, shadowRepo.recordedOutcomes, "no shadow outcomes should be recorded when shadow_version is empty")
+	outcomes, err := shadowRepo.ListShadowOutcomes(ctx, res.RunID)
+	require.NoError(t, err)
+	assert.Empty(t, outcomes, "no shadow outcomes should be recorded when shadow_version is empty")
 }

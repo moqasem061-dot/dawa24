@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -47,7 +48,7 @@ func TestUploadsServeRefusesProductsPrefixedPrivateFile(t *testing.T) {
 	RegisterUploadRoutes(r)
 	for _, p := range []string{"/uploads/licenses/licenses_secret.pdf", "/uploads/products/licenses/licenses_secret.pdf"} {
 		rec := httptest.NewRecorder()
-		r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, p, nil))
+		r.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, p, nil))
 		if rec.Code == http.StatusOK {
 			t.Errorf("GET %s served a private file", p)
 		}
@@ -75,7 +76,7 @@ func TestUploadsProxyRequiresSignature(t *testing.T) {
 	r := chi.NewRouter()
 	RegisterUploadRoutes(r)
 	rec := httptest.NewRecorder()
-	r.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/uploads/proxy?url="+url.QueryEscape(remote), nil))
+	r.ServeHTTP(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/uploads/proxy?url="+url.QueryEscape(remote), nil))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("unsigned proxy request status = %d; want 404", rec.Code)
 	}

@@ -94,7 +94,7 @@ func TestAdminMatchPoliciesPage(t *testing.T) {
 	catSvc.SetMatchingService(matchingMock)
 	h := &UIHandler{log: logger, catSvc: catSvc}
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/policies", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/policies", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminMatchPoliciesPage(rec, req)
@@ -122,7 +122,7 @@ func TestAdminMatchPolicyUpdateAssignment(t *testing.T) {
 	form.Set("shadow_version", "pm-shadow-v2")
 	form.Set("reason", "Rollout candidate shadow test")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/matching/policies/assign", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/matching/policies/assign", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	actor := authctx.Actor{
@@ -158,7 +158,7 @@ func TestAdminMatchPolicyRollback(t *testing.T) {
 	form.Set("workflow", "vendor")
 	form.Set("cohort", "*")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/matching/policies/rollback", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/matching/policies/rollback", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	actor := authctx.Actor{

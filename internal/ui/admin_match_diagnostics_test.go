@@ -123,7 +123,7 @@ func TestAdminMatchDiagnostics_CrossTenantForbidden(t *testing.T) {
 	r.Get("/admin/matching/runs/{id}/diagnose", h.AdminMatchDiagnosticsPage)
 
 	// Actor from different org (org 20), not staff, not admin
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:         5,
 		OrganizationID: 20,
@@ -152,7 +152,7 @@ func TestAdminMatchDiagnostics_StaffAllowed(t *testing.T) {
 	r.Get("/admin/matching/runs/{id}/diagnose", h.AdminMatchDiagnosticsPage)
 
 	// Actor from org 20, but IsStaff = true
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:         1,
 		OrganizationID: 20,
@@ -182,7 +182,7 @@ func TestAdminMatchDiagnostics_SameTenantAllowed(t *testing.T) {
 	r.Get("/admin/matching/runs/{id}/diagnose", h.AdminMatchDiagnosticsPage)
 
 	// Actor from same org (org 10)
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/runs/101/diagnose", nil)
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:         2,
 		OrganizationID: 10,
@@ -201,7 +201,7 @@ func TestAdminMatchDiagnostics_RunNotFound(t *testing.T) {
 	r := chi.NewRouter()
 	r.Get("/admin/matching/runs/{id}/diagnose", h.AdminMatchDiagnosticsPage)
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/runs/999/diagnose", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/runs/999/diagnose", nil)
 	ctx := authctx.WithActor(req.Context(), authctx.Actor{
 		UserID:  1,
 		IsStaff: true,

@@ -85,7 +85,8 @@ type Linkable interface {
 	EntityRef() Entity
 }
 
-// MaxEntitiesPerTurn bounds how many records one answer may carry.
+// MaxEntitiesPerTurn bounds ordinary record links in one answer. Action cards
+// have their own tool-budget bound so a file order cannot lose confirmations.
 //
 // Every entity costs a chip in the drawer and a pass over the answer's text, so
 // an unbounded list would turn a twenty-five-row listing into a wall of chips.
@@ -117,9 +118,11 @@ func CollectEntities(v any) []Entity {
 }
 
 type entityCollector struct {
-	out   []Entity
-	seen  map[string]bool
-	nodes int
+	out     []Entity
+	seen    map[string]bool
+	nodes   int
+	records int
+	actions int
 }
 
 func (c *entityCollector) add(e Entity) {
@@ -129,6 +132,17 @@ func (c *entityCollector) add(e Entity) {
 	key := string(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 	if c.seen[key] {
 		return
+	}
+	if actionableEntity(e) {
+		if c.actions >= maxAttachmentToolCalls {
+			return
+		}
+		c.actions++
+	} else {
+		if c.records >= MaxEntitiesPerTurn {
+			return
+		}
+		c.records++
 	}
 	c.seen[key] = true
 	c.out = append(c.out, e)
@@ -157,7 +171,7 @@ func (c *entityCollector) take(v reflect.Value) bool {
 }
 
 func (c *entityCollector) walk(v reflect.Value, depth int) {
-	if depth > maxCollectDepth || c.nodes > maxCollectNodes || len(c.out) >= MaxEntitiesPerTurn {
+	if depth > maxCollectDepth || c.nodes > maxCollectNodes {
 		return
 	}
 	c.nodes++
@@ -191,20 +205,34 @@ func (c *entityCollector) walk(v reflect.Value, depth int) {
 	}
 }
 
-// MergeEntities appends new entities to an accumulator, dropping duplicates and
-// stopping at the per-turn ceiling. Used across the tool rounds of one turn.
+// MergeEntities drops duplicate references while keeping action cards separate
+// from the small ordinary record-link strip.
 func MergeEntities(into []Entity, more ...Entity) []Entity {
 	seen := make(map[string]bool, len(into))
+	records, actionable := 0, 0
 	for _, e := range into {
 		seen[string(e.Kind)+":"+strconv.FormatInt(e.ID, 10)] = true
+		if actionableEntity(e) {
+			actionable++
+		} else {
+			records++
+		}
 	}
 	for _, e := range more {
-		if len(into) >= MaxEntitiesPerTurn {
-			break
-		}
 		key := string(e.Kind) + ":" + strconv.FormatInt(e.ID, 10)
 		if seen[key] {
 			continue
+		}
+		if actionableEntity(e) {
+			if actionable >= maxAttachmentToolCalls {
+				continue
+			}
+			actionable++
+		} else {
+			if records >= MaxEntitiesPerTurn {
+				continue
+			}
+			records++
 		}
 		seen[key] = true
 		into = append(into, e)

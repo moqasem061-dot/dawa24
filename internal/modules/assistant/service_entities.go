@@ -22,7 +22,7 @@ import (
 // linkEntities resolves collected records for the caller's dashboard and keeps
 // the ones the answer names.
 func (s *Service) linkEntities(actor authctx.Actor, answer string, ents []Entity) []Entity {
-	if len(ents) == 0 || strings.TrimSpace(answer) == "" {
+	if len(ents) == 0 {
 		return nil
 	}
 	resolved := ResolveLinks(actor.DashboardScope(), ents)

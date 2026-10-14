@@ -79,7 +79,7 @@ func TestAdminAIMatchConfigsPage(t *testing.T) {
 	catSvc.SetMatchingService(matchingMock)
 	h := &UIHandler{log: logger, catSvc: catSvc}
 
-	req := httptest.NewRequest(http.MethodGet, "/admin/matching/ai-configs", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/admin/matching/ai-configs", nil)
 	rec := httptest.NewRecorder()
 
 	h.AdminAIMatchConfigsPage(rec, req)
@@ -104,7 +104,7 @@ func TestAdminAIMatchConfigUpdateStatus(t *testing.T) {
 	form.Set("status", "qualified")
 	form.Set("reason", "Verified on benchmark test set")
 
-	req := httptest.NewRequest(http.MethodPost, "/admin/matching/ai-configs/pm-default-v8/status", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/admin/matching/ai-configs/pm-default-v8/status", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
 	// Set chi URLParam

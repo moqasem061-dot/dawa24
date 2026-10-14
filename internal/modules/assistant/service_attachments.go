@@ -246,10 +246,7 @@ func (s *Service) readTabular(ctx context.Context, row *AttachmentRow) (string, 
 		return "", false
 	}
 
-	if len(table) > DigestMaxChars {
-		return table[:DigestMaxChars] + "\n…(اقتُطع الجدول لكبر حجمه)", true
-	}
-	return table, true
+	return tabularContext(table), true
 }
 
 func (s *Service) readPlainText(ctx context.Context, row *AttachmentRow) (string, bool) {

@@ -19,6 +19,17 @@ system.
 
 ## Who owns what
 
+## Attached order lists (2026-10-15)
+
+Capsule uses the same attachment-order budget and proposal handling in Telegram
+and the web drawer. Spreadsheet tables have a separate 60 KB context allowance,
+instead of the 6 KB prose-summary cutoff; the existing 150-row extraction limit
+remains explicit. Tool-call and round budgets scale with extracted table rows.
+The 25-record search-link ceiling never discards pending confirmation cards.
+Normal questions retain their existing budgets. Bounded oversized files report
+that rows remain, rather than claiming a complete order. Availability, pricing,
+tenant authorization and per-action confirmation still run for each item.
+
 | Concern | Owner |
 |---|---|
 | Who the Telegram user is | Dawa24: `telegram.links`, created only through browser confirmation |

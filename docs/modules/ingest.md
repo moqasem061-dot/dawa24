@@ -74,6 +74,11 @@ from accepted matching and is shown as needing review. A real PostgreSQL
 regression covers acceptance, clearing and obsolete responses; the deterministic
 AI-off staging tests remain in place.
 
+Single-row review refreshes use `RowFilter.RowID` scoped to the import. They no
+longer search product names for the numeric row ID or manufacture a placeholder
+with an unpersisted product link when the row cannot be loaded. Read/write and
+render failures are surfaced or logged through the standard handler helpers.
+
 Staging previously replaced **every candidate score** with `1.0`. That made
 unsettled, conflicting suggestions appear to be 100% matches even though no
 product link was accepted. Staging now preserves canonical candidate scores;

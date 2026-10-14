@@ -28,7 +28,8 @@ func (s *Service) RunTurn(
 	in TurnInput,
 	em Emitter,
 ) {
-	ctx, cancel := context.WithTimeout(ctx, turnDeadline)
+	budget := budgetForTurn(in)
+	ctx, cancel := context.WithTimeout(ctx, budget.deadline)
 	defer cancel()
 	channel := in.Channel
 	if channel == "" {
@@ -66,13 +67,13 @@ func (s *Service) RunTurn(
 		maxTokens = 8000
 	}
 
-	for round := 0; round <= maxToolRounds; round++ {
+	for round := 0; round <= budget.rounds; round++ {
 		// The last permitted round drops the tools entirely. Left in, a model
 		// that has decided to call something keeps calling it, hits the cap and
 		// returns nothing; taken away, it answers from what it has already
 		// read, which is what the user wanted three rounds ago.
 		roundTools := schemas
-		if round == maxToolRounds {
+		if round == budget.rounds || toolsUsed >= budget.calls {
 			roundTools = nil
 		}
 
@@ -122,7 +123,7 @@ func (s *Service) RunTurn(
 			ToolCalls: calls,
 		})
 		runnable := calls
-		if room := maxToolCalls - toolsUsed; len(runnable) > room {
+		if room := budget.calls - toolsUsed; len(runnable) > room {
 			runnable = runnable[:max(room, 0)]
 		}
 		toolsUsed += len(runnable)

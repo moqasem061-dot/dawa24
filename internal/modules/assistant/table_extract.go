@@ -5,13 +5,15 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/sheet"
 )
 
 const (
 	// DefaultMaxTabularRows caps how many rows from a spreadsheet are embedded into the turn context.
 	// 150 rows gives plenty of room for medicine order lists while keeping token count reasonable.
-	DefaultMaxTabularRows = 150
+	DefaultMaxTabularRows  = 150
+	MaxTabularContextBytes = 60000
 )
 
 // ReadTabularContent extracts spreadsheet data (XLSX, XLS, CSV, TSV) into a clean Markdown table.
@@ -108,6 +110,17 @@ func ReadTabularContent(content []byte, filename string, maxRows int) (string, b
 	}
 
 	return sb.String(), true
+}
+
+func tabularContext(table string) string {
+	if len(table) <= MaxTabularContextBytes {
+		return table
+	}
+	end := strings.LastIndex(table[:MaxTabularContextBytes], "\n")
+	if end < 0 {
+		return i18n.TDefault("assistant.table_too_large")
+	}
+	return table[:end] + "\n" + i18n.TDefault("assistant.table_partial")
 }
 
 func cleanCellForMarkdown(val string) string {

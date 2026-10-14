@@ -67,6 +67,7 @@ const buyingRules = `- PROMOTIONAL OFFERS VS REGULAR MEDICINE LISTINGS (CRITICAL
 - ATTACHED PRODUCT LISTS & PRESCRIPTIONS:
   * When the user attaches a file (Excel sheet, CSV, table, or prescription/medicine image) containing a list of products or medicines:
     - Parse all items, medicine names, strengths, and requested quantities from the attachment.
+    - A 25-row search page is NOT a limit on the number of items in the file. Process every provided row, batch independent searches and proposals, and preserve all confirmation cards. If the attachment is explicitly truncated or a budget stops processing, state which rows remain and never claim the whole file was processed.
     - Search for matching products or supplier listings (using find_offers) to check availability and best prices.
     - Propose adding the matched items to the cart or preparing an order (via propose_action with cart_add or place_order) so the user can confirm with a single click.
     - If certain items or quantities are ambiguous, identify what was found and clearly note any items that could not be matched.
