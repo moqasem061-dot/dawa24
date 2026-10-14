@@ -146,7 +146,7 @@ func UniversalFilePreviewModal(langOpt ...string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</button></div></div><div class=\"modal-body p-0\"><div class=\"doc-viewer-viewport\" id=\"universal-preview-viewport\"><!-- PDF / Document Iframe --><iframe id=\"universal-preview-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\"></iframe><!-- Image Viewport --><div id=\"universal-preview-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"universal-preview-img\" src=\"\" alt=\"معاينة الملف\" class=\"doc-viewer-img\"></div><!-- Error State Placeholder --><div id=\"universal-preview-error\" class=\"hidden p-6 text-center stack-sm\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "</button></div></div><div class=\"modal-body p-0\"><div class=\"doc-viewer-viewport\" id=\"universal-preview-viewport\"><!-- PDF / Document Iframe --><iframe id=\"universal-preview-iframe\" src=\"about:blank\" class=\"doc-viewer-iframe hidden\"></iframe><!-- Image Viewport --><div id=\"universal-preview-img-container\" class=\"doc-viewer-img-container hidden\"><img id=\"universal-preview-img\" alt=\"معاينة الملف\" class=\"doc-viewer-img\"></div><!-- Error State Placeholder --><div id=\"universal-preview-error\" class=\"hidden p-6 text-center stack-sm\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

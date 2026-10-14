@@ -27,6 +27,7 @@ test('product image preview displays images and preserves details on every close
       await modal.waitFor({ state: 'visible' });
       await page.waitForFunction(() => document.getElementById('universal-preview-img').naturalWidth > 0);
       await page.locator('#universal-preview-img').waitFor({ state: 'visible', timeout: 5000 });
+	  await page.locator('#universal-preview-img').evaluate(img => img.dispatchEvent(new Event('error')));
       assert.equal(await page.locator('#universal-preview-img').isVisible(), true, close + ' image viewport: ' + await page.locator('#universal-preview-img-container').getAttribute('class'));
       if (close === 'header') await modal.locator('.modal-header button').click();
       else if (close === 'footer') await modal.locator('.modal-footer button').click();

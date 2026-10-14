@@ -16,6 +16,9 @@ restoration. Each image load owns a fresh node so late callbacks cannot hide
 the next document. Native new-tab links bypass the universal preview handler.
 Configured shared-storage failures refuse official document uploads before
 registering metadata, rather than recording success with only a local copy.
+The global image fallback leaves managed preview images to their own handlers
+and ignores stale errors for decoded/cleared sources. It previously hid a
+reusable viewer image permanently after its first failed or cleared load.
 
 Moving the map pin regenerates the detailed address after previous manual edits;
 typing while the request is pending still protects that new text. The supplier

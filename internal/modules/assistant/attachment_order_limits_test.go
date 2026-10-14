@@ -10,6 +10,10 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 )
 
+type actionableReference Entity
+
+func (reference actionableReference) EntityRef() Entity { return Entity(reference) }
+
 func TestAttachmentOrderKeepsEveryProposalBeyondSearchPage(t *testing.T) {
 	for _, channel := range []actions.Channel{actions.ChannelWeb, actions.ChannelTelegram} {
 		t.Run(string(channel), func(t *testing.T) {
@@ -37,7 +41,11 @@ func TestAttachmentOrderKeepsEveryProposalBeyondSearchPage(t *testing.T) {
 			if len(linked) != 80 {
 				t.Fatalf("%s retained %d of 80 actionable proposals", channel, len(linked))
 			}
-			if got := CollectEntities(linked); len(got) != 80 {
+			references := make([]actionableReference, len(linked))
+			for index, entity := range linked {
+				references[index] = actionableReference(entity)
+			}
+			if got := CollectEntities(references); len(got) != 80 {
 				t.Fatalf("collector kept only %d proposal cards", len(got))
 			}
 		})
