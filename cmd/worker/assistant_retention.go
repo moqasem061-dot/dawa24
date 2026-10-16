@@ -31,11 +31,13 @@ func startAssistantRetention(
 	// object storage being unavailable must not stop the database half of the
 	// retention promise, which is the half that actually deletes the data.
 	var store *storage.Client
-	if sc, err := storage.New(ctx, storageCfg); err == nil {
-		store = sc
-	} else {
-		log.Warn("assistant retention: object storage unavailable; "+
-			"attachment rows will still be deleted, objects will not", "error", err)
+	if storageCfg.Configured() {
+		if sc, err := storage.New(ctx, storageCfg); err == nil {
+			store = sc
+		} else {
+			log.Warn("assistant retention: object storage unavailable; "+
+				"attachment rows will still be deleted, objects will not", "error", err)
+		}
 	}
 
 	repo := assistantPostgres.NewRepository(db)

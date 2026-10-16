@@ -129,8 +129,10 @@ func run() error {
 	// Periodic Promotions & Media Expiry Sweeper (Runs every 30 minutes in server)
 	safe.Go(log, "server-promotions-sweeper", func() {
 		var s3Store *storage.Client
-		if sc, err := storage.New(ctx, cfg.Storage); err == nil {
-			s3Store = sc
+		if cfg.Storage.Configured() {
+			if sc, err := storage.New(ctx, cfg.Storage); err == nil {
+				s3Store = sc
+			}
 		}
 
 		sweep := func(trigger string) {

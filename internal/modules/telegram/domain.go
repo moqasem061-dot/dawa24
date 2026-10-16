@@ -111,6 +111,8 @@ type Message struct {
 	Caption   string      `json:"caption,omitempty"`
 	Photo     []PhotoSize `json:"photo,omitempty"`
 	Document  *Document   `json:"document,omitempty"`
+	Voice     *Voice      `json:"voice,omitempty"`
+	Audio     *Audio      `json:"audio,omitempty"`
 }
 
 // PhotoSize is one size of a photo or a file thumbnail.
@@ -128,6 +130,31 @@ type PhotoSize struct {
 type Document struct {
 	FileID       string `json:"file_id"`
 	FileUniqueID string `json:"file_unique_id,omitempty"`
+	FileName     string `json:"file_name,omitempty"`
+	MimeType     string `json:"mime_type,omitempty"`
+	FileSize     int64  `json:"file_size,omitempty"`
+	FileURL      string `json:"file_url,omitempty"`
+	FileData     string `json:"file_data,omitempty"`
+}
+
+// Voice is a voice note sent via Telegram.
+type Voice struct {
+	FileID       string `json:"file_id"`
+	FileUniqueID string `json:"file_unique_id,omitempty"`
+	Duration     int    `json:"duration,omitempty"`
+	MimeType     string `json:"mime_type,omitempty"`
+	FileSize     int64  `json:"file_size,omitempty"`
+	FileURL      string `json:"file_url,omitempty"`
+	FileData     string `json:"file_data,omitempty"`
+}
+
+// Audio is an audio file sent via Telegram.
+type Audio struct {
+	FileID       string `json:"file_id"`
+	FileUniqueID string `json:"file_unique_id,omitempty"`
+	Duration     int    `json:"duration,omitempty"`
+	Performer    string `json:"performer,omitempty"`
+	Title        string `json:"title,omitempty"`
 	FileName     string `json:"file_name,omitempty"`
 	MimeType     string `json:"mime_type,omitempty"`
 	FileSize     int64  `json:"file_size,omitempty"`

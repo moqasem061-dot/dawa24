@@ -95,16 +95,6 @@ type Redis struct {
 	PoolSize int
 }
 
-type Storage struct {
-	Endpoint        string // MinIO or S3 endpoint
-	Region          string
-	Bucket          string
-	AccessKeyID     string
-	SecretAccessKey string
-	UsePathStyle    bool // MinIO needs this; AWS S3 does not
-	PublicBaseURL   string
-}
-
 // Gateway is the connection to the MuhiyaLLM Gateway.
 //
 // This struct is the ONLY place in the Store that knows an AI service exists at
@@ -212,15 +202,7 @@ func load(cliOnly bool) (*Config, error) {
 			PoolSize: getInt("REDIS_POOL_SIZE", 10),
 		},
 
-		Storage: Storage{
-			Endpoint:        getStr("STORAGE_ENDPOINT", ""),
-			Region:          getStr("STORAGE_REGION", "us-east-1"),
-			Bucket:          getStr("STORAGE_BUCKET", "dawa24"),
-			AccessKeyID:     getStr("STORAGE_ACCESS_KEY_ID", ""),
-			SecretAccessKey: getStr("STORAGE_SECRET_ACCESS_KEY", ""),
-			UsePathStyle:    getBool("STORAGE_USE_PATH_STYLE", true),
-			PublicBaseURL:   getStr("STORAGE_PUBLIC_BASE_URL", ""),
-		},
+		Storage: loadStorage(fail, env, cliOnly),
 
 		Gateway: Gateway{
 			BaseURL:    getStr("GATEWAY_BASE_URL", "https://api.dawa24.com"),
@@ -317,9 +299,6 @@ func load(cliOnly bool) (*Config, error) {
 
 	// --- Production-only strictness ---
 	if env.IsProd() && !cliOnly {
-		if cfg.Storage.Endpoint != "" && (cfg.Storage.AccessKeyID == "" || cfg.Storage.SecretAccessKey == "") {
-			fail("STORAGE_ACCESS_KEY_ID and STORAGE_SECRET_ACCESS_KEY are required when STORAGE_ENDPOINT is configured")
-		}
 		if !cfg.Session.SecureOnly {
 			fail("SESSION_SECURE must not be disabled in production")
 		}

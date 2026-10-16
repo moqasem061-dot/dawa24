@@ -81,8 +81,10 @@ func run() error {
 	defer db.Close()
 
 	var s3Store *storage.Client
-	if sc, err := storage.New(ctx, cfg.Storage); err == nil {
-		s3Store = sc
+	if cfg.Storage.Configured() {
+		if sc, err := storage.New(ctx, cfg.Storage); err == nil {
+			s3Store = sc
+		}
 	}
 
 	workers := river.NewWorkers()

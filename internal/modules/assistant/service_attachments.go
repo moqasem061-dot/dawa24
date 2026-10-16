@@ -158,7 +158,11 @@ func (s *Service) ResolveAttachments(
 			}
 		}
 		if digest == "" {
-			digest = "تعذّر قراءة محتوى هذا الملف. أبلغ المستخدم بذلك واطلب إعادة إرساله بصيغة أخرى."
+			if ClassifyMIME(row.MIMEType) == KindAudio {
+				digest = "تعذّر تحويل التسجيل الصوتي إلى نص حالياً. أبلغ المستخدم بالتعذر واطلب منه كتابة الأصناف كنص أو إرسال صورة الروشتة."
+			} else {
+				digest = "تعذّر قراءة محتوى هذا الملف. أبلغ المستخدم بذلك واطلب إعادة إرساله بصيغة أخرى."
+			}
 		}
 		digests = append(digests, AttachmentDigest{
 			Filename: row.Filename,
@@ -313,7 +317,7 @@ func (s *Service) readAttachmentViaGateway(
 			{Role: "user", Parts: []gateway.ContentPart{
 				{Kind: partKindFor(kind), DataURL: DataURL(mime, content),
 					Filename: row.Filename, MIMEType: mime},
-				{Kind: gateway.PartText, Text: "استخرج محتوى هذا الملف."},
+				{Kind: gateway.PartText, Text: audioOrFileExtractPrompt(kind)},
 			}},
 		},
 		MaxTokens:   1200,
@@ -377,4 +381,11 @@ func partKindFor(kind string) gateway.PartKind {
 		return gateway.PartVideo
 	}
 	return gateway.PartFile
+}
+
+func audioOrFileExtractPrompt(kind string) string {
+	if kind == KindAudio {
+		return "قم بتفريغ وتحويل هذا التسجيل الصوتي بدقة إلى نص مكتوب باللغة العربية (Transcription)، مع ذكر أسماء الأدوية والكميات المنطوقة بوضوح."
+	}
+	return "استخرج محتوى هذا الملف."
 }

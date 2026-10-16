@@ -3,9 +3,7 @@ package telegram
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
-	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/chatbridge"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -133,7 +131,7 @@ func (s *Service) HandleUpdate(ctx context.Context, u Update) (Reply, error) {
 	}
 
 	var attachmentRefs []string
-	if msg.Document != nil || len(msg.Photo) > 0 {
+	if msg.Document != nil || len(msg.Photo) > 0 || msg.Voice != nil || msg.Audio != nil {
 		ref, err := s.ingestTelegramAttachment(ctx, link, msg)
 		if err != nil {
 			s.log.WarnContext(ctx, "telegram: ingest attachment failed", "error", err)
@@ -145,7 +143,11 @@ func (s *Service) HandleUpdate(ctx context.Context, u Update) (Reply, error) {
 	}
 
 	if text == "" && len(attachmentRefs) == 0 {
-		return replyTo(chatID, "أستقبل حالياً الأسئلة المكتوبة أو المرفقات (ملفات Excel أو صور الروشتات). اكتب سؤالك أو أرفق الملف."), nil
+		return replyTo(chatID, "أستقبل حالياً الأسئلة المكتوبة أو المرفقات (ملفات Excel أو صور الروشتات أو الرسائل الصوتية). اكتب سؤالك أو أرسل التسجيل الصوتي أو أرفق الملف."), nil
+	}
+
+	if text == "" && (msg.Voice != nil || msg.Audio != nil) {
+		text = "استمع إلى هذا التسجيل الصوتي ونفّذ الطلب أو أجب عن السؤال الوارد فيه، وإذا كان يحتوي على أسماء أدوية أو طلبيات فحدد الأصناف والكميات واقترح إضافتها إلى السلة."
 	}
 	return s.answer(ctx, link, text, attachmentRefs...)
 }
@@ -218,49 +220,6 @@ func (s *Service) onMembershipChange(sys context.Context, m *ChatMemberUpdated) 
 		}
 	}
 	return nil
-}
-
-func (s *Service) ingestTelegramAttachment(ctx context.Context, link *Link, msg *Message) (string, error) {
-	actor, refusal, err := s.core.Authorize(ctx, link.chat())
-	if err != nil {
-		return "", err
-	}
-	if refusal != "" {
-		return "", errors.New(refusal)
-	}
-
-	var (
-		content  []byte
-		filename string
-	)
-
-	if msg.Document != nil {
-		doc := msg.Document
-		filename = doc.FileName
-		if filename == "" {
-			filename = "telegram_document"
-		}
-		content, err = s.DownloadFile(ctx, doc.FileID, doc.FileURL, doc.FileData)
-		if err != nil {
-			return "", err
-		}
-	} else if len(msg.Photo) > 0 {
-		// Pick highest resolution photo
-		p := msg.Photo[len(msg.Photo)-1]
-		filename = fmt.Sprintf("telegram_photo_%d.jpg", time.Now().Unix())
-		content, err = s.DownloadFile(ctx, p.FileID, p.FileURL, p.FileData)
-		if err != nil {
-			return "", err
-		}
-	} else {
-		return "", nil
-	}
-
-	if len(content) == 0 {
-		return "", errors.New("الملف المرفق فارغ")
-	}
-
-	return s.assistant.IngestAttachment(ctx, actor, filename, content)
 }
 
 // answer runs one question through the shared gates and the assistant.

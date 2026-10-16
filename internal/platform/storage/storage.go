@@ -37,6 +37,9 @@ type Client struct {
 
 // New creates a new Storage Client configured from config.Storage.
 func New(ctx context.Context, cfg config.Storage) (*Client, error) {
+	if !cfg.Configured() {
+		return nil, errors.New("storage: object storage is not configured")
+	}
 	if cfg.Bucket == "" {
 		return nil, errors.New("storage: bucket is required")
 	}

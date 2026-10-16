@@ -52,11 +52,15 @@ func mountModuleRoutesAPI(
 
 	// 1. Storage & Attachments
 	var storageClient *storage.Client
-	if sClient, err := storage.New(context.Background(), cfg.Storage); err == nil {
-		storageClient = sClient
-		log.Info("object storage client initialized", "bucket", cfg.Storage.Bucket)
+	if cfg.Storage.Configured() {
+		if sClient, err := storage.New(context.Background(), cfg.Storage); err == nil {
+			storageClient = sClient
+			log.Info("object storage client initialized", "bucket", cfg.Storage.Bucket)
+		} else {
+			log.Warn("object storage client not initialized", "error", err)
+		}
 	} else {
-		log.Warn("object storage client not initialized", "error", err)
+		log.Info("object storage not configured; using local platform storage for uploads")
 	}
 
 	attachRepo := attachmentsPostgres.NewRepository(db)

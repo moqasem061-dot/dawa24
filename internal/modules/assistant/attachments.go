@@ -34,14 +34,16 @@ var allowedMIMEs = map[string]string{
 	"image/gif":  KindImage,
 
 	// Audio
-	"audio/mpeg":  KindAudio,
-	"audio/mp3":   KindAudio,
-	"audio/wav":   KindAudio,
-	"audio/x-wav": KindAudio,
-	"audio/webm":  KindAudio,
-	"audio/ogg":   KindAudio,
-	"audio/m4a":   KindAudio,
-	"audio/x-m4a": KindAudio,
+	"audio/mpeg":      KindAudio,
+	"audio/mp3":       KindAudio,
+	"audio/wav":       KindAudio,
+	"audio/x-wav":     KindAudio,
+	"audio/webm":      KindAudio,
+	"audio/ogg":       KindAudio,
+	"application/ogg": KindAudio,
+	"audio/oga":       KindAudio,
+	"audio/m4a":       KindAudio,
+	"audio/x-m4a":     KindAudio,
 
 	// Video
 	"video/mp4":  KindVideo,
@@ -142,6 +144,18 @@ func refineByExtension(detected, ext string, content []byte) string {
 	case ".txt", ".md", ".log":
 		if detected == "application/octet-stream" && utf8.Valid(content) {
 			return "text/plain"
+		}
+	case ".mp3":
+		if detected == "application/octet-stream" {
+			return "audio/mpeg"
+		}
+	case ".wav":
+		if detected == "application/octet-stream" {
+			return "audio/wav"
+		}
+	case ".oga", ".ogg":
+		if detected == "application/ogg" || detected == "application/octet-stream" || bytes.HasPrefix(content, []byte("OggS")) {
+			return "audio/ogg"
 		}
 	case ".m4a", ".mp4":
 		// DetectContentType calls both video/mp4; an .m4a is audio in the same
