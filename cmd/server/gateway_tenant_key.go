@@ -134,6 +134,11 @@ func (p *tenantKeyProvisioner) Key(ctx context.Context, orgID int64) string {
 		entry.lastFailure = time.Now()
 		p.log.WarnContext(ctx, "could not resolve organisation gateway key",
 			"org_id", orgID, "plan_id", wantPlan, "error", err)
+		if o, oerr := p.orgs.GetOrganization(sysCtx, orgID); oerr == nil && o != nil && isVirtualKey(o.AIVirtualKey) {
+			entry.key, entry.planID, entry.resolvedAt = o.AIVirtualKey, wantPlan, time.Now()
+			entry.lastFailure = time.Time{}
+			return entry.key
+		}
 		if entry.key != "" {
 			return entry.key
 		}
@@ -211,12 +216,15 @@ func (p *tenantKeyProvisioner) Invalidate(orgID int64) {
 // provision brings the organisation's Gateway account into line and returns a
 // key that has been proven to work.
 func (p *tenantKeyProvisioner) provision(ctx context.Context, orgID int64, planID string) (string, error) {
-	client, err := p.client(ctx)
+	o, err := p.orgs.GetOrganization(ctx, orgID)
 	if err != nil {
 		return "", err
 	}
-	o, err := p.orgs.GetOrganization(ctx, orgID)
+	client, err := p.client(ctx)
 	if err != nil {
+		if o != nil && isVirtualKey(o.AIVirtualKey) {
+			return o.AIVirtualKey, nil
+		}
 		return "", err
 	}
 

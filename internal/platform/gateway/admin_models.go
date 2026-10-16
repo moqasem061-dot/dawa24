@@ -139,18 +139,25 @@ func NewTranscriptionModelCache(
 
 // Resolve returns the model name to send for an upload of this MIME type.
 func (c *TranscriptionModelCache) Resolve(ctx context.Context, mime string) (string, error) {
-	if c == nil || c.list == nil {
+	if c == nil {
+		return "", ErrNoTranscriptionModel
+	}
+
+	pin := ""
+	if c.pinned != nil {
+		pin = strings.TrimSpace(c.pinned(ctx))
+	}
+	if pin != "" {
+		return pin, nil
+	}
+
+	if c.list == nil {
 		return "", ErrNoTranscriptionModel
 	}
 
 	models, err := c.catalogue(ctx)
 	if err != nil {
 		return "", err
-	}
-
-	pin := ""
-	if c.pinned != nil {
-		pin = strings.TrimSpace(c.pinned(ctx))
 	}
 
 	var best *GatewayModel

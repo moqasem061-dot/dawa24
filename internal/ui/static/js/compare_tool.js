@@ -721,8 +721,22 @@ function whenStagingReady(ids, done) {
 					bar.open();
 				}
 				if (bar) {
-					bar.setCaption('جارٍ قراءة أصناف الكشوف…');
-					bar.setPercent(data.percent || 0);
+					const allFailed = (data.files || []).length > 0 && (data.files || []).every(f => f.status === 'failed');
+					if (allFailed) {
+						bar.fail('تعذّرت قراءة الكشوف المرفوعة. يرجى مراجعة التنسيق والمحاولة مرة أخرى.');
+						setTimeout(() => {
+							if (bar) bar.close();
+							finish();
+						}, 2500);
+						return;
+					}
+
+					bar.setCaption('جارٍ قراءة أصناف الكشوف ومطابقتها…');
+					if (!data.percent || data.percent === 0) {
+						bar.setIndeterminate('جارٍ قراءة أصناف الكشوف ومطابقتها بالكتالوج…');
+					} else {
+						bar.setPercent(data.percent);
+					}
 					bar.setCount((data.done || 0) + ' من ' + (data.total || 0));
 					bar.setFiles((data.files || []).map((f) => ({
 						name: f.name || ('#' + f.id),

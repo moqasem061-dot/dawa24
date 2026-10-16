@@ -132,6 +132,13 @@ func (s *Service) Ask(ctx context.Context, actor authctx.Actor, channel actions.
 
 	atts, digests, parts := s.ResolveAttachments(ctx, actor, attachmentRefs)
 
+	if isAudioOnlyTurn(question, atts, digests) {
+		return AskResult{
+			Answer:         "عذراً، تعذّر تحويل الرسالة الصوتية إلى نص تلقائياً. يُرجى كتابة الأصناف والكميات المطلوبة هنا نصياً (مثلاً: أوجمنتين 1 جم قرص × 50)، أو إرسال صورة واضحة للروشتة أو الفاتورة وسأقوم بتجهيز الطلب لك فوراً.",
+			ConversationID: conv.ID,
+		}
+	}
+
 	c := &collector{}
 	s.RunTurn(ctx, actor, cfg, turn, TurnInput{
 		Text:        question,
@@ -164,4 +171,26 @@ func (c *collector) Done(answer string, _ int64)   { c.answer = answer }
 func (c *collector) Failed(code Code, partial string, _ int64) {
 	c.code = code
 	c.answer = partial
+}
+
+func isAudioOnlyTurn(question string, atts []Attachment, digests []AttachmentDigest) bool {
+	if len(atts) == 0 {
+		return false
+	}
+	for _, a := range atts {
+		if ClassifyMIME(a.MIMEType) != KindAudio {
+			return false
+		}
+	}
+	isDefaultPrompt := question == "" || strings.Contains(question, "مرفق تفريغ التسجيل الصوتي للعميل")
+	if !isDefaultPrompt {
+		return false
+	}
+	for _, d := range digests {
+		t := strings.TrimSpace(d.Text)
+		if t != "" && !strings.Contains(t, "تعذّر تحويل التسجيل الصوتي") && !strings.Contains(t, "تعذّر تفريغ الرسالة الصوتية") {
+			return false
+		}
+	}
+	return true
 }

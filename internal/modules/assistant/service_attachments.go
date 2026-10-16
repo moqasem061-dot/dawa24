@@ -299,10 +299,17 @@ func (s *Service) readAttachmentViaGateway(
 
 	kind := ClassifyMIME(row.MIMEType)
 	if kind == KindAudio {
+		var model string
+		if s.transcribeModel != nil {
+			if m, merr := s.transcribeModel(ctx, row.MIMEType); merr == nil {
+				model = m
+			}
+		}
 		text, err := s.gateway.Transcribe(ctx, gateway.TranscribeRequest{
 			Audio:      bytes.NewReader(content),
 			Filename:   row.Filename,
 			MIMEType:   row.MIMEType,
+			Model:      model,
 			Language:   "ar",
 			OrgID:      actor.OrgID,
 			UserID:     actor.UserID,
@@ -311,11 +318,11 @@ func (s *Service) readAttachmentViaGateway(
 		})
 		if err != nil {
 			s.log.WarnContext(ctx, "assistant: audio transcription failed", "attachment", row.PublicID, "error", err)
-			return "تعذّر تفريغ الرسالة الصوتية تلقائيًا. يُرجى كتابة الطلب نصيًا أو إرسال صورة واضحة للفاتورة/الروشتة."
+			return ""
 		}
 		text = strings.TrimSpace(text)
 		if text == "" {
-			return "لم نتمكن من التقاط أي صوت واضح في هذا التسجيل. يُرجى إعادة التسجيل بصوت أوضح أو كتابة الطلب نصيًا."
+			return ""
 		}
 		if len(text) > DigestMaxChars {
 			text = text[:DigestMaxChars] + "\n…(اقتُطع المحتوى)"

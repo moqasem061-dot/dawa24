@@ -8189,15 +8189,27 @@ tr.team-row, .team-row { display: table-row; }
   gap: 0.85rem;
 }
 
+.upload-progress-modal,
+.upload-progress-modal.is-busy,
+dialog.modal.upload-progress-modal {
+  opacity: 1 !important;
+}
+
 .upload-progress-modal .modal-box {
-  background: var(--bg-surface-raised, #ffffff);
-  background-color: var(--bg-surface-raised, #ffffff);
+  background: var(--bg-surface-raised, #ffffff) !important;
+  background-color: var(--bg-surface-raised, #ffffff) !important;
   border: 1px solid var(--border-card, #cbd5e1);
   box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.55), 0 0 0 1px var(--border-card, rgba(0, 0, 0, 0.08));
+  opacity: 1 !important;
 }
 
 [data-theme="dark"] .upload-progress-modal .modal-box,
 body.dark .upload-progress-modal .modal-box {
+  background: var(--bg-surface-raised, #131c22) !important;
+  background-color: var(--bg-surface-raised, #131c22) !important;
+  border-color: var(--border-card, #2a3a46) !important;
+  box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.08) !important;
+  opacity: 1 !important;
 }
 
 .upload-progress-phase {

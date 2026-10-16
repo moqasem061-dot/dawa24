@@ -215,7 +215,9 @@ func DataURL(mime string, content []byte) string {
 
 func isStaleAudioDigest(digest string) bool {
 	return strings.Contains(digest, "التسجيل ده مفيهوش محتوى صوتي") ||
-		strings.Contains(digest, "مش عندي القدرة أستمع للصوت")
+		strings.Contains(digest, "مش عندي القدرة أستمع للصوت") ||
+		strings.Contains(digest, "تعذّر تفريغ الرسالة الصوتية") ||
+		strings.Contains(digest, "تعذّر تحويل التسجيل الصوتي")
 }
 
 func sendableDirectly(caps gateway.ModelCapabilities, kind string) bool {

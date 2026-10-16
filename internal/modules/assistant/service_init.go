@@ -93,15 +93,16 @@ type KeyResolver func(ctx context.Context, orgID int64) (string, error)
 
 // Service runs turns.
 type Service struct {
-	repo    Repository
-	reader  Reader
-	gateway gateway.Client
-	tools   ToolRunner
-	keys    KeyResolver
-	refs    RefIssuer
-	actions *actions.Flow
-	storage *storage.Client
-	log     *slog.Logger
+	repo            Repository
+	reader          Reader
+	gateway         gateway.Client
+	tools           ToolRunner
+	keys            KeyResolver
+	transcribeModel gateway.TranscriptionModelResolver
+	refs            RefIssuer
+	actions         *actions.Flow
+	storage         *storage.Client
+	log             *slog.Logger
 }
 
 // SetStorage installs object storage client for attachments.
@@ -133,6 +134,11 @@ func NewService(repo Repository, gw gateway.Client, runner ToolRunner, log *slog
 
 // SetKeyResolver installs the tenant key lookup.
 func (s *Service) SetKeyResolver(k KeyResolver) { s.keys = k }
+
+// SetTranscriptionModelResolver installs the runtime transcription model resolver.
+func (s *Service) SetTranscriptionModelResolver(r gateway.TranscriptionModelResolver) {
+	s.transcribeModel = r
+}
 
 // Repo exposes the repository to the HTTP layer, which owns conversation
 // lifecycle. The service owns turns.

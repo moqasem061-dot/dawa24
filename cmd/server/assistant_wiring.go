@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"strings"
 
 	"github.com/redis/go-redis/v9"
 
@@ -87,6 +88,7 @@ func mountAssistant(r chi.Router, d assistantDeps) {
 	svc := assistant.NewService(repo, d.ai, registry, d.log)
 	svc.SetStorage(d.storage)
 	svc.SetKeyResolver(d.keys)
+	svc.SetTranscriptionModelResolver(transcriptionResolver(d))
 	svc.SetActionFlow(flow)
 	svc.SetRefIssuer(registry.BranchRef)
 
@@ -124,11 +126,29 @@ func assistantBuffer(d assistantDeps) stream.Buffer {
 
 // transcriptionResolver discovers which model can turn speech into text.
 //
-// It has to ask the Gateway's ADMIN catalogue rather than /v1/models, because
-// /v1/models excludes transcription models by design and the one the Gateway
-// ships is seeded inactive. Hardcoding a name is how the microphone button came
-// to answer 404 on a fresh deployment.
+// Priority order:
+//  1. The model explicitly configured by platform owners in the admin panel
+//     (platform_admin.ai_role_models with role = "assistant.transcribe").
+//  2. The environment variable override GATEWAY_MODEL_ASSISTANT_TRANSCRIBE.
+//  3. Dynamic discovery from Gateway's admin catalogue (cheapest active model).
+//  4. Built-in default model for RoleTranscribe.
 func transcriptionResolver(d assistantDeps) gateway.TranscriptionModelResolver {
+	pinnedModel := func(ctx context.Context) string {
+		if d.admin != nil {
+			if rms, err := d.admin.ListAIRoleModels(database.AsSystem(ctx)); err == nil {
+				for _, rm := range rms {
+					if rm != nil && rm.Role == string(gateway.RoleTranscribe) && rm.IsActive && strings.TrimSpace(rm.Model) != "" {
+						return strings.TrimSpace(rm.Model)
+					}
+				}
+			}
+		}
+		if env := strings.TrimSpace(os.Getenv("GATEWAY_MODEL_ASSISTANT_TRANSCRIBE")); env != "" {
+			return env
+		}
+		return ""
+	}
+
 	cacheEntry := gateway.NewTranscriptionModelCache(
 		func(ctx context.Context) ([]gateway.GatewayModel, error) {
 			client, err := adminClientFor(ctx, d.admin)
@@ -137,14 +157,18 @@ func transcriptionResolver(d assistantDeps) gateway.TranscriptionModelResolver {
 			}
 			return client.ListModels(ctx)
 		},
-		func(context.Context) string {
-			// An operator may pin a model with the same environment variable
-			// that overrides every other model role. Empty means "choose the
-			// cheapest active one that accepts this audio".
-			return os.Getenv("GATEWAY_MODEL_ASSISTANT_TRANSCRIBE")
-		},
+		pinnedModel,
 	)
-	return cacheEntry.Resolve
+
+	return func(ctx context.Context, mime string) (string, error) {
+		if pin := pinnedModel(ctx); pin != "" {
+			return pin, nil
+		}
+		if m, err := cacheEntry.Resolve(ctx, mime); err == nil && m != "" {
+			return m, nil
+		}
+		return gateway.ResolveRoleModel(gateway.Settings{}, gateway.RoleTranscribe), nil
+	}
 }
 
 // adminClientFor builds a Gateway management client from saved settings.
