@@ -130,8 +130,31 @@ func (s *Service) SaveFileMapping(ctx context.Context, fileID int64, config Mapp
 		return err
 	}
 
+	// Fast path: if the file is already ready with extracted rows, and the mapping hasn't changed,
+	// avoid re-reading the whole spreadsheet from disk, re-parsing tens of thousands of rows,
+	// and re-running catalog matching synchronously.
+	if file.Status == FileReady && file.RowCount > 0 && mappingConfigEqual(file.MappingConfig, config) {
+		return nil
+	}
+
 	file.MappingConfig = config
 	return s.processMappedFile(ctx, file)
+}
+
+func mappingConfigEqual(a, b MappingConfig) bool {
+	ptrEq := func(x, y *int) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if x == nil || y == nil {
+			return false
+		}
+		return *x == *y
+	}
+	return ptrEq(a.NameCol, b.NameCol) &&
+		ptrEq(a.PriceCol, b.PriceCol) &&
+		ptrEq(a.DiscountCol, b.DiscountCol) &&
+		ptrEq(a.CodeCol, b.CodeCol)
 }
 
 // UploadAndProcessCompareFile uploads a spreadsheet, detects columns, extracts rows, and stores them in compare.file_rows immediately.

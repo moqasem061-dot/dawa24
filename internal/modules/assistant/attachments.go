@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 // Allowed MIME classifications
@@ -209,4 +211,39 @@ func SanitiseFilename(name string) string {
 // history load.
 func DataURL(mime string, content []byte) string {
 	return "data:" + mime + ";base64," + base64.StdEncoding.EncodeToString(content)
+}
+
+func isStaleAudioDigest(digest string) bool {
+	return strings.Contains(digest, "التسجيل ده مفيهوش محتوى صوتي") ||
+		strings.Contains(digest, "مش عندي القدرة أستمع للصوت")
+}
+
+func sendableDirectly(caps gateway.ModelCapabilities, kind string) bool {
+	switch kind {
+	case KindImage:
+		return true
+	case KindDocument:
+		return caps.Documents
+	case KindVideo:
+		return caps.Video
+	}
+	return false
+}
+
+func withinLimit(caps gateway.ModelCapabilities, size int64) bool {
+	limit := int64(caps.MaxAttachmentMB) << 20
+	if caps.MaxAttachmentMB <= 0 {
+		limit = MaxAttachmentBytes
+	}
+	return size <= limit
+}
+
+func partKindFor(kind string) gateway.PartKind {
+	switch kind {
+	case KindImage:
+		return gateway.PartImage
+	case KindVideo:
+		return gateway.PartVideo
+	}
+	return gateway.PartFile
 }

@@ -177,7 +177,10 @@ func (r *Repository) UpdateFileRowMatch(ctx context.Context, rowID int64, matche
 			WHERE id = $4;
 		`
 		dbMethod := toDBMatchMethod(method)
-		_, err := tx.Exec(txCtx, query, matchedProductID, dbMethod, confidence, rowID)
+		if _, err := tx.Exec(txCtx, query, matchedProductID, dbMethod, confidence, rowID); err != nil {
+			return err
+		}
+		_, err := tx.Exec(txCtx, `UPDATE compare.files SET updated_at = now() WHERE id = (SELECT file_id FROM compare.file_rows WHERE id = $1);`, rowID)
 		return err
 	})
 }

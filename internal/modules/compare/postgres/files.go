@@ -201,18 +201,19 @@ func (r *Repository) UpdateFile(ctx context.Context, f *compare.CompareFile) err
 			UPDATE compare.files
 			SET supplier_name = $2, row_count = $3, status = $4, mapping_config = $5,
 			    archived_at = $6, archive_reason = $7, error_message = $8, updated_at = now()
-			WHERE id = $1 AND deleted_at IS NULL;
+			WHERE id = $1 AND deleted_at IS NULL
+			RETURNING updated_at;
 		`
 		mappingJSON, _ := json.Marshal(f.MappingConfig)
-		res, err := tx.Exec(txCtx, query,
+		err := tx.QueryRow(txCtx, query,
 			f.ID, f.SupplierName, f.RowCount, string(f.Status), mappingJSON,
 			f.ArchivedAt, f.ArchiveReason, f.ErrorMessage,
-		)
+		).Scan(&f.UpdatedAt)
 		if err != nil {
+			if errors.Is(err, pgx.ErrNoRows) {
+				return apperr.NotFound("compare file")
+			}
 			return err
-		}
-		if res.RowsAffected() == 0 {
-			return apperr.NotFound("compare file")
 		}
 		return nil
 	})

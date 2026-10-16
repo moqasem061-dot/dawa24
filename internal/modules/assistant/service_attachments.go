@@ -147,8 +147,11 @@ func (s *Service) ResolveAttachments(
 			continue
 		}
 
-		// 4. Cached or Gateway model reading (PDFs, Word docs, etc.)
+		// 4. Cached or Gateway model reading (PDFs, Word docs, audio, etc.)
 		digest := row.Digest
+		if isStaleAudioDigest(digest) {
+			digest = ""
+		}
 		if digest == "" {
 			digest = s.readAttachmentViaGateway(ctx, actor, row)
 			if digest != "" {
@@ -279,26 +282,10 @@ func (s *Service) readAttachmentViaGateway(
 		return ""
 	}
 
-	caps, err := s.gateway.Capabilities(ctx, gateway.RoleAttachment)
-	if err != nil {
-		caps = gateway.ConservativeDefaultCapabilities()
-	}
-	kind := ClassifyMIME(row.MIMEType)
-	if kind == KindUnknown {
-		return fmt.Sprintf("تعذّر تحليل الملف %q: نوع غير مدعوم.", row.Filename)
-	}
-	if !withinLimit(caps, row.SizeBytes) {
-		return fmt.Sprintf("الملف %q أكبر من الحد الذي يمكن تحليله.", row.Filename)
-	}
-
 	content, err := s.AttachmentBytes(ctx, row)
 	if err != nil {
 		s.log.WarnContext(ctx, "assistant: read attachment bytes", "error", err)
 		return ""
-	}
-	mime := row.MIMEType
-	if kind == KindImage {
-		mime, content = PrepareImageForModel(mime, content)
 	}
 
 	var virtualKey string
@@ -310,6 +297,48 @@ func (s *Service) readAttachmentViaGateway(
 		}
 	}
 
+	kind := ClassifyMIME(row.MIMEType)
+	if kind == KindAudio {
+		text, err := s.gateway.Transcribe(ctx, gateway.TranscribeRequest{
+			Audio:      bytes.NewReader(content),
+			Filename:   row.Filename,
+			MIMEType:   row.MIMEType,
+			Language:   "ar",
+			OrgID:      actor.OrgID,
+			UserID:     actor.UserID,
+			VirtualKey: virtualKey,
+			Feature:    "تفريغ صوتي للمساعد",
+		})
+		if err != nil {
+			s.log.WarnContext(ctx, "assistant: audio transcription failed", "attachment", row.PublicID, "error", err)
+			return "تعذّر تفريغ الرسالة الصوتية تلقائيًا. يُرجى كتابة الطلب نصيًا أو إرسال صورة واضحة للفاتورة/الروشتة."
+		}
+		text = strings.TrimSpace(text)
+		if text == "" {
+			return "لم نتمكن من التقاط أي صوت واضح في هذا التسجيل. يُرجى إعادة التسجيل بصوت أوضح أو كتابة الطلب نصيًا."
+		}
+		if len(text) > DigestMaxChars {
+			text = text[:DigestMaxChars] + "\n…(اقتُطع المحتوى)"
+		}
+		return text
+	}
+
+	caps, err := s.gateway.Capabilities(ctx, gateway.RoleAttachment)
+	if err != nil {
+		caps = gateway.ConservativeDefaultCapabilities()
+	}
+	if kind == KindUnknown {
+		return fmt.Sprintf("تعذّر تحليل الملف %q: نوع غير مدعوم.", row.Filename)
+	}
+	if !withinLimit(caps, row.SizeBytes) {
+		return fmt.Sprintf("الملف %q أكبر من الحد الذي يمكن تحليله.", row.Filename)
+	}
+
+	mime := row.MIMEType
+	if kind == KindImage {
+		mime, content = PrepareImageForModel(mime, content)
+	}
+
 	events, err := s.gateway.Stream(ctx, gateway.ChatRequest{
 		Role: gateway.RoleAttachment,
 		Messages: []gateway.ChatMessage{
@@ -317,7 +346,7 @@ func (s *Service) readAttachmentViaGateway(
 			{Role: "user", Parts: []gateway.ContentPart{
 				{Kind: partKindFor(kind), DataURL: DataURL(mime, content),
 					Filename: row.Filename, MIMEType: mime},
-				{Kind: gateway.PartText, Text: audioOrFileExtractPrompt(kind)},
+				{Kind: gateway.PartText, Text: "استخرج محتوى هذا الملف."},
 			}},
 		},
 		MaxTokens:   1200,
@@ -347,45 +376,4 @@ func (s *Service) readAttachmentViaGateway(
 		text = text[:DigestMaxChars] + "\n…(اقتُطع المحتوى)"
 	}
 	return text
-}
-
-func sendableDirectly(caps gateway.ModelCapabilities, kind string) bool {
-	switch kind {
-	case KindImage:
-		return true
-	case KindDocument:
-		return caps.Documents
-	case KindAudio:
-		return caps.Audio
-	case KindVideo:
-		return caps.Video
-	}
-	return false
-}
-
-func withinLimit(caps gateway.ModelCapabilities, size int64) bool {
-	limit := int64(caps.MaxAttachmentMB) << 20
-	if caps.MaxAttachmentMB <= 0 {
-		limit = MaxAttachmentBytes
-	}
-	return size <= limit
-}
-
-func partKindFor(kind string) gateway.PartKind {
-	switch kind {
-	case KindImage:
-		return gateway.PartImage
-	case KindAudio:
-		return gateway.PartAudio
-	case KindVideo:
-		return gateway.PartVideo
-	}
-	return gateway.PartFile
-}
-
-func audioOrFileExtractPrompt(kind string) string {
-	if kind == KindAudio {
-		return "قم بتفريغ وتحويل هذا التسجيل الصوتي بدقة إلى نص مكتوب باللغة العربية (Transcription)، مع ذكر أسماء الأدوية والكميات المنطوقة بوضوح."
-	}
-	return "استخرج محتوى هذا الملف."
 }

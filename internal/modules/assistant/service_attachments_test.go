@@ -9,6 +9,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 )
 
 type memoryAttachmentRepo struct {
@@ -98,4 +99,65 @@ func TestService_IngestAttachment_Validation(t *testing.T) {
 	// Forbidden extension
 	_, err = svc.IngestAttachment(ctx, actor, "virus.exe", []byte("MZ....."))
 	require.Error(t, err)
+}
+
+type fakeAudioGateway struct {
+	gateway.Client
+	transcribeText string
+	transcribeErr  error
+	called         bool
+}
+
+func (f *fakeAudioGateway) Capabilities(context.Context, gateway.Role) (gateway.ModelCapabilities, error) {
+	return gateway.ModelCapabilities{Audio: false}, nil
+}
+
+func (f *fakeAudioGateway) Transcribe(_ context.Context, _ gateway.TranscribeRequest) (string, error) {
+	f.called = true
+	return f.transcribeText, f.transcribeErr
+}
+
+func TestService_ResolveAudioAttachment_TranscribesSpeech(t *testing.T) {
+	ctx := context.Background()
+	repo := newMemoryAttachmentRepo()
+	gw := &fakeAudioGateway{transcribeText: "أريد 10 علب بنادول اكسترا"}
+	svc := assistant.NewService(repo, gw, nil, nil)
+	actor := authctx.Actor{UserID: 10, OrgID: 5}
+
+	voiceData := []byte("OggSfakeaudiocontent")
+	row, err := svc.IngestAttachment(ctx, actor, "telegram_voice.ogg", voiceData)
+	require.NoError(t, err)
+	require.NotNil(t, row)
+	require.Equal(t, "audio/ogg", row.MIMEType)
+
+	ref := row.PublicID.String()
+	atts, digests, parts := svc.ResolveAttachments(ctx, actor, []string{ref})
+	require.Len(t, atts, 1)
+	require.Len(t, digests, 1)
+	require.Empty(t, parts) // Audio must be transcribed into digest, not sent as raw part
+	require.True(t, gw.called)
+	require.Equal(t, "telegram_voice.ogg", digests[0].Filename)
+	require.Equal(t, "أريد 10 علب بنادول اكسترا", digests[0].Text)
+}
+
+func TestService_ResolveAudioAttachment_StaleDigestRefreshes(t *testing.T) {
+	ctx := context.Background()
+	repo := newMemoryAttachmentRepo()
+	gw := &fakeAudioGateway{transcribeText: "أريد 5 علب أوجمنتين"}
+	svc := assistant.NewService(repo, gw, nil, nil)
+	actor := authctx.Actor{UserID: 10, OrgID: 5}
+
+	voiceData := []byte("OggSfakeaudiocontent")
+	row, err := svc.IngestAttachment(ctx, actor, "telegram_voice.ogg", voiceData)
+	require.NoError(t, err)
+
+	// Simulate stale hallucinated apology previously cached in DB
+	row.Digest = "التسجيل ده مفيهوش محتوى صوتي مُفرّغ — اللي وصلني نصه مجرد طلب لتفريغ التسجيل نفسه..."
+	repo.digests[row.ID] = row.Digest
+
+	ref := row.PublicID.String()
+	_, digests, _ := svc.ResolveAttachments(ctx, actor, []string{ref})
+	require.Len(t, digests, 1)
+	require.True(t, gw.called)
+	require.Equal(t, "أريد 5 علب أوجمنتين", digests[0].Text)
 }

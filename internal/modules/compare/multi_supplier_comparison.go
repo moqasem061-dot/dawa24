@@ -30,6 +30,11 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 		files = append(files, f)
 	}
 
+	cached, cacheKey := s.getCachedMultiSupplier(ctx, files)
+	if cached != nil {
+		return cached, nil
+	}
+
 	var resultRows []*ProductComparisonRow
 	byProductID := make(map[int64]*ProductComparisonRow)
 	byBarcode := make(map[string]*ProductComparisonRow)
@@ -350,8 +355,10 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 		TotalPotentialSaving: totalPotentialSaving,
 	}
 
-	return &ComparisonResultSet{
+	res := &ComparisonResultSet{
 		Rows:    resultRows,
 		Summary: summary,
-	}, nil
+	}
+	s.setCachedMultiSupplier(ctx, cacheKey, res)
+	return res, nil
 }

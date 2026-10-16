@@ -26,6 +26,11 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		return nil, fmt.Errorf("failed to get target file: %w", err)
 	}
 
+	cached, cacheKey := s.getCachedHeadToHead(ctx, sourceFile, targetFile, filter)
+	if cached != nil {
+		return cached, nil
+	}
+
 	sourceRows, err := s.repo.ListFileRows(ctx, filter.SourceFileID, 100000, 0)
 	if err != nil {
 		return nil, err
@@ -355,7 +360,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 	}
 	totalSavings, _ := targetTotal.Sub(sourceTotal)
 
-	return &HeadToHeadComparisonResult{
+	res := &HeadToHeadComparisonResult{
 		SourceSupplierName: sourceFile.SupplierName,
 		TargetSupplierName: targetFile.SupplierName,
 		SourceFileID:       filter.SourceFileID,
@@ -369,5 +374,7 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		TotalSavings:       totalSavings,
 		SourceTotal:        sourceTotal,
 		TargetTotal:        targetTotal,
-	}, nil
+	}
+	s.setCachedHeadToHead(ctx, cacheKey, res)
+	return res, nil
 }

@@ -268,7 +268,13 @@ func FindBestHeaderRow(rows [][]string) (int, map[int]TargetField, float64) {
 	bestConfidence := 0.0
 	var bestMapping map[int]TargetField
 
-	for i, row := range rows {
+	maxScan := len(rows)
+	if maxScan > 25 {
+		maxScan = 25
+	}
+
+	for i := 0; i < maxScan; i++ {
+		row := rows[i]
 		if len(row) == 0 {
 			continue
 		}
@@ -297,6 +303,9 @@ func FindBestHeaderRow(rows [][]string) (int, map[int]TargetField, float64) {
 			bestConfidence = confidence
 			bestIndex = i
 			bestMapping = mapping
+			if confidence >= 0.85 {
+				break
+			}
 		}
 	}
 

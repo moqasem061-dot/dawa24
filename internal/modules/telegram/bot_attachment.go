@@ -48,7 +48,7 @@ func (s *Service) ingestTelegramAttachment(ctx context.Context, link *Link, msg 
 		}
 	} else if msg.Voice != nil {
 		v := msg.Voice
-		filename = fmt.Sprintf("telegram_voice_%d.oga", time.Now().Unix())
+		filename = fmt.Sprintf("telegram_voice_%d.ogg", time.Now().Unix())
 		content, err = s.DownloadFile(ctx, v.FileID, v.FileURL, v.FileData)
 		if err != nil {
 			return "", err

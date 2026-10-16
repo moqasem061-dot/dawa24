@@ -47,7 +47,8 @@ func (r *Repository) BulkUpdateFileRowMatches(
 				return err
 			}
 		}
-		return nil
+		_, err := tx.Exec(txCtx, `UPDATE compare.files SET updated_at = now() WHERE id = $1;`, fileID)
+		return err
 	})
 }
 
