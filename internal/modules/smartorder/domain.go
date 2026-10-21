@@ -54,6 +54,41 @@ const (
 	MethodNone           MatchMethod = "none"
 )
 
+// Valid reports whether the MatchMethod is accepted by the database check constraint.
+func (m MatchMethod) Valid() bool {
+	switch m {
+	case MethodSavingProduct, MethodLearnedMapping, MethodBarcode, MethodSKU,
+		MethodExactName, MethodIdentityKey, MethodFuzzy, MethodAlias,
+		MethodAI, MethodManual, MethodNone:
+		return true
+	default:
+		return false
+	}
+}
+
+// SanitizeMatchMethod maps any non-conforming or legacy level strings into a valid MatchMethod.
+func SanitizeMatchMethod(m MatchMethod) MatchMethod {
+	if m.Valid() {
+		return m
+	}
+	switch string(m) {
+	case "exact":
+		return MethodExactName
+	case "strong":
+		return MethodIdentityKey
+	case "code":
+		return MethodSKU
+	case "barcode":
+		return MethodBarcode
+	case "fuzzy":
+		return MethodFuzzy
+	case "ai":
+		return MethodAI
+	default:
+		return MethodNone
+	}
+}
+
 // Outcome is why a line will or will not be ordered.
 //
 // The distinctions matter to the buyer and are not cosmetic: "nobody sells this"

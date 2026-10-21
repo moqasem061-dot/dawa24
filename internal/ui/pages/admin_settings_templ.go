@@ -180,7 +180,25 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" min=\"1\" max=\"1440\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">المدة بالدقائق قبل إنهاء الجلسة وتسجيل خروج المستخدم تلقائياً عند عدم وجود نشاط (الافتراضي: 30 دقيقة).</span></div></div><div><button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "\" min=\"1\" max=\"1440\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">المدة بالدقائق قبل إنهاء الجلسة وتسجيل خروج المستخدم تلقائياً عند عدم وجود نشاط (الافتراضي: 30 دقيقة).</span></div></div><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-2 mt-2\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.IconWallet("icon-xs text-brand").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<label class=\"form-label text-xs font-black text-primary m-0 cursor-pointer\" for=\"enable-cost-pricing-toggle\">إظهار سعر التكلفة وخصم التكلفة للموردين (Cost Pricing & Discounts)</label></div><label class=\"switch-toggle m-0\"><input type=\"checkbox\" id=\"enable-cost-pricing-toggle\" name=\"enable_cost_pricing\" value=\"true\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			if values.SiteSettings != nil && values.SiteSettings.EnableCostPricing {
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, " checked")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "> <span class=\"switch-slider\"></span></label></div><p class=\"text-2xs text-secondary m-0\">عند تفعيل هذا الخيار، ستظهر حقول وأعمدة سعر التكلفة وخصم التكلفة في شاشات الـ Modals، إضافة وتعديل المنتجات، جداول عروض الموردين، وأنظمة استيراد المنتجات (Column Mapping ومراجعة الاستيراد). عند إيقافها، يتم إخفاؤها للمستخدمين مع الاحتفاظ بالبيانات كاملة في النظام.</p></div><div><button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -188,7 +206,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 12, "<span>حفظ إعدادات المنصة</span></button></div></form></div><!-- Temp Warehouse & Compare Files Lifecycle & Retention Card --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span>حفظ إعدادات المنصة</span></button></div></form></div><!-- Temp Warehouse & Compare Files Lifecycle & Retention Card --><div class=\"glass-panel p-6 mb-0\"><div class=\"d-flex items-center justify-between pb-3 mb-4 border-b flex-wrap gap-3\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -196,7 +214,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<div><h3 class=\"text-base font-black text-primary m-0\">دورة حياة وأرشفة المستودعات المؤقتة وملفات المقارنة</h3><p class=\"text-xs text-secondary m-0 mt-0.5\">التحكم الكامل في مدد الأرشفة التلقائية وحذف سجلات ملفات المقارنة والمستودعات لتوفير مساحة التخزين وموارد الخادم</p></div></div><form action=\"/admin/settings/temp-warehouses/run-lifecycle\" method=\"POST\" class=\"m-0\" data-confirm=\"هل تريد بدء فحص وتشغيل دورة أرشفة وحذف المستودعات المؤقتة فوراً؟\"><button type=\"submit\" class=\"btn btn-secondary btn-sm font-bold text-xs d-flex items-center gap-1.5\" title=\"تشغيل دورة الفحص يدوياً وتطبيق مدد الأرشفة والحذف فوراً\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<div><h3 class=\"text-base font-black text-primary m-0\">دورة حياة وأرشفة المستودعات المؤقتة وملفات المقارنة</h3><p class=\"text-xs text-secondary m-0 mt-0.5\">التحكم الكامل في مدد الأرشفة التلقائية وحذف سجلات ملفات المقارنة والمستودعات لتوفير مساحة التخزين وموارد الخادم</p></div></div><form action=\"/admin/settings/temp-warehouses/run-lifecycle\" method=\"POST\" class=\"m-0\" data-confirm=\"هل تريد بدء فحص وتشغيل دورة أرشفة وحذف المستودعات المؤقتة فوراً؟\"><button type=\"submit\" class=\"btn btn-secondary btn-sm font-bold text-xs d-flex items-center gap-1.5\" title=\"تشغيل دورة الفحص يدوياً وتطبيق مدد الأرشفة والحذف فوراً\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -204,7 +222,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 14, "<span>تشغيل الفحص والتنظيف الآن</span></button></form></div><form action=\"/admin/settings/temp-warehouses/lifecycle\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><!-- Auto Archive Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, "<span>تشغيل الفحص والتنظيف الآن</span></button></form></div><form action=\"/admin/settings/temp-warehouses/lifecycle\" method=\"POST\" class=\"d-flex flex-col gap-4 m-0\"><div class=\"form-grid-2\"><!-- Auto Archive Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -212,30 +230,30 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 15, "<span class=\"font-bold text-xs text-primary\">الأرشفة التلقائية للمستودعات وملفات المقارنة</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_archive_enabled\" value=\"true\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "<span class=\"font-bold text-xs text-primary\">الأرشفة التلقائية للمستودعات وملفات المقارنة</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_archive_enabled\" value=\"true\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoArchiveEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 17, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الأرشفة</span></label></div><p class=\"text-2xs text-secondary m-0\">نقل المستودعات المؤقتة وملفات المقارنة الجاهزة إلى حالة \"مؤرشفة\" بعد انقضاء هذه المدة من وقت رفعها وإضافتها.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الأرشفة بعد الإضافة (بالساعات) *</label> <input type=\"number\" name=\"auto_archive_hours\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الأرشفة</span></label></div><p class=\"text-2xs text-secondary m-0\">نقل المستودعات المؤقتة وملفات المقارنة الجاهزة إلى حالة \"مؤرشفة\" بعد انقضاء هذه المدة من وقت رفعها وإضافتها.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الأرشفة بعد الإضافة (بالساعات) *</label> <input type=\"number\" name=\"auto_archive_hours\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var7 string
 			templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhArchiveHours(values.TempWarehouseLifecycle)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 319, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 343, Col: 86}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var7)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "\" min=\"1\" max=\"87600\" required class=\"form-input text-xs tabular-nums\" placeholder=\"720\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة شائعة: 24 ساعة (يوم واحد)، 48 ساعة (يومان)، 168 ساعة (أسبوع)، 720 ساعة (30 يوماً).</span></div></div><!-- Auto Delete Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, "\" min=\"1\" max=\"87600\" required class=\"form-input text-xs tabular-nums\" placeholder=\"720\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة شائعة: 24 ساعة (يوم واحد)، 48 ساعة (يومان)، 168 ساعة (أسبوع)، 720 ساعة (30 يوماً).</span></div></div><!-- Auto Delete Box --><div class=\"p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-3\"><div class=\"d-flex items-center justify-between\"><div class=\"d-flex items-center gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -243,30 +261,30 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 19, "<span class=\"font-bold text-xs text-primary\">الحذف والتفريغ النهائي لبيانات المستودع</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_delete_enabled\" value=\"true\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "<span class=\"font-bold text-xs text-primary\">الحذف والتفريغ النهائي لبيانات المستودع</span></div><label class=\"d-flex items-center gap-1.5 cursor-pointer\"><input type=\"checkbox\" name=\"auto_delete_enabled\" value=\"true\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if values.TempWarehouseLifecycle != nil && values.TempWarehouseLifecycle.AutoDeleteEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, " checked")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, " checked")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 21, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الحذف النهائي</span></label></div><p class=\"text-2xs text-secondary m-0\">حذف سجلات ومواد المستودع بالكامل من قاعدة البيانات وتفريغ الملفات من التخزين بعد مرور هذه المدة من وقت الأرشفة.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الحذف النهائي بعد الأرشفة (بالأيام) *</label> <input type=\"number\" name=\"auto_delete_days\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, " class=\"form-checkbox\"> <span class=\"text-xs font-semibold text-primary\">تفعيل الحذف النهائي</span></label></div><p class=\"text-2xs text-secondary m-0\">حذف سجلات ومواد المستودع بالكامل من قاعدة البيانات وتفريغ الملفات من التخزين بعد مرور هذه المدة من وقت الأرشفة.</p><div class=\"form-group mb-0\"><label class=\"form-label text-xs font-bold\">مهلة الحذف النهائي بعد الأرشفة (بالأيام) *</label> <input type=\"number\" name=\"auto_delete_days\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", tempWhDeleteDays(values.TempWarehouseLifecycle)))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 358, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_settings.templ`, Line: 382, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var8)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" min=\"1\" max=\"3650\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة: 7 أيام، 14 يوماً، 30 يوماً (شهر)، 60 يوماً. هذه العملية تمسح المواد نهائياً لتحرير الموارد وتوفير مساحة السيرفر.</span></div></div></div><div class=\"d-flex items-center justify-between pt-3 border-t flex-wrap gap-2\"><span class=\"text-2xs text-secondary\">يتم تشغيل فحص دورة الحياة تلقائياً في الخلفية كل ساعة بنظام دفعات مباشر ومحسن في قاعدة البيانات.</span> <button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "\" min=\"1\" max=\"3650\" required class=\"form-input text-xs tabular-nums\" placeholder=\"30\"> <span class=\"text-2xs text-secondary mt-1 d-block\">أمثلة: 7 أيام، 14 يوماً، 30 يوماً (شهر)، 60 يوماً. هذه العملية تمسح المواد نهائياً لتحرير الموارد وتوفير مساحة السيرفر.</span></div></div></div><div class=\"d-flex items-center justify-between pt-3 border-t flex-wrap gap-2\"><span class=\"text-2xs text-secondary\">يتم تشغيل فحص دورة الحياة تلقائياً في الخلفية كل ساعة بنظام دفعات مباشر ومحسن في قاعدة البيانات.</span> <button type=\"submit\" class=\"btn btn-primary font-bold text-xs\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -274,7 +292,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 23, "<span>حفظ إعدادات دورة الحياة</span></button></div></form></div></div><!-- ========================================== --><!-- TAB 2: Site Branding & Metadata            --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<span>حفظ إعدادات دورة الحياة</span></button></div></form></div></div><!-- ========================================== --><!-- TAB 2: Site Branding & Metadata            --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -282,7 +300,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "<!-- ========================================== --><!-- TAB 3: Legal Policies & Documents          --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<!-- ========================================== --><!-- TAB 3: Legal Policies & Documents          --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -290,7 +308,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 25, "<!-- ========================================== --><!-- TAB 4: Payment Methods & Gateways          --><!-- ========================================== -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 28, "<!-- ========================================== --><!-- TAB 4: Payment Methods & Gateways          --><!-- ========================================== -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -298,7 +316,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 26, "<!-- Dialog for Adding/Editing Payment Method -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "<!-- Dialog for Adding/Editing Payment Method -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -306,7 +324,7 @@ func AdminSettings(values AdminSettingsValues, lang, dir string) templ.Component
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 30, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

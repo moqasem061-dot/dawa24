@@ -7,6 +7,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/imageurl"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 templ VendorVariantsTable(variants []*VendorVariantView, lang string) {
@@ -19,9 +20,11 @@ templ VendorVariantsTable(variants []*VendorVariantView, lang string) {
 					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_public_price") }</th>
 					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_discount") }</th>
 					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_net_price") }</th>
-					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_price") }</th>
-					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_discount") }</th>
-					<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_unit_profit") }</th>
+					if layouts.GetSiteSettings(ctx).EnableCostPricing {
+						<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_price") }</th>
+						<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_cost_discount") }</th>
+						<th class="tabular-nums whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_unit_profit") }</th>
+					}
 					<th class="text-center whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_available_stock") }</th>
 					<th class="whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_expiry_date") }</th>
 					<th class="whitespace-nowrap">{ i18n.T(lang, "vendor_products.th_shipping_warehouse") }</th>
@@ -119,42 +122,44 @@ templ VendorVariantsTable(variants []*VendorVariantView, lang string) {
 							</span>
 						</td>
 
-						<!-- سعر التكلفة -->
-						<td class="whitespace-nowrap">
-							if v.Variant.HasCost() {
-								<div class="tabular-nums font-bold text-primary text-sm whitespace-nowrap">
-									if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() {
-										<span>{ v.Variant.CostPrice.String() }</span>
-									} else {
-										<span>{ v.Variant.DiscountedCost().String() }</span>
-									}
-									<span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
-								</div>
-								if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() && v.Variant.CostDiscountPercentage > 0 {
-									<div class="tabular-nums text-xs text-muted mt-0.5 whitespace-nowrap">
-										{ fmt.Sprintf(i18n.T(lang, "vendor_products.after_discount_prefix"), v.Variant.DiscountedCost().String() + " " + i18n.T(lang, "common.currency_egp")) }
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<!-- سعر التكلفة -->
+							<td class="whitespace-nowrap">
+								if v.Variant.HasCost() {
+									<div class="tabular-nums font-bold text-primary text-sm whitespace-nowrap">
+										if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() {
+											<span>{ v.Variant.CostPrice.String() }</span>
+										} else {
+											<span>{ v.Variant.DiscountedCost().String() }</span>
+										}
+										<span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
 									</div>
+									if v.Variant.CostPrice != nil && v.Variant.CostPrice.IsPositive() && v.Variant.CostDiscountPercentage > 0 {
+										<div class="tabular-nums text-xs text-muted mt-0.5 whitespace-nowrap">
+											{ fmt.Sprintf(i18n.T(lang, "vendor_products.after_discount_prefix"), v.Variant.DiscountedCost().String() + " " + i18n.T(lang, "common.currency_egp")) }
+										</div>
+									}
+								} else {
+									<span class="badge badge-slate text-xs whitespace-nowrap">{ i18n.T(lang, "vendor_products.unspecified") }</span>
 								}
-							} else {
-								<span class="badge badge-slate text-xs whitespace-nowrap">{ i18n.T(lang, "vendor_products.unspecified") }</span>
-							}
-						</td>
+							</td>
 
-						<!-- نسبة خصم التكلفة -->
-						<td class="whitespace-nowrap">
-							if v.Variant.CostDiscountPercentage > 0 {
-								<span class="badge badge-sky text-xs font-bold whitespace-nowrap">-{ fmt.Sprintf("%.1f%%", v.Variant.CostDiscountPercentage) }</span>
-							} else {
-								<span class="text-muted text-xs">—</span>
-							}
-						</td>
+							<!-- نسبة خصم التكلفة -->
+							<td class="whitespace-nowrap">
+								if v.Variant.CostDiscountPercentage > 0 {
+									<span class="badge badge-sky text-xs font-bold whitespace-nowrap">-{ fmt.Sprintf("%.1f%%", v.Variant.CostDiscountPercentage) }</span>
+								} else {
+									<span class="text-muted text-xs">—</span>
+								}
+							</td>
 
-						<!-- صافي ربح الوحدة (بدون هامش) -->
-						<td class="whitespace-nowrap">
-							<div class="tabular-nums font-black text-success text-sm whitespace-nowrap">
-								+{ v.Variant.UnitNetProfit().String() } <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
-							</div>
-						</td>
+							<!-- صافي ربح الوحدة (بدون هامش) -->
+							<td class="whitespace-nowrap">
+								<div class="tabular-nums font-black text-success text-sm whitespace-nowrap">
+									+{ v.Variant.UnitNetProfit().String() } <span class="text-xs font-semibold text-secondary">{ i18n.T(lang, "common.currency_egp") }</span>
+								</div>
+							</td>
+						}
 
 						<!-- Stock Quantity -->
 						<td class="text-center whitespace-nowrap">

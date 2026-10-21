@@ -90,7 +90,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\tdawaData('unifiedSettingsState', function () {\n\t\t\t\tvar tab = 'profile';\n\t\t\t\ttry {\n\t\t\t\t\tvar p = new URLSearchParams(window.location.search).get('tab');\n\t\t\t\t\tif (p) {\n\t\t\t\t\t\ttab = p;\n\t\t\t\t\t} else if (window.location.hash) {\n\t\t\t\t\t\ttab = window.location.hash.replace('#', '');\n\t\t\t\t\t}\n\t\t\t\t} catch (e) {}\n\t\t\t\treturn {\n\t\t\t\t\tactiveTab: tab,\n\t\t\t\t\tselectTab(t) {\n\t\t\t\t\t\tthis.activeTab = t;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\thistory.replaceState(null, null, '#' + t);\n\t\t\t\t\t\t} catch (e) {}\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\n\t\t\tdawaData('avatarUploadState', function () {\n\t\t\t\treturn {\n\t\t\t\t\tavatarPreview: '',\n\t\t\t\t\tremoveAvatar: false,\n\t\t\t\t\tfileChanged(event) {\n\t\t\t\t\t\tvar files = event.target.files;\n\t\t\t\t\t\tif (files && files[0]) {\n\t\t\t\t\t\t\tthis.removeAvatar = false;\n\t\t\t\t\t\t\tvar self = this;\n\t\t\t\t\t\t\tvar reader = new FileReader();\n\t\t\t\t\t\t\treader.onload = function (e) {\n\t\t\t\t\t\t\t\tself.avatarPreview = e.target.result;\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\treader.readAsDataURL(files[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tdeleteAvatar() {\n\t\t\t\t\t\tthis.removeAvatar = true;\n\t\t\t\t\t\tthis.avatarPreview = '';\n\t\t\t\t\t\tvar el = document.getElementById('user-avatar-file');\n\t\t\t\t\t\tif (el) el.value = '';\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\n\t\t\tdawaData('passwordChangeState', function () {\n\t\t\t\treturn {\n\t\t\t\t\totpSent: false,\n\t\t\t\t\totpLoading: false,\n\t\t\t\t\totpFeedback: '',\n\t\t\t\t\totpError: false,\n\t\t\t\t\tcooldown: 0,\n\t\t\t\t\tsendOTP() {\n\t\t\t\t\t\tif (this.otpLoading || this.cooldown > 0) return;\n\t\t\t\t\t\tthis.otpLoading = true;\n\t\t\t\t\t\tthis.otpFeedback = '';\n\t\t\t\t\t\tvar csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : '') ||\n\t\t\t\t\t\t\t(document.cookie.match(/(?:^|;\\s*)dawa_csrf=([^;]+)/) ? document.cookie.match(/(?:^|;\\s*)dawa_csrf=([^;]+)/)[1] : '');\n\t\t\t\t\t\tvar self = this;\n\t\t\t\t\t\tfetch('/settings/password/send-otp', {\n\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t'Content-Type': 'application/json',\n\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t'X-CSRF-Token': csrfToken\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.then(function (r) {\n\t\t\t\t\t\t\treturn r.json().catch(function () { return {}; }).then(function (data) {\n\t\t\t\t\t\t\t\tif (!r.ok) {\n\t\t\t\t\t\t\t\t\tvar msg = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t\t\t\tthrow new Error(msg);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\treturn data || {};\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.then(function (data) {\n\t\t\t\t\t\t\tif (data && data.ok) {\n\t\t\t\t\t\t\t\tself.otpSent = true;\n\t\t\t\t\t\t\t\tself.otpError = false;\n\t\t\t\t\t\t\t\tself.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';\n\t\t\t\t\t\t\t\tself.cooldown = data.cooldown || 60;\n\t\t\t\t\t\t\t\tvar timer = setInterval(function () {\n\t\t\t\t\t\t\t\t\tself.cooldown--;\n\t\t\t\t\t\t\t\t\tif (self.cooldown <= 0) clearInterval(timer);\n\t\t\t\t\t\t\t\t}, 1000);\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tself.otpError = true;\n\t\t\t\t\t\t\t\tself.otpFeedback = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.catch(function (err) {\n\t\t\t\t\t\t\tself.otpError = true;\n\t\t\t\t\t\t\tself.otpFeedback = (err && err.message) || 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.finally(function () {\n\t\t\t\t\t\t\tself.otpLoading = false;\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"w-full mb-16\" x-data=\"unifiedSettingsState\"><!-- Page Header --><div class=\"flex-between items-center flex-wrap gap-4 mb-8\"><div class=\"stack-sm\"><div class=\"row-center-sm mb-2\"><div class=\"b2b-icon-box-sm\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\">\n\t\t\tdawaData('unifiedSettingsState', function () {\n\t\t\t\tvar tab = 'profile';\n\t\t\t\ttry {\n\t\t\t\t\tvar p = new URLSearchParams(window.location.search).get('tab');\n\t\t\t\t\tif (p) {\n\t\t\t\t\t\ttab = p;\n\t\t\t\t\t} else if (window.location.hash) {\n\t\t\t\t\t\ttab = window.location.hash.replace('#', '');\n\t\t\t\t\t}\n\t\t\t\t} catch (e) {}\n\t\t\t\treturn {\n\t\t\t\t\tactiveTab: tab,\n\t\t\t\t\tselectTab(t) {\n\t\t\t\t\t\tthis.activeTab = t;\n\t\t\t\t\t\ttry {\n\t\t\t\t\t\t\thistory.replaceState(null, null, '#' + t);\n\t\t\t\t\t\t} catch (e) {}\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\n\t\t\tdawaData('avatarUploadState', function () {\n\t\t\t\treturn {\n\t\t\t\t\tavatarPreview: '',\n\t\t\t\t\tremoveAvatar: false,\n\t\t\t\t\tfileChanged(event) {\n\t\t\t\t\t\tvar files = event.target.files;\n\t\t\t\t\t\tif (files && files[0]) {\n\t\t\t\t\t\t\tthis.removeAvatar = false;\n\t\t\t\t\t\t\tvar self = this;\n\t\t\t\t\t\t\tvar reader = new FileReader();\n\t\t\t\t\t\t\treader.onload = function (e) {\n\t\t\t\t\t\t\t\tself.avatarPreview = e.target.result;\n\t\t\t\t\t\t\t};\n\t\t\t\t\t\t\treader.readAsDataURL(files[0]);\n\t\t\t\t\t\t}\n\t\t\t\t\t},\n\t\t\t\t\tdeleteAvatar() {\n\t\t\t\t\t\tthis.removeAvatar = true;\n\t\t\t\t\t\tthis.avatarPreview = '';\n\t\t\t\t\t\tvar el = document.getElementById('user-avatar-file');\n\t\t\t\t\t\tif (el) el.value = '';\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\n\t\t\tdawaData('passwordChangeState', function () {\n\t\t\t\treturn {\n\t\t\t\t\totpSent: false,\n\t\t\t\t\totpLoading: false,\n\t\t\t\t\totpFeedback: '',\n\t\t\t\t\totpError: false,\n\t\t\t\t\tcooldown: 0,\n\t\t\t\t\tnewPassword: '',\n\t\t\t\t\tconfirmPassword: '',\n\t\t\t\t\tshowPassword: false,\n\t\t\t\t\tshowConfirmPassword: false,\n\t\t\t\t\thasLen() {\n\t\t\t\t\t\treturn (this.newPassword || '').length >= 8;\n\t\t\t\t\t},\n\t\t\t\t\thasCasing() {\n\t\t\t\t\t\tvar p = this.newPassword || '';\n\t\t\t\t\t\treturn /[A-Z]/.test(p) && /[a-z]/.test(p);\n\t\t\t\t\t},\n\t\t\t\t\thasNum() {\n\t\t\t\t\t\treturn /[0-9]/.test(this.newPassword || '');\n\t\t\t\t\t},\n\t\t\t\t\thasSpec() {\n\t\t\t\t\t\treturn /[^A-Za-z0-9]/.test(this.newPassword || '');\n\t\t\t\t\t},\n\t\t\t\t\tstrengthScore() {\n\t\t\t\t\t\tvar s = 0;\n\t\t\t\t\t\tif (this.hasLen()) s++;\n\t\t\t\t\t\tif (this.hasCasing()) s++;\n\t\t\t\t\t\tif (this.hasNum()) s++;\n\t\t\t\t\t\tif (this.hasSpec()) s++;\n\t\t\t\t\t\treturn s;\n\t\t\t\t\t},\n\t\t\t\t\tstrengthLabel() {\n\t\t\t\t\t\tvar isEn = document.documentElement.lang === 'en';\n\t\t\t\t\t\tvar p = this.newPassword || '';\n\t\t\t\t\t\tif (p.length === 0) return isEn ? 'Enter password' : 'أدخل كلمة المرور';\n\t\t\t\t\t\tvar s = this.strengthScore();\n\t\t\t\t\t\tvar labelsAr = ['', 'ضعيفة جداً', 'ضعيفة', 'متوسطة', 'قوية ومطابقة للمعايير'];\n\t\t\t\t\t\tvar labelsEn = ['', 'Very weak', 'Weak', 'Medium', 'Strong and compliant'];\n\t\t\t\t\t\tvar labels = isEn ? labelsEn : labelsAr;\n\t\t\t\t\t\treturn labels[s] || labels[1];\n\t\t\t\t\t},\n\t\t\t\t\tstrengthColor() {\n\t\t\t\t\t\tvar colors = ['#ef4444', '#ef4444', '#f97316', '#eab308', '#10b981'];\n\t\t\t\t\t\treturn colors[this.strengthScore()] || colors[0];\n\t\t\t\t\t},\n\t\t\t\t\tmismatch() {\n\t\t\t\t\t\treturn (this.confirmPassword || '').length > 0 && this.newPassword !== this.confirmPassword;\n\t\t\t\t\t},\n\t\t\t\t\tsendOTP() {\n\t\t\t\t\t\tif (this.otpLoading || this.cooldown > 0) return;\n\t\t\t\t\t\tthis.otpLoading = true;\n\t\t\t\t\t\tthis.otpFeedback = '';\n\t\t\t\t\t\tvar csrfToken = (typeof getCsrfToken === 'function' ? getCsrfToken() : '') ||\n\t\t\t\t\t\t\t(document.cookie.match(/(?:^|;\\s*)dawa_csrf=([^;]+)/) ? document.cookie.match(/(?:^|;\\s*)dawa_csrf=([^;]+)/)[1] : '');\n\t\t\t\t\t\tvar self = this;\n\t\t\t\t\t\tfetch('/settings/password/send-otp', {\n\t\t\t\t\t\t\tmethod: 'POST',\n\t\t\t\t\t\t\theaders: {\n\t\t\t\t\t\t\t\t'Content-Type': 'application/json',\n\t\t\t\t\t\t\t\t'Accept': 'application/json',\n\t\t\t\t\t\t\t\t'X-CSRF-Token': csrfToken\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.then(function (r) {\n\t\t\t\t\t\t\treturn r.json().catch(function () { return {}; }).then(function (data) {\n\t\t\t\t\t\t\t\tif (!r.ok) {\n\t\t\t\t\t\t\t\t\tvar msg = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t\t\t\tthrow new Error(msg);\n\t\t\t\t\t\t\t\t}\n\t\t\t\t\t\t\t\treturn data || {};\n\t\t\t\t\t\t\t});\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.then(function (data) {\n\t\t\t\t\t\t\tif (data && data.ok) {\n\t\t\t\t\t\t\t\tself.otpSent = true;\n\t\t\t\t\t\t\t\tself.otpError = false;\n\t\t\t\t\t\t\t\tself.otpFeedback = data.message || 'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';\n\t\t\t\t\t\t\t\tself.cooldown = data.cooldown || 60;\n\t\t\t\t\t\t\t\tvar timer = setInterval(function () {\n\t\t\t\t\t\t\t\t\tself.cooldown--;\n\t\t\t\t\t\t\t\t\tif (self.cooldown <= 0) clearInterval(timer);\n\t\t\t\t\t\t\t\t}, 1000);\n\t\t\t\t\t\t\t} else {\n\t\t\t\t\t\t\t\tself.otpError = true;\n\t\t\t\t\t\t\t\tself.otpFeedback = (data && (data.message || (data.error && data.error.message))) || 'تعذر إرسال رمز التحقق، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t\t}\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.catch(function (err) {\n\t\t\t\t\t\t\tself.otpError = true;\n\t\t\t\t\t\t\tself.otpFeedback = (err && err.message) || 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً';\n\t\t\t\t\t\t})\n\t\t\t\t\t\t.finally(function () {\n\t\t\t\t\t\t\tself.otpLoading = false;\n\t\t\t\t\t\t});\n\t\t\t\t\t}\n\t\t\t\t};\n\t\t\t});\n\t\t</script> <div class=\"w-full mb-16\" x-data=\"unifiedSettingsState\"><!-- Page Header --><div class=\"flex-between items-center flex-wrap gap-4 mb-8\"><div class=\"stack-sm\"><div class=\"row-center-sm mb-2\"><div class=\"b2b-icon-box-sm\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -105,7 +105,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var4 string
 			templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.unified_title"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 158, Col: 47}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 200, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 			if templ_7745c5c3_Err != nil {
@@ -118,7 +118,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var5 string
 			templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.unified_desc"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 162, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 204, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 			if templ_7745c5c3_Err != nil {
@@ -136,7 +136,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var6 templ.SafeURL
 				templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinURLErrs(templ.SafeURL(walletHref))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 168, Col: 41}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 210, Col: 41}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 				if templ_7745c5c3_Err != nil {
@@ -157,7 +157,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var7 string
 				templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "billing.wallet_balance"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 170, Col: 53}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 212, Col: 53}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 				if templ_7745c5c3_Err != nil {
@@ -183,7 +183,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var8 string
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.tab_profile"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 186, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 228, Col: 49}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -204,7 +204,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.tab_security"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 197, Col: 50}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 239, Col: 50}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -225,7 +225,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.tab_preferences"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 208, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 250, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {
@@ -251,7 +251,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var11 string
 				templ_7745c5c3_Var11, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.tab_telegram"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 220, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 262, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var11))
 				if templ_7745c5c3_Err != nil {
@@ -278,7 +278,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var12 string
 				templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.tab_whatsapp"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 233, Col: 51}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 275, Col: 51}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 				if templ_7745c5c3_Err != nil {
@@ -296,7 +296,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var13 string
 			templ_7745c5c3_Var13, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.profile_section_title"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 246, Col: 53}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 288, Col: 53}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var13))
 			if templ_7745c5c3_Err != nil {
@@ -314,7 +314,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var14 string
 				templ_7745c5c3_Var14, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.User.AvatarURL)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 265, Col: 39}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 307, Col: 39}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var14)
 				if templ_7745c5c3_Err != nil {
@@ -345,7 +345,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.avatar_label"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 277, Col: 102}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 319, Col: 102}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -366,7 +366,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.avatar_change"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 281, Col: 55}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 323, Col: 55}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -392,7 +392,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				var templ_7745c5c3_Var17 string
 				templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.avatar_delete"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 300, Col: 56}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 342, Col: 56}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 				if templ_7745c5c3_Err != nil {
@@ -410,7 +410,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.avatar_hint"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 306, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 348, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -423,7 +423,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.full_name"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 312, Col: 84}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 354, Col: 84}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -436,7 +436,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.ResolveAttributeValue(userNameVal(data.User, lang))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 313, Col: 107}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 355, Col: 107}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var20)
 			if templ_7745c5c3_Err != nil {
@@ -465,7 +465,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var21 string
 			templ_7745c5c3_Var21, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.account_role"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 321, Col: 87}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 363, Col: 87}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var21))
 			if templ_7745c5c3_Err != nil {
@@ -478,7 +478,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(userRoleVal(data.User))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 322, Col: 118}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 364, Col: 118}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
@@ -499,7 +499,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var23 string
 			templ_7745c5c3_Var23, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.save_profile"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 328, Col: 52}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 370, Col: 52}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var23))
 			if templ_7745c5c3_Err != nil {
@@ -531,7 +531,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						var templ_7745c5c3_Var24 string
 						templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 342, Col: 61}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 384, Col: 61}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 						if templ_7745c5c3_Err != nil {
@@ -544,7 +544,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						var templ_7745c5c3_Var25 string
 						templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(data.PendingOrgDeletion.CreatedAt.Format("2006-01-02 15:04"))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 345, Col: 149}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 387, Col: 149}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 						if templ_7745c5c3_Err != nil {
@@ -562,7 +562,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 							var templ_7745c5c3_Var26 string
 							templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(data.PendingOrgDeletion.Reason)
 							if templ_7745c5c3_Err != nil {
-								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 349, Col: 86}
+								return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 391, Col: 86}
 							}
 							_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 							if templ_7745c5c3_Err != nil {
@@ -580,7 +580,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						var templ_7745c5c3_Var27 string
 						templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", data.PendingOrgDeletion.ID))
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 354, Col: 102}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 396, Col: 102}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var27)
 						if templ_7745c5c3_Err != nil {
@@ -614,7 +614,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						var templ_7745c5c3_Var28 string
 						templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgName)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 366, Col: 69}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 408, Col: 69}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 						if templ_7745c5c3_Err != nil {
@@ -650,7 +650,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					var templ_7745c5c3_Var29 string
 					templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(data.PendingAccountDeletion.CreatedAt.Format("2006-01-02 15:04"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 392, Col: 152}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 434, Col: 152}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 					if templ_7745c5c3_Err != nil {
@@ -668,7 +668,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						var templ_7745c5c3_Var30 string
 						templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(data.PendingAccountDeletion.Reason)
 						if templ_7745c5c3_Err != nil {
-							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 396, Col: 89}
+							return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 438, Col: 89}
 						}
 						_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 						if templ_7745c5c3_Err != nil {
@@ -686,7 +686,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					var templ_7745c5c3_Var31 string
 					templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("%d", data.PendingAccountDeletion.ID))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 401, Col: 105}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 443, Col: 105}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var31)
 					if templ_7745c5c3_Err != nil {
@@ -720,7 +720,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					var templ_7745c5c3_Var32 string
 					templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.delete_account_title"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 413, Col: 63}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 455, Col: 63}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 					if templ_7745c5c3_Err != nil {
@@ -733,7 +733,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					var templ_7745c5c3_Var33 string
 					templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.delete_account_desc"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 416, Col: 56}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 458, Col: 56}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 					if templ_7745c5c3_Err != nil {
@@ -754,7 +754,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					var templ_7745c5c3_Var34 string
 					templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.delete_account_btn"))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 425, Col: 60}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 467, Col: 60}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 					if templ_7745c5c3_Err != nil {
@@ -777,7 +777,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var35 string
 			templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.security_title"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 441, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 483, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var35))
 			if templ_7745c5c3_Err != nil {
@@ -790,52 +790,212 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			var templ_7745c5c3_Var36 string
 			templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.security_desc"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 444, Col: 45}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 486, Col: 45}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var36))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</p><form action=\"/settings/password\" method=\"POST\" class=\"max-w-xl d-flex flex-col gap-5 text-start\" x-data=\"passwordChangeState\"><input type=\"hidden\" name=\"_csrf\" value=\"\" :value=\"$csrf()\"><div class=\"form-group mb-0\"><label class=\"form-label font-bold text-xs mb-1\" for=\"settings-new-password\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 75, "</p><form action=\"/settings/password\" method=\"POST\" class=\"max-w-xl d-flex flex-col gap-5 text-start\" x-data=\"passwordChangeState\"><input type=\"hidden\" name=\"_csrf\" value=\"\" :value=\"$csrf()\"><div class=\"form-group mb-0\"><div class=\"d-flex items-center justify-between mb-1\"><label class=\"form-label font-bold text-xs m-0\" for=\"settings-new-password\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var37 string
 			templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.new_password"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 456, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 499, Col: 47}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var37))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</label> <input type=\"password\" id=\"settings-new-password\" name=\"new_password\" minlength=\"8\" required placeholder=\"••••••••\" class=\"form-input text-xs\"></div><div class=\"form-group mb-0\"><label class=\"form-label font-bold text-xs mb-1\" for=\"settings-confirm-password\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 76, "</label> <span class=\"text-2xs font-semibold\" :style=\"{ color: (newPassword || '').length === 0 ? 'var(--text-muted)' : strengthColor() }\" x-text=\"strengthLabel()\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var38 string
-			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.confirm_new_password"))
+			templ_7745c5c3_Var38, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "Enter password"
+				}
+				return "أدخل كلمة المرور"
+			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 471, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 506, Col: 114}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var38))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</label> <input type=\"password\" id=\"settings-confirm-password\" name=\"new_password_confirmation\" minlength=\"8\" required placeholder=\"••••••••\" class=\"form-input text-xs\"></div><div class=\"p-4 bg-surface-sunken border rounded-xl stack-sm\"><div class=\"flex-between items-center flex-wrap gap-2\"><label class=\"form-label font-bold text-xs m-0\" for=\"settings-email-otp\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 77, "</span></div><div class=\"pwd-input-wrap\"><input :type=\"showPassword ? 'text' : 'password'\" id=\"settings-new-password\" name=\"new_password\" minlength=\"8\" required placeholder=\"••••••••\" class=\"form-input text-xs\" x-model=\"newPassword\"> <button type=\"button\" class=\"pwd-toggle-btn\" @click=\"showPassword = !showPassword\" title=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var39 string
-			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.email_otp_code"))
+			templ_7745c5c3_Var39, templ_7745c5c3_Err = templ.ResolveAttributeValue(func() string {
+				if lang == "en" {
+					return "Show/Hide password"
+				}
+				return "إظهار / إخفاء كلمة المرور"
+			}())
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 487, Col: 49}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 524, Col: 139}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var39))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var39)
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "</label> <button type=\"button\" class=\"btn btn-secondary btn-sm font-bold text-xs gap-1.5\" @click=\"sendOTP()\" :disabled=\"otpLoading || cooldown > 0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 78, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.IconEye("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "</button></div><!-- Strength Progress Bars --><div class=\"pwd-strength-bars d-flex gap-1 mt-1.5\"><div class=\"strength-bar-seg\" :style=\"{ backgroundColor: strengthScore() >= 1 ? strengthColor() : 'var(--border)' }\"></div><div class=\"strength-bar-seg\" :style=\"{ backgroundColor: strengthScore() >= 2 ? strengthColor() : 'var(--border)' }\"></div><div class=\"strength-bar-seg\" :style=\"{ backgroundColor: strengthScore() >= 3 ? strengthColor() : 'var(--border)' }\"></div><div class=\"strength-bar-seg\" :style=\"{ backgroundColor: strengthScore() >= 4 ? strengthColor() : 'var(--border)' }\"></div></div><!-- Real-Time Password Checklist --><div class=\"pwd-checklist d-flex flex-col gap-1 mt-2 text-2xs text-secondary\"><div class=\"pwd-checklist-item\" :class=\"{ 'valid': hasLen() }\"><span class=\"rule-icon\" :class=\"hasLen() ? 'text-success' : 'text-muted'\" x-text=\"hasLen() ? '✓' : '●'\">●</span> <span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var40 string
+			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "At least 8 characters"
+				}
+				return "8 أحرف على الأقل"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 542, Col: 125}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span></div><div class=\"pwd-checklist-item\" :class=\"{ 'valid': hasCasing() }\"><span class=\"rule-icon\" :class=\"hasCasing() ? 'text-success' : 'text-muted'\" x-text=\"hasCasing() ? '✓' : '●'\">●</span> <span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var41 string
+			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "Uppercase (A-Z) and lowercase (a-z)"
+				}
+				return "حرف كبير (A-Z) وصغير (a-z)"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 546, Col: 149}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "</span></div><div class=\"pwd-checklist-item\" :class=\"{ 'valid': hasNum() }\"><span class=\"rule-icon\" :class=\"hasNum() ? 'text-success' : 'text-muted'\" x-text=\"hasNum() ? '✓' : '●'\">●</span> <span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var42 string
+			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "At least one number (0-9)"
+				}
+				return "رقم واحد على الأقل (0-9)"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 550, Col: 140}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</span></div><div class=\"pwd-checklist-item\" :class=\"{ 'valid': hasSpec() }\"><span class=\"rule-icon\" :class=\"hasSpec() ? 'text-success' : 'text-muted'\" x-text=\"hasSpec() ? '✓' : '●'\">●</span> <span>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var43 string
+			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "Special character (@, $, !, %, *, #)"
+				}
+				return "رمز خاص (@, $, !, %, *, #)"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 554, Col: 144}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</span></div></div></div><div class=\"form-group mb-0\"><label class=\"form-label font-bold text-xs mb-1\" for=\"settings-confirm-password\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var44 string
+			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.confirm_new_password"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 561, Col: 54}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</label><div class=\"pwd-input-wrap\"><input :type=\"showConfirmPassword ? 'text' : 'password'\" id=\"settings-confirm-password\" name=\"new_password_confirmation\" minlength=\"8\" required placeholder=\"••••••••\" class=\"form-input text-xs\" x-model=\"confirmPassword\"> <button type=\"button\" class=\"pwd-toggle-btn\" @click=\"showConfirmPassword = !showConfirmPassword\" title=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var45 string
+			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.ResolveAttributeValue(func() string {
+				if lang == "en" {
+					return "Show/Hide password"
+				}
+				return "إظهار / إخفاء كلمة المرور"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 578, Col: 139}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var45)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.IconEye("icon-xs").Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, "</button></div><template x-if=\"mismatch()\"><div class=\"text-danger text-2xs font-semibold mt-1\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var46 string
+			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(func() string {
+				if lang == "en" {
+					return "Passwords do not match"
+				}
+				return "كلمتا المرور غير متطابقتين"
+			}())
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 585, Col: 141}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, "</div></template></div><div class=\"p-4 bg-surface-sunken border rounded-xl stack-sm\"><div class=\"flex-between items-center flex-wrap gap-2\"><label class=\"form-label font-bold text-xs m-0\" for=\"settings-email-otp\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var47 string
+			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.email_otp_code"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 593, Col: 49}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</label> <button type=\"button\" class=\"btn btn-secondary btn-sm font-bold text-xs gap-1.5\" @click=\"sendOTP()\" :disabled=\"otpLoading || cooldown > 0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -843,20 +1003,20 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 79, "<span x-show=\"!otpLoading && cooldown <= 0\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "<span x-show=\"!otpLoading && cooldown <= 0\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var40 string
-			templ_7745c5c3_Var40, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.send_email_code"))
+			var templ_7745c5c3_Var48 string
+			templ_7745c5c3_Var48, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.send_email_code"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 496, Col: 94}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 602, Col: 94}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var40))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var48))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 80, "</span> <span x-show=\"otpLoading\">جاري الإرسال...</span> <span x-show=\"cooldown > 0\" x-text=\"'إعادة الإرسال بعد ' + cooldown + ' ثانية'\"></span></button></div><input type=\"text\" id=\"settings-email-otp\" name=\"email_otp_code\" maxlength=\"6\" required placeholder=\"123456\" class=\"form-input text-center font-mono text-lg tracking-widest font-bold\"><template x-if=\"otpFeedback\"><div :class=\"otpError ? 'alert alert-error text-xs font-semibold p-2.5 rounded-lg' : 'alert alert-success text-xs font-semibold p-2.5 rounded-lg'\" x-text=\"otpFeedback\"></div></template></div><div class=\"pt-2\"><button type=\"submit\" class=\"btn btn-primary font-bold gap-2\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, "</span> <span x-show=\"otpLoading\">جاري الإرسال...</span> <span x-show=\"cooldown > 0\" x-text=\"'إعادة الإرسال بعد ' + cooldown + ' ثانية'\"></span></button></div><input type=\"text\" id=\"settings-email-otp\" name=\"email_otp_code\" maxlength=\"6\" required placeholder=\"123456\" class=\"form-input text-center font-mono text-lg tracking-widest font-bold\"><template x-if=\"otpFeedback\"><div :class=\"otpError ? 'alert alert-error text-xs font-semibold p-2.5 rounded-lg' : 'alert alert-success text-xs font-semibold p-2.5 rounded-lg'\" x-text=\"otpFeedback\"></div></template></div><div class=\"pt-2\"><button type=\"submit\" class=\"btn btn-primary font-bold gap-2\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -864,105 +1024,105 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 81, "<span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, "<span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var41 string
-			templ_7745c5c3_Var41, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.change_password_btn"))
+			var templ_7745c5c3_Var49 string
+			templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.change_password_btn"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 523, Col: 59}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 629, Col: 59}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var41))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 82, "</span></button></div></form></div><!-- Tab 2: Preferences --><div id=\"tab-preferences\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'preferences' }\" x-show=\"activeTab === 'preferences'\"><h3 class=\"text-lg font-extrabold text-primary mb-6\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var49))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var42 string
-			templ_7745c5c3_Var42, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_title"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 537, Col: 42}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var42))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "</span></button></div></form></div><!-- Tab 2: Preferences --><div id=\"tab-preferences\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'preferences' }\" x-show=\"activeTab === 'preferences'\"><h3 class=\"text-lg font-extrabold text-primary mb-6\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 83, "</h3><form action=\"/settings/preferences\" method=\"POST\" class=\"max-w-2xl d-flex flex-col gap-5 text-start\"><div class=\"flex-between items-center p-4 border rounded-lg bg-surface-sunken\"><div class=\"stack-sm\"><div class=\"font-extrabold text-primary\">")
+			var templ_7745c5c3_Var50 string
+			templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_title"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 643, Col: 42}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var43 string
-			templ_7745c5c3_Var43, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_email"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 543, Col: 85}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var43))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</h3><form action=\"/settings/preferences\" method=\"POST\" class=\"max-w-2xl d-flex flex-col gap-5 text-start\"><div class=\"flex-between items-center p-4 border rounded-lg bg-surface-sunken\"><div class=\"stack-sm\"><div class=\"font-extrabold text-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 84, "</div><div class=\"text-sm text-muted\">")
+			var templ_7745c5c3_Var51 string
+			templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_email"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 649, Col: 85}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var51))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var44 string
-			templ_7745c5c3_Var44, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_email_desc"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 544, Col: 81}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var44))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "</div><div class=\"text-sm text-muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 85, "</div></div><input type=\"checkbox\" name=\"notif_email\"")
+			var templ_7745c5c3_Var52 string
+			templ_7745c5c3_Var52, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_email_desc"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 650, Col: 81}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var52))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "</div></div><input type=\"checkbox\" name=\"notif_email\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.Preferences == nil || data.Preferences.NotificationChannels["email"] {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 86, " checked=\"checked\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, " checked=\"checked\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 87, " class=\"form-checkbox\"></div><div class=\"flex-between items-center p-4 border rounded-lg bg-surface-sunken\"><div class=\"stack-sm\"><div class=\"font-extrabold text-primary\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, " class=\"form-checkbox\"></div><div class=\"flex-between items-center p-4 border rounded-lg bg-surface-sunken\"><div class=\"stack-sm\"><div class=\"font-extrabold text-primary\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var45 string
-			templ_7745c5c3_Var45, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_promos"))
+			var templ_7745c5c3_Var53 string
+			templ_7745c5c3_Var53, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_promos"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 558, Col: 86}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 664, Col: 86}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var45))
-			if templ_7745c5c3_Err != nil {
-				return templ_7745c5c3_Err
-			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 88, "</div><div class=\"text-sm text-muted\">")
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var53))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var46 string
-			templ_7745c5c3_Var46, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_promos_desc"))
-			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 559, Col: 82}
-			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var46))
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "</div><div class=\"text-sm text-muted\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 89, "</div></div><input type=\"checkbox\" name=\"notif_promos\"")
+			var templ_7745c5c3_Var54 string
+			templ_7745c5c3_Var54, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.pref_promos_desc"))
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 665, Col: 82}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var54))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "</div></div><input type=\"checkbox\" name=\"notif_promos\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.Preferences == nil || data.Preferences.NotificationTopics["offers"] {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 90, " checked=\"checked\"")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, " checked=\"checked\"")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 91, " class=\"form-checkbox\"></div><div class=\"mt-3\"><button type=\"submit\" class=\"btn btn-primary font-black px-8 py-3\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, " class=\"form-checkbox\"></div><div class=\"mt-3\"><button type=\"submit\" class=\"btn btn-primary font-black px-8 py-3\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -970,36 +1130,36 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 92, "<span>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<span>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			var templ_7745c5c3_Var47 string
-			templ_7745c5c3_Var47, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.save_preferences"))
+			var templ_7745c5c3_Var55 string
+			templ_7745c5c3_Var55, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "settings.save_preferences"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 574, Col: 56}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 680, Col: 56}
 			}
-			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var47))
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var55))
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 93, "</span></button></div></form></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</span></button></div></form></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			if data.TelegramEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 94, "<!-- Tab 3: Telegram. Loaded on first view; the card manages itself. --> <div id=\"tab-telegram\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'telegram' }\" x-show=\"activeTab === 'telegram'\"><div hx-get=\"/settings/telegram\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 104, "<!-- Tab 3: Telegram. Loaded on first view; the card manages itself. --> <div id=\"tab-telegram\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'telegram' }\" x-show=\"activeTab === 'telegram'\"><div hx-get=\"/settings/telegram\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
 			if data.WhatsAppEnabled {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 95, "<!-- Tab 4: WhatsApp. Loaded on first view; the card manages itself. --> <div id=\"tab-whatsapp\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'whatsapp' }\" x-show=\"activeTab === 'whatsapp'\"><div hx-get=\"/settings/whatsapp\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div></div>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 105, "<!-- Tab 4: WhatsApp. Loaded on first view; the card manages itself. --> <div id=\"tab-whatsapp\" class=\"tab-pane glass-panel p-8\" :class=\"{ 'active': activeTab === 'whatsapp' }\" x-show=\"activeTab === 'whatsapp'\"><div hx-get=\"/settings/whatsapp\" hx-trigger=\"load\" hx-swap=\"outerHTML\"></div></div>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 96, "<!-- Dynamic Modal: Request Account Deletion Modal (Typed Confirmation) -->")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 106, "<!-- Dynamic Modal: Request Account Deletion Modal (Typed Confirmation) -->")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -1020,11 +1180,11 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 				}
 			}
 			if data.IsOwner && data.OrgID > 0 && data.PendingOrgDeletion == nil {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 97, "<!-- Confirm Org Delete Modal --> ")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 107, "<!-- Confirm Org Delete Modal --> ")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
-				templ_7745c5c3_Var48 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_Var56 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 					templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 					templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
 					if !templ_7745c5c3_IsBuffer {
@@ -1036,46 +1196,46 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 						}()
 					}
 					ctx = templ.InitializeContext(ctx)
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 98, "<div x-data=\"{ typedConfirm: '', expectedName: '' }\" x-init=\"")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 108, "<div x-data=\"{ typedConfirm: '', expectedName: '' }\" x-init=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var49 string
-					templ_7745c5c3_Var49, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("expectedName = '%s'", data.OrgLegalName))
+					var templ_7745c5c3_Var57 string
+					templ_7745c5c3_Var57, templ_7745c5c3_Err = templ.ResolveAttributeValue(fmt.Sprintf("expectedName = '%s'", data.OrgLegalName))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 628, Col: 120}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 734, Col: 120}
 					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var49)
-					if templ_7745c5c3_Err != nil {
-						return templ_7745c5c3_Err
-					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 99, "\"><div class=\"alert alert-danger mb-4 text-xs leading-relaxed\"><strong>تنبيه وضمانة قانونية:</strong> تقديم هذا الطلب يخضع لمراجعة وتدقيق إدارة المنصة. عند اعتماد الطلب، سيتم إيقاف وتعطيل (Block) نشاط المنشأة وفروعها وحساباتها بالكامل على المنصة، مع الحفاظ التام والأرشفة الكاملة لكافة السجلات والبيانات القانونية والمالية وفقاً للمتطلبات التنظيمية دون أي مساس بها.</div><form method=\"POST\" action=\"/settings/delete-request\" class=\"m-0 stack-sm\"><input type=\"hidden\" name=\"delete_target\" value=\"organization\"><div class=\"form-group mb-3\"><label class=\"form-label text-xs font-bold\" for=\"org-del-reason\">سبب طلب الحذف <span class=\"text-danger\">*</span></label> <textarea id=\"org-del-reason\" name=\"reason\" rows=\"3\" class=\"form-input text-xs\" placeholder=\"يرجى كتابة سبب طلب الحذف للمراجعة الإدارية...\" required></textarea></div><div class=\"form-group mb-4\"><label class=\"form-label text-xs font-bold\" for=\"org-del-confirm\">لتأكيد الطلب، يرجى كتابة اسم المنشأة: <span class=\"text-primary font-black select-all\">\"")
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var57)
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var50 string
-					templ_7745c5c3_Var50, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgLegalName)
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 651, Col: 147}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var50))
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 109, "\"><div class=\"alert alert-danger mb-4 text-xs leading-relaxed\"><strong>تنبيه وضمانة قانونية:</strong> تقديم هذا الطلب يخضع لمراجعة وتدقيق إدارة المنصة. عند اعتماد الطلب، سيتم إيقاف وتعطيل (Block) نشاط المنشأة وفروعها وحساباتها بالكامل على المنصة، مع الحفاظ التام والأرشفة الكاملة لكافة السجلات والبيانات القانونية والمالية وفقاً للمتطلبات التنظيمية دون أي مساس بها.</div><form method=\"POST\" action=\"/settings/delete-request\" class=\"m-0 stack-sm\"><input type=\"hidden\" name=\"delete_target\" value=\"organization\"><div class=\"form-group mb-3\"><label class=\"form-label text-xs font-bold\" for=\"org-del-reason\">سبب طلب الحذف <span class=\"text-danger\">*</span></label> <textarea id=\"org-del-reason\" name=\"reason\" rows=\"3\" class=\"form-input text-xs\" placeholder=\"يرجى كتابة سبب طلب الحذف للمراجعة الإدارية...\" required></textarea></div><div class=\"form-group mb-4\"><label class=\"form-label text-xs font-bold\" for=\"org-del-confirm\">لتأكيد الطلب، يرجى كتابة اسم المنشأة: <span class=\"text-primary font-black select-all\">\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 100, "\"</span></label> <input type=\"text\" id=\"org-del-confirm\" class=\"form-input text-xs\" x-model=\"typedConfirm\" placeholder=\"اكتب اسم المنشأة كما هو موضح أعلاه...\" autocomplete=\"off\"></div><div class=\"d-flex items-center justify-end gap-2 pt-3 border-t\"><button type=\"button\" class=\"btn btn-secondary font-bold\" data-modal-close=\"org-delete-modal\">إلغاء</button> <button type=\"submit\" class=\"btn btn-danger font-black gap-1\" :disabled=\"")
+					var templ_7745c5c3_Var58 string
+					templ_7745c5c3_Var58, templ_7745c5c3_Err = templ.JoinStringErrs(data.OrgLegalName)
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 757, Col: 147}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var58))
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					var templ_7745c5c3_Var51 string
-					templ_7745c5c3_Var51, templ_7745c5c3_Err = templ.ResolveAttributeValue("typedConfirm.trim() !== expectedName.trim() && typedConfirm.trim() !== 'حذف'")
-					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 670, Col: 102}
-					}
-					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var51)
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 110, "\"</span></label> <input type=\"text\" id=\"org-del-confirm\" class=\"form-input text-xs\" x-model=\"typedConfirm\" placeholder=\"اكتب اسم المنشأة كما هو موضح أعلاه...\" autocomplete=\"off\"></div><div class=\"d-flex items-center justify-end gap-2 pt-3 border-t\"><button type=\"button\" class=\"btn btn-secondary font-bold\" data-modal-close=\"org-delete-modal\">إلغاء</button> <button type=\"submit\" class=\"btn btn-danger font-black gap-1\" :disabled=\"")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 101, "\">")
+					var templ_7745c5c3_Var59 string
+					templ_7745c5c3_Var59, templ_7745c5c3_Err = templ.ResolveAttributeValue("typedConfirm.trim() !== expectedName.trim() && typedConfirm.trim() !== 'حذف'")
+					if templ_7745c5c3_Err != nil {
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/settings_unified.templ`, Line: 776, Col: 102}
+					}
+					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var59)
+					if templ_7745c5c3_Err != nil {
+						return templ_7745c5c3_Err
+					}
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 111, "\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -1083,7 +1243,7 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 102, "<span>تأكيد تقديم طلب الحذف</span></button></div></form></div>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 112, "<span>تأكيد تقديم طلب الحذف</span></button></div></form></div>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -1095,12 +1255,12 @@ func UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) templ.Compo
 					Subtitle: data.OrgLegalName,
 					Icon:     "trash",
 					Size:     "md",
-				}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var48), templ_7745c5c3_Buffer)
+				}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var56), templ_7745c5c3_Buffer)
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 103, "</div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 113, "</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

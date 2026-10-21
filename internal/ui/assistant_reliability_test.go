@@ -51,11 +51,15 @@ func TestTurnStatusEndpointIsRouted(t *testing.T) {
 // when simply given one. Gating on either field is what produced
 // "لا أستطيع رؤية الصور" for a photographed medicine box.
 func TestImagesAreNotGatedOnCatalogueFlags(t *testing.T) {
-	b, err := os.ReadFile("../modules/assistant/service_attachments.go")
+	b1, err := os.ReadFile("../modules/assistant/service_attachments.go")
+	if err != nil {
+		t.Fatalf("read service_attachments: %v", err)
+	}
+	b2, err := os.ReadFile("../modules/assistant/attachments.go")
 	if err != nil {
 		t.Fatalf("read attachments: %v", err)
 	}
-	src := string(b)
+	src := string(b1) + "\n" + string(b2)
 
 	if !strings.Contains(src, "limit = MaxAttachmentBytes") && !strings.Contains(src, "limit = maxAttachmentBytes") {
 		t.Error("a model publishing no attachment ceiling must fall back to our " +

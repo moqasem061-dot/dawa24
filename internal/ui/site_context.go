@@ -148,6 +148,7 @@ func DefaultSiteSettings() *platformadmin.SiteSettings {
 		WhatsApp:                  "201065397000",
 		Address:                   i18n.TDefault("w4_ui.s_100_100"),
 		SessionIdleTimeoutMinutes: 30,
+		EnableCostPricing:         false,
 		SocialLinks: map[string]string{
 			"facebook":  "https://facebook.com/dawa24",
 			"twitter":   "https://twitter.com/dawa24",

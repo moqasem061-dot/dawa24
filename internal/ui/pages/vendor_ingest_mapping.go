@@ -137,6 +137,9 @@ func (v VendorImportView) FieldMappingRows() []FieldMappingRow {
 	specs := productmatch.VendorFields.Specs()
 	rows := make([]FieldMappingRow, 0, len(specs))
 	for _, spec := range specs {
+		if !v.EnableCostPricing && (spec.Field == productmatch.FieldCostPrice || spec.Field == productmatch.FieldCostDiscountPct) {
+			continue
+		}
 		row := FieldMappingRow{Spec: spec, ColumnIndex: -1}
 		if c, ok := bound[spec.Field]; ok {
 			row.ColumnIndex = c.Index

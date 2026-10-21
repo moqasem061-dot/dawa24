@@ -257,6 +257,30 @@ templ AdminSettings(values AdminSettingsValues, lang, dir string) {
 							</div>
 						</div>
 
+						<div class="p-4 rounded-xl border border-border bg-subtle/40 d-flex flex-col gap-2 mt-2">
+							<div class="d-flex items-center justify-between">
+								<div class="d-flex items-center gap-2">
+									@components.IconWallet("icon-xs text-brand")
+									<label class="form-label text-xs font-black text-primary m-0 cursor-pointer" for="enable-cost-pricing-toggle">
+										إظهار سعر التكلفة وخصم التكلفة للموردين (Cost Pricing & Discounts)
+									</label>
+								</div>
+								<label class="switch-toggle m-0">
+									<input
+										type="checkbox"
+										id="enable-cost-pricing-toggle"
+										name="enable_cost_pricing"
+										value="true"
+										checked?={ values.SiteSettings != nil && values.SiteSettings.EnableCostPricing }
+									/>
+									<span class="switch-slider"></span>
+								</label>
+							</div>
+							<p class="text-2xs text-secondary m-0">
+								عند تفعيل هذا الخيار، ستظهر حقول وأعمدة سعر التكلفة وخصم التكلفة في شاشات الـ Modals، إضافة وتعديل المنتجات، جداول عروض الموردين، وأنظمة استيراد المنتجات (Column Mapping ومراجعة الاستيراد). عند إيقافها، يتم إخفاؤها للمستخدمين مع الاحتفاظ بالبيانات كاملة في النظام.
+							</p>
+						</div>
+
 						<div>
 							<button type="submit" class="btn btn-primary font-bold text-xs">
 								@components.IconCheck("icon-xs")

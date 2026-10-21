@@ -231,12 +231,14 @@ templ importReviewStage(view VendorImportView, langOpt ...string) {
 						<th class="text-center review-col-net">
 							{ i18n.T(lang, "vendor_ingest.table.th_net_price") }
 						</th>
-						<th class="text-center review-col-money">
-							{ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
-						</th>
-						<th class="text-center review-col-discount">
-							{ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
-						</th>
+						if view.EnableCostPricing {
+							<th class="text-center review-col-money">
+								{ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
+							</th>
+							<th class="text-center review-col-discount">
+								{ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
+							</th>
+						}
 						<th class="text-center review-col-qty">
 							@reviewSortHeader(view, "quantity", i18n.T(lang, "vendor_ingest.table.th_quantity"))
 						</th>
@@ -245,7 +247,7 @@ templ importReviewStage(view VendorImportView, langOpt ...string) {
 				<tbody>
 					if len(view.Rows) == 0 {
 						<tr>
-							<td colspan="12" class="text-center p-8 text-muted">
+							<td colspan={ func() string { if view.EnableCostPricing { return "12" }; return "10" }() } class="text-center p-8 text-muted">
 								<div class="font-extrabold text-sm">{ i18n.T(lang, "vendor_ingest.table.empty_filter") }</div>
 								<div class="text-xs mt-1">{ i18n.T(lang, "vendor_ingest.table.empty_filter_desc") }</div>
 							</td>

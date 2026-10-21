@@ -21,6 +21,7 @@ import (
 // loadImportReview fills the review table with pagination and filters.
 func (h *UIHandler) loadImportReview(r *http.Request, view *pages.VendorImportView) {
 	ctx := r.Context()
+	view.EnableCostPricing = GetSiteSettings(ctx).EnableCostPricing
 	limit := 25
 	if l, err := strconv.Atoi(r.URL.Query().Get("limit")); err == nil && (l == 10 || l == 25 || l == 50 || l == 100) {
 		limit = l
@@ -200,8 +201,9 @@ func (h *UIHandler) VendorIngestRowMatchSubmit(w http.ResponseWriter, r *http.Re
 			return
 		}
 		view := pages.VendorImportView{
-			Session: session,
-			Lang:    langOf(r),
+			Session:           session,
+			Lang:              langOf(r),
+			EnableCostPricing: GetSiteSettings(ctx).EnableCostPricing,
 		}
 		var targetRow *ingest.RowOutcome
 		rows, _, err := h.ingSvc.ImportRows(ctx, publicID, ingest.RowFilter{Limit: 1, RowID: rowID})

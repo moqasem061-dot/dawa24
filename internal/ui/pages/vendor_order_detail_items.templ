@@ -7,6 +7,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 templ VendorOrderDetailItemsTable(sh *commerce.OrderShipment, fin VendorShipmentFinancialSummary, lang string) {
@@ -32,9 +33,13 @@ templ VendorOrderDetailItemsTable(sh *commerce.OrderShipment, fin VendorShipment
 						<th class="text-center tabular-nums">سعر الجمهور</th>
 						<th class="text-center tabular-nums">نسبة الخصم %</th>
 						<th class="text-center tabular-nums">صافي سعر الوحدة</th>
-						<th class="text-center tabular-nums">سعر التكلفة</th>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<th class="text-center tabular-nums">سعر التكلفة</th>
+						}
 						<th class="text-end tabular-nums">إجمالي الصنف</th>
-						<th class="text-end tabular-nums">الربح التقديري</th>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<th class="text-end tabular-nums">الربح التقديري</th>
+						}
 					</tr>
 				</thead>
 				<tbody>
@@ -96,23 +101,27 @@ templ VendorOrderDetailItemsTable(sh *commerce.OrderShipment, fin VendorShipment
 							<td class="text-center tabular-nums font-bold text-xs text-primary">
 								{ unitNet.String() } ج.م
 							</td>
-							<td class="text-center tabular-nums text-muted text-xs">
-								if hasCost {
-									{ unitCost.String() } ج.م
-								} else {
-									<span class="text-muted">—</span>
-								}
-							</td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td class="text-center tabular-nums text-muted text-xs">
+									if hasCost {
+										{ unitCost.String() } ج.م
+									} else {
+										<span class="text-muted">—</span>
+									}
+								</td>
+							}
 							<td class="text-end tabular-nums font-black text-primary text-sm">
 								{ line.TotalPrice.String() } ج.م
 							</td>
-							<td class="text-end tabular-nums font-bold text-emerald text-xs">
-								if hasCost {
-									+{ lineProfit.String() } ج.م
-								} else {
-									<span class="text-muted font-normal">—</span>
-								}
-							</td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td class="text-end tabular-nums font-bold text-emerald text-xs">
+									if hasCost {
+										+{ lineProfit.String() } ج.م
+									} else {
+										<span class="text-muted font-normal">—</span>
+									}
+								</td>
+							}
 						</tr>
 					}
 				</tbody>
@@ -131,51 +140,75 @@ templ VendorOrderDetailItemsTable(sh *commerce.OrderShipment, fin VendorShipment
 						<td class="text-center tabular-nums">
 							<span class="badge badge-secondary text-xs font-black">{ fmt.Sprintf("%d عبوة", totalPacks) }</span>
 						</td>
-						<td colspan="4" class="text-end text-secondary font-bold">إجمالي سعر الجمهور:</td>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<td colspan="4" class="text-end text-secondary font-bold">إجمالي سعر الجمهور:</td>
+						} else {
+							<td colspan="3" class="text-end text-secondary font-bold">إجمالي سعر الجمهور:</td>
+						}
 						<td class="text-end tabular-nums text-primary font-bold">
 							{ fin.TotalPublicPrice.String() } ج.م
 						</td>
-						<td class="text-end tabular-nums text-emerald font-bold">
-							if fin.TotalCost.IsPositive() {
-								+{ fin.TotalProfit.String() } ج.م
-							} else {
-								<span class="text-muted font-normal">—</span>
-							}
-						</td>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<td class="text-end tabular-nums text-emerald font-bold">
+								if fin.TotalCost.IsPositive() {
+									+{ fin.TotalProfit.String() } ج.م
+								} else {
+									<span class="text-muted font-normal">—</span>
+								}
+							</td>
+						}
 					</tr>
 					<!-- Row 2: Discount Granted -->
 					if fin.TotalDiscount.IsPositive() {
 						<tr class="bg-surface-sunken font-bold text-xs">
-							<td colspan="8" class="text-end text-secondary font-bold">الخصم الممنوح:</td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td colspan="8" class="text-end text-secondary font-bold">الخصم الممنوح:</td>
+							} else {
+								<td colspan="6" class="text-end text-secondary font-bold">الخصم الممنوح:</td>
+							}
 							<td class="text-end tabular-nums text-emerald font-bold">
 								− { fin.TotalDiscount.String() } ج.م
 							</td>
-							<td></td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td></td>
+							}
 						</tr>
 					}
 					<!-- Row 3: Shipping Fees -->
 					if fin.ShippingFee.IsPositive() {
 						<tr class="bg-surface-sunken font-bold text-xs">
-							<td colspan="8" class="text-end text-secondary font-bold">تكاليف الشحن:</td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td colspan="8" class="text-end text-secondary font-bold">تكاليف الشحن:</td>
+							} else {
+								<td colspan="6" class="text-end text-secondary font-bold">تكاليف الشحن:</td>
+							}
 							<td class="text-end tabular-nums text-primary font-bold">
 								+ { fin.ShippingFee.String() } ج.م
 							</td>
-							<td></td>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<td></td>
+							}
 						</tr>
 					}
 					<!-- Row 4: Net Total Price -->
 					<tr class="bg-surface-sunken font-black text-sm border-t">
-						<td colspan="8" class="text-end text-primary font-black">السعر الصافي:</td>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<td colspan="8" class="text-end text-primary font-black">السعر الصافي:</td>
+						} else {
+							<td colspan="6" class="text-end text-primary font-black">السعر الصافي:</td>
+						}
 						<td class="text-end tabular-nums text-brand font-black text-base">
 							{ fin.NetTotal.String() } ج.م
 						</td>
-						<td class="text-end tabular-nums text-emerald font-black text-xs">
-							if fin.TotalCost.IsPositive() {
-								ربح: +{ fin.TotalProfit.String() } ج.م
-							} else {
-								<span class="text-muted font-normal">—</span>
-							}
-						</td>
+						if layouts.GetSiteSettings(ctx).EnableCostPricing {
+							<td class="text-end tabular-nums text-emerald font-black text-xs">
+								if fin.TotalCost.IsPositive() {
+									ربح: +{ fin.TotalProfit.String() } ج.م
+								} else {
+									<span class="text-muted font-normal">—</span>
+								}
+							</td>
+						}
 					</tr>
 				</tfoot>
 			</table>

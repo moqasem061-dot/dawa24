@@ -303,7 +303,7 @@ func (r *Repository) UpdateLines(ctx context.Context, lines []*smartorder.Line) 
 			for i, l := range batch {
 				ids[i] = l.ID
 				productIDs[i] = l.MatchedProductID
-				methods[i] = string(l.MatchMethod)
+				methods[i] = string(smartorder.SanitizeMatchMethod(l.MatchMethod))
 				confidences[i] = l.MatchConfidence
 				outcomes[i] = string(l.Outcome)
 				reasons[i] = l.OutcomeReason

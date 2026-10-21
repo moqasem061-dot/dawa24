@@ -59,66 +59,76 @@ templ VendorProductEditorPricing(data VendorVariantEditorData, lang string) {
 			</div>
 		</div>
 
-		<div class="grid-2">
-			<div class="stack-sm">
-				<label class="form-label font-bold text-primary text-sm" for="var-cost">
-					{ i18n.T(lang, "vendor_products.fld_cost_price") } <span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
-				</label>
-				<input
-					type="number"
-					step="0.01"
-					min="0"
-					id="var-cost"
-					name="cost_price"
-					value={ data.Form.CostPrice }
-					class="form-input tabular-nums"
-					placeholder="0.00"
-					data-on-input="recalcProfitPreview()"
-				/>
-				<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_products.cost_price_desc") }</span>
+		if layouts.GetSiteSettings(ctx).EnableCostPricing {
+			<div class="grid-2">
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm" for="var-cost">
+						{ i18n.T(lang, "vendor_products.fld_cost_price") } <span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+					</label>
+					<input
+						type="number"
+						step="0.01"
+						min="0"
+						id="var-cost"
+						name="cost_price"
+						value={ data.Form.CostPrice }
+						class="form-input tabular-nums"
+						placeholder="0.00"
+						data-on-input="recalcProfitPreview()"
+					/>
+					<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_products.cost_price_desc") }</span>
+				</div>
+				<div class="stack-sm">
+					<label class="form-label font-bold text-primary text-sm" for="var-cost-discount">
+						{ i18n.T(lang, "vendor_products.fld_cost_discount") } <span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+					</label>
+					<input
+						type="number"
+						step="0.1"
+						min="0"
+						max="100"
+						id="var-cost-discount"
+						name="cost_discount_percentage"
+						value={ data.Form.CostDiscountPercentage }
+						class={ "form-input tabular-nums", templ.KV("is-invalid", data.Errors.Has("cost_discount_percentage")) }
+						placeholder="0.0%"
+						data-on-input="recalcProfitPreview()"
+					/>
+					if data.Errors.Has("cost_discount_percentage") {
+						<div class="text-danger text-xs font-bold">{ data.Errors.Get("cost_discount_percentage") }</div>
+					}
+					<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_products.cost_discount_desc") }</span>
+				</div>
 			</div>
-			<div class="stack-sm">
-				<label class="form-label font-bold text-primary text-sm" for="var-cost-discount">
-					{ i18n.T(lang, "vendor_products.fld_cost_discount") } <span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
-				</label>
-				<input
-					type="number"
-					step="0.1"
-					min="0"
-					max="100"
-					id="var-cost-discount"
-					name="cost_discount_percentage"
-					value={ data.Form.CostDiscountPercentage }
-					class={ "form-input tabular-nums", templ.KV("is-invalid", data.Errors.Has("cost_discount_percentage")) }
-					placeholder="0.0%"
-					data-on-input="recalcProfitPreview()"
-				/>
-				if data.Errors.Has("cost_discount_percentage") {
-					<div class="text-danger text-xs font-bold">{ data.Errors.Get("cost_discount_percentage") }</div>
-				}
-				<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_products.cost_discount_desc") }</span>
-			</div>
-		</div>
 
-		<!-- Real-time Profit Preview Strip -->
-		<div class="stack-sm" id="profit-calc-preview">
-			<div class="stack-sm">
-				<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_net_selling") }</div>
-				<div id="preview-selling-price" class="font-extrabold text-primary tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+			<!-- Real-time Profit Preview Strip -->
+			<div class="stack-sm" id="profit-calc-preview">
+				<div class="stack-sm">
+					<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_net_selling") }</div>
+					<div id="preview-selling-price" class="font-extrabold text-primary tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+				</div>
+				<div class="stack-sm">
+					<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_discounted_cost") }</div>
+					<div id="preview-cost-price" class="font-extrabold text-secondary tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+				</div>
+				<div class="stack-sm">
+					<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_net_profit") }</div>
+					<div id="preview-net-profit" class="font-black text-success tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+				</div>
+				<div class="stack-sm">
+					<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_expected_margin") }</div>
+					<div id="preview-profit-margin" class="font-black text-brand tabular-nums mt-1">0.0%</div>
+				</div>
 			</div>
-			<div class="stack-sm">
-				<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_discounted_cost") }</div>
-				<div id="preview-cost-price" class="font-extrabold text-secondary tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+		} else {
+			<!-- Single Net Selling Price Preview -->
+			<div class="stack-sm" id="profit-calc-preview">
+				<div class="stack-sm">
+					<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_net_selling") }</div>
+					<div id="preview-selling-price" class="font-extrabold text-primary tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
+				</div>
 			</div>
-			<div class="stack-sm">
-				<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_net_profit") }</div>
-				<div id="preview-net-profit" class="font-black text-success tabular-nums mt-1">0.00 { i18n.T(lang, "common.currency_egp") }</div>
-			</div>
-			<div class="stack-sm">
-				<div class="text-xs text-muted font-bold">{ i18n.T(lang, "vendor_products.calc_expected_margin") }</div>
-				<div id="preview-profit-margin" class="font-black text-brand tabular-nums mt-1">0.0%</div>
-			</div>
-		</div>
+		}
 	</div>
 
 	<script nonce={ layouts.Nonce(ctx) } data-currency={ i18n.T(lang, "common.currency_egp") } data-no-cost={ i18n.T(lang, "vendor_products.no_cost") }>

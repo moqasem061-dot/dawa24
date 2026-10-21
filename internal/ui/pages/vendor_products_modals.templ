@@ -5,6 +5,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 templ VendorProductsModals(data VendorVariantsData, lang string) {
@@ -89,40 +90,42 @@ templ VendorProductsModals(data VendorVariantsData, lang string) {
 					</div>
 				</div>
 
-				<div class="grid-2">
-					<div class="stack-sm">
-						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
-							<span>{ i18n.T(lang, "vendor_products.fld_cost_price") }</span>
-							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
-						</label>
-						<input
-							type="number"
-							step="0.01"
-							min="0"
-							id="edit-form-cost"
-							name="cost_price"
-							placeholder="0.00"
-							class="form-input w-full-rounded"
-						/>
-					</div>
+				if layouts.GetSiteSettings(ctx).EnableCostPricing {
+					<div class="grid-2">
+						<div class="stack-sm">
+							<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
+								<span>{ i18n.T(lang, "vendor_products.fld_cost_price") }</span>
+								<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+							</label>
+							<input
+								type="number"
+								step="0.01"
+								min="0"
+								id="edit-form-cost"
+								name="cost_price"
+								placeholder="0.00"
+								class="form-input w-full-rounded"
+							/>
+						</div>
 
-					<div class="stack-sm">
-						<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
-							<span>{ i18n.T(lang, "vendor_products.fld_cost_discount") }</span>
-							<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
-						</label>
-						<input
-							type="number"
-							step="0.1"
-							min="0"
-							max="100"
-							id="edit-form-cost-discount"
-							name="cost_discount_percentage"
-							placeholder="0.0%"
-							class="form-input w-full-rounded"
-						/>
+						<div class="stack-sm">
+							<label class="form-label font-bold text-primary text-sm d-flex items-center gap-1">
+								<span>{ i18n.T(lang, "vendor_products.fld_cost_discount") }</span>
+								<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_products.badge_optional") }</span>
+							</label>
+							<input
+								type="number"
+								step="0.1"
+								min="0"
+								max="100"
+								id="edit-form-cost-discount"
+								name="cost_discount_percentage"
+								placeholder="0.0%"
+								class="form-input w-full-rounded"
+							/>
+						</div>
 					</div>
-				</div>
+				}
 
 				<div class="grid-2">
 					<div class="stack-sm">

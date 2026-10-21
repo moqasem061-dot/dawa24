@@ -304,6 +304,7 @@ type SiteSettings struct {
 	Address                   string            `json:"address"`
 	SessionIdleTimeoutMinutes int               `json:"session_idle_timeout_minutes"`
 	SocialLinks               map[string]string `json:"social_links"` // facebook, twitter, instagram, linkedin, youtube, tiktok, snapchat, whatsapp, telegram
+	EnableCostPricing         bool              `json:"enable_cost_pricing"`
 }
 
 // Policy represents a versioned platform policy document (Terms, Privacy, Refund, etc.).

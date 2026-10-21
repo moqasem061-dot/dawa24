@@ -142,6 +142,7 @@ func (h *UIHandler) AdminSettingsSubmit(w http.ResponseWriter, r *http.Request) 
 	if err != nil || idleMins < 1 || idleMins > 10080 {
 		idleMins = 30
 	}
+	enableCostPricing := r.PostFormValue("enable_cost_pricing") == "on" || r.PostFormValue("enable_cost_pricing") == "true" || r.PostFormValue("enable_cost_pricing") == "1"
 
 	settings := []*platformadmin.SystemSetting{
 		{
@@ -162,6 +163,12 @@ func (h *UIHandler) AdminSettingsSubmit(w http.ResponseWriter, r *http.Request) 
 			Description: "Session idle timeout in minutes before automatic logout",
 			IsPublic:    true,
 		},
+		{
+			Key:         settingEnableCostPricing,
+			Value:       map[string]any{"value": enableCostPricing},
+			Description: "Visibility of cost price and cost discount across vendor modals, imports, and tables",
+			IsPublic:    true,
+		},
 	}
 	for _, s := range settings {
 		if err := h.adminSvc.SetSetting(ctx, s); err != nil {
@@ -176,6 +183,7 @@ func (h *UIHandler) AdminSettingsSubmit(w http.ResponseWriter, r *http.Request) 
 	}
 	if ss, err := h.adminSvc.GetSiteSettings(ctx); err == nil && ss != nil {
 		ss.SessionIdleTimeoutMinutes = idleMins
+		ss.EnableCostPricing = enableCostPricing
 		_ = h.adminSvc.SaveSiteSettings(ctx, ss)
 	}
 	InvalidateSiteSettingsCache()

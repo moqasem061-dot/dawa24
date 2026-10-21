@@ -274,64 +274,66 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 			</span>
 		</td>
 
-		<!-- Cost Price (Editable Inline) -->
-		<td class="review-col-money text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }>
-			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
-				class="review-money-form">
-				<input type="hidden" name="display_name" value={ row.DisplayName }/>
-				if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
-					<input type="hidden" name="price" value={ rowPriceValue(row) }/>
-				}
-				if row.Payload != nil && row.Payload.DiscountBps > 0 {
-					<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
-				}
-				if row.Payload != nil && row.Payload.HasQuantity {
-					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
-				}
-				if row.Payload != nil && row.Payload.CostDiscountBps > 0 {
-					<input type="hidden" name="cost_discount" value={ rowCostDiscountPercentValue(row) }/>
-				}
-				<input type="number" name="cost_price" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
-					value={ rowCostPriceValue(row) }
-					step="0.01"
-					min="0"
-					placeholder="0.00"
-					class="form-input text-center tabular-nums font-bold"/>
-				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_price_title") }>
-					@components.IconCheck("icon-2xs")
-				</button>
-			</form>
-		</td>
+		if view.EnableCostPricing {
+			<!-- Cost Price (Editable Inline) -->
+			<td class="review-col-money text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }>
+				<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+					class="review-money-form">
+					<input type="hidden" name="display_name" value={ row.DisplayName }/>
+					if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
+						<input type="hidden" name="price" value={ rowPriceValue(row) }/>
+					}
+					if row.Payload != nil && row.Payload.DiscountBps > 0 {
+						<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
+					}
+					if row.Payload != nil && row.Payload.HasQuantity {
+						<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
+					}
+					if row.Payload != nil && row.Payload.CostDiscountBps > 0 {
+						<input type="hidden" name="cost_discount" value={ rowCostDiscountPercentValue(row) }/>
+					}
+					<input type="number" name="cost_price" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_price") }
+						value={ rowCostPriceValue(row) }
+						step="0.01"
+						min="0"
+						placeholder="0.00"
+						class="form-input text-center tabular-nums font-bold"/>
+					<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_price_title") }>
+						@components.IconCheck("icon-2xs")
+					</button>
+				</form>
+			</td>
 
-		<!-- Cost Discount % (Editable Inline) -->
-		<td class="review-col-discount text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }>
-			<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
-				class="review-money-form">
-				<input type="hidden" name="display_name" value={ row.DisplayName }/>
-				if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
-					<input type="hidden" name="price" value={ rowPriceValue(row) }/>
-				}
-				if row.Payload != nil && row.Payload.DiscountBps > 0 {
-					<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
-				}
-				if row.Payload != nil && row.Payload.HasQuantity {
-					<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
-				}
-				if row.Payload != nil && row.Payload.CostPrice.IsPositive() {
-					<input type="hidden" name="cost_price" value={ rowCostPriceValue(row) }/>
-				}
-				<input type="number" name="cost_discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
-					value={ rowCostDiscountPercentValue(row) }
-					step="0.1"
-					min="0"
-					max="100"
-					placeholder="0.0"
-					class="form-input text-center tabular-nums font-bold"/>
-				<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_discount_title") }>
-					@components.IconCheck("icon-2xs")
-				</button>
-			</form>
-		</td>
+			<!-- Cost Discount % (Editable Inline) -->
+			<td class="review-col-discount text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }>
+				<form method="POST" action={ templ.SafeURL(view.RowActionPath(row.ID, "update")) }
+					class="review-money-form">
+					<input type="hidden" name="display_name" value={ row.DisplayName }/>
+					if row.Payload != nil && (row.Payload.NetPrice.IsPositive() || row.Payload.PublicPrice.IsPositive()) {
+						<input type="hidden" name="price" value={ rowPriceValue(row) }/>
+					}
+					if row.Payload != nil && row.Payload.DiscountBps > 0 {
+						<input type="hidden" name="discount" value={ rowDiscountPercentValue(row) }/>
+					}
+					if row.Payload != nil && row.Payload.HasQuantity {
+						<input type="hidden" name="quantity" value={ fmt.Sprint(row.Payload.Quantity) }/>
+					}
+					if row.Payload != nil && row.Payload.CostPrice.IsPositive() {
+						<input type="hidden" name="cost_price" value={ rowCostPriceValue(row) }/>
+					}
+					<input type="number" name="cost_discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
+						value={ rowCostDiscountPercentValue(row) }
+						step="0.1"
+						min="0"
+						max="100"
+						placeholder="0.0"
+						class="form-input text-center tabular-nums font-bold"/>
+					<button type="submit" class="btn btn-secondary btn-icon btn-xs" title={ i18n.T(lang, "vendor_ingest.row.save_cost_discount_title") }>
+						@components.IconCheck("icon-2xs")
+					</button>
+				</form>
+			</td>
+		}
 
 		<!-- Quantity (Editable Inline) -->
 		<td class="review-col-qty text-center align-middle tabular-nums" data-label={ i18n.T(lang, "vendor_ingest.table.th_quantity") }>

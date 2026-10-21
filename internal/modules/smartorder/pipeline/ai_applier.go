@@ -37,15 +37,15 @@ func (a *SmartOrderAIApplier) ApplyAI(ctx context.Context, ref productmatch.RowR
 			    match_basis        = $2,
 			    match_granularity  = $3,
 			    matched_product_id = $4,
-			    match_level        = $5,
-			    ai_state           = $6,
-			    match_run_id       = $7,
-			    match_decision     = $8
-			WHERE id = $9
-			  AND match_revision = $10
+			    match_method       = CASE WHEN $4::bigint IS NOT NULL THEN 'ai' ELSE match_method END,
+			    ai_state           = $5,
+			    match_run_id       = $6,
+			    match_decision     = $7
+			WHERE id = $8
+			  AND match_revision = $9
 			  AND human_locked = false
 		`, cols.MatchState, cols.MatchBasis, cols.MatchGranularity,
-			cols.MatchedProductID, cols.MatchLevel, cols.AIState,
+			cols.MatchedProductID, cols.AIState,
 			runID, data, ref.ID, expectedRev)
 		if err != nil {
 			return err

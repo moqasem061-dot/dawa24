@@ -186,6 +186,7 @@ func (h *UIHandler) vendorWarehouses(r *http.Request) []*inventory.Warehouse {
 // renderImport writes the page.
 func (h *UIHandler) renderImport(w http.ResponseWriter, r *http.Request, view pages.VendorImportView) {
 	lang, dir := h.localeAndDir(r)
+	view.EnableCostPricing = GetSiteSettings(r.Context()).EnableCostPricing
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if err := pages.VendorIngestPage(view, lang, dir).Render(renderContext(r.Context()), w); err != nil {
 		h.log.ErrorContext(r.Context(), "render vendor import page", "error", err)

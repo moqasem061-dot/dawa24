@@ -37,10 +37,11 @@ type VendorImportView struct {
 	Fatal         string
 
 	// Target organization context when executed by staff on behalf of an org
-	Audience      string
-	TargetOrgID   int64
-	TargetOrgName string
-	BaseURL       string
+	Audience          string
+	TargetOrgID       int64
+	TargetOrgName     string
+	BaseURL           string
+	EnableCostPricing bool
 }
 
 // MappedIdentifiers reports which identifier columns the vendor bound in step

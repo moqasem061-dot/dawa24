@@ -186,7 +186,7 @@ func (m *CandidateMatcher) ScoreWithContext(ctx context.Context, orgID, runID in
 				ambiguous := dec.State == matchflow.StateAmbiguous
 				switch {
 				case (dec.State == matchflow.StateAccepted || dec.State == matchflow.StateConfirmed) && cols.MatchedProductID != nil:
-					setMatch(l, *cols.MatchedProductID, smartorder.MatchMethod(cols.MatchLevel), 1.0)
+					setMatch(l, *cols.MatchedProductID, methodForDecision(dec, cols), 1.0)
 				default:
 					reviews = append(reviews, Review{
 						Line:       l,
@@ -364,6 +364,17 @@ func mergeCandidates(primary, wide []productmatch.MatchCandidate, limit int) []p
 		}
 	}
 	return out
+}
+
+// methodForDecision maps the decision and projected columns into a valid MatchMethod.
+func methodForDecision(dec matchflow.RowDecision, cols matchflow.ColumnProjection) smartorder.MatchMethod {
+	if dec.Basis == matchflow.BasisAI {
+		return smartorder.MethodAI
+	}
+	if dec.Basis == matchflow.BasisKnowledgeHuman {
+		return smartorder.MethodLearnedMapping
+	}
+	return methodFor(productmatch.MatchLevel(cols.MatchLevel))
 }
 
 // methodFor maps the matcher's level onto the method the buyer sees.

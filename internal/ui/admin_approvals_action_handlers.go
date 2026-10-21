@@ -138,6 +138,7 @@ const (
 	settingSupportEmail       = "platform.support_email"
 	settingCommissionRate     = "platform.commission_rate"
 	settingSessionIdleTimeout = "platform.session_idle_timeout_minutes"
+	settingEnableCostPricing  = "platform.enable_cost_pricing"
 )
 
 // Organization approval actions.

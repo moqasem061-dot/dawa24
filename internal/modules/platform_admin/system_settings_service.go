@@ -86,6 +86,7 @@ func (s *Service) GetSiteSettings(ctx context.Context) (*SiteSettings, error) {
 		Address:                   getString(v, "address", i18n.TDefault("w4_ui.s_100_100")),
 		SessionIdleTimeoutMinutes: idleTimeoutMins,
 		SocialLinks:               socialMap,
+		EnableCostPricing:         getBool(v, "enable_cost_pricing", false),
 	}
 	return ss, nil
 }
@@ -109,6 +110,7 @@ func (s *Service) SaveSiteSettings(ctx context.Context, ss *SiteSettings) error 
 		"address":                      ss.Address,
 		"session_idle_timeout_minutes": idleMins,
 		"social_links":                 ss.SocialLinks,
+		"enable_cost_pricing":          ss.EnableCostPricing,
 	}
 	return s.storeSetting(ctx, &SystemSetting{
 		Key:         "site_public_settings",

@@ -7,6 +7,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 // VendorEarningsTopProducts renders product profitability and margin comparison table.
@@ -48,12 +49,16 @@ templ VendorEarningsTopProducts(products []*commerce.VendorProductProfit, pagina
 							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_public_price") }</th>
 							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_selling_discount") }</th>
 							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_selling_price") }</th>
-							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_purchase_discount") }</th>
-							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_actual_cost") }</th>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_purchase_discount") }</th>
+								<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_actual_cost") }</th>
+							}
 							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_total_revenue") }</th>
-							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_total_cost") }</th>
-							<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_realized_profit") }</th>
-							<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_profit_margin") }</th>
+							if layouts.GetSiteSettings(ctx).EnableCostPricing {
+								<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_total_cost") }</th>
+								<th class="tabular-nums">{ i18n.T(lang, "vendor_finance.earnings.th_realized_profit") }</th>
+								<th class="text-center">{ i18n.T(lang, "vendor_finance.earnings.th_profit_margin") }</th>
+							}
 						</tr>
 					</thead>
 					<tbody>
@@ -101,65 +106,69 @@ templ VendorEarningsTopProducts(products []*commerce.VendorProductProfit, pagina
 									{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.SellingPrice.FormatWithCommas()) }
 								</td>
 
-								<!-- Cost Discount % (خصم التكلفة) -->
-								<td class="text-center tabular-nums">
-									if p.CostDiscountPercentage > 0 {
-										<span class="badge badge-sky text-xs font-bold">
-											{ fmt.Sprintf("%.1f%%", p.CostDiscountPercentage) }
-										</span>
-									} else {
-										<span class="text-muted text-xs">0%</span>
-									}
-								</td>
+								if layouts.GetSiteSettings(ctx).EnableCostPricing {
+									<!-- Cost Discount % (خصم التكلفة) -->
+									<td class="text-center tabular-nums">
+										if p.CostDiscountPercentage > 0 {
+											<span class="badge badge-sky text-xs font-bold">
+												{ fmt.Sprintf("%.1f%%", p.CostDiscountPercentage) }
+											</span>
+										} else {
+											<span class="text-muted text-xs">0%</span>
+										}
+									</td>
 
-								<!-- Actual Purchase Cost (سعر التكلفة بعد خصم التكلفة) -->
-								<td class="tabular-nums font-semibold text-secondary text-sm">
-									if p.DiscountedCost.IsPositive() {
-										{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.DiscountedCost.FormatWithCommas()) }
-									} else {
-										<span class="text-muted text-xs">-</span>
-									}
-								</td>
+									<!-- Actual Purchase Cost (سعر التكلفة بعد خصم التكلفة) -->
+									<td class="tabular-nums font-semibold text-secondary text-sm">
+										if p.DiscountedCost.IsPositive() {
+											{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.DiscountedCost.FormatWithCommas()) }
+										} else {
+											<span class="text-muted text-xs">-</span>
+										}
+									</td>
+								}
 
 								<!-- Total Revenue (إجمالي الإيراد) -->
 								<td class="tabular-nums font-extrabold text-primary text-sm">
 									{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.TotalRevenue.FormatWithCommas()) }
 								</td>
 
-								<!-- Total Cost (إجمالي التكلفة) -->
-								<td class="tabular-nums font-semibold text-danger text-sm">
-									if p.TotalCost.IsPositive() {
-										-{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.TotalCost.FormatWithCommas()) }
-									} else {
-										<span class="text-muted text-xs">0.00</span>
-									}
-								</td>
+								if layouts.GetSiteSettings(ctx).EnableCostPricing {
+									<!-- Total Cost (إجمالي التكلفة) -->
+									<td class="tabular-nums font-semibold text-danger text-sm">
+										if p.TotalCost.IsPositive() {
+											-{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.TotalCost.FormatWithCommas()) }
+										} else {
+											<span class="text-muted text-xs">0.00</span>
+										}
+									</td>
 
-								<!-- Net Profit (صافي الربح) -->
-								<td class="tabular-nums font-black text-success text-sm">
-									if p.NetProfit.IsPositive() {
-										+{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
-									} else if p.NetProfit.Minor() < 0 {
-										{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
-									} else {
-										<span class="text-muted text-xs">0.00</span>
-									}
-								</td>
+									<!-- Net Profit (صافي الربح) -->
+									<td class="tabular-nums font-black text-success text-sm">
+										if p.NetProfit.IsPositive() {
+											+{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
+										} else if p.NetProfit.Minor() < 0 {
+											{ fmt.Sprintf(i18n.T(lang, "vendor_finance.payments.currency_egp"), p.NetProfit.FormatWithCommas()) }
+										} else {
+											<span class="text-muted text-xs">0.00</span>
+										}
+									</td>
 
-								<!-- Margin % (هامش الربح) -->
-								<td class="text-center">
-									if p.ProfitMargin > 0 {
-										<span class="badge badge-emerald text-xs font-black tabular-nums">
-											{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
-										</span>
-									} else if p.ProfitMargin < 0 {
-										<span class="badge badge-rose text-xs font-black tabular-nums">
-											{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
-										</span>
-									} else {
-										<span class="badge badge-slate text-xs font-bold tabular-nums">0.0%</span>
-									}
-								</td>
+									<!-- Margin % (هامش الربح) -->
+									<td class="text-center">
+										if p.ProfitMargin > 0 {
+											<span class="badge badge-emerald text-xs font-black tabular-nums">
+												{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
+											</span>
+										} else if p.ProfitMargin < 0 {
+											<span class="badge badge-rose text-xs font-black tabular-nums">
+												{ fmt.Sprintf("%.1f%%", p.ProfitMargin) }
+											</span>
+										} else {
+											<span class="badge badge-slate text-xs font-bold tabular-nums">0.0%</span>
+										}
+									</td>
+								}
 							</tr>
 						}
 					</tbody>

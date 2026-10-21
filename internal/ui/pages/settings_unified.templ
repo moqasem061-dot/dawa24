@@ -93,6 +93,48 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 					otpFeedback: '',
 					otpError: false,
 					cooldown: 0,
+					newPassword: '',
+					confirmPassword: '',
+					showPassword: false,
+					showConfirmPassword: false,
+					hasLen() {
+						return (this.newPassword || '').length >= 8;
+					},
+					hasCasing() {
+						var p = this.newPassword || '';
+						return /[A-Z]/.test(p) && /[a-z]/.test(p);
+					},
+					hasNum() {
+						return /[0-9]/.test(this.newPassword || '');
+					},
+					hasSpec() {
+						return /[^A-Za-z0-9]/.test(this.newPassword || '');
+					},
+					strengthScore() {
+						var s = 0;
+						if (this.hasLen()) s++;
+						if (this.hasCasing()) s++;
+						if (this.hasNum()) s++;
+						if (this.hasSpec()) s++;
+						return s;
+					},
+					strengthLabel() {
+						var isEn = document.documentElement.lang === 'en';
+						var p = this.newPassword || '';
+						if (p.length === 0) return isEn ? 'Enter password' : 'أدخل كلمة المرور';
+						var s = this.strengthScore();
+						var labelsAr = ['', 'ضعيفة جداً', 'ضعيفة', 'متوسطة', 'قوية ومطابقة للمعايير'];
+						var labelsEn = ['', 'Very weak', 'Weak', 'Medium', 'Strong and compliant'];
+						var labels = isEn ? labelsEn : labelsAr;
+						return labels[s] || labels[1];
+					},
+					strengthColor() {
+						var colors = ['#ef4444', '#ef4444', '#f97316', '#eab308', '#10b981'];
+						return colors[this.strengthScore()] || colors[0];
+					},
+					mismatch() {
+						return (this.confirmPassword || '').length > 0 && this.newPassword !== this.confirmPassword;
+					},
 					sendOTP() {
 						if (this.otpLoading || this.cooldown > 0) return;
 						this.otpLoading = true;
@@ -452,33 +494,97 @@ templ UnifiedSettingsPage(data UnifiedSettingsData, lang, dir string) {
 				>
 					<input type="hidden" name="_csrf" value="" :value="$csrf()"/>
 					<div class="form-group mb-0">
-						<label class="form-label font-bold text-xs mb-1" for="settings-new-password">
-							{ i18n.T(lang, "settings.new_password") }
-						</label>
-						<input
-							type="password"
-							id="settings-new-password"
-							name="new_password"
-							minlength="8"
-							required
-							placeholder="••••••••"
-							class="form-input text-xs"
-						/>
+						<div class="d-flex items-center justify-between mb-1">
+							<label class="form-label font-bold text-xs m-0" for="settings-new-password">
+								{ i18n.T(lang, "settings.new_password") }
+							</label>
+							<span
+								class="text-2xs font-semibold"
+								:style="{ color: (newPassword || '').length === 0 ? 'var(--text-muted)' : strengthColor() }"
+								x-text="strengthLabel()"
+							>
+								{ func() string { if lang == "en" { return "Enter password" }; return "أدخل كلمة المرور" }() }
+							</span>
+						</div>
+						<div class="pwd-input-wrap">
+							<input
+								:type="showPassword ? 'text' : 'password'"
+								id="settings-new-password"
+								name="new_password"
+								minlength="8"
+								required
+								placeholder="••••••••"
+								class="form-input text-xs"
+								x-model="newPassword"
+							/>
+							<button
+								type="button"
+								class="pwd-toggle-btn"
+								@click="showPassword = !showPassword"
+								title={ func() string { if lang == "en" { return "Show/Hide password" }; return "إظهار / إخفاء كلمة المرور" }() }
+							>
+								@components.IconEye("icon-xs")
+							</button>
+						</div>
+
+						<!-- Strength Progress Bars -->
+						<div class="pwd-strength-bars d-flex gap-1 mt-1.5">
+							<div class="strength-bar-seg" :style="{ backgroundColor: strengthScore() >= 1 ? strengthColor() : 'var(--border)' }"></div>
+							<div class="strength-bar-seg" :style="{ backgroundColor: strengthScore() >= 2 ? strengthColor() : 'var(--border)' }"></div>
+							<div class="strength-bar-seg" :style="{ backgroundColor: strengthScore() >= 3 ? strengthColor() : 'var(--border)' }"></div>
+							<div class="strength-bar-seg" :style="{ backgroundColor: strengthScore() >= 4 ? strengthColor() : 'var(--border)' }"></div>
+						</div>
+
+						<!-- Real-Time Password Checklist -->
+						<div class="pwd-checklist d-flex flex-col gap-1 mt-2 text-2xs text-secondary">
+							<div class="pwd-checklist-item" :class="{ 'valid': hasLen() }">
+								<span class="rule-icon" :class="hasLen() ? 'text-success' : 'text-muted'" x-text="hasLen() ? '✓' : '●'">●</span>
+								<span>{ func() string { if lang == "en" { return "At least 8 characters" }; return "8 أحرف على الأقل" }() }</span>
+							</div>
+							<div class="pwd-checklist-item" :class="{ 'valid': hasCasing() }">
+								<span class="rule-icon" :class="hasCasing() ? 'text-success' : 'text-muted'" x-text="hasCasing() ? '✓' : '●'">●</span>
+								<span>{ func() string { if lang == "en" { return "Uppercase (A-Z) and lowercase (a-z)" }; return "حرف كبير (A-Z) وصغير (a-z)" }() }</span>
+							</div>
+							<div class="pwd-checklist-item" :class="{ 'valid': hasNum() }">
+								<span class="rule-icon" :class="hasNum() ? 'text-success' : 'text-muted'" x-text="hasNum() ? '✓' : '●'">●</span>
+								<span>{ func() string { if lang == "en" { return "At least one number (0-9)" }; return "رقم واحد على الأقل (0-9)" }() }</span>
+							</div>
+							<div class="pwd-checklist-item" :class="{ 'valid': hasSpec() }">
+								<span class="rule-icon" :class="hasSpec() ? 'text-success' : 'text-muted'" x-text="hasSpec() ? '✓' : '●'">●</span>
+								<span>{ func() string { if lang == "en" { return "Special character (@, $, !, %, *, #)" }; return "رمز خاص (@, $, !, %, *, #)" }() }</span>
+							</div>
+						</div>
 					</div>
 
 					<div class="form-group mb-0">
 						<label class="form-label font-bold text-xs mb-1" for="settings-confirm-password">
 							{ i18n.T(lang, "settings.confirm_new_password") }
 						</label>
-						<input
-							type="password"
-							id="settings-confirm-password"
-							name="new_password_confirmation"
-							minlength="8"
-							required
-							placeholder="••••••••"
-							class="form-input text-xs"
-						/>
+						<div class="pwd-input-wrap">
+							<input
+								:type="showConfirmPassword ? 'text' : 'password'"
+								id="settings-confirm-password"
+								name="new_password_confirmation"
+								minlength="8"
+								required
+								placeholder="••••••••"
+								class="form-input text-xs"
+								x-model="confirmPassword"
+							/>
+							<button
+								type="button"
+								class="pwd-toggle-btn"
+								@click="showConfirmPassword = !showConfirmPassword"
+								title={ func() string { if lang == "en" { return "Show/Hide password" }; return "إظهار / إخفاء كلمة المرور" }() }
+							>
+								@components.IconEye("icon-xs")
+							</button>
+						</div>
+						<template x-if="mismatch()">
+							<div class="text-danger text-2xs font-semibold mt-1">
+								{ func() string { if lang == "en" { return "Passwords do not match" }; return "كلمتا المرور غير متطابقتين" }() }
+							</div>
+						</template>
 					</div>
 
 					<div class="p-4 bg-surface-sunken border rounded-xl stack-sm">
