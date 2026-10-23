@@ -58,8 +58,13 @@ func (h *UIHandler) VendorIngestMappingSubmit(w http.ResponseWriter, r *http.Req
 // the vendor had just cleared — which is exactly how a cleared mapping came
 // back on the next screen.
 func vendorMappingOverrides(r *http.Request) (map[int]productmatch.Field, error) {
+	inputType := r.PostFormValue("discount_input_type")
+	if inputType != "" && inputType != "percentage" && inputType != "sale_price" {
+		return nil, fmt.Errorf("%s", i18n.T(langOf(r), "vendor.pricing.invalid"))
+	}
 	overrides := map[int]productmatch.Field{}
 	claimedBy := map[int]productmatch.Field{}
+	claimedFields := map[productmatch.Field]bool{}
 	sawFieldForm := false
 
 	for key, values := range r.PostForm {
@@ -68,6 +73,9 @@ func vendorMappingOverrides(r *http.Request) (map[int]productmatch.Field, error)
 		}
 		sawFieldForm = true
 		field := productmatch.Field(strings.TrimPrefix(key, "field_"))
+		if field == productmatch.FieldDiscountPct && r.PostFormValue("discount_input_type") == "sale_price" {
+			field = productmatch.FieldNetPrice
+		}
 		if _, known := productmatch.SpecOf(field); !known {
 			continue
 		}
@@ -87,6 +95,10 @@ func vendorMappingOverrides(r *http.Request) (map[int]productmatch.Field, error)
 				"العمود رقم %d مربوط بحقلين: «%s» و«%s». اختر حقلاً واحداً لكل عمود.",
 				index+1, other.Label(), field.Label())
 		}
+		if claimedFields[field] {
+			return nil, fmt.Errorf("%s", i18n.T(langOf(r), "vendor.pricing.invalid"))
+		}
+		claimedFields[field] = true
 		claimedBy[index] = field
 		overrides[index] = field
 	}
@@ -113,6 +125,16 @@ func vendorMappingOverrides(r *http.Request) (map[int]productmatch.Field, error)
 			}
 		}
 		return overrides, nil
+	}
+	if inputType == "sale_price" {
+		hasSale, hasPublic := false, false
+		for _, field := range overrides {
+			hasSale = hasSale || field == productmatch.FieldNetPrice
+			hasPublic = hasPublic || field == productmatch.FieldPublicPrice || field == productmatch.FieldPrice
+		}
+		if !hasSale || !hasPublic {
+			return nil, fmt.Errorf("%s", i18n.T(langOf(r), "vendor.pricing.invalid"))
+		}
 	}
 
 	// Pin every unclaimed column shut.

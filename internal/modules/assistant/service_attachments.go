@@ -299,35 +299,7 @@ func (s *Service) readAttachmentViaGateway(
 
 	kind := ClassifyMIME(row.MIMEType)
 	if kind == KindAudio {
-		var model string
-		if s.transcribeModel != nil {
-			if m, merr := s.transcribeModel(ctx, row.MIMEType); merr == nil {
-				model = m
-			}
-		}
-		text, err := s.gateway.Transcribe(ctx, gateway.TranscribeRequest{
-			Audio:      bytes.NewReader(content),
-			Filename:   row.Filename,
-			MIMEType:   row.MIMEType,
-			Model:      model,
-			Language:   "ar",
-			OrgID:      actor.OrgID,
-			UserID:     actor.UserID,
-			VirtualKey: virtualKey,
-			Feature:    "تفريغ صوتي للمساعد",
-		})
-		if err != nil {
-			s.log.WarnContext(ctx, "assistant: audio transcription failed", "attachment", row.PublicID, "error", err)
-			return ""
-		}
-		text = strings.TrimSpace(text)
-		if text == "" {
-			return ""
-		}
-		if len(text) > DigestMaxChars {
-			text = text[:DigestMaxChars] + "\n…(اقتُطع المحتوى)"
-		}
-		return text
+		return s.readAudioAttachment(ctx, actor, audioAttachmentInput{row: row, content: content, key: virtualKey})
 	}
 
 	caps, err := s.gateway.Capabilities(ctx, gateway.RoleAttachment)

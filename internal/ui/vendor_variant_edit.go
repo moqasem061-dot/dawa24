@@ -83,7 +83,13 @@ func applyVariantValues(r url.Values, v *catalog.ProductVariant, lang string) er
 		}
 		v.Price = price
 	}
-	if raw, ok := formField(r, "discount"); ok {
+	if r.Has("discount_input_type") {
+		discount, err := vendorInputDiscount(r, v.Price)
+		if err != nil {
+			return fmt.Errorf("%s", i18n.T(lang, "vendor.pricing.invalid"))
+		}
+		v.Discount = discount
+	} else if raw, ok := formField(r, "discount"); ok {
 		if raw == "" {
 			v.Discount = money.Zero
 		} else {

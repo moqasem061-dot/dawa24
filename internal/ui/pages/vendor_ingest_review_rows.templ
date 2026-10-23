@@ -256,7 +256,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 				<input type="hidden" name="display_name" value={ row.DisplayName }/>
 				<input type="number" name="discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_discount") }
 					value={ rowDiscountPercentValue(row) }
-					step="0.1"
+					step="0.01"
 					min="0"
 					max="100"
 					placeholder="0.0"
@@ -323,7 +323,7 @@ templ VendorReviewTableRow(view VendorImportView, row *ingest.RowOutcome, langOp
 					}
 					<input type="number" name="cost_discount" aria-label={ i18n.T(lang, "vendor_ingest.table.th_cost_discount") }
 						value={ rowCostDiscountPercentValue(row) }
-						step="0.1"
+						step="0.01"
 						min="0"
 						max="100"
 						placeholder="0.0"

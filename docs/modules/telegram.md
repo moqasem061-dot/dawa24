@@ -198,3 +198,19 @@ with a Telegram Trigger on the same bot — Telegram allows one webhook per bot.
   `internal/modules/telegram/postgres` and `cmd/server` `TestTelegramEndToEnd`,
   which drives the bridge over HTTP against the real resolver, assistant service,
   tool registry and audit trail with only the model scripted.
+
+## Local audio repair (2026-10-23)
+
+Transcription requests use the common JSON response format. Some transcription
+models reject verbose JSON despite accepting the audio itself. If transcription
+fails or returns no text, attachment extraction tries an audio-capable
+attachment role, then the primary role, checking the advertised MIME and size
+limits first. It sends an audio part, never an empty file-description prompt.
+Only successful transcripts are cached; oversized transcripts carry an explicit
+truncation note, and failed partial streams retain
+the written-input fallback. Actor and tenant attribution remain attached to
+both paths. Transcription has a bounded 45-second budget so an unavailable
+endpoint cannot consume the entire turn before fallback.
+
+No n8n workflow was changed. Live Telegram file forwarding and the deployed
+Gateway still need a real voice-message acceptance test in that environment.

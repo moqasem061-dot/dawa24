@@ -120,6 +120,26 @@ baseline comparison, regression coverage and remaining quality-gate limits.
 
 ## 4. Product Matching and AI Enhancement
 
+### Sale-price input and progress repair (2026-10-23)
+
+In the vendor mapping step the discount column can represent either percentage
+points or the sale price to the pharmacy. Sale-price selection maps that column
+to the existing `net_price` field before processing. A positive public-price
+column is required. The row reader computes `(public - sale) / public * 100`,
+rounded half away from zero to 0.01 percentage points using integer money
+arithmetic. Zero sale and sale equal to public are valid (100% and 0%);
+missing, malformed, negative, percentage-valued or above-public sale cells are
+row errors. Percentage inputs retain their existing semantics. The staged
+discount and committed variant use the same derived basis points; no database
+schema change is needed.
+
+The shared progress client now uses a real DOM owner for SVG rings, falls back
+to polling when a previously working stream stalls or disconnects, bounds
+individual poll requests, and keeps retrying outages with capped backoff.
+Failure snapshots do not become successful 100% completion. Saving-session
+snapshots no longer use the creation timestamp as their update timestamp,
+which previously made safety reads look older than published events.
+
 Vendor catalogue onboarding routes identity assignment through the unified product matching architecture (`matching.Service`). The module maintains strict boundary separation: `ingest` never imports `catalog` internal matching types, consuming the capability solely via `ingest.Matcher` (`internal/modules/ingest/matching_port.go`) adapted in the composition root (`cmd/server/ingest_ports.go`).
 
 ### 4.1 Matching Service Integration

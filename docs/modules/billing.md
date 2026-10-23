@@ -45,3 +45,12 @@ The `billing` bounded context manages user and tenant wallets with an append-onl
 `RecordInvoicePayment` accepts only the issuing organization (`invoices.organization_id`) or staff (organization 0). Recording a payment marks the invoice and its order paid, and the billed customer (`customer_org_id`) used to be accepted, so a pharmacy could settle its own debt by typing an amount. Admin payment routes require `billing.invoice.manage`, not the view permission.
 
 Invoice print and Excel/Word exports (`/invoices/{id}/*`, `/orders/{id}/invoice/*`) check that the caller is staff, the issuer, the billed customer, the buyer or a fulfilling vendor (`internal/ui/invoice_access.go`). Orders are read as system, so these pages previously printed any company's order. An invoice synthesised from an order is filed only when its issuer is known; it no longer defaults to organization 1.
+
+## Deposit rejection repair (2026-10-23)
+
+The admin rejection lookup qualifies `d.id` after joining wallets. The previous
+unqualified `id` made PostgreSQL reject every rejection attempt as ambiguous.
+The pending deposit is locked before transition; rejection and its audit entry
+commit together. No credit transaction is created. A real PostgreSQL regression
+checks the saved reason, reviewer, audit, unchanged ledger and refusal to reject
+twice or approve after rejection.

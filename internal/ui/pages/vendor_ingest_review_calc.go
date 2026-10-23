@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
@@ -33,13 +34,14 @@ func rowDiscountPercentValue(row *ingest.RowOutcome) string {
 		return "0.0"
 	}
 	if row.Payload.DiscountBps > 0 {
-		return fmt.Sprintf("%.1f", float64(row.Payload.DiscountBps)/100.0)
+		return money.FromMinor(row.Payload.DiscountBps).String()
 	}
 	list := row.Payload.PublicPrice
 	net := row.Payload.NetPrice
 	if list.IsPositive() && net.IsPositive() && net.Minor() < list.Minor() {
-		pct := (1.0 - float64(net.Minor())/float64(list.Minor())) * 100.0
-		return fmt.Sprintf("%.1f", pct)
+		if discount, err := money.DiscountFromSalePrice(list, net); err == nil {
+			return discount.String()
+		}
 	}
 	return "0.0"
 }

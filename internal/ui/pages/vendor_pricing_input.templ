@@ -1,0 +1,57 @@
+package pages
+
+import (
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+templ VendorSalePriceInput(mode, sale, lang string) {
+	<div class="stack-sm">
+		<label class="form-label">
+			{ i18n.T(lang, "vendor.pricing.input_type") }
+			<select name="discount_input_type" class="form-input">
+				<option value="percentage" selected?={ mode != "sale_price" }>{ i18n.T(lang, "vendor_products.fld_discount_pct") }</option>
+				<option value="sale_price" selected?={ mode == "sale_price" }>{ i18n.T(lang, "vendor.pricing.sale_price") }</option>
+			</select>
+		</label>
+		<label class="form-label">
+			{ i18n.T(lang, "vendor.pricing.sale_price") }
+			<input name="sale_price" type="number" min="0" step="0.01" value={ sale } class="form-input tabular-nums"/>
+		</label>
+		<p class="text-xs text-muted">{ i18n.T(lang, "vendor.pricing.sale_help") }</p>
+	</div>
+	<script nonce={ layouts.Nonce(ctx) }>
+		(function () {
+			const form = document.currentScript.closest('form');
+			if (!form) return;
+			const mode = form.elements.namedItem('discount_input_type');
+			const sale = form.elements.namedItem('sale_price');
+			const discount = form.elements.namedItem('discount');
+			const publicPrice = form.elements.namedItem('price');
+			function minor(raw) {
+				if (!/^\d+(\.\d{1,2})?$/.test(raw)) return null;
+				const parts = raw.split('.');
+				return BigInt(parts[0]) * 100n + BigInt(((parts[1] || '') + '00').slice(0, 2));
+			}
+			function sync() {
+				const isSale = mode.value === 'sale_price';
+				sale.closest('label').hidden = !isSale;
+				sale.disabled = !isSale;
+				sale.required = isSale;
+				discount.readOnly = isSale;
+				if (isSale) {
+					const base = minor(publicPrice.value);
+					const net = minor(sale.value);
+					if (base !== null && base > 0n && net !== null && net <= base) {
+						const bps = ((base - net) * 10000n + base / 2n) / base;
+						discount.value = String(bps / 100n) + '.' + String(bps % 100n).padStart(2, '0');
+					} else discount.value = '';
+				}
+				if (typeof window.recalcProfitPreview === 'function') window.recalcProfitPreview();
+			}
+			form.addEventListener('input', sync);
+			mode.addEventListener('change', sync);
+			sync();
+		})();
+	</script>
+}

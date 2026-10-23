@@ -264,7 +264,7 @@ templ importResultsStage(view VendorImportView, langOpt ...string) {
 												{ i18n.T(lang, "vendor_ingest.mapping.severity_info") }
 											}
 										</span>
-										<span class="text-sm">{ f.Message }</span>
+										<span class="text-sm">{ vendorImportFindingMessage(f.Message, lang) }</span>
 									</td>
 								</tr>
 							}

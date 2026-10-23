@@ -54,11 +54,15 @@ func (r *Reader) readPricing(out *Row, cells []string) {
 	}
 
 	switch {
-	case net.IsPositive():
+	case net.IsPositive() || (r.has(FieldNetPrice) && r.cell(cells, FieldNetPrice) != ""):
 		out.NetPrice = net
 		r.checkDerivedNet(out, public, net)
 	case public.IsPositive():
 		out.NetPrice = applyDiscount(public, out.DiscountBps)
+	}
+
+	if r.has(FieldNetPrice) && !r.has(FieldDiscountPct) {
+		r.readSaleDiscount(out, cells, public)
 	}
 
 	if out.NetPrice.Minor() > out.PublicPrice.Minor() && out.PublicPrice.IsPositive() {

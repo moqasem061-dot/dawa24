@@ -209,3 +209,13 @@ A JSON API mirroring these lives in `internal/modules/smartorder/http`.
   The chunked-upload path in `ingest` is the answer when that starts to matter.
 - **History** shares the import screen rather than having its own view.
 - **Results export** (FR-041) is not implemented.
+
+## Live progress repair (2026-10-23)
+
+The SVG progress ring passes its actual card as the lifecycle owner. Its
+rendering shim has no DOM `isConnected` property; treating that shim as the
+owner stopped all updates before opening a stream. The shared progress client
+now recovers from disconnects, frozen streams and prolonged network outages
+without a manual refresh. JSON polling responses are not cached. A browser
+regression executes the actual template initializer and observes the automatic
+reload when the run completes.

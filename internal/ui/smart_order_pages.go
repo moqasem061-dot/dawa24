@@ -273,6 +273,7 @@ func (h *UIHandler) SmartOrderProgressJSON(w http.ResponseWriter, r *http.Reques
 	ctx := r.Context()
 	lang, _ := h.localeAndDir(r)
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-store")
 
 	run, ok := h.smartOrderRun(w, r)
 	if !ok {

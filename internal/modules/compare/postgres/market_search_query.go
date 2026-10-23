@@ -29,8 +29,9 @@ func marketSearchFilter(filter compare.MarketDiscountsFilter) (string, []any) {
 	for _, word := range strings.Fields(query) {
 		args = append(args, word)
 		param := fmt.Sprintf("('%%' || lower(platform.normalize_arabic($%d)) || '%%')", len(args))
-		rowTerms = append(rowTerms, marketRowSearch+" LIKE "+param)
-		catalogTerms = append(catalogTerms, marketCatalogSearch+" LIKE "+param)
+		valid := fmt.Sprintf("length(platform.normalize_arabic($%d)) > 0 AND ", len(args))
+		rowTerms = append(rowTerms, "("+valid+marketRowSearch+" LIKE "+param+")")
+		catalogTerms = append(catalogTerms, "("+valid+marketCatalogSearch+" LIKE "+param+")")
 	}
 	args = append(args, filter.CatalogIDs)
 	clause := fmt.Sprintf(`(length($1::text) > 0 AND ((%s) OR r.matched_product_id IN (

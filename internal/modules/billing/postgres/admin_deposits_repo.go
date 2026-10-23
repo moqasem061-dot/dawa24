@@ -273,7 +273,7 @@ func (r *Repository) AdminRejectDepositRequest(ctx context.Context, depositID in
 			       d.status, d.created_at, d.updated_at
 			FROM billing.wallet_deposits d
 			LEFT JOIN billing.wallets w ON d.wallet_id = w.id
-			WHERE id = $1
+			WHERE d.id = $1
 			FOR UPDATE OF d;
 		`
 		var statusStr string
@@ -308,7 +308,7 @@ func (r *Repository) AdminRejectDepositRequest(ctx context.Context, depositID in
 		dep.ReviewedBy = &reviewerID
 		dep.ReviewedAt = &now
 
-		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+		return database.WriteAudit(txCtx, tx, database.AuditEntry{
 			OrganizationID: dep.OrganizationID,
 			ActorUserID:    reviewerID,
 			Action:         "commerce.deposit.reject",
@@ -318,7 +318,6 @@ func (r *Repository) AdminRejectDepositRequest(ctx context.Context, depositID in
 			After:          map[string]any{"status": "rejected", "reason": reason},
 		})
 
-		return nil
 	})
 	if err != nil {
 		return nil, err

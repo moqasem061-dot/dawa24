@@ -162,7 +162,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<input type=\"number\" step=\"0.1\" min=\"0\" max=\"100\" id=\"add-form-discount\" name=\"discount\" value=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 13, "<input type=\"number\" step=\"0.01\" min=\"0\" max=\"100\" id=\"add-form-discount\" name=\"discount\" value=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -228,6 +228,10 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
+		templ_7745c5c3_Err = VendorSalePriceInput(data.Form.DiscountInputType, data.Form.SalePrice, lang).Render(ctx, templ_7745c5c3_Buffer)
+		if templ_7745c5c3_Err != nil {
+			return templ_7745c5c3_Err
+		}
 		if layouts.GetSiteSettings(ctx).EnableCostPricing {
 			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 20, "<div class=\"grid-2\"><div class=\"stack-sm\"><label class=\"form-label font-bold text-primary text-sm\" for=\"var-cost\">")
 			if templ_7745c5c3_Err != nil {
@@ -236,7 +240,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var15 string
 			templ_7745c5c3_Var15, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.fld_cost_price"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 66, Col: 54}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 67, Col: 54}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var15))
 			if templ_7745c5c3_Err != nil {
@@ -249,7 +253,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var16 string
 			templ_7745c5c3_Var16, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.badge_optional"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 66, Col: 145}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 67, Col: 145}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var16))
 			if templ_7745c5c3_Err != nil {
@@ -262,7 +266,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Form.CostPrice)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 74, Col: 33}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 75, Col: 33}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var17)
 			if templ_7745c5c3_Err != nil {
@@ -275,7 +279,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var18 string
 			templ_7745c5c3_Var18, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.cost_price_desc"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 79, Col: 100}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 80, Col: 100}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var18))
 			if templ_7745c5c3_Err != nil {
@@ -288,7 +292,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var19 string
 			templ_7745c5c3_Var19, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.fld_cost_discount"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 83, Col: 57}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 84, Col: 57}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var19))
 			if templ_7745c5c3_Err != nil {
@@ -301,7 +305,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var20 string
 			templ_7745c5c3_Var20, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.badge_optional"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 83, Col: 148}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 84, Col: 148}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var20))
 			if templ_7745c5c3_Err != nil {
@@ -316,14 +320,14 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<input type=\"number\" step=\"0.1\" min=\"0\" max=\"100\" id=\"var-cost-discount\" name=\"cost_discount_percentage\" value=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<input type=\"number\" step=\"0.01\" min=\"0\" max=\"100\" id=\"var-cost-discount\" name=\"cost_discount_percentage\" value=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var22 string
 			templ_7745c5c3_Var22, templ_7745c5c3_Err = templ.ResolveAttributeValue(data.Form.CostDiscountPercentage)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 92, Col: 46}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 93, Col: 46}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var22)
 			if templ_7745c5c3_Err != nil {
@@ -354,7 +358,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 				var templ_7745c5c3_Var24 string
 				templ_7745c5c3_Var24, templ_7745c5c3_Err = templ.JoinStringErrs(data.Errors.Get("cost_discount_percentage"))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 98, Col: 94}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 99, Col: 94}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var24))
 				if templ_7745c5c3_Err != nil {
@@ -372,7 +376,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var25 string
 			templ_7745c5c3_Var25, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.cost_discount_desc"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 100, Col: 103}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 101, Col: 103}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var25))
 			if templ_7745c5c3_Err != nil {
@@ -385,7 +389,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var26 string
 			templ_7745c5c3_Var26, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.calc_net_selling"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 107, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 108, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var26))
 			if templ_7745c5c3_Err != nil {
@@ -398,7 +402,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var27 string
 			templ_7745c5c3_Var27, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.currency_egp"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 108, Col: 133}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 109, Col: 133}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var27))
 			if templ_7745c5c3_Err != nil {
@@ -411,7 +415,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var28 string
 			templ_7745c5c3_Var28, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.calc_discounted_cost"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 111, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 112, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var28))
 			if templ_7745c5c3_Err != nil {
@@ -424,7 +428,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var29 string
 			templ_7745c5c3_Var29, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.currency_egp"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 112, Col: 132}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 113, Col: 132}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var29))
 			if templ_7745c5c3_Err != nil {
@@ -437,7 +441,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var30 string
 			templ_7745c5c3_Var30, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.calc_net_profit"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 115, Col: 96}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 116, Col: 96}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var30))
 			if templ_7745c5c3_Err != nil {
@@ -450,7 +454,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var31 string
 			templ_7745c5c3_Var31, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.currency_egp"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 116, Col: 126}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 117, Col: 126}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var31))
 			if templ_7745c5c3_Err != nil {
@@ -463,7 +467,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var32 string
 			templ_7745c5c3_Var32, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.calc_expected_margin"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 119, Col: 101}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 120, Col: 101}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var32))
 			if templ_7745c5c3_Err != nil {
@@ -481,7 +485,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var33 string
 			templ_7745c5c3_Var33, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "vendor_products.calc_net_selling"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 127, Col: 97}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 128, Col: 97}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var33))
 			if templ_7745c5c3_Err != nil {
@@ -494,7 +498,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 			var templ_7745c5c3_Var34 string
 			templ_7745c5c3_Var34, templ_7745c5c3_Err = templ.JoinStringErrs(i18n.T(lang, "common.currency_egp"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 128, Col: 133}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 129, Col: 133}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var34))
 			if templ_7745c5c3_Err != nil {
@@ -512,7 +516,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 		var templ_7745c5c3_Var35 string
 		templ_7745c5c3_Var35, templ_7745c5c3_Err = templ.ResolveAttributeValue(layouts.Nonce(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 134, Col: 35}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 135, Col: 35}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var35)
 		if templ_7745c5c3_Err != nil {
@@ -525,7 +529,7 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 		var templ_7745c5c3_Var36 string
 		templ_7745c5c3_Var36, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "common.currency_egp"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 134, Col: 89}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 135, Col: 89}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var36)
 		if templ_7745c5c3_Err != nil {
@@ -538,13 +542,13 @@ func VendorProductEditorPricing(data VendorVariantEditorData, lang string) templ
 		var templ_7745c5c3_Var37 string
 		templ_7745c5c3_Var37, templ_7745c5c3_Err = templ.ResolveAttributeValue(i18n.T(lang, "vendor_products.no_cost"))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 134, Col: 146}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/vendor_product_editor_pricing.templ`, Line: 135, Col: 146}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var37)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\">\n\t\tfunction recalcProfitPreview() {\n\t\t\tconst price = parseFloat(document.getElementById('add-form-price')?.value) || 0;\n\t\t\tconst discount = parseFloat(document.getElementById('add-form-discount')?.value) || 0;\n\t\t\tconst cost = parseFloat(document.getElementById('var-cost')?.value) || 0;\n\t\t\tconst costDiscount = parseFloat(document.getElementById('var-cost-discount')?.value) || 0;\n\n\t\t\tconst scriptEl = document.querySelector('script[data-currency]');\n\t\t\tconst currency = scriptEl ? scriptEl.getAttribute('data-currency') : 'ج.م';\n\t\t\tconst noCostText = scriptEl ? scriptEl.getAttribute('data-no-cost') : 'لا توجد تكلفة';\n\n\t\t\tconst sellingPrice = price > 0 ? (price * (1 - (discount / 100))) : 0;\n\t\t\tlet discountedCost = 0;\n\t\t\tif (cost > 0) {\n\t\t\t\tdiscountedCost = cost * (1 - (costDiscount / 100));\n\t\t\t} else if (costDiscount > 0 && price > 0) {\n\t\t\t\tdiscountedCost = price * (1 - (costDiscount / 100));\n\t\t\t}\n\t\t\t\n\t\t\tconst netProfit = sellingPrice - discountedCost;\n\t\t\tconst basePrice = price > 0 ? price : sellingPrice;\n\t\t\tconst margin = basePrice > 0 ? ((netProfit / basePrice) * 100) : 0;\n\n\t\t\tconst elSell = document.getElementById('preview-selling-price');\n\t\t\tconst elCost = document.getElementById('preview-cost-price');\n\t\t\tconst elProfit = document.getElementById('preview-net-profit');\n\t\t\tconst elMargin = document.getElementById('preview-profit-margin');\n\n\t\t\tif (elSell) elSell.textContent = sellingPrice.toFixed(2) + ' ' + currency;\n\t\t\tif (elCost) elCost.textContent = (cost > 0 || (costDiscount > 0 && price > 0)) ? (discountedCost.toFixed(2) + ' ' + currency) : noCostText;\n\t\t\tif (elProfit) elProfit.textContent = netProfit.toFixed(2) + ' ' + currency;\n\t\t\tif (elMargin) elMargin.textContent = margin.toFixed(1) + '%';\n\t\t}\n\t\t\n\t\t(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', recalcProfitPreview) : recalcProfitPreview());\n\n\t\tfunction onAddVariantComboboxChange(e) {\n\t\t\tif (!e || !e.detail) return;\n\t\t\tif (e.detail.name === 'product_id' && e.detail.item) {\n\t\t\t\tconst item = e.detail.item;\n\t\t\t\tconst nameAr = document.getElementById('add-form-name-ar');\n\t\t\t\tif (nameAr && !nameAr.value) {\n\t\t\t\t\tnameAr.value = item.name_ar || item.label || '';\n\t\t\t\t}\n\t\t\t\tconst nameEn = document.getElementById('add-form-name-en');\n\t\t\t\tif (nameEn && !nameEn.value && item.name_en) {\n\t\t\t\t\tnameEn.value = item.name_en;\n\t\t\t\t}\n\t\t\t\tconst price = document.getElementById('add-form-price');\n\t\t\t\tif (price && (!price.value || price.value === '0.00' || price.value === '0')) {\n\t\t\t\t\tif (item.price) {\n\t\t\t\t\t\tprice.value = item.price;\n\t\t\t\t\t\trecalcProfitPreview();\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\tconst sku = document.getElementById('add-form-sku');\n\t\t\t\tif (sku && !sku.value && item.sku) {\n\t\t\t\t\tsku.value = item.sku;\n\t\t\t\t}\n\t\t\t\tconst barcode = document.getElementById('add-form-barcode');\n\t\t\t\tif (barcode && !barcode.value && item.barcode) {\n\t\t\t\t\tbarcode.value = item.barcode;\n\t\t\t\t}\n\t\t\t\tconst unit = document.getElementById('add-form-unit');\n\t\t\t\tif (unit && !unit.value && item.unit) {\n\t\t\t\t\tunit.value = item.unit;\n\t\t\t\t}\n\t\t\t}\n\t\t}\n\t</script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 47, "\">\r\n\t\tfunction vendorPreviewMinor(id) {\r\n\t\t\tconst raw = document.getElementById(id)?.value || '';\r\n\t\t\tif (!/^\\d+(\\.\\d{1,2})?$/.test(raw)) return 0n;\r\n\t\t\tconst parts = raw.split('.');\r\n\t\t\treturn BigInt(parts[0]) * 100n + BigInt(((parts[1] || '') + '00').slice(0, 2));\r\n\t\t}\r\n\t\tfunction vendorPreviewRound(numerator, denominator) {\r\n\t\t\tconst negative = numerator < 0n;\r\n\t\t\tconst absolute = negative ? -numerator : numerator;\r\n\t\t\tconst rounded = (absolute + denominator / 2n) / denominator;\r\n\t\t\treturn negative ? -rounded : rounded;\r\n\t\t}\r\n\t\tfunction vendorPreviewDecimal(minor) {\r\n\t\t\tconst absolute = minor < 0n ? -minor : minor;\r\n\t\t\treturn (minor < 0n ? '-' : '') + String(absolute / 100n) + '.' + String(absolute % 100n).padStart(2, '0');\r\n\t\t}\r\n\t\tfunction recalcProfitPreview() {\r\n\t\t\tconst price = vendorPreviewMinor('add-form-price');\r\n\t\t\tconst discount = vendorPreviewMinor('add-form-discount');\r\n\t\t\tconst cost = vendorPreviewMinor('var-cost');\r\n\t\t\tconst costDiscount = vendorPreviewMinor('var-cost-discount');\r\n\t\t\tconst scriptEl = document.querySelector('script[data-currency]');\r\n\t\t\tconst currency = scriptEl?.dataset.currency || '';\r\n\t\t\tconst noCostText = scriptEl?.dataset.noCost || '';\r\n\t\t\tconst sellingPrice = vendorPreviewRound(price * (10000n - discount), 10000n);\r\n\t\t\tconst costBase = costDiscount > 0n ? price : cost;\r\n\t\t\tconst discountedCost = costBase - vendorPreviewRound(costBase * costDiscount, 10000n);\r\n\t\t\tconst profit = sellingPrice - discountedCost;\r\n\t\t\tconst margin = price > 0n ? vendorPreviewRound(profit * 10000n, price) : 0n;\r\n\t\t\tconst amounts = { 'preview-selling-price': sellingPrice, 'preview-net-profit': profit };\r\n\t\t\tObject.entries(amounts).forEach(([id, amount]) => {\r\n\t\t\t\tconst element = document.getElementById(id);\r\n\t\t\t\tif (element) element.textContent = vendorPreviewDecimal(amount) + ' ' + currency;\r\n\t\t\t});\r\n\t\t\tconst costEl = document.getElementById('preview-cost-price');\r\n\t\t\tif (costEl) costEl.textContent = costBase > 0n ? vendorPreviewDecimal(discountedCost) + ' ' + currency : noCostText;\r\n\t\t\tconst marginEl = document.getElementById('preview-profit-margin');\r\n\t\t\tif (marginEl) marginEl.textContent = vendorPreviewDecimal(margin) + '%';\r\n\t\t}\r\n\t\t\r\n\t\t(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', recalcProfitPreview) : recalcProfitPreview());\r\n\r\n\t\tfunction onAddVariantComboboxChange(e) {\r\n\t\t\tif (!e || !e.detail) return;\r\n\t\t\tif (e.detail.name === 'product_id' && e.detail.item) {\r\n\t\t\t\tconst item = e.detail.item;\r\n\t\t\t\tconst nameAr = document.getElementById('add-form-name-ar');\r\n\t\t\t\tif (nameAr && !nameAr.value) {\r\n\t\t\t\t\tnameAr.value = item.name_ar || item.label || '';\r\n\t\t\t\t}\r\n\t\t\t\tconst nameEn = document.getElementById('add-form-name-en');\r\n\t\t\t\tif (nameEn && !nameEn.value && item.name_en) {\r\n\t\t\t\t\tnameEn.value = item.name_en;\r\n\t\t\t\t}\r\n\t\t\t\tconst price = document.getElementById('add-form-price');\r\n\t\t\t\tif (price && (!price.value || price.value === '0.00' || price.value === '0')) {\r\n\t\t\t\t\tif (item.price) {\r\n\t\t\t\t\t\tprice.value = item.price;\r\n\t\t\t\t\t\trecalcProfitPreview();\r\n\t\t\t\t\t}\r\n\t\t\t\t}\r\n\t\t\t\tconst sku = document.getElementById('add-form-sku');\r\n\t\t\t\tif (sku && !sku.value && item.sku) {\r\n\t\t\t\t\tsku.value = item.sku;\r\n\t\t\t\t}\r\n\t\t\t\tconst barcode = document.getElementById('add-form-barcode');\r\n\t\t\t\tif (barcode && !barcode.value && item.barcode) {\r\n\t\t\t\t\tbarcode.value = item.barcode;\r\n\t\t\t\t}\r\n\t\t\t\tconst unit = document.getElementById('add-form-unit');\r\n\t\t\t\tif (unit && !unit.value && item.unit) {\r\n\t\t\t\t\tunit.value = item.unit;\r\n\t\t\t\t}\r\n\t\t\t}\r\n\t\t}\r\n\t</script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

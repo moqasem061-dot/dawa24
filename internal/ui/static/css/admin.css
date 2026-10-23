@@ -171,9 +171,13 @@
     border: 1px solid var(--border-card);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-xs);
-    overflow: hidden;
+    overflow-x: auto;
     margin-bottom: var(--space-md);
   }
+
+  .admin-organizations-table { min-inline-size: 64rem; }
+  .admin-organizations-table .organization-name-cell { min-inline-size: 16rem; }
+  .organization-name-cell a { overflow-wrap: break-word; }
 
   @media (max-width: 768px) {
     .data-table-responsive thead {

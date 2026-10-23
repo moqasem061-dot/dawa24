@@ -59,12 +59,13 @@
 		this.percentEl = opts.percent || null;
 		this.countEl = opts.count || null;
 		this.onDone = opts.onDone || function () {};
-		this.owner = this.fill || this.labelEl || this.percentEl || this.countEl;
+		this.owner = opts.owner || this.percentEl || this.labelEl || this.countEl || this.fill;
 		this.source = null;
 		this.pollTimer = null;
 		this.graceTimer = null;
 		this.completionTimer = null;
 		this.pollAbort = null;
+		this.pollRequestTimer = null;
 		this.pollRevision = 0;
 		this.stopped = false;
 
@@ -132,8 +133,8 @@
 				this.countEl.textContent = '';
 			}
 		}
-		if (snapshot.failed || snapshot.status === 'failed' || snapshot.phase === 'failed') {
-			this.fail(snapshot.message || 'تعذرت معالجة الملف');
+		if (snapshot.failed || snapshot.state === 'failed' || snapshot.state === 'cancelled' || snapshot.status === 'failed' || snapshot.phase === 'failed') {
+			this.fail(snapshot.error || snapshot.message || 'تعذرت معالجة الملف');
 			if (this.onDone) {
 				var self = this;
 				this.completionTimer = setTimeout(function () {
@@ -223,6 +224,7 @@
 		clearTimeout(this.pollTimer);
 		clearTimeout(this.graceTimer);
 		clearTimeout(this.completionTimer);
+		clearTimeout(this.pollRequestTimer);
 		if (this.pollAbort) { this.pollAbort.abort(); this.pollAbort = null; }
 		if (this.source) { this.source.close(); this.source = null; }
 		if (this.timer) {
@@ -239,8 +241,8 @@
 	 * poll drives the bar from a JSON endpoint until it reports done.
 	 *
 	 * A failed poll is not a failed import: networks blink and a background run
-	 * outlives the page watching it. Failures are counted, and only a sustained
-	 * run of them stops the bar.
+	 * outlives the page watching it. Retry delays grow up to thirty seconds so
+	 * a restored connection can resume without a manual refresh.
 	 */
 	ImportProgress.prototype.poll = function (url, intervalMs) {
 		var self = this;
@@ -252,15 +254,25 @@
 			if (revision !== self.pollRevision) return;
 			if (self.stopped || !self.isAttached()) { self.stop(); return; }
 			self.pollAbort = typeof AbortController === 'function' ? new AbortController() : null;
-			fetch(url, {
+			var request = fetch(url, {
+				cache: 'no-store',
 				headers: { Accept: 'application/json', 'X-Dawa-Background': '1' },
 				signal: self.pollAbort ? self.pollAbort.signal : undefined
-			})
-				.then(function (res) {
-					if (!res.ok) throw new Error('HTTP ' + res.status);
-					return res.json();
-				})
+			}).then(function (res) {
+				if (!res.ok) throw new Error('HTTP ' + res.status);
+				return res.json();
+			});
+			var requestTimer;
+			var timeout = new Promise(function (_, reject) {
+				requestTimer = setTimeout(function () {
+					if (self.pollAbort) self.pollAbort.abort();
+					reject(new Error('progress request timed out'));
+				}, 15000);
+				self.pollRequestTimer = requestTimer;
+			});
+			Promise.race([request, timeout])
 				.then(function (data) {
+					clearTimeout(requestTimer);
 					if (revision !== self.pollRevision) return;
 					if (!self.isAttached()) { self.stop(); return; }
 					failures = 0;
@@ -272,14 +284,11 @@
 					if (!self.done && !self.stopped) self.pollTimer = setTimeout(tick, pollInterval);
 				})
 				.catch(function (err) {
-					if (revision !== self.pollRevision || (err && err.name === 'AbortError')) return;
+					clearTimeout(requestTimer);
+					if (revision !== self.pollRevision || self.stopped) return;
 					if (!self.isAttached()) { self.stop(); return; }
 					failures++;
-					if (failures >= 8) {
-						self.fail('تعذّر الاتصال بالخادم لمتابعة التقدم. المعالجة قد تكون مستمرة في الخلفية — أعد تحميل الصفحة.');
-						return;
-					}
-					self.pollTimer = setTimeout(tick, pollInterval * 2);
+					self.pollTimer = setTimeout(tick, Math.min(30000, pollInterval * Math.pow(2, Math.min(failures, 5))));
 				});
 		};
 		tick();
@@ -315,7 +324,6 @@
 		}
 
 		var fellBack = false;
-		var gotFirst = false;
 		var source;
 
 		var fallBack = function () {
@@ -341,10 +349,7 @@
 		// A stream that has not said anything within this window is not a
 		// stream. Generous enough to cover a slow first query, short enough
 		// that nobody watches a still bar wondering.
-		var GRACE_MS = 4000;
-		this.graceTimer = setTimeout(function () {
-			if (!gotFirst) fallBack();
-		}, GRACE_MS);
+		this.graceTimer = setTimeout(fallBack, 4000);
 
 		var apply = function (event) {
 			if (self.source !== source || self.stopped) return;
@@ -355,13 +360,15 @@
 			} catch (e) {
 				return;
 			}
-			gotFirst = true;
 			clearTimeout(self.graceTimer);
 			self.update(data);
 			if (self.isAttached()) notify(data);
 			if (data && data.error && !self.stopped) self.fail(data.error);
 			if (self.done || (data && data.error)) {
 				source.close();
+			} else if (!self.stopped) {
+				// Proxies can leave an open stream frozen after its first event.
+				self.graceTimer = setTimeout(fallBack, 30000);
 			}
 		};
 
@@ -375,14 +382,11 @@
 
 		source.onerror = function () {
 			if (!self.isAttached()) { self.stop(); return; }
-			// EventSource retries by itself, which is right while the run is
-			// live. It is wrong once we have finished, and wrong if we never
-			// connected at all — those are the two cases handled here.
 			if (self.done) {
 				source.close();
 				return;
 			}
-			if (!gotFirst) fallBack();
+			fallBack();
 		};
 	};
 

@@ -274,6 +274,9 @@ func TestPhase2_TranscriptionEndpoint(t *testing.T) {
 		}
 		defer file.Close()
 		content, _ := io.ReadAll(file)
+		if r.FormValue("response_format") != "json" {
+			t.Errorf("transcription response format must be json, got %q", r.FormValue("response_format"))
+		}
 		if string(content) != "audio-data" {
 			t.Errorf("expected audio-data, got %q", string(content))
 		}

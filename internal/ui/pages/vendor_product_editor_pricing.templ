@@ -42,7 +42,7 @@ templ VendorProductEditorPricing(data VendorVariantEditorData, lang string) {
 				</label>
 				<input
 					type="number"
-					step="0.1"
+					step="0.01"
 					min="0"
 					max="100"
 					id="add-form-discount"
@@ -59,6 +59,7 @@ templ VendorProductEditorPricing(data VendorVariantEditorData, lang string) {
 			</div>
 		</div>
 
+		@VendorSalePriceInput(data.Form.DiscountInputType, data.Form.SalePrice, lang)
 		if layouts.GetSiteSettings(ctx).EnableCostPricing {
 			<div class="grid-2">
 				<div class="stack-sm">
@@ -84,7 +85,7 @@ templ VendorProductEditorPricing(data VendorVariantEditorData, lang string) {
 					</label>
 					<input
 						type="number"
-						step="0.1"
+						step="0.01"
 						min="0"
 						max="100"
 						id="var-cost-discount"
@@ -132,37 +133,44 @@ templ VendorProductEditorPricing(data VendorVariantEditorData, lang string) {
 	</div>
 
 	<script nonce={ layouts.Nonce(ctx) } data-currency={ i18n.T(lang, "common.currency_egp") } data-no-cost={ i18n.T(lang, "vendor_products.no_cost") }>
+		function vendorPreviewMinor(id) {
+			const raw = document.getElementById(id)?.value || '';
+			if (!/^\d+(\.\d{1,2})?$/.test(raw)) return 0n;
+			const parts = raw.split('.');
+			return BigInt(parts[0]) * 100n + BigInt(((parts[1] || '') + '00').slice(0, 2));
+		}
+		function vendorPreviewRound(numerator, denominator) {
+			const negative = numerator < 0n;
+			const absolute = negative ? -numerator : numerator;
+			const rounded = (absolute + denominator / 2n) / denominator;
+			return negative ? -rounded : rounded;
+		}
+		function vendorPreviewDecimal(minor) {
+			const absolute = minor < 0n ? -minor : minor;
+			return (minor < 0n ? '-' : '') + String(absolute / 100n) + '.' + String(absolute % 100n).padStart(2, '0');
+		}
 		function recalcProfitPreview() {
-			const price = parseFloat(document.getElementById('add-form-price')?.value) || 0;
-			const discount = parseFloat(document.getElementById('add-form-discount')?.value) || 0;
-			const cost = parseFloat(document.getElementById('var-cost')?.value) || 0;
-			const costDiscount = parseFloat(document.getElementById('var-cost-discount')?.value) || 0;
-
+			const price = vendorPreviewMinor('add-form-price');
+			const discount = vendorPreviewMinor('add-form-discount');
+			const cost = vendorPreviewMinor('var-cost');
+			const costDiscount = vendorPreviewMinor('var-cost-discount');
 			const scriptEl = document.querySelector('script[data-currency]');
-			const currency = scriptEl ? scriptEl.getAttribute('data-currency') : 'ج.م';
-			const noCostText = scriptEl ? scriptEl.getAttribute('data-no-cost') : 'لا توجد تكلفة';
-
-			const sellingPrice = price > 0 ? (price * (1 - (discount / 100))) : 0;
-			let discountedCost = 0;
-			if (cost > 0) {
-				discountedCost = cost * (1 - (costDiscount / 100));
-			} else if (costDiscount > 0 && price > 0) {
-				discountedCost = price * (1 - (costDiscount / 100));
-			}
-			
-			const netProfit = sellingPrice - discountedCost;
-			const basePrice = price > 0 ? price : sellingPrice;
-			const margin = basePrice > 0 ? ((netProfit / basePrice) * 100) : 0;
-
-			const elSell = document.getElementById('preview-selling-price');
-			const elCost = document.getElementById('preview-cost-price');
-			const elProfit = document.getElementById('preview-net-profit');
-			const elMargin = document.getElementById('preview-profit-margin');
-
-			if (elSell) elSell.textContent = sellingPrice.toFixed(2) + ' ' + currency;
-			if (elCost) elCost.textContent = (cost > 0 || (costDiscount > 0 && price > 0)) ? (discountedCost.toFixed(2) + ' ' + currency) : noCostText;
-			if (elProfit) elProfit.textContent = netProfit.toFixed(2) + ' ' + currency;
-			if (elMargin) elMargin.textContent = margin.toFixed(1) + '%';
+			const currency = scriptEl?.dataset.currency || '';
+			const noCostText = scriptEl?.dataset.noCost || '';
+			const sellingPrice = vendorPreviewRound(price * (10000n - discount), 10000n);
+			const costBase = costDiscount > 0n ? price : cost;
+			const discountedCost = costBase - vendorPreviewRound(costBase * costDiscount, 10000n);
+			const profit = sellingPrice - discountedCost;
+			const margin = price > 0n ? vendorPreviewRound(profit * 10000n, price) : 0n;
+			const amounts = { 'preview-selling-price': sellingPrice, 'preview-net-profit': profit };
+			Object.entries(amounts).forEach(([id, amount]) => {
+				const element = document.getElementById(id);
+				if (element) element.textContent = vendorPreviewDecimal(amount) + ' ' + currency;
+			});
+			const costEl = document.getElementById('preview-cost-price');
+			if (costEl) costEl.textContent = costBase > 0n ? vendorPreviewDecimal(discountedCost) + ' ' + currency : noCostText;
+			const marginEl = document.getElementById('preview-profit-margin');
+			if (marginEl) marginEl.textContent = vendorPreviewDecimal(margin) + '%';
 		}
 		
 		(document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', recalcProfitPreview) : recalcProfitPreview());

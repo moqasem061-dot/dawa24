@@ -295,3 +295,13 @@ history concurrently, keeping these independent reads off each other's latency p
 Saving-products import session reads return snapshots of mutable progress
 metadata and editable row fields under the store lock. This fixes a race between
 background completion and HTTP progress/review reads, detected by the race suite.
+
+## Vendor sale-price input (2026-10-23)
+
+Vendor product creation (editor, custom modal and central-catalog modal) and
+editing accept a sale-price input alternative to a percentage. The server
+recomputes the stored discount from the submitted public and sale prices;
+client-computed percentages are never authoritative. Invalid price pairs and
+unknown input types are refused. Both the percentage and the money preview use
+exact decimal arithmetic; browser calculations use integer minor units.
+Discounts retain the existing two-decimal percentage precision.

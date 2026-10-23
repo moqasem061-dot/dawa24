@@ -90,7 +90,7 @@ func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string
 
 	// The date shown on a card is the upload date, so "newest" means the most
 	// recently uploaded warehouse rather than the row's own insert order.
-	orderBy := "f.created_at DESC, r.id DESC"
+	orderBy := "f.created_at DESC"
 	switch filter.SortBy {
 	case "oldest":
 		orderBy = "f.created_at ASC, r.id ASC"
@@ -100,13 +100,13 @@ func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string
 		orderBy = fmt.Sprintf("r.price DESC, (%s) DESC", marketWarehouseDiscountSQL)
 	case "discount_asc":
 		orderBy = fmt.Sprintf("(%s) ASC, (%s) ASC", marketWarehouseDiscountSQL, marketWarehouseNetSQL)
-	case "discount_desc", "relevance", "":
+	case "discount_desc", "relevance":
 		// The clamped expression, not the raw column: ranking by a number the
 		// card refuses to print is how 6,182 rows showing "0%" reached the top
 		// of "الأعلى خصماً".
 		orderBy = fmt.Sprintf("(%s) DESC, (%s) ASC", marketWarehouseDiscountSQL, marketWarehouseNetSQL)
 	}
-	if filter.SortBy == "relevance" || filter.SortBy == "" {
+	if filter.SortBy == "relevance" {
 		orderBy = marketRelevanceOrder(filter) + orderBy
 	}
 	orderBy += ", r.id DESC"

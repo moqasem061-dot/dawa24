@@ -289,7 +289,7 @@ func AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) t
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"table-container admin-table-wrapper\"><table class=\"data-table data-table-responsive\"><thead><tr><th class=\"nowrap\"># المعرف</th><th>المنشأة والاسم التجاري</th><th class=\"nowrap\">نوع النشاط</th><th>السجل والضريبة والترخيص</th><th class=\"nowrap\">الفروع</th><th class=\"nowrap\">تاريخ الانضمام</th><th class=\"nowrap\">حالة الاعتماد</th><th class=\"col-actions nowrap min-w-36\">الإجراءات</th></tr></thead> <tbody>")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 27, "<div class=\"table-container admin-table-wrapper\"><table class=\"data-table admin-organizations-table\"><thead><tr><th class=\"nowrap\"># المعرف</th><th>المنشأة والاسم التجاري</th><th class=\"nowrap\">نوع النشاط</th><th>السجل والضريبة والترخيص</th><th class=\"nowrap\">الفروع</th><th class=\"nowrap\">تاريخ الانضمام</th><th class=\"nowrap\">حالة الاعتماد</th><th class=\"col-actions nowrap min-w-36\">الإجراءات</th></tr></thead> <tbody>")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -307,7 +307,7 @@ func AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) t
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</td><td><div class=\"d-flex items-center gap-2\"><div class=\"w-9 h-9 rounded-lg bg-surface-sunken border flex-center font-black text-primary text-sm\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 29, "</td><td class=\"organization-name-cell\"><div class=\"d-flex items-center gap-2\"><div class=\"w-9 h-9 flex-shrink-0 rounded-lg bg-surface-sunken border flex-center font-black text-primary text-sm\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}

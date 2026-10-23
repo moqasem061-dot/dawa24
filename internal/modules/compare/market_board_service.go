@@ -63,13 +63,23 @@ func (s *Service) SetCache(c Cache) {
 // ListMarketDiscounts returns one page of the public temporary-warehouse board.
 func (s *Service) ListMarketDiscounts(ctx context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
 	filter.Query = marketQuery(filter.Query)
-	filter.CatalogIDs = s.marketCatalogIDs(ctx, filter.Query)
-	result, err := s.repo.ListMarketDiscounts(ctx, filter)
+	filter.CatalogIDs = nil
+	total, err := s.marketTotal(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-
-	total, err := s.marketTotal(ctx, filter)
+	// Indexed name searches already include both catalogue languages. Only
+	// pay for fuzzy candidate retrieval when there are no direct matches.
+	if total == 0 && filter.Query != "" {
+		filter.CatalogIDs = s.marketCatalogIDs(ctx, filter.Query)
+		if len(filter.CatalogIDs) > 0 {
+			total, err = s.marketTotal(ctx, filter)
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+	result, err := s.repo.ListMarketDiscounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
@@ -143,7 +153,7 @@ func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
 // arriving from a URL, and a raw one would put user input — colons, spaces,
 // newlines — into a Redis key namespace that uses ':' as its separator.
 func marketFilterFingerprint(f MarketDiscountsFilter) string {
-	raw := fmt.Sprintf("v2|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
+	raw := fmt.Sprintf("v3|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
 		f.Query, f.Supplier,
 		marketPriceBound(f.MinPrice), marketPriceBound(f.MaxPrice),
 		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs)

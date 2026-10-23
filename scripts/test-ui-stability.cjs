@@ -288,3 +288,121 @@ test('direct import polling works without DOM elements or an EventSource', async
     assert.equal(target, 37);
   } finally { await page.close(); }
 });
+
+
+test('the real smart-order ring bootstraps, updates and reloads automatically at completion', async () => {
+  const page = await fixture();
+  try {
+    const template = fs.readFileSync(path.join(__dirname, '..', 'internal/ui/pages/smart_order_steps.templ'), 'utf8');
+    const source = [...template.matchAll(/<script[^>]*>([\s\S]*?)<\/script>/g)]
+      .map(match => match[1]).find(script => script.includes("querySelector('.so-progress-card')"));
+    assert.ok(source, 'test must run the real progress initializer');
+    await page.evaluate(source => {
+      document.querySelector('main').innerHTML = '<div class="so-progress-card"><div class="so-ring" role="progressbar" aria-valuenow="46"><svg><circle class="so-ring-value"></circle></svg><span class="so-ring-percent">46%</span></div><p class="so-progress-caption"></p></div>';
+      window.EventSource = function () {
+        window.progressStream = this;
+        this.listeners = {};
+        this.addEventListener = (name, callback) => { this.listeners[name] = callback; };
+        this.close = () => {};
+      };
+      (0, eval)(source);
+      if (document.querySelector('.so-ring-percent').textContent !== '46%') throw new Error('progress rewound during initialization');
+      window.progressStream.listeners.progress({ data: JSON.stringify({ percent: 60, message: 'Matching' }) });
+    }, source);
+    await page.waitForFunction(() => Number(document.querySelector('.so-ring-percent').textContent.replace('%', '')) >= 59);
+    await Promise.all([
+      page.waitForEvent('framenavigated'),
+      page.evaluate(() => window.progressStream.listeners.progress({ data: JSON.stringify({ percent: 100, done: true }) }))
+    ]);
+    assert.ok(page.url().endsWith('/fixture'));
+  } finally { await page.close(); }
+});
+
+test('a stream that breaks or freezes after its first snapshot falls back and completes once', async () => {
+  const page = await fixture();
+  try {
+    for (const failure of ['error', 'frozen']) {
+      const snapshot = await page.evaluate(async failure => {
+        const nativeTimeout = window.setTimeout;
+        window.setTimeout = (fn, ms) => nativeTimeout(fn, ms === 30000 ? 20 : ms);
+        let source, completed = 0, polls = 0;
+        window.EventSource = function () {
+          source = this; this.listeners = {};
+          this.addEventListener = (name, fn) => { this.listeners[name] = fn; };
+          this.close = () => { this.closed = true; };
+        };
+        window.fetch = () => { polls++; return Promise.resolve({ ok: true, json: async () => ({ percent: 100, done: true }) }); };
+        const fill = document.createElement('div'); document.body.append(fill);
+        const bar = new ImportProgress({ fill, onDone() { completed++; } });
+        bar.follow('/stream', '/progress');
+        source.listeners.progress({ data: JSON.stringify({ percent: 20 }) });
+        if (failure === 'error') source.onerror();
+        await new Promise(resolve => nativeTimeout(resolve, 60));
+        window.setTimeout = nativeTimeout;
+        bar.stop(); fill.remove();
+        return { completed, polls, closed: source.closed };
+      }, failure);
+      assert.deepEqual(snapshot, { completed: 1, polls: 1, closed: true });
+    }
+  } finally { await page.close(); }
+});
+
+test('import polling recovers automatically after more than eight network failures', async () => {
+  const page = await fixture();
+  try {
+    const snapshot = await page.evaluate(async () => {
+      const nativeTimeout = window.setTimeout;
+      window.setTimeout = (fn, ms) => nativeTimeout(fn, Math.min(ms, 2));
+      let attempts = 0, completed = 0;
+      window.fetch = () => {
+        attempts++;
+        return attempts <= 9 ? Promise.reject(new Error('offline')) : Promise.resolve({ ok: true, json: async () => ({ done: true }) });
+      };
+      const bar = new ImportProgress({ onDone() { completed++; } });
+      bar.poll('/progress');
+      await new Promise(resolve => nativeTimeout(resolve, 150));
+      window.setTimeout = nativeTimeout;
+      bar.stop();
+      return { completed, attempts };
+    });
+    assert.deepEqual(snapshot, { completed: 1, attempts: 10 });
+  } finally { await page.close(); }
+});
+
+test('failed stream snapshots preserve progress and never display successful completion', async () => {
+  const page = await fixture();
+  try {
+    const snapshot = await page.evaluate(() => {
+      const percent = document.createElement('span'); document.body.append(percent);
+      const bar = new ImportProgress({ percent });
+      bar.update({ percent: 60, state: 'failed', done: true, error: 'Import failed' });
+      const snapshot = { done: bar.done, label: percent.textContent, stopped: bar.stopped };
+      bar.stop(); percent.remove();
+      return snapshot;
+    });
+    assert.deepEqual(snapshot, { done: false, label: '0%', stopped: true });
+  } finally { await page.close(); }
+});
+
+
+test('a hung progress request times out and retries without refreshing', async () => {
+  const page = await fixture();
+  try {
+    const snapshot = await page.evaluate(async () => {
+      const nativeTimeout = window.setTimeout;
+      window.setTimeout = (fn, ms) => nativeTimeout(fn, Math.min(ms, 2));
+      let attempts = 0, completed = 0, firstSignal;
+      window.fetch = (url, options) => {
+        attempts++;
+        if (attempts === 1) { firstSignal = options.signal; return new Promise(() => {}); }
+        return Promise.resolve({ ok: true, json: async () => ({ done: true }) });
+      };
+      const bar = new ImportProgress({ onDone() { completed++; } });
+      bar.poll('/progress');
+      await new Promise(resolve => nativeTimeout(resolve, 100));
+      bar.stop(); window.setTimeout = nativeTimeout;
+      return { attempts, completed, aborted: firstSignal.aborted };
+    });
+    assert.deepEqual(snapshot, { attempts: 2, completed: 1, aborted: true });
+  } finally { await page.close(); }
+});

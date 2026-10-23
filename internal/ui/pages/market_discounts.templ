@@ -92,7 +92,7 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							placeholder={ i18n.T(lang, "market.search.placeholder") }
 							aria-label="بحث في خصومات السوق"
 							data-min-chars="2"
- data-debounce-ms="250"
+ data-debounce-ms="450"
  maxlength="128"
 							autocomplete="off"
 						/>
@@ -105,12 +105,12 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						</datalist>
 
 						<select name="sort" class="form-select md-select" data-autosubmit aria-label="الترتيب">
-							<option value="relevance" selected?={ filter.SortBy == "" || filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
+							<option value="relevance" selected?={ filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
  <option value="discount_desc" selected?={ filter.SortBy == "discount_desc" }>الأعلى خصماً</option>
 							<option value="discount_asc" selected?={ filter.SortBy == "discount_asc" }>الأقل خصماً</option>
 							<option value="price_asc" selected?={ filter.SortBy == "price_asc" }>الأقل سعراً</option>
 							<option value="price_desc" selected?={ filter.SortBy == "price_desc" }>الأعلى سعراً</option>
-							<option value="newest" selected?={ filter.SortBy == "newest" }>الأحدث إضافة</option>
+							<option value="newest" selected?={ filter.SortBy == "" || filter.SortBy == "newest" }>الأحدث إضافة</option>
 							<option value="oldest" selected?={ filter.SortBy == "oldest" }>الأقدم</option>
 						</select>
 

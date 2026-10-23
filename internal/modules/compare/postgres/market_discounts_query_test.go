@@ -212,11 +212,23 @@ func TestMarketListingCarriesNoWindowCount(t *testing.T) {
 // The index in db/migrations/190 is built on these exact expressions. If the
 // ORDER BY stops matching them the index goes unused, silently, and the default
 // sort goes from 0.41 ms back to 59 ms with nothing failing.
-func TestMarketDefaultSortMatchesItsIndex(t *testing.T) {
-	sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{})
+func TestMarketDiscountSortMatchesItsIndex(t *testing.T) {
+	sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{SortBy: "discount_desc"})
 	want := "ORDER BY (" + marketWarehouseDiscountSQL + ") DESC, (" + marketWarehouseNetSQL + ") ASC"
 	if !strings.Contains(sql, want) {
 		t.Errorf("the default ordering no longer matches idx_compare_file_rows_market_sort.\nwant substring:\n%s\ngot:\n%s", want, sql)
+	}
+}
+
+func TestMarketDefaultSortKeepsNewestFirstWhileSearching(t *testing.T) {
+	for _, query := range []string{"", "بانادول"} {
+		sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{Query: query})
+		if !strings.Contains(sql, "ORDER BY f.created_at DESC, r.id DESC") {
+			t.Fatalf("default order must be chronological: %s", sql)
+		}
+		if query != "" && !strings.Contains(sql, "normalize_arabic(r.raw_name)") {
+			t.Fatal("search filter lost")
+		}
 	}
 }
 

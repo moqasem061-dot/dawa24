@@ -114,7 +114,6 @@ func snapshotOfSavingSession(sess *pages.SavingImportSession) progress.Snapshot 
 		State:   state,
 		Done:    isDone,
 		Error:   sess.ErrorMessage,
-		At:      sess.CreatedAt,
 	}
 }
 

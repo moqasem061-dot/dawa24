@@ -144,7 +144,7 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 	supplier := strings.TrimSpace(r.URL.Query().Get("supplier"))
 	sortBy := strings.TrimSpace(r.URL.Query().Get("sort"))
 	if sortBy == "" {
-		sortBy = "relevance"
+		sortBy = "newest"
 	}
 	currentView := strings.TrimSpace(r.URL.Query().Get("view"))
 	if currentView != "grid" {

@@ -52,3 +52,10 @@ Edit, delete, approve and reject address a link by id and run as system, so ever
 
 - A team manager assigns only roles whose permissions they hold themselves (`resolveTeamRole`); the owner and staff are not bounded. The fallback is the least-privileged assignable role.
 - Adding an employee by email reuses an existing account only when it is not platform staff and belongs to no other organization (`accountManagedByOrg`, vendor and pharmacy screens and team import). The team edit screen changes the person's own name and phone only under the same condition.
+
+## Organization list layout (2026-10-23)
+
+The admin organization table reserves a readable name column and a fixed avatar.
+Wide content scrolls inside the table wrapper on phones instead of compressing
+Arabic names into one letter per line. Browser fixtures cover 390, 768 and 1440
+pixel widths in both themes.

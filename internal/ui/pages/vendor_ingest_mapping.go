@@ -6,8 +6,16 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
+
+func vendorImportFindingMessage(message, lang string) string {
+	if message == "vendor.pricing.invalid" {
+		return i18n.T(lang, "vendor.pricing.invalid")
+	}
+	return message
+}
 
 // The column-mapping step, read the way a vendor actually thinks about it.
 //
@@ -30,7 +38,8 @@ import (
 
 // FieldMappingRow is one system field and whichever file column is bound to it.
 type FieldMappingRow struct {
-	Spec productmatch.Spec
+	SalePriceInput bool
+	Spec           productmatch.Spec
 	// ColumnIndex is the zero-based file column bound to this field, or -1.
 	ColumnIndex int
 	// Header is that column's heading, for the confirmation line.
@@ -135,13 +144,30 @@ func (v VendorImportView) FieldMappingRows() []FieldMappingRow {
 	}
 
 	specs := productmatch.VendorFields.Specs()
+	saleColumn := bound[productmatch.FieldNetPrice]
+	priceAsSale := bound[productmatch.FieldPrice] != nil && bound[productmatch.FieldPublicPrice] != nil &&
+		bound[productmatch.FieldDiscountPct] == nil && saleColumn == nil
+	if priceAsSale {
+		saleColumn = bound[productmatch.FieldPrice]
+	}
 	rows := make([]FieldMappingRow, 0, len(specs))
 	for _, spec := range specs {
+		if priceAsSale && spec.Field == productmatch.FieldPrice {
+			continue
+		}
+		if spec.Field == productmatch.FieldNetPrice && bound[productmatch.FieldDiscountPct] == nil {
+			continue
+		}
 		if !v.EnableCostPricing && (spec.Field == productmatch.FieldCostPrice || spec.Field == productmatch.FieldCostDiscountPct) {
 			continue
 		}
 		row := FieldMappingRow{Spec: spec, ColumnIndex: -1}
-		if c, ok := bound[spec.Field]; ok {
+		column := bound[spec.Field]
+		if spec.Field == productmatch.FieldDiscountPct && column == nil && saleColumn != nil {
+			column = saleColumn
+			row.SalePriceInput = true
+		}
+		if c := column; c != nil {
 			row.ColumnIndex = c.Index
 			row.Header = c.Header
 			row.Confidence = c.Confidence

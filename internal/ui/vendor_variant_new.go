@@ -190,6 +190,8 @@ func parseAndValidateVariantNew(
 		Unit:                   unit,
 		Price:                  priceStr,
 		Discount:               discountStr,
+		DiscountInputType:      r.FormValue("discount_input_type"),
+		SalePrice:              r.FormValue("sale_price"),
 		CostPrice:              costStr,
 		CostDiscountPercentage: costDiscStr,
 		StockQty:               r.PostFormValue("stock_qty"),
@@ -248,14 +250,9 @@ func parseAndValidateVariantNew(
 	}
 
 	// 5. Discount validation
-	var discount money.Amount
-	if discountStr != "" {
-		d, dErr := money.Parse(discountStr)
-		if dErr != nil || d.IsNegative() || d.Minor() > 10000 {
-			errors.Fields["discount"] = i18n.T(lang, "vendor.variant.discount_invalid")
-		} else {
-			discount = d
-		}
+	discount, discountErr := vendorInputDiscount(r.PostForm, price)
+	if discountErr != nil {
+		errors.Fields["discount"] = i18n.T(lang, "vendor.pricing.invalid")
 	}
 
 	// 6. Cost discount percentage validation

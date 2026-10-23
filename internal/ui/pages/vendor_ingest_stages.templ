@@ -96,6 +96,16 @@ templ importFieldRow(row FieldMappingRow, cols []FileColumn, lang string) {
 			<span class={ "badge", row.NeedTone(), "text-xs" }>{ row.NeedLabel() }</span>
 		</td>
 		<td>
+			if row.Spec.Field == productmatch.FieldDiscountPct {
+				<label class="form-label">
+					{ i18n.T(lang, "vendor.pricing.input_type") }
+					<select name="discount_input_type" class="form-input">
+						<option value="percentage" selected?={ !row.SalePriceInput }>{ i18n.T(lang, "vendor_products.fld_discount_pct") }</option>
+						<option value="sale_price" selected?={ row.SalePriceInput }>{ i18n.T(lang, "vendor.pricing.sale_price") }</option>
+					</select>
+				</label>
+				<p class="text-xs text-muted">{ i18n.T(lang, "vendor.pricing.sale_help") }</p>
+			}
 			<select name={ row.FormName() } class="form-input" x-model="sel">
 				<option value="">{ i18n.T(lang, "vendor_ingest.mapping.no_column") }</option>
 				for _, c := range cols {
@@ -131,13 +141,13 @@ templ importFindings(a *productmatch.Analysis, lang string) {
 							{ i18n.T(lang, "vendor_ingest.mapping.severity_info") }
 						}
 					</span>
-					<span class="text-sm">{ c.Message }</span>
+					<span class="text-sm">{ vendorImportFindingMessage(c.Message, lang) }</span>
 				</div>
 			}
 			for _, n := range a.Mapping.Notes {
 				<div class="row-center-sm mb-2">
 					<span class="badge badge-slate text-xs">{ i18n.T(lang, "vendor_ingest.mapping.severity_info") }</span>
-					<span class="text-sm">{ n.Message }</span>
+					<span class="text-sm">{ vendorImportFindingMessage(n.Message, lang) }</span>
 				</div>
 			}
 		</div>

@@ -54,3 +54,41 @@ func TestMarketQueryBoundsUnicode(t *testing.T) {
 		t.Fatal(got)
 	}
 }
+
+func TestMarketSearchUsesIndexedResultsWithoutFuzzyRetrieval(t *testing.T) {
+	stub := &marketSearchStub{}
+	svc := NewService(&countingMarketRepo{total: 2}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	svc.SetMarketCatalogSearcher(stub)
+	_, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Query: "Panadol"})
+	if err != nil || stub.calls != 0 {
+		t.Fatalf("err=%v fuzzy calls=%d", err, stub.calls)
+	}
+}
+
+type fuzzyFallbackRepo struct {
+	countingMarketRepo
+	listedIDs []int64
+}
+
+func (r *fuzzyFallbackRepo) CountMarketDiscounts(_ context.Context, filter MarketDiscountsFilter) (int64, error) {
+	if len(filter.CatalogIDs) > 0 {
+		return 3, nil
+	}
+	return 0, nil
+}
+
+func (r *fuzzyFallbackRepo) ListMarketDiscounts(ctx context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
+	r.listedIDs = filter.CatalogIDs
+	return r.countingMarketRepo.ListMarketDiscounts(ctx, filter)
+}
+
+func TestMarketSearchFallbackUsesSameCandidatesForRowsAndCount(t *testing.T) {
+	stub := &marketSearchStub{}
+	repo := &fuzzyFallbackRepo{}
+	svc := NewService(repo, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	svc.SetMarketCatalogSearcher(stub)
+	result, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Query: "pnadol"})
+	if err != nil || result.TotalCount != 3 || stub.calls != 1 || !reflect.DeepEqual(repo.listedIDs, []int64{7, 10}) {
+		t.Fatalf("err=%v result=%+v fuzzy calls=%d ids=%v", err, result, stub.calls, repo.listedIDs)
+	}
+}

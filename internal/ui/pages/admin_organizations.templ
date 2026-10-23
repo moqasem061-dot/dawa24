@@ -144,7 +144,7 @@ templ AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) 
 				})
 			} else {
 				<div class="table-container admin-table-wrapper">
-					<table class="data-table data-table-responsive">
+					<table class="data-table admin-organizations-table">
 						<thead>
 							<tr>
 								<th class="nowrap"># المعرف</th>
@@ -163,9 +163,9 @@ templ AdminOrganizationsPage(data AdminOrganizationsPageData, lang, dir string) 
 									<td class="tabular-nums font-black text-primary nowrap">
 										#{ fmt.Sprintf("ORG-%d", o.ID) }
 									</td>
-									<td>
+									<td class="organization-name-cell">
 										<div class="d-flex items-center gap-2">
-											<div class="w-9 h-9 rounded-lg bg-surface-sunken border flex-center font-black text-primary text-sm">
+											<div class="w-9 h-9 flex-shrink-0 rounded-lg bg-surface-sunken border flex-center font-black text-primary text-sm">
 												if len(o.LegalName) > 0 {
 													{ string([]rune(o.LegalName)[0]) }
 												} else {

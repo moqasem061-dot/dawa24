@@ -31,7 +31,7 @@ func marketFixture(w http.ResponseWriter, r *http.Request) {
 	result.Items = append(result.Items, &secondOffer)
 	result.TotalCount = int64(len(result.Items))
 	ctx := layouts.WithPath(authctx.WithActor(r.Context(), actor), r.URL.Path)
-	filter := compare.MarketDiscountsFilter{Query: r.URL.Query().Get("q"), SortBy: "relevance"}
+	filter := compare.MarketDiscountsFilter{Query: r.URL.Query().Get("q"), SortBy: "newest"}
 	view := r.URL.Query().Get("view")
 	if view != "grid" {
 		view = "list"

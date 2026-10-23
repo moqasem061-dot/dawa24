@@ -91,7 +91,7 @@ func (c *HTTPClient) Transcribe(ctx context.Context, req TranscribeRequest) (str
 	for field, value := range map[string]string{
 		"model":           modelName,
 		"language":        language,
-		"response_format": "verbose_json",
+		"response_format": "json",
 	} {
 		if err := writer.WriteField(field, value); err != nil {
 			return "", fmt.Errorf("gateway: write %s field: %w", field, err)

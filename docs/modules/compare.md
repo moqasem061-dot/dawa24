@@ -77,6 +77,18 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
 
 ## Search stability (2026-09-30)
 
+### Market-board repair (2026-10-23)
+
+The default order is warehouse upload date descending, with a stable row-ID
+tie-breaker, including during search. Relevance and explicit price/discount
+orders remain selectable. The indexed search checks imported names and both
+catalogue languages first. Fuzzy catalogue retrieval is attempted only when
+the filtered direct search has no results, avoiding up to 500 ms of candidate
+retrieval on ordinary searches. Totals use the same filter as rows, including
+fuzzy candidates. Punctuation-only normalized terms cannot match every row.
+Typing uses a 450 ms debounce; cancellation, stale-response suppression,
+Arabic composition and input-focus retention are covered by browser tests.
+
 Market-discount and other GET filter searches wait 450 ms after typing pauses.
 Each form owns its debounce timer, composition input waits until committed, and
 editing or submitting cancels pending search work. Select controls with

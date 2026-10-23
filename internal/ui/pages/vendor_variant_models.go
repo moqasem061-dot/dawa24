@@ -4,6 +4,8 @@ import "fmt"
 
 // VendorVariantFormInput holds the submitted values for vendor variant creation.
 type VendorVariantFormInput struct {
+	DiscountInputType      string
+	SalePrice              string
 	ProductID              int64
 	ProductName            string
 	NameAR                 string

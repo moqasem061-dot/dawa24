@@ -17,12 +17,15 @@ func TestMarketMatchingSearchAndAtomicReplacement(t *testing.T) {
 	t.Cleanup(db.Close)
 	ctx := database.AsSystem(context.Background())
 	repo := comparepg.NewRepository(db)
-	var userID, productID int64
+	var userID, productID, organizationID int64
 	err := db.InTx(ctx, func(c context.Context, tx pgx.Tx) error {
 		if err := tx.QueryRow(c, `INSERT INTO identity.users(email,password_hash) VALUES(gen_random_uuid()::text || '@market.test','test-only') RETURNING id`).Scan(&userID); err != nil {
 			return err
 		}
-		return tx.QueryRow(c, `INSERT INTO catalog.products(name) VALUES('{"ar":"بانادول 500 مجم","en":"Panadol 500 mg"}') RETURNING id`).Scan(&productID)
+		if err := tx.QueryRow(c, `INSERT INTO org.organizations(name) VALUES('{"ar":"اختبار السوق","en":"Market test"}') RETURNING id`).Scan(&organizationID); err != nil {
+			return err
+		}
+		return tx.QueryRow(c, `INSERT INTO catalog.products(organization_id,name) VALUES($1,'{"ar":"بانادول 500 مجم","en":"Panadol 500 mg"}') RETURNING id`, organizationID).Scan(&productID)
 	})
 	if err != nil {
 		t.Fatal(err)
@@ -35,6 +38,9 @@ func TestMarketMatchingSearchAndAtomicReplacement(t *testing.T) {
 			}
 			_, err = tx.Exec(c, `DELETE FROM catalog.products WHERE id=$1`, productID)
 			if err != nil {
+				return err
+			}
+			if _, err := tx.Exec(c, `DELETE FROM org.organizations WHERE id=$1`, organizationID); err != nil {
 				return err
 			}
 			_, err = tx.Exec(c, `DELETE FROM identity.users WHERE id=$1`, userID)
@@ -104,5 +110,22 @@ func TestMarketMatchingSearchAndAtomicReplacement(t *testing.T) {
 	})
 	if err != nil || state != "accepted" {
 		t.Fatalf("canonical state lost: %q %v", state, err)
+	}
+	newer := &compare.CompareFile{UserID: userID, IsTempWarehouse: true, OriginalFilename: "newer.csv", SupplierName: "newest warehouse", Status: compare.FileReady}
+	if err := repo.CreateFile(ctx, newer); err != nil {
+		t.Fatal(err)
+	}
+	newRow := *row
+	newRow.FileID = newer.ID
+	newRow.Discount = 1
+	newRow.RawName = "Panadol recent offer"
+	if err := repo.InsertFileRows(ctx, []*compare.CompareFileRow{&newRow}); err != nil {
+		t.Fatal(err)
+	}
+	for _, query := range []string{"", "Panadol"} {
+		result, err := repo.ListMarketDiscounts(ctx, compare.MarketDiscountsFilter{Query: query})
+		if err != nil || len(result.Items) != 2 || result.Items[0].FileID != newer.ID {
+			t.Fatalf("newest search ordering: err=%v result=%+v", err, result)
+		}
 	}
 }

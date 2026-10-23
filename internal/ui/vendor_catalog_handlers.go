@@ -126,7 +126,6 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 	if costDiscStr == "" {
 		costDiscStr = strings.TrimSpace(r.FormValue("cost_discount"))
 	}
-	discountStr := strings.TrimSpace(r.FormValue("discount"))
 	stockQty, _ := strconv.Atoi(strings.TrimSpace(r.FormValue("stock_qty")))
 	minQty, _ := strconv.Atoi(strings.TrimSpace(r.FormValue("min_order_qty")))
 	if minQty <= 0 {
@@ -170,7 +169,11 @@ func (h *UIHandler) VendorProductAddFromCatalogSubmit(w http.ResponseWriter, r *
 		costDiscount = 100
 	}
 
-	discount, _ := money.Parse(discountStr)
+	discount, discountErr := vendorInputDiscount(r.PostForm, price)
+	if discountErr != nil {
+		h.redirectWithNotice(w, r, "/vendor/products", "error", i18n.T(langOf(r), "vendor.pricing.invalid"))
+		return
+	}
 	isNegotiable := r.FormValue("is_negotiable") == "true" || r.FormValue("is_negotiable") == "1"
 
 	variant := &catalog.ProductVariant{

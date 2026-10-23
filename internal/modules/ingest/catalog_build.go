@@ -15,10 +15,8 @@ import (
 // listAndDiscount converts the row's reconciled prices into the pair the
 // variant table stores: the list price, and the discount as a percentage.
 //
-// The percentage is derived from the two prices rather than from the stated
-// one, so that what a pharmacy is charged always equals what the supplier's
-// file said the net was — even where the stated percentage and the net
-// disagreed by a piastre, which they routinely do.
+// A stated or normalized percentage is preserved. Older staged rows carrying
+// only public and net prices derive their percentage with the same rounding.
 func listAndDiscount(row *productmatch.Row) (list, discount money.Amount) {
 	if row == nil {
 		return money.Zero, money.Zero
@@ -34,10 +32,9 @@ func listAndDiscount(row *productmatch.Row) (list, discount money.Amount) {
 	if !net.IsPositive() || net.Minor() >= list.Minor() {
 		return list, money.Zero
 	}
-	diff, err := list.Sub(net)
+	discount, err := money.DiscountFromSalePrice(list, net)
 	if err != nil {
 		return list, money.Zero
 	}
-	pctBps := diff.Minor() * 10000 / list.Minor()
-	return list, money.FromMinor(pctBps)
+	return list, discount
 }
