@@ -41,7 +41,7 @@ templ CourierMiniMapScript() {
 						zoomControl: false,
 						attributionControl: false
 					}).setView([lat, lon], 15);
-					L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+					L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 						maxZoom: 19
 					}).addTo(miniMap);
 					// The pharmacy chose its own name and branch name, and a

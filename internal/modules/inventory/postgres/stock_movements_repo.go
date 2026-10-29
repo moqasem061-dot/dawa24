@@ -226,7 +226,7 @@ func (r *Repository) ListLowStocksByOrgWithTotal(
 	ctx context.Context,
 	orgID int64,
 	warehouseID int64,
-	search string,
+	search, status string,
 	limit, offset int,
 ) ([]*inventory.Stock, int, error) {
 	var list []*inventory.Stock
@@ -242,10 +242,11 @@ func (r *Repository) ListLowStocksByOrgWithTotal(
 			WHERE s.organization_id = $1
 			  AND s.deleted_at IS NULL
 			  AND s.quantity <= s.min_threshold
+			  AND ($4 = '' OR ($4 = 'out_of_stock' AND s.quantity <= 0) OR ($4 = 'low_stock' AND s.quantity > 0))
 			  AND ($2 = 0 OR s.warehouse_id = $2)
 			  AND ($3 = '' OR v.name->>'ar' ILIKE '%' || $3 || '%' OR v.name->>'en' ILIKE '%' || $3 || '%' OR v.sku ILIKE '%' || $3 || '%' OR v.barcode ILIKE '%' || $3 || '%' OR v.batch_number ILIKE '%' || $3 || '%');
 		`
-		if err := tx.QueryRow(txCtx, countQuery, orgID, warehouseID, search).Scan(&total); err != nil {
+		if err := tx.QueryRow(txCtx, countQuery, orgID, warehouseID, search, status).Scan(&total); err != nil {
 			return err
 		}
 
@@ -266,12 +267,13 @@ func (r *Repository) ListLowStocksByOrgWithTotal(
 			WHERE s.organization_id = $1
 			  AND s.deleted_at IS NULL
 			  AND s.quantity <= s.min_threshold
+			  AND ($4 = '' OR ($4 = 'out_of_stock' AND s.quantity <= 0) OR ($4 = 'low_stock' AND s.quantity > 0))
 			  AND ($2 = 0 OR s.warehouse_id = $2)
 			  AND ($3 = '' OR v.name->>'ar' ILIKE '%' || $3 || '%' OR v.name->>'en' ILIKE '%' || $3 || '%' OR v.sku ILIKE '%' || $3 || '%' OR v.barcode ILIKE '%' || $3 || '%' OR v.batch_number ILIKE '%' || $3 || '%')
 			ORDER BY (s.quantity - s.min_threshold) ASC, s.quantity ASC, s.id ASC
-			LIMIT $4 OFFSET $5;
+			LIMIT $5 OFFSET $6;
 		`
-		rows, err := tx.Query(txCtx, query, orgID, warehouseID, search, limit, offset)
+		rows, err := tx.Query(txCtx, query, orgID, warehouseID, search, status, limit, offset)
 		if err != nil {
 			return err
 		}

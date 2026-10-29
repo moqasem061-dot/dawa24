@@ -66,10 +66,10 @@ func (s *Service) headToHeadCacheKey(source, target *CompareFile, filter HeadToH
 		filter.Query,
 	)
 	if filter.MinPrice != nil {
-		fmt.Fprintf(h, "minp:%f;", *filter.MinPrice)
+		fmt.Fprintf(h, "minp:%s;", filter.MinPrice.String())
 	}
 	if filter.MaxPrice != nil {
-		fmt.Fprintf(h, "maxp:%f;", *filter.MaxPrice)
+		fmt.Fprintf(h, "maxp:%s;", filter.MaxPrice.String())
 	}
 	if filter.MinDiscount != nil {
 		fmt.Fprintf(h, "mind:%f;", *filter.MinDiscount)

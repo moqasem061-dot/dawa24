@@ -155,7 +155,7 @@ func (m *mockInventoryRepo) ListStocksByOrgWithTotal(ctx context.Context, orgID 
 	return list, len(list), err
 }
 
-func (m *mockInventoryRepo) ListLowStocksByOrgWithTotal(ctx context.Context, orgID int64, _ int64, _ string, limit, offset int) ([]*inventory.Stock, int, error) {
+func (m *mockInventoryRepo) ListLowStocksByOrgWithTotal(ctx context.Context, orgID int64, _ int64, _ string, _ string, limit, offset int) ([]*inventory.Stock, int, error) {
 	list, err := m.ListStocksByOrg(ctx, orgID)
 	var low []*inventory.Stock
 	for _, s := range list {

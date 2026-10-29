@@ -17,6 +17,10 @@ The `inventory` bounded context provides warehouse facilities, stock balance tra
 
 ## Invariants & Rules
 
+### Stock-alert feedback fixes (2026-10-29)
+
+Stock alerts combine warehouse, search and stock-status conditions in the database before counting and pagination. Adjustment dialogs identify the product, warehouse and branch; the route addresses the exact stock row rather than a product shared by multiple warehouses. The server establishes the actor's tenant, verifies stock ownership, rejects invalid/zero quantities, and reports database failures and successful ledger-backed changes through the shared notice mechanism. The existing atomic balance-and-movement transaction remains the only adjustment path. Dialog forms have padded, scrollable content so controls remain reachable on smaller screens.
+
 1. **Legacy D4 Defect Resolution:** The legacy database had `UNIQUE (product_id, warehouse_id)` while `product_childern_id` was NOT NULL, which made it impossible for two variants of the same product to exist in the same warehouse. Dawa24 Store scopes uniqueness strictly to `UNIQUE (warehouse_id, product_variant_id)`.
 2. **Immutable Stock Ledger:** No stock quantity is ever modified without an atomic corresponding row inserted into `inventory.stock_movements`.
 3. **Non-Negative Balance:** Stock adjustments that would drop inventory below zero are rejected with `422 Unprocessable Entity` (`stock.insufficient`).

@@ -132,7 +132,7 @@ func (m *mockTransferRepo) ListStocksByOrgWithTotal(_ context.Context, orgID, wh
 	stocks, _ := m.ListStocksByOrg(context.Background(), orgID)
 	return stocks, len(stocks), nil
 }
-func (m *mockTransferRepo) ListLowStocksByOrgWithTotal(_ context.Context, orgID, whID int64, search string, limit, offset int) ([]*inventory.Stock, int, error) {
+func (m *mockTransferRepo) ListLowStocksByOrgWithTotal(_ context.Context, orgID, whID int64, search, status string, limit, offset int) ([]*inventory.Stock, int, error) {
 	stocks, _ := m.ListStocksByOrg(context.Background(), orgID)
 	var low []*inventory.Stock
 	for _, s := range stocks {

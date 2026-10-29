@@ -151,7 +151,7 @@ func (m *mockInventoryRepoForWarehouseTest) ListStocksByOrgWithTotal(_ context.C
 	return m.stocks, len(m.stocks), nil
 }
 
-func (m *mockInventoryRepoForWarehouseTest) ListLowStocksByOrgWithTotal(_ context.Context, _ int64, _ int64, _ string, _ int, _ int) ([]*inventory.Stock, int, error) {
+func (m *mockInventoryRepoForWarehouseTest) ListLowStocksByOrgWithTotal(_ context.Context, _ int64, _ int64, _ string, _ string, _ int, _ int) ([]*inventory.Stock, int, error) {
 	var low []*inventory.Stock
 	for _, s := range m.stocks {
 		if s.Quantity <= s.MinThreshold {

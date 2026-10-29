@@ -8,8 +8,8 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
- "github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
@@ -46,7 +46,7 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 		</script>
 		<div
 			class="page-container"
-			x-data={ components.AlpineCall("marketDiscountsData", (filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
+			x-data={ components.AlpineCall("marketDiscountsData", (filter.DateFrom != "" || filter.DateTo != "" || filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil), currentView) }
 		>
 			<!-- Header: what this page is, and the two numbers that describe it -->
 			<header class="md-header">
@@ -59,7 +59,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						كشوف أسعار المستودعات المؤقتة التي ترفعها إدارة المنصة — أسعار الجمهور ونسب الخصم كما وردت من السوق.
 					</p>
 				</div>
-
 				<dl class="md-stats">
 					<div class="md-stat">
 						<dt>أصناف مرصودة</dt>
@@ -75,14 +74,14 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 					</div>
 				</dl>
 			</header>
-
 			<!-- Controls: one row — search, two selects, actions, view switch -->
 			<div class="filter-bar md-controls">
 				<form method="GET" action="/market-discounts" class="md-controls-form filter-form" id="market-filter-form" data-filter-form>
 					<input type="hidden" name="view" x-bind:value="currentView"/>
 					<input type="hidden" name="limit" value={ strconv.Itoa(marketDiscountsLimit(filter)) }/>
-
 					<div class="md-controls-row">
+						<label class="stack-xs"><span class="text-xs">{ i18n.T(lang, "feedback.date_from") }</span><input type="date" name="date_from" value={ filter.DateFrom } class="form-input" aria-label={ i18n.T(lang, "feedback.date_from") } data-autosubmit/></label>
+						<label class="stack-xs"><span class="text-xs">{ i18n.T(lang, "feedback.date_to") }</span><input type="date" name="date_to" value={ filter.DateTo } class="form-input" aria-label={ i18n.T(lang, "feedback.date_to") } data-autosubmit/></label>
 						<input
 							type="search"
 							name="q"
@@ -92,33 +91,29 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							placeholder={ i18n.T(lang, "market.search.placeholder") }
 							aria-label="بحث في خصومات السوق"
 							data-min-chars="2"
- data-debounce-ms="450"
- maxlength="128"
+							data-debounce-ms="250"
+							maxlength="128"
 							autocomplete="off"
 						/>
-
 						<input type="search" name="supplier" value={ filter.Supplier } list="market-warehouse-options" class="form-input md-select" placeholder={ i18n.T(lang, "market.search.warehouse") } aria-label={ i18n.T(lang, "market.search.warehouse") } autocomplete="off"/>
 						<datalist id="market-warehouse-options">
 							for _, sup := range result.AvailableSuppliers {
 								<option value={ sup }></option>
 							}
 						</datalist>
-
 						<select name="sort" class="form-select md-select" data-autosubmit aria-label="الترتيب">
 							<option value="relevance" selected?={ filter.SortBy == "relevance" }>{ i18n.T(lang, "market.search.relevance") }</option>
- <option value="discount_desc" selected?={ filter.SortBy == "discount_desc" }>الأعلى خصماً</option>
+							<option value="discount_desc" selected?={ filter.SortBy == "discount_desc" }>الأعلى خصماً</option>
 							<option value="discount_asc" selected?={ filter.SortBy == "discount_asc" }>الأقل خصماً</option>
 							<option value="price_asc" selected?={ filter.SortBy == "price_asc" }>الأقل سعراً</option>
 							<option value="price_desc" selected?={ filter.SortBy == "price_desc" }>الأعلى سعراً</option>
 							<option value="newest" selected?={ filter.SortBy == "" || filter.SortBy == "newest" }>الأحدث إضافة</option>
 							<option value="oldest" selected?={ filter.SortBy == "oldest" }>الأقدم</option>
 						</select>
-
 						<button type="submit" class="btn btn-primary btn-sm font-bold">
 							@components.IconSearch("icon-xs")
 							<span>بحث</span>
 						</button>
-
 						<button
 							type="button"
 							@click="showMoreFilters = !showMoreFilters"
@@ -129,13 +124,10 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						>
 							<span>نطاق متقدم</span>
 						</button>
-
 						if filter.Query != "" || filter.Supplier != "" || filter.MinPrice != nil || filter.MaxPrice != nil || filter.MinDiscount != nil || filter.MaxDiscount != nil {
 							<a href="/market-discounts" class="btn btn-ghost btn-sm">إلغاء الفلاتر</a>
 						}
-
 						<div class="md-controls-spacer"></div>
-
 						<div class="tabs-nav md-viewswitch" role="group" aria-label="طريقة العرض">
 							<button
 								type="button"
@@ -159,7 +151,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							</button>
 						</div>
 					</div>
-
 					<!-- Advanced ranges, collapsed until asked for -->
 					<div x-show="showMoreFilters" x-cloak x-transition.opacity class="md-ranges">
 						<div class="md-range">
@@ -170,7 +161,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 								<input type="number" min="0" step="0.5" name="max_price" value={ formatOptionalMoney(filter.MaxPrice) } class="form-input" placeholder="إلى" aria-label="أعلى سعر"/>
 							</div>
 						</div>
-
 						<div class="md-range">
 							<span class="md-range-label">نسبة الخصم (%)</span>
 							<div class="md-range-pair">
@@ -179,16 +169,16 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 								<input type="number" min="0" max="100" step="1" name="max_discount" value={ formatOptionalFloat(filter.MaxDiscount) } class="form-input" placeholder="إلى" aria-label="أعلى خصم"/>
 							</div>
 						</div>
-
 						<button type="submit" class="btn btn-primary btn-sm font-bold md-range-apply">تطبيق النطاق</button>
 					</div>
 				</form>
 			</div>
-
 			<!-- 3. Results Surface -->
 			if len(result.Items) == 0 {
 				<div class="glass-panel p-12 text-center empty-state-glass">
-					<div class="text-4xl mb-3">@components.IconSearch("icon-sm")</div>
+					<div class="text-4xl mb-3">
+						@components.IconSearch("icon-sm")
+					</div>
 					<h3 class="text-lg font-black text-primary mb-2">
 						لم نجد أي خصومات مطابقة
 					</h3>
@@ -207,18 +197,17 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							<div class="market-list-identity">
 								<div class="market-list-title-wrap">
 									<div class="market-product-names">
- <h3 class="market-list-title" dir="auto">{ marketProductName(item, lang) }</h3>
- if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
- <p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
- }
- </div>
+										<h3 class="market-list-title" dir="auto">{ marketProductName(item, lang) }</h3>
+										if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
+											<p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
+										}
+									</div>
 									<span class="badge badge-primary market-supplier-badge">{ item.SupplierName }</span>
 									<span class="market-list-date tabular-nums" title="تاريخ رفع المستودع">
 										{ item.UploadedAt.Format("2006-01-02") }
 									</span>
 								</div>
 							</div>
-
 							<div class="market-money">
 								<div class="market-money-cell is-lead">
 									<span class="market-money-label">سعر الجمهور</span>
@@ -228,7 +217,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 										<span class="market-money-was is-empty">—</span>
 									}
 								</div>
-
 								if item.DiscountPercent > 0 {
 									<div class="market-money-cell">
 										<span class="market-money-label">الخصم</span>
@@ -239,7 +227,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 										}
 									</div>
 								}
-
 								<div class="market-money-cell is-net">
 									<span class="market-money-label">السعر بعد الخصم</span>
 									if item.PriceAfterDiscount.Minor() > 0 {
@@ -251,7 +238,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 									}
 								</div>
 							</div>
-
 							if item.InCatalog && item.MatchedProductID != nil {
 								<div class="market-list-action">
 									@marketRowAction(item)
@@ -260,7 +246,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						</article>
 					}
 				</div>
-
 				<!-- Grid view -->
 				<div class="market-grid" x-show="currentView === 'grid'" x-cloak>
 					for _, item := range result.Items {
@@ -271,12 +256,10 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 									{ item.UploadedAt.Format("2006-01-02") }
 								</span>
 							</header>
-
 							<h3 class="market-card-title" dir="auto">{ marketProductName(item, lang) }</h3>
- if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
- <p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
- }
-
+							if item.CatalogNameAR != "" || item.CatalogNameEN != "" {
+								<p class="market-source-name"><span>{ i18n.T(lang, "market.search.file_name") }</span> <bdi>{ item.ProductName }</bdi></p>
+							}
 							<div class="market-card-rail">
 								<div class="market-card-pricing-group">
 									<div class="market-card-price-block">
@@ -315,7 +298,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 									</div>
 								</div>
 							</div>
-
 							if item.InCatalog && item.MatchedProductID != nil {
 								<footer class="market-card-foot">
 									@marketCardAction(item)
@@ -324,7 +306,6 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 						</article>
 					}
 				</div>
-
 				<!-- Pagination Footer Deck -->
 				if result.TotalCount > 0 {
 					<div class="glass-panel p-4 bg-surface-sunken">
@@ -384,6 +365,12 @@ func marketDiscountsLimit(f compare.MarketDiscountsFilter) int {
 // page change. components.B2BPagination adds page and limit itself.
 func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) url.Values {
 	q := url.Values{}
+	if f.DateFrom != "" {
+		q.Set("date_from", f.DateFrom)
+	}
+	if f.DateTo != "" {
+		q.Set("date_to", f.DateTo)
+	}
 	if f.Query != "" {
 		q.Set("q", f.Query)
 	}
@@ -446,10 +433,21 @@ func calculateMaxDiscount(items []*compare.MarketDiscountRow) float64 {
 }
 
 func marketProductName(item *compare.MarketDiscountRow, lang string) string {
- if lang == "en" && item.CatalogNameEN != "" { return item.CatalogNameEN }
- if item.CatalogNameAR != "" { return item.CatalogNameAR }
- if item.CatalogNameEN != "" { return item.CatalogNameEN }
- return item.ProductName
+	if lang == "en" && item.CatalogNameEN != "" {
+		return item.CatalogNameEN
+	}
+	if item.CatalogNameAR != "" {
+		return item.CatalogNameAR
+	}
+	if item.CatalogNameEN != "" {
+		return item.CatalogNameEN
+	}
+	return item.ProductName
 }
 
-func formatOptionalMoney(value *money.Amount) string { if value == nil { return "" }; return value.String() }
+func formatOptionalMoney(value *money.Amount) string {
+	if value == nil {
+		return ""
+	}
+	return value.String()
+}

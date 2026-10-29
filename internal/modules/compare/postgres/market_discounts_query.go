@@ -27,6 +27,16 @@ func marketFilterClauses(filter compare.MarketDiscountsFilter) (extra string, ar
 		argIdx++
 	}
 
+	if filter.DateFrom != "" {
+		where = append(where, fmt.Sprintf("f.created_at >= ($%d::date::timestamp AT TIME ZONE 'Africa/Cairo')", argIdx))
+		args = append(args, filter.DateFrom)
+		argIdx++
+	}
+	if filter.DateTo != "" {
+		where = append(where, fmt.Sprintf("f.created_at < (($%d::date + 1)::timestamp AT TIME ZONE 'Africa/Cairo')", argIdx))
+		args = append(args, filter.DateTo)
+		argIdx++
+	}
 	if filter.MinPrice != nil {
 		where = append(where, fmt.Sprintf("r.price >= $%d", argIdx))
 		args = append(args, filter.MinPrice.String())

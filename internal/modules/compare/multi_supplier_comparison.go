@@ -11,13 +11,10 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
-// RunMultiSupplierComparison executes multi-supplier analysis across 1 to 10 selected files (Plan V5 Phase 2 §2.5).
+// RunMultiSupplierComparison compares the files allowed by the effective entitlement.
 func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int64) (*ComparisonResultSet, error) {
 	if len(fileIDs) < 1 {
 		return nil, apperr.Validation("compare.no_suppliers", "يرجى اختيار مورد واحد على الأقل للمقارنة.", nil)
-	}
-	if len(fileIDs) > 10 {
-		return nil, apperr.Validation("compare.max_suppliers", "الحد الأقصى للمقارنة هو 10 موردين في المرة الواحدة.", nil)
 	}
 
 	// Fetch all rows for the selected files
@@ -28,6 +25,9 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 			return nil, err
 		}
 		files = append(files, f)
+	}
+	if err := s.ValidateComparisonCount(ctx, files[0].UserID, orgIDValue(files[0].OrganizationID), len(fileIDs)); err != nil {
+		return nil, err
 	}
 
 	cached, cacheKey := s.getCachedMultiSupplier(ctx, files)
@@ -61,7 +61,7 @@ func (s *Service) RunMultiSupplierComparison(ctx context.Context, fileIDs []int6
 
 	for _, f := range files {
 		suppliersList = append(suppliersList, f.SupplierName)
-		rows, err := s.repo.ListFileRows(ctx, f.ID, 100000, 0)
+		rows, err := s.repo.ListFileRows(ctx, f.ID, math.MaxInt, 0)
 		if err != nil {
 			return nil, err
 		}

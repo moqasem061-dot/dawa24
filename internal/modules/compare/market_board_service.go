@@ -153,8 +153,8 @@ func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
 // arriving from a URL, and a raw one would put user input — colons, spaces,
 // newlines — into a Redis key namespace that uses ':' as its separator.
 func marketFilterFingerprint(f MarketDiscountsFilter) string {
-	raw := fmt.Sprintf("v3|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
-		f.Query, f.Supplier,
+	raw := fmt.Sprintf("v4|from=%s|to=%s|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
+		f.DateFrom, f.DateTo, f.Query, f.Supplier,
 		marketPriceBound(f.MinPrice), marketPriceBound(f.MaxPrice),
 		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs)
 	sum := sha256.Sum256([]byte(raw))

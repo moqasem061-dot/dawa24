@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components/matchreview"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
@@ -15,6 +16,9 @@ type CompareResultsPageData struct {
 	Result             *compare.ComparisonResultSet
 	ActiveFilter       string
 	Query              string
+	CatalogFilter      string
+	SupplierFilter     string
+	Suppliers          []string
 	SuppliersParam     string
 	Pagination         components.PaginationProps
 	TotalFilteredCount int
@@ -32,6 +36,12 @@ func (d CompareResultsPageData) FileCenterURL() string {
 
 func (d CompareResultsPageData) SubtabURL(base string) string {
 	vals := url.Values{}
+	if d.CatalogFilter != "" {
+		vals.Set("catalog", d.CatalogFilter)
+	}
+	if d.SupplierFilter != "" {
+		vals.Set("supplier", d.SupplierFilter)
+	}
 	if d.SuppliersParam != "" && strings.Contains(base, "/results") {
 		vals.Set("suppliers", d.SuppliersParam)
 	}
@@ -47,6 +57,12 @@ func (d CompareResultsPageData) SubtabURL(base string) string {
 
 func (d CompareResultsPageData) FilterURL(filter string) string {
 	vals := url.Values{}
+	if d.CatalogFilter != "" {
+		vals.Set("catalog", d.CatalogFilter)
+	}
+	if d.SupplierFilter != "" {
+		vals.Set("supplier", d.SupplierFilter)
+	}
 	if d.SuppliersParam != "" {
 		vals.Set("suppliers", d.SuppliersParam)
 	}
@@ -68,6 +84,12 @@ func (d CompareResultsPageData) FilterURL(filter string) string {
 
 func (d CompareResultsPageData) ClearSearchURL() string {
 	vals := url.Values{}
+	if d.CatalogFilter != "" {
+		vals.Set("catalog", d.CatalogFilter)
+	}
+	if d.SupplierFilter != "" {
+		vals.Set("supplier", d.SupplierFilter)
+	}
 	if d.SuppliersParam != "" {
 		vals.Set("suppliers", d.SuppliersParam)
 	}
@@ -127,7 +149,6 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 				</a>
 			</div>
 		}
-
 		<!-- Header Banner -->
 		<div class="glass-panel p-6 mb-6">
 			<div class="flex-between flex-wrap gap-4">
@@ -144,7 +165,6 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 						مقارنة تفصيلية ذكية لأسعار وخصومات الأصناف بين كشوف الموردين واستخراج أفضل فرص الشراء.
 					</p>
 				</div>
-
 				<div class="d-flex items-center gap-3 flex-wrap">
 					<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary font-bold gap-2">
 						@components.IconArrowLeft("icon-xs")
@@ -160,7 +180,6 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 					</button>
 				</div>
 			</div>
-
 			<!-- Navigation Subtabs for all 4 Analysis Modes -->
 			<div class="tabs-nav mt-4">
 				<a href={ templ.SafeURL(data.SubtabURL("/compare/results")) } class="tab-btn active">
@@ -177,242 +196,246 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 				</a>
 			</div>
 		</div>
-
-			<!-- KPI Summary Metric Cards -->
-			<div class="dashboard-stat-grid mb-6">
-				<!-- Total Compared -->
-				<div class="stat-card-3d">
-					<div class="stat-card-label">إجمالي الأصناف المقارنة</div>
-					<div class="stat-card-value text-primary tabular-nums">
-						if data.Result != nil {
-							{ fmt.Sprintf("%d", data.Result.Summary.TotalProducts) }
-						} else {
-							0
-						}
-					</div>
-					<span class="text-xs text-secondary mt-1 d-block">
-						if data.Result != nil {
-							{ fmt.Sprintf("عبر %d موردين", data.Result.Summary.TotalSuppliers) }
-						}
-					</span>
+		<!-- KPI Summary Metric Cards -->
+		<div class="dashboard-stat-grid mb-6">
+			<!-- Total Compared -->
+			<div class="stat-card-3d">
+				<div class="stat-card-label">إجمالي الأصناف المقارنة</div>
+				<div class="stat-card-value text-primary tabular-nums">
+					if data.Result != nil {
+						{ fmt.Sprintf("%d", data.Result.Summary.TotalProducts) }
+					} else {
+						0
+					}
 				</div>
-
-				<!-- Average Discount -->
-				<div class="stat-card-3d">
-					<div class="stat-card-label">متوسط الخصم في السوق</div>
-					<div class="stat-card-value text-success tabular-nums">
-						if data.Result != nil {
-							{ fmt.Sprintf("%.1f%%", data.Result.Summary.AverageDiscount) }
-						} else {
-							0%
-						}
-					</div>
-					<span class="text-xs text-secondary mt-1 d-block">أفضل فرصة شراء وتوفير</span>
-				</div>
-
-				<!-- Suppliers Analyzed -->
-				<div class="stat-card-3d">
-					<div class="stat-card-label">الموردون المشمولون</div>
-					<div class="stat-card-value text-brand tabular-nums">
-						if data.Result != nil {
-							{ fmt.Sprintf("%d", data.Result.Summary.TotalSuppliers) }
-						} else {
-							0
-						}
-					</div>
-					<span class="text-xs text-secondary mt-1 d-block">كشوف أسعار نشطة ومطابقة</span>
-				</div>
+				<span class="text-xs text-secondary mt-1 d-block">
+					if data.Result != nil {
+						{ fmt.Sprintf("عبر %d موردين", data.Result.Summary.TotalSuppliers) }
+					}
+				</span>
 			</div>
-
-			<!-- Filter Bar & Search -->
-			<div class="glass-panel p-6 d-flex flex-col gap-4">
-				<div class="flex-between flex-wrap gap-3">
-					<!-- Quick Filter Tabs -->
-					<div class="d-flex items-center gap-2 flex-wrap">
-						<a
-							href={ templ.SafeURL(data.FilterURL("all")) }
-							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "all" || data.ActiveFilter == "") }
-						>
-							<span>الكل ({ fmt.Sprintf("%d", data.TotalFilteredCount) })</span>
-						</a>
-
-						<a
-							href={ templ.SafeURL(data.FilterURL("multi-offer")) }
-							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "multi-offer") }
-						>
-							<span>متوفر لدى أكثر من مورد</span>
-						</a>
-
-						<a
-							href={ templ.SafeURL(data.FilterURL("single-offer")) }
-							class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "single-offer") }
-						>
-							<span>أصناف حصرية لمورد واحد</span>
-						</a>
-					</div>
-
-					<!-- Search Filter Form -->
-					<form method="GET" action="/compare/results" class="min-w-280 m-0 d-flex gap-2 filter-form" data-filter-form>
-						if data.SuppliersParam != "" {
-							<input type="hidden" name="suppliers" value={ data.SuppliersParam } />
-						}
-						if data.ActiveFilter != "" && data.ActiveFilter != "all" {
-							<input type="hidden" name="filter" value={ data.ActiveFilter } />
-						}
-						if data.IsAdmin && data.TargetOrgID > 0 {
-							<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
-						}
-						<input
-							type="search"
-							name="q"
-							value={ data.Query }
-							id="comparison-table-search"
-							placeholder="بحث باسم الصنف، الكود، أو المورد..."
-							class="form-input text-xs"
-							data-min-chars="3"
-							autocomplete="off"
-						/>
-						<button type="submit" class="btn btn-secondary btn-sm font-bold" title="بحث">
-							@components.IconSearch("icon-xs")
-						</button>
-						if data.Query != "" {
-							<a href={ templ.SafeURL(data.ClearSearchURL()) } class="btn btn-secondary btn-sm px-2 text-muted" title="مسح البحث">
-								✕
-							</a>
-						}
-					</form>
+			<!-- Average Discount -->
+			<div class="stat-card-3d">
+				<div class="stat-card-label">متوسط الخصم في السوق</div>
+				<div class="stat-card-value text-success tabular-nums">
+					if data.Result != nil {
+						{ fmt.Sprintf("%.1f%%", data.Result.Summary.AverageDiscount) }
+					} else {
+						0%
+					}
 				</div>
-
-				<!-- Keyboard Shortcuts Help -->
-				<div class="mb-3">
-					@matchreview.KeyboardShortcutsHelp()
+				<span class="text-xs text-secondary mt-1 d-block">أفضل فرصة شراء وتوفير</span>
+			</div>
+			<!-- Suppliers Analyzed -->
+			<div class="stat-card-3d">
+				<div class="stat-card-label">الموردون المشمولون</div>
+				<div class="stat-card-value text-brand tabular-nums">
+					if data.Result != nil {
+						{ fmt.Sprintf("%d", data.Result.Summary.TotalSuppliers) }
+					} else {
+						0
+					}
 				</div>
-
-				<!-- Comparison Table -->
-				if data.Result == nil || len(data.Result.Rows) == 0 {
-					<div class="empty-state-glass p-8 text-center">
-						<div class="empty-state-icon-wrapper mx-auto mb-3">
-							<span class="text-3xl">@components.IconBarChart("icon-sm")</span>
-						</div>
-						<h3 class="text-lg font-black text-primary mb-1">لا توجد أصناف مستخرجة في الكشوف المختارة</h3>
-						<p class="text-sm text-muted mb-4">تأكد من ضبط تعيين الأعمدة للملفات عبر أيقونة الترس في مركز الملفات.</p>
-						<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-primary font-bold">
-							العودة لمركز الملفات
+				<span class="text-xs text-secondary mt-1 d-block">كشوف أسعار نشطة ومطابقة</span>
+			</div>
+		</div>
+		<!-- Filter Bar & Search -->
+		<div class="glass-panel p-6 d-flex flex-col gap-4">
+			<div class="flex-between flex-wrap gap-3">
+				<!-- Quick Filter Tabs -->
+				<div class="d-flex items-center gap-2 flex-wrap">
+					<a
+						href={ templ.SafeURL(data.FilterURL("all")) }
+						class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "all" || data.ActiveFilter == "") }
+					>
+						<span>الكل ({ fmt.Sprintf("%d", data.TotalFilteredCount) })</span>
+					</a>
+					<a
+						href={ templ.SafeURL(data.FilterURL("multi-offer")) }
+						class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "multi-offer") }
+					>
+						<span>متوفر لدى أكثر من مورد</span>
+					</a>
+					<a
+						href={ templ.SafeURL(data.FilterURL("single-offer")) }
+						class={ "tab-btn font-bold", templ.KV("active", data.ActiveFilter == "single-offer") }
+					>
+						<span>أصناف حصرية لمورد واحد</span>
+					</a>
+				</div>
+				<!-- Search Filter Form -->
+				<form method="GET" action="/compare/results" class="compare-filter-grid w-full m-0 filter-form" data-filter-form>
+					if data.SuppliersParam != "" {
+						<input type="hidden" name="suppliers" value={ data.SuppliersParam }/>
+					}
+					if data.ActiveFilter != "" && data.ActiveFilter != "all" {
+						<input type="hidden" name="filter" value={ data.ActiveFilter }/>
+					}
+					if data.IsAdmin && data.TargetOrgID > 0 {
+						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
+					}
+					<label class="stack-xs">
+						<span class="text-xs">{ i18n.T(lang, "feedback.catalog") }</span>
+						<select name="catalog" class="form-input" data-autosubmit>
+							<option value="">{ i18n.T(lang, "feedback.catalog_all") }</option>
+							<option value="linked" selected?={ data.CatalogFilter == "linked" }>{ i18n.T(lang, "feedback.catalog_linked") }</option>
+							<option value="unlinked" selected?={ data.CatalogFilter == "unlinked" }>{ i18n.T(lang, "feedback.catalog_unlinked") }</option>
+						</select>
+					</label>
+					<label class="stack-xs">
+						<span class="text-xs">{ i18n.T(lang, "feedback.supplier") }</span>
+						<select name="supplier" class="form-input" data-autosubmit>
+							<option value="">{ i18n.T(lang, "feedback.supplier_all") }</option>
+							for _, supplier := range data.Suppliers {
+								<option value={ supplier } selected?={ data.SupplierFilter == supplier }>{ supplier }</option>
+							}
+						</select>
+					</label>
+					<input
+						type="search"
+						name="q"
+						value={ data.Query }
+						id="comparison-table-search"
+						placeholder="بحث باسم الصنف، الكود، أو المورد..."
+						class="form-input text-xs"
+						data-min-chars="3"
+						autocomplete="off"
+					/>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold" title="بحث">
+						@components.IconSearch("icon-xs")
+					</button>
+					if data.Query != "" {
+						<a href={ templ.SafeURL(data.ClearSearchURL()) } class="btn btn-secondary btn-sm px-2 text-muted" title="مسح البحث">
+							✕
 						</a>
+					}
+				</form>
+			</div>
+			<!-- Keyboard Shortcuts Help -->
+			<div class="mb-3">
+				@matchreview.KeyboardShortcutsHelp()
+			</div>
+			<!-- Comparison Table -->
+			if data.Result == nil || len(data.Result.Rows) == 0 {
+				<div class="empty-state-glass p-8 text-center">
+					<div class="empty-state-icon-wrapper mx-auto mb-3">
+						<span class="text-3xl">
+							@components.IconBarChart("icon-sm")
+						</span>
 					</div>
-				} else {
-					<div class="table-container m-0" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.comparison-row', selectActionUrl: '' })">
-						<table class="data-table m-0" id="comparison-results-table">
-							<thead>
-								<tr>
-									<th>الصنف وحالة الكتالوج</th>
-									<th class="tabular-nums">سعر الجمهور</th>
-									<th class="tabular-nums">أعلى نسبة خصم</th>
-									<th>المورد الفائز بالصفقة</th>
-									<th>عروض الموردين</th>
-								</tr>
-							</thead>
-							<tbody>
-								for _, row := range data.Result.Rows {
-									<tr
-										class="comparison-row review-row"
-										data-discount={ fmt.Sprintf("%.2f", row.BestDiscount) }
-										data-suppliers={ fmt.Sprintf("%d", row.TotalSuppliers) }
-										data-gaps={ fmt.Sprintf("%d", len(row.MissingSuppliers)) }
-										data-search={ row.ProductName + " " + row.SKU + " " + row.BestSupplier + " " + strings.Join(row.MissingSuppliers, " ") }
-									>
-										<!-- Product Name & Catalog Verification -->
-										<td>
-											if row.ConflictNotice != "" {
-												<div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-1.5" role="alert">
-													<svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-														<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
-													</svg>
-													<span>{ row.ConflictNotice }</span>
-												</div>
-											}
-											<div class="d-flex items-center gap-2 flex-wrap mb-1">
-												<strong class="text-sm font-extrabold text-primary">{ row.ProductName }</strong>
-												if row.NotComparable || row.GroupBasis == "not_comparable" {
-													<span class="badge badge-amber text-2xs font-bold" title="غير قابل للمقارنة المباشرة لعدم وجود علاقة تحويل معتمدة (Not directly comparable)">
-														غير قابل للمقارنة المباشرة
-													</span>
-												} else if row.GroupBasis == "canonical_pack" {
-													<span class="badge badge-emerald text-2xs font-bold" title="مطابقة لعبوة الكتالوج المعتمد (Canonical pack)">
-														كتالوج معتمد
-													</span>
-												} else if row.GroupBasis == "source_equivalence" {
-													<span class="badge badge-slate text-2xs font-bold" title="تطابق بين ملفات المصدر دون ربط بالكتالوج (Source equivalence)">
-														تطابق مصادر
-													</span>
-												} else if row.GroupBasis == "relationship" {
-													<span class="badge badge-sky text-2xs font-bold" title="محول بواسطة علاقة عبوة معتمدة (Pack relationship)">
-														علاقة عبوة
-													</span>
-												}
+					<h3 class="text-lg font-black text-primary mb-1">لا توجد أصناف مستخرجة في الكشوف المختارة</h3>
+					<p class="text-sm text-muted mb-4">تأكد من ضبط تعيين الأعمدة للملفات عبر أيقونة الترس في مركز الملفات.</p>
+					<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-primary font-bold">
+						العودة لمركز الملفات
+					</a>
+				</div>
+			} else {
+				<div class="table-container m-0" x-data="dawaMatchReviewKeyboard({ rowsSelector: '.comparison-row', selectActionUrl: '' })">
+					<table class="data-table m-0" id="comparison-results-table">
+						<thead>
+							<tr>
+								<th>الصنف وحالة الكتالوج</th>
+								<th class="tabular-nums">سعر الجمهور</th>
+								<th class="tabular-nums">أعلى نسبة خصم</th>
+								<th>المورد الفائز بالصفقة</th>
+								<th>عروض الموردين</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, row := range data.Result.Rows {
+								<tr
+									class="comparison-row review-row"
+									data-discount={ fmt.Sprintf("%.2f", row.BestDiscount) }
+									data-suppliers={ fmt.Sprintf("%d", row.TotalSuppliers) }
+									data-gaps={ fmt.Sprintf("%d", len(row.MissingSuppliers)) }
+									data-search={ row.ProductName + " " + row.SKU + " " + row.BestSupplier + " " + strings.Join(row.MissingSuppliers, " ") }
+								>
+									<!-- Product Name & Catalog Verification -->
+									<td>
+										if row.ConflictNotice != "" {
+											<div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800 flex items-center gap-1.5" role="alert">
+												<svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+													<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+												</svg>
+												<span>{ row.ConflictNotice }</span>
 											</div>
-											if row.SKU != "" {
-												<span class="text-xs text-muted tabular-nums">كود: <bdi>{ row.SKU }</bdi></span>
-											}
-										</td>
-
-										<!-- Best Price -->
-										<td class="tabular-nums font-bold text-secondary">
-											if row.BestPrice.IsPositive() {
-												<span>{ row.BestPrice.String() } ج.م</span>
-											} else {
-												<span class="text-muted">--</span>
-											}
-										</td>
-
-										<!-- Best Discount -->
-										<td>
-											if row.NotComparable {
-												<span class="text-muted text-xs font-semibold">—</span>
-											} else {
-												<span class="badge badge-emerald text-xs font-extrabold tabular-nums">
-													{ fmt.Sprintf("%.1f%%", row.BestDiscount) }
+										}
+										<div class="d-flex items-center gap-2 flex-wrap mb-1">
+											<strong class="text-sm font-extrabold text-primary">{ row.ProductName }</strong>
+											if row.NotComparable || row.GroupBasis == "not_comparable" {
+												<span class="badge badge-amber text-2xs font-bold" title="غير قابل للمقارنة المباشرة لعدم وجود علاقة تحويل معتمدة (Not directly comparable)">
+													غير قابل للمقارنة المباشرة
+												</span>
+											} else if row.GroupBasis == "canonical_pack" {
+												<span class="badge badge-emerald text-2xs font-bold" title="مطابقة لعبوة الكتالوج المعتمد (Canonical pack)">
+													كتالوج معتمد
+												</span>
+											} else if row.GroupBasis == "source_equivalence" {
+												<span class="badge badge-slate text-2xs font-bold" title="تطابق بين ملفات المصدر دون ربط بالكتالوج (Source equivalence)">
+													تطابق مصادر
+												</span>
+											} else if row.GroupBasis == "relationship" {
+												<span class="badge badge-sky text-2xs font-bold" title="محول بواسطة علاقة عبوة معتمدة (Pack relationship)">
+													علاقة عبوة
 												</span>
 											}
-										</td>
-
-										<!-- Best Supplier -->
-										<td>
-											<span class="badge badge-sky text-xs font-bold">
-												{ row.BestSupplier }
+										</div>
+										if row.SKU != "" {
+											<span class="text-xs text-muted tabular-nums">كود: <bdi>{ row.SKU }</bdi></span>
+										}
+									</td>
+									<!-- Best Price -->
+									<td class="tabular-nums font-bold text-secondary">
+										if row.BestPrice.IsPositive() {
+											<span>{ row.BestPrice.String() } ج.م</span>
+										} else {
+											<span class="text-muted">--</span>
+										}
+									</td>
+									<!-- Best Discount -->
+									<td>
+										if row.NotComparable {
+											<span class="text-muted text-xs font-semibold">—</span>
+										} else {
+											<span class="badge badge-emerald text-xs font-extrabold tabular-nums">
+												{ fmt.Sprintf("%.1f%%", row.BestDiscount) }
 											</span>
-										</td>
-
-										<!-- Detailed Offers & Gaps Breakdown -->
-										<td>
-											<div class="d-flex flex-wrap gap-1 mb-1">
-												for supName, off := range row.Offers {
-													if supName == row.BestSupplier {
-														<span class="badge badge-emerald text-xs font-bold" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
-															{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
-														</span>
-													} else {
-														<span class="badge badge-secondary text-xs" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
-															{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
-														</span>
-													}
+										}
+									</td>
+									<!-- Best Supplier -->
+									<td>
+										<span class="badge badge-sky text-xs font-bold">
+											{ row.BestSupplier }
+										</span>
+									</td>
+									<!-- Detailed Offers & Gaps Breakdown -->
+									<td>
+										<div class="d-flex flex-wrap gap-1 mb-1">
+											for supName, off := range row.Offers {
+												if supName == row.BestSupplier {
+													<span class="badge badge-emerald text-xs font-bold" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
+														{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
+													</span>
+												} else {
+													<span class="badge badge-secondary text-xs" title={ fmt.Sprintf("السعر الصافي: %s ج.م", off.PriceAfterDiscount.String()) }>
+														{ supName }: { fmt.Sprintf("%.1f%%", off.Discount) } ({ off.PriceAfterDiscount.String() } ج.م)
+													</span>
 												}
-											</div>
-										</td>
-									</tr>
-								}
-							</tbody>
-						</table>
-					</div>
-				}
-			</div>
-
-			if data.TotalFilteredCount > 0 {
-				<div class="glass-panel p-4 mt-4 bg-surface-sunken">
-					@components.B2BPagination(data.Pagination)
+											}
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
 				</div>
 			}
-
+		</div>
+		if data.TotalFilteredCount > 0 {
+			<div class="glass-panel p-4 mt-4 bg-surface-sunken">
+				@components.B2BPagination(data.Pagination)
+			</div>
+		}
 		<!-- Script for filter tabs, search and CSV export -->
 		<script nonce={ layouts.Nonce(ctx) }>
 			var currentFilter = 'all';
@@ -483,4 +506,3 @@ templ compareResultsContent(lang, dir string, data CompareResultsPageData) {
 		</script>
 	</div>
 }
-

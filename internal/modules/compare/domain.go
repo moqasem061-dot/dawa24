@@ -361,6 +361,8 @@ const (
 // clause, and a filter that could name an organization would be the beginning
 // of a way to ask it for a supplier's private upload.
 type MarketDiscountsFilter struct {
+	DateFrom    string        `json:"date_from"`
+	DateTo      string        `json:"date_to"`
 	CatalogIDs  []int64       `json:"-"` // Ranked by the matching module, never bound from a request.
 	Query       string        `json:"query"`
 	Supplier    string        `json:"supplier"`

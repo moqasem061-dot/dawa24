@@ -143,7 +143,7 @@ func loadCompareAndPromoKeys(e *engine) {
 	addKey(e, "compare.run.vendors_only", "compare", "هذه الأداة مخصصة لحسابات الموردين فقط.", "This tool is for vendor accounts only.", "Permission error")
 	addKey(e, "compare.run.request_failed", "compare", "تعذر معالجة الطلب.", "Unable to process request.", "Request error")
 	addKey(e, "compare.run.select_at_least_one", "compare", "يرجى اختيار مورد واحد على الأقل للمقارنة.", "Please select at least one supplier to compare.", "Validation error")
-	addKey(e, "compare.run.max_suppliers_exceeded", "compare", "الحد الأقصى للمقارنة هو 10 موردين في المرة الواحدة.", "Maximum comparison limit is 10 suppliers at a time.", "Validation error")
+	addKey(e, "compare.run.max_suppliers_exceeded", "compare", "الحد الأقصى للمقارنة حسب خطتك هو %d ملفاً.", "Your plan allows up to %d files per comparison.", "Validation error")
 	addKey(e, "compare.run.mapping_needed", "compare", "الملف '%s' بحاجة إلى تعيين الأعمدة أولاً. الرجاء اكتمال تعيين الأعمدة لجميع الملفات المختارة.", "File '%s' needs column mapping first. Please complete column mapping for all selected files.", "Validation error")
 	addKey(e, "compare.run.read_content_failed", "compare", "تعذرت قراءة محتوى الملف.", "Could not read file content.", "File error")
 	addKey(e, "compare.run.file_failed_format", "compare", "تعذرت معالجة الملف '%s': %s يرجى إعادة رفع الملف أو مراجعة تعيين الأعمدة.", "Could not process file '%s': %s Please re-upload file or review column mappings.", "File error")

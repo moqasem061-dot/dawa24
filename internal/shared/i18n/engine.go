@@ -30,6 +30,7 @@ var globalEngine = &engine{
 
 func init() {
 	loadCatalogDefaults(globalEngine)
+	loadFeedbackKeys(globalEngine)
 }
 
 // T translates a key into the given language with optional format arguments.

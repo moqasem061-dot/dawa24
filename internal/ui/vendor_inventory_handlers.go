@@ -62,37 +62,13 @@ func (h *UIHandler) VendorStockAlertsPage(w http.ResponseWriter, r *http.Request
 			}
 		}
 
-		if statusFilter == "out_of_stock" || statusFilter == "low_stock" {
-			var matched []*inventory.Stock
-			for _, s := range allLowStocks {
-				if whID > 0 && s.WarehouseID != whID {
-					continue
-				}
-				if statusFilter == "out_of_stock" && s.Quantity > 0 {
-					continue
-				}
-				if statusFilter == "low_stock" && s.Quantity <= 0 {
-					continue
-				}
-				matched = append(matched, s)
-			}
-			total = len(matched)
-			start := offset
-			if start > total {
-				start = total
-			}
-			end := start + limit
-			if end > total {
-				end = total
-			}
-			pagedStocks = matched[start:end]
+		if loaded, count, err := h.invSvc.ListLowStocksByOrgWithTotal(ctx, actor.OrganizationID, whID, q, statusFilter, limit, offset); err != nil {
+			h.renderError(w, r, err)
+			return
 		} else {
-			if loaded, loaded2, err := h.invSvc.ListLowStocksByOrgWithTotal(ctx, actor.OrganizationID, whID, q, limit, offset); err != nil {
-				h.logLoadErr(ctx, "invSvc.ListLowStocksByOrgWithTotal", err)
-			} else {
-				pagedStocks, total = loaded, loaded2
-			}
+			pagedStocks, total = loaded, count
 		}
+
 	}
 
 	if h.orgSvc != nil {
@@ -125,6 +101,7 @@ func (h *UIHandler) VendorStockAlertsPage(w http.ResponseWriter, r *http.Request
 		totalPages = 1
 	}
 
+	noticeType, noticeMessage := noticeFrom(r)
 	data := pages.VendorStockAlertsData{
 		Stocks:       pagedStocks,
 		AllLowStocks: allLowStocks,
@@ -138,8 +115,8 @@ func (h *UIHandler) VendorStockAlertsPage(w http.ResponseWriter, r *http.Request
 		Query:        q,
 		WarehouseID:  whID,
 		StatusFilter: statusFilter,
-		NoticeType:   r.URL.Query().Get("notice_type"),
-		NoticeMsg:    r.URL.Query().Get("notice"),
+		NoticeType:   noticeType,
+		NoticeMsg:    noticeMessage,
 	}
 
 	h.renderPage(ctx, w, "render vendor stock alerts page", pages.VendorStockAlerts(data, lang, dir, h.isHTMX(r)))
@@ -210,6 +187,7 @@ func (h *UIHandler) VendorInventoryPage(w http.ResponseWriter, r *http.Request) 
 		totalPages = 1
 	}
 
+	noticeType, noticeMessage := noticeFrom(r)
 	data := pages.VendorInventoryData{
 		Stocks:      pagedStocks,
 		AllStocks:   allStocks,
@@ -221,8 +199,8 @@ func (h *UIHandler) VendorInventoryPage(w http.ResponseWriter, r *http.Request) 
 		TotalPages:  totalPages,
 		Query:       q,
 		WarehouseID: whID,
-		NoticeType:  r.URL.Query().Get("notice_type"),
-		NoticeMsg:   r.URL.Query().Get("notice"),
+		NoticeType:  noticeType,
+		NoticeMsg:   noticeMessage,
 	}
 
 	h.renderPage(ctx, w, "render vendor inventory page", pages.VendorInventory(data, lang, dir, h.isHTMX(r)))

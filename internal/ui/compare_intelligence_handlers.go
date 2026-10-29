@@ -193,6 +193,8 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 	// caller's organization — the source clause is a constant, so nothing a
 	// request sends can widen it to include a supplier's private upload.
 	filter := compare.MarketDiscountsFilter{
+		DateFrom:    validFilterDate(r.URL.Query().Get("date_from")),
+		DateTo:      validFilterDate(r.URL.Query().Get("date_to")),
 		Query:       query,
 		Supplier:    supplier,
 		MinPrice:    minPricePtr,

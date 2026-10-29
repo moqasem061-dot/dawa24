@@ -12,6 +12,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
 
@@ -38,30 +39,41 @@ func (h *UIHandler) VendorTransferCancelSubmit(w http.ResponseWriter, r *http.Re
 func (h *UIHandler) VendorStockAdjustSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	actor, ok := authctx.From(ctx)
-	if !ok {
+	if !ok || actor.OrganizationID <= 0 {
 		http.Redirect(w, r, "/auth/login?redirect=/vendor/inventory", http.StatusSeeOther)
 		return
 	}
+	ctx = database.WithTenant(ctx, actor.OrganizationID)
 
 	redirectURL := r.PostFormValue("redirect_url")
-	if redirectURL == "" {
+	if redirectURL != "/vendor/inventory/alerts" {
 		redirectURL = "/vendor/inventory"
 	}
 
 	stockID, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	delta, _ := strconv.Atoi(r.PostFormValue("delta"))
-	if h.invSvc != nil && stockID > 0 && delta != 0 {
-		if _, err := h.invSvc.AdjustStock(ctx, inventory.AdjustStockInput{
-			StockID: stockID,
-			Delta:   delta,
-			Type:    inventory.MovementAdjustment,
-			Details: r.PostFormValue("reason"),
-			UserID:  &actor.UserID,
-		}); err != nil {
-			h.logLoadErr(ctx, "invSvc.AdjustStock", err)
-		}
+	delta, parseErr := strconv.Atoi(r.PostFormValue("delta"))
+	if h.invSvc == nil || stockID <= 0 || parseErr != nil || delta == 0 {
+		h.redirectWithNotice(w, r, redirectURL, "error", i18n.T(langOf(r), "feedback.stock_invalid"))
+		return
 	}
-	http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+	stock, err := h.invSvc.GetStockByID(ctx, stockID)
+	h.logLoadErr(ctx, "invSvc.GetStockByID", err)
+	if err != nil || stock == nil || stock.OrganizationID != actor.OrganizationID {
+		h.redirectWithNotice(w, r, redirectURL, "error", i18n.T(langOf(r), "feedback.stock_invalid"))
+		return
+	}
+	if _, err := h.invSvc.AdjustStock(ctx, inventory.AdjustStockInput{
+		StockID: stockID,
+		Delta:   delta,
+		Type:    inventory.MovementAdjustment,
+		Details: r.PostFormValue("reason"),
+		UserID:  &actor.UserID,
+	}); err != nil {
+		h.logLoadErr(ctx, "invSvc.AdjustStock", err)
+		h.redirectWithNotice(w, r, redirectURL, "error", h.safeMessage(err, langOf(r)))
+		return
+	}
+	h.redirectWithNotice(w, r, redirectURL, "success", i18n.T(langOf(r), "feedback.stock_saved"))
 }
 
 // recordInitialStock writes a variant's opening quantity into inventory.stocks.

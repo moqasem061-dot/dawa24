@@ -21,6 +21,8 @@ func main() {
 	r.Use(httpx.SecurityHeaders(httpx.SecurityOptions{}))
 	ui.RegisterStaticRoutes(r, func(*http.Request) string { return "http://" + *addr })
 	r.Get("/review", reviewFixture)
+	r.Get("/vendor/inventory/alerts", stockAlertsFixture)
+	r.Get("/vendor/branches", branchMapFixture)
 	r.Get("/market-discounts", marketFixture)
 	r.Get("/admin/organizations", adminOrganizationsFixture)
 	r.Get("/admin/finance/deposits", financeDepositsFixture)

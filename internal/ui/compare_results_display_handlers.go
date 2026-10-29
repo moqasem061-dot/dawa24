@@ -10,6 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
@@ -90,6 +91,17 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 
 	var result *compare.ComparisonResultSet
 	if h.compareSvc != nil {
+		visibleFiles, err := h.compareSvc.ListFiles(sysCtx, effectiveUserID, orgPtr, nil)
+		if err != nil {
+			h.renderError(w, r, err)
+			return
+		}
+		for _, id := range fileIDs {
+			if !containsCompareFile(visibleFiles, id) {
+				h.renderError(w, r, apperr.NotFound("compare file"))
+				return
+			}
+		}
 		res, err := h.compareSvc.RunMultiSupplierComparison(sysCtx, fileIDs)
 		if err == nil { // nolint:errswallow: the else branch reports it to the user
 			result = res
@@ -107,6 +119,9 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 	if limit <= 0 {
 		limit = 25
 	}
+	if limit > 100 {
+		limit = 100
+	}
 
 	filter := strings.TrimSpace(r.URL.Query().Get("filter"))
 	if filter == "" {
@@ -115,6 +130,8 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	qLower := strings.ToLower(q)
 
+	catalogFilter := r.URL.Query().Get("catalog")
+	supplierFilter := r.URL.Query().Get("supplier")
 	totalFiltered := 0
 	var pagedResult *compare.ComparisonResultSet
 
@@ -122,6 +139,12 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 		var filteredRows []*compare.ProductComparisonRow
 		for _, row := range result.Rows {
 			if row == nil {
+				continue
+			}
+			if catalogFilter == "linked" && !row.InCatalog || catalogFilter == "unlinked" && row.InCatalog {
+				continue
+			}
+			if supplierFilter != "" && row.BestSupplier != supplierFilter {
 				continue
 			}
 			if filter == "multi-offer" && row.TotalSuppliers <= 1 {
@@ -141,7 +164,10 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 		totalFiltered = len(filteredRows)
 
 		pagedRows := []*compare.ProductComparisonRow{}
-		start := (page - 1) * limit
+		start := totalFiltered
+		if page <= (totalFiltered+limit-1)/limit {
+			start = (page - 1) * limit
+		}
 		if start < totalFiltered {
 			end := start + limit
 			if end > totalFiltered {
@@ -169,6 +195,8 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 		queryValues.Set("org_id", strconv.FormatInt(*orgPtr, 10))
 	}
 
+	queryValues.Set("catalog", catalogFilter)
+	queryValues.Set("supplier", supplierFilter)
 	pagination := components.PaginationProps{
 		CurrentPage:     page,
 		PageSize:        limit,
@@ -179,7 +207,15 @@ func (h *UIHandler) CompareResultsPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	pageData := pages.CompareResultsPageData{
-		Result:             pagedResult,
+		Result:         pagedResult,
+		CatalogFilter:  catalogFilter,
+		SupplierFilter: supplierFilter,
+		Suppliers: func() []string {
+			if result != nil {
+				return result.Summary.SuppliersList
+			}
+			return nil
+		}(),
 		ActiveFilter:       filter,
 		Query:              q,
 		SuppliersParam:     supParam,

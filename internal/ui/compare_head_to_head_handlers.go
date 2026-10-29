@@ -9,6 +9,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
 )
@@ -70,6 +72,10 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 	} else if targetID <= 0 && len(files) == 1 {
 		targetID = files[0].ID
 	}
+	if sourceID > 0 && targetID > 0 && (!containsCompareFile(files, sourceID) || !containsCompareFile(files, targetID)) {
+		h.renderError(w, r, apperr.NotFound("compare file"))
+		return
+	}
 
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	minPStr := strings.TrimSpace(r.URL.Query().Get("min_price"))
@@ -81,11 +87,12 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 		tab = "all"
 	}
 
-	var minP, maxP, minD, maxD *float64
-	if v, err := strconv.ParseFloat(minPStr, 64); err == nil && v >= 0 {
+	var minP, maxP *money.Amount
+	var minD, maxD *float64
+	if v, err := money.Parse(minPStr); err == nil && !v.IsNegative() {
 		minP = &v
 	}
-	if v, err := strconv.ParseFloat(maxPStr, 64); err == nil && v >= 0 {
+	if v, err := money.Parse(maxPStr); err == nil && !v.IsNegative() {
 		maxP = &v
 	}
 	if v, err := strconv.ParseFloat(minDStr, 64); err == nil && v >= 0 {
@@ -116,6 +123,9 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 	if limit <= 0 {
 		limit = 25
 	}
+	if limit > 100 {
+		limit = 100
+	}
 
 	var result *compare.HeadToHeadComparisonResult
 	totalCount := 0
@@ -132,10 +142,19 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 		})
 		if err != nil {
 			h.log.ErrorContext(sysCtx, "failed to run head-to-head comparison", "error", err)
+			h.renderError(w, r, err)
+			return
 		} else if res != nil {
+			if r.URL.Query().Get("export") == "csv" {
+				h.exportHeadToHead(w, r, res)
+				return
+			}
 			totalCount = len(res.Rows)
 			pagedRows := []*compare.HeadToHeadRow{}
-			start := (page - 1) * limit
+			start := totalCount
+			if page <= (totalCount+limit-1)/limit {
+				start = (page - 1) * limit
+			}
 			if start < totalCount {
 				end := start + limit
 				if end > totalCount {
@@ -192,6 +211,7 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 	}
 
 	pageData := pages.HeadToHeadPageData{
+		Lang:         lang,
 		Result:       result,
 		Files:        files,
 		SourceFileID: sourceID,

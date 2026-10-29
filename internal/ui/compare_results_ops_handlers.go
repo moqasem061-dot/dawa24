@@ -46,17 +46,20 @@ func (h *UIHandler) CompareRunSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if len(supplierIDs) > 10 {
-		h.redirectWithNotice(w, r, returnURL, "error", i18n.T(lang, "compare.run.max_suppliers_exceeded"))
-		return
-	}
-
 	// Validate all selected files are ready (have mapping applied)
 	sysCtx := ctx
 	if isAdminActing {
 		sysCtx = database.WithTenant(database.AsSystem(ctx), targetOrgID)
 	}
 	if h.compareSvc != nil {
+		quotaOrgID := actor.OrganizationID
+		if isAdminActing {
+			quotaOrgID = targetOrgID
+		}
+		if err := h.compareSvc.ValidateComparisonCount(sysCtx, actor.UserID, quotaOrgID, len(supplierIDs)); err != nil {
+			h.redirectWithNotice(w, r, returnURL, "error", h.safeMessage(err, lang))
+			return
+		}
 		for _, idStr := range supplierIDs {
 			if id, err := strconv.ParseInt(strings.TrimSpace(idStr), 10, 64); err == nil && id > 0 {
 				file, errGet := h.compareSvc.GetFile(sysCtx, id)

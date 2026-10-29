@@ -655,9 +655,8 @@
   window.addEventListener('error', function (e) {
     var el = e.target;
     if (el && el.tagName === 'IMG') {
-		// Previewers own their loading/error state. A queued error from a cleared
-		// source must not permanently hide the next successfully loaded image.
-		if (el.classList.contains('doc-viewer-img') || !el.hasAttribute('src') || !el.complete || el.naturalWidth > 0) return;
+		// Previewers and Leaflet own their images' loading/error lifecycle.
+		if (el.classList.contains('doc-viewer-img') || el.closest('.leaflet-container') || !el.hasAttribute('src') || !el.complete || el.naturalWidth > 0) return;
       el.style.display = 'none';
       var parent = el.parentElement;
       if (parent) {

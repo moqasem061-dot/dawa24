@@ -31,11 +31,11 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 		return cached, nil
 	}
 
-	sourceRows, err := s.repo.ListFileRows(ctx, filter.SourceFileID, 100000, 0)
+	sourceRows, err := s.repo.ListFileRows(ctx, filter.SourceFileID, math.MaxInt, 0)
 	if err != nil {
 		return nil, err
 	}
-	targetRows, err := s.repo.ListFileRows(ctx, filter.TargetFileID, 100000, 0)
+	targetRows, err := s.repo.ListFileRows(ctx, filter.TargetFileID, math.MaxInt, 0)
 	if err != nil {
 		return nil, err
 	}
@@ -332,10 +332,10 @@ func (s *Service) RunSupplierVsSupplierDetailed(ctx context.Context, filter Head
 				}
 			}
 
-			if filter.MinPrice != nil && row.Price.Minor() < int64(*filter.MinPrice*100) {
+			if filter.MinPrice != nil && row.Price.Minor() < filter.MinPrice.Minor() {
 				continue
 			}
-			if filter.MaxPrice != nil && row.Price.Minor() > int64(*filter.MaxPrice*100) {
+			if filter.MaxPrice != nil && row.Price.Minor() > filter.MaxPrice.Minor() {
 				continue
 			}
 			if filter.MinDiscount != nil && (row.YourDiscount < *filter.MinDiscount && row.CompetitorDiscount < *filter.MinDiscount) {

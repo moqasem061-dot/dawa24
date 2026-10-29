@@ -17,7 +17,7 @@
 (function () {
   'use strict';
 
-  var TILE_URL = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  var TILE_URL = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
   var el, map, layer, meMarker, state = null, watchId = null;
 
   document.addEventListener('DOMContentLoaded', function () {

@@ -36,7 +36,7 @@ type Repository interface {
 	ListDetailedStocksByWarehouse(ctx context.Context, warehouseID int64) ([]*DetailedWarehouseStockView, error)
 	ListStocksByOrg(ctx context.Context, orgID int64) ([]*Stock, error)
 	ListStocksByOrgWithTotal(ctx context.Context, orgID int64, warehouseID int64, search string, limit, offset int) ([]*Stock, int, error)
-	ListLowStocksByOrgWithTotal(ctx context.Context, orgID int64, warehouseID int64, search string, limit, offset int) ([]*Stock, int, error)
+	ListLowStocksByOrgWithTotal(ctx context.Context, orgID int64, warehouseID int64, search, status string, limit, offset int) ([]*Stock, int, error)
 	ListStockMovements(ctx context.Context, stockID int64, limit int) ([]*StockMovement, error)
 	// ListLowStock returns rows at or below their reorder threshold, which is
 	// what the vendor replenishment screen is built on.

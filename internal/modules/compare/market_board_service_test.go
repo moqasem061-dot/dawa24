@@ -95,6 +95,8 @@ func TestMarketTotalCacheKeySeparatesFilters(t *testing.T) {
 	seen := map[string]string{}
 	for name, f := range map[string]MarketDiscountsFilter{
 		"empty":        {},
+		"from date":    {DateFrom: "2026-10-29"},
+		"to date":      {DateTo: "2026-10-29"},
 		"query":        {Query: "بانادول"},
 		"other query":  {Query: "كونجستال"},
 		"supplier":     {Supplier: "مخزن المتحدة"},

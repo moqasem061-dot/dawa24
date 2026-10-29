@@ -1,0 +1,26 @@
+package i18n
+
+func loadFeedbackKeys(e *engine) {
+	addKey(e, "feedback.csv.product", "compare", "المنتج", "Product", "CSV product column")
+	addKey(e, "feedback.csv.sku", "compare", "الكود", "SKU", "CSV SKU column")
+	addKey(e, "feedback.csv.price", "compare", "سعر الجمهور", "Public price", "CSV price column")
+	addKey(e, "feedback.csv.discount", "compare", "الخصم", "Discount", "CSV discount column")
+	addKey(e, "feedback.csv.net", "compare", "الصافي", "Net price", "CSV net price column")
+	addKey(e, "feedback.csv.difference", "compare", "فرق الخصم", "Discount difference", "CSV difference column")
+	addKey(e, "feedback.csv.savings", "compare", "التوفير", "Savings", "CSV savings column")
+	addKey(e, "feedback.csv.basis", "compare", "أساس المطابقة", "Match basis", "CSV identity column")
+	addKey(e, "feedback.outcome", "compare", "نتيجة المقارنة", "Comparison outcome", "Comparison outcome filter")
+	addKey(e, "feedback.your_better", "compare", "خصمك أفضل", "Your discount is better", "Source discount wins")
+	addKey(e, "feedback.equal", "compare", "نفس الخصم", "Equal discounts", "Equal discounts")
+	addKey(e, "feedback.competitor_better", "compare", "خصم المنافس أفضل", "Competitor discount is better", "Target discount wins")
+	addKey(e, "feedback.date_from", "compare", "من تاريخ", "From date", "Upload date range start")
+	addKey(e, "feedback.date_to", "compare", "إلى تاريخ", "To date", "Upload date range end")
+	addKey(e, "feedback.stock_invalid", "inventory", "تعذر تعديل الرصيد. أدخل كمية صحيحة غير صفرية وتأكد من توفر خدمة المخزون.", "Could not adjust stock. Enter a nonzero whole quantity and check inventory availability.", "Invalid adjustment")
+	addKey(e, "feedback.stock_saved", "inventory", "تم تحديث رصيد المخزن وتسجيل حركة المخزون بنجاح.", "Warehouse balance updated and stock movement recorded.", "Adjustment saved")
+	addKey(e, "feedback.catalog", "compare", "حالة الكتالوج", "Catalog status", "Catalog filter")
+	addKey(e, "feedback.catalog_all", "compare", "كل الأصناف", "All products", "All catalog states")
+	addKey(e, "feedback.catalog_linked", "compare", "مرتبط بالكتالوج", "Linked to catalog", "Linked catalog products")
+	addKey(e, "feedback.catalog_unlinked", "compare", "غير مرتبط بالكتالوج", "Not linked to catalog", "Unlinked catalog products")
+	addKey(e, "feedback.supplier", "compare", "المورد صاحب أفضل عرض", "Best offer supplier", "Best supplier filter")
+	addKey(e, "feedback.supplier_all", "compare", "كل الموردين", "All suppliers", "All suppliers filter")
+}

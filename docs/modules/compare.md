@@ -4,6 +4,13 @@
 
 The `compare` bounded context implements the platform's flagship supplier-vs-supplier discount and price comparison engine. It manages pricing tiers, quotas (maximum active comparison spreadsheets, concurrent session device caps), self-serve upgrade requests, subscriptions, user seat assignments, and session eviction.
 
+## Feedback fixes (2026-10-29)
+
+- Comparison selection uses `EntitlementFor().MaxActiveFiles` in both submission and execution. The independent ten-file ceiling is removed; the current effective entitlement permits 100 files. These are supplier spreadsheet files, not a limit on product rows.
+- Results support product/code search, offer availability, catalog linkage and winning supplier filters. Filter links and pagination preserve the selected criteria. Head-to-head filters use a responsive grid, explicit outcome selection and exact monetary price bounds.
+- Head-to-head CSV exports every row matching the current filters before pagination, including all report columns. Export and result requests validate selected IDs against the caller's visible files. CSV text is protected against spreadsheet formula execution.
+- Market upload-date filters include both ends of the selected date range in Africa/Cairo time. Listing, totals, cache keys and pagination share the date criteria. Market typing waits 250 ms; cancellation, composition handling and stale-response protection remain active.
+
 ## Schema Mapping
 
 - **PostgreSQL Schemas:** `compare`
@@ -47,7 +54,7 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
    - **Knowledge Scoping & Manual Corrections**: Reviewer confirmations and manual row links persist to `catalog.match_knowledge` scoped to the organization (`Scope.EffectiveOrg`), auto-resolving future uploads with identical row fingerprints without cross-tenant data leakage.
    - **AI Gateway Independence (Rule R3)**: Deterministic matching runs 100% locally with zero external AI dependency.
 10. **Multi-Supplier & Head-to-Head Comparison (Task 2.5):**
-    - Multi-supplier analysis over 1 to 10 files computes best price, best discount, best net price after discount, and best supplier per item.
+    - Multi-supplier analysis over files up to the effective entitlement limit computes best price, best discount, best net price after discount, and best supplier per item.
     - Aggregated metrics include total unique products, average discount, and potential savings.
     - Head-to-head comparison between two suppliers computes shared product count, better count, quality score (`better/shared * 100`), source total, target total, and net savings.
     - 5 Market comparison filter modes (`all`, `lower_discount_than_market`, `equal_to_market`, `higher_discount_than_market`, `exclusives`).
@@ -86,10 +93,10 @@ catalogue languages first. Fuzzy catalogue retrieval is attempted only when
 the filtered direct search has no results, avoiding up to 500 ms of candidate
 retrieval on ordinary searches. Totals use the same filter as rows, including
 fuzzy candidates. Punctuation-only normalized terms cannot match every row.
-Typing uses a 450 ms debounce; cancellation, stale-response suppression,
+Typing uses a 250 ms debounce; cancellation, stale-response suppression,
 Arabic composition and input-focus retention are covered by browser tests.
 
-Market-discount and other GET filter searches wait 450 ms after typing pauses.
+Market-discount searches wait 250 ms after typing pauses; other GET filter searches retain 450 ms.
 Each form owns its debounce timer, composition input waits until committed, and
 editing or submitting cancels pending search work. Select controls with
 `data-autosubmit` issue one request rather than also triggering the generic filter

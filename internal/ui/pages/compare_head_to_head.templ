@@ -6,11 +6,13 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
 type HeadToHeadPageData struct {
+	Lang          string
 	Result        *compare.HeadToHeadComparisonResult
 	Files         []*compare.CompareFile
 	SourceFileID  int64
@@ -46,6 +48,15 @@ func (d HeadToHeadPageData) SubtabURL(base string) string {
 		return base
 	}
 	return base + "?" + encoded
+}
+
+func (d HeadToHeadPageData) ExportURL() string {
+	vals := url.Values{}
+	for key, values := range d.Pagination.QueryValues {
+		vals[key] = append([]string(nil), values...)
+	}
+	vals.Set("export", "csv")
+	return "/compare/head-to-head?" + vals.Encode()
 }
 
 func buildHeadToHeadURL(sourceID, targetID int64, q, minP, maxP, minD, maxD, tab string, orgID int64) string {
@@ -108,7 +119,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 				</a>
 			</div>
 		}
-
 		<!-- Header Banner -->
 		<div class="glass-panel p-6 mb-6">
 			<div class="flex-between flex-wrap gap-4">
@@ -125,25 +135,19 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						تحليل مقارن مباشر ودقيق لأسعار وخصومات الأصناف بين موردين اثنين مع تحديد نقاط التفوق والضعف والتوفير الصافي.
 					</p>
 				</div>
-
 				<div class="d-flex items-center gap-3 flex-wrap">
 					<a href={ templ.SafeURL(data.FileCenterURL()) } class="btn btn-secondary font-bold gap-2">
 						@components.IconArrowLeft("icon-xs")
 						<span>مركز الملفات</span>
 					</a>
-					if data.Result != nil && len(data.Result.Rows) > 0 {
-						<button
-							type="button"
-							class="btn btn-primary font-bold gap-2"
-							data-on-click="exportHeadToHeadToCSV()"
-						>
+					if data.TotalCount > 0 {
+						<a href={ templ.SafeURL(data.ExportURL()) } hx-boost="false" download class="btn btn-primary font-bold gap-2">
 							@components.IconDownload("icon-xs")
 							<span>تصدير التقرير</span>
-						</button>
+						</a>
 					}
 				</div>
 			</div>
-
 			<!-- Navigation Subtabs for all 4 Analysis Modes -->
 			<div class="tabs-nav mt-4">
 				<a href={ templ.SafeURL(data.SubtabURL("/compare/results")) } class="tab-btn">
@@ -160,12 +164,11 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 				</a>
 			</div>
 		</div>
-
 		<!-- Supplier Selector Form -->
 		<div class="filter-bar">
 			<form method="GET" action="/compare/head-to-head" class="d-grid gap-4 items-end m-0" data-no-filter>
 				if data.IsAdmin && data.TargetOrgID > 0 {
-					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
+					<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
 				}
 				<div class="stack-sm">
 					<label class="form-label font-bold text-xs text-primary mb-1 d-block">
@@ -180,8 +183,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						}
 					</select>
 				</div>
-
-    <div class="stack-sm">
+				<div class="stack-sm">
 					<label class="form-label font-bold text-xs text-primary mb-1 d-block">
 						المورد المقارن به (المنافس / الهدف)
 					</label>
@@ -194,13 +196,11 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						}
 					</select>
 				</div>
-
 				<button type="submit" class="btn btn-primary font-bold px-6">
 					بدء المقارنة
 				</button>
 			</form>
 		</div>
-
 		if data.Result != nil {
 			<!-- KPI Summary Metric Cards -->
 			<div class="dashboard-stat-grid mb-6">
@@ -212,7 +212,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 					</div>
 					<span class="text-xs text-secondary mt-1 d-block">صنف متطابق بين الكشفين</span>
 				</div>
-
 				<!-- Your Better (خصمك أفضل منهم) -->
 				<div class="stat-card-3d">
 					<div class="stat-card-label text-success">خصمك أفضل منهم</div>
@@ -225,7 +224,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						}
 					</span>
 				</div>
-
 				<!-- Equal Discount (نفس الخصم) -->
 				<div class="stat-card-3d">
 					<div class="stat-card-label text-brand">نفس الخصم</div>
@@ -238,7 +236,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						}
 					</span>
 				</div>
-
 				<!-- Competitor Better (خصم أفضل منك) -->
 				<div class="stat-card-3d">
 					<div class="stat-card-label text-danger">خصم أفضل منك</div>
@@ -251,7 +248,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						}
 					</span>
 				</div>
-
 				<!-- Competitive Win Rate -->
 				<div class="stat-card-3d">
 					<div class="stat-card-label">معدل التفوق التنافسي</div>
@@ -261,18 +257,24 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 					<span class="text-xs text-secondary mt-1 d-block">نسبة تفوقك أو تطابقك</span>
 				</div>
 			</div>
-
 			<!-- Filter Bar -->
 			<div class="filter-bar">
 				<form method="GET" action="/compare/head-to-head" class="m-0 filter-form" data-filter-form>
 					if data.IsAdmin && data.TargetOrgID > 0 {
-						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) } />
+						<input type="hidden" name="org_id" value={ fmt.Sprintf("%d", data.TargetOrgID) }/>
 					}
-					<input type="hidden" name="source" value={ fmt.Sprintf("%d", data.SourceFileID) } />
-					<input type="hidden" name="target" value={ fmt.Sprintf("%d", data.TargetFileID) } />
-					<input type="hidden" name="tab" value={ data.ActiveTab } />
-
-					<div class="d-grid gap-3 items-end">
+					<input type="hidden" name="source" value={ fmt.Sprintf("%d", data.SourceFileID) }/>
+					<input type="hidden" name="target" value={ fmt.Sprintf("%d", data.TargetFileID) }/>
+					<label class="stack-xs">
+						<span class="text-xs">{ i18n.T(data.Lang, "feedback.outcome") }</span>
+						<select name="tab" class="form-input" data-autosubmit>
+							<option value="all" selected?={ data.ActiveTab == "all" }>{ i18n.T(data.Lang, "feedback.catalog_all") }</option>
+							<option value="your_better" selected?={ data.ActiveTab == "your_better" }>{ i18n.T(data.Lang, "feedback.your_better") }</option>
+							<option value="equal" selected?={ data.ActiveTab == "equal" }>{ i18n.T(data.Lang, "feedback.equal") }</option>
+							<option value="competitor_better" selected?={ data.ActiveTab == "competitor_better" }>{ i18n.T(data.Lang, "feedback.competitor_better") }</option>
+						</select>
+					</label>
+					<div class="compare-filter-grid">
 						<!-- الحد الأدنى للسعر -->
 						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
@@ -287,7 +289,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 								class="form-input text-xs"
 							/>
 						</div>
-
 						<!-- الحد الأقصى للسعر -->
 						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
@@ -302,7 +303,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 								class="form-input text-xs"
 							/>
 						</div>
-
 						<!-- الحد الأدنى للخصم -->
 						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
@@ -317,7 +317,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 								class="form-input text-xs"
 							/>
 						</div>
-
 						<!-- الحد الأقصى للخصم -->
 						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
@@ -332,7 +331,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 								class="form-input text-xs"
 							/>
 						</div>
-
 						<!-- بحث بالاسم -->
 						<div class="stack-sm">
 							<label class="text-xs font-bold text-muted mb-1 d-block">
@@ -348,7 +346,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 								autocomplete="off"
 							/>
 						</div>
-
 						<div class="d-flex gap-2">
 							<button type="submit" class="btn btn-primary font-bold px-4">
 								تطبيق الفلتر
@@ -361,7 +358,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 						</div>
 					</div>
 				</form>
-
 				<!-- Quick Filter Tabs -->
 				<div class="d-flex items-center gap-2 pt-3 border-t flex-wrap">
 					<a
@@ -370,21 +366,18 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 					>
 						الكل ({ fmt.Sprintf("%d", data.TotalCount) })
 					</a>
-
 					<a
 						href={ templ.SafeURL(buildHeadToHeadURL(data.SourceFileID, data.TargetFileID, data.Query, data.MinPrice, data.MaxPrice, data.MinDiscount, data.MaxDiscount, "your_better", data.TargetOrgID)) }
 						class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.ActiveTab == "your_better"), templ.KV("btn-secondary", data.ActiveTab != "your_better") }
 					>
 						خصمك أفضل منهم ({ fmt.Sprintf("%d", data.Result.YourBetterCount) })
 					</a>
-
 					<a
 						href={ templ.SafeURL(buildHeadToHeadURL(data.SourceFileID, data.TargetFileID, data.Query, data.MinPrice, data.MaxPrice, data.MinDiscount, data.MaxDiscount, "equal", data.TargetOrgID)) }
 						class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.ActiveTab == "equal"), templ.KV("btn-secondary", data.ActiveTab != "equal") }
 					>
 						نفس الخصم ({ fmt.Sprintf("%d", data.Result.EqualCount) })
 					</a>
-
 					<a
 						href={ templ.SafeURL(buildHeadToHeadURL(data.SourceFileID, data.TargetFileID, data.Query, data.MinPrice, data.MaxPrice, data.MinDiscount, data.MaxDiscount, "competitor_better", data.TargetOrgID)) }
 						class={ "btn btn-sm font-bold", templ.KV("btn-primary", data.ActiveTab == "competitor_better"), templ.KV("btn-secondary", data.ActiveTab != "competitor_better") }
@@ -393,7 +386,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 					</a>
 				</div>
 			</div>
-
 			<!-- Main Comparison Table Matching Image 1 Exactly -->
 			<div class="glass-panel p-0 mb-0 overflow-hidden">
 				<div class="table-container m-0">
@@ -402,25 +394,20 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 							<tr>
 								<!-- 1. المنتج -->
 								<th>المنتج</th>
-								
 								<!-- 2. سعر الجمهور -->
 								<th class="text-center tabular-nums">سعر الجمهور</th>
-								
 								<!-- 3. نسبة الخصم -->
 								<th class="text-center tabular-nums">
 									نسبة الخصم ({ data.Result.SourceSupplierName })
 								</th>
-								
 								<!-- 4. خصم أفضل منك -->
 								<th class="text-center text-danger">
 									خصم أفضل منك
 								</th>
-								
 								<!-- 5. نفس الخصم -->
 								<th class="text-center text-brand">
 									نفس الخصم
 								</th>
-								
 								<!-- 6. خصمك أفضل منهم -->
 								<th class="text-center text-success">
 									خصمك أفضل منهم
@@ -431,7 +418,9 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 							if len(data.Result.Rows) == 0 {
 								<tr>
 									<td colspan="6" class="text-center p-8 text-muted">
-										<div class="text-3xl mb-2">@components.IconSearch("icon-sm")</div>
+										<div class="text-3xl mb-2">
+											@components.IconSearch("icon-sm")
+										</div>
 										<div class="font-extrabold text-base text-primary">لا توجد نتائج تطابق خيارات الفلترة المحددة</div>
 										<div class="text-xs text-muted mt-1">جرب تعديل نطاق الأسعار أو نسب الخصم أو اختيار موردين آخرين.</div>
 									</td>
@@ -469,12 +458,10 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 											}
 										</div>
 									</td>
-
 									<!-- 2. السعر -->
 									<td class="text-center font-bold text-secondary tabular-nums">
 										{ r.Price.String() } ج.م
 									</td>
-
 									<!-- 3. الخصم -->
 									<td class="text-center tabular-nums">
 										if r.YourDiscount > 0 {
@@ -485,7 +472,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 											<span class="text-muted text-sm font-semibold">0%</span>
 										}
 									</td>
-
 									<!-- 4. خصم أفضل منك -->
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeCompetitorBetter {
@@ -496,7 +482,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 											<span class="text-muted text-sm font-semibold">—</span>
 										}
 									</td>
-
 									<!-- 5. نفس الخصم -->
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeEqual {
@@ -507,7 +492,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 											<span class="text-muted text-sm font-semibold">—</span>
 										}
 									</td>
-
 									<!-- 6. خصمك أفضل منهم -->
 									<td class="text-center tabular-nums">
 										if r.Outcome == compare.OutcomeYourBetter {
@@ -531,33 +515,6 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 			}
 		}
 	</div>
-
-	<!-- Export Table to CSV Script -->
-	<script nonce={ layouts.Nonce(ctx) }>
-		function exportHeadToHeadToCSV() {
-			var table = document.getElementById("head-to-head-table");
-			if (!table) return;
-			var rows = table.querySelectorAll("tr");
-			var csv = [];
-			for (var i = 0; i < rows.length; i++) {
-				var row = [], cols = rows[i].querySelectorAll("td, th");
-				for (var j = 0; j < cols.length; j++) {
-					var data = cols[j].innerText.replace(/(\r\n|\n|\r)/gm, " ").trim();
-					data = data.replace(/"/g, '""');
-					row.push('"' + data + '"');
-				}
-				csv.push(row.join(","));
-			}
-			var csvFile = new Blob(["\uFEFF" + csv.join("\n")], { type: "text/csv;charset=utf-8;" });
-			var downloadLink = document.createElement("a");
-			downloadLink.download = "head_to_head_comparison.csv";
-			downloadLink.href = window.URL.createObjectURL(csvFile);
-			downloadLink.style.display = "none";
-			document.body.appendChild(downloadLink);
-			downloadLink.click();
-			document.body.removeChild(downloadLink);
-		}
-	</script>
 }
 
 templ CompareHeadToHeadPage(lang, dir string, data HeadToHeadPageData) {
@@ -575,4 +532,3 @@ templ CompareHeadToHeadPage(lang, dir string, data HeadToHeadPageData) {
 		}
 	}
 }
-

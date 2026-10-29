@@ -10,7 +10,6 @@ import (
 
 templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 	@SuppliersMapStyles()
-
 	<!-- View 2: Interactive Map View -->
 	<div id="suppliers-map-view" class={ templ.KV("d-none", data.ActiveTab != "map") }>
 		<div class="suppliers-map-layout mb-6">
@@ -24,7 +23,6 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 						انقر على أي فرع أو مورد للتركيز عليه وتكبير الخريطة
 					</p>
 				</div>
-
 				<div class="d-flex flex-col gap-2">
 					if len(data.AllPins) > 0 {
 						for idx, pin := range data.AllPins {
@@ -32,7 +30,8 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 								id={ fmt.Sprintf("supplier-card-%d", idx) }
 								data-supplier-idx={ fmt.Sprintf("%d", idx) }
 								class="map-supplier-item p-3 rounded-xl bg-surface-sunken border cursor-pointer transition-all"
-								data-on-click="focusSupplierOnMap" data-args={ components.JSArgs(idx) }
+								data-on-click="focusSupplierOnMap"
+								data-args={ components.JSArgs(idx) }
 							>
 								<div class="flex-between items-center gap-2 mb-1">
 									<strong class="text-xs text-primary font-extrabold line-clamp-1">
@@ -64,7 +63,8 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 								id={ fmt.Sprintf("supplier-card-%d", idx) }
 								data-supplier-idx={ fmt.Sprintf("%d", idx) }
 								class="map-supplier-item p-3 rounded-xl bg-surface-sunken border cursor-pointer transition-all"
-								data-on-click="focusSupplierOnMap" data-args={ components.JSArgs(idx) }
+								data-on-click="focusSupplierOnMap"
+								data-args={ components.JSArgs(idx) }
 							>
 								<div class="flex-between items-center gap-2 mb-1">
 									<strong class="text-xs text-primary font-extrabold line-clamp-1">
@@ -95,17 +95,14 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 					}
 				</div>
 			</div>
-
 			<!-- Map Container -->
 			<div class="glass-panel p-0 overflow-hidden map-container-frame">
 				<div class="s-suppliers-map" id="suppliers-leaflet-map"></div>
 			</div>
 		</div>
 	</div>
-
 	<!-- Hidden data carrier for map pins -->
 	<div id="suppliers-map-data" class="d-none" data-pins={ SuppliersMapJSON(data, lang) }></div>
-
 	<!-- Interactive Map & View Switcher Script -->
 	<script nonce={ layouts.Nonce(ctx) } data-hard-nav>
 		let mapInstance = null;
@@ -173,7 +170,7 @@ templ SuppliersMap(lang, dir string, data SupplierDirectoryData) {
 			// Center on Egypt / Cairo by default (30.0444, 31.2357)
 			mapInstance = L.map('suppliers-leaflet-map').setView([30.0444, 31.2357], 6);
 
-			L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+			L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				maxZoom: 19,
 				attribution: '© OpenStreetMap contributors'
 			}).addTo(mapInstance);

@@ -1,8 +1,6 @@
 package pages
 
-import (
-	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
-)
+import "github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 
 templ AdminWeeklyCoverageMapModal() {
 	<div
@@ -90,7 +88,7 @@ templ AdminWeeklyCoverageMapModal() {
 					if (!el) return;
 					if (!this.covMap) {
 						this.covMap = L.map(el).setView([this.mapLat, this.mapLon], 10);
-						L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+						L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
 							maxZoom: 19,
 							attribution: '© OSM'
 						}).addTo(this.covMap);

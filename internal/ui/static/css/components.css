@@ -9574,3 +9574,14 @@ body.dark .upload-progress-note {
 .market-source-name { margin: .25rem 0 0; color: var(--text-muted); font-size: .8125rem; line-height: 1.6; overflow-wrap: anywhere; }
 .market-source-name span { font-weight: 500; }
 .market-card > .market-source-name { margin-block: -.5rem .75rem; }
+
+@layer components {
+/* Comparison filters keep labels and their controls together in RTL and on phones. */
+.compare-filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr)); gap: 1rem; align-items: end; }
+.stock-alert-dialog > form { padding: 1.5rem; overflow-y: auto; }
+.stock-alert-dialog > .bg-surface-sunken { margin: 1rem 1.5rem 0; flex-shrink: 0; }
+.stock-alerts .table-actions { flex-wrap: wrap; }
+
+.map-load-status { padding: .75rem; background: var(--bg-surface-raised); color: var(--text-primary); max-inline-size: 18rem; border: 1px solid var(--border); border-radius: var(--radius-lg); }
+.map-load-status button { display: block; margin-block-start: .5rem; }
+}

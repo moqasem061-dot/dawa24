@@ -4,6 +4,10 @@
 
 The `org` bounded context manages organization tenants (suppliers, pharmacies, pharmacy chains), physical branch networks, staff membership roles, vendor customer ratings/reviews, following relationships, and organizational policies.
 
+## Map reliability (2026-10-29)
+
+Branch pickers wait for both local Leaflet CSS and JavaScript before initializing. Platform maps use the canonical HTTPS OpenStreetMap tile host, and the shared loader installs a bilingual tile-failure notice with a retry action. The generic product-image fallback leaves Leaflet's managed tiles and markers to its own loading/error lifecycle instead of permanently hiding them. Pickers retain resize/visibility handling and guard against repeated initialization. Local browser checks cover real tile loading and simulated network failure/recovery; production network availability still depends on the client's connection to OpenStreetMap.
+
 ## Schema Mapping
 
 - **PostgreSQL Schema:** `org`

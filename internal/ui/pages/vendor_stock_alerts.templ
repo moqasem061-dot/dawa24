@@ -34,23 +34,25 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 		@VendorStockAlertsTable(data, lang)
 	} else {
 		@layouts.VendorShell(i18n.T(lang, "vendor_stock_alerts.page_title"), "inventory", lang, dir) {
-			<div class="page-container" x-data="{ adjustModal: false, selectedStock: { id: 0, variantName: '', currentQty: 0 }, transferModal: false, transferStock: { id: 0, variant_id: 0, product_id: 0, name: '', from_wh_id: 0, from_wh_name: '', qty: 0 } }">
-				
+			<div class="page-container stock-alerts" x-data="{ adjustModal: false, selectedStock: { id: 0, variantName: '', location: '', currentQty: 0 }, transferModal: false, transferStock: { id: 0, variant_id: 0, product_id: 0, name: '', from_wh_id: 0, from_wh_name: '', qty: 0 } }">
 				<!-- Header Notice -->
 				if data.NoticeMsg != "" {
 					if data.NoticeType == "error" {
 						<div class="alert alert-danger mb-4 d-flex items-center gap-3 p-4">
-							<span class="text-xl">@components.IconAlert("icon-sm")</span>
+							<span class="text-xl">
+								@components.IconAlert("icon-sm")
+							</span>
 							<span class="font-bold text-sm">{ data.NoticeMsg }</span>
 						</div>
 					} else {
 						<div class="alert alert-success mb-4 d-flex items-center gap-3 p-4">
-							<span class="text-xl">@components.IconCheck("icon-sm")</span>
+							<span class="text-xl">
+								@components.IconCheck("icon-sm")
+							</span>
 							<span class="font-bold text-sm">{ data.NoticeMsg }</span>
 						</div>
 					}
 				}
-
 				<!-- Page Header -->
 				<div class="d-flex items-center justify-between flex-wrap gap-4 mb-4">
 					<div>
@@ -66,7 +68,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 							{ i18n.T(lang, "vendor_stock_alerts.subtitle") }
 						</p>
 					</div>
-
 					<div class="d-flex items-center gap-2 flex-wrap">
 						<a href="/vendor/inventory" class="btn btn-secondary btn-sm font-bold gap-1.5">
 							@components.IconLayers("icon-xs")
@@ -78,7 +79,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 						</a>
 					</div>
 				</div>
-
 				<!-- Alerts Metric Cards -->
 				{{
 					outOfStockCount := 0
@@ -99,26 +99,22 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 						<div class="stat-card-value text-rose tabular-nums">{ fmt.Sprintf("%d", outOfStockCount) }</div>
 						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_out_of_stock_desc") }</div>
 					</div>
-
 					<div class="stat-card-3d">
 						<div class="stat-card-label text-warning">{ i18n.T(lang, "vendor_stock_alerts.stat_approaching_empty") }</div>
 						<div class="stat-card-value text-warning tabular-nums">{ fmt.Sprintf("%d", lowStockCount) }</div>
 						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_approaching_empty_desc") }</div>
 					</div>
-
 					<div class="stat-card-3d">
 						<div class="stat-card-label text-primary">{ i18n.T(lang, "vendor_stock_alerts.stat_total_alerts") }</div>
 						<div class="stat-card-value text-primary tabular-nums">{ fmt.Sprintf("%d", len(data.AllLowStocks)) }</div>
 						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_total_alerts_desc") }</div>
 					</div>
-
 					<div class="stat-card-3d">
 						<div class="stat-card-label text-brand">{ i18n.T(lang, "vendor_stock_alerts.stat_affected_warehouses") }</div>
 						<div class="stat-card-value text-brand tabular-nums">{ fmt.Sprintf("%d", len(affectedWHMap)) }</div>
 						<div class="text-2xs text-muted mt-1">{ i18n.T(lang, "vendor_stock_alerts.stat_affected_warehouses_desc") }</div>
 					</div>
 				</div>
-
 				<!-- Filter & Search Bar -->
 				<div class="filter-bar mb-4">
 					<form method="GET" action="/vendor/inventory/alerts" class="d-flex items-center gap-3 flex-wrap m-0">
@@ -131,7 +127,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 								class="form-input text-xs w-full"
 							/>
 						</div>
-
 						<div class="stack-sm">
 							<select name="warehouse_id" data-autosubmit class="form-input text-xs w-full">
 								<option value="">{ fmt.Sprintf(i18n.T(lang, "vendor_inventory.all_warehouses"), len(data.Warehouses)) }</option>
@@ -142,7 +137,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 								}
 							</select>
 						</div>
-
 						<div class="stack-sm">
 							<select name="status" data-autosubmit class="form-input text-xs w-full">
 								<option value="" selected?={ data.StatusFilter == "" }>{ i18n.T(lang, "vendor_stock_alerts.filter_all_statuses") }</option>
@@ -150,13 +144,10 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 								<option value="low_stock" selected?={ data.StatusFilter == "low_stock" }>{ i18n.T(lang, "vendor_stock_alerts.filter_low_stock") }</option>
 							</select>
 						</div>
-
 						<input type="hidden" name="limit" value={ fmt.Sprintf("%d", data.PerPage) }/>
-
 						<button type="submit" class="btn btn-primary btn-sm font-bold text-xs px-4">
 							<span>{ i18n.T(lang, "common.search") }</span>
 						</button>
-
 						if data.Query != "" || data.WarehouseID > 0 || data.StatusFilter != "" {
 							<a href="/vendor/inventory/alerts" class="btn btn-secondary btn-sm text-xs">
 								<span>{ i18n.T(lang, "common.cancel") }</span>
@@ -164,14 +155,12 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 						}
 					</form>
 				</div>
-
 				<!-- Alerts Table Card -->
 				<div class="glass-panel p-0 mb-0 overflow-hidden">
 					<div class="stack-sm" id="vendor-stock-alerts-content">
 						@VendorStockAlertsTable(data, lang)
 					</div>
 				</div>
-
 				<!-- Stock Adjust Modal -->
 				<div
 					class="modal-backdrop"
@@ -184,28 +173,26 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 					x-transition:leave-start="opacity-100"
 					x-transition:leave-end="opacity-0"
 				>
-					<div class="modal-dialog modal-sm" @click.away="adjustModal = false">
+					<div class="modal-dialog modal-md stock-alert-dialog" role="dialog" aria-modal="true" :aria-label="selectedStock.variantName" @keydown.escape.window="adjustModal = false" @click.outside="adjustModal = false">
 						<div class="modal-header">
 							<div>
 								<h3 class="modal-title">{ i18n.T(lang, "vendor_inventory.adjust_title") }</h3>
 								<p class="modal-subtitle" x-text="selectedStock.variantName"></p>
+								<p class="text-xs text-secondary" x-text="selectedStock.location"></p>
 							</div>
-							<button type="button" @click="adjustModal = false" class="btn btn-secondary btn-icon btn-sm">&times;</button>
+							<button type="button" @click="adjustModal = false" aria-label={ i18n.T(lang, "common.close") } class="btn btn-secondary btn-icon btn-sm">&times;</button>
 						</div>
-
 						<div class="bg-surface-sunken border rounded-xl p-3.5 mb-3 text-xs d-flex justify-between items-center">
 							<span class="text-secondary font-bold">{ i18n.T(lang, "vendor_inventory.current_stock_label") }</span>
 							<strong class="tabular-nums text-brand font-black" x-text="selectedStock.currentQty"></strong>
 						</div>
-
 						<form :action="'/vendor/inventory/' + selectedStock.id + '/adjust'" method="POST" class="d-flex flex-col gap-4 m-0">
 							<input type="hidden" name="redirect_url" value="/vendor/inventory/alerts"/>
 							<div class="stack-sm">
-								<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_qty") } <span class="text-danger">*</span></label>
-								<input type="number" name="delta" required class="form-input text-center font-bold tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_inventory.fld_delta_ph") } />
+								<label for="alert-stock-delta" class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_qty") } <span class="text-danger">*</span></label>
+								<input type="number" id="alert-stock-delta" name="delta" required class="form-input text-center font-bold tabular-nums w-full" placeholder={ i18n.T(lang, "vendor_inventory.fld_delta_ph") }/>
 								<span class="text-xs text-muted mt-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_delta_help") }</span>
 							</div>
-
 							<div class="stack-sm">
 								<label class="form-label text-xs font-bold text-primary mb-1 d-block">{ i18n.T(lang, "vendor_inventory.fld_adjust_reason") }</label>
 								<select name="reason" class="form-input text-xs w-full font-bold">
@@ -216,7 +203,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 									<option value="أخرى">{ i18n.T(lang, "vendor_inventory.reason_other") }</option>
 								</select>
 							</div>
-
 							<div class="modal-actions mt-2">
 								<button type="button" @click="adjustModal = false" class="btn btn-secondary btn-sm flex-1 font-bold">
 									{ i18n.T(lang, "common.cancel") }
@@ -228,7 +214,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 						</form>
 					</div>
 				</div>
-
 				<!-- Stock Transfer Modal -->
 				<div
 					class="modal-backdrop"
@@ -241,22 +226,20 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 					x-transition:leave-start="opacity-100"
 					x-transition:leave-end="opacity-0"
 				>
-					<div class="modal-dialog modal-md" @click.away="transferModal = false">
+					<div class="modal-dialog modal-md stock-alert-dialog" role="dialog" aria-modal="true" :aria-label="transferStock.name" @keydown.escape.window="transferModal = false" @click.outside="transferModal = false">
 						<div class="modal-header">
 							<div>
 								<h3 class="modal-title">{ i18n.T(lang, "vendor_inventory.transfer_title") }</h3>
 								<p class="modal-subtitle" x-text="transferStock.name"></p>
 							</div>
-							<button type="button" @click="transferModal = false" class="btn btn-secondary btn-icon btn-sm">&times;</button>
+							<button type="button" @click="transferModal = false" aria-label={ i18n.T(lang, "common.close") } class="btn btn-secondary btn-icon btn-sm">&times;</button>
 						</div>
-
 						<form action="/vendor/inventory/transfer" method="POST" class="d-flex flex-col gap-4 m-0">
 							<input type="hidden" name="stock_id" :value="transferStock.id"/>
 							<input type="hidden" name="variant_id" :value="transferStock.variant_id"/>
 							<input type="hidden" name="product_id" :value="transferStock.product_id"/>
 							<input type="hidden" name="from_warehouse_id" :value="transferStock.from_wh_id"/>
 							<input type="hidden" name="redirect_url" value="/vendor/inventory/alerts"/>
-
 							<div class="bg-surface-sunken border rounded-xl p-3.5 text-xs stack-xs">
 								<div class="text-2xs text-muted font-bold">{ i18n.T(lang, "vendor_inventory.transfer_source_label") }</div>
 								<div class="d-flex justify-between items-center">
@@ -264,7 +247,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 									<span class="text-secondary">{ i18n.T(lang, "vendor_inventory.available_label") }: <strong class="text-brand tabular-nums font-black" x-text="transferStock.qty"></strong></span>
 								</div>
 							</div>
-
 							<div class="stack-sm">
 								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
 									{ i18n.T(lang, "vendor_inventory.transfer_dest_label") }
@@ -278,7 +260,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 									}
 								</select>
 							</div>
-
 							<div class="stack-sm">
 								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
 									{ i18n.T(lang, "vendor_inventory.transfer_qty_label") }
@@ -292,7 +273,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 									class="form-input text-sm w-full font-bold tabular-nums"
 								/>
 							</div>
-
 							<div class="stack-sm">
 								<label class="form-label text-xs font-bold text-primary mb-1 d-block">
 									{ i18n.T(lang, "vendor_inventory.transfer_notes_label") }
@@ -304,7 +284,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 									class="form-input text-xs w-full"
 								/>
 							</div>
-
 							<div class="modal-actions mt-2">
 								<button type="button" @click="transferModal = false" class="btn btn-secondary btn-sm flex-1 font-bold">
 									{ i18n.T(lang, "common.cancel") }
@@ -316,7 +295,6 @@ templ VendorStockAlerts(data VendorStockAlertsData, lang, dir string, isPartial 
 						</form>
 					</div>
 				</div>
-
 			</div>
 		}
 	}
@@ -332,7 +310,9 @@ templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
 	}}
 	if len(data.Stocks) == 0 {
 		<div class="p-12 text-center empty-state-glass">
-			<div class="text-4xl mb-3">@components.IconCheck("icon-sm")</div>
+			<div class="text-4xl mb-3">
+				@components.IconCheck("icon-sm")
+			</div>
 			<h3 class="text-lg font-black text-primary mb-2">
 				if data.Query != "" || data.WarehouseID > 0 || data.StatusFilter != "" {
 					{ i18n.T(lang, "vendor_stock_alerts.empty_filter_title") }
@@ -450,7 +430,7 @@ templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
 									<button
 										type="button"
 										class="btn btn-primary btn-xs font-bold gap-1"
-										@click={ fmt.Sprintf("[selectedStock = { id: %d, variantName: %q, currentQty: %d }, adjustModal = true]", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), s.Quantity) }
+										@click={ fmt.Sprintf("[selectedStock = { id: %d, variantName: %q, location: %q, currentQty: %d }, adjustModal = true]", s.ID, resolveVariantName(s.ProductVariantID, data.Variants, lang), resolveWarehouseName(s.WarehouseID, data.Warehouses, lang)+" — "+resolveBranchName(s.WarehouseID, data.Warehouses, data.Branches, lang), s.Quantity) }
 										title={ i18n.T(lang, "vendor_stock_alerts.btn_adjust_title") }
 									>
 										<span>{ i18n.T(lang, "vendor_stock_alerts.btn_restock") }</span>
@@ -478,7 +458,6 @@ templ VendorStockAlertsTable(data VendorStockAlertsData, langOpt ...string) {
 				</tbody>
 			</table>
 		</div>
-
 		@components.B2BPagination(components.PaginationProps{
 			CurrentPage: data.Page,
 			PageSize:    data.PerPage,

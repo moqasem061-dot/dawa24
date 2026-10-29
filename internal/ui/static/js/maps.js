@@ -10,27 +10,83 @@
 // ensureLeaflet injects it the first time a map element is actually present and
 // resolves immediately on every call after that.
 let leafletPromise = null;
-function ensureLeaflet() {
-  if (typeof L !== 'undefined') return Promise.resolve();
-  if (leafletPromise) return leafletPromise;
-
-  leafletPromise = new Promise(function (resolve, reject) {
-    if (!document.querySelector('link[data-leaflet-css]')) {
-      const css = document.createElement('link');
+let mapTileRecoveryInstalled = false;
+function installMapTileRecovery() {
+  if (mapTileRecoveryInstalled) return;
+  mapTileRecoveryInstalled = true;
+  L.TileLayer.addInitHook(function () {
+    const layer = this;
+    let notice;
+    function clearNotice() {
+      if (notice) notice.remove();
+      notice = null;
+    }
+    layer.on('tileerror', function () {
+      if (!layer._map || notice) return;
+      const english = document.documentElement.lang === 'en';
+      notice = L.control({ position: 'bottomleft' });
+      notice.onAdd = function () {
+        const panel = L.DomUtil.create('div', 'map-load-status');
+        panel.setAttribute('role', 'status');
+        panel.textContent = english ? 'Map tiles could not load. Check your connection.' : 'تعذر تحميل الخريطة. تحقق من اتصال الإنترنت.';
+        const retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'btn btn-secondary btn-sm';
+        retry.textContent = english ? 'Retry' : 'إعادة المحاولة';
+        retry.addEventListener('click', function () { clearNotice(); layer.redraw(); });
+        panel.appendChild(retry);
+        L.DomEvent.disableClickPropagation(panel);
+        return panel;
+      };
+      notice.addTo(layer._map);
+    });
+    layer.on('load', function () {
+      if (Object.values(layer._tiles).some(tile => tile.el.naturalWidth > 0)) clearNotice();
+    });
+    layer.on('remove', clearNotice);
+  });
+}
+function leafletStyles() {
+  let css = document.querySelector('link[data-leaflet-css]');
+  if (css && css.sheet) return Promise.resolve();
+  return new Promise(function (resolve, reject) {
+    if (!css) {
+      css = document.createElement('link');
       css.rel = 'stylesheet';
       css.href = '/static/vendor/leaflet/leaflet.css';
       css.setAttribute('data-leaflet-css', '');
-      css.setAttribute('data-clarity-unmask', 'true'); // see base.templ
-      document.head.appendChild(css);
+      css.setAttribute('data-clarity-unmask', 'true');
     }
+    css.addEventListener('load', resolve, { once: true });
+    css.addEventListener('error', function () {
+      css.remove();
+      reject(new Error('leaflet CSS failed to load'));
+    }, { once: true });
+    if (!css.isConnected) document.head.appendChild(css);
+  });
+}
+
+function leafletScript() {
+  if (typeof L !== 'undefined') return Promise.resolve();
+  return new Promise(function (resolve, reject) {
     const script = document.createElement('script');
     script.src = '/static/vendor/leaflet/leaflet.js';
-    script.onload = function () { resolve(); };
+    script.onload = resolve;
     script.onerror = function () {
-      leafletPromise = null;
+      script.remove();
       reject(new Error('leaflet failed to load'));
     };
     document.head.appendChild(script);
+  });
+}
+
+function ensureLeaflet() {
+  if (leafletPromise) return leafletPromise;
+  leafletPromise = Promise.all([leafletStyles(), leafletScript()]).then(function () {
+    installMapTileRecovery();
+  }).catch(function (error) {
+    leafletPromise = null;
+    throw error;
   });
   return leafletPromise;
 }
@@ -287,7 +343,7 @@ function initMapPickers() {
   const containers = document.querySelectorAll('[data-map-picker]');
   if (!containers.length) return;
 
-  if (typeof L === 'undefined') {
+  if (typeof L === 'undefined' || !document.querySelector('link[data-leaflet-css]')?.sheet) {
     ensureLeaflet().then(initMapPickers).catch(function (err) {
       // A map that cannot load says so, rather than leaving an empty box.
       containers.forEach(function (container) {
@@ -323,8 +379,6 @@ function initMapPickers() {
     let initialLon = parseFloat(canvas.dataset.lon || container.dataset.defaultLon || (lonInput ? lonInput.value : '31.2357')) || 31.2357;
     let initialRadius = parseInt(canvas.dataset.radius || container.dataset.defaultRadius || (radiusInput ? radiusInput.value : '1000'), 10) || 1000;
 
-    container.dataset.mapInitialized = 'true';
-
     // Initialize Leaflet Map
     const map = L.map(canvas, {
       center: [initialLat, initialLon],
@@ -333,11 +387,12 @@ function initMapPickers() {
       scrollWheelZoom: true,
     });
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
       maxZoom: 19,
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
 
+    container.dataset.mapInitialized = 'true';
     canvas._leaflet_map = map;
     container._leaflet_map = map;
 

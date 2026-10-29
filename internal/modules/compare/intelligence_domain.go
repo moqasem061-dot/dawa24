@@ -19,8 +19,8 @@ type HeadToHeadFilter struct {
 	SourceFileID int64              `json:"source_file_id"`
 	TargetFileID int64              `json:"target_file_id"`
 	Query        string             `json:"query"`
-	MinPrice     *float64           `json:"min_price"`
-	MaxPrice     *float64           `json:"max_price"`
+	MinPrice     *money.Amount      `json:"min_price"`
+	MaxPrice     *money.Amount      `json:"max_price"`
 	MinDiscount  *float64           `json:"min_discount"`
 	MaxDiscount  *float64           `json:"max_discount"`
 	Outcome      *HeadToHeadOutcome `json:"outcome"`
