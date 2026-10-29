@@ -147,10 +147,6 @@ func (c *TranscriptionModelCache) Resolve(ctx context.Context, mime string) (str
 	if c.pinned != nil {
 		pin = strings.TrimSpace(c.pinned(ctx))
 	}
-	if pin != "" {
-		return pin, nil
-	}
-
 	if c.list == nil {
 		return "", ErrNoTranscriptionModel
 	}
@@ -166,11 +162,11 @@ func (c *TranscriptionModelCache) Resolve(ctx context.Context, mime string) (str
 		if !m.IsTranscription() || !strings.EqualFold(m.Status, "active") {
 			continue
 		}
-		if pin != "" && (m.Name == pin || m.ID == pin) {
-			return m.Name, nil
-		}
 		if !m.Accepts(mime) {
 			continue
+		}
+		if pin != "" && (m.Name == pin || m.ID == pin) {
+			return m.Name, nil
 		}
 		if best == nil || m.PricePerMinute < best.PricePerMinute {
 			best = m

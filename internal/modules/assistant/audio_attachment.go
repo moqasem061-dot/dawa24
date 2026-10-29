@@ -18,7 +18,11 @@ type audioAttachmentInput struct {
 
 func (s *Service) readAudioAttachment(ctx context.Context, actor authctx.Actor, input audioAttachmentInput) string {
 	row := input.row
-	model := s.audioTranscriptionModel(ctx, row.MIMEType)
+	model, modelErr := s.audioTranscriptionModel(ctx, row.MIMEType)
+	if modelErr != nil {
+		s.log.WarnContext(ctx, "assistant: transcription model discovery failed; trying audio-capable role", "error", modelErr)
+		return s.readAudioViaChat(ctx, actor, input)
+	}
 	transcribeCtx, cancel := context.WithTimeout(ctx, 45*time.Second)
 	text, err := s.gateway.Transcribe(transcribeCtx, gateway.TranscribeRequest{
 		Audio: bytes.NewReader(input.content), Filename: row.Filename, MIMEType: row.MIMEType,
@@ -98,14 +102,9 @@ func boundedAudioText(text string) string {
 	return string(characters)
 }
 
-func (s *Service) audioTranscriptionModel(ctx context.Context, mime string) string {
+func (s *Service) audioTranscriptionModel(ctx context.Context, mime string) (string, error) {
 	if s.transcribeModel == nil {
-		return ""
+		return "", nil
 	}
-	model, err := s.transcribeModel(ctx, mime)
-	if err != nil {
-		s.log.WarnContext(ctx, "assistant: transcription model discovery failed", "error", err)
-		return ""
-	}
-	return model
+	return s.transcribeModel(ctx, mime)
 }

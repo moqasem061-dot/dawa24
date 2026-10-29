@@ -69,3 +69,27 @@ func TestAudioAttachmentFailureKeepsWrittenInputFallbackWithoutCachingPartialTra
 		}
 	}
 }
+
+func TestAudioAttachmentDiscoveryFailureDoesNotSendUnverifiedModel(t *testing.T) {
+	for _, audio := range []bool{false, true} {
+		t.Run(map[bool]string{false: "written fallback", true: "audio chat fallback"}[audio], func(t *testing.T) {
+			repo := newMemoryAttachmentRepo()
+			gw := &audioReadingGateway{audio: audio}
+			svc := assistant.NewService(repo, gw, nil, nil)
+			svc.SetTranscriptionModelResolver(func(context.Context, string) (string, error) {
+				return "", gateway.ErrNoTranscriptionModel
+			})
+			actor := authctx.Actor{UserID: 10, OrgID: 5}
+			row, err := svc.IngestAttachment(context.Background(), actor, "voice.ogg", []byte("OggSvoice"))
+			require.NoError(t, err)
+			_, digests, _ := svc.ResolveAttachments(context.Background(), actor, []string{row.PublicID.String()})
+			require.False(t, gw.called)
+			if audio {
+				require.Equal(t, "أريد ٥ علب من الدواء", digests[0].Text)
+			} else {
+				require.Contains(t, digests[0].Text, "كتابة الأصناف كنص")
+				require.Empty(t, repo.digests[row.ID])
+			}
+		})
+	}
+}

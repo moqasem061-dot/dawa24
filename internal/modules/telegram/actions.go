@@ -64,6 +64,8 @@ func (s *Service) handleCallback(ctx context.Context, updateID int64, q *Callbac
 		return Reply{}, err
 	}
 	chatID := q.Message.Chat.ID
+	stopTyping := s.keepTyping(ctx, chatID)
+	defer stopTyping()
 	reply := Reply{AnswerCallback: &CallbackAnswer{ID: q.ID}}
 
 	confirm, proposalID, ok := chatbridge.ParseDecisionPayload(q.Data)

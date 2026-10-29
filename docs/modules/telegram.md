@@ -214,3 +214,31 @@ endpoint cannot consume the entire turn before fallback.
 
 No n8n workflow was changed. Live Telegram file forwarding and the deployed
 Gateway still need a real voice-message acceptance test in that environment.
+
+## Transcription model validation (2026-10-29)
+
+A live native Telegram voice update reached the bridge as `audio/ogg`, but
+the Gateway returned 400 because the configured transcription role selected a
+chat model. Native voice forwarding in n8n was intact. Explicit DB/environment
+model choices now undergo the same catalogue checks as automatic discovery:
+active status, transcription type, and support for the upload MIME. An invalid
+choice falls back to an eligible transcription model; catalogue failures and
+the absence of eligible models propagate instead of selecting an unverified
+default. Attachment extraction then tries the existing audio-capable chat path
+and retains the written-input fallback when neither path is available.
+
+Production still requires a configured active transcription model and a live
+voice acceptance test after deployment. Unit tests cover a chat-model pin,
+inactive and incompatible pins, catalogue failure, and both fallback paths.
+
+## Typing during long answers (2026-10-29)
+
+n8n sends the initial typing action. With `TELEGRAM_BOT_TOKEN` configured, the
+bridge refreshes `sendChatAction` every three seconds while handling a private
+message or button press, including attachment processing. The refresh stops
+and any in-flight action is canceled before the bridge returns the reply to
+n8n. Final messages and files remain delivered by n8n. A typing failure never
+fails the answer, follows a redirect, or exposes the bot token in logs.
+
+Tests use a virtual clock to cover a long answer, stopping after completion,
+cancellation during an in-flight action, and credential-safe failure logging.

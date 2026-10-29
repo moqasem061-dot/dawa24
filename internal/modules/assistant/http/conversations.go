@@ -126,12 +126,10 @@ func (h *Handler) Transcribe(w http.ResponseWriter, r *http.Request) {
 	if h.modelResolver != nil {
 		model, err = h.modelResolver(ctx, mime)
 		if err != nil {
-			if errors.Is(err, gateway.ErrNoTranscriptionModel) {
-				writeFailure(w, http.StatusServiceUnavailable,
-					assistant.Fail(assistant.CodeTranscribeUnavail))
-				return
-			}
 			h.log.WarnContext(ctx, "assistant: transcription model discovery failed", "error", err)
+			writeFailure(w, http.StatusServiceUnavailable,
+				assistant.Fail(assistant.CodeTranscribeUnavail))
+			return
 		}
 	}
 

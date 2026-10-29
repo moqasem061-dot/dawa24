@@ -26,7 +26,7 @@ type Config struct {
 	BotUsername string
 	// BaseURL is the public site address, for links back into the dashboard.
 	BaseURL string
-	// BotToken is the optional Telegram Bot API token for downloading attachments.
+	// BotToken enables attachment downloads and typing refreshes while answering.
 	BotToken string
 }
 

@@ -131,7 +131,9 @@ func assistantBuffer(d assistantDeps) stream.Buffer {
 //     (platform_admin.ai_role_models with role = "assistant.transcribe").
 //  2. The environment variable override GATEWAY_MODEL_ASSISTANT_TRANSCRIBE.
 //  3. Dynamic discovery from Gateway's admin catalogue (cheapest active model).
-//  4. Built-in default model for RoleTranscribe.
+//
+// A configured model must still be active, support transcription, and accept
+// the upload format. A chat model pin must never reach the transcription API.
 func transcriptionResolver(d assistantDeps) gateway.TranscriptionModelResolver {
 	pinnedModel := func(ctx context.Context) string {
 		if d.admin != nil {
@@ -160,15 +162,7 @@ func transcriptionResolver(d assistantDeps) gateway.TranscriptionModelResolver {
 		pinnedModel,
 	)
 
-	return func(ctx context.Context, mime string) (string, error) {
-		if pin := pinnedModel(ctx); pin != "" {
-			return pin, nil
-		}
-		if m, err := cacheEntry.Resolve(ctx, mime); err == nil && m != "" {
-			return m, nil
-		}
-		return gateway.ResolveRoleModel(gateway.Settings{}, gateway.RoleTranscribe), nil
-	}
+	return cacheEntry.Resolve
 }
 
 // adminClientFor builds a Gateway management client from saved settings.

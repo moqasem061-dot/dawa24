@@ -45,6 +45,8 @@ func (s *Service) HandleUpdate(ctx context.Context, u Update) (Reply, error) {
 	}
 
 	chatID := msg.Chat.ID
+	stopTyping := s.keepTyping(ctx, chatID)
+	defer stopTyping()
 	cmd, arg := parseCommand(msg.Text, s.cfg.BotUsername)
 	if cmd == "start" && arg != "" {
 		return s.handleLinkCode(sys, msg, arg)
