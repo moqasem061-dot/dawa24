@@ -219,6 +219,9 @@ func loadAdminCatalogB(e *engine) {
 
 	// --- Contact Messages & Requests ---
 	addKey(e, "admin.messages.status_updated_success", "admin", "تم تحديث حالة الرسالة بنجاح.", "Message status updated successfully.", "Success notice")
+	addKey(e, "admin.messages.status_invalid", "admin", "حالة الرسالة المطلوبة غير صحيحة.", "The requested message status is not valid.", "Validation error")
+	addKey(e, "admin.messages.status_update_failed", "admin", "تعذّر تحديث حالة الرسالة. حاول مرة أخرى.", "Could not update the message status. Please try again.", "Error notice")
+	addKey(e, "admin.messages.delete_failed", "admin", "تعذّر حذف الرسالة. حاول مرة أخرى.", "Could not delete the message. Please try again.", "Error notice")
 	addKey(e, "admin.messages.deleted_success", "admin", "تم حذف الرسالة بنجاح.", "Message deleted successfully.", "Success notice")
 	addKey(e, "requests.sent_success", "workflow", "تم إرسال الطلب.", "Request sent successfully.", "Success notice")
 

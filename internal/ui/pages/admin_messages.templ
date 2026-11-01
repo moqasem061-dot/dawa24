@@ -2,7 +2,6 @@ package pages
 
 import (
 	"fmt"
-	"net/url"
 	"strings"
 
 	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
@@ -10,6 +9,26 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
+// The contact inbox.
+//
+// It is a list of messages, not the messages themselves. The full text of every
+// inquiry used to be printed in a table cell, which is where this screen stopped
+// being usable: the column widened to the longest message on the page, the
+// sender block above it wrapped around an IP address and a raw browser string,
+// and two rows could fill a laptop screen. Reading one message meant reading all
+// of them.
+//
+// So a row now answers the three questions a queue has to answer — who, about
+// what, and since when — and the message itself opens in a dialog
+// (AdminMessageModal), with the sender's details and the actions beside it.
+//
+// The rest of the screen is spent on the decisions a row has to make visible:
+// an unread message is tinted and carries a dot, so the queue can be scanned for
+// what still needs an answer; the actions are icon buttons of one width, because
+// the previous text buttons changed length when they flipped between "تمت
+// المتابعة" and "غير مقروءة" and made the whole column jump; and the metadata
+// that belongs to a single message (IP, browser, registered-user link) has moved
+// into that message's dialog rather than being repeated in every row.
 func resolveMessageSubject(subj string) string {
 	s := strings.TrimSpace(subj)
 	if s == "" {
@@ -52,38 +71,53 @@ func cleanPhoneForWhatsApp(phone string) string {
 	return raw
 }
 
+// unreadOnPage counts what an operator still owes a reply for, on the page in
+// front of them. It is labelled as such in the header: the total across the
+// inbox is not in this response, and a number that silently means something
+// narrower than the reader assumes is worse than no number.
+func unreadOnPage(messages []*platformadmin.ContactMessage) int {
+	unread := 0
+	for _, m := range messages {
+		if isUnreadMessage(m.Status) {
+			unread++
+		}
+	}
+	return unread
+}
 
 templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, page, perPage, totalCount int) {
 	@layouts.AdminShell("رسائل واستفسارات التواصل", "messages", lang, dir) {
 		<div class="page-container">
-			
-			<!-- Header Banner -->
-			<div class="glass-panel p-6 mb-6">
+			<header class="glass-panel p-6 mb-6">
 				<div class="flex-between items-center flex-wrap gap-4">
 					<div class="d-flex items-center gap-3">
 						<div class="user-avatar-badge text-xl">
-							@components.IconMail("icon-sm")
+							@components.IconInbox("icon-sm")
 						</div>
-      <div class="stack-sm">
+						<div class="stack-sm">
 							<h1 class="text-2xl font-black text-primary m-0">
 								رسائل واستفسارات التواصل ({ fmt.Sprintf("%d", totalCount) })
 							</h1>
 							<p class="text-sm text-secondary m-0 mt-1">
-								صندوق الرسائل والطلبات الواردة عبر نموذج "تواصل معنا" من الصيدليات والشركات والعملاء
+								الطلبات الواردة من نموذج «تواصل معنا». يعرض الجدول ملخص كل رسالة، ونصها الكامل في نافذة القراءة.
 							</p>
 						</div>
 					</div>
-
-					<div class="d-flex items-center gap-2">
+					<div class="d-flex items-center gap-2 flex-wrap">
+						if unread := unreadOnPage(messages); unread > 0 {
+							<span class="badge badge-rose fw-800" title="عدد الرسائل غير المقروءة في هذه الصفحة">
+								<span>{ fmt.Sprintf("%d", unread) }</span>
+								<span>غير مقروءة في هذه الصفحة</span>
+							</span>
+						}
 						<a href="/admin/messages" class="btn btn-secondary btn-sm font-bold text-xs gap-1">
 							@components.IconRefresh("icon-xs")
 							<span>تحديث الرسائل</span>
 						</a>
 					</div>
 				</div>
-			</div>
+			</header>
 
-			<!-- Messages Table Card -->
 			<div class="glass-panel p-0 mb-6 overflow-hidden">
 				if len(messages) == 0 {
 					<div class="p-8 text-center empty-state-glass">
@@ -93,117 +127,106 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 					</div>
 				} else {
 					<div class="table-container m-0">
-						<table class="data-table m-0">
+						<table class="data-table data-table-compact m-0">
 							<thead>
 								<tr>
-									<th>#</th>
-									<th>المرسل وبيانات الاتصال</th>
-									<th>الموضوع / نوع الطلب</th>
-									<th>نص الرسالة</th>
+									<th class="text-center">#</th>
+									<th>المرسل</th>
+									<th>الموضوع والملخص</th>
 									<th class="text-center">الحالة</th>
-									<th>التاريخ والتوقيت</th>
-									<th class="col-actions">الإجراءات</th>
+									<th>التاريخ</th>
+									<th class="col-actions text-center">الإجراءات</th>
 								</tr>
 							</thead>
 							<tbody>
 								for _, m := range messages {
-									<tr id={ fmt.Sprintf("message-row-%d", m.ID) }>
-										<td class="tabular-nums">
-											#{ fmt.Sprintf("%d", m.ID) }
+									<tr class={ "inbox-row", templ.KV("is-unread", isUnreadMessage(m.Status)) }>
+										<td class="text-center tabular-nums text-xs text-muted">
+											{ fmt.Sprintf("%d", m.ID) }
 										</td>
 										<td>
-											<div class="fw-800 text-primary text-base">
-												{ m.Name }
-											</div>
-											if m.Email != "" {
-												<div class="stack-sm" dir="ltr">
-													<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) }>
-														{ m.Email }
-													</a>
-												</div>
-											}
-											if m.Phone != "" {
-												<div dir="ltr" class="tabular-nums">
-													<span>{ m.Phone }</span>
-													{{ waPhone := cleanPhoneForWhatsApp(m.Phone) }}
-													if waPhone != "" {
-														<a href={ templ.SafeURL("https://wa.me/" + waPhone) } target="_blank" rel="noopener" class="text-xs text-success font-bold" title="محادثة واتساب">
-															(واتساب)
-														</a>
+											<div class="d-flex items-center gap-2">
+												<span class="inbox-avatar" aria-hidden="true">{ senderInitials(m.Name) }</span>
+												<div class="stack-xs">
+													<div class="d-flex items-center gap-1 flex-wrap">
+														if isUnreadMessage(m.Status) {
+															<span class="inbox-unread-dot" aria-hidden="true"></span>
+														}
+														<span class="fw-800 text-primary text-sm">{ m.Name }</span>
+													</div>
+													if m.Email != "" {
+														<div dir="ltr" class="inbox-contact">
+															<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) }>{ m.Email }</a>
+														</div>
+													}
+													if m.Phone != "" {
+														<div dir="ltr" class="inbox-contact tabular-nums">
+															<a href={ templ.SafeURL("tel:" + m.Phone) }>{ m.Phone }</a>
+														</div>
 													}
 												</div>
-											}
-											if m.IP != "" {
-												<div class="stack-xs text-xs text-secondary font-mono" dir="ltr">
-													<span>IP: { m.IP }</span>
-												</div>
-											}
-											if m.UserID != nil && *m.UserID > 0 {
-												<div class="stack-xs text-xs">
-													<a href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", *m.UserID)) } class="badge badge-indigo">
-														مستخدم مسجل #{ fmt.Sprintf("%d", *m.UserID) }
-													</a>
-												</div>
-											}
-											if m.UserAgent != "" {
-												<div class="stack-xs text-xs text-secondary truncate max-w-xs" title={ m.UserAgent } dir="ltr">
-													{ m.UserAgent }
-												</div>
-											}
+											</div>
 										</td>
 										<td>
-											<span class={ "badge font-bold", messageSubjectBadgeClass(m.Subject) }>
-												{ resolveMessageSubject(m.Subject) }
+											<div class="stack-xs">
+												<div class="d-flex items-center gap-1 flex-wrap">
+													<span class={ "badge font-bold", messageSubjectBadgeClass(m.Subject) }>
+														{ resolveMessageSubject(m.Subject) }
+													</span>
+													if m.UserID != nil && *m.UserID > 0 {
+														<span class="badge badge-indigo" title={ fmt.Sprintf("مستخدم مسجل #%d", *m.UserID) }>مسجل</span>
+													}
+												</div>
+												<p class="inbox-preview">
+													{ messagePreview(m.Message, 96) }
+													<span class="inbox-meta-count">{ messageLengthLabel(m.Message) }</span>
+												</p>
+											</div>
+										</td>
+										<td class="text-center">
+											<span class={ "badge fw-800", messageStatusClass(m.Status) }>
+												{ messageStatusLabel(m.Status) }
 											</span>
 										</td>
-										<td>
-											<div class="stack-xs text-sm">
-												{ m.Message }
+										<td class="tabular-nums text-xs">
+											<div class="stack-xs">
+												<span>{ m.CreatedAt.Format("2006-01-02") }</span>
+												<span class="text-muted">{ m.CreatedAt.Format("03:04 PM") }</span>
 											</div>
 										</td>
-										<td>
-											if m.Status == "unread" || m.Status == "" {
-												<span class="badge badge-rose fw-800">غير مقروءة </span>
-											} else if m.Status == "in_progress" {
-												<span class="badge badge-warning fw-800">قيد المتابعة ⏳</span>
-											} else {
-												<span class="badge badge-emerald fw-800">تم الرد / مكتملة </span>
-											}
-										</td>
-										<td class="tabular-nums">
-											<div class="stack-xs text-sm">{ m.CreatedAt.Format("2006-01-02") }</div>
-											<div class="stack-xs text-sm">{ m.CreatedAt.Format("03:04:05 PM") }</div>
-										</td>
 										<td class="col-actions">
-											<div class="table-actions">
-												if m.Email != "" {
-													<a
-														href={ templ.SafeURL(fmt.Sprintf("mailto:%s?subject=%s", m.Email, url.QueryEscape("رد بخصوص: "+resolveMessageSubject(m.Subject)))) }
+											<div class="table-actions inbox-actions">
+												<button
+													type="button"
+													class="btn btn-primary btn-sm"
+													data-modal-open={ messageModalID(m.ID) }
+													title="قراءة الرسالة كاملة"
+													aria-label="قراءة الرسالة كاملة"
+												>
+													@components.IconEye("icon-xs")
+												</button>
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/toggle", m.ID)) } class="m-0">
+													<input type="hidden" name="status" value={ messageToggleTarget(m.Status) }/>
+													<button
+														type="submit"
 														class="btn btn-secondary btn-sm"
-														title="إرسال بريد إلكتروني"
+														title={ messageToggleLabel(m.Status) }
+														aria-label={ messageToggleLabel(m.Status) }
 													>
-														@components.IconMail("icon-xs")
-													</a>
-												}
-
-												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/toggle", m.ID)) } class="m-0 inline">
-													if m.Status == "unread" || m.Status == "" {
-														<button type="submit" class="btn btn-secondary btn-sm text-success" title="تحديد كمقروءة / تم التعامل">
-															تمت المتابعة
-														</button>
-													} else {
-														<button type="submit" class="btn btn-secondary btn-sm text-warning" title="تحديد كغير مقروءة">
-															غير مقروءة
-														</button>
-													}
+														if isUnreadMessage(m.Status) {
+															@components.IconCheck("icon-xs")
+														} else {
+															@components.IconRotateCcw("icon-xs")
+														}
+													</button>
 												</form>
-
-												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/delete", m.ID)) } class="m-0 inline">
+												<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/delete", m.ID)) } class="m-0">
 													<button
 														type="submit"
 														class="btn btn-secondary btn-sm text-danger"
-														data-confirm="هل أنت متأكد من حذف هذه الرسالة؟"
+														data-confirm="هل أنت متأكد من حذف هذه الرسالة؟ لا يمكن التراجع عن الحذف."
 														title="حذف الرسالة"
+														aria-label="حذف الرسالة"
 													>
 														@components.IconTrash("icon-xs")
 													</button>
@@ -226,6 +249,23 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 				}
 			</div>
 
+			for _, m := range messages {
+				@AdminMessageModal(m)
+			}
 		</div>
 	}
+}
+
+// messageLengthLabel tells the reader how much text is behind the preview
+// without opening it: a three-word inquiry and a page-long complaint look
+// identical as a truncated line.
+func messageLengthLabel(body string) string {
+	words := len(strings.Fields(body))
+	if words == 0 {
+		return ""
+	}
+	if words < 25 {
+		return "رسالة قصيرة"
+	}
+	return "رسالة طويلة"
 }

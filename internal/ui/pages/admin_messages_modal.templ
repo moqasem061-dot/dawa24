@@ -1,0 +1,267 @@
+package pages
+
+import (
+	"fmt"
+	"net/url"
+	"strings"
+
+	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// The contact inbox's detail dialog.
+//
+// The inbox used to print every message's full body inside the table, which is
+// what made the screen unreadable: a contact message is free text of any length,
+// the column stretched to the longest one on the page, and the sender details —
+// e-mail, phone, IP, browser — were wrapped above it, so a row could be forty
+// lines tall and two rows filled the screen. The table is now a list of
+// messages; the text lives here, where it can be read and acted on.
+//
+// The dialog carries everything the table no longer repeats: the message
+// itself, who sent it, from where, and the three actions an inbox needs — reply,
+// mark read/unread, delete.
+
+// messageModalID is the dialog id a row's "عرض" button targets. Namespaced by
+// the message id so several dialogs can coexist on one page.
+func messageModalID(id int64) string {
+	return fmt.Sprintf("admin-message-modal-%d", id)
+}
+
+// isUnreadMessage reports whether an operator still owes this message a reply.
+// An empty status is the column default on rows written before the status was
+// set, and means the same thing as unread.
+func isUnreadMessage(status string) bool {
+	return status == "unread" || status == ""
+}
+
+// messageStatusLabel is the operator-facing name of a status.
+func messageStatusLabel(status string) string {
+	switch {
+	case isUnreadMessage(status):
+		return "غير مقروءة"
+	case status == "in_progress":
+		return "قيد المتابعة"
+	default:
+		return "تم الرد / مكتملة"
+	}
+}
+
+// messageStatusClass is the badge colour for a status. One mapping for the
+// table and the dialog, so the same message cannot be rose in one and emerald in
+// the other.
+func messageStatusClass(status string) string {
+	switch {
+	case isUnreadMessage(status):
+		return "badge-rose"
+	case status == "in_progress":
+		return "badge-warning"
+	default:
+		return "badge-emerald"
+	}
+}
+
+// messageToggleTarget is the status the toggle button writes. It is sent with
+// the form instead of being looked up in the handler: the inbox used to re-read
+// the first 500 messages to discover the current status, which both scanned a
+// table to flip one row and left every message past the five-hundredth
+// impossible to mark as read.
+func messageToggleTarget(status string) string {
+	if status == "read" || status == "resolved" {
+		return "unread"
+	}
+	return "read"
+}
+
+// messageToggleLabel is what the toggle button promises to do.
+func messageToggleLabel(status string) string {
+	if status == "read" || status == "resolved" {
+		return "إرجاع كغير مقروءة"
+	}
+	return "تمت المتابعة"
+}
+
+// senderInitials is the two-letter mark beside a sender's name. A name that is
+// one word keeps one letter; an empty name (a form submitted without one) gets a
+// neutral mark rather than an empty circle.
+func senderInitials(name string) string {
+	fields := strings.Fields(strings.TrimSpace(name))
+	var initials []rune
+	for _, field := range fields {
+		runes := []rune(field)
+		if len(runes) == 0 {
+			continue
+		}
+		initials = append(initials, runes[0])
+		if len(initials) == 2 {
+			break
+		}
+	}
+	if len(initials) == 0 {
+		return "؟"
+	}
+	return string(initials)
+}
+
+// messagePreview is the one-line glimpse of the message shown in the list.
+//
+// The body is free text that may contain newlines, tabs and runs of spaces — a
+// pasted paragraph is common — so it is collapsed to a single line before being
+// cut, and cut on a word boundary where one is close enough, because a preview
+// ending mid-word reads like a rendering fault.
+func messagePreview(body string, limit int) string {
+	fields := strings.Fields(body)
+	joined := strings.Join(fields, " ")
+	if joined == "" {
+		return "لا يوجد نص في هذه الرسالة."
+	}
+	runes := []rune(joined)
+	if len(runes) <= limit {
+		return joined
+	}
+	cut := string(runes[:limit])
+	if space := strings.LastIndex(cut, " "); space > limit/2 {
+		cut = cut[:space]
+	}
+	return strings.TrimRight(cut, " .,،;") + "…"
+}
+
+// messageBody is the message as written, with the whitespace preserved. It
+// returns a visible placeholder for a message stored empty rather than an empty
+// dialog that looks broken.
+func messageBody(body string) string {
+	trimmed := strings.TrimSpace(body)
+	if trimmed == "" {
+		return "لم يُكتب نص في هذه الرسالة."
+	}
+	return trimmed
+}
+
+// AdminMessageModal is the read-and-act dialog for one contact message.
+templ AdminMessageModal(m *platformadmin.ContactMessage) {
+	@components.Modal(components.ModalProps{
+		ID:       messageModalID(m.ID),
+		Title:    resolveMessageSubject(m.Subject),
+		Subtitle: fmt.Sprintf("#%d · %s · %s", m.ID, m.Name, m.CreatedAt.Format("2006-01-02 03:04 PM")),
+		Icon:     "inbox",
+		Size:     "lg",
+	}) {
+		<div class="stack-md">
+			<div class="d-flex items-center gap-2 flex-wrap">
+				<span class={ "badge font-bold", messageStatusClass(m.Status) }>
+					{ messageStatusLabel(m.Status) }
+				</span>
+				<span class={ "badge font-bold", messageSubjectBadgeClass(m.Subject) }>
+					{ resolveMessageSubject(m.Subject) }
+				</span>
+				if m.UserID != nil && *m.UserID > 0 {
+					<a href={ templ.SafeURL(fmt.Sprintf("/admin/users/%d", *m.UserID)) } class="badge badge-indigo">
+						مستخدم مسجل #{ fmt.Sprintf("%d", *m.UserID) }
+					</a>
+				}
+			</div>
+
+			<div class="inbox-message-body" dir="auto">{ messageBody(m.Message) }</div>
+
+			<dl class="inbox-meta">
+				<div class="inbox-meta-item">
+					<dt>المرسل</dt>
+					<dd>{ m.Name }</dd>
+				</div>
+				<div class="inbox-meta-item">
+					<dt>البريد الإلكتروني</dt>
+					<dd dir="ltr">
+						if m.Email != "" {
+							<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) }>{ m.Email }</a>
+						} else {
+							<span class="text-muted">—</span>
+						}
+					</dd>
+				</div>
+				<div class="inbox-meta-item">
+					<dt>الهاتف</dt>
+					<dd dir="ltr">
+						if m.Phone != "" {
+							<span class="tabular-nums">{ m.Phone }</span>
+							{{ waPhone := cleanPhoneForWhatsApp(m.Phone) }}
+							if waPhone != "" {
+								<a
+									href={ templ.SafeURL("https://wa.me/" + waPhone) }
+									target="_blank"
+									rel="noopener"
+									class="text-success font-bold"
+								>
+									واتساب
+								</a>
+							}
+						} else {
+							<span class="text-muted">—</span>
+						}
+					</dd>
+				</div>
+				<div class="inbox-meta-item">
+					<dt>تاريخ الاستلام</dt>
+					<dd class="tabular-nums">{ m.CreatedAt.Format("2006-01-02 03:04 PM") }</dd>
+				</div>
+				<div class="inbox-meta-item">
+					<dt>عنوان IP</dt>
+					<dd dir="ltr" class="font-mono text-xs">
+						if m.IP != "" {
+							{ m.IP }
+						} else {
+							<span class="text-muted">—</span>
+						}
+					</dd>
+				</div>
+				<div class="inbox-meta-item">
+					<dt>المتصفح</dt>
+					<dd dir="ltr" class="text-xs">{ messageUserAgent(m.UserAgent) }</dd>
+				</div>
+			</dl>
+
+			<div class="d-flex items-center gap-2 flex-wrap pt-3 border-t">
+				if m.Email != "" {
+					<a
+						href={ templ.SafeURL(fmt.Sprintf("mailto:%s?subject=%s", m.Email, url.QueryEscape("رد بخصوص: "+resolveMessageSubject(m.Subject)))) }
+						class="btn btn-primary btn-sm font-bold gap-1"
+					>
+						@components.IconMail("icon-xs")
+						<span>رد بالبريد</span>
+					</a>
+				}
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/toggle", m.ID)) } class="m-0">
+					<input type="hidden" name="status" value={ messageToggleTarget(m.Status) }/>
+					<button type="submit" class="btn btn-secondary btn-sm font-bold gap-1">
+						@components.IconCheck("icon-xs")
+						<span>{ messageToggleLabel(m.Status) }</span>
+					</button>
+				</form>
+				<form method="POST" action={ templ.SafeURL(fmt.Sprintf("/admin/messages/%d/delete", m.ID)) } class="m-0 ms-auto">
+					<button
+						type="submit"
+						class="btn btn-secondary btn-sm text-danger font-bold gap-1"
+						data-confirm="هل أنت متأكد من حذف هذه الرسالة؟ لا يمكن التراجع عن الحذف."
+					>
+						@components.IconTrash("icon-xs")
+						<span>حذف</span>
+					</button>
+				</form>
+			</div>
+		</div>
+	}
+}
+
+// messageUserAgent keeps the browser string from stretching the metadata grid:
+// real user agents are 120+ characters of product tokens.
+func messageUserAgent(ua string) string {
+	trimmed := strings.TrimSpace(ua)
+	if trimmed == "" {
+		return "غير مسجل"
+	}
+	runes := []rune(trimmed)
+	if len(runes) <= 60 {
+		return trimmed
+	}
+	return string(runes[:60]) + "…"
+}
+

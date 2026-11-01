@@ -80,36 +80,49 @@ func (h *UIHandler) AdminMessagesPage(w http.ResponseWriter, r *http.Request) {
 	h.renderPage(ctx, w, "render admin messages", pages.AdminMessages(lang, dir, messages, page, limit, total))
 }
 
-// AdminMessageToggleSubmit toggles the status of a contact message between unread and read.
+// AdminMessageToggleSubmit flips a contact message between read and unread.
+//
+// The status to write arrives with the form, which is the whole point: it used
+// to be discovered by reading the first five hundred messages and searching them
+// for this id. That scanned the inbox to flip one row, and every message past
+// the five-hundredth could not be marked as read at all — the row simply did
+// nothing when an operator clicked it.
 func (h *UIHandler) AdminMessageToggleSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	lang := langOf(r)
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err == nil && id > 0 && h.adminSvc != nil {
-		msgs, err := h.adminSvc.ListContactMessages(database.AsSystem(ctx), "", 500, 0)
-		if err != nil {
-			h.logLoadErr(ctx, "adminSvc.ListContactMessages", err)
-		} else {
-			for _, m := range msgs {
-				if m.ID == id {
-					newStatus := "read"
-					if m.Status == "read" {
-						newStatus = "unread"
-					}
-					_ = h.adminSvc.UpdateContactMessageStatus(database.AsSystem(ctx), id, newStatus)
-					break
-				}
-			}
-		}
+	if err != nil || id <= 0 || h.adminSvc == nil {
+		h.redirectWithNotice(w, r, "/admin/messages", "error", i18n.T(lang, "admin.messages.status_invalid"))
+		return
 	}
-	h.redirectWithNotice(w, r, "/admin/messages", "success", i18n.T(langOf(r), "admin.messages.status_updated_success"))
+	// Only the two states this inbox knows how to show. Anything else in the
+	// form is a request to store a status no screen renders.
+	status := strings.TrimSpace(r.PostFormValue("status"))
+	if status != "read" && status != "unread" {
+		h.redirectWithNotice(w, r, "/admin/messages", "error", i18n.T(lang, "admin.messages.status_invalid"))
+		return
+	}
+	if err := h.adminSvc.UpdateContactMessageStatus(database.AsSystem(ctx), id, status); err != nil {
+		h.logLoadErr(ctx, "adminSvc.UpdateContactMessageStatus", err)
+		h.redirectWithNotice(w, r, "/admin/messages", "error", i18n.T(lang, "admin.messages.status_update_failed"))
+		return
+	}
+	h.redirectWithNotice(w, r, "/admin/messages", "success", i18n.T(lang, "admin.messages.status_updated_success"))
 }
 
 // AdminMessageDeleteSubmit deletes a contact message from the inbox.
 func (h *UIHandler) AdminMessageDeleteSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+	lang := langOf(r)
 	id, err := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err == nil && id > 0 && h.adminSvc != nil {
-		_ = h.adminSvc.DeleteContactMessage(database.AsSystem(ctx), id)
+	if err != nil || id <= 0 || h.adminSvc == nil {
+		h.redirectWithNotice(w, r, "/admin/messages", "error", i18n.T(lang, "admin.messages.delete_failed"))
+		return
 	}
-	h.redirectWithNotice(w, r, "/admin/messages", "success", i18n.T(langOf(r), "admin.messages.deleted_success"))
+	if err := h.adminSvc.DeleteContactMessage(database.AsSystem(ctx), id); err != nil {
+		h.logLoadErr(ctx, "adminSvc.DeleteContactMessage", err)
+		h.redirectWithNotice(w, r, "/admin/messages", "error", i18n.T(lang, "admin.messages.delete_failed"))
+		return
+	}
+	h.redirectWithNotice(w, r, "/admin/messages", "success", i18n.T(lang, "admin.messages.deleted_success"))
 }
