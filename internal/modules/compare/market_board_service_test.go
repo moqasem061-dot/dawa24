@@ -3,6 +3,7 @@ package compare
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 	"time"
 
@@ -42,10 +43,10 @@ func (cacheMiss) Error() string { return "miss" }
 
 var errMiss = cacheMiss{}
 
-// The board's total is the expensive half of the page — 33 ms of database CPU
-// against 0.41 ms for the rows. It is read once per TTL, not once per view.
+// The board's total is the expensive half of the page — 38 ms of database CPU
+// against 0.06–1.1 ms for the rows. It is read once per TTL, not once per view.
 func TestMarketTotalIsCachedAcrossPageViews(t *testing.T) {
-	svc := &Service{repo: &countingMarketRepo{total: 98370}}
+	svc := &Service{repo: &countingMarketRepo{total: 98370, rows: 24}}
 	svc.SetCache(newFakeCache())
 	repo := svc.repo.(*countingMarketRepo)
 
@@ -68,6 +69,99 @@ func TestMarketTotalIsCachedAcrossPageViews(t *testing.T) {
 	// The rows themselves are never cached: a price on this board is live.
 	if repo.lists != 5 {
 		t.Errorf("listed rows %d times for 5 page views; rows must never be cached", repo.lists)
+	}
+}
+
+// The rows are read first, and the page renders even when the total cannot be
+// read at all.
+//
+// Before this rewrite the count came first and its error was the page's error,
+// so a count that timed out on a cold cache took the whole board down with it:
+// the reader got a 503 rather than twenty-four prices and a missing page number.
+func TestMarketBoardRendersRowsWhenTheCountFails(t *testing.T) {
+	svc := &Service{repo: &countingMarketRepo{rows: 24, countErr: errors.New("statement timeout")}}
+	res, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1})
+	if err != nil {
+		t.Fatalf("a failed count must not fail the board: %v", err)
+	}
+	if len(res.Items) != 24 {
+		t.Fatalf("got %d rows, want the 24 the query returned", len(res.Items))
+	}
+	if res.TotalKnown {
+		t.Error("TotalKnown is true for a count that failed; the page would print a zero it invented")
+	}
+	if res.TotalPages != 0 {
+		t.Errorf("TotalPages = %d, want 0 when the total is unknown", res.TotalPages)
+	}
+}
+
+// Without a total, a full page still offers the next one. It is the only honest
+// hint available and it is what keeps a degraded page navigable.
+func TestMarketBoardOffersTheNextPageWithoutATotal(t *testing.T) {
+	full := &Service{repo: &countingMarketRepo{rows: 24, countErr: errors.New("timeout")}}
+	res, err := full.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 2})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !res.HasNext || !res.HasPrev {
+		t.Errorf("a full page in the middle of the board should offer both ways: next=%v prev=%v", res.HasNext, res.HasPrev)
+	}
+
+	short := &Service{repo: &countingMarketRepo{rows: 6, countErr: errors.New("timeout")}}
+	tail, err := short.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tail.HasNext {
+		t.Error("a page that came back short offered a next page")
+	}
+}
+
+// A cached total must not outlive the board it describes. The stamp changes when
+// a temporary warehouse is uploaded, archived or deleted; the key changes with
+// it, so the next view recounts instead of serving yesterday's page count.
+func TestMarketBoardCountIsInvalidatedWhenTheBoardChanges(t *testing.T) {
+	repo := &stampingMarketRepo{countingMarketRepo: countingMarketRepo{total: 100, rows: 24}, stamp: "1:5:5"}
+	svc := &Service{repo: repo}
+	svc.SetCache(newFakeCache())
+
+	if _, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1}); err != nil {
+		t.Fatal(err)
+	}
+	if repo.counts != 1 {
+		t.Fatalf("counted %d times while the board was unchanged, want 1", repo.counts)
+	}
+
+	// A warehouse was archived: the board holds fewer rows now.
+	repo.stamp = "1:5:4"
+	repo.total = 98
+	res, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if repo.counts != 2 {
+		t.Errorf("counted %d times after the board changed, want a recount", repo.counts)
+	}
+	if res.TotalCount != 98 {
+		t.Errorf("total = %d, want the recounted 98", res.TotalCount)
+	}
+}
+
+// The supplier dropdown is a convenience. Losing it must not cost the page.
+func TestMarketBoardSurvivesASupplierListFailure(t *testing.T) {
+	svc := &Service{repo: &countingMarketRepo{total: 10, rows: 3, supplierErr: errors.New("timeout")}}
+	res, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1})
+	if err != nil {
+		t.Fatalf("a failed supplier list must not fail the board: %v", err)
+	}
+	if len(res.Items) != 3 || res.TotalCount != 10 {
+		t.Errorf("rows or total lost with the dropdown: %+v", res)
+	}
+	if len(res.AvailableSuppliers) != 0 {
+		t.Errorf("suppliers = %v, want none", res.AvailableSuppliers)
 	}
 }
 
@@ -117,13 +211,13 @@ func TestMarketTotalCacheKeySeparatesFilters(t *testing.T) {
 // With no cache installed — tests, or Redis unreachable — the board must still
 // render. Slow is a supported state; broken is not.
 func TestMarketBoardWorksWithoutACache(t *testing.T) {
-	svc := &Service{repo: &countingMarketRepo{total: 42}}
+	svc := &Service{repo: &countingMarketRepo{total: 42, rows: 24}}
 	res, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Limit: 24, Page: 1})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if res.TotalCount != 42 {
-		t.Errorf("total = %d, want 42", res.TotalCount)
+	if res.TotalCount != 42 || !res.TotalKnown {
+		t.Errorf("total = %d known=%v, want 42/true", res.TotalCount, res.TotalKnown)
 	}
 	if res.TotalPages != 2 {
 		t.Errorf("total pages = %d, want 2 for 42 rows at 24 a page", res.TotalPages)
@@ -141,11 +235,17 @@ func fp(v float64) *float64 { return &v }
 type countingMarketRepo struct {
 	Repository
 	total                    int64
+	rows                     int
+	countErr, listErr        error
+	supplierErr              error
 	counts, lists, suppliers int
 }
 
 func (r *countingMarketRepo) ListMarketDiscounts(_ context.Context, f MarketDiscountsFilter) (*MarketDiscountsResult, error) {
 	r.lists++
+	if r.listErr != nil {
+		return nil, r.listErr
+	}
 	limit := f.Limit
 	if limit != 24 && limit != 48 && limit != 96 {
 		limit = 24
@@ -154,8 +254,12 @@ func (r *countingMarketRepo) ListMarketDiscounts(_ context.Context, f MarketDisc
 	if page <= 0 {
 		page = 1
 	}
+	items := make([]*MarketDiscountRow, 0, r.rows)
+	for i := 0; i < r.rows; i++ {
+		items = append(items, &MarketDiscountRow{ID: int64(i + 1)})
+	}
 	return &MarketDiscountsResult{
-		Items:      []*MarketDiscountRow{},
+		Items:      items,
 		Page:       page,
 		Limit:      limit,
 		TotalPages: 1,
@@ -164,12 +268,28 @@ func (r *countingMarketRepo) ListMarketDiscounts(_ context.Context, f MarketDisc
 
 func (r *countingMarketRepo) CountMarketDiscounts(context.Context, MarketDiscountsFilter) (int64, error) {
 	r.counts++
+	if r.countErr != nil {
+		return 0, r.countErr
+	}
 	return r.total, nil
 }
 
 func (r *countingMarketRepo) ListDistinctSuppliers(context.Context) ([]string, error) {
 	r.suppliers++
+	if r.supplierErr != nil {
+		return nil, r.supplierErr
+	}
 	return []string{"مخزن المتحدة", "مخزن ابن سينا"}, nil
+}
+
+// stampingMarketRepo reports a board stamp, the way the Postgres repository does.
+type stampingMarketRepo struct {
+	countingMarketRepo
+	stamp string
+}
+
+func (r *stampingMarketRepo) MarketBoardStamp(context.Context) (string, error) {
+	return r.stamp, nil
 }
 
 func priceBound(value string) *money.Amount { amount := money.MustParse(value); return &amount }

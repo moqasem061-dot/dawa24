@@ -19,7 +19,7 @@ func marketFixture(w http.ResponseWriter, r *http.Request) {
 	}
 	actor := authctx.Actor{UserID: 1, OrganizationID: 10, IsStaff: true, Role: "super_admin"}
 	id := int64(7)
-	result := &compare.MarketDiscountsResult{Items: []*compare.MarketDiscountRow{{ID: 1, ProductName: "اسم المورد في الملف — بانادول ٥٠٠", CatalogNameAR: "بانادول 500 مجم أقراص", CatalogNameEN: "Panadol 500 mg tablets", SupplierName: "مستودع الاختبار", OriginalPrice: money.MustParse("123.45"), PriceAfterDiscount: money.MustParse("111.10"), DiscountPercent: 10, InCatalog: true, MatchedProductID: &id, UploadedAt: time.Now()}, {ID: 2, ProductName: "منتج لم تتأكد مطابقته", SupplierName: "مستودع آخر", OriginalPrice: money.MustParse("100.00"), PriceAfterDiscount: money.MustParse("80.00"), DiscountPercent: 20, UploadedAt: time.Now()}}, TotalCount: 2, Page: 1, Limit: 24, TotalPages: 1}
+	result := &compare.MarketDiscountsResult{Items: []*compare.MarketDiscountRow{{ID: 1, ProductName: "اسم المورد في الملف — بانادول ٥٠٠", CatalogNameAR: "بانادول 500 مجم أقراص", CatalogNameEN: "Panadol 500 mg tablets", SupplierName: "مستودع الاختبار", OriginalPrice: money.MustParse("123.45"), PriceAfterDiscount: money.MustParse("111.10"), DiscountPercent: 10, InCatalog: true, MatchedProductID: &id, UploadedAt: time.Now()}, {ID: 2, ProductName: "منتج لم تتأكد مطابقته", SupplierName: "مستودع آخر", OriginalPrice: money.MustParse("100.00"), PriceAfterDiscount: money.MustParse("80.00"), DiscountPercent: 20, UploadedAt: time.Now()}}, TotalCount: 2, TotalKnown: true, Page: 1, Limit: 24, TotalPages: 1}
 	result.AvailableSuppliers = []string{"مستودع الاختبار", "مستودع آخر", "مستودع العرض الثاني"}
 	secondOffer := *result.Items[0]
 	secondOffer.ID = 3

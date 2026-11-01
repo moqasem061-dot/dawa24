@@ -209,21 +209,52 @@ func TestMarketListingCarriesNoWindowCount(t *testing.T) {
 
 // The listing must stay orderable from idx_compare_file_rows_market_sort.
 //
-// The index in db/migrations/190 is built on these exact expressions. If the
-// ORDER BY stops matching them the index goes unused, silently, and the default
-// sort goes from 0.41 ms back to 59 ms with nothing failing.
+// The index (rebuilt in db/migrations/246) is on these exact expressions. If the
+// ORDER BY stops matching them the index goes unused, silently, and sorting the
+// board by highest discount goes from 1 ms back to 108 ms with nothing failing.
 func TestMarketDiscountSortMatchesItsIndex(t *testing.T) {
 	sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{SortBy: "discount_desc"})
 	want := "ORDER BY (" + marketWarehouseDiscountSQL + ") DESC, (" + marketWarehouseNetSQL + ") ASC"
 	if !strings.Contains(sql, want) {
-		t.Errorf("the default ordering no longer matches idx_compare_file_rows_market_sort.\nwant substring:\n%s\ngot:\n%s", want, sql)
+		t.Errorf("the discount ordering no longer matches idx_compare_file_rows_market_sort.\nwant substring:\n%s\ngot:\n%s", want, sql)
+	}
+}
+
+// The default ordering must stay orderable from idx_compare_file_rows_market_newest.
+//
+// "newest" is the board's default, and it used to order by compare.files.created_at
+// across the join — 118.6 ms of sorting per page view, because no index on
+// compare.file_rows can order a table by a column that lives on compare.files.
+// Migration 246 denormalises the upload date onto the row; if this ORDER BY stops
+// matching the index, the page scan comes back and nothing fails.
+func TestMarketNewestSortMatchesItsIndex(t *testing.T) {
+	for _, sort := range []string{"", "newest"} {
+		sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{SortBy: sort})
+		want := "ORDER BY r.file_uploaded_at DESC NULLS LAST, r.id DESC"
+		if !strings.Contains(sql, want) {
+			t.Fatalf("sort=%q no longer matches idx_compare_file_rows_market_newest.\nwant substring:\n%s\ngot:\n%s",
+				sort, want, sql)
+		}
+	}
+}
+
+// "oldest" is the same index read backwards, which only works if its NULLS
+// placement is the exact reverse of the index's. Getting this wrong is invisible:
+// the board still shows the oldest rows first, it just sorts 100,000 of them to
+// do it.
+func TestMarketOldestSortReadsTheNewestIndexBackwards(t *testing.T) {
+	sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{SortBy: "oldest"})
+	want := "ORDER BY r.file_uploaded_at ASC NULLS FIRST, r.id ASC"
+	if !strings.Contains(sql, want) {
+		t.Fatalf("oldest is no longer the reverse scan of idx_compare_file_rows_market_newest.\nwant substring:\n%s\ngot:\n%s",
+			want, sql)
 	}
 }
 
 func TestMarketDefaultSortKeepsNewestFirstWhileSearching(t *testing.T) {
 	for _, query := range []string{"", "بانادول"} {
 		sql, _, _, _ := buildMarketDiscountsQuery(compare.MarketDiscountsFilter{Query: query})
-		if !strings.Contains(sql, "ORDER BY f.created_at DESC, r.id DESC") {
+		if !strings.Contains(sql, "ORDER BY r.file_uploaded_at DESC NULLS LAST, r.id DESC") {
 			t.Fatalf("default order must be chronological: %s", sql)
 		}
 		if query != "" && !strings.Contains(sql, "normalize_arabic(r.raw_name)") {

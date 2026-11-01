@@ -74,6 +74,38 @@ const marketWarehouseNetSQL = `
 	  ELSE r.price
 	END`
 
+// MarketBoardStamp names the board's current contents, cheaply enough to read
+// on every page view.
+//
+// It answers "has any temporary warehouse appeared, disappeared, been archived
+// or been restored since this number was cached?", which is the whole of what
+// can change how many rows the board holds. A price edit does not change it, on
+// purpose: prices are never cached, so invalidating the count for one would only
+// buy a recount of the same number.
+//
+// It reads compare.files — a few hundred rows — not compare.file_rows, so it
+// costs a fraction of a millisecond and never touches the 100,000-row side of
+// the join. compare.Service puts it in the cache key; that is the one place it
+// is used.
+func (r *Repository) MarketBoardStamp(ctx context.Context) (string, error) {
+	const sql = `
+		SELECT count(*)::text || ':' || COALESCE(max(id), 0)::text || ':' ||
+		       count(*) FILTER (
+		           WHERE deleted_at IS NULL AND archived_at IS NULL AND status = 'ready'
+		       )::text
+		FROM compare.files
+		WHERE is_temp_warehouse = TRUE;`
+
+	var stamp string
+	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		if err := tx.QueryRow(txCtx, sql).Scan(&stamp); err != nil {
+			return fmt.Errorf("compare postgres: market board stamp: %w", err)
+		}
+		return nil
+	})
+	return stamp, err
+}
+
 // ListDistinctSuppliers names the temporary warehouses currently on the board.
 //
 // It reads compare.files — 202 rows — and asks each one whether it has a row

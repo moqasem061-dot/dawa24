@@ -45,6 +45,11 @@ type MarketDiscountRow struct {
 type MarketDiscountsResult struct {
 	Items              []*MarketDiscountRow `json:"items"`
 	TotalCount         int64                `json:"total_count"`
+	// TotalKnown is false when the exact count could not be read inside the
+	// page's budget. The rows are still the answer; the pager is the part that
+	// is missing, and it says so rather than printing a zero it would have to
+	// invent.
+	TotalKnown         bool                 `json:"total_known"`
 	AvailableSuppliers []string             `json:"available_suppliers"`
 	Page               int                  `json:"page"`
 	Limit              int                  `json:"limit"`

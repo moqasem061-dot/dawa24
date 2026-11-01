@@ -57,7 +57,7 @@ func TestMarketQueryBoundsUnicode(t *testing.T) {
 
 func TestMarketSearchUsesIndexedResultsWithoutFuzzyRetrieval(t *testing.T) {
 	stub := &marketSearchStub{}
-	svc := NewService(&countingMarketRepo{total: 2}, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	svc := NewService(&countingMarketRepo{total: 2, rows: 2}, slog.New(slog.NewTextHandler(io.Discard, nil)))
 	svc.SetMarketCatalogSearcher(stub)
 	_, err := svc.ListMarketDiscounts(context.Background(), MarketDiscountsFilter{Query: "Panadol"})
 	if err != nil || stub.calls != 0 {
@@ -77,9 +77,17 @@ func (r *fuzzyFallbackRepo) CountMarketDiscounts(_ context.Context, filter Marke
 	return 0, nil
 }
 
-func (r *fuzzyFallbackRepo) ListMarketDiscounts(ctx context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
+// The indexed search found nothing, so the second pass runs with the catalogue's
+// candidates — and the rows, which are now what decides whether that second pass
+// happens, come back from it.
+func (r *fuzzyFallbackRepo) ListMarketDiscounts(_ context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
 	r.listedIDs = filter.CatalogIDs
-	return r.countingMarketRepo.ListMarketDiscounts(ctx, filter)
+	if len(filter.CatalogIDs) == 0 {
+		return &MarketDiscountsResult{Items: []*MarketDiscountRow{}, Page: 1, Limit: 24}, nil
+	}
+	return &MarketDiscountsResult{
+		Items: []*MarketDiscountRow{{ID: 1}, {ID: 2}, {ID: 3}}, Page: 1, Limit: 24,
+	}, nil
 }
 
 func TestMarketSearchFallbackUsesSameCandidatesForRowsAndCount(t *testing.T) {

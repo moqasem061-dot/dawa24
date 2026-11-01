@@ -62,7 +62,11 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 				<dl class="md-stats">
 					<div class="md-stat">
 						<dt>أصناف مرصودة</dt>
-						<dd class="tabular-nums">{ fmt.Sprintf("%d", result.TotalCount) }</dd>
+						if result.TotalKnown {
+							<dd class="tabular-nums">{ fmt.Sprintf("%d", result.TotalCount) }</dd>
+						} else {
+							<dd class="tabular-nums" title="تعذّر حساب إجمالي الأصناف الآن. الأصناف المعروضة صحيحة وحديثة، والإجمالي سيعود في التحديث القادم.">—</dd>
+						}
 					</div>
 					<div class="md-stat">
 						<dt>المستودعات</dt>
@@ -307,7 +311,7 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 					}
 				</div>
 				<!-- Pagination Footer Deck -->
-				if result.TotalCount > 0 {
+				if result.TotalKnown && result.TotalCount > 0 {
 					<div class="glass-panel p-4 bg-surface-sunken">
 						@components.B2BPagination(components.PaginationProps{
 							CurrentPage:     result.Page,
@@ -317,6 +321,27 @@ templ MarketDiscountsPage(lang, dir string, actor authctx.Actor, result *compare
 							QueryValues:     marketDiscountsQueryValues(filter, currentView),
 							PageSizeOptions: []int{24, 48, 96},
 						})
+					</div>
+				} else if !result.TotalKnown && (result.HasPrev || result.HasNext) {
+					<!-- The exact total could not be read in time. The rows are live and
+					     correct, so the reader can still move between pages; what is
+					     missing is the page numbers, and the bar says so. -->
+					<div class="glass-panel p-4 bg-surface-sunken d-flex items-center justify-between gap-2 flex-wrap">
+						<span class="text-xs text-secondary">
+							تعذّر حساب إجمالي النتائج الآن — الأصناف المعروضة حديثة، ويمكنك التنقل بين الصفحات.
+						</span>
+						<div class="d-flex items-center gap-2">
+							if result.HasPrev {
+								<a href={ templ.SafeURL(marketPageURL(filter, currentView, result.Page-1)) } class="btn btn-secondary btn-sm font-bold">
+									الصفحة السابقة
+								</a>
+							}
+							if result.HasNext {
+								<a href={ templ.SafeURL(marketPageURL(filter, currentView, result.Page+1)) } class="btn btn-primary btn-sm font-bold">
+									الصفحة التالية
+								</a>
+							}
+						</div>
 					</div>
 				}
 			}
@@ -396,6 +421,19 @@ func marketDiscountsQueryValues(f compare.MarketDiscountsFilter, view string) ur
 		q.Set("view", view)
 	}
 	return q
+}
+
+// marketPageURL is one page of the board with every filter kept.
+//
+// It exists for the footer the board falls back to when the exact total could
+// not be read: components.B2BPagination needs a total to draw page numbers, and
+// without one the reader would have no way forward from a page that has rows on
+// it.
+func marketPageURL(f compare.MarketDiscountsFilter, view string, page int) string {
+	q := marketDiscountsQueryValues(f, view)
+	q.Set("limit", strconv.Itoa(marketDiscountsLimit(f)))
+	q.Set("page", strconv.Itoa(page))
+	return "/market-discounts?" + q.Encode()
 }
 
 func formatOptionalFloat(val *float64) string {

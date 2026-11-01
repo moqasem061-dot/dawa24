@@ -224,6 +224,7 @@ func (h *UIHandler) MarketDiscountsPage(w http.ResponseWriter, r *http.Request) 
 			Page:               page,
 			Limit:              limit,
 			TotalPages:         1,
+			TotalKnown:         true,
 			AvailableSuppliers: make([]string, 0),
 		}
 	}

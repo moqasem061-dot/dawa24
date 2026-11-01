@@ -10,30 +10,48 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
-// Assembling one page of خصومات السوق العامة, cheaply.
+// Assembling one page of خصومات السوق العامة.
 //
-// The board is shared across authorized vendor and staff accounts.
-// It used to cost about 190 ms of database CPU per page view — three full
-// passes over compare.file_rows for a page that shows twenty-four cards:
+// This is the second rewrite of this path, and the first one that starts from
+// the rows.
 //
-//	listing, with COUNT(*) OVER() ....... 145.7 ms
-//	supplier filter dropdown ............  44.2 ms
+// What the page cost before (100,000 live rows, two vCPUs, measured):
 //
-// On the two vCPUs this platform's database runs on, that is roughly ten page
-// views a second before the database is saturated and every other screen —
-// orders, catalogue, the pharmacies' dashboards — slows down with it.
+//	default ordering (newest) ....... 118.6 ms   seq scan + hash join + sort
+//	highest discount ................ 108.1 ms   sort (its index had stopped
+//	                                             matching the expression)
+//	the pager's total ...............  38.0 ms   COUNT(*) over every row
+//	supplier dropdown ...............   0.6 ms
 //
-// The three passes are now one indexed read plus two numbers that barely
-// change:
+// A cold view paid ~160 ms of database CPU to render twenty-four cards, and the
+// page did it in the request path: first the total, then — only if that total
+// was non-zero — the rows. Every one of those steps could fail the page, and
+// the first one was the slowest.
 //
-//	listing (idx_compare_file_rows_market_sort) ...... 0.41 ms, live
-//	total count (33 ms uncached) ..................... cached, marketCountTTL
-//	supplier names (0.97 ms uncached) ................ cached, marketCountTTL
+// After the rewrite (db/migrations/246 + this file):
 //
-// What is NOT cached is the only thing that must not be: the rows. A price on
-// this board is always read live. The cache holds a row count and a list of
-// warehouse names, both of which change only when a moderator uploads or
-// archives a temporary warehouse — minutes to days apart, never mid-page.
+//	rows, any sort, page 1 ..........  0.06–1.1 ms  index scan, LIMIT stops it
+//	rows, page 500 ..................  3.1 ms       index scan, OFFSET walks it
+//	total ...........................  cached, 3 minutes, keyed by the board
+//	                                  stamp below, bounded by marketCountBudget
+//	supplier dropdown ...............  cached, 1 minute
+//
+// Three decisions carry that:
+//
+//   - **Rows first.** The list is the page; the total is a label on it. Reading
+//     the count first meant the cheapest, most cacheable part of the query
+//     gated the part that had to be live.
+//
+//   - **A bounded total.** The count runs against a deadline. On a miss that
+//     overruns it, the board renders with its rows and without a page count,
+//     which is a worse label and a working screen — instead of a timeout page.
+//
+//   - **A board stamp in the cache key.** The cached total used to expire on a
+//     timer alone, so it could be three minutes stale and had no way to know a
+//     warehouse had been uploaded or archived. The stamp is one cheap aggregate
+//     over compare.files (a few hundred rows); when it changes, every cached
+//     count for the board misses at once. Prices are still never cached: the
+//     stamp describes which rows exist, not what they cost.
 
 // Cache is the subset of the platform cache this module needs.
 //
@@ -46,77 +64,154 @@ type Cache interface {
 	SetJSON(ctx context.Context, key string, val any, ttl time.Duration) error
 }
 
-// marketCountTTL bounds how stale the board's total and supplier list may be.
-//
-// Sixty seconds is chosen against what the numbers describe, not against how
-// often the page is read. They move when a temporary warehouse is uploaded or
-// archived; a minute later the page agrees. Nobody can perceive a pager that
-// says 98,370 results when it has just become 98,394, and the rows themselves
-// were never cached, so no price and no discount is ever a minute old.
-const marketCountTTL = 60 * time.Second
+const (
+	// marketCountTTL bounds how stale the board's total and supplier list may
+	// be. The board stamp invalidates them the moment a warehouse is uploaded,
+	// archived or deleted; the TTL is what bounds the damage when the stamp
+	// itself cannot be read.
+	marketCountTTL = 3 * time.Minute
+
+	// marketSuppliersTTL is longer than the count's because the dropdown is a
+	// list of names that only changes with an upload, and a stale name in a
+	// suggestion list costs nothing.
+	marketSuppliersTTL = 5 * time.Minute
+
+	// marketCountBudget is how long the page will wait for an exact total.
+	//
+	// The count is 38 ms on 100,000 rows uncached and is normally a cache hit
+	// in under a millisecond. This deadline exists for the case where it is
+	// neither: a cold cache, a busy database, a pathological filter. Beyond it
+	// the reader gets the page without the pager's page numbers, which is a
+	// label missing — not a screen missing.
+	marketCountBudget = 1200 * time.Millisecond
+)
 
 // SetCache installs the cache used for the market board's totals.
 func (s *Service) SetCache(c Cache) {
 	s.cache = c
 }
 
+// marketStamper is implemented by the Postgres repository, and only by it.
+//
+// Declared as an optional interface rather than added to Repository so that the
+// dozen test doubles for the module keep compiling: a double that does not
+// implement it simply never invalidates a count early, which is exactly the
+// state the TTL covers.
+type marketStamper interface {
+	MarketBoardStamp(ctx context.Context) (string, error)
+}
+
 // ListMarketDiscounts returns one page of the public temporary-warehouse board.
 func (s *Service) ListMarketDiscounts(ctx context.Context, filter MarketDiscountsFilter) (*MarketDiscountsResult, error) {
 	filter.Query = marketQuery(filter.Query)
 	filter.CatalogIDs = nil
-	total, err := s.marketTotal(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-	// Indexed name searches already include both catalogue languages. Only
-	// pay for fuzzy candidate retrieval when there are no direct matches.
-	if total == 0 && filter.Query != "" {
-		filter.CatalogIDs = s.marketCatalogIDs(ctx, filter.Query)
-		if len(filter.CatalogIDs) > 0 {
-			total, err = s.marketTotal(ctx, filter)
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
+
 	result, err := s.repo.ListMarketDiscounts(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
-	result.TotalCount = total
-	if total > 0 && result.Limit > 0 {
-		result.TotalPages = int((total + int64(result.Limit) - 1) / int64(result.Limit))
-	}
-	result.HasPrev = result.Page > 1
-	result.HasNext = result.Page < result.TotalPages
 
-	suppliers, err := s.marketSuppliers(ctx)
-	if err != nil {
-		return nil, err
-	}
-	result.AvailableSuppliers = suppliers
-
-	return result, nil
-}
-
-// marketTotal counts the rows behind the pager, through the cache.
-func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter) (int64, error) {
-	key := "compare:market:count:" + marketFilterFingerprint(filter)
-	var cached int64
-	if s.cache != nil {
-		if err := s.cache.GetJSON(ctx, key, &cached); err == nil { // nolint:errswallow: a cache miss or error recomputes the count below
-			return cached, nil
+	// Nothing matched the indexed text search. The reader may have typed the name
+	// the way a supplier's sheet spells it rather than the way the catalogue
+	// does, so ask the catalogue for candidates and try once more. This is only
+	// worth a second query when the first found nothing — which is why it is
+	// decided from the rows now, and used to be decided from the count.
+	if len(result.Items) == 0 && filter.Query != "" {
+		if ids := s.marketCatalogIDs(ctx, filter.Query); len(ids) > 0 {
+			filter.CatalogIDs = ids
+			retried, retryErr := s.repo.ListMarketDiscounts(ctx, filter)
+			if retryErr != nil {
+				s.warn(ctx, "market board: catalogue candidate retry failed", retryErr)
+			} else {
+				result = retried
+			}
 		}
 	}
 
-	total, err := s.repo.CountMarketDiscounts(ctx, filter)
+	s.decorateBoard(ctx, filter, result)
+	return result, nil
+}
+
+// decorateBoard adds what the page needs around the rows: the pager, and the
+// warehouse list for the filter. Neither can fail the page — they are read,
+// logged, and left out if they are unavailable.
+func (s *Service) decorateBoard(ctx context.Context, filter MarketDiscountsFilter, result *MarketDiscountsResult) {
+	total, known := s.marketTotal(ctx, filter)
+	result.TotalCount = total
+	result.TotalKnown = known
+	if known {
+		if result.Limit > 0 {
+			result.TotalPages = int((total + int64(result.Limit) - 1) / int64(result.Limit))
+		}
+	} else {
+		result.TotalPages = 0
+	}
+	result.HasPrev = result.Page > 1
+	if known {
+		result.HasNext = result.Page < result.TotalPages
+	} else {
+		// No exact total, so no way to know where the last page is. A full page
+		// is the only honest hint available, and it is only ever used to draw a
+		// "next page" link.
+		result.HasNext = len(result.Items) >= result.Limit
+	}
+
+	suppliers, err := s.marketSuppliers(ctx)
 	if err != nil {
-		return 0, err
+		s.warn(ctx, "market board: supplier list unavailable", err)
+		return
+	}
+	result.AvailableSuppliers = suppliers
+}
+
+// marketTotal counts the rows behind the pager, through the cache, under a
+// deadline. The bool reports whether the number is known; false is a page
+// without a pager, not an error.
+func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter) (int64, bool) {
+	key := ""
+	if s.cache != nil {
+		key = "compare:market:count:v5:" + s.boardStamp(ctx) + ":" + marketFilterFingerprint(filter)
+		var cached int64
+		if err := s.cache.GetJSON(ctx, key, &cached); err == nil { // nolint:errswallow: a cache miss or error recomputes the count below
+			return cached, true
+		}
+	}
+
+	countCtx, cancel := context.WithTimeout(ctx, marketCountBudget)
+	defer cancel()
+	total, err := s.repo.CountMarketDiscounts(countCtx, filter)
+	if err != nil {
+		s.warn(ctx, "market board: count unavailable, rendering without a pager", err)
+		return 0, false
 	}
 	if s.cache != nil {
-		_ = s.cache.SetJSON(ctx, key, total, marketCountTTL)
+		if err := s.cache.SetJSON(ctx, key, total, marketCountTTL); err != nil {
+			s.warn(ctx, "market board: could not cache the count", err)
+		}
 	}
-	return total, nil
+	return total, true
+}
+
+// boardStamp names the board's current contents.
+//
+// It changes when a temporary warehouse is added, removed, archived or restored
+// — every event that changes how many rows the board holds. It deliberately
+// does not change when a price does: prices are read live, and invalidating the
+// count for a price edit would only cost a recount that returns the same number.
+//
+// An unreadable stamp returns a constant, which keeps the cache working and
+// leaves the TTL in charge of staleness.
+func (s *Service) boardStamp(ctx context.Context) string {
+	stamper, ok := s.repo.(marketStamper)
+	if !ok {
+		return "static"
+	}
+	stamp, err := stamper.MarketBoardStamp(ctx)
+	if err != nil {
+		s.warn(ctx, "market board: board stamp unavailable", err)
+		return "unknown"
+	}
+	return stamp
 }
 
 // marketSuppliers lists the warehouses on the board, through the cache.
@@ -125,10 +220,10 @@ func (s *Service) marketTotal(ctx context.Context, filter MarketDiscountsFilter)
 // that it can be used to narrow it. Narrowing it by supplier must not change
 // which suppliers are offered.
 func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
-	const key = "compare:market:suppliers"
+	const key = "compare:market:suppliers:v2"
 	var cached []string
 	if s.cache != nil {
-		if err := s.cache.GetJSON(ctx, key, &cached); err == nil && len(cached) > 0 {
+		if err := s.cache.GetJSON(ctx, key, &cached); err == nil && len(cached) > 0 { // nolint:errswallow: a cache miss or error recomputes the list below
 			return cached, nil
 		}
 	}
@@ -138,9 +233,17 @@ func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	if s.cache != nil && len(suppliers) > 0 {
-		_ = s.cache.SetJSON(ctx, key, suppliers, marketCountTTL)
+		if err := s.cache.SetJSON(ctx, key, suppliers, marketSuppliersTTL); err != nil {
+			s.warn(ctx, "market board: could not cache the supplier list", err)
+		}
 	}
 	return suppliers, nil
+}
+
+func (s *Service) warn(ctx context.Context, msg string, err error) {
+	if s.log != nil {
+		s.log.WarnContext(ctx, msg, "error", err)
+	}
 }
 
 // marketFilterFingerprint names one filter's count.
@@ -153,7 +256,7 @@ func (s *Service) marketSuppliers(ctx context.Context) ([]string, error) {
 // arriving from a URL, and a raw one would put user input — colons, spaces,
 // newlines — into a Redis key namespace that uses ':' as its separator.
 func marketFilterFingerprint(f MarketDiscountsFilter) string {
-	raw := fmt.Sprintf("v4|from=%s|to=%s|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
+	raw := fmt.Sprintf("from=%s|to=%s|q=%s|sup=%s|minp=%v|maxp=%v|mind=%v|maxd=%v|ids=%v",
 		f.DateFrom, f.DateTo, f.Query, f.Supplier,
 		marketPriceBound(f.MinPrice), marketPriceBound(f.MaxPrice),
 		derefFloat(f.MinDiscount), derefFloat(f.MaxDiscount), f.CatalogIDs)
