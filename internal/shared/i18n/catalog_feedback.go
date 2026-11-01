@@ -23,4 +23,17 @@ func loadFeedbackKeys(e *engine) {
 	addKey(e, "feedback.catalog_unlinked", "compare", "غير مرتبط بالكتالوج", "Not linked to catalog", "Unlinked catalog products")
 	addKey(e, "feedback.supplier", "compare", "المورد صاحب أفضل عرض", "Best offer supplier", "Best supplier filter")
 	addKey(e, "feedback.supplier_all", "compare", "كل الموردين", "All suppliers", "All suppliers filter")
+
+	// Head-to-head workbook export (Excel).
+	addKey(e, "compare.h2h.export_excel", "compare", "تصدير Excel", "Export Excel", "Export button")
+	addKey(e, "compare.h2h.sheet", "compare", "مقارنة مورد بمورد", "Head to head", "Workbook sheet name")
+	addKey(e, "compare.h2h.summary", "compare", "الملخص", "Summary", "Workbook summary sheet name")
+	addKey(e, "compare.h2h.exported_at", "compare", "تاريخ التصدير", "Exported at", "Workbook summary label")
+	addKey(e, "compare.h2h.source_supplier", "compare", "المورد الأساسي", "Source supplier", "Workbook summary label")
+	addKey(e, "compare.h2h.target_supplier", "compare", "المورد المنافس", "Competitor supplier", "Workbook summary label")
+	addKey(e, "compare.h2h.total_shared", "compare", "الأصناف المشتركة", "Shared products", "Workbook summary label")
+	addKey(e, "compare.h2h.win_rate", "compare", "نسبة التفوق", "Win rate", "Workbook summary label")
+	addKey(e, "compare.h2h.total_savings", "compare", "إجمالي التوفير", "Total savings", "Workbook summary label")
+	addKey(e, "compare.h2h.source_total", "compare", "إجمالي المورد الأساسي", "Source supplier total", "Workbook summary label")
+	addKey(e, "compare.h2h.target_total", "compare", "إجمالي المورد المنافس", "Competitor total", "Workbook summary label")
 }

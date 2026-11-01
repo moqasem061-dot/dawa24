@@ -55,7 +55,7 @@ func (d HeadToHeadPageData) ExportURL() string {
 	for key, values := range d.Pagination.QueryValues {
 		vals[key] = append([]string(nil), values...)
 	}
-	vals.Set("export", "csv")
+	vals.Set("export", "xlsx")
 	return "/compare/head-to-head?" + vals.Encode()
 }
 
@@ -143,7 +143,7 @@ templ CompareHeadToHeadContent(data HeadToHeadPageData) {
 					if data.TotalCount > 0 {
 						<a href={ templ.SafeURL(data.ExportURL()) } hx-boost="false" download class="btn btn-primary font-bold gap-2">
 							@components.IconDownload("icon-xs")
-							<span>تصدير التقرير</span>
+							<span>{ i18n.T(data.Lang, "compare.h2h.export_excel") }</span>
 						</a>
 					}
 				</div>

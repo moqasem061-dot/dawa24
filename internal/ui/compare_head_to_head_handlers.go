@@ -145,7 +145,7 @@ func (h *UIHandler) CompareHeadToHeadPage(w http.ResponseWriter, r *http.Request
 			h.renderError(w, r, err)
 			return
 		} else if res != nil {
-			if r.URL.Query().Get("export") == "csv" {
+			if wantsHeadToHeadExport(r) {
 				h.exportHeadToHead(w, r, res)
 				return
 			}
