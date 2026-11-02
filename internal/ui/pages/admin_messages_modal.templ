@@ -142,7 +142,7 @@ templ AdminMessageModal(m *platformadmin.ContactMessage) {
 	@components.Modal(components.ModalProps{
 		ID:       messageModalID(m.ID),
 		Title:    resolveMessageSubject(m.Subject),
-		Subtitle: fmt.Sprintf("#%d · %s · %s", m.ID, m.Name, m.CreatedAt.Format("2006-01-02 03:04 PM")),
+		Subtitle: fmt.Sprintf("#%d · %s", m.ID, m.Name),
 		Icon:     "inbox",
 		Size:     "lg",
 	}) {
@@ -180,7 +180,7 @@ templ AdminMessageModal(m *platformadmin.ContactMessage) {
 				</div>
 				<div class="inbox-meta-item">
 					<dt>الهاتف</dt>
-					<dd dir="ltr">
+					<dd dir="ltr" class="d-flex items-center gap-2 flex-wrap justify-end">
 						if m.Phone != "" {
 							<span class="tabular-nums">{ m.Phone }</span>
 							{{ waPhone := cleanPhoneForWhatsApp(m.Phone) }}
@@ -189,7 +189,7 @@ templ AdminMessageModal(m *platformadmin.ContactMessage) {
 									href={ templ.SafeURL("https://wa.me/" + waPhone) }
 									target="_blank"
 									rel="noopener"
-									class="text-success font-bold"
+									class="badge badge-emerald font-bold"
 								>
 									واتساب
 								</a>
@@ -201,7 +201,7 @@ templ AdminMessageModal(m *platformadmin.ContactMessage) {
 				</div>
 				<div class="inbox-meta-item">
 					<dt>تاريخ الاستلام</dt>
-					<dd class="tabular-nums">{ m.CreatedAt.Format("2006-01-02 03:04 PM") }</dd>
+					<dd class="tabular-nums" dir="ltr">{ m.CreatedAt.Format("2006-01-02 03:04 PM") }</dd>
 				</div>
 				<div class="inbox-meta-item">
 					<dt>عنوان IP</dt>

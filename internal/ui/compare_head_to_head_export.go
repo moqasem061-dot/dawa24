@@ -162,9 +162,9 @@ func newHeadToHeadStyles(book *excelize.File) (headToHeadSheetStyles, error) {
 			Alignment: &excelize.Alignment{Horizontal: "left", Vertical: "center"},
 		}},
 		{&styles.percent, &excelize.Style{
-			Font:          &excelize.Font{Size: 11},
-			CustomNumFmt:  &percentFormat,
-			Alignment:     &excelize.Alignment{Horizontal: "center", Vertical: "center"},
+			Font:         &excelize.Font{Size: 11},
+			CustomNumFmt: &percentFormat,
+			Alignment:    &excelize.Alignment{Horizontal: "center", Vertical: "center"},
 		}},
 		{&styles.label, &excelize.Style{
 			Font:      &excelize.Font{Bold: true, Size: 11, Color: "#0F172A"},

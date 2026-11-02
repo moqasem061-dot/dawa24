@@ -141,13 +141,13 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 							<tbody>
 								for _, m := range messages {
 									<tr class={ "inbox-row", templ.KV("is-unread", isUnreadMessage(m.Status)) }>
-										<td class="text-center tabular-nums text-xs text-muted">
+										<td class="text-center tabular-nums text-xs text-muted inbox-id">
 											{ fmt.Sprintf("%d", m.ID) }
 										</td>
 										<td>
 											<div class="d-flex items-center gap-2">
 												<span class="inbox-avatar" aria-hidden="true">{ senderInitials(m.Name) }</span>
-												<div class="stack-xs">
+												<div class="stack-xs inbox-sender">
 													<div class="d-flex items-center gap-1 flex-wrap">
 														if isUnreadMessage(m.Status) {
 															<span class="inbox-unread-dot" aria-hidden="true"></span>
@@ -156,7 +156,7 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 													</div>
 													if m.Email != "" {
 														<div dir="ltr" class="inbox-contact">
-															<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) }>{ m.Email }</a>
+															<a href={ templ.SafeURL(fmt.Sprintf("mailto:%s", m.Email)) } title={ m.Email }>{ m.Email }</a>
 														</div>
 													}
 													if m.Phone != "" {
@@ -177,10 +177,11 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 														<span class="badge badge-indigo" title={ fmt.Sprintf("مستخدم مسجل #%d", *m.UserID) }>مسجل</span>
 													}
 												</div>
-												<p class="inbox-preview">
-													{ messagePreview(m.Message, 96) }
-													<span class="inbox-meta-count">{ messageLengthLabel(m.Message) }</span>
-												</p>
+												<p class="inbox-preview">{ messagePreview(m.Message, 96) }</p>
+												{{ longMessage := messageLengthLabel(m.Message) }}
+												if longMessage != "" {
+													<span class="inbox-meta-count">{ longMessage }</span>
+												}
 											</div>
 										</td>
 										<td class="text-center">
@@ -189,7 +190,7 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 											</span>
 										</td>
 										<td class="tabular-nums text-xs">
-											<div class="stack-xs">
+											<div class="stack-xs inbox-date">
 												<span>{ m.CreatedAt.Format("2006-01-02") }</span>
 												<span class="text-muted">{ m.CreatedAt.Format("03:04 PM") }</span>
 											</div>
@@ -256,16 +257,13 @@ templ AdminMessages(lang, dir string, messages []*platformadmin.ContactMessage, 
 	}
 }
 
-// messageLengthLabel tells the reader how much text is behind the preview
-// without opening it: a three-word inquiry and a page-long complaint look
-// identical as a truncated line.
+// messageLengthLabel warns that the preview is hiding text. It returns nothing
+// for a message the preview already shows in full: "رسالة قصيرة" beside a
+// one-line inquiry is noise, and a label that appears on every row is not a
+// signal.
 func messageLengthLabel(body string) string {
-	words := len(strings.Fields(body))
-	if words == 0 {
+	if len(strings.Fields(body)) < 25 {
 		return ""
-	}
-	if words < 25 {
-		return "رسالة قصيرة"
 	}
 	return "رسالة طويلة"
 }

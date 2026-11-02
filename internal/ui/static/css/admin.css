@@ -753,7 +753,7 @@
 
 
 /* ==========================================================================
-   Contact inbox — /admin/messages
+   Contact inbox â€” /admin/messages
    ========================================================================== */
 
 @layer components {
@@ -887,5 +887,29 @@
     font-size: var(--text-xs);
     color: var(--text-primary);
     overflow-wrap: anywhere;
+  }
+}
+
+@layer components {
+  /* Ids and dates are single tokens: an identifier broken across two lines
+     ("120" / "4") reads as two numbers, not as message 1204. */
+  .inbox-id,
+  .inbox-date {
+    white-space: nowrap;
+  }
+
+  /* The sender column is the one that has to stay narrow: an e-mail address is
+     the longest thing in the table and a wrapped one ("...example.c / om") is
+     unreadable and unclickable. It is clipped with its full value in the title
+     attribute, and it can always be copied from the message dialog. */
+  .inbox-sender {
+    min-inline-size: 0;
+  }
+
+  .inbox-sender .inbox-contact {
+    max-inline-size: 15rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 }

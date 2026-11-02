@@ -8,7 +8,7 @@ The `compare` bounded context implements the platform's flagship supplier-vs-sup
 
 - Comparison selection uses `EntitlementFor().MaxActiveFiles` in both submission and execution. The independent ten-file ceiling is removed; the current effective entitlement permits 100 files. These are supplier spreadsheet files, not a limit on product rows.
 - Results support product/code search, offer availability, catalog linkage and winning supplier filters. Filter links and pagination preserve the selected criteria. Head-to-head filters use a responsive grid, explicit outcome selection and exact monetary price bounds.
-- Head-to-head CSV exports every row matching the current filters before pagination, including all report columns. Export and result requests validate selected IDs against the caller's visible files. CSV text is protected against spreadsheet formula execution.
+- Head-to-head exports the report as an Excel workbook (`.xlsx`), not CSV: money and discounts are numeric cells with number formats, the header row is frozen and filterable, the sheet is right-to-left for the Arabic report, and a second sheet carries the summary statistics. Every row matching the current filters is exported before pagination, including all report columns. Export and result requests validate selected IDs against the caller's visible files. `export=csv` is still accepted so saved links keep working, and also downloads a workbook.
 - Market upload-date filters include both ends of the selected date range in Africa/Cairo time. Listing, totals, cache keys and pagination share the date criteria. Market typing waits 250 ms; cancellation, composition handling and stale-response protection remain active.
 
 ## Schema Mapping
@@ -102,6 +102,50 @@ editing or submitting cancels pending search work. Select controls with
 `data-autosubmit` issue one request rather than also triggering the generic filter
 submit. Short queries retain the existing three-character minimum; clearing the
 query refreshes the unfiltered results.
+
+### Market-board rewrite (2026-11-01)
+
+خصومات السوق opened slowly because the page paid for a scan of every row before
+it could show twenty-four of them. Measured on 100,000 live rows, two vCPUs:
+
+| step | before | after |
+| --- | --- | --- |
+| default ordering (newest) | 118.6 ms (seq scan + hash join + sort) | 0.06 ms (index scan) |
+| highest discount | 108.1 ms (sort) | 1.06 ms (index scan) |
+| price ascending | ~58 ms (sort) | 0.47 ms (index scan) |
+| pager total `COUNT(*)` | 38.0 ms, on every cold view, in the request path | cached 3 min; ~0 ms |
+| supplier dropdown | 0.6 ms | cached 5 min; ~0 ms |
+| **cold page view** | **~160 ms of database CPU** | **0.3–1 ms (3.1 ms at page 500)** |
+
+Three changes:
+
+1. **The upload date is on the row.** `compare.file_rows.file_uploaded_at` is a
+   copy of `compare.files.created_at`, filled by a trigger
+   (`compare.file_rows_set_uploaded_at`, migration `246`) so every writer gets it.
+   A file's `created_at` never changes, so there is no update anomaly; a
+   re-upload copies rows into a new file. This is what lets "newest" and "oldest"
+   be index scans — no index on `file_rows` could ever order it by a column on
+   `files`. `oldest` is the same index read backwards, which is why both ORDER BY
+   clauses spell out `NULLS LAST` / `NULLS FIRST`.
+2. **The discount index matches the code again.** The index from migration 190
+   clamped the discount with `> 0 AND < 100` while the listing clamps with
+   `>= 0 AND <= 100` (so a genuine 100% line prints as 100, not 0). The two
+   expressions differ, so the index had stopped matching the ORDER BY and sorting
+   by "الأعلى خصماً" was a full sort. Nothing failed — it was just a hundred times
+   slower. `TestMarketDiscountSortMatchesItsIndex` and
+   `TestMarketNewestSortMatchesItsIndex` now pin both orderings to their indexes.
+3. **Rows first, and the total under a deadline.** The listing is read before the
+   count; the count runs against `marketCountBudget` (1.2 s) and is cached under
+   a key that carries a **board stamp** — one cheap aggregate over
+   `compare.files` that changes when a temporary warehouse is uploaded, archived,
+   deleted or restored. Prices are still never cached. When the count cannot be
+   read, the board renders its rows with `TotalKnown = false`: the header shows
+   `—` instead of a count, the pager becomes a plain previous/next pair, and the
+   reader still gets the prices. A failed supplier list is logged and omitted
+   rather than failing the page.
+
+The fuzzy catalogue retry is now decided by the rows (nothing matched) instead of
+by the count, which removes the last dependency between the page and its total.
 
 Boosted filter responses preserve the active search input, focus, selection and
 scroll position. Older responses are discarded when the form values have changed,

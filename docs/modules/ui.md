@@ -149,3 +149,25 @@ Discount comparison labels describe percentage comparisons. Display helpers and
 market-discount filter URLs retain hundredths of a percentage point, including
 0.25 and 12.34. Warehouse mapping previews use a 200-row sample instead of
 materializing the entire sheet; full spreadsheet security checks remain enabled.
+
+## Contact inbox (2026-11-01)
+
+`/admin/messages` is a list of messages, not the messages themselves. The full
+body of every inquiry used to be printed in a table cell, so the column widened
+to the longest message on the page, the sender block wrapped around an IP address
+and a raw browser string, and two rows could fill a laptop screen.
+
+- Each row answers who, about what and since when: sender with e-mail/phone, the
+  subject badge, a two-line preview of the body with a short/long marker, status
+  and date. The body, the sender's metadata (IP, browser, registered-user link)
+  and the actions live in a `components.Modal` dialog opened by `عرض`.
+- Unread is the only row style, because it is what the queue exists to show: a
+  tinted row plus a dot, and the header counts unread *on this page* and says so.
+- Actions are three icon buttons of one width. The previous text buttons changed
+  length when the status flipped and made the whole column jump.
+- The toggle form sends the status it wants (`read` / `unread`), validated against
+  those two values. The handler used to re-read the first 500 messages to
+  discover the current status, which scanned the inbox to flip one row and left
+  every message past the five-hundredth impossible to mark as read. Delete and
+  status-update failures now report instead of redirecting as if they succeeded.
+

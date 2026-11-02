@@ -352,7 +352,7 @@ func AdminMessageModal(m *platformadmin.ContactMessage) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</dd></div><div class=\"inbox-meta-item\"><dt>الهاتف</dt><dd dir=\"ltr\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 18, "</dd></div><div class=\"inbox-meta-item\"><dt>الهاتف</dt><dd dir=\"ltr\" class=\"d-flex items-center gap-2 flex-wrap justify-end\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -389,7 +389,7 @@ func AdminMessageModal(m *platformadmin.ContactMessage) templ.Component {
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" target=\"_blank\" rel=\"noopener\" class=\"text-success font-bold\">واتساب</a>")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 22, "\" target=\"_blank\" rel=\"noopener\" class=\"badge badge-emerald font-bold\">واتساب</a>")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -400,14 +400,14 @@ func AdminMessageModal(m *platformadmin.ContactMessage) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</dd></div><div class=\"inbox-meta-item\"><dt>تاريخ الاستلام</dt><dd class=\"tabular-nums\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 24, "</dd></div><div class=\"inbox-meta-item\"><dt>تاريخ الاستلام</dt><dd class=\"tabular-nums\" dir=\"ltr\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			var templ_7745c5c3_Var17 string
 			templ_7745c5c3_Var17, templ_7745c5c3_Err = templ.JoinStringErrs(m.CreatedAt.Format("2006-01-02 03:04 PM"))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_messages_modal.templ`, Line: 204, Col: 73}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_messages_modal.templ`, Line: 204, Col: 83}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var17))
 			if templ_7745c5c3_Err != nil {
@@ -554,7 +554,7 @@ func AdminMessageModal(m *platformadmin.ContactMessage) templ.Component {
 		templ_7745c5c3_Err = components.Modal(components.ModalProps{
 			ID:       messageModalID(m.ID),
 			Title:    resolveMessageSubject(m.Subject),
-			Subtitle: fmt.Sprintf("#%d · %s · %s", m.ID, m.Name, m.CreatedAt.Format("2006-01-02 03:04 PM")),
+			Subtitle: fmt.Sprintf("#%d · %s", m.ID, m.Name),
 			Icon:     "inbox",
 			Size:     "lg",
 		}).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
