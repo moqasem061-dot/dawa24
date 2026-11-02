@@ -189,10 +189,13 @@ func buildUIHandler(
 	// and without the catalogue there is nothing to match against. Wiring them
 	// here keeps the module free of the composition root.
 	ingSvcUI.SetImportStore(ingest.WithProgressNotifications(ingRepoUI, uiProgress))
-	// The decision cache the AI stage reads before it asks anything. Shared
-	// with the smart order, on purpose: both ask the same question through the
-	// same prompt, so an answer either bought is free to the other.
-	ingSvcUI.SetMatchMemory(ingRepoUI)
+	// The decision memory the AI stage reads before it asks anything, and writes
+	// what it accepted into afterwards. Read from the legacy cache (which the
+	// ETL still fills and the backfill CLI migrates); written to
+	// catalog.match_knowledge, the only writable memory since US8 T114. Sharing
+	// one key space is the point: an answer bought by the vendor import, the
+	// smart order or the saving list is free to the others.
+	ingSvcUI.SetMatchMemory(newIngestDecisionMemory(ingRepoUI, deps.Matching(), log))
 	// The same cache, in the shared vocabulary, for the two import paths that
 	// had none: the saving-list import and the administrator's master-catalogue
 	// import. Four tools, one table, one key — an answer bought by any of them

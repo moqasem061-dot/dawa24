@@ -13,7 +13,12 @@ import (
 )
 
 func TestIngestAIUpdatesImportLinkAndCandidateProjection(t *testing.T) {
-	db := connectTestDB(t)
+	// getTestDB, not connectTestDB: the first assertion below is a cross-tenant
+	// write, and the guard against it is row-level security. A superuser
+	// connection bypasses RLS unconditionally, FORCE included, so on such a DSN
+	// this test reports a leak that is only a fact about the connection. The
+	// helper skips with that reason instead (see rls_test.go).
+	db := getTestDB(t)
 	t.Cleanup(db.Close)
 	system := database.AsSystem(context.Background())
 	var orgID, importID, rowID, productID, runID int64

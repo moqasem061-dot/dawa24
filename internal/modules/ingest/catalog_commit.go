@@ -138,21 +138,30 @@ func (s *Service) commit(ctx context.Context, session *Session) (*Session, error
 		ctxWithTenant := database.WithTenant(ctx, session.OrganizationID)
 		decisions := make([]CachedDecision, 0, len(staged))
 		for _, row := range staged {
-			if row.ProductID != nil && *row.ProductID > 0 && (row.IsManuallyMatched || row.MatchLevel == "exact" || row.MatchLevel == "strong") {
-				norm := strings.ToLower(strings.TrimSpace(row.DisplayName))
-				if norm != "" {
-					decisions = append(decisions, CachedDecision{
-						Key:             "manual:" + norm,
-						NormName:        norm,
-						ChosenProductID: row.ProductID,
-						Confidence:      1.0,
-						Reason:          "مطابقة مؤكدة عند اعتماد الاستيراد",
-						PromptVersion:   "manual:v1",
-						Scope:           "org",
-						Source:          "manual",
-					})
-				}
+			// Only rows a person matched by hand. An engine-accepted row is
+			// recomputable — the same name against the same catalogue gives the
+			// same answer — so remembering it buys nothing, and remembered as a
+			// person's decision it would outrank every future engine's evidence
+			// for that question, permanently. A reviewer's own choice is the
+			// only thing here that cannot be re-derived.
+			if !row.IsManuallyMatched || row.ProductID == nil || *row.ProductID <= 0 {
+				continue
 			}
+			norm := strings.ToLower(strings.TrimSpace(row.DisplayName))
+			if norm == "" {
+				continue
+			}
+			decisions = append(decisions, CachedDecision{
+				Key:             "manual:" + norm,
+				NormName:        norm,
+				ChosenProductID: row.ProductID,
+				Confidence:      1.0,
+				Reason:          "مطابقة يدوية مؤكدة عند اعتماد الاستيراد",
+				PromptVersion:   "manual:v1",
+				Scope:           "org",
+				Source:          "manual",
+				Signature:       payloadQuestionSignature(row.Payload),
+			})
 		}
 		if len(decisions) > 0 {
 			_ = s.memory.SaveDecisions(ctxWithTenant, decisions)

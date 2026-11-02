@@ -85,6 +85,14 @@ type CachedDecision struct {
 	PromptVersion   string
 	Scope           string
 	Source          string
+	// Signature is the question this answer belongs to, in the vocabulary the
+	// matcher looks its memory up by (productmatch.QuestionSignature over the
+	// row's own facts). Key is a cache key — it carries the candidate list and
+	// the normalised name, not the facts — so an answer filed under Key alone
+	// could never be found by the next run. Empty means the caller could not
+	// derive one, and the memory then declines to store the answer rather than
+	// store something nothing can find.
+	Signature string
 }
 
 // MatchMemory is the decision cache and the alias ledger.

@@ -199,19 +199,29 @@ func (h *UIHandler) CustomerDecisionMemoryClearSubmit(w http.ResponseWriter, r *
 	h.redirectWithNotice(w, r, "/customer/decision-memory", "success", i18n.T(lang, "decision_memory.org_cleared_success"))
 }
 
+// loadOrgKnowledgeDecisions lists what this organisation's decision memory holds.
+//
+// Knowledge first: catalog.match_knowledge is the memory the platform writes —
+// a vendor's corrections from an import, a buyer's accepted answers from a smart
+// order, a reviewer's confirmations — and the table the matcher reads back on
+// the next upload. The legacy ledger is the fallback for organisations whose
+// decisions predate it: the ETL and the backfill CLI left rows there, and
+// catalog.match_decisions has been read-only since US8 T114.
 func (h *UIHandler) loadOrgKnowledgeDecisions(ctx context.Context, orgID int64, search string, limit, offset int) ([]*catalog.MatchDecisionView, int) {
-	if h.catSvc != nil && h.catSvc.Matching() != nil {
+	if h.catSvc == nil {
+		return nil, 0
+	}
+	if h.catSvc.Matching() != nil {
 		sc := matching.Scope{
 			EffectiveOrg: orgID,
 			Workflow:     matching.WorkflowCatalog,
 			EntryPoint:   "org.decision_memory",
 		}
-		kFilter := matching.KnowledgeFilter{
+		pageRes, err := h.catSvc.Matching().ListKnowledge(ctx, sc, matching.KnowledgeFilter{
 			Search: search,
 			Limit:  limit,
 			Offset: offset,
-		}
-		pageRes, err := h.catSvc.Matching().ListKnowledge(ctx, sc, kFilter)
+		})
 		if err != nil {
 			h.log.ErrorContext(ctx, "failed to list match knowledge for org", "org_id", orgID, "error", err)
 		} else if len(pageRes.Items) > 0 {

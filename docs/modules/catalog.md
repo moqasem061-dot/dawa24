@@ -272,9 +272,66 @@ The savings products import (`catalog.saving_products`) enables pharmacies, vend
    - **Requirement**: Do NOT enable shadow matching mode in production environments until formal approval is signed below.
    - Product owner approval: ____________________ date ____________________
 
+## Match decision memory: who writes it (2026-11-02)
 
+The platform keeps the answers it has already paid for in one writable table and
+one retired one, and conflating them is how a supplier's memory page came to be
+empty after an upload.
 
+- **`catalog.match_knowledge` — the memory.** One row per organisation per
+  question, with the question's *signature* (`productmatch.QuestionSignature`
+  over the row's own facts), a kind (`human_confirm`, `human_reject`,
+  `curated_alias`, `platform_fact`, `ai_answer`), and the product it points at.
+  `matching.Service` reads it before deciding anything (`KnowledgeResolver`) and
+  is the only writer (`Remember`). `/admin/match-decisions` curates it;
+  `/vendor/decision-memory` and `/customer/decision-memory` list it.
+- **`catalog.match_decisions` — the retired ledger.** Read-only since US8 T114
+  (`test/match_decisions_readonly_test.go` fails the build on any `INSERT` into
+  it outside migrations). It is still read (`LookupDecisions`) so rows the ETL
+  and `cli match-knowledge-backfill` left there keep working, and it is what the
+  memory screens fall back to for an organisation whose decisions predate
+  knowledge.
 
+**What was broken.** Both import pipelines — the vendor catalogue upload
+(`internal/modules/ingest`) and the smart order (`internal/modules/smartorder`) —
+were handed a repository as their decision memory, and that repository's
+`SaveDecisions` is a documented no-op (the ledger is read-only). The comment on it
+said writes "route through `matching.Service`", but nothing did the routing for
+those two pipelines: only the catalog import and the saving list got the
+`matchflow.Memory` adapter. So:
+
+- an answer the vendor's upload paid for was applied to the row and filed
+  nowhere — the supplier's ذاكرة قرارات المطابقة stayed empty;
+- the next upload of the same question paid the model again;
+- a row a person matched by hand was forgotten the moment the import ended.
+
+**What happens now** (`cmd/server/pipeline_memory.go`). Two adapters, wired at the
+composition root — the only place allowed to know both an import module's
+vocabulary and the matching service:
+
+1. `LookupDecisions` and `SaveAlias` are the repository's (the legacy read and the
+   alias ledger, both legitimate).
+2. `SaveDecisions` goes to `matching.Service.Remember`, i.e. into
+   `catalog.match_knowledge`, under the pipeline's own workflow namespace
+   (`vendor`, `smart_order`) so `KnowledgeResolver` finds it on the next run and
+   not in another tool's answers.
+3. Only real memory is filed: a person's manual match becomes `human_confirm`
+   (highest precedence), an accepted model answer becomes `ai_answer` (lowest,
+   and inert while AI is off). Engine-accepted rows are **not** filed: the engine
+   is deterministic, so an answer filed for one of them would be a remembered
+   guess that outranks every future engine's evidence — permanently.
+4. An answer with no signature is dropped rather than stored under its cache key,
+   which nothing would ever look up. The signature travels on the decision
+   (`CachedDecision.Signature`), computed where the parsed row is still in hand.
+5. No organisation in scope means no write: a row without a tenant would be
+   visible to every tenant.
+
+Covered by `internal/modules/ingest/catalog_memory_write_test.go` (the stage hands
+over signatures), `cmd/server/pipeline_memory_test.go` (the routing: kind,
+namespace, signature, tenant), and against a real database
+`test/integration/decision_memory_recall_test.go` — which files a decision exactly
+as the import does and asserts the **next** `Prepare` returns it accepted on
+`knowledge_human` basis, plus the cross-tenant read, which must return nothing.
 ## Catalog query work (2026-10-09)
 
 Master-catalog administration and vendor linking opt out of stock-priority

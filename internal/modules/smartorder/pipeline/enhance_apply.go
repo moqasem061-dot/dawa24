@@ -27,6 +27,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // confDisputed is the confidence a line carries once the deterministic engine
@@ -65,7 +66,20 @@ func (e *Enhancement) apply(groups map[string][]Review, a matchflow.Answer) (sma
 		Confidence:      out.Confidence,
 		Reason:          out.Reason,
 		PromptVersion:   PromptVersion,
+		// The question, in the vocabulary the matcher looks memory up by, so the
+		// next order that asks it is answered without paying the model again.
+		Signature: questionSignature(lead.Row),
 	}, true
+}
+
+// questionSignature is the memory key for a line, derived from the same facts
+// the matcher matches on. Empty when the caller had no parsed row.
+func questionSignature(row *productmatch.Row) string {
+	if row == nil {
+		return ""
+	}
+	return productmatch.QuestionSignature(
+		productmatch.ExtractRowFacts(row, nil), row.Name, productmatch.NormalizerVersion)
 }
 
 // judge gathers what the shared rules need to decide one answer.

@@ -56,6 +56,15 @@ func inlineSmartOrderRunner(
 	// actually writes the events a watching screen is waiting for.
 	repo := smartorder.WithProgressNotifications(smartorderPG.New(db), publisher)
 
+	// Answers this pipeline accepts are filed in the shared decision memory, the
+	// same one the vendor import writes: the table the memory screens read, and
+	// the only one still writable (catalog.match_decisions is read-only since
+	// US8 T114). Without this decorator the repository's SaveDecisions is a
+	// no-op and a pharmacy's order teaches the platform nothing.
+	if db != nil {
+		repo = smartorder.WithDecisionMemory(repo, newSmartOrderDecisionMemory(newMatchingService(db), log))
+	}
+
 	// AI is optional; a nil enhancer makes the pipeline skip the stage, which
 	// is the same path a disabled Gateway takes.
 	var enhancer pipeline.Enhancer

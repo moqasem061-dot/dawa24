@@ -31,6 +31,7 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/matchflow"
+	"github.com/moqasem061-dot/dawa24/internal/shared/productmatch"
 )
 
 // apply validates a request's answers and records the ones that survive.
@@ -57,7 +58,35 @@ func (e *Enhancement) apply(asked map[string]*openRow, a matchflow.Answer) (Cach
 		Confidence:      out.Confidence,
 		Reason:          out.Reason,
 		PromptVersion:   PromptVersion,
+		// The same signature the matcher will look this question up by on the
+		// next run: the row's facts, exactly as the staging stage derived them.
+		Signature: rowQuestionSignature(r),
 	}, true
+}
+
+// rowQuestionSignature is the question a row asks, in the matcher's own
+// vocabulary. Empty when the stage was given no parsed row, which is a caller
+// that should not be filing memory at all.
+func rowQuestionSignature(r *openRow) string {
+	if r == nil {
+		return ""
+	}
+	return questionSignatureFor(r.row)
+}
+
+// payloadQuestionSignature is the same signature for a row read back from the
+// database instead of held in memory: the staged payload is the row that was
+// matched, so it derives the same question.
+func payloadQuestionSignature(row *productmatch.Row) string {
+	return questionSignatureFor(row)
+}
+
+func questionSignatureFor(row *productmatch.Row) string {
+	if row == nil {
+		return ""
+	}
+	return productmatch.QuestionSignature(
+		productmatch.ExtractRowFacts(row, nil), row.Name, productmatch.NormalizerVersion)
 }
 
 // judge gathers what the shared rules need to decide one answer.
