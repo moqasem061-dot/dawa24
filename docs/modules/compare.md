@@ -147,6 +147,20 @@ Three changes:
 The fuzzy catalogue retry is now decided by the rows (nothing matched) instead of
 by the count, which removes the last dependency between the page and its total.
 
+**It also runs on a database that has not had migration `246` yet.** The board is
+the only screen that reads `compare.file_rows.file_uploaded_at`, and a deploy can
+serve traffic before its migrate step applies that column — the server starts as
+the least-privilege role, which cannot run DDL. On such a database the listing
+failed with SQLSTATE 42703 and the page answered 503 for the whole window. Now
+the ordering is chosen at runtime: `ListMarketDiscounts` takes the undefined
+column as the signal, logs
+`compare.file_rows.file_uploaded_at is missing (migration 246 has not been
+applied)`, and re-runs on the pre-246 ordering (`compare.files.created_at`) —
+the same rows in the same order, sorting instead of using an index. The fallback
+is a ten-minute window rather than a latch, so a process that started before the
+migration picks the fast path up on its own once it has run. Every other sort
+reads no new column and is unaffected.
+
 Boosted filter responses preserve the active search input, focus, selection and
 scroll position. Older responses are discarded when the form values have changed,
 so a slow search cannot replace newer input or update the URL with an old query.

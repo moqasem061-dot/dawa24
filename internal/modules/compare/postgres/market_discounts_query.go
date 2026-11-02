@@ -70,7 +70,55 @@ func buildMarketDiscountsCountQuery(filter compare.MarketDiscountsFilter) (strin
 	return "SELECT COUNT(*)" + marketWarehouseFrom + extra + ";", args
 }
 
-// Building one page of خصومات السوق العامة.
+// marketOrdering selects the column the two chronological orderings sort by.
+//
+// Migration 246 adds compare.file_rows.file_uploaded_at — the warehouse's upload
+// date, denormalised onto the row so that "newest" is an index scan instead of a
+// 118 ms sort of every row. An image can be promoted before that migration has
+// run (and on this platform it can: the server starts as the least-privilege
+// role, which cannot run DDL, and the migration is applied by the deploy's own
+// migrate step). When it has not run, the column does not exist, the query fails
+// with SQLSTATE 42703, and the board — which is the only screen that reads it —
+// answers 503.
+//
+// So the ordering is a choice rather than a constant, and the repository makes
+// that choice at runtime: the denormalised column when it is there, the
+// pre-246 join to compare.files.created_at when it is not. Same rows, same
+// order, one of them slower.
+type marketOrdering int
+
+const (
+	// orderByUploadDate is migration 246's column: an index scan.
+	orderByUploadDate marketOrdering = iota
+	// orderByWarehouseDate is the pre-246 ordering, read across the join. No
+	// index on compare.file_rows can serve it, so it sorts.
+	orderByWarehouseDate
+)
+
+// marketChronologicalOrder is the ordering for "newest" (and any sort this
+// builder does not recognise) and for "oldest".
+func marketChronologicalOrder(ordering marketOrdering, sortBy string) string {
+	if ordering == orderByWarehouseDate {
+		if sortBy == "oldest" {
+			return "f.created_at ASC, r.id ASC"
+		}
+		return "f.created_at DESC, r.id DESC"
+	}
+	// "oldest" is the same index read backwards. The NULLS placements are
+	// written out on both sides because that is what makes the backward scan an
+	// exact match: DESC NULLS LAST reversed is ASC NULLS FIRST.
+	if sortBy == "oldest" {
+		return "r.file_uploaded_at ASC NULLS FIRST, r.id ASC"
+	}
+	return "r.file_uploaded_at DESC NULLS LAST, r.id DESC"
+}
+
+// buildMarketDiscountsQuery builds the page query on the current schema.
+func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string, args []any, page, limit int) {
+	return buildMarketDiscountsOrderedQuery(filter, orderByUploadDate)
+}
+
+// buildMarketDiscountsOrderedQuery builds one page of خصومات السوق العامة.
 //
 // The source clause is a constant spliced in whole (marketWarehouseFrom), never
 // assembled from anything the caller sent. Filters can only ever append to it,
@@ -84,7 +132,9 @@ func buildMarketDiscountsCountQuery(filter compare.MarketDiscountsFilter) (strin
 // in step by construction; splitting them is what made the page fast, and this
 // is what keeps the split honest. A count that filters differently from the
 // rows it counts is a pager that runs off the end of the results.
-func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string, args []any, page, limit int) {
+func buildMarketDiscountsOrderedQuery(
+	filter compare.MarketDiscountsFilter, ordering marketOrdering,
+) (sql string, args []any, page, limit int) {
 	limit = filter.Limit
 	if limit != 24 && limit != 48 && limit != 96 {
 		limit = 24
@@ -98,19 +148,8 @@ func buildMarketDiscountsQuery(filter compare.MarketDiscountsFilter) (sql string
 	extra, args := marketFilterClauses(filter)
 	argIdx := len(args) + 1
 
-	// "newest" is the warehouse's upload date, and the row carries it as
-	// file_uploaded_at (migration 246) so that this ordering can be an index
-	// scan. It used to order by f.created_at across the join — correct, and
-	// 118 ms of sorting per page view, because no index on compare.file_rows can
-	// order it by a column that lives on compare.files.
-	//
-	// "oldest" is the same index read backwards. The NULLS placements are
-	// written out on both sides because that is what makes the backward scan an
-	// exact match: DESC NULLS LAST reversed is ASC NULLS FIRST.
-	orderBy := "r.file_uploaded_at DESC NULLS LAST, r.id DESC"
+	orderBy := marketChronologicalOrder(ordering, filter.SortBy)
 	switch filter.SortBy {
-	case "oldest":
-		orderBy = "r.file_uploaded_at ASC NULLS FIRST, r.id ASC"
 	case "price_asc":
 		orderBy = fmt.Sprintf("r.price ASC, (%s) DESC, r.id DESC", marketWarehouseDiscountSQL)
 	case "price_desc":

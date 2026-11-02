@@ -104,7 +104,13 @@ func TestVisualRegressionMatrix(t *testing.T) {
 
 				url := fmt.Sprintf("%s/admin/gallery?density=%s&theme=%s&dir=%s&lang=%s", ts.URL, density, theme, d.dir, d.lang)
 
-				ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+				// Sixty seconds, not twenty. A capture takes about a second on
+				// its own, but `go test ./...` runs packages in parallel and this
+				// one shares two vCPUs with the matcher corpus; at twenty seconds
+				// it was killed mid-render and the test failed with a capture
+				// error that said nothing about the page. The deadline exists to
+				// stop a hung Chrome, not to time a screenshot.
+				ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
 				cmd := exec.CommandContext(ctx, chromePath,
 					"--headless=new",
 					"--disable-gpu",

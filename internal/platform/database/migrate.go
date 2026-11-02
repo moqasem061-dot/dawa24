@@ -185,6 +185,21 @@ func applyOne(ctx context.Context, conn *pgx.Conn, m Migration, start time.Time)
 	}
 	defer func() { _ = tx.Rollback(context.WithoutCancel(ctx)) }()
 
+	// A migration is a maintenance operation, not a request: its deadline is
+	// the deploy's, not DB_STATEMENT_TIMEOUT's.
+	//
+	// Every pooled connection carries statement_timeout (20s in production), and
+	// the migration runner used a pooled connection like any other. That is the
+	// wrong ceiling for the work migrations actually do: building an index on a
+	// few million rows, or backfilling a new column, is minutes of legitimate
+	// work, and being cancelled at twenty seconds leaves the schema half-migrated
+	// with a bare "canceling statement due to statement timeout" in the log.
+	// SET LOCAL scopes the change to this transaction, so the connection returns
+	// to its request-sized timeout when the migration ends.
+	if _, err := tx.Exec(ctx, "SELECT set_config('statement_timeout', '0', true)"); err != nil {
+		return fmt.Errorf("migrate: lift statement timeout for %d: %w", m.Version, err)
+	}
+
 	if _, err := tx.Exec(ctx, m.SQL); err != nil {
 		return fmt.Errorf("migrate: apply %d (%s): %w", m.Version, m.Name, err)
 	}

@@ -209,6 +209,21 @@ Otherwise run it manually on each deploy that contains a new migration —
 `/ready` will report `pending_migrations > 0` and refuse traffic until you do,
 which is the safety net for forgetting.
 
+One page answering `حدث خطأ غير متوقع` (or a bare 503 from one screen while the
+rest of the site works) is usually this: the image reads a column that a pending
+migration adds. The server's own startup migration only *logs* a failure — under
+the least-privilege role it cannot run DDL — so grep the server log for
+`pending migrations could not be applied` and re-run step 7.
+
+The market board used to be that page (migration `246` adds
+`compare.file_rows.file_uploaded_at`, which its ordering reads). It no longer
+is: `compare/postgres.ListMarketDiscounts` detects the missing column, logs
+`compare.file_rows.file_uploaded_at is missing (migration 246 has not been
+applied)`, and serves the board on the pre-246 ordering — the same rows in the
+same order, sorting instead of using an index — until the migration lands. So a
+deploy that runs the image before its migrate step is slower on one screen
+rather than broken on it; if you see that log line, step 7 has not run.
+
 8. Deploy. Then verify:
 
 ```bash

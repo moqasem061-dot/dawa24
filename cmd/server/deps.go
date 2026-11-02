@@ -177,16 +177,26 @@ func (d *dependencies) connect(ctx context.Context, cfg *config.Config, log *slo
 		// Pending migrations are applied as soon as the database is reachable.
 		// `cli migrate` normally ran them already and this is a no-op; when it
 		// could not (database not up yet at deploy time), this catches up. A
-		// failure is logged: under the least-privilege role DDL is refused, and
-		// the deploy's migrate step is then the one that applies them.
+		// failure is logged but not fatal: under the least-privilege role DDL is
+		// refused, and the deploy's migrate step is then the one that applies
+		// them.
+		//
+		// It is logged at ERROR, not WARN, because of what a pending migration
+		// actually means once the server is serving: every screen that reads a
+		// column the pending migration adds answers 500, and the operator sees a
+		// generic "unexpected error" page rather than a server that refuses to
+		// start. That is exactly what happened when the market board began
+		// ordering by compare.file_rows.file_uploaded_at (migration 246) and the
+		// deploy skipped its migrate step.
 		if migrations, err := database.LoadMigrations(dbfs.Migrations, "migrations"); err == nil { // nolint:errswallow: embedded files; the else branch logs it
 			if migErr := d.db.Migrate(ctx, migrations, func(msg string, args ...any) {
 				log.Info(msg, args...)
 			}); migErr != nil {
-				log.Warn("startup migration note", "error", migErr)
+				log.Error("pending migrations could not be applied; screens that need them will fail until `cli migrate` runs as the schema owner",
+					"error", migErr)
 			}
 		} else {
-			log.Warn("load migrations note", "error", err)
+			log.Error("could not load the embedded migrations", "error", err)
 		}
 		// The permission catalogue is defined in Go and mirrored into
 		// identity.permissions. Syncing here, on the connection that just came

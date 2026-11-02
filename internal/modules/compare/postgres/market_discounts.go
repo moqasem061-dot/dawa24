@@ -2,10 +2,14 @@ package postgres
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"log/slog"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -184,10 +188,64 @@ func (r *Repository) CountMarketDiscounts(ctx context.Context, filter compare.Ma
 // Rows only: the total and the supplier list are read by compare.Service, which
 // can cache them. This reads live, always — a price on this board is never
 // served from a cache.
+//
+// The board is the only screen that reads compare.file_rows.file_uploaded_at
+// (migration 246), and a deploy can serve traffic before that migration has run:
+// the server starts as the least-privilege role, which cannot run DDL, so the
+// column arrives when the deploy's migrate step applies it, not when the image
+// goes live. On a database without the column this query failed with SQLSTATE
+// 42703 and the page answered 503 for that whole window. So the ordering is a
+// runtime choice now: the denormalised column when it is there, the pre-246 join
+// on compare.files.created_at when it is not. Same rows in the same order; the
+// fallback sorts, and it is noticed once and remembered.
 func (r *Repository) ListMarketDiscounts(
 	ctx context.Context, filter compare.MarketDiscountsFilter,
 ) (*compare.MarketDiscountsResult, error) {
-	sql, args, page, limit := buildMarketDiscountsQuery(filter)
+	result, err := r.listMarketDiscounts(ctx, filter, r.marketOrdering())
+	if err != nil && r.marketOrdering() == orderByUploadDate && isMissingUploadDate(err) {
+		r.legacyUntil.Store(time.Now().Add(legacyOrderingWindow).UnixNano())
+		slog.WarnContext(ctx,
+			"market board: compare.file_rows.file_uploaded_at is missing (migration 246 has not been applied); "+
+				"ordering by compare.files.created_at until it runs",
+			"error", err)
+		return r.listMarketDiscounts(ctx, filter, orderByWarehouseDate)
+	}
+	return result, err
+}
+
+// legacyOrderingWindow is how long the board stays on the fallback ordering
+// before trying the denormalised column again.
+//
+// Long enough that a pending migration costs one failed query per window rather
+// than one per page view; short enough that the board picks up the fast path on
+// its own once the deploy's migrate step has run, without waiting for a restart.
+const legacyOrderingWindow = 10 * time.Minute
+
+// marketOrdering reports which chronological ordering this database can serve.
+func (r *Repository) marketOrdering() marketOrdering {
+	if until := r.legacyUntil.Load(); until > 0 && time.Now().UnixNano() < until {
+		return orderByWarehouseDate
+	}
+	return orderByUploadDate
+}
+
+// isMissingUploadDate reports whether err is the database saying the
+// denormalised upload date does not exist — that is, migration 246 is pending.
+//
+// Matched on the SQLSTATE and the column name rather than on the message alone:
+// the message is translated by the server's locale, the code is not.
+func isMissingUploadDate(err error) bool {
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		return pgErr.Code == "42703" && strings.Contains(pgErr.Message, "file_uploaded_at")
+	}
+	return strings.Contains(err.Error(), "file_uploaded_at")
+}
+
+func (r *Repository) listMarketDiscounts(
+	ctx context.Context, filter compare.MarketDiscountsFilter, ordering marketOrdering,
+) (*compare.MarketDiscountsResult, error) {
+	sql, args, page, limit := buildMarketDiscountsOrderedQuery(filter, ordering)
 
 	result := &compare.MarketDiscountsResult{
 		Items:      make([]*compare.MarketDiscountRow, 0, limit),

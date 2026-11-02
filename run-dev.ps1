@@ -29,7 +29,7 @@ Write-Host "======================================================" -ForegroundC
 Write-Host " 🚀 Starting Dawa24 Store on http://localhost:$env:PORT" -ForegroundColor Green
 Write-Host "======================================================" -ForegroundColor Green
 
-Write-Host "[1/2] Generating Templ UI components..." -ForegroundColor Yellow
+Write-Host "[1/3] Generating Templ UI components..." -ForegroundColor Yellow
 templ generate
 
 if ($LASTEXITCODE -ne 0) {
@@ -37,5 +37,17 @@ if ($LASTEXITCODE -ne 0) {
     exit $LASTEXITCODE
 }
 
-Write-Host "[2/2] Running Go HTTP Server..." -ForegroundColor Yellow
+# Apply pending migrations before serving. The server also tries this on startup,
+# but it can only log a failure (under the least-privilege role DDL is refused)
+# and keeps serving - and then every screen that reads a newly added column
+# answers 500. Running it here either applies them or stops with the reason.
+Write-Host "[2/3] Applying database migrations..." -ForegroundColor Yellow
+go run ./cmd/cli migrate
+
+if ($LASTEXITCODE -ne 0) {
+    Write-Host "[!] Migrations failed. Fix the error above before starting the server." -ForegroundColor Red
+    exit $LASTEXITCODE
+}
+
+Write-Host "[3/3] Running Go HTTP Server..." -ForegroundColor Yellow
 go run ./cmd/server
