@@ -72,7 +72,18 @@ twice or approve after rejection.
 - Admin finance refund (`AdminRefundTransaction`) of an order debit now locks the wallet and
   refuses the reversal when the order's remaining net debit does not cover it
   (`transaction.already_refunded`). Other transactions are unchanged.
-- Known limit: ordinary debits (`Withdraw`) and credits do not take the wallet lock, so a debit that
-  races a refund on the same wallet can still leave a wrong `balance_after` projection. This is the
-  S01 ledger-serialisation gap and is not fixed in Batch 1B.
+- Known limit (S01, closed by Batch 2): ordinary debits and credits now take the wallet lock too
+  (see below).
 
+## Wallet ledger concurrency and wallet-paid purchases (Batch 2, S01)
+
+- Every ledger write locks the wallet row (`lockWalletRow`) in the same transaction as its balance
+  check: `RecordTransaction`, subscription renewal, deposit approval, withdrawal request and approval,
+  admin adjustment and refund. Two writers on one wallet run one after the other. A wallet can
+  not go negative and no debit is lost. Tests: `wallet_lock_integration_test.go` (20 rounds each).
+- `PurchaseWalletSubscription` writes the subscription and its debit in one transaction. The
+  caller's expected current subscription must still be current, or the purchase is refused with
+  `subscription.changed`. A failed debit leaves no active subscription.
+- `DebitOrderShipment` (commerce's shipment charge) and `WithdrawInTx` (promo's package payment) run
+  inside the caller's transaction, so the debit commits with the caller's write or not at all.
+  Ledger key `order-shipment-debit:<order>:<shipment>` is unique (migration 247).

@@ -112,19 +112,10 @@ type apiVendorCanceller interface {
 	CancelAPIVendorShipment(context.Context, APIVendorCancelRequest) error
 }
 
-type walletDebitReturner interface {
-	ReturnWalletDebits(ctx context.Context, orderID int64, shipmentID *int64, actorUserID int64, reason string) (money.Amount, error)
-}
-
-// ReturnWalletDebits credits back what a wallet order was debited when a
-// confirmation fails straight after the debit (compensation). It runs under the
-// order lock and never credits more than the ledger shows as debited.
-func (s *Service) ReturnWalletDebits(ctx context.Context, orderID int64, shipmentID *int64, actorUserID int64, reason string) (money.Amount, error) {
-	returner, ok := s.repo.(walletDebitReturner)
-	if !ok {
-		return money.Zero, apperr.Internal(errors.New("repository does not support wallet refunds"))
-	}
-	return returner.ReturnWalletDebits(ctx, orderID, shipmentID, actorUserID, reason)
+// shipmentWalletUpdater is implemented by a repository that can charge a wallet
+// order's shipment in the same transaction as its status change.
+type shipmentWalletUpdater interface {
+	UpdateShipmentStatusWithWallet(ctx context.Context, id int64, from, to OrderStatus, history OrderStatusHistory, walletUserID int64) error
 }
 
 func (s *Service) CancelAPIVendorShipment(ctx context.Context, request APIVendorCancelRequest) error {

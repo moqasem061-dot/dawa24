@@ -230,31 +230,37 @@ func (s *Service) SubscribeWithWallet(
 		}
 	}
 
-	// 3. Create the subscription record
-	sub := &Subscription{
-		UserID:         userID,
-		OrganizationID: orgID,
-		PlanID:         plan.ID,
-		Status:         SubActive,
-		BillingCycle:   cycle,
-		AutoRenew:      autoRenew,
-		StartsAt:       startsAt,
-		ExpiresAt:      expiresAt,
-		SourceSystem:   "wallet_checkout",
-	}
-
-	if err := s.repo.CreateSubscription(ctx, sub); err != nil {
-		return nil, err
-	}
-
-	// 4. Record wallet ledger transaction with the subscription ID reference (always recorded for complete transaction history)
+	// 3. Create the subscription and record its wallet debit in one transaction, under
+	// the wallet lock. A failed debit leaves no subscription behind (Batch 2, S01).
 	negCost := money.Zero
 	if !cost.IsZero() && !cost.IsNegative() {
 		negCost = money.FromMinor(-cost.Minor())
 	}
-	_, err = s.repo.RecordTransaction(ctx, wallet.ID, TxPurchase, negCost, refType, &sub.ID, desc)
+	var expectedCurrentID *int64
+	if currentSub != nil {
+		currentID := currentSub.ID
+		expectedCurrentID = &currentID
+	}
+	sub, err := s.repo.PurchaseWalletSubscription(ctx, WalletSubscriptionPurchase{
+		WalletID: wallet.ID,
+		Subscription: Subscription{
+			UserID:         userID,
+			OrganizationID: orgID,
+			PlanID:         plan.ID,
+			Status:         SubActive,
+			BillingCycle:   cycle,
+			AutoRenew:      autoRenew,
+			StartsAt:       startsAt,
+			ExpiresAt:      expiresAt,
+			SourceSystem:   "wallet_checkout",
+		},
+		ExpectedCurrentSubID: expectedCurrentID,
+		Delta:                negCost,
+		RefType:              refType,
+		Description:          desc,
+	})
 	if err != nil {
-		s.log.ErrorContext(ctx, "failed to record subscription transaction in wallet", "error", err, "sub_id", sub.ID)
+		s.log.ErrorContext(ctx, "wallet subscription purchase failed", "error", err, "user_id", userID, "plan", planSlug)
 		return nil, err
 	}
 

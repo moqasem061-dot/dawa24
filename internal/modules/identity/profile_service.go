@@ -130,6 +130,12 @@ func (s *Service) PurchaseSessionPlan(ctx context.Context, userID, planID int64)
 	if err != nil {
 		return err
 	}
+	// Batch 2 (S22): a plan that is switched off cannot be applied. Paid plans are
+	// unchanged: the payment flow they would need is not built yet (see the report).
+	if !plan.IsActive {
+		return apperr.Validation("session_plan.inactive",
+			"هذه الخطة غير متاحة حالياً. This session plan is not available.", nil)
+	}
 	if err := s.repo.SetMaxLoginSessions(ctx, userID, plan.MaxLoginSessions); err != nil {
 		return err
 	}

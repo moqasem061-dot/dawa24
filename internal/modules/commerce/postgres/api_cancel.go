@@ -66,14 +66,14 @@ func lockAPICancellationOrder(ctx context.Context, tx pgx.Tx, orderID int64) (*c
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(ctx, `SELECT id, organization_id, status, subtotal, shipping_fee, total_amount FROM commerce.order_shipments WHERE order_id = $1 ORDER BY id FOR UPDATE`, orderID)
+	rows, err := tx.Query(ctx, `SELECT id, organization_id, status, subtotal, shipping_fee, total_amount, wallet_paid_amount, wallet_paid_at, wallet_refunded_amount FROM commerce.order_shipments WHERE order_id = $1 ORDER BY id FOR UPDATE`, orderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		shipment := &commerce.OrderShipment{}
-		if err := rows.Scan(&shipment.ID, &shipment.OrganizationID, &shipment.Status, &shipment.Subtotal, &shipment.ShippingFee, &shipment.TotalAmount); err != nil {
+		if err := rows.Scan(&shipment.ID, &shipment.OrganizationID, &shipment.Status, &shipment.Subtotal, &shipment.ShippingFee, &shipment.TotalAmount, &shipment.WalletPaidAmount, &shipment.WalletPaidAt, &shipment.WalletRefundedAmount); err != nil {
 			return nil, err
 		}
 		order.Shipments = append(order.Shipments, shipment)
@@ -124,11 +124,7 @@ func (r *Repository) CancelAPIVendorShipment(ctx context.Context, request commer
 			_, err = r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(order.ID), request.UserID, request.Reason)
 			return err
 		}
-		goods, err := own.WalletGoodsAmount()
-		if err != nil {
-			return apperr.Internal(err)
-		}
-		_, err = r.refundWalletDebits(txCtx, tx, order, &goods, shipmentCancelKey(order.ID, own.ID), request.UserID, request.Reason)
+		_, err = r.refundWalletDebits(txCtx, tx, order, &own.ID, shipmentCancelKey(order.ID, own.ID), request.UserID, request.Reason)
 		return err
 	})
 }

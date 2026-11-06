@@ -175,7 +175,10 @@ func (r *Repository) AdminPerformWalletAdjustment(
 			return fmt.Errorf("billing postgres: read wallet: %w", err)
 		}
 
-		current, err := r.latestBalance(txCtx, tx, walletID, true)
+		if err := lockWalletRow(txCtx, tx, walletID); err != nil {
+			return err
+		}
+		current, err := r.latestBalance(txCtx, tx, walletID, false)
 		if err != nil {
 			return fmt.Errorf("billing postgres: read wallet balance: %w", err)
 		}

@@ -155,7 +155,7 @@ func (m *mockCommerceRepoForSupplierCartTest) AdminOrderStats(ctx context.Contex
 func (m *mockCommerceRepoForSupplierCartTest) AdminOrderKPIs(ctx context.Context) (commerce.AdminOrderKPIs, error) {
 	return commerce.AdminOrderKPIs{}, nil
 }
-func (m *mockCommerceRepoForSupplierCartTest) AcceptNegotiation(ctx context.Context, orderID int64, actorID int64) error {
+func (m *mockCommerceRepoForSupplierCartTest) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	return nil
 }
 func (m *mockCommerceRepoForSupplierCartTest) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {

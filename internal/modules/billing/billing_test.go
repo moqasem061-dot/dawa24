@@ -381,3 +381,15 @@ func (m *mockBillingRepo) ListPaymentMethods(_ context.Context, userID int64) ([
 func (m *mockBillingRepo) AdminGetFinanceStats(_ context.Context) (*AdminFinanceStats, error) {
 	return &AdminFinanceStats{}, nil
 }
+
+// PurchaseWalletSubscription mirrors the repository: subscription first, then its debit.
+func (m *mockBillingRepo) PurchaseWalletSubscription(ctx context.Context, p WalletSubscriptionPurchase) (*Subscription, error) {
+	sub := p.Subscription
+	if err := m.CreateSubscription(ctx, &sub); err != nil {
+		return nil, err
+	}
+	if _, err := m.RecordTransaction(ctx, p.WalletID, TxPurchase, p.Delta, p.RefType, &sub.ID, p.Description); err != nil {
+		return nil, err
+	}
+	return &sub, nil
+}

@@ -130,9 +130,8 @@ Repeated or racing cancels: the second cancel of a cancelled order is refused, w
 the API and the same message on the website. A cancel that races a supplier's shipment cancel
 serialises on the order row.
 
-Known limit (S02): a multi-vendor order records one debit for the first confirmed shipment. A
-partial cancel of another shipment can credit money debited for a different shipment, but the
-total credited never exceeds what was debited. Per-shipment debit records belong to Batch 2.
+Known limit (S02), closed by Batch 2 for orders confirmed after it. Orders debited before Batch 2
+are listed by the owner queries (Q3 and Q4 in `reports/security-audit-2026-11-06/batch-2-owner-queries.sql`).
 
 - `POST /api/v1/commerce/orders/{id}/status` — Apply a validated status transition.
 - `POST /api/v1/commerce/orders/{id}/rate` — Rate a delivered order with 3 criteria or scalar score and review comment.
@@ -160,3 +159,33 @@ total credited never exceeds what was debited. Per-shipment debit records belong
   - `GET /vendor/purchase-requests/{id}` (Vendor request detail)
   - `POST /vendor/purchase-requests/{id}/respond` (Vendor accept/modify/reject response)
 
+### Wallet payments per supplier shipment (Batch 2, S02, S04)
+
+- A supplier's confirmation of a wallet shipment charges that shipment to the buyer's wallet
+  in the same transaction. The debit is written by `billing` (`DebitOrderShipment`) under the
+  wallet lock. If the debit is refused, the shipment is not confirmed.
+- Each shipment is charged once. `commerce.order_shipments.wallet_paid_at` is set in the same
+  transaction as the debit, and the ledger key `order-shipment-debit:<order>:<shipment>` is unique.
+  A repeated confirmation of a charged shipment does not charge again.
+- The charge amount is the shipment's goods (`WalletGoodsAmount`), the same amount the
+  website has always debited for a shipment.
+- Order `payment_status` is `partially_paid` while some live shipments are uncharged and `paid`
+  once all are charged. After refunds it is `partially_refunded` or `refunded`. Orders that
+  have no per-shipment charge (cash on delivery, or wallet orders debited before Batch 2) keep
+  their status rules.
+- Refunds are per shipment. A supplier's cancel refunds only that shipment's open charge. A
+  whole-order cancel refunds the sum of the open charges. Each credit is capped by the ledger.
+- A wallet order debited before Batch 2 (no per-shipment charge on record): a whole-order cancel
+  refunds the net debit as before. A supplier's partial cancel is refused with
+  `order.wallet_review_required` until an administrator reviews it. It is never credited blind.
+- Setting `refunded` on a wallet order (order or shipment) requires a real credit. With nothing to
+  refund it is refused (`order.refund_nothing_to_refund`, `shipment.refund_nothing_to_refund`).
+  An order that is already refunded stays refunded. Non-wallet orders are unchanged.
+- `AcceptNegotiation` takes the accepting supplier's organisation. It refuses an order that is
+  not in a pending negotiation or is closed (`order.negotiation_not_pending`,
+  `order.negotiation_closed`), and a supplier that is not on the order (`order.negotiation_not_party`).
+  It confirms and charges only that supplier's open shipments. Other suppliers' shipments are unchanged.
+- Migration 248 adds `wallet_paid_amount`, `wallet_paid_at` and `wallet_refunded_amount` to
+  `commerce.order_shipments`. They are internal and not part of the API.
+- The composition root wires the payer with `WithWalletPayer` next to `WithWalletRefunder`. A wallet
+  charge without a payer fails closed.

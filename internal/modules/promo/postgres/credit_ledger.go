@@ -19,11 +19,70 @@ import (
 // movement whose second write failed, which is exactly the class of silence
 // this table exists to end.
 
+// consumeCreditsTx moves a purchase's balance inside the caller's transaction and
+// writes its ledger entry. The UPDATE locks the purchase row, so callers that
+// create a request in the same transaction serialise with each other.
+func consumeCreditsTx(ctx context.Context, tx pgx.Tx, in promo.ConsumeCredits) (*promo.CreditEntry, error) {
+	used := in.Credits
+	if in.Refund {
+		used = -in.Credits
+	}
+
+	const updateSQL = `
+		UPDATE promo.sponsorship_purchases
+		SET credits_used = credits_used + $2, updated_at = now()
+		WHERE id = $1
+		  AND credits_used + $2 <= credits_total
+		  AND credits_used + $2 >= 0
+		  AND ($3 OR (status = 'active' AND expires_at > now()))
+		RETURNING organization_id, GREATEST(credits_total - credits_used, 0);`
+
+	var orgID int64
+	var balanceAfter int
+	// A refund is allowed against an expired or cancelled purchase: the credit was
+	// taken while it was live, and refusing to give it back because the package has
+	// since lapsed would keep money the platform did not earn.
+	err := tx.QueryRow(ctx, updateSQL, in.PurchaseID, used, in.Refund).Scan(&orgID, &balanceAfter)
+	if err != nil {
+		if database.IsNotFound(err) {
+			return nil, apperr.Conflict("sponsorship.insufficient_credits",
+				i18n.TDefault("w4_mod.w4str_253_253"))
+		}
+		return nil, fmt.Errorf("promo postgres: move sponsorship credits: %w", err)
+	}
+
+	const insertSQL = `
+		INSERT INTO promo.sponsorship_credit_entries (
+			organization_id, purchase_id, delta, balance_after,
+			reason, entity_type, entity_id, actor_user_id, note
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id, public_id, created_at;`
+
+	entry := &promo.CreditEntry{
+		OrganizationID: orgID,
+		PurchaseID:     in.PurchaseID,
+		Delta:          in.Delta(),
+		BalanceAfter:   balanceAfter,
+		Reason:         in.Reason,
+		EntityType:     in.EntityType,
+		EntityID:       in.EntityID,
+		ActorUserID:    in.ActorUserID,
+		Note:           in.Note,
+	}
+	if err := tx.QueryRow(ctx, insertSQL,
+		orgID, in.PurchaseID, entry.Delta, balanceAfter,
+		string(in.Reason), in.EntityType, in.EntityID, in.ActorUserID, in.Note,
+	).Scan(&entry.ID, &entry.PublicID, &entry.CreatedAt); err != nil {
+		return nil, err
+	}
+	return entry, nil
+}
+
 // ConsumeSponsorshipCredits moves a purchase's balance and records why.
 //
-// The UPDATE keeps the guards the old increment had — the purchase must be
-// active, unexpired, and must not go past credits_total — and adds one the old
-// one lacked: a refund cannot drive credits_used below zero, which would have
+// The UPDATE keeps the guards the old increment had (the purchase must be
+// active, unexpired, and must not go past credits_total) and adds one the old one
+// lacked: a refund cannot drive credits_used below zero, which would have
 // manufactured credits out of a double-refund.
 func (r *Repository) ConsumeSponsorshipCredits(
 	ctx context.Context, in promo.ConsumeCredits,
@@ -31,66 +90,16 @@ func (r *Repository) ConsumeSponsorshipCredits(
 	if err := in.Validate(); err != nil {
 		return nil, err
 	}
-
-	var entry promo.CreditEntry
+	var entry *promo.CreditEntry
 	err := r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		used := in.Credits
-		if in.Refund {
-			used = -in.Credits
-		}
-
-		const updateSQL = `
-			UPDATE promo.sponsorship_purchases
-			SET credits_used = credits_used + $2, updated_at = now()
-			WHERE id = $1
-			  AND credits_used + $2 <= credits_total
-			  AND credits_used + $2 >= 0
-			  AND ($3 OR (status = 'active' AND expires_at > now()))
-			RETURNING organization_id, GREATEST(credits_total - credits_used, 0);`
-
-		var orgID int64
-		var balanceAfter int
-		// A refund is allowed against an expired or cancelled purchase: the
-		// credit was taken while it was live, and refusing to give it back
-		// because the package has since lapsed would keep money the platform
-		// did not earn.
-		err := tx.QueryRow(txCtx, updateSQL, in.PurchaseID, used, in.Refund).
-			Scan(&orgID, &balanceAfter)
-		if err != nil {
-			if database.IsNotFound(err) {
-				return apperr.Conflict("sponsorship.insufficient_credits",
-					i18n.TDefault("w4_mod.w4str_253_253"))
-			}
-			return fmt.Errorf("promo postgres: move sponsorship credits: %w", err)
-		}
-
-		const insertSQL = `
-			INSERT INTO promo.sponsorship_credit_entries (
-				organization_id, purchase_id, delta, balance_after,
-				reason, entity_type, entity_id, actor_user_id, note
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-			RETURNING id, public_id, created_at;`
-
-		entry = promo.CreditEntry{
-			OrganizationID: orgID,
-			PurchaseID:     in.PurchaseID,
-			Delta:          in.Delta(),
-			BalanceAfter:   balanceAfter,
-			Reason:         in.Reason,
-			EntityType:     in.EntityType,
-			EntityID:       in.EntityID,
-			ActorUserID:    in.ActorUserID,
-			Note:           in.Note,
-		}
-		return tx.QueryRow(txCtx, insertSQL,
-			orgID, in.PurchaseID, entry.Delta, balanceAfter,
-			string(in.Reason), in.EntityType, in.EntityID, in.ActorUserID, in.Note,
-		).Scan(&entry.ID, &entry.PublicID, &entry.CreatedAt)
+		e, err := consumeCreditsTx(txCtx, tx, in)
+		entry = e
+		return err
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &entry, nil
+	return entry, nil
 }
 
 const creditEntryColumns = `

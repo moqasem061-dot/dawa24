@@ -16,19 +16,7 @@ import (
 // CreateSponsorshipPurchase inserts a new sponsorship package purchase.
 func (r *Repository) CreateSponsorshipPurchase(ctx context.Context, p *promo.SponsorshipPurchase) error {
 	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			INSERT INTO promo.sponsorship_purchases (
-				organization_id, package_id, credits_total, credits_used,
-				starts_at, expires_at, status, auto_renew, billing_cycle,
-				amount, payment_id, source_system, source_id
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-			RETURNING id, public_id, created_at, updated_at;
-		`
-		return tx.QueryRow(txCtx, query,
-			p.OrganizationID, p.PackageID, p.CreditsTotal, p.CreditsUsed,
-			p.StartsAt, p.ExpiresAt, string(p.Status), p.AutoRenew, p.BillingCycle,
-			p.Amount, p.PaymentID, p.SourceSystem, p.SourceID,
-		).Scan(&p.ID, &p.PublicID, &p.CreatedAt, &p.UpdatedAt)
+		return insertSponsorshipPurchaseTx(txCtx, tx, p)
 	})
 }
 
@@ -147,17 +135,7 @@ func (r *Repository) ExpireSponsorshipPurchases(ctx context.Context) (int64, err
 // CreateSponsorshipRequest inserts a new sponsorship request in pending status.
 func (r *Repository) CreateSponsorshipRequest(ctx context.Context, sr *promo.SponsorshipRequest) error {
 	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			INSERT INTO promo.sponsorship_requests (
-				organization_id, purchase_id, package_id, item_type, item_id,
-				credits_used, admin_status, starts_at, expires_at, status
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-			RETURNING id, public_id, created_at, updated_at;
-		`
-		return tx.QueryRow(txCtx, query,
-			sr.OrganizationID, sr.PurchaseID, sr.PackageID, string(sr.ItemType), sr.ItemID,
-			sr.CreditsUsed, string(sr.AdminStatus), sr.StartsAt, sr.ExpiresAt, string(sr.Status),
-		).Scan(&sr.ID, &sr.PublicID, &sr.CreatedAt, &sr.UpdatedAt)
+		return insertSponsorshipRequestTx(txCtx, tx, sr)
 	})
 }
 

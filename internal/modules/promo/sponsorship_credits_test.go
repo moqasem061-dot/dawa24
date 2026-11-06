@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
@@ -288,4 +289,41 @@ func (m *creditLedgerRepo) ListCreditAccounts(context.Context, string, int, int)
 }
 func (m *creditLedgerRepo) ListPurchasesForOrg(context.Context, int64, int, int) ([]*SponsorshipPurchase, int, error) {
 	return nil, 0, nil
+}
+
+// CreateSponsorshipRequestReserved mirrors the repository: request, then credit.
+func (m *creditLedgerRepo) CreateSponsorshipRequestReserved(ctx context.Context, sr *SponsorshipRequest, in ConsumeCredits) error {
+	if err := m.CreateSponsorshipRequest(ctx, sr); err != nil {
+		return err
+	}
+	entityID := sr.ID
+	in.EntityID = &entityID
+	_, err := m.ConsumeSponsorshipCredits(ctx, in)
+	return err
+}
+
+// CreateSponsorshipRequestsReserved mirrors the repository: requests, then credit.
+func (m *creditLedgerRepo) CreateSponsorshipRequestsReserved(ctx context.Context, reqs []*SponsorshipRequest, in ConsumeCredits) error {
+	for _, sr := range reqs {
+		if err := m.CreateSponsorshipRequest(ctx, sr); err != nil {
+			return err
+		}
+	}
+	if len(reqs) == 0 {
+		return nil
+	}
+	_, err := m.ConsumeSponsorshipCredits(ctx, in)
+	return err
+}
+
+// CreateSponsorshipPurchaseWithDebit mirrors the repository: debit, then purchase.
+func (m *creditLedgerRepo) CreateSponsorshipPurchaseWithDebit(ctx context.Context, p *SponsorshipPurchase, debit func(ctx context.Context, tx pgx.Tx) (*int64, error)) error {
+	if debit != nil {
+		paymentID, err := debit(ctx, nil)
+		if err != nil {
+			return err
+		}
+		p.SourceID = paymentID
+	}
+	return m.CreateSponsorshipPurchase(ctx, p)
 }

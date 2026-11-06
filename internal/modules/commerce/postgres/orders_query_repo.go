@@ -316,8 +316,16 @@ func (r *Repository) UpdateOrderStatus(
 			_, err = r.refundWalletDebits(txCtx, tx, locked, nil, orderCancelKey(orderID), actorID, history.Notes)
 			return err
 		case commerce.StatusRefunded:
-			_, err = r.refundWalletDebits(txCtx, tx, locked, nil, orderRefundKey(orderID), actorID, history.Notes)
-			return err
+			credited, err := r.refundWalletDebits(txCtx, tx, locked, nil, orderRefundKey(orderID), actorID, history.Notes)
+			if err != nil {
+				return err
+			}
+			// An order that is already refunded stays refunded, with no money moved.
+			if commerce.IsWalletPayment(locked.PaymentMethod) && !credited.IsPositive() && currentStatus != string(commerce.StatusRefunded) {
+				return apperr.Conflict("order.refund_nothing_to_refund",
+					"لا توجد مدفوعات من المحفظة لاسترجاعها لهذا الطلب. There is no wallet payment to refund for this order.")
+			}
+			return nil
 		}
 		return nil
 	})

@@ -4,60 +4,56 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/moqasem061-dot/dawa24/internal/platform/database"
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-
-	assistantPostgres "github.com/moqasem061-dot/dawa24/internal/modules/assistant/postgres"
-	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
-	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
-	chatPostgres "github.com/moqasem061-dot/dawa24/internal/modules/chat/postgres"
-	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
-	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
-	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
-	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
-	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
-	notificationsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/notifications/postgres"
-	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
-	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
-	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
-	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
-
+	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/aicapabilities"
+	assistantPostgres "github.com/moqasem061-dot/dawa24/internal/modules/assistant/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/attachments"
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	cataloggw "github.com/moqasem061-dot/dawa24/internal/modules/catalog/gateway"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
+	chatPostgres "github.com/moqasem061-dot/dawa24/internal/modules/chat/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
+	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	comparePostgres "github.com/moqasem061-dot/dawa24/internal/modules/compare/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
+	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
+	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
+	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
+	notificationsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/notifications/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
 	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
+	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
-
+	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
 	aiusagePostgres "github.com/moqasem061-dot/dawa24/internal/platform/aiusage/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/platform/antiscrape"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
 	"github.com/moqasem061-dot/dawa24/internal/platform/pagecontrol"
+	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
+	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
 	"github.com/moqasem061-dot/dawa24/internal/platform/telegramgateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/turnstile"
-	"github.com/moqasem061-dot/dawa24/internal/ui"
-
-	"github.com/redis/go-redis/v9"
-
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
-	"github.com/moqasem061-dot/dawa24/internal/platform/progress"
-	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
+	"github.com/moqasem061-dot/dawa24/internal/ui"
+	"github.com/redis/go-redis/v9"
 )
 
 func buildUIHandler(
@@ -77,7 +73,7 @@ func buildUIHandler(
 	catRepoUI := catalogPostgres.NewRepository(db)
 	orgRepoUI := orgPostgres.NewRepository(db)
 	ingRepoUI := ingestPostgres.NewRepository(db)
-	commRepoUI := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db))
+	commRepoUI := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db)).WithWalletPayer(billingPostgres.NewRepository(db))
 	invRepoUI := inventoryPostgres.NewRepository(db)
 	notifRepoUI := notificationsPostgres.NewRepository(db)
 	promoRepoUI := promoPostgres.NewRepository(db)
@@ -153,7 +149,7 @@ func buildUIHandler(
 	promoSvcUI.SetRequiredDocsChecker(docsGate)
 	// Wallet debiter for UI-driven sponsorship purchases.
 	billSvcUIForPromo := billing.NewService(billRepoUI, log)
-	promoSvcUI.SetWalletDebiter(func(ctx context.Context, orgID int64, amount money.Amount, description string) (*int64, error) {
+	promoSvcUI.SetWalletDebiter(func(ctx context.Context, tx pgx.Tx, orgID int64, amount money.Amount, description string) (*int64, error) {
 		uid, _ := authctx.UserID(ctx)
 		if uid <= 0 {
 			return nil, apperr.Validation("auth.required", i18n.TDefault("w4_cmd.w4str_263_263"), nil)
@@ -165,11 +161,10 @@ func buildUIHandler(
 		if wallet.Available().Minor() < amount.Minor() {
 			return nil, apperr.Conflict("wallet.insufficient_funds", i18n.TDefault("w4_cmd.w4str_264_264"))
 		}
-		tx, err := billSvcUIForPromo.Withdraw(ctx, uid, "EGP", amount, "sponsorship_package", nil, description)
+		txID, err := billRepoUI.WithdrawInTx(ctx, tx, uid, amount, "sponsorship_package", nil, description)
 		if err != nil {
 			return nil, err
 		}
-		txID := tx.ID
 		return &txID, nil
 	})
 

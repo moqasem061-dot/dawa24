@@ -5,58 +5,54 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-
 	"github.com/go-chi/chi/v5"
-
-	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
-	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
-	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
-	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
-	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
-	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
-	notificationsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/notifications/postgres"
-	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
-	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
-	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
-	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
-
+	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/assistant"
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	billingHttp "github.com/moqasem061-dot/dawa24/internal/modules/billing/http"
+	billingPostgres "github.com/moqasem061-dot/dawa24/internal/modules/billing/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/catalog"
 	catalogHttp "github.com/moqasem061-dot/dawa24/internal/modules/catalog/http"
+	catalogPostgres "github.com/moqasem061-dot/dawa24/internal/modules/catalog/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	commerceHttp "github.com/moqasem061-dot/dawa24/internal/modules/commerce/http"
+	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
 	hrHttp "github.com/moqasem061-dot/dawa24/internal/modules/hr/http"
+	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	identityHttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	ingestHttp "github.com/moqasem061-dot/dawa24/internal/modules/ingest/http"
+	ingestPostgres "github.com/moqasem061-dot/dawa24/internal/modules/ingest/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/inventory"
 	inventoryHttp "github.com/moqasem061-dot/dawa24/internal/modules/inventory/http"
+	inventoryPostgres "github.com/moqasem061-dot/dawa24/internal/modules/inventory/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/notifications"
 	notificationsHttp "github.com/moqasem061-dot/dawa24/internal/modules/notifications/http"
+	notificationsPostgres "github.com/moqasem061-dot/dawa24/internal/modules/notifications/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
 	orgHttp "github.com/moqasem061-dot/dawa24/internal/modules/org/http"
+	orgPostgres "github.com/moqasem061-dot/dawa24/internal/modules/org/postgres"
 	platformadmin "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin"
 	platformadminHttp "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/http"
+	platformadminPostgres "github.com/moqasem061-dot/dawa24/internal/modules/platform_admin/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
 	promoHttp "github.com/moqasem061-dot/dawa24/internal/modules/promo/http"
+	promoPostgres "github.com/moqasem061-dot/dawa24/internal/modules/promo/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/smartorder"
 	smartorderHttp "github.com/moqasem061-dot/dawa24/internal/modules/smartorder/http"
 	smartorderPG "github.com/moqasem061-dot/dawa24/internal/modules/smartorder/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 	workflowHttp "github.com/moqasem061-dot/dawa24/internal/modules/workflow/http"
-
+	workflowPostgres "github.com/moqasem061-dot/dawa24/internal/modules/workflow/postgres"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 	"github.com/moqasem061-dot/dawa24/internal/platform/gateway"
 	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/storage"
-
-	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 	"github.com/redis/go-redis/v9"
 )
@@ -218,7 +214,7 @@ func mountAuthenticatedModules(
 	moduleAPI(func() { inventoryHttp.NewHandler(invSvc, log).RegisterRoutes(r) })
 
 	// 4. Commerce
-	commRepo := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db))
+	commRepo := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db)).WithWalletPayer(billingPostgres.NewRepository(db))
 	commSvc := commerce.NewService(commRepo, log)
 	commSvc.SetRequiredDocsChecker(commerce.RequiredDocsChecker(docsGate))
 	commSvc.OnOrderPlaced(deps.orders.announce)
@@ -261,7 +257,7 @@ func mountAuthenticatedModules(
 	// Wallet debiter: charges the vendor's wallet for a sponsorship package
 	// purchase. Composed here because promo must not import billing (ADR 0002).
 	billSvcForPromo := billing.NewService(billRepo, log)
-	promoSvc.SetWalletDebiter(func(ctx context.Context, orgID int64, amount money.Amount, description string) (*int64, error) {
+	promoSvc.SetWalletDebiter(func(ctx context.Context, tx pgx.Tx, orgID int64, amount money.Amount, description string) (*int64, error) {
 		// Find the wallet for the org's first member (owner).
 		// The billing service's GetOrCreateWallet is user-scoped; we resolve
 		// the org's owner user from the tenant context.
@@ -276,11 +272,10 @@ func mountAuthenticatedModules(
 		if wallet.Available().Minor() < amount.Minor() {
 			return nil, apperr.Conflict("wallet.insufficient_funds", i18n.TDefault("w4_cmd.w4str_264_264"))
 		}
-		tx, err := billSvcForPromo.Withdraw(ctx, uid, "EGP", amount, "sponsorship_package", nil, description)
+		txID, err := billRepo.WithdrawInTx(ctx, tx, uid, amount, "sponsorship_package", nil, description)
 		if err != nil {
 			return nil, err
 		}
-		txID := tx.ID
 		return &txID, nil
 	})
 	promoHandler := promoHttp.NewHandler(promoSvc, log)

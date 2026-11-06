@@ -108,6 +108,7 @@ func (r *Repository) GetWallet(ctx context.Context, id int64) (*billing.Wallet, 
 }
 
 // RecordTransaction writes an append-only ledger row and updates the balance projection.
+// The wallet is locked for the whole write (see recordLedgerRow).
 func (r *Repository) RecordTransaction(
 	ctx context.Context,
 	walletID int64,
@@ -117,57 +118,19 @@ func (r *Repository) RecordTransaction(
 	refID *int64,
 	desc string,
 ) (*billing.WalletTransaction, error) {
-	var txRecord billing.WalletTransaction
+	var txRecord *billing.WalletTransaction
 	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		currentBalance, err := r.latestBalance(txCtx, tx, walletID, true)
+		rec, err := r.recordLedgerRow(txCtx, tx, walletID, txType, delta, refType, refID, desc, "")
 		if err != nil {
 			return err
 		}
-
-		newBalance, addErr := currentBalance.Add(delta)
-		if addErr != nil {
-			return apperr.Internal(addErr)
-		}
-		if newBalance.IsNegative() {
-			return apperr.Validation("wallet.insufficient_funds", "رصيد المحفظة غير كافٍ لإتمام هذه العملية.", nil)
-		}
-
-		// When debiting, ensure non-withdrawal transactions do not spend held pending withdrawal funds
-		if delta.IsNegative() && refType != "withdrawal_approval" {
-			pendingWithdrawals, err := r.pendingWithdrawals(txCtx, tx, walletID)
-			if err != nil {
-				return err
-			}
-
-			availableMinor := currentBalance.Minor() - pendingWithdrawals.Minor()
-			if availableMinor < (-delta.Minor()) {
-				return apperr.Validation("wallet.insufficient_funds", "رصيد المحفظة المتاح غير كافٍ لإتمام هذه العملية لوجود مبالغ معلقة.", nil)
-			}
-		}
-
-		queryInsert := `
-			INSERT INTO billing.wallet_transactions (
-				wallet_id, type, amount, balance_after, reference_type, reference_id, description
-			) VALUES ($1, $2, $3, $4, $5, $6, $7)
-			RETURNING id, wallet_id, type, amount, balance_after, reference_type, reference_id, description, created_at;
-		`
-		var typeStr string
-		err = tx.QueryRow(txCtx, queryInsert,
-			walletID, string(txType), delta, newBalance, refType, refID, desc,
-		).Scan(
-			&txRecord.ID, &txRecord.WalletID, &typeStr, &txRecord.Amount, &txRecord.BalanceAfter,
-			&txRecord.ReferenceType, &txRecord.ReferenceID, &txRecord.Description, &txRecord.CreatedAt,
-		)
-		if err != nil {
-			return err
-		}
-		txRecord.Type = billing.TransactionType(typeStr)
+		txRecord = rec
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &txRecord, nil
+	return txRecord, nil
 }
 
 // ListTransactions retrieves paginated transactions for a wallet.

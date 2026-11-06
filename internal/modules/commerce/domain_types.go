@@ -195,6 +195,13 @@ type OrderShipment struct {
 	CollectedAmountMinor int64        `json:"collected_amount_minor"`
 	DeliveredByCourierAt *time.Time   `json:"delivered_by_courier_at,omitempty"`
 
+	// WalletPaidAmount is what this shipment was charged to the buyer's wallet, and
+	// WalletPaidAt is when (nil until it is charged). WalletRefundedAmount is what has
+	// been credited back for it. They are internal and never part of the API.
+	WalletPaidAmount     money.Amount `json:"-"`
+	WalletPaidAt         *time.Time   `json:"-"`
+	WalletRefundedAmount money.Amount `json:"-"`
+
 	// CourierUserID is the delivery representative (مندوب) carrying this
 	// parcel, and CourierAssignedAt is when they were handed it. The courier
 	// portal orders a queue by that timestamp ascending, so the parcel that

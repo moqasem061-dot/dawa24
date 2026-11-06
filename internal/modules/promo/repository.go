@@ -2,6 +2,8 @@ package promo
 
 import (
 	"context"
+
+	"github.com/jackc/pgx/v5"
 )
 
 // Repository defines the persistence interface for promotional offers and ads.
@@ -50,6 +52,13 @@ type Repository interface {
 
 	// Sponsorship requests — the approval workflow.
 	CreateSponsorshipRequest(ctx context.Context, r *SponsorshipRequest) error
+	// CreateSponsorshipRequestReserved and CreateSponsorshipRequestsReserved write
+	// requests and take their credits in one transaction (Batch 2, S24).
+	CreateSponsorshipRequestReserved(ctx context.Context, sr *SponsorshipRequest, in ConsumeCredits) error
+	CreateSponsorshipRequestsReserved(ctx context.Context, reqs []*SponsorshipRequest, in ConsumeCredits) error
+	// CreateSponsorshipPurchaseWithDebit records a purchase and its wallet payment in
+	// one transaction. debit runs inside that transaction and returns the payment id.
+	CreateSponsorshipPurchaseWithDebit(ctx context.Context, p *SponsorshipPurchase, debit func(ctx context.Context, tx pgx.Tx) (*int64, error)) error
 	GetSponsorshipRequestByID(ctx context.Context, id int64) (*SponsorshipRequest, error)
 	ListSponsorshipRequestsByOrg(ctx context.Context, orgID int64, limit, offset int) ([]*SponsorshipRequest, error)
 	ListSponsorshipRequestsByOrgWithTotal(ctx context.Context, orgID int64, limit, offset int) ([]*SponsorshipRequest, int, error)

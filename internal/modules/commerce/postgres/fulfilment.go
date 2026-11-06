@@ -73,15 +73,40 @@ func (r *Repository) GetShipmentByID(ctx context.Context, id int64) (*commerce.O
 
 // UpdateShipmentStatus advances a shipment and records the transition.
 //
-// The status change and its history row are written in one transaction, so the
-// audit trail cannot disagree with the current state. The `status = $2`
-// predicate makes it a compare-and-swap: two vendor staff clicking at once
-// produce one transition and one conflict, not two history rows.
+// The status change, its history row, any wallet charge or refund and the order's
+// payment status are written in one transaction, so the audit trail cannot
+// disagree with the current state. The `status = $2` predicate makes it a
+// compare-and-swap: two vendor staff clicking at once produce one transition and
+// one conflict, not two history rows.
 func (r *Repository) UpdateShipmentStatus(
 	ctx context.Context,
 	id int64,
 	from, to commerce.OrderStatus,
 	history commerce.OrderStatusHistory,
+) error {
+	return r.updateShipmentStatus(ctx, id, from, to, history, 0)
+}
+
+// UpdateShipmentStatusWithWallet is UpdateShipmentStatus for a supplier's move on
+// a wallet order. A confirmation charges this shipment to the buyer's wallet
+// (walletUserID) in the same transaction; when the charge is refused, the shipment
+// stays as it was.
+func (r *Repository) UpdateShipmentStatusWithWallet(
+	ctx context.Context,
+	id int64,
+	from, to commerce.OrderStatus,
+	history commerce.OrderStatusHistory,
+	walletUserID int64,
+) error {
+	return r.updateShipmentStatus(ctx, id, from, to, history, walletUserID)
+}
+
+func (r *Repository) updateShipmentStatus(
+	ctx context.Context,
+	id int64,
+	from, to commerce.OrderStatus,
+	history commerce.OrderStatusHistory,
+	walletUserID int64,
 ) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// The order is locked before the shipment, as in every other path. The write
@@ -90,6 +115,14 @@ func (r *Repository) UpdateShipmentStatus(
 		order, err := lockAPICancellationOrder(txCtx, tx, history.OrderID)
 		if err != nil {
 			return err
+		}
+		actor := actorOrZero(history.ChangedByUserID)
+		if shipment := findOrderShipment(order, id); shipment != nil &&
+			to == commerce.StatusConfirmed && from != commerce.StatusConfirmed &&
+			commerce.IsWalletPayment(order.PaymentMethod) {
+			if err := r.chargeShipment(txCtx, tx, order, shipment, walletUserID, actor); err != nil {
+				return err
+			}
 		}
 		update := `
 			UPDATE commerce.order_shipments
@@ -134,9 +167,9 @@ func (r *Repository) UpdateShipmentStatus(
 			var nonMatchingCount int
 			_ = database.Soft(txCtx, tx, func() error {
 				return tx.QueryRow(txCtx, `
-				SELECT COUNT(*) 
-				FROM commerce.order_shipments 
-				WHERE order_id = $1 
+				SELECT COUNT(*)
+				FROM commerce.order_shipments
+				WHERE order_id = $1
 				  AND status NOT IN ($2, 'delivered', 'completed', 'cancelled');
 			`, history.OrderID, string(to)).Scan(&nonMatchingCount)
 			})
@@ -165,33 +198,29 @@ func (r *Repository) UpdateShipmentStatus(
 			}
 		}
 
-		if to == commerce.StatusCancelled && from != commerce.StatusCancelled && commerce.IsWalletPayment(order.PaymentMethod) {
+		if !commerce.IsWalletPayment(order.PaymentMethod) {
+			return nil
+		}
+		switch {
+		case to == commerce.StatusCancelled && from != commerce.StatusCancelled:
 			var nowStatus string
 			if err := tx.QueryRow(txCtx, `SELECT status FROM commerce.orders WHERE id = $1;`, order.ID).Scan(&nowStatus); err != nil {
 				return err
 			}
-			actor := actorOrZero(history.ChangedByUserID)
 			if nowStatus == string(commerce.StatusCancelled) && order.Status != commerce.StatusCancelled {
-				if _, err := r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(order.ID), actor, history.Notes); err != nil {
-					return err
-				}
-			} else {
-				var own *commerce.OrderShipment
-				for _, s := range order.Shipments {
-					if s.ID == id {
-						own = s
-					}
-				}
-				if own == nil {
-					return apperr.NotFound("shipment")
-				}
-				goods, gErr := own.WalletGoodsAmount()
-				if gErr != nil {
-					return apperr.Internal(gErr)
-				}
-				if _, err := r.refundWalletDebits(txCtx, tx, order, &goods, shipmentCancelKey(order.ID, id), actor, history.Notes); err != nil {
-					return err
-				}
+				_, err := r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(order.ID), actor, history.Notes)
+				return err
+			}
+			_, err := r.refundWalletDebits(txCtx, tx, order, &id, shipmentCancelKey(order.ID, id), actor, history.Notes)
+			return err
+		case to == commerce.StatusRefunded && from != commerce.StatusRefunded:
+			credited, err := r.refundWalletDebits(txCtx, tx, order, &id, shipmentRefundKey(order.ID, id), actor, history.Notes)
+			if err != nil {
+				return err
+			}
+			if !credited.IsPositive() {
+				return apperr.Conflict("shipment.refund_nothing_to_refund",
+					"لا توجد مدفوعات من المحفظة لاسترجاعها لهذه الشحنة. There is no wallet payment to refund for this shipment.")
 			}
 		}
 		return nil

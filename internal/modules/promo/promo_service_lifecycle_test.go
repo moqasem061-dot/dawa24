@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
@@ -181,7 +182,7 @@ func TestPurchaseSponsorshipPackage_WalletDebit(t *testing.T) {
 	var debitedOrgID int64
 	var debitedAmount money.Amount
 	fakeTxID := int64(777)
-	svc.SetWalletDebiter(func(ctx context.Context, orgID int64, amount money.Amount, description string) (*int64, error) {
+	svc.SetWalletDebiter(func(ctx context.Context, _ pgx.Tx, orgID int64, amount money.Amount, description string) (*int64, error) {
 		debitedOrgID = orgID
 		debitedAmount = amount
 		return &fakeTxID, nil

@@ -18,7 +18,10 @@ import (
 func (r *Repository) CreateWithdrawalRequest(ctx context.Context, w *billing.WalletWithdrawal) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// Check current available balance
-		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, true)
+		if err := lockWalletRow(txCtx, tx, w.WalletID); err != nil {
+			return err
+		}
+		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, false)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}
@@ -168,7 +171,10 @@ func (r *Repository) AdminApproveWithdrawalRequest(
 		}
 
 		// Check current balance and ensure no overdraft
-		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, true)
+		if err := lockWalletRow(txCtx, tx, w.WalletID); err != nil {
+			return err
+		}
+		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, false)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}

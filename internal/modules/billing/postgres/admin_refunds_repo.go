@@ -106,7 +106,10 @@ func (r *Repository) AdminRefundTransaction(
 		}
 
 		// 5. Read current wallet balance FOR UPDATE to prevent balance drift
-		currentBalance, err := r.latestBalance(txCtx, tx, walletID, true)
+		if err := lockWalletRow(txCtx, tx, walletID); err != nil {
+			return err
+		}
+		currentBalance, err := r.latestBalance(txCtx, tx, walletID, false)
 		if err != nil {
 			return fmt.Errorf("read current wallet balance: %w", err)
 		}

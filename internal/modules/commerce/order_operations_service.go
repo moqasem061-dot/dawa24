@@ -258,12 +258,17 @@ func (s *Service) UpdatePurchaseRequestLineOffer(ctx context.Context, lineID int
 	return s.repo.UpdatePurchaseRequestLineOffer(ctx, lineID, price, discount, status)
 }
 
-// AcceptNegotiation allows vendor or admin to accept a price negotiation on an order.
-func (s *Service) AcceptNegotiation(ctx context.Context, orderID int64, actorID int64) error {
+// AcceptNegotiation accepts a buyer's negotiated price for one supplier's
+// shipments on an order. Only that supplier's shipments are confirmed, and they
+// are charged to the buyer's wallet (walletUserID) when the order is wallet-paid.
+func (s *Service) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	if orderID <= 0 {
 		return apperr.Validation("order.invalid_id", "Valid order ID is required.", nil)
 	}
-	return s.repo.AcceptNegotiation(ctx, orderID, actorID)
+	if vendorOrgID <= 0 {
+		return apperr.Forbidden("order.negotiation_not_party", "Only a supplier on the order can accept its negotiation.")
+	}
+	return s.repo.AcceptNegotiation(ctx, orderID, vendorOrgID, actorID, walletUserID)
 }
 
 // RejectNegotiation allows vendor or admin to reject a price negotiation on an order.

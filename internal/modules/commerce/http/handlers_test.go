@@ -205,7 +205,7 @@ func (r stubRepo) UpdatePurchaseRequestLineOffer(ctx context.Context, lineID int
 	r.fail("UpdatePurchaseRequestLineOffer")
 	return nil
 }
-func (r stubRepo) AcceptNegotiation(ctx context.Context, orderID int64, actorID int64) error {
+func (r stubRepo) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	r.fail("AcceptNegotiation")
 	return nil
 }

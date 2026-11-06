@@ -193,7 +193,10 @@ func (r *Repository) AdminApproveDepositRequest(ctx context.Context, depositID i
 			return apperr.Conflict("deposit.already_processed", fmt.Sprintf(i18n.TDefault("w4_mod.s_71"), dep.Status))
 		}
 
-		currentBalance, err := r.latestBalance(txCtx, tx, dep.WalletID, true)
+		if err := lockWalletRow(txCtx, tx, dep.WalletID); err != nil {
+			return err
+		}
+		currentBalance, err := r.latestBalance(txCtx, tx, dep.WalletID, false)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}

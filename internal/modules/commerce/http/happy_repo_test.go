@@ -145,7 +145,7 @@ func (happyRepo) UpdatePurchaseRequestStatus(ctx context.Context, id int64, stat
 func (happyRepo) UpdatePurchaseRequestLineOffer(ctx context.Context, lineID int64, price money.Amount, discount float64, status string) error {
 	return nil
 }
-func (happyRepo) AcceptNegotiation(ctx context.Context, orderID int64, actorID int64) error {
+func (happyRepo) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	return nil
 }
 func (happyRepo) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {

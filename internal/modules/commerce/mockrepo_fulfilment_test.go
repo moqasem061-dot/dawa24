@@ -79,7 +79,7 @@ func (m *mockCommerceRepo) CountVendorShipmentsByStatus(_ context.Context, _ int
 	return 0, nil
 }
 
-func (m *mockCommerceRepo) AcceptNegotiation(_ context.Context, orderID, actorID int64) error {
+func (m *mockCommerceRepo) AcceptNegotiation(_ context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	o, ok := m.orders[orderID]
 	if !ok {
 		return apperr.NotFound("order")

@@ -88,3 +88,14 @@ The `promo` bounded context handles promotional campaigns, vendor discount confi
 ## Ad click destinations (security fix 2026-09-24)
 
 `Ad.ResolveClickURL` follows `target_url` only when it is a plain same-site path; anything else (an absolute URL, `//host`, `/\host`) falls back to the click-target type. The screens only ever store local paths, but the JSON API accepts any string and `/ads/click/{ad}` redirects to it.
+
+## Sponsorship credits and package payments (Batch 2, S24)
+
+- `CreateSponsorshipRequestReserved` writes the request and takes its credit in one transaction. The
+  credit UPDATE locks the purchase row. A refused credit leaves no request behind.
+- The batch variant (`CreateSponsorshipRequestsReserved`) writes all requests and takes their combined
+  credit together, or nothing.
+- `CreateSponsorshipPurchaseWithDebit` writes a paid package's purchase and its wallet debit in one
+  transaction. The debit runs in the purchase's transaction (`WalletDebiter` receives the transaction).
+  A paid package with no debiter wired is refused. It is never free.
+- Tests: `test/integration/sponsorship_reserve_test.go` (eight vendors race three credits, 20 rounds).

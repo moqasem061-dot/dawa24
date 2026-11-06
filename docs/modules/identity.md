@@ -92,3 +92,8 @@ details; reverse geocoding cannot supply details absent from map data.
 | `error_logs_view` | `platform.error_log.view` | `GET /admin/error-logs*` |
 | `sql-console-developer` | `platform.developer.sql` | `GET/POST /admin/developers/sql*` |
 
+## Session plans (Batch 2, S22)
+
+- `PurchaseSessionPlan` refuses a plan that is not active (`session_plan.inactive`). Nothing is
+  written. Paid plans are unchanged: no payment flow exists for them yet, so the question of how
+  they should be paid is open (see the batch 2 report). Test: `session_plan_guard_test.go`.

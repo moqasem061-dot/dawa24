@@ -68,45 +68,9 @@ func (h *UIHandler) verifyWalletFunds(
 	return walletUserID, nil
 }
 
-// executeOrderWalletPayment performs the actual wallet debit when the supplier confirms the order/shipment.
-func (h *UIHandler) executeOrderWalletPayment(
-	ctx context.Context,
-	order *commerce.Order,
-	shipment *commerce.OrderShipment,
-) error {
-	if order == nil || order.PaymentMethod != "wallet" || order.PaymentStatus == commerce.PaymentPaid {
-		return nil
-	}
-	if h.billSvc == nil {
-		return fmt.Errorf("خدمة المحفظة غير متاحة حالياً")
-	}
-
-	// Calculate goods amount for this confirmation
-	var goodsAmount money.Amount
-	if shipment != nil {
-		goodsAmount = shipment.TotalAmount
-		if shipment.ShippingFee.IsPositive() && shipment.ShippingFee.Minor() < shipment.TotalAmount.Minor() {
-			goodsAmount, _ = shipment.TotalAmount.Sub(shipment.ShippingFee)
-		} else if shipment.Subtotal.IsPositive() {
-			goodsAmount = shipment.Subtotal
-		}
-	} else {
-		goodsAmount = order.TotalAmount
-		if order.ShippingFee.IsPositive() && order.ShippingFee.Minor() < order.TotalAmount.Minor() {
-			goodsAmount, _ = order.TotalAmount.Sub(order.ShippingFee)
-		} else if order.Subtotal.IsPositive() {
-			if order.DiscountAmount.IsPositive() && order.DiscountAmount.Minor() < order.Subtotal.Minor() {
-				goodsAmount, _ = order.Subtotal.Sub(order.DiscountAmount)
-			} else {
-				goodsAmount = order.Subtotal
-			}
-		}
-	}
-
-	if !goodsAmount.IsPositive() {
-		return nil
-	}
-
+// buyerWalletUserID returns the user whose wallet pays for a wallet order placed by
+// the buyer's organisation.
+func (h *UIHandler) buyerWalletUserID(ctx context.Context, order *commerce.Order) int64 {
 	var buyerOrgID int64
 	if order.OrganizationID != nil {
 		buyerOrgID = *order.OrganizationID
@@ -117,40 +81,56 @@ func (h *UIHandler) executeOrderWalletPayment(
 		Scope:          "pharmacy",
 	}
 	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
-
-	wallet, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP")
-	if err != nil || wallet == nil {
-		return fmt.Errorf("تعذر الوصول للمحفظة المؤسسية الخاصة بالصيدلية")
-	}
-
-	if wallet.AvailableBalance.Minor() < goodsAmount.Minor() {
-		return fmt.Errorf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م)",
-			wallet.AvailableBalance.String(), goodsAmount.String())
-	}
-
-	orderNum := order.OrderNumber
-	if orderNum == "" {
-		orderNum = fmt.Sprintf("ORD-%d", order.ID)
-	}
-	desc := fmt.Sprintf("سداد قيمة مشتريات أدوية للطلب رقم %s من المحفظة المؤسسية", orderNum)
-	if _, err := h.billSvc.Withdraw(ctx, walletUserID, "EGP", goodsAmount, "order", &order.ID, desc); err != nil {
-		return fmt.Errorf("فشل خصم المبلغ من محفظة الصيدلية: %w", err)
-	}
-
-	if h.commSvc != nil {
-		_ = h.commSvc.UpdateOrderPaymentStatus(ctx, order.ID, commerce.PaymentPaid)
-	}
-	order.PaymentStatus = commerce.PaymentPaid
-	if shipment != nil {
-		shipment.PaymentStatus = commerce.PaymentPaid
-	}
-
-	return nil
+	return walletUserID
 }
 
-// returnWalletDebits credits back a wallet debit made just before a failed
-// confirmation. The credit runs in commerce and never exceeds the ledger's debit.
-func (h *UIHandler) returnWalletDebits(ctx context.Context, orderID int64, shipmentID *int64, actorUserID int64, reason string) error {
-	_, err := h.commSvc.ReturnWalletDebits(ctx, orderID, shipmentID, actorUserID, reason)
-	return err
+// prepareWalletShipmentCharge checks, before the commerce transaction starts, that
+// the buyer's wallet covers one shipment and returns the wallet's user. The check
+// is advisory and gives the message the buyer has always seen. The debit itself
+// runs under the wallet lock in the same transaction as the confirmation, and it
+// is the authority (Batch 2, S02).
+func (h *UIHandler) prepareWalletShipmentCharge(ctx context.Context, order *commerce.Order, shipment *commerce.OrderShipment) (int64, error) {
+	goods, err := shipment.WalletGoodsAmount()
+	if err != nil {
+		return 0, err
+	}
+	return h.prepareWalletCharge(ctx, order, goods)
+}
+
+// prepareWalletNegotiationCharge is prepareWalletShipmentCharge for an accepted
+// negotiation: it covers the accepting supplier's shipments only.
+func (h *UIHandler) prepareWalletNegotiationCharge(ctx context.Context, order *commerce.Order, vendorOrgID int64) (int64, error) {
+	goods := money.Zero
+	for _, s := range order.Shipments {
+		if s == nil || s.OrganizationID != vendorOrgID {
+			continue
+		}
+		g, err := s.WalletGoodsAmount()
+		if err != nil {
+			return 0, err
+		}
+		if goods, err = goods.Add(g); err != nil {
+			return 0, err
+		}
+	}
+	return h.prepareWalletCharge(ctx, order, goods)
+}
+
+func (h *UIHandler) prepareWalletCharge(ctx context.Context, order *commerce.Order, goodsAmount money.Amount) (int64, error) {
+	if h.billSvc == nil {
+		return 0, fmt.Errorf("خدمة المحفظة غير متاحة حالياً")
+	}
+	if !goodsAmount.IsPositive() {
+		return 0, nil
+	}
+	walletUserID := h.buyerWalletUserID(ctx, order)
+	wallet, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP")
+	if err != nil || wallet == nil {
+		return 0, fmt.Errorf("تعذر الوصول للمحفظة المؤسسية الخاصة بالصيدلية")
+	}
+	if wallet.AvailableBalance.Minor() < goodsAmount.Minor() {
+		return 0, fmt.Errorf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م)",
+			wallet.AvailableBalance.String(), goodsAmount.String())
+	}
+	return walletUserID, nil
 }

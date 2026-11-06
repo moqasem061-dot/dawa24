@@ -181,7 +181,7 @@ func (m *deliveryMockRepo) AdminOrderStats(_ context.Context) (int, int, int, er
 func (m *deliveryMockRepo) AdminOrderKPIs(_ context.Context) (commerce.AdminOrderKPIs, error) {
 	return commerce.AdminOrderKPIs{}, nil
 }
-func (m *deliveryMockRepo) AcceptNegotiation(_ context.Context, _, _ int64) error { return nil }
+func (m *deliveryMockRepo) AcceptNegotiation(_ context.Context, _, _, _, _ int64) error { return nil }
 func (m *deliveryMockRepo) RejectNegotiation(_ context.Context, _ int64, _ string, _ int64) error {
 	return nil
 }

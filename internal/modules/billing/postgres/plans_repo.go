@@ -45,52 +45,17 @@ func (r *Repository) GetPlanBySlug(ctx context.Context, slug string) (*billing.P
 }
 
 // CreateSubscription activates a subscription for a user/org.
+//
+// A user/organisation has exactly one live platform subscription. Booking a new
+// one (upgrade, downgrade, plan switch, or renewal onto a different plan)
+// supersedes any earlier live row, so that the "current plan" reads resolve to
+// the plan just paid for.
 func (r *Repository) CreateSubscription(ctx context.Context, sub *billing.Subscription) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		if sub.BillingCycle == "" {
-			sub.BillingCycle = "monthly"
+		if err := supersedeLiveSubscriptions(txCtx, tx, sub); err != nil {
+			return err
 		}
-
-		// A user/organisation has exactly one live platform subscription. Booking a
-		// new one (upgrade, downgrade, plan switch, or renewal onto a different
-		// plan) supersedes any earlier live row so that the "current plan" reads —
-		// which pick the most recent live subscription — resolve to the plan just
-		// paid for, instead of an older row whose expires_at happens to sit
-		// further in the future (e.g. an unexpired annual term replaced by a
-		// monthly one).
-		if sub.OrganizationID != nil && *sub.OrganizationID > 0 {
-			if _, err := tx.Exec(txCtx, `
-				UPDATE billing.subscriptions
-				SET status = 'expired', auto_renew = false, updated_at = now()
-				WHERE organization_id = $1
-				  AND status IN ('active', 'trialing', 'past_due');
-			`, *sub.OrganizationID); err != nil {
-				return err
-			}
-		} else {
-			if _, err := tx.Exec(txCtx, `
-				UPDATE billing.subscriptions
-				SET status = 'expired', auto_renew = false, updated_at = now()
-				WHERE user_id = $1
-				  AND organization_id IS NULL
-				  AND status IN ('active', 'trialing', 'past_due');
-			`, sub.UserID); err != nil {
-				return err
-			}
-		}
-
-		query := `
-			INSERT INTO billing.subscriptions (
-				user_id, organization_id, plan_id, status, billing_cycle, auto_renew,
-				starts_at, expires_at, last_renewed_at, renewal_attempts, source_system, source_id
-			) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
-			RETURNING id, public_id, created_at, updated_at;
-		`
-		return tx.QueryRow(txCtx, query,
-			sub.UserID, sub.OrganizationID, sub.PlanID, string(sub.Status),
-			sub.BillingCycle, sub.AutoRenew, sub.StartsAt, sub.ExpiresAt,
-			sub.LastRenewedAt, sub.RenewalAttempts, sub.SourceSystem, sub.SourceID,
-		).Scan(&sub.ID, &sub.PublicID, &sub.CreatedAt, &sub.UpdatedAt)
+		return insertSubscription(txCtx, tx, sub)
 	})
 }
 
@@ -235,8 +200,12 @@ func (r *Repository) RenewSubscription(ctx context.Context, subID int64, walletI
 			return err
 		}
 
-		// 2. If cost > 0, deduct from wallet with ledger record
+		// 2. If cost > 0, deduct from wallet with ledger record. The wallet is locked
+		// first so that the balance read below cannot race another ledger writer.
 		if !cost.IsZero() && !cost.IsNegative() {
+			if err := lockWalletRow(txCtx, tx, walletID); err != nil {
+				return err
+			}
 			var balance money.Amount
 			err = tx.QueryRow(txCtx, `
 				SELECT COALESCE(SUM(amount), 0.00)

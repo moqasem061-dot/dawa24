@@ -66,7 +66,7 @@ func newWRWorld(t *testing.T) *wrWorld {
 	n := wrSeq.Add(1)
 	suffix := fmt.Sprintf("%d-%d", time.Now().UnixNano()%1000000000, n)
 	w := &wrWorld{db: db, billRepo: billingPostgres.NewRepository(db), suffix: fmt.Sprintf("%d", time.Now().UnixNano()%1000000000)}
-	w.commSvc = commerce.NewService(commercePostgres.NewRepository(db).WithWalletRefunder(w.billRepo), logger)
+	w.commSvc = commerce.NewService(commercePostgres.NewRepository(db).WithWalletRefunder(w.billRepo).WithWalletPayer(w.billRepo), logger)
 	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
 		VALUES ($1, $2, $3, $4, $5, 'customer', 'approved') RETURNING id`,
 		`{"ar":"صيدلية `+suffix+`"}`, "صيدلية "+suffix, `{"ar":"صيدلية `+suffix+`"}`, "TAX-WR-C-"+suffix, "CR-WR-C-"+suffix).Scan(&w.buyerOrg); err != nil {
@@ -271,27 +271,20 @@ func TestBuyerCancelRacesAdminRefundOfDebit(t *testing.T) {
 	}
 }
 
-// Supplier partial cancel refunds at most its goods and never beyond the ledger;
-// the last shipment's cancel completes the refund.
-func TestSupplierPartialCancelRefundIsCapped(t *testing.T) {
+// Batch 2 (S02): a legacy wallet debit (one debit for the order, made before
+// per-supplier payments, with no shipment charge on record) cannot be partly
+// cancelled. The debit may belong to the shipment being cancelled, so nothing is
+// credited until an administrator reviews the order.
+func TestSupplierPartialCancelOfLegacyDebitIsRefused(t *testing.T) {
 	w := newWRWorld(t)
 	orderID, shipments := w.order(t, "wallet", 100000, "pending", "pending")
 	before := w.balance(t)
 	ctx := database.WithTenant(context.Background(), w.vendorOrg)
-	if _, err := w.commSvc.TransitionShipmentStatus(ctx, shipments[0], commerce.StatusCancelled, nil, "supplier cancel"); err != nil {
-		t.Fatalf("shipment cancel: %v", err)
+	if _, err := w.commSvc.TransitionShipmentStatus(ctx, shipments[0], commerce.StatusCancelled, nil, "supplier cancel"); err == nil {
+		t.Fatal("partial cancel of a legacy wallet debit was accepted")
 	}
-	if got := w.balance(t); got != before+50000 {
-		t.Fatalf("after one shipment: balance %d, want %d (capped at that shipment's 500.00 goods)", got, before+50000)
-	}
-	if _, err := w.commSvc.TransitionShipmentStatus(ctx, shipments[1], commerce.StatusCancelled, nil, "supplier cancel"); err != nil {
-		t.Fatalf("second shipment cancel: %v", err)
-	}
-	if got := w.balance(t); got != before+100000 {
-		t.Fatalf("after both shipments: balance %d, want %d", got, before+100000)
-	}
-	if n := w.refundCredits(t, orderID); n != 2 {
-		t.Fatalf("%d refund credits, want 2 (one per cancel event)", n)
+	if got := w.balance(t); got != before || w.refundCredits(t, orderID) != 0 {
+		t.Fatalf("refused partial cancel moved money: balance %d, want %d", got, before)
 	}
 }
 

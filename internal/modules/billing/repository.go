@@ -35,6 +35,8 @@ type Repository interface {
 	ListDueSubscriptionsForRenewal(ctx context.Context, now time.Time) ([]*Subscription, error)
 	UpdateSubscriptionStatus(ctx context.Context, id int64, status SubscriptionStatus, renewalAttempts int) error
 	RenewSubscription(ctx context.Context, subID int64, walletID int64, cost money.Amount, newExpiresAt time.Time, details string) error
+	// PurchaseWalletSubscription creates a subscription and its wallet debit in one transaction.
+	PurchaseWalletSubscription(ctx context.Context, p WalletSubscriptionPurchase) (*Subscription, error)
 	CheckEntitlement(ctx context.Context, userID int64, featureKey string) (bool, string, error)
 	CheckOrgEntitlement(ctx context.Context, orgID, userID int64, featureKey string) (bool, error)
 	GetSetting(ctx context.Context, key string) (string, error)
@@ -95,4 +97,17 @@ type Repository interface {
 	AdminGetFinanceStats(ctx context.Context) (*AdminFinanceStats, error)
 	AdminRefundTransaction(ctx context.Context, transactionID int64, reason string, actorID int64) (*WalletTransaction, error)
 	AdminRefundDeposit(ctx context.Context, depositID int64, reason string, actorID int64) (*WalletDeposit, *WalletTransaction, error)
+}
+
+// WalletSubscriptionPurchase is one subscription bought from a wallet. The
+// subscription and its ledger row are written in one transaction. Delta is the
+// signed ledger amount (zero or negative). ExpectedCurrentSubID is the live
+// subscription the caller based the purchase on, nil when there was none.
+type WalletSubscriptionPurchase struct {
+	WalletID             int64
+	Subscription         Subscription
+	ExpectedCurrentSubID *int64
+	Delta                money.Amount
+	RefType              string
+	Description          string
 }

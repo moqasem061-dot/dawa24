@@ -2,6 +2,7 @@ package commerce
 
 import (
 	"context"
+	"errors"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
@@ -68,6 +69,32 @@ func (s *Service) TransitionShipmentStatus(
 	changedByUserID *int64,
 	notes string,
 ) (*OrderShipment, error) {
+	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, nil)
+}
+
+// TransitionShipmentStatusWithWallet is TransitionShipmentStatus for a supplier's
+// move on a wallet order. A confirmation charges the shipment to the buyer's
+// wallet (walletUserID) in the same transaction, so a refused charge leaves the
+// shipment unconfirmed. Other moves do not use walletUserID.
+func (s *Service) TransitionShipmentStatusWithWallet(
+	ctx context.Context,
+	shipmentID int64,
+	to OrderStatus,
+	changedByUserID *int64,
+	notes string,
+	walletUserID int64,
+) (*OrderShipment, error) {
+	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, &walletUserID)
+}
+
+func (s *Service) transitionShipment(
+	ctx context.Context,
+	shipmentID int64,
+	to OrderStatus,
+	changedByUserID *int64,
+	notes string,
+	walletUserID *int64,
+) (*OrderShipment, error) {
 	orgID, ok := database.TenantFrom(ctx)
 	if !ok {
 		return nil, database.ErrNoTenant
@@ -102,7 +129,16 @@ func (s *Service) TransitionShipmentStatus(
 		ChangedByUserID: changedByUserID,
 	}
 
-	if err := s.repo.UpdateShipmentStatus(ctx, shipmentID, shipment.Status, to, history); err != nil {
+	if walletUserID == nil {
+		err = s.repo.UpdateShipmentStatus(ctx, shipmentID, shipment.Status, to, history)
+	} else {
+		updater, ok := s.repo.(shipmentWalletUpdater)
+		if !ok {
+			return nil, apperr.Internal(errors.New("repository does not support wallet shipment updates"))
+		}
+		err = updater.UpdateShipmentStatusWithWallet(ctx, shipmentID, shipment.Status, to, history, *walletUserID)
+	}
+	if err != nil {
 		return nil, err
 	}
 

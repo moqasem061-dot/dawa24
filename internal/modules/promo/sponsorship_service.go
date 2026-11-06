@@ -2,12 +2,13 @@ package promo
 
 import (
 	"context"
+	"errors"
 	"time"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-
+	"github.com/jackc/pgx/v5"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
@@ -15,7 +16,7 @@ import (
 // charge a vendor's wallet for a sponsorship package purchase without
 // importing the billing module (ADR 0002). It debits amount from the org's
 // wallet and returns the wallet transaction reference.
-type WalletDebiter func(ctx context.Context, orgID int64, amount money.Amount, description string) (paymentID *int64, err error)
+type WalletDebiter func(ctx context.Context, tx pgx.Tx, orgID int64, amount money.Amount, description string) (paymentID *int64, err error)
 
 // SetWalletDebiter installs the wallet payment hook.
 func (s *Service) SetWalletDebiter(fn WalletDebiter) { s.walletDebit = fn }
@@ -49,15 +50,18 @@ func (s *Service) PurchaseSponsorshipPackage(ctx context.Context, packageID int6
 		durationDays = 30
 	}
 
-	// Charge wallet if the package has a price and a debiter is wired.
-	var sourceID *int64
-	if s.walletDebit != nil && cost.IsPositive() {
-		desc := i18n.TDefault("w4_mod.w4str_248_248") + pkg.Name.Get("ar")
-		txID, err := s.walletDebit(ctx, orgID, cost, desc)
-		if err != nil {
-			return nil, err
+	// A paid package is charged in the same transaction that records the purchase,
+	// so a failed purchase leaves no debit and a failed debit leaves no purchase
+	// (Batch 2, S24). A paid package needs a debiter; without one it is refused.
+	var debit func(ctx context.Context, tx pgx.Tx) (*int64, error)
+	if cost.IsPositive() {
+		if s.walletDebit == nil {
+			return nil, apperr.Internal(errors.New("promo: no wallet debiter is wired for paid packages"))
 		}
-		sourceID = txID
+		desc := i18n.TDefault("w4_mod.w4str_248_248") + pkg.Name.Get("ar")
+		debit = func(txCtx context.Context, tx pgx.Tx) (*int64, error) {
+			return s.walletDebit(txCtx, tx, orgID, cost, desc)
+		}
 	}
 
 	now := time.Now().UTC()
@@ -74,10 +78,10 @@ func (s *Service) PurchaseSponsorshipPackage(ctx context.Context, packageID int6
 		Amount:         cost,
 		PaymentID:      nil,
 		SourceSystem:   "wallet_checkout",
-		SourceID:       sourceID,
+		SourceID:       nil,
 	}
 
-	if err := s.repo.CreateSponsorshipPurchase(ctx, purchase); err != nil {
+	if err := s.repo.CreateSponsorshipPurchaseWithDebit(ctx, purchase, debit); err != nil {
 		return nil, err
 	}
 	purchase.CreditsRemaining = purchase.CreditsRemainingInt()
@@ -171,26 +175,16 @@ func (s *Service) SubmitSponsorshipRequest(ctx context.Context, itemType Sponsor
 		ExpiresAt:      expiresAt,
 	}
 
-	if err := s.repo.CreateSponsorshipRequest(ctx, sr); err != nil {
-		return nil, err
-	}
-
-	// Reserve the credit immediately so concurrent submissions don't overspend.
-	// The credit is refunded if the admin rejects the request (in the admin
-	// activation path the credit was already reserved at submission time, so
-	// rejection releases it).
-	if _, err := s.repo.ConsumeSponsorshipCredits(ctx, ConsumeCredits{
+	// The request and its credit are written in one transaction (Batch 2, S24):
+	// when the credit is refused, no pending request is left behind.
+	if err := s.repo.CreateSponsorshipRequestReserved(ctx, sr, ConsumeCredits{
 		OrganizationID: orgID,
 		PurchaseID:     purchase.ID,
 		Credits:        1,
 		Reason:         CreditSponsorshipRequested,
 		EntityType:     string(itemType),
-		EntityID:       &sr.ID,
 	}); err != nil {
-		// The request exists and the reservation did not happen. Silence here
-		// let a vendor submit more requests than they had credits for.
-		s.log.ErrorContext(ctx, "sponsorship request: credit reservation failed",
-			"error", err, "request_id", sr.ID, "purchase_id", purchase.ID)
+		return nil, err
 	}
 
 	s.log.InfoContext(ctx, "sponsorship request submitted", "request_id", sr.ID, "item_type", string(itemType), "item_id", itemID, "package_id", packageID)
@@ -237,12 +231,12 @@ func (s *Service) SubmitBatchSponsorshipRequests(ctx context.Context, itemType S
 		expiresAt = purchase.ExpiresAt
 	}
 
-	var created []*SponsorshipRequest
+	var reqs []*SponsorshipRequest
 	for _, itemID := range itemIDs {
 		if itemID <= 0 {
 			continue
 		}
-		sr := &SponsorshipRequest{
+		reqs = append(reqs, &SponsorshipRequest{
 			OrganizationID: orgID,
 			PurchaseID:     &purchase.ID,
 			PackageID:      packageID,
@@ -253,25 +247,19 @@ func (s *Service) SubmitBatchSponsorshipRequests(ctx context.Context, itemType S
 			Status:         SRSPending,
 			StartsAt:       now,
 			ExpiresAt:      expiresAt,
-		}
-		if err := s.repo.CreateSponsorshipRequest(ctx, sr); err != nil {
-			return created, err
-		}
-		created = append(created, sr)
+		})
 	}
-
-	if len(created) > 0 {
-		if _, err := s.repo.ConsumeSponsorshipCredits(ctx, ConsumeCredits{
-			OrganizationID: orgID,
-			PurchaseID:     purchase.ID,
-			Credits:        len(created) * SponsorshipCreditCost,
-			Reason:         CreditSponsorshipBatch,
-			EntityType:     string(itemType),
-		}); err != nil {
-			s.log.ErrorContext(ctx, "batch sponsorship: credit reservation failed",
-				"error", err, "count", len(created), "purchase_id", purchase.ID)
-		}
+	// The requests and their combined credit commit together, or not at all (Batch 2, S24).
+	if err := s.repo.CreateSponsorshipRequestsReserved(ctx, reqs, ConsumeCredits{
+		OrganizationID: orgID,
+		PurchaseID:     purchase.ID,
+		Credits:        len(reqs) * SponsorshipCreditCost,
+		Reason:         CreditSponsorshipBatch,
+		EntityType:     string(itemType),
+	}); err != nil {
+		return nil, err
 	}
+	created := reqs
 
 	s.log.InfoContext(ctx, "batch sponsorship requests submitted", "count", len(created), "org_id", orgID, "package_id", packageID)
 	return created, nil

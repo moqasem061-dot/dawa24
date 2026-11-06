@@ -238,12 +238,14 @@ func (h *UIHandler) VendorNegotiationRejectSubmit(w http.ResponseWriter, r *http
 
 // transitionVendorShipment moves a supplier's shipment to a new status, records
 // tracking, and tells the buyer. The commerce service refuses a shipment of
-// another organisation and a transition outside the status machine.
+// another organisation and a transition outside the status machine. A confirmation
+// of a wallet order charges the shipment to the buyer's wallet in the same
+// transaction, so a refused charge leaves the shipment unconfirmed.
 func (h *UIHandler) transitionVendorShipment(
 	ctx context.Context, actor authctx.Actor, shipmentID int64, to commerce.OrderStatus, notes, carrier, tracking string,
 ) error {
 	shipment, sErr := h.commSvc.GetShipment(database.AsSystem(ctx), shipmentID)
-	// Ownership first: the wallet debit below runs before the commerce service
+	// Ownership first: the wallet charge below runs before the commerce service
 	// would refuse another organisation's shipment.
 	if sErr != nil || shipment == nil || (!actor.IsStaff && shipment.OrganizationID != actor.OrganizationID) {
 		return fmt.Errorf("shipment not found")
@@ -253,21 +255,19 @@ func (h *UIHandler) transitionVendorShipment(
 		return fmt.Errorf("order not found")
 	}
 
-	var walletDebited bool
-	if to == commerce.StatusConfirmed && order.PaymentMethod == "wallet" && order.PaymentStatus != commerce.PaymentPaid {
-		if err := h.executeOrderWalletPayment(ctx, order, shipment); err != nil {
+	var walletUserID int64
+	if to == commerce.StatusConfirmed && shipment.Status != commerce.StatusConfirmed &&
+		commerce.IsWalletPayment(order.PaymentMethod) && order.PaymentStatus != commerce.PaymentPaid {
+		uid, err := h.prepareWalletShipmentCharge(ctx, order, shipment)
+		if err != nil {
 			return err
 		}
-		walletDebited = true
+		walletUserID = uid
 	}
 
-	// A cancel refunds the wallet inside TransitionShipmentStatus, in one transaction.
-	if _, err := h.commSvc.TransitionShipmentStatus(ctx, shipmentID, to, &actor.UserID, notes); err != nil {
-		if walletDebited {
-			if rErr := h.returnWalletDebits(ctx, order.ID, &shipmentID, actor.UserID, "فشل اعتماد حالة الشحنة"); rErr != nil {
-				h.log.ErrorContext(ctx, "wallet compensation failed", "error", rErr, "order_id", order.ID)
-			}
-		}
+	// A confirmation charges the wallet and a cancel refunds it, inside
+	// TransitionShipmentStatusWithWallet, in the same transaction as the status.
+	if _, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, to, &actor.UserID, notes, walletUserID); err != nil {
 		return err
 	}
 
@@ -300,7 +300,9 @@ func (h *UIHandler) supplierOrder(ctx context.Context, actor authctx.Actor, lang
 
 // decideVendorNegotiation accepts or rejects a buyer's proposed prices and
 // tells the buyer. It returns a user-facing message on failure, with the
-// underlying error when there is one to log.
+// underlying error when there is one to log. An acceptance confirms this
+// supplier's shipments only, and charges them to the buyer's wallet when the
+// order is wallet-paid (Batch 2, S02 and S04).
 func (h *UIHandler) decideVendorNegotiation(
 	ctx context.Context, actor authctx.Actor, lang string, orderID int64, accept bool, reason string,
 ) (string, error) {
@@ -309,19 +311,15 @@ func (h *UIHandler) decideVendorNegotiation(
 		return msg, nil
 	}
 	if accept {
-		var walletDebited bool
-		if order.PaymentMethod == "wallet" && order.PaymentStatus != commerce.PaymentPaid {
-			if err := h.executeOrderWalletPayment(ctx, order, nil); err != nil {
+		var walletUserID int64
+		if commerce.IsWalletPayment(order.PaymentMethod) && order.PaymentStatus != commerce.PaymentPaid {
+			uid, err := h.prepareWalletNegotiationCharge(ctx, order, actor.OrganizationID)
+			if err != nil {
 				return "تعذر قبول التفاوض: " + err.Error(), err
 			}
-			walletDebited = true
+			walletUserID = uid
 		}
-		if err := h.commSvc.AcceptNegotiation(ctx, orderID, actor.UserID); err != nil {
-			if walletDebited {
-				if rErr := h.returnWalletDebits(ctx, order.ID, nil, actor.UserID, "فشل اعتماد التفاوض"); rErr != nil {
-					h.log.ErrorContext(ctx, "wallet compensation failed", "error", rErr, "order_id", order.ID)
-				}
-			}
+		if err := h.commSvc.AcceptNegotiation(ctx, orderID, actor.OrganizationID, actor.UserID, walletUserID); err != nil {
 			return i18n.T(lang, "vendor.orders.accept_negotiation_error_prefix") + h.safeMessage(err, lang), err
 		}
 	} else if err := h.commSvc.RejectNegotiation(ctx, orderID, reason, actor.UserID); err != nil {
