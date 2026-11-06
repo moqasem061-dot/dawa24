@@ -92,8 +92,13 @@ details; reverse geocoding cannot supply details absent from map data.
 | `error_logs_view` | `platform.error_log.view` | `GET /admin/error-logs*` |
 | `sql-console-developer` | `platform.developer.sql` | `GET/POST /admin/developers/sql*` |
 
-## Session plans (Batch 2, S22)
+## Session plans (Batch 2, S22; paid plans, owner decision 2026-11-06)
 
 - `PurchaseSessionPlan` refuses a plan that is not active (`session_plan.inactive`). Nothing is
-  written. Paid plans are unchanged: no payment flow exists for them yet, so the question of how
-  they should be paid is open (see the batch 2 report). Test: `session_plan_guard_test.go`.
+  written.
+- A paid plan is charged to the payer's wallet and the buyer's limit is raised in one transaction,
+  through the billing wallet debit that `cmd/server` wires into `SetSessionPlanDebiter`. A free
+  plan is applied with no debit. The payer rule, the permission, the token and the ledger key are
+  in `docs/modules/billing.md`, "Session plan payment".
+- Tests: `session_plan_guard_test.go`, `session_plan_purchase_test.go`, and the integration
+  tests named in billing.md.

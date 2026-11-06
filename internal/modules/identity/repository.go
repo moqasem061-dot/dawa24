@@ -72,7 +72,9 @@ type Repository interface {
 
 	ListSessionPlans(ctx context.Context) ([]*SessionPlan, error)
 	GetSessionPlanByID(ctx context.Context, id int64) (*SessionPlan, error)
-	SetMaxLoginSessions(ctx context.Context, userID int64, max int) error
+	// PurchaseSessionPlan applies a plan to buyerUserID in one transaction (see
+	// session_plan_purchase.go). The limit is only written inside that transaction.
+	PurchaseSessionPlan(ctx context.Context, buyerUserID, planID int64, decide SessionPlanDecider) error
 	GetOrgPlanLimits(ctx context.Context, orgID int64) (maxSessions int, maxDevices int, planName string, err error)
 
 	CreateAccountDeletionRequest(ctx context.Context, req *AccountDeletionRequest) error

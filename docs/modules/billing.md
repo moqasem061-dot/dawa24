@@ -87,3 +87,47 @@ twice or approve after rejection.
 - `DebitOrderShipment` (commerce's shipment charge) and `WithdrawInTx` (promo's package payment) run
   inside the caller's transaction, so the debit commits with the caller's write or not at all.
   Ledger key `order-shipment-debit:<order>:<shipment>` is unique (migration 247).
+
+## Session plan payment (S22, owner decision 2026-11-06)
+
+A paid session plan is charged to a wallet and raises the buyer's sign-in limit in one
+transaction. Both happen, or neither does.
+
+- **Whose wallet pays.** The settings handler resolves the payer with the same helper the
+  wallet subscription checkout uses (`resolveTenantUserIDs`). For a company member that is the
+  company owner's wallet. Otherwise it is the buyer's own wallet. Wallets are per user
+  (`billing.wallets.user_id`), so a company's money sits in its owner's wallet.
+- **Permission.** When the payer is not the buyer, the buyer needs `pharmacy.subscription.manage`
+  (or `vendor.subscription.manage` for a vendor), the permission that the subscription checkout
+  requires for the same wallet. Without it the purchase is refused with
+  `session_plan.payer_not_permitted` and nothing is written. Roles were not changed.
+- **Price.** Only the stored plan supplies the price. Values the client sends are ignored.
+  A plan that is flagged free or has a price of zero is applied with no debit row, as before.
+- **Inactive plans** are refused (`session_plan.inactive`) and nothing is written.
+- **One transaction** (`identity/postgres` `PurchaseSessionPlan`, with `billing/postgres`
+  `DebitSessionPlanInTx` inside it): the plan row is locked for share, then the payer's wallet
+  is locked, then the ledger row is written, then `identity.user_security.max_login_sessions`
+  is set. A refusal at any step rolls the whole purchase back.
+- **Ledger row.** Type `purchase`, `reference_type` `session_plan`, `reference_id` the plan id,
+  and `idempotency_key` `session-plan:<payer>:<buyer>:<plan>:<token>`. The partial unique index
+  on the key (migration 247) refuses a second row with that key.
+- **Double submit and concurrency.** A repeat of the same token is a replay: nothing is debited,
+  the limit is not written again, and the submit is answered as a success. Concurrent purchases
+  with different tokens queue on the wallet lock. A short balance is refused with
+  `session_plan.insufficient_funds`, a bilingual message, and nothing is written.
+- **Token.** A paid purchase needs a `purchase_token` form field of 8 to 64 letters, digits,
+  dashes or underscores (`session_plan.token_required` otherwise). A page must create a new token
+  each time it renders a purchase form. No page renders a plan form today, so nothing sends one.
+- **Wiring.** Identity exposes `SetSessionPlanDebiter`. `cmd/server` (`routes_ui_builder.go`)
+  wires it to `DebitSessionPlanInTx`. A paid plan is refused when no debiter is wired, so it can
+  never be applied free by accident.
+- **Lock order.** Session plan purchase: plan row (shared), then the payer's wallet, then the
+  buyer's security row. No path was found that takes the wallet first and then a plan.
+- **Not changed.** Refunds for plans, plan expiry (`duration_days` is stored but never enforced),
+  and buying the same or a lower plan (still allowed, still overwrites the limit). See the batch
+  2 report, "Session plan payment", for the open questions.
+
+Tests: `test/integration/session_plan_payment_test.go` and
+`session_plan_payment_concurrency_test.go` (real Postgres, through the settings handler),
+`internal/modules/identity/session_plan_purchase_test.go` and `session_plan_guard_test.go`,
+`internal/ui/settings_session_plan_test.go`.

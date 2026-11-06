@@ -228,6 +228,9 @@ func (m *testMockIdentityRepo) ListSessionPlans(ctx context.Context) ([]*identit
 func (m *testMockIdentityRepo) GetSessionPlanByID(ctx context.Context, id int64) (*identity.SessionPlan, error) {
 	return nil, nil
 }
+func (m *testMockIdentityRepo) PurchaseSessionPlan(ctx context.Context, buyerUserID, planID int64, decide identity.SessionPlanDecider) error {
+	return nil
+}
 func (m *testMockIdentityRepo) SetMaxLoginSessions(ctx context.Context, userID int64, max int) error {
 	return nil
 }

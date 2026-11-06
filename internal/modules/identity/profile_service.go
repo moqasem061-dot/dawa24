@@ -123,25 +123,6 @@ func (s *Service) ListSessionPlans(ctx context.Context) ([]*SessionPlan, error) 
 	return s.repo.ListSessionPlans(ctx)
 }
 
-// PurchaseSessionPlan applies a plan's concurrency limit to the user. Payment
-// integration is deferred; the limit is applied directly for now.
-func (s *Service) PurchaseSessionPlan(ctx context.Context, userID, planID int64) error {
-	plan, err := s.repo.GetSessionPlanByID(ctx, planID)
-	if err != nil {
-		return err
-	}
-	// Batch 2 (S22): a plan that is switched off cannot be applied. Paid plans are
-	// unchanged: the payment flow they would need is not built yet (see the report).
-	if !plan.IsActive {
-		return apperr.Validation("session_plan.inactive",
-			"هذه الخطة غير متاحة حالياً. This session plan is not available.", nil)
-	}
-	if err := s.repo.SetMaxLoginSessions(ctx, userID, plan.MaxLoginSessions); err != nil {
-		return err
-	}
-	return nil
-}
-
 // AddFavorite adds a product to user favorites.
 func (s *Service) AddFavorite(ctx context.Context, userID, productID int64) error {
 	if productID <= 0 {

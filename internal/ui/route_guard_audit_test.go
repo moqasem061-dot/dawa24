@@ -82,7 +82,7 @@ var routesWithoutPermissionGate = map[string]string{
 	"POST /settings/organization/delete-request/cancel": "cancelling your own organization deletion request",
 	"POST /settings/security/revoke":                    "revoking your own session on a lost device",
 	"POST /settings/sessions/revoke":                    "revoking your own session on a lost device",
-	"POST /settings/security/plan/{id}":                 "buying a session plan for your own account, not the company's",
+	"POST /settings/security/plan/{id}":                 "buying a session plan for your own account; a purchase paid from a company wallet is checked in the handler",
 	"POST /settings/payment-methods":                    "redirects to the gated wallet screen",
 	"POST /settings/payment-methods/{id}/edit":          "redirects to the gated wallet screen",
 	"POST /settings/payment-methods/{id}/default":       "redirects to the gated wallet screen",

@@ -311,6 +311,10 @@ func (m *mockRepo) GetSessionPlanByID(_ context.Context, _ int64) (*SessionPlan,
 	return &SessionPlan{MaxLoginSessions: 1}, nil
 }
 
+func (m *mockRepo) PurchaseSessionPlan(_ context.Context, _, _ int64, _ SessionPlanDecider) error {
+	return nil
+}
+
 func (m *mockRepo) SetMaxLoginSessions(_ context.Context, _ int64, _ int) error {
 	return nil
 }

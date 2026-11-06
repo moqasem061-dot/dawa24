@@ -310,6 +310,9 @@ func (happyRepo) ListSessionPlans(ctx context.Context) ([]*identity.SessionPlan,
 func (happyRepo) GetSessionPlanByID(ctx context.Context, id int64) (*identity.SessionPlan, error) {
 	return nil, nil
 }
+func (happyRepo) PurchaseSessionPlan(ctx context.Context, buyerUserID, planID int64, decide identity.SessionPlanDecider) error {
+	return nil
+}
 func (happyRepo) SetMaxLoginSessions(ctx context.Context, userID int64, max int) error {
 	return nil
 }

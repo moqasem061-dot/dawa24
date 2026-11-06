@@ -242,6 +242,11 @@ func (r stubRepo) GetSessionPlanByID(_ context.Context, _ int64) (*identity.Sess
 	return nil, nil
 }
 
+func (r stubRepo) PurchaseSessionPlan(_ context.Context, _, _ int64, _ identity.SessionPlanDecider) error {
+	r.fail("PurchaseSessionPlan")
+	return nil
+}
+
 func (r stubRepo) SetMaxLoginSessions(_ context.Context, _ int64, _ int) error {
 	r.fail("SetMaxLoginSessions")
 	return nil

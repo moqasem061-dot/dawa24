@@ -130,7 +130,10 @@ func (h *UIHandler) SettingsAddressDeleteSubmit(w http.ResponseWriter, r *http.R
 	h.redirectWithNotice(w, r, "/settings/addresses", "success", i18n.T(lang, "settings.address_deleted_success"))
 }
 
-// SettingsSessionPlanPurchaseSubmit applies a session plan's concurrency limit.
+// SettingsSessionPlanPurchaseSubmit buys a session plan for the caller's own account.
+// A paid plan is charged to the payer's wallet, which for a company member is the
+// company owner's wallet (the rule wallet subscriptions use). The price comes from
+// the stored plan, never from the form.
 func (h *UIHandler) SettingsSessionPlanPurchaseSubmit(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	lang := langOf(r)
@@ -145,11 +148,33 @@ func (h *UIHandler) SettingsSessionPlanPurchaseSubmit(w http.ResponseWriter, r *
 		return
 	}
 	planID, _ := strconv.ParseInt(chi.URLParam(r, "id"), 10, 64)
-	if err := h.idSvc.PurchaseSessionPlan(ctx, actor.UserID, planID); err != nil {
+	payerUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+	purchase := identity.SessionPlanPurchase{
+		BuyerUserID:     actor.UserID,
+		PayerUserID:     payerUserID,
+		PlanID:          planID,
+		Token:           strings.TrimSpace(r.PostFormValue("purchase_token")),
+		PayerAuthorized: sessionPlanPayerAllowed(actor, payerUserID),
+	}
+	if err := h.idSvc.PurchaseSessionPlan(ctx, purchase); err != nil {
 		h.redirectWithNotice(w, r, "/settings/security", "error", h.safeMessage(err, lang))
 		return
 	}
 	h.redirectWithNotice(w, r, "/settings/security", "success", i18n.T(lang, "settings.plan_activated_success"))
+}
+
+// sessionPlanPayerAllowed reports whether the caller may spend the payer's wallet on
+// a session plan. The buyer's own wallet is always allowed. Another payer is a
+// company wallet, and then the caller needs the subscription manage permission
+// that the wallet subscription checkout requires for the same money.
+func sessionPlanPayerAllowed(actor authctx.Actor, payerUserID int64) bool {
+	if payerUserID <= 0 || payerUserID == actor.UserID {
+		return true
+	}
+	if actor.IsVendor() {
+		return actor.Can("vendor.subscription.manage")
+	}
+	return actor.Can("pharmacy.subscription.manage")
 }
 
 // SettingsSessionRevokeSubmit revokes one of the user's sessions.
