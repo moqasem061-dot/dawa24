@@ -9,6 +9,8 @@ import (
 
 type happyRepo struct{}
 
+func (happyRepo) CancelAPIOrder(context.Context, commerce.APICancelRequest) error { return nil }
+
 func (happyRepo) GetOrCreateCart(ctx context.Context, userID int64) (*commerce.Cart, error) {
 	return &commerce.Cart{ID: 1, UserID: userID}, nil
 }

@@ -26,6 +26,7 @@ type Service struct {
 	// availability answers the stock / coverage / branch questions that live in
 	// other modules. Injected at the composition root; see AvailabilityProbe.
 	availability AvailabilityProbe
+	apiQuote     APIQuoteResolver
 	// placedHooks announce committed orders; see OnOrderPlaced.
 	placedHooks []OrderPlacedHook
 }
@@ -53,36 +54,41 @@ func NewService(repo Repository, log *slog.Logger) *Service {
 
 // CheckoutLineItem represents an item to be purchased in an order.
 type CheckoutLineItem struct {
-	VendorOrgID            int64         `json:"vendor_org_id"`
-	ProductID              *int64        `json:"product_id,omitempty"`
-	ProductVariantID       *int64        `json:"product_variant_id,omitempty"`
-	ProductName            i18n.Text     `json:"product_name"`
-	VariantName            i18n.Text     `json:"variant_name,omitempty"`
-	SKU                    string        `json:"sku,omitempty"`
-	OfferProductID         *int64        `json:"offer_product_id,omitempty"` // offer_product line sold under (063)
-	UnitPrice              money.Amount  `json:"unit_price"`
-	Quantity               int           `json:"quantity"`
-	DiscountAmount         money.Amount  `json:"discount_amount"`
-	CostPrice              *money.Amount `json:"cost_price,omitempty"`
-	CostDiscountPercentage float64       `json:"cost_discount_percentage"`
-	ListPrice              money.Amount  `json:"list_price,omitempty"`        // pre-discount strike price (063)
-	OriginalPrice          money.Amount  `json:"original_price,omitempty"`    // legacy price snapshot (063)
-	OriginalDiscount       money.Amount  `json:"original_discount,omitempty"` // legacy discount snapshot (063)
-	IsNegotiated           bool          `json:"is_negotiated"`
-	ProposedUnitPrice      money.Amount  `json:"proposed_unit_price,omitempty"`
+	VendorOrgID               int64         `json:"vendor_org_id"`
+	ProductID                 *int64        `json:"product_id,omitempty"`
+	ProductVariantID          *int64        `json:"product_variant_id,omitempty"`
+	ProductName               i18n.Text     `json:"product_name"`
+	VariantName               i18n.Text     `json:"variant_name,omitempty"`
+	SKU                       string        `json:"sku,omitempty"`
+	OfferProductID            *int64        `json:"offer_product_id,omitempty"` // offer_product line sold under (063)
+	UnitPrice                 money.Amount  `json:"unit_price"`
+	Quantity                  int           `json:"quantity"`
+	DiscountAmount            money.Amount  `json:"discount_amount"`
+	SubmittedDiscount         bool          `json:"-"`
+	CostPrice                 *money.Amount `json:"cost_price,omitempty"`
+	CostDiscountPercentage    float64       `json:"cost_discount_percentage"`
+	ListPrice                 money.Amount  `json:"list_price,omitempty"`        // pre-discount strike price (063)
+	OriginalPrice             money.Amount  `json:"original_price,omitempty"`    // legacy price snapshot (063)
+	OriginalDiscount          money.Amount  `json:"original_discount,omitempty"` // legacy discount snapshot (063)
+	SubmittedListPrice        bool          `json:"-"`
+	SubmittedOriginalPrice    bool          `json:"-"`
+	SubmittedOriginalDiscount bool          `json:"-"`
+	IsNegotiated              bool          `json:"is_negotiated"`
+	ProposedUnitPrice         money.Amount  `json:"proposed_unit_price,omitempty"`
 }
 
 // CheckoutInput contains all details required to finalize a purchase.
 type CheckoutInput struct {
-	CustomerID         int64                  `json:"customer_id"`
-	OfferID            int64                  `json:"offer_id"`                   // the offer this order belongs to (063)
-	BranchID           *int64                 `json:"branch_id,omitempty"`        // customer branch buying for
-	VendorBranchID     *int64                 `json:"vendor_branch_id,omitempty"` // fulfilling vendor branch
-	UserAddressID      *int64                 `json:"user_address_id,omitempty"`  // delivery address (063)
-	PaymentMethod      string                 `json:"payment_method"`
-	PaymentStatus      PaymentStatus          `json:"payment_status,omitempty"`
-	ShippingFee        money.Amount           `json:"shipping_fee,omitempty"`
-	VendorShippingFees map[int64]money.Amount `json:"vendor_shipping_fees,omitempty"` // distance delivery fee per vendor shipment
+	CustomerID           int64                  `json:"customer_id"`
+	OfferID              int64                  `json:"offer_id"`                   // the offer this order belongs to (063)
+	BranchID             *int64                 `json:"branch_id,omitempty"`        // customer branch buying for
+	VendorBranchID       *int64                 `json:"vendor_branch_id,omitempty"` // fulfilling vendor branch
+	UserAddressID        *int64                 `json:"user_address_id,omitempty"`  // delivery address (063)
+	PaymentMethod        string                 `json:"payment_method"`
+	PaymentStatus        PaymentStatus          `json:"payment_status,omitempty"`
+	ShippingFee          money.Amount           `json:"shipping_fee,omitempty"`
+	SubmittedShippingFee bool                   `json:"-"`
+	VendorShippingFees   map[int64]money.Amount `json:"vendor_shipping_fees,omitempty"` // distance delivery fee per vendor shipment
 	// VendorBranchIDs is the fulfilling branch per vendor. VendorBranchID above
 	// holds one branch resolved from the first vendor in the cart, and every
 	// shipment was stamped with it — so in a three-supplier order, supplier B's
@@ -112,6 +118,10 @@ type RequiredDocsChecker func(ctx context.Context, orgID int64, orgType string) 
 
 // Checkout processes an order and partitions it into vendor shipments with exact price snapshots.
 func (s *Service) Checkout(ctx context.Context, input CheckoutInput) (*Order, error) {
+	return s.checkout(ctx, input, s.verifyAndSanitizeCheckoutPrices)
+}
+
+func (s *Service) checkout(ctx context.Context, input CheckoutInput, verify func(context.Context, *CheckoutInput) error) (*Order, error) {
 	if input.CustomerID <= 0 {
 		return nil, apperr.Validation("checkout.customer_required", "Customer ID is required.", nil)
 	}
@@ -137,7 +147,7 @@ func (s *Service) Checkout(ctx context.Context, input CheckoutInput) (*Order, er
 
 	// Authoritatively verify and sanitize all prices and discounts against the catalog
 	// database before calculating line subtotals or order amounts.
-	if err := s.verifyAndSanitizeCheckoutPrices(ctx, &input); err != nil {
+	if err := verify(ctx, &input); err != nil {
 		return nil, err
 	}
 
@@ -384,15 +394,4 @@ func (s *Service) Checkout(ctx context.Context, input CheckoutInput) (*Order, er
 	s.log.InfoContext(ctx, "order created", "order_id", order.ID, "order_number", order.OrderNumber, "vendor_count", len(shipments))
 	s.announcePlaced(ctx, order)
 	return order, nil
-}
-
-// shipmentBranchFor picks the branch that actually fulfils one vendor's parcel.
-//
-// It falls back to the order-level branch only when the caller resolved none
-// for this vendor — an offer checkout, where the offer itself names the branch.
-func shipmentBranchFor(input CheckoutInput, vendorOrgID int64) *int64 {
-	if branch, ok := input.VendorBranchIDs[vendorOrgID]; ok && branch != nil && *branch > 0 {
-		return branch
-	}
-	return input.VendorBranchID
 }

@@ -150,9 +150,41 @@ func (h *Handler) TransitionShipmentStatus(w http.ResponseWriter, r *http.Reques
 		reqCtx = database.WithTenant(reqCtx, shipment.OrganizationID)
 	}
 
+	// Wallet orders are refused for every status: the website moves the money.
+	order, err := h.service.GetOrder(reqCtx, shipment.OrderID)
+	if err != nil {
+		httpx.Error(w, r, h.log, err)
+		return
+	}
+	if err := commerce.ValidateAPIWalletOrder(order); err != nil {
+		httpx.Error(w, r, h.log, err)
+		return
+	}
+
+	status := commerce.OrderStatus(body.Status)
 	actorID := actor.UserID
+	if status == commerce.StatusCancelled {
+		// A shipment cancel follows the same temporary rule as an order cancel:
+		// the order and its shipments are checked under lock, and only this
+		// supplier's shipment changes.
+		if err := h.service.CancelAPIVendorShipment(reqCtx, commerce.APIVendorCancelRequest{
+			OrderID: shipment.OrderID, ShipmentID: id, VendorOrgID: shipment.OrganizationID,
+			UserID: actorID, Reason: body.Notes,
+		}); err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+		cancelled, err := h.service.GetShipment(reqCtx, id)
+		if err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+		httpx.JSON(w, http.StatusOK, cancelled)
+		return
+	}
+
 	updatedShipment, err := h.service.TransitionShipmentStatus(
-		reqCtx, id, commerce.OrderStatus(body.Status), &actorID, body.Notes)
+		reqCtx, id, status, &actorID, body.Notes)
 	if err != nil {
 		httpx.Error(w, r, h.log, err)
 		return

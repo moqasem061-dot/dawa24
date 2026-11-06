@@ -68,6 +68,42 @@ from zero. No money value passes through `float64`.
 
 ## Endpoints
 
+### Module API hardening (Batch 1A)
+
+The REST checkout also applies two website rules to the buyer's own choices: the payment method must be active and enabled for checkout (none submitted means `cod`), and `user_address_id` must belong to the buyer. See `cmd/server/api_checkout_buyer.go`.
+
+The REST checkout (`CheckoutAPI`) takes its prices, discounts, delivery charges,
+tax, supplier and branch from the server: the catalog or approved offer, the
+branch's delivery bands, and the availability and quota checks. The caller's
+figures are only compared with that result. Any difference returns
+`checkout.price_changed` (409) with the server amounts in `fields`, and no
+order is written. The caller's `payment_status` is ignored; orders start
+`unpaid`. The REST checkout refuses, for the whole request and without writing
+an order:
+- negotiations (`checkout.negotiation_on_website`);
+- wallet payment (`checkout.wallet_on_website`), because the website's funds check
+  does not run on this path;
+- any line without a `product_variant_id`, such as a standalone bundle
+  (`checkout.unverifiable_on_website`).
+
+The website checkout is unchanged. Its `Checkout` path still accepts bundles,
+negotiations and wallet payment, and it has no price review.
+See [the checkout review backlog](../checkout-price-review-backlog.md) for the
+separate website delivery-total and price-review work.
+
+The order-status and shipment-status APIs require `vendor.order.update` for
+suppliers and change only the requesting supplier's own shipment. Wallet-paid
+orders are refused on the order-status, cancel and shipment-status APIs for any
+status (`order.wallet_on_website`); the website moves the money on confirmation
+and cancellation, and these routes do not. The three routes share a temporary
+cancellation rule: the order must be `pending` or `processing`, and every
+shipment must still be `pending`, `processing`, `confirmed`, `on_hold` or
+`cancelled`. The rule is checked inside the transaction with the order and its
+shipments locked. Confirmed and on-hold orders are not cancellable through the
+API. The shared website/API cancellation rule and atomic wallet refunds are
+deferred to Batch 1B. The `/api/v1/admin/commerce/...` routes are not changed by
+this batch.
+
 - `POST /api/v1/commerce/checkout` — Execute checkout and create order.
 - `GET /api/v1/commerce/orders/{id}` — Retrieve order and shipment status.
 - `GET /api/v1/commerce/orders` — List customer order history.

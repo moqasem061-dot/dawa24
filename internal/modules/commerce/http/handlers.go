@@ -63,11 +63,12 @@ func (h *Handler) RegisterRoutes(r chi.Router) {
 
 // Checkout handles order placement.
 func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
-	var input commerce.CheckoutInput
-	if err := httpx.DecodeJSON(w, r, &input); err != nil {
+	var request apiCheckoutRequest
+	if err := httpx.DecodeJSON(w, r, &request); err != nil {
 		httpx.Error(w, r, h.log, err)
 		return
 	}
+	input := request.input()
 
 	actor, ok := authctx.From(r.Context())
 	if !ok {
@@ -77,12 +78,11 @@ func (h *Handler) Checkout(w http.ResponseWriter, r *http.Request) {
 
 	// Always bind customer identity strictly to the authenticated actor
 	input.CustomerID = actor.UserID
-	if actor.OrganizationID > 0 {
-		input.CustomerOrgID = actor.OrganizationID
-		input.CustomerOrgType = actor.OrgType
-	}
+	input.PaymentStatus = commerce.PaymentUnpaid
+	input.CustomerOrgID = actor.OrganizationID
+	input.CustomerOrgType = actor.OrgType
 
-	order, err := h.service.Checkout(r.Context(), input)
+	order, err := h.service.CheckoutAPI(r.Context(), input)
 	if err != nil {
 		httpx.Error(w, r, h.log, err)
 		return
@@ -144,70 +144,6 @@ func (h *Handler) ListCustomerOrders(w http.ResponseWriter, r *http.Request) {
 	httpx.JSON(w, http.StatusOK, map[string]any{
 		"orders": orders,
 		"count":  len(orders),
-	})
-}
-
-// TransitionStatusRequest represents a status change payload.
-type TransitionStatusRequest struct {
-	Status          commerce.OrderStatus `json:"status"`
-	ChangedByUserID *int64               `json:"changed_by_user_id,omitempty"`
-	Notes           string               `json:"notes,omitempty"`
-}
-
-// TransitionStatus transitions an order status.
-func (h *Handler) TransitionStatus(w http.ResponseWriter, r *http.Request) {
-	idStr := chi.URLParam(r, "id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		httpx.Error(w, r, h.log, apperr.Validation("id.invalid", "Invalid order ID", nil))
-		return
-	}
-
-	actor, ok := authctx.From(r.Context())
-	if !ok {
-		httpx.Error(w, r, h.log, apperr.Unauthorized())
-		return
-	}
-
-	order, err := h.service.GetOrder(r.Context(), id)
-	if err != nil {
-		httpx.Error(w, r, h.log, err)
-		return
-	}
-
-	var req TransitionStatusRequest
-	if err := httpx.DecodeJSON(w, r, &req); err != nil {
-		httpx.Error(w, r, h.log, err)
-		return
-	}
-
-	isStaff := actor.IsStaff || actor.Can("commerce.admin")
-	isBuyer := order.CustomerID == actor.UserID || (order.OrganizationID != nil && *order.OrganizationID == actor.OrganizationID)
-	isVendor := isFulfillingVendor(order, actor.OrganizationID)
-
-	if !isStaff && !isVendor && !isBuyer {
-		httpx.Error(w, r, h.log, apperr.Forbidden("order.unauthorized", "Not authorized to update this order"))
-		return
-	}
-	if isBuyer && !isStaff && !isVendor {
-		if req.Status != commerce.StatusCancelled {
-			httpx.Error(w, r, h.log, apperr.Forbidden("order.status_transition_denied", "Buyers may only cancel pending orders"))
-			return
-		}
-		if order.Status != commerce.StatusPending && order.Status != commerce.StatusProcessing {
-			httpx.Error(w, r, h.log, apperr.Forbidden("order.cannot_cancel", "Only pending orders can be cancelled by the buyer"))
-			return
-		}
-	}
-
-	actorUserID := actor.UserID
-	if err := h.service.TransitionOrderStatus(r.Context(), id, req.Status, &actorUserID, req.Notes); err != nil {
-		httpx.Error(w, r, h.log, err)
-		return
-	}
-
-	httpx.JSON(w, http.StatusOK, map[string]string{
-		"status": "success",
 	})
 }
 
@@ -376,7 +312,7 @@ func (h *Handler) CancelOrder(w http.ResponseWriter, r *http.Request) {
 	_ = httpx.DecodeJSON(w, r, &body)
 
 	actorUserID := actor.UserID
-	if err := h.service.CancelOrder(r.Context(), id, &actorUserID, body.Reason); err != nil {
+	if err := h.service.CancelAPIOrder(r.Context(), commerce.APICancelRequest{OrderID: id, UserID: actorUserID, OrganizationID: actor.OrganizationID, Staff: actor.IsStaff || actor.Can("commerce.admin"), Reason: body.Reason}); err != nil {
 		httpx.Error(w, r, h.log, err)
 		return
 	}

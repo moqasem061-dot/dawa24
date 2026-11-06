@@ -7,6 +7,14 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
+// shipmentBranchFor falls back to the offer-level branch when no per-vendor branch is resolved.
+func shipmentBranchFor(input CheckoutInput, vendorOrgID int64) *int64 {
+	if branch, ok := input.VendorBranchIDs[vendorOrgID]; ok && branch != nil && *branch > 0 {
+		return branch
+	}
+	return input.VendorBranchID
+}
+
 // verifyAndSanitizeCheckoutPrices verifies all line item prices against authoritative
 // catalog variant data to prevent client-side price tampering or discount forging.
 func (s *Service) verifyAndSanitizeCheckoutPrices(ctx context.Context, input *CheckoutInput) error {

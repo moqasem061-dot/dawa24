@@ -30,6 +30,7 @@ import (
 	commerceHttp "github.com/moqasem061-dot/dawa24/internal/modules/commerce/http"
 	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
 	hrHttp "github.com/moqasem061-dot/dawa24/internal/modules/hr/http"
+	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	identityHttp "github.com/moqasem061-dot/dawa24/internal/modules/identity/http"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
 	ingestHttp "github.com/moqasem061-dot/dawa24/internal/modules/ingest/http"
@@ -187,6 +188,7 @@ func mountAuthenticatedModules(
 	tenantKeys *tenantKeyProvisioner,
 	storageClient *storage.Client,
 	docsGate func(ctx context.Context, orgID int64, orgType string) error,
+	idSvc *identity.Service,
 ) {
 	db := deps.Handle()
 
@@ -228,11 +230,19 @@ func mountAuthenticatedModules(
 		workflow.NewCoverageService(db),
 		inventory.NewService(inventoryPostgres.NewRepository(db), log),
 	))
+	apiQuotes := &apiQuoteResolver{
+		catalog:  catSvc,
+		org:      org.NewService(orgPostgres.NewRepository(db), log),
+		promo:    promo.NewService(promoPostgres.NewRepository(db), log),
+		coverage: workflow.NewCoverageService(db),
+	}
+	commSvc.SetAPIQuoteResolver(apiQuotes.quote)
 	moduleAPI(func() { commerceHttp.NewHandler(commSvc, log).RegisterRoutes(r) })
 
 	// 5. Billing & Entitlements
 	billRepo := billingPostgres.NewRepository(db)
 	billSvc := billing.NewService(billRepo, log)
+	apiQuotes.apiBuyerChoices(billSvc, idSvc)
 	billSvc.SetAIPlanSync(tenantKeys)
 	moduleAPI(func() { billingHttp.NewHandler(billSvc, log).RegisterRoutes(r) })
 

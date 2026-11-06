@@ -52,6 +52,15 @@ func newTestRouter(t *testing.T) http.Handler {
 func newAuthedRouter(repo commerce.Repository) http.Handler {
 	log := slog.New(slog.NewJSONHandler(io.Discard, nil))
 	svc := commerce.NewService(repo, log)
+	svc.SetAvailabilityProbe(apiHappyProbe{})
+	svc.SetAPIQuoteResolver(func(_ context.Context, input commerce.CheckoutInput) (commerce.CheckoutInput, error) {
+		for i := range input.Items {
+			input.Items[i].VendorOrgID = 2
+			input.Items[i].UnitPrice = money.MustParse("50.00")
+			input.Items[i].ListPrice = money.MustParse("50.00")
+		}
+		return input, nil
+	})
 	r := chi.NewRouter()
 	r.Use(httpx.RequestID)
 	r.Use(httpx.Recover(log))
@@ -164,7 +173,7 @@ func TestCommerceHandler_HappyPaths(t *testing.T) {
 		{"SetCartQuantity", http.MethodPatch, "/api/v1/commerce/cart/items/1", `{"quantity":5}`, http.StatusOK},
 		{"RemoveCartItem", http.MethodDelete, "/api/v1/commerce/cart/items/1", "", http.StatusOK},
 		{"ClearCart", http.MethodDelete, "/api/v1/commerce/cart", "", http.StatusOK},
-		{"Checkout", http.MethodPost, "/api/v1/commerce/checkout", `{"customer_id":1,"payment_method":"fawry","items":[{"vendor_org_id":1,"product_name":{"en":"Panadol"},"unit_price":"50.00","quantity":2}]}`, http.StatusCreated},
+		{"Checkout", http.MethodPost, "/api/v1/commerce/checkout", `{"customer_id":1,"branch_id":3,"payment_method":"fawry","items":[{"vendor_org_id":2,"product_variant_id":1,"product_name":{"en":"Panadol"},"unit_price":"50.00","quantity":2}]}`, http.StatusCreated},
 		{"GetOrder", http.MethodGet, "/api/v1/commerce/orders/1", "", http.StatusOK},
 		{"ListOrders", http.MethodGet, "/api/v1/commerce/orders?limit=10&offset=0", "", http.StatusOK},
 		{"GetOrderHistory", http.MethodGet, "/api/v1/commerce/orders/1/history", "", http.StatusOK},
@@ -195,7 +204,11 @@ func TestCommerceHandler_HappyPaths(t *testing.T) {
 				req.Header.Set("Content-Type", "application/json")
 			}
 			rec := httptest.NewRecorder()
-			router.ServeHTTP(rec, req)
+			if tt.name == "CancelOrder" {
+				newAuthedRouter(pendingHappyRepo{}).ServeHTTP(rec, req)
+			} else {
+				router.ServeHTTP(rec, req)
+			}
 			if rec.Code != tt.wantStatus {
 				t.Errorf("%s %s got status %d, want %d (body: %s)", tt.method, tt.path, rec.Code, tt.wantStatus, rec.Body.String())
 			}

@@ -162,7 +162,7 @@ func mountModuleRoutesAPI(
 		approved.Use(authctx.ActivityAudit(idSvc.RecordAudit, cfg.HTTP.TrustedProxyHops, log))
 		approved.Use(authctx.RequireApproved(log))
 
-		mountAuthenticatedModules(approved, cfg, log, deps, ai, adminKeys, tenantKeys, storageClient, docsGate)
+		mountAuthenticatedModules(approved, cfg, log, deps, ai, adminKeys, tenantKeys, storageClient, docsGate, idSvc)
 	})
 
 	return db, idSvc, attachSvc, docsGate, storageClient, permissions
