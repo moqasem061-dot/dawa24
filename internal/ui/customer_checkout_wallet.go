@@ -148,68 +148,9 @@ func (h *UIHandler) executeOrderWalletPayment(
 	return nil
 }
 
-// refundOrderWalletPayment returns debited funds to the buyer's wallet if an already-paid order is cancelled.
-func (h *UIHandler) refundOrderWalletPayment(
-	ctx context.Context,
-	order *commerce.Order,
-	shipment *commerce.OrderShipment,
-	reason string,
-) error {
-	if order == nil || order.PaymentMethod != "wallet" || order.PaymentStatus != commerce.PaymentPaid {
-		return nil
-	}
-	if h.billSvc == nil {
-		return nil
-	}
-
-	var goodsAmount money.Amount
-	if shipment != nil {
-		goodsAmount = shipment.TotalAmount
-		if shipment.ShippingFee.IsPositive() && shipment.ShippingFee.Minor() < shipment.TotalAmount.Minor() {
-			goodsAmount, _ = shipment.TotalAmount.Sub(shipment.ShippingFee)
-		} else if shipment.Subtotal.IsPositive() {
-			goodsAmount = shipment.Subtotal
-		}
-	} else {
-		goodsAmount = order.TotalAmount
-		if order.ShippingFee.IsPositive() && order.ShippingFee.Minor() < order.TotalAmount.Minor() {
-			goodsAmount, _ = order.TotalAmount.Sub(order.ShippingFee)
-		} else if order.Subtotal.IsPositive() {
-			if order.DiscountAmount.IsPositive() && order.DiscountAmount.Minor() < order.Subtotal.Minor() {
-				goodsAmount, _ = order.Subtotal.Sub(order.DiscountAmount)
-			} else {
-				goodsAmount = order.Subtotal
-			}
-		}
-	}
-
-	if !goodsAmount.IsPositive() {
-		return nil
-	}
-
-	var buyerOrgID int64
-	if order.OrganizationID != nil {
-		buyerOrgID = *order.OrganizationID
-	}
-	actor := authctx.Actor{
-		UserID:         order.CustomerID,
-		OrganizationID: buyerOrgID,
-		Scope:          "pharmacy",
-	}
-	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
-
-	orderNum := order.OrderNumber
-	if orderNum == "" {
-		orderNum = fmt.Sprintf("ORD-%d", order.ID)
-	}
-	desc := fmt.Sprintf("استرداد قيمة مشتريات للطلب الملغي رقم %s إلى المحفظة المؤسسية", orderNum)
-	if reason != "" {
-		desc += " (" + reason + ")"
-	}
-	_, err := h.billSvc.Deposit(ctx, walletUserID, "EGP", goodsAmount, "refund", &order.ID, desc)
-	if err == nil && h.commSvc != nil {
-		_ = h.commSvc.UpdateOrderPaymentStatus(ctx, order.ID, commerce.PaymentRefunded)
-		order.PaymentStatus = commerce.PaymentRefunded
-	}
+// returnWalletDebits credits back a wallet debit made just before a failed
+// confirmation. The credit runs in commerce and never exceeds the ledger's debit.
+func (h *UIHandler) returnWalletDebits(ctx context.Context, orderID int64, shipmentID *int64, actorUserID int64, reason string) error {
+	_, err := h.commSvc.ReturnWalletDebits(ctx, orderID, shipmentID, actorUserID, reason)
 	return err
 }

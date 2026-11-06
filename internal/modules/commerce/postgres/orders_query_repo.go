@@ -215,15 +215,16 @@ func (r *Repository) UpdateOrderStatus(
 	history commerce.OrderStatusHistory,
 ) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-		var currentStatus string
-		var customerOrgID *int64
-		var customerUserID int64
-		err := tx.QueryRow(txCtx, `SELECT status, organization_id, customer_id FROM commerce.orders WHERE id = $1 FOR UPDATE;`, orderID).Scan(&currentStatus, &customerOrgID, &customerUserID)
+		locked, err := lockAPICancellationOrder(txCtx, tx, orderID)
 		if err != nil {
-			if database.IsNotFound(err) {
-				return apperr.NotFound("order")
-			}
 			return err
+		}
+		currentStatus := string(locked.Status)
+		customerOrgID := locked.OrganizationID
+		if toStatus == commerce.StatusCancelled {
+			if err := commerce.CheckCancellation(locked); err != nil {
+				return err
+			}
 		}
 
 		if !commerce.IsValidStatusTransition(commerce.OrderStatus(currentStatus), toStatus) {
@@ -310,6 +311,14 @@ func (r *Repository) UpdateOrderStatus(
 			})
 		}
 
+		switch toStatus {
+		case commerce.StatusCancelled:
+			_, err = r.refundWalletDebits(txCtx, tx, locked, nil, orderCancelKey(orderID), actorID, history.Notes)
+			return err
+		case commerce.StatusRefunded:
+			_, err = r.refundWalletDebits(txCtx, tx, locked, nil, orderRefundKey(orderID), actorID, history.Notes)
+			return err
+		}
 		return nil
 	})
 }

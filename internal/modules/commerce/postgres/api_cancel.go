@@ -11,7 +11,9 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
-// CancelAPIOrder locks the order and its shipments before checking the rule.
+// CancelAPIOrder locks the order and its shipments, applies the shared
+// cancellation rule and cancels the order. A wallet-paid order is refunded in
+// the same transaction, so a cancel never commits without its refund.
 func (r *Repository) CancelAPIOrder(ctx context.Context, request commerce.APICancelRequest) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		order, err := lockAPICancellationOrder(txCtx, tx, request.OrderID)
@@ -21,7 +23,7 @@ func (r *Repository) CancelAPIOrder(ctx context.Context, request commerce.APICan
 		if !request.Staff && order.CustomerID != request.UserID && (order.OrganizationID == nil || request.OrganizationID <= 0 || *order.OrganizationID != request.OrganizationID) {
 			return apperr.Forbidden("order.unauthorized", "Not authorized to cancel this order")
 		}
-		if err := commerce.ValidateAPICancellation(order); err != nil {
+		if err := commerce.CheckCancellation(order); err != nil {
 			return err
 		}
 		if _, err := tx.Exec(txCtx, `UPDATE commerce.orders SET status = 'cancelled', updated_at = now() WHERE id = $1`, request.OrderID); err != nil {
@@ -48,27 +50,30 @@ func (r *Repository) CancelAPIOrder(ctx context.Context, request commerce.APICan
 				return err
 			}
 		}
-		return nil
+		_, err = r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(request.OrderID), request.UserID, request.Reason)
+		return err
 	})
 }
 
+// lockAPICancellationOrder locks the order row first and then its shipments, in
+// that order everywhere, so two transactions cannot wait on each other.
 func lockAPICancellationOrder(ctx context.Context, tx pgx.Tx, orderID int64) (*commerce.Order, error) {
 	order := &commerce.Order{ID: orderID}
-	err := tx.QueryRow(ctx, `SELECT customer_id, organization_id, status, payment_method, payment_status FROM commerce.orders WHERE id = $1 FOR UPDATE`, orderID).Scan(&order.CustomerID, &order.OrganizationID, &order.Status, &order.PaymentMethod, &order.PaymentStatus)
+	err := tx.QueryRow(ctx, `SELECT customer_id, organization_id, status, payment_method, payment_status, COALESCE(order_number, '') FROM commerce.orders WHERE id = $1 FOR UPDATE`, orderID).Scan(&order.CustomerID, &order.OrganizationID, &order.Status, &order.PaymentMethod, &order.PaymentStatus, &order.OrderNumber)
 	if errors.Is(err, pgx.ErrNoRows) {
 		return nil, apperr.NotFound("order")
 	}
 	if err != nil {
 		return nil, err
 	}
-	rows, err := tx.Query(ctx, `SELECT id, organization_id, status FROM commerce.order_shipments WHERE order_id = $1 ORDER BY id FOR UPDATE`, orderID)
+	rows, err := tx.Query(ctx, `SELECT id, organization_id, status, subtotal, shipping_fee, total_amount FROM commerce.order_shipments WHERE order_id = $1 ORDER BY id FOR UPDATE`, orderID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
 		shipment := &commerce.OrderShipment{}
-		if err := rows.Scan(&shipment.ID, &shipment.OrganizationID, &shipment.Status); err != nil {
+		if err := rows.Scan(&shipment.ID, &shipment.OrganizationID, &shipment.Status, &shipment.Subtotal, &shipment.ShippingFee, &shipment.TotalAmount); err != nil {
 			return nil, err
 		}
 		order.Shipments = append(order.Shipments, shipment)
@@ -76,13 +81,17 @@ func lockAPICancellationOrder(ctx context.Context, tx pgx.Tx, orderID int64) (*c
 	return order, rows.Err()
 }
 
+// CancelAPIVendorShipment cancels one supplier's shipment under the shared rule.
+// When no other shipment is left, the order is cancelled and refunded in full.
+// Otherwise only this shipment's goods are refunded, and never more than the
+// ledger shows as debited.
 func (r *Repository) CancelAPIVendorShipment(ctx context.Context, request commerce.APIVendorCancelRequest) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		order, err := lockAPICancellationOrder(txCtx, tx, request.OrderID)
 		if err != nil {
 			return err
 		}
-		if err := commerce.ValidateAPICancellation(order); err != nil {
+		if err := commerce.CheckCancellation(order); err != nil {
 			return err
 		}
 		var own *commerce.OrderShipment
@@ -112,7 +121,14 @@ func (r *Repository) CancelAPIVendorShipment(ctx context.Context, request commer
 			if _, err := tx.Exec(txCtx, `UPDATE commerce.orders SET status='cancelled',updated_at=now() WHERE id=$1`, order.ID); err != nil {
 				return err
 			}
+			_, err = r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(order.ID), request.UserID, request.Reason)
+			return err
 		}
-		return nil
+		goods, err := own.WalletGoodsAmount()
+		if err != nil {
+			return apperr.Internal(err)
+		}
+		_, err = r.refundWalletDebits(txCtx, tx, order, &goods, shipmentCancelKey(order.ID, own.ID), request.UserID, request.Reason)
+		return err
 	})
 }

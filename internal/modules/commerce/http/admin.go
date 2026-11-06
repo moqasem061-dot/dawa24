@@ -78,6 +78,19 @@ func (h *Handler) AdminForceOrderStatus(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// A wallet order may only be cancelled or refunded here: both move the money
+	// through the shared rule. Any other status change waits for the S02 fix.
+	if status := commerce.OrderStatus(body.Status); status != commerce.StatusCancelled && status != commerce.StatusRefunded {
+		order, err := h.service.GetOrder(ctx, id)
+		if err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+		if err := commerce.ValidateAPIWalletOrder(order); err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+	}
 	if err := h.service.TransitionOrderStatus(ctx, id, commerce.OrderStatus(body.Status), &actorID, body.Note); err != nil {
 		httpx.Error(w, r, h.log, err)
 		return

@@ -3,6 +3,7 @@ package ui
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -183,31 +184,44 @@ func (h *UIHandler) cancellableBuyerOrder(ctx context.Context, actor authctx.Act
 		return nil, &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id), Message: i18n.T(lang, "orders.cancel_unauthorized")}
 	}
 
-	switch order.Status {
-	case commerce.StatusPending, commerce.StatusProcessing, commerce.StatusConfirmed, commerce.StatusOnHold:
-	default:
-		msg := fmt.Sprintf(i18n.T(lang, "orders.cancel_invalid_status"), string(order.Status))
-		if order.Status == commerce.StatusShipped || order.Status == commerce.StatusInTransit || order.Status == commerce.StatusOutForDelivery || order.Status == commerce.StatusDelivered {
-			msg = i18n.T(lang, "orders.cancel_shipment_in_progress")
-		}
-		return nil, &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id), Message: msg, JSON: true}
-	}
-
-	// Forbid cancellation if any shipment is already on the road or delivered.
-	for _, sh := range order.Shipments {
-		if sh == nil {
-			continue
-		}
-		switch sh.Status {
-		case commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery, commerce.StatusDelivered, commerce.StatusCompleted:
-			return nil, &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id),
-				Message: i18n.T(lang, "orders.cancel_shipment_in_progress_partial"), JSON: true}
-		}
+	// The shared cancellation rule (commerce.CheckCancellation) decides here and
+	// again under the order lock when the cancel runs.
+	if err := commerce.CheckCancellation(order); err != nil {
+		return nil, cancelRefusalFailure(lang, id, refusalOf(err))
 	}
 	return order, nil
 }
 
-// cancelBuyerOrder cancels an order for the buyer and tells its suppliers.
+// cancelRefusalFailure gives the website's message for a refused cancellation.
+// The wording is the same as before: a shipment in progress, or the order status.
+func cancelRefusalFailure(lang string, id int64, refusal *commerce.CancellationRefusal) *orderCancelFailure {
+	failure := &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id), JSON: true}
+	switch {
+	case refusal == nil:
+		failure.Message = i18n.T(lang, "orders.cancel_failed_with_err")
+	case refusal.ShipmentInProgress:
+		failure.Message = i18n.T(lang, "orders.cancel_shipment_in_progress_partial")
+	case refusal.Status == commerce.StatusShipped || refusal.Status == commerce.StatusInTransit ||
+		refusal.Status == commerce.StatusOutForDelivery || refusal.Status == commerce.StatusDelivered:
+		failure.Message = i18n.T(lang, "orders.cancel_shipment_in_progress")
+	default:
+		failure.Message = fmt.Sprintf(i18n.T(lang, "orders.cancel_invalid_status"), string(refusal.Status))
+	}
+	return failure
+}
+
+// refusalOf returns the cancellation refusal carried by err, or nil.
+func refusalOf(err error) *commerce.CancellationRefusal {
+	var refusal *commerce.CancellationRefusal
+	if errors.As(err, &refusal) {
+		return refusal
+	}
+	return nil
+}
+
+// cancelBuyerOrder cancels an order for the buyer and tells its suppliers. For a
+// wallet order the refund is part of the cancellation: it commits with it, so
+// a repeated or racing cancel cannot credit the wallet twice.
 func (h *UIHandler) cancelBuyerOrder(ctx context.Context, actor authctx.Actor, lang string, id int64, reason, notes string) *orderCancelFailure {
 	order, failure := h.cancellableBuyerOrder(ctx, actor, lang, id)
 	if failure != nil {
@@ -226,12 +240,11 @@ func (h *UIHandler) cancelBuyerOrder(ctx context.Context, actor authctx.Actor, l
 	}
 
 	if err := h.commSvc.CancelOrder(ctx, id, &actor.UserID, fullReason); err != nil {
+		if refusal := refusalOf(err); refusal != nil {
+			return cancelRefusalFailure(lang, id, refusal)
+		}
 		return &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id),
 			Message: fmt.Sprintf(i18n.T(lang, "orders.cancel_failed_with_err"), h.safeMessage(err, lang)), JSON: true}
-	}
-
-	if order.PaymentMethod == "wallet" && order.PaymentStatus == commerce.PaymentPaid {
-		_ = h.refundOrderWalletPayment(ctx, order, nil, fullReason)
 	}
 
 	buyerName := h.resolveOrgName(ctx, actor.OrganizationID)

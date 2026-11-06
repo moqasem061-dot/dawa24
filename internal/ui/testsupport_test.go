@@ -107,7 +107,7 @@ func newRealUIHandler(t *testing.T, db *database.DB) http.Handler {
 	catRepo := catalogPostgres.NewRepository(db)
 	orgRepo := orgPostgres.NewRepository(db)
 	ingRepo := ingestPostgres.NewRepository(db)
-	commRepo := commercePostgres.NewRepository(db)
+	commRepo := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db))
 	invRepo := inventoryPostgres.NewRepository(db)
 	idRepo := identityPostgres.NewRepository(db)
 	notifRepo := notificationsPostgres.NewRepository(db)

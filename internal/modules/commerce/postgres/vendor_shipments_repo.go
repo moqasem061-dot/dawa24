@@ -242,6 +242,11 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 			}
 		}
 
-		return nil
+		locked, err := lockAPICancellationOrder(txCtx, tx, orderID)
+		if err != nil {
+			return err
+		}
+		_, err = r.refundWalletDebits(txCtx, tx, locked, nil, orderCancelKey(orderID), actorID, reason)
+		return err
 	})
 }

@@ -54,3 +54,25 @@ The pending deposit is locked before transition; rejection and its audit entry
 commit together. No credit transaction is created. A real PostgreSQL regression
 checks the saved reason, reviewer, audit, unchanged ledger and refusal to reject
 twice or approve after rejection.
+
+## Order wallet refunds (Batch 1B, S03)
+
+- `Repository.CreditOrderRefund` credits back, inside the caller's transaction, the wallet money an
+  order is still net-debited. The commerce repository calls it with the order row locked. It is
+  wired in the composition root (`WithWalletRefunder`), so commerce never imports billing.
+- The amount is taken from the ledger, never from the order total: debits of the order
+  (`withdrawal`, reference `order`), less admin reversals of those debits (`reverses_transaction_id`),
+  less earlier order credits (`deposit`, reference `refund`). A negative result credits nothing.
+- The wallet row is locked (`SELECT ... FOR UPDATE`) before the balance is read, so refunds for one
+  wallet serialise with each other and with the admin finance refund.
+- A key (`idempotency_key`, migration 247) is stored on the credit row. The partial unique index
+  refuses a second credit with the same key with a conflict. Old rows have no key and are unaffected.
+- An order debited from two wallets is refused with an internal error and needs review. The
+  current code debits one wallet per order.
+- Admin finance refund (`AdminRefundTransaction`) of an order debit now locks the wallet and
+  refuses the reversal when the order's remaining net debit does not cover it
+  (`transaction.already_refunded`). Other transactions are unchanged.
+- Known limit: ordinary debits (`Withdraw`) and credits do not take the wallet lock, so a debit that
+  races a refund on the same wallet can still leave a wrong `balance_after` projection. This is the
+  S01 ledger-serialisation gap and is not fixed in Batch 1B.
+

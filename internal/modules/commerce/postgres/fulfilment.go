@@ -83,7 +83,14 @@ func (r *Repository) UpdateShipmentStatus(
 	from, to commerce.OrderStatus,
 	history commerce.OrderStatusHistory,
 ) error {
-	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		// The order is locked before the shipment, as in every other path. The write
+		// runs as system because a cancel refunds the buyer's wallet. The caller has
+		// already checked that the shipment belongs to its tenant.
+		order, err := lockAPICancellationOrder(txCtx, tx, history.OrderID)
+		if err != nil {
+			return err
+		}
 		update := `
 			UPDATE commerce.order_shipments
 			SET status = $3,
@@ -158,6 +165,35 @@ func (r *Repository) UpdateShipmentStatus(
 			}
 		}
 
+		if to == commerce.StatusCancelled && from != commerce.StatusCancelled && commerce.IsWalletPayment(order.PaymentMethod) {
+			var nowStatus string
+			if err := tx.QueryRow(txCtx, `SELECT status FROM commerce.orders WHERE id = $1;`, order.ID).Scan(&nowStatus); err != nil {
+				return err
+			}
+			actor := actorOrZero(history.ChangedByUserID)
+			if nowStatus == string(commerce.StatusCancelled) && order.Status != commerce.StatusCancelled {
+				if _, err := r.refundWalletDebits(txCtx, tx, order, nil, orderCancelKey(order.ID), actor, history.Notes); err != nil {
+					return err
+				}
+			} else {
+				var own *commerce.OrderShipment
+				for _, s := range order.Shipments {
+					if s.ID == id {
+						own = s
+					}
+				}
+				if own == nil {
+					return apperr.NotFound("shipment")
+				}
+				goods, gErr := own.WalletGoodsAmount()
+				if gErr != nil {
+					return apperr.Internal(gErr)
+				}
+				if _, err := r.refundWalletDebits(txCtx, tx, order, &goods, shipmentCancelKey(order.ID, id), actor, history.Notes); err != nil {
+					return err
+				}
+			}
+		}
 		return nil
 	})
 }

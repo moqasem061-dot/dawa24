@@ -218,7 +218,7 @@ func mountAuthenticatedModules(
 	moduleAPI(func() { inventoryHttp.NewHandler(invSvc, log).RegisterRoutes(r) })
 
 	// 4. Commerce
-	commRepo := commercePostgres.NewRepository(db)
+	commRepo := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db))
 	commSvc := commerce.NewService(commRepo, log)
 	commSvc.SetRequiredDocsChecker(commerce.RequiredDocsChecker(docsGate))
 	commSvc.OnOrderPlaced(deps.orders.announce)

@@ -92,6 +92,19 @@ func (r *Repository) AdminRefundTransaction(
 			return apperr.Validation("refund.zero_amount", "Original transaction has zero amount and cannot be refunded.", nil)
 		}
 
+		// 4b. An order debit may already have been returned through the order
+		// (cancellation or refund). Lock the wallet and refuse a reversal the
+		// order's remaining net debit cannot cover (Batch 1B, S03).
+		if origType == billing.TxWithdrawal && origRefType != nil && *origRefType == "order" && origRefID != nil {
+			remaining, rErr := lockedOrderRemaining(txCtx, tx, walletID, *origRefID)
+			if rErr != nil {
+				return fmt.Errorf("read order net debit: %w", rErr)
+			}
+			if remaining.Minor() < refundAmount.Minor() {
+				return apperr.Conflict("transaction.already_refunded", fmt.Sprintf("This transaction #%d was already returned through its order.", transactionID))
+			}
+		}
+
 		// 5. Read current wallet balance FOR UPDATE to prevent balance drift
 		currentBalance, err := r.latestBalance(txCtx, tx, walletID, true)
 		if err != nil {

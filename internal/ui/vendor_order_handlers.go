@@ -261,15 +261,14 @@ func (h *UIHandler) transitionVendorShipment(
 		walletDebited = true
 	}
 
+	// A cancel refunds the wallet inside TransitionShipmentStatus, in one transaction.
 	if _, err := h.commSvc.TransitionShipmentStatus(ctx, shipmentID, to, &actor.UserID, notes); err != nil {
 		if walletDebited {
-			_ = h.refundOrderWalletPayment(ctx, order, shipment, "فشل اعتماد حالة الشحنة")
+			if rErr := h.returnWalletDebits(ctx, order.ID, &shipmentID, actor.UserID, "فشل اعتماد حالة الشحنة"); rErr != nil {
+				h.log.ErrorContext(ctx, "wallet compensation failed", "error", rErr, "order_id", order.ID)
+			}
 		}
 		return err
-	}
-
-	if to == commerce.StatusCancelled && order.PaymentMethod == "wallet" && order.PaymentStatus == commerce.PaymentPaid {
-		_ = h.refundOrderWalletPayment(ctx, order, shipment, "إلغاء أمر التوريد من المورد")
 	}
 
 	if to == commerce.StatusShipped && tracking == "" {
@@ -319,7 +318,9 @@ func (h *UIHandler) decideVendorNegotiation(
 		}
 		if err := h.commSvc.AcceptNegotiation(ctx, orderID, actor.UserID); err != nil {
 			if walletDebited {
-				_ = h.refundOrderWalletPayment(ctx, order, nil, "فشل اعتماد التفاوض")
+				if rErr := h.returnWalletDebits(ctx, order.ID, nil, actor.UserID, "فشل اعتماد التفاوض"); rErr != nil {
+					h.log.ErrorContext(ctx, "wallet compensation failed", "error", rErr, "order_id", order.ID)
+				}
 			}
 			return i18n.T(lang, "vendor.orders.accept_negotiation_error_prefix") + h.safeMessage(err, lang), err
 		}

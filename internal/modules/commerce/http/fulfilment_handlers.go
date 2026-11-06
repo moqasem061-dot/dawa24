@@ -150,18 +150,21 @@ func (h *Handler) TransitionShipmentStatus(w http.ResponseWriter, r *http.Reques
 		reqCtx = database.WithTenant(reqCtx, shipment.OrganizationID)
 	}
 
-	// Wallet orders are refused for every status: the website moves the money.
+	// The order is read again for the wallet rule; the shipment's order id is authoritative.
 	order, err := h.service.GetOrder(reqCtx, shipment.OrderID)
 	if err != nil {
 		httpx.Error(w, r, h.log, err)
 		return
 	}
-	if err := commerce.ValidateAPIWalletOrder(order); err != nil {
-		httpx.Error(w, r, h.log, err)
-		return
-	}
-
 	status := commerce.OrderStatus(body.Status)
+	// A wallet order can be cancelled here, and the cancel refunds the wallet. Other
+	// status changes on a wallet order are refused until the debit is reliable (S02).
+	if status != commerce.StatusCancelled {
+		if err := commerce.ValidateAPIWalletOrder(order); err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+	}
 	actorID := actor.UserID
 	if status == commerce.StatusCancelled {
 		// A shipment cancel follows the same temporary rule as an order cancel:

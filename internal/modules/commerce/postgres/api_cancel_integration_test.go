@@ -47,13 +47,26 @@ func TestAPICancelTransaction(t *testing.T) {
 	for _, status := range []string{"pending", "processing"} {
 		t.Run("allowed_"+status, func(t *testing.T) { check(status, "pending", "cod", true) })
 	}
-	for _, status := range []string{"confirmed", "on_hold", "shipped", "in_transit", "out_for_delivery", "delivered", "completed", "cancelled", "failed", "returned", "refunded"} {
+	for _, status := range []string{"shipped", "in_transit", "out_for_delivery", "delivered", "completed", "cancelled", "failed", "returned", "refunded"} {
 		t.Run("blocked_order_"+status, func(t *testing.T) { check(status, "pending", "cod", false) })
 	}
 	for _, status := range []string{"shipped", "in_transit", "out_for_delivery", "delivered", "completed"} {
 		t.Run("blocked_shipment_"+status, func(t *testing.T) { check("pending", status, "cod", false) })
 	}
-	t.Run("wallet", func(t *testing.T) { check("pending", "pending", "wallet", false) })
+	// Batch 1B: a wallet order cancels through the shared rule and refunds the wallet.
+	// This repository has no wallet refunder, so the cancel must fail closed and write nothing.
+	t.Run("wallet_without_refunder_fails_closed", func(t *testing.T) {
+		id := newOrder("pending", "pending", "wallet")
+		if err := repo.CancelAPIOrder(ctx, commerce.APICancelRequest{OrderID: id, UserID: testCommerceUserID, OrganizationID: testCommerceCustID}); err == nil {
+			t.Fatal("wallet cancel without a refunder was accepted")
+		}
+		var status string
+		if err := db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+			return tx.QueryRow(txCtx, `SELECT status FROM commerce.orders WHERE id=$1`, id).Scan(&status)
+		}); err != nil || status != "pending" {
+			t.Fatalf("status %s (err %v) after refused wallet cancel, want pending", status, err)
+		}
+	})
 	t.Run("supplier_cancels_only_own_shipment", func(t *testing.T) {
 		id := newOrder("pending", "pending", "cod")
 		var ownID int64
@@ -140,9 +153,15 @@ func TestAPICancelTransaction(t *testing.T) {
 			go func() {
 				results <- repo.UpdateOrderStatus(ctx, id, commerce.StatusConfirmed, commerce.OrderStatusHistory{OrderID: id, ToStatus: string(commerce.StatusConfirmed)})
 			}()
+			// Batch 1B: a confirmed order can be cancelled under the shared rule, so the two
+			// transitions may both succeed, one after the other. At least one must succeed and
+			// the order must end in a consistent status.
 			first, second := <-results, <-results
-			if (first == nil) == (second == nil) {
-				t.Fatalf("exactly one transition must succeed: %v; %v", first, second)
+			if first != nil && second != nil {
+				t.Fatalf("neither transition succeeded: %v; %v", first, second)
+			}
+			if status := orderStatusOf(t, db, id); status != "cancelled" && status != "confirmed" {
+				t.Fatalf("order ended in status %q", status)
 			}
 		}
 	})

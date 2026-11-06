@@ -83,7 +83,7 @@ func TestAPIWalletOrdersAreRefusedOnEveryJSONStatusRoute(t *testing.T) {
 		{"shipment_status_staff", "/api/v1/commerce/shipments/11/status", staff},
 	}
 	for _, route := range routes {
-		for _, status := range []string{"confirmed", "cancelled", "shipped", "delivered"} {
+		for _, status := range []string{"confirmed", "shipped", "delivered"} {
 			t.Run(route.name+"_"+status, func(t *testing.T) {
 				repo := &apiGuardRepo{paymentMethod: "wallet", orderStatus: commerce.StatusPending, otherStatus: commerce.StatusPending}
 				response := postJSON(t, newRouterWithActor(repo, route.actor), route.path, `{"status":"`+status+`"}`)
@@ -106,7 +106,7 @@ func TestAPIShipmentCancelFollowsTheTemporaryCancelRule(t *testing.T) {
 		wantCode                 int
 		wantRefusal              string
 	}{
-		{"confirmed_order_refused", commerce.StatusConfirmed, commerce.StatusPending, http.StatusConflict, "order.cannot_cancel"},
+		{"confirmed_order_allowed_by_shared_rule", commerce.StatusConfirmed, commerce.StatusPending, http.StatusOK, ""},
 		{"sibling_shipped_refused", commerce.StatusPending, commerce.StatusShipped, http.StatusConflict, "order.shipment_in_progress"},
 		{"pending_order_allowed", commerce.StatusPending, commerce.StatusPending, http.StatusOK, ""},
 	}

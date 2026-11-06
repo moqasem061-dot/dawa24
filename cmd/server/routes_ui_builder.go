@@ -77,7 +77,7 @@ func buildUIHandler(
 	catRepoUI := catalogPostgres.NewRepository(db)
 	orgRepoUI := orgPostgres.NewRepository(db)
 	ingRepoUI := ingestPostgres.NewRepository(db)
-	commRepoUI := commercePostgres.NewRepository(db)
+	commRepoUI := commercePostgres.NewRepository(db).WithWalletRefunder(billingPostgres.NewRepository(db))
 	invRepoUI := inventoryPostgres.NewRepository(db)
 	notifRepoUI := notificationsPostgres.NewRepository(db)
 	promoRepoUI := promoPostgres.NewRepository(db)

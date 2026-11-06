@@ -54,11 +54,14 @@ func (h *Handler) TransitionStatus(w http.ResponseWriter, r *http.Request) {
 		httpx.Error(w, r, h.log, apperr.Forbidden("order.unauthorized", "Not authorized to update this order"))
 		return
 	}
-	// Wallet orders are refused for every actor and every status: the website
-	// moves the money on confirmation and cancellation, and this route does not.
-	if err := commerce.ValidateAPIWalletOrder(order); err != nil {
-		httpx.Error(w, r, h.log, err)
-		return
+	// A wallet order can be cancelled here: the cancel refunds the wallet in the same
+	// transaction. Any other status change is refused until the wallet debit on
+	// confirmation is reliable (S02).
+	if req.Status != commerce.StatusCancelled {
+		if err := commerce.ValidateAPIWalletOrder(order); err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
 	}
 	if isVendor && !isStaff {
 		if err := h.transitionVendorOrderStatus(r.Context(), actor, order, req); err != nil {

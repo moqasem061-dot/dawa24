@@ -91,22 +91,49 @@ negotiations and wallet payment, and it has no price review.
 See [the checkout review backlog](../checkout-price-review-backlog.md) for the
 separate website delivery-total and price-review work.
 
-The order-status and shipment-status APIs require `vendor.order.update` for
-suppliers and change only the requesting supplier's own shipment. Wallet-paid
-orders are refused on the order-status, cancel and shipment-status APIs for any
-status (`order.wallet_on_website`); the website moves the money on confirmation
-and cancellation, and these routes do not. The three routes share a temporary
-cancellation rule: the order must be `pending` or `processing`, and every
-shipment must still be `pending`, `processing`, `confirmed`, `on_hold` or
-`cancelled`. The rule is checked inside the transaction with the order and its
-shipments locked. Confirmed and on-hold orders are not cancellable through the
-API. The shared website/API cancellation rule and atomic wallet refunds are
-deferred to Batch 1B. The `/api/v1/admin/commerce/...` routes are not changed by
-this batch.
+The order-status, cancel and shipment-status APIs require `vendor.order.update` for
+suppliers and change only the requesting supplier's own shipment. A wallet-paid order can be
+cancelled through these routes and the admin status route, and the cancel refunds the wallet
+(Batch 1B, below). Every other status change on a wallet-paid order is refused
+(`order.wallet_on_website`) until the wallet debit on confirmation is fixed (S02).
 
 - `POST /api/v1/commerce/checkout` — Execute checkout and create order.
 - `GET /api/v1/commerce/orders/{id}` — Retrieve order and shipment status.
 - `GET /api/v1/commerce/orders` — List customer order history.
+### Cancellation and wallet refunds (Batch 1B, S03)
+
+One rule, `commerce.CheckCancellation`, decides every cancellation. An order can be cancelled only
+while its status is pending, processing, confirmed or on hold, and no shipment is shipped, in
+transit, out for delivery, delivered or completed. The website buyer cancel, the cancel and
+status routes of the API, the admin status route (cancel) and a rejected negotiation all check it
+under the order row lock. The website keeps its wording: a shipment in progress, or the order
+status.
+
+Locks: the order row is locked first, then its shipments. Every path that cancels, refunds or
+moves a shipment takes the order lock first, so two transactions cannot wait on each other.
+
+Refunds: a cancellation that leaves the order cancelled credits the wallet with the full net
+debit. A supplier's partial cancel credits at most that shipment's goods, and never more than the
+net debit. An admin refund (`/refund`, or status `refunded`) credits the net debit. The amount is
+read from the wallet ledger (`billing.wallet_transactions`): the order's debits, less earlier order
+credits and admin reversals. It is never the order total. The credit commits in the same
+transaction as the status change, so a cancel never commits without its refund, and a refund never
+commits without its cancel. Money credited sets `payment_status` to `refunded`, as the website
+always did.
+
+Once only: each cancellation event writes its credit with an idempotency key (`order-cancel:<id>`,
+`order-refund:<id>`, `shipment-cancel:<order>:<shipment>`). A partial unique index (migration 247)
+rejects a second credit with the same key. The order lock and the ledger cap also stop a second
+credit.
+
+Repeated or racing cancels: the second cancel of a cancelled order is refused, with the same 409 on
+the API and the same message on the website. A cancel that races a supplier's shipment cancel
+serialises on the order row.
+
+Known limit (S02): a multi-vendor order records one debit for the first confirmed shipment. A
+partial cancel of another shipment can credit money debited for a different shipment, but the
+total credited never exceeds what was debited. Per-shipment debit records belong to Batch 2.
+
 - `POST /api/v1/commerce/orders/{id}/status` — Apply a validated status transition.
 - `POST /api/v1/commerce/orders/{id}/rate` — Rate a delivered order with 3 criteria or scalar score and review comment.
 - `GET /api/v1/commerce/vendor/shipments` — List vendor shipment partitions.

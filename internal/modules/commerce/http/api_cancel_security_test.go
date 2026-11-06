@@ -29,9 +29,6 @@ func TestAPICancellationRejectsUnsafeOrders(t *testing.T) {
 		name  string
 		order commerce.Order
 	}{
-		{"wallet paid", commerce.Order{ID: 1, CustomerID: 1, Status: commerce.StatusPending, PaymentMethod: "wallet", PaymentStatus: commerce.PaymentPaid}},
-		{"wallet authorized", commerce.Order{ID: 1, CustomerID: 1, Status: commerce.StatusPending, PaymentMethod: "wallet", PaymentStatus: commerce.PaymentAuthorized}},
-		{"confirmed", commerce.Order{ID: 1, CustomerID: 1, Status: commerce.StatusConfirmed}},
 		{"shipped shipment", commerce.Order{ID: 1, CustomerID: 1, Status: commerce.StatusPending, Shipments: []*commerce.OrderShipment{{Status: commerce.StatusShipped}}}},
 	}
 	for _, tc := range cases {

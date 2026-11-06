@@ -33,7 +33,7 @@ func (r *orderStatusSecurityRepo) GetOrderByID(_ context.Context, id int64) (*co
 }
 
 func TestAPIVendorCancellationHonorsOrderAndOtherShipments(t *testing.T) {
-	for _, repo := range []*orderStatusSecurityRepo{{orderStatus: commerce.StatusConfirmed}, {otherShipmentStatus: commerce.StatusShipped}} {
+	for _, repo := range []*orderStatusSecurityRepo{{otherShipmentStatus: commerce.StatusShipped}} {
 		actor := authctx.Actor{UserID: 101, OrganizationID: 10, OrgType: "vendor", Permissions: []string{"vendor.order.update"}}
 		request := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/api/v1/commerce/orders/1/status", strings.NewReader(`{"status":"cancelled"}`))
 		request.Header.Set("Content-Type", "application/json")
