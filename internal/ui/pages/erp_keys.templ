@@ -1,0 +1,217 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+// ErpKeysPageData is everything the integration-keys screen renders. Audience
+// names the action path prefix ("vendor" or "customer"); Owner gates the
+// owner-only actions (create, rotate, revoke, limit change, pause) — it is
+// the signed-in actor's ownership, never a submitted value.
+type ErpKeysPageData struct {
+	Keys          []erp.APIKey
+	Audience      string
+	Owner         bool
+	Paused        bool
+	NoticeKind    string
+	NoticeMessage string
+}
+
+// ErpKeysVendorPage renders /vendor/integrations for a supplier.
+templ ErpKeysVendorPage(data ErpKeysPageData, lang, dir string) {
+	@layouts.VendorShell(i18n.T(lang, "erp.keys.title"), "integrations", lang, dir) {
+		@erpKeysBody(data, lang, dir)
+	}
+}
+
+// ErpKeysCustomerPage renders /customer/integrations for a pharmacy.
+templ ErpKeysCustomerPage(data ErpKeysPageData, lang, dir string, actor authctx.Actor) {
+	@layouts.ShellFor(i18n.T(lang, "erp.keys.title"), "integrations", lang, dir, actor) {
+		@erpKeysBody(data, lang, dir)
+	}
+}
+
+// erpKeysBody is the shared page content for both shells. The dialogs it
+// references by id (create, rotate, revoke, change limit) are rendered by the
+// ERP key modals file.
+templ erpKeysBody(data ErpKeysPageData, lang, dir string) {
+	<div class="page-container">
+		<div class="glass-panel p-6 mb-6">
+			<div class="flex-between items-center flex-wrap gap-4">
+				<div class="d-flex items-center gap-3 mb-0">
+					<div class="user-avatar-badge text-xl text-brand">
+						@components.IconShield("icon-sm")
+					</div>
+					<div class="stack-sm">
+						<h1 class="text-2xl font-black text-primary m-0">
+							{ i18n.T(lang, "erp.keys.title") }
+						</h1>
+						<p class="text-xs text-secondary m-0" dir="ltr">
+							/erp/v1
+						</p>
+					</div>
+				</div>
+				if data.Owner {
+					<div class="d-flex items-center gap-2 flex-wrap">
+						<form method="POST" class="m-0" action={ templ.SafeURL(fmt.Sprintf("/%s/integrations/pause", data.Audience)) }>
+							<input type="hidden" name="pause" value={ ternary(data.Paused, "false", "true") } />
+							<button type="submit" class="btn btn-secondary btn-sm font-bold">
+								{ erpPauseResumeText(lang, data.Paused) }
+							</button>
+						</form>
+						@components.ModalTrigger("erp-create-key-modal", "btn btn-primary btn-sm font-bold rounded-lg") {
+							<span>{ i18n.T(lang, "erp.keys.new_key") }</span>
+						}
+					</div>
+				}
+			</div>
+		</div>
+
+		if data.NoticeMessage != "" {
+			if data.NoticeKind == "error" {
+				<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">
+					@components.IconAlertCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			} else {
+				<div class="alert alert-success mb-4 p-4 d-flex items-center gap-3">
+					@components.IconCheckCircle("icon-xs")
+					<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+				</div>
+			}
+		}
+
+		if len(data.Keys) == 0 {
+			@components.EmptyState(components.EmptyStateProps{
+				Title:   i18n.T(lang, "erp.keys.title"),
+				Message: i18n.T(lang, "erp.keys.empty"),
+			})
+		} else {
+			<div class="glass-panel p-0 overflow-x-auto">
+				<table class="data-table m-0 w-full text-xs">
+					<thead>
+						<tr>
+							<th>{ i18n.T(lang, "erp.keys.name") }</th>
+							<th>{ i18n.T(lang, "erp.keys.prefix") }</th>
+							<th>{ i18n.T(lang, "erp.keys.scopes") }</th>
+							<th>{ i18n.T(lang, "erp.keys.last_used") }</th>
+							<th>{ i18n.T(lang, "erp.keys.expires") }</th>
+							<th>{ i18n.T(lang, "erp.keys.status") }</th>
+							<th>{ i18n.T(lang, "erp.keys.change_limit") }</th>
+							<th>{ i18n.T(lang, "erp.keys.rotate") }</th>
+							<th>{ i18n.T(lang, "erp.keys.revoke") }</th>
+						</tr>
+					</thead>
+					<tbody>
+						for _, key := range data.Keys {
+							@erpKeyRow(key, data, lang)
+						}
+					</tbody>
+				</table>
+			</div>
+		}
+	</div>
+}
+
+templ erpKeyRow(key erp.APIKey, data ErpKeysPageData, lang string) {
+	<tr>
+		<td class="font-bold text-primary">{ key.Name }</td>
+		<td><code class="font-mono" dir="ltr">{ key.KeyPrefix }</code></td>
+		<td>
+			<div class="d-flex flex-wrap gap-1">
+				for _, scope := range key.Scopes {
+					@components.Badge(components.BadgeProps{Label: erpScopeLabelText(lang, scope)})
+				}
+			</div>
+		</td>
+		<td class="tabular-nums" dir="ltr">
+			if key.LastUsedAt != nil {
+				{ key.LastUsedAt.Format("2006-01-02") }
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td class="tabular-nums" dir="ltr">
+			if key.ExpiresAt != nil {
+				{ key.ExpiresAt.Format("2006-01-02") }
+			} else {
+				<span class="text-muted">—</span>
+			}
+		</td>
+		<td>
+			@components.Badge(components.BadgeProps{
+				Label: erpKeyStatusText(lang, key.Status),
+				Tone:  ternary(key.Status == "revoked", "rose", "emerald"),
+			})
+		</td>
+		if data.Owner {
+			<td>
+				@components.ModalTrigger(fmt.Sprintf("erp-limits-%d", key.ID), "btn btn-secondary btn-xs font-bold") {
+					<span>{ i18n.T(lang, "erp.keys.change_limit") }</span>
+				}
+			</td>
+			if key.Status == "active" {
+				<td>
+					@components.ModalTrigger(fmt.Sprintf("erp-rotate-%d", key.ID), "btn btn-secondary btn-xs font-bold") {
+						<span>{ i18n.T(lang, "erp.keys.rotate") }</span>
+					}
+				</td>
+			} else {
+				<td><span class="text-muted">—</span></td>
+			}
+			<td>
+				@components.ModalTrigger(fmt.Sprintf("erp-revoke-%d", key.ID), "btn btn-outline-danger btn-xs font-bold") {
+					<span>{ i18n.T(lang, "erp.keys.revoke") }</span>
+				}
+			</td>
+		} else {
+			<td><span class="text-muted">—</span></td>
+			<td><span class="text-muted">—</span></td>
+			<td><span class="text-muted">—</span></td>
+		}
+	</tr>
+}
+
+// The label helpers keep every i18n key a Go literal: the i18n scan test and
+// the printf vet check both read the source, so keys are never built by
+// concatenation.
+
+// erpScopeLabelText renders one scope's localized label.
+func erpScopeLabelText(lang, scope string) string {
+	switch scope {
+	case erp.ScopeProductsSync:
+		return i18n.T(lang, "erp.keys.erp.products.sync")
+	case erp.ScopeOrdersRead:
+		return i18n.T(lang, "erp.keys.erp.orders.read")
+	case erp.ScopeOrdersAck:
+		return i18n.T(lang, "erp.keys.erp.orders.ack")
+	case erp.ScopeOrdersDecide:
+		return i18n.T(lang, "erp.keys.erp.orders.decide")
+	case erp.ScopePurchaseCreate:
+		return i18n.T(lang, "erp.keys.erp.po.create")
+	default:
+		return scope
+	}
+}
+
+// erpKeyStatusText localizes a key status; the schema allows active/revoked.
+func erpKeyStatusText(lang, status string) string {
+	if status == "revoked" {
+		return i18n.T(lang, "erp.keys.status_revoked")
+	}
+	return i18n.T(lang, "erp.keys.status_active")
+}
+
+// erpPauseResumeText localizes the pause toggle label.
+func erpPauseResumeText(lang string, paused bool) string {
+	if paused {
+		return i18n.T(lang, "erp.keys.resume")
+	}
+	return i18n.T(lang, "erp.keys.pause")
+}

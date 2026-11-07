@@ -90,19 +90,25 @@ func TestHandlerHealth(t *testing.T) {
 	if unknown.Code != 404 || !strings.Contains(unknown.Body.String(), "ERP_NOT_FOUND") {
 		t.Errorf("unknown: %d %s", unknown.Code, unknown.Body.String())
 	}
-	parts := strings.Split(full, "_")
-	secret := parts[3]
-	if secret[0] == 'A' {
-		parts[3] = "B" + secret[1:]
-	} else {
-		parts[3] = "A" + secret[1:]
+	// The secret is base64url and may contain '_', so it is taken from the
+	// parser rather than a naive underscore split: the assertions below must
+	// cover the whole secret, not the fragment before its first underscore.
+	_, secret, ok := erp.ParseKey(full)
+	if !ok {
+		t.Fatal("generated key does not parse")
 	}
-	bad := strings.Join(parts, "_")
+	mutated := []byte(secret)
+	if mutated[0] == 'A' {
+		mutated[0] = 'B'
+	} else {
+		mutated[0] = 'A'
+	}
+	bad := full[:len(full)-len(secret)] + string(mutated)
 	badReq := httptest.NewRequest("GET", "/health", nil)
 	badReq.Header.Set("Authorization", "Bearer "+bad)
 	badW := httptest.NewRecorder()
 	handler.ServeHTTP(badW, badReq)
-	if badW.Code != 401 || strings.Contains(badW.Body.String(), bad) || strings.Contains(badW.Body.String(), parts[3]) || strings.Contains(logs.String(), bad) || strings.Contains(logs.String(), parts[3]) {
+	if badW.Code != 401 || strings.Contains(badW.Body.String(), bad) || strings.Contains(badW.Body.String(), secret) || strings.Contains(logs.String(), bad) || strings.Contains(logs.String(), secret) {
 		t.Error("bad key response or logs leaked credentials")
 	}
 }

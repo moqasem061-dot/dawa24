@@ -1,0 +1,114 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
+)
+
+// ErpAdminKeysPageData is what /admin/integrations renders: every
+// organization's keys, staff-wide.
+type ErpAdminKeysPageData struct {
+	Rows          []erp.StaffKeyRow
+	NoticeKind    string
+	NoticeMessage string
+}
+
+// ErpAdminKeysPage is the staff screen: every organization's keys with their
+// prefixes, statuses and last use, plus a revoke action per key. Revocation
+// here goes straight through the staff handler; the owner-facing flows use
+// the modals rendered beside the tenant keys pages.
+templ ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) {
+	@layouts.AdminShell(i18n.T(lang, "erp.keys.title"), "integrations", lang, dir) {
+		<div class="page-container">
+			<div class="glass-panel p-6 mb-6">
+				<div class="d-flex items-center gap-3 mb-0">
+					<div class="user-avatar-badge text-xl text-brand">
+						@components.IconShield("icon-sm")
+					</div>
+					<h1 class="text-2xl font-black text-primary m-0">
+						{ i18n.T(lang, "erp.keys.title") }
+					</h1>
+				</div>
+			</div>
+
+			if data.NoticeMessage != "" {
+				if data.NoticeKind == "error" {
+					<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">
+						@components.IconAlertCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+					</div>
+				} else {
+					<div class="alert alert-success mb-4 p-4 d-flex items-center gap-3">
+						@components.IconCheckCircle("icon-xs")
+						<span class="font-bold text-sm">{ data.NoticeMessage }</span>
+					</div>
+				}
+			}
+
+			if len(data.Rows) == 0 {
+				@components.EmptyState(components.EmptyStateProps{
+					Title:   i18n.T(lang, "erp.keys.title"),
+					Message: i18n.T(lang, "erp.keys.empty"),
+				})
+			} else {
+				<div class="glass-panel p-0 overflow-x-auto">
+					<table class="data-table m-0 w-full text-xs">
+						<thead>
+							<tr>
+								<th>{ i18n.T(lang, "erp.keys.provider") }</th>
+								<th>{ i18n.T(lang, "erp.keys.name") }</th>
+								<th>{ i18n.T(lang, "erp.keys.prefix") }</th>
+								<th>{ i18n.T(lang, "erp.keys.status") }</th>
+								<th>{ i18n.T(lang, "erp.keys.last_used") }</th>
+								<th>{ i18n.T(lang, "erp.keys.revoke") }</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, row := range data.Rows {
+								<tr>
+									<td>
+										<div class="font-bold text-primary">{ row.OrganizationName }</div>
+										<div class="text-2xs text-muted" dir="ltr">{ row.Integration.Provider }</div>
+									</td>
+									<td class="font-bold">{ row.Key.Name }</td>
+									<td><code class="font-mono" dir="ltr">{ row.Key.KeyPrefix }</code></td>
+									<td>
+										@components.Badge(components.BadgeProps{
+											Label: erpKeyStatusText(lang, row.Key.Status),
+											Tone:  ternary(row.Key.Status == "revoked", "rose", "emerald"),
+										})
+									</td>
+									<td class="tabular-nums" dir="ltr">
+										if row.Key.LastUsedAt != nil {
+											{ row.Key.LastUsedAt.Format("2006-01-02") }
+										} else {
+											<span class="text-muted">—</span>
+										}
+									</td>
+									<td>
+										if row.Key.Status == "active" {
+											<form method="POST" class="d-flex items-center gap-1 m-0"
+												action={ templ.SafeURL(fmt.Sprintf("/admin/integrations/keys/%d/revoke", row.Key.ID)) }>
+												<input type="text" name="reason" maxlength="200"
+													class="form-control form-control-sm w-40" />
+												<button type="submit" class="btn btn-outline-danger btn-xs font-bold">
+													{ i18n.T(lang, "erp.keys.revoke") }
+												</button>
+											</form>
+										} else {
+											<span class="text-muted">—</span>
+										}
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			}
+		</div>
+	}
+}

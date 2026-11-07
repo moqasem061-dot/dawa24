@@ -300,7 +300,7 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Traps: 1, 24.
   - Done: `go build ./internal/modules/erp/postgres/` and `go test ./internal/modules/erp/postgres/ -count=1`.
 
-- [ ] T050 [US1] Add the S1 fake repository in `internal/modules/erp/fake_keys_test.go`
+- [x] T050 [US1] Add the S1 fake repository in `internal/modules/erp/fake_keys_test.go`
   - Do: `type fakeRepo struct` implementing `erp.Repository` in memory (maps for keys and integrations, a slice of `AuditRecord`, a hook to set org status). Used by the next tests.
   - Done: `gofmt -l internal/modules/erp/fake_keys_test.go` prints nothing.
 
@@ -393,51 +393,51 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Do: test that disabled mode mounts no `/erp/v1` route and leaves website, n8n and existing routes unchanged; call it in `mountModuleRoutes` right after `mountModuleRoutesAPI` (about line 74) and before `buildUIHandler`; after the UI handler exists call `uiHandler.SetERP(erpSvc)`. `SetERP` exists because the previous task added it.
   - Done: `go build ./... && go test ./cmd/server/ -run Router -count=1`.
 
-- [ ] T070 [US1] Write the key page tests in `internal/ui/erp_keys_test.go`
+- [x] T070 [US1] Write the key page tests in `internal/ui/erp_keys_test.go`
   - Do: names start with `TestErp`: create requires `actor.IsOwner` (non-owner gets the notice, no key row); the full key appears in the create response once and a reload shows only `key_prefix`; rotate and revoke require owner; the admin page lists every organization's keys and revoke works for staff; a pharmacy owner sees only its own keys under `/customer/integrations`; the form rejects unknown scopes; the limits form saves a value from 10 to 6000 for an owner, refuses 9 and 6001, and refuses a non-owner even when a posted `is_owner` or `actorIsOwner` field is set; the modals are rendered through `components.Modal`.
   - Done: `gofmt -l internal/ui/erp_keys_test.go` prints nothing; `go test ./internal/ui/ -run Erp -count=1` fails (RED).
 
-- [ ] T071 [US1] Add the key form parser in `internal/ui/erp_keys_forms.go`
+- [x] T071 [US1] Add the key form parser in `internal/ui/erp_keys_forms.go`
   - Do: `parseCreateKeyForm(r *http.Request, vendor bool) (erp.CreateKeyInput, []formError)`, `parseRotateForm`, `parseRevokeForm`, `parseLimitsForm`; the provider is chosen from `provider.Names()` and defaults to `provider.DefaultProvider` (never typed); scopes checked with `erp.ValidScope`; defaults from `erp.DefaultScopes(vendor)`; name length 1 to 80; rate between `MinRatePerMinute` and `MaxRatePerMinute`; messages from `erp.keys.*` keys.
   - Done: `go build ./internal/ui/`.
 
-- [ ] T072 [P] [US1] Add the key list page in `internal/ui/pages/erp_keys.templ`
+- [x] T072 [P] [US1] Add the key list page in `internal/ui/pages/erp_keys.templ`
   - Do: RTL-first page using `layouts.VendorShell` for suppliers and `layouts.ShellFor` for pharmacies (one templ func per shell, same body component). Table columns: name, prefix, scopes, last used, expires, status, change limit, rotate and revoke. Use `components` that already exist. Run templ generate (form from V3).
   - Traps: 22.
   - Done: `go build ./internal/ui/pages/` and the `_templ.go` file exists.
 
-- [ ] T073 [P] [US1] Add the key modals in `internal/ui/pages/erp_key_modals.templ`
+- [x] T073 [P] [US1] Add the key modals in `internal/ui/pages/erp_key_modals.templ`
   - Do: create form modal, show-once key modal, rotate modal, revoke modal, change-limit modal (one number input, 10 to 6000), all built with `components.Modal`. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/pages/` and `make check-modal-handwritten`.
 
-- [ ] T074 [P] [US1] Add the staff page in `internal/ui/pages/admin_erp_keys.templ`
+- [x] T074 [P] [US1] Add the staff page in `internal/ui/pages/admin_erp_keys.templ`
   - Do: `layouts.AdminShell` page listing every key with organization name, prefix, status, last used and a Revoke button. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/pages/`.
 
-- [ ] T075 [US1] Add the key handlers in `internal/ui/erp_keys_handlers.go`
+- [x] T075 [US1] Add the key handlers in `internal/ui/erp_keys_handlers.go`
   - Do: `ErpKeysPage`, `ErpKeyCreate`, `ErpKeyRotate`, `ErpKeyRevoke`, `ErpKeyLimits` (calls `UpdateKeyLimits`), `ErpIntegrationPause` for both vendor and customer audiences (an audience flag picks permission keys and shell). Owner check `actor.IsOwner`; pass this signed-in actor value as `actorIsOwner` to rotate and limits and as `ActorIsOwner` to create, never read ownership from submitted fields. The full key is returned only in the create and rotate responses.
   - Use: `h.erpSvc` methods from `keys_service.go`.
   - Traps: 24, 29.
   - Done: `go test ./internal/ui/ -run Erp -count=1` (vendor and pharmacy cases pass).
 
-- [ ] T076 [US1] Add the staff handlers in `internal/ui/erp_admin_handlers.go`
+- [x] T076 [US1] Add the staff handlers in `internal/ui/erp_admin_handlers.go`
   - Do: `ErpAdminKeysPage`, `ErpAdminKeyRevoke` calling `ListKeysAsStaff` and `RevokeKeyAsStaff`.
   - Traps: 1, 29.
   - Done: `go test ./internal/ui/ -run Erp -count=1`.
 
-- [ ] T077 [P] [US1] Register vendor routes in `internal/ui/vendor_routes_erp.go`
+- [x] T077 [P] [US1] Register vendor routes in `internal/ui/vendor_routes_erp.go`
   - Do: do not edit `internal/ui/vendor_routes.go` (384 lines) beyond one call line. Create `internal/ui/vendor_routes_erp.go` with `func (h *UIHandler) registerVendorERPRoutes(g chi.Router)` using the parameter name `g` (not `r`, so the `reProtectedPath` regex in `test/route_audience_test.go` ignores it) and declaring each group as `g.Group(func(gg chi.Router) { gg.Use(authctx.RequireTenantPagePermission(...)); gg.Get(...) })`. Routes: `GET /vendor/integrations`, `POST /vendor/integrations/keys`, `POST /vendor/integrations/keys/{id}/rotate`, `POST /vendor/integrations/keys/{id}/revoke`, `POST /vendor/integrations/keys/{id}/limits`, `POST /vendor/integrations/pause`, each with a gate naming `vendor.integration.view` or `vendor.integration.manage` (`limits` uses `vendor.integration.manage`). Call it as the last statement of `registerVendorRoutes` in `vendor_routes.go` (the registrar that `RegisterVendorRoutes` in `handlers.go` calls). Run `TestUIRoutesAreAudienceGated`.
   - Traps: 11, 29.
   - Done: `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1` and `make check-file-size`.
 
-- [ ] T078 [P] [US1] Register pharmacy routes in `internal/ui/customer_routes.go`
+- [x] T078 [P] [US1] Register pharmacy routes in `internal/ui/customer_routes.go`
   - Do: the same six routes (including `POST /customer/integrations/keys/{id}/limits`, gate `pharmacy.integration.manage`) under `/customer/integrations` with `pharmacy.integration.view`/`manage`.
   - Traps: 29.
   - Done: `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
 
-- [ ] T079 [P] [US1] Register admin routes in `internal/ui/admin_routes_platform.go`
+- [x] T079 [P] [US1] Register admin routes in `internal/ui/admin_routes_platform.go`
   - Do: `GET /admin/integrations` (`platform.integration.view`) and `POST /admin/integrations/keys/{id}/revoke` (`platform.integration.revoke`).
   - Traps: 29.
   - Done: `go test ./internal/ui/ -run Erp -count=1 && go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestModulesDoNotImportEachOther' -count=1` and `make check-modal-handwritten check-hardcoded-arabic`.

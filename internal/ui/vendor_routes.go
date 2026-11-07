@@ -28,6 +28,7 @@ func (h *UIHandler) registerVendorRoutes(r chi.Router) {
 	h.registerVendorCommerceRoutes(r)
 	h.registerVendorDeliveryRoutes(r)
 	h.registerVendorContentRoutes(r)
+	h.registerVendorERPRoutes(r)
 }
 
 // إدارة الشحنات: the delivery representative's portal and the dispatcher's

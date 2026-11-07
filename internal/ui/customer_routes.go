@@ -26,6 +26,24 @@ func (h *UIHandler) registerCustomerRoutes(r chi.Router) {
 	h.registerCustomerSavingRoutes(r)
 	h.registerCustomerCompanyRoutes(r)
 	h.registerCustomerTeamRoutes(r)
+	h.registerCustomerERPRoutes(r)
+}
+
+// registerCustomerERPRoutes mounts the pharmacy's integration screen and its
+// key mutations (the customer twin of registerVendorERPRoutes).
+func (h *UIHandler) registerCustomerERPRoutes(r chi.Router) {
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.view"))
+		g.Get("/customer/integrations", h.ErpKeysPage)
+	})
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.manage"))
+		g.Post("/customer/integrations/keys", h.ErpKeyCreate)
+		g.Post("/customer/integrations/keys/{id}/rotate", h.ErpKeyRotate)
+		g.Post("/customer/integrations/keys/{id}/revoke", h.ErpKeyRevoke)
+		g.Post("/customer/integrations/keys/{id}/limits", h.ErpKeyLimits)
+		g.Post("/customer/integrations/pause", h.ErpIntegrationPause)
+	})
 }
 
 func (h *UIHandler) registerCustomerDashboardRoutes(r chi.Router) {

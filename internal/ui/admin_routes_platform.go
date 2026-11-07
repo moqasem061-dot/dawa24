@@ -23,6 +23,21 @@ func (h *UIHandler) registerAdminPlatformRoutes(r chi.Router) {
 	h.registerAdminContentRoutes(r)
 	h.registerAdminToolRoutes(r)
 	h.registerAdminDiagnosticRoutes(r)
+	h.registerAdminERPRoutes(r)
+}
+
+// registerAdminERPRoutes mounts the staff listing of every organization's
+// integration keys and the staff revoke action, behind the platform
+// integration permissions added with the ERP slice.
+func (h *UIHandler) registerAdminERPRoutes(r chi.Router) {
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequirePagePermission("platform.integration.view"))
+		g.Get("/admin/integrations", h.ErpAdminKeysPage)
+	})
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequirePagePermission("platform.integration.revoke"))
+		g.Post("/admin/integrations/keys/{id}/revoke", h.ErpAdminKeyRevoke)
+	})
 }
 
 func (h *UIHandler) registerAdminSettingsRoutes(r chi.Router) {

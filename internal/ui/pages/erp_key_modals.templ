@@ -1,0 +1,229 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp/provider"
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// The integration-key dialogs. Every dialog here goes through
+// components.Modal (the modal ratchet refuses raw dialog markup in pages).
+// ErpKeyModals renders the owner's action dialogs for the keys screen: the
+// create form and, for every listed key, the rotate, revoke and change-limit
+// dialogs. The full key dialog is rendered separately by the create and
+// rotate handlers, because the secret exists only inside those responses.
+
+// ErpKeyModals renders the create dialog plus one rotate, revoke and
+// change-limit dialog per listed key.
+templ ErpKeyModals(data ErpKeysPageData, lang, dir string) {
+	@ErpCreateKeyModal(data, lang, dir)
+	for _, key := range data.Keys {
+		@ErpRotateKeyModal(key, data.Audience, lang)
+		@ErpRevokeKeyModal(key, data.Audience, lang)
+		@ErpKeyLimitsModal(key, data.Audience, lang)
+	}
+}
+
+// ErpCreateKeyModal is the new-key form. Defaults follow DefaultScopes for the
+// audience and the default rate limit; ownership is decided by the handler
+// from the signed-in actor, never from a posted field.
+templ ErpCreateKeyModal(data ErpKeysPageData, lang, dir string) {
+	@components.Modal(components.ModalProps{
+		ID:    "erp-create-key-modal",
+		Title: i18n.T(lang, "erp.keys.new_key"),
+		Size:  "lg",
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/%s/integrations/keys", data.Audience)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="erp-key-name">
+					{ i18n.T(lang, "erp.keys.name") }
+				</label>
+				<input type="text" id="erp-key-name" name="name" required maxlength="80" class="form-control font-bold" />
+			</div>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for="erp-key-provider">
+					{ i18n.T(lang, "erp.keys.provider") }
+				</label>
+				<select id="erp-key-provider" name="provider" class="form-control font-bold">
+					for _, name := range provider.Names() {
+						if name == provider.DefaultProvider {
+							<option value={ name } selected>{ name }</option>
+						} else {
+							<option value={ name }>{ name }</option>
+						}
+					}
+				</select>
+			</div>
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold" for="erp-key-warehouse">
+						{ i18n.T(lang, "erp.keys.warehouse") }
+					</label>
+					<input type="number" id="erp-key-warehouse" name="warehouse_id" min="1" required class="form-control" dir="ltr" />
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold" for="erp-key-branch">
+						{ i18n.T(lang, "erp.keys.branch") }
+					</label>
+					<input type="number" id="erp-key-branch" name="branch_id" min="1" required class="form-control" dir="ltr" />
+				</div>
+			</div>
+			<div class="d-grid grid-auto-fit-sm gap-3">
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold" for="erp-key-buying-user">
+						{ i18n.T(lang, "erp.keys.buying_user") }
+					</label>
+					<input type="number" id="erp-key-buying-user" name="buying_user_id" min="1" class="form-control" dir="ltr" />
+				</div>
+				<div class="form-group mb-0">
+					<label class="form-label text-xs font-bold" for="erp-key-rate">
+						{ i18n.T(lang, "erp.keys.rate_limit") }
+					</label>
+					<input type="number" id="erp-key-rate" name="rate_limit" min="10" max="6000" value="600"
+						class="form-control" dir="ltr" />
+				</div>
+			</div>
+			<fieldset class="form-group m-0 border-0 p-0">
+				<legend class="form-label text-xs font-bold m-0 mb-1">
+					{ i18n.T(lang, "erp.keys.scopes") }
+				</legend>
+				<div class="d-flex flex-col gap-1">
+					for _, scope := range erp.AllScopes() {
+						<label class="d-flex items-center gap-2 text-sm m-0">
+							<input type="checkbox" name="scopes" value={ scope }
+								if erpDefaultScope(data.Audience == "vendor", scope) {
+									checked
+								}
+							/>
+							<span>{ erpScopeLabelText(lang, scope) }</span>
+						</label>
+					}
+				</div>
+			</fieldset>
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button type="button" class="btn btn-secondary btn-sm" data-modal-close="erp-create-key-modal">
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm fw-800">
+					{ i18n.T(lang, "erp.keys.new_key") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+// ErpKeyShownOnceModal shows the generated secret once, after create or
+// rotate. It renders already open and is the only place a full key appears.
+templ ErpKeyShownOnceModal(fullKey, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:    "erp-key-shown-once",
+		Title: i18n.T(lang, "erp.keys.new_key"),
+		Open:  true,
+	}) {
+		<div class="d-flex flex-col gap-3">
+			<p class="text-sm text-danger font-bold m-0">
+				{ i18n.T(lang, "erp.keys.shown_once") }
+			</p>
+			<code class="p-3 rounded-lg border font-mono text-sm d-block break-all" dir="ltr">{ fullKey }</code>
+			<button type="button" class="btn btn-primary btn-sm font-bold" data-copy-text={ fullKey }>
+				{ i18n.T(lang, "erp.keys.copy") }
+			</button>
+		</div>
+	}
+}
+
+// ErpRotateKeyModal asks for the old key's remaining grace in hours.
+templ ErpRotateKeyModal(key erp.APIKey, audience, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:      fmt.Sprintf("erp-rotate-%d", key.ID),
+		Title:   i18n.T(lang, "erp.keys.rotate"),
+		Subtitle: key.Name,
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/%s/integrations/keys/%d/rotate", audience, key.ID)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("erp-rotate-grace-%d", key.ID) }>
+					{ i18n.T(lang, "erp.keys.grace_hours") }
+				</label>
+				<input type="number" id={ fmt.Sprintf("erp-rotate-grace-%d", key.ID) } name="grace_hours"
+					min="0" max="72" value="24" class="form-control" dir="ltr" />
+			</div>
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button type="button" class="btn btn-secondary btn-sm" data-modal-close={ fmt.Sprintf("erp-rotate-%d", key.ID) }>
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm fw-800">
+					{ i18n.T(lang, "erp.keys.rotate") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+// ErpRevokeKeyModal asks for the optional revocation reason.
+templ ErpRevokeKeyModal(key erp.APIKey, audience, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:      fmt.Sprintf("erp-revoke-%d", key.ID),
+		Title:   i18n.T(lang, "erp.keys.revoke"),
+		Subtitle: key.Name,
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/%s/integrations/keys/%d/revoke", audience, key.ID)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("erp-revoke-reason-%d", key.ID) }>
+					{ i18n.T(lang, "erp.keys.revoke_reason") }
+				</label>
+				<input type="text" id={ fmt.Sprintf("erp-revoke-reason-%d", key.ID) } name="reason"
+					class="form-control" />
+			</div>
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button type="button" class="btn btn-secondary btn-sm" data-modal-close={ fmt.Sprintf("erp-revoke-%d", key.ID) }>
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-outline-danger btn-sm fw-800">
+					{ i18n.T(lang, "erp.keys.revoke") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+// ErpKeyLimitsModal changes the per-minute request limit: one number input
+// between 10 and 6000.
+templ ErpKeyLimitsModal(key erp.APIKey, audience, lang string) {
+	@components.Modal(components.ModalProps{
+		ID:      fmt.Sprintf("erp-limits-%d", key.ID),
+		Title:   i18n.T(lang, "erp.keys.change_limit"),
+		Subtitle: key.Name,
+	}) {
+		<form method="POST" class="d-flex flex-col gap-3 m-0" action={ templ.SafeURL(fmt.Sprintf("/%s/integrations/keys/%d/limits", audience, key.ID)) }>
+			<div class="form-group m-0">
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("erp-limits-rate-%d", key.ID) }>
+					{ i18n.T(lang, "erp.keys.rate_limit") }
+				</label>
+				<input type="number" id={ fmt.Sprintf("erp-limits-rate-%d", key.ID) } name="rate_limit"
+					min="10" max="6000" value={ fmt.Sprintf("%d", key.RateLimitPerMinute) }
+					required class="form-control" dir="ltr" />
+			</div>
+			<div class="d-flex justify-end gap-2 mt-2">
+				<button type="button" class="btn btn-secondary btn-sm" data-modal-close={ fmt.Sprintf("erp-limits-%d", key.ID) }>
+					{ i18n.T(lang, "common.cancel") }
+				</button>
+				<button type="submit" class="btn btn-primary btn-sm fw-800">
+					{ i18n.T(lang, "erp.keys.change_limit") }
+				</button>
+			</div>
+		</form>
+	}
+}
+
+// erpDefaultScope reports whether a scope box starts checked.
+func erpDefaultScope(vendor bool, scope string) bool {
+	for _, s := range erp.DefaultScopes(vendor) {
+		if s == scope {
+			return true
+		}
+	}
+	return false
+}
