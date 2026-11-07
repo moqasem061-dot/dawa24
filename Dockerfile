@@ -28,7 +28,7 @@
 #    migrations are compiled into the binaries via //go:embed
 #    (internal/ui/static, db/migrations), so there is nothing else to ship.
 
-FROM golang:1.26-bookworm AS builder
+FROM golang:1.26.10-bookworm AS builder
 
 WORKDIR /app
 
