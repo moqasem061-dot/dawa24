@@ -165,7 +165,7 @@ func TestBillingRepository(t *testing.T) {
 	t.Run("Payments_and_Methods", func(t *testing.T) {
 		pm := &billing.UserPaymentMethod{
 			UserID:            testBillingUserID,
-			Provider:          "fawry",
+			Provider:          "wallet",
 			AccountIdentifier: "01000000000",
 			IsDefault:         true,
 		}
@@ -277,7 +277,7 @@ func TestBillingRepository(t *testing.T) {
 	t.Run("Payment_Methods_CRUD", func(t *testing.T) {
 		pm := &billing.UserPaymentMethod{
 			UserID:            testBillingUserID,
-			Provider:          "paymob",
+			Provider:          "card",
 			AccountIdentifier: "**** 1234",
 			IsDefault:         true,
 		}

@@ -286,6 +286,10 @@ func TestAdminProductsImportStagesWithoutWriting(t *testing.T) {
 		t.Fatalf("catalogue holds %d products after upload, want 0 — nothing may be written before confirmation", n)
 	}
 
+	// Preparing runs the analysis in the background; the review screen exists
+	// only after that step, so the test takes it before reading the screen.
+	prepareImportSession(t, h, sessionID, defaultSettings())
+
 	rec := doGET(t, h, "/admin/products/import/"+sessionID, superAdmin())
 	if rec.Code != http.StatusOK {
 		t.Fatalf("review status = %d, want 200", rec.Code)

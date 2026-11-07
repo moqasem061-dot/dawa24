@@ -28,6 +28,13 @@ func TestTenantIsolation_SmartOrderMatchDecision(t *testing.T) {
 		_, _ = tx.Exec(txCtx, `INSERT INTO org.organizations (id, name) VALUES ($1, '{"en":"Org A"}') ON CONFLICT DO NOTHING;`, orgA)
 		_, _ = tx.Exec(txCtx, `INSERT INTO org.organizations (id, name) VALUES ($1, '{"en":"Org B"}') ON CONFLICT DO NOTHING;`, orgB)
 
+		_, _ = tx.Exec(txCtx, `INSERT INTO identity.users (id, email, password_hash, name) VALUES (1, 'smartorder-iso-1@example.com', 'x', '{"ar":"","en":""}') ON CONFLICT DO NOTHING;`)
+		_, _ = tx.Exec(txCtx, `INSERT INTO org.branches (id, organization_id, name, is_main) VALUES (1, $1, '{"en":"Isolation branch"}', false) ON CONFLICT DO NOTHING;`, orgA)
+		// Runs from an earlier execution keep their run numbers, which are unique.
+		// Clear them first so the fixed numbers below can be inserted again.
+		if _, err := tx.Exec(txCtx, `DELETE FROM smartorder.runs WHERE run_number IN ('SO-TEST-ISO-A', 'SO-TEST-ISO-B')`); err != nil {
+			return err
+		}
 		// Create runs for Org A and Org B
 		errA := tx.QueryRow(txCtx, `
 			INSERT INTO smartorder.runs (

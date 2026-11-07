@@ -38,11 +38,11 @@ func TestAdminProductsImportShowsColumnsBeforeProcessing(t *testing.T) {
 	// The three things the screen exists to answer: how the file was read,
 	// which column feeds which field, and what the products come out as.
 	for _, want := range []string{
-		"ربط الأعمدة بالحقول", // the mapping table
-		"معاينة أول",          // the preview table
-		"اسم الصنف",           // a field label with a chooser
-		"بانادول اكسترا",      // a product read out of the file
-		"بدء المعالجة",        // the button that starts a run
+		"ربط وتعيين أعمدة الملف", // the mapping table
+		"معاينة أول",             // the preview table
+		"اسم الصنف",              // a field label with a chooser
+		"بانادول اكسترا",         // a product read out of the file
+		"بدء المعالجة",           // the button that starts a run
 	} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the mapping screen does not show %q", want)

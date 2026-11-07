@@ -78,6 +78,15 @@ jobs:
       - name: Run Tests (race detector + coverage)
         run: go test -race -covermode=atomic -coverprofile=coverage.out -count=1 ./...
 
+      # S11: the TenantIsolation tests skip when connected as a superuser, which
+      # bypasses row-level security, so the run above proves nothing for them. This
+      # step runs them again as the non-superuser application role dawa24_app, which
+      # migration 222 creates (password set there; this database is throwaway).
+      - name: Run tenant-isolation tests as the application role
+        env:
+          DATABASE_URL: postgres://dawa24_app:dawa24_app_change_me@localhost:5432/dawa24_store?sslmode=disable
+        run: go test -count=1 -run TestTenantIsolation ./test/integration/
+
       - name: Enforce Coverage Floor
         run: |
           total=$(go tool cover -func=coverage.out | tail -1 | awk '{print $3}' | tr -d '%')

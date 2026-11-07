@@ -341,9 +341,9 @@ check-alpine-csp: ## Fail if an Alpine expression is outside what the @alpinejs/
 	@node scripts/alpine-csp/check.cjs
 
 .PHONY: check-deadcode
-check-deadcode: ## Fail if unreachable exported code grows past the ceiling
+check-deadcode: ## Fail if unreachable exported code grows past the ceiling (test/deadcode_ratchet_test.go)
 	@echo "==> checking for unreachable code"
-	@if ! go run golang.org/x/tools/cmd/deadcode@v0.50.0 -test ./... > /tmp/dawa_deadcode.txt 2>/dev/null; then 	  echo "  skipped: deadcode unavailable (needs network on first run)"; exit 0; 	fi; 	n=$$(wc -l < /tmp/dawa_deadcode.txt | tr -d ' '); 	if [ "$$n" -gt 211 ]; then 	  echo "FAIL: $$n unreachable funcs (ceiling 211). See /tmp/dawa_deadcode.txt."; 	  echo "Read each finding before deleting: a symbol may be reached from a .templ"; 	  echo "file, which deadcode does not parse."; 	  exit 1; 	fi; 	echo "  ok: $$n unreachable funcs (ceiling 211)"
+	@go test -count=1 -run '^TestDeadcodeRatchet$$' ./test/
 
 .PHONY: check-undefined-classes
 check-undefined-classes: ## Fail if templates reference class names no stylesheet defines

@@ -206,6 +206,7 @@ func TestPromoRepository(t *testing.T) {
 	t.Run("Create and List Highlight Sections", func(t *testing.T) {
 		h := &promo.HighlightSection{
 			Title:        i18n.Text{"en": "Trending Medicine"},
+			Description:  i18n.Text{"en": "Curated highlights for the home page"},
 			Slug:         "test-curated",
 			DisplayOrder: 1,
 			IsActive:     true,
@@ -228,6 +229,15 @@ func TestPromoRepository(t *testing.T) {
 	})
 
 	t.Run("ListActiveOffers", func(t *testing.T) {
+		// Listing shows only platform-approved, non-draft offers from approved
+		// suppliers. The offer created above is approved here, as the platform
+		// review would do.
+		if err := db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+			_, err := tx.Exec(txCtx, `UPDATE promo.offers SET admin_status = 'approved', is_draft = false WHERE id = $1`, offerID)
+			return err
+		}); err != nil {
+			t.Fatalf("approve offer fixture: %v", err)
+		}
 		activeOffers, err := repo.ListActiveOffers(ctx, 10, 0)
 		if err != nil {
 			t.Fatalf("ListActiveOffers failed: %v", err)
@@ -244,8 +254,8 @@ func TestPromoRepository(t *testing.T) {
 			_, _ = tx.Exec(txCtx, `DELETE FROM promo.ads WHERE title = 'Banner Ad Test'`)
 			var adID int64
 			err := tx.QueryRow(txCtx, `
-				INSERT INTO promo.ads (organization_id, title, image_url, target_url, position, is_active, starts_at, expires_at)
-				VALUES ($1, 'Banner Ad Test', 'https://cdn.example.com/ad.jpg', 'https://dawa24.test/sale', 'top_banner', true, now() - interval '1 hour', now() + interval '1 day')
+				INSERT INTO promo.ads (organization_id, title, image_url, media_url, target_url, position, is_active, admin_status, starts_at, expires_at)
+				VALUES ($1, 'Banner Ad Test', 'https://cdn.example.com/ad.jpg', 'https://cdn.example.com/ad.jpg', 'https://dawa24.test/sale', 'top_banner', true, 'approved', now() - interval '1 hour', now() + interval '1 day')
 				RETURNING id;
 			`, testOrgID).Scan(&adID)
 			if err != nil {

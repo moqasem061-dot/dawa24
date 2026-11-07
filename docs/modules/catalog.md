@@ -362,3 +362,10 @@ client-computed percentages are never authoritative. Invalid price pairs and
 unknown input types are refused. Both the percentage and the money preview use
 exact decimal arithmetic; browser calculations use integer minor units.
 Discounts retain the existing two-decimal percentage precision.
+
+## Saving products tenant policy (audit batch 7, migration 254)
+
+`catalog.saving_products` policies now use `platform.tenant_visible(organization_id)`
+like every other tenant table. The former policy read `app.current_tenant`, which
+the application never sets, so owners saw none of their own rows. Code paths that
+use `database.AsSystem` now see every row, as the design intends.

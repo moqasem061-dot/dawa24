@@ -18,6 +18,8 @@ func TestVendorPaymentsLifecycle_E2E(t *testing.T) {
 		t.Skip("database not available")
 	}
 
+	seedVendorPaymentsFixture(t, db)
+
 	handler := newRealUIHandler(t, db)
 
 	vendorActor := authctx.Actor{
@@ -90,4 +92,25 @@ func TestVendorPaymentsLifecycle_E2E(t *testing.T) {
 		`DELETE FROM billing.payments WHERE reference_number = 'TRX-E2E-PARTIAL-50'`)
 	_, _ = db.Pool().Exec(database.AsSystem(context.Background()),
 		`UPDATE billing.invoices SET status = 'issued', updated_at = now() WHERE id = 21`)
+}
+
+// seedVendorPaymentsFixture creates the organization, user and open invoice the
+// test names. They used to be legacy rows (org 51, user 14, invoice 21 numbered
+// INV-2026-00028), which a fresh database does not have. The test resets the
+// invoice to issued when it finishes, so the fixture is safe to upsert.
+func seedVendorPaymentsFixture(t *testing.T, db *database.DB) {
+	t.Helper()
+	ctx := database.AsSystem(context.Background())
+	stmts := []string{
+		`INSERT INTO org.organizations (id, name, type, status) VALUES (51, '{"ar":"مورد الدفعات","en":"Payments Vendor"}'::jsonb, 'supplier', 'approved') ON CONFLICT (id) DO NOTHING`,
+		`INSERT INTO identity.users (id, email, password_hash, name) VALUES (14, 'vendor-payments-14@example.com', 'x', '{"ar":"","en":""}') ON CONFLICT DO NOTHING`,
+		`INSERT INTO billing.invoices (id, organization_id, invoice_number, due_date, total_amount, status)
+		 VALUES (21, 51, 'INV-2026-00028', CURRENT_DATE + 30, 500.00, 'issued')
+		 ON CONFLICT (id) DO UPDATE SET status = 'issued', updated_at = now()`,
+	}
+	for _, s := range stmts {
+		if _, err := db.Pool().Exec(ctx, s); err != nil {
+			t.Fatalf("seed vendor payments fixture: %v", err)
+		}
+	}
 }

@@ -109,8 +109,10 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 	pharmActor := authctx.Actor{
 		UserID:         customerUserID,
 		OrganizationID: customerOrgID,
-		Role:           "customer",
-		Permissions:    []string{"pharmacy.review.write"},
+		// Review writes are gated on the buyer side: the route needs IsBuyer().
+		OrgType:     "pharmacy",
+		Role:        "customer",
+		Permissions: []string{"pharmacy.review.write"},
 	}
 
 	// 4. Pharmacy submits 3-criteria rating review
@@ -218,8 +220,17 @@ func TestVendorReviewAndReplyLifecycle_E2E(t *testing.T) {
 		t.Fatalf("vendor reply not updated correctly in DB: %v, val: %s", err, dbResponse)
 	}
 
-	// 8. View public supplier profile (/suppliers/{id}?tab=reviews)
+	// 8. The supplier profile is private: an anonymous visitor is sent to log in.
+	anonReq := httptest.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("/suppliers/%d?tab=reviews", vendorOrgID), nil)
+	anonRec := httptest.NewRecorder()
+	handler.ServeHTTP(anonRec, anonReq)
+	if anonRec.Code != http.StatusSeeOther || !strings.Contains(anonRec.Header().Get("Location"), "/auth/login") {
+		t.Fatalf("anonymous profile GET: got %d to %q, want 303 to login", anonRec.Code, anonRec.Header().Get("Location"))
+	}
+
+	// A logged-in buyer sees the profile and its reviews.
 	pubReq := httptest.NewRequestWithContext(context.Background(), http.MethodGet, fmt.Sprintf("/suppliers/%d?tab=reviews", vendorOrgID), nil)
+	pubReq = pubReq.WithContext(authctx.WithActor(pubReq.Context(), pharmActor))
 	pubRec := httptest.NewRecorder()
 
 	handler.ServeHTTP(pubRec, pubReq)

@@ -66,7 +66,7 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 		t.Fatalf("GET /customer/wallet returned %d, expected 200", cRec.Code)
 	}
 	cBody := cRec.Body.String()
-	if !strings.Contains(cBody, "المحفظة والرصيد") {
+	if !strings.Contains(cBody, "المحفظة الرقمية والمعاملات المالية") {
 		t.Errorf("expected wallet page title in customer body")
 	}
 	if !strings.Contains(cBody, "الرصيد المتاح") {
@@ -123,18 +123,18 @@ func TestTenantWallet_PharmacyAndVendor_E2E(t *testing.T) {
 		t.Fatalf("GET /vendor/wallet returned %d, expected 200", vRec.Code)
 	}
 	vBody := vRec.Body.String()
-	if !strings.Contains(vBody, "المحفظة والرصيد") {
+	if !strings.Contains(vBody, "المحفظة الرقمية والمعاملات المالية") {
 		t.Errorf("expected wallet page title in vendor body")
 	}
 
-	// 5. Test Generic /wallet 301 redirection
+	// 5. Test Generic /wallet redirection (303, as the handler sends)
 	genReq := httptest.NewRequestWithContext(context.Background(), "GET", "/wallet", nil)
 	genReq = genReq.WithContext(authctx.WithActor(genReq.Context(), vendorActor))
 	genRec := httptest.NewRecorder()
 	handler.ServeHTTP(genRec, genReq)
 
-	if genRec.Code != http.StatusMovedPermanently {
-		t.Fatalf("GET /wallet returned %d, expected 301", genRec.Code)
+	if genRec.Code != http.StatusSeeOther {
+		t.Fatalf("GET /wallet returned %d, expected 303", genRec.Code)
 	}
 	if loc := genRec.Header().Get("Location"); loc != "/vendor/wallet" {
 		t.Errorf("expected /wallet redirect to /vendor/wallet for vendor, got: %s", loc)

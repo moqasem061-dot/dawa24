@@ -310,7 +310,7 @@ func TestIdentityRepository(t *testing.T) {
 			t.Fatalf("AdminResetMFA failed: %v", err)
 		}
 
-		if err := repo.AdminAssignRole(ctx, userID, "vendor", 1); err != nil {
+		if err := repo.AdminAssignRole(ctx, userID, "staff", 1); err != nil {
 			t.Fatalf("AdminAssignRole failed: %v", err)
 		}
 	})

@@ -43,10 +43,10 @@ func TestCoverageChain_VisibilityRule(t *testing.T) {
 	err := db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		err := tx.QueryRow(txCtx, `
 			INSERT INTO org.organizations (
-				legal_name, trade_name, tax_number, commercial_register,
+				name, legal_name, trade_name, tax_number, commercial_register,
 				type, status, created_at, updated_at
 			) VALUES (
-				'Coverage Test Vendor Co', '{"ar":"مورد اختبار التغطية","en":"Coverage Test Vendor"}',
+				'{"ar":"مورد اختبار التغطية","en":"Coverage Test Vendor"}', 'Coverage Test Vendor Co', '{"ar":"مورد اختبار التغطية","en":"Coverage Test Vendor"}',
 				'TX-99887766', 'CR-99887766', 'vendor', 'approved', now(), now()
 			) RETURNING id;
 		`).Scan(&orgID)
@@ -165,8 +165,10 @@ func TestCoverageChain_VisibilityRule(t *testing.T) {
 		t.Errorf("offer %d should NOT be visible to Alexandria pharmacy", offerID)
 	}
 
-	// 6. Vendor toggles coverage to inactive: Cairo no longer sees it.
-	if err := wfRepo.ToggleWeeklyCoverage(ctx, covID, false); err != nil {
+	// 6. Vendor toggles coverage to inactive: Cairo no longer sees it. The write is
+	// tenant-owned, so it runs as the vendor; without a tenant row-level security
+	// hides the coverage and the toggle reports not_found.
+	if err := wfRepo.ToggleWeeklyCoverage(database.WithTenant(ctx, orgID), covID, false); err != nil {
 		t.Fatalf("ToggleWeeklyCoverage failed: %v", err)
 	}
 	if listed(visibleTo(30.0500, 31.2400)) {

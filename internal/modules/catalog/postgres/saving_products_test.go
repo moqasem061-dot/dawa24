@@ -17,8 +17,14 @@ func TestSavingProductsIntegration(t *testing.T) {
 	repo := catalogPostgres.NewRepository(db)
 	ctx := context.Background()
 
+	// Create the organization and user this test writes for. The suite used to
+	// assume legacy rows 51 and 41, which a fresh database does not have.
 	orgID := int64(51)
 	userID := int64(41)
+	_, err := db.Pool().Exec(ctx, `INSERT INTO org.organizations (id, name) VALUES ($1, '{"ar":"مؤسسة","en":"Org"}') ON CONFLICT DO NOTHING`, orgID)
+	require.NoError(t, err)
+	_, err = db.Pool().Exec(ctx, `INSERT INTO identity.users (id, email, password_hash, name) VALUES ($1, 'saving-test-41@example.com', 'x', '{"ar":"","en":""}') ON CONFLICT DO NOTHING`, userID)
+	require.NoError(t, err)
 
 	// 1. Batch Upsert
 	items := []*catalog.SavingProduct{

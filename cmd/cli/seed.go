@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log/slog"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -10,6 +11,13 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
+
+// bilingualJSON builds the {"ar":...,"en":...} text the JSONB name columns use.
+// Building it with json.Marshal keeps quotes and Arabic text valid JSON.
+func bilingualJSON(ar, en string) string {
+	b, _ := json.Marshal(map[string]string{"ar": ar, "en": en}) // a string map cannot fail to marshal
+	return string(b)
+}
 
 // runSeed inserts baseline reference data: countries, Egyptian governorates/cities,
 // currencies, languages, roles, and system settings.
@@ -33,9 +41,11 @@ func runSeed(ctx context.Context, db *database.DB, log *slog.Logger) error {
 		}
 
 		for _, r := range roles {
+			// $1 is cast in both places: jsonb_build_object takes "any", so
+			// Postgres cannot infer an untyped parameter from it (SQLSTATE 42P08).
 			_, err := tx.Exec(txCtx, `
 				INSERT INTO identity.roles (key, name, scope, is_system, description)
-				VALUES ($1, jsonb_build_object('ar', $1, 'en', $1), $2, $3, $4)
+				VALUES ($1, jsonb_build_object('ar', $1::text, 'en', $1::text), $2, $3, $4)
 				ON CONFLICT (key) DO NOTHING;
 			`, r.key, r.scope, r.isSystem, r.description)
 			if err != nil {
@@ -48,17 +58,17 @@ func runSeed(ctx context.Context, db *database.DB, log *slog.Logger) error {
 			code   string
 			name   string
 			symbol string
-			rate   float64
+			rate   string
 			isDef  bool
 		}{
-			{"EGP", `{"ar":i18n.TDefault("w4_mod.s_302_302"),"en":"Egyptian Pound"}`, i18n.TDefault("w4_ui.s_50_50"), 1.0, true},
-			{"USD", `{"ar":i18n.TDefault("w4_mod.s_457_457"),"en":"US Dollar"}`, "$", 48.5, false},
-			{"SAR", `{"ar":i18n.TDefault("w4_mod.s_458_458"),"en":"Saudi Riyal"}`, i18n.TDefault("w4_mod.s_303_303"), 12.9, false},
+			{"EGP", bilingualJSON(i18n.TDefault("w4_mod.s_302_302"), "Egyptian Pound"), i18n.TDefault("w4_ui.s_50_50"), "1.0000", true},
+			{"USD", bilingualJSON(i18n.TDefault("w4_mod.s_457_457"), "US Dollar"), "$", "48.5000", false},
+			{"SAR", bilingualJSON(i18n.TDefault("w4_mod.s_458_458"), "Saudi Riyal"), i18n.TDefault("w4_mod.s_303_303"), "12.9000", false},
 		}
 		for _, c := range currencies {
 			_, err := tx.Exec(txCtx, `
 				INSERT INTO platform_admin.currencies (code, name, symbol, exchange_rate_egp, is_active, is_default)
-				VALUES ($1, $2::jsonb, $3, $4, true, $5)
+				VALUES ($1, $2::jsonb, $3, $4::numeric, true, $5)
 				ON CONFLICT (code) DO NOTHING;
 			`, c.code, c.name, c.symbol, c.rate, c.isDef)
 			if err != nil {
@@ -91,10 +101,10 @@ func runSeed(ctx context.Context, db *database.DB, log *slog.Logger) error {
 		var countryID int64
 		err := tx.QueryRow(txCtx, `
 			INSERT INTO platform_admin.countries (code, name, phone_code, currency, is_active)
-			VALUES ('EG', '{"ar":i18n.TDefault("w4_ui.s_176_176"),"en":"Egypt"}'::jsonb, '+20', 'EGP', true)
+			VALUES ('EG', $1::jsonb, '+20', 'EGP', true)
 			ON CONFLICT (code) DO UPDATE SET is_active = true
 			RETURNING id;
-		`).Scan(&countryID)
+		`, bilingualJSON(i18n.TDefault("w4_ui.s_176_176"), "Egypt")).Scan(&countryID)
 		if err != nil {
 			return err
 		}
@@ -132,7 +142,7 @@ func runSeed(ctx context.Context, db *database.DB, log *slog.Logger) error {
 			value string
 			desc  string
 		}{
-			{"platform_name", `{"ar":i18n.TDefault("w4_cmd.24_262"),"en":"Dawa 24"}`, "Platform public title"},
+			{"platform_name", bilingualJSON(i18n.TDefault("w4_cmd.24_262"), "Dawa 24"), "Platform public title"},
 			{"contact_email", `{"value":"support@dawa24.com"}`, "Support email address"},
 			{"contact_phone", `{"value":"19000"}`, "Support hotline number"},
 			{"maintenance_mode", `{"enabled":false}`, "Platform maintenance state"},

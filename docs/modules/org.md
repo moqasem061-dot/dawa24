@@ -63,3 +63,10 @@ The admin organization table reserves a readable name column and a fixed avatar.
 Wide content scrolls inside the table wrapper on phones instead of compressing
 Arabic names into one letter per line. Browser fixtures cover 390, 768 and 1440
 pixel widths in both themes.
+
+## Employee institutional works tenant policy (audit batch 7, migration 254)
+
+`org.employee_institutional_works` uses `platform.tenant_visible(organization_id)`
+(migration 254). It previously read `app.current_tenant`, so tenant reads and
+writes returned or affected no rows. Writes are limited to the caller's own
+organization by the same policy.

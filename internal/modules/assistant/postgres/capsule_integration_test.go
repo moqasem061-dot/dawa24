@@ -239,7 +239,9 @@ func TestDatasetsNeverCrossTenants(t *testing.T) {
 		}
 		ref := payload.Data.Rows[0][0].(string)
 		rec := dispatch(buyer, "get_record", map[string]any{"ref": ref})
-		if rec.Decision != "allowed" || !strings.Contains(rec.Content, markA+" line") || strings.Contains(rec.Content, markB) {
+		// The line field is COALESCE(catalog product name, order-line name), so the
+		// catalog product name wins when the product exists. Assert that name.
+		if rec.Decision != "allowed" || !strings.Contains(rec.Content, markA+" product") || strings.Contains(rec.Content, markB) {
 			t.Fatalf("record: %s %s", rec.Decision, rec.Content)
 		}
 		intruder := ownerActor(rbac.ScopePharmacy, a.buyer+1_000_000, a.buyerUser)

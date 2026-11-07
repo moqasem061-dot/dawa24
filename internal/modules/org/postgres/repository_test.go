@@ -210,11 +210,15 @@ func TestOrgRepository(t *testing.T) {
 	})
 
 	t.Run("Members", func(t *testing.T) {
+		// The service fills EMP-<userID> before calling the repository; the
+		// column is NOT NULL, so the repository test supplies it the same way.
 		m := &org.Member{
 			OrganizationID: orgID,
 			UserID:         testUserID,
 			RoleID:         1,
 			IsActive:       true,
+			EmployeeCode:   fmt.Sprintf("EMP-%d", testUserID),
+			JobTitle:       "Pharmacist",
 		}
 		if err := repo.AddMember(ctx, m); err != nil {
 			t.Fatalf("failed to add member: %v", err)

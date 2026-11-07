@@ -118,12 +118,18 @@ func TestPhaseA_RealDatabase_BranchDeleteAndToggle(t *testing.T) {
 
 	vendorOrgID := seedOrg(t, db, "vendor")
 	branchID := seedBranch(t, db, vendorOrgID)
+	// seedBranch makes a main branch, and a main branch cannot be deleted. This
+	// test is about deleting a non-main branch, so demote the seeded one.
+	if _, err := db.Pool().Exec(context.Background(), `UPDATE org.branches SET is_main = false WHERE id = $1`, branchID); err != nil {
+		t.Fatalf("demote seeded branch: %v", err)
+	}
 
 	vendorActor := authctx.Actor{
 		UserID:         1000 + vendorOrgID,
 		OrganizationID: vendorOrgID,
 		OrgType:        "vendor",
 		Role:           "owner",
+		Permissions:    []string{"vendor.branch.delete"},
 	}
 
 	// 1. Delete branch
