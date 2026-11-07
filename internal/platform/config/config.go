@@ -28,6 +28,11 @@ const (
 
 func (e Env) IsProd() bool { return e == EnvProd }
 
+// IsDev reports a development environment. Only development may run with a
+// derived default for secrets such as the ERP pepper; staging must be
+// configured exactly like production.
+func (e Env) IsDev() bool { return e == EnvDev }
+
 type Config struct {
 	Env       Env
 	AppName   string

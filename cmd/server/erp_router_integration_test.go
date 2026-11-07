@@ -8,7 +8,6 @@ import (
 	"net/http/httptest"
 	"os"
 	"strconv"
-	"strings"
 	"testing"
 	"time"
 
@@ -111,13 +110,19 @@ func TestRouterERPRealWiring(t *testing.T) {
 	if w := request(router, full, ip); w.Code != 401 {
 		t.Fatalf("revoked health status=%d", w.Code)
 	}
-	parts := strings.Split(full, "_")
-	if parts[3][0] == 'A' {
-		parts[3] = "B" + parts[3][1:]
-	} else {
-		parts[3] = "A" + parts[3][1:]
+	// The secret may contain '_', so derive it from the parser like
+	// handler_test.go does instead of splitting on underscores.
+	_, secret, ok := erp.ParseKey(full)
+	if !ok {
+		t.Fatal("generated key does not parse")
 	}
-	wrong := strings.Join(parts, "_")
+	mutated := []byte(secret)
+	if mutated[0] == 'A' {
+		mutated[0] = 'B'
+	} else {
+		mutated[0] = 'A'
+	}
+	wrong := full[:len(full)-len(secret)] + string(mutated)
 	for i := 1; i < erp.AuthFailuresPerIPPerMinute; i++ {
 		if w := request(router, wrong, ip); w.Code != 401 {
 			t.Fatalf("wrong attempt %d status=%d", i, w.Code)

@@ -442,7 +442,7 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Traps: 29.
   - Done: `go test ./internal/ui/ -run Erp -count=1 && go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestModulesDoNotImportEachOther' -count=1` and `make check-modal-handwritten check-hardcoded-arabic`.
 
-- [ ] T080 [US1] S1 slice gate
+- [x] T080 [US1] S1 slice gate
   - Do: run the slice gate from "Rules for every task". Changed packages: `./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ ./internal/ui/...`. Focused tests: `go test ./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ -run 'Audit|ERP|AllowKey|Erp|Key|Authenticate|CallLog|Respond|Auth|Handler|Router|AsSystem|Codes|Principal' -count=1`; `go test ./internal/ui/ -run Erp -count=1`; `SB-6 go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP|TestERPKeysRepo|TestAuditActorKeyRoundTrip' -count=1`; `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
   - Commit message: `feat(erp): S1 keys and machine principal`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message and `git status --short` lists no file other than the four baselines and the spec folder.

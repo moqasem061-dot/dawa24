@@ -86,18 +86,30 @@ func Nav(scope Scope) []NavSection {
 	return nil
 }
 
+// NavSuppressions lists sidebar entry keys this deployment has switched off —
+// "integrations" when the ERP API is disabled, for example. The composition
+// root writes it once at startup, before serving. It is a deployment switch,
+// not an authorization control: the gate on the route stays the control, and
+// hiding a link never changes what a request may do.
+var NavSuppressions = map[string]bool{}
+
 // VisibleNav returns the sidebar a holder actually sees: items they hold a
 // permission for, and only the sections that still have items.
 //
 // This is the whole of "sidebar items show or hide based on the assigned
 // permissions". It is a convenience, not a control — the gate on the route is
-// the control, and it is applied independently.
+// the control, and it is applied independently. Entries in NavSuppressions are
+// hidden whatever the caller holds, because the page they point at does not
+// exist on this deployment.
 func VisibleNav(scope Scope, held Set) []NavSection {
 	src := Nav(scope)
 	out := make([]NavSection, 0, len(src))
 	for _, sec := range src {
 		items := make([]NavItem, 0, len(sec.Items))
 		for _, it := range sec.Items {
+			if NavSuppressions[it.Key] {
+				continue
+			}
 			if it.Visible(held) {
 				items = append(items, it)
 			}

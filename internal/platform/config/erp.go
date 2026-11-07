@@ -17,13 +17,14 @@ func loadERP(env Env, fail func(string, ...any)) ERP {
 		DefaultRate:   getInt("ERP_DEFAULT_RATE_PER_MINUTE", 600),
 		MaxBatchItems: getInt("ERP_MAX_BATCH_ITEMS", 50000),
 	}
-	if len(cfg.KeyPepper) < 32 {
-		if env.IsProd() && cfg.Enabled {
-			fail("ERP_KEY_PEPPER must be at least 32 bytes when ERP API is enabled in production")
-		}
-		if !env.IsProd() {
-			cfg.KeyPepper = "dawa24-development-erp-pepper-not-for-production"
-		}
+	// An enabled API in any non-development environment must have a real
+	// pepper: keys minted with a derivable default would be forgeable by
+	// anyone who reads this repository. Disabled deployments need no pepper.
+	if cfg.Enabled && len(cfg.KeyPepper) < 32 && !env.IsDev() {
+		fail("ERP_KEY_PEPPER must be at least 32 bytes when ERP API is enabled outside development")
+	}
+	if !env.IsProd() && len(cfg.KeyPepper) < 32 {
+		cfg.KeyPepper = "dawa24-development-erp-pepper-not-for-production"
 	}
 	return cfg
 }

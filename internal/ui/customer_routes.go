@@ -32,6 +32,11 @@ func (h *UIHandler) registerCustomerRoutes(r chi.Router) {
 // registerCustomerERPRoutes mounts the pharmacy's integration screen and its
 // key mutations (the customer twin of registerVendorERPRoutes).
 func (h *UIHandler) registerCustomerERPRoutes(r chi.Router) {
+	if h.erpSvc == nil {
+		// ERP API disabled on this deployment; the routes do not exist and
+		// the navigation entry is hidden by rbac.NavSuppressions.
+		return
+	}
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequireTenantPagePermission("pharmacy.integration.view"))
 		g.Get("/customer/integrations", h.ErpKeysPage)

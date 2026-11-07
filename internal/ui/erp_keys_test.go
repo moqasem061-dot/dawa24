@@ -64,7 +64,7 @@ func (r *erpPageRepo) ListKeys(_ context.Context, org int64) ([]erp.APIKey, erro
 func (r *erpPageRepo) ListKeysAsStaff(context.Context) ([]erp.StaffKeyRow, error) {
 	var out []erp.StaffKeyRow
 	for _, k := range r.keys {
-		out = append(out, erp.StaffKeyRow{Key: k.APIKey, OrganizationName: "Org"})
+		out = append(out, erp.StaffKeyRow{Key: k.APIKey, OrganizationName: map[string]string{"ar": "منشأة", "en": "Org"}})
 	}
 	return out, nil
 }

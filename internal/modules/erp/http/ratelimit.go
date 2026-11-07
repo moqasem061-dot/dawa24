@@ -18,6 +18,27 @@ type limitHeaders struct {
 }
 
 func failureKey(ip string) string { return "dawa24:erp:auth-fail:" + ip }
+
+// docsLimit throttles requests for the public OpenAPI file per client IP. The
+// counter is its own ("dawa24:erp:docs:<ip>"), so an anonymous docs crawler
+// can neither exhaust a key's request allowance nor feed the auth-failure
+// counter, and a Redis outage fails open like every other limiter here.
+func (h *Handler) docsLimit(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if h.lim == nil {
+			next.ServeHTTP(w, r)
+			return
+		}
+		ip := httpx.ClientIP(r, 1)
+		allowed, _, retry, err := h.lim.AllowKey(r.Context(), "dawa24:erp:docs:"+ip, erp.DocsPerIPPerMinute, time.Minute)
+		if err == nil && !allowed {
+			setRetryAfter(w, retry)
+			writeError(w, r, erp.NewError("ERP_RATE_LIMITED", 429, map[string]any{"retryAfterSeconds": int64(retry.Seconds()), "limitPerMinute": erp.DocsPerIPPerMinute}))
+			return
+		}
+		next.ServeHTTP(w, r)
+	})
+}
 func checkAuthFailures(ctx context.Context, lim *httpx.Limiter, ip string) (limitHeaders, error) {
 	count, ttl, err := lim.FailedAuthCount(ctx, failureKey(ip))
 	return limitHeaders{limit: erp.AuthFailuresPerIPPerMinute, count: count, retry: ttl}, err

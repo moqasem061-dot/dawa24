@@ -30,6 +30,11 @@ func (h *UIHandler) registerAdminPlatformRoutes(r chi.Router) {
 // integration keys and the staff revoke action, behind the platform
 // integration permissions added with the ERP slice.
 func (h *UIHandler) registerAdminERPRoutes(r chi.Router) {
+	if h.erpSvc == nil {
+		// ERP API disabled on this deployment; the routes do not exist and
+		// the navigation entry is hidden by rbac.NavSuppressions.
+		return
+	}
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("platform.integration.view"))
 		g.Get("/admin/integrations", h.ErpAdminKeysPage)

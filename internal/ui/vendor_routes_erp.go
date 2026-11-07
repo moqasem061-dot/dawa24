@@ -13,6 +13,12 @@ import (
 // The parameter is named g (not r) so the protected-path regex in
 // test/route_audience_test.go ignores this file.
 func (h *UIHandler) registerVendorERPRoutes(g chi.Router) {
+	if h.erpSvc == nil {
+		// The ERP API is disabled on this deployment (SetERP(nil)); the
+		// navigation entry is hidden by rbac.NavSuppressions and these routes
+		// do not exist.
+		return
+	}
 	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.view"))
 		gg.Get("/vendor/integrations", h.ErpKeysPage)

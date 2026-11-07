@@ -146,9 +146,12 @@ func (l *Limiter) LimitUserOrIP(userLimit, ipLimit int, window time.Duration) fu
 	}
 }
 
-// AllowKey applies a rate limit to the supplied key.
+// AllowKey applies a rate limit to the supplied key. The key is namespaced by
+// the limiter prefix so that instance-level counters (ERP keys, ERP auth
+// failures) can never collide with website counters, even when two
+// deployments share one Redis.
 func (l *Limiter) AllowKey(ctx context.Context, key string, limit int, window time.Duration) (allowed bool, count int64, retryAfter time.Duration, err error) {
-	return l.allow(ctx, key, limit, window)
+	return l.allow(ctx, l.prefixed(key), limit, window)
 }
 
 // FailedAuthCount reads a failure counter without changing its expiry.
@@ -157,14 +160,14 @@ func (l *Limiter) FailedAuthCount(ctx context.Context, key string) (count int64,
 	if rdb == nil {
 		return 0, 0, nil
 	}
-	count, err = rdb.Get(ctx, key).Int64()
+	count, err = rdb.Get(ctx, l.prefixed(key)).Int64()
 	if err == redis.Nil {
 		return 0, 0, nil
 	}
 	if err != nil {
 		return 0, 0, err
 	}
-	ttl, err = rdb.TTL(ctx, key).Result()
+	ttl, err = rdb.TTL(ctx, l.prefixed(key)).Result()
 	if err == nil && ttl < 0 {
 		return 0, 0, fmt.Errorf("failure counter has no expiry")
 	}
@@ -177,14 +180,24 @@ func (l *Limiter) IncrementAuthFailure(ctx context.Context, key string, window t
 	if rdb == nil {
 		return nil
 	}
-	count, err := rdb.Incr(ctx, key).Result()
+	count, err := rdb.Incr(ctx, l.prefixed(key)).Result()
 	if err != nil {
 		return err
 	}
 	if count == 1 {
-		return rdb.Expire(ctx, key, window).Err()
+		return rdb.Expire(ctx, l.prefixed(key), window).Err()
 	}
 	return nil
+}
+
+// prefixed namespaces a caller-supplied key. Every method that takes a key
+// string instead of building one from request data passes through here, so a
+// limiter configured with a prefix owns one whole key namespace.
+func (l *Limiter) prefixed(key string) string {
+	if l == nil {
+		return key
+	}
+	return l.prefix + key
 }
 
 func (l *Limiter) allow(ctx context.Context, key string, limit int, window time.Duration) (bool, int64, time.Duration, error) {

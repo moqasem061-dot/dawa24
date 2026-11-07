@@ -113,25 +113,43 @@ func (r *Repository) FindKeyByPrefixAsSystem(ctx context.Context, prefix string)
 	return out, err == nil, err
 }
 
-// ListKeysAsStaff supports staff oversight (plan.md E5).
+// ListKeysAsStaff supports staff oversight (plan.md E5). Every row carries
+// the owning organization's name and the key's integration, so the staff
+// screen can attribute a key before revoking it.
 func (r *Repository) ListKeysAsStaff(ctx context.Context) ([]erp.StaffKeyRow, error) {
 	var result []erp.StaffKeyRow
 	err := r.db.InReadTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
-		rows, err := tx.Query(ctx, `SELECT `+keyColumns+` FROM erp.api_keys ORDER BY id`)
+		rows, err := tx.Query(ctx, `SELECT `+staffKeyColumns+`
+			FROM erp.api_keys k
+			JOIN erp.integrations i ON i.id = k.integration_id
+			JOIN org.organizations o ON o.id = k.organization_id
+			ORDER BY k.id`)
 		if err != nil {
 			return err
 		}
 		defer rows.Close()
 		for rows.Next() {
-			k, err := scanKey(rows)
+			row, err := scanStaffKeyRow(rows)
 			if err != nil {
 				return err
 			}
-			result = append(result, erp.StaffKeyRow{Key: k})
+			result = append(result, row)
 		}
 		return rows.Err()
 	})
 	return result, err
+}
+
+const staffKeyColumns = `k.id, k.public_id::text, k.organization_id, k.integration_id, k.name, k.key_prefix, k.scopes, k.warehouse_id, k.branch_id, k.buying_user_id, k.rate_limit_per_minute, k.max_batch_items, k.status, k.expires_at, k.last_used_at, k.last_used_ip::text, k.revoked_at, k.revoked_by, k.revoke_reason, k.rotated_from_id, k.created_by, k.created_at, k.updated_at, i.id, i.public_id::text, i.organization_id, i.provider, i.status, i.created_by, i.created_at, i.updated_at, o.name`
+
+func scanStaffKeyRow(row scanner) (erp.StaffKeyRow, error) {
+	var out erp.StaffKeyRow
+	k := &out.Key
+	i := &out.Integration
+	err := row.Scan(&k.ID, &k.PublicID, &k.OrganizationID, &k.IntegrationID, &k.Name, &k.KeyPrefix, &k.Scopes, &k.WarehouseID, &k.BranchID, &k.BuyingUserID, &k.RateLimitPerMinute, &k.MaxBatchItems, &k.Status, &k.ExpiresAt, &k.LastUsedAt, &k.LastUsedIP, &k.RevokedAt, &k.RevokedBy, &k.RevokeReason, &k.RotatedFromID, &k.CreatedBy, &k.CreatedAt, &k.UpdatedAt,
+		&i.ID, &i.PublicID, &i.OrganizationID, &i.Provider, &i.Status, &i.CreatedBy, &i.CreatedAt, &i.UpdatedAt,
+		&out.OrganizationName)
+	return out, err
 }
 
 // RevokeKeyAsStaff supports staff revocation (plan.md E5).

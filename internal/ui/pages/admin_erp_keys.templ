@@ -71,7 +71,7 @@ templ ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) {
 							for _, row := range data.Rows {
 								<tr>
 									<td>
-										<div class="font-bold text-primary">{ row.OrganizationName }</div>
+										<div class="font-bold text-primary">{ erpOrgDisplayName(row.OrganizationName, lang) }</div>
 										<div class="text-2xs text-muted" dir="ltr">{ row.Integration.Provider }</div>
 									</td>
 									<td class="font-bold">{ row.Key.Name }</td>
@@ -111,4 +111,17 @@ templ ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) {
 			}
 		</div>
 	}
+}
+
+// erpOrgDisplayName picks the organization name in the page language, falling
+// back to the other language and then to a placeholder rather than rendering
+// raw JSON on the staff screen.
+func erpOrgDisplayName(name map[string]string, lang string) string {
+	if text := name[lang]; text != "" {
+		return text
+	}
+	if lang == "en" {
+		return name["ar"]
+	}
+	return name["en"]
 }

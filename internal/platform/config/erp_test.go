@@ -10,8 +10,15 @@ func TestERPConfig(t *testing.T) {
 		{"defaults", "dev", "", "", false},
 		{"production defaults", "prod", "", "", false},
 		{"short production pepper", "prod", "short", "true", true},
+		// Staging must be configured exactly like production when the API is
+		// on: a derivable pepper there would make every minted key forgeable
+		// by anyone who reads this repository.
+		{"short staging pepper", "staging", "short", "true", true},
+		{"short empty staging pepper", "staging", "", "true", true},
 		{"development fallback", "dev", "short", "true", false},
 		{"disabled in production", "prod", "", "false", false},
+		{"disabled in staging", "staging", "", "false", false},
+		{"staging long pepper", "staging", "staging-erp-pepper-32-bytes-minimum!", "true", false},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			setMinimalProdEnv(t)

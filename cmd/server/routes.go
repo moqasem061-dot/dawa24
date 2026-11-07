@@ -72,7 +72,7 @@ func mountModuleRoutes(
 	deps.orders = &lateOrderAnnouncer{}
 
 	db, idSvc, attachSvc, docsGate, storageClient, permissions := mountModuleRoutesAPI(r, cfg, log, deps, ai, adminKeys, tenantKeys)
-	erpSvc := mountERP(r, cfg, log, deps, db, idSvc, docsGate)
+	erpSvc := mountERP(r, cfg, log, deps, db)
 
 	uiHandler := buildUIHandler(cfg, log, deps, db, idSvc, attachSvc, docsGate, tenantKeys, adminKeys, storageClient, ai, permissions)
 	uiHandler.SetERP(erpSvc)

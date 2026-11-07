@@ -24,7 +24,11 @@ func NewHandler(svc *erp.Service, cfg erp.Config, lim *httpx.Limiter, log *slog.
 
 func (h *Handler) Routes() chi.Router {
 	r := chi.NewRouter()
-	r.Get("/openapi.yaml", h.spec)
+	// The spec stays public (S6/S8 ship it as documentation); it carries no
+	// tenant data, but it is still unauthenticated output, so it gets its own
+	// per-IP counter — separate from the per-key limit and the auth-failure
+	// counter, and from any website limiter.
+	r.With(h.docsLimit).Get("/openapi.yaml", h.spec)
 	r.Group(func(r chi.Router) { r.Use(h.auth); r.Get("/health", h.health) })
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_NOT_FOUND", 404, nil))

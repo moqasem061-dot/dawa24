@@ -28,7 +28,15 @@ func writeOK(w http.ResponseWriter, r *http.Request, status int, data any) {
 func writeError(w http.ResponseWriter, r *http.Request, err error) {
 	var e *erp.Error
 	if !errors.As(err, &e) {
-		slog.ErrorContext(r.Context(), "ERP request failed")
+		// The log carries the raw error and the request id so a 500 can be
+		// debugged from the server side. No key, hash or pepper can reach
+		// this line: every error arriving here is either an *erp.Error —
+		// whose Error() is the stable code alone — or a database error whose
+		// text is PostgreSQL's catalog message without bound parameters, and
+		// the bearer value never enters error strings anywhere in the erp
+		// module (GenerateKey returns the secret out-of-band; key_hash is
+		// never placed in an error).
+		slog.ErrorContext(r.Context(), "ERP request failed", "error", err, "requestId", requestID(w, r))
 		e = erp.NewError("ERP_INTERNAL", 500, nil)
 	}
 	id := requestID(w, r)

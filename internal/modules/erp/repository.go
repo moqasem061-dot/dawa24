@@ -20,9 +20,12 @@ type NewKey struct {
 	KeyHash string
 }
 type StaffKeyRow struct {
-	Key              APIKey
-	Integration      Integration
-	OrganizationName string
+	Key         APIKey
+	Integration Integration
+	// OrganizationName is the owning organization's bilingual display name,
+	// straight from org.organizations.name (an {"ar":…,"en":…} JSON object),
+	// so the staff screen can attribute a key before revoking it.
+	OrganizationName map[string]string
 }
 
 type HealthInfo struct {

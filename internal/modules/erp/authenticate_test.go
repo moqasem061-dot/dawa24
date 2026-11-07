@@ -26,13 +26,19 @@ func TestAuthenticate(t *testing.T) {
 					t.Fatal("test prefix collision")
 				}
 			case "wrong":
-				parts := strings.Split(raw, "_")
-				if parts[3][0] == 'A' {
-					parts[3] = "B" + parts[3][1:]
-				} else {
-					parts[3] = "A" + parts[3][1:]
+				// The secret may contain '_', so take it from the parser and
+				// mutate the whole secret, never a split fragment.
+				_, secret, ok := ParseKey(raw)
+				if !ok {
+					t.Fatal("generated key does not parse")
 				}
-				raw = strings.Join(parts, "_")
+				mutated := []byte(secret)
+				if mutated[0] == 'A' {
+					mutated[0] = 'B'
+				} else {
+					mutated[0] = 'A'
+				}
+				raw = raw[:len(raw)-len(secret)] + string(mutated)
 			case "revoked":
 				key.Status = "revoked"
 				repo.keys[key.ID] = key

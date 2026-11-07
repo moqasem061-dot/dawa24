@@ -239,9 +239,9 @@ func ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) templ.Compone
 						return templ_7745c5c3_Err
 					}
 					var templ_7745c5c3_Var12 string
-					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(row.OrganizationName)
+					templ_7745c5c3_Var12, templ_7745c5c3_Err = templ.JoinStringErrs(erpOrgDisplayName(row.OrganizationName, lang))
 					if templ_7745c5c3_Err != nil {
-						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_erp_keys.templ`, Line: 74, Col: 68}
+						return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/pages/admin_erp_keys.templ`, Line: 74, Col: 93}
 					}
 					_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var12))
 					if templ_7745c5c3_Err != nil {
@@ -380,6 +380,19 @@ func ErpAdminKeysPage(data ErpAdminKeysPageData, lang, dir string) templ.Compone
 		}
 		return nil
 	})
+}
+
+// erpOrgDisplayName picks the organization name in the page language, falling
+// back to the other language and then to a placeholder rather than rendering
+// raw JSON on the staff screen.
+func erpOrgDisplayName(name map[string]string, lang string) string {
+	if text := name[lang]; text != "" {
+		return text
+	}
+	if lang == "en" {
+		return name["ar"]
+	}
+	return name["en"]
 }
 
 var _ = templruntime.GeneratedTemplate

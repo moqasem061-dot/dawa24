@@ -12,6 +12,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp/provider"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/mailer"
 	"github.com/moqasem061-dot/dawa24/internal/ui"
@@ -20,12 +22,34 @@ import (
 // testSessionSecret signs verification and reset tokens in these tests.
 const testSessionSecret = "test-session-secret-for-ui-handlers"
 
+// sidebarErpRepo is the minimal ERP stub the sidebar/route sync needs: the
+// integration routes must exist and serve their own callers; only the two
+// listing pages of the ERP slice are reachable through a GET.
+type sidebarErpRepo struct {
+	erp.Repository
+}
+
+func (r *sidebarErpRepo) ListKeys(context.Context, int64) ([]erp.APIKey, error) {
+	return nil, nil
+}
+
+func (r *sidebarErpRepo) ListKeysAsStaff(context.Context) ([]erp.StaffKeyRow, error) {
+	return nil, nil
+}
+
 func newTestRouter(actor *authctx.Actor) http.Handler {
 	logger := slog.New(slog.NewTextHandler(io.Discard, nil))
 	handler := ui.NewUIHandler(
 		nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, logger,
 	)
 	handler.SetSessionSecret(testSessionSecret)
+	handler.SetERP(erp.NewService(&sidebarErpRepo{}, erp.Ports{}, erp.Config{
+		Pepper:        []byte("sidebar-erp-test-pepper-32-bytes-ok"),
+		Tag:           "test",
+		DefaultRate:   600,
+		MaxBatchItems: 50000,
+		Provider:      provider.DefaultProvider,
+	}, logger))
 
 	// Mirrors cmd/server/routes.go, except session-based RequireAuth is
 	// replaced by a stub that carries an optional test actor.
