@@ -10,17 +10,26 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
+// openAndDeliveredShipmentsSQL counts, for one order, the shipments still to be
+// delivered and the ones delivered. A cancelled, failed or returned shipment is
+// neither: another supplier's cancelled part must not keep the order from
+// becoming delivered.
+const openAndDeliveredShipmentsSQL = `
+	SELECT COUNT(*) FILTER (WHERE status NOT IN ('delivered', 'completed', 'cancelled', 'failed', 'returned')),
+	       COUNT(*) FILTER (WHERE status IN ('delivered', 'completed'))
+	FROM commerce.order_shipments WHERE order_id = $1;`
+
 // syncParentOrderStatus moves the parent order's status to match its shipments
 // after a shipment changes to status to. It runs inside the caller's transaction.
 func syncParentOrderStatus(txCtx context.Context, tx pgx.Tx, to commerce.OrderStatus, history commerce.OrderStatusHistory) {
 	// Synchronize parent order status if appropriate
 	switch to {
 	case commerce.StatusDelivered:
-		var nonDeliveredCount int
+		var openCount, deliveredCount int
 		_ = database.Soft(txCtx, tx, func() error {
-			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, history.OrderID).Scan(&nonDeliveredCount)
+			return tx.QueryRow(txCtx, openAndDeliveredShipmentsSQL, history.OrderID).Scan(&openCount, &deliveredCount)
 		})
-		if nonDeliveredCount == 0 {
+		if openCount == 0 && deliveredCount > 0 {
 			_ = database.SoftExec(txCtx, tx, `UPDATE commerce.orders SET status = 'delivered', delivered_at = now(), updated_at = now() WHERE id = $1;`, history.OrderID)
 		}
 	case commerce.StatusShipped, commerce.StatusInTransit, commerce.StatusOutForDelivery:

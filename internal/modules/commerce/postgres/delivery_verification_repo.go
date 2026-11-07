@@ -111,6 +111,16 @@ func (r *Repository) completeDelivery(
 			return apperr.Conflict("delivery.cancelled", i18n.TDefault("w4_mod.w4str_146_146"))
 		}
 
+		// A wallet order is charged when its shipment is confirmed. A parcel that
+		// was never confirmed would be delivered without being paid for.
+		if commerce.IsWalletPayment(paymentMethod) {
+			switch currentOrderStatus {
+			case commerce.StatusPending, commerce.StatusProcessing, commerce.StatusOnHold:
+				return apperr.Conflict("delivery.not_confirmed",
+					"يجب تأكيد الشحنة أولاً قبل تسليمها. The shipment must be confirmed before it is delivered.")
+			}
+		}
+
 		// 4. Verify Delivery Code (PIN). A shipment under the PIN rule always
 		// needs a code, so an empty one is refused rather than matched.
 		// A staff override skips this check, and is audited below.
@@ -198,16 +208,29 @@ func (r *Repository) completeDelivery(
 		}
 
 		// 7. Synchronize parent order status if all shipments are delivered
-		var nonDeliveredCount int
+		var openCount, deliveredCount int
 		_ = database.Soft(txCtx, tx, func() error {
-			return tx.QueryRow(txCtx, `SELECT COUNT(*) FROM commerce.order_shipments WHERE order_id = $1 AND status != 'delivered';`, orderID).Scan(&nonDeliveredCount)
+			return tx.QueryRow(txCtx, openAndDeliveredShipmentsSQL, orderID).Scan(&openCount, &deliveredCount)
 		})
-		if nonDeliveredCount == 0 {
+		if openCount == 0 && deliveredCount > 0 {
 			var totalOrder money.Amount
 			var totalCollectedMinor int64
 			_ = database.Soft(txCtx, tx, func() error {
 				return tx.QueryRow(txCtx, `SELECT COALESCE(total_amount, 0) FROM commerce.orders WHERE id = $1;`, orderID).Scan(&totalOrder)
 			})
+			// When another supplier's part was cancelled, only the parts that
+			// went ahead are owed, so the order total is the sum of those.
+			var liveTotal money.Amount
+			var deadCount int
+			_ = database.Soft(txCtx, tx, func() error {
+				return tx.QueryRow(txCtx, `
+					SELECT COALESCE(SUM(total_amount) FILTER (WHERE status NOT IN ('cancelled', 'failed', 'returned')), 0),
+					       COUNT(*) FILTER (WHERE status IN ('cancelled', 'failed', 'returned'))
+					FROM commerce.order_shipments WHERE order_id = $1;`, orderID).Scan(&liveTotal, &deadCount)
+			})
+			if deadCount > 0 {
+				totalOrder = liveTotal
+			}
 			_ = database.Soft(txCtx, tx, func() error {
 				return tx.QueryRow(txCtx, `SELECT COALESCE(SUM(collected_amount_minor), 0) FROM commerce.order_shipments WHERE order_id = $1;`, orderID).Scan(&totalCollectedMinor)
 			})

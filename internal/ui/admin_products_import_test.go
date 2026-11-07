@@ -295,7 +295,7 @@ func TestAdminProductsImportStagesWithoutWriting(t *testing.T) {
 		t.Fatalf("review status = %d, want 200", rec.Code)
 	}
 	body := rec.Body.String()
-	for _, want := range []string{"مراجعة ما سيتم تنفيذه", "بانادول اكسترا", "كيف تمت قراءة الملف"} {
+	for _, want := range []string{"مراجعة وتحليل بيانات الكتالوج", "بانادول اكسترا", "كيف تمت قراءة الملف"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("the review screen does not show %q", want)
 		}

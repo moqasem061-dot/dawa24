@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/promo"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // Batch 2 (S24): a sponsorship request and the credit that pays for it are written
@@ -81,12 +82,17 @@ func (r *Repository) CreateSponsorshipRequestsReserved(ctx context.Context, reqs
 // CreateSponsorshipPurchaseWithDebit records a purchase and, when debit is given,
 // the wallet payment for it, in one transaction. The payment id returned by debit
 // is stored on the purchase. If either step fails, neither is kept.
+//
+// The transaction runs as system: the wallet and its ledger rows carry no
+// organization, so under a vendor's tenant context row-level security hides them
+// and every debit would read a zero balance. The purchase row still names its
+// organization (set by the service from the caller's own tenant).
 func (r *Repository) CreateSponsorshipPurchaseWithDebit(
 	ctx context.Context,
 	p *promo.SponsorshipPurchase,
 	debit func(ctx context.Context, tx pgx.Tx) (*int64, error),
 ) error {
-	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
+	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		if debit != nil {
 			paymentID, err := debit(txCtx, tx)
 			if err != nil {

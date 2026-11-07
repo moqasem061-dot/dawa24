@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/go-chi/chi/v5"
 	"github.com/redis/go-redis/v9"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
@@ -65,11 +66,14 @@ func (l *Limiter) LimitByIP(limit int, window time.Duration) func(http.Handler) 
 			}
 
 			ip := ClientIP(r, 1)
-			key := fmt.Sprintf("%sip:%s", l.prefix, ip)
+			// One counter per address, route and limit, so that a busy route
+			// (ad impressions) cannot use up the allowance of login or register.
+			key := fmt.Sprintf("%sip:%s:%s:%d", l.prefix, ip, routeKey(r), limit)
 
 			allowed, count, ttl, err := l.allow(r.Context(), key, limit, window)
 			setRateLimitHeaders(w, limit, count, ttl)
-			if err != nil || !allowed {
+			// A Redis error fails open (see allow), it is not a reason to refuse.
+			if err == nil && !allowed {
 				if ttl > 0 {
 					w.Header().Set("Retry-After", strconv.FormatInt(int64(max(1, int(ttl.Seconds()))), 10))
 				}
@@ -80,6 +84,17 @@ func (l *Limiter) LimitByIP(limit int, window time.Duration) func(http.Handler) 
 			next.ServeHTTP(w, r)
 		})
 	}
+}
+
+// routeKey names the matched route pattern, so /ads/click/1 and /ads/click/2
+// share a counter. It falls back to the path when no pattern is known.
+func routeKey(r *http.Request) string {
+	if rc := chi.RouteContext(r.Context()); rc != nil {
+		if p := rc.RoutePattern(); p != "" {
+			return r.Method + " " + p
+		}
+	}
+	return r.Method + " " + r.URL.Path
 }
 
 // LimitUserOrIP provides dynamic tiered rate limiting for backend APIs:
@@ -118,7 +133,7 @@ func (l *Limiter) LimitUserOrIP(userLimit, ipLimit int, window time.Duration) fu
 
 			allowed, count, ttl, err := l.allow(r.Context(), key, limit, window)
 			setRateLimitHeaders(w, limit, count, ttl)
-			if err != nil || !allowed {
+			if err == nil && !allowed {
 				if ttl > 0 {
 					w.Header().Set("Retry-After", strconv.FormatInt(int64(max(1, int(ttl.Seconds()))), 10))
 				}

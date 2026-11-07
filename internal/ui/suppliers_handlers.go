@@ -161,6 +161,13 @@ func resolveSupplierCoordinates(sID int64, branches []*org.Branch, coverages []*
 	return baseLat, baseLng, true
 }
 
+// listedInDirectory reports whether a supplier appears in the directory. Only
+// approved suppliers have a profile page (S14), so only they are listed: a
+// pending one would be a link to a not-found page.
+func listedInDirectory(o *org.Organization) bool {
+	return o != nil && o.Status == org.StatusApproved
+}
+
 // SuppliersPage renders the public supplier directory.
 func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -211,7 +218,7 @@ func (h *UIHandler) SuppliersPage(w http.ResponseWriter, r *http.Request) {
 			if o == nil {
 				continue
 			}
-			if o.Status == org.StatusRejected || o.Status == org.StatusSuspended {
+			if !listedInDirectory(o) {
 				continue
 			}
 			// A supplier is not a supplier to itself. Its own row would offer

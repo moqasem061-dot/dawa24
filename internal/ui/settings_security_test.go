@@ -132,19 +132,20 @@ func TestForgotSubmit_UserFoundAndNotFound(t *testing.T) {
 	h, idSvc, _, _ := setupTestMFAHandler(t)
 	ctx := context.Background()
 
-	// 1. Non-existent email -> should render user_not_found error
+	// 1. Non-existent email -> the same answer as a registered one (S19): the
+	// screen must not reveal which emails have accounts.
 	formNotFound := url.Values{"email": {"nonexistent@dawa24.eg"}}
 	reqNotFound := httptest.NewRequestWithContext(context.Background(), "POST", "/auth/forgot", strings.NewReader(formNotFound.Encode()))
 	reqNotFound.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	recNotFound := httptest.NewRecorder()
 	h.ForgotSubmit(recNotFound, reqNotFound)
 
-	// Should not redirect to verify
-	if recNotFound.Result().StatusCode == http.StatusSeeOther {
-		loc := recNotFound.Result().Header.Get("Location")
-		if strings.Contains(loc, "/auth/forgot/verify") {
-			t.Fatalf("non-existent email should not redirect to verify page")
-		}
+	if recNotFound.Result().StatusCode != http.StatusSeeOther {
+		t.Fatalf("expected 303 see other for an unknown email, got %d", recNotFound.Result().StatusCode)
+	}
+	locNotFound := recNotFound.Result().Header.Get("Location")
+	if !strings.Contains(locNotFound, "/auth/forgot/verify") || !strings.Contains(locNotFound, "notice=sent") {
+		t.Fatalf("unknown email must get the same redirect as a known one, got %s", locNotFound)
 	}
 
 	// 2. Existing user -> should redirect to /auth/forgot/verify?email=...&notice=sent

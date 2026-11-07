@@ -167,6 +167,9 @@ func (h *UIHandler) TenantPasswordChangeSubmit(w http.ResponseWriter, r *http.Re
 	}
 
 	_ = r.ParseForm()
+	if r.PostFormValue("return") == "account" {
+		dest = "/account/password"
+	}
 	curr := r.PostFormValue("current_password")
 	newPass := r.PostFormValue("new_password")
 	confirmPass := r.PostFormValue("confirm_password")

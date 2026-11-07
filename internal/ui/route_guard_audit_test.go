@@ -26,6 +26,7 @@ var routesWithoutPermissionGate = map[string]string{
 	// Account actions, not company actions: a member locked out of every page
 	// must still be able to secure their own credentials and pick the branch
 	// they are buying for.
+	"GET /account/password":          "the password form for a member who must change an administrator-set password; it must open whatever the role allows",
 	"POST /vendor/password":          "changing your own password is an account action",
 	"POST /vendor/set-branch":        "choosing your own active branch is an account action",
 	"POST /vendor/branches/active":   "choosing your own active branch is an account action",

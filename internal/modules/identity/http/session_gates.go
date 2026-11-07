@@ -2,6 +2,7 @@ package http
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	"github.com/moqasem061-dot/dawa24/internal/platform/rbac"
@@ -11,31 +12,39 @@ import (
 // that middleware.go stays within its size limit.
 
 // passwordChangeRedirect sends a session that must change its password to the
-// sessions page, which carries the change form. The page and its form are the
-// only ones such a session may reach.
+// account password page. That page asks for no permission, so a role without
+// the sessions permission can still reach it. The page and the two form
+// endpoints are the only ones such a session may reach.
 func passwordChangeRedirect(sess *identity.Session, path string) (string, bool) {
 	if sess == nil || !sess.MustChangePassword {
 		return "", false
 	}
 	switch path {
-	case "/customer/sessions", "/customer/password", "/vendor/sessions", "/vendor/password":
+	case "/account/password", "/customer/password", "/vendor/password":
 		return "", false
 	}
-	return passwordPagePath(sess.OrgType), true
+	return "/account/password", true
 }
 
-func passwordPagePath(orgType string) string {
-	if orgType == "vendor" {
-		return "/vendor/sessions"
+// holdForPasswordChange answers a request from a session that must change its
+// password, and reports whether it did. The page's own timer polls (the
+// notification badge) get an empty 204: a redirect would reload the page the
+// user is on and wipe the password form they are typing in.
+func holdForPasswordChange(w http.ResponseWriter, r *http.Request, sess *identity.Session) bool {
+	target, held := passwordChangeRedirect(sess, r.URL.Path)
+	if !held {
+		return false
 	}
-	return "/customer/sessions"
-}
-
-func passwordPageKey(orgType string) string {
-	if orgType == "vendor" {
-		return "vendor.session.view"
+	switch {
+	case isBackgroundPoll(r):
+		w.WriteHeader(http.StatusNoContent)
+	case r.Header.Get("HX-Request") == "true":
+		w.Header().Set("HX-Redirect", target)
+		w.WriteHeader(http.StatusUnauthorized)
+	default:
+		http.Redirect(w, r, target, http.StatusSeeOther)
 	}
-	return "pharmacy.session.view"
+	return true
 }
 
 // memberOfActiveOrg reports whether the user may still act for the organization
@@ -50,13 +59,4 @@ func memberOfActiveOrg(ctx context.Context, service *identity.Service, resolver 
 	}
 	belongs, err := service.UserBelongsToOrg(ctx, userID, orgID)
 	return err != nil || belongs
-}
-
-func hasKey(keys []string, want string) bool {
-	for _, k := range keys {
-		if k == want {
-			return true
-		}
-	}
-	return false
 }

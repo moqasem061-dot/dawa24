@@ -4,7 +4,7 @@
 #
 # Build speed notes (why this file is shaped the way it is):
 #
-#  - The builder image is pinned to a Go minor version. `golang:bookworm` is a
+#  - The builder image is pinned to an exact Go patch version. `golang:bookworm` is a
 #    moving tag: when upstream ships a Go patch the digest changes, every cached
 #    layer below it is invalidated and the whole tree recompiles from cold. A
 #    pinned tag turns that from "every few days" into "when we choose to".

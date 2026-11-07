@@ -104,19 +104,7 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 
 			// A team member created with an administrator's password must set
 			// their own before anything else (Batch 3, S06).
-			if target, held := passwordChangeRedirect(sess, r.URL.Path); held {
-				// Without the sessions permission the page would bounce the user
-				// back here, so the request is refused outright instead.
-				if !hasKey(sess.Permissions, passwordPageKey(sess.OrgType)) {
-					http.Error(w, "يلزم تغيير كلمة المرور قبل استخدام هذا الحساب. A password change is required before this account can be used.", http.StatusForbidden)
-					return
-				}
-				if r.Header.Get("HX-Request") == "true" {
-					w.Header().Set("HX-Redirect", target)
-					w.WriteHeader(http.StatusUnauthorized)
-					return
-				}
-				http.Redirect(w, r, target, http.StatusSeeOther)
+			if holdForPasswordChange(w, r, sess) {
 				return
 			}
 

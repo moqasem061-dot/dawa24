@@ -254,6 +254,10 @@ func (h *UIHandler) RegisterAdminRoutes(r chi.Router) {
 func (h *UIHandler) RegisterPreApprovalRoutes(r chi.Router) {
 	r.Get("/onboarding/pending", h.OnboardingPendingPage)
 
+	// The password form for a member who must change an administrator-set
+	// password. No permission is asked for; see AccountPasswordPage.
+	r.Get("/account/password", h.AccountPasswordPage)
+
 	// Documents (Rebuild V2 §4.2) - accessible by both pending and approved orgs
 	r.Get("/documents", h.OrganizationDocumentsPage)
 	r.Get("/documents/{id}/view", h.DocumentViewHandler)
