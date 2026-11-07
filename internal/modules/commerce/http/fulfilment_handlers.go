@@ -96,7 +96,7 @@ func (h *Handler) GetShipment(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// The order decides whether the caller may see the buyer's PIN.
-	if !(actor.IsStaff || actor.Can("commerce.admin")) && shipment.OrderID > 0 {
+	if !actor.IsStaff && !actor.Can("commerce.admin") && shipment.OrderID > 0 {
 		if order, err := h.service.GetOrder(r.Context(), shipment.OrderID); err == nil {
 			if !pinVisibleTo(actor, order) {
 				shipment.DeliveryCode = ""

@@ -187,6 +187,6 @@ func (happyRepo) ListCourierWorkload(ctx context.Context, vendorOrgID int64) ([]
 	return nil, nil
 }
 
-func (_ happyRepo) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
+func (happyRepo) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
 	return nil, nil
 }

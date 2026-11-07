@@ -22,6 +22,13 @@ import (
 
 var websiteCancelSeq atomic.Int64
 
+// websiteFixtureID returns a fresh id in microseconds since the epoch plus a
+// counter. It sits far above the database sequence and the fixed ids that other
+// tests insert, so a fixture row cannot collide with either.
+func websiteFixtureID() int64 {
+	return time.Now().UnixNano()/1000 + websiteCancelSeq.Add(1)
+}
+
 type websiteCancelFixture struct {
 	actor    authctx.Actor
 	walletID int64
@@ -36,20 +43,20 @@ func seedWebsiteCancelOrder(t *testing.T, db *database.DB, method string, debitM
 	ctx := database.AsSystem(context.Background())
 	n := websiteCancelSeq.Add(1)
 	suffix := fmt.Sprintf("%d-%d", time.Now().UnixNano()%1000000000, n)
-	var customerOrgID, vendorOrgID, userID int64
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
-		VALUES ($1, $2, $3, $4, $5, 'customer', 'approved') RETURNING id`,
-		`{"ar":"صيدلية `+suffix+`"}`, "صيدلية "+suffix, `{"ar":"صيدلية `+suffix+`"}`, "TAX-C-"+suffix, "CR-C-"+suffix).Scan(&customerOrgID); err != nil {
+	customerOrgID, vendorOrgID, userID := websiteFixtureID(), websiteFixtureID(), websiteFixtureID()
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (id, name, legal_name, trade_name, tax_number, commercial_register, type, status)
+		VALUES ($1, $2, $3, $4, $5, $6, 'customer', 'approved') RETURNING id`,
+		customerOrgID, `{"ar":"صيدلية `+suffix+`"}`, "صيدلية "+suffix, `{"ar":"صيدلية `+suffix+`"}`, "TAX-C-"+suffix, "CR-C-"+suffix).Scan(&customerOrgID); err != nil {
 		t.Fatalf("customer org: %v", err)
 	}
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
-		VALUES ($1, $2, $3, $4, $5, 'vendor', 'approved') RETURNING id`,
-		`{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-V-"+suffix, "CR-V-"+suffix).Scan(&vendorOrgID); err != nil {
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (id, name, legal_name, trade_name, tax_number, commercial_register, type, status)
+		VALUES ($1, $2, $3, $4, $5, $6, 'vendor', 'approved') RETURNING id`,
+		vendorOrgID, `{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-V-"+suffix, "CR-V-"+suffix).Scan(&vendorOrgID); err != nil {
 		t.Fatalf("vendor org: %v", err)
 	}
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO identity.users (name, email, password_hash, role, status)
-		VALUES ($1, $2, '$2a$10$abcdefghijklmnopqrstuu', 'user', 'active') RETURNING id`,
-		`{"ar":"مستخدم `+suffix+`"}`, "wc-"+suffix+"@dawa24.test").Scan(&userID); err != nil {
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO identity.users (id, name, email, password_hash, role, status)
+		VALUES ($1, $2, $3, '$2a$10$abcdefghijklmnopqrstuu', 'user', 'active') RETURNING id`,
+		userID, `{"ar":"مستخدم `+suffix+`"}`, "wc-"+suffix+"@dawa24.test").Scan(&userID); err != nil {
 		t.Fatalf("user: %v", err)
 	}
 	repo := billingPostgres.NewRepository(db)

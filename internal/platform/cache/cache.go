@@ -22,7 +22,6 @@ import (
 	"time"
 
 	"github.com/redis/go-redis/v9"
-	"golang.org/x/sync/singleflight"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/config"
 )
@@ -213,8 +212,6 @@ func (c *Cache) Delete(ctx context.Context, keys ...string) error {
 	}
 	return rdb.Del(ctx, keys...).Err()
 }
-
-var rememberGroup singleflight.Group
 
 // InvalidateTenant drops every cached entry for one organisation.
 //

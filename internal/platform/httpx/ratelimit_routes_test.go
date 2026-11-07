@@ -1,6 +1,7 @@
 package httpx
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -17,7 +18,7 @@ func okHandler() http.Handler {
 }
 
 func serve(h http.Handler, method, path string) int {
-	req := httptest.NewRequest(method, path, nil)
+	req := httptest.NewRequestWithContext(context.Background(), method, path, nil)
 	req.RemoteAddr = "203.0.113.7:4000"
 	w := httptest.NewRecorder()
 	h.ServeHTTP(w, req)

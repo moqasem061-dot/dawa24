@@ -26,6 +26,13 @@ import (
 
 var wrSeq atomic.Int64
 
+// wrFixtureID returns a fresh id in microseconds since the epoch plus a counter.
+// It sits far above the database sequence and the fixed ids that other tests
+// insert, so a fixture row cannot collide with either.
+func wrFixtureID() int64 {
+	return time.Now().UnixNano()/1000 + wrSeq.Add(1)
+}
+
 // wrOpenDB connects with the configured URL. Unlike getTestDB it does not skip
 // a superuser connection: the sandbox runs as one, and these tests check money.
 func wrOpenDB(t *testing.T) *database.DB {
@@ -67,19 +74,20 @@ func newWRWorld(t *testing.T) *wrWorld {
 	suffix := fmt.Sprintf("%d-%d", time.Now().UnixNano()%1000000000, n)
 	w := &wrWorld{db: db, billRepo: billingPostgres.NewRepository(db), suffix: fmt.Sprintf("%d", time.Now().UnixNano()%1000000000)}
 	w.commSvc = commerce.NewService(commercePostgres.NewRepository(db).WithWalletRefunder(w.billRepo).WithWalletPayer(w.billRepo), logger)
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
-		VALUES ($1, $2, $3, $4, $5, 'customer', 'approved') RETURNING id`,
-		`{"ar":"صيدلية `+suffix+`"}`, "صيدلية "+suffix, `{"ar":"صيدلية `+suffix+`"}`, "TAX-WR-C-"+suffix, "CR-WR-C-"+suffix).Scan(&w.buyerOrg); err != nil {
+	w.buyerOrg, w.vendorOrg, w.buyerUser = wrFixtureID(), wrFixtureID(), wrFixtureID()
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (id, name, legal_name, trade_name, tax_number, commercial_register, type, status)
+		VALUES ($1, $2, $3, $4, $5, $6, 'customer', 'approved') RETURNING id`,
+		w.buyerOrg, `{"ar":"صيدلية `+suffix+`"}`, "صيدلية "+suffix, `{"ar":"صيدلية `+suffix+`"}`, "TAX-WR-C-"+suffix, "CR-WR-C-"+suffix).Scan(&w.buyerOrg); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
-		VALUES ($1, $2, $3, $4, $5, 'vendor', 'approved') RETURNING id`,
-		`{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-WR-V-"+suffix, "CR-WR-V-"+suffix).Scan(&w.vendorOrg); err != nil {
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (id, name, legal_name, trade_name, tax_number, commercial_register, type, status)
+		VALUES ($1, $2, $3, $4, $5, $6, 'vendor', 'approved') RETURNING id`,
+		w.vendorOrg, `{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-WR-V-"+suffix, "CR-WR-V-"+suffix).Scan(&w.vendorOrg); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.Pool().QueryRow(ctx, `INSERT INTO identity.users (name, email, password_hash, role, status)
-		VALUES ($1, $2, '$2a$10$abcdefghijklmnopqrstuu', 'user', 'active') RETURNING id`,
-		`{"ar":"مستخدم `+suffix+`"}`, "wr-"+suffix+"@dawa24.test").Scan(&w.buyerUser); err != nil {
+	if err := db.Pool().QueryRow(ctx, `INSERT INTO identity.users (id, name, email, password_hash, role, status)
+		VALUES ($1, $2, $3, '$2a$10$abcdefghijklmnopqrstuu', 'user', 'active') RETURNING id`,
+		w.buyerUser, `{"ar":"مستخدم `+suffix+`"}`, "wr-"+suffix+"@dawa24.test").Scan(&w.buyerUser); err != nil {
 		t.Fatal(err)
 	}
 	wallet, err := w.billRepo.GetOrCreateWallet(ctx, w.buyerUser, "EGP")

@@ -179,7 +179,7 @@ func (s *Service) SaveManualCorrection(ctx context.Context, orgID *int64, rowID 
 	var owner *RowOwner
 	if actor, ok := authctx.From(ctx); !ok {
 		owner = &RowOwner{}
-	} else if !(actor.IsStaff || actor.IsPlatformAdmin()) {
+	} else if !actor.IsStaff && !actor.IsPlatformAdmin() {
 		owner = &RowOwner{UserID: actor.UserID, OrganizationID: actor.OrganizationID}
 	}
 	if err := s.repo.UpdateFileRowMatch(ctx, rowID, &productID, MatchMethodManual, 100.0, owner); err != nil {

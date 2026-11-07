@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -34,7 +35,7 @@ func TestAdImpressionRouteIsRateLimitedPerIP(t *testing.T) {
 	h.RegisterPublicRoutes(router)
 
 	hit := func(ip string) int {
-		req := httptest.NewRequest(http.MethodGet, "/ads/impression/1", nil)
+		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/ads/impression/1", nil)
 		req.RemoteAddr = ip + ":40000"
 		w := httptest.NewRecorder()
 		router.ServeHTTP(w, req)

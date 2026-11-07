@@ -21,7 +21,7 @@ func accountPasswordHandler() *UIHandler {
 // form that the forced-change hold points to.
 func TestAccountPasswordPageNeedsNoPermission(t *testing.T) {
 	h := accountPasswordHandler()
-	req := httptest.NewRequest(http.MethodGet, "/account/password", nil)
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/account/password", nil)
 	req = req.WithContext(authctx.WithActor(req.Context(), authctx.Actor{UserID: 9}))
 	rec := httptest.NewRecorder()
 	h.AccountPasswordPage(rec, req)
@@ -39,7 +39,7 @@ func TestAccountPasswordPageNeedsNoPermission(t *testing.T) {
 func TestAccountPasswordPageRequiresSignIn(t *testing.T) {
 	h := accountPasswordHandler()
 	rec := httptest.NewRecorder()
-	h.AccountPasswordPage(rec, httptest.NewRequest(http.MethodGet, "/account/password", nil))
+	h.AccountPasswordPage(rec, httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/account/password", nil))
 	if rec.Code != http.StatusSeeOther || rec.Header().Get("Location") != "/auth/login" {
 		t.Fatalf("anonymous got %d to %q, want redirect to /auth/login", rec.Code, rec.Header().Get("Location"))
 	}
@@ -50,7 +50,7 @@ func TestAccountPasswordPageRequiresSignIn(t *testing.T) {
 func TestPasswordChangeFailureReturnsToAccountPage(t *testing.T) {
 	h := accountPasswordHandler()
 	form := url.Values{"return": {"account"}, "current_password": {"old"}, "new_password": {"abcdefgh1"}, "confirm_password": {"different"}}
-	req := httptest.NewRequest(http.MethodPost, "/customer/password", strings.NewReader(form.Encode()))
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodPost, "/customer/password", strings.NewReader(form.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req = req.WithContext(authctx.WithActor(context.Background(), authctx.Actor{UserID: 9}))
 	rec := httptest.NewRecorder()

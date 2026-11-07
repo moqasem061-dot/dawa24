@@ -25,10 +25,10 @@ func (w *wrWorld) secondVendor(t *testing.T) int64 {
 	ctx := database.AsSystem(context.Background())
 	n := wrSeq.Add(1)
 	suffix := fmt.Sprintf("%s-b%d", w.suffix, n)
-	var id int64
-	if err := w.db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (name, legal_name, trade_name, tax_number, commercial_register, type, status)
-		VALUES ($1, $2, $3, $4, $5, 'vendor', 'approved') RETURNING id`,
-		`{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-WS-V-"+suffix, "CR-WS-V-"+suffix).Scan(&id); err != nil {
+	id := wrFixtureID()
+	if err := w.db.Pool().QueryRow(ctx, `INSERT INTO org.organizations (id, name, legal_name, trade_name, tax_number, commercial_register, type, status)
+		VALUES ($1, $2, $3, $4, $5, $6, 'vendor', 'approved') RETURNING id`,
+		id, `{"ar":"مورد `+suffix+`"}`, "مورد "+suffix, `{"ar":"مورد `+suffix+`"}`, "TAX-WS-V-"+suffix, "CR-WS-V-"+suffix).Scan(&id); err != nil {
 		t.Fatal(err)
 	}
 	return id

@@ -1,7 +1,5 @@
 package pages
 
-import ()
-
 // RegisterFormData carries the registration form state so a validation failure
 // re-renders the form with the user's entered values still in the fields.
 // A registration form that empties itself on error is the fastest way to lose a
