@@ -26,21 +26,31 @@ func (s *Service) VerifyMFA(ctx context.Context, userID int64, code string) (boo
 
 	// A second factor guessed at 10 requests a minute per IP falls in hours to
 	// an attacker spreading requests across addresses. The account's own
-	// failure counter — the one password login uses — caps guesses per user.
+	// second-factor counter caps guesses per user. It is separate from the
+	// password counter, which a correct password resets.
 	now := time.Now().UTC()
 	sec, _ := s.repo.GetSecurity(ctx, userID)
-	if sec == nil {
-		sec = &UserSecurity{UserID: userID}
-	}
-	if sec.IsLocked(now) {
+	if sec.IsLocked(now) || sec.MFAIsLocked(now) {
 		return false, apperr.Forbidden("mfa.locked", "Too many failed verification attempts. Try again later.")
 	}
-	ok := s.checkMFACode(ctx, mfa, code)
-	if !ok {
-		sec.RecordFailedAttempt(now)
-		_ = s.repo.UpsertSecurity(ctx, sec)
+	if !s.checkMFACode(ctx, mfa, code) {
+		if _, _, err := s.repo.RecordMFAFailure(ctx, userID, now, MaxFailedLoginsBeforeLockout, DefaultLockoutDuration); err != nil {
+			s.log.WarnContext(ctx, "record mfa failure", "user_id", userID, "error", err)
+		}
+		return false, nil
 	}
-	return ok, nil
+	if err := s.repo.ClearMFAFailures(ctx, userID); err != nil {
+		s.log.WarnContext(ctx, "clear mfa failures", "user_id", userID, "error", err)
+	}
+	return true, nil
+}
+
+// MFAIsLocked reports whether second-factor checks are refused right now.
+func (s *UserSecurity) MFAIsLocked(now time.Time) bool {
+	if s == nil || s.MFALockedUntil == nil {
+		return false
+	}
+	return s.MFALockedUntil.After(now)
 }
 
 // checkMFACode reports whether code is a current TOTP code or an unused

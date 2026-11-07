@@ -42,6 +42,18 @@ func (r stubRepo) UpsertSecurity(context.Context, *identity.UserSecurity) error 
 	r.fail("UpsertSecurity")
 	return nil
 }
+func (r stubRepo) RecordMFAFailure(context.Context, int64, time.Time, int, time.Duration) (int, *time.Time, error) {
+	r.fail("RecordMFAFailure")
+	return 0, nil, nil
+}
+func (r stubRepo) ClearMFAFailures(context.Context, int64) error {
+	r.fail("ClearMFAFailures")
+	return nil
+}
+func (r stubRepo) StampPasswordChange(context.Context, int64, time.Time, time.Time) (bool, error) {
+	r.fail("StampPasswordChange")
+	return false, nil
+}
 func (r stubRepo) GetMFA(context.Context, int64) (*identity.UserMFA, error) {
 	r.fail("GetMFA")
 	return nil, nil
@@ -208,6 +220,13 @@ func (happyRepo) GetSecurity(ctx context.Context, id int64) (*identity.UserSecur
 	return &identity.UserSecurity{UserID: id}, nil
 }
 func (happyRepo) UpsertSecurity(ctx context.Context, s *identity.UserSecurity) error { return nil }
+func (happyRepo) RecordMFAFailure(ctx context.Context, id int64, now time.Time, threshold int, lockFor time.Duration) (int, *time.Time, error) {
+	return 0, nil, nil
+}
+func (happyRepo) ClearMFAFailures(ctx context.Context, id int64) error { return nil }
+func (happyRepo) StampPasswordChange(ctx context.Context, id int64, changedAt, issuedAt time.Time) (bool, error) {
+	return true, nil
+}
 func (happyRepo) GetMFA(ctx context.Context, id int64) (*identity.UserMFA, error) {
 	return &identity.UserMFA{UserID: id, Enabled: false}, nil
 }

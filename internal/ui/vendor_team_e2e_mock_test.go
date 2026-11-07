@@ -3,6 +3,7 @@ package ui_test
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
@@ -43,6 +44,18 @@ func (m *mockIdentityRepoTeamTest) CreateSecurity(ctx context.Context, s *identi
 
 func (m *mockIdentityRepoTeamTest) UpsertSecurity(ctx context.Context, s *identity.UserSecurity) error {
 	return nil
+}
+
+func (m *mockIdentityRepoTeamTest) RecordMFAFailure(ctx context.Context, userID int64, now time.Time, threshold int, lockFor time.Duration) (int, *time.Time, error) {
+	return 0, nil, nil
+}
+
+func (m *mockIdentityRepoTeamTest) ClearMFAFailures(ctx context.Context, userID int64) error {
+	return nil
+}
+
+func (m *mockIdentityRepoTeamTest) StampPasswordChange(ctx context.Context, userID int64, changedAt, tokenIssuedAt time.Time) (bool, error) {
+	return true, nil
 }
 
 func (m *mockIdentityRepoTeamTest) GetPermissionsForUser(ctx context.Context, userID int64, orgID int64) ([]string, error) {

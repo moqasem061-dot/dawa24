@@ -85,6 +85,38 @@ func (m *testMockIdentityRepo) UpsertSecurity(ctx context.Context, s *identity.U
 	return nil
 }
 
+func (m *testMockIdentityRepo) RecordMFAFailure(ctx context.Context, userID int64, now time.Time, threshold int, lockFor time.Duration) (int, *time.Time, error) {
+	s, _ := m.GetSecurity(ctx, userID)
+	if s.MFALockedUntil != nil && !s.MFALockedUntil.After(now) {
+		s.MFAFailedAttempts = 0
+	}
+	s.MFAFailedAttempts++
+	s.MFALockedUntil = nil
+	if s.MFAFailedAttempts >= threshold {
+		lockedUntil := now.Add(lockFor)
+		s.MFALockedUntil = &lockedUntil
+	}
+	return s.MFAFailedAttempts, s.MFALockedUntil, nil
+}
+
+func (m *testMockIdentityRepo) ClearMFAFailures(ctx context.Context, userID int64) error {
+	if s, ok := m.security[userID]; ok {
+		s.MFAFailedAttempts = 0
+		s.MFALockedUntil = nil
+	}
+	return nil
+}
+
+func (m *testMockIdentityRepo) StampPasswordChange(ctx context.Context, userID int64, changedAt, tokenIssuedAt time.Time) (bool, error) {
+	s, _ := m.GetSecurity(ctx, userID)
+	if s.LastPasswordChange != nil && !s.LastPasswordChange.Before(tokenIssuedAt) {
+		return false, nil
+	}
+	stamped := changedAt
+	s.LastPasswordChange = &stamped
+	return true, nil
+}
+
 func (m *testMockIdentityRepo) GetMFA(ctx context.Context, userID int64) (*identity.UserMFA, error) {
 	val, ok := m.mfa[userID]
 	if !ok {

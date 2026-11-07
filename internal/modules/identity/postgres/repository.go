@@ -197,7 +197,8 @@ func (r *Repository) GetSecurity(ctx context.Context, userID int64) (*identity.U
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			SELECT user_id, login_attempts, locked_until, last_login_at, last_login_ip::text,
-			       last_user_agent, last_password_change, password_change_count, max_login_sessions
+			       last_user_agent, last_password_change, password_change_count, max_login_sessions,
+			       mfa_failed_attempts, mfa_locked_until
 			FROM identity.user_security
 			WHERE user_id = $1;
 		`
@@ -205,6 +206,7 @@ func (r *Repository) GetSecurity(ctx context.Context, userID int64) (*identity.U
 		err := tx.QueryRow(txCtx, query, userID).Scan(
 			&s.UserID, &s.LoginAttempts, &s.LockedUntil, &s.LastLoginAt, &ip,
 			&s.LastUserAgent, &s.LastPasswordChange, &s.PasswordChangeCount, &s.MaxLoginSessions,
+			&s.MFAFailedAttempts, &s.MFALockedUntil,
 		)
 		if err != nil {
 			if database.IsNotFound(err) {

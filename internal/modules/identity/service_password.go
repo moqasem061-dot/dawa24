@@ -2,13 +2,28 @@ package identity
 
 import (
 	"context"
+	"errors"
 	"strconv"
+	"sync"
 	"time"
+
+	"golang.org/x/crypto/bcrypt"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 )
+
+// unknownUserHash is a bcrypt hash of a throwaway value, built once and checked
+// against when there is no real hash to compare, so a failed login costs the
+// same time either way.
+var unknownUserHash = sync.OnceValue(func() string {
+	hash, err := bcrypt.GenerateFromPassword([]byte("dawa24-no-such-account"), bcrypt.DefaultCost)
+	if err != nil {
+		return ""
+	}
+	return string(hash)
+})
 
 // ChangePassword verifies current password and updates to the new hashed password.
 func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassword, newPassword string) error {
@@ -33,6 +48,10 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassw
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
 		return err
 	}
+	// Any reset token issued before this change can no longer be used.
+	if _, err := s.repo.StampPasswordChange(ctx, userID, user.UpdatedAt, user.UpdatedAt); err != nil {
+		s.log.WarnContext(ctx, "stamp password change", "user_id", userID, "error", err)
+	}
 	if s.sessionStore != nil {
 		_ = s.sessionStore.DeleteAllForUser(ctx, userID)
 	}
@@ -55,8 +74,24 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassw
 	return nil
 }
 
-// ResetPassword resets a user's password directly after OTP verification.
+// ErrResetTokenSpent means a password reset token was already used, or a
+// password change was recorded after the token was issued.
+var ErrResetTokenSpent = errors.New("identity: password reset token already used")
+
+// ResetPassword resets a user's password after an OTP check in settings. The
+// settings page has no reset token to consume.
 func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) error {
+	return s.resetPassword(ctx, email, newPassword, nil)
+}
+
+// ResetPasswordWithToken resets a password for a reset token issued at
+// tokenIssuedAt. The token works once: the reset records a password change, and
+// a token issued before that change is refused.
+func (s *Service) ResetPasswordWithToken(ctx context.Context, email, newPassword string, tokenIssuedAt time.Time) error {
+	return s.resetPassword(ctx, email, newPassword, &tokenIssuedAt)
+}
+
+func (s *Service) resetPassword(ctx context.Context, email, newPassword string, tokenIssuedAt *time.Time) error {
 	cleanEmail := NormalizeEmail(email)
 	if cleanEmail == "" {
 		return apperr.Validation("email.invalid", "A valid email address is required.", nil)
@@ -72,9 +107,18 @@ func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) 
 	if err != nil {
 		return err
 	}
+	user.UpdatedAt = time.Now().UTC()
+	if tokenIssuedAt != nil {
+		stamped, err := s.repo.StampPasswordChange(ctx, user.ID, user.UpdatedAt, *tokenIssuedAt)
+		if err != nil {
+			return err
+		}
+		if !stamped {
+			return ErrResetTokenSpent
+		}
+	}
 	user.PasswordHash = hash
 	user.MustChangePassword = false
-	user.UpdatedAt = time.Now().UTC()
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
 		return err
 	}

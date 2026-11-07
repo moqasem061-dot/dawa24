@@ -314,3 +314,43 @@ func (m *mockRepo) GetPlatformRole(_ context.Context, _ string) (*PlatformRole, 
 func (m *mockRepo) CreatePlatformRole(_ context.Context, _ *PlatformRole, _ int64) error { return nil }
 func (m *mockRepo) UpdatePlatformRole(_ context.Context, _ *PlatformRole, _ int64) error { return nil }
 func (m *mockRepo) DeletePlatformRole(_ context.Context, _ string) error                 { return nil }
+
+func (m *mockRepo) RecordMFAFailure(_ context.Context, userID int64, now time.Time, threshold int, lockFor time.Duration) (int, *time.Time, error) {
+	s := m.securities[userID]
+	if s == nil {
+		s = &UserSecurity{UserID: userID}
+		m.securities[userID] = s
+	}
+	if s.MFALockedUntil != nil && !s.MFALockedUntil.After(now) {
+		s.MFAFailedAttempts = 0
+	}
+	s.MFAFailedAttempts++
+	s.MFALockedUntil = nil
+	if s.MFAFailedAttempts >= threshold {
+		lockedUntil := now.Add(lockFor)
+		s.MFALockedUntil = &lockedUntil
+	}
+	return s.MFAFailedAttempts, s.MFALockedUntil, nil
+}
+
+func (m *mockRepo) ClearMFAFailures(_ context.Context, userID int64) error {
+	if s := m.securities[userID]; s != nil {
+		s.MFAFailedAttempts = 0
+		s.MFALockedUntil = nil
+	}
+	return nil
+}
+
+func (m *mockRepo) StampPasswordChange(_ context.Context, userID int64, changedAt, tokenIssuedAt time.Time) (bool, error) {
+	s := m.securities[userID]
+	if s == nil {
+		s = &UserSecurity{UserID: userID}
+		m.securities[userID] = s
+	}
+	if s.LastPasswordChange != nil && !s.LastPasswordChange.Before(tokenIssuedAt) {
+		return false, nil
+	}
+	stamped := changedAt
+	s.LastPasswordChange = &stamped
+	return true, nil
+}

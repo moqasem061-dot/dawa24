@@ -122,10 +122,29 @@ func (r *Repository) RejectAdEditRequest(ctx context.Context, id int64, reviewer
 // RecordAdImpression logs an impression and increments the counter.
 func (r *Repository) RecordAdImpression(ctx context.Context, adID int64, userID *int64, ip, ua string) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		seen, err := adHitSeenRecently(txCtx, tx, "promo.ad_impressions", adID, ip)
+		if err != nil || seen {
+			return err
+		}
 		if _, err := tx.Exec(txCtx, `UPDATE promo.ads SET impressions = impressions + 1 WHERE id = $1;`, adID); err != nil {
 			return err
 		}
-		_, err := tx.Exec(txCtx, `INSERT INTO promo.ad_impressions (ad_id, user_id, ip_address, user_agent) VALUES ($1, $2, $3, $4);`, adID, userID, ip, ua)
+		_, err = tx.Exec(txCtx, `INSERT INTO promo.ad_impressions (ad_id, user_id, ip_address, user_agent) VALUES ($1, $2, $3, $4);`, adID, userID, ip, ua)
 		return err
 	})
+}
+
+// adHitWindow is how long a repeat click or view of one ad from one address is
+// folded into the first. It bounds how many rows one client can write per ad.
+const adHitWindow = "1 minute"
+
+// adHitSeenRecently reports whether this address already hit this ad inside
+// adHitWindow. The ad_id and created_at index serves the lookup.
+func adHitSeenRecently(ctx context.Context, tx pgx.Tx, table string, adID int64, ip string) (bool, error) {
+	var seen bool
+	query := `SELECT EXISTS (SELECT 1 FROM ` + table + ` WHERE ad_id = $1 AND ip_address = $2 AND created_at > now() - interval '` + adHitWindow + `');`
+	if err := tx.QueryRow(ctx, query, adID, ip).Scan(&seen); err != nil {
+		return false, err
+	}
+	return seen, nil
 }

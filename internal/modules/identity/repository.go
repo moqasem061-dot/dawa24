@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
@@ -16,6 +17,16 @@ type Repository interface {
 
 	GetSecurity(ctx context.Context, userID int64) (*UserSecurity, error)
 	UpsertSecurity(ctx context.Context, s *UserSecurity) error
+	// RecordMFAFailure atomically counts one wrong second-factor code and locks
+	// second-factor checks once threshold is reached. It returns the new count
+	// and lock time.
+	RecordMFAFailure(ctx context.Context, userID int64, now time.Time, threshold int, lockFor time.Duration) (int, *time.Time, error)
+	// ClearMFAFailures resets the second-factor counter after a correct code.
+	ClearMFAFailures(ctx context.Context, userID int64) error
+	// StampPasswordChange records a password change at changedAt, but only when
+	// no change is already recorded at or after tokenIssuedAt. It reports whether
+	// the stamp was written, so a reset token can be used once.
+	StampPasswordChange(ctx context.Context, userID int64, changedAt, tokenIssuedAt time.Time) (bool, error)
 
 	GetMFA(ctx context.Context, userID int64) (*UserMFA, error)
 	UpsertMFA(ctx context.Context, mfa *UserMFA) error

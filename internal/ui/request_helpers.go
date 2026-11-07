@@ -3,7 +3,6 @@ package ui
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -118,10 +117,12 @@ func (h *UIHandler) safeMessage(err error, lang string) string {
 	if strings.Contains(errStr, "orders_vendor_branch_id_fkey") {
 		return i18n.T(lang, "validation.vendor_branch_invalid")
 	}
+	// Driver text names tables, columns and constraints, so it is never shown.
+	// The raw error is logged by renderError.
 	if strings.Contains(errStr, "foreign key") || strings.Contains(errStr, "23503") {
-		return fmt.Sprintf(i18n.T(lang, "errors.foreign_key_mismatch_format"), errStr)
+		return i18n.T(lang, "errors.400_bad_request")
 	}
-	return fmt.Sprintf(i18n.T(lang, "errors.processing_error_format"), errStr)
+	return i18n.T(lang, "errors.500_internal")
 }
 
 // statusForError maps an error onto a response code. A full page load that

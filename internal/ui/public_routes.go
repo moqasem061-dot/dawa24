@@ -166,11 +166,17 @@ func (h *UIHandler) RegisterPublicRoutes(r chi.Router) {
 		pub.Get("/compare/market-benchmark/offers/close", h.CompareBenchmarkOffersClose)
 		pub.Get("/compare/market-intelligence", h.CompareMarketIntelligencePage)
 		pub.Get("/market-discounts", h.MarketDiscountsPage)
-		pub.Get("/tracking", h.GuestOrderTrackingPage)
+		// Order numbers are sequential, so /tracking is limited per IP to stop
+		// it being walked. 30 a minute is far above what a person needs.
+		pub.With(h.limiter.LimitByIP(30, time.Minute)).Get("/tracking", h.GuestOrderTrackingPage)
 		pub.Get("/promotions/track-click/{offer}", h.PublicPromotionTrackClick)
 		pub.Get("/promotions/track-click/{offer}/{promotion}", h.PublicPromotionTrackClick)
-		pub.Get("/ads/click/{ad}", h.PublicAdClick)
-		pub.Get("/ads/impression/{ad}", h.PublicAdImpression)
+		// Ad hits are anonymous and write a row each. The per-IP limits are well
+		// above a real visitor's rate (impressions are higher: many visitors
+		// share one carrier IP). Repeats of one ad from one IP within a minute
+		// are counted once in the promo module.
+		pub.With(h.limiter.LimitByIP(60, time.Minute)).Get("/ads/click/{ad}", h.PublicAdClick)
+		pub.With(h.limiter.LimitByIP(300, time.Minute)).Get("/ads/impression/{ad}", h.PublicAdImpression)
 
 		// Form actions that work signed-out (sign-up must be reachable pre-login)
 		if h.limiter != nil {

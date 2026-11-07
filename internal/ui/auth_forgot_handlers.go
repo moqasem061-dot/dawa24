@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"errors"
 	"net/http"
 	"net/url"
@@ -47,44 +48,32 @@ func (h *UIHandler) ForgotSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	engine := h.EmailOTP()
-
-	// Always look up user in system context
-	var userFound bool
+	// The answer is the same whether or not the email is registered: the code is
+	// sent only to a registered account, and every outcome lands on the verify
+	// page with the same notice. Failures are logged, not shown, so the screen
+	// cannot be used to learn which emails have accounts.
 	if h.idSvc != nil {
 		sysCtx := database.AsSystem(ctx)
-		u, err := h.idSvc.GetUserByEmail(sysCtx, cleanEmail)
-		if err == nil && u != nil {
-			userFound = true
+		if u, err := h.idSvc.GetUserByEmail(sysCtx, cleanEmail); err == nil && u != nil {
+			h.sendPasswordResetCode(ctx, cleanEmail, lang)
 		}
-	}
-
-	if !userFound {
-		h.renderPage(ctx, w, "render forgot password user not found", pages.PasswordReset(i18n.T(lang, "auth.reset.user_not_found"), "", cleanEmail, lang, dir))
-		return
-	}
-
-	// If user exists, generate OTP and dispatch email
-	code, _, err := engine.GenerateOTP(cleanEmail, "password_reset", 15*time.Minute)
-	if err != nil {
-		if errors.Is(err, mailer.ErrOTPInCooldown) {
-			http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&error=cooldown", http.StatusSeeOther)
-			return
-		} else if errors.Is(err, mailer.ErrOTPHourlyExceeded) {
-			http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&error=rate_limited", http.StatusSeeOther)
-			return
-		}
-		h.renderPage(ctx, w, "render forgot password send error", pages.PasswordReset(i18n.T(lang, "auth.email.error_sending"), "", cleanEmail, lang, dir))
-		return
-	}
-
-	if sendErr := h.Mailer().SendOTP(ctx, cleanEmail, code, "password_reset", lang); sendErr != nil {
-		h.log.ErrorContext(ctx, "failed to send password reset otp email", "email", cleanEmail, "error", sendErr)
-		h.renderPage(ctx, w, "render forgot password send error", pages.PasswordReset(i18n.T(lang, "auth.email.error_sending"), "", cleanEmail, lang, dir))
-		return
 	}
 
 	http.Redirect(w, r, "/auth/forgot/verify?email="+url.QueryEscape(cleanEmail)+"&notice=sent", http.StatusSeeOther)
+}
+
+// sendPasswordResetCode generates the reset code and emails it. Cooldown,
+// hourly-limit and send failures are logged only; the caller shows one message.
+func (h *UIHandler) sendPasswordResetCode(ctx context.Context, cleanEmail, lang string) {
+	engine := h.EmailOTP()
+	code, _, err := engine.GenerateOTP(cleanEmail, "password_reset", 15*time.Minute)
+	if err != nil {
+		h.log.InfoContext(ctx, "password reset code not sent", "error", err)
+		return
+	}
+	if sendErr := h.Mailer().SendOTP(ctx, cleanEmail, code, "password_reset", lang); sendErr != nil {
+		h.log.ErrorContext(ctx, "failed to send password reset otp email", "email", cleanEmail, "error", sendErr)
+	}
 }
 
 // ForgotVerifyPage renders the 6-digit OTP entry screen for password reset.
@@ -160,7 +149,7 @@ func (h *UIHandler) ResetPasswordPage(w http.ResponseWriter, r *http.Request) {
 	lang, dir := h.localeAndDir(r)
 
 	token := strings.TrimSpace(r.URL.Query().Get("token"))
-	email, err := mailer.VerifyPasswordResetToken(token, h.phoneSecret())
+	email, _, err := mailer.VerifyPasswordResetToken(token, h.phoneSecret())
 	if err != nil || email == "" {
 		http.Redirect(w, r, "/auth/forgot?error=invalid_token", http.StatusSeeOther)
 		return
@@ -175,7 +164,7 @@ func (h *UIHandler) ResetPasswordSubmit(w http.ResponseWriter, r *http.Request) 
 	lang, dir := h.localeAndDir(r)
 
 	token := strings.TrimSpace(r.PostFormValue("token"))
-	email, err := mailer.VerifyPasswordResetToken(token, h.phoneSecret())
+	email, issuedAt, err := mailer.VerifyPasswordResetToken(token, h.phoneSecret())
 	if err != nil || email == "" {
 		http.Redirect(w, r, "/auth/forgot?error=invalid_token", http.StatusSeeOther)
 		return
@@ -200,7 +189,11 @@ func (h *UIHandler) ResetPasswordSubmit(w http.ResponseWriter, r *http.Request) 
 	}
 
 	sysCtx := database.AsSystem(ctx)
-	if err := h.idSvc.ResetPassword(sysCtx, email, password); err != nil {
+	if err := h.idSvc.ResetPasswordWithToken(sysCtx, email, password, issuedAt); err != nil {
+		if errors.Is(err, identity.ErrResetTokenSpent) {
+			http.Redirect(w, r, "/auth/forgot?error=invalid_token", http.StatusSeeOther)
+			return
+		}
 		h.log.ErrorContext(ctx, "failed to reset password", "email", email, "error", err)
 		h.renderPage(ctx, w, "render reset password error", pages.PasswordResetConfirm(token, email, h.safeMessage(err, lang), lang, dir))
 		return

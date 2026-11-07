@@ -370,16 +370,16 @@ func (h *UIHandler) SmartOrderExportCSV(w http.ResponseWriter, r *http.Request) 
 		}
 		_ = out.Write([]string{
 			strconv.Itoa(l.RowNumber),
-			l.RawName,
-			l.RawSKU,
-			l.RawBarcode,
+			csvSafe(l.RawName),
+			csvSafe(l.RawSKU),
+			csvSafe(l.RawBarcode),
 			matchedID,
-			matchedName,
+			csvSafe(matchedName),
 			pages.MatchMethodLabel(l.MatchMethod),
 			fmt.Sprintf("%.0f%%", l.MatchConfidence*100),
 			strconv.FormatFloat(l.EffectiveQty, 'f', -1, 64),
 			pages.SmartOrderOutcomeLabel(l.Outcome),
-			l.OutcomeReason,
+			csvSafe(l.OutcomeReason),
 		})
 	}
 }

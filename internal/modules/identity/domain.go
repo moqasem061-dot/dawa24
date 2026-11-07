@@ -96,6 +96,8 @@ type UserSecurity struct {
 	UserID              int64      `json:"user_id"`
 	LoginAttempts       int        `json:"login_attempts"`
 	LockedUntil         *time.Time `json:"locked_until,omitempty"`
+	MFAFailedAttempts   int        `json:"mfa_failed_attempts"`
+	MFALockedUntil      *time.Time `json:"mfa_locked_until,omitempty"`
 	LastLoginAt         *time.Time `json:"last_login_at,omitempty"`
 	LastLoginIP         string     `json:"last_login_ip,omitempty"`
 	LastUserAgent       string     `json:"last_user_agent,omitempty"`

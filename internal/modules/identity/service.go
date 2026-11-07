@@ -185,6 +185,8 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 }
 
 // Login authenticates a user against credentials, lockouts, and MFA requirements.
+// The password is checked before anything about the account is revealed: a
+// caller who does not know the password learns nothing about status or lockout.
 func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, error) {
 	now := time.Now().UTC()
 	cleanEmail := NormalizeEmail(input.Email)
@@ -192,6 +194,9 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, er
 	user, err := s.repo.GetUserByEmail(ctx, cleanEmail)
 	if err != nil {
 		if errors.Is(err, apperr.NotFound("user")) || apperr.KindOf(err) == apperr.KindNotFound {
+			// Spend the same bcrypt time as a real check, so the response time
+			// does not show whether the email is registered.
+			CheckPassword(unknownUserHash(), input.Password)
 			return nil, ErrInvalidCredentials
 		}
 		return nil, err
@@ -203,20 +208,31 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, er
 		return nil, err
 	}
 
+	// An account without a stored hash still spends the bcrypt time, and never matches.
+	hash := user.PasswordHash
+	if hash == "" {
+		hash = unknownUserHash()
+	}
+	passwordOK := CheckPassword(hash, input.Password) && user.PasswordHash != ""
+
 	if sec.IsLocked(now) {
+		// Wrong guesses during a lock are not recorded, so they do not extend it.
+		if !passwordOK {
+			return nil, ErrInvalidCredentials
+		}
 		s.log.WarnContext(ctx, "login attempt on locked account", "user_id", user.ID, "locked_until", sec.LockedUntil)
 		return nil, apperr.Forbidden("auth.locked", "Account is temporarily locked due to multiple failed login attempts. Please try again later.")
 	}
 
-	if err := user.ValidateLogin(); err != nil {
-		return nil, err
-	}
-
-	if !CheckPassword(user.PasswordHash, input.Password) {
+	if !passwordOK {
 		sec.RecordFailedAttempt(now)
 		_ = s.repo.UpsertSecurity(ctx, sec)
 		s.log.WarnContext(ctx, "failed login attempt", "user_id", user.ID, "attempts", sec.LoginAttempts)
 		return nil, ErrInvalidCredentials
+	}
+
+	if err := user.ValidateLogin(); err != nil {
+		return nil, err
 	}
 
 	// Password is correct; reset attempts

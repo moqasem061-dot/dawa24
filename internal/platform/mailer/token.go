@@ -55,9 +55,14 @@ func SignPasswordResetToken(email, secret string, ttl time.Duration) (string, er
 	return signToken(email, "password_reset", secret, ttl)
 }
 
-// VerifyPasswordResetToken validates the reset token and returns the authorized email address.
-func VerifyPasswordResetToken(token, secret string) (string, error) {
-	return extractTokenEmail(token, "password_reset", secret)
+// VerifyPasswordResetToken validates the reset token and returns the authorized
+// email address and the time the token was issued.
+func VerifyPasswordResetToken(token, secret string) (string, time.Time, error) {
+	payload, err := extractTokenPayload(token, "password_reset", secret)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return payload.Email, time.Unix(payload.IssuedAt, 0), nil
 }
 
 func signToken(email, purpose, secret string, ttl time.Duration) (string, error) {
@@ -101,17 +106,25 @@ func signToken(email, purpose, secret string, ttl time.Duration) (string, error)
 }
 
 func extractTokenEmail(token, expectedPurpose, secret string) (string, error) {
+	payload, err := extractTokenPayload(token, expectedPurpose, secret)
+	if err != nil {
+		return "", err
+	}
+	return payload.Email, nil
+}
+
+func extractTokenPayload(token, expectedPurpose, secret string) (VerifiedEmailPayload, error) {
 	token = strings.TrimSpace(token)
 	if token == "" {
-		return "", ErrTokenInvalidFormat
+		return VerifiedEmailPayload{}, ErrTokenInvalidFormat
 	}
 	if secret == "" {
-		return "", errors.New("mailer: secret required for token verification")
+		return VerifiedEmailPayload{}, errors.New("mailer: secret required for token verification")
 	}
 
 	parts := strings.Split(token, ".")
 	if len(parts) != 2 {
-		return "", ErrTokenInvalidFormat
+		return VerifiedEmailPayload{}, ErrTokenInvalidFormat
 	}
 
 	payloadB64, sigHex := parts[0], parts[1]
@@ -121,26 +134,26 @@ func extractTokenEmail(token, expectedPurpose, secret string) (string, error) {
 	expectedSig := hex.EncodeToString(mac.Sum(nil))
 
 	if !hmac.Equal([]byte(sigHex), []byte(expectedSig)) {
-		return "", ErrTokenSignature
+		return VerifiedEmailPayload{}, ErrTokenSignature
 	}
 
 	payloadJSON, err := base64.RawURLEncoding.DecodeString(payloadB64)
 	if err != nil {
-		return "", ErrTokenInvalidFormat
+		return VerifiedEmailPayload{}, ErrTokenInvalidFormat
 	}
 
 	var payload VerifiedEmailPayload
 	if err := json.Unmarshal(payloadJSON, &payload); err != nil {
-		return "", ErrTokenInvalidFormat
+		return VerifiedEmailPayload{}, ErrTokenInvalidFormat
 	}
 
 	if payload.Purpose != expectedPurpose {
-		return "", ErrTokenPurposeWrong
+		return VerifiedEmailPayload{}, ErrTokenPurposeWrong
 	}
 
 	if time.Now().Unix() > payload.ExpiresAt {
-		return "", ErrTokenExpired
+		return VerifiedEmailPayload{}, ErrTokenExpired
 	}
 
-	return payload.Email, nil
+	return payload, nil
 }

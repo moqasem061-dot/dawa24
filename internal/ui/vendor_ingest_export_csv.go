@@ -59,8 +59,8 @@ func (h *UIHandler) VendorIngestRowsExport(w http.ResponseWriter, r *http.Reques
 		}
 		for _, row := range rows {
 			_ = out.Write([]string{
-				strconv.Itoa(row.SourceRow), row.DisplayName, row.MatchedCatalogName(), row.SourceCode,
-				pages.OutcomeLabel(row.Outcome, lang), pages.PercentText(row.MatchScore), row.Message,
+				strconv.Itoa(row.SourceRow), csvSafe(row.DisplayName), csvSafe(row.MatchedCatalogName()), csvSafe(row.SourceCode),
+				pages.OutcomeLabel(row.Outcome, lang), pages.PercentText(row.MatchScore), csvSafe(row.Message),
 			})
 		}
 		out.Flush()

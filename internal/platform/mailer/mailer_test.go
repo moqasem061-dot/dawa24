@@ -65,17 +65,20 @@ func TestPasswordResetTokenSignAndVerify(t *testing.T) {
 		t.Fatalf("sign password reset token failed: %v", err)
 	}
 
-	extractedEmail, err := VerifyPasswordResetToken(token, secret)
+	extractedEmail, issuedAt, err := VerifyPasswordResetToken(token, secret)
 	if err != nil {
 		t.Fatalf("verify password reset token failed: %v", err)
 	}
 	if extractedEmail != email {
 		t.Fatalf("expected %s, got %s", email, extractedEmail)
 	}
+	if d := time.Since(issuedAt); d < 0 || d > time.Minute {
+		t.Fatalf("issue time %s is not within the last minute", issuedAt)
+	}
 
 	// Email verify token cannot be used for password reset
 	emailToken, _ := SignEmailToken(email, secret, 10*time.Minute)
-	_, err = VerifyPasswordResetToken(emailToken, secret)
+	_, _, err = VerifyPasswordResetToken(emailToken, secret)
 	if err == nil {
 		t.Fatalf("expected purpose mismatch error")
 	}

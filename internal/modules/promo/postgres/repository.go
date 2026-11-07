@@ -292,11 +292,15 @@ func (r *Repository) CreateSponsorship(ctx context.Context, s *promo.OfferSponso
 // RecordAdClick logs click analytics and increments counters.
 func (r *Repository) RecordAdClick(ctx context.Context, adID int64, userID *int64, ip, ua string) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		seen, err := adHitSeenRecently(txCtx, tx, "promo.ad_clicks", adID, ip)
+		if err != nil || seen {
+			return err
+		}
 		if _, err := tx.Exec(txCtx, `UPDATE promo.ads SET clicks = clicks + 1 WHERE id = $1;`, adID); err != nil {
 			return err
 		}
 		query := `INSERT INTO promo.ad_clicks (ad_id, user_id, ip_address, user_agent) VALUES ($1, $2, $3, $4);`
-		_, err := tx.Exec(txCtx, query, adID, userID, ip, ua)
+		_, err = tx.Exec(txCtx, query, adID, userID, ip, ua)
 		return err
 	})
 }
