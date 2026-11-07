@@ -189,6 +189,10 @@ func (m *deliveryMockRepo) ListVendorNegotiationOrdersWithTotal(_ context.Contex
 	return nil, 0, nil
 }
 
+func (m *deliveryMockRepo) ConfirmDeliveryOverride(_ context.Context, _, _ int64, _ string) (*commerce.OrderShipment, error) {
+	return nil, nil
+}
+
 func (m *deliveryMockRepo) VerifyAndCompleteDelivery(
 	_ context.Context,
 	shipmentID int64,

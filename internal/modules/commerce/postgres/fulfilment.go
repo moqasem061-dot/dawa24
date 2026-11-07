@@ -44,7 +44,7 @@ func (r *Repository) GetShipmentByID(ctx context.Context, id int64) (*commerce.O
 			       status, subtotal, shipping_fee, total_amount, tracking_number,
 			       carrier_name, delivery_code, delivery_attempts, delivery_locked_until,
 			       delivery_notes, collected_amount_minor, delivered_by_courier_at,
-			       shipped_at, delivered_at, created_at, updated_at
+			       shipped_at, delivered_at, created_at, updated_at, delivery_pin_required
 			FROM commerce.order_shipments
 			WHERE id = $1;
 		`
@@ -54,7 +54,7 @@ func (r *Repository) GetShipmentByID(ctx context.Context, id int64) (*commerce.O
 			&statusStr, &s.Subtotal, &s.ShippingFee, &s.TotalAmount, &s.TrackingNumber,
 			&s.CarrierName, &s.DeliveryCode, &s.DeliveryAttempts, &s.DeliveryLockedUntil,
 			&s.DeliveryNotes, &s.CollectedAmountMinor, &s.DeliveredByCourierAt,
-			&s.ShippedAt, &s.DeliveredAt, &s.CreatedAt, &s.UpdatedAt,
+			&s.ShippedAt, &s.DeliveredAt, &s.CreatedAt, &s.UpdatedAt, &s.DeliveryPINRequired,
 		)
 		if err != nil {
 			return err

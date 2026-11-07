@@ -49,6 +49,9 @@ type Repository interface {
 	UpdateShipmentStatus(ctx context.Context, id int64, from, to OrderStatus, history OrderStatusHistory) error
 	SetShipmentTracking(ctx context.Context, id int64, carrier, tracking string) error
 	VerifyAndCompleteDelivery(ctx context.Context, shipmentID int64, deliveryCode string, notes string, collectedAmountMinor int64) (*OrderShipment, error)
+	// ConfirmDeliveryOverride closes a shipment without the buyer's PIN, for staff,
+	// and audits the actor and the reason in the same transaction.
+	ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*OrderShipment, error)
 
 	// The dispatch board: which parcel is on which delivery representative's
 	// round. GetVendorShipment is the only enriched single-parcel read scoped

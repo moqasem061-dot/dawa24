@@ -10,7 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/components"
 )
 
-templ CustomerOrderLines(order *commerce.Order, lang string, reviews map[int64]*org.Review) {
+templ CustomerOrderLines(order *commerce.Order, lang string, reviews map[int64]*org.Review, canOverride bool) {
 	<!-- Shipments & Line Items Table Card -->
 	<div class="glass-panel p-6 mb-0" id="order-lines-container">
 		<div class="flex-between items-center mb-4 flex-wrap gap-3 pb-3 border-b">
@@ -150,6 +150,12 @@ templ CustomerOrderLines(order *commerce.Order, lang string, reviews map[int64]*
 										</span>
 									}
 									@components.StatusBadge(string(sh.Status), lang)
+									if canOverride && sh.DeliveryPINRequired && sh.Status != commerce.StatusDelivered && sh.Status != commerce.StatusCompleted && sh.Status != commerce.StatusCancelled {
+										<form action={ templ.SafeURL(fmt.Sprintf("/admin/orders/%d/shipments/%d/confirm-delivery", order.ID, sh.ID)) } method="POST" class="m-0 d-inline" data-confirm={ i18n.T(lang, "admin.delivery_override.confirm") }>
+											<input type="text" name="reason" required maxlength="500" placeholder={ i18n.T(lang, "admin.delivery_override.reason") } class="form-input text-xs" />
+											<button type="submit" class="btn btn-secondary btn-sm text-xs font-bold">{ i18n.T(lang, "admin.delivery_override.submit") }</button>
+										</form>
+									}
 									if sh.Status == commerce.StatusDelivered || sh.Status == commerce.StatusCompleted {
 										@VendorShipmentReviewButton(order.ID, sh, reviews[sh.OrganizationID] != nil, reviewScoreOf(reviews[sh.OrganizationID]), lang)
 									}

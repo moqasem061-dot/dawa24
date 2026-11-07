@@ -152,7 +152,15 @@ func (m *mockCommerceRepo) VerifyAndCompleteDelivery(
 // Courier assignment — the dispatch board. These mocks predate it and none of
 // their tests exercise it; the queue itself is covered in courier_test.go.
 
-func (m *mockCommerceRepo) GetVendorShipment(_ context.Context, _, _ int64) (*OrderShipment, error) {
+func (m *mockCommerceRepo) GetVendorShipment(_ context.Context, shipmentID, vendorOrgID int64) (*OrderShipment, error) {
+	for _, list := range m.shipments {
+		for _, s := range list {
+			if s.ID == shipmentID && s.OrganizationID == vendorOrgID {
+				copied := *s
+				return &copied, nil
+			}
+		}
+	}
 	return nil, apperr.NotFound("shipment")
 }
 
@@ -174,4 +182,24 @@ func (m *mockCommerceRepo) CourierQueueCounts(_ context.Context, _, _ int64) (Co
 
 func (m *mockCommerceRepo) ListCourierWorkload(_ context.Context, _ int64) ([]*CourierWorkload, error) {
 	return nil, nil
+}
+
+// overrideRecord is one staff override the fake was asked to apply.
+type overrideRecord struct {
+	shipmentID, actorUserID int64
+	reason                  string
+}
+
+func (m *mockCommerceRepo) ConfirmDeliveryOverride(_ context.Context, shipmentID, actorUserID int64, reason string) (*OrderShipment, error) {
+	m.overrides = append(m.overrides, overrideRecord{shipmentID, actorUserID, reason})
+	for _, list := range m.shipments {
+		for _, s := range list {
+			if s.ID == shipmentID {
+				s.Status = StatusDelivered
+				copied := *s
+				return &copied, nil
+			}
+		}
+	}
+	return nil, apperr.NotFound("shipment")
 }

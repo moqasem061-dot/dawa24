@@ -246,3 +246,7 @@ func (r stubRepo) ListCourierWorkload(ctx context.Context, vendorOrgID int64) ([
 	r.fail("ListCourierWorkload")
 	return nil, nil
 }
+
+func (r stubRepo) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
+	return nil, nil
+}

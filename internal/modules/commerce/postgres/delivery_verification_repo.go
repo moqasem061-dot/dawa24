@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -24,12 +25,45 @@ func (r *Repository) VerifyAndCompleteDelivery(
 	notes string,
 	collectedAmountMinor int64,
 ) (*commerce.OrderShipment, error) {
+	return r.completeDelivery(ctx, shipmentID, deliveryCode, notes, collectedAmountMinor, nil)
+}
+
+// ConfirmDeliveryOverride marks a shipment delivered without the buyer's PIN.
+// It is the staff path for a buyer who cannot give the PIN. The same transaction
+// closes the shipment and syncs the order; the override itself is written to the
+// audit log with the actor and the reason.
+func (r *Repository) ConfirmDeliveryOverride(
+	ctx context.Context,
+	shipmentID, actorUserID int64,
+	reason string,
+) (*commerce.OrderShipment, error) {
+	return r.completeDelivery(ctx, shipmentID, "", reason, -1, &deliveryOverride{actorUserID: actorUserID, reason: reason})
+}
+
+// deliveryOverride marks a completion that skipped the PIN check.
+type deliveryOverride struct {
+	actorUserID int64
+	reason      string
+}
+
+// completeDelivery is the one transaction that closes a parcel as delivered. A
+// nil override checks the PIN, with the attempt lockout; a non-nil override
+// skips the PIN and audits the actor and reason.
+func (r *Repository) completeDelivery(
+	ctx context.Context,
+	shipmentID int64,
+	deliveryCode string,
+	notes string,
+	collectedAmountMinor int64,
+	override *deliveryOverride,
+) (*commerce.OrderShipment, error) {
 	err := r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// 1. Lock shipment row for update and read payment method
 		query := `
 			SELECT s.id, s.order_id, s.organization_id, s.status, s.delivery_code, s.delivery_attempts,
 			       s.delivery_locked_until, s.total_amount, s.shipping_fee,
-			       COALESCE(ord.payment_method, 'cod'), COALESCE(ord.payment_status, 'unpaid')
+			       COALESCE(ord.payment_method, 'cod'), COALESCE(ord.payment_status, 'unpaid'),
+			       s.delivery_pin_required
 			FROM commerce.order_shipments s
 			JOIN commerce.orders ord ON ord.id = s.order_id
 			WHERE s.id = $1
@@ -45,10 +79,12 @@ func (r *Repository) VerifyAndCompleteDelivery(
 		var paymentStatus string
 		var orderID int64
 		var orgID int64
+		var pinRequired bool
 
 		err := tx.QueryRow(txCtx, query, shipmentID).Scan(
 			&shipmentID, &orderID, &orgID, &currentStatus, &actualCode,
 			&attempts, &lockedUntil, &totalAmount, &shippingFee, &paymentMethod, &paymentStatus,
+			&pinRequired,
 		)
 		if err != nil {
 			if errors.Is(err, pgx.ErrNoRows) {
@@ -75,8 +111,11 @@ func (r *Repository) VerifyAndCompleteDelivery(
 			return apperr.Conflict("delivery.cancelled", i18n.TDefault("w4_mod.w4str_146_146"))
 		}
 
-		// 4. Verify Delivery Code (PIN)
-		if actualCode != "" && deliveryCode != actualCode {
+		// 4. Verify Delivery Code (PIN). A shipment under the PIN rule always
+		// needs a code, so an empty one is refused rather than matched.
+		// A staff override skips this check, and is audited below.
+		needsPIN := pinRequired || actualCode != ""
+		if override == nil && needsPIN && (deliveryCode == "" || deliveryCode != actualCode) {
 			newAttempts := attempts + 1
 			if newAttempts >= 5 {
 				lockTime := now.Add(15 * time.Minute)
@@ -127,6 +166,20 @@ func (r *Repository) VerifyAndCompleteDelivery(
 		`
 		if _, err := tx.Exec(txCtx, updateQuery, shipmentID, notes, collectedAmountMinor); err != nil {
 			return fmt.Errorf("commerce postgres: update delivery status: %w", err)
+		}
+
+		if override != nil {
+			if err := database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: &orgID,
+				ActorUserID:    override.actorUserID,
+				Action:         "shipment.delivery_override",
+				EntityType:     "shipment",
+				EntityID:       strconv.FormatInt(shipmentID, 10),
+				Before:         map[string]any{"status": currentStatus},
+				After:          map[string]any{"status": "delivered", "reason": override.reason},
+			}); err != nil {
+				return fmt.Errorf("commerce postgres: audit delivery override: %w", err)
+			}
 		}
 
 		// 6. Record audit trail in order_status_history

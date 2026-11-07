@@ -178,24 +178,27 @@ type AdminOrderKPIs struct {
 
 // OrderShipment represents a vendor-specific shipment split from a master order.
 type OrderShipment struct {
-	ID                   int64        `json:"id"`
-	PublicID             string       `json:"public_id"`
-	OrderID              int64        `json:"order_id"`
-	OrganizationID       int64        `json:"organization_id"`
-	BranchID             *int64       `json:"branch_id,omitempty"`
-	ShipmentNumber       string       `json:"shipment_number"`
-	Status               OrderStatus  `json:"status"`
-	Subtotal             money.Amount `json:"subtotal"`
-	ShippingFee          money.Amount `json:"shipping_fee"`
-	TotalAmount          money.Amount `json:"total_amount"`
-	TrackingNumber       string       `json:"tracking_number,omitempty"`
-	CarrierName          string       `json:"carrier_name,omitempty"`
-	DeliveryCode         string       `json:"delivery_code,omitempty"`
-	DeliveryAttempts     int          `json:"delivery_attempts"`
-	DeliveryLockedUntil  *time.Time   `json:"delivery_locked_until,omitempty"`
-	DeliveryNotes        string       `json:"delivery_notes,omitempty"`
-	CollectedAmountMinor int64        `json:"collected_amount_minor"`
-	DeliveredByCourierAt *time.Time   `json:"delivered_by_courier_at,omitempty"`
+	ID             int64        `json:"id"`
+	PublicID       string       `json:"public_id"`
+	OrderID        int64        `json:"order_id"`
+	OrganizationID int64        `json:"organization_id"`
+	BranchID       *int64       `json:"branch_id,omitempty"`
+	ShipmentNumber string       `json:"shipment_number"`
+	Status         OrderStatus  `json:"status"`
+	Subtotal       money.Amount `json:"subtotal"`
+	ShippingFee    money.Amount `json:"shipping_fee"`
+	TotalAmount    money.Amount `json:"total_amount"`
+	TrackingNumber string       `json:"tracking_number,omitempty"`
+	CarrierName    string       `json:"carrier_name,omitempty"`
+	DeliveryCode   string       `json:"delivery_code,omitempty"`
+	// DeliveryPINRequired is true for a shipment created under the delivery PIN
+	// rule: it cannot be marked delivered without the buyer's PIN or a staff override.
+	DeliveryPINRequired  bool       `json:"delivery_pin_required"`
+	DeliveryAttempts     int        `json:"delivery_attempts"`
+	DeliveryLockedUntil  *time.Time `json:"delivery_locked_until,omitempty"`
+	DeliveryNotes        string     `json:"delivery_notes,omitempty"`
+	CollectedAmountMinor int64      `json:"collected_amount_minor"`
+	DeliveredByCourierAt *time.Time `json:"delivered_by_courier_at,omitempty"`
 
 	// WalletPaidAmount is what this shipment was charged to the buyer's wallet, and
 	// WalletPaidAt is when (nil until it is charged). WalletRefundedAmount is what has

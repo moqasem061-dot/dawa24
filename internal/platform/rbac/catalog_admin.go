@@ -222,6 +222,7 @@ func adminCommercePerms() []Permission {
 		adminAct("commerce.order.update", g, "تعديل الطلبات", "Edit orders", "commerce.order.view"),
 		adminAct("commerce.order.dispatch", g, "إرسال الطلبات للموردين", "Dispatch orders", "commerce.order.view"),
 		adminAct("commerce.order.fulfil", g, "إغلاق وتنفيذ الطلبات", "Fulfil orders", "commerce.order.view"),
+		adminAct("commerce.delivery.override", g, "تأكيد تسليم بدون رمز المشتري", "Confirm delivery without the buyer PIN", "commerce.order.view"),
 		adminAct("commerce.admin", g, "واجهة الطلبات البرمجية", "Commerce API", "commerce.order.view"),
 		adminPage("commerce.quote.view", g, "orders", "عروض الأسعار", "Quotes"),
 		adminAct("commerce.quote.manage", g, "إدارة عروض الأسعار", "Manage quotes", "commerce.quote.view"),

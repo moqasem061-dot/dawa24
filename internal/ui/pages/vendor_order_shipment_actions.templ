@@ -75,6 +75,7 @@ templ VendorOrderShipmentActions(sh *commerce.OrderShipment, data VendorOrdersDa
 				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
 					<input type="hidden" name="status" value="delivered" />
 					<input type="hidden" name="notes" value="تم تسليم الشحنة المبردة بالصيدلية وتوثيق الاستلام" />
+					<input type="text" name="delivery_code" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" class="form-input text-xs tabular-nums flex-1 min-w-36 rounded-md" placeholder={ i18n.T(lang, "vendor.delivery_pin.placeholder") } />
 					<button
 						type="submit"
 						class="btn btn-secondary font-bold px-4 py-2 gap-2 text-xs"
@@ -87,6 +88,7 @@ templ VendorOrderShipmentActions(sh *commerce.OrderShipment, data VendorOrdersDa
 				<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", sh.ID)) } method="POST" class="m-0 d-inline">
 					<input type="hidden" name="status" value="delivered" />
 					<input type="hidden" name="notes" value="تم تسليم الشحنة المبردة بالصيدلية وتوثيق الاستلام" />
+					<input type="text" name="delivery_code" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" class="form-input text-xs tabular-nums flex-1 min-w-36 rounded-md" placeholder={ i18n.T(lang, "vendor.delivery_pin.placeholder") } />
 					<button
 						type="submit"
 						class="btn btn-primary font-black px-4 py-2 gap-2 text-xs"

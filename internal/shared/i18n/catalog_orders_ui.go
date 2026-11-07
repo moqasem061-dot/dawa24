@@ -1,6 +1,11 @@
 package i18n
 
 func loadOrdersUIKeys(e *engine) {
+	// Delivery PIN: the buyer's code on a supplier's delivered action, and the staff override.
+	addKey(e, "vendor.delivery_pin.placeholder", "vendor", "رمز التسليم من المشتري", "Buyer's delivery PIN", "Placeholder")
+	addKey(e, "admin.delivery_override.reason", "admin", "سبب التأكيد بدون الرمز (مطلوب)", "Reason without the PIN (required)", "Placeholder")
+	addKey(e, "admin.delivery_override.submit", "admin", "تأكيد التسليم بدون الرمز", "Confirm delivery without PIN", "Button")
+	addKey(e, "admin.delivery_override.confirm", "admin", "سيتم تسجيل هذا الإجراء في سجل التدقيق. هل تريد المتابعة؟", "This action is audit logged. Continue?", "Confirm prompt")
 	// Orders List
 	addKey(e, "orders.page_title", "orders", "طلبياتي وأوامر التوريد", "My Orders & Supply Requests", "Customer orders page title")
 	addKey(e, "orders.heading", "orders", "سجل طلبيات وأوامر التوريد", "Orders & Procurement History", "Customer orders heading")

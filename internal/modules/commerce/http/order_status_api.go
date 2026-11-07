@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
@@ -17,6 +18,8 @@ type TransitionStatusRequest struct {
 	Status          commerce.OrderStatus `json:"status"`
 	ChangedByUserID *int64               `json:"changed_by_user_id,omitempty"`
 	Notes           string               `json:"notes,omitempty"`
+	// DeliveryCode is the buyer's PIN, required to mark a parcel under the PIN rule delivered.
+	DeliveryCode string `json:"delivery_code,omitempty"`
 }
 
 // TransitionStatus transitions an order status.
@@ -118,6 +121,10 @@ func (h *Handler) transitionVendorOrderStatus(ctx context.Context, actor authctx
 		return h.service.CancelAPIVendorShipment(ctx, commerce.APIVendorCancelRequest{OrderID: order.ID, ShipmentID: own.ID, VendorOrgID: actor.OrganizationID, UserID: actor.UserID, Reason: request.Notes})
 	}
 	actorUserID := actor.UserID
+	if request.Status == commerce.StatusDelivered && strings.TrimSpace(request.DeliveryCode) != "" {
+		_, err := h.service.CompleteShipmentDelivery(ctx, own.ID, actor.OrganizationID, request.DeliveryCode, request.Notes)
+		return err
+	}
 	_, err := h.service.TransitionShipmentStatus(ctx, own.ID, request.Status, &actorUserID, request.Notes)
 	return err
 }

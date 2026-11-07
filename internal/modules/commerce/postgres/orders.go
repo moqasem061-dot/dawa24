@@ -155,8 +155,9 @@ func (r *Repository) CreateOrder(
 			queryShipment := `
 				INSERT INTO commerce.order_shipments (
 					order_id, organization_id, branch_id, shipment_number,
-					status, subtotal, shipping_fee, total_amount, tracking_number, delivery_code
-				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+					status, subtotal, shipping_fee, total_amount, tracking_number, delivery_code,
+					delivery_pin_required
+				) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, true)
 				RETURNING id, public_id, created_at, updated_at;
 			`
 			err := tx.QueryRow(txCtx, queryShipment,

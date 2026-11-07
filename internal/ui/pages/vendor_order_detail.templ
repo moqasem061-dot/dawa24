@@ -249,6 +249,7 @@ templ VendorOrderDetail(data VendorOrderDetailData) {
 								<input type="hidden" name="return_to" value={ fmt.Sprintf("/vendor/orders/%d", sh.ID) } />
 								<input type="hidden" name="status" value="delivered" />
 								<input type="hidden" name="notes" value="تم تسليم الطلب للصيدلية وتأكيد الاستلام" />
+								<input type="text" name="delivery_code" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" class="form-input text-xs tabular-nums flex-1 min-w-36 rounded-md" placeholder={ i18n.T(lang, "vendor.delivery_pin.placeholder") } />
 								<button type="submit" class="btn btn-primary font-bold px-4 py-2 gap-2 text-xs">
 									@components.IconCheckCircle("icon-xs")
 									<span>تأكيد التسليم للصيدلية (Delivered)</span>

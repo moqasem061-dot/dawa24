@@ -119,6 +119,7 @@ func (h *Handler) GetOrder(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	hideOrderPINs(actor, order)
 	httpx.JSON(w, http.StatusOK, order)
 }
 
@@ -203,6 +204,7 @@ func (h *Handler) ListVendorShipments(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	hideShipmentPINs(actor, shipments)
 	httpx.JSON(w, http.StatusOK, map[string]any{
 		"shipments": shipments,
 		"count":     len(shipments),

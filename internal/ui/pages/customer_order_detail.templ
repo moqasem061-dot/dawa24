@@ -11,7 +11,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatusHistory, noticeType, noticeMsg, lang, dir string, reviews map[int64]*org.Review) {
+templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatusHistory, noticeType, noticeMsg, lang, dir string, reviews map[int64]*org.Review, canOverride bool) {
 	{{
 		canCancel := (order.Status == commerce.StatusPending || order.Status == commerce.StatusProcessing || order.Status == commerce.StatusConfirmed || order.Status == commerce.StatusOnHold)
 		if canCancel {
@@ -260,7 +260,7 @@ templ CustomerOrderDetail(order *commerce.Order, history []*commerce.OrderStatus
 					}
 
 					<!-- 2. Shipments & Line Items Table Component -->
-					@CustomerOrderLines(order, lang, reviews)
+					@CustomerOrderLines(order, lang, reviews, canOverride)
 
 					<!-- 3. Status History Timeline -->
 					if len(history) > 0 {

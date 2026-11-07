@@ -225,3 +225,7 @@ func TestWalletCollectionRuleIsOneRule(t *testing.T) {
 		})
 	}
 }
+
+func (m *walletMockCommerceRepo) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
+	return nil, nil
+}

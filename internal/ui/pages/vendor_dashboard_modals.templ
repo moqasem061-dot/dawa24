@@ -149,6 +149,7 @@ templ VendorDashboardShipmentModals(data VendorDashboardData, lang, dir string) 
 								<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", s.ID)) } method="POST" class="m-0">
 									<input type="hidden" name="status" value="delivered" />
 									<input type="hidden" name="notes" value="Delivered order" />
+									<input type="text" name="delivery_code" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" class="form-input text-xs tabular-nums flex-1 min-w-36 rounded-md" placeholder={ i18n.T(lang, "vendor.delivery_pin.placeholder") } />
 									<button type="submit" class="btn btn-primary w-full justify-center font-bold text-xs py-2 gap-1 rounded-md">
 										@components.IconCheckCircle("icon-xs")
 										<span>{ i18n.T(lang, "vendor_dashboard.modal_btn_deliver") }</span>
@@ -215,6 +216,7 @@ templ VendorDashboardShipmentModals(data VendorDashboardData, lang, dir string) 
 							<form action={ templ.SafeURL(fmt.Sprintf("/vendor/orders/%d/status", s.ID)) } method="POST" class="m-0">
 								<input type="hidden" name="status" value="delivered" />
 								<input type="hidden" name="notes" value="Delivered order" />
+								<input type="text" name="delivery_code" inputmode="numeric" maxlength="6" autocomplete="off" dir="ltr" class="form-input text-xs tabular-nums flex-1 min-w-36 rounded-md" placeholder={ i18n.T(lang, "vendor.delivery_pin.placeholder") } />
 								<button type="submit" class="btn btn-primary w-full justify-center font-bold text-xs py-2 gap-1 rounded-md">
 									@components.IconCheckCircle("icon-xs")
 									<span>{ i18n.T(lang, "vendor_dashboard.modal_btn_confirm_delivery") }</span>

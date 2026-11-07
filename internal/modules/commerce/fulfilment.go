@@ -118,6 +118,11 @@ func (s *Service) transitionShipment(
 		return nil, apperr.Conflict("shipment.invalid_transition",
 			"A shipment cannot move from "+string(shipment.Status)+" to "+string(to)+".")
 	}
+	// A parcel under the PIN rule is closed only by the buyer's PIN, or a staff
+	// override. A plain status change would be a delivery without the PIN.
+	if to == StatusDelivered && shipment.DeliveryPINRequired {
+		return nil, ErrDeliveryPINRequired
+	}
 
 	from := string(shipment.Status)
 	history := OrderStatusHistory{

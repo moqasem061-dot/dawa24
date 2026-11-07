@@ -325,6 +325,17 @@ func (s *Service) TransitionOrderStatus(
 	changedByUserID *int64,
 	notes string,
 ) error {
+	// Marking the order delivered directly would close every shipment without
+	// its buyer's PIN, so an order with a parcel still under the PIN rule is refused.
+	if newStatus == StatusDelivered {
+		order, err := s.repo.GetOrderByID(ctx, orderID)
+		if err != nil {
+			return err
+		}
+		if order != nil && order.hasOpenPINShipment() {
+			return ErrDeliveryPINRequired
+		}
+	}
 	history := OrderStatusHistory{
 		OrderID:         orderID,
 		ToStatus:        string(newStatus),

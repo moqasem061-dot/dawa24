@@ -306,3 +306,7 @@ func (m *courierMockCommerceRepo) VerifyAndCompleteDelivery(
 	}
 	return nil, apperr.NotFound("shipment")
 }
+
+func (m *courierMockCommerceRepo) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
+	return nil, nil
+}

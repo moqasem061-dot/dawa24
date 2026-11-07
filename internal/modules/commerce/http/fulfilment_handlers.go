@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 
@@ -94,6 +95,16 @@ func (h *Handler) GetShipment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// The order decides whether the caller may see the buyer's PIN.
+	if !(actor.IsStaff || actor.Can("commerce.admin")) && shipment.OrderID > 0 {
+		if order, err := h.service.GetOrder(r.Context(), shipment.OrderID); err == nil {
+			if !pinVisibleTo(actor, order) {
+				shipment.DeliveryCode = ""
+			}
+		} else {
+			shipment.DeliveryCode = ""
+		}
+	}
 	httpx.JSON(w, http.StatusOK, shipment)
 }
 
@@ -137,8 +148,9 @@ func (h *Handler) TransitionShipmentStatus(w http.ResponseWriter, r *http.Reques
 	}
 
 	var body struct {
-		Status string `json:"status"`
-		Notes  string `json:"notes"`
+		Status       string `json:"status"`
+		Notes        string `json:"notes"`
+		DeliveryCode string `json:"delivery_code"`
 	}
 	if err := httpx.DecodeJSON(w, r, &body); err != nil {
 		httpx.Error(w, r, h.log, err)
@@ -183,6 +195,17 @@ func (h *Handler) TransitionShipmentStatus(w http.ResponseWriter, r *http.Reques
 			return
 		}
 		httpx.JSON(w, http.StatusOK, cancelled)
+		return
+	}
+
+	// A delivery closed with the buyer's PIN goes through the PIN handover.
+	if status == commerce.StatusDelivered && strings.TrimSpace(body.DeliveryCode) != "" {
+		completed, err := h.service.CompleteShipmentDelivery(reqCtx, id, shipment.OrganizationID, body.DeliveryCode, body.Notes)
+		if err != nil {
+			httpx.Error(w, r, h.log, err)
+			return
+		}
+		httpx.JSON(w, http.StatusOK, completed)
 		return
 	}
 

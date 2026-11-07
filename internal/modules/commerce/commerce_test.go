@@ -16,6 +16,7 @@ type mockCommerceRepo struct {
 	quotes               map[int64]*QuoteRequest
 	purchaseRequests     map[int64]*PurchaseRequest
 	purchaseRequestLines map[int64][]*PurchaseRequestLine
+	overrides            []overrideRecord
 	nextID               int64
 }
 

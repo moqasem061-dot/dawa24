@@ -21,6 +21,7 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 			http.Redirect(w, r, "/admin/orders/"+id, http.StatusMovedPermanently)
 		})
 		g.With(authctx.RequirePagePermission("commerce.order.update")).Post("/admin/orders/{id}/status", h.AdminOrderStatusSubmit)
+		g.With(authctx.RequirePagePermission("commerce.delivery.override")).Post("/admin/orders/{id}/shipments/{shipmentID}/confirm-delivery", h.AdminConfirmDeliveryOverride)
 	})
 
 	// Offers & Promotions

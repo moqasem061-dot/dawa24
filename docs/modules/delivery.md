@@ -134,3 +134,42 @@ always was; what changed is that its caller now proves who is asking.
 `GET /delivery` answers `301` to `/vendor/delivery`, so links a supplier already
 shared do not dead-end. `POST /delivery/verify` is gone — it is the endpoint that
 let a waybill number close an order.
+
+## The delivery PIN rule for new shipments
+
+Every shipment created after this release carries `delivery_pin_required = true`
+(migration 251). Such a shipment cannot be marked delivered by a status change
+on any path. It is closed only in two ways:
+
+1. **The buyer's six-digit PIN.** The courier portal, the supplier's order
+   screens (the delivered action, with a PIN field) and the REST shipment
+   status endpoint (`delivery_code` in the body) all end in
+   `VerifyAndCompleteDelivery`, with the same five-attempt, fifteen-minute
+   lockout. The buyer sees the PIN on the order page while the parcel is open.
+2. **A staff override.** A user holding `commerce.delivery.override` confirms
+   delivery on the order page with a required reason. The same transaction
+   closes the parcel and writes `platform.audit_log` with action
+   `shipment.delivery_override`, the actor, and the reason. Buyer and supplier
+   are notified.
+
+Where the rule is enforced:
+
+| Path | Enforcement |
+|---|---|
+| Supplier status change, REST shipment status, admin shipment status | `Service.transitionShipment` refuses `delivered` (`delivery.code_required`) |
+| Order-level status (admin API, order status API) | `Service.TransitionOrderStatus` refuses `delivered` while any parcel under the rule is open |
+| Courier board | `AdvanceCourierShipment` already refused `delivered`; handover needs the PIN |
+
+The buyer's PIN is hidden from supplier-side reads: `GET /api/v1/commerce/orders/{id}`,
+`GET /api/v1/commerce/shipments/{id}` and `GET /api/v1/commerce/vendor/shipments`
+blank `delivery_code` for anyone who is neither the buyer, nor staff.
+
+**Cutover.** Shipments that existed before migration 251 keep the default
+`false` and finish the old way, with no backfill. Rollback: the previous image
+ignores the column, so it behaves as before; parcels created by this release
+would then lose the PIN gate until this release is redeployed. The PIN itself
+is still stored and still checked by the old handover.
+
+**Known gap.** `cmd/loadseed` inserts development shipments without a PIN and
+without the flag, so they use the old flow. Production creates shipments only
+through `orders.go`, which always generates a PIN and sets the flag.

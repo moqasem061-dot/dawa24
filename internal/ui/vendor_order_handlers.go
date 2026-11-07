@@ -105,6 +105,12 @@ func (h *UIHandler) VendorOrderStatusSubmit(w http.ResponseWriter, r *http.Reque
 		ctx = database.WithTenant(ctx, actor.OrganizationID)
 	}
 
+	// A delivery closed with the buyer's PIN goes through the PIN handover.
+	if code := strings.TrimSpace(r.PostFormValue("delivery_code")); code != "" && toStatus == string(commerce.StatusDelivered) && h.commSvc != nil && shipmentID > 0 {
+		h.vendorDeliverWithPIN(w, r, ctx, actor, shipmentID, code, notes, returnTo)
+		return
+	}
+
 	if h.commSvc != nil && shipmentID > 0 && toStatus != "" {
 		if err := h.transitionVendorShipment(ctx, actor, shipmentID, commerce.OrderStatus(toStatus), notes,
 			strings.TrimSpace(r.PostFormValue("carrier")), strings.TrimSpace(r.PostFormValue("tracking"))); err != nil {

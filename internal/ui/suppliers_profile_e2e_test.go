@@ -381,3 +381,7 @@ func TestSupplierProfileData_AvailabilityAndStock(t *testing.T) {
 		t.Errorf("expected v2 NOT to be purchasable")
 	}
 }
+
+func (m *mockCommerceRepoForSupplierCartTest) ConfirmDeliveryOverride(ctx context.Context, shipmentID, actorUserID int64, reason string) (*commerce.OrderShipment, error) {
+	return nil, nil
+}

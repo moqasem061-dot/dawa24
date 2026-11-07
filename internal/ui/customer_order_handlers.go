@@ -119,7 +119,8 @@ func (h *UIHandler) CustomerOrderDetailPage(w http.ResponseWriter, r *http.Reque
 		noticeMsg = r.URL.Query().Get("notice_msg")
 	}
 
-	h.renderPage(ctx, w, "render customer order detail page", pages.CustomerOrderDetail(order, history, noticeType, noticeMsg, lang, dir, reviewedMap))
+	canOverride := actor.Can("commerce.delivery.override")
+	h.renderPage(ctx, w, "render customer order detail page", pages.CustomerOrderDetail(order, history, noticeType, noticeMsg, lang, dir, reviewedMap, canOverride))
 }
 
 // OrderAccessDecision represents the authorization outcome for customer order viewing.
