@@ -1,0 +1,81 @@
+# Quickstart: validate the ERP Integration API
+
+Two readers: the implementer (sections 1 to 3 and 7 to 9) and the owner acting as Orgasoft (sections 4 to 6, Postman only). Windows shell is Git Bash; every command runs from `F:\dawa24`.
+
+## 1. Build and migrate (implementer)
+```
+make up                      # postgres, redis, minio (docker compose)
+make migrate                 # applies 255 to 258 and the River tables
+go build ./... && go vet ./...
+```
+Done when `make migrate-status` shows 0 pending and `psql` lists schema `erp` with nine tables.
+
+## 2. Start the services
+```
+SEED_PASSWORD='choose-12-chars+' go run ./cmd/cli seed-users     # vendor@, pharmacy@, admin@ dawa24.test
+go run ./cmd/cli erp-demo                                       # S6: warehouse, branch, one variant with SKU 100245, one pending link from pharmacy@ with no code, prints one demo key
+make run          # terminal 1: web on :8080
+make worker       # terminal 2: background jobs (queue erpsync must appear in its startup log)
+```
+`erp-demo` refuses to run when `APP_ENV=prod`. It prints the key once; copy it now.
+
+## 3. Create a key in the website (owner path, no command)
+1. Sign in as the supplier owner (`vendor@dawa24.test`), open `/vendor/integrations`.
+2. Press "New key": provider Orgasoft, a name, the warehouse, the branch, tick the scopes `erp.products.sync`, `erp.orders.read`, `erp.orders.ack`, `erp.orders.decide`. Save.
+3. Copy the key shown once. Reload the page: only the first 8 characters (the prefix) remain.
+3a. Press "Change limit" on the key row, enter a number from 10 to 6000, save: the new limit shows in the table and in Health (`rateLimitPerMinute`) on the next call.
+4. Sign in as `admin@dawa24.test`, open `/admin/integrations`: the key is listed with its organization and a Revoke button.
+
+## 4. Import Postman (owner)
+1. Postman, Import, choose `docs/erp-api/dawa24-erp.postman_collection.json` and `docs/erp-api/dawa24-erp.postman_environment.json`.
+2. Pick the environment "Dawa24 ERP (local)". Set `baseUrl` to `http://localhost:8080` and `apiKey` to the key from section 3.
+3. Open the collection, press Run, keep the order of folders: 00 Health, 01 Products, 02 Sales orders, 03 Decide, 04 Purchase, 05 Errors.
+
+## 5. The journey as Orgasoft (owner, about 20 minutes)
+| Step | Request | You should see |
+|---|---|---|
+| 1 | 00 Health / Check key | 200, `organization`, `scopes`, `warehouse` |
+| 2 | 01 Products / Send batch (3 items: new, known (SKU `100245`, created by `erp-demo`), invalid price `12.345`) | 202, `syncId` saved to `{{syncId}}` |
+| 3 | 01 Products / Sync state (repeat until `completed`, under a minute with the worker running) | counts: 2 ok, 1 failed |
+| 4 | 01 Products / Item results | item 3 `failed`, `ERP_ITEM_PRICE_PRECISION`, Arabic and English text |
+| 5 | Send the same batch again | `unchanged` for the known items, no duplicates in `/vendor/products` |
+| 6 | In the browser as `pharmacy@dawa24.test`: add the supplier's product to the cart, open `/checkout` | a modal asks for the customer code; enter `C-00871`; the cart is still there; place the order |
+| 7 | 02 Sales orders / New orders | the order, `customer.erpCode` = `C-00871`, `importState` = `new` |
+| 8 | 02 Sales orders / Acknowledge (`{{orderNumber}}`, `ORGA-1`) | `acknowledged` |
+| 9 | 02 Sales orders / New orders again | the order is gone from `state=new`; `state=imported` shows it |
+| 10 | 03 Decide / Confirm | `confirmed`; the website order page shows confirmed |
+| 11 | 03 Decide / Confirm again | 200 `already_confirmed` |
+| 12 | 03 Decide / Deliver | 403 `ERP_DELIVERY_NOT_ALLOWED` |
+| 13 | 04 Purchase / Find offers (`barcode`), then Create purchase order | 201 with an order number; send it again: 200, same number |
+
+## 6. Failure examples (owner)
+Folder 05 Errors holds one request per documented code and a test that the returned `error.code` equals the one in `contracts/error-codes.md`: no key (401 `ERP_AUTH_MISSING`), wrong key (`ERP_AUTH_INVALID`), a scope the key lacks (`ERP_SCOPE_MISSING`), a batch of 50,001 items (`ERP_BATCH_TOO_LARGE`), bad cursor (`ERP_CURSOR_INVALID`), wrong price on a purchase order (`ERP_PO_PRICE_MISMATCH`). Revoke the key in `/admin/integrations` and run Health again: 401 `ERP_KEY_REVOKED`.
+
+Pass criteria: every Postman test is green, and SC-001 holds (key to acknowledged order in under 30 minutes).
+
+## 7. Automated checks (implementer)
+```
+go test ./internal/modules/erp/... -count=1                      # unit + http
+go test ./internal/platform/... ./internal/shared/... -count=1   # limiter, audit, i18n, queue config
+go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1
+go test -p 1 ./test/integration/... -run 'ERP' -count=1          # real Postgres: isolation, cursors, idempotency
+make check                                                       # every gate CI runs
+```
+Done when all pass and `make check-file-size` and `make check-hardcoded-arabic` print ok.
+
+## 8. AI off (implementer)
+```
+go test ./internal/modules/erp/... -run 'TestSyncWithGatewayOff' -count=1
+```
+The test builds the sync service with no Gateway client and a matcher stub that returns `needs_review`, then asserts a batch of 20 items completes, each item has a state, and linked items update normally. For the manual check, start the worker without `GATEWAY_*` variables and repeat steps 2 to 5 of section 5: the batch finishes, unknown items are `needs_review` and appear in `/vendor/integrations/review`.
+
+## 9. Load check (implementer, not in CI)
+```
+k6 run test/load/erp_sync.js -e BASE=http://localhost:8080 -e KEY=$KEY -e ITEMS=50000
+```
+`test/load/erp_sync.js` is new (the folder already holds `k6_pages.js`). Expect: the 202 in under 5 seconds (SC-002) and `completed` in under 7 minutes on the dev machine. Run again with `-e KEYS=k1,k2,...,k10` (ten keys from `go run ./cmd/cli erp-demo -count 10`) and watch `river_job` for the `erpsync` queue draining. If it does not drain in 7 minutes, raise `WORKER_ERPSYNC`.
+
+SC-003 (website latency while syncs run): `k6 run test/load/erp_sync.js -e BASE=... -e KEYS=... -e EMAIL=... -e PASSWORD=... -e SYNC=0` records the baseline p95 of the website pages; the same command with `-e SYNC=1` repeats it while the keys send batches every 7 minutes. Pass when the p95 with `SYNC=1` is at most 1.2 times the p95 with `SYNC=0`. `erp-demo -count N` makes N keys of one organization, so this models fewer tenants than the 50 in SC-003; record the number of keys used and have the owner confirm with real tenants before launch.
+
+## 10. Rollback
+Redeploy the previous image. The tables are unused by it; migrations are expand-only. To switch the API off without a rollback set `ERP_API_ENABLED=false`: every `/erp/v1/*` call returns 503 `ERP_DISABLED`. Existing n8n bridges and `/api/v1` routes are untouched either way.
