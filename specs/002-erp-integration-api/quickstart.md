@@ -11,6 +11,8 @@ go build ./... && go vet ./...
 Done when `make migrate-status` shows 0 pending and `psql` lists schema `erp` with nine tables.
 
 ## 2. Start the services
+
+The ERP API defaults to off. For this test flow, set `ERP_API_ENABLED=true` in the environment of the server and worker; configure `ERP_KEY_PEPPER` (at least 32 bytes in production). Deploy first with the API off, then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true` when ready.
 ```
 SEED_PASSWORD='choose-12-chars+' go run ./cmd/cli seed-users     # vendor@, pharmacy@, admin@ dawa24.test
 go run ./cmd/cli erp-demo                                       # S6: warehouse, branch, one variant with SKU 100245, one pending link from pharmacy@ with no code, prints one demo key
@@ -78,4 +80,4 @@ k6 run test/load/erp_sync.js -e BASE=http://localhost:8080 -e KEY=$KEY -e ITEMS=
 SC-003 (website latency while syncs run): `k6 run test/load/erp_sync.js -e BASE=... -e KEYS=... -e EMAIL=... -e PASSWORD=... -e SYNC=0` records the baseline p95 of the website pages; the same command with `-e SYNC=1` repeats it while the keys send batches every 7 minutes. Pass when the p95 with `SYNC=1` is at most 1.2 times the p95 with `SYNC=0`. `erp-demo -count N` makes N keys of one organization, so this models fewer tenants than the 50 in SC-003; record the number of keys used and have the owner confirm with real tenants before launch.
 
 ## 10. Rollback
-Redeploy the previous image. The tables are unused by it; migrations are expand-only. To switch the API off without a rollback set `ERP_API_ENABLED=false`: every `/erp/v1/*` call returns 503 `ERP_DISABLED`. Existing n8n bridges and `/api/v1` routes are untouched either way.
+Redeploy the previous image. The tables are unused by it; migrations are expand-only. To switch the API off without a rollback set `ERP_API_ENABLED=false`: no `/erp/v1` routes are mounted and the erpsync worker does not start. Existing n8n bridges and `/api/v1` routes are untouched either way.

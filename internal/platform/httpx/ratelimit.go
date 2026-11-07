@@ -146,6 +146,47 @@ func (l *Limiter) LimitUserOrIP(userLimit, ipLimit int, window time.Duration) fu
 	}
 }
 
+// AllowKey applies a rate limit to the supplied key.
+func (l *Limiter) AllowKey(ctx context.Context, key string, limit int, window time.Duration) (allowed bool, count int64, retryAfter time.Duration, err error) {
+	return l.allow(ctx, key, limit, window)
+}
+
+// FailedAuthCount reads a failure counter without changing its expiry.
+func (l *Limiter) FailedAuthCount(ctx context.Context, key string) (count int64, ttl time.Duration, err error) {
+	rdb := l.client()
+	if rdb == nil {
+		return 0, 0, nil
+	}
+	count, err = rdb.Get(ctx, key).Int64()
+	if err == redis.Nil {
+		return 0, 0, nil
+	}
+	if err != nil {
+		return 0, 0, err
+	}
+	ttl, err = rdb.TTL(ctx, key).Result()
+	if err == nil && ttl < 0 {
+		return 0, 0, fmt.Errorf("failure counter has no expiry")
+	}
+	return count, ttl, err
+}
+
+// IncrementAuthFailure records a failure without extending an existing window.
+func (l *Limiter) IncrementAuthFailure(ctx context.Context, key string, window time.Duration) error {
+	rdb := l.client()
+	if rdb == nil {
+		return nil
+	}
+	count, err := rdb.Incr(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+	if count == 1 {
+		return rdb.Expire(ctx, key, window).Err()
+	}
+	return nil
+}
+
 func (l *Limiter) allow(ctx context.Context, key string, limit int, window time.Duration) (bool, int64, time.Duration, error) {
 	rdb := l.client()
 	if rdb == nil {

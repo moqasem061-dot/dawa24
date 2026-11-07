@@ -1,0 +1,789 @@
+openapi: 3.1.0
+info:
+  title: Dawa24 ERP Integration API
+  version: "1.0.0"
+  description: |
+    Machine API for ERP systems (first consumer: Orgasoft). Arabic is the primary language: every message is `{ar, en}`.
+
+    **Authentication.** Send `Authorization: Bearer <key>`. A key belongs to one organization and one integration and carries scopes. The organization is always taken from the key.
+
+    **Envelope.** Success: `{"status":"ok","requestId","data"}`. Failure: `{"status":"error","requestId","error":{"code","message":{"ar","en"},"details"}}`. The `X-Request-ID` header repeats `requestId`; log it. Codes are listed in `error-codes.md`.
+
+    **Money** is a decimal string with at most two decimals ("125.50"). On input a JSON number is accepted too, but more than two decimals is rejected, never rounded. `discount` and `tax` are percentages.
+
+    **Field names on input** may be camelCase or PascalCase (`externalProductCode` or `ExternalProductCode`). Output is always camelCase.
+
+    **Polling orders.** Start each cycle without a cursor and filter `state=new`. The cursor only pages inside one cycle; it is the id of the last row, so no row is skipped or repeated while you page.
+
+    **Limits.** 600 requests/minute per key by default (adjustable per key), 6 sync batches/minute, 50,000 items and 32 MiB per sync body (gzip accepted with `Content-Encoding: gzip`). On 429 read `Retry-After`.
+
+    Nothing marked "unverified" in the assumptions is final: Orgasoft has not confirmed the product field spellings other than those in this document, the meaning of `tax`, `isQuota`/`quotaQuantity`, or that the acknowledgement payload below is their sample 3.
+servers:
+  - url: "{baseUrl}/erp/v1"
+    variables:
+      baseUrl:
+        default: http://localhost:8080
+security:
+  - ApiKey: []
+tags:
+  - name: Health
+  - name: Products
+  - name: Sales orders
+  - name: Purchase orders
+paths:
+  /health:
+    get:
+      tags: [Health]
+      operationId: getHealth
+      summary: Check the key and see what it may do
+      description: Works with any valid key. Use it first to confirm the base address and key.
+      responses:
+        "200":
+          description: Key is valid
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HealthResponse" }
+              example:
+                status: ok
+                requestId: 9f2c41d07a3b4e55
+                data:
+                  apiVersion: "1.0"
+                  serverTime: "2026-11-07T10:15:30Z"
+                  organization: { id: 4021, name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" }, type: vendor }
+                  integration: { provider: orgasoft, status: active }
+                  key:
+                    prefix: k3m9x2pq
+                    scopes: [erp.products.sync, erp.orders.read, erp.orders.ack, erp.orders.decide]
+                    warehouse: { id: 811, name: "المستودع الرئيسي" }
+                    branch: { id: 977 }
+                    rateLimitPerMinute: 600
+                    expiresAt: null
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /openapi.yaml:
+    get:
+      tags: [Health]
+      operationId: getOpenApi
+      summary: This document
+      security: []
+      responses:
+        "200": { description: OpenAPI 3.1 YAML, content: { application/yaml: { schema: { type: string } } } }
+  /products/sync:
+    post:
+      tags: [Products]
+      operationId: syncProducts
+      summary: Send a batch of changed products
+      description: |
+        Accepted at once (202) and processed in the background in the order received. A product absent from a batch is left unchanged. Stock 0 shows the product out of stock. If a code appears twice, the last one wins and the earlier row gets `ERP_ITEM_SUPERSEDED`. Send `Idempotency-Key` to make a retried request return the same `syncId`; the same key with a different body is `ERP_IDEMPOTENCY_CONFLICT`.
+        Required scope: `erp.products.sync`. Supplier organizations only.
+      parameters:
+        - { name: Idempotency-Key, in: header, required: false, schema: { type: string, maxLength: 100 } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SyncRequest" }
+            examples:
+              camelCase:
+                summary: Two products, camelCase
+                value:
+                  clientBatchId: orga-2026-11-07T10:15
+                  items:
+                    - externalProductCode: "100245"
+                      arName: "بانادول اكسترا 24 قرص"
+                      barcode: "6221024000123"
+                      publicPrice: 62.50
+                      discount: 12.5
+                      tax: 0
+                      stock: 340
+                      expiryDate: "2027-09-30"
+                      isQuota: true
+                      quotaQuantity: 20
+                    - externalProductCode: "100311"
+                      arName: "فيتامين د 50000 وحدة"
+                      publicPrice: 95
+                      stock: 0
+              pascalCase:
+                summary: Same shape, PascalCase
+                value:
+                  Items:
+                    - ExternalProductCode: "100245"
+                      ArName: "بانادول اكسترا 24 قرص"
+                      PublicPrice: 62.50
+                      Discount: "12.50"
+                      Tax: "0"
+                      Stock: 340
+                      ExpiryDate: "2027-09-30T00:00:00"
+          application/gzip: { schema: { type: string, format: binary } }
+      responses:
+        "202":
+          description: Accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncAcceptedResponse" }
+              example:
+                status: ok
+                requestId: 4b1f9a6c22d34b10
+                data:
+                  syncId: 7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+                  state: queued
+                  itemCount: 2
+                  rejectedAtIntake: 0
+                  statusUrl: /erp/v1/products/sync/7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "413":
+          description: Body or batch too large
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+              example:
+                status: error
+                requestId: 0a77d3c9e1b24f60
+                error:
+                  code: ERP_BATCH_TOO_LARGE
+                  message: { ar: "عدد الأصناف أكبر من الحد المسموح (50000 صنف في الدفعة).", en: "The batch has more items than allowed (50000 per batch)." }
+                  details: { limit: 50000, received: 50001 }
+        "422": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /products/sync/{syncId}:
+    get:
+      tags: [Products]
+      operationId: getSync
+      summary: Overall state of a sync
+      description: "Scope: `erp.products.sync`. `state` is queued, processing, completed or failed. A completed sync can still contain failed items."
+      parameters:
+        - { $ref: "#/components/parameters/SyncId" }
+      responses:
+        "200":
+          description: Sync state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncStatusResponse" }
+              example:
+                status: ok
+                requestId: 6c20ab98f1e14d07
+                data:
+                  syncId: 7d0c3f1e-2b6a-4f3d-9a45-0c8d5e1b7a90
+                  clientBatchId: orga-2026-11-07T10:15
+                  state: completed
+                  acceptedAt: "2026-11-07T10:15:31Z"
+                  startedAt: "2026-11-07T10:15:33Z"
+                  finishedAt: "2026-11-07T10:15:35Z"
+                  itemCount: 2
+                  counts: { created: 1, updated: 0, unchanged: 0, needsReview: 1, failed: 0 }
+        "404": { $ref: "#/components/responses/Error" }
+  /products/sync/{syncId}/items:
+    get:
+      tags: [Products]
+      operationId: getSyncItems
+      summary: Per-item results of a sync
+      parameters:
+        - { $ref: "#/components/parameters/SyncId" }
+        - { name: state, in: query, schema: { type: string, enum: [pending, created, updated, unchanged, needs_review, failed] } }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 5000, default: 1000 } }
+      responses:
+        "200":
+          description: One page of item results, in the order sent
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncItemsResponse" }
+              example:
+                status: ok
+                requestId: 1e8d4f7a90b24c31
+                data:
+                  - { position: 0, externalProductCode: "100245", state: created, code: null, message: null }
+                  - position: 1
+                    externalProductCode: "100311"
+                    state: needs_review
+                    code: ERP_ITEM_MATCH_REVIEW
+                    message: { ar: "الصنف يحتاج مراجعة المورد لتحديد المنتج الصحيح.", en: "The item needs the supplier to pick the right product." }
+                page: { nextCursor: null, limit: 1000 }
+        "404": { $ref: "#/components/responses/Error" }
+  /orders/sales:
+    get:
+      tags: [Sales orders]
+      operationId: listSalesOrders
+      summary: Orders the supplier received
+      description: "Only the key organization's own part of each order (its shipment). Scope: `erp.orders.read`. Supplier organizations only."
+      parameters:
+        - { $ref: "#/components/parameters/OrderState" }
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/OrderLimit" }
+      responses:
+        "200":
+          description: One page of sales orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SalesOrderPage" }
+              examples:
+                firstPage:
+                  summary: One new order, last page
+                  value:
+                    status: ok
+                    requestId: 2d5b8a1c77e04f92
+                    data:
+                      - orderNumber: "10542"
+                        shipmentNumber: "10542-1"
+                        status: pending
+                        importState: new
+                        total: "1275.00"
+                        customer: { erpCode: "C-00871", mapped: true, name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" } }
+                        lines: []
+                    page: { nextCursor: null, limit: 100 }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /orders/sales/{orderNumber}:
+    get:
+      tags: [Sales orders]
+      operationId: getSalesOrder
+      summary: One sales order
+      parameters:
+        - { $ref: "#/components/parameters/OrderNumber" }
+      responses:
+        "200":
+          description: The order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SalesOrderResponse" }
+              examples:
+                order:
+                  $ref: "#/components/examples/SalesOrderGet"
+        "404": { $ref: "#/components/responses/Error" }
+  /orders/sales/ack:
+    post:
+      tags: [Sales orders]
+      operationId: ackSalesOrders
+      summary: Mark orders as imported
+      description: |
+        Up to 500 per call. Repeating a call with the same references is safe. A new reference for an order already acknowledged is refused per order (`result: conflict`, `code: ERP_ACK_REFERENCE_CONFLICT`, `existingReference` set). Acknowledging again with the same reference returns `already_acknowledged` and, after the order changed, clears the `changed` flag.
+        Scope: `erp.orders.ack`. Also accepted (Orgasoft sample 3, unverified): `{"order_number":"10542","orga_orderID":"ORGA-77123","items":[...]}`; `items` is ignored.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AckRequest" }
+            example:
+              orders:
+                - { orderNumber: "10542", erpReference: "ORGA-77123" }
+                - { orderNumber: "10543", erpReference: "ORGA-77124" }
+      responses:
+        "200":
+          description: Result per order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AckResponse" }
+              example:
+                status: ok
+                requestId: 7f3a6d2e0c1b4a85
+                data:
+                  - { orderNumber: "10542", result: acknowledged }
+                  - { orderNumber: "10543", result: not_found }
+        "422": { $ref: "#/components/responses/Error" }
+  /orders/sales/{orderNumber}/status:
+    post:
+      tags: [Sales orders]
+      operationId: decideSalesOrder
+      summary: Confirm or reject a pending order
+      description: |
+        Same rules as a supplier acting on the website: confirming a wallet-paid order charges the buyer's wallet; rejecting refunds it. Only `pending` orders. `delivered` and every other status are refused (delivery needs the buyer's PIN). Repeating the same decision returns `already_confirmed` / `already_rejected`.
+        Scope: `erp.orders.decide`.
+      parameters:
+        - { $ref: "#/components/parameters/OrderNumber" }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/StatusRequest" }
+            examples:
+              confirm: { value: { status: confirmed } }
+              reject: { value: { status: rejected, reason: "الصنف غير متوفر حالياً" } }
+      responses:
+        "200":
+          description: Applied or already applied
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StatusResponse" }
+              example:
+                status: ok
+                requestId: 3c8e1f5a9d724b06
+                data: { orderNumber: "10542", result: confirmed, orderStatus: confirmed }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /orders/purchase:
+    get:
+      tags: [Purchase orders]
+      operationId: listPurchaseOrders
+      summary: Orders the key organization placed
+      description: "Scope: `erp.orders.read`. Pharmacies and suppliers."
+      parameters:
+        - { $ref: "#/components/parameters/OrderState" }
+        - { $ref: "#/components/parameters/From" }
+        - { $ref: "#/components/parameters/To" }
+        - { $ref: "#/components/parameters/Cursor" }
+        - { $ref: "#/components/parameters/OrderLimit" }
+      responses:
+        "200":
+          description: One page of purchase orders
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderPage" }
+        "400": { $ref: "#/components/responses/Error" }
+    post:
+      tags: [Purchase orders]
+      operationId: createPurchaseOrder
+      summary: Create a purchase order for the key organization
+      description: |
+        Scope: `erp.po.create`. Prices are Dawa24's. `unitPrice` is optional; if sent and different, the call is refused with the correct price. Each supplier must already be linked to your organization. No account is ever created. Retrying with the same `externalReference` returns the original order (HTTP 200) and never a second one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PurchaseRequest" }
+            example:
+              externalReference: ORGA-PO-2026-000451
+              notes: "توريد الأسبوع"
+              lines:
+                - { variantId: "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33", quantity: 12, unitPrice: "48.00" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+        "200":
+          description: Same externalReference sent before; the original order is returned
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+        "409":
+          description: Price mismatch, refused rules or request in progress
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorResponse" }
+              example:
+                status: error
+                requestId: 8e2d4c6a1f3b4097
+                error:
+                  code: ERP_PO_PRICE_MISMATCH
+                  message: { ar: "السعر المرسل يختلف عن سعر دواء 24. السعر الصحيح موضح في التفاصيل.", en: "The price sent differs from Dawa24's. The correct price is in the details." }
+                  details: { lines: [{ line: 1, sentPrice: "48.00", correctPrice: "50.40" }] }
+        "422": { $ref: "#/components/responses/Error" }
+  /orders/purchase/{orderNumber}:
+    get:
+      tags: [Purchase orders]
+      operationId: getPurchaseOrder
+      summary: One purchase order
+      parameters:
+        - { $ref: "#/components/parameters/OrderNumber" }
+      responses:
+        "200":
+          description: The order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+        "404": { $ref: "#/components/responses/Error" }
+  /orders/purchase/ack:
+    post:
+      tags: [Purchase orders]
+      operationId: ackPurchaseOrders
+      summary: Mark purchase orders as imported
+      description: "Same behaviour as the sales acknowledgement. Scope: `erp.orders.ack`."
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AckRequest" }
+      responses:
+        "200":
+          description: Result per order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AckResponse" }
+  /offers:
+    get:
+      tags: [Purchase orders]
+      operationId: listOffers
+      summary: Find supplier products to buy
+      description: "Active supplier products with stock for one barcode, to get the `variantId` for a purchase order. Scope: `erp.po.create`."
+      parameters:
+        - { name: barcode, in: query, required: true, schema: { type: string, maxLength: 32 } }
+      responses:
+        "200":
+          description: Offers, cheapest first, at most 50
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OfferList" }
+              example:
+                status: ok
+                requestId: 0d9b7e5c3a1f4826
+                data:
+                  - variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                    supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" }, linked: true }
+                    name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
+                    barcode: "6221024000123"
+                    publicPrice: "62.50"
+                    discountPercent: "12.50"
+                    unitPrice: "54.69"
+                    inStock: true
+components:
+  securitySchemes:
+    ApiKey: { type: http, scheme: bearer, description: "Key shown once when the owner creates it, format d24_<live|test>_<prefix>_<secret>" }
+  parameters:
+    SyncId: { name: syncId, in: path, required: true, schema: { type: string, format: uuid } }
+    OrderNumber: { name: orderNumber, in: path, required: true, schema: { type: string, maxLength: 32 } }
+    Cursor: { name: cursor, in: query, schema: { type: string, maxLength: 64 }, description: Opaque. Use `page.nextCursor` from the previous response. }
+    OrderState: { name: state, in: query, schema: { type: string, enum: [new, imported, changed, all], default: new } }
+    From: { name: from, in: query, schema: { type: string, format: date-time }, description: Orders created at or after this time. }
+    To: { name: to, in: query, schema: { type: string, format: date-time }, description: Orders created before this time. }
+    OrderLimit: { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 500, default: 100 } }
+  responses:
+    Error:
+      description: Failure. The code is stable; see error-codes.md.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorResponse" }
+          example:
+            status: error
+            requestId: b41c0e7d5a2f4938
+            error:
+              code: ERP_SCOPE_MISSING
+              message: { ar: "المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.", en: "The key does not have the permission this call needs." }
+              details: { requiredScope: erp.orders.read }
+  examples:
+    SalesOrderGet:
+      summary: A full sales order
+      value:
+        status: ok
+        requestId: 5a9e0c12b8d34f71
+        data:
+          orderNumber: "10542"
+          shipmentNumber: "10542-1"
+          status: pending
+          importState: new
+          createdAt: "2026-11-07T08:02:11Z"
+          updatedAt: "2026-11-07T08:02:11Z"
+          paymentMethod: cash_on_delivery
+          paymentStatus: unpaid
+          notes: ""
+          subtotal: "1250.00"
+          shippingFee: "25.00"
+          total: "1275.00"
+          customer:
+            erpCode: "C-00871"
+            mapped: true
+            unmappedReason: null
+            name: { ar: "صيدلية الشفاء", en: "Al Shifa Pharmacy" }
+            branchName: { ar: "الفرع الرئيسي", en: "Main branch" }
+            address: "12 شارع النيل، المعادي، القاهرة"
+            phone: "01012345678"
+          erp: { reference: null, acknowledgedAt: null }
+          lines:
+            - lineId: 88231
+              variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+              externalProductCode: "100245"
+              name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
+              barcode: "6221024000123"
+              quantity: 20
+              unitPrice: "54.69"
+              discountAmount: "0.00"
+              totalPrice: "1093.80"
+  schemas:
+    MultiLang:
+      type: object
+      required: [ar, en]
+      properties: { ar: { type: string }, en: { type: string } }
+    Money: { type: string, pattern: '^-?\d+(\.\d{1,2})?$', examples: ["125.50"] }
+    Error:
+      type: object
+      required: [code, message]
+      properties:
+        code: { type: string, examples: [ERP_VALIDATION] }
+        message: { $ref: "#/components/schemas/MultiLang" }
+        details: { type: object, additionalProperties: true }
+    ErrorResponse:
+      type: object
+      required: [status, requestId, error]
+      properties:
+        status: { const: error }
+        requestId: { type: string }
+        error: { $ref: "#/components/schemas/Error" }
+    Page:
+      type: object
+      required: [nextCursor, limit]
+      properties:
+        nextCursor: { type: [string, "null"] }
+        limit: { type: integer }
+    HealthResponse:
+      type: object
+      required: [status, requestId, data]
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: object
+          properties:
+            apiVersion: { type: string }
+            serverTime: { type: string, format: date-time }
+            organization: { type: object, properties: { id: { type: integer }, name: { $ref: "#/components/schemas/MultiLang" }, type: { type: string, enum: [vendor, customer] } } }
+            integration: { type: object, properties: { provider: { type: string }, status: { type: string } } }
+            key:
+              type: object
+              properties:
+                prefix: { type: string }
+                scopes: { type: array, items: { type: string } }
+                warehouse: { type: object }
+                branch: { type: object }
+                rateLimitPerMinute: { type: integer }
+                expiresAt: { type: [string, "null"], format: date-time }
+    ProductItem:
+      type: object
+      description: |
+        Field names follow contracts/orgasoft-samples.md. Input accepts camelCase and PascalCase, with the first letter case ignored. Other Orgasoft spellings can be added in one place: `internal/modules/erp/provider/orgasoft/fields.go`.
+      required: [externalProductCode, arName, publicPrice, stock]
+      properties:
+        externalProductCode: { type: [string, integer], maxLength: 64, description: "Orgasoft's code. One code is one sellable item per tenant." }
+        arName: { type: string, maxLength: 200, description: "Arabic name, as Orgasoft sends it." }
+        barcode: { type: string, pattern: '^[0-9]{1,32}$' }
+        publicPrice: { type: [string, number], description: "Public price. At most 2 decimals." }
+        discount: { type: [string, number], minimum: 0, maximum: 100, description: Percent off the public price. }
+        tax: { type: [string, number], minimum: 0, maximum: 100, description: "Percent. Stored, not applied to order totals." }
+        stock: { type: integer, minimum: 0 }
+        expiryDate: { type: string, description: "YYYY-MM-DD; a time part is ignored. Optional." }
+        isQuota: { type: boolean }
+        quotaQuantity: { type: integer, minimum: 0, description: "With isQuota=true: the most any one buying pharmacy branch may ever take. isQuota=false removes the quota. Omitted: unchanged." }
+        unit: { type: string, maxLength: 40, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
+        manufacturer: { type: string, maxLength: 120, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
+        batchNumber: { type: string, maxLength: 60, description: "Optional. Not in Orgasoft's samples (unverified); ignored when absent." }
+    SyncRequest:
+      type: object
+      required: [items]
+      properties:
+        clientBatchId: { type: string, maxLength: 100 }
+        items: { type: array, minItems: 1, maxItems: 50000, items: { $ref: "#/components/schemas/ProductItem" } }
+    SyncAcceptedResponse:
+      type: object
+      required: [status, requestId, data]
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: object
+          properties:
+            syncId: { type: string, format: uuid }
+            state: { type: string }
+            itemCount: { type: integer }
+            rejectedAtIntake: { type: integer }
+            statusUrl: { type: string }
+    SyncStatusResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: object
+          properties:
+            syncId: { type: string, format: uuid }
+            clientBatchId: { type: [string, "null"] }
+            state: { type: string, enum: [queued, processing, completed, failed] }
+            acceptedAt: { type: string, format: date-time }
+            startedAt: { type: [string, "null"], format: date-time }
+            finishedAt: { type: [string, "null"], format: date-time }
+            itemCount: { type: integer }
+            counts:
+              type: object
+              properties: { created: { type: integer }, updated: { type: integer }, unchanged: { type: integer }, needsReview: { type: integer }, failed: { type: integer } }
+    SyncItemResult:
+      type: object
+      properties:
+        position: { type: integer }
+        externalProductCode: { type: string }
+        state: { type: string, enum: [pending, created, updated, unchanged, needs_review, failed] }
+        code: { type: [string, "null"] }
+        message: { oneOf: [{ $ref: "#/components/schemas/MultiLang" }, { type: "null" }] }
+    SyncItemsResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data: { type: array, items: { $ref: "#/components/schemas/SyncItemResult" } }
+        page: { $ref: "#/components/schemas/Page" }
+    Customer:
+      type: object
+      properties:
+        erpCode: { type: [string, "null"] }
+        mapped: { type: boolean }
+        unmappedReason: { type: [string, "null"], enum: [no_link, empty_code, code_conflict, null] }
+        name: { $ref: "#/components/schemas/MultiLang" }
+        branchName: { $ref: "#/components/schemas/MultiLang" }
+        address: { type: string }
+        phone: { type: string }
+    OrderLine:
+      type: object
+      properties:
+        lineId: { type: integer }
+        variantId: { type: [string, "null"], format: uuid }
+        externalProductCode: { type: [string, "null"] }
+        name: { $ref: "#/components/schemas/MultiLang" }
+        barcode: { type: string }
+        quantity: { type: integer }
+        unitPrice: { $ref: "#/components/schemas/Money" }
+        discountAmount: { $ref: "#/components/schemas/Money" }
+        totalPrice: { $ref: "#/components/schemas/Money" }
+    SalesOrder:
+      type: object
+      properties:
+        orderNumber: { type: string }
+        shipmentNumber: { type: string }
+        status: { type: string, enum: [pending, confirmed, processing, shipped, in_transit, out_for_delivery, delivered, completed, cancelled, failed, returned, refunded, on_hold] }
+        importState: { type: string, enum: [new, imported, changed] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        paymentMethod: { type: string }
+        paymentStatus: { type: string }
+        notes: { type: string }
+        subtotal: { $ref: "#/components/schemas/Money" }
+        shippingFee: { $ref: "#/components/schemas/Money" }
+        total: { $ref: "#/components/schemas/Money" }
+        customer: { $ref: "#/components/schemas/Customer" }
+        erp:
+          type: object
+          properties: { reference: { type: [string, "null"] }, acknowledgedAt: { type: [string, "null"], format: date-time } }
+        lines: { type: array, items: { $ref: "#/components/schemas/OrderLine" } }
+    SalesOrderPage:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data: { type: array, items: { $ref: "#/components/schemas/SalesOrder" } }
+        page: { $ref: "#/components/schemas/Page" }
+    SalesOrderResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data: { $ref: "#/components/schemas/SalesOrder" }
+    PurchaseOrder:
+      type: object
+      properties:
+        orderNumber: { type: string }
+        status: { type: string }
+        importState: { type: string, enum: [new, imported, changed] }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        externalReference: { type: [string, "null"] }
+        total: { $ref: "#/components/schemas/Money" }
+        shipments:
+          type: array
+          items:
+            type: object
+            properties:
+              shipmentNumber: { type: string }
+              status: { type: string }
+              supplier: { type: object, properties: { name: { $ref: "#/components/schemas/MultiLang" } } }
+              subtotal: { $ref: "#/components/schemas/Money" }
+              shippingFee: { $ref: "#/components/schemas/Money" }
+              lines: { type: array, items: { $ref: "#/components/schemas/OrderLine" } }
+        erp:
+          type: object
+          properties: { reference: { type: [string, "null"] }, acknowledgedAt: { type: [string, "null"], format: date-time } }
+    PurchaseOrderPage:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data: { type: array, items: { $ref: "#/components/schemas/PurchaseOrder" } }
+        page: { $ref: "#/components/schemas/Page" }
+    PurchaseOrderResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data: { $ref: "#/components/schemas/PurchaseOrder" }
+    AckRequest:
+      type: object
+      required: [orders]
+      properties:
+        orders:
+          type: array
+          minItems: 1
+          maxItems: 500
+          items:
+            type: object
+            required: [orderNumber, erpReference]
+            properties:
+              orderNumber: { type: string }
+              erpReference: { type: string, minLength: 1, maxLength: 100 }
+    AckResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              orderNumber: { type: string }
+              result: { type: string, enum: [acknowledged, already_acknowledged, not_found, conflict] }
+              code: { type: [string, "null"] }
+              existingReference: { type: [string, "null"] }
+    StatusRequest:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, description: "confirmed or rejected. Anything else is refused." }
+        reason: { type: string, maxLength: 500, description: Optional. Shown to the buyer and stored. }
+    StatusResponse:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: object
+          properties:
+            orderNumber: { type: string }
+            result: { type: string, enum: [confirmed, rejected, already_confirmed, already_rejected] }
+            orderStatus: { type: string }
+    PurchaseRequest:
+      type: object
+      required: [externalReference, lines]
+      properties:
+        externalReference: { type: string, minLength: 1, maxLength: 100 }
+        notes: { type: string, maxLength: 500 }
+        lines:
+          type: array
+          minItems: 1
+          maxItems: 200
+          items:
+            type: object
+            required: [variantId, quantity]
+            properties:
+              variantId: { type: string, format: uuid }
+              quantity: { type: integer, minimum: 1, maximum: 100000 }
+              unitPrice: { type: [string, number], description: Optional check against Dawa24's price. }
+    OfferList:
+      type: object
+      properties:
+        status: { const: ok }
+        requestId: { type: string }
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              variantId: { type: string, format: uuid }
+              supplier: { type: object, properties: { name: { $ref: "#/components/schemas/MultiLang" }, linked: { type: boolean } } }
+              name: { $ref: "#/components/schemas/MultiLang" }
+              barcode: { type: string }
+              publicPrice: { $ref: "#/components/schemas/Money" }
+              discountPercent: { $ref: "#/components/schemas/Money" }
+              unitPrice: { $ref: "#/components/schemas/Money" }
+              inStock: { type: boolean }

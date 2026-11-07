@@ -16,7 +16,7 @@
 | 9 | S7 | US6 | purchase orders |
 | 10 | S8 | US7 | Reveal |
 
-Format: `- [ ] T001 [P] [US1] Action in exact/file/path`. A task added after the first numbering carries a letter suffix (`T124a`) and sits in the position where it must run; no number was changed. `[P]` means the files differ and nothing unfinished is needed. "Traps: n" are the numbers in the "Traps" list of plan.md. Two plan.md details that tasks changed on purpose, both to stay under 400 lines: extra files `authenticate.go`, `orders_decide.go`, `decide_handlers.go`, `repository_purchase.go`, `catalog_erp_ui.go`, `reveal_kinds.go`, `erp_purchase_placer.go`, and test files split per slice (`erp_isolation_sync_test.go`, `erp_orders_paging_test.go`, `erp_decide_test.go`, `erp_customer_code_test.go`, `erp_sync_repeat_test.go`).
+Format: `- [x] T001 [P] [US1] Action in exact/file/path`. A task added after the first numbering carries a letter suffix (`T124a`) and sits in the position where it must run; no number was changed. `[P]` means the files differ and nothing unfinished is needed. "Traps: n" are the numbers in the "Traps" list of plan.md. Two plan.md details that tasks changed on purpose, both to stay under 400 lines: extra files `authenticate.go`, `orders_decide.go`, `decide_handlers.go`, `repository_purchase.go`, `catalog_erp_ui.go`, `reveal_kinds.go`, `erp_purchase_placer.go`, and test files split per slice (`erp_isolation_sync_test.go`, `erp_orders_paging_test.go`, `erp_decide_test.go`, `erp_customer_code_test.go`, `erp_sync_repeat_test.go`).
 
 ## Rules for every task
 
@@ -33,43 +33,60 @@ Format: `- [ ] T001 [P] [US1] Action in exact/file/path`. A task added after the
    - SB-3 (refresh sandbox source, new files included): `cd /f/dawa24 && git ls-files -co --exclude-standard -z | tar --ignore-failed-read --null -T - -cf - | MSYS_NO_PATHCONV=1 docker run --rm -i --network none -v dawa24audit-src:/src golang:1.27.2 sh -c 'cd /src && find . -mindepth 1 -maxdepth 1 ! -name vendor -exec rm -rf {} + && tar -x && chmod -R a+rX .'`
    - SB-4 (Postgres is on tmpfs, migrate after every start): `bash ~/security-audit-skill/dawa24-store/run-5/sandbox/sb.sh run sh -c 'go build -o /tmp/cli ./cmd/cli && /tmp/cli migrate'`
    - SB-5: `bash ~/security-audit-skill/dawa24-store/run-5/sandbox/sb.sh run sh -c 'timeout 400 go test -count=1 <args> 2>&1'`. For a clean DB: `docker restart dawa24audit-pg`, then SB-4.
+   - SB-6, for any test whose name starts with `TestTenantIsolation` or that uses `getTestDB`: run `docker exec dawa24audit-pg psql -U dawa24 -d dawa24_store -c "ALTER ROLE dawa24_app PASSWORD 'dawa24_app_change_me'"`, then `bash ~/security-audit-skill/dawa24-store/run-5/sandbox/sb.sh run sh -c 'DATABASE_URL="postgres://dawa24_app:dawa24_app_change_me@dawa24audit-pg:5432/dawa24_store?sslmode=disable" timeout 400 go test -count=1 <args> 2>&1'`. Run ALTER ROLE again after every Postgres restart. This password is for the throwaway sandbox only. Isolation tests must actually run; a skip is not a pass. Insert fixtures in `db.InTx(database.AsSystem(ctx), ...)` and read as the other tenant.
 8. **Slice gate** (last task of each slice): `go build ./...`; `go vet <changed packages>`; the slice's focused tests; `gofmt -l` on changed files prints nothing; `make check-file-size`; then commit locally: `git add -A -- . ':(exclude)test/visual_baselines'`, confirm the staged list holds no `.env`, `.exe` or `.log` file, run `~/go/bin/gitleaks.exe protect --staged --no-banner --redact`, then `git commit` with the stated message ending in the line `Co-Authored-By: Claude Sonnet 5.5 <noreply@anthropic.com>`. Never push, merge, or deploy.
 9. If a task edits a `.templ` file: run the V3 command, commit the `_templ.go` output, then refresh the homepage hash only if CSS or the homepage template changed (`node "$(cygpath -m ~/security-audit-skill/dawa24-store/run-5/sandbox/homehash.cjs)" .`); otherwise record "no hash change" in `verify-notes.md`.
 10. No `float64` money, tenant queries inside `db.InTx`/`db.InReadTx`, every message bilingual, no module imports another module, new migrations backward-compatible only. Do not touch `/api/v1/integrations/`, `MODULE_API_ENABLED`, secrets, or git history. Do not read or log API keys.
+
+11. **Small document mismatch rule**: if two spec documents disagree only on a name or a column, and the data-model.md column list is clear, follow the column list, fix the wrong line in the document, record it in verify-notes.md, and continue without stopping. This covers only naming and doc slips. Still stop and ask for anything that changes behaviour, security, tenant isolation, money, an API response, a migration's meaning, or a task's scope, or if adding something new would be needed to continue.
+
+12. **RED order rule**: when a test or Done check fails only because a later task in the same slice has not been done, do that task first and rerun both Done checks. Record the swap in verify-notes.md and continue. If the missing work is in no task, or the swap would change behaviour or a migration, stop and ask.
+
+13. Any test or Postman flow needing the ERP API sets `ERP_API_ENABLED=true` explicitly. Deploy first with the API off, then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true` when ready.
+
+14. **Ownership signal security**: `ActorIsOwner` and `actorIsOwner` must be read only from the signed-in actor, `authctx.Actor.IsOwner`, in the handler. They must never come from a form, query, header, or JSON field.
+
+15. **Test seam rule**: an unexported function field on a struct, set in its constructor, is allowed without asking when a test needs to observe behaviour. It must not change production behaviour, and it must not be a global, exported, or configurable from outside. Record it in verify-notes.md and continue. Security checks must never be bypassable through it.
+
+16. **Layer test rule**: to test a layer, inject the next layer down through an interface it already depends on. Do not export private seams for tests. This needs no question. Each security path also needs one test through the real wiring.
+
+17. **Read method rule**: you may add a read-only service and repository method inside the erp module without asking when a task needs it. It must use the key’s tenant context, explicit organization filters, no AsSystem, no new table or column, no writes, and it must return only fields the contract lists. Add a test and record it in verify-notes.md. Anything needing AsSystem, a schema change, a write, or new API fields still stops and asks.
+
+18. **Real wiring rule**: any test needing a real database, Redis, or real server wiring runs in the sandbox with SB-6, and its Done check requires a visible PASS with -v. Host runs may skip it. A sandbox skip fails the task. This needs no question.
 
 ## Phase 1: Setup (verify first, no application code)
 
 Purpose: settle the unverified items in plan.md before any code depends on them. Every result is written to `specs/002-erp-integration-api/verify-notes.md`. If a check fails, stop, record it there, and do not start the slice that needs it.
 
-- [ ] T001 Confirm branch and clean tree
+- [x] T001 Confirm branch and clean tree
   - Do: run `git branch --show-current` and `git status --short`. Nothing under `internal/`, `cmd/`, `db/`, `test/` (except `test/visual_baselines`) may be modified.
   - Done: branch prints `codex/audit-batches` and the status list holds only `.specify/feature.json`, the four `test/visual_baselines/*.png`, and `specs/002-erp-integration-api/`.
 
-- [ ] T002 Confirm the sandbox and disk
+- [x] T002 Confirm the sandbox and disk
   - Do: run SB-0, SB-1, SB-2 and SB-4 from "Rules for every task". Read `sb.sh` once first.
   - Done: `bash ~/security-audit-skill/dawa24-store/run-5/sandbox/sb.sh run sh -c 'go version'` prints a Go version, and `df -h /c` shows at least 3 GB free.
 
-- [ ] T003 V1 verify River insert-only client in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T003 V1 verify River insert-only client in `specs/002-erp-integration-api/verify-notes.md`
   - Do: create the file with a heading. Find River with `go list -m -f '{{.Dir}}' github.com/riverqueue/river`; read the `Config` validation in `client.go`. Confirm `river.NewClient` accepts a config with `Queues` nil and `Workers` nil (an insert-only client). Write one line `V1 result: yes|no, <file>:<line>`.
   - Use: `queue.New` at `internal/platform/queue/queue.go` for how the existing client is built.
   - Traps: 20. If `no`: stop; S2 task "NewInsertOnly" is blocked until the owner decides.
   - Done: `grep -n "^V1 result:" specs/002-erp-integration-api/verify-notes.md` prints one line.
 
-- [ ] T004 V2 verify the foreign keys to catalog.match_runs in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T004 V2 verify the foreign keys to catalog.match_runs in `specs/002-erp-integration-api/verify-notes.md`
   - Do: run `grep -rn 'REFERENCES catalog.match_runs' db/migrations` and record `V2 result: all foreign keys to catalog.match_runs are CASCADE or SET NULL, no child delete is needed` (verified when this plan was written: the table is created in 232; the references are in 234 to 238, `ON DELETE SET NULL`, and in 240 and 242, `ON DELETE CASCADE`). If any hit is neither, record `V2 result: <file>:<line> has no cascade` and the S2 cleanup task T118 must delete that child table first.
   - Traps: none. Reason: research D-14 deletes ERP `catalog.match_runs` rows after 30 days.
   - Done: `grep -n "^V2 result:" specs/002-erp-integration-api/verify-notes.md` prints one line.
 
-- [ ] T005 V3 verify the templ generate form in `specs/002-erp-integration-api/verify-notes.md`
-  - Do: run `go run github.com/a-h/templ/cmd/templ version` from the repo root (HOST-GO). Also run `grep -n templ Makefile`. Record the exact command that works, as `V3 result: <command>`.
+- [x] T005 V3 verify the templ generate form in `specs/002-erp-integration-api/verify-notes.md`
+  - Do: run `~/go/bin/templ.exe version` from the repo root. Also run `grep -n templ Makefile`. Record the exact command that works, as `V3 result: <command>`.
   - Traps: 22.
   - Done: `grep -n "^V3 result:" specs/002-erp-integration-api/verify-notes.md` prints one line.
 
-- [ ] T006 V4 verify every existing symbol that plan.md cites in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T006 V4 verify every existing symbol that plan.md cites in `specs/002-erp-integration-api/verify-notes.md`
   - Do: run these greps and record found or missing for each: `func (s \*Service) BulkWriteVariants` in `internal/modules/catalog/vendor_import.go`; `BulkWriteStocks` in `internal/modules/inventory/vendor_import.go`; `Prepare` in `internal/modules/catalog/matching/service.go`; `Remember` in `internal/modules/catalog/matching/knowledge_service.go`; `TransitionShipmentStatusWithWallet` in `internal/modules/commerce/fulfilment.go`; `prepareWalletShipmentCharge` in `internal/ui/customer_checkout_wallet.go`; `CheckoutAPI` in `internal/modules/commerce/api_checkout.go`; `func.*quote` in `cmd/server/api_checkout_quote.go`; `QueryRowUnscoped` and `WithTenant` in `internal/platform/database/query_helpers.go`; `EnqueueTx` and `StartStalledJobReaper` in `internal/platform/queue/queue.go`; `lateOrderAnnouncer` in `cmd/server/order_announce_wiring.go`; `RegisterApprovedSharedRoutes` in `internal/ui/handlers.go`.
   - Done: `grep -n "^V4 result:" specs/002-erp-integration-api/verify-notes.md` prints one line that lists any missing symbol or says `all found`.
 
-- [ ] T007 V5 record the Orgasoft unverified items in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T007 V5 record the Orgasoft unverified items in `specs/002-erp-integration-api/verify-notes.md`
   - Do: copy these as a list headed `V5 unverified (owner or Orgasoft must confirm)`: sample 3 is the import acknowledgement (research D-18); Orgasoft wants `variantId` as purchase-order item identity (D-21); `taxes` in sample 3 is an amount while `tax: 14` in the product samples is a percent; `discount` and `tax` are percents and `tax` is stored, not applied; quota means a cap per buying pharmacy branch; one external code is one sellable item per tenant; the optional fields `unit`, `manufacturer` and `batchNumber` are not in any Orgasoft sample and are ignored when absent.
   - Done: `grep -c "unverified" specs/002-erp-integration-api/verify-notes.md` prints 1 or more.
 
@@ -77,15 +94,15 @@ Purpose: settle the unverified items in plan.md before any code depends on them.
 
 Only the Orgasoft sample files qualify: S2 (products), S3 (acknowledgement) and S6 (Postman) all read them. Nothing else blocks every slice; S8 needs T026 to T029 from S1 (the i18n files and the rbac test file) and nothing else.
 
-- [ ] T008 [P] Add the camelCase product sample as `internal/modules/erp/testdata/orgasoft_products_camel.json`
+- [x] T008 [P] Add the camelCase product sample as `internal/modules/erp/testdata/orgasoft_products_camel.json`
   - Do: copy the JSON under "Product sync, camelCase" in `specs/002-erp-integration-api/contracts/orgasoft-samples.md` byte for byte (field names `externalProductCode`, `arName`, `stock`, `publicPrice`, `discount`, `tax`, `isQuota`, `quotaQuantity`, `barcode`, `expiryDate`).
   - Done: `node -e "JSON.parse(require('fs').readFileSync('internal/modules/erp/testdata/orgasoft_products_camel.json','utf8'))"` prints nothing and exits 0.
 
-- [ ] T009 [P] Add the PascalCase product sample as `internal/modules/erp/testdata/orgasoft_products_pascal.json`
+- [x] T009 [P] Add the PascalCase product sample as `internal/modules/erp/testdata/orgasoft_products_pascal.json`
   - Do: copy the JSON under "Product sync, PascalCase (11 Mar 2026)" byte for byte (`ExternalProductCode` value `ORGA-100`, no `ExpiryDate`).
   - Done: `node -e "JSON.parse(require('fs').readFileSync('internal/modules/erp/testdata/orgasoft_products_pascal.json','utf8'))"` exits 0.
 
-- [ ] T010 [P] Add the order acknowledgement sample as `internal/modules/erp/testdata/orgasoft_order_ack_sample3.json`
+- [x] T010 [P] Add the order acknowledgement sample as `internal/modules/erp/testdata/orgasoft_order_ack_sample3.json`
   - Do: copy the array under "Order data (11 Mar 2026)" byte for byte (`order_number` value `{{orderNumber}}`, `orga_orderID` value `ORG-9921`, one item with `sku` `MED-001`, `taxes` 1.50).
   - Done: `node -e "JSON.parse(require('fs').readFileSync('internal/modules/erp/testdata/orgasoft_order_ack_sample3.json','utf8'))"` exits 0.
 
@@ -93,192 +110,192 @@ Only the Orgasoft sample files qualify: S2 (products), S3 (acknowledgement) and 
 
 Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` works. Independent test: create a key, call health, revoke, call health again and get 401 `ERP_KEY_REVOKED`.
 
-- [ ] T011 [US1] Write the S1 tenant isolation tests in `test/integration/erp_isolation_test.go`
+- [x] T011 [US1] Write the S1 tenant isolation tests in `test/integration/erp_isolation_test.go`
   - Do: `TestTenantIsolation_ERPIntegrations`, `TestTenantIsolation_ERPApiKeys`, `TestTenantIsolation_ERPCalls`: insert a row for organization A with raw SQL, open a transaction as organization B, assert 0 rows. Use time-based fixture ids. Copy the structure of `test/integration/match_ai_attempts_isolation_test.go`.
   - Traps: 19.
-  - Done: `gofmt -l test/integration/erp_isolation_test.go` prints nothing; `SB go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` fails (RED) because schema `erp` does not exist.
+  - Done: `gofmt -l test/integration/erp_isolation_test.go` prints nothing; `SB-6 go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` fails (RED) because schema `erp` does not exist.
 
-- [ ] T012 [US1] Write migration 255 part 1 in `db/migrations/255_erp_schema.up.sql`
+- [x] T012 [US1] Write migration 255 part 1 in `db/migrations/255_erp_schema.up.sql`
   - Do: `BEGIN;`, `CREATE SCHEMA erp;`, then tables `erp.integrations` and `erp.api_keys` exactly as in `data-model.md` (columns, CHECKs, unique indexes, RLS block, touch triggers, one Arabic `COMMENT ON TABLE` and one `COMMENT ON COLUMN` per column using the Arabic text in `data-model.md`; for a blank cell use the standard comment list in `data-model.md`). Do not write `COMMIT;` yet.
   - Traps: 21, 30 (each `CREATE TABLE` ends with `);` alone on its line).
   - Done: `grep -c "CREATE TABLE erp" db/migrations/255_erp_schema.up.sql` prints 2.
 
-- [ ] T013 [US1] Write migration 255 part 2 in `db/migrations/255_erp_schema.up.sql`
+- [x] T013 [US1] Write migration 255 part 2 in `db/migrations/255_erp_schema.up.sql`
   - Do: append `erp.product_links`, `erp.sync_batches`, `erp.sync_items` exactly as in `data-model.md`, same RLS, trigger and comment rules.
   - Traps: 30.
   - Done: `grep -c "CREATE TABLE erp" db/migrations/255_erp_schema.up.sql` prints 5.
 
-- [ ] T014 [US1] Write migration 255 part 3 in `db/migrations/255_erp_schema.up.sql`
+- [x] T014 [US1] Write migration 255 part 3 in `db/migrations/255_erp_schema.up.sql`
   - Do: append `erp.review_items`, `erp.order_imports`, `erp.idempotency_records`, same rules.
   - Traps: 30.
   - Done: `grep -c "CREATE TABLE erp" db/migrations/255_erp_schema.up.sql` prints 8.
 
-- [ ] T015 [US1] Write migration 255 part 4 in `db/migrations/255_erp_schema.up.sql`
+- [x] T015 [US1] Write migration 255 part 4 in `db/migrations/255_erp_schema.up.sql`
   - Do: append `erp.api_calls` (organization_id nullable, no update trigger, standard policy), then the `dawa24_app` grant `DO $$ ... $$;` block copied from `data-model.md`, then `COMMIT;`.
   - Traps: 21, 30.
   - Done: `grep -c "CREATE TABLE erp" db/migrations/255_erp_schema.up.sql` prints 9 and the last non-blank line is `COMMIT;`.
 
-- [ ] T016 [US1] Write `db/migrations/255_erp_schema.down.sql` and apply 255
+- [x] T016 [US1] Write `db/migrations/255_erp_schema.down.sql` and apply 255
   - Do: `BEGIN; DROP SCHEMA IF EXISTS erp CASCADE; COMMIT;`. Then run SB-3 and SB-4.
-  - Done: `SB go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` passes (GREEN), and `go test ./test/ -run 'TestRepositorySQLMatchesMigrations|TestWriteSQLMatchesMigrations' -count=1` passes.
+  - Done: `SB-6 go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` passes (GREEN), and `go test ./test/ -run 'TestRepositorySQLMatchesMigrations|TestWriteSQLMatchesMigrations' -count=1` passes.
 
-- [ ] T017 [US1] Write the audit actor default test in `internal/platform/database/audit_actor_test.go`
+- [x] T017 [US1] Write the audit actor default test in `internal/platform/database/audit_actor_test.go`
   - Do: table test `TestAuditActorKindDefault` calling an unexported helper `auditActorKind(e AuditEntry) string`: empty returns `user`, `api_key` and `system` pass through.
   - Traps: 15.
   - Done: `gofmt -l internal/platform/database/audit_actor_test.go` prints nothing; `go test ./internal/platform/database/ -run AuditActorKind -count=1` fails to compile (RED).
 
-- [ ] T018 [US1] Write the audit round-trip test in `test/integration/erp_audit_actor_test.go`
+- [x] T018 [US1] Write the audit round-trip test in `test/integration/erp_audit_actor_test.go`
   - Do: `TestAuditActorKeyRoundTrip`: inside `db.InTx` call `database.WriteAudit` with `ActorKind: "api_key"`, `ActorKeyID` set, then read the row from `platform.audit_log` and assert both columns. A second entry with no `ActorKind` reads back `user` and NULL.
   - Traps: 15.
   - Done: `gofmt -l test/integration/erp_audit_actor_test.go` prints nothing; the test fails (RED) because the fields do not exist.
 
-- [ ] T019 [US1] Write migration 256 in `db/migrations/256_audit_actor_kind.up.sql` and `.down.sql`
-  - Do: use the SQL in `data-model.md` "Migration 256" with `BEGIN;`/`COMMIT;` and the two Arabic column comments. Down: drop the index, the constraint and both columns.
-  - Traps: 15.
-  - Done: SB-3 and SB-4 apply 256 with no error, then `SB go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` still passes.
-
-- [ ] T020 [US1] Add `ActorKind` and `ActorKeyID` in `internal/platform/database/audit.go`
+- [x] T020 [US1] Add `ActorKind` and `ActorKeyID` in `internal/platform/database/audit.go`
   - Do: add `ActorKind string` and `ActorKeyID *int64` to `AuditEntry`; add `auditActorKind`; extend the INSERT with `actor_kind, actor_key_id`.
   - Use: existing `WriteAudit` in the same file.
   - Traps: 15.
   - Done: `go test ./internal/platform/database/ -count=1` and `SB go test -p 1 ./test/integration/ -run TestAuditActorKeyRoundTrip -count=1` both pass.
 
-- [ ] T021 [US1] Write the ERP config test in `internal/platform/config/erp_test.go`
-  - Do: cases: defaults (`Enabled` true, `DefaultRate` 600, `MaxBatchItems` 50000); `ERP_KEY_PEPPER` shorter than 32 bytes with `APP_ENV=prod` and enabled fails; the same in `dev` loads with a fixed development pepper; disabled in prod needs no pepper; `WORKER_ERPSYNC` defaults 3 in `Worker.Queues["erpsync"]`. Copy how existing config tests build the env.
+- [x] T019 [US1] Write migration 256 in `db/migrations/256_audit_actor_kind.up.sql` and `.down.sql`
+  - Do: use the SQL in `data-model.md` "Migration 256" with `BEGIN;`/`COMMIT;` and the two Arabic column comments. Down: drop the index, the constraint and both columns.
+  - Traps: 15.
+  - Done: SB-3 and SB-4 apply 256 with no error, then `SB-6 go test -p 1 ./test/integration/ -run TestTenantIsolation_ERP -count=1` still passes.
+
+- [x] T021 [US1] Write the ERP config test in `internal/platform/config/erp_test.go`
+  - Do: cases: defaults (`Enabled` false, `DefaultRate` 600, `MaxBatchItems` 50000); `ERP_KEY_PEPPER` shorter than 32 bytes with `APP_ENV=prod` and enabled fails; the same in `dev` loads with a fixed development pepper; disabled in prod needs no pepper; `WORKER_ERPSYNC` defaults 3 in `Worker.Queues["erpsync"]`. Copy how existing config tests build the env.
   - Done: `gofmt -l internal/platform/config/erp_test.go` prints nothing; `go test ./internal/platform/config/ -run ERP -count=1` fails (RED).
 
-- [ ] T022 [US1] Add ERP config in `internal/platform/config/erp.go` and `config.go`
-  - Do: `type ERP struct{Enabled bool; KeyPepper string; DefaultRate, MaxBatchItems int}`; `loadERP(env, fail)`; keys `ERP_API_ENABLED`, `ERP_KEY_PEPPER`, `ERP_DEFAULT_RATE_PER_MINUTE`, `ERP_MAX_BATCH_ITEMS`; add field `ERP` to the config struct and call `loadERP`; add `"erpsync": getInt("WORKER_ERPSYNC", 3)` to `Worker.Queues`. Add a comment on `DefaultRate`: `DefaultRate default 600 duplicates erp.DefaultRatePerMinute; keep both, TestERPDefaultRateMatchesLimit in cmd/server/erp_wiring_test.go asserts they match` (`platform/config` cannot import `erp`); the same comment on `MaxBatchItems` (50000, `erp.MaxBatchItems`).
+- [x] T022 [US1] Add ERP config in `internal/platform/config/erp.go` and `config.go`
+  - Do: `type ERP struct{Enabled bool; KeyPepper string; DefaultRate, MaxBatchItems int}`; `loadERP(env, fail)`; keys `ERP_API_ENABLED` (default false), `ERP_KEY_PEPPER`, `ERP_DEFAULT_RATE_PER_MINUTE`, `ERP_MAX_BATCH_ITEMS`; add field `ERP` to the config struct and call `loadERP`; add `"erpsync": getInt("WORKER_ERPSYNC", 3)` to `Worker.Queues`. Add a comment on `DefaultRate`: `DefaultRate default 600 duplicates erp.DefaultRatePerMinute; keep both, TestERPDefaultRateMatchesLimit in cmd/server/erp_wiring_test.go asserts they match` (`platform/config` cannot import `erp`); the same comment on `MaxBatchItems` (50000, `erp.MaxBatchItems`).
   - Traps: 4.
   - Done: `go test ./internal/platform/config/ ./internal/platform/queue/ -count=1`.
 
-- [ ] T023 [US1] Write the `AllowKey` test in `internal/platform/httpx/ratelimit_allowkey_test.go`
+- [x] T023 [US1] Write the `AllowKey` test in `internal/platform/httpx/ratelimit_allowkey_test.go`
   - Do: `TestAllowKey`: limit 3 per window gives true,true,true,false; count and retryAfter returned; a nil Redis client returns `allowed=true`; a Redis error returns `allowed=true`. Copy the setup of the existing tests in `internal/platform/httpx/ratelimit*_test.go`.
   - Done: `gofmt -l internal/platform/httpx/ratelimit_allowkey_test.go` prints nothing; `go test ./internal/platform/httpx/ -run AllowKey -count=1` fails to compile (RED).
 
-- [ ] T024 [US1] Add `AllowKey` in `internal/platform/httpx/ratelimit.go`
+- [x] T024 [US1] Add `AllowKey` in `internal/platform/httpx/ratelimit.go`
   - Do: `func (l *Limiter) AllowKey(ctx context.Context, key string, limit int, window time.Duration) (allowed bool, count int64, retryAfter time.Duration, err error)` that calls the private `allow` at line 149 and returns its ttl as `retryAfter`. Do not change `allow`.
   - Done: `go test ./internal/platform/httpx/ -run AllowKey -count=1`.
 
-- [ ] T025 [US1] Write the i18n key tests in `internal/shared/i18n/catalog_erp_test.go`
+- [x] T025 [US1] Write the i18n key tests in `internal/shared/i18n/catalog_erp_test.go`
   - Do: two tests. `TestErpErrorKeys` asserts, for the keys `erp.err.auth_missing`, `erp.err.rate_limited`, `erp.err.po_price_mismatch`, `erp.err.reveal_forbidden`: `i18n.T(i18n.AR, key)` and `i18n.T(i18n.EN, key)` are not empty, differ from the key, and differ from each other. `TestErpUIKeys` asserts the same for `erp.keys.title` and `erp.keys.change_limit`.
   - Done: `gofmt -l internal/shared/i18n/catalog_erp_test.go` prints nothing; `go test ./internal/shared/i18n/ -run 'TestErpErrorKeys|TestErpUIKeys' -count=1` fails (RED).
 
-- [ ] T026 [US1] Write error messages part 1 in `internal/shared/i18n/catalog_erp.go`
+- [x] T026 [US1] Write error messages part 1 in `internal/shared/i18n/catalog_erp.go`
   - Do: `func loadErpKeys(e ...)` (copy the signature style of the other `load*` functions in `internal/shared/i18n/`). Add keys `erp.err.<code lower case without ERP_>` with the Arabic and English text from `contracts/error-codes.md` for the sections "Authentication and access", "Request shape", "Product sync (request level)", "Product sync (item level)".
   - Traps: 12.
   - Done: `gofmt -l internal/shared/i18n/catalog_erp.go` prints nothing and `go build ./internal/shared/i18n/`.
 
-- [ ] T027 [US1] Write error messages part 2 in `internal/shared/i18n/catalog_erp.go` and call it from `catalog.go`
+- [x] T027 [US1] Write error messages part 2 in `internal/shared/i18n/catalog_erp.go` and call it from `catalog.go`
   - Do: add the sections "Orders", "Purchase orders", "Internal codes" (keys `erp.err.reveal_not_revealable`, `erp.err.reveal_forbidden`, `erp.err.reveal_not_found`, `erp.err.code_taken`). Register `loadErpKeys` in `loadCatalogDefaults` in `catalog.go`.
   - Traps: 12.
   - Done: `go test ./internal/shared/i18n/ -run TestErpErrorKeys -count=1` passes; `make check-hardcoded-arabic` prints ok.
 
-- [ ] T028 [US1] Add key-page strings in `internal/shared/i18n/catalog_erp_ui.go`
+- [x] T028 [US1] Add key-page strings in `internal/shared/i18n/catalog_erp_ui.go`
   - Do: `loadErpUIKeys(e ...)` called at the end of `loadErpKeys`. Add `erp.keys.*` bilingual strings for the pages: `title`, `new_key`, `provider`, `name`, `warehouse`, `branch`, `buying_user`, `scopes`, `rate_limit`, `expires`, `prefix`, `last_used`, `status`, `rotate`, `revoke`, `grace_hours`, `pause`, `resume`, `shown_once`, `copy`, `empty`, `owner_only`, `revoke_reason`, `change_limit`, plus one label per scope name. Arabic first.
   - Traps: 12.
   - Done: `go test ./internal/shared/i18n/ -run 'TestErpErrorKeys|TestErpUIKeys' -count=1`, then `go test ./internal/shared/i18n/ -count=1` and `make check-hardcoded-arabic`.
 
-- [ ] T029 [US1] Write the permission tests in `internal/platform/rbac/erp_perms_test.go`
+- [x] T029 [US1] Write the permission tests in `internal/platform/rbac/erp_perms_test.go`
   - Do: three tests. `TestErpPermsVendor`: keys `vendor.integration.view` and `vendor.integration.manage` exist, `manage` implies `view`, nav entry `integrations` exists for vendor. `TestErpPermsPharmacy`: `pharmacy.integration.view` and `pharmacy.integration.manage` the same way, nav entry for pharmacy. `TestErpPermsAdmin`: `platform.integration.view` and `platform.integration.revoke` exist, nav entry for admin. Copy how existing rbac tests read the catalog.
   - Done: `gofmt -l internal/platform/rbac/erp_perms_test.go` prints nothing; `go test ./internal/platform/rbac/ -run 'TestErpPerms' -count=1` fails (RED).
 
-- [ ] T030 [P] [US1] Add vendor permissions and nav in `internal/platform/rbac/catalog_vendor.go` and `nav_vendor.go`
+- [x] T030 [P] [US1] Add vendor permissions and nav in `internal/platform/rbac/catalog_vendor.go` and `nav_vendor.go`
   - Do: add `vendor.integration.view` and `vendor.integration.manage` in the style of `vendor.quota.view` (`catalog_vendor.go:117`); `manage` implies `view`. Add nav entry `integrations` near line 109 of `nav_vendor.go`, pointing to `/vendor/integrations`.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsVendor -count=1`.
 
-- [ ] T031 [P] [US1] Add pharmacy permissions and nav in `internal/platform/rbac/catalog_pharmacy.go` and `nav_pharmacy.go`
+- [x] T031 [P] [US1] Add pharmacy permissions and nav in `internal/platform/rbac/catalog_pharmacy.go` and `nav_pharmacy.go`
   - Do: add `pharmacy.integration.view` and `pharmacy.integration.manage` the same way; nav entry `integrations` to `/customer/integrations`.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ -run TestErpPermsPharmacy -count=1`.
 
-- [ ] T032 [P] [US1] Add admin permissions and nav in `internal/platform/rbac/catalog_admin.go` and `nav_admin.go`
+- [x] T032 [P] [US1] Add admin permissions and nav in `internal/platform/rbac/catalog_admin.go` and `nav_admin.go`
   - Do: add `platform.integration.view` and `platform.integration.revoke`; nav entry `integrations` to `/admin/integrations`.
   - Traps: 29.
   - Done: `go test ./internal/platform/rbac/ ./test/ -run 'TestErpPermsAdmin|TestEveryRouteGateNamesADeclaredPermission' -count=1`.
 
-- [ ] T033 [P] [US1] Add limits in `internal/modules/erp/limits.go`
+- [x] T033 [P] [US1] Add limits in `internal/modules/erp/limits.go`
   - Do: `package erp`; one constant each, exact names and values from the plan.md "Limits" list: `KeyPrefixLen=8`, `DefaultRatePerMinute=600`, `MinRatePerMinute=10`, `MaxRatePerMinute=6000`, `SyncBatchesPerMinute=6`, `AuthFailuresPerIPPerMinute=30`, `MaxBatchItems=50000`, `MaxBodyBytes=32<<20`, `MaxInflatedBytes=128<<20`, `SyncChunkSize=2500`, `SyncSnoozeSeconds=15`, `PageDefault=100`, `PageMax=500`, `SyncItemsPageDefault=1000`, `SyncItemsPageMax=5000`, `AckMax=500`, `PurchaseLinesMax=200`, `OffersMax=50`, `RotateGraceDefault=24h`, `RotateGraceMax=72h`, `LastUsedTouchEvery=1m`, `IdempotencyStaleAfter=2m`, `RetentionAPICalls=30d`, `RetentionSyncItems=7d`, `RetentionSyncBatches=90d`, `RetentionReview=180d`, `RetentionMatchRuns=30d`, `CleanupBatchRows=10000`. Durations are `time.Duration` (days as `n*24*time.Hour`).
   - Traps: 3, 11.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T034 [P] [US1] Add scopes in `internal/modules/erp/scopes.go`
+- [x] T034 [P] [US1] Add scopes in `internal/modules/erp/scopes.go`
   - Do: `ScopeProductsSync = "erp.products.sync"`, `ScopeOrdersRead = "erp.orders.read"`, `ScopeOrdersAck = "erp.orders.ack"`, `ScopeOrdersDecide = "erp.orders.decide"`, `ScopePurchaseCreate = "erp.po.create"`, `func AllScopes() []string`, `func DefaultScopes(vendor bool) []string` (vendor: first four; customer: read, ack, po.create), `func ValidScope(s string) bool`. These three function names are chosen by this task list; plan.md gives none.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T035 [US1] Write the error-code test in `internal/modules/erp/errors_test.go`
+- [x] T035 [US1] Write the error-code test in `internal/modules/erp/errors_test.go`
   - Do: `TestAllCodesHaveBilingualMessages`: for each code in `AllCodes`, `i18n.T(i18n.AR, "erp.err."+strings.ToLower(strings.TrimPrefix(code,"ERP_")))` and the EN one are non-empty and not equal to the key. `TestAllCodesCount`: `len(AllCodes) == 58` (57 codes in the tables plus `ERP_CODE_TAKEN`; recount against `contracts/error-codes.md` and stop if it differs). `TestNewErrorFields`.
   - Done: `gofmt -l internal/modules/erp/errors_test.go` prints nothing; `go test ./internal/modules/erp/ -run Codes -count=1` fails to compile (RED).
 
-- [ ] T036 [US1] Add errors in `internal/modules/erp/errors.go`
+- [x] T036 [US1] Add errors in `internal/modules/erp/errors.go`
   - Do: `type Error struct{Code string; Status int; Details map[string]any}`, `func (e *Error) Error() string`, `func NewError(code string, status int, details map[string]any) *Error`, `var AllCodes []string` listing all 58 `ERP_*` codes from `contracts/error-codes.md` (no REVEAL codes), `var ErrWaitForEarlierBatch = errors.New(...)`.
   - Traps: 12.
   - Done: `go test ./internal/modules/erp/ -run 'Codes|NewError' -count=1`.
 
-- [ ] T037 [US1] Add domain types in `internal/modules/erp/domain.go`
+- [x] T037 [US1] Add domain types in `internal/modules/erp/domain.go`
   - Do: `Principal{OrganizationID, IntegrationID, KeyID int64; Provider string; Scopes []string; WarehouseID, BranchID int64; BuyingUserID *int64; MaxBatchItems, RatePerMinute int; OrgType string; KeyPrefix string}` with `func (p Principal) HasScope(s string) bool`; `Integration`, `APIKey` (all columns of `erp.api_keys` except `key_hash`), `CreateKeyInput`, `CreatedKey{Key APIKey; FullKey string}`, `CallRecord` (fields of `erp.api_calls`), `KeyAuthRow` (key columns plus `key_hash`, integration status). Money-free; no float.
   - Done: `go build ./internal/modules/erp/` and `go test ./internal/modules/erp/ -run Principal -count=1` (write one `TestPrincipalHasScope` table test in `domain_test.go` first).
 
-- [ ] T038 [US1] Write the key tests in `internal/modules/erp/keys_test.go`
+- [x] T038 [US1] Write the key tests in `internal/modules/erp/keys_test.go`
   - Do: format regex `^d24_(live|test)_[a-z0-9]{8}_[A-Za-z0-9_-]{43}$`; round trip `GenerateKey` then `ParseKey` then `VerifyHash`; wrong secret fails; 1,000 keys have unique prefixes; `ParseKey` rejects short, wrong tag and extra segments; `HashSecret` is 64 hex characters and depends on the pepper.
   - Done: `gofmt -l internal/modules/erp/keys_test.go` prints nothing; `go test ./internal/modules/erp/ -run Key -count=1` fails (RED).
 
-- [ ] T039 [US1] Add key functions in `internal/modules/erp/keys.go`
+- [x] T039 [US1] Add key functions in `internal/modules/erp/keys.go`
   - Do: `GenerateKey(tag string, pepper []byte) (full, prefix, hash string, err error)`, `ParseKey(raw string) (prefix, secret string, ok bool)`, `HashSecret(pepper []byte, secret string) string` (hex HMAC-SHA256), `VerifyHash(pepper []byte, secret, hash string) bool` using `hmac.Equal`. Prefix: 8 chars from `[a-z0-9]` via `crypto/rand`; secret: 32 random bytes, base64url without padding.
   - Traps: 24.
   - Done: `go test ./internal/modules/erp/ -run Key -count=1`.
 
-- [ ] T040 [P] [US1] Add the repository interface in `internal/modules/erp/repository.go`
+- [x] T040 [P] [US1] Add the repository interface in `internal/modules/erp/repository.go`
   - Do: `type Repository interface` with these methods (names chosen by this list): `FindKeyByPrefixAsSystem(ctx, prefix string) (KeyAuthRow, bool, error)`; `OrgStatusType(ctx, orgID int64) (status, orgType string, err error)`; `TouchLastUsed(ctx, orgID, keyID int64, ip string) error`; `InsertCallsAsSystem(ctx, []CallRecord) error`; `EnsureIntegration(ctx, orgID int64, provider string, createdBy int64, audit AuditRecord) (Integration, error)`; `InsertKey(ctx, orgID int64, k NewKey, audit AuditRecord) (APIKey, error)`; `GetKey(ctx, orgID, keyID int64) (APIKey, error)` (returns `ErrNotFound` for a missing id); `ListKeys(ctx, orgID int64) ([]APIKey, error)`; `SetKeyExpiry(ctx, orgID, keyID int64, at time.Time, audit AuditRecord) error`; `SetKeyRateLimit(ctx, orgID, keyID int64, ratePerMinute int, audit AuditRecord) error`; `RevokeKey(ctx, orgID, keyID int64, reason string, by int64, audit AuditRecord) error`; `SetIntegrationStatus(ctx, orgID, integrationID int64, status string, audit AuditRecord) error`; `WarehouseInOrg`, `BranchInOrg`, `ActiveMember(ctx, orgID, id int64) (bool, error)`; `ListKeysAsStaff(ctx) ([]StaffKeyRow, error)`; `RevokeKeyAsStaff(ctx, keyID int64, reason string, by int64, audit AuditRecord) error`. Define `AuditRecord{Action, EntityType, EntityID string; Before, After any; ActorUserID int64; ActorKeyID *int64; ActorKind string}`, `NewKey`, `StaffKeyRow` in the same file; `var ErrNotFound`.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T041 [P] [US1] Add ports in `internal/modules/erp/ports.go`
+- [x] T041 [P] [US1] Add ports in `internal/modules/erp/ports.go`
   - Do: `type Ports struct{}` with a comment that each later slice adds its ports here. Do not add interfaces nothing uses yet.
   - Traps: 23.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T042 [US1] Add the service shell in `internal/modules/erp/service.go`
+- [x] T042 [US1] Add the service shell in `internal/modules/erp/service.go`
   - Do: `type Config struct{Pepper []byte; Tag string; DefaultRate, MaxBatchItems int; Provider string}` (the caller sets `Provider` to `provider.DefaultProvider`, created by the next task; never type the provider name), `type Service struct`, `func NewService(repo Repository, ports Ports, cfg Config, log *slog.Logger) *Service`. Keep under 100 lines.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T042a [US1] Add the provider name constant in `internal/modules/erp/provider/registry.go`
+- [x] T042a [US1] Add the provider name constant in `internal/modules/erp/provider/registry.go`
   - Do: create the file with `package provider`, `const DefaultProvider = "orgasoft"` and `func Names() []string { return []string{DefaultProvider} }`. Task T093 extends this file with the registry map and `Get`; this is the only non-test, non-doc place outside `provider/orgasoft` that may contain the string `orgasoft`. Every other place uses `provider.DefaultProvider` or `provider.Names()`.
   - Traps: 28.
   - Done: `gofmt -l internal/modules/erp/provider/registry.go` prints nothing and `go build ./internal/modules/erp/provider/`.
 
-- [ ] T043 [US1] Write the AsSystem guard test in `internal/modules/erp/postgres/asystem_test.go`
+- [x] T043 [US1] Write the AsSystem guard test in `internal/modules/erp/postgres/asystem_test.go`
   - Do: `TestAsSystemOnlyInNamedFunctions`: use `go/parser` on the package directory; fail when `database.AsSystem(` is called inside a function whose name does not end in `AsSystem` or `AsStaff`. Each allowed function must have a comment containing one of `plan.md E1` to `plan.md E7`.
   - Traps: 1.
   - Done: `gofmt -l internal/modules/erp/postgres/asystem_test.go` prints nothing; `go test ./internal/modules/erp/postgres/ -run AsSystem -count=1` passes on an empty package (GREEN is expected; it guards the next tasks).
 
-- [ ] T044 [US1] Write the key repository integration test in `test/integration/erp_keys_test.go`
+- [x] T044 [US1] Write the key repository integration test in `test/integration/erp_keys_test.go`
   - Do: `TestERPKeysRepo` against `postgres.New(db)`: `EnsureIntegration` twice returns the same row; `InsertKey` then `FindKeyByPrefixAsSystem` finds it and an unknown prefix returns not found; `TouchLastUsed` twice within a minute changes `last_used_at` once; `RevokeKey`; `SetKeyRateLimit` changes `rate_limit_per_minute` and leaves one audit row; rotation sets old `expires_at`, both keys authenticate until then; `ListKeys(orgA)` never returns org B keys; `ListKeysAsStaff` returns both; every mutation left one `platform.audit_log` row with `actor_kind`.
   - Traps: 1, 15, 19.
   - Done: `gofmt -l test/integration/erp_keys_test.go` prints nothing; the test fails to compile (RED).
 
-- [ ] T045 [US1] Add the Postgres repository base in `internal/modules/erp/postgres/repository.go`
+- [x] T045 [US1] Add the Postgres repository base in `internal/modules/erp/postgres/repository.go`
   - Do: `type Repository struct{ db *database.DB }`, and `func New(db *database.DB) *Repository` (this task creates the file with `New` only; the compile-time check `var _ erp.Repository = (*Repository)(nil)` is added by T118).
   - Use: `internal/platform/database/query_helpers.go` for `InTx`, `InReadTx`, `WithTenant`.
   - Traps: 1.
   - Done: `go build ./internal/modules/erp/postgres/`.
 
-- [ ] T046 [US1] Add the audit writer in `internal/modules/erp/postgres/audit.go`
+- [x] T046 [US1] Add the audit writer in `internal/modules/erp/postgres/audit.go`
   - Do: unexported `writeAudit(ctx, tx pgx.Tx, orgID int64, a erp.AuditRecord) error` calling `database.WriteAudit` with `ActorKind` defaulting to `user` and `ActorKeyID` copied.
   - Traps: 15.
   - Done: `go build ./internal/modules/erp/postgres/`.
 
-- [ ] T047 [P] [US1] Add integration SQL in `internal/modules/erp/postgres/integrations.go`
+- [x] T047 [P] [US1] Add integration SQL in `internal/modules/erp/postgres/integrations.go`
   - Do: `EnsureIntegration` (find active row for `(org, provider)` or insert, audit in the same `InTx`), `SetIntegrationStatus`, `OrgStatusType` via `db.QueryRowUnscoped` on `org.organizations` (read status and type only), `WarehouseInOrg`, `BranchInOrg`, `ActiveMember` (active `org.members` row).
   - Traps: 1, 15.
   - Done: `go build ./internal/modules/erp/postgres/`.
 
-- [ ] T048 [P] [US1] Add key SQL in `internal/modules/erp/postgres/keys.go`
+- [x] T048 [P] [US1] Add key SQL in `internal/modules/erp/postgres/keys.go`
   - Do: `InsertKey`, `GetKey`, `ListKeys`, `SetKeyExpiry`, `SetKeyRateLimit`, `RevokeKey` (all `WithTenant`, audit in the same `InTx`); `FindKeyByPrefixAsSystem` (comment `plan.md E1`, `WHERE key_prefix = $1`, joins the integration status, returns one row); `TouchLastUsed` (update only when `last_used_at IS NULL OR last_used_at < now() - interval '1 minute'`); `ListKeysAsStaff`, `RevokeKeyAsStaff` (comment `plan.md E5`).
   - Traps: 1, 15, 24.
   - Done: `go test ./internal/modules/erp/postgres/ -count=1` and `SB go test -p 1 ./test/integration/ -run TestERPKeysRepo -count=1`.
 
-- [ ] T049 [P] [US1] Add call-log SQL in `internal/modules/erp/postgres/calls.go`
+- [x] T049 [P] [US1] Add call-log SQL in `internal/modules/erp/postgres/calls.go`
   - Do: `InsertCallsAsSystem` (comment `plan.md E4`, insert only) inside `db.InTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error { _, err := tx.CopyFrom(ctx, pgx.Identifier{"erp","api_calls"}, cols, pgx.CopyFromRows(rows)); return err })`; never `db.Pool()`.
   - Traps: 1, 24.
   - Done: `go build ./internal/modules/erp/postgres/` and `go test ./internal/modules/erp/postgres/ -count=1`.
@@ -287,95 +304,97 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Do: `type fakeRepo struct` implementing `erp.Repository` in memory (maps for keys and integrations, a slice of `AuditRecord`, a hook to set org status). Used by the next tests.
   - Done: `gofmt -l internal/modules/erp/fake_keys_test.go` prints nothing.
 
-- [ ] T051 [US1] Write the key service tests in `internal/modules/erp/keys_service_test.go`
-  - Do: only an owner may create (when `CreateKeyInput.ActorIsOwner` is false the call returns `ERP_VALIDATION` with `details.fields` naming `actor`, because no error code names this case); warehouse or branch of another organization refused with `ERP_VALIDATION`; buying user not an active member refused with `ERP_VALIDATION` and `details.fields=["buyingUserId"]` (`ERP_PO_BUYING_USER_MISSING` is for purchase orders only, T220); `CreateKey` returns the full key once and the stored record has only prefix and hash; rotation: new key active, old `expires_at = now + grace`, grace above 72 h refused; `RevokeKey` for org A on a key of org B returns the same error as a missing id (`ERP_NOT_FOUND`, US1.3); every mutation recorded one `AuditRecord`; `ListKeys` shows only own keys, `ListKeysAsStaff` shows all; default scopes follow `DefaultScopes`; `UpdateKeyLimits` stores a value from `MinRatePerMinute` to `MaxRatePerMinute`, refuses 9 and 6001 with `ERP_VALIDATION` and `details.fields=["ratePerMinute"]`, refuses a non-owner, refuses a key of another organization with `ERP_NOT_FOUND`, and records one `AuditRecord`; after `RotateKey` the new key has the old key's scopes, warehouse, branch, buying user, rate limit and max batch items.
+- [x] T051 [US1] Write the key service tests in `internal/modules/erp/keys_service_test.go`
+  - Do: only an owner may create (when `CreateKeyInput.ActorIsOwner` is false the call returns `ERP_VALIDATION` with `details.fields` naming `actor`, because no error code names this case); warehouse or branch of another organization refused with `ERP_VALIDATION`; buying user not an active member refused with `ERP_VALIDATION` and `details.fields=["buyingUserId"]` (`ERP_PO_BUYING_USER_MISSING` is for purchase orders only, T220); `CreateKey` returns the full key once and the stored record has only prefix and hash; rotation: new key active, old `expires_at = now + grace`, grace above 72 h refused; `RevokeKey` for org A on a key of org B returns the same error as a missing id (`ERP_NOT_FOUND`, US1.3); every mutation recorded one `AuditRecord`; `ListKeys` shows only own keys, `ListKeysAsStaff` shows all; default scopes follow `DefaultScopes`; `UpdateKeyLimits` stores a value from `MinRatePerMinute` to `MaxRatePerMinute`, refuses 9 and 6001 with `ERP_VALIDATION` and `details.fields=["ratePerMinute"]`, refuses a non-owner, refuses a key of another organization with `ERP_NOT_FOUND`, and records one `AuditRecord`; a non-owner rotate is refused with no mutation or audit; an owner of org B changing org A’s key gets the same error as a missing key; after `RotateKey` the new key has the old key's scopes, warehouse, branch, buying user, rate limit and max batch items.
   - Done: `gofmt -l internal/modules/erp/keys_service_test.go` prints nothing; `go test ./internal/modules/erp/ -run KeyService -count=1` fails to compile (RED).
 
-- [ ] T052 [US1] Add the key service in `internal/modules/erp/keys_service.go`
-  - Do: methods on `*Service`: `CreateKey(ctx, CreateKeyInput) (CreatedKey, error)`, `RotateKey(ctx, orgID, keyID int64, grace time.Duration, actorUserID int64) (CreatedKey, error)`, `RevokeKey(ctx, orgID, keyID int64, reason string, actorUserID int64) error`, `UpdateKeyLimits(ctx, orgID, keyID int64, ratePerMinute int, actorUserID int64) error` (owner only, range check, calls `SetKeyRateLimit`), `PauseIntegration(ctx, orgID int64, pause bool, actorUserID int64) error`, `ListKeys(ctx, orgID int64) ([]APIKey, error)`, `ListKeysAsStaff(ctx) ([]StaffKeyRow, error)`, `RevokeKeyAsStaff(ctx, keyID int64, reason string, actorUserID int64) error`. Use `GenerateKey` from `keys.go` with tag `Config.Tag`. `RotateKey` copies scopes, warehouse, branch, buying user, rate limit and max batch items from the old key.
+- [x] T052 [US1] Add the key service in `internal/modules/erp/keys_service.go`
+  - Do: methods on `*Service`: `CreateKey(ctx, CreateKeyInput) (CreatedKey, error)`, `RotateKey(ctx, orgID, keyID int64, grace time.Duration, actorUserID int64, actorIsOwner bool) (CreatedKey, error)`, `RevokeKey(ctx, orgID, keyID int64, reason string, actorUserID int64) error`, `UpdateKeyLimits(ctx, orgID, keyID int64, ratePerMinute int, actorUserID int64, actorIsOwner bool) error` (owner only, range check, calls `SetKeyRateLimit`), `PauseIntegration(ctx, orgID int64, pause bool, actorUserID int64) error`, `ListKeys(ctx, orgID int64) ([]APIKey, error)`, `ListKeysAsStaff(ctx) ([]StaffKeyRow, error)`, `RevokeKeyAsStaff(ctx, keyID int64, reason string, actorUserID int64) error`. For rotate and limits, reject `actorIsOwner=false` with `ERP_VALIDATION` and `details.fields` naming `actor`, with no change or audit. Use `GenerateKey` from `keys.go` with tag `Config.Tag`. `RotateKey` copies scopes, warehouse, branch, buying user, rate limit and max batch items from the old key.
   - Traps: 1, 15, 24.
   - Done: `go test ./internal/modules/erp/ -run KeyService -count=1`.
 
-- [ ] T053 [US1] Write the authentication tests in `internal/modules/erp/authenticate_test.go`
-  - Do: unknown prefix and wrong secret return the identical `*Error` (`ERP_AUTH_INVALID`, 401) and both compute the HMAC; revoked gives `ERP_KEY_REVOKED` with `revokedAt`; expired gives `ERP_KEY_EXPIRED` with `expiredAt`; paused or closed integration gives `ERP_INTEGRATION_PAUSED`; organization not `approved` gives `ERP_ORG_NOT_APPROVED`; an organization that becomes approved again works with no key change; success returns a `Principal` with scopes, warehouse, branch, org type; `TouchLastUsed` is called on success.
+- [x] T053 [US1] Write the authentication tests in `internal/modules/erp/authenticate_test.go`
+  - Do: wrap the real service HMAC function with a counter and assert exactly one call for unknown prefix, wrong secret, revoked, expired, and valid keys. Unknown prefix and wrong secret return identical `ERP_AUTH_INVALID` errors to the caller; all authentication failures use the same error and message. Test paused/closed integration, unapproved organization, approval restored, principal fields, and successful last-used touch.
   - Done: `gofmt -l internal/modules/erp/authenticate_test.go` prints nothing; `go test ./internal/modules/erp/ -run Authenticate -count=1` fails to compile (RED).
 
-- [ ] T054 [US1] Add `Authenticate` in `internal/modules/erp/authenticate.go`
-  - Do: `func (s *Service) Authenticate(ctx context.Context, raw, ip string) (Principal, error)`. Order: `ParseKey`; `FindKeyByPrefixAsSystem`; always compute `HashSecret` (use a dummy hash when the prefix is unknown); `VerifyHash`; revoked; expired; integration status; `OrgStatusType` must be `approved`. Own file because plan puts it in `keys_service.go`, which would pass 350 lines.
+- [x] T054 [US1] Add `Authenticate` in `internal/modules/erp/authenticate.go`
+  - Do: `func (s *Service) Authenticate(ctx context.Context, raw, ip string) (Principal, error)`. Constructor initializes an unexported service HMAC function using the real pepper; call it exactly once on every path and compare using constant-time comparison, including a fixed dummy hash for unknown prefix. Check key, integration and organization status after hashing. All failures return the same error and message. No global, exported setter, or configuration switch.
   - Traps: 1, 24.
   - Done: `go test ./internal/modules/erp/ -run Authenticate -count=1`.
 
-- [ ] T055 [US1] Write the call logger test in `internal/modules/erp/calllog_test.go`
+- [x] T055 [US1] Write the call logger test in `internal/modules/erp/calllog_test.go`
   - Do: `Record` x 200 flushes without waiting; fewer rows flush within 1 s (use a short injected interval); a full 4,096 channel drops and counts; `Close(ctx)` flushes the rest; a `CallRecord` never has an `Authorization` value. Use a fake `InsertCallsAsSystem`.
   - Done: `gofmt -l internal/modules/erp/calllog_test.go` prints nothing; `go test ./internal/modules/erp/ -run CallLog -count=1` fails to compile (RED).
 
-- [ ] T056 [US1] Add the call logger in `internal/modules/erp/calllog.go`
+- [x] T056 [US1] Add the call logger in `internal/modules/erp/calllog.go`
   - Do: `CallLogger` with `NewCallLogger(repo Repository, log *slog.Logger)`, `Record(CallRecord)` into a 4,096-slot channel, a goroutine that flushes every 1 s or 200 rows, `Dropped() int64`, `Close(ctx)`. Start the goroutine from `Run(ctx)` so `cmd/server` can start it with `safe.Go`.
   - Traps: 24.
   - Done: `go test ./internal/modules/erp/ -run CallLog -count=1`.
 
-- [ ] T057 [US1] Write the envelope tests in `internal/modules/erp/http/respond_test.go`
+- [x] T057 [US1] Write the envelope tests in `internal/modules/erp/http/respond_test.go`
   - Do: `writeError` outputs `{"status":"error","requestId","error":{"code","message":{"ar","en"},"details"}}` with non-empty `ar` and `en` for every code in `erp.AllCodes`; `writeOK` outputs `{"status":"ok","requestId","data"}`; every placeholder in the table of T058 is filled from the named `details` key, and a missing key leaves the placeholder text unfilled and does not panic; response header `X-Request-ID` equals `requestId`; request id comes from `observability.RequestIDFrom`.
   - Traps: 9, 12.
   - Done: `gofmt -l internal/modules/erp/http/respond_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Respond -count=1` fails (RED).
 
-- [ ] T058 [US1] Add the envelope writer in `internal/modules/erp/http/respond.go`
+- [x] T058 [US1] Add the envelope writer in `internal/modules/erp/http/respond.go`
   - Do: `writeOK(w, r, status int, data any)`, `writeError(w, r, err error)` (non-`*erp.Error` becomes `ERP_INTERNAL` 500 and is logged without the body), message built with `i18n.T(i18n.AR, ...)` and `i18n.T(i18n.EN, ...)`. Do not use `httpx.Error`. Set the `X-Request-ID` header to the request id explicitly if it is absent (`w.Header().Set`). Placeholders are filled from `details` by this table: `ERP_RATE_LIMITED` uses `details.retryAfterSeconds`; `ERP_BODY_TOO_LARGE` uses `details.limitBytes/1048576`; `ERP_BATCH_TOO_LARGE` uses `details.limit`; `ERP_PO_ITEM_NOT_FOUND`, `ERP_PO_NO_ACTIVE_OFFER`, `ERP_PO_QUANTITY_INVALID` and `ERP_PO_SUPPLIER_NOT_LINKED` use `details.line`; `ERP_ORDER_STATE_CONFLICT` uses `details.currentStatus`; `ERP_PO_REFUSED` uses `details.reason`. A missing key leaves the placeholder text unfilled and must not panic.
   - Traps: 9, 12.
   - Done: `go test ./internal/modules/erp/http/ -run Respond -count=1`.
 
-- [ ] T059 [US1] Write the middleware tests in `internal/modules/erp/http/auth_test.go`
-  - Do: missing header `ERP_AUTH_MISSING`; bad format `ERP_AUTH_INVALID`; 31st failed attempt from one IP in a minute gets `ERP_RATE_LIMITED`; per-key limit returns `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset` and `Retry-After` on 429; success puts the `Principal` in the context and `database.TenantFrom(ctx)` equals the key's organization even when the request sends `X-Organization-Id` or `?organization_id=`; a call record is written after the handler with the chi route pattern, not the URL; a key in the query string is ignored.
-  - Traps: 1, 24.
+- [x] T059 [US1] Write the middleware tests in `internal/modules/erp/http/auth_test.go`
+  - Do: missing header `ERP_AUTH_MISSING`; bad format fails normally; 100 successful calls do not consume the per-IP failure limit; failures up to the limit return the normal error and the next attempt returns 429 without invoking an injected authenticate function (the existing erp test establishes one HMAC per Authenticate call); a valid key from a blocked IP remains blocked until expiry; failed ERP attempts do not affect the website login limiter; Redis failure does not block valid keys; per-key rate headers and `Retry-After`; successful principal and tenant context ignore caller-supplied organization; call log uses route pattern; query key ignored. Use the trusted client IP helper. Tests that need the API explicitly enable it.
   - Done: `gofmt -l internal/modules/erp/http/auth_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Auth -count=1` fails (RED).
 
-- [ ] T060 [US1] Add rate-limit helpers in `internal/modules/erp/http/ratelimit.go`
-  - Do: `checkKeyLimit(ctx, lim *httpx.Limiter, p erp.Principal) (headers, *erp.Error)` and `checkAuthFailures(ctx, lim, ip)` using `AllowKey` with `erp.AuthFailuresPerIPPerMinute`, `erp.DefaultRatePerMinute` and the key's `RatePerMinute`; `setLimitHeaders`.
-  - Traps: 24.
+- [x] T060 [US1] Add rate-limit helpers in `internal/modules/erp/http/ratelimit.go` and read-only failure check and failure-only increment next to `AllowKey` in `internal/platform/httpx/ratelimit.go`
+  - Do: separate read-only IP failure count check and increment used only after failed authentication, using an ERP-specific namespace distinct from per-key and website LimitByIP keys; check at or above `erp.AuthFailuresPerIPPerMinute` without increment and return retry TTL. Keep the existing one-minute window. Blocked requests do not extend it. Redis errors are logged and fail open. `checkKeyLimit` uses `AllowKey` and the principal rate; set limit headers. Do not change `AllowKey`.
   - Done: `go build ./internal/modules/erp/http/`.
 
-- [ ] T061 [US1] Add the auth middleware in `internal/modules/erp/http/auth.go`
-  - Do: `func (h *Handler) auth(next http.Handler) http.Handler` in the order bearer present, parse, per-IP failure counter, `svc.Authenticate`, per-key limit, set `Principal` in a private context key, `database.WithTenant(ctx, p.OrganizationID)`; after the handler record the call with `CallLogger`. A failed authentication records a call with no organization.
+- [x] T060a [US1] Add the handler shell in `internal/modules/erp/http/handler.go`
+  - Do: define only `Handler` and `NewHandler(svc *erp.Service, cfg erp.Config, lim *httpx.Limiter, log *slog.Logger)` with the dependencies later tasks use; no routes yet.
+  - Done: `go build ./internal/modules/erp/...`.
+
+- [x] T061 [US1] Add the auth middleware in `internal/modules/erp/http/auth.go`
+  - Do: use the platform trusted client IP helper. Check the ERP-specific failure counter read-only first; if blocked return 429 and `Retry-After` without authenticating or incrementing. Authenticate; on failure increment the counter and return the normal error, on success do not increment or reset it. Log Redis failures and continue authentication; per-key limiting counts every authenticated request. Set principal and `database.WithTenant` context, ignoring caller-supplied tenant. Middleware depends on a small authentication interface or function; production passes the real Service.Authenticate and has no alternate production path. After the handler record the call using the route pattern; failed authentication records no organization.
   - Traps: 1, 24.
   - Done: `go test ./internal/modules/erp/http/ -run Auth -count=1`.
 
-- [ ] T062 [US1] Write the handler tests in `internal/modules/erp/http/handler_test.go`
+- [x] T062 [US1] Write the handler tests in `internal/modules/erp/http/handler_test.go`
   - Do: `GET /health` with a valid key returns 200 and asserts `data.organization{id,name{ar,en},type}`, `data.integration{provider,status}`, `data.key{prefix,scopes,warehouse{id,name},branch{id},rateLimitPerMinute,expiresAt}`, `data.apiVersion`, `data.serverTime`; `GET /openapi.yaml` works without a key; an unknown route under the prefix returns the bilingual `ERP_NOT_FOUND`; captured logs and every response body for a bad key contain neither the key nor the secret part (grep the buffer).
   - Traps: 24.
   - Done: `gofmt -l internal/modules/erp/http/handler_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Handler -count=1` fails (RED).
 
-- [ ] T063 [P] [US1] Add the health route in `internal/modules/erp/http/health.go`
-  - Do: `func (h *Handler) health(w, r)` returning exactly the `HealthResponse` schema and example in `openapi.yaml`; `warehouse.name` comes from `inventory.warehouses.name`.
+- [x] T063 [P] [US1] Add the health route in `internal/modules/erp/http/health.go`
+  - Do: `func (h *Handler) health(w, r)` returning exactly the `HealthResponse` schema and example in `openapi.yaml`; `warehouse.name` comes from `inventory.warehouses.name`. Call `HealthData` with the authenticated principal; never accept organization or key IDs from the request. It reads under `WithTenant(principal.OrganizationID)` and explicit organization/key filters without AsSystem.
   - Done: `go build ./internal/modules/erp/http/`.
 
-- [ ] T064 [P] [US1] Add the embedded spec in `internal/modules/erp/http/spec.go` and `spec/openapi.yaml`
+- [x] T064 [P] [US1] Add the embedded spec in `internal/modules/erp/http/spec.go` and `spec/openapi.yaml`
   - Do: copy `specs/002-erp-integration-api/contracts/openapi.yaml` to `internal/modules/erp/http/spec/openapi.yaml`; `spec.go` embeds it with `go:embed` and serves `GET /openapi.yaml` as `application/yaml`.
   - Done: `diff -q specs/002-erp-integration-api/contracts/openapi.yaml internal/modules/erp/http/spec/openapi.yaml` prints nothing, and `go build ./internal/modules/erp/http/`.
 
-- [ ] T065 [US1] Add the handler root in `internal/modules/erp/http/handler.go`
-  - Do: `func NewHandler(svc *erp.Service, cfg erp.Config, lim *httpx.Limiter, log *slog.Logger) *Handler` and `func (h *Handler) Routes() chi.Router` mounting `/health` and `/openapi.yaml` (no auth) plus an auth-wrapped group for later slices; unknown paths return `ERP_NOT_FOUND`.
+- [x] T065 [US1] Add the handler root in `internal/modules/erp/http/handler.go`
+  - Do: `func (h *Handler) Routes() chi.Router` mounts `/health` inside the authenticated group and `/openapi.yaml` without auth, as specified by OpenAPI; unknown paths return `ERP_NOT_FOUND`. The constructor already exists from T060a.
   - Done: `go test ./internal/modules/erp/http/ -count=1`.
 
-- [ ] T066 [US1] Write the disabled-mode test in `cmd/server/erp_wiring_test.go`
-  - Do: `TestRouterERPDisabled`: with `ERP.Enabled=false`, any `GET /erp/v1/health` returns 503 with `ERP_DISABLED` in both languages and does not touch `/api/v1` or n8n routes (those answer as before). Copy the style of existing `Router` tests in `cmd/server/`. Add `TestERPDefaultRateMatchesLimit`: the config defaults `ERP.DefaultRate` and `ERP.MaxBatchItems` equal `erp.DefaultRatePerMinute` and `erp.MaxBatchItems` (this one passes at once and guards later edits).
-  - Done: `gofmt -l cmd/server/erp_wiring_test.go` prints nothing; `go test ./cmd/server/ -run Router -count=1` fails (RED).
+- [x] T066 [US1] Write the real server router test in `cmd/server/erp_router_integration_test.go`
+  - Do: use the production router and real ERP service with sandbox Postgres and Redis; set `ERP_API_ENABLED=true` and a test pepper of at least 32 bytes in the test. Seed unique organization, integration and key through `db.InTx(database.AsSystem(ctx), ...)`. Assert valid health 200, revoked key refused, wrong key refused then failure limit 429, and disabled API has no health route while the website responds. Skip only when no database URL is set; sandbox skip fails.
+  - Done: `SB-6 go test -p 1 ./cmd/server/ -run TestRouterERPRealWiring -count=1 -v` visibly PASSes without a skip.
 
-- [ ] T067 [US1] Add `mountERP` in `cmd/server/erp_wiring.go`
-  - Do: `mountERP(r, cfg, log, deps, db, idSvc, docsGate) *erp.Service` (plan.md S1 step 15 names this parameter list; take the types from the neighbouring `mount*` calls in `cmd/server/routes.go`; follow `mountTelegram` at `cmd/server/telegram_wiring.go:33` for disabled mode). Builds `postgres.New(db)`, `erp.NewService` with `Config.Provider` set to `provider.DefaultProvider` (never typed), creates `lim := httpx.NewLazyLimiter(func() *redis.Client { return deps.CacheHandle().Redis() }, "dawa24:erp:ratelimit:")` inside `mountERP` (pattern of `cmd/server/routes.go:78`) and passes it to `erpHttp.NewHandler`, starts `CallLogger.Run` with `safe.Go`, mounts at `/erp/v1`. Disabled mode mounts a 503 `ERP_DISABLED` handler.
+- [x] T067 [US1] Add `mountERP` in `cmd/server/erp_wiring.go`
+  - Do: `mountERP(r, cfg, log, deps, db, idSvc, docsGate) *erp.Service` (plan.md S1 step 15 names this parameter list; take the types from the neighbouring `mount*` calls in `cmd/server/routes.go`; return without mounting any ERP routes when disabled). Builds `postgres.New(db)`, `erp.NewService` with `Config.Provider` set to `provider.DefaultProvider` (never typed), creates `lim := httpx.NewLazyLimiter(func() *redis.Client { return deps.CacheHandle().Redis() }, "dawa24:erp:ratelimit:")` inside `mountERP` (pattern of `cmd/server/routes.go:78`) and passes it to `erpHttp.NewHandler`, starts `CallLogger.Run` with `safe.Go`, mounts at `/erp/v1`. Disabled mode mounts no `/erp/v1` route.
   - Traps: 9, 10, 20.
   - Done: `go build ./cmd/server/`.
 
-- [ ] T068 [US1] Add `erpSvc` and `SetERP` in `internal/ui/handlers.go`
+- [x] T068 [US1] Add `erpSvc` and `SetERP` in `internal/ui/handlers.go`
   - Do: field `erpSvc *erp.Service` on the UI handler struct and `func (h *UIHandler) SetERP(s *erp.Service)`. The `ui` package may import `erp`.
   - Traps: 10.
   - Done: `go build ./internal/ui/`.
 
-- [ ] T069 [US1] Call `mountERP` in `cmd/server/routes.go`
-  - Do: call it in `mountModuleRoutes` right after `mountModuleRoutesAPI` (about line 74) and before `buildUIHandler`; after the UI handler exists call `uiHandler.SetERP(erpSvc)`. `SetERP` exists because the previous task added it.
+- [x] T069 [US1] Call `mountERP` in `cmd/server/routes.go`
+  - Do: test that disabled mode mounts no `/erp/v1` route and leaves website, n8n and existing routes unchanged; call it in `mountModuleRoutes` right after `mountModuleRoutesAPI` (about line 74) and before `buildUIHandler`; after the UI handler exists call `uiHandler.SetERP(erpSvc)`. `SetERP` exists because the previous task added it.
   - Done: `go build ./... && go test ./cmd/server/ -run Router -count=1`.
 
 - [ ] T070 [US1] Write the key page tests in `internal/ui/erp_keys_test.go`
-  - Do: names start with `TestErp`: create requires `actor.IsOwner` (non-owner gets the notice, no key row); the full key appears in the create response once and a reload shows only `key_prefix`; rotate and revoke require owner; the admin page lists every organization's keys and revoke works for staff; a pharmacy owner sees only its own keys under `/customer/integrations`; the form rejects unknown scopes; the limits form saves a value from 10 to 6000 for an owner, refuses 9 and 6001, and refuses a non-owner; the modals are rendered through `components.Modal`.
+  - Do: names start with `TestErp`: create requires `actor.IsOwner` (non-owner gets the notice, no key row); the full key appears in the create response once and a reload shows only `key_prefix`; rotate and revoke require owner; the admin page lists every organization's keys and revoke works for staff; a pharmacy owner sees only its own keys under `/customer/integrations`; the form rejects unknown scopes; the limits form saves a value from 10 to 6000 for an owner, refuses 9 and 6001, and refuses a non-owner even when a posted `is_owner` or `actorIsOwner` field is set; the modals are rendered through `components.Modal`.
   - Done: `gofmt -l internal/ui/erp_keys_test.go` prints nothing; `go test ./internal/ui/ -run Erp -count=1` fails (RED).
 
 - [ ] T071 [US1] Add the key form parser in `internal/ui/erp_keys_forms.go`
@@ -398,7 +417,7 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Done: `go build ./internal/ui/pages/`.
 
 - [ ] T075 [US1] Add the key handlers in `internal/ui/erp_keys_handlers.go`
-  - Do: `ErpKeysPage`, `ErpKeyCreate`, `ErpKeyRotate`, `ErpKeyRevoke`, `ErpKeyLimits` (calls `UpdateKeyLimits`), `ErpIntegrationPause` for both vendor and customer audiences (an audience flag picks permission keys and shell). Owner check `actor.IsOwner`. The full key is returned only in the create and rotate responses.
+  - Do: `ErpKeysPage`, `ErpKeyCreate`, `ErpKeyRotate`, `ErpKeyRevoke`, `ErpKeyLimits` (calls `UpdateKeyLimits`), `ErpIntegrationPause` for both vendor and customer audiences (an audience flag picks permission keys and shell). Owner check `actor.IsOwner`; pass this signed-in actor value as `actorIsOwner` to rotate and limits and as `ActorIsOwner` to create, never read ownership from submitted fields. The full key is returned only in the create and rotate responses.
   - Use: `h.erpSvc` methods from `keys_service.go`.
   - Traps: 24, 29.
   - Done: `go test ./internal/ui/ -run Erp -count=1` (vendor and pharmacy cases pass).
@@ -424,7 +443,7 @@ Goal: owners and staff create, rotate and revoke keys; `GET /erp/v1/health` work
   - Done: `go test ./internal/ui/ -run Erp -count=1 && go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestModulesDoNotImportEachOther' -count=1` and `make check-modal-handwritten check-hardcoded-arabic`.
 
 - [ ] T080 [US1] S1 slice gate
-  - Do: run the slice gate from "Rules for every task". Changed packages: `./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ ./internal/ui/...`. Focused tests: `go test ./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ -run 'Audit|ERP|AllowKey|Erp|Key|Authenticate|CallLog|Respond|Auth|Handler|Router|AsSystem|Codes|Principal' -count=1`; `go test ./internal/ui/ -run Erp -count=1`; `SB go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP|TestERPKeysRepo|TestAuditActorKeyRoundTrip' -count=1`; `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
+  - Do: run the slice gate from "Rules for every task". Changed packages: `./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ ./internal/ui/...`. Focused tests: `go test ./internal/platform/database/ ./internal/platform/config/ ./internal/platform/httpx/ ./internal/shared/i18n/ ./internal/platform/rbac/ ./internal/modules/erp/... ./cmd/server/ -run 'Audit|ERP|AllowKey|Erp|Key|Authenticate|CallLog|Respond|Auth|Handler|Router|AsSystem|Codes|Principal' -count=1`; `go test ./internal/ui/ -run Erp -count=1`; `SB-6 go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP|TestERPKeysRepo|TestAuditActorKeyRoundTrip' -count=1`; `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
   - Commit message: `feat(erp): S1 keys and machine principal`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message and `git status --short` lists no file other than the four baselines and the spec folder.
 
@@ -511,7 +530,7 @@ Goal: the ERP sends batches, reads per-item results; suppliers resolve review it
 - [ ] T097 [US2] Write the S2 isolation tests in `test/integration/erp_isolation_sync_test.go`
   - Do: `TestTenantIsolation_ERPProductLinks`, `TestTenantIsolation_ERPSyncBatches`, `TestTenantIsolation_ERPSyncItems`, `TestTenantIsolation_ERPReviewItems` (separate file from the S1 one to keep both under 400 lines).
   - Traps: 19.
-  - Done: `gofmt -l test/integration/erp_isolation_sync_test.go` prints nothing; `SB go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP(ProductLinks|SyncBatches|SyncItems|ReviewItems)' -count=1` passes (the tables already exist from 255).
+  - Done: `gofmt -l test/integration/erp_isolation_sync_test.go` prints nothing; `SB-6 go test -p 1 ./test/integration/ -run 'TestTenantIsolation_ERP(ProductLinks|SyncBatches|SyncItems|ReviewItems)' -count=1` passes (the tables already exist from 255).
 
 - [ ] T098 [US2] Write the sync flow tests in `test/integration/erp_sync_flow_test.go`
   - Do: `TestERPSyncFlow_Basic`: seed a vendor organization, warehouse, branch, key principal and one existing variant with SKU `4001`; call `AcceptBatch` then `ProcessChunk` directly (no River) with three items from the two fixtures plus one invalid price `12.345`; assert created, updated (known), failed `ERP_ITEM_PRICE_PRECISION`, stock row for the key's warehouse; absent product untouched; stock 0 writes quantity 0; duplicate code in one batch: last wins, earlier row `unchanged` `ERP_ITEM_SUPERSEDED`. Real adapters from `internal/composition/erpports` with the matcher stubbed to return `needs_review` for unknown items.
@@ -654,9 +673,9 @@ Goal: the ERP sends batches, reads per-item results; suppliers resolve review it
   - Done: `go build ./cmd/worker/`.
 
 - [ ] T126 [US2] Wire the worker in `cmd/worker/main.go` and `cmd/worker/matching.go`
-  - Do: change `registerMatchingWorkers` to also return its `matching.Service` (an interface value, no pointer); call `registerERPWorkers`; add `river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour), ... ERPCleanupArgs ...)` to the returned periodic list.
+  - Do: change `registerMatchingWorkers` to also return its `matching.Service` (an interface value, no pointer); only when `ERP.Enabled` is true call `registerERPWorkers` and start the erpsync queue; add a worker test asserting disabled mode does not register or start erpsync and enabled mode does; add `river.NewPeriodicJob(river.PeriodicInterval(24*time.Hour), ... ERPCleanupArgs ...)` to the returned periodic list.
   - Traps: 4.
-  - Done: `go build ./cmd/worker/ && go test ./internal/platform/queue/ -count=1`.
+  - Done: `go build ./cmd/worker/ && go test ./cmd/worker/ ./internal/platform/queue/ -count=1`.
 
 - [ ] T127 [US2] Write the body tests in `internal/modules/erp/http/body_test.go`
   - Do: body over 32 MiB gives 413 `ERP_BODY_TOO_LARGE`; gzip body with `Content-Encoding: gzip` is inflated; inflated size over 128 MiB is refused with the same code; `Content-Type` other than `application/json` gives 415; broken JSON gives 400 `ERP_BAD_JSON` with `position`.
@@ -710,7 +729,7 @@ Goal: the ERP sends batches, reads per-item results; suppliers resolve review it
 
 - [ ] T138 [US2] Run the S2 flow tests
   - Do: run SB-3 and SB-4, then the flow tests. If one fails, fix the code of the earlier S2 task that owns the behavior; do not edit the test unless the test contradicts plan.md, and then record the reason in `verify-notes.md`.
-  - Done: `SB go test -p 1 ./test/integration/ -run 'ERPSyncFlow|TestTenantIsolation_ERP' -skip 'Scale50000' -count=1` passes.
+  - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPSyncFlow|TestTenantIsolation_ERP' -skip 'Scale50000' -count=1` passes.
 
 - [ ] T138a [US2] Run the SC-002 scale test
   - Do: run SB-3, then `docker restart dawa24audit-pg` and SB-4 (a clean database), then the command below on its own. The SB timeout of 400 s is stricter than the 7-minute window: if the run is killed by it, write `V8a result: SC-002 not met, killed at 400 s` in `verify-notes.md` and stop the slice.
@@ -792,7 +811,7 @@ Goal: the ERP reads sales and purchase orders, sees what is new, and acknowledge
 
 - [ ] T154 [US3] Run the S3 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S3 task when a test fails; do not edit a test unless it contradicts plan.md (record why in `verify-notes.md`).
-  - Done: `SB go test -p 1 ./test/integration/ -run 'ERPOrders|TestTenantIsolation_ERPOrderImports' -count=1` passes.
+  - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPOrders|TestTenantIsolation_ERPOrderImports' -count=1` passes.
 
 - [ ] T155 [US3] S3 slice gate
   - Do: slice gate. Changed packages: `./internal/modules/erp/... ./cmd/server/`. Focused tests: `go test ./internal/modules/erp/... -run 'Orders|Cursor|Ack' -count=1`; the SB command above; `go test ./test/ -run TestModulesDoNotImportEachOther -count=1`.
@@ -1144,7 +1163,7 @@ Goal: the ERP creates a purchase order for its own organization at Dawa24 prices
 
 - [ ] T229 [US6] Run the S7 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S7 task when a test fails.
-  - Done: `SB go test -p 1 ./test/integration/ -run 'ERPPO|TestTenantIsolation_ERPIdempotency|TestOrderNumberSequenceConcurrent' -count=1` passes.
+  - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPPO|TestTenantIsolation_ERPIdempotency|TestOrderNumberSequenceConcurrent' -count=1` passes.
 
 - [ ] T230 [US6] S7 slice gate
   - Do: slice gate. Changed packages: `./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/`. Focused tests: `go test ./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/ -run 'OrderNumber|Purchase|ErpPurchasePlacer|OpenAPIMatchesRoutes|Postman|Router' -count=1`; the SB command above.
@@ -1253,7 +1272,7 @@ Goal: sensitive values are masked on screen and revealed one at a time with an a
 
 - [ ] T250 Run the whole ERP isolation and flow suite once
   - Do: SB-3, SB-4, then one run.
-  - Done: `SB go test -p 1 ./test/integration/ -run 'ERP|TestTenantIsolation_ERP|TestOrderNumberSequenceConcurrent|TestAuditActorKeyRoundTrip' -skip 'Scale50000' -count=1` passes (the scale test has its own run, T138a).
+  - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERP|TestTenantIsolation_ERP|TestOrderNumberSequenceConcurrent|TestAuditActorKeyRoundTrip' -skip 'Scale50000' -count=1` passes (the scale test has its own run, T138a).
 
 - [ ] T251 Confirm no secret or key is stored or logged
   - Do: `grep -rn "Authorization" internal/modules/erp --include=*.go | grep -v _test.go` and read each hit; confirm none writes the header value to a log, a database row or a response.
@@ -1261,7 +1280,7 @@ Goal: sensitive values are masked on screen and revealed one at a time with an a
   - Done: the review is written as `V7 result:` in `verify-notes.md`.
 
 - [ ] T252 Write the owner handoff in `specs/002-erp-integration-api/verify-notes.md`
-  - Do: add a section `Handoff` listing: migrations 255 to 258 and their order; config keys `ERP_API_ENABLED`, `ERP_KEY_PEPPER` (required in prod, 32 bytes or more), `ERP_DEFAULT_RATE_PER_MINUTE`, `ERP_MAX_BATCH_ITEMS`, `WORKER_ERPSYNC`; worker must run for sync; `ERP_API_ENABLED=false` turns the API off; the V5 unverified items; any `V` result that said no.
+  - Do: add a section `Handoff` listing: migrations 255 to 258 and their order; config keys `ERP_API_ENABLED`, `ERP_KEY_PEPPER` (required in prod, 32 bytes or more), `ERP_DEFAULT_RATE_PER_MINUTE`, `ERP_MAX_BATCH_ITEMS`, `WORKER_ERPSYNC`; worker must run for sync; `ERP_API_ENABLED` defaults false and disabled means no ERP route or erpsync worker; deploy first with the API off, then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true` when ready; tests and Postman flows that need the API explicitly enable it; the V5 unverified items; any `V` result that said no.
   - Done: `grep -c "Handoff" specs/002-erp-integration-api/verify-notes.md` prints 1.
 
 ## Dependencies and order
@@ -1271,7 +1290,7 @@ Goal: sensitive values are masked on screen and revealed one at a time with an a
 - S1 (T011 to T080, plus T042a) blocks S2, S3, S7. S8 (T231 to T246) needs T026 to T029 from S1 (the i18n files and the rbac test file) and nothing else; it may run any time after those four tasks.
 - S2 needs S1. S3 needs S1 (S2 only for `externalProductCode` in lines). S4 needs S3. S5 needs S3. S6 needs the endpoints it describes (S1 to S5; folder `04 Purchase` passes only after S7). S7 needs S1.
 - Recommended order, as in plan.md: S1, S2, S3, S4, S5, S6, S7, S8, then Polish.
-- Tasks with a letter suffix run right after the task whose number they carry, in this order: T042a (provider constant, before T067, T071 and T093), T099a (scale test, RED, before the S2 wiring), T124a (ADR, after the adapters), T138a (scale run, after T138), T158a then T158b (wallet shortfall error, before T161), T247a then T247b (load script scenario, then the run).
+- Tasks with a letter suffix run right after the task whose number they carry, in this order: T042a (provider constant, before T067, T071 and T093), T060a (handler shell before T061), T099a (scale test, RED, before the S2 wiring), T124a (ADR, after the adapters), T138a (scale run, after T138), T158a then T158b (wallet shortfall error, before T161), T247a then T247b (load script scenario, then the run).
 - `var _ erp.Repository = (*Repository)(nil)` is added by T118. From T145 the Postgres tasks T146 to T148, and T217, only need `gofmt` to pass; T149, T175 and T218 must `go build` the package with the assertion.
 - Inside a slice: migration before code that uses it; tests before the code they prove; templ tasks before the handlers that call them; the slice gate last.
 - Postman work grows: S6 builds the generator and the first committed files; the S7 task "Regenerate the Postman files after S7" re-runs it. Re-run it again after any later change to `openapi.yaml`.

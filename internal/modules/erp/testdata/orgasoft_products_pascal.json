@@ -1,0 +1,15 @@
+{
+  "items": [
+    {
+      "ExternalProductCode": "ORGA-100",
+      "ArName": "منتج اورجا سوفت",
+      "Stock": 50,
+      "PublicPrice": 250,
+      "Discount": 0,
+      "Tax": 14,
+      "IsQuota": false,
+      "QuotaQuantity": 0,
+      "Barcode": "8888888888"
+    }
+  ]
+}

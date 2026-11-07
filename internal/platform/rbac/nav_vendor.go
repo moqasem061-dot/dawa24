@@ -106,6 +106,8 @@ func vendorNav() []NavSection {
 				{Key: "decision_memory", Href: "/vendor/decision-memory", Icon: "zap",
 					NameAr: "ذاكرة قرارات المطابقة", NameEn: "Match decisions",
 					Perm: "vendor.decision_memory.view"},
+				{Key: "integrations", Href: "/vendor/integrations", Icon: "layers",
+					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "vendor.integration.view"},
 				{Key: "quotas", Href: "/vendor/quotas", Icon: "shield",
 					NameAr: "حصص الفروع", NameEn: "Branch quotas",
 					Perm: "vendor.quota.view"},

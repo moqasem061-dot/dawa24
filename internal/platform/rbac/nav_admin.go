@@ -5,6 +5,8 @@ func adminNav() []NavSection {
 		{
 			Key: "overview", NameAr: "الرئيسية والرقابة", NameEn: "Overview & Operations",
 			Items: []NavItem{
+				{Key: "integrations", Href: "/admin/integrations", Icon: "layers",
+					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "platform.integration.view"},
 				{Key: "dashboard", Href: "/admin/dashboard", Icon: "chart",
 					NameAr: "لوحة المعلومات الرئيسية", NameEn: "Dashboard",
 					Perm: "platform.dashboard.view"},

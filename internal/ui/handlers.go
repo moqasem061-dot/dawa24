@@ -13,6 +13,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/chat"
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	"github.com/moqasem061-dot/dawa24/internal/modules/compare"
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
 	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
 	"github.com/moqasem061-dot/dawa24/internal/modules/identity"
 	"github.com/moqasem061-dot/dawa24/internal/modules/ingest"
@@ -44,6 +45,7 @@ import (
 
 // UIHandler serves server-rendered HTML pages via Templ.
 type UIHandler struct {
+	erpSvc            *erp.Service
 	catSvc            *catalog.Service
 	orgSvc            *org.Service
 	ingSvc            *ingest.Service
@@ -370,3 +372,6 @@ func (h *UIHandler) RegisterApprovedSharedRoutes(r chi.Router) {
 	r.Post("/messages/{id}/send", h.MessagesSendSubmit)
 	r.Post("/requests", h.RequestCreateSubmit)
 }
+
+// SetERP supplies the ERP integration service.
+func (h *UIHandler) SetERP(s *erp.Service) { h.erpSvc = s }

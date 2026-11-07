@@ -1,0 +1,16 @@
+[
+  {
+    "order_number": "{{orderNumber}}",
+    "orga_orderID": "ORG-9921",
+    "items": [
+      {
+        "sku": "MED-001",
+        "name": "باراسيتامول",
+        "qty": 1,
+        "price": 15.00,
+        "discount": 5,
+        "taxes": 1.50
+      }
+    ]
+  }
+]

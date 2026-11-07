@@ -96,7 +96,7 @@ Unique `(integration_id, external_code)`; unique `(integration_id, variant_id)`;
 | created_at / updated_at | TIMESTAMPTZ | NOT NULL DEFAULT now() | |
 
 ## erp.sync_batches
-Unique `(integration_id, idempotency_key) WHERE idempotency_key IS NOT NULL`. Index `(integration_id, id) WHERE state IN ('queued','processing')`. Index `(organization_id, created_at DESC)`.
+Unique `(integration_id, idempotency_key) WHERE idempotency_key IS NOT NULL`. Index `(integration_id, id) WHERE state IN ('queued','processing')`. Index `(organization_id, accepted_at DESC)`.
 
 | Column | Type | Constraint | Arabic comment |
 |---|---|---|---|

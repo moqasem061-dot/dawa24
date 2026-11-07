@@ -5,6 +5,8 @@ func pharmacyNav() []NavSection {
 		{
 			Key: "orders", NameAr: "الطلبات والشحنات", NameEn: "Orders & Shipments",
 			Items: []NavItem{
+				{Key: "integrations", Href: "/customer/integrations", Icon: "layers",
+					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "pharmacy.integration.view"},
 				{Key: "dashboard", Href: "/customer/dashboard", Icon: "home",
 					NameAr: "لوحة التحكم", NameEn: "Dashboard",
 					Perm: "pharmacy.dashboard.view"},

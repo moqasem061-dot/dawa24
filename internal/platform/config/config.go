@@ -49,6 +49,7 @@ type Config struct {
 	Turnstile Turnstile
 	Auth      Auth
 	Clarity   Clarity
+	ERP       ERP
 }
 
 // AntiScrape governs the guard on the signed-out pages that publish
@@ -237,6 +238,7 @@ func load(cliOnly bool) (*Config, error) {
 				// Separate pools so that a vendor uploading 500k SKUs cannot
 				// starve order confirmations or notification delivery.
 				// Sized for 2-core VPS (8 total workers instead of 15).
+				"erpsync":       getInt("WORKER_ERPSYNC", 3),
 				"imports":       getInt("WORKER_IMPORTS", 1),
 				"ai":            getInt("WORKER_AI", 2),
 				"notifications": getInt("WORKER_NOTIFICATIONS", 2),
@@ -259,6 +261,7 @@ func load(cliOnly bool) (*Config, error) {
 	cfg.Turnstile = loadTurnstile(fail)
 	cfg.Auth = loadAuth()
 	cfg.Clarity = loadClarity(fail)
+	cfg.ERP = loadERP(env, fail)
 
 	// --- Required everywhere ---
 	if cfg.Database.URL == "" {

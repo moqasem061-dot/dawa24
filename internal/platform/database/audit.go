@@ -48,6 +48,8 @@ func AuditActorIDFrom(ctx context.Context) int64 {
 // what makes an audit trail answer "what did this actually do", rather than
 // only "something happened".
 type AuditEntry struct {
+	ActorKind      string
+	ActorKeyID     *int64
 	OrganizationID *int64
 	ActorUserID    int64
 	Action         string
@@ -57,6 +59,13 @@ type AuditEntry struct {
 	After          any
 	IP             string
 	RequestID      string
+}
+
+func auditActorKind(e AuditEntry) string {
+	if e.ActorKind == "" {
+		return "user"
+	}
+	return e.ActorKind
 }
 
 // WriteAudit records an administrative change.
@@ -97,12 +106,12 @@ func WriteAudit(ctx context.Context, tx pgx.Tx, e AuditEntry) error {
 	const query = `
 		INSERT INTO platform.audit_log (
 			organization_id, actor_user_id, action, entity_type, entity_id,
-			before, after, ip, request_id
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::inet, NULLIF($9, ''));
+			before, after, ip, request_id, actor_kind, actor_key_id
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8::inet, NULLIF($9, ''), $10, $11);
 	`
 	if _, err := tx.Exec(ctx, query,
 		e.OrganizationID, e.ActorUserID, e.Action, e.EntityType, e.EntityID,
-		beforeJSON, afterJSON, ipVal, e.RequestID,
+		beforeJSON, afterJSON, ipVal, e.RequestID, auditActorKind(e), e.ActorKeyID,
 	); err != nil {
 		return fmt.Errorf("write audit log: %w", err)
 	}

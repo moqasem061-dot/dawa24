@@ -54,6 +54,7 @@ func loadCatalogDefaults(e *engine) {
 	loadMissingCatalogKeys(e)
 	loadCatalogMatchingKeys(e)
 	loadMatchReviewKeys(e)
+	loadErpKeys(e)
 }
 
 func addKey(e *engine, key, namespace, textAR, textEN, desc string) {

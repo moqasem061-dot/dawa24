@@ -1,0 +1,16 @@
+{
+  "items": [
+    {
+      "externalProductCode": "4001",
+      "arName": "منتج مياه 1",
+      "stock": 1976,
+      "publicPrice": 1305.46,
+      "discount": 2,
+      "tax": 14,
+      "isQuota": false,
+      "quotaQuantity": 0,
+      "barcode": "6221790408214",
+      "expiryDate": "2028-01-10"
+    }
+  ]
+}

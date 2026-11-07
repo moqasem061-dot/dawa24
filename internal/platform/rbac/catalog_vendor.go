@@ -114,6 +114,9 @@ func vendorCatalogPerms() []Permission {
 		vendorPage("vendor.decision_memory.view", g, "decision_memory", "ذاكرة قرارات المطابقة", "Match decision memory"),
 		vendorAct("vendor.decision_memory.delete", g, "مسح قرارات المطابقة", "Clear match decisions", "vendor.decision_memory.view"),
 
+		vendorPage("vendor.integration.view", g, "integrations", "تكامل الأنظمة", "Integrations"),
+		vendorAct("vendor.integration.manage", g, "إدارة التكامل", "Manage integrations", "vendor.integration.view"),
+
 		vendorPage("vendor.quota.view", g, "quotas", "حصص الفروع", "Branch quotas"),
 		vendorAct("vendor.quota.manage", g, "تعديل وتحرير حصص الفروع", "Set and release branch quotas", "vendor.quota.view"),
 

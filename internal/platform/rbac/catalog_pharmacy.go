@@ -83,6 +83,9 @@ func pharmacyMarketPerms() []Permission {
 func pharmacyCompanyPerms() []Permission {
 	g := gPharmacyCompany
 	return []Permission{
+		pharmacyPage("pharmacy.integration.view", g, "integrations", "تكامل الأنظمة", "Integrations"),
+		pharmacyAct("pharmacy.integration.manage", g, "إدارة التكامل", "Manage integrations", "pharmacy.integration.view"),
+
 		pharmacyPage("pharmacy.organization.view", g, "organization", "بيانات المنشأة", "Company profile"),
 		pharmacyAct("pharmacy.organization.update", g, "تعديل بيانات المنشأة", "Edit company profile", "pharmacy.organization.view"),
 
