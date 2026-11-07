@@ -1,6 +1,8 @@
 package commerce
 
 import (
+	"strings"
+
 	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -364,3 +366,14 @@ type UpdateCustomerOrderInput struct {
 	Lines   []OrderLineEditItem `json:"lines"`
 	Notes   string              `json:"notes,omitempty"`
 }
+
+// IsWalletPayment reports whether an order is paid from the buyer's wallet. The
+// match ignores case and surrounding spaces, so a spelling variant cannot step
+// around the API rules while the website still reads it as another method.
+func IsWalletPayment(method string) bool {
+	return strings.EqualFold(strings.TrimSpace(method), "wallet")
+}
+
+// DefaultPaymentMethod is recorded when a checkout names no payment method: cash on
+// delivery, on the website and in the API alike.
+const DefaultPaymentMethod = "cod"

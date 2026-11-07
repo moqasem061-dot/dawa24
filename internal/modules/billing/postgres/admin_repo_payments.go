@@ -173,7 +173,8 @@ func (r *Repository) RecordInvoicePayment(ctx context.Context, req billing.Recor
 			return fmt.Errorf("update invoice status: %w", err)
 		}
 
-		// 6. If linked to an order, keep order payment status updated
+		// 6. If linked to an order, keep order payment status updated. A wallet order
+		// is paid per shipment by commerce (B2, A6), so its status is not touched here.
 		if orderID != nil {
 			orderPaymentStatus := "partially_paid"
 			switch newStatus {
@@ -185,7 +186,7 @@ func (r *Repository) RecordInvoicePayment(ctx context.Context, req billing.Recor
 			if _, errExec := tx.Exec(txCtx, `
 				UPDATE commerce.orders
 				SET payment_status = $1, updated_at = now()
-				WHERE id = $2;
+				WHERE id = $2 AND LOWER(payment_method) <> 'wallet';
 			`, orderPaymentStatus, *orderID); errExec != nil {
 				return fmt.Errorf("sync order payment status: %w", errExec)
 			}

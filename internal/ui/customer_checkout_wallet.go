@@ -54,7 +54,7 @@ func (h *UIHandler) verifyWalletFunds(
 		return 0, apperr.Validation("wallet.invalid_amount", "المبلغ المطلوب سداده غير صالح.", nil)
 	}
 
-	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 	wallet, err := h.billSvc.GetWallet(ctx, walletUserID, "EGP")
 	if err != nil || wallet == nil {
 		return 0, apperr.Validation("wallet.not_found", "تعذر الوصول للمحفظة المؤسسية الخاصة بحسابك.", nil)
@@ -75,12 +75,7 @@ func (h *UIHandler) buyerWalletUserID(ctx context.Context, order *commerce.Order
 	if order.OrganizationID != nil {
 		buyerOrgID = *order.OrganizationID
 	}
-	actor := authctx.Actor{
-		UserID:         order.CustomerID,
-		OrganizationID: buyerOrgID,
-		Scope:          "pharmacy",
-	}
-	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, _ := resolveTenantUserIDs(ctx, h, order.CustomerID, buyerOrgID)
 	return walletUserID
 }
 
@@ -129,8 +124,8 @@ func (h *UIHandler) prepareWalletCharge(ctx context.Context, order *commerce.Ord
 		return 0, fmt.Errorf("تعذر الوصول للمحفظة المؤسسية الخاصة بالصيدلية")
 	}
 	if wallet.AvailableBalance.Minor() < goodsAmount.Minor() {
-		return 0, fmt.Errorf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م)",
-			wallet.AvailableBalance.String(), goodsAmount.String())
+		return 0, fmt.Errorf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م). The pharmacy wallet balance (%s EGP) does not cover the goods amount (%s EGP)",
+			wallet.AvailableBalance.String(), goodsAmount.String(), wallet.AvailableBalance.String(), goodsAmount.String())
 	}
 	return walletUserID, nil
 }

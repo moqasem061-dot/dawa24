@@ -79,11 +79,6 @@ func buildUIHandler(
 	promoRepoUI := promoPostgres.NewRepository(db)
 	adminRepoUI := platformadminPostgres.NewRepository(db)
 	billRepoUI := billingPostgres.NewRepository(db)
-	// Session plan debiter: a paid plan is charged to the payer's wallet inside the
-	// purchase transaction. Composed here because identity must not import billing.
-	idSvc.SetSessionPlanDebiter(func(ctx context.Context, tx pgx.Tx, c identity.SessionPlanCharge) (bool, error) {
-		return billRepoUI.DebitSessionPlanInTx(ctx, tx, c.PayerUserID, c.BuyerUserID, c.PlanID, c.Amount, c.Key, c.Description)
-	})
 	chatRepoUI := chatPostgres.NewRepository(db)
 	wfRepoUI := workflowPostgres.NewRepository(db)
 	hrRepoUI := hrPostgres.NewRepository(db)

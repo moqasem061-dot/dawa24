@@ -61,12 +61,12 @@ func FormatPaymentStatusLabel(status commerce.PaymentStatus, method, lang string
 	case commerce.PaymentFailed:
 		return i18n.T(lang, "orders.payment_status.failed")
 	case commerce.PaymentAuthorized:
-		if method == "wallet" {
+		if commerce.IsWalletPayment(method) {
 			return i18n.T(lang, "orders.payment_status.wallet_authorized")
 		}
 		return i18n.T(lang, "orders.payment_status.online_authorized")
 	default:
-		if method == "wallet" {
+		if commerce.IsWalletPayment(method) {
 			return i18n.T(lang, "orders.payment_status.wallet_pending")
 		}
 		if !IsPrepaidPaymentMethod(method) {
@@ -98,7 +98,7 @@ func PaymentStatusBadgeClass(status commerce.PaymentStatus, method string, order
 	case commerce.PaymentFailed:
 		return "badge-rose"
 	case commerce.PaymentAuthorized:
-		if method == "wallet" {
+		if commerce.IsWalletPayment(method) {
 			return "badge-amber"
 		}
 		return "badge-sky"
@@ -130,7 +130,7 @@ func PaymentStatusTextClass(status commerce.PaymentStatus, method string, orderS
 	case commerce.PaymentFailed:
 		return "text-danger"
 	case commerce.PaymentAuthorized:
-		if method == "wallet" {
+		if commerce.IsWalletPayment(method) {
 			return "text-amber"
 		}
 		return "text-sky"

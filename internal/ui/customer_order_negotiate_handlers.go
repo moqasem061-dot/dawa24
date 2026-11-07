@@ -76,7 +76,7 @@ func (h *UIHandler) CustomerNegotiateOrderSubmit(w http.ResponseWriter, r *http.
 
 	paymentMethod := r.PostFormValue("payment_method")
 	if paymentMethod == "" {
-		paymentMethod = "cod"
+		paymentMethod = commerce.DefaultPaymentMethod
 	}
 
 	var pIDPtr *int64

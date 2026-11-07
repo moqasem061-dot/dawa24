@@ -109,7 +109,7 @@ func (r *Repository) AdminRefundTransaction(
 		if err := lockWalletRow(txCtx, tx, walletID); err != nil {
 			return err
 		}
-		currentBalance, err := r.latestBalance(txCtx, tx, walletID, false)
+		currentBalance, err := r.latestBalance(txCtx, tx, walletID)
 		if err != nil {
 			return fmt.Errorf("read current wallet balance: %w", err)
 		}

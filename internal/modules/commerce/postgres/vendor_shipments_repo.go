@@ -103,12 +103,22 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var customerOrgID *int64
 		var customerUserID int64
-		err := tx.QueryRow(txCtx, `SELECT organization_id, customer_id FROM commerce.orders WHERE id = $1 FOR UPDATE;`, orderID).Scan(&customerOrgID, &customerUserID)
+		var isNegotiation bool
+		var negotiationStatus string
+		err := tx.QueryRow(txCtx, `
+			SELECT organization_id, customer_id, is_negotiation, COALESCE(negotiation_status, 'none')
+			FROM commerce.orders WHERE id = $1 FOR UPDATE;`, orderID).Scan(&customerOrgID, &customerUserID, &isNegotiation, &negotiationStatus)
 		if err != nil {
 			if database.IsNotFound(err) {
 				return apperr.NotFound("order")
 			}
 			return err
+		}
+		// Only a negotiation still waiting for a decision can be rejected. An
+		// accepted or already rejected one must not be cancelled and refunded.
+		if !isNegotiation || negotiationStatus != "pending" {
+			return apperr.Conflict("order.negotiation_not_pending",
+				"لا يوجد تفاوض على الأسعار بانتظار القرار لهذا الطلب. This order has no price negotiation waiting for a decision.")
 		}
 
 		if reason == "" {
@@ -152,22 +162,27 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 			})
 		}
 
-		rows, err := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, orderID)
-		if err == nil {
-			defer rows.Close()
+		// The supplier ids are read into memory first: a pgx transaction cannot
+		// run the audit insert while this result set is still open ("conn busy").
+		var vendorOrgIDs []int64
+		if rows, err := tx.Query(txCtx, `SELECT DISTINCT organization_id FROM commerce.order_shipments WHERE order_id = $1`, orderID); err == nil {
 			for rows.Next() {
 				var vOrgID int64
 				if err := rows.Scan(&vOrgID); err == nil && vOrgID > 0 {
-					_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
-						OrganizationID: &vOrgID,
-						ActorUserID:    actorID,
-						Action:         "order.negotiation_rejected",
-						EntityType:     "order",
-						EntityID:       orderIDStr,
-						After:          map[string]any{"negotiation_status": "rejected", "status": "cancelled", "reason": reason},
-					})
+					vendorOrgIDs = append(vendorOrgIDs, vOrgID)
 				}
 			}
+			rows.Close()
+		}
+		for _, vOrgID := range vendorOrgIDs {
+			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+				OrganizationID: &vOrgID,
+				ActorUserID:    actorID,
+				Action:         "order.negotiation_rejected",
+				EntityType:     "order",
+				EntityID:       orderIDStr,
+				After:          map[string]any{"negotiation_status": "rejected", "status": "cancelled", "reason": reason},
+			})
 		}
 
 		locked, err := lockAPICancellationOrder(txCtx, tx, orderID)

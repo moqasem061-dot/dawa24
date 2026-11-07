@@ -2,25 +2,10 @@ package identity
 
 import (
 	"strings"
-	"time"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
-
-// SessionPlan is a concurrent sign-in licensing tier.
-type SessionPlan struct {
-	ID               int64        `json:"id"`
-	Name             i18n.Text    `json:"name"`
-	MaxLoginSessions int          `json:"max_login_sessions"`
-	Price            money.Amount `json:"price"`
-	DurationDays     int          `json:"duration_days"`
-	IsFree           bool         `json:"is_free"`
-	IsActive         bool         `json:"is_active"`
-	CreatedAt        time.Time    `json:"created_at"`
-	UpdatedAt        time.Time    `json:"updated_at"`
-}
 
 // DeviceDetails contains parsed client hardware and software environment.
 type DeviceDetails struct {

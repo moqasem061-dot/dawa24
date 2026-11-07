@@ -226,21 +226,20 @@ func (r *Repository) UpsertSecurity(ctx context.Context, s *identity.UserSecurit
 		query := `
 			INSERT INTO identity.user_security (
 				user_id, login_attempts, locked_until, last_login_at, last_user_agent,
-				last_password_change, password_change_count, max_login_sessions
+				last_password_change, password_change_count
 			) VALUES (
-				$1, $2, $3, $4, $5, $6, $7, $8
+				$1, $2, $3, $4, $5, $6, $7
 			) ON CONFLICT (user_id) DO UPDATE SET
 				login_attempts = EXCLUDED.login_attempts,
 				locked_until = EXCLUDED.locked_until,
 				last_login_at = EXCLUDED.last_login_at,
 				last_user_agent = EXCLUDED.last_user_agent,
 				last_password_change = EXCLUDED.last_password_change,
-				password_change_count = EXCLUDED.password_change_count,
-				max_login_sessions = EXCLUDED.max_login_sessions;
+				password_change_count = EXCLUDED.password_change_count;
 		`
 		_, err := tx.Exec(txCtx, query,
 			s.UserID, s.LoginAttempts, s.LockedUntil, s.LastLoginAt, s.LastUserAgent,
-			s.LastPasswordChange, s.PasswordChangeCount, s.MaxLoginSessions,
+			s.LastPasswordChange, s.PasswordChangeCount,
 		)
 		if err != nil {
 			return fmt.Errorf("identity postgres: upsert security: %w", err)

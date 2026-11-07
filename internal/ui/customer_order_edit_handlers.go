@@ -83,12 +83,12 @@ func (h *UIHandler) CustomerOrderEditSubmit(w http.ResponseWriter, r *http.Reque
 			}
 		}
 
-		if updatedOrder.PaymentMethod == "wallet" && h.billSvc != nil {
+		if commerce.IsWalletPayment(updatedOrder.PaymentMethod) && h.billSvc != nil {
 			newGoodsAmount := updatedOrder.TotalAmount
 			if updatedOrder.ShippingFee.IsPositive() && updatedOrder.ShippingFee.Minor() < updatedOrder.TotalAmount.Minor() {
 				newGoodsAmount, _ = updatedOrder.TotalAmount.Sub(updatedOrder.ShippingFee)
 			}
-			walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+			walletUserID, _ := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 			if wallet, wErr := h.billSvc.GetWallet(ctx, walletUserID, "EGP"); wErr == nil && wallet != nil {
 				if wallet.AvailableBalance.Minor() < newGoodsAmount.Minor() {
 					h.log.WarnContext(ctx, "customer edited order total exceeds available wallet balance",
@@ -187,18 +187,18 @@ func (h *UIHandler) cancellableBuyerOrder(ctx context.Context, actor authctx.Act
 	// The shared cancellation rule (commerce.CheckCancellation) decides here and
 	// again under the order lock when the cancel runs.
 	if err := commerce.CheckCancellation(order); err != nil {
-		return nil, cancelRefusalFailure(lang, id, refusalOf(err))
+		return nil, cancelRefusalFailure(lang, id, refusalOf(err), h.safeMessage(err, lang))
 	}
 	return order, nil
 }
 
 // cancelRefusalFailure gives the website's message for a refused cancellation.
 // The wording is the same as before: a shipment in progress, or the order status.
-func cancelRefusalFailure(lang string, id int64, refusal *commerce.CancellationRefusal) *orderCancelFailure {
+func cancelRefusalFailure(lang string, id int64, refusal *commerce.CancellationRefusal, detail string) *orderCancelFailure {
 	failure := &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id), JSON: true}
 	switch {
 	case refusal == nil:
-		failure.Message = i18n.T(lang, "orders.cancel_failed_with_err")
+		failure.Message = fmt.Sprintf(i18n.T(lang, "orders.cancel_failed_with_err"), detail)
 	case refusal.ShipmentInProgress:
 		failure.Message = i18n.T(lang, "orders.cancel_shipment_in_progress_partial")
 	case refusal.Status == commerce.StatusShipped || refusal.Status == commerce.StatusInTransit ||
@@ -241,7 +241,7 @@ func (h *UIHandler) cancelBuyerOrder(ctx context.Context, actor authctx.Actor, l
 
 	if err := h.commSvc.CancelOrder(ctx, id, &actor.UserID, fullReason); err != nil {
 		if refusal := refusalOf(err); refusal != nil {
-			return cancelRefusalFailure(lang, id, refusal)
+			return cancelRefusalFailure(lang, id, refusal, h.safeMessage(err, lang))
 		}
 		return &orderCancelFailure{Back: fmt.Sprintf("/orders/%d", id),
 			Message: fmt.Sprintf(i18n.T(lang, "orders.cancel_failed_with_err"), h.safeMessage(err, lang)), JSON: true}

@@ -196,7 +196,7 @@ func (r *Repository) AdminApproveDepositRequest(ctx context.Context, depositID i
 		if err := lockWalletRow(txCtx, tx, dep.WalletID); err != nil {
 			return err
 		}
-		currentBalance, err := r.latestBalance(txCtx, tx, dep.WalletID, false)
+		currentBalance, err := r.latestBalance(txCtx, tx, dep.WalletID)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}

@@ -113,7 +113,7 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 			}
 		}
 
-		walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+		walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 		seenPM := make(map[int64]bool)
 		for _, uid := range candidateUIDs {
 			if upms, err := h.billSvc.ListPaymentMethods(ctx, uid); err != nil {

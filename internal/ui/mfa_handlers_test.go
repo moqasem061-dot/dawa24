@@ -222,18 +222,6 @@ func (m *testMockIdentityRepo) UpdatePreferences(ctx context.Context, p *identit
 	return nil
 }
 
-func (m *testMockIdentityRepo) ListSessionPlans(ctx context.Context) ([]*identity.SessionPlan, error) {
-	return nil, nil
-}
-func (m *testMockIdentityRepo) GetSessionPlanByID(ctx context.Context, id int64) (*identity.SessionPlan, error) {
-	return nil, nil
-}
-func (m *testMockIdentityRepo) PurchaseSessionPlan(ctx context.Context, buyerUserID, planID int64, decide identity.SessionPlanDecider) error {
-	return nil
-}
-func (m *testMockIdentityRepo) SetMaxLoginSessions(ctx context.Context, userID int64, max int) error {
-	return nil
-}
 func (m *testMockIdentityRepo) GetOrgPlanLimits(ctx context.Context, orgID int64) (int, int, string, error) {
 	return 5, 5, "باقة احترافية", nil
 }

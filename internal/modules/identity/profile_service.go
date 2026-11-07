@@ -118,11 +118,6 @@ func (s *Service) UpdatePreferences(ctx context.Context, p *UserPreferences) err
 	return s.repo.UpdatePreferences(ctx, p)
 }
 
-// ListSessionPlans returns available concurrent sign-in plans.
-func (s *Service) ListSessionPlans(ctx context.Context) ([]*SessionPlan, error) {
-	return s.repo.ListSessionPlans(ctx)
-}
-
 // AddFavorite adds a product to user favorites.
 func (s *Service) AddFavorite(ctx context.Context, userID, productID int64) error {
 	if productID <= 0 {

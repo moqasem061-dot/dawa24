@@ -75,7 +75,7 @@ func (h *UIHandler) TenantPaymentMethodDeleteSubmit(w http.ResponseWriter, r *ht
 	}
 
 	if h.billSvc != nil {
-		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 		deleted := false
 		for _, uid := range candidateUIDs {
 			if err := h.billSvc.DeletePaymentMethod(ctx, uid, id); err != nil {
@@ -95,9 +95,11 @@ func (h *UIHandler) TenantPaymentMethodDeleteSubmit(w http.ResponseWriter, r *ht
 	h.redirectWithNotice(w, r, dest, "success", i18n.T(lang, "payment.deleted_success"))
 }
 
-// resolveTenantUserIDs returns the primary wallet user ID and all candidate user IDs for the tenant org.
-func resolveTenantUserIDs(ctx context.Context, h *UIHandler, actor authctx.Actor) (int64, []int64) {
-	walletUserID := actor.UserID
+// resolveTenantUserIDs returns the user whose wallet pays for an organisation's money
+// (the owner's wallet) and every candidate user id, for the given user in the given
+// organisation.
+func resolveTenantUserIDs(ctx context.Context, h *UIHandler, userID, orgID int64) (int64, []int64) {
+	walletUserID := userID
 	seen := make(map[int64]bool)
 	var list []int64
 
@@ -107,17 +109,17 @@ func resolveTenantUserIDs(ctx context.Context, h *UIHandler, actor authctx.Actor
 			list = append(list, uid)
 		}
 	}
-	addUID(actor.UserID)
+	addUID(userID)
 
-	if actor.OrganizationID > 0 && h.orgSvc != nil {
+	if orgID > 0 && h.orgSvc != nil {
 		// 1. Prioritize organization owner
-		if org, err := h.orgSvc.GetOrganization(ctx, actor.OrganizationID); err == nil && org != nil && org.OwnerID > 0 {
+		if org, err := h.orgSvc.GetOrganization(ctx, orgID); err == nil && org != nil && org.OwnerID > 0 {
 			walletUserID = org.OwnerID
 			addUID(org.OwnerID)
 		}
 
 		// 2. Scan employees, strictly prioritizing org_owner / owner
-		if emps, err := h.orgSvc.ListEmployees(ctx, actor.OrganizationID); err != nil {
+		if emps, err := h.orgSvc.ListEmployees(ctx, orgID); err != nil {
 			h.logLoadErr(ctx, "orgSvc.ListEmployees", err)
 		} else {
 			var ownerUID int64
@@ -139,7 +141,7 @@ func resolveTenantUserIDs(ctx context.Context, h *UIHandler, actor authctx.Actor
 			}
 			if ownerUID > 0 {
 				walletUserID = ownerUID
-			} else if adminUID > 0 && walletUserID == actor.UserID {
+			} else if adminUID > 0 && walletUserID == userID {
 				walletUserID = adminUID
 			}
 		}

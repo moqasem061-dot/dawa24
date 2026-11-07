@@ -323,9 +323,9 @@ type assistantCheckout struct {
 func (h *UIHandler) planAssistantCheckout(ctx context.Context, actor authctx.Actor, args actions.Args) (*assistantCheckout, error) {
 	method := strings.TrimSpace(args.Str("payment_method"))
 	if method == "" {
-		method = "cod"
+		method = commerce.DefaultPaymentMethod
 	}
-	if method == "wallet" {
+	if commerce.IsWalletPayment(method) {
 		return nil, actions.Refuse("الدفع من المحفظة غير متاح عبر المساعد. أكمل الطلب من صفحة الدفع إذا أردت الدفع من المحفظة.")
 	}
 	bctx, bactor, branch, err := h.buyingContext(ctx, actor, args.ID("branch"))

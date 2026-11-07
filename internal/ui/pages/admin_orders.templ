@@ -72,8 +72,12 @@ func formatAdminPaymentStatusBadge(status commerce.PaymentStatus) (label string,
 		return "بانتظار السداد", "badge-amber"
 	case commerce.PaymentUnpaid:
 		return "غير مدفوع", "badge-rose"
-	case commerce.PaymentRefunded, commerce.PaymentPartiallyRefunded:
+	case commerce.PaymentPartiallyPaid:
+		return "مدفوع جزئياً", "badge-amber"
+	case commerce.PaymentRefunded:
 		return "مسترجع", "badge-purple"
+	case commerce.PaymentPartiallyRefunded:
+		return "مسترجع جزئياً", "badge-purple"
 	case commerce.PaymentFailed:
 		return "فشلت العملية", "badge-rose"
 	default:
@@ -305,9 +309,10 @@ templ AdminOrdersHub(data AdminOrdersData, lang, dir string) {
 							<select name="payment_status" class="form-select text-xs w-full">
 								<option value="">كافة الحالات</option>
 								<option value="paid" selected?={ data.PaymentStatus == "paid" }>مدفوع</option>
-								<option value="pending" selected?={ data.PaymentStatus == "pending" }>بانتظار السداد</option>
+								<option value="partially_paid" selected?={ data.PaymentStatus == "partially_paid" }>مدفوع جزئياً</option>
 								<option value="unpaid" selected?={ data.PaymentStatus == "unpaid" }>غير مدفوع</option>
 								<option value="refunded" selected?={ data.PaymentStatus == "refunded" }>مسترد</option>
+								<option value="partially_refunded" selected?={ data.PaymentStatus == "partially_refunded" }>مسترد جزئياً</option>
 							</select>
 						</div>
 

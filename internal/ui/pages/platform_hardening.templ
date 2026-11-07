@@ -9,39 +9,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
-
-
-// AdminSessionPlansPage renders session plan management.
-templ AdminSessionPlansPage(lang, dir string) {
-	@layouts.AdminShell("خطط الجلسات والأجهزة (Session Plans)", "session_plans", lang, dir) {
-		<div class="glass-panel mb-0">
-			<div class="header-row">
-    <div class="stack-sm">
-					<h2 class="m-0 text-base font-bold text-primary">خطط الجلسات المتعددة وتحديد الأجهزة</h2>
-					<p class="subtitle">تحديد عدد الأجهزة المتزامنة المسموح بها لكل مستخدم حسب خطته.</p>
-				</div>
-				<a href="/admin/session-plan/requests" class="btn btn-secondary btn-sm">طلبات زيادة المقاعد</a>
-			</div>
-			@components.EmptyState(components.EmptyStateProps{Title: "خطط الجلسات", Message: "تحديد الحد الأقصى للجلسات الفعالة والأجهزة المسجلة."})
-		</div>
-	}
-}
-
-// AdminSessionPlanRequestsPage renders session seat requests.
-templ AdminSessionPlanRequestsPage(lang, dir string) {
-	@layouts.AdminShell("طلبات زيادة الجلسات والأجهزة", "session_plans", lang, dir) {
-		<div class="glass-panel mb-0">
-			<div class="header-row">
-    <div class="stack-sm">
-					<h2 class="m-0 text-base font-bold text-primary">طلبات زيادة عدد الأجهزة والجلسات</h2>
-				</div>
-				<a href="/admin/session-plan" class="btn btn-secondary btn-sm">العودة للخطط</a>
-			</div>
-			@components.EmptyState(components.EmptyStateProps{Title: "لا توجد طلبات معلقة", Message: "تظهر هنا طلبات المنشآت لزيادة عدد المقاعد والأجهزة المتصلة."})
-		</div>
-	}
-}
-
 // CustomerReportIssuePage renders issue form and user's ticket history.
 templ CustomerReportIssuePage(lang, dir string, userIssues []*workflow.ReportIssue, prefilledOrderOpt ...string) {
 	{{

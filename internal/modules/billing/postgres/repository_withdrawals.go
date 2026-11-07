@@ -21,7 +21,7 @@ func (r *Repository) CreateWithdrawalRequest(ctx context.Context, w *billing.Wal
 		if err := lockWalletRow(txCtx, tx, w.WalletID); err != nil {
 			return err
 		}
-		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, false)
+		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}
@@ -174,7 +174,7 @@ func (r *Repository) AdminApproveWithdrawalRequest(
 		if err := lockWalletRow(txCtx, tx, w.WalletID); err != nil {
 			return err
 		}
-		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID, false)
+		currentBalance, err := r.latestBalance(txCtx, tx, w.WalletID)
 		if err != nil {
 			return fmt.Errorf("read wallet balance: %w", err)
 		}

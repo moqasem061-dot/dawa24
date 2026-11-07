@@ -185,6 +185,16 @@ func (r *Repository) UpdateSubscriptionStatus(ctx context.Context, id int64, sta
 // RenewSubscription performs atomic wallet deduction and advances the subscription expiration date.
 func (r *Repository) RenewSubscription(ctx context.Context, subID int64, walletID int64, cost money.Amount, newExpiresAt time.Time, details string) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
+		// Lock order: the wallet first, then the subscription row. A wallet
+		// subscription purchase locks the wallet and then the subscription rows,
+		// so both paths take them in that order and cannot deadlock (B1).
+		chargeable := !cost.IsZero() && !cost.IsNegative()
+		if chargeable {
+			if err := lockWalletRow(txCtx, tx, walletID); err != nil {
+				return err
+			}
+		}
+
 		// 1. Lock subscription row
 		var currentStatus string
 		var planID int64
@@ -200,38 +210,12 @@ func (r *Repository) RenewSubscription(ctx context.Context, subID int64, walletI
 			return err
 		}
 
-		// 2. If cost > 0, deduct from wallet with ledger record. The wallet is locked
-		// first so that the balance read below cannot race another ledger writer.
-		if !cost.IsZero() && !cost.IsNegative() {
-			if err := lockWalletRow(txCtx, tx, walletID); err != nil {
-				return err
-			}
-			var balance money.Amount
-			err = tx.QueryRow(txCtx, `
-				SELECT COALESCE(SUM(amount), 0.00)
-				FROM billing.wallet_transactions
-				WHERE wallet_id = $1;
-			`, walletID).Scan(&balance)
-			if err != nil {
-				return err
-			}
-
-			pendingWithdrawals, _ := r.pendingWithdrawals(txCtx, tx, walletID)
-
-			availMinor := balance.Minor() - pendingWithdrawals.Minor()
-			if availMinor < cost.Minor() {
-				return apperr.Conflict("wallet.insufficient_funds", i18n.TDefault("w4_mod.w4str_75_75"))
-			}
-
-			newBalance, _ := balance.Sub(cost)
+		// 2. Deduct the cost with a ledger row. recordLedgerRow checks the balance
+		// and the pending withdrawals, and refuses a short wallet without writing.
+		if chargeable {
 			negCost := money.FromMinor(-cost.Minor())
-
-			_, err = tx.Exec(txCtx, `
-				INSERT INTO billing.wallet_transactions (
-					wallet_id, type, amount, balance_after, reference_type, reference_id, description
-				) VALUES ($1, $2, $3, $4, $5, $6, $7);
-			`, walletID, string(billing.TxPurchase), negCost, newBalance, "subscription_renewal", subID, i18n.TDefault("w4_mod.w4str_76_76")+details)
-			if err != nil {
+			if _, err := r.recordLedgerRow(txCtx, tx, walletID, billing.TxPurchase, negCost,
+				"subscription_renewal", &subID, i18n.TDefault("w4_mod.w4str_76_76")+details, ""); err != nil {
 				return err
 			}
 		}

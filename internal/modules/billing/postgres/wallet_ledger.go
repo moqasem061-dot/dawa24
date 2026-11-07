@@ -39,7 +39,7 @@ func (r *Repository) recordLedgerRow(
 	// The wallet lock already serialises writers, so the balance is a plain read. A
 	// row lock on the latest ledger row here would order locks differently from the
 	// admin refund, which locks a ledger row before the wallet, and could deadlock.
-	currentBalance, err := r.latestBalance(ctx, tx, walletID, false)
+	currentBalance, err := r.latestBalance(ctx, tx, walletID)
 	if err != nil {
 		return nil, err
 	}

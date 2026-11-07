@@ -93,7 +93,7 @@ func settleWalletPayment(ctx context.Context, tx pgx.Tx, orderID int64) error {
 	}
 	var status commerce.PaymentStatus
 	switch {
-	case refunded.IsPositive() && refunded.Minor() >= charged.Minor():
+	case refunded.IsPositive() && refunded.Minor() >= charged.Minor() && unpaidLive == 0:
 		status = commerce.PaymentRefunded
 	case refunded.IsPositive():
 		status = commerce.PaymentPartiallyRefunded

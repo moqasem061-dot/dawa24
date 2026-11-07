@@ -13,15 +13,11 @@ type queryable interface {
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func (r *Repository) latestBalance(ctx context.Context, q queryable, walletID int64, forUpdate bool) (money.Amount, error) {
+// latestBalance reads the balance after the wallet's newest ledger row. Callers
+// lock the wallet row first (lockWalletRow), which is what makes the read current.
+func (r *Repository) latestBalance(ctx context.Context, q queryable, walletID int64) (money.Amount, error) {
 	var bal money.Amount
-	var query string
-	if forUpdate {
-		query = `SELECT balance_after FROM billing.wallet_transactions WHERE wallet_id = $1 ORDER BY id DESC LIMIT 1 FOR UPDATE;`
-	} else {
-		query = `SELECT balance_after FROM billing.wallet_transactions WHERE wallet_id = $1 ORDER BY id DESC LIMIT 1;`
-	}
-	err := q.QueryRow(ctx, query, walletID).Scan(&bal)
+	err := q.QueryRow(ctx, `SELECT balance_after FROM billing.wallet_transactions WHERE wallet_id = $1 ORDER BY id DESC LIMIT 1;`, walletID).Scan(&bal)
 	if err != nil {
 		if database.IsNotFound(err) {
 			return money.Zero, nil

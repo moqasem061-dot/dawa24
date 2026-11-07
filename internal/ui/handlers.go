@@ -296,8 +296,6 @@ func (h *UIHandler) RegisterApprovedSharedRoutes(r chi.Router) {
 	// holding a bookmark lands somewhere useful.
 	r.Get("/settings/employees", h.SettingsEmployeesRedirect)
 
-	r.Post("/settings/security/plan/{id}", h.SettingsSessionPlanPurchaseSubmit)
-
 	// Branch management lives at /customer/branches and /vendor/branches. The
 	// settings page used to carry a third, lower-quality write path that even
 	// invented branch codes when the form omitted one (PLAN_V7 Task 2.2). What

@@ -79,7 +79,7 @@ details; reverse geocoding cannot supply details absent from map data.
 | `payments_view` | `billing.payment.view` | `GET /admin/payments*`, `GET /admin/wallet-transactions*` |
 | `ads_view` | `promo.ad.view` | `GET /admin/ads*` |
 | `ad_plans_view` | `promo.ad_plan.view` | `GET /admin/ad-plans*` |
-| `session_plans_view` | `billing.session_plan.view` | `GET /admin/session-plans*` |
+| `session_plans_view` | `billing.session_plan.view` | retired; `/admin/session-plan*` redirects to `/admin/plans` |
 | `plans_view` | `billing.subscription_plan.view` | `GET /admin/plans*` |
 | `warehouses_view` | `inventory.warehouse.view` | `GET /admin/warehouses*` |
 | `stocks_view` | `inventory.stock.view` | `GET /admin/stocks*` |
@@ -92,13 +92,18 @@ details; reverse geocoding cannot supply details absent from map data.
 | `error_logs_view` | `platform.error_log.view` | `GET /admin/error-logs*` |
 | `sql-console-developer` | `platform.developer.sql` | `GET/POST /admin/developers/sql*` |
 
-## Session plans (Batch 2, S22; paid plans, owner decision 2026-11-06)
+## Session plans (retired 2026-11-07)
 
-- `PurchaseSessionPlan` refuses a plan that is not active (`session_plan.inactive`). Nothing is
-  written.
-- A paid plan is charged to the payer's wallet and the buyer's limit is raised in one transaction,
-  through the billing wallet debit that `cmd/server` wires into `SetSessionPlanDebiter`. A free
-  plan is applied with no debit. The payer rule, the permission, the token and the ledger key are
-  in `docs/modules/billing.md`, "Session plan payment".
-- Tests: `session_plan_guard_test.go`, `session_plan_purchase_test.go`, and the integration
-  tests named in billing.md.
+Session plans are retired. No page or route sells them: `POST /settings/security/plan/{id}`,
+its handler, the wallet debit (`DebitSessionPlanInTx`) and the purchase service are removed.
+`/admin/session-plan*` redirects to `/admin/plans`.
+
+- **The sign-in limit comes from the organisation's subscription plan only**
+  (`billing.plans.max_login_sessions`, plus the organisation's extra devices), as before.
+- **Correction (C1).** Earlier notes said a purchased session plan raised the buyer's sign-in
+  limit. That was never true: the stored value was not used at login. Nothing was ever
+  charged to a wallet by a page, so no refund is due.
+- **Kept as data.** `identity.session_plans`, `identity.user_security.max_login_sessions` (no
+  longer written by the password path, and the security upsert no longer touches it), and the
+  read fallback in `identity/service.go`. The permission keys `billing.session_plan.*` remain.
+- **Not enforced.** `max_devices` is still not enforced anywhere. That is a separate ticket.

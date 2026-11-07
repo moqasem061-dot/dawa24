@@ -18,7 +18,10 @@ import (
 // cancelled or otherwise closed, are never changed (Batch 2, S04).
 //
 // The order must still have a pending negotiation and be open. The accepting
-// supplier must be on the order with shipments that are still open.
+// supplier must be on the order with shipments that are still open. When other
+// suppliers on the order have not accepted yet, the order stays pending and only
+// this supplier's part is confirmed (A10). The order is accepted and confirmed
+// once every supplier's shipments have been accepted.
 func (r *Repository) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		order, err := lockAPICancellationOrder(txCtx, tx, orderID)
@@ -76,6 +79,17 @@ func (r *Repository) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID
 			WHERE order_id = $1 AND organization_id = $2
 			  AND status IN ('pending', 'processing', 'on_hold');`, orderID, vendorOrgID); err != nil {
 			return err
+		}
+		// The order is accepted only when every supplier on it has accepted its
+		// own part. Until then it stays pending, so the next supplier can accept.
+		var awaiting int
+		if err := tx.QueryRow(txCtx, `
+			SELECT count(*) FROM commerce.order_shipments
+			WHERE order_id = $1 AND status IN ('pending', 'processing', 'on_hold');`, orderID).Scan(&awaiting); err != nil {
+			return err
+		}
+		if awaiting > 0 {
+			return nil
 		}
 		res, err := tx.Exec(txCtx, `
 			UPDATE commerce.orders

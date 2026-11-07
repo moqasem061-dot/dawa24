@@ -255,7 +255,7 @@ func (h *UIHandler) TenantSubscriptionPage(w http.ResponseWriter, r *http.Reques
 		}
 
 		// Always ensure wallet exists for seamless in-app upgrades
-		walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+		walletUserID, _ := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 		if walletUserID > 0 {
 			if w, err := h.billSvc.GetWallet(sysCtx, walletUserID, "EGP"); err == nil && w != nil {
 				walletBal = w.Available()

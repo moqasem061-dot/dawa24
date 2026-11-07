@@ -76,13 +76,11 @@ func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) 
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
 		return err
 	}
-	maxSessions := 10
 	_ = s.repo.UpsertSecurity(ctx, &UserSecurity{
 		UserID:              user.ID,
 		LoginAttempts:       0,
 		LastPasswordChange:  &user.UpdatedAt,
 		PasswordChangeCount: 1,
-		MaxLoginSessions:    &maxSessions,
 	})
 	if s.sessionStore != nil {
 		_ = s.sessionStore.DeleteAllForUser(ctx, user.ID)

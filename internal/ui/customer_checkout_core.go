@@ -72,7 +72,7 @@ func (h *UIHandler) planCheckout(ctx context.Context, actor authctx.Actor, lang 
 
 	paymentMethod := req.PaymentMethod
 	if paymentMethod == "" {
-		paymentMethod = "cod"
+		paymentMethod = commerce.DefaultPaymentMethod
 	}
 	// The payment method must be active and enabled for checkout by the platform.
 	if h.billSvc != nil {
@@ -109,7 +109,7 @@ func (h *UIHandler) planCheckout(ctx context.Context, actor authctx.Actor, lang 
 		paymentMeta = append(paymentMeta, fmt.Sprintf("مرجع التحويل: %s", req.PaymentReference))
 	}
 	if req.SenderPaymentMethodID > 0 && h.billSvc != nil {
-		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+		_, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 		for _, uid := range candidateUIDs {
 			if upm, err := h.billSvc.GetPaymentMethodByID(ctx, uid, req.SenderPaymentMethodID); err == nil && upm != nil {
 				paymentMeta = append(paymentMeta, fmt.Sprintf("المحول منه: %s", upm.AccountIdentifier))
@@ -325,7 +325,7 @@ func (h *UIHandler) resolveCheckoutVendors(ctx context.Context, items []commerce
 // Actual wallet debit occurs when the supplier confirms the order.
 func (h *UIHandler) placeCheckout(ctx context.Context, actor authctx.Actor, lang string, plan *checkoutPlan) (*commerce.Order, *checkoutFailure) {
 	input := plan.Input
-	if input.PaymentMethod == "wallet" {
+	if commerce.IsWalletPayment(input.PaymentMethod) {
 		goodsAmount := computeCheckoutGoodsAmount(plan.Items)
 		_, err := h.verifyWalletFunds(ctx, actor, goodsAmount)
 		if err != nil {

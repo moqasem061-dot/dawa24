@@ -129,7 +129,7 @@ func (h *UIHandler) TenantSubscriptionCheckoutSubmit(w http.ResponseWriter, r *h
 		return
 	}
 
-	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, _ := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 
 	// Check if this action represents an upgrade from an active plan
 	var isUpgrade bool

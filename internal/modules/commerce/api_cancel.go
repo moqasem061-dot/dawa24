@@ -3,7 +3,6 @@ package commerce
 import (
 	"context"
 	"errors"
-	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
@@ -26,16 +25,9 @@ type APIVendorCancelRequest struct {
 	Reason      string
 }
 
-// IsWalletPayment reports whether an order is paid from the buyer's wallet. The
-// match ignores case and surrounding spaces, so a spelling variant cannot step
-// around the API rules while the website still reads it as another method.
-func IsWalletPayment(method string) bool {
-	return strings.EqualFold(strings.TrimSpace(method), "wallet")
-}
-
 // ValidateAPIWalletOrder refuses a wallet-paid order for a status change other
-// than a cancellation. Debits on confirmation are not reliable yet (S02), so
-// the APIs leave those changes to the website. Cancellation goes through the
+// than a cancellation. The API cannot resolve the buyer's wallet owner (the payer), so
+// the website makes those changes. Cancellation goes through the
 // shared rule and refunds the wallet (see CheckCancellation).
 func ValidateAPIWalletOrder(order *Order) error {
 	if IsWalletPayment(order.PaymentMethod) {

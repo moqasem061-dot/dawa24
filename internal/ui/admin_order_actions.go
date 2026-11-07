@@ -2,6 +2,7 @@ package ui
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -44,25 +45,68 @@ func (h *UIHandler) AdminOrderStatusSubmit(w http.ResponseWriter, r *http.Reques
 		vendorName = h.resolveOrgName(sysCtx, order.Shipments[0].OrganizationID)
 	}
 
-	// If a specific shipment is given, transition it; otherwise transition all shipments of the order
+	// If a specific shipment is given, transition it; otherwise transition all shipments of the order.
+	// A failure is reported, never hidden: the bulk path counts what did not change (B2).
+	var failed []error
+	targets := order.Shipments
 	if shipmentID > 0 {
-		if _, err := h.commSvc.TransitionShipmentStatus(sysCtx, shipmentID, toStatus, &actor.UserID, notes); err != nil {
-			h.redirectWithNotice(w, r, "/admin/orders/"+strconv.FormatInt(orderID, 10), "error", "فشل تغيير حالة الشحنة: "+err.Error())
-			return
-		}
-	} else {
+		targets = nil
 		for _, sh := range order.Shipments {
-			if sh != nil {
-				if _, err := h.commSvc.TransitionShipmentStatus(sysCtx, sh.ID, toStatus, &actor.UserID, notes); err != nil {
-					h.logLoadErr(ctx, "commSvc.TransitionShipmentStatus", err)
-				}
+			if sh != nil && sh.ID == shipmentID {
+				targets = append(targets, sh)
 			}
 		}
+		if len(targets) == 0 {
+			h.redirectWithNotice(w, r, "/admin/orders/"+strconv.FormatInt(orderID, 10), "error", "فشل تغيير حالة الشحنة: الشحنة غير موجودة في هذا الطلب. The shipment is not part of this order.")
+			return
+		}
+	}
+	attempted := 0
+	for _, sh := range targets {
+		if sh == nil {
+			continue
+		}
+		attempted++
+		if err := h.adminTransitionShipment(sysCtx, actor.UserID, order, sh, toStatus, notes); err != nil {
+			h.logLoadErr(ctx, "commSvc.TransitionShipmentStatus", err)
+			failed = append(failed, err)
+		}
+	}
+	if len(failed) > 0 && shipmentID > 0 {
+		h.redirectWithNotice(w, r, "/admin/orders/"+strconv.FormatInt(orderID, 10), "error", "فشل تغيير حالة الشحنة: "+failed[0].Error())
+		return
 	}
 
 	h.safeGo("notify-admin-order-status-changed", func() {
 		h.notifyOrderStatusChanged(context.Background(), order, shipmentID, toStatus, vendorName, notes)
 	})
 
+	if len(failed) > 0 {
+		h.redirectWithNotice(w, r, "/admin/orders/"+strconv.FormatInt(orderID, 10), "error",
+			fmt.Sprintf("فشل تغيير حالة %d من %d شحنات: %s. Failed to change %d of %d shipments: %s.",
+				len(failed), attempted, failed[0].Error(), len(failed), attempted, failed[0].Error()))
+		return
+	}
+
 	h.redirectWithNotice(w, r, "/admin/orders/"+strconv.FormatInt(orderID, 10), "success", "تم تحديث حالة الطلب بنجاح وإشعار جميع الأطراف")
+}
+
+// adminTransitionShipment moves one shipment as a platform admin. A confirmation of
+// a wallet order charges the buyer's wallet in the same transaction and refuses a
+// short balance, as a supplier's confirmation does (B2).
+func (h *UIHandler) adminTransitionShipment(ctx context.Context, actorID int64, order *commerce.Order, shipment *commerce.OrderShipment, to commerce.OrderStatus, notes string) error {
+	// The commerce service checks the shipment against the tenant in its context, so the
+	// shipment's own supplier is the tenant. The system marker stays (admin, RLS exempt).
+	ctx = database.WithTenant(ctx, shipment.OrganizationID)
+	var walletUserID int64
+	if to == commerce.StatusConfirmed && shipment.Status != commerce.StatusConfirmed &&
+		commerce.IsWalletPayment(order.PaymentMethod) && order.PaymentStatus != commerce.PaymentPaid {
+		uid, err := h.prepareWalletShipmentCharge(ctx, order, shipment)
+		if err != nil {
+			return err
+		}
+		walletUserID = uid
+	}
+	_, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipment.ID, to, &actorID, notes, walletUserID)
+	return err
 }

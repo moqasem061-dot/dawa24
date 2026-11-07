@@ -23,7 +23,6 @@ type Service struct {
 	userCacheMu  sync.RWMutex
 	userCache    map[int64]userCacheEntry
 	userCacheTTL time.Duration
-	planDebiter  SessionPlanDebiter
 }
 
 // SetPermissionResolver supplies the shared permission resolver.

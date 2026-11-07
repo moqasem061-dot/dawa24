@@ -11,10 +11,6 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
-// defaultPaymentMethod matches the website, which records cash on delivery when
-// the buyer submits no method.
-const defaultPaymentMethod = "cod"
-
 // checkBuyerChoices holds the REST checkout to the rules the website applies to
 // the buyer's own selections: the payment method must be one the platform enables
 // for checkout, and a delivery address must belong to the buyer placing the order.
@@ -24,7 +20,7 @@ func (q *apiQuoteResolver) checkBuyerChoices(ctx context.Context, requested *com
 	}
 	method := strings.TrimSpace(requested.PaymentMethod)
 	if method == "" {
-		method = defaultPaymentMethod
+		method = commerce.DefaultPaymentMethod
 	}
 	selected, err := q.paymentMethod(ctx, method)
 	if err != nil || selected == nil {

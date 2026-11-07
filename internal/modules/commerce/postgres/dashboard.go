@@ -108,7 +108,7 @@ func (r *Repository) GetVendorFinancialSummary(ctx context.Context, vendorOrgID 
 			       COALESCE(cust_org.name->>'ar', cust_org.name->>'en', u.name->>'ar', u.name->>'en', 'صيدلية عميل') as customer_org_name,
 			       COALESCE(s.delivered_at, s.updated_at, s.created_at) as delivered_at,
 			       s.subtotal, s.shipping_fee, s.total_amount,
-			       o.payment_status
+			       CASE WHEN LOWER(o.payment_method) = 'wallet' THEN CASE WHEN s.wallet_paid_at IS NOT NULL THEN 'paid' ELSE 'unpaid' END ELSE o.payment_status END
 			FROM commerce.order_shipments s
 			JOIN commerce.orders o ON o.id = s.order_id
 			LEFT JOIN org.organizations cust_org ON cust_org.id = o.organization_id

@@ -31,7 +31,6 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 
 	var user *identity.User
 	var sessions []*identity.Session
-	var sessionPlans []*identity.SessionPlan
 	var paymentMethods []*billing.UserPaymentMethod
 	var wallet *billing.Wallet
 	var txs []*billing.WalletTransaction
@@ -48,11 +47,6 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 			h.log.WarnContext(ctx, "settings: list sessions", "error", err)
 		} else {
 			sessions = sess
-		}
-		if plans, err := h.idSvc.ListSessionPlans(ctx); err != nil {
-			h.log.WarnContext(ctx, "settings: list session plans", "error", err)
-		} else {
-			sessionPlans = plans
 		}
 	}
 
@@ -147,7 +141,6 @@ func (h *UIHandler) SettingsIndex(w http.ResponseWriter, r *http.Request) {
 		PaymentMethods:         paymentMethods,
 		PlatformPaymentMethods: platformPaymentMethods,
 		Sessions:               sessions,
-		SessionPlans:           sessionPlans,
 		ActiveTab:              "profile",
 		CanRequestDeletion:     !isEmployee,
 		IsOwner:                isOwner,

@@ -189,3 +189,26 @@ are listed by the owner queries (Q3 and Q4 in `reports/security-audit-2026-11-06
   `commerce.order_shipments`. They are internal and not part of the API.
 - The composition root wires the payer with `WithWalletPayer` next to `WithWalletRefunder`. A wallet
   charge without a payer fails closed.
+
+## Post-fix changes (2026-11-07, codex/post-fix-cleanup)
+
+- **Negotiation, one supplier at a time (A10).** A supplier accepts only its own shipments. The
+  order stays `negotiation_status = pending` until every supplier on it has accepted, and only
+  then becomes `accepted` and `confirmed`. Negotiation orders from the website have one supplier.
+- **Reject needs a pending negotiation.** `RejectNegotiation` refuses (`order.negotiation_not_pending`)
+  an accepted or already rejected negotiation. It also no longer fails with `conn busy` when the
+  order has a supplier: the supplier list is read before the audit rows are written (found while
+  testing; rejecting any negotiation failed before this).
+- **Admin confirmation of a wallet shipment (B2).** The admin shipment path runs in the shipment's
+  own supplier tenant, resolves the buyer's wallet owner, and charges the buyer's wallet like a
+  supplier's confirmation. A short balance gives a bilingual error. The bulk "all shipments"
+  action reports how many shipments failed and no longer shows success when one failed.
+- **Partial refund status (B3).** When one supplier's charge is refunded and another supplier's
+  shipment is still open, the order is `partially_refunded`, not `refunded`.
+- **Supplier earnings (A6).** A wallet order shows the supplier's own shipment state: paid once its
+  shipment is charged (`wallet_paid_at`), otherwise unpaid.
+- **Cancelled wallet order.** A cancelled order cannot be marked `refunded`: the state machine
+  refuses it (`order.invalid_transition`). Earlier notes said the wallet check refused it with
+  "no wallet payment to refund"; that message is for a non-cancelled wallet order with no debit.
+- **REST API comments.** `ValidateAPIWalletOrder` refuses non-cancel status changes on wallet orders
+  because the API cannot resolve the payer, not because confirmation debits were unreliable (C3).

@@ -42,7 +42,7 @@ func (r *Repository) GetOrCreateWallet(ctx context.Context, userID int64, curren
 		}
 
 		// Compute balance from latest transaction
-		bal, err := r.latestBalance(txCtx, tx, w.ID, false)
+		bal, err := r.latestBalance(txCtx, tx, w.ID)
 		if err != nil {
 			return err
 		}
@@ -82,7 +82,7 @@ func (r *Repository) GetWallet(ctx context.Context, id int64) (*billing.Wallet, 
 			return err
 		}
 
-		bal, err := r.latestBalance(txCtx, tx, w.ID, false)
+		bal, err := r.latestBalance(txCtx, tx, w.ID)
 		if err != nil {
 			return err
 		}

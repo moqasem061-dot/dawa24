@@ -304,18 +304,6 @@ func (happyRepo) GetPreferences(ctx context.Context, userID int64) (*identity.Us
 func (happyRepo) UpdatePreferences(ctx context.Context, p *identity.UserPreferences) error {
 	return nil
 }
-func (happyRepo) ListSessionPlans(ctx context.Context) ([]*identity.SessionPlan, error) {
-	return nil, nil
-}
-func (happyRepo) GetSessionPlanByID(ctx context.Context, id int64) (*identity.SessionPlan, error) {
-	return nil, nil
-}
-func (happyRepo) PurchaseSessionPlan(ctx context.Context, buyerUserID, planID int64, decide identity.SessionPlanDecider) error {
-	return nil
-}
-func (happyRepo) SetMaxLoginSessions(ctx context.Context, userID int64, max int) error {
-	return nil
-}
 func (happyRepo) CreateAccountDeletionRequest(ctx context.Context, req *identity.AccountDeletionRequest) error {
 	return nil
 }

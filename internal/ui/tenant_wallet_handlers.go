@@ -77,7 +77,7 @@ func (h *UIHandler) TenantWalletPage(w http.ResponseWriter, r *http.Request) {
 	var paymentMethods []*billing.UserPaymentMethod
 	var platformPaymentMethods []*billing.PlatformPaymentMethod
 
-	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 
 	if h.billSvc != nil {
 		seenPM := make(map[int64]bool)
@@ -234,7 +234,7 @@ func (h *UIHandler) TenantWalletDepositSubmit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
-	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 	if senderPMIDPtr != nil && *senderPMIDPtr > 0 && senderAccount == "" {
 		for _, uid := range candidateUIDs {
 			if pm, err := h.billSvc.GetPaymentMethodByID(ctx, uid, *senderPMIDPtr); err == nil && pm != nil {
@@ -308,7 +308,7 @@ func (h *UIHandler) TenantWalletWithdrawSubmit(w http.ResponseWriter, r *http.Re
 		userPMIDPtr = &pmID
 	}
 
-	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor)
+	walletUserID, candidateUIDs := resolveTenantUserIDs(ctx, h, actor.UserID, actor.OrganizationID)
 	if userPMIDPtr != nil && *userPMIDPtr > 0 && (destDetails == "" || payoutType == "") {
 		for _, uid := range candidateUIDs {
 			if pm, err := h.billSvc.GetPaymentMethodByID(ctx, uid, *userPMIDPtr); err == nil && pm != nil {

@@ -44,10 +44,6 @@ func (m *mockIdentityDeletionRepo) ListSessions(_ context.Context, _ int64) ([]*
 	return nil, nil
 }
 
-func (m *mockIdentityDeletionRepo) ListSessionPlans(_ context.Context) ([]*identity.SessionPlan, error) {
-	return nil, nil
-}
-
 func (m *mockIdentityDeletionRepo) RequestAccountDeletion(_ context.Context, _ int64, _ *int64, _ string) error {
 	return nil
 }

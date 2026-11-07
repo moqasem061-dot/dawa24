@@ -55,8 +55,8 @@ func (h *Handler) TransitionStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// A wallet order can be cancelled here: the cancel refunds the wallet in the same
-	// transaction. Any other status change is refused until the wallet debit on
-	// confirmation is reliable (S02).
+	// transaction. Any other status change is refused: the API has no way to resolve
+	// the buyer's wallet owner for a confirmation, so the website makes those changes.
 	if req.Status != commerce.StatusCancelled {
 		if err := commerce.ValidateAPIWalletOrder(order); err != nil {
 			httpx.Error(w, r, h.log, err)
