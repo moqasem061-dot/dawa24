@@ -47,3 +47,6 @@ coverage.html
 .specify/extensions/.cache/
 .playwright-mcp/
 /scripts/pagespeed/node_modules/
+
+# Stray lint and test captures written at the repo root
+/tmp-*.log

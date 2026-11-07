@@ -260,14 +260,3 @@ func (c *Catalog) Restrict(keys []string, s Scope) []string {
 	}
 	return out
 }
-
-// NavKeys maps each sidebar item key to the permissions that reveal it.
-func (c *Catalog) NavKeys(s Scope) map[string][]string {
-	out := map[string][]string{}
-	for _, p := range c.PermissionsFor(s) {
-		if p.Nav != "" {
-			out[p.Nav] = append(out[p.Nav], p.Key)
-		}
-	}
-	return out
-}

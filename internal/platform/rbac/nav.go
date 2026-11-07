@@ -121,9 +121,6 @@ func NavLabel(lang, ar, en string) string {
 	return en
 }
 
-// Label returns the permission's label in the requested language.
-func (p Permission) Label(lang string) string { return NavLabel(lang, p.NameAr, p.NameEn) }
-
 // Label returns the group's label in the requested language.
 func (g Group) Label(lang string) string { return NavLabel(lang, g.NameAr, g.NameEn) }
 

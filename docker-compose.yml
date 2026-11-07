@@ -21,7 +21,7 @@ services:
       - APP_ENV=${APP_ENV:-prod}
       # Migrations run as the schema owner, from MIGRATE_DATABASE_URL only.
       # The owner credential is never given to the server or worker.
-      - DATABASE_URL=${MIGRATE_DATABASE_URL:?Set MIGRATE_DATABASE_URL to the schema-owner connection (see docs/SECURITY_DATABASE_AND_SECRETS.md)}
+      - DATABASE_URL=${MIGRATE_DATABASE_URL:?Set MIGRATE_DATABASE_URL to the schema-owner connection (see docs/security/SECURITY_DATABASE_AND_SECRETS.md)}
       # migrate sets the dawa24_app password from this (see cmd/cli/app_role.go).
       - DB_APP_PASSWORD=${DB_APP_PASSWORD:?Set DB_APP_PASSWORD (at least 24 random characters)}
       - DATA_DIR=/app/data

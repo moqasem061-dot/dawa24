@@ -64,13 +64,6 @@ type serviceImpl struct {
 // Option configures serviceImpl.
 type Option func(*serviceImpl)
 
-// WithQueueClient sets the queue enqueuer for asynchronous enhancement.
-func WithQueueClient(q Enqueuer) Option {
-	return func(s *serviceImpl) {
-		s.queueClient = q
-	}
-}
-
 // NewService constructs a matching Service.
 func NewService(repo Repository, indexCache *IndexCache, loader *Loader, opts ...Option) Service {
 	s := &serviceImpl{

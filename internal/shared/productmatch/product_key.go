@@ -76,12 +76,6 @@ func ProductKeyParts(name string) (baseKey string, packCount float64, hasCount b
 	return baseKey, 0, false
 }
 
-// BaseProductKey returns the base identity key without pack counts or bare residuals.
-func BaseProductKey(name string) string {
-	baseKey, _, _ := ProductKeyParts(name)
-	return baseKey
-}
-
 func ProductKey(name string) string {
 	baseKey, _, _ := ProductKeyParts(name)
 	if baseKey == "" {

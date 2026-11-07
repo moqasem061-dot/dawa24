@@ -5,17 +5,13 @@ package features
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log/slog"
-	"net/http"
 	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5"
 
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
-	"github.com/moqasem061-dot/dawa24/internal/platform/httpx"
-	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
 
 // FeatureFlag is the domain model representing a toggleable system feature.
@@ -179,56 +175,6 @@ func (e *Engine) Enabled(key string) bool {
 	return true
 }
 
-// List returns a copy of all registered feature flags.
-func (e *Engine) List() []FeatureFlag {
-	if e == nil {
-		return defaultCoreFlags
-	}
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	res := make([]FeatureFlag, len(e.list))
-	copy(res, e.list)
-	return res
-}
-
-// Set updates a feature flag in the database and immediately flushes the in-memory cache.
-func (e *Engine) Set(ctx context.Context, key string, enabled bool, updatedBy int64) error {
-	if e == nil {
-		return fmt.Errorf("features engine not initialized")
-	}
-
-	e.mu.Lock()
-	e.flags[key] = enabled
-	for i := range e.list {
-		if e.list[i].Key == key {
-			e.list[i].IsEnabled = enabled
-		}
-	}
-	e.mu.Unlock()
-
-	if e.db != nil {
-		err := e.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
-			query := `
-				INSERT INTO platform_admin.feature_flags (key, name, description, is_enabled, updated_by, updated_at)
-				VALUES ($1, jsonb_build_object('ar', $1, 'en', $1), '{"ar":"","en":""}'::jsonb, $2, NULLIF($3, 0), now())
-				ON CONFLICT (key) DO UPDATE
-				SET is_enabled = EXCLUDED.is_enabled,
-				    updated_by = EXCLUDED.updated_by,
-				    updated_at = now();
-			`
-			_, err := tx.Exec(txCtx, query, key, enabled, updatedBy)
-			return err
-		})
-
-		if err != nil {
-			return fmt.Errorf("features.Set: %w", err)
-		}
-	}
-
-	_ = e.Reload(ctx)
-	return nil
-}
-
 // Global accessor functions:
 
 // Enabled checks if a feature is enabled on the global engine.
@@ -237,34 +183,4 @@ func Enabled(ctx context.Context, key string) bool {
 		return true
 	}
 	return globalEngine.Enabled(key)
-}
-
-// List returns all feature flags from the global engine.
-func List() []FeatureFlag {
-	if globalEngine == nil {
-		return nil
-	}
-	return globalEngine.List()
-}
-
-// Require returns a Chi HTTP middleware that yields a 404 Not Found if the feature is disabled.
-func Require(flagKey string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if !Enabled(r.Context(), flagKey) {
-				var l *slog.Logger
-				if globalEngine != nil {
-					l = globalEngine.log
-				}
-				httpx.Error(w, r, l, apperr.NotFound("الصفحة المطلوبة غير مفعلة حالياً"))
-				return
-			}
-			next.ServeHTTP(w, r)
-		})
-	}
-}
-
-// GetEngine returns the initialized singleton engine.
-func GetEngine() *Engine {
-	return globalEngine
 }

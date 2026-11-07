@@ -105,16 +105,3 @@ func SimpleInstitutionalGate(authorizedWorkIDs []int64) InstitutionalFunc {
 func AlwaysInstitutionallyVisible() InstitutionalFunc {
 	return func(context.Context, InstitutionalCheck) (bool, error) { return true, nil }
 }
-
-// AlwaysCovered is the coverage gate used when the buyer's branch has no
-// coordinates.
-//
-// Refusing every supplier because an address is incomplete would be worse than
-// the alternative, and it matches how the rest of the platform behaves when
-// coverage data is absent. The worker logs a warning when this path is taken, so
-// it is visible rather than silent.
-func AlwaysCovered() CoverageFunc {
-	return func(context.Context, int64, time.Weekday, float64, float64) (bool, int, error) {
-		return true, 0, nil
-	}
-}

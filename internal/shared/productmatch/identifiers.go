@@ -77,16 +77,6 @@ func (o MatchOptions) WithIdentifiers(mapped MappedColumns, chosen IdentifierCho
 	return o
 }
 
-// OfferableIdentifiers reports which identifier toggles a tool should show for
-// a given mapping, so a screen can hide a switch that could not do anything.
-func OfferableIdentifiers(mapped MappedColumns) IdentifierChoices {
-	return IdentifierChoices{
-		ByCode:            mapped.Code,
-		ByBarcode:         mapped.Barcode,
-		CodeIsCatalogCode: mapped.Code,
-	}
-}
-
 // MappedIdentifiers reports which identifier columns a confirmed mapping binds.
 //
 // It is the bridge between step one of a wizard and the matching options, so a

@@ -88,13 +88,6 @@ func (d *dependencies) Cache() (*cache.Cache, error) {
 	return d.cache, d.cacheErr
 }
 
-// Ready reports whether every dependency connected at least once.
-func (d *dependencies) Ready() bool {
-	d.mu.RLock()
-	defer d.mu.RUnlock()
-	return d.ready
-}
-
 // setDBErr records connection state. The handle itself never changes.
 func (d *dependencies) setDBErr(err error) {
 	d.mu.Lock()

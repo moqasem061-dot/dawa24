@@ -304,28 +304,6 @@ func ColumnLetter(idx int) string {
 	return string(out)
 }
 
-// OverridesFromColumns turns the mapping screen's submitted bindings into the
-// overrides the parser reads.
-//
-// A field the admin left unselected is recorded as IgnoreColumn rather than
-// omitted. The screen shows every field with an explicit choice, so "none" is a
-// decision; omitting it would let header detection re-bind the field on the
-// next run behind the admin's back.
-func OverridesFromColumns(columns map[string]int) map[string]int {
-	if len(columns) == 0 {
-		return nil
-	}
-	out := make(map[string]int, len(columns))
-	for field, column := range columns {
-		if column > 0 {
-			out[field] = column
-			continue
-		}
-		out[field] = IgnoreColumn
-	}
-	return out
-}
-
 // ProductFieldValue renders one field of a parsed product as text, for the
 // mapping screen's preview table.
 //

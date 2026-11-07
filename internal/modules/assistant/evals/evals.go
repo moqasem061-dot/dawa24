@@ -144,20 +144,3 @@ func ByScope(cases []Case) map[rbac.Scope][]Case {
 	}
 	return out
 }
-
-// ExpectedTools returns the distinct tools the corpus expects for one scope,
-// excluding refusal cases, in a stable order.
-func ExpectedTools(cases []Case, scope rbac.Scope) []string {
-	set := map[string]bool{}
-	for _, c := range cases {
-		if c.DashboardScope() == scope && !c.MustRefuse() {
-			set[c.Tool] = true
-		}
-	}
-	out := make([]string, 0, len(set))
-	for name := range set {
-		out = append(out, name)
-	}
-	sort.Strings(out)
-	return out
-}

@@ -160,17 +160,6 @@ func (d *OrganizationDocumentsData) PendingCount() int {
 	return count
 }
 
-// RejectedCount counts requirements that were rejected.
-func (d *OrganizationDocumentsData) RejectedCount() int {
-	count := 0
-	for _, req := range d.Requirements {
-		if doc := d.LatestFor(req.DocType); doc != nil && doc.Status == attachments.StatusRejected {
-			count++
-		}
-	}
-	return count
-}
-
 // CompletionPercentage returns integer percentage of verified documents against total requirements.
 func (d *OrganizationDocumentsData) CompletionPercentage() int {
 	if len(d.Requirements) == 0 {

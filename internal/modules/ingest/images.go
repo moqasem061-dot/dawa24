@@ -11,8 +11,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/google/uuid"
 )
 
 var (
@@ -262,9 +260,4 @@ func DetectImageExtension(data []byte, contentType, urlPath string) string {
 	}
 
 	return ""
-}
-
-// GenerateProductImageStorageKey produces standard storage key `products/<uuid>.<ext>`.
-func GenerateProductImageStorageKey(ext string) string {
-	return fmt.Sprintf("products/%s.%s", uuid.New().String(), ext)
 }

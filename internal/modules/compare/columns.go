@@ -4,8 +4,6 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
-
 	"github.com/moqasem061-dot/dawa24/internal/shared/arabic"
 )
 
@@ -31,38 +29,6 @@ var detectionFieldOrder = []TargetField{
 	FieldProductID, FieldProductName, FieldDescription, FieldPrice, FieldCostPrice,
 	FieldDiscount, FieldQuantity, FieldSKU, FieldUniqueID, FieldBarcode,
 	FieldAlertPrice, FieldAlertDiscount,
-}
-
-// ArabicLabel returns human-readable Arabic name for a target field.
-func ArabicLabel(f TargetField) string {
-	switch f {
-	case FieldProductID:
-		return i18n.TDefault("w4_mod.s_365_365")
-	case FieldProductName:
-		return i18n.TDefault("w4_ui.s_53_53")
-	case FieldDescription:
-		return i18n.TDefault("w4_mod.s_366_366")
-	case FieldPrice:
-		return i18n.TDefault("w4_ui.s_54_54")
-	case FieldCostPrice:
-		return i18n.TDefault("w4_mod.s_367_367")
-	case FieldDiscount:
-		return i18n.TDefault("w4_ui.s_55_55")
-	case FieldQuantity:
-		return i18n.TDefault("w4_mod.s_368_368")
-	case FieldSKU:
-		return i18n.TDefault("w4_mod.s_369_369")
-	case FieldUniqueID:
-		return i18n.TDefault("w4_mod.s_370_370")
-	case FieldBarcode:
-		return i18n.TDefault("w4_ui.s_84_84")
-	case FieldAlertPrice:
-		return i18n.TDefault("w4_mod.s_371_371")
-	case FieldAlertDiscount:
-		return i18n.TDefault("w4_mod.w4str_159_159")
-	default:
-		return string(f)
-	}
 }
 
 // CleanHeader strips BOM, zero-width characters, and leading/trailing whitespace.

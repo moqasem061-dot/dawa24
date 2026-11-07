@@ -78,9 +78,8 @@ func NotFound(entity string) *Error {
 	}
 }
 
-func Conflict(code, msg string) *Error   { return New(KindConflict, code, msg) }
-func Forbidden(code, msg string) *Error  { return New(KindForbidden, code, msg) }
-func BadRequest(code, msg string) *Error { return Validation(code, msg, nil) }
+func Conflict(code, msg string) *Error  { return New(KindConflict, code, msg) }
+func Forbidden(code, msg string) *Error { return New(KindForbidden, code, msg) }
 
 func Unauthorized() *Error {
 	return New(KindUnauthorized, "auth.required", "Authentication is required.")

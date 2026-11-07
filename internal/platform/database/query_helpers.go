@@ -221,19 +221,3 @@ func IsUniqueViolation(err error) bool {
 	var pgErr *pgconn.PgError
 	return errors.As(err, &pgErr) && pgErr.Code == "23505"
 }
-
-// IsForeignKeyViolation reports a referential integrity failure.
-func IsForeignKeyViolation(err error) bool {
-	var pgErr *pgconn.PgError
-	return errors.As(err, &pgErr) && pgErr.Code == "23503"
-}
-
-// ConstraintName returns the violated constraint, letting a service map a
-// specific unique index to a specific field error.
-func ConstraintName(err error) string {
-	var pgErr *pgconn.PgError
-	if errors.As(err, &pgErr) {
-		return pgErr.ConstraintName
-	}
-	return ""
-}

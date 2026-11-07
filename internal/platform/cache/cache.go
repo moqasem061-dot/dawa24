@@ -216,46 +216,6 @@ func (c *Cache) Delete(ctx context.Context, keys ...string) error {
 
 var rememberGroup singleflight.Group
 
-// Remember returns the cached value or computes, stores and returns it.
-//
-// A failure to read or write the cache is logged by the caller but never fails
-// the request: the compute path is always available. Redis being down should
-// make the site slow, not broken.
-//
-// Concurrent callers for the same uncached or expired key are coalesced via
-// singleflight, preventing cache stampedes against the primary database.
-func Remember[T any](ctx context.Context, c *Cache, key string, ttl time.Duration, compute func(context.Context) (T, error)) (T, error) {
-	var cached T
-	if err := c.GetJSON(ctx, key, &cached); err == nil {
-		return cached, nil
-	}
-
-	v, err, _ := rememberGroup.Do(key, func() (any, error) {
-		// Re-check under the singleflight barrier in case the winner just cached it
-		var again T
-		if err := c.GetJSON(ctx, key, &again); err == nil {
-			return again, nil
-		}
-
-		val, cErr := compute(ctx)
-		if cErr != nil {
-			return val, cErr
-		}
-		_ = c.SetJSON(ctx, key, val, ttl)
-		return val, nil
-	})
-	if err != nil {
-		var zero T
-		return zero, err
-	}
-	res, ok := v.(T)
-	if !ok {
-		var zero T
-		return zero, fmt.Errorf("cache: unexpected type %T", v)
-	}
-	return res, nil
-}
-
 // InvalidateTenant drops every cached entry for one organisation.
 //
 // It uses SCAN rather than KEYS: KEYS blocks Redis for the duration of the

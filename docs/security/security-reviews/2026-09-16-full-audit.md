@@ -77,7 +77,7 @@ However, the full-codebase audit identified two **High Severity** items requirin
 **Finding ID:** SEC-001  
 **Severity:** High  
 **CVSS Score:** 8.2 (CVSS:3.1/AV:N/AC:L/PR:L/UI:N/S:U/C:H/I:H/A:N)  
-**Location:** `internal/platform/database/connection.go:50`, `db/migrations/001_foundation.up.sql:73`, `docs/SECURITY_HARDENING.md:9`  
+**Location:** `internal/platform/database/connection.go:50`, `db/migrations/001_foundation.up.sql:73`, `docs/security/SECURITY_HARDENING.md:9`  
 **Evidence Provenance:** statically-reviewed  
 **OWASP Category:** A01:2025 - Broken Access Control  
 **CWE:** CWE-284: Improper Access Control, CWE-250: Execution with Unnecessary Privileges  
@@ -181,7 +181,7 @@ if strings.HasPrefix(fileURL, "http://") || strings.HasPrefix(fileURL, "https://
 **Finding ID:** SEC-003  
 **Severity:** Medium  
 **CVSS Score:** 6.1 (CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:C/C:L/I:L/A:N)  
-**Location:** `internal/platform/httpx/middleware.go:257-260`, `docs/SECURITY_HARDENING.md:40-43`  
+**Location:** `internal/platform/httpx/middleware.go:257-260`, `docs/security/SECURITY_HARDENING.md:40-43`  
 **Evidence Provenance:** statically-reviewed  
 **OWASP Category:** A05:2025 - Injection  
 **CWE:** CWE-79: Improper Neutralization of Input During Web Page Generation ('Cross-site Scripting')  

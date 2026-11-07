@@ -2,7 +2,6 @@ package etl
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"log/slog"
 	"time"
@@ -18,45 +17,6 @@ type Pipeline struct {
 // NewPipeline creates a migration engine.
 func NewPipeline(log *slog.Logger) *Pipeline {
 	return &Pipeline{log: log}
-}
-
-// VerifyTable directly computes counts and monetary sums on both source and target databases.
-func (p *Pipeline) VerifyTable(
-	ctx context.Context,
-	sourceDB *sql.DB,
-	targetDB *sql.DB,
-	sourceTable, targetTable string,
-	moneyCol string,
-) (*ValidationResult, error) {
-	var srcRows, tgtRows int64
-	var srcSumMinor, tgtSumMinor sql.NullInt64
-
-	srcCountQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s;", sourceTable)
-	if err := sourceDB.QueryRowContext(ctx, srcCountQuery).Scan(&srcRows); err != nil {
-		return nil, fmt.Errorf("query source count for %s: %w", sourceTable, err)
-	}
-
-	tgtCountQuery := fmt.Sprintf("SELECT COUNT(*) FROM %s;", targetTable)
-	if err := targetDB.QueryRowContext(ctx, tgtCountQuery).Scan(&tgtRows); err != nil {
-		return nil, fmt.Errorf("query target count for %s: %w", targetTable, err)
-	}
-
-	var srcMoney, tgtMoney money.Amount
-	if moneyCol != "" {
-		srcSumQuery := fmt.Sprintf("SELECT COALESCE(ROUND(SUM(%s) * 100), 0) FROM %s;", moneyCol, sourceTable)
-		_ = sourceDB.QueryRowContext(ctx, srcSumQuery).Scan(&srcSumMinor)
-		if srcSumMinor.Valid {
-			srcMoney = money.FromMinor(srcSumMinor.Int64)
-		}
-
-		tgtSumQuery := fmt.Sprintf("SELECT COALESCE(SUM(%s), 0) FROM %s;", moneyCol, targetTable)
-		_ = targetDB.QueryRowContext(ctx, tgtSumQuery).Scan(&tgtSumMinor)
-		if tgtSumMinor.Valid {
-			tgtMoney = money.FromMinor(tgtSumMinor.Int64)
-		}
-	}
-
-	return p.RunVerificationGate(ctx, sourceTable, srcRows, tgtRows, srcMoney, tgtMoney), nil
 }
 
 // RunVerificationGate executes checksum and monetary sum reconciliation for a migrated table.

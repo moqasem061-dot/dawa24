@@ -59,11 +59,6 @@ func NewIndexCache(builder IndexBuilder) *IndexCache {
 	}
 }
 
-// NewIndexCacheWithCuration creates an IndexCache backed by a Loader and CuratedRepository.
-func NewIndexCacheWithCuration(loader *Loader, curatedRepo CuratedRepository) *IndexCache {
-	return NewIndexCache(NewDefaultIndexBuilderWithCuration(loader, curatedRepo))
-}
-
 // Get retrieves an existing index or builds it through the builder, collapsing concurrent requests.
 func (c *IndexCache) Get(ctx context.Context, scope string, revision int64) (*productmatch.Index, error) {
 	if scope == "" {

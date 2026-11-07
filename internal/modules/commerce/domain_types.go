@@ -9,8 +9,8 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
-// OrderStatus defines the canonical lifecycle states, matching Laravel's
-// main_orders/adv_orders enum exactly (Rebuild V2 §3.3).
+// OrderStatus defines the lifecycle states. The values match the legacy
+// main_orders/adv_orders enum so imported orders keep their meaning (Rebuild V2 §3.3).
 type OrderStatus string
 
 const (
@@ -265,7 +265,7 @@ type OrderLine struct {
 	OriginalDiscount       money.Amount  `json:"original_discount,omitempty"` // legacy discount snapshot (063)
 	IsNegotiated           bool          `json:"is_negotiated"`
 	ProposedUnitPrice      money.Amount  `json:"proposed_unit_price,omitempty"`
-	Rating                 *float64      `json:"rating,omitempty"` // per-line rating (Laravel adv_orders.rating parity)
+	Rating                 *float64      `json:"rating,omitempty"` // per-line rating (legacy column adv_orders.rating)
 	AvailableStock         int           `json:"available_stock,omitempty"`
 	MinOrderQty            int           `json:"min_order_qty,omitempty"`
 	MaxQtyPerOrder         int           `json:"max_qty_per_order,omitempty"`

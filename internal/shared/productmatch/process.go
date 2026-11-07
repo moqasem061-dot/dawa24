@@ -192,29 +192,6 @@ func (p *pass) section(number int, cells []string) {
 	})
 }
 
-// IdentityKey is the strongest identity a row carries, used to detect a product
-// listed twice in one file.
-//
-// The item code comes first because it is what the supplier themselves use to
-// mean "the same product". The barcode is deliberately second and the name
-// third: several packages legitimately share a barcode, and two genuinely
-// different products can share a name once the manufacturer differs.
-func IdentityKey(row *Row) string {
-	if row == nil {
-		return ""
-	}
-	if key := sheet.NormalizeKey(row.SKU); key != "" {
-		return "sku:" + key
-	}
-	if row.Barcode != "" {
-		return "barcode:" + row.Barcode
-	}
-	if name := sheet.NormalizeName(row.Name); name != "" {
-		return "name:" + name + "|" + sheet.NormalizeKey(row.Manufacturer)
-	}
-	return ""
-}
-
 func (p *pass) flush(sink Sink) error {
 	if len(p.batch) == 0 {
 		return nil

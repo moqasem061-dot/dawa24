@@ -58,14 +58,6 @@ func FormatTimeSec12(t time.Time) string {
 	return timeutil.InCairo(t).Format(LayoutTimeSec12)
 }
 
-// FormatDateOnly formats a date in YYYY-MM-DD format (in Africa/Cairo timezone).
-func FormatDateOnly(t time.Time) string {
-	if t.IsZero() {
-		return ""
-	}
-	return timeutil.InCairo(t).Format(LayoutDateOnly)
-}
-
 // FormatClock12 converts a stored 24-hour clock string ("HH:MM" or "HH:MM:SS")
 // to the Egyptian 12-hour form the UI shows everywhere times are read back:
 // "16:00" -> "4:00 م", "09:30" -> "9:30 ص", "00:15" -> "12:15 ص". A value that

@@ -158,7 +158,7 @@
 
 ### 9.1 Confirmed Repository Evidence Paths
 - `AGENTS.md`: Non-negotiable money rules, AI isolation, RLS rules, and file size ceilings.
-- `docs/SECURITY_HARDENING.md`: Deploy actions, CSP state, and operator security checklist.
+- `docs/security/SECURITY_HARDENING.md`: Deploy actions, CSP state, and operator security checklist.
 - `internal/platform/httpx/middleware.go`: Security headers, per-request CSP nonce, trusted hop client IP resolution.
 - `internal/platform/httpx/csrf.go`: Double-submit cookie verification.
 - `internal/platform/database/query_helpers.go`: Tenant scoping (`applyTenant`), `AsSystem`, and `UnscopedTables`.

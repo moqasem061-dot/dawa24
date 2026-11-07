@@ -89,12 +89,6 @@ func RequestIDFrom(ctx context.Context) string {
 	return v
 }
 
-// WithActor binds the authenticated user and organisation for logging.
-func WithActor(ctx context.Context, userID, orgID int64) context.Context {
-	ctx = context.WithValue(ctx, ctxKeyUserID, userID)
-	return context.WithValue(ctx, ctxKeyOrgID, orgID)
-}
-
 func parseLevel(s string) slog.Level {
 	switch strings.ToLower(strings.TrimSpace(s)) {
 	case "debug":

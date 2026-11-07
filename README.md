@@ -82,7 +82,7 @@ All bounded contexts are built and served: `identity`, `org`, `catalog`,
 (`cmd/etl`). The UI is templ + HTMX + the CSP build of Alpine, served from the
 same binary.
 
-Known open work is tracked in `docs/security-reviews/` and `docs/modules/`.
+Known open work is tracked in `docs/security/security-reviews/` and `docs/modules/`.
 
 ## Deployment
 

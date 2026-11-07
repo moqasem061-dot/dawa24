@@ -16,14 +16,6 @@ type RequestsData struct {
 	TotalCount   int
 }
 
-// TabClass returns the button classes for a status filter tab.
-func TabClass(active, current string) string {
-	if active == current {
-		return "btn btn-sm btn-primary"
-	}
-	return "btn btn-sm btn-secondary"
-}
-
 // reqTypeLabel maps a request type onto an Arabic label.
 func reqTypeLabel(t workflow.RequestType) string {
 	switch t {

@@ -36,9 +36,11 @@ type HTTP struct {
 	// ModuleAPI mounts the per-module JSON APIs under /api/v1 (catalog,
 	// inventory, commerce, billing, ingest, promo, workflow, hr, platform,
 	// notifications, organizations). The web dashboard uses none of them — it
-	// is server-rendered — and they were written for row-level security the
-	// database does not enforce (the application connects as a superuser), so
-	// several answered another organisation's records by id. Off in production
+	// is server-rendered — and they were written for row-level security. A
+	// superuser connection skips that security; the application is meant to
+	// connect as dawa24_app (migration 222, not a superuser), and checkRLS in
+	// internal/platform/database refuses a bypassing role when required. Several
+	// of them answered another organisation's records by id. Off in production
 	// unless MODULE_API_ENABLED is set; the assistant, smart-order, attachment,
 	// identity and integration APIs are mounted regardless.
 	ModuleAPI bool

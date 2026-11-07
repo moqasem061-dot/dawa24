@@ -110,26 +110,32 @@ func (r *Repository) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID
 			VALUES ($1, 'confirmed', 'تم قبول السعر المتفاوض عليه واعتماد الطلب من قبل المورد', $2);
 		`, orderID, actorID)
 
-		orderIDStr := strconv.FormatInt(orderID, 10)
-		after := map[string]any{"negotiation_status": "accepted", "status": "confirmed"}
-		if customerOrgID != nil && *customerOrgID > 0 {
-			_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
-				OrganizationID: customerOrgID,
-				ActorUserID:    actorID,
-				Action:         "order.negotiation_accepted",
-				EntityType:     "order",
-				EntityID:       orderIDStr,
-				After:          after,
-			})
-		}
+		writeNegotiationAcceptedAudit(txCtx, tx, orderID, vendorOrgID, actorID, customerOrgID)
+		return nil
+	})
+}
+
+// writeNegotiationAcceptedAudit records the acceptance for the customer and the
+// supplier. It runs inside the caller's transaction.
+func writeNegotiationAcceptedAudit(txCtx context.Context, tx pgx.Tx, orderID, vendorOrgID, actorID int64, customerOrgID *int64) {
+	orderIDStr := strconv.FormatInt(orderID, 10)
+	after := map[string]any{"negotiation_status": "accepted", "status": "confirmed"}
+	if customerOrgID != nil && *customerOrgID > 0 {
 		_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
-			OrganizationID: &vendorOrgID,
+			OrganizationID: customerOrgID,
 			ActorUserID:    actorID,
 			Action:         "order.negotiation_accepted",
 			EntityType:     "order",
 			EntityID:       orderIDStr,
 			After:          after,
 		})
-		return nil
+	}
+	_ = database.WriteAudit(txCtx, tx, database.AuditEntry{
+		OrganizationID: &vendorOrgID,
+		ActorUserID:    actorID,
+		Action:         "order.negotiation_accepted",
+		EntityType:     "order",
+		EntityID:       orderIDStr,
+		After:          after,
 	})
 }

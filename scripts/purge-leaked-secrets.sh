@@ -11,7 +11,7 @@
 # READ FIRST
 #   * Purging history does NOT make the secrets safe: anyone who cloned, forked
 #     or cached the repository still has them. ROTATE EVERY VALUE FIRST
-#     (docs/SECURITY_DATABASE_AND_SECRETS.md, section 5). This script is cleanup.
+#     (docs/security/SECURITY_DATABASE_AND_SECRETS.md, section 5). This script is cleanup.
 #   * It rewrites all commit ids on every branch. Everyone must re-clone
 #     afterwards; deploy hosts that `git reset --hard origin/main` keep working.
 #   * The working tree must be clean (commit or stash first).

@@ -210,7 +210,7 @@ check-no-cdn: ## Fail if a template loads a script or stylesheet from a CDN
 
 .PHONY: check-file-size-count
 check-file-size-count: ## Fail if the number of oversized Go files grows
-	# Ceiling set to 103 in Phase 5 Wave 4 (measured baseline before Phase 6 splitting).
+	# Ceiling is 0: no non-generated Go file under cmd/ or internal/ may exceed 400 lines (AGENTS.md rule 6).
 	@n=$$(find ./cmd ./internal -name '*.go' -not -name '*_templ.go' -exec wc -l {} + | grep -v " total$$" | awk '$$1>400' | wc -l | tr -d " "); if [ "$$n" -gt 0 ]; then echo "FAIL: $$n Go files over 400 lines (ceiling 0). check-file-size lists them."; exit 1; fi; echo "  ok: $$n oversized files (ceiling 0)"
 
 .PHONY: check-hardcoded-arabic

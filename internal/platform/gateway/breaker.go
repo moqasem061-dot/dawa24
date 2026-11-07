@@ -89,12 +89,6 @@ func pseudoRand() float64 {
 
 type traceKey struct{}
 
-// WithTraceparent stores a W3C traceparent for propagation to the Gateway, so a
-// slow AI call can be followed across both services in one trace.
-func WithTraceparent(ctx context.Context, tp string) context.Context {
-	return context.WithValue(ctx, traceKey{}, tp)
-}
-
 func traceparentFrom(ctx context.Context) string {
 	tp, _ := ctx.Value(traceKey{}).(string)
 	return tp

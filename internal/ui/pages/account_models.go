@@ -5,7 +5,6 @@ import (
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/billing"
 	"github.com/moqasem061-dot/dawa24/internal/modules/org"
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
@@ -45,64 +44,4 @@ type InvoicesData struct {
 	Page             int
 	PerPage          int
 	TotalCount       int
-}
-
-// TxLabel maps a wallet transaction type onto an Arabic label.
-func TxLabel(t billing.TransactionType) string {
-	switch t {
-	case billing.TxDeposit:
-		return i18n.T("ar", "tx.deposit")
-	case billing.TxWithdrawal:
-		return i18n.T("ar", "tx.withdrawal")
-	case billing.TxPurchase:
-		return i18n.T("ar", "tx.purchase")
-	case billing.TxRefund:
-		return i18n.T("ar", "tx.refund")
-	case billing.TxBonus:
-		return i18n.T("ar", "tx.bonus")
-	case billing.TxPenalty:
-		return i18n.T("ar", "tx.penalty")
-	case billing.TxTransferIn:
-		return i18n.T("ar", "tx.transfer_in")
-	case billing.TxTransferOut:
-		return i18n.T("ar", "tx.transfer_out")
-	case billing.TxAdjustment:
-		return i18n.T("ar", "tx.adjustment")
-	default:
-		return string(t)
-	}
-}
-
-// InvoiceLabel maps an invoice status onto an Arabic label.
-func InvoiceLabel(s billing.InvoiceStatus) string {
-	switch s {
-	case billing.InvoiceDraft:
-		return i18n.T("ar", "invoice.status_draft")
-	case billing.InvoiceIssued:
-		return i18n.T("ar", "invoice.status_issued")
-	case billing.InvoicePaid:
-		return i18n.T("ar", "invoice.status_paid")
-	case billing.InvoiceOverdue:
-		return i18n.T("ar", "invoice.status_overdue")
-	case billing.InvoiceCancelled:
-		return i18n.T("ar", "invoice.status_cancelled")
-	default:
-		return string(s)
-	}
-}
-
-// InvoiceBadgeClass maps an invoice status onto a badge colour class.
-func InvoiceBadgeClass(s billing.InvoiceStatus) string {
-	switch s {
-	case billing.InvoicePaid:
-		return "badge-emerald"
-	case billing.InvoiceIssued:
-		return "badge-amber"
-	case billing.InvoiceOverdue:
-		return "badge-rose"
-	case billing.InvoiceCancelled:
-		return "badge-rose"
-	default:
-		return "badge-amber"
-	}
 }

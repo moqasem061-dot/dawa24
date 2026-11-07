@@ -89,7 +89,7 @@ user means the migration's `IF NOT EXISTS` becomes a no-op.
 
    The full model — roles, why tenants do not get their own database users, TLS,
    `pg_hba`, rotation of every credential — is in
-   [docs/SECURITY_DATABASE_AND_SECRETS.md](docs/SECURITY_DATABASE_AND_SECRETS.md).
+   [docs/security/SECURITY_DATABASE_AND_SECRETS.md](docs/security/SECURITY_DATABASE_AND_SECRETS.md).
 
    Switching an existing deployment over:
    1. Set `DB_APP_PASSWORD` to a new long random value.

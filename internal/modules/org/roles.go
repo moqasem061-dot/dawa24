@@ -42,16 +42,6 @@ type RoleInput struct {
 
 var roleKeyPattern = regexp.MustCompile(`[^a-z0-9_]+`)
 
-// ScopeForOrganization returns the dashboard a company's members use.
-func ScopeForOrganization(orgType OrganizationType) (rbac.Scope, error) {
-	scope, ok := rbac.TenantScopeFor(string(orgType))
-	if !ok {
-		return "", apperr.Validation("org.type_has_no_dashboard",
-			i18n.TDefault("w4_mod.w4str_227_227"), nil)
-	}
-	return scope, nil
-}
-
 // ListRoles returns one company's roles with their grants.
 func (s *Service) ListRoles(ctx context.Context, orgID int64) ([]*Role, error) {
 	if orgID <= 0 {

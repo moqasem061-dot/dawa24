@@ -42,7 +42,7 @@ type CandidateProduct struct {
 // MatchResult encapsulates the resolved product match and confidence score.
 type MatchResult struct {
 	ProductID   *int64      `json:"product_id"`
-	Confidence  float64     `json:"confidence"` // 0..100 scale (matching Laravel parity)
+	Confidence  float64     `json:"confidence"` // 0..100 scale
 	Method      MatchMethod `json:"method"`
 	MethodLabel string      `json:"method_label"`
 }

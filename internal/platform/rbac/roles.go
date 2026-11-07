@@ -1,7 +1,5 @@
 package rbac
 
-import "sort"
-
 // SystemRole is a role the platform ships and an operator may not delete.
 //
 // Two families live here. Platform roles sit in identity.roles and name a
@@ -274,16 +272,5 @@ func OrganizationRolesFor(scope Scope) []SystemRole {
 			out = append(out, r)
 		}
 	}
-	return out
-}
-
-// SystemRoleKeys lists the organization starter role keys, sorted, for the
-// seeder and for tests.
-func SystemRoleKeys() []string {
-	out := make([]string, 0, 8)
-	for _, r := range OrganizationRoles() {
-		out = append(out, r.Key)
-	}
-	sort.Strings(out)
 	return out
 }

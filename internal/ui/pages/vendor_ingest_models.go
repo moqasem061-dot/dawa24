@@ -204,13 +204,6 @@ func (v VendorImportView) CoreFieldsStatus() []CoreFieldStatus {
 	}
 }
 
-// FieldChoices lists the fields a column may be bound to, grouped for the
-// dropdown.
-func FieldChoices() []productmatch.Spec { return productmatch.Specs }
-
-// FieldGroups lists the review screen's sections in order.
-func FieldGroups() []productmatch.Group { return productmatch.Groups }
-
 // ConfidenceTone maps a confidence onto the badge palette.
 func ConfidenceTone(c productmatch.Confidence) string {
 	switch c {

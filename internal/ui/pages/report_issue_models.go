@@ -44,34 +44,6 @@ func IssueTypeLabel(issueType string) string {
 	}
 }
 
-// IssueStatusLabel returns the localized Arabic label for an issue status.
-func IssueStatusLabel(status string) string {
-	switch status {
-	case "pending":
-		return "قيد المراجعة"
-	case "in_progress":
-		return "جاري المعالجة"
-	case "resolved":
-		return "تم الحل بنجاح"
-	default:
-		return status
-	}
-}
-
-// IssuePriorityLabel returns the localized Arabic label for priority.
-func IssuePriorityLabel(priority string) string {
-	switch priority {
-	case "high":
-		return "عاجل"
-	case "medium":
-		return "متوسط"
-	case "low":
-		return "منخفض"
-	default:
-		return "متوسط"
-	}
-}
-
 // PaginationURL generates a URL query string with updated page number preserving existing filters.
 func (d AdminReportIssuesData) PaginationURL(page int) string {
 	q := url.Values{}

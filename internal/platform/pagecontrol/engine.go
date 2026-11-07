@@ -203,13 +203,6 @@ func (e *Engine) DecisionInfo(path string) (bool, BlockedInfo) {
 	}
 }
 
-// Version is the invalidation counter the last reload saw.
-func (e *Engine) Version() int64 {
-	e.mu.RLock()
-	defer e.mu.RUnlock()
-	return e.version
-}
-
 // refreshLoop keeps the snapshot fresh: a LISTEN for near-immediate propagation
 // across instances, with a timer as the safety net if the notification is missed
 // or the listen connection drops.

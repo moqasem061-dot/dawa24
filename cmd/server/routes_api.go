@@ -33,7 +33,7 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
-// mountModuleRoutes registers domain handlers across all platform bounded contexts.
+// mountModuleRoutesAPI registers domain handlers across all platform bounded contexts.
 func mountModuleRoutesAPI(
 	r chi.Router,
 	cfg *config.Config,

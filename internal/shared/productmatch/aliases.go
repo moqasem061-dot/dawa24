@@ -60,13 +60,6 @@ func (idx *Index) WithAliases(aliases map[string][]int64) *Index {
 	return clone
 }
 
-// WithAliases returns an Index modifier that attaches aliases to an Index.
-func WithAliases(aliases map[string][]int64) func(*Index) *Index {
-	return func(idx *Index) *Index {
-		return idx.WithAliases(aliases)
-	}
-}
-
 // aliasCandidates gathers catalogue products referenced by in-scope aliases for the query.
 func (idx *Index) aliasCandidates(q *query) []*MasterProduct {
 	if idx == nil || len(idx.aliases) == 0 || q == nil {

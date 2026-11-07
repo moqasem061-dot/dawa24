@@ -1,8 +1,6 @@
 package pages
 
-import (
-	"fmt"
-)
+import ()
 
 // RegisterFormData carries the registration form state so a validation failure
 // re-renders the form with the user's entered values still in the fields.
@@ -40,17 +38,6 @@ type RegisterFormData struct {
 	RequirePhoneVerification bool
 	TurnstileSiteKey         string
 	Error                    string
-}
-
-// AlpineState renders the Alpine.js x-data payload for the two-step form.
-// If an account type is already present (a failed submit re-render), the form
-// opens on step 2 with that type selected so the user's work is not lost.
-func (f RegisterFormData) AlpineState() string {
-	step := 1
-	if f.AccountType != "" {
-		step = 2
-	}
-	return fmt.Sprintf("{ step: %d, accountType: %q }", step, f.AccountType)
 }
 
 // CitySelected reported whether a <select> option was the chosen city. The

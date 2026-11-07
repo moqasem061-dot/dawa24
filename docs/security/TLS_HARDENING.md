@@ -40,7 +40,7 @@ This document details the TLS remediation implemented for the Dawa24 Store platf
 
 ### Option A: Native Go Platform TLS (Direct HTTPS)
 The Go application binary includes native TLS termination:
-- Configured in [`internal/platform/httpx/tls.go`](../internal/platform/httpx/tls.go) via `httpx.DefaultTLSConfig()`.
+- Configured in [`internal/platform/httpx/tls.go`](../../internal/platform/httpx/tls.go) via `httpx.DefaultTLSConfig()`.
 - Set the following environment variables:
   ```env
   TLS_ENABLED=true
@@ -48,11 +48,11 @@ The Go application binary includes native TLS termination:
   TLS_KEY_FILE=/etc/ssl/private/privkey.pem
   PORT=443
   ```
-- Starts automatically in [`cmd/server/main.go`](../cmd/server/main.go) with `srv.ListenAndServeTLS()`.
+- Starts automatically in [`cmd/server/main.go`](../../cmd/server/main.go) with `srv.ListenAndServeTLS()`.
 
 ### Option B: Reverse Proxy (Elest.io / Nginx / Caddy)
 When running behind an edge reverse proxy (standard in production Docker compose):
-1. **Nginx**: Drop in [`deploy/tls/nginx-hardened.conf`](../deploy/tls/nginx-hardened.conf).
+1. **Nginx**: Drop in [`deploy/tls/nginx-hardened.conf`](../../deploy/tls/nginx-hardened.conf).
    - In your Elest.io service dashboard or host Nginx config:
      ```nginx
      ssl_protocols TLSv1.2 TLSv1.3;
@@ -61,4 +61,4 @@ When running behind an edge reverse proxy (standard in production Docker compose
      ssl_ecdh_curve X25519MLKEM768:X25519Kyber768Draft00:X25519:prime256v1:secp384r1;
      add_header Strict-Transport-Security "max-age=63072000; includeSubDomains; preload" always;
      ```
-2. **Caddy**: Use [`deploy/tls/Caddyfile`](../deploy/tls/Caddyfile).
+2. **Caddy**: Use [`deploy/tls/Caddyfile`](../../deploy/tls/Caddyfile).

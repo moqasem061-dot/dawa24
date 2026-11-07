@@ -234,19 +234,6 @@ func (d *SupplierProfileData) GetConcentration(v *catalog.ProductVariant) string
 	return ""
 }
 
-func OrgTypeBadgeClass(t org.OrganizationType) string {
-	switch t {
-	case org.TypeVendor, "wholesaler":
-		return "badge-primary"
-	case "distributor":
-		return "badge-brand"
-	case "manufacturer":
-		return "badge-purple"
-	default:
-		return "badge-slate"
-	}
-}
-
 // OrgTypeLabel maps an organization type onto an Arabic label.
 //
 // Two types exist (Rebuild V2 rule 1); legacy values are mapped by migration

@@ -42,34 +42,6 @@ var (
 	ErrUnknownCapability = errors.New("gateway: unknown capability")
 )
 
-// ShouldFallback reports whether a caller should serve its deterministic path.
-//
-// This is the single decision point every AI-touching feature consults, which is
-// why it is one function rather than a switch repeated in six modules. Note that
-// ErrBadRequest is included: our own malformed request must still not break a
-// vendor's import.
-func ShouldFallback(err error) bool {
-	switch {
-	case err == nil:
-		return false
-	case errors.Is(err, ErrDisabled),
-		errors.Is(err, ErrUnavailable),
-		errors.Is(err, ErrCircuitOpen),
-		errors.Is(err, ErrTimeout),
-		errors.Is(err, ErrRateLimited),
-		errors.Is(err, ErrUnauthorized),
-		errors.Is(err, ErrBadRequest),
-		errors.Is(err, ErrUnknownCapability):
-		return true
-	case errors.Is(err, ErrQuotaExceeded):
-		// Budget exhaustion is deliberate. Fall back so the feature keeps
-		// working, and let the billing module warn the organisation.
-		return true
-	default:
-		return true
-	}
-}
-
 func isRetryable(err error) bool {
 	switch {
 	case errors.Is(err, ErrUnavailable), errors.Is(err, ErrTimeout), errors.Is(err, ErrRateLimited):

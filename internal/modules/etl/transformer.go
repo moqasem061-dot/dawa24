@@ -1,12 +1,10 @@
 package etl
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/money"
 )
 
@@ -56,22 +54,4 @@ func ParseLegacyMoney(raw any) (money.Amount, error) {
 	default:
 		return money.Zero, fmt.Errorf("etl: unknown money type %T", raw)
 	}
-}
-
-// TransformToI18nText normalizes legacy string/JSON into bilingual i18n.Text.
-func TransformToI18nText(raw string, defaultEn string) i18n.Text {
-	raw = strings.TrimSpace(raw)
-	if raw == "" {
-		return i18n.New("", "")
-	}
-
-	// If raw is already JSON encoded
-	if strings.HasPrefix(raw, "{") && strings.HasSuffix(raw, "}") {
-		var m map[string]string
-		if err := json.Unmarshal([]byte(raw), &m); err == nil { // nolint:errswallow: not JSON; treated as a plain string below
-			return i18n.New(m["ar"], m["en"])
-		}
-	}
-
-	return i18n.New(raw, defaultEn)
 }
