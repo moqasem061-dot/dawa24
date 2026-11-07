@@ -19,6 +19,9 @@ func (h *UIHandler) registerAdminMatchingRoutes(r chi.Router) {
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission("catalog.match_decision.view"))
 		g.Get("/admin/matching/policies", h.AdminMatchPoliciesPage)
+	})
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequirePagePermission("catalog.match_decision.update"))
 		g.Post("/admin/matching/policies/assign", h.AdminMatchPolicyUpdateAssignment)
 		g.Post("/admin/matching/policies/rollback", h.AdminMatchPolicyRollback)
 	})

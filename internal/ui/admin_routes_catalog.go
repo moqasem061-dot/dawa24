@@ -64,6 +64,11 @@ func (h *UIHandler) registerAdminProductRoutes(r chi.Router) {
 		g.Get("/admin/match-decisions", h.AdminMatchDecisionsPage)
 		g.Get("/admin/match-decisions/export", h.AdminMatchDecisionsExportXLSX)
 		g.Get("/admin/match-decisions/search-products", h.AdminSavingProductSearchJSON)
+	})
+
+	// Changing a decision needs the update key, not the view key (Batch 3, S10).
+	r.Group(func(g chi.Router) {
+		g.Use(authctx.RequirePagePermission("catalog.match_decision.update"))
 		g.Post("/admin/match-decisions/toggle-state", h.AdminMatchDecisionToggleStateSubmit)
 		g.Post("/admin/match-decisions/{id}/promote", h.AdminMatchDecisionPromoteSubmit)
 		g.Post("/admin/match-decisions/{id}/demote", h.AdminMatchDecisionDemoteSubmit)
@@ -239,10 +244,10 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission(
-			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
-			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
-			"inventory.my_temp_warehouse.manage", "inventory.my_temp_warehouse.view",
-			"inventory.team_temp_warehouse.manage", "inventory.team_temp_warehouse.view",
+			"inventory.temp_warehouse.manage",
+			"inventory.warehouse.manage", "inventory.warehouse.update",
+			"inventory.my_temp_warehouse.manage",
+			"inventory.team_temp_warehouse.manage",
 		))
 		g.Post("/admin/temporary-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/user/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
@@ -289,9 +294,9 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission(
-			"inventory.my_temp_warehouse.manage", "inventory.my_temp_warehouse.view",
-			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
-			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
+			"inventory.my_temp_warehouse.manage",
+			"inventory.temp_warehouse.manage",
+			"inventory.warehouse.manage", "inventory.warehouse.update",
 		))
 		g.Post("/admin/my/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/my/temparte-warehouses/{id}/mapping", h.AdminMyTempWarehouseMappingSubmit)
@@ -325,9 +330,9 @@ func (h *UIHandler) registerAdminWarehouseRoutes(r chi.Router) {
 	})
 	r.Group(func(g chi.Router) {
 		g.Use(authctx.RequirePagePermission(
-			"inventory.team_temp_warehouse.manage", "inventory.team_temp_warehouse.view",
-			"inventory.temp_warehouse.manage", "inventory.temp_warehouse.view",
-			"inventory.warehouse.manage", "inventory.warehouse.update", "inventory.warehouse.view",
+			"inventory.team_temp_warehouse.manage",
+			"inventory.temp_warehouse.manage",
+			"inventory.warehouse.manage", "inventory.warehouse.update",
 		))
 		g.Post("/admin/team/temparte-warehouses/upload", h.AdminTempWarehouseUploadSubmit)
 		g.Post("/admin/team/temparte-warehouses/{id}/mapping", h.AdminTeamTempWarehouseMappingSubmit)

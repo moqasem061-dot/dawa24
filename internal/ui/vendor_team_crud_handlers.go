@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"crypto/rand"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -49,11 +48,6 @@ func (h *UIHandler) VendorTeamNewSubmit(w http.ResponseWriter, r *http.Request) 
 	if roleKey == "" {
 		roleKey = "org_employee"
 	}
-	if password == "" || len(password) < 6 {
-		// crypto/rand cannot fail (Go 1.24+), so there is no fallback: the one
-		// that was here built a guessable password from the clock.
-		password = rand.Text() + "!A1"
-	}
 
 	var branchID *int64
 	if bStr := strings.TrimSpace(r.PostFormValue("branch_id")); bStr != "" {
@@ -77,13 +71,19 @@ func (h *UIHandler) VendorTeamNewSubmit(w http.ResponseWriter, r *http.Request) 
 		}
 		targetUserID = existingUser.ID
 	} else {
+		// New accounts take the owner's password and must change it (S06).
+		if len(password) < 8 {
+			h.redirectWithNotice(w, r, "/vendor/team", "error", i18n.T(langOf(r), "tenant.sessions.password_too_short"))
+			return
+		}
 		newUser, _, regErr := h.idSvc.Register(ctx, identity.RegisterInput{
-			Email:    email,
-			Password: password,
-			NameAr:   name,
-			NameEn:   name,
-			Phone:    phone,
-			Role:     "user",
+			Email:              email,
+			Password:           password,
+			NameAr:             name,
+			NameEn:             name,
+			Phone:              phone,
+			Role:               "user",
+			MustChangePassword: true,
 		})
 		if regErr != nil {
 			h.log.ErrorContext(ctx, "failed to register employee user", "email", email, "error", regErr)
@@ -310,6 +310,7 @@ func (h *UIHandler) VendorTeamToggleSubmit(w http.ResponseWriter, r *http.Reques
 		h.redirectWithNotice(w, r, "/vendor/team", "error", h.safeMessage(err, langOf(r)))
 		return
 	}
+	h.revokeMemberSessions(ctx, member.UserID, actor.OrganizationID)
 
 	h.recordAudit(ctx, database.AuditEntry{
 		OrganizationID: &actor.OrganizationID,
@@ -360,6 +361,7 @@ func (h *UIHandler) VendorTeamDeleteSubmit(w http.ResponseWriter, r *http.Reques
 		h.redirectWithNotice(w, r, "/vendor/team", "error", h.safeMessage(err, langOf(r)))
 		return
 	}
+	h.revokeMemberSessions(ctx, member.UserID, actor.OrganizationID)
 
 	h.recordAudit(ctx, database.AuditEntry{
 		OrganizationID: &actor.OrganizationID,

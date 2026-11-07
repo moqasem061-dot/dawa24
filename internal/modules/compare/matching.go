@@ -6,6 +6,7 @@ import (
 	"math"
 	"strings"
 
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
@@ -173,8 +174,15 @@ func (s *Service) SaveManualCorrection(ctx context.Context, orgID *int64, rowID 
 		return apperr.Validation("correction.invalid", "Invalid product or name for correction.", nil)
 	}
 
-	// 1. Update the row in compare.file_rows
-	if err := s.repo.UpdateFileRowMatch(ctx, rowID, &productID, MatchMethodManual, 100.0); err != nil {
+	// 1. Update the row in compare.file_rows. Only the caller's own files may be
+	// changed; staff may change any file (Batch 3, S13).
+	var owner *RowOwner
+	if actor, ok := authctx.From(ctx); !ok {
+		owner = &RowOwner{}
+	} else if !(actor.IsStaff || actor.IsPlatformAdmin()) {
+		owner = &RowOwner{UserID: actor.UserID, OrganizationID: actor.OrganizationID}
+	}
+	if err := s.repo.UpdateFileRowMatch(ctx, rowID, &productID, MatchMethodManual, 100.0, owner); err != nil {
 		return err
 	}
 

@@ -89,7 +89,7 @@ func (m *mockCommerceRepo) AcceptNegotiation(_ context.Context, orderID, vendorO
 	return nil
 }
 
-func (m *mockCommerceRepo) RejectNegotiation(_ context.Context, orderID int64, reason string, actorID int64) error {
+func (m *mockCommerceRepo) RejectNegotiation(_ context.Context, orderID int64, vendorOrgID int64, reason string, actorID int64) error {
 	o, ok := m.orders[orderID]
 	if !ok {
 		return apperr.NotFound("order")

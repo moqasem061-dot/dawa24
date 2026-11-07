@@ -271,12 +271,16 @@ func (s *Service) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, a
 	return s.repo.AcceptNegotiation(ctx, orderID, vendorOrgID, actorID, walletUserID)
 }
 
-// RejectNegotiation allows vendor or admin to reject a price negotiation on an order.
-func (s *Service) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {
+// RejectNegotiation rejects a supplier's part of a buyer's price negotiation.
+// Only that supplier's shipments are cancelled (Batch 3).
+func (s *Service) RejectNegotiation(ctx context.Context, orderID, vendorOrgID int64, reason string, actorID int64) error {
 	if orderID <= 0 {
 		return apperr.Validation("order.invalid_id", "Valid order ID is required.", nil)
 	}
-	return s.repo.RejectNegotiation(ctx, orderID, reason, actorID)
+	if vendorOrgID <= 0 {
+		return apperr.Forbidden("order.negotiation_not_party", "Only a supplier on the order can reject its negotiation.")
+	}
+	return s.repo.RejectNegotiation(ctx, orderID, vendorOrgID, reason, actorID)
 }
 
 // GetOfferDetailsForOrderLine returns the offer details and bundled items for an order line.

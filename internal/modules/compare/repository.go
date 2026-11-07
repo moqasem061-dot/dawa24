@@ -85,7 +85,10 @@ type Repository interface {
 	// DeleteFileRowOwnedBy deletes a row only if its parent file's user_id
 	// matches ownerUserID. Returns apperr.NotFound when nothing matched.
 	DeleteFileRowOwnedBy(ctx context.Context, rowID int64, ownerUserID int64) error
-	UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method MatchMethod, confidence float64) error
+	// UpdateFileRowMatch sets one row's match. A non-nil owner limits the write
+	// to rows whose file belongs to that user or organization, and returns
+	// apperr.NotFound otherwise (Batch 3, S13). A nil owner is unrestricted.
+	UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method MatchMethod, confidence float64, owner *RowOwner) error
 	// BulkUpdateFileRowMatches writes a whole matching run in one statement.
 	// A price list is tens of thousands of rows; a round trip per row would
 	// move the bottleneck rather than remove it.
@@ -126,4 +129,12 @@ type MarketScanOptions struct {
 	// ExcludeSupplierName drops any offers from the compared supplier itself,
 	// ensuring a supplier is never benchmarked against itself.
 	ExcludeSupplierName string
+}
+
+// RowOwner is the caller a row write is limited to: the user who uploaded the
+// file, and the organization the caller acts for, if any. A zero value matches
+// no file, so a write with no caller identity is refused.
+type RowOwner struct {
+	UserID         int64
+	OrganizationID int64
 }

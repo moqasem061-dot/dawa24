@@ -142,9 +142,16 @@ func (m *mockCompareRepoE2E) GetFileByPublicID(ctx context.Context, pid string) 
 func (m *mockCompareRepoE2E) ListFiles(ctx context.Context, userID int64, orgID *int64, status *compare.CompareFileStatus) ([]*compare.CompareFile, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
+	// Scoped like the SQL: the caller's own files, or their organization's.
 	var list []*compare.CompareFile
 	for _, f := range m.files {
-		list = append(list, f)
+		mine := f.UserID == userID
+		if orgID != nil && f.OrganizationID != nil && *f.OrganizationID == *orgID {
+			mine = true
+		}
+		if mine {
+			list = append(list, f)
+		}
 	}
 	return list, nil
 }
@@ -316,7 +323,7 @@ func (m *mockCompareRepoE2E) BulkUpdateFileRowMatches(ctx context.Context, fileI
 	return nil
 }
 
-func (m *mockCompareRepoE2E) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64) error {
+func (m *mockCompareRepoE2E) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64, owner *compare.RowOwner) error {
 	return nil
 }
 func (m *mockCompareRepoE2E) SaveCustomerProductMapping(ctx context.Context, orgID *int64, rawName string, productID int64, source string) error {

@@ -102,6 +102,35 @@ func RequireAuth(service *identity.Service, resolver *rbac.Resolver, cookieName 
 				return
 			}
 
+			// A team member created with an administrator's password must set
+			// their own before anything else (Batch 3, S06).
+			if target, held := passwordChangeRedirect(sess, r.URL.Path); held {
+				// Without the sessions permission the page would bounce the user
+				// back here, so the request is refused outright instead.
+				if !hasKey(sess.Permissions, passwordPageKey(sess.OrgType)) {
+					http.Error(w, "يلزم تغيير كلمة المرور قبل استخدام هذا الحساب. A password change is required before this account can be used.", http.StatusForbidden)
+					return
+				}
+				if r.Header.Get("HX-Request") == "true" {
+					w.Header().Set("HX-Redirect", target)
+					w.WriteHeader(http.StatusUnauthorized)
+					return
+				}
+				http.Redirect(w, r, target, http.StatusSeeOther)
+				return
+			}
+
+			// A removed or deactivated member keeps a session until it expires.
+			// The session's copy of the organization is not trusted for them, so
+			// the active organization is dropped and the default is looked up again.
+			if sess.ActiveOrgID > 0 && !sess.IsStaff() && resolver != nil && service != nil {
+				if !memberOfActiveOrg(r.Context(), service, resolver, sess.UserID, sess.ActiveOrgID) {
+					sess.ActiveOrgID = 0
+					sess.OrgType = ""
+					sess.OrgStatus = ""
+				}
+			}
+
 			// The session's active organization is the trusted default. A zero
 			// org means the user has no organization membership (or is staff),
 			// and no query then runs under a guessed tenant — the previous

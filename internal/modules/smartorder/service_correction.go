@@ -47,17 +47,12 @@ func (s *Service) CorrectMatch(ctx context.Context, orgID, lineID, productID int
 	if err := s.repo.UpdateLines(ctx, []*Line{line}); err != nil {
 		return nil, err
 	}
+	// The correction is remembered for this buyer's organization only. It is not
+	// written as a global alias: a global alias would resolve the same text to
+	// this product for every other pharmacy (Batch 3, S09). Promoting a
+	// correction to global is a staff decision, not built yet.
 	if err := s.repo.SaveLearnedMapping(ctx, orgID, line.RawName, productID); err != nil {
 		s.log.WarnContext(ctx, "could not remember match correction",
-			"line_id", lineID, "error", err)
-	}
-
-	source := "manual"
-	if line.MatchMethod == MethodAI {
-		source = "ai_confirmed"
-	}
-	if err := s.repo.SaveAlias(ctx, productID, line.NormName, source, 1.0); err != nil {
-		s.log.WarnContext(ctx, "could not record product alias",
 			"line_id", lineID, "error", err)
 	}
 

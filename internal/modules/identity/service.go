@@ -71,12 +71,15 @@ type RegisterInput struct {
 	// Role, PhoneVerifiedAt and EmailVerifiedAt are set only by server code.
 	// They are excluded from JSON so a self-service caller cannot choose a
 	// platform role or claim a verified contact.
-	Role            string     `json:"-"`
-	Language        i18n.Lang  `json:"language,omitempty"`
-	Timezone        string     `json:"timezone,omitempty"`
-	Phone           string     `json:"phone,omitempty"`
-	PhoneVerifiedAt *time.Time `json:"-"`
-	EmailVerifiedAt *time.Time `json:"-"`
+	Role string `json:"-"`
+	// MustChangePassword is set by server code only: an administrator created
+	// this account with a password of the administrator's choosing.
+	MustChangePassword bool       `json:"-"`
+	Language           i18n.Lang  `json:"language,omitempty"`
+	Timezone           string     `json:"timezone,omitempty"`
+	Phone              string     `json:"phone,omitempty"`
+	PhoneVerifiedAt    *time.Time `json:"-"`
+	EmailVerifiedAt    *time.Time `json:"-"`
 }
 
 // LoginInput captures authentication parameters.
@@ -130,16 +133,17 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 	}
 
 	user := &User{
-		Email:           cleanEmail,
-		PasswordHash:    hash,
-		Name:            i18n.New(input.NameAr, input.NameEn),
-		Role:            role,
-		Status:          status,
-		Language:        lang,
-		Timezone:        tz,
-		Phone:           input.Phone,
-		PhoneVerifiedAt: input.PhoneVerifiedAt,
-		EmailVerifiedAt: input.EmailVerifiedAt,
+		Email:              cleanEmail,
+		PasswordHash:       hash,
+		Name:               i18n.New(input.NameAr, input.NameEn),
+		Role:               role,
+		Status:             status,
+		Language:           lang,
+		Timezone:           tz,
+		Phone:              input.Phone,
+		PhoneVerifiedAt:    input.PhoneVerifiedAt,
+		EmailVerifiedAt:    input.EmailVerifiedAt,
+		MustChangePassword: input.MustChangePassword,
 	}
 
 	if err := s.repo.CreateUser(ctx, user); err != nil {
@@ -162,11 +166,12 @@ func (s *Service) Register(ctx context.Context, input RegisterInput) (*User, *Se
 	permissions := s.resolvePermissions(ctx, user.ID, 0)
 
 	sess := &Session{
-		UserID:      user.ID,
-		PublicID:    user.PublicID,
-		Email:       user.Email,
-		Role:        user.Role,
-		Permissions: permissions,
+		UserID:             user.ID,
+		PublicID:           user.PublicID,
+		Email:              user.Email,
+		Role:               user.Role,
+		Permissions:        permissions,
+		MustChangePassword: user.MustChangePassword,
 	}
 
 	if s.sessionStore != nil {
@@ -273,23 +278,24 @@ func (s *Service) Login(ctx context.Context, input LoginInput) (*LoginResult, er
 	dev := ParseUserAgentDevice(input.UserAgent, input.IP)
 
 	sess := &Session{
-		UserID:           user.ID,
-		PublicID:         user.PublicID,
-		Email:            user.Email,
-		Role:             user.Role,
-		ActiveOrgID:      orgID,
-		OrgType:          orgType,
-		OrgStatus:        orgStatus,
-		StaffRole:        staffRole,
-		Permissions:      permissions,
-		IP:               input.IP,
-		UserAgent:        input.UserAgent,
-		DeviceName:       dev.DeviceName,
-		DeviceType:       dev.DeviceType,
-		Browser:          dev.Browser,
-		OS:               dev.OS,
-		Icon:             dev.Icon,
-		MaxLoginSessions: &maxSessions,
+		UserID:             user.ID,
+		PublicID:           user.PublicID,
+		Email:              user.Email,
+		Role:               user.Role,
+		ActiveOrgID:        orgID,
+		OrgType:            orgType,
+		OrgStatus:          orgStatus,
+		StaffRole:          staffRole,
+		MustChangePassword: user.MustChangePassword,
+		Permissions:        permissions,
+		IP:                 input.IP,
+		UserAgent:          input.UserAgent,
+		DeviceName:         dev.DeviceName,
+		DeviceType:         dev.DeviceType,
+		Browser:            dev.Browser,
+		OS:                 dev.OS,
+		Icon:               dev.Icon,
+		MaxLoginSessions:   &maxSessions,
 	}
 
 	if s.sessionStore != nil {

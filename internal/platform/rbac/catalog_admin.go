@@ -173,6 +173,7 @@ func adminCatalogPerms() []Permission {
 		adminAct("catalog.saving_product.update", g, "تعديل منتجات التوفير", "Edit saving products", "catalog.saving_product.view"),
 
 		adminPage("catalog.match_decision.view", g, "match_decisions", "ذاكرة قرارات المطابقة", "Match decision memory"),
+		adminAct("catalog.match_decision.update", g, "تعديل قرارات المطابقة", "Edit match decisions", "catalog.match_decision.view"),
 		adminAct("catalog.match_decision.delete", g, "مسح قرارات المطابقة", "Clear match decisions", "catalog.match_decision.view"),
 
 		adminPage("inventory.warehouse.view", g, "warehouses", "المخازن", "Warehouses"),

@@ -34,21 +34,24 @@ type Session struct {
 	// under reaches the admin dashboard. It is written at login from
 	// identity.roles.is_staff, so a role an operator invented after this code
 	// was written is recognised as staff without a code change.
-	StaffRole    bool      `json:"staff_role"`
-	ActiveOrgID  int64     `json:"active_org_id,omitempty"`
-	OrgType      string    `json:"org_type,omitempty"`
-	OrgStatus    string    `json:"org_status,omitempty"`
-	Permissions  []string  `json:"permissions"`
-	CreatedAt    time.Time `json:"created_at"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	IP           string    `json:"ip,omitempty"`
-	UserAgent    string    `json:"user_agent,omitempty"`
-	DeviceName   string    `json:"device_name,omitempty"`
-	DeviceType   string    `json:"device_type,omitempty"`
-	Browser      string    `json:"browser,omitempty"`
-	OS           string    `json:"os,omitempty"`
-	Icon         string    `json:"icon,omitempty"`
-	LastActiveAt time.Time `json:"last_active_at,omitempty"`
+	StaffRole   bool   `json:"staff_role"`
+	ActiveOrgID int64  `json:"active_org_id,omitempty"`
+	OrgType     string `json:"org_type,omitempty"`
+	OrgStatus   string `json:"org_status,omitempty"`
+	// MustChangePassword holds the session on the change-password page until
+	// the user sets a password of their own (see identity/http middleware).
+	MustChangePassword bool      `json:"must_change_password,omitempty"`
+	Permissions        []string  `json:"permissions"`
+	CreatedAt          time.Time `json:"created_at"`
+	ExpiresAt          time.Time `json:"expires_at"`
+	IP                 string    `json:"ip,omitempty"`
+	UserAgent          string    `json:"user_agent,omitempty"`
+	DeviceName         string    `json:"device_name,omitempty"`
+	DeviceType         string    `json:"device_type,omitempty"`
+	Browser            string    `json:"browser,omitempty"`
+	OS                 string    `json:"os,omitempty"`
+	Icon               string    `json:"icon,omitempty"`
+	LastActiveAt       time.Time `json:"last_active_at,omitempty"`
 	// MaxLoginSessions, when set, is the concurrent-sign-in limit enforced by
 	// SessionStore.Create (evicting the oldest session beyond the limit).
 	MaxLoginSessions *int `json:"max_login_sessions,omitempty"`

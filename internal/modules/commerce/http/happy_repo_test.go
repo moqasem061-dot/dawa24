@@ -148,7 +148,7 @@ func (happyRepo) UpdatePurchaseRequestLineOffer(ctx context.Context, lineID int6
 func (happyRepo) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error {
 	return nil
 }
-func (happyRepo) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {
+func (happyRepo) RejectNegotiation(ctx context.Context, orderID int64, vendorOrgID int64, reason string, actorID int64) error {
 	return nil
 }
 func (happyRepo) ListVendorNegotiationOrdersWithTotal(ctx context.Context, vendorOrgID int64, status string, limit, offset int) ([]*commerce.Order, int, error) {

@@ -209,7 +209,7 @@ func (r stubRepo) AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, a
 	r.fail("AcceptNegotiation")
 	return nil
 }
-func (r stubRepo) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {
+func (r stubRepo) RejectNegotiation(ctx context.Context, orderID int64, vendorOrgID int64, reason string, actorID int64) error {
 	r.fail("RejectNegotiation")
 	return nil
 }

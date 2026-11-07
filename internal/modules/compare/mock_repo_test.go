@@ -337,17 +337,21 @@ func (m *mockCompareRepo) DeleteFileRow(ctx context.Context, rowID int64) error 
 
 func (m *mockCompareRepo) BulkUpdateFileRowMatches(ctx context.Context, fileID int64, matches []compare.RowMatch) error {
 	for _, match := range matches {
-		if err := m.UpdateFileRowMatch(ctx, match.RowID, match.ProductID, match.Method, match.Confidence); err != nil {
+		if err := m.UpdateFileRowMatch(ctx, match.RowID, match.ProductID, match.Method, match.Confidence, nil); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (m *mockCompareRepo) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64) error {
-	for _, rows := range m.fileRows {
+func (m *mockCompareRepo) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64, owner *compare.RowOwner) error {
+	for fileID, rows := range m.fileRows {
 		for _, r := range rows {
 			if r.ID == rowID {
+				// Mirrors the SQL: a restricted write reaches only the owner's files.
+				if owner != nil && !m.fileOwnedBy(fileID, *owner) {
+					return apperr.NotFound("compare row")
+				}
 				r.MatchedProductID = matchedProductID
 				r.MatchMethod = method
 				r.MatchConfidence = confidence

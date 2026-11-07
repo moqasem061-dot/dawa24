@@ -28,6 +28,7 @@ func (s *Service) ChangePassword(ctx context.Context, userID int64, currentPassw
 		return err
 	}
 	user.PasswordHash = hash
+	user.MustChangePassword = false
 	user.UpdatedAt = time.Now()
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
 		return err
@@ -72,6 +73,7 @@ func (s *Service) ResetPassword(ctx context.Context, email, newPassword string) 
 		return err
 	}
 	user.PasswordHash = hash
+	user.MustChangePassword = false
 	user.UpdatedAt = time.Now().UTC()
 	if err := s.repo.UpdateUser(ctx, user); err != nil {
 		return err

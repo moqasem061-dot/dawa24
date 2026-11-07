@@ -89,6 +89,8 @@ type Repository interface {
 	AdminOrderStats(ctx context.Context) (allCount, directCount, negotiationCount int, err error)
 	AdminOrderKPIs(ctx context.Context) (AdminOrderKPIs, error)
 	AcceptNegotiation(ctx context.Context, orderID, vendorOrgID, actorID, walletUserID int64) error
-	RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error
+	// RejectNegotiation cancels the rejecting supplier's part of an order
+	// (vendorOrgID). The whole order is rejected only when nothing else is left.
+	RejectNegotiation(ctx context.Context, orderID, vendorOrgID int64, reason string, actorID int64) error
 	ListVendorNegotiationOrdersWithTotal(ctx context.Context, vendorOrgID int64, status string, limit, offset int) ([]*Order, int, error)
 }

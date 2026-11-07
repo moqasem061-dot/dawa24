@@ -140,6 +140,9 @@ func (h *UIHandler) CompareMarketBenchmarkPage(w http.ResponseWriter, r *http.Re
 	}
 
 	fileID, _ := strconv.ParseInt(strings.TrimSpace(r.URL.Query().Get("file")), 10, 64)
+	if fileID > 0 && !h.benchmarkFileOwned(ctx, actor, fileID) {
+		fileID = 0
+	}
 	if fileID <= 0 && len(files) > 0 {
 		fileID = files[0].ID
 	}

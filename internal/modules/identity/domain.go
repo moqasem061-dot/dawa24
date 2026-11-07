@@ -55,9 +55,12 @@ type User struct {
 	AvatarURL       string     `json:"avatar_url,omitempty"`
 	EmailVerifiedAt *time.Time `json:"email_verified_at,omitempty"`
 	PhoneVerifiedAt *time.Time `json:"phone_verified_at,omitempty"`
-	CreatedAt       time.Time  `json:"created_at"`
-	UpdatedAt       time.Time  `json:"updated_at"`
-	DeletedAt       *time.Time `json:"deleted_at,omitempty"`
+	// MustChangePassword is set for a team member created with a password an
+	// administrator chose. Sign-in then holds the session on the password page.
+	MustChangePassword bool       `json:"must_change_password,omitempty"`
+	CreatedAt          time.Time  `json:"created_at"`
+	UpdatedAt          time.Time  `json:"updated_at"`
+	DeletedAt          *time.Time `json:"deleted_at,omitempty"`
 }
 
 // AccountDeletionRequest represents a formal user request to delete their account.

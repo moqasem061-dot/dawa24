@@ -21,7 +21,7 @@ func (r *Repository) DefaultOrgInfoForUser(ctx context.Context, userID int64) (i
 		const query = `
 			SELECT o.id, o.type, o.status
 			FROM org.organizations o
-			LEFT JOIN org.members m ON m.organization_id = o.id AND m.user_id = $1 AND m.status = 'active'
+			LEFT JOIN org.members m ON m.organization_id = o.id AND m.user_id = $1 AND m.status = 'active' AND m.is_active = true
 			WHERE (m.user_id = $1 OR o.owner_id = $1)
 			ORDER BY (o.owner_id = $1) DESC, m.id ASC
 			LIMIT 1;
@@ -42,7 +42,7 @@ func (r *Repository) UserBelongsToOrg(ctx context.Context, userID int64, orgID i
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			SELECT EXISTS (
-				SELECT 1 FROM org.members WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
+				SELECT 1 FROM org.members WHERE user_id = $1 AND organization_id = $2 AND status = 'active' AND is_active = true
 				UNION
 				SELECT 1 FROM org.organizations WHERE owner_id = $1 AND id = $2
 			);

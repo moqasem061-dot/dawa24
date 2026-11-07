@@ -38,6 +38,28 @@ func (s *Service) RevokeOrgSession(ctx context.Context, orgID int64, token strin
 	return s.sessionStore.Delete(ctx, token)
 }
 
+// RevokeUserOrgSessions ends every session the user holds on one organization.
+// It runs when a member is removed or deactivated, so the member signs in again
+// and is checked against the membership then (Batch 3, S08).
+func (s *Service) RevokeUserOrgSessions(ctx context.Context, userID, orgID int64) error {
+	if s.sessionStore == nil {
+		return nil
+	}
+	sessions, err := s.sessionStore.ListForUser(ctx, userID)
+	if err != nil {
+		return err
+	}
+	for _, sess := range sessions {
+		if sess.ActiveOrgID != orgID {
+			continue
+		}
+		if err := s.sessionStore.Delete(ctx, sess.Token); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // RevokeAllOtherOrgSessions revokes all sessions belonging to the organization EXCEPT the current token.
 func (s *Service) RevokeAllOtherOrgSessions(ctx context.Context, orgID int64, currentToken string) error {
 	if s.sessionStore == nil {
@@ -193,14 +215,15 @@ func (s *Service) SwitchActiveOrg(ctx context.Context, userID, targetOrgID int64
 	orgType = normType
 
 	sess := &Session{
-		UserID:      user.ID,
-		PublicID:    user.PublicID,
-		Email:       user.Email,
-		Role:        user.Role,
-		ActiveOrgID: targetOrgID,
-		OrgType:     orgType,
-		OrgStatus:   orgStatus,
-		Permissions: perms,
+		UserID:             user.ID,
+		PublicID:           user.PublicID,
+		Email:              user.Email,
+		Role:               user.Role,
+		ActiveOrgID:        targetOrgID,
+		OrgType:            orgType,
+		OrgStatus:          orgStatus,
+		Permissions:        perms,
+		MustChangePassword: user.MustChangePassword,
 	}
 
 	if s.sessionStore != nil {

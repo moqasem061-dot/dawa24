@@ -183,7 +183,7 @@ func (m *courierMockCommerceRepo) AdminOrderKPIs(_ context.Context) (commerce.Ad
 func (m *courierMockCommerceRepo) AcceptNegotiation(_ context.Context, _, _, _, _ int64) error {
 	return nil
 }
-func (m *courierMockCommerceRepo) RejectNegotiation(_ context.Context, _ int64, _ string, _ int64) error {
+func (m *courierMockCommerceRepo) RejectNegotiation(_ context.Context, _ int64, vendorOrgID int64, _ string, _ int64) error {
 	return nil
 }
 func (m *courierMockCommerceRepo) ListVendorNegotiationOrdersWithTotal(_ context.Context, _ int64, _ string, _, _ int) ([]*commerce.Order, int, error) {

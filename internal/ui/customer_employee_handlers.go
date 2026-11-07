@@ -2,8 +2,6 @@ package ui
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -235,6 +233,7 @@ func (h *UIHandler) CustomerEmployeeDeleteSubmit(w http.ResponseWriter, r *http.
 		h.redirectWithNotice(w, r, teamBack, "error", h.safeMessage(err, lang))
 		return
 	}
+	h.revokeMemberSessions(ctx, member.UserID, orgID)
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
@@ -281,6 +280,7 @@ func (h *UIHandler) CustomerEmployeeStatusSubmit(w http.ResponseWriter, r *http.
 		h.redirectWithNotice(w, r, teamBack, "error", h.safeMessage(err, lang))
 		return
 	}
+	h.revokeMemberSessions(ctx, member.UserID, orgID)
 
 	if h.idSvc != nil {
 		_ = h.idSvc.RecordAudit(ctx, database.AuditEntry{
@@ -352,16 +352,14 @@ func (h *UIHandler) resolveEmployeeUser(
 		return existing.ID, nil
 	}
 
-	if password == "" {
-		randBytes := make([]byte, 8)
-		if _, err := rand.Read(randBytes); err != nil {
-			return 0, fmt.Errorf("%s", i18n.T(lang, "common.service_unavailable"))
-		}
-		password = fmt.Sprintf("Dawa24!%s", hex.EncodeToString(randBytes))
+	// A new account takes the password the owner typed and must change it at
+	// first sign-in (Batch 3, S06). Existing accounts were returned above.
+	if len(password) < 8 {
+		return 0, fmt.Errorf("%s", i18n.T(lang, "tenant.sessions.password_too_short"))
 	}
 	newUser, _, err := h.idSvc.Register(sysCtx, identity.RegisterInput{
 		Email: email, Password: password, NameAr: name, NameEn: name,
-		Phone: phone, Role: "user",
+		Phone: phone, Role: "user", MustChangePassword: true,
 	})
 	if err != nil {
 		return 0, fmt.Errorf("%s", h.safeMessage(err, lang))

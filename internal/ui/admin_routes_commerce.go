@@ -165,7 +165,7 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 		g.Get("/admin/offers-packages/purchases/{id}/statement", h.CreditStatementPage)
 	})
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("promo.offer_package.update", "promo.offer_package.view"))
+		g.Use(authctx.RequirePagePermission("promo.offer_package.update", "promo.offer_package.manage"))
 		g.Post("/admin/offers-packages/new", h.AdminOfferPackageCreateSubmit)
 		g.Post("/admin/offers-packages/{id}/edit", h.AdminOfferPackageEditSubmit)
 		g.Post("/admin/offers-packages/{id}/toggle", h.AdminOfferPackageToggleSubmit)
@@ -180,7 +180,7 @@ func (h *UIHandler) registerAdminCommerceRoutes(r chi.Router) {
 		})
 	})
 	r.Group(func(g chi.Router) {
-		g.Use(authctx.RequirePagePermission("promo.ad.update", "promo.ad.view", "promo.offer_package.manage", "promo.offer_package.view"))
+		g.Use(authctx.RequirePagePermission("promo.ad.update", "promo.offer_package.manage"))
 		g.Post("/admin/ads/{id}/approve", h.AdminAdApproveSubmit)
 		g.Post("/admin/ads/{id}/reject", h.AdminAdRejectSubmit)
 		g.Post("/admin/ads/{id}/toggle", h.AdminAdToggleSubmit)

@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"fmt"
 	"math"
 	"net/http"
 	"net/url"
@@ -17,6 +16,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/workflow"
 	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
+	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
 	"github.com/moqasem061-dot/dawa24/internal/shared/pagination"
 	"github.com/moqasem061-dot/dawa24/internal/ui/pages"
@@ -41,15 +41,21 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	// The profile is for signed-in users, and only an approved supplier has one.
+	// Anything else answers as not found, so a pending or rejected organization
+	// cannot be probed by id (Batch 3, S14).
+	if !hasActor {
+		http.Redirect(w, r, "/auth/login?redirect="+url.QueryEscape(r.URL.RequestURI()), http.StatusSeeOther)
+		return
+	}
 	sysCtx := database.AsSystem(ctx)
 	o, err := h.orgSvc.GetOrganization(sysCtx, id)
 	if err != nil {
 		h.renderError(w, r, err)
 		return
 	}
-	// Allow approved or active suppliers
-	if o.Status == org.StatusRejected || o.Status == org.StatusSuspended {
-		h.renderError(w, r, fmt.Errorf("%s", i18n.T(lang, "suppliers.vendor_unavailable")))
+	if o.Type != org.TypeVendor || o.Status != org.StatusApproved {
+		h.renderError(w, r, apperr.NotFound("supplier"))
 		return
 	}
 	// A supplier reaching its own profile through the buying surface is sent
@@ -63,6 +69,9 @@ func (h *UIHandler) SupplierProfilePage(w http.ResponseWriter, r *http.Request) 
 
 	branches, loadErr := h.orgSvc.ListBranches(sysCtx, id)
 	h.logLoadErr(ctx, "orgSvc.ListBranches", loadErr)
+	if !canSeeContactDetails(actor) {
+		branches = hideContactDetails(o, branches)
+	}
 	var coverages []*workflow.CoverageView
 	if h.wfSvc != nil {
 		if loaded, err := h.wfSvc.ListCoverageForOrganization(sysCtx, id); err != nil {

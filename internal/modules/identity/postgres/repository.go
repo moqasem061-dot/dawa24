@@ -28,14 +28,15 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			INSERT INTO identity.users (
-				email, password_hash, name, role, status, language, timezone, phone, phone_verified_at, email_verified_at
+				email, password_hash, name, role, status, language, timezone, phone, phone_verified_at, email_verified_at,
+				must_change_password
 			) VALUES (
 				-- name is NOT NULL DEFAULT '{"ar":"","en":""}', so the schema already
 				-- treats an empty name as acceptable. An empty i18n.Text marshals to
 				-- NULL, though, which violates the constraint instead of taking the
 				-- default. Registration validates the name; this keeps any other
 				-- caller from turning a missing one into a 500.
-				$1, $2, COALESCE($3, '{"ar":"","en":""}'::jsonb), $4, $5, $6, $7, $8, $9, $10
+				$1, $2, COALESCE($3, '{"ar":"","en":""}'::jsonb), $4, $5, $6, $7, $8, $9, $10, $11
 			) RETURNING id, public_id, created_at, updated_at;
 		`
 		err := tx.QueryRow(txCtx, query,
@@ -49,6 +50,7 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 			u.Phone,
 			u.PhoneVerifiedAt,
 			u.EmailVerifiedAt,
+			u.MustChangePassword,
 		).Scan(&u.ID, &u.PublicID, &u.CreatedAt, &u.UpdatedAt)
 
 		if err != nil {
@@ -88,7 +90,8 @@ func (r *Repository) CreateUser(ctx context.Context, u *identity.User) error {
 func (r *Repository) GetUserByID(ctx context.Context, id int64) (*identity.User, error) {
 	const query = `
 		SELECT id, public_id, email, password_hash, name, role, status, language, timezone,
-		       phone, COALESCE(avatar_url, ''), email_verified_at, phone_verified_at, created_at, updated_at, deleted_at
+		       phone, COALESCE(avatar_url, ''), email_verified_at, phone_verified_at, created_at, updated_at, deleted_at,
+		       must_change_password
 		FROM identity.users
 		WHERE id = $1 AND deleted_at IS NULL;
 	`
@@ -99,7 +102,7 @@ func (r *Repository) GetUserByID(ctx context.Context, id int64) (*identity.User,
 	err := r.db.QueryRowUnscoped(ctx, query, id).Scan(
 		&u.ID, &u.PublicID, &u.Email, &u.PasswordHash, &u.Name, &u.Role,
 		&statusStr, &langStr, &u.Timezone, &u.Phone, &u.AvatarURL, &u.EmailVerifiedAt,
-		&u.PhoneVerifiedAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+		&u.PhoneVerifiedAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt, &u.MustChangePassword,
 	)
 	if err != nil {
 		if database.IsNotFound(err) {
@@ -118,7 +121,8 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*identit
 	err := r.db.InReadTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		query := `
 			SELECT id, public_id, email, password_hash, name, role, status, language, timezone,
-			       phone, COALESCE(avatar_url, ''), email_verified_at, phone_verified_at, created_at, updated_at, deleted_at
+			       phone, COALESCE(avatar_url, ''), email_verified_at, phone_verified_at, created_at, updated_at, deleted_at,
+			       must_change_password
 			FROM identity.users
 			WHERE (email = $1 OR LOWER(email) = LOWER($1)) AND deleted_at IS NULL
 			LIMIT 1;
@@ -127,7 +131,7 @@ func (r *Repository) GetUserByEmail(ctx context.Context, email string) (*identit
 		err := tx.QueryRow(txCtx, query, identity.NormalizeEmail(email)).Scan(
 			&u.ID, &u.PublicID, &u.Email, &u.PasswordHash, &u.Name, &u.Role,
 			&statusStr, &langStr, &u.Timezone, &u.Phone, &u.AvatarURL, &u.EmailVerifiedAt,
-			&u.PhoneVerifiedAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt,
+			&u.PhoneVerifiedAt, &u.CreatedAt, &u.UpdatedAt, &u.DeletedAt, &u.MustChangePassword,
 		)
 		if err != nil {
 			if database.IsNotFound(err) {
@@ -155,7 +159,7 @@ func (r *Repository) UpdateUser(ctx context.Context, u *identity.User) error {
 			    -- NULL, which the column rejects rather than defaulting.
 			    name = COALESCE($4, '{"ar":"","en":""}'::jsonb), role = $5, status = $6,
 			    language = $7, timezone = $8, phone = $9, avatar_url = $10, email_verified_at = $11,
-			    phone_verified_at = $12, updated_at = now()
+			    phone_verified_at = $12, must_change_password = $13, updated_at = now()
 			WHERE id = $1 AND deleted_at IS NULL;
 		`
 		var oldHash string
@@ -166,7 +170,7 @@ func (r *Repository) UpdateUser(ctx context.Context, u *identity.User) error {
 		res, err := tx.Exec(txCtx, query,
 			u.ID, identity.NormalizeEmail(u.Email), u.PasswordHash, u.Name, u.Role,
 			string(u.Status), string(u.Language), u.Timezone, u.Phone, u.AvatarURL,
-			u.EmailVerifiedAt, u.PhoneVerifiedAt,
+			u.EmailVerifiedAt, u.PhoneVerifiedAt, u.MustChangePassword,
 		)
 		if err != nil {
 			return fmt.Errorf("identity postgres: update user: %w", err)

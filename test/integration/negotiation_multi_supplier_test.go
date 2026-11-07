@@ -55,7 +55,7 @@ func TestRejectNegotiationAfterAcceptanceIsRefused(t *testing.T) {
 	if err := w.commSvc.AcceptNegotiation(context.Background(), orderID, w.vendorOrg, w.buyerUser, w.buyerUser); err != nil {
 		t.Fatalf("accept: %v", err)
 	}
-	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, "too late", w.buyerUser); err == nil {
+	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, w.vendorOrg, "too late", w.buyerUser); err == nil {
 		t.Fatal("accepted negotiation was rejected")
 	} else {
 		requireApperrCode(t, err, "order.negotiation_not_pending")
@@ -75,13 +75,68 @@ func TestRejectNegotiationAfterAcceptanceIsRefused(t *testing.T) {
 func TestRejectedNegotiationCannotBeRejectedTwice(t *testing.T) {
 	w := newWRWorld(t)
 	orderID, _ := w.shipmentOrder(t, []int64{w.vendorOrg}, []int64{50000}, []string{"pending"}, "pending", true)
-	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, "first", w.buyerUser); err != nil {
+	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, w.vendorOrg, "first", w.buyerUser); err != nil {
 		t.Fatalf("first reject: %v", err)
 	}
-	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, "second", w.buyerUser); err == nil {
+	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, w.vendorOrg, "second", w.buyerUser); err == nil {
 		t.Fatal("rejected negotiation was rejected a second time")
 	} else {
 		requireApperrCode(t, err, "order.negotiation_not_pending")
+	}
+}
+
+// Batch 3: rejecting a negotiation affects only the rejecting supplier's part of a
+// multi-supplier order. The other supplier can still accept its own part, and
+// nothing that supplier was asked to accept is cancelled or charged.
+func TestRejectNegotiationOnlyCancelsRejectingSupplierPart(t *testing.T) {
+	w := newWRWorld(t)
+	vendorB := w.secondVendor(t)
+	before := w.balance(t)
+	orderID, ships := w.shipmentOrder(t, []int64{w.vendorOrg, vendorB}, []int64{50000, 30000}, []string{"pending", "pending"}, "pending", true)
+
+	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, w.vendorOrg, "not at this price", w.buyerUser); err != nil {
+		t.Fatalf("supplier A reject: %v", err)
+	}
+	if s := w.shipmentStatus(t, ships[0]); s != "cancelled" {
+		t.Fatalf("rejecting supplier's shipment is %q, want cancelled", s)
+	}
+	if s := w.shipmentStatus(t, ships[1]); s != "pending" {
+		t.Fatalf("other supplier's shipment is %q after A's rejection, want pending", s)
+	}
+	if s := w.orderStatus(t, orderID); s == "cancelled" {
+		t.Fatal("the whole order was cancelled although supplier B has not decided")
+	}
+	if s := w.orderNegotiationStatus(t, orderID); s != "pending" {
+		t.Fatalf("negotiation status %q after A's rejection, want pending for supplier B", s)
+	}
+	if got := w.balance(t); got != before {
+		t.Fatalf("balance %d after a rejection that charged nothing, want %d", got, before)
+	}
+
+	if err := w.commSvc.AcceptNegotiation(context.Background(), orderID, vendorB, w.buyerUser, w.buyerUser); err != nil {
+		t.Fatalf("supplier B accept after A's rejection: %v", err)
+	}
+	if s := w.orderStatus(t, orderID); s != "confirmed" {
+		t.Fatalf("order status %q after B accepts, want confirmed", s)
+	}
+	if got := w.balance(t); got != before-30000 {
+		t.Fatalf("balance %d after B accepts, want %d (only B's 300.00)", got, before-30000)
+	}
+}
+
+// A supplier that is not on the order cannot reject anything on it.
+func TestRejectNegotiationRefusesSupplierNotOnOrder(t *testing.T) {
+	w := newWRWorld(t)
+	vendorB := w.secondVendor(t)
+	orderID, ships := w.shipmentOrder(t, []int64{w.vendorOrg}, []int64{50000}, []string{"pending"}, "pending", true)
+
+	if err := w.commSvc.RejectNegotiation(context.Background(), orderID, vendorB, "not mine", w.buyerUser); err == nil {
+		t.Fatal("a supplier not on the order rejected its negotiation")
+	} else {
+		requireApperrCode(t, err, "order.negotiation_not_party")
+	}
+	if s := w.shipmentStatus(t, ships[0]); s != "pending" {
+		t.Fatalf("shipment changed to %q by a refused rejection", s)
 	}
 }
 

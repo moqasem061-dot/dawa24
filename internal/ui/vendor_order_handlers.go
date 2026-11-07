@@ -322,7 +322,7 @@ func (h *UIHandler) decideVendorNegotiation(
 		if err := h.commSvc.AcceptNegotiation(ctx, orderID, actor.OrganizationID, actor.UserID, walletUserID); err != nil {
 			return i18n.T(lang, "vendor.orders.accept_negotiation_error_prefix") + h.safeMessage(err, lang), err
 		}
-	} else if err := h.commSvc.RejectNegotiation(ctx, orderID, reason, actor.UserID); err != nil {
+	} else if err := h.commSvc.RejectNegotiation(ctx, orderID, actor.OrganizationID, reason, actor.UserID); err != nil {
 		return i18n.T(lang, "vendor.orders.reject_negotiation_error_prefix") + h.safeMessage(err, lang), err
 	}
 

@@ -91,7 +91,7 @@ templ VendorTeamAddModal(data VendorTeamData, lang string) {
 					<label class="form-label text-xs font-bold text-primary mb-1 d-block">
 						{ i18n.T(lang, "vendor_team.lbl_password") } <span class="text-danger">*</span>
 					</label>
-					<input type="password" name="password" minlength="6" class="form-input text-xs w-full" value="Password123!" required />
+					<input type="password" name="password" minlength="8" autocomplete="new-password" class="form-input text-xs w-full" required />
 				</div>
 			</div>
 

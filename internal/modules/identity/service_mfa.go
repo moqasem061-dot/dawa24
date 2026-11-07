@@ -80,6 +80,19 @@ func (s *Service) SetupMFA(ctx context.Context, userID int64, email string) (*MF
 		email = user.Email
 	}
 
+	// An enabled factor is only ever changed through DisableMFA, which asks for
+	// the password and a current code. Enrolling again here would overwrite the
+	// active secret with a pending one and switch the second factor off on a
+	// session alone (Batch 3, S07).
+	existing, err := s.repo.GetMFA(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+	if existing != nil && existing.Enabled {
+		return nil, apperr.Conflict("mfa.already_enabled",
+			"التحقق بخطوتين مفعّل بالفعل، أوقفه أولاً بكلمة المرور ورمز حالي. Two-factor sign-in is already on; turn it off first with your password and a current code.")
+	}
+
 	secret, err := GenerateTOTPSecret()
 	if err != nil {
 		return nil, err
@@ -279,22 +292,23 @@ func (s *Service) CompleteMFALogin(ctx context.Context, userID, orgID int64, ip,
 	dev := ParseUserAgentDevice(userAgent, ip)
 
 	sess := &Session{
-		UserID:           user.ID,
-		PublicID:         user.PublicID,
-		Email:            user.Email,
-		Role:             user.Role,
-		ActiveOrgID:      orgID,
-		OrgType:          orgType,
-		OrgStatus:        orgStatus,
-		Permissions:      permissions,
-		MaxLoginSessions: &maxSessions,
-		IP:               ip,
-		UserAgent:        userAgent,
-		DeviceName:       dev.DeviceName,
-		DeviceType:       dev.DeviceType,
-		Browser:          dev.Browser,
-		OS:               dev.OS,
-		Icon:             dev.Icon,
+		UserID:             user.ID,
+		PublicID:           user.PublicID,
+		Email:              user.Email,
+		Role:               user.Role,
+		ActiveOrgID:        orgID,
+		OrgType:            orgType,
+		OrgStatus:          orgStatus,
+		Permissions:        permissions,
+		MaxLoginSessions:   &maxSessions,
+		MustChangePassword: user.MustChangePassword,
+		IP:                 ip,
+		UserAgent:          userAgent,
+		DeviceName:         dev.DeviceName,
+		DeviceType:         dev.DeviceType,
+		Browser:            dev.Browser,
+		OS:                 dev.OS,
+		Icon:               dev.Icon,
 	}
 
 	if s.sessionStore != nil {

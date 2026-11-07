@@ -15,6 +15,10 @@ type correctionRepo struct {
 	line       *Line
 	offers     []Offer
 	candidates []Candidate
+	// aliases counts global product aliases written; learned counts the
+	// buyer's own learned mappings.
+	aliases int
+	learned int
 }
 
 func (r *correctionRepo) GetLine(context.Context, int64, int64) (*Line, error) { return r.line, nil }
@@ -95,6 +99,33 @@ func TestCorrectMatchNeverAdmitsAnOfferWithoutAVerdict(t *testing.T) {
 	})
 }
 
-func (r *correctionRepo) SaveLearnedMapping(context.Context, int64, string, int64) error  { return nil }
-func (r *correctionRepo) UpdateRunStats(context.Context, *Run) error                      { return nil }
-func (r *correctionRepo) SaveAlias(context.Context, int64, string, string, float64) error { return nil }
+func (r *correctionRepo) SaveLearnedMapping(context.Context, int64, string, int64) error {
+	r.learned++
+	return nil
+}
+func (r *correctionRepo) UpdateRunStats(context.Context, *Run) error { return nil }
+func (r *correctionRepo) SaveAlias(context.Context, int64, string, string, float64) error {
+	r.aliases++
+	return nil
+}
+
+// Batch 3 (S09): a buyer's correction is remembered for that buyer's
+// organization only. It must not write a global alias that resolves the same
+// text for every other pharmacy.
+func TestCorrectMatchDoesNotWriteGlobalAlias(t *testing.T) {
+	offer := Offer{ProductID: 5, VariantID: 50, VendorOrgID: 7, PriceMinor: 1000,
+		StockQty: 100, VendorActive: true, ProductActive: true}
+	repo := &correctionRepo{line: &Line{ID: 9, RunID: 1, EffectiveQty: 2, RawName: "poison"}, offers: []Offer{offer}}
+	svc := NewService(repo, slog.New(slog.NewTextHandler(io.Discard, nil)))
+	svc.SetAvailabilityGate(fixedGate{verdicts: map[int64]GateVerdict{50: {Allowed: true}}})
+
+	if _, err := svc.CorrectMatch(context.Background(), 1, 9, 5); err != nil {
+		t.Fatalf("CorrectMatch: %v", err)
+	}
+	if repo.aliases != 0 {
+		t.Fatalf("buyer correction wrote %d global alias(es); want none", repo.aliases)
+	}
+	if repo.learned != 1 {
+		t.Fatalf("buyer correction learned %d mapping(s) for its own organization; want 1", repo.learned)
+	}
+}

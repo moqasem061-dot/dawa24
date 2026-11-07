@@ -167,20 +167,34 @@ func (r *Repository) DeleteFileRowOwnedBy(ctx context.Context, rowID int64, owne
 	})
 }
 
-func (r *Repository) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64) error {
+func (r *Repository) UpdateFileRowMatch(ctx context.Context, rowID int64, matchedProductID *int64, method compare.MatchMethod, confidence float64, owner *compare.RowOwner) error {
 	return r.db.InTx(ctx, func(txCtx context.Context, tx pgx.Tx) error {
-		query := `
-			UPDATE compare.file_rows
+		// A nil owner is unrestricted (staff). Otherwise the row's file must
+		// belong to the caller by user or by organization. A row of someone
+		// else's file is reported as not found, not as forbidden.
+		unrestricted := owner == nil
+		var userID, orgID int64
+		if owner != nil {
+			userID, orgID = owner.UserID, owner.OrganizationID
+		}
+		tag, err := tx.Exec(txCtx, `
+			UPDATE compare.file_rows AS r
 			SET matched_product_id = $1,
 			    match_method = $2,
 			    match_confidence = $3
-			WHERE id = $4;
-		`
-		dbMethod := toDBMatchMethod(method)
-		if _, err := tx.Exec(txCtx, query, matchedProductID, dbMethod, confidence, rowID); err != nil {
+			WHERE r.id = $4
+			  AND ($5::boolean OR EXISTS (
+			        SELECT 1 FROM compare.files f
+			         WHERE f.id = r.file_id
+			           AND (f.user_id = $6 OR (f.organization_id IS NOT NULL AND f.organization_id = $7))));
+		`, matchedProductID, toDBMatchMethod(method), confidence, rowID, unrestricted, userID, orgID)
+		if err != nil {
 			return err
 		}
-		_, err := tx.Exec(txCtx, `UPDATE compare.files SET updated_at = now() WHERE id = (SELECT file_id FROM compare.file_rows WHERE id = $1);`, rowID)
+		if tag.RowsAffected() == 0 {
+			return apperr.NotFound("compare row")
+		}
+		_, err = tx.Exec(txCtx, `UPDATE compare.files SET updated_at = now() WHERE id = (SELECT file_id FROM compare.file_rows WHERE id = $1);`, rowID)
 		return err
 	})
 }

@@ -98,8 +98,12 @@ func (r *Repository) CountOrders(ctx context.Context) (int, error) {
 	return total, err
 }
 
-// RejectNegotiation rejects a negotiated order and sets its status to cancelled.
-func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reason string, actorID int64) error {
+// RejectNegotiation rejects a buyer's proposed prices for one supplier's part of
+// an order. Only the rejecting supplier's shipments are cancelled. When other
+// suppliers still have shipments on the order, the order stays open for them
+// (Batch 3, negotiation decision). When nothing else is left, the whole order is
+// rejected and cancelled, as before.
+func (r *Repository) RejectNegotiation(ctx context.Context, orderID, vendorOrgID int64, reason string, actorID int64) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		var customerOrgID *int64
 		var customerUserID int64
@@ -120,10 +124,23 @@ func (r *Repository) RejectNegotiation(ctx context.Context, orderID int64, reaso
 			return apperr.Conflict("order.negotiation_not_pending",
 				"لا يوجد تفاوض على الأسعار بانتظار القرار لهذا الطلب. This order has no price negotiation waiting for a decision.")
 		}
-
 		if reason == "" {
 			reason = i18n.TDefault("w4_mod.s_360_360")
 		}
+
+		if err := cancelOwnNegotiationPart(txCtx, tx, orderID, vendorOrgID); err != nil {
+			return err
+		}
+		var live int
+		if err := tx.QueryRow(txCtx, `
+			SELECT count(*) FROM commerce.order_shipments
+			WHERE order_id = $1 AND status <> 'cancelled';`, orderID).Scan(&live); err != nil {
+			return err
+		}
+		if live > 0 {
+			return settlePartialNegotiationRejection(txCtx, tx, orderID, customerOrgID, reason, actorID)
+		}
+
 		query := `
 			UPDATE commerce.orders
 			SET negotiation_status = 'rejected',
