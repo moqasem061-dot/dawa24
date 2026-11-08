@@ -105,6 +105,9 @@ func VisibleNav(scope Scope, held Set) []NavSection {
 	src := Nav(scope)
 	out := make([]NavSection, 0, len(src))
 	for _, sec := range src {
+		if NavSuppressions[sec.Key] {
+			continue
+		}
 		items := make([]NavItem, 0, len(sec.Items))
 		for _, it := range sec.Items {
 			if NavSuppressions[it.Key] {

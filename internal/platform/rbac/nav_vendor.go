@@ -106,8 +106,6 @@ func vendorNav() []NavSection {
 				{Key: "decision_memory", Href: "/vendor/decision-memory", Icon: "zap",
 					NameAr: "ذاكرة قرارات المطابقة", NameEn: "Match decisions",
 					Perm: "vendor.decision_memory.view"},
-				{Key: "integrations", Href: "/vendor/integrations", Icon: "layers",
-					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "vendor.integration.view"},
 				{Key: "quotas", Href: "/vendor/quotas", Icon: "shield",
 					NameAr: "حصص الفروع", NameEn: "Branch quotas",
 					Perm: "vendor.quota.view"},
@@ -120,6 +118,18 @@ func vendorNav() []NavSection {
 				{Key: "warehouses", Href: "/vendor/warehouses", Icon: "building",
 					NameAr: "المخازن ومواقع التخزين", NameEn: "Warehouses",
 					Perm: "vendor.warehouse.view"},
+			},
+		},
+		// The ERP connection: the keys page, then the items an upload could not
+		// match. One section, so the review screen has a way in from the
+		// sidebar. NavSuppressions["integrations"] hides the whole section.
+		{
+			Key: "integrations", NameAr: "تكامل الأنظمة", NameEn: "Integrations",
+			Items: []NavItem{
+				{Key: "integrations", Href: "/vendor/integrations", Icon: "layers",
+					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "vendor.integration.view"},
+				{Key: "integration_review", Href: "/vendor/integrations/review", Icon: "alert-triangle",
+					NameAr: "مراجعة أصناف التكامل", NameEn: "Integration item review", Perm: "vendor.integration.review"},
 			},
 		},
 		{

@@ -2626,6 +2626,11 @@ input:focus {
               border-color var(--duration-normal) var(--ease-smooth);
 }
 
+/* A card holding a product search: its results list must open past the
+   card's edge, and the open row sits above the next card. */
+.glass-panel.erp-review-row { overflow: visible; }
+.glass-panel.erp-review-row:focus-within { z-index: 3; }
+
 .glass-panel::before {
   content: '';
   position: absolute;

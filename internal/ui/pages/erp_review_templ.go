@@ -155,7 +155,7 @@ func ErpReviewPage(data ErpReviewData, lang, dir string) templ.Component {
 					return templ_7745c5c3_Err
 				}
 				for _, row := range data.Items {
-					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"glass-panel p-4\"><div class=\"d-flex items-center justify-between flex-wrap gap-3\"><div class=\"stack-sm\">")
+					templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 11, "<div class=\"glass-panel erp-review-row p-4\"><div class=\"d-flex items-center justify-between flex-wrap gap-3\"><div class=\"stack-sm\">")
 					if templ_7745c5c3_Err != nil {
 						return templ_7745c5c3_Err
 					}
@@ -271,7 +271,7 @@ func ErpReviewPage(data ErpReviewData, lang, dir string) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = layouts.VendorShell(i18n.T(lang, "erp.review.title"), "integrations", lang, dir).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = layouts.VendorShell(i18n.T(lang, "erp.review.title"), "integration_review", lang, dir).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

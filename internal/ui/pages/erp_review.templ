@@ -21,7 +21,7 @@ type ErpReviewData struct {
 // ErpReviewPage lists the open review items for the supplier to resolve or
 // dismiss.
 templ ErpReviewPage(data ErpReviewData, lang, dir string) {
-	@layouts.VendorShell(i18n.T(lang, "erp.review.title"), "integrations", lang, dir) {
+	@layouts.VendorShell(i18n.T(lang, "erp.review.title"), "integration_review", lang, dir) {
 		<div class="page-container">
 			<div class="glass-panel p-6 mb-6">
 				<div class="d-flex items-center gap-3 mb-0">
@@ -56,7 +56,7 @@ templ ErpReviewPage(data ErpReviewData, lang, dir string) {
 			} else {
 				<div class="d-flex flex-col gap-3">
 					for _, row := range data.Items {
-						<div class="glass-panel p-4">
+						<div class="glass-panel erp-review-row p-4">
 							<div class="d-flex items-center justify-between flex-wrap gap-3">
 								<div class="stack-sm">
 									@erpReviewFacts(row, lang)

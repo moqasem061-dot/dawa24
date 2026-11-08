@@ -5,8 +5,6 @@ func pharmacyNav() []NavSection {
 		{
 			Key: "orders", NameAr: "الطلبات والشحنات", NameEn: "Orders & Shipments",
 			Items: []NavItem{
-				{Key: "integrations", Href: "/customer/integrations", Icon: "layers",
-					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "pharmacy.integration.view"},
 				{Key: "dashboard", Href: "/customer/dashboard", Icon: "home",
 					NameAr: "لوحة التحكم", NameEn: "Dashboard",
 					Perm: "pharmacy.dashboard.view"},
@@ -46,6 +44,13 @@ func pharmacyNav() []NavSection {
 				{Key: "followed", Href: "/suppliers/followed", Icon: "heart-filled",
 					NameAr: "الموردون المتابَعون", NameEn: "Followed suppliers",
 					Perm: "pharmacy.supplier.follow"},
+			},
+		},
+		{
+			Key: "integrations", NameAr: "تكامل الأنظمة", NameEn: "Integrations",
+			Items: []NavItem{
+				{Key: "integrations", Href: "/customer/integrations", Icon: "layers",
+					NameAr: "تكامل الأنظمة", NameEn: "Integrations", Perm: "pharmacy.integration.view"},
 			},
 		},
 		{
