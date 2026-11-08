@@ -153,7 +153,9 @@ templ VendorOrderShipmentCard(sh *commerce.OrderShipment, data VendorOrdersData,
 							<div class="font-bold">{ sh.CustomerManagerName }</div>
 						}
 						if sh.CustomerBranchPhone != "" {
-							<div class="tabular-nums text-secondary">{ sh.CustomerBranchPhone }</div>
+							<div class="text-secondary">
+								@components.RevealField("branch.phone", sh.OrderID, sh.CustomerBranchPhone, data.CanReveal, lang)
+							</div>
 						} else if sh.CustomerManagerName == "" {
 							<span class="text-muted">{ i18n.T(lang, "vendor_orders.responsible_pharmacist") }</span>
 						}

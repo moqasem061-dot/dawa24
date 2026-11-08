@@ -28,12 +28,14 @@ type VendorDashboardData struct {
 	LowStockCount         int
 	ActiveWarehousesCount int
 	Shipments             []*commerce.OrderShipment
-	LowStock              []*inventory.Stock
-	LowStockProductNames  map[int64]string
-	Offers                []*promo.Offer
-	UnreadQuotes          int
-	PendingDocRequests    []*attachments.DocumentRequest
-	Subscription          *OrgSubscriptionView
+	// CanReveal adds the reveal control to the masked buyer branch phone.
+	CanReveal            bool
+	LowStock             []*inventory.Stock
+	LowStockProductNames map[int64]string
+	Offers               []*promo.Offer
+	UnreadQuotes         int
+	PendingDocRequests   []*attachments.DocumentRequest
+	Subscription         *OrgSubscriptionView
 }
 
 // PharmacyDashboardData is the pharmacy dashboard view model.

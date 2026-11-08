@@ -115,3 +115,31 @@ func TestRevealEveryGrantAuditsOnce(t *testing.T) {
 		}
 	}
 }
+
+// The supplier order list and the dashboard order preview show the buyer branch
+// phone masked with the reveal control (owner decision 2026-11-08). The delivery
+// screens keep the clear number so a driver can call.
+func TestRevealSupplierListsHideBranchPhone(t *testing.T) {
+	sh := &commerce.OrderShipment{
+		ID: 701, OrderID: revealOrderID, OrganizationID: revealOrgID,
+		ShipmentNumber: "SH-701", CustomerBranchPhone: revealBranchPhone,
+	}
+	pagesToCheck := map[string]templ.Component{
+		"order list card": pages.VendorOrderShipmentCard(maskedShipment(sh),
+			pages.VendorOrdersData{CanReveal: true}, "ar"),
+		"dashboard preview": pages.VendorDashboardShipmentModals(
+			pages.VendorDashboardData{Shipments: []*commerce.OrderShipment{maskedShipment(sh)}, CanReveal: true}, "ar", "rtl"),
+	}
+	for name, c := range pagesToCheck {
+		t.Run(name, func(t *testing.T) {
+			page := revealRenderHTML(t, c)
+			assertRevealHidden(t, page, revealBranchPhone)
+			if !strings.Contains(page, mask.Phone(revealBranchPhone)) {
+				t.Fatalf("masked branch phone is missing")
+			}
+			if !strings.Contains(page, `hx-post="/reveal"`) {
+				t.Fatalf("no reveal control")
+			}
+		})
+	}
+}

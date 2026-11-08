@@ -68,6 +68,12 @@ func (h *UIHandler) VendorOrdersPage(w http.ResponseWriter, r *http.Request) {
 		DeliveredCount: deliveredCount,
 		FailedCount:    failedCount,
 		CanAssign:      actor.Can("vendor.delivery.assign"),
+		CanReveal:      actor.Can(revealPermSupplier),
+	}
+	// The buyer branch phone is masked in the list (FR-032); each card offers
+	// the reveal control. The delivery screens keep it so drivers can call.
+	for i, sh := range data.Shipments {
+		data.Shipments[i] = maskedShipment(sh)
 	}
 	// The assignment control on each shipment is rendered from the company's
 	// own delivery representatives, and only for a caller who may dispatch.

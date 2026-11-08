@@ -30,6 +30,7 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 
 	data := pages.VendorDashboardData{
 		Subscription: h.loadOrgSubscriptionView(ctx, actor, lang),
+		CanReveal:    actor.Can(revealPermSupplier),
 	}
 
 	if h.orgSvc != nil && actor.OrganizationID > 0 {
@@ -79,7 +80,9 @@ func (h *UIHandler) VendorDashboardPage(w http.ResponseWriter, r *http.Request) 
 				case commerce.StatusPending, commerce.StatusConfirmed, commerce.StatusProcessing:
 					data.PendingOrdersTotal, _ = data.PendingOrdersTotal.Add(sh.TotalAmount)
 					if len(data.Shipments) < 12 {
-						data.Shipments = append(data.Shipments, sh)
+						// The buyer branch phone is masked here (FR-032); the preview
+						// modal offers the reveal control.
+						data.Shipments = append(data.Shipments, maskedShipment(sh))
 					}
 				}
 			}

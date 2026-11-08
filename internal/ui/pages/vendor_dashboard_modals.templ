@@ -51,7 +51,9 @@ templ VendorDashboardShipmentModals(data VendorDashboardData, lang, dir string) 
 								<strong>{ s.CustomerManagerName }</strong>
 							}
 							if s.CustomerBranchPhone != "" {
-								<div class="tabular-nums text-secondary mt-1">{ s.CustomerBranchPhone }</div>
+								<div class="text-secondary mt-1">
+									@components.RevealField("branch.phone", s.OrderID, s.CustomerBranchPhone, data.CanReveal, lang)
+								</div>
 							} else if s.CustomerManagerName == "" {
 								<span class="text-muted">{ i18n.T(lang, "vendor_dashboard.modal_default_pharmacist") }</span>
 							}

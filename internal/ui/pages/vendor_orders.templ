@@ -26,6 +26,8 @@ type VendorOrdersData struct {
 	// natural place to decide whose round it goes on; the dispatch board at
 	// /vendor/delivery offers the same control over the same parcels.
 	CanAssign bool
+	// CanReveal adds the reveal control to the masked buyer branch phone.
+	CanReveal bool
 	Couriers  []DeliveryCourierOption
 }
 

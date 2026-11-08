@@ -396,3 +396,14 @@ Open items for the owner:
 3. `TestHomepageCriticalCSSIsCurrent` fails at HEAD `c3a8aa7`, before this feature. The hash covers every template under `internal/ui`, so any template edit makes it stale. Refresh it or narrow the file list.
 4. `check-file-size` finds three files over 400 lines (`fake_sync_test.go` 469, `sync_process_test.go` 403, `admin_org_detail_handlers.go` 402). The owner said to ignore this limit.
 5. SC-002 and SC-003 are not measured. k6 is not installed. The owner runs quickstart section 9 and records the numbers. The SC-003 model uses one organization's keys, not 50 tenants; the owner confirms with real tenants before launch.
+
+FR-032 owner decision (2026-11-08): the buyer branch phone is masked, with the reveal control (kind `branch.phone`, id = order id), on these screens:
+- the supplier order list (`vendor_order_shipment_card.templ`)
+- the dashboard order preview (`vendor_dashboard_modals.templ`)
+- the order detail page (masked in S8)
+
+The delivery screens keep the clear number and the `tel:` link, because the driver must call the pharmacy:
+- `vendor_delivery_detail.templ`
+- `vendor_delivery_card.templ`
+
+Test: `TestRevealSupplierListsHideBranchPhone`. This was not a RED-first run: the test was written after the change.
