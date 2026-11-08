@@ -157,6 +157,13 @@ func (s *Service) PauseIntegration(ctx context.Context, orgID int64, pause bool,
 	}
 	return keyError(s.repo.SetIntegrationStatus(ctx, orgID, integration.ID, status, keyAudit("erp.integration.status", integration.ID, actorUserID)))
 }
+
+// IntegrationPaused reports whether the organization paused its integration.
+// While paused every key is refused, so the keys page must say so.
+func (s *Service) IntegrationPaused(ctx context.Context, orgID int64) (bool, error) {
+	status, err := s.repo.IntegrationStatus(ctx, orgID)
+	return status == "paused", err
+}
 func (s *Service) ListKeys(ctx context.Context, orgID int64) ([]APIKey, error) {
 	return s.repo.ListKeys(ctx, orgID)
 }

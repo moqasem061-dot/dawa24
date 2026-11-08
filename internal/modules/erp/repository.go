@@ -53,6 +53,7 @@ type Repository interface {
 	SetKeyRateLimit(context.Context, int64, int64, int, AuditRecord) error
 	RevokeKey(context.Context, int64, int64, string, int64, AuditRecord) error
 	SetIntegrationStatus(context.Context, int64, int64, string, AuditRecord) error
+	IntegrationStatus(context.Context, int64) (string, error)
 	WarehouseInOrg(context.Context, int64, int64) (bool, error)
 	BranchInOrg(context.Context, int64, int64) (bool, error)
 	KeyTargets(context.Context, int64) (KeyTargetSet, error)

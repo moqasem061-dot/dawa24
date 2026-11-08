@@ -22,6 +22,13 @@ type erpPageRepo struct {
 	keys   map[int64]erp.NewKey
 	next   int64
 	audits int
+	status string
+}
+
+func (r *erpPageRepo) IntegrationStatus(context.Context, int64) (string, error) { return r.status, nil }
+func (r *erpPageRepo) SetIntegrationStatus(_ context.Context, _, _ int64, status string, _ erp.AuditRecord) error {
+	r.status = status
+	return nil
 }
 
 func (r *erpPageRepo) EnsureIntegration(_ context.Context, org int64, p string, _ int64, _ erp.AuditRecord) (erp.Integration, error) {
@@ -312,5 +319,34 @@ func TestErpPharmacyKeyNeedsNoWarehouse(t *testing.T) {
 		if k.WarehouseID != 0 {
 			t.Errorf("pharmacy key bound to warehouse %d", k.WarehouseID)
 		}
+	}
+}
+
+// The pause button used to read no state: it always said "Pause", always sent
+// pause=true, and a paused integration (every key refused) was never shown.
+func TestErpKeysPageShowsPausedAndOffersResume(t *testing.T) {
+	h, repo := erpPageFixture()
+	owner := erpPageActor(1, true)
+	page := func() string {
+		w := httptest.NewRecorder()
+		req := httptest.NewRequest("GET", "/vendor/integrations", nil)
+		req = req.WithContext(authctx.WithActor(req.Context(), owner))
+		h.ErpKeysPage(w, req)
+		return w.Body.String()
+	}
+	if body := page(); !strings.Contains(body, `name="pause" value="true"`) || strings.Contains(body, `role="alert"`) {
+		t.Fatal("active integration must offer pause and show no warning")
+	}
+	w := httptest.NewRecorder()
+	h.ErpIntegrationPause(w, erpPageRequest(owner, "/vendor/integrations/pause", url.Values{"pause": {"true"}}, ""))
+	if repo.status != "paused" {
+		t.Fatalf("status = %q", repo.status)
+	}
+	body := page()
+	if !strings.Contains(body, `name="pause" value="false"`) || !strings.Contains(body, "استئناف") {
+		t.Error("paused integration must offer resume")
+	}
+	if !strings.Contains(body, `role="alert"`) {
+		t.Error("paused integration must show the warning")
 	}
 }

@@ -24,6 +24,20 @@ func (r *Repository) EnsureIntegration(ctx context.Context, orgID int64, provide
 	return result, err
 }
 
+// IntegrationStatus is the status of the organization's open integration, or
+// "" when it has none yet.
+func (r *Repository) IntegrationStatus(ctx context.Context, orgID int64) (string, error) {
+	var status string
+	err := r.db.InReadTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
+		err := tx.QueryRow(ctx, `SELECT status FROM erp.integrations WHERE organization_id=$1 AND status <> 'closed' ORDER BY id DESC LIMIT 1`, orgID).Scan(&status)
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil
+		}
+		return err
+	})
+	return status, err
+}
+
 func (r *Repository) SetIntegrationStatus(ctx context.Context, orgID, integrationID int64, status string, audit erp.AuditRecord) error {
 	return r.db.InTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
 		tag, err := tx.Exec(ctx, `UPDATE erp.integrations SET status=$3 WHERE organization_id=$1 AND id=$2`, orgID, integrationID, status)

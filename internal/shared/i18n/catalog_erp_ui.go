@@ -26,6 +26,7 @@ func loadErpUIKeys(e *engine) {
 	addKey(e, "erp.review.search_product", "erp", "ابحث باسم المنتج أو الباركود", "Search by product name or barcode", "ERP review")
 	addKey(e, "erp.review.code", "erp", "كود النظام", "ERP code", "ERP review")
 	addKey(e, "erp.review.barcode", "erp", "الباركود", "Barcode", "ERP review")
+	addKey(e, "erp.keys.paused_banner", "erp", "الربط موقوف مؤقتاً: كل المفاتيح مرفوضة الآن (ERP_AUTH_INVALID). اضغط «استئناف» لتشغيلها من جديد.", "The integration is paused: every key is refused now (ERP_AUTH_INVALID). Press Resume to turn them back on.", "ERP keys")
 	addKey(e, "erp.keys.warehouse_missing", "erp", "لا يوجد مخزن بعد. أضف مخزنًا من صفحة المخازن أولًا.", "No warehouse yet. Add one from the Warehouses page first.", "ERP keys")
 	addKey(e, "erp.keys.branch_missing", "erp", "لا يوجد فرع بعد. أضف فرعًا من صفحة الفروع أولًا.", "No branch yet. Add one from the Branches page first.", "ERP keys")
 	addKey(e, "erp.keys.buying_user_none", "erp", "بدون (المفتاح لا ينشئ طلبات شراء)", "None (the key does not place purchase orders)", "ERP keys")

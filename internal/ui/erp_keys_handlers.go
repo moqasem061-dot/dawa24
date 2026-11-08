@@ -104,6 +104,7 @@ func (h *UIHandler) ErpKeysPage(w http.ResponseWriter, r *http.Request) {
 		}
 		data.Keys = keys
 		h.fillKeyTargets(ctx, &data, erpActorOrg(actor))
+		h.fillPaused(ctx, &data, erpActorOrg(actor))
 	}
 	h.renderPage(ctx, w, "render erp keys page", erpKeysScreen(data, lang, dir, actor))
 }
@@ -279,6 +280,7 @@ func (h *UIHandler) renderKeysWithShownOnce(w http.ResponseWriter, r *http.Reque
 		ShownOnceKey: fullKey,
 	}
 	h.fillKeyTargets(r.Context(), &data, ctx.orgID)
+	h.fillPaused(r.Context(), &data, ctx.orgID)
 	w.Header().Set("Cache-Control", "no-store")
 	// A boosted form would leave the address bar on the POST path, which a
 	// reload cannot GET; show the keys page address instead.
@@ -326,4 +328,19 @@ func erpFieldMessage(e *erp.Error, lang string) string {
 		return translate(lang, "erp.keys.rate_range", erp.MinRatePerMinute, erp.MaxRatePerMinute)
 	}
 	return ""
+}
+
+// fillPaused loads whether the integration is paused. The pause button sends
+// the opposite of this state, and the page warns that every key is refused
+// while paused; without it the button always paused and never offered resume.
+func (h *UIHandler) fillPaused(ctx context.Context, data *pages.ErpKeysPageData, orgID int64) {
+	if h.erpSvc == nil {
+		return
+	}
+	paused, err := h.erpSvc.IntegrationPaused(ctx, orgID)
+	if err != nil {
+		h.log.WarnContext(ctx, "erp integration status", "error", err)
+		return
+	}
+	data.Paused = paused
 }

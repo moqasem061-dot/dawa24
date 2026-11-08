@@ -80,6 +80,12 @@ templ erpKeysBody(data ErpKeysPageData, lang, dir string) {
 			</div>
 		</div>
 
+		if data.Paused {
+			<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3" role="alert">
+				@components.IconAlertCircle("icon-xs")
+				<span class="font-bold text-sm">{ i18n.T(lang, "erp.keys.paused_banner") }</span>
+			</div>
+		}
 		if data.NoticeMessage != "" {
 			if data.NoticeKind == "error" {
 				<div class="alert alert-danger mb-4 p-4 d-flex items-center gap-3">

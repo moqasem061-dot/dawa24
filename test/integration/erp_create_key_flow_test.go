@@ -81,6 +81,15 @@ func TestERPCreateKeyThroughService(t *testing.T) {
 	if err != nil || len(keys) != 1 {
 		t.Fatalf("ListKeys = %d, %v", len(keys), err)
 	}
+	// Pausing is visible to the keys page, and resuming clears it.
+	for _, pause := range []bool{true, false} {
+		if err := svc.PauseIntegration(ctx, org, pause, userID); err != nil {
+			t.Fatalf("PauseIntegration(%v): %v", pause, err)
+		}
+		if got, err := svc.IntegrationPaused(ctx, org); err != nil || got != pause {
+			t.Fatalf("IntegrationPaused = %v, %v; want %v", got, err, pause)
+		}
+	}
 	// Health reads the key back the way the API does.
 	row, found, err := erppg.New(db).FindKeyByPrefixAsSystem(ctx, created.Key.KeyPrefix)
 	if err != nil || !found || row.WarehouseID != warehouses[0].ID {

@@ -123,6 +123,14 @@ func (f *fakeRepo) WarehouseInOrg(context.Context, int64, int64) (bool, error) {
 func (f *fakeRepo) BranchInOrg(context.Context, int64, int64) (bool, error) {
 	return f.validBranch, nil
 }
+func (f *fakeRepo) IntegrationStatus(_ context.Context, orgID int64) (string, error) {
+	for _, i := range f.integrations {
+		if i.OrganizationID == orgID && i.Status != "closed" {
+			return i.Status, nil
+		}
+	}
+	return "", nil
+}
 func (f *fakeRepo) KeyTargets(context.Context, int64) (KeyTargetSet, error) {
 	return KeyTargetSet{}, nil
 }
