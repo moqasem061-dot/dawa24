@@ -104,13 +104,13 @@ func (w *wrWorld) debitCount(t *testing.T, orderID int64) int {
 
 func (w *wrWorld) confirmAs(vendorOrg int64, shipmentID int64) error {
 	ctx := database.WithTenant(context.Background(), vendorOrg)
-	_, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, commerce.StatusConfirmed, nil, "confirmed", w.buyerUser)
+	_, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, commerce.StatusConfirmed, nil, "confirmed", w.buyerUser, nil)
 	return err
 }
 
 func (w *wrWorld) cancelShipmentAs(vendorOrg int64, shipmentID int64) error {
 	ctx := database.WithTenant(context.Background(), vendorOrg)
-	_, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, commerce.StatusCancelled, nil, "supplier cancel", 0)
+	_, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, commerce.StatusCancelled, nil, "supplier cancel", 0, nil)
 	return err
 }
 
@@ -352,7 +352,7 @@ func TestCODOrdersAreUnaffectedByWalletRules(t *testing.T) {
 		t.Fatal(err)
 	}
 	vendorCtx := database.WithTenant(context.Background(), w.vendorOrg)
-	if _, err := w.commSvc.TransitionShipmentStatusWithWallet(vendorCtx, shipID, commerce.StatusConfirmed, nil, "ok", 0); err != nil {
+	if _, err := w.commSvc.TransitionShipmentStatusWithWallet(vendorCtx, shipID, commerce.StatusConfirmed, nil, "ok", 0, nil); err != nil {
 		t.Fatalf("confirm COD shipment: %v", err)
 	}
 	if s := w.shipmentStatus(t, shipID); s != "confirmed" {

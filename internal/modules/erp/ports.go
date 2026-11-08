@@ -22,6 +22,31 @@ type Ports struct {
 	Matcher       Matcher
 	MatchMemory   MatchMemory
 	Enqueuer      Enqueuer
+	Decider       OrderDecider
+}
+
+// OrderDecider confirms or rejects one supplier shipment through the website's
+// decision rules. The adapter lives in cmd/server; erp sees only this port.
+type OrderDecider interface {
+	Decide(ctx context.Context, d ShipmentDecision) (ShipmentDecisionResult, error)
+}
+
+// ShipmentDecision is one confirm or reject for a supplier shipment. Status is
+// "confirmed" or "rejected"; Reason is optional buyer-facing text. Audit is the
+// record of the decision; the decider writes it through AuditTxHook inside the
+// same transaction as the change (trap 15).
+type ShipmentDecision struct {
+	ShipmentID, OrganizationID int64
+	Status                     string
+	Reason                     string
+	Audit                      AuditRecord
+}
+
+// ShipmentDecisionResult is what the decider reports: "confirmed", "rejected",
+// "already_confirmed" or "already_rejected", and the shipment's status afterwards.
+type ShipmentDecisionResult struct {
+	Result      string
+	OrderStatus string
 }
 
 // VariantWriter writes the catalog side of a synced chunk. Write inserts

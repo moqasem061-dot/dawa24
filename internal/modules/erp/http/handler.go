@@ -43,6 +43,8 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/orders/sales", h.listSales)
 		r.Get("/orders/sales/{orderNumber}", h.getSale)
 		r.Post("/orders/sales/ack", h.ackSales)
+		// The supplier's decision on one sales order (S4): confirm or reject.
+		r.Post("/orders/sales/{orderNumber}/status", h.decideSale)
 		r.Get("/orders/purchase", h.listPurchase)
 		r.Get("/orders/purchase/{orderNumber}", h.getPurchase)
 		r.Post("/orders/purchase/ack", h.ackPurchase)

@@ -84,21 +84,23 @@ func (r *Repository) UpdateShipmentStatus(
 	from, to commerce.OrderStatus,
 	history commerce.OrderStatusHistory,
 ) error {
-	return r.updateShipmentStatus(ctx, id, from, to, history, 0)
+	return r.updateShipmentStatus(ctx, id, from, to, history, 0, nil)
 }
 
 // UpdateShipmentStatusWithWallet is UpdateShipmentStatus for a supplier's move on
 // a wallet order. A confirmation charges this shipment to the buyer's wallet
 // (walletUserID) in the same transaction; when the charge is refused, the shipment
-// stays as it was.
+// stays as it was. A non-nil hook runs last, inside that transaction, and its
+// error rolls the change back.
 func (r *Repository) UpdateShipmentStatusWithWallet(
 	ctx context.Context,
 	id int64,
 	from, to commerce.OrderStatus,
 	history commerce.OrderStatusHistory,
 	walletUserID int64,
+	hook commerce.ShipmentTxHook,
 ) error {
-	return r.updateShipmentStatus(ctx, id, from, to, history, walletUserID)
+	return r.updateShipmentStatus(ctx, id, from, to, history, walletUserID, hook)
 }
 
 func (r *Repository) updateShipmentStatus(
@@ -107,6 +109,7 @@ func (r *Repository) updateShipmentStatus(
 	from, to commerce.OrderStatus,
 	history commerce.OrderStatusHistory,
 	walletUserID int64,
+	hook commerce.ShipmentTxHook,
 ) error {
 	return r.db.InTx(database.AsSystem(ctx), func(txCtx context.Context, tx pgx.Tx) error {
 		// The order is locked before the shipment, as in every other path. The write
@@ -155,7 +158,13 @@ func (r *Repository) updateShipmentStatus(
 
 		syncParentOrderStatus(txCtx, tx, to, history)
 
-		return r.settleShipmentWallet(txCtx, tx, order, id, from, to, actor, history)
+		if err := r.settleShipmentWallet(txCtx, tx, order, id, from, to, actor, history); err != nil {
+			return err
+		}
+		if hook != nil {
+			return hook(txCtx, tx)
+		}
+		return nil
 	})
 }
 

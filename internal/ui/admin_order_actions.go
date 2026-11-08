@@ -107,6 +107,6 @@ func (h *UIHandler) adminTransitionShipment(ctx context.Context, actorID int64, 
 		}
 		walletUserID = uid
 	}
-	_, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipment.ID, to, &actorID, notes, walletUserID)
+	_, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipment.ID, to, &actorID, notes, walletUserID, nil)
 	return err
 }

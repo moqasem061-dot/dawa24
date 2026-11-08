@@ -70,12 +70,14 @@ func mountModuleRoutes(
 	deps.capsule = newCapsuleBridge(cfg.BaseURL)
 	deps.actions = &lateActions{}
 	deps.orders = &lateOrderAnnouncer{}
+	deps.erpDecide = newERPDecideDeps()
 
 	db, idSvc, attachSvc, docsGate, storageClient, permissions := mountModuleRoutesAPI(r, cfg, log, deps, ai, adminKeys, tenantKeys)
 	erpSvc := mountERP(r, cfg, log, deps, db)
 
 	uiHandler := buildUIHandler(cfg, log, deps, db, idSvc, attachSvc, docsGate, tenantKeys, adminKeys, storageClient, ai, permissions)
 	uiHandler.SetERP(erpSvc)
+	deps.erpDecide.bind(uiHandler.ErpDecideShipment)
 	deps.orders.bind(uiHandler.AnnounceOrderPlaced)
 	uiHandler.SetLimiter(httpx.NewLazyLimiter(func() *redis.Client {
 		return deps.CacheHandle().Redis()

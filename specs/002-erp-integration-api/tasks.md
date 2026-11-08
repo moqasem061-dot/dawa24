@@ -822,78 +822,78 @@ Goal: the ERP reads sales and purchase orders, sees what is new, and acknowledge
 
 Goal: the ERP confirms or rejects pending orders through the website rules. Depends on S3. Independent test: confirm one pending order and reject another; the website shows what a supplier action would show.
 
-- [ ] T156 [US4] Write the decide integration tests in `test/integration/erp_decide_test.go`
+- [x] T156 [US4] Write the decide integration tests in `test/integration/erp_decide_test.go`
   - Do: `TestERPDecide_ConfirmCash`; `TestERPDecide_ConfirmWalletCharges` (wallet charged once; with short funds the shipment stays pending and the call gets `ERP_WALLET_INSUFFICIENT` with `requiredAmount` and `availableAmount`); `TestERPDecide_RejectRefunds`; `TestERPDecide_RepeatConfirm` (`already_confirmed`, wallet charged once); `TestERPDecide_SameHistoryAsWebsite` (status history rows equal to a website confirm); audit row `erp.order.confirm` has `actor_kind = 'api_key'`. Exact money strings.
   - Traps: 8, 15, 25.
   - Done: `gofmt -l test/integration/erp_decide_test.go` prints nothing; compile fails (RED).
 
-- [ ] T157 [US4] Record the vendor order test baseline in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T157 [US4] Record the vendor order test baseline in `specs/002-erp-integration-api/verify-notes.md`
   - Do: run `go test ./internal/ui/ -run 'Vendor.*Order|Shipment' -count=1` and write `V6 before: <ok/fail and counts>`.
   - Done: `grep -n "^V6 before:" specs/002-erp-integration-api/verify-notes.md` prints a line.
 
-- [ ] T158 [US4] Split the shipment transition in `internal/ui/vendor_order_handlers.go`
+- [x] T158 [US4] Split the shipment transition in `internal/ui/vendor_order_handlers.go`
   - Do: at about line 250 split `transitionVendorShipment` into `transitionVendorShipmentBy(ctx, orgID int64, isStaff bool, changedBy *int64, shipmentID int64, to commerce.OrderStatus, notes, carrier, tracking, vendorName string) error` holding the existing body, and keep `transitionVendorShipment` as a wrapper passing `&actor.UserID`. No behaviour change.
   - Traps: 7, 8.
   - Done: `go test ./internal/ui/ -run 'Vendor.*Order|Shipment' -count=1` gives the same result as V6; record `V6 after:` in `verify-notes.md`.
 
-- [ ] T158a [US4] Write the wallet shortfall error test in `internal/ui/customer_checkout_wallet_shortfall_test.go`
+- [x] T158a [US4] Write the wallet shortfall error test in `internal/ui/customer_checkout_wallet_shortfall_test.go`
   - Do: `TestWalletShortfallError`: copy the wallet fake setup of `internal/ui/customer_checkout_wallet_test.go`; call `prepareWalletCharge` with an available balance below the goods amount and assert `errors.As(err, &walletShortfallError{})` succeeds, `Available` and `Required` equal the exact `money.Amount` values, and `err.Error()` equals the current message text; with enough balance the error is nil; a missing billing service returns a plain error that is not a `walletShortfallError`.
   - Traps: 8.
   - Done: `gofmt -l internal/ui/customer_checkout_wallet_shortfall_test.go` prints nothing; `go test ./internal/ui/ -run WalletShortfall -count=1` fails to compile (RED).
 
-- [ ] T158b [US4] Return a typed shortfall error from `prepareWalletCharge` in `internal/ui/customer_checkout_wallet.go`
+- [x] T158b [US4] Return a typed shortfall error from `prepareWalletCharge` in `internal/ui/customer_checkout_wallet.go`
   - Do: `prepareWalletCharge` returns plain `fmt.Errorf` strings today, so nothing can be extracted from them. Add `type walletShortfallError struct{ Available, Required money.Amount; msg string }` with `Error() string` returning exactly the current text, and return it at the shortfall branch (`wallet.AvailableBalance.Minor() < goodsAmount.Minor()`, about line 124), which is the only shortfall branch. Existing callers keep working because it is an `error`. Change no other branch and no message text.
   - Traps: 8.
   - Done: `go test ./internal/ui/ -run 'WalletShortfall|Wallet|Checkout' -count=1`.
 
-- [ ] T159 [US4] Write the decision method tests in `internal/ui/erp_order_decision_test.go`
+- [x] T159 [US4] Write the decision method tests in `internal/ui/erp_order_decision_test.go`
   - Do: names start with `TestErpDecide`: pending to confirmed; pending to rejected maps to `StatusCancelled` with status-history notes `"ERP: " + reason`, while the buyer notification receives only `reason` (without the prefix) when a reason was sent and the default text when not; non-pending gives `ERP_ORDER_STATE_CONFLICT` with `currentStatus`; a repeat gives the `already_*` result; `IsNegotiation` with `NegotiationStatus=="pending"` gives `ERP_ORDER_NEGOTIATION_PENDING`; a `walletShortfallError` gives `ERP_WALLET_INSUFFICIENT` with `requiredAmount` and `availableAmount`, any other wallet error gives `ERP_UNAVAILABLE`; `changedBy` is nil; the buyer notification is sent.
   - Done: `gofmt -l internal/ui/erp_order_decision_test.go` prints nothing; `go test ./internal/ui/ -run ErpDecide -count=1` fails (RED).
 
-- [ ] T160 [US4] Add the decision ports in `internal/modules/erp/ports.go`
+- [x] T160 [US4] Add the decision ports in `internal/modules/erp/ports.go`
   - Do: add `OrderDecider`, `ShipmentDecision{ShipmentID, OrganizationID int64; Status string; Reason string}`, `ShipmentDecisionResult{Result string; OrderStatus string}` as in plan.md "Ports"; field `Decider OrderDecider` on `Ports`.
   - Traps: 23.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T161 [US4] Add the website-rule decision method in `internal/ui/erp_order_decision.go`
+- [x] T161 [US4] Add the website-rule decision method in `internal/ui/erp_order_decision.go`
   - Do: `func (h *UIHandler) ErpDecideShipment(ctx context.Context, d erp.ShipmentDecision) (erp.ShipmentDecisionResult, error)`: load shipment and order as `transitionVendorShipment` does, apply the refusals above, call `transitionVendorShipmentBy` with `changedBy=nil`. Wallet pre-check and buyer notice come from `prepareWalletShipmentCharge` and `notifyOrderStatusChanged` through the same path. `errors.As(err, &walletShortfallError)` becomes `ERP_WALLET_INSUFFICIENT` with `details.requiredAmount` and `details.availableAmount` as `money.Amount.String()`; any other wallet error becomes `ERP_UNAVAILABLE`. The status-history note is `ERP: <reason>`; the buyer notification receives only `<reason>` (without the prefix) when a reason was sent, and the default text when not.
   - Traps: 7, 8.
   - Done: `go test ./internal/ui/ -run ErpDecide -count=1`.
 
-- [ ] T162 [US4] Write the decide service tests in `internal/modules/erp/orders_decide_test.go`
+- [x] T162 [US4] Write the decide service tests in `internal/modules/erp/orders_decide_test.go`
   - Do: `confirmed` and `rejected` reach the decider; `delivered`, `shipped`, `completed`, `out_for_delivery`, `in_transit` give 403 `ERP_DELIVERY_NOT_ALLOWED`; any other value gives 422 `ERP_STATUS_NOT_ALLOWED` with `allowed`; scope `erp.orders.decide` required; the shipment is resolved by `orderNumber` and the principal's organization only; an audit record `erp.order.confirm` or `erp.order.reject` with `ActorKind: "api_key"` and the key id is written with the change.
   - Done: `gofmt -l internal/modules/erp/orders_decide_test.go` prints nothing; `go test ./internal/modules/erp/ -run Decide -count=1` fails (RED).
 
-- [ ] T163 [US4] Add `Decide` in `internal/modules/erp/orders_decide.go`
+- [x] T163 [US4] Add `Decide` in `internal/modules/erp/orders_decide.go`
   - Do: `func (s *Service) Decide(ctx context.Context, p Principal, orderNumber, status, reason string) (DecideResult, error)` with `DecideResult{OrderNumber, Result, OrderStatus string}`. Own file because `orders_service.go` would pass 350 lines.
   - Traps: 7, 15, 25.
   - Done: `go test ./internal/modules/erp/ -run Decide -count=1`.
 
-- [ ] T164 [US4] Add the decide handler in `internal/modules/erp/http/decide_handlers.go`
+- [x] T164 [US4] Add the decide handler in `internal/modules/erp/http/decide_handlers.go`
   - Do: `POST /orders/sales/{orderNumber}/status` body `{"status","reason"?}`; response `{orderNumber, result, orderStatus}`; mount it in `handler.go` in the same task (two files). Handler test first: add `TestDecideHandler` cases to a new `decide_handlers_test.go` before writing the handler.
   - Done: `go test ./internal/modules/erp/http/ -run Decide -count=1`.
 
-- [ ] T165 [US4] Add the late decider in `cmd/server/erp_late.go`
+- [x] T165 [US4] Add the late decider in `cmd/server/erp_late.go`
   - Do: `lateERPDecider` implementing `erp.OrderDecider` with `bind(fn)`; calls before binding return `ERP_UNAVAILABLE`. Pattern: `lateOrderAnnouncer` in `cmd/server/order_announce_wiring.go`.
   - Done: `go build ./cmd/server/`.
 
-- [ ] T166 [US4] Hold the decider in `cmd/server/erp_ports.go` and `deps.go`
+- [x] T166 [US4] Hold the decider in `cmd/server/erp_ports.go` and `deps.go`
   - Do: create `erp_ports.go` with `func newERPDecideDeps() *lateERPDecider`; add the field `erpDecide *lateERPDecider` to the deps struct in `deps.go`. Setting `erp.Ports.Decider` in `erp_wiring.go` is the next task.
   - Done: `go build ./cmd/server/`.
 
-- [ ] T167 [US4] Set the decider port in `cmd/server/erp_wiring.go`
+- [x] T167 [US4] Set the decider port in `cmd/server/erp_wiring.go`
   - Do: set `erp.Ports.Decider` to `deps.erpDecide`.
   - Done: `go build ./cmd/server/`.
 
-- [ ] T168 [US4] Bind the decider in `cmd/server/routes.go`
+- [x] T168 [US4] Bind the decider in `cmd/server/routes.go`
   - Do: after `buildUIHandler` call `deps.erpDecide.bind(uiHandler.ErpDecideShipment)`.
   - Done: `go build ./... && go test ./cmd/server/ -run Router -count=1`.
 
-- [ ] T169 [US4] Run the S4 integration tests
+- [x] T169 [US4] Run the S4 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S4 task when a test fails.
   - Done: `SB go test -p 1 ./test/integration/ -run ERPDecide -count=1` passes.
 
-- [ ] T170 [US4] S4 slice gate
+- [x] T170 [US4] S4 slice gate
   - Do: slice gate. Changed packages: `./internal/ui/ ./internal/modules/erp/... ./cmd/server/`. Focused tests: `go test ./internal/ui/ -run 'ErpDecide|Vendor.*Order|Shipment' -count=1`; `go test ./internal/modules/erp/... -run 'Decide' -count=1`; the SB command above.
   - Commit message: `feat(erp): S4 confirm and reject`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.

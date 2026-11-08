@@ -18,7 +18,7 @@ func TestAdminConfirmOfWalletShipmentChargesTheBuyerWallet(t *testing.T) {
 	admin := w.buyerUser
 	ctx := database.WithTenant(database.AsSystem(context.Background()), w.vendorOrg)
 
-	if _, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, ships[0], commerce.StatusConfirmed, &admin, "admin confirm", w.buyerUser); err != nil {
+	if _, err := w.commSvc.TransitionShipmentStatusWithWallet(ctx, ships[0], commerce.StatusConfirmed, &admin, "admin confirm", w.buyerUser, nil); err != nil {
 		t.Fatalf("admin confirm with the buyer's wallet: %v", err)
 	}
 	if s := w.shipmentStatus(t, ships[0]); s != "confirmed" {

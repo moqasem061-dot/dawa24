@@ -111,6 +111,16 @@ func (h *UIHandler) prepareWalletNegotiationCharge(ctx context.Context, order *c
 	return h.prepareWalletCharge(ctx, order, goods)
 }
 
+// walletShortfallError is the pre-check refusal when the wallet cannot cover the
+// goods. The ERP decision reads the two amounts from it with errors.As; the
+// buyer and the website see the same message text as before.
+type walletShortfallError struct {
+	Available, Required money.Amount
+	msg                 string
+}
+
+func (e walletShortfallError) Error() string { return e.msg }
+
 func (h *UIHandler) prepareWalletCharge(ctx context.Context, order *commerce.Order, goodsAmount money.Amount) (int64, error) {
 	if h.billSvc == nil {
 		return 0, fmt.Errorf("خدمة المحفظة غير متاحة حالياً")
@@ -124,8 +134,9 @@ func (h *UIHandler) prepareWalletCharge(ctx context.Context, order *commerce.Ord
 		return 0, fmt.Errorf("تعذر الوصول للمحفظة المؤسسية الخاصة بالصيدلية")
 	}
 	if wallet.AvailableBalance.Minor() < goodsAmount.Minor() {
-		return 0, fmt.Errorf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م). The pharmacy wallet balance (%s EGP) does not cover the goods amount (%s EGP)",
+		msg := fmt.Sprintf("رصيد محفظة الصيدلية المتاح (%s ج.م) غير كافٍ لسداد قيمة الأصناف المطلوبة (%s ج.م). The pharmacy wallet balance (%s EGP) does not cover the goods amount (%s EGP)",
 			wallet.AvailableBalance.String(), goodsAmount.String(), wallet.AvailableBalance.String(), goodsAmount.String())
+		return 0, walletShortfallError{Available: wallet.AvailableBalance, Required: goodsAmount, msg: msg}
 	}
 	return walletUserID, nil
 }

@@ -107,7 +107,7 @@ type apiVendorCanceller interface {
 // shipmentWalletUpdater is implemented by a repository that can charge a wallet
 // order's shipment in the same transaction as its status change.
 type shipmentWalletUpdater interface {
-	UpdateShipmentStatusWithWallet(ctx context.Context, id int64, from, to OrderStatus, history OrderStatusHistory, walletUserID int64) error
+	UpdateShipmentStatusWithWallet(ctx context.Context, id int64, from, to OrderStatus, history OrderStatusHistory, walletUserID int64, hook ShipmentTxHook) error
 }
 
 func (s *Service) CancelAPIVendorShipment(ctx context.Context, request APIVendorCancelRequest) error {

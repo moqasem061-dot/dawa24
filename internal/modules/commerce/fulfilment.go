@@ -4,9 +4,18 @@ import (
 	"context"
 	"errors"
 
+	"github.com/jackc/pgx/v5"
+
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 	"github.com/moqasem061-dot/dawa24/internal/shared/apperr"
 )
+
+// ShipmentTxHook runs inside the transaction that changes a shipment's status:
+// after the status, its history row and any wallet settlement are written, and
+// before commit. An error rolls the whole change back, so a row the hook writes
+// (an audit entry, for example) commits or rolls back with the change. The caller
+// supplies the hook; commerce never imports the caller's module.
+type ShipmentTxHook func(ctx context.Context, tx pgx.Tx) error
 
 // Cart quantity edits, vendor shipment fulfilment, order history and rating.
 
@@ -69,13 +78,15 @@ func (s *Service) TransitionShipmentStatus(
 	changedByUserID *int64,
 	notes string,
 ) (*OrderShipment, error) {
-	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, nil)
+	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, nil, nil)
 }
 
 // TransitionShipmentStatusWithWallet is TransitionShipmentStatus for a supplier's
 // move on a wallet order. A confirmation charges the shipment to the buyer's
 // wallet (walletUserID) in the same transaction, so a refused charge leaves the
-// shipment unconfirmed. Other moves do not use walletUserID.
+// shipment unconfirmed. Other moves do not use walletUserID. A non-nil hook runs
+// inside the same transaction as the change (see ShipmentTxHook); nil keeps the
+// behaviour of a plain transition.
 func (s *Service) TransitionShipmentStatusWithWallet(
 	ctx context.Context,
 	shipmentID int64,
@@ -83,8 +94,9 @@ func (s *Service) TransitionShipmentStatusWithWallet(
 	changedByUserID *int64,
 	notes string,
 	walletUserID int64,
+	hook ShipmentTxHook,
 ) (*OrderShipment, error) {
-	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, &walletUserID)
+	return s.transitionShipment(ctx, shipmentID, to, changedByUserID, notes, &walletUserID, hook)
 }
 
 func (s *Service) transitionShipment(
@@ -94,6 +106,7 @@ func (s *Service) transitionShipment(
 	changedByUserID *int64,
 	notes string,
 	walletUserID *int64,
+	hook ShipmentTxHook,
 ) (*OrderShipment, error) {
 	orgID, ok := database.TenantFrom(ctx)
 	if !ok {
@@ -141,7 +154,7 @@ func (s *Service) transitionShipment(
 		if !ok {
 			return nil, apperr.Internal(errors.New("repository does not support wallet shipment updates"))
 		}
-		err = updater.UpdateShipmentStatusWithWallet(ctx, shipmentID, shipment.Status, to, history, *walletUserID)
+		err = updater.UpdateShipmentStatusWithWallet(ctx, shipmentID, shipment.Status, to, history, *walletUserID, hook)
 	}
 	if err != nil {
 		return nil, err

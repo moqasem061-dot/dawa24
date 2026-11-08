@@ -43,6 +43,9 @@ type dependencies struct {
 	// orders lets the API's commerce service announce orders through the UI
 	// handler built after it. See order_announce_wiring.go.
 	orders *lateOrderAnnouncer
+	// erpDecide lets the ERP API confirm or reject orders through the UI handler
+	// built after it. See erp_late.go.
+	erpDecide *lateERPDecider
 	// matching provides the unified product matching service.
 	matching matching.Service
 }

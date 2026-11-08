@@ -250,10 +250,24 @@ func (h *UIHandler) VendorNegotiationRejectSubmit(w http.ResponseWriter, r *http
 func (h *UIHandler) transitionVendorShipment(
 	ctx context.Context, actor authctx.Actor, shipmentID int64, to commerce.OrderStatus, notes, carrier, tracking string,
 ) error {
+	vendorName := h.resolveOrgName(ctx, actor.OrganizationID)
+	return h.transitionVendorShipmentBy(ctx, actor.OrganizationID, actor.IsStaff, &actor.UserID, shipmentID, to, notes, notes, carrier, tracking, vendorName, nil)
+}
+
+// transitionVendorShipmentBy holds the transition for the website (changedBy is
+// the signed-in user) and for the ERP API (changedBy is nil, a machine has no
+// user). Ownership is checked against orgID unless isStaff. notes goes into the
+// status history and buyerNote into the buyer's notice; the website passes the
+// same text for both. hook, when non-nil, runs inside the transition's own
+// transaction (see commerce.ShipmentTxHook).
+func (h *UIHandler) transitionVendorShipmentBy(
+	ctx context.Context, orgID int64, isStaff bool, changedBy *int64, shipmentID int64, to commerce.OrderStatus,
+	notes, buyerNote, carrier, tracking, vendorName string, hook commerce.ShipmentTxHook,
+) error {
 	shipment, sErr := h.commSvc.GetShipment(database.AsSystem(ctx), shipmentID)
 	// Ownership first: the wallet charge below runs before the commerce service
 	// would refuse another organisation's shipment.
-	if sErr != nil || shipment == nil || (!actor.IsStaff && shipment.OrganizationID != actor.OrganizationID) {
+	if sErr != nil || shipment == nil || (!isStaff && shipment.OrganizationID != orgID) {
 		return fmt.Errorf("shipment not found")
 	}
 	order, oErr := h.commSvc.GetOrder(database.AsSystem(ctx), shipment.OrderID)
@@ -273,7 +287,7 @@ func (h *UIHandler) transitionVendorShipment(
 
 	// A confirmation charges the wallet and a cancel refunds it, inside
 	// TransitionShipmentStatusWithWallet, in the same transaction as the status.
-	if _, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, to, &actor.UserID, notes, walletUserID); err != nil {
+	if _, err := h.commSvc.TransitionShipmentStatusWithWallet(ctx, shipmentID, to, changedBy, notes, walletUserID, hook); err != nil {
 		return err
 	}
 
@@ -283,9 +297,8 @@ func (h *UIHandler) transitionVendorShipment(
 	if carrier != "" || tracking != "" {
 		_ = h.commSvc.SetShipmentTracking(ctx, shipmentID, carrier, tracking)
 	}
-	vendorName := h.resolveOrgName(ctx, actor.OrganizationID)
 	h.safeGo("notify-order-status-changed", func() {
-		h.notifyOrderStatusChanged(context.Background(), order, shipmentID, to, vendorName, notes)
+		h.notifyOrderStatusChanged(context.Background(), order, shipmentID, to, vendorName, buyerNote)
 	})
 	return nil
 }
