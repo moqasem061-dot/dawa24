@@ -123,8 +123,8 @@ func (f *fakeRepo) WarehouseInOrg(context.Context, int64, int64) (bool, error) {
 func (f *fakeRepo) BranchInOrg(context.Context, int64, int64) (bool, error) {
 	return f.validBranch, nil
 }
-func (f *fakeRepo) KeyTargets(context.Context, int64) ([]KeyTarget, []KeyTarget, error) {
-	return nil, nil, nil
+func (f *fakeRepo) KeyTargets(context.Context, int64) (KeyTargetSet, error) {
+	return KeyTargetSet{}, nil
 }
 func (f *fakeRepo) ActiveMember(context.Context, int64, int64) (bool, error) {
 	return f.validMember, nil

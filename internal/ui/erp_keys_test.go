@@ -35,9 +35,12 @@ func (r *erpPageRepo) OrgStatusType(_ context.Context, org int64) (string, strin
 }
 func (r *erpPageRepo) WarehouseInOrg(context.Context, int64, int64) (bool, error) { return true, nil }
 func (r *erpPageRepo) BranchInOrg(context.Context, int64, int64) (bool, error)    { return true, nil }
-func (r *erpPageRepo) KeyTargets(context.Context, int64) ([]erp.KeyTarget, []erp.KeyTarget, error) {
-	return []erp.KeyTarget{{ID: 7, Name: map[string]string{"ar": "المخزن الرئيسي", "en": "Main warehouse"}}},
-		[]erp.KeyTarget{{ID: 9, Name: map[string]string{"ar": "الفرع الرئيسي", "en": "Main branch"}}}, nil
+func (r *erpPageRepo) KeyTargets(context.Context, int64) (erp.KeyTargetSet, error) {
+	return erp.KeyTargetSet{
+		Warehouses: []erp.KeyTarget{{ID: 7, Name: map[string]string{"ar": "المخزن الرئيسي", "en": "Main warehouse"}}},
+		Branches:   []erp.KeyTarget{{ID: 9, Name: map[string]string{"ar": "الفرع الرئيسي", "en": "Main branch"}}},
+		Members:    []erp.KeyTarget{{ID: 5, Name: map[string]string{"ar": "أحمد", "en": "أحمد"}}},
+	}, nil
 }
 func (r *erpPageRepo) ActiveMember(context.Context, int64, int64) (bool, error) { return true, nil }
 func (r *erpPageRepo) InsertKey(_ context.Context, org int64, k erp.NewKey, _ erp.AuditRecord) (erp.APIKey, error) {
@@ -251,5 +254,63 @@ func TestErpKeysPageRendersCreateDialogForOwner(t *testing.T) {
 	}
 	if strings.Contains(get(false), `id="erp-create-key-modal"`) {
 		t.Error("non-owner page renders the create dialog")
+	}
+}
+
+// The full key must sit inside <body> (a boosted form swaps only the body) with
+// a working copy control, and the response must not be cached.
+func TestErpCreateShowsKeyInsideBodyWithCopy(t *testing.T) {
+	h, _ := erpPageFixture()
+	w := httptest.NewRecorder()
+	h.ErpKeyCreate(w, erpPageRequest(erpPageActor(1, true), "/vendor/integrations/keys", validERPForm(), ""))
+	body := w.Body.String()
+	at := strings.Index(body, `id="erp-key-shown-once"`)
+	end := strings.LastIndex(body, "</body>")
+	if at < 0 || end < 0 || at > end {
+		t.Fatalf("show-once dialog missing or outside <body> (at=%d end=%d)", at, end)
+	}
+	if !strings.Contains(body, `id="erp-key-full"`) || !strings.Contains(body, "$copy(&#34;d24_test_") {
+		t.Error("full key lacks the readonly field or the copy action")
+	}
+	if w.Header().Get("Cache-Control") != "no-store" {
+		t.Error("response carrying the key is cacheable")
+	}
+}
+
+// A service refusal names its field instead of the generic sentence.
+func TestErpFieldMessageNamesTheField(t *testing.T) {
+	h, _ := erpPageFixture()
+	err := erp.NewError("ERP_VALIDATION", 422, map[string]any{"fields": []string{"warehouseId"}})
+	if got := h.erpMessage(err, "ar"); got != "اختر مستودعاً صحيحاً." {
+		t.Fatalf("message = %q", got)
+	}
+}
+
+// A pharmacy has no warehouse page; its key form asks for the branch and the
+// buying member only, and a key is created without a warehouse.
+func TestErpPharmacyKeyNeedsNoWarehouse(t *testing.T) {
+	h, repo := erpPageFixture()
+	owner := erpPageActor(2, true)
+	w := httptest.NewRecorder()
+	req := httptest.NewRequest("GET", "/customer/integrations", nil)
+	req = req.WithContext(authctx.WithActor(req.Context(), owner))
+	h.ErpKeysPage(w, req)
+	body := w.Body.String()
+	if strings.Contains(body, `name="warehouse_id"`) {
+		t.Error("pharmacy form asks for a warehouse")
+	}
+	if !strings.Contains(body, `name="buying_user_id"`) || !strings.Contains(body, `<option value="5">`) {
+		t.Error("pharmacy form lacks the buying member dropdown")
+	}
+	v := url.Values{"name": {"Pharmacy key"}, "branch_id": {"9"}, "buying_user_id": {"5"}}
+	w = httptest.NewRecorder()
+	h.ErpKeyCreate(w, erpPageRequest(owner, "/customer/integrations/keys", v, ""))
+	if w.Code != 200 || len(repo.keys) != 1 {
+		t.Fatalf("pharmacy create status=%d keys=%d", w.Code, len(repo.keys))
+	}
+	for _, k := range repo.keys {
+		if k.WarehouseID != 0 {
+			t.Errorf("pharmacy key bound to warehouse %d", k.WarehouseID)
+		}
 	}
 }

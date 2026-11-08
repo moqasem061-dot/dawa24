@@ -18,12 +18,13 @@ SEED_PASSWORD='choose-12-chars+' go run ./cmd/cli seed-users     # vendor@, phar
 make run          # terminal 1: web on :8080
 make worker       # terminal 2: background jobs (queue erpsync must appear in its startup log)
 ```
-There is no demo-data command: the key comes from the website (section 3), the first product send creates SKU `100245`, and the checkout screen creates the pharmacy's customer link.
+There is no demo-data command: the key comes from the website (section 3), and the checkout screen creates the pharmacy's customer link. The first product send matches each item against the catalog; an item the catalog does not hold yet (on a fresh database, all of them) goes to the review screen `/vendor/integrations/review`, where the supplier searches for the product by name or barcode and links it. After that, every send of the same code updates it directly.
 
 ## 3. Create a key in the website (owner path, no command)
-1. Sign in as the supplier owner (`vendor@dawa24.test`). If the supplier has no warehouse or branch yet, create one of each in the website first. Open `/vendor/integrations`.
-2. Press "New key": provider Orgasoft, a name, the warehouse, the branch, tick the scopes `erp.products.sync`, `erp.orders.read`, `erp.orders.ack`, `erp.orders.decide`. Save.
-3. Copy the key shown once. Reload the page: only the first 8 characters (the prefix) remain.
+1. Sign in as the supplier owner (`vendor@dawa24.test`). If the supplier has no warehouse or branch yet, create one of each in the website first (`/vendor/warehouses`, `/vendor/branches`). Open `/vendor/integrations`.
+2. Press "New key": provider Orgasoft, a name, then pick the warehouse and branch from the lists, tick the scopes `erp.products.sync`, `erp.orders.read`, `erp.orders.ack`, `erp.orders.decide`. Save.
+3. Copy the key shown once (the Copy button, or select the field). Reload the page: only the first 8 characters (the prefix) remain.
+3b. A pharmacy key (`pharmacy@dawa24.test`, `/customer/integrations`) asks only for the branch and the buying member (both lists); it has no warehouse.
 3a. Press "Change limit" on the key row, enter a number from 10 to 6000, save: the new limit shows in the table and in Health (`rateLimitPerMinute`) on the next call.
 4. Sign in as `admin@dawa24.test`, open `/admin/integrations`: the key is listed with its organization and a Revoke button.
 
@@ -37,10 +38,11 @@ Request names are the ones shown in the collection. Steps 9, 11 and 12 use the s
 | Step | Request | You should see |
 |---|---|---|
 | 1 | 01 Start here / 1. Check my API key | 200, `organization`, `scopes`, `warehouse` |
-| 2 | 02 Products / 1. Send products (3 items: new, known (SKU `100245`, created by the first send; on a fresh database run this request twice), invalid price `12.345`) | 202, `syncId` saved to `{{syncId}}` |
-| 3 | 02 Products / 2. Check the upload (repeat until `completed`, under a minute with the worker running) | counts: 2 ok, 1 failed |
-| 4 | 02 Products / 3. See each product's result | item 3 `failed`, `ERP_ITEM_PRICE_PRECISION`, Arabic and English text |
-| 5 | 02 Products / 1. Send products, same batch again | `unchanged` for the known items, no duplicates in `/vendor/products` |
+| 2 | 02 Products / 1. Send products (2 items, SKUs `100245` and `100311`) | 202, `syncId` saved to `{{syncId}}` |
+| 3 | 02 Products / 2. Check the upload (repeat until `completed`, under a minute with the worker running) | `completed`; on a fresh catalog both are `needsReview` |
+| 4 | 02 Products / 3. See each product's result | each item's state; `ERP_ITEM_MATCH_REVIEW` with Arabic and English text for the review ones |
+| 4a | Website, `/vendor/integrations/review` | each item shows its name, code, barcode and price; search the product, press link |
+| 5 | 02 Products / 1. Send products, same batch again | the linked item is `updated`; nothing is duplicated in `/vendor/products` or in the review list |
 | 6 | In the browser as `pharmacy@dawa24.test`: add the supplier's product to the cart, open `/checkout` | a modal asks for the customer code; enter `C-00871`; the cart is still there; place the order |
 | 7 | 03 Sales orders / 1. Get new orders | the order, `customer.erpCode` = `C-00871`, `importState` = `new` |
 | 8 | 03 Sales orders / 3. Mark orders as imported (`{{orderNumber}}`, `ORGA-1`) | `acknowledged` |
@@ -51,7 +53,7 @@ Request names are the ones shown in the collection. Steps 9, 11 and 12 use the s
 | 13 | 04 Purchase orders / 4. Find supplier offers by barcode, then 5. Create a purchase order | Coming soon: 201 with an order number; send it again: 200, same number |
 
 ## 6. Failure examples (owner)
-Folder 05 Errors holds one request per documented code and a test that the returned `error.code` equals the one in `contracts/error-codes.md`: no key (401 `ERP_AUTH_MISSING`), wrong key (`ERP_AUTH_INVALID`), a scope the key lacks (`ERP_SCOPE_MISSING`), a batch of 50,001 items (`ERP_BATCH_TOO_LARGE`), bad cursor (`ERP_CURSOR_INVALID`), wrong price on a purchase order (`ERP_PO_PRICE_MISMATCH`). Revoke the key in `/admin/integrations` and run Health again: 401 `ERP_KEY_REVOKED`.
+The collection has no errors folder; send these by hand (Postman or curl) and compare `error.code` with `contracts/error-codes.md`: no key (401 `ERP_AUTH_MISSING`), wrong key (`ERP_AUTH_INVALID`), a scope the key lacks (`ERP_SCOPE_MISSING`), a batch of 50,001 items (`ERP_BATCH_TOO_LARGE`), bad cursor (`ERP_CURSOR_INVALID`), wrong price on a purchase order (`ERP_PO_PRICE_MISMATCH`). Revoke the key in `/admin/integrations` and run Health again: 401 `ERP_KEY_REVOKED`.
 
 Pass criteria: every Postman test is green, and SC-001 holds (key to acknowledged order in under 30 minutes).
 

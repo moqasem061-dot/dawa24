@@ -636,7 +636,7 @@ components:
               properties:
                 prefix: { type: string }
                 scopes: { type: array, items: { type: string } }
-                warehouse: { type: object }
+                warehouse: { type: [object, "null"], description: "The warehouse product uploads write to. null for a key without one (a pharmacy key)." }
                 branch: { type: object }
                 rateLimitPerMinute: { type: integer }
                 expiresAt: { type: [string, "null"], format: date-time }

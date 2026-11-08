@@ -10,7 +10,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
-const keyColumns = `id, public_id::text, organization_id, integration_id, name, key_prefix, scopes, warehouse_id, branch_id, buying_user_id, rate_limit_per_minute, max_batch_items, status, expires_at, last_used_at, last_used_ip::text, revoked_at, revoked_by, revoke_reason, rotated_from_id, created_by, created_at, updated_at`
+const keyColumns = `id, public_id::text, organization_id, integration_id, name, key_prefix, scopes, COALESCE(warehouse_id, 0), branch_id, buying_user_id, rate_limit_per_minute, max_batch_items, status, expires_at, last_used_at, last_used_ip::text, revoked_at, revoked_by, revoke_reason, rotated_from_id, created_by, created_at, updated_at`
 
 type scanner interface{ Scan(...any) error }
 
@@ -26,7 +26,7 @@ func (r *Repository) InsertKey(ctx context.Context, orgID int64, k erp.NewKey, a
 	var out erp.APIKey
 	err := r.db.InTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
 		var err error
-		out, err = scanKey(tx.QueryRow(ctx, `INSERT INTO erp.api_keys (organization_id,integration_id,name,key_prefix,key_hash,scopes,warehouse_id,branch_id,buying_user_id,rate_limit_per_minute,max_batch_items,expires_at,rotated_from_id,created_by) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING `+keyColumns, orgID, k.IntegrationID, k.Name, k.KeyPrefix, k.KeyHash, k.Scopes, k.WarehouseID, k.BranchID, k.BuyingUserID, k.RateLimitPerMinute, k.MaxBatchItems, k.ExpiresAt, k.RotatedFromID, k.CreatedBy))
+		out, err = scanKey(tx.QueryRow(ctx, `INSERT INTO erp.api_keys (organization_id,integration_id,name,key_prefix,key_hash,scopes,warehouse_id,branch_id,buying_user_id,rate_limit_per_minute,max_batch_items,expires_at,rotated_from_id,created_by) VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,0),$8,$9,$10,$11,$12,$13,$14) RETURNING `+keyColumns, orgID, k.IntegrationID, k.Name, k.KeyPrefix, k.KeyHash, k.Scopes, k.WarehouseID, k.BranchID, k.BuyingUserID, k.RateLimitPerMinute, k.MaxBatchItems, k.ExpiresAt, k.RotatedFromID, k.CreatedBy))
 		if err != nil {
 			return err
 		}
@@ -140,7 +140,7 @@ func (r *Repository) ListKeysAsStaff(ctx context.Context) ([]erp.StaffKeyRow, er
 	return result, err
 }
 
-const staffKeyColumns = `k.id, k.public_id::text, k.organization_id, k.integration_id, k.name, k.key_prefix, k.scopes, k.warehouse_id, k.branch_id, k.buying_user_id, k.rate_limit_per_minute, k.max_batch_items, k.status, k.expires_at, k.last_used_at, k.last_used_ip::text, k.revoked_at, k.revoked_by, k.revoke_reason, k.rotated_from_id, k.created_by, k.created_at, k.updated_at, i.id, i.public_id::text, i.organization_id, i.provider, i.status, i.created_by, i.created_at, i.updated_at, o.name`
+const staffKeyColumns = `k.id, k.public_id::text, k.organization_id, k.integration_id, k.name, k.key_prefix, k.scopes, COALESCE(k.warehouse_id, 0), k.branch_id, k.buying_user_id, k.rate_limit_per_minute, k.max_batch_items, k.status, k.expires_at, k.last_used_at, k.last_used_ip::text, k.revoked_at, k.revoked_by, k.revoke_reason, k.rotated_from_id, k.created_by, k.created_at, k.updated_at, i.id, i.public_id::text, i.organization_id, i.provider, i.status, i.created_by, i.created_at, i.updated_at, o.name`
 
 func scanStaffKeyRow(row scanner) (erp.StaffKeyRow, error) {
 	var out erp.StaffKeyRow

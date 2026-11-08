@@ -70,7 +70,7 @@ func (s *Service) ResolveReview(ctx context.Context, orgID, id, productID, actor
 
 	// The human's choice is a manual_review link: future syncs of the same
 	// code resolve through it before the matcher ever runs.
-	externalCode := reviewDisplayName(item)
+	externalCode := item.ExternalCode
 	if err := s.repo.WriteResults(ctx, orgID, nil, []LinkWrite{{
 		IntegrationID: item.IntegrationID, VariantID: variantID,
 		ProductID: &productID, ExternalCode: externalCode,
@@ -101,7 +101,7 @@ func (s *Service) ResolveReview(ctx context.Context, orgID, id, productID, actor
 			TargetGranularity: "product",
 			PolicyVersion:     erpPolicyVersion,
 			NormalizerVersion: productmatch.NormalizerVersion,
-			DisplayText:       item.ExternalCode,
+			DisplayText:       reviewDisplayName(item),
 		})
 	}
 	return nil
@@ -125,5 +125,31 @@ func (s *Service) DismissReview(ctx context.Context, orgID, id, actorUserID int6
 }
 
 func reviewDisplayName(item ReviewItem) string {
+	if facts := ReviewFactsOf(item); facts.Name != "" {
+		return facts.Name
+	}
 	return item.ExternalCode
+}
+
+// ReviewFacts is what the ERP sent for a review item, for the supplier to
+// recognise it: the product name, barcode, manufacturer and public price.
+type ReviewFacts struct {
+	Name         string
+	Barcode      string
+	Manufacturer string
+	Price        string
+}
+
+// ReviewFactsOf reads the stored payload. A payload that does not decode
+// leaves the facts empty; the page then shows the ERP code alone.
+func ReviewFactsOf(item ReviewItem) ReviewFacts {
+	var raw provider.RawItem
+	if err := json.Unmarshal(item.Payload, &raw); err != nil {
+		return ReviewFacts{}
+	}
+	facts := ReviewFacts{Name: raw.ArName, Barcode: raw.Barcode, Manufacturer: raw.Manufacturer}
+	if raw.PublicPrice != nil {
+		facts.Price = raw.PublicPrice.String()
+	}
+	return facts
 }

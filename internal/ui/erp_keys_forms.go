@@ -5,6 +5,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp/provider"
@@ -39,7 +40,7 @@ func parseCreateKeyForm(r *http.Request, vendor bool) (erp.CreateKeyInput, []for
 	}
 
 	in.Name = strings.TrimSpace(r.Form.Get("name"))
-	if n := len(in.Name); n < 1 || n > 80 {
+	if n := utf8.RuneCountInString(in.Name); n < 1 || n > 80 {
 		add("name", translate(lang, "erp.keys.name_length"))
 	}
 

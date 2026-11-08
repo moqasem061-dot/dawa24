@@ -4,7 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"slices"
 	"time"
+	"unicode/utf8"
 )
 
 func validation(field string) error {
@@ -24,12 +26,25 @@ func (s *Service) CreateKey(ctx context.Context, in CreateKeyInput) (CreatedKey,
 	if !in.ActorIsOwner {
 		return CreatedKey{}, validation("actor")
 	}
-	if len(in.Name) == 0 || len(in.Name) > 80 {
+	if n := utf8.RuneCountInString(in.Name); n == 0 || n > 80 {
 		return CreatedKey{}, validation("name")
 	}
-	ok, err := s.repo.WarehouseInOrg(ctx, in.OrganizationID, in.WarehouseID)
-	if err != nil {
-		return CreatedKey{}, err
+	if len(in.Scopes) == 0 {
+		_, orgType, err := s.repo.OrgStatusType(ctx, in.OrganizationID)
+		if err != nil {
+			return CreatedKey{}, err
+		}
+		in.Scopes = DefaultScopes(orgType == "vendor" || orgType == "supplier" || orgType == "company" || orgType == "agency")
+	}
+	// The warehouse is where product uploads write stock. A key that may upload
+	// products needs one; any other key may leave it out.
+	ok := true
+	var err error
+	if in.WarehouseID != 0 || slices.Contains(in.Scopes, ScopeProductsSync) {
+		ok, err = s.repo.WarehouseInOrg(ctx, in.OrganizationID, in.WarehouseID)
+		if err != nil {
+			return CreatedKey{}, err
+		}
 	}
 	if !ok {
 		return CreatedKey{}, validation("warehouseId")
@@ -49,13 +64,6 @@ func (s *Service) CreateKey(ctx context.Context, in CreateKeyInput) (CreatedKey,
 		if !ok {
 			return CreatedKey{}, validation("buyingUserId")
 		}
-	}
-	if len(in.Scopes) == 0 {
-		_, orgType, err := s.repo.OrgStatusType(ctx, in.OrganizationID)
-		if err != nil {
-			return CreatedKey{}, err
-		}
-		in.Scopes = DefaultScopes(orgType == "vendor" || orgType == "supplier" || orgType == "company" || orgType == "agency")
 	}
 	for _, scope := range in.Scopes {
 		if !ValidScope(scope) {
@@ -153,9 +161,9 @@ func (s *Service) ListKeys(ctx context.Context, orgID int64) ([]APIKey, error) {
 	return s.repo.ListKeys(ctx, orgID)
 }
 
-// KeyTargets lists the organization's own warehouses and branches, so the
-// create-key form offers names instead of raw ids.
-func (s *Service) KeyTargets(ctx context.Context, orgID int64) (warehouses, branches []KeyTarget, err error) {
+// KeyTargets lists the organization's own warehouses, branches and active
+// members, so the create-key form offers names instead of raw ids.
+func (s *Service) KeyTargets(ctx context.Context, orgID int64) (KeyTargetSet, error) {
 	return s.repo.KeyTargets(ctx, orgID)
 }
 func (s *Service) ListKeysAsStaff(ctx context.Context) ([]StaffKeyRow, error) {

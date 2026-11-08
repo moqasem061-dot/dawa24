@@ -138,7 +138,7 @@ next cycle.
 ### Endpoints
 
 #### GET /erp/v1/health
-Checks the key and shows the organization, the scopes it has, and its warehouse. Works with any valid key.
+Checks the key and shows the organization, the scopes it has, and its warehouse. Works with any valid key. A pharmacy key has no warehouse: `warehouse` is `null`.
 
 #### POST /erp/v1/products/sync
 Sends a batch of changed products (scope `erp.products.sync`, supplier organizations only).

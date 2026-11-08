@@ -14,12 +14,12 @@ func (r *Repository) HealthData(ctx context.Context, principal erp.Principal) (e
 	var info erp.HealthInfo
 	err := r.db.InReadTx(database.WithTenant(ctx, principal.OrganizationID), func(ctx context.Context, tx pgx.Tx) error {
 		var name []byte
-		err := tx.QueryRow(ctx, `SELECT o.name, w.name, k.expires_at, i.status
+		err := tx.QueryRow(ctx, `SELECT o.name, COALESCE(w.name, ''), k.expires_at, i.status
    FROM erp.api_keys k
    JOIN org.organizations o ON o.id=k.organization_id
-   JOIN inventory.warehouses w ON w.id=k.warehouse_id AND w.organization_id=k.organization_id
+   LEFT JOIN inventory.warehouses w ON w.id=k.warehouse_id AND w.organization_id=$1
    JOIN erp.integrations i ON i.id=k.integration_id AND i.organization_id=k.organization_id
-   WHERE k.organization_id=$1 AND k.id=$2 AND o.id=$1 AND w.organization_id=$1 AND i.organization_id=$1`, principal.OrganizationID, principal.KeyID).Scan(&name, &info.WarehouseName, &info.ExpiresAt, &info.IntegrationStatus)
+   WHERE k.organization_id=$1 AND k.id=$2 AND o.id=$1 AND i.organization_id=$1`, principal.OrganizationID, principal.KeyID).Scan(&name, &info.WarehouseName, &info.ExpiresAt, &info.IntegrationStatus)
 		if errors.Is(err, pgx.ErrNoRows) {
 			return erp.ErrNotFound
 		}

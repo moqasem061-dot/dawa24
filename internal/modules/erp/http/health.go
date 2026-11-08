@@ -29,7 +29,16 @@ func (h *Handler) health(w http.ResponseWriter, r *http.Request) {
 		"apiVersion": "1.0", "serverTime": time.Now().UTC().Format(time.RFC3339),
 		"organization": map[string]any{"id": principal.OrganizationID, "name": info.OrganizationName, "type": orgType},
 		"integration":  map[string]any{"provider": principal.Provider, "status": info.IntegrationStatus},
-		"key":          map[string]any{"prefix": principal.KeyPrefix, "scopes": principal.Scopes, "warehouse": map[string]any{"id": principal.WarehouseID, "name": info.WarehouseName}, "branch": map[string]any{"id": principal.BranchID}, "rateLimitPerMinute": principal.RatePerMinute, "expiresAt": info.ExpiresAt},
+		"key":          map[string]any{"prefix": principal.KeyPrefix, "scopes": principal.Scopes, "warehouse": healthWarehouse(principal.WarehouseID, info.WarehouseName), "branch": map[string]any{"id": principal.BranchID}, "rateLimitPerMinute": principal.RatePerMinute, "expiresAt": info.ExpiresAt},
 	}
 	writeOK(w, r, http.StatusOK, data)
+}
+
+// healthWarehouse is the key's warehouse, or null for a key bound to none (a
+// pharmacy key, which never uploads stock).
+func healthWarehouse(id int64, name string) any {
+	if id == 0 {
+		return nil
+	}
+	return map[string]any{"id": id, "name": name}
 }

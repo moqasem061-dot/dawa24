@@ -35,6 +35,14 @@ type KeyTarget struct {
 	Name map[string]string
 }
 
+// KeyTargetSet is everything the create-key form offers: the warehouses and
+// branches a key binds to, and the active members a purchase key buys as.
+type KeyTargetSet struct {
+	Warehouses []KeyTarget
+	Branches   []KeyTarget
+	Members    []KeyTarget
+}
+
 type APIKey struct {
 	ID, OrganizationID, IntegrationID   int64
 	PublicID, Name, KeyPrefix           string

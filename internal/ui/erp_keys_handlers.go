@@ -60,6 +60,11 @@ func erpKeysScreen(data pages.ErpKeysPageData, lang, dir string, actor authctx.A
 func (h *UIHandler) erpMessage(err error, lang string) string {
 	translate := i18n.T
 	var e *erp.Error
+	if errors.As(err, &e) && e.Code == "ERP_VALIDATION" {
+		if msg := erpFieldMessage(e, lang); msg != "" {
+			return msg
+		}
+	}
 	if errors.As(err, &e) && e.Code != "" {
 		key := "erp.err." + strings.ToLower(strings.TrimPrefix(e.Code, "ERP_"))
 		msg := translate(lang, key)
@@ -269,12 +274,16 @@ func (h *UIHandler) renderKeysWithShownOnce(w http.ResponseWriter, r *http.Reque
 		Keys:     keys,
 		Audience: erpAudienceName(ctx.vendor),
 		Owner:    ctx.actor.IsOwner,
+		// The secret lives in this one response only; it is never stored,
+		// logged or put in a redirect.
+		ShownOnceKey: fullKey,
 	}
 	h.fillKeyTargets(r.Context(), &data, ctx.orgID)
+	w.Header().Set("Cache-Control", "no-store")
+	// A boosted form would leave the address bar on the POST path, which a
+	// reload cannot GET; show the keys page address instead.
+	w.Header().Set("HX-Replace-Url", ctx.back)
 	h.renderPage(r.Context(), w, "render erp key with show-once", erpKeysScreen(data, ctx.lang, ctx.dir, ctx.actor))
-	if rerr := pages.ErpKeyShownOnceModal(fullKey, ctx.lang).Render(r.Context(), w); rerr != nil {
-		h.log.ErrorContext(r.Context(), "render erp show-once modal", "error", rerr)
-	}
 }
 
 // fillKeyTargets loads the warehouses and branches the create form offers. Only
@@ -284,10 +293,37 @@ func (h *UIHandler) fillKeyTargets(ctx context.Context, data *pages.ErpKeysPageD
 	if !data.Owner || h.erpSvc == nil {
 		return
 	}
-	wh, br, err := h.erpSvc.KeyTargets(ctx, orgID)
+	set, err := h.erpSvc.KeyTargets(ctx, orgID)
 	if err != nil {
 		h.log.WarnContext(ctx, "erp key targets", "error", err)
 		return
 	}
-	data.Warehouses, data.Branches = wh, br
+	data.Warehouses, data.Branches, data.Members = set.Warehouses, set.Branches, set.Members
+}
+
+// erpFieldMessage names the field a validation refusal is about, so the owner
+// sees "choose a warehouse" rather than "the request data is not valid".
+func erpFieldMessage(e *erp.Error, lang string) string {
+	fields, _ := e.Details["fields"].([]string)
+	if len(fields) == 0 {
+		return ""
+	}
+	translate := i18n.T
+	switch fields[0] {
+	case "actor":
+		return translate(lang, "erp.keys.owner_only")
+	case "name":
+		return translate(lang, "erp.keys.name_length")
+	case "warehouseId":
+		return translate(lang, "erp.keys.warehouse_invalid")
+	case "branchId":
+		return translate(lang, "erp.keys.branch_invalid")
+	case "buyingUserId":
+		return translate(lang, "erp.keys.buying_user_invalid")
+	case "scopes":
+		return translate(lang, "erp.keys.scope_invalid")
+	case "ratePerMinute":
+		return translate(lang, "erp.keys.rate_range", erp.MinRatePerMinute, erp.MaxRatePerMinute)
+	}
+	return ""
 }

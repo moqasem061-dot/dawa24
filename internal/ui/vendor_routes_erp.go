@@ -26,6 +26,9 @@ func (h *UIHandler) registerVendorERPRoutes(g chi.Router) {
 	g.Group(func(gg chi.Router) {
 		gg.Use(authctx.RequireTenantPagePermission("vendor.integration.review"))
 		gg.Get("/vendor/integrations/review", h.ErpReviewPage)
+		// The product search of the review form, under the review permission so
+		// a reviewer does not also need the product-catalogue page.
+		gg.Get("/vendor/integrations/review/search-json", h.VendorCatalogSearchJSON)
 		gg.Post("/vendor/integrations/review/{id}/resolve", h.ErpReviewResolve)
 		gg.Post("/vendor/integrations/review/{id}/dismiss", h.ErpReviewDismiss)
 	})

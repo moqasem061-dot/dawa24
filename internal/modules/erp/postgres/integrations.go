@@ -47,18 +47,31 @@ func (r *Repository) BranchInOrg(ctx context.Context, orgID, id int64) (bool, er
 	return r.exists(ctx, orgID, id, `SELECT EXISTS(SELECT 1 FROM org.branches WHERE organization_id=$1 AND id=$2 AND deleted_at IS NULL)`)
 }
 
-// KeyTargets reads the organization's warehouses and branches under its own
-// tenant context, the same scoping WarehouseInOrg and BranchInOrg use.
-func (r *Repository) KeyTargets(ctx context.Context, orgID int64) (warehouses, branches []erp.KeyTarget, err error) {
-	err = r.db.InReadTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
+// KeyTargets reads the organization's warehouses, branches and active members
+// under its own tenant context, the same scoping WarehouseInOrg, BranchInOrg
+// and ActiveMember use to check the submitted choice.
+func (r *Repository) KeyTargets(ctx context.Context, orgID int64) (erp.KeyTargetSet, error) {
+	var set erp.KeyTargetSet
+	err := r.db.InReadTx(database.WithTenant(ctx, orgID), func(ctx context.Context, tx pgx.Tx) error {
 		var qerr error
-		if warehouses, qerr = scanKeyTargets(ctx, tx, `SELECT id, jsonb_build_object('ar', name, 'en', name) FROM inventory.warehouses WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY id`, orgID); qerr != nil {
+		if set.Warehouses, qerr = scanKeyTargets(ctx, tx, `SELECT id, jsonb_build_object('ar', name, 'en', name) FROM inventory.warehouses WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY id`, orgID); qerr != nil {
 			return qerr
 		}
-		branches, qerr = scanKeyTargets(ctx, tx, `SELECT id, name FROM org.branches WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY is_main DESC, id`, orgID)
+		if set.Branches, qerr = scanKeyTargets(ctx, tx, `SELECT id, name FROM org.branches WHERE organization_id=$1 AND deleted_at IS NULL ORDER BY is_main DESC, id`, orgID); qerr != nil {
+			return qerr
+		}
+		set.Members, qerr = scanKeyTargets(ctx, tx, `
+			SELECT u.id, jsonb_build_object(
+			           'ar', COALESCE(NULLIF(btrim(u.name->>'ar'), ''), NULLIF(btrim(u.name->>'en'), ''), fallback),
+			           'en', COALESCE(NULLIF(btrim(u.name->>'en'), ''), NULLIF(btrim(u.name->>'ar'), ''), fallback))
+			  FROM org.members m
+			  JOIN identity.users u ON u.id = m.user_id
+			 CROSS JOIN LATERAL (SELECT COALESCE(NULLIF(btrim(concat_ws(' ', u.first_name, u.last_name)), ''), u.email, '#' || u.id::text) AS fallback) l
+			 WHERE m.organization_id=$1 AND m.status='active'
+			 ORDER BY u.id`, orgID)
 		return qerr
 	})
-	return warehouses, branches, err
+	return set, err
 }
 
 func scanKeyTargets(ctx context.Context, tx pgx.Tx, query string, orgID int64) ([]erp.KeyTarget, error) {

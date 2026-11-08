@@ -58,17 +58,19 @@ templ ErpCreateKeyModal(data ErpKeysPageData, lang, dir string) {
 				</select>
 			</div>
 			<div class="d-grid grid-auto-fit-sm gap-3">
-				<div class="form-group mb-0">
-					<label class="form-label text-xs font-bold" for="erp-key-warehouse">
-						{ i18n.T(lang, "erp.keys.warehouse") }
-					</label>
-					@erpTargetSelect("erp-key-warehouse", "warehouse_id", data.Warehouses, lang)
-				</div>
+				if data.Audience == "vendor" {
+					<div class="form-group mb-0">
+						<label class="form-label text-xs font-bold" for="erp-key-warehouse">
+							{ i18n.T(lang, "erp.keys.warehouse") }
+						</label>
+						@erpTargetSelect("erp-key-warehouse", "warehouse_id", data.Warehouses, "erp.keys.warehouse_missing", lang)
+					</div>
+				}
 				<div class="form-group mb-0">
 					<label class="form-label text-xs font-bold" for="erp-key-branch">
 						{ i18n.T(lang, "erp.keys.branch") }
 					</label>
-					@erpTargetSelect("erp-key-branch", "branch_id", data.Branches, lang)
+					@erpTargetSelect("erp-key-branch", "branch_id", data.Branches, "erp.keys.branch_missing", lang)
 				</div>
 			</div>
 			<div class="d-grid grid-auto-fit-sm gap-3">
@@ -76,7 +78,19 @@ templ ErpCreateKeyModal(data ErpKeysPageData, lang, dir string) {
 					<label class="form-label text-xs font-bold" for="erp-key-buying-user">
 						{ i18n.T(lang, "erp.keys.buying_user") }
 					</label>
-					<input type="number" id="erp-key-buying-user" name="buying_user_id" min="1" class="form-control" dir="ltr" />
+					<select id="erp-key-buying-user" name="buying_user_id" class="form-control font-bold"
+						if data.Audience != "vendor" {
+							required
+						}
+					>
+						if data.Audience == "vendor" {
+							<option value="">{ i18n.T(lang, "erp.keys.buying_user_none") }</option>
+						}
+						for _, m := range data.Members {
+							<option value={ fmt.Sprint(m.ID) }>{ erpTargetName(m, lang) }</option>
+						}
+					</select>
+					<p class="text-xs text-secondary m-0 mt-1">{ i18n.T(lang, "erp.keys.buying_user_help") }</p>
 				</div>
 				<div class="form-group mb-0">
 					<label class="form-label text-xs font-bold" for="erp-key-rate">
@@ -123,12 +137,14 @@ templ ErpKeyShownOnceModal(fullKey, lang string) {
 		Title: i18n.T(lang, "erp.keys.new_key"),
 		Open:  true,
 	}) {
-		<div class="d-flex flex-col gap-3">
+		<div class="d-flex flex-col gap-3" x-data>
 			<p class="text-sm text-danger font-bold m-0">
 				{ i18n.T(lang, "erp.keys.shown_once") }
 			</p>
-			<code class="p-3 rounded-lg border font-mono text-sm d-block break-all" dir="ltr">{ fullKey }</code>
-			<button type="button" class="btn btn-primary btn-sm font-bold" data-copy-text={ fullKey }>
+			<label class="form-label text-xs font-bold m-0" for="erp-key-full">{ i18n.T(lang, "erp.keys.new_key") }</label>
+			<input type="text" id="erp-key-full" readonly class="form-control font-mono text-sm" dir="ltr"
+				value={ fullKey } autocomplete="off" spellcheck="false" @focus="$el.select()"/>
+			<button type="button" class="btn btn-primary btn-sm font-bold" @click={ fmt.Sprintf("$copy(%q)", fullKey) }>
 				{ i18n.T(lang, "erp.keys.copy") }
 			</button>
 		</div>
@@ -230,14 +246,14 @@ func erpDefaultScope(vendor bool, scope string) bool {
 
 // erpTargetSelect is the warehouse or branch dropdown of the create form. The
 // handler still checks the chosen id belongs to the caller's organization.
-templ erpTargetSelect(id, name string, targets []erp.KeyTarget, lang string) {
+templ erpTargetSelect(id, name string, targets []erp.KeyTarget, missingKey, lang string) {
 	<select id={ id } name={ name } required class="form-control font-bold">
 		for _, t := range targets {
 			<option value={ fmt.Sprint(t.ID) }>{ erpTargetName(t, lang) }</option>
 		}
 	</select>
 	if len(targets) == 0 {
-		<p class="text-xs text-danger m-0 mt-1">{ i18n.T(lang, "erp.keys.target_missing") }</p>
+		<p class="text-xs text-danger m-0 mt-1">{ erpMissingText(lang, missingKey) }</p>
 	}
 }
 
@@ -250,4 +266,12 @@ func erpTargetName(t erp.KeyTarget, lang string) string {
 		return v
 	}
 	return t.Name["en"]
+}
+
+// erpMissingText keeps each i18n key a literal for the catalogue scan.
+func erpMissingText(lang, key string) string {
+	if key == "erp.keys.warehouse_missing" {
+		return i18n.T(lang, "erp.keys.warehouse_missing")
+	}
+	return i18n.T(lang, "erp.keys.branch_missing")
 }

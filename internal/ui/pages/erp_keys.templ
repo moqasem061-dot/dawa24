@@ -21,6 +21,11 @@ type ErpKeysPageData struct {
 	Paused        bool
 	Warehouses    []erp.KeyTarget
 	Branches      []erp.KeyTarget
+	Members       []erp.KeyTarget
+	// ShownOnceKey is the full secret of a key just created or rotated. It is
+	// set only on that one response and rendered inside the page, so the
+	// boosted navigation that swaps <body> keeps it.
+	ShownOnceKey string
 	NoticeKind    string
 	NoticeMessage string
 }
@@ -120,6 +125,9 @@ templ erpKeysBody(data ErpKeysPageData, lang, dir string) {
 		}
 		if data.Owner {
 			@ErpKeyModals(data, lang, dir)
+		}
+		if data.ShownOnceKey != "" {
+			@ErpKeyShownOnceModal(data.ShownOnceKey, lang)
 		}
 	</div>
 }
