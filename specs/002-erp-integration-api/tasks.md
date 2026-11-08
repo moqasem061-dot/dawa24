@@ -1250,36 +1250,36 @@ Goal: sensitive values are masked on screen and revealed one at a time with an a
 
 ## Phase 11: Polish
 
-- [ ] T247 [P] Add the load script `test/load/erp_sync.js`
+- [x] T247 [P] Add the load script `test/load/erp_sync.js`
   - Do: k6 script from `quickstart.md` section 9: variables `BASE`, `KEY`, `KEYS` (comma list), `ITEMS` (default 50000); posts one batch, checks 202 within 5 s, polls the sync status until `completed`. Do not run it.
   - Done: `node --check test/load/erp_sync.js` prints nothing.
 
-- [ ] T247a Add the SC-003 website-latency scenario to `test/load/erp_sync.js`
+- [x] T247a Add the SC-003 website-latency scenario to `test/load/erp_sync.js`
   - Do: add a scenario `web` that logs in with `EMAIL` and `PASSWORD` and requests the pages of `test/load/k6_pages.js` (copy its `pages` list and the login in its `setup`) with 20 virtual users for 8 minutes, tagged `scenario:web`. Add a sync scenario that runs only when `SYNC=1` (default `0`): each key in `KEYS` posts one batch of `ITEMS` items every 7 minutes (`constant-arrival-rate`, `rate` equal to the number of keys, `timeUnit` `7m`). In the end summary print the p95 of `http_req_duration{scenario:web}` as a line `WEB_P95_MS <number>`. Do not run it here.
   - Done: `node --check test/load/erp_sync.js` prints nothing and `grep -c "WEB_P95_MS" test/load/erp_sync.js` prints 1 or more.
 
-- [ ] T247b Run the load script once and record SC-002 and SC-003 in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T247b Run the load script once and record SC-002 and SC-003 in `specs/002-erp-integration-api/verify-notes.md`
   - Do: run `k6 version`. If it fails, write `V8 result: not run, k6 is not installed; owner runs quickstart section 9` and stop; install nothing. Otherwise start the server and worker in the sandbox (quickstart sections 1 and 2, `APP_ENV` not `prod`), create 10 keys in the website key screen (quickstart section 3; keep them in a shell variable; never print them), run `k6 run test/load/erp_sync.js -e BASE=<url> -e KEYS=<the keys> -e ITEMS=50000 -e SYNC=1 -e EMAIL=<seed email> -e PASSWORD=<seed password>` once, then the same command with `-e SYNC=0`. Record the 202 time, the completion time, and `WEB_P95_MS` of both runs. Pass rule: 202 in under 5 s, completed in under 7 minutes, and `WEB_P95_MS` with sync at most 1.2 times the value without sync. Append: `SC-003 modelled with 10 keys of one organization, not 50 tenants; the owner confirms with real tenants before launch`.
   - Done: `grep -n "^V8 result:" specs/002-erp-integration-api/verify-notes.md` prints one line.
 
-- [ ] T248 [P] Run the static gates for the whole feature
+- [x] T248 [P] Run the static gates for the whole feature
   - Do: `make check-file-size check-hardcoded-arabic check-provider-isolation check-modal-handwritten check-deadcode check-unused-components`. Fix only findings in files this feature added or changed; record any other finding in `verify-notes.md` and do not touch it.
   - Done: the command exits 0 or `verify-notes.md` lists every remaining finding.
 
-- [ ] T249 Run the structural tests for the whole feature
+- [x] T249 Run the structural tests for the whole feature
   - Do: `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1` and `go test ./internal/platform/queue/ -count=1`.
   - Done: both pass.
 
-- [ ] T250 Run the whole ERP isolation and flow suite once
+- [x] T250 Run the whole ERP isolation and flow suite once
   - Do: SB-3, SB-4, then one run.
   - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERP|TestTenantIsolation_ERP|TestOrderNumberSequenceConcurrent|TestAuditActorKeyRoundTrip' -skip 'Scale50000' -count=1` passes (the scale test has its own run, T138a).
 
-- [ ] T251 Confirm no secret or key is stored or logged
+- [x] T251 Confirm no secret or key is stored or logged
   - Do: `grep -rn "Authorization" internal/modules/erp --include=*.go | grep -v _test.go` and read each hit; confirm none writes the header value to a log, a database row or a response.
   - Traps: 24.
   - Done: the review is written as `V7 result:` in `verify-notes.md`.
 
-- [ ] T252 Write the owner handoff in `specs/002-erp-integration-api/verify-notes.md`
+- [x] T252 Write the owner handoff in `specs/002-erp-integration-api/verify-notes.md`
   - Do: add a section `Handoff` listing: migrations 255 to 258 and their order; config keys `ERP_API_ENABLED`, `ERP_KEY_PEPPER` (required in prod, 32 bytes or more), `ERP_DEFAULT_RATE_PER_MINUTE`, `ERP_MAX_BATCH_ITEMS`, `WORKER_ERPSYNC`; worker must run for sync; `ERP_API_ENABLED` defaults false and disabled means no ERP route or erpsync worker; deploy first with the API off, then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true` when ready; tests and Postman flows that need the API explicitly enable it; the V5 unverified items; any `V` result that said no.
   - Done: `grep -c "Handoff" specs/002-erp-integration-api/verify-notes.md` prints 1.
 

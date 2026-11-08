@@ -340,3 +340,59 @@ Gate results (run 5, host):
 - `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestTenantGatesUseTenantScopedPermissions|TestNoDashboardRouteIsRegisteredOutsideAGate' -count=1` ok. `go test ./test/ -run TestDeadcodeRatchet` ok.
 - `make` is not installed. The recipe bodies were run directly with bash (`$$` changed to `$`): `check-hardcoded-arabic` prints `ok: 0 user-facing Arabic literals in Go (ceiling 0)`; `check-unused-components` prints `ok: every component is referenced`.
 - `check-file-size`: not run as a gate; the owner says to ignore the 400-line limit.
+
+Polish (T247 to T252), run 5.
+
+T247 and T247a: `test/load/erp_sync.js` written (sync scenario; web scenario with 20 virtual users for 8 minutes tagged `scenario:web`; the sync scenario only when `SYNC=1`, one batch of `ITEMS` per key every 7 minutes; `WEB_P95_MS` in the end summary). `node --check test/load/erp_sync.js` passes. Not run.
+
+V8 result: not run, k6 is not installed; owner runs quickstart section 9
+
+T248 static gates (recipe bodies run directly with bash; `make` is not installed):
+- check-hardcoded-arabic: exit 0, 0 literals.
+- check-provider-isolation: exit 0.
+- check-modal-handwritten: exit 0, 0 raw `<dialog`.
+- check-unused-components: exit 0.
+- check-deadcode: `TestDeadcodeRatchet` passes (run in S8).
+- check-file-size: exit 1, owner says ignore the 400-line limit, so nothing was split. Remaining findings: `internal/modules/erp/fake_sync_test.go` (469 lines), `internal/modules/erp/sync_process_test.go` (403), `internal/ui/admin_org_detail_handlers.go` (402; this feature added 5 lines, S8 reveal).
+
+T249 structural tests: `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1` ok. `go test ./internal/platform/queue/ -count=1` ok.
+
+V7 result: reviewed `grep -rn Authorization internal/modules/erp --include=*.go` (non-test). One read: `internal/modules/erp/http/auth.go:106`, which splits the header into fields and passes the token to `Authenticate`. `Authenticate` (`authenticate.go`) returns the fixed codes `ERP_AUTH_INVALID` and `ERP_AUTH_MISSING`; no error text carries the token. The logs written on this path (`auth.go` Redis errors, `respond.go` request failures with the request id, `sync_write.go` item failures with writer, reference and reason) hold no key material. The stored columns are `key_prefix` and an HMAC of the secret (`keys.go`). No header value reaches a log, a row or a response.
+
+T250 (run 5, sandbox): SB-0 `df -h /c` 8.3 GB free. SB-1 containers `dawa24audit-pg` and `dawa24audit-redis` already up, nothing restarted. SB-2 Redis `save ""` and `stop-writes-on-bgsave-error no` applied (OK, OK). SB-3 source refresh ran with exit 0. SB-4 `cli migrate` ran: migrations up to date. The `dawa24_app` password was set with ALTER ROLE for the sandbox only, as SB-6 prescribes. SB-6 run: `go test -p 1 ./test/integration/ -run 'ERP|TestTenantIsolation_ERP|TestOrderNumberSequenceConcurrent|TestAuditActorKeyRoundTrip' -skip 'Scale50000' -count=1 -v` as `dawa24_app`: `ok`, PASS=48, FAIL=0, SKIP=0. The 18 `TestTenantIsolation_ERP*` tests ran and passed. Scale50000 is excluded here; it keeps its own run (T138a).
+
+## Handoff
+
+Migrations, in order (each has an up and a down file; all are backward-compatible, so rollback to the old image is safe):
+1. `255_erp_schema`: the `erp` schema, its tables, RLS, the app-role grant and the Arabic comments.
+2. `256_audit_actor_kind`: actor kind and key id on the audit row, so machine calls are attributed.
+3. `257_user_org_erp_code_index`: the index for ERP customer codes.
+4. `258_order_number_sequence`: the order number sequence (expand only).
+
+Config keys:
+- `ERP_API_ENABLED` (default false). When disabled, no `/erp/v1` route is mounted and the erpsync worker does not start.
+- `ERP_KEY_PEPPER`: required when the API is enabled outside development; 32 bytes or more.
+- `ERP_DEFAULT_RATE_PER_MINUTE` (600) and `ERP_MAX_BATCH_ITEMS` (50000).
+- `WORKER_ERPSYNC` (3): concurrency of the `erpsync` queue. The worker process must run for product sync to complete.
+
+Rollout: deploy with the API off. Then set `ERP_KEY_PEPPER` and `ERP_API_ENABLED=true`. Tests and Postman flows that need the API set `ERP_API_ENABLED=true` explicitly.
+
+Reveal (S8): staff reveal of the five organization kinds under plan.md E9, gated by `platform.reveal.sensitive`. Supplier reveal of a buyer branch phone, gated by `vendor.reveal.customer_contact`, for an order the supplier shipped. Every grant and every refusal writes one `reveal.grant` or `reveal.deny` audit row, and no value is logged.
+
+V results: V1 yes, V2 all foreign keys cascade or set null, V3 the templ command, V4 all symbols found. None said no. V8 not run (k6 not installed).
+
+V5 unverified items (owner or Orgasoft must confirm):
+- Sample 3 is the import acknowledgement (research D-18).
+- Orgasoft wants `variantId` as purchase-order item identity (D-21).
+- `taxes` in sample 3 is an amount, while `tax: 14` in the product samples is a percent.
+- `discount` and `tax` are percents; `tax` is stored, not applied.
+- Quota means a cap per buying pharmacy branch.
+- One external code is one sellable item per tenant.
+- The optional fields `unit`, `manufacturer` and `batchNumber` are in no Orgasoft sample and are ignored when absent.
+
+Open items for the owner:
+1. FR-032: the buyer branch phone is still shown in clear with a `tel:` link on the supplier order list and the delivery screens (list in the S8 notes above). Decide whether to mask them.
+2. `org.phone` and `org.email` are allowlisted and tested, but no page renders a reveal for them.
+3. `TestHomepageCriticalCSSIsCurrent` fails at HEAD `c3a8aa7`, before this feature. The hash covers every template under `internal/ui`, so any template edit makes it stale. Refresh it or narrow the file list.
+4. `check-file-size` finds three files over 400 lines (`fake_sync_test.go` 469, `sync_process_test.go` 403, `admin_org_detail_handlers.go` 402). The owner said to ignore this limit.
+5. SC-002 and SC-003 are not measured. k6 is not installed. The owner runs quickstart section 9 and records the numbers. The SC-003 model uses one organization's keys, not 50 tenants; the owner confirms with real tenants before launch.
