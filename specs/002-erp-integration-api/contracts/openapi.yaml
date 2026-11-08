@@ -359,6 +359,38 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseOrderPage" }
+              examples:
+                firstPage:
+                  summary: One new purchase order, last page
+                  value:
+                    status: ok
+                    requestId: 3b81f0c64e2a4d19
+                    data:
+                      - orderNumber: "20871"
+                        status: pending
+                        importState: new
+                        createdAt: "2026-11-07T09:40:05Z"
+                        updatedAt: "2026-11-07T09:40:05Z"
+                        externalReference: ORGA-PO-2026-000451
+                        total: "626.00"
+                        shipments:
+                          - shipmentNumber: "20871-1"
+                            status: pending
+                            supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" } }
+                            subtotal: "601.00"
+                            shippingFee: "25.00"
+                            lines:
+                              - lineId: 90412
+                                variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                                externalProductCode: null
+                                name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
+                                barcode: "6221024000123"
+                                quantity: 12
+                                unitPrice: "50.40"
+                                discountAmount: "3.80"
+                                totalPrice: "601.00"
+                        erp: { reference: null, acknowledgedAt: null }
+                    page: { nextCursor: null, limit: 100 }
         "400": { $ref: "#/components/responses/Error" }
     post:
       tags: [Purchase orders]
@@ -382,11 +414,13 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
         "200":
           description: Same externalReference sent before; the original order is returned
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
         "409":
           description: Price mismatch, refused rules or request in progress
           content:
@@ -413,6 +447,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/PurchaseOrderResponse" }
+              examples: { order: { $ref: "#/components/examples/PurchaseOrderGet" } }
         "404": { $ref: "#/components/responses/Error" }
   /orders/purchase/ack:
     post:
@@ -425,12 +460,20 @@ paths:
         content:
           application/json:
             schema: { $ref: "#/components/schemas/AckRequest" }
+            example:
+              orders:
+                - { orderNumber: "20871", erpReference: "ORGA-PO-2026-000451" }
       responses:
         "200":
           description: Result per order
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AckResponse" }
+              example:
+                status: ok
+                requestId: 0d9e3b7c51a24f86
+                data:
+                  - { orderNumber: "20871", result: acknowledged, code: null, existingReference: null }
   /offers:
     get:
       tags: [Purchase orders]
@@ -482,6 +525,36 @@ components:
               message: { ar: "المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.", en: "The key does not have the permission this call needs." }
               details: { requiredScope: erp.orders.read }
   examples:
+    PurchaseOrderGet:
+      summary: A full purchase order
+      value:
+        status: ok
+        requestId: 4c7a2e19d05b4f68
+        data:
+          orderNumber: "20871"
+          status: pending
+          importState: new
+          createdAt: "2026-11-07T09:40:05Z"
+          updatedAt: "2026-11-07T09:40:05Z"
+          externalReference: ORGA-PO-2026-000451
+          total: "626.00"
+          shipments:
+            - shipmentNumber: "20871-1"
+              status: pending
+              supplier: { name: { ar: "مؤسسة النور للأدوية", en: "Al Nour Pharma" } }
+              subtotal: "601.00"
+              shippingFee: "25.00"
+              lines:
+                - lineId: 90412
+                  variantId: 3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33
+                  externalProductCode: null
+                  name: { ar: "بانادول اكسترا 24 قرص", en: "Panadol Extra 24 tablets" }
+                  barcode: "6221024000123"
+                  quantity: 12
+                  unitPrice: "50.40"
+                  discountAmount: "3.80"
+                  totalPrice: "601.00"
+          erp: { reference: null, acknowledgedAt: null }
     SalesOrderGet:
       summary: A full sales order
       value:
