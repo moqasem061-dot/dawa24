@@ -5,6 +5,8 @@ import (
 	"crypto/hmac"
 	"encoding/hex"
 	"time"
+
+	"github.com/moqasem061-dot/dawa24/internal/platform/authctx"
 )
 
 func (s *Service) Authenticate(ctx context.Context, raw, ip string) (Principal, error) {
@@ -34,7 +36,7 @@ func (s *Service) Authenticate(ctx context.Context, raw, ip string) (Principal, 
 		return invalid()
 	}
 	status, orgType, err := s.repo.OrgStatusType(ctx, row.OrganizationID)
-	if err != nil || status != "approved" {
+	if err != nil || !authctx.IsApprovedOrgStatus(status) {
 		return invalid()
 	}
 	if err = s.repo.TouchLastUsed(ctx, row.OrganizationID, row.ID, ip); err != nil {

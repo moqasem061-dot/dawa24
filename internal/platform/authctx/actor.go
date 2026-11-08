@@ -119,7 +119,15 @@ func (a Actor) IsOrgApproved() bool {
 	if a.IsStaff {
 		return true
 	}
-	switch a.OrgStatus {
+	return IsApprovedOrgStatus(a.OrgStatus)
+}
+
+// IsApprovedOrgStatus is the one rule for "this organization may trade":
+// imported companies carry "active" or "verified" for what new ones call
+// "approved". The website and the ERP API both ask it, so a company that can
+// open its dashboard can also use the keys it creates there.
+func IsApprovedOrgStatus(status string) bool {
+	switch status {
 	case "approved", "active", "verified":
 		return true
 	default:

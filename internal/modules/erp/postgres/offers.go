@@ -30,7 +30,7 @@ FROM catalog.product_variants v
 JOIN org.organizations o ON o.id = v.organization_id
 JOIN catalog.products p ON p.id = v.product_id
 WHERE v.barcode = $2 AND v.status = 'active' AND v.deleted_at IS NULL
-  AND o.status = 'approved' AND o.type IN ` + orgVendorTypes + `
+  AND o.status IN ('approved', 'active', 'verified') AND o.type IN ` + orgVendorTypes + `
   AND v.discount >= 0 AND v.discount < 100
   AND EXISTS (SELECT 1 FROM inventory.stocks s WHERE s.product_variant_id = v.id AND s.quantity > 0)
 ORDER BY v.price * (1 - v.discount / 100), v.id
@@ -40,7 +40,7 @@ LIMIT $3`
 // active is the purchase rule: live variant, approved vendor.
 const variantOfferSQL = `
 SELECT v.id, v.organization_id, v.public_id::text, v.price, v.discount, o.name,
-       (v.status = 'active' AND v.deleted_at IS NULL AND o.status = 'approved' AND o.type IN ` + orgVendorTypes + `) AS active,
+       (v.status = 'active' AND v.deleted_at IS NULL AND o.status IN ('approved', 'active', 'verified') AND o.type IN ` + orgVendorTypes + `) AS active,
        EXISTS (SELECT 1 FROM inventory.stocks s WHERE s.product_variant_id = v.id AND s.quantity > 0) AS in_stock
 FROM catalog.product_variants v
 JOIN org.organizations o ON o.id = v.organization_id

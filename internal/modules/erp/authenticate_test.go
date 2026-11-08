@@ -111,3 +111,22 @@ func TestAuthenticateUnknownAndWrongAreIdentical(t *testing.T) {
 		t.Error("authentication failures differ")
 	}
 }
+
+// An imported company carries "active" or "verified" where a new one carries
+// "approved"; the website lets all three trade, so the API must too. Found on
+// the test server: a supplier could create a key on its dashboard and every
+// call with it was refused.
+func TestAuthenticateAcceptsEveryApprovedStatus(t *testing.T) {
+	ctx := context.Background()
+	for _, status := range []string{"approved", "active", "verified"} {
+		svc, repo, in := keyServiceFixture()
+		created, err := svc.CreateKey(ctx, in)
+		if err != nil {
+			t.Fatal(err)
+		}
+		repo.orgStatus = status
+		if _, err := svc.Authenticate(ctx, created.FullKey, ""); err != nil {
+			t.Errorf("status %q refused: %v", status, err)
+		}
+	}
+}
