@@ -212,3 +212,13 @@ are listed by the owner queries (Q3 and Q4 in `reports/security-audit-2026-11-06
   "no wallet payment to refund"; that message is for a non-cancelled wallet order with no debit.
 - **REST API comments.** `ValidateAPIWalletOrder` refuses non-cancel status changes on wallet orders
   because the API cannot resolve the payer, not because confirmation debits were unreliable (C3).
+
+## Order numbers from a sequence (ERP S7, migration 258)
+
+Order numbers come from `commerce.order_number_seq` when the repository implements
+`OrderNumberAllocator` (the Postgres repository does). Every server process draws from
+the one sequence, so two processes cannot print the same number. The sequence starts
+at the largest existing numeric order number plus 1000. Repositories without the
+allocator keep the in-process counter. Numbers of 9 or more digits (the date format)
+never collide with the sequence. Rolling back to the old image is safe: the old code
+ignores the sequence and keeps numbering with its counter.

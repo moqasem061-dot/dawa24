@@ -23,6 +23,7 @@ type Ports struct {
 	MatchMemory   MatchMemory
 	Enqueuer      Enqueuer
 	Decider       OrderDecider
+	Placer        PurchasePlacer
 }
 
 // OrderDecider confirms or rejects one supplier shipment through the website's
@@ -136,4 +137,28 @@ type KnowledgeWrite struct {
 	PolicyVersion     string
 	NormalizerVersion string
 	DisplayText       string
+}
+
+// PurchasePlacer places one purchase order through the website's checkout rules
+// (plan.md S7 step 5). The adapter lives in cmd/server; erp sees only this port.
+// It quotes the lines, compares any sent price, and returns ERP_PO_PRICE_MISMATCH,
+// ERP_PO_PAYMENT_NOT_SUPPORTED or ERP_PO_REFUSED as *Error values.
+type PurchasePlacer interface {
+	Place(ctx context.Context, p PurchaseRequest) (PlacedOrder, error)
+}
+
+// PurchaseRequest is one order to place for the buyer. BranchID is the key's
+// receiving branch; BuyerOrgType is the buyer's organization type.
+type PurchaseRequest struct {
+	BuyerOrgID, BuyingUserID, BranchID int64
+	BuyerOrgType                       string
+	Lines                              []PurchaseLine
+	Notes                              string
+}
+
+// PlacedOrder is the order the placer wrote.
+type PlacedOrder struct {
+	OrderID     int64
+	OrderNumber string
+	Total       money.Amount
 }

@@ -152,8 +152,10 @@ func (s *Service) checkout(ctx context.Context, input CheckoutInput, verify func
 	}
 
 	now := time.Now().UTC()
-	seq := orderCounter.Add(1)
-	orderNumber := GenerateOrderNumber(now, seq)
+	orderNumber, err := s.nextOrderNumber(ctx, now)
+	if err != nil {
+		return nil, err
+	}
 
 	// Group line items by vendor organization
 	vendorMap := make(map[int64][]*OrderLine)

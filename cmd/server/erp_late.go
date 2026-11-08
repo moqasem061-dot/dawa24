@@ -40,3 +40,37 @@ func (l *lateERPDecider) Decide(ctx context.Context, d erp.ShipmentDecision) (er
 	}
 	return fn(ctx, d)
 }
+
+// lateERPPurchasePlacer is the erp.PurchasePlacer the ERP API holds from the
+// start. The placer needs the billing and commerce services, which are built
+// after the ERP routes are mounted, so it is bound once they exist. A call before
+// the bind is refused as unavailable.
+type lateERPPurchasePlacer struct {
+	mu     sync.RWMutex
+	placer erp.PurchasePlacer
+}
+
+var _ erp.PurchasePlacer = (*lateERPPurchasePlacer)(nil)
+
+func (l *lateERPPurchasePlacer) bind(p erp.PurchasePlacer) {
+	if l == nil {
+		return
+	}
+	l.mu.Lock()
+	l.placer = p
+	l.mu.Unlock()
+}
+
+// Place implements erp.PurchasePlacer.
+func (l *lateERPPurchasePlacer) Place(ctx context.Context, req erp.PurchaseRequest) (erp.PlacedOrder, error) {
+	if l == nil {
+		return erp.PlacedOrder{}, erp.NewError("ERP_UNAVAILABLE", 503, nil)
+	}
+	l.mu.RLock()
+	p := l.placer
+	l.mu.RUnlock()
+	if p == nil {
+		return erp.PlacedOrder{}, erp.NewError("ERP_UNAVAILABLE", 503, nil)
+	}
+	return p.Place(ctx, req)
+}

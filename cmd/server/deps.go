@@ -46,6 +46,9 @@ type dependencies struct {
 	// erpDecide lets the ERP API confirm or reject orders through the UI handler
 	// built after it. See erp_late.go.
 	erpDecide *lateERPDecider
+	// erpPurchase places the ERP purchase orders through the checkout rules; bound
+	// once the billing and commerce pieces exist (routes.go).
+	erpPurchase *lateERPPurchasePlacer
 	// matching provides the unified product matching service.
 	matching matching.Service
 }

@@ -1068,104 +1068,104 @@ Goal: the owner imports a Postman collection and runs the whole journey from the
 
 Goal: the ERP creates a purchase order for its own organization at Dawa24 prices with safe retries. Depends on S1. Carries the order-number fix. Independent test: create, repeat 100 times, one order.
 
-- [ ] T208 [US6] Write the purchase order integration tests in `test/integration/erp_po_test.go`
+- [x] T208 [US6] Write the purchase order integration tests in `test/integration/erp_po_test.go`
   - Do: `TestERPPO_CreateAndRepeat100` (one order, same number, HTTP 200 on replays, SC-004); `TestERPPO_WrongPriceRefused` (`ERP_PO_PRICE_MISMATCH` with `sentPrice` and `correctPrice`, no order row); `TestERPPO_NoActiveOffer`; `TestERPPO_SupplierNotLinked` (`ERP_PO_SUPPLIER_NOT_LINKED`, and no `org.user_organizations`, customer or account row was created, FR-031); `TestERPPO_WalletRefused` (`ERP_PO_PAYMENT_NOT_SUPPORTED`); `TestERPPO_CrashRepair` (an `in_progress` row older than 2 minutes with an order carrying the note marker `[ERP:orgasoft:<ref>]` is repaired and returns that order); `TestERPPO_SelfSupply`; `TestTenantIsolation_ERPIdempotency`.
   - Traps: 14, 19, 25.
   - Done: `gofmt -l test/integration/erp_po_test.go` prints nothing; compile fails (RED).
 
-- [ ] T209 [US6] Write the order number concurrency test in `test/integration/commerce_order_number_test.go`
+- [x] T209 [US6] Write the order number concurrency test in `test/integration/commerce_order_number_test.go`
   - Do: `TestOrderNumberSequenceConcurrent`: two `commerce.Service` instances, 200 concurrent checkouts, 200 distinct order numbers, no unique violation.
   - Traps: 14.
   - Done: `gofmt -l test/integration/commerce_order_number_test.go` prints nothing; the run fails (RED) with duplicate numbers or a compile error.
 
-- [ ] T210 [US6] Write migration 258 in `db/migrations/258_order_number_sequence.up.sql` and `.down.sql`
+- [x] T210 [US6] Write migration 258 in `db/migrations/258_order_number_sequence.up.sql` and `.down.sql`
   - Do: the SQL from `data-model.md` "Migration 258" with `BEGIN;`/`COMMIT;`, an Arabic `COMMENT ON SEQUENCE`, and the grant to `dawa24_app` inside the `IF EXISTS` role block. Down: `DROP SEQUENCE IF EXISTS commerce.order_number_seq`.
   - Done: SB-3 and SB-4 apply 258 with no error and the migrate output lists `258_order_number_sequence`.
 
-- [ ] T211 [US6] Write the allocator unit tests in `internal/modules/commerce/order_number_test.go`
+- [x] T211 [US6] Write the allocator unit tests in `internal/modules/commerce/order_number_test.go`
   - Do: when the repository implements `OrderNumberAllocator`, `checkout` uses it; otherwise the old counter is used; an allocator error fails the checkout.
   - Done: `gofmt -l internal/modules/commerce/order_number_test.go` prints nothing; `go test ./internal/modules/commerce/ -run OrderNumber -count=1` fails (RED).
 
-- [ ] T212 [US6] Add the allocator in `internal/modules/commerce/order_number.go`
+- [x] T212 [US6] Add the allocator in `internal/modules/commerce/order_number.go`
   - Do: `type OrderNumberAllocator interface{ NextOrderNumber(ctx context.Context) (string, error) }`, and `func (s *Service) nextOrderNumber(ctx context.Context, now time.Time) (string, error)` in the same file: if `s.repo` implements `OrderNumberAllocator` return `NextOrderNumber(ctx)`, else return `GenerateOrderNumber(now, orderCounter.Add(1))`. `service.go` is 397 lines and the limit is 400, so the logic lives here.
   - Done: `go build ./internal/modules/commerce/`.
 
-- [ ] T213 [US6] Implement the allocator in `internal/modules/commerce/postgres/order_number.go`
+- [x] T213 [US6] Implement the allocator in `internal/modules/commerce/postgres/order_number.go`
   - Do: `func (r *Repository) NextOrderNumber(ctx context.Context) (string, error)` running `SELECT nextval('commerce.order_number_seq')::text`.
   - Done: `go build ./internal/modules/commerce/...`.
 
-- [ ] T214 [US6] Use the allocator in `internal/modules/commerce/service.go`
+- [x] T214 [US6] Use the allocator in `internal/modules/commerce/service.go`
   - Do: in `checkout`, replace the two lines `seq := orderCounter.Add(1)` and `orderNumber := GenerateOrderNumber(now, seq)` (lines 155 and 156) with `orderNumber, err := s.nextOrderNumber(ctx, now)` followed by a 3-line `if err != nil { return nil, err }`. The net change is +2 lines (399 lines). Pattern for the optional interface: `shipmentWalletUpdater` at `api_cancel.go:107`.
   - Traps: 14.
   - Done: `make check-file-size`, `go test ./internal/modules/commerce/... -count=1` and `SB go test -p 1 ./test/integration/ -run TestOrderNumberSequenceConcurrent -count=1`.
 
-- [ ] T215 [P] [US6] Note the order number change in `docs/modules/commerce.md`
+- [x] T215 [P] [US6] Note the order number change in `docs/modules/commerce.md`
   - Do: record the sequence, the optional interface, the formats of 9 or more digits never colliding, and that rollback to the old image is safe.
   - Done: `grep -n "order_number_seq" docs/modules/commerce.md` prints a line.
 
-- [ ] T216 [US6] Add the purchase repository interface in `internal/modules/erp/repository_purchase.go`
+- [x] T216 [US6] Add the purchase repository interface in `internal/modules/erp/repository_purchase.go`
   - Do: `ListOffersAsSystem(ctx, buyerOrgID int64, barcode string, limit int) ([]Offer, error)` (plan.md E6); `BeginIdempotency(ctx, orgID, integrationID int64, ref, requestSHA string) (IdemState, error)`; `FinishIdempotency(ctx, orgID, integrationID int64, ref string, orderID int64, orderNumber string, response []byte) error`; `DeleteIdempotency(ctx, orgID, integrationID int64, ref string) error`; `FindOrderByNoteMarker(ctx, buyerOrgID int64, marker string) (orderID int64, orderNumber string, found bool, err error)`; `SupplierLinked(ctx, buyerOrgID, supplierOrgID int64) (bool, error)`; `VariantOfferAsSystem(ctx, publicID string) (VariantOfferRow, error)` (plan.md E6). Types: `Offer{VariantID string; SupplierName, Name map[string]string; SupplierLinked bool; Barcode string; PublicPrice, DiscountPercent, UnitPrice money.Amount; InStock bool}`; `IdemState{Replay bool; InProgress bool; Stale bool; Response []byte}`; `VariantOfferRow{ID, OrganizationID int64; PublicID string; PublicPrice, DiscountPercent money.Amount}`; `CreatePurchaseRequest{ExternalReference, Notes string; Lines []PurchaseLine}`; `PurchaseLine{VariantID string; Quantity int; UnitPrice *money.Amount}`. Embed in `Repository`. New file because plan keeps purchase code out of `repository_orders.go`. Create `fake_purchase_test.go` with `type fakePurchase struct` implementing these methods in memory and change `fakeRepo` to `type fakeRepo struct { ...; *fakeSync; *fakeOrders; *fakeCode; *fakePurchase }` so it still satisfies `erp.Repository`.
   - Done: `go build ./internal/modules/erp/` and `go vet ./internal/modules/erp/`.
 
-- [ ] T217 [P] [US6] Add offers SQL in `internal/modules/erp/postgres/offers.go`
+- [x] T217 [P] [US6] Add offers SQL in `internal/modules/erp/postgres/offers.go`
   - Do: implement `ListOffersAsSystem` and `VariantOfferAsSystem` (resolve a variant `public_id` UUID to id, organization id and price fields). Read-only on `catalog.product_variants`: `status='active'`, `deleted_at IS NULL`, organization type vendor and approved, stock greater than 0, barcode match, price ascending, `LIMIT 50` (`OffersMax`), public fields only; `SupplierLinked` in the offer is an `EXISTS` on `org.user_organizations` for the buyer. These two functions are plan.md E6: wrap the query in `database.AsSystem(ctx)` and put the comment `plan.md E6` on each.
   - Traps: 1.
   - Done: `gofmt -l internal/modules/erp/postgres/offers.go` prints nothing (`go vet` is not required: the package compiles as a whole at T218).
 
-- [ ] T218 [P] [US6] Add idempotency SQL in `internal/modules/erp/postgres/idempotency.go`
+- [x] T218 [P] [US6] Add idempotency SQL in `internal/modules/erp/postgres/idempotency.go`
   - Do: insert `in_progress`, get, finish (`done` with `response`), delete; `FindOrderByNoteMarker` on `commerce.orders.notes LIKE '[ERP:%'` under `WithTenant(buyer)`; `SupplierLinked(ctx, buyerOrgID, supplierOrgID)`: `SELECT 1 FROM org.user_organizations WHERE vendor_org_id=$2 AND customer_org_id=$1 AND status IN ('pending','approved') AND deleted_at IS NULL` (no RLS on that table, research D-20).
   - Traps: 1, 25.
   - Done: `go build ./internal/modules/erp/postgres/` must pass including the `var _ erp.Repository` line.
 
-- [ ] T219 [US6] Add the purchase ports in `internal/modules/erp/ports.go`
+- [x] T219 [US6] Add the purchase ports in `internal/modules/erp/ports.go`
   - Do: add `PurchasePlacer`, `PurchaseRequest{BuyerOrgID, BuyingUserID int64; Lines []PurchaseLine; Notes string}`, `PlacedOrder{OrderID int64; OrderNumber string; Total money.Amount}`, field `Placer` on `Ports`.
   - Traps: 23.
   - Done: `go build ./internal/modules/erp/`.
 
-- [ ] T220 [US6] Write the purchase service tests in `internal/modules/erp/purchase_service_test.go`
+- [x] T220 [US6] Write the purchase service tests in `internal/modules/erp/purchase_service_test.go`
   - Do: every purchase code in `contracts/error-codes.md` "Purchase orders" has a row: reference required, buying user missing or not an active member, item not found (line number in `details`), no active offer, quantity zero or negative or fractional, price mismatch with `lines[{line,sentPrice,correctPrice}]` as exact strings like `"62.50"`, supplier not linked (no account is created), self supply, refused by rules (`reason`), in progress, payment not supported; more than `PurchaseLinesMax` (200) lines gives `ERP_VALIDATION`; a replay returns the stored response with HTTP 200 and calls `Place` once; a refusal deletes the idempotency row; a stale `in_progress` row is repaired through the marker; audit `erp.po.create` with `ActorKind: "api_key"`; `Offers` returns at most 50.
   - Traps: 13, 25.
   - Done: `gofmt -l internal/modules/erp/purchase_service_test.go` prints nothing; `go test ./internal/modules/erp/ -run Purchase -count=1` fails (RED).
 
-- [ ] T221 [US6] Add the purchase service in `internal/modules/erp/purchase_service.go`
+- [x] T221 [US6] Add the purchase service in `internal/modules/erp/purchase_service.go`
   - Do: `Offers(ctx, p Principal, barcode string) ([]Offer, error)` and `CreatePurchaseOrder(ctx, p Principal, req CreatePurchaseRequest) (PurchaseResult, error)` as in plan.md S7 step 4, with `PurchaseResult{OrderID int64; OrderNumber string; Replay bool; Response []byte}`. The order note starts with `[ERP:<provider>:<externalReference>]`. Never creates accounts or links.
   - Traps: 13, 25.
   - Done: `go test ./internal/modules/erp/ -run Purchase -count=1`.
 
-- [ ] T222 [US6] Write the placer tests in `cmd/server/erp_purchase_placer_test.go`
+- [x] T222 [US6] Write the placer tests in `cmd/server/erp_purchase_placer_test.go`
   - Do: `TestErpPurchasePlacer`: a `variantId` UUID resolves to a variant id; a quote is made with `apiQuoteResolver.quote`; a differing `unitPrice` returns `ERP_PO_PRICE_MISMATCH` with the quote's amounts; an `apperr` code from `CheckoutAPI` becomes `ERP_PO_REFUSED` with `details.reason`; a wallet error becomes `ERP_PO_PAYMENT_NOT_SUPPORTED`.
   - Done: `gofmt -l cmd/server/erp_purchase_placer_test.go` prints nothing; `go test ./cmd/server/ -run ErpPurchasePlacer -count=1` fails (RED).
 
-- [ ] T223 [US6] Add the placer in `cmd/server/erp_purchase_placer.go`
+- [x] T223 [US6] Add the placer in `cmd/server/erp_purchase_placer.go`
   - Do: `erpPurchasePlacer` builds a dedicated `commerce.Service` exactly like `routes.go:217-236` (wallet refunder and payer, docs gate, `OnOrderPlaced(deps.orders.announce)`, availability probe, `apiQuoteResolver` with `apiBuyerChoices`); `Place` as in plan.md S7 step 5. Own file because `erp_ports.go` would pass 350 lines.
   - Traps: 9, 14.
   - Done: `go test ./cmd/server/ -run ErpPurchasePlacer -count=1`.
 
-- [ ] T224 [US6] Hold the placer in `cmd/server/erp_wiring.go`
+- [x] T224 [US6] Hold the placer in `cmd/server/erp_wiring.go`
   - Do: set `erp.Ports.Placer` to the placer after the commerce dependencies exist.
   - Done: `go build ./... && go test ./cmd/server/ -run Router -count=1`.
 
-- [ ] T225 [US6] Write the purchase handler tests in `internal/modules/erp/http/purchase_handlers_test.go`
+- [x] T225 [US6] Write the purchase handler tests in `internal/modules/erp/http/purchase_handlers_test.go`
   - Do: `GET /offers?barcode=` (scope `erp.po.create`), `POST /orders/purchase` returns 201 new and 200 replay; body `externalReference`, `lines[{variantId, quantity, unitPrice?}]`, `notes?` per `openapi.yaml`; error bodies bilingual.
   - Done: `gofmt -l internal/modules/erp/http/purchase_handlers_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Purchase -count=1` fails (RED).
 
-- [ ] T226 [US6] Add the purchase handlers in `internal/modules/erp/http/purchase_handlers.go` and mount them
+- [x] T226 [US6] Add the purchase handlers in `internal/modules/erp/http/purchase_handlers.go` and mount them
   - Do: `getOffers`, `postPurchase`; mount both in `handler.go` (two files).
   - Done: `go test ./internal/modules/erp/http/ -count=1`.
 
-- [ ] T227 [US6] Empty the not-yet-mounted list in `internal/modules/erp/http/spec_test.go`
+- [x] T227 [US6] Empty the not-yet-mounted list in `internal/modules/erp/http/spec_test.go`
   - Do: set `specRoutesNotYetMounted` to an empty slice.
   - Done: `go test ./internal/modules/erp/http/ -run OpenAPIMatchesRoutes -count=1`.
 
-- [ ] T228 [US6] Regenerate the Postman files after S7
+- [x] T228 [US6] Regenerate the Postman files after S7
   - Do: run `go run ./cmd/cli erp-postman` so the two JSON files in `docs/erp-api/` include the purchase requests.
   - Done: `go test ./cmd/cli/ -run PostmanCollectionIsCurrent -count=1`.
 
-- [ ] T229 [US6] Run the S7 integration tests
+- [x] T229 [US6] Run the S7 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S7 task when a test fails.
   - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPPO|TestTenantIsolation_ERPIdempotency|TestOrderNumberSequenceConcurrent' -count=1` passes.
 
-- [ ] T230 [US6] S7 slice gate
+- [x] T230 [US6] S7 slice gate
   - Do: slice gate. Changed packages: `./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/`. Focused tests: `go test ./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/ -run 'OrderNumber|Purchase|ErpPurchasePlacer|OpenAPIMatchesRoutes|Postman|Router' -count=1`; the SB command above.
   - Commit message: `feat(erp): S7 purchase orders and order number sequence`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.

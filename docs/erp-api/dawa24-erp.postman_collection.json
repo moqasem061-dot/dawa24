@@ -1,6 +1,6 @@
 {
   "info": {
-    "_postman_id": "1ca79027-1dde-42ea-8bc0-94e117b4ff10",
+    "_postman_id": "ca14554a-d3f5-4c43-acda-3fe0cded52de",
     "name": "Dawa24 ERP API for Orgasoft",
     "description": "**Dawa24 ERP API — for Orgasoft**\n\n**How to read this collection (no server needed):**\n1. Click a request on the left.\n2. Read the explanation on the right.\n3. Open the **Body** tab to see exactly what to send.\n4. Click **Examples** (top right) to see exactly what Dawa24 replies — for success and for each error.\n\n**How to run it (when Dawa24 gives you a test server and a key):**\n1. Choose the environment **Dawa24 ERP - test server** (top right).\n2. Put the server address in `baseUrl` and your key in `apiKey`. Nothing else to change.\n3. Run **01 Start here → Check my API key**. If it says `\"status\": \"ok\"`, you are connected.\n\n**Rules that apply to every request:**\n- Your key goes in the header `Authorization: Bearer <key>` (already set up here).\n- Every reply has `\"status\": \"ok\"` or `\"status\": \"error\"`. Errors have a `code` and a message in Arabic and English.\n- Prices are text with at most 2 decimals, like `\"125.50\"`. Discount and tax are percents.\n- Up to 600 requests per minute. If you get error 429, wait the seconds in the `Retry-After` header.\n- Keep the `requestId` from the reply when you report a problem — it lets us find your request.\n\n---\n\n**طريقة قراءة المجموعة (بدون سيرفر):** اضغط على أي طلب، اقرأ الشرح، افتح تبويب **Body** لترى ما يجب إرساله، واضغط **Examples** لترى رد دواء24 بالضبط في حالة النجاح وكل خطأ.\n\n**طريقة التشغيل (عندما نرسل لكم سيرفر تجريبي ومفتاح):** اختر البيئة **Dawa24 ERP - test server**، ضع عنوان السيرفر في `baseUrl` والمفتاح في `apiKey`، ثم شغّل **Check my API key**. إذا ظهر `\"status\": \"ok\"` فالربط يعمل.\n\n**قواعد عامة:** المفتاح يُرسل في `Authorization: Bearer`. كل رد فيه `status` ورسائل الخطأ بالعربي والإنجليزي. الأسعار بحد أقصى رقمين عشريين. احتفظوا بـ `requestId` عند الإبلاغ عن مشكلة.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
@@ -2315,7 +2315,7 @@
                 }
               ]
             },
-            "description": "**What it does:** finds which suppliers sell a product, by barcode, with price and stock.\n\n**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد.\n\n> ⏳ **Coming soon / قريباً** — this request is final but not open yet. Read it now, test it later."
+            "description": "**What it does:** finds which suppliers sell a product, by barcode, with price and stock.\n\n**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد."
           },
           "response": [
             {
@@ -2357,6 +2357,86 @@
                 }
               ],
               "body": "{\n  \"status\": \"ok\",\n  \"requestId\": \"0d9b7e5c3a1f4826\",\n  \"data\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"supplier\": {\n        \"name\": {\n          \"ar\": \"مؤسسة النور للأدوية\",\n          \"en\": \"Al Nour Pharma\"\n        },\n        \"linked\": true\n      },\n      \"name\": {\n        \"ar\": \"بانادول اكسترا 24 قرص\",\n        \"en\": \"Panadol Extra 24 tablets\"\n      },\n      \"barcode\": \"6221024000123\",\n      \"publicPrice\": \"62.50\",\n      \"discountPercent\": \"12.50\",\n      \"unitPrice\": \"54.69\",\n      \"inStock\": true\n    }\n  ]\n}"
+            },
+            {
+              "name": "403 Key lacks erp.po.create",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/offers?barcode=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "offers"
+                  ],
+                  "query": [
+                    {
+                      "key": "barcode",
+                      "value": "",
+                      "disabled": false
+                    }
+                  ]
+                }
+              },
+              "status": "Key lacks erp.po.create",
+              "code": 403,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_SCOPE_MISSING\",\n    \"message\": {\n      \"ar\": \"المفتاح لا يملك الصلاحية المطلوبة لهذه العملية.\",\n      \"en\": \"The key does not have the permission this call needs.\"\n    },\n    \"details\": {\n      \"requiredScope\": \"erp.po.create\"\n    }\n  }\n}"
+            },
+            {
+              "name": "422 Barcode missing",
+              "originalRequest": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/offers?barcode=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "offers"
+                  ],
+                  "query": [
+                    {
+                      "key": "barcode",
+                      "value": "",
+                      "disabled": false
+                    }
+                  ]
+                }
+              },
+              "status": "Barcode missing",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_VALIDATION\",\n    \"message\": {\n      \"ar\": \"بيانات الطلب غير صالحة.\",\n      \"en\": \"The request data is not valid.\"\n    },\n    \"details\": {\n      \"fields\": [\n        \"barcode\"\n      ]\n    }\n  }\n}"
             }
           ],
           "event": [
@@ -2397,7 +2477,7 @@
                 "purchase"
               ]
             },
-            "description": "**What it does:** places a purchase order on Dawa24 from your system.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم.\n\n> ⏳ **Coming soon / قريباً** — this request is final but not open yet. Read it now, test it later.",
+            "description": "**What it does:** places a purchase order on Dawa24 from your system.\n\n**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم.",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
@@ -2551,6 +2631,194 @@
               "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"8e2d4c6a1f3b4097\",\n  \"error\": {\n    \"code\": \"ERP_PO_PRICE_MISMATCH\",\n    \"message\": {\n      \"ar\": \"السعر المرسل يختلف عن سعر دواء 24. السعر الصحيح موضح في التفاصيل.\",\n      \"en\": \"The price sent differs from Dawa24's. The correct price is in the details.\"\n    },\n    \"details\": {\n      \"lines\": [\n        {\n          \"line\": 1,\n          \"sentPrice\": \"48.00\",\n          \"correctPrice\": \"50.40\"\n        }\n      ]\n    }\n  }\n}"
             },
             {
+              "name": "409 Price differs from Dawa24's",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Price differs from Dawa24's",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_PRICE_MISMATCH\",\n    \"message\": {\n      \"ar\": \"السعر المرسل يختلف عن سعر دواء 24. السعر الصحيح موضح في التفاصيل.\",\n      \"en\": \"The price sent differs from Dawa24's. The correct price is in the details.\"\n    },\n    \"details\": {\n      \"lines\": [\n        {\n          \"line\": 1,\n          \"sentPrice\": \"48.00\",\n          \"correctPrice\": \"50.40\"\n        }\n      ]\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Refused by the ordering rules",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Refused by the ordering rules",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_REFUSED\",\n    \"message\": {\n      \"ar\": \"رفضت قواعد الشراء الطلب: quota.exhausted\",\n      \"en\": \"The ordering rules refused the order: quota.exhausted\"\n    },\n    \"details\": {\n      \"reason\": \"quota.exhausted\"\n    }\n  }\n}"
+            },
+            {
+              "name": "409 Same reference, different body",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Same reference, different body",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_IDEMPOTENCY_CONFLICT\",\n    \"message\": {\n      \"ar\": \"استُخدم مفتاح منع التكرار نفسه مع محتوى مختلف.\",\n      \"en\": \"The same idempotency key was used with different content.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
+              "name": "409 Same reference still being processed",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Same reference still being processed",
+              "code": 409,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_IN_PROGRESS\",\n    \"message\": {\n      \"ar\": \"طلب الشراء بنفس المرجع قيد المعالجة. أعد المحاولة بعد دقيقة.\",\n      \"en\": \"A purchase order with this reference is still being processed. Retry in a minute.\"\n    },\n    \"details\": null\n  }\n}"
+            },
+            {
               "name": "422 Wrong quantity on a line",
               "originalRequest": {
                 "method": "POST",
@@ -2596,6 +2864,100 @@
                 }
               ],
               "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_QUANTITY_INVALID\",\n    \"message\": {\n      \"ar\": \"الكمية في السطر 1 يجب أن تكون عدداً صحيحاً موجباً.\",\n      \"en\": \"The quantity on line 1 must be a positive whole number.\"\n    },\n    \"details\": {\n      \"line\": 1\n    }\n  }\n}"
+            },
+            {
+              "name": "422 Supplier not linked to your organization",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "Supplier not linked to your organization",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_SUPPLIER_NOT_LINKED\",\n    \"message\": {\n      \"ar\": \"المورد في السطر 1 غير مرتبط بحساب منشأتك.\",\n      \"en\": \"The supplier on line 1 is not linked to your organization.\"\n    },\n    \"details\": {\n      \"line\": 1,\n      \"supplierName\": \"Al Nour Pharma\"\n    }\n  }\n}"
+            },
+            {
+              "name": "422 No active offer for the product",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/erp/v1/orders/purchase",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "erp",
+                    "v1",
+                    "orders",
+                    "purchase"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"externalReference\": \"ORGA-PO-2026-000451\",\n  \"notes\": \"توريد الأسبوع\",\n  \"lines\": [\n    {\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\",\n      \"quantity\": 12,\n      \"unitPrice\": \"48.00\"\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "No active offer for the product",
+              "code": 422,
+              "_postman_previewlanguage": "json",
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"error\",\n  \"requestId\": \"a41f7c2e9b0d4e63\",\n  \"error\": {\n    \"code\": \"ERP_PO_NO_ACTIVE_OFFER\",\n    \"message\": {\n      \"ar\": \"لا يوجد عرض نشط للصنف رقم 1.\",\n      \"en\": \"Line 1 has no active offer.\"\n    },\n    \"details\": {\n      \"line\": 1,\n      \"variantId\": \"3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33\"\n    }\n  }\n}"
             }
           ],
           "event": [

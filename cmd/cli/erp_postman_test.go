@@ -164,15 +164,16 @@ func TestPostmanCollectionShape(t *testing.T) {
 		}
 	}
 
-	// Find offers and create purchase order stay marked "Coming soon" until S7.
+	// S7 mounted find offers and create purchase order, so no request in the
+	// purchase folder may still carry the "Coming soon" mark.
 	comingSoon := 0
 	for _, it := range c.Item[3].Item {
 		if it.Request != nil && strings.Contains(it.Request.Description, "Coming soon") {
 			comingSoon++
 		}
 	}
-	if comingSoon != 2 {
-		t.Errorf("purchase folder marks %d requests coming soon, want 2 (find offers, create purchase order)", comingSoon)
+	if comingSoon != 0 {
+		t.Errorf("purchase folder marks %d requests coming soon, want 0 now that S7 mounts them", comingSoon)
 	}
 
 	text := string(raw)

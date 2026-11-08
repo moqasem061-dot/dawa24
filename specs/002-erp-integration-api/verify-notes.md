@@ -228,3 +228,41 @@ BLOCKER (T198 to T200, erp-demo; owner decision needed):
 - Gate effect: S6 gate (T207) is not run, and S6 is not committed. The working tree holds the S6 changes for review. Nothing pushed.
 
 S6 owner decision (2026-11-08): option (b). T198 to T200 (`erp-demo`) are dropped. Keys come from the website (quickstart section 3). The first product send creates SKU 100245. The checkout modal creates the pending customer link. The V8 load test makes its 10 keys in the website. T195 to T197 are done in adapted form: the owner-reviewed Python generator lives at docs/erp-api/oas2postman.py, with Go tests in cmd/cli/erp_postman_test.go. Opus also removed the three "unverified" field notes left in the served spec, keeping both copies identical.
+
+S7 (T208 to T230), run 3: built and committed at the slice gate.
+
+Sandbox (this run): SB-0 `df -h /c` 8.4 GB free. SB-1 containers up. SB-2 Redis save and stop-writes settings applied. SB-3 official refresh ran with exit 0 (the removal step was not refused this time). SB-4 migrate applied 258 `258_order_number_sequence`. SB-6 `ALTER ROLE dawa24_app` applied once, no Postgres restart since.
+
+Gate results:
+- `go build ./...` ok; `go vet` on `./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/` ok; `gofmt -l` on the touched packages prints nothing.
+- Focused: `go test ./internal/modules/commerce/... ./internal/modules/erp/... ./cmd/server/ ./cmd/cli/ -run 'OrderNumber|Purchase|ErpPurchasePlacer|OpenAPIMatchesRoutes|Postman|Router|Offers' -count=1` ok. Full `go test ./internal/modules/erp/... -count=1` ok (after the citation fix below, `TestAsSystemOnlyInNamedFunctions` passes).
+- Structural: `go test ./test/ -run 'TestDeadcodeRatchet|TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated|TestRepositorySQLMatchesMigrations|TestWriteSQLMatchesMigrations|TestAsSystem'` ok.
+- SB-6 (dawa24_app, -v, no skips): `TestOrderNumberSequenceConcurrent`, `TestERPPO_CreateAndRepeat100`, `_WrongPriceRefused`, `_NoActiveOffer`, `_SupplierNotLinked`, `_WalletRefused`, `_CrashRepair`, `_SelfSupply`, `TestTenantIsolation_ERPIdempotency`: PASS=9 FAIL=0 SKIP=0.
+- `go test ./cmd/cli/ -run Postman` ok. Contract copies `cmp` identical.
+
+RED record and order deviations:
+- T211 (allocator unit tests): RED captured, build failed on the missing `nextOrderNumber`. GREEN after T212.
+- T220 (purchase service tests): RED captured, build failed on the missing `CreatePurchaseOrder` and `Offers`. GREEN after T221.
+- T225 (handler tests): RED captured, 404 and 405 because the routes were not mounted. GREEN after T226.
+- T208 (`erp_po_test.go`): written before the ERP purchase code, but its RED run was not captured in a separate step; its first run was the GREEN run above.
+- T209 (`commerce_order_number_test.go`): written after the allocator (T212 to T214) in this run, so RED was not captured. The test asserts that `commerce.order_number_seq` advanced by at least orders-1 during the run, which the in-process counter cannot satisfy. Recorded as an order deviation (rule 12 and rule 5).
+- T222 (placer tests): the test file and the placer were written together, so RED was not captured. GREEN run above.
+
+Deviations from the names in the task text (all additive, same behaviour as the task describes):
+1. `VariantOfferRow` carries `SupplierName`, `Active` (live variant, approved vendor) and `InStock`. `Offer` carries `UnitPrice`. The purchase rules need the variant's status and the supplier name, which the task's field list did not hold.
+2. `IdemState` carries `Created` (the caller owns a new row) and `RequestSHA`. A different body under the same reference is `ERP_IDEMPOTENCY_CONFLICT`; without the stored fingerprint the service cannot tell.
+3. `FinishIdempotency` takes the `AuditRecord` as its last argument, so the audit row and the finished row commit in one transaction (trap 15). An empty action skips the audit (used by the stale repair, which creates no new order).
+4. `PurchaseRequest` carries `BranchID` (the key's receiving branch, needed by the quote) and `BuyerOrgType` (the checkout's customer type). `PurchaseResult` carries `Row PurchaseRow` instead of raw `Response`. The stored response is the JSON of the internal `PurchaseRow`; a replay decodes it and renders it with the same `purchaseJSON` as GET, so the reply shape is one code path.
+5. The fake named `fakePurchase` in the task clashed with the existing row type in `fake_orders_test.go`; it is `fakePurchaseRepo`.
+6. `Repository` embeds `PurchaseRepository`; `PurchasePlacer` is a port in `ports.go`; the adapter `erpPurchasePlacer` is in `cmd/server/erp_purchase_placer.go` and is bound late (`lateERPPurchasePlacer`, the S4 pattern), because billing and commerce are built after the ERP routes.
+7. The price is checked twice: the service compares the sent `unitPrice` with the offer price (the E6 row, `offerUnitPrice`, the website's effective price), so a wrong price writes no order even in an integration test with a placer double; the placer compares again with the website quote and maps a checkout price change to `ERP_PO_PRICE_MISMATCH`.
+8. The integration tests use a placer double that writes the order row from `commerce.order_number_seq`. The real checkout is exercised by `TestOrderNumberSequenceConcurrent` (`CheckoutAPI` with an open availability probe and an identity quote) and by the placer unit tests.
+9. `stale repair` deletes the stale row when no order carries the marker, then places again. A refusal (any `*Error` below 500) deletes the row; an internal error keeps it in progress, which is the crash case.
+10. The marker lookup uses `starts_with(notes, marker)` rather than `notes LIKE '[ERP:%'`, so a reference containing `%` or `_` cannot match another order.
+11. `TestPostmanCollectionShape` expected two "Coming soon" requests in the purchase folder (S6 comment: "until S7"). S7 mounts both, so it now expects zero. The generator dropped the marks, per the owner's instruction.
+12. Postman error examples: `docs/erp-api/oas2postman.py` has real examples for create purchase order (price, supplier link, no offer, refused reason, idempotency conflict, in progress) and for offers (scope, barcode). Regenerated and copied to the committed names.
+13. `TestAsSystemOnlyInNamedFunctions` rejected the `VariantOfferAsSystem` comment because the "plan.md E6" citation wrapped onto two lines. Fixed the comment wording; no behaviour change.
+
+Migration 258 (`db/migrations/258_order_number_sequence.up.sql`, `.down.sql`): sequence start at MAX(numeric order number)+1000, grant to `dawa24_app` in the role block, Arabic comment. Expand-only; rollback to the old image is safe.
+
+Not done in this run: SB-5 for T230 is covered by the SB-6 run above (the stricter form). A comment-only edit to `offers.go` came after the SB-6 run and was checked on the host only.

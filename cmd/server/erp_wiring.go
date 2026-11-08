@@ -76,6 +76,7 @@ func erpPorts(db *database.DB, deps *dependencies, log *slog.Logger) erp.Ports {
 		MatchMemory:   erpports.NewMatchMemory(matchSvc),
 		Enqueuer:      &erpEnqueuer{db: db, log: log},
 		Decider:       deps.erpDecide,
+		Placer:        deps.erpPurchase,
 	}
 }
 

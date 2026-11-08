@@ -29,8 +29,19 @@ ERRORS = {
     "/orders/purchase": AUTH[1:2] + [(400, "Bad page cursor", "ERP_CURSOR_INVALID", None)],
     "/orders/purchase/{orderNumber}": [(404, "Order not found", "ERP_ORDER_NOT_FOUND", None)],
     "/orders/purchase/ack": [(422, "Invalid data", "ERP_VALIDATION", {"fields": ["orders"]})],
+    "/offers": [(403, "Key lacks erp.po.create", "ERP_SCOPE_MISSING", {"requiredScope": "erp.po.create"}),
+               (422, "Barcode missing", "ERP_VALIDATION", {"fields": ["barcode"]})],
 }
-SCOPE = {"/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read"}
+PURCHASE_ERRORS = [
+    (422, "Wrong quantity on a line", "ERP_PO_QUANTITY_INVALID", {"line": 1}),
+    (409, "Price differs from Dawa24's", "ERP_PO_PRICE_MISMATCH", {"lines": [{"line": 1, "sentPrice": "48.00", "correctPrice": "50.40"}]}),
+    (422, "Supplier not linked to your organization", "ERP_PO_SUPPLIER_NOT_LINKED", {"line": 1, "supplierName": "Al Nour Pharma"}),
+    (422, "No active offer for the product", "ERP_PO_NO_ACTIVE_OFFER", {"line": 1, "variantId": "3b9c1a4e-6f02-4d58-8c7e-12a4d9e05b33"}),
+    (409, "Refused by the ordering rules", "ERP_PO_REFUSED", {"reason": "quota.exhausted"}),
+    (409, "Same reference, different body", "ERP_IDEMPOTENCY_CONFLICT", None),
+    (409, "Same reference still being processed", "ERP_PO_IN_PROGRESS", None),
+]
+SCOPE = {"/offers": "erp.po.create", "/health": "", "/products/sync": "erp.products.sync", "/orders/sales": "erp.orders.read", "/orders/purchase": "erp.orders.read"}
 
 
 def error_body(code, details):
@@ -44,9 +55,7 @@ def error_body(code, details):
     return {"status": "error", "requestId": "a41f7c2e9b0d4e63",
             "error": {"code": code, "message": {"ar": ar, "en": en}, "details": details}}
 d = yaml.safe_load(open(src, encoding="utf-8"))
-
-COMING = "\n\n> ⏳ **Coming soon / قريباً** — this request is final but not open yet. Read it now, test it later."
-
+
 # (folder, request summary in contract) -> (new name, explanation). Order here is the order shown.
 PLAN = [
     ("01 Start here - ابدأ هنا", "Use these first to check that everything is connected. / استخدمها أولاً للتأكد من أن الربط يعمل.", [
@@ -116,10 +125,10 @@ PLAN = [
          "**ماذا يفعل:** مثل طلبات البيع: يخبر دواء24 أنك حفظت طلبات الشراء عندك."),
         ("GET", "/offers", "4. Find supplier offers by barcode - البحث عن عروض الموردين",
          "**What it does:** finds which suppliers sell a product, by barcode, with price and stock.\n\n"
-         "**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد." + COMING),
+         "**ماذا يفعل:** يبحث بالباركود عن الموردين الذين يبيعون الصنف مع السعر والرصيد."),
         ("POST", "/orders/purchase", "5. Create a purchase order - إنشاء طلب شراء",
          "**What it does:** places a purchase order on Dawa24 from your system.\n\n"
-         "**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم." + COMING),
+         "**ماذا يفعل:** ينشئ طلب شراء على دواء24 من نظامكم."),
     ]),
 ]
 
@@ -177,7 +186,7 @@ def build(method, path, name, text):
     op = d["paths"][path][method.lower()]
     errors = ERRORS.get(path, [])
     if (method, path) == ("POST", "/orders/purchase"):
-        errors = [(422, "Wrong quantity on a line", "ERP_PO_QUANTITY_INVALID", {"line": 1})]
+        errors = PURCHASE_ERRORS
     params = [deref(p) for p in d["paths"][path].get("parameters", []) + op.get("parameters", [])]
     pm_path, variables, query = path, [], []
     headers = [{"key": "Accept", "value": "application/json"}]

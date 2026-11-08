@@ -15,7 +15,7 @@ import (
 // specRoutesNotYetMounted are documented operations the server does not serve
 // yet (S7 mounts them). They must stay documented, and they must stay unmounted:
 // when S7 mounts one, this test fails until the entry is removed here.
-var specRoutesNotYetMounted = []string{"GET /offers", "POST /orders/purchase"}
+var specRoutesNotYetMounted = []string{}
 
 // TestOpenAPIMatchesRoutes compares the routes the handler mounts with the
 // operations in the embedded contract, in both directions.

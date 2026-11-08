@@ -17,6 +17,7 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/modules/commerce"
 	commerceHttp "github.com/moqasem061-dot/dawa24/internal/modules/commerce/http"
 	commercePostgres "github.com/moqasem061-dot/dawa24/internal/modules/commerce/postgres"
+	erppostgres "github.com/moqasem061-dot/dawa24/internal/modules/erp/postgres"
 	"github.com/moqasem061-dot/dawa24/internal/modules/hr"
 	hrHttp "github.com/moqasem061-dot/dawa24/internal/modules/hr/http"
 	hrPostgres "github.com/moqasem061-dot/dawa24/internal/modules/hr/postgres"
@@ -71,6 +72,7 @@ func mountModuleRoutes(
 	deps.actions = &lateActions{}
 	deps.orders = &lateOrderAnnouncer{}
 	deps.erpDecide = newERPDecideDeps()
+	deps.erpPurchase = &lateERPPurchasePlacer{}
 
 	db, idSvc, attachSvc, docsGate, storageClient, permissions := mountModuleRoutesAPI(r, cfg, log, deps, ai, adminKeys, tenantKeys)
 	erpSvc := mountERP(r, cfg, log, deps, db)
@@ -243,6 +245,18 @@ func mountAuthenticatedModules(
 	billRepo := billingPostgres.NewRepository(db)
 	billSvc := billing.NewService(billRepo, log)
 	apiQuotes.apiBuyerChoices(billSvc, idSvc)
+	// The ERP purchase placer checks out through its own commerce service, wired
+	// as the API checkout above is (plan.md S7 step 5).
+	deps.erpPurchase.bind(&erpPurchasePlacer{
+		checkout: newERPPurchaseCheckout(db, log, commerce.RequiredDocsChecker(docsGate), deps.orders.announce, newAvailabilityProbe(
+			catalog.NewService(catalogPostgres.NewRepository(db), log),
+			org.NewService(orgPostgres.NewRepository(db), log),
+			workflow.NewCoverageService(db),
+			inventory.NewService(inventoryPostgres.NewRepository(db), log),
+		), apiQuotes.quote),
+		quote:    apiQuotes.quote,
+		variants: erppostgres.New(db),
+	})
 	billSvc.SetAIPlanSync(tenantKeys)
 	moduleAPI(func() { billingHttp.NewHandler(billSvc, log).RegisterRoutes(r) })
 

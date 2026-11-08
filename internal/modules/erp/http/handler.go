@@ -48,6 +48,9 @@ func (h *Handler) Routes() chi.Router {
 		r.Get("/orders/purchase", h.listPurchase)
 		r.Get("/orders/purchase/{orderNumber}", h.getPurchase)
 		r.Post("/orders/purchase/ack", h.ackPurchase)
+		// Purchase orders (S7): the offers lookup and the order creation.
+		r.Get("/offers", h.getOffers)
+		r.Post("/orders/purchase", h.postPurchase)
 	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_NOT_FOUND", 404, nil))

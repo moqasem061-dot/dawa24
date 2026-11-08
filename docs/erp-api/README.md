@@ -23,7 +23,7 @@ The Postman collection `dawa24-erp.postman_collection.json` runs the whole journ
 2. الأصناف: إرسال دفعة الأصناف ومتابعتها ونتيجة كل صنف.
 3. طلبات البيع: جلب الطلبات الجديدة وطلب واحد وتأكيد الاستيراد وقبول الطلب أو رفضه.
 4. طلبات الشراء: طلبات الشراء وتأكيد استيرادها. البحث عن العروض وإنشاء طلب الشراء
-   ما زالا "قريباً" (Coming soon).
+   والبحث عن العروض وإنشاء طلب الشراء (القسم 9).
 
 ### 4. الرحلة الكاملة (13 خطوة)
 1. تحقق من المفتاح (`/health`).
@@ -38,7 +38,7 @@ The Postman collection `dawa24-erp.postman_collection.json` runs the whole journ
 10. أكّد الطلب (`confirmed`).
 11. أكّد الطلب نفسه مرة ثانية؛ يعود `already_confirmed` ولا يحدث تغيير.
 12. جرّب تسليم الطلب؛ الرد `403 ERP_DELIVERY_NOT_ALLOWED`، لأن التسليم لا يُضبط من الواجهة.
-13. الشراء: البحث عن العروض وإنشاء طلب الشراء (قريباً).
+13. الشراء: البحث عن العروض ثم إنشاء طلب شراء (القسم 9).
 
 ### 5. قراءة الطلبات (الاستطلاع)
 ابدأ كل دورة بدون `cursor` واطلب `state=new`. الـ `cursor` يتنقّل داخل الدورة الواحدة فقط،
@@ -60,6 +60,13 @@ The Postman collection `dawa24-erp.postman_collection.json` runs the whole journ
 
 ---
 
+### 9. إنشاء طلب شراء والبحث عن العروض
+- `GET /erp/v1/offers?barcode=...` يعيد حتى 50 عرضاً مرتبة من الأرخص، فيه `variantId` و`unitPrice` و`supplier.linked`، ويحتاج صلاحية `erp.po.create`.
+- `POST /erp/v1/orders/purchase` ينشئ طلب شراء على دواء24 بالأسعار الخاصة بدواء24. إذا أرسلت `unitPrice` ولم يطابق السعر، يُرفض الطلب بـ `ERP_PO_PRICE_MISMATCH` ويظهر السعر الصحيح في `details.lines`.
+- أعد إرسال نفس `externalReference` عند انقطاع الرد؛ ستحصل على الطلب الأول بالرد `200` ولن يُنشأ طلب ثانٍ.
+- المورّد يجب أن يكون مرتبطاً بمنشأتك (`ERP_PO_SUPPLIER_NOT_LINKED`)، ولا يُنشأ أي حساب أو ربط عند الرفض.
+- الدفع بالمحفظة غير متاح عبر الواجهة (`ERP_PO_PAYMENT_NOT_SUPPORTED`).
+
 ## English
 
 ### What this API is
@@ -80,7 +87,7 @@ and key are correct.
 2. Products: send a batch, check the upload, read each product's result.
 3. Sales orders: read new orders, read one order, mark orders as imported, confirm or reject.
 4. Purchase orders: read purchase orders and mark them as imported. Find offers and create a
-   purchase order are marked "Coming soon".
+   purchase order (section 9 of the Arabic part).
 
 ### 4. The full journey (13 steps)
 The journey is the same as in the Arabic section above (steps 1 to 13). Each step is one
@@ -170,13 +177,16 @@ One purchase order.
 #### POST /erp/v1/orders/purchase/ack
 Marks purchase orders as imported (scope `erp.orders.ack`). Same behaviour as the sales acknowledgement.
 
-#### POST /erp/v1/orders/purchase (Coming soon)
+#### POST /erp/v1/orders/purchase
 Creates a purchase order (scope `erp.po.create`). Prices are Dawa24's; a sent `unitPrice` that
 differs is refused with `ERP_PO_PRICE_MISMATCH`. Retrying with the same `externalReference`
-returns the first order.
+returns the first order. Body: `externalReference` (required, up to 100 characters), `notes` (optional, up to 500),
+`lines[{variantId, quantity, unitPrice?}]` (1 to 200 lines; `quantity` is a whole number from 1 to 100000;
+`unitPrice` is a string or number, optional). The reply is `201` for a new order and `200` for a replay.
+The buyer key needs a buying user, and each supplier must already be linked to your organization. No account is ever created.
 
-#### GET /erp/v1/offers (Coming soon)
-Active supplier products with stock for one barcode, to get the `variantId` for a purchase order (scope `erp.po.create`).
+#### GET /erp/v1/offers
+Active supplier products with stock for one barcode, to get the `variantId` for a purchase order (scope `erp.po.create`). Query: `barcode` (required). At most 50 offers, cheapest first, with `unitPrice` (the price after discount) and `supplier.linked`.
 
 ## Error codes
 
