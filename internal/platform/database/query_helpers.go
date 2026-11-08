@@ -143,6 +143,9 @@ func (db *DB) InReadTx(ctx context.Context, fn func(context.Context, pgx.Tx) err
 }
 
 func (db *DB) transact(ctx context.Context, opts pgx.TxOptions, fn func(context.Context, pgx.Tx) error) (err error) {
+	if tx, ok := joinedTx(ctx); ok {
+		return fn(ctx, tx)
+	}
 	pool, err := db.getPool()
 	if err != nil {
 		return err

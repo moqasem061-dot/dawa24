@@ -137,7 +137,12 @@ func (h *UIHandler) CustomerCheckoutPage(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
-	h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckout(cart, branches, wallet, checkoutMethods, userPaymentMethods, lang, dir))
+	// The code modal is decided here from the cart, never from the query string.
+	erpNeeds, err := h.erpMissingCodeNeeds(ctx, actor, cart, lang)
+	if err != nil {
+		h.logLoadErr(ctx, "erp.MissingCodes", err)
+	}
+	h.renderPage(ctx, w, "render checkout page", pages.CustomerCheckoutWithExtras(cart, branches, wallet, checkoutMethods, userPaymentMethods, lang, dir, pages.CheckoutExtras{MissingERPCodes: erpNeeds}))
 }
 
 func (h *UIHandler) CheckoutSubmit(w http.ResponseWriter, r *http.Request) {

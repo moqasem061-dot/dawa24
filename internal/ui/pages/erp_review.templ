@@ -2,7 +2,6 @@ package pages
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
 	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
@@ -61,7 +60,7 @@ templ ErpReviewPage(data ErpReviewData, lang, dir string) {
 							<div class="d-flex items-center justify-between flex-wrap gap-3">
 								<div>
 									<div class="font-bold text-primary">{ row.ExternalCode }</div>
-									<div class="text-xs text-secondary">{ i18n.T(lang, "erp.review.reason") }: { i18n.T(lang, "erp.err."+strings.ToLower(strings.TrimPrefix(row.ReasonCode, "ERP_"))) }</div>
+									<div class="text-xs text-secondary">{ i18n.T(lang, "erp.review.reason") }: { erpReasonLabel(lang, row.ReasonCode) }</div>
 								</div>
 								<div class="d-flex items-center gap-2">
 									<form method="POST" class="d-flex items-center gap-1 m-0"

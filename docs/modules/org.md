@@ -70,3 +70,12 @@ pixel widths in both themes.
 (migration 254). It previously read `app.current_tenant`, so tenant reads and
 writes returned or affected no rows. Writes are limited to the caller's own
 organization by the same policy.
+
+## ERP customer code guard (S5)
+
+The organization number on a customer link is the ERP customer code for that
+supplier. It is unique per ERP supplier: `GuardCustomerCode` (erp module) refuses
+a code another customer holds, among pending and approved links, and the check
+and the write run in one transaction under the supplier's advisory lock. The
+writers that use it are the customer and vendor create and update handlers and
+the checkout modal. Existing duplicates stay as they are.

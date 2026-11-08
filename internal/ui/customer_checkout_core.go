@@ -70,6 +70,12 @@ func (h *UIHandler) planCheckout(ctx context.Context, actor authctx.Actor, lang 
 		}
 	}
 
+	// S5: an ERP supplier needs this buyer's customer code before the order goes
+	// through. The checkout page opens the code modal for the missing ones.
+	if f := h.erpMissingCodeFailure(ctx, actor, items); f != nil {
+		return nil, f
+	}
+
 	paymentMethod := req.PaymentMethod
 	if paymentMethod == "" {
 		paymentMethod = commerce.DefaultPaymentMethod

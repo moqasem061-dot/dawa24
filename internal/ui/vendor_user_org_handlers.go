@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/url"
@@ -163,14 +164,21 @@ func (h *UIHandler) VendorUserOrganizationCreateSubmit(w http.ResponseWriter, r 
 		return
 	}
 
-	sysCtx := database.AsSystem(ctx)
-	if h.orgSvc != nil {
-		_, err := h.orgSvc.CreateUserOrgLink(sysCtx, targetUserID, nil, orgID, orgNumber, org.UserOrgStatusApproved)
-		if err != nil {
-			h.log.ErrorContext(ctx, "vendor create user org link failed", "error", err)
-			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(h.safeMessage(err, lang)), http.StatusSeeOther)
-			return
+	err = h.erpGuardCustomerCode(ctx, orgID, nil, targetUserID, orgNumber, 0, func(txCtx context.Context) error {
+		if h.orgSvc == nil {
+			return nil
 		}
+		_, err := h.orgSvc.CreateUserOrgLink(database.AsSystem(txCtx), targetUserID, nil, orgID, orgNumber, org.UserOrgStatusApproved)
+		return err
+	})
+	if erpCodeTaken(err) {
+		http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(i18n.T(lang, "customer.userorg.number_taken")), http.StatusSeeOther)
+		return
+	}
+	if err != nil {
+		h.log.ErrorContext(ctx, "vendor create user org link failed", "error", err)
+		http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(h.safeMessage(err, lang)), http.StatusSeeOther)
+		return
 	}
 
 	http.Redirect(w, r, "/vendor/user-organization?notice_type=success&notice_msg="+url.QueryEscape(i18n.T(lang, "vendor.user_org.linked_approved_success")), http.StatusSeeOther)
@@ -265,7 +273,23 @@ func (h *UIHandler) VendorUserOrganizationUpdateSubmit(w http.ResponseWriter, r 
 			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(h.safeMessage(err, langOf(r))), http.StatusSeeOther)
 			return
 		}
-		if err := h.orgSvc.UpdateUserOrgLink(sysCtx, id, orgNumber, notes); err != nil {
+		link, err := h.orgSvc.GetUserOrgLink(sysCtx, id)
+		if err != nil {
+			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(h.safeMessage(err, lang)), http.StatusSeeOther)
+			return
+		}
+		if link == nil {
+			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(i18n.T(lang, "vendor.user_org.invalid_id")), http.StatusSeeOther)
+			return
+		}
+		err = h.erpGuardCustomerCode(ctx, link.VendorOrgID, link.CustomerOrgID, link.UserID, orgNumber, id, func(txCtx context.Context) error {
+			return h.orgSvc.UpdateUserOrgLink(database.AsSystem(txCtx), id, orgNumber, notes)
+		})
+		if erpCodeTaken(err) {
+			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(i18n.T(lang, "customer.userorg.number_taken")), http.StatusSeeOther)
+			return
+		}
+		if err != nil {
 			http.Redirect(w, r, "/vendor/user-organization?notice_type=error&notice_msg="+url.QueryEscape(h.safeMessage(err, lang)), http.StatusSeeOther)
 			return
 		}

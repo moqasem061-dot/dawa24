@@ -1,0 +1,34 @@
+package pages
+
+import (
+	"fmt"
+
+	"github.com/moqasem061-dot/dawa24/internal/shared/i18n"
+	"github.com/moqasem061-dot/dawa24/internal/ui/components"
+)
+
+// ErpCodeNeed is one ERP supplier in the cart that the buyer has no customer
+// code for.
+type ErpCodeNeed struct {
+	VendorOrgID  int64
+	SupplierName string
+}
+
+// ErpCodeModal asks for the buyer's customer number with each ERP supplier. Each
+// form posts to /checkout/erp-customer-code. The cart is not changed.
+templ ErpCodeModal(needs []ErpCodeNeed, lang string) {
+	@components.Modal(components.ModalProps{ID: "erp-code-modal", Title: i18n.T(lang, "erp.checkout.code_title"), Size: "md", Open: true}) {
+		<p class="text-sm m-0">{ i18n.T(lang, "erp.checkout.code_explain") }</p>
+		for _, need := range needs {
+			<form method="POST" class="d-flex flex-col gap-2 m-0" action="/checkout/erp-customer-code">
+				<input type="hidden" name="vendor_org_id" value={ fmt.Sprintf("%d", need.VendorOrgID) }/>
+				<label class="form-label text-xs font-bold" for={ fmt.Sprintf("erp-code-%d", need.VendorOrgID) }>
+					{ i18n.T(lang, "erp.checkout.supplier") }: { need.SupplierName }
+				</label>
+				<input class="form-input" type="text" required name="organization_number" id={ fmt.Sprintf("erp-code-%d", need.VendorOrgID) } placeholder={ i18n.T(lang, "erp.checkout.code_label") }/>
+				<button type="submit" class="btn btn-primary">{ i18n.T(lang, "erp.checkout.code_submit") }</button>
+			</form>
+		}
+		<a href="/cart" class="btn btn-ghost text-sm">{ i18n.T(lang, "erp.checkout.code_cancel") }</a>
+	}
+}

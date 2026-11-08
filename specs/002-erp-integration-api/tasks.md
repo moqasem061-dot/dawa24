@@ -902,94 +902,94 @@ Goal: the ERP confirms or rejects pending orders through the website rules. Depe
 
 Goal: the link-page organization number acts as the ERP customer code, unique per ERP supplier, with a quick-entry modal in checkout. Depends on S3. Independent test: order as a user with no code, enter it in the modal, finish the order, and the API shows `erpCode`.
 
-- [ ] T171 [US5] Write the customer code integration tests in `test/integration/erp_customer_code_test.go`
+- [x] T171 [US5] Write the customer code integration tests in `test/integration/erp_customer_code_test.go`
   - Do: `TestERPCustomerCode_OrderWithCode` (`erpCode` returned); `TestERPCustomerCode_NoLink` (`mapped=false`, `unmappedReason="no_link"`); `TestERPCustomerCode_EmptyCode` (a link exists with `organization_number=''`: `mapped=false`, `unmappedReason="empty_code"`); `TestERPCustomerCode_Conflict` (code shared by two customers: `code_conflict`); `TestERPCustomerCode_SupplierWithoutERP` (no modal, plan unchanged, SC-009); `TestERPCustomerCode_GuardTakenAndLock` (second customer with the same code refused `ERP_CODE_TAKEN`).
   - Traps: 19.
   - Done: `gofmt -l test/integration/erp_customer_code_test.go` prints nothing; compile fails (RED).
 
-- [ ] T172 [US5] Write migration 257 in `db/migrations/257_user_org_erp_code_index.up.sql` and `.down.sql`
+- [x] T172 [US5] Write migration 257 in `db/migrations/257_user_org_erp_code_index.up.sql` and `.down.sql`
   - Do: the index from `data-model.md` "Migration 257" with `BEGIN;`/`COMMIT;`; down `DROP INDEX IF EXISTS org.idx_user_orgs_vendor_number`. Not unique. Add an Arabic `COMMENT ON INDEX`.
   - Done: SB-3 and SB-4 apply 257 with no error; `go test ./test/ -run 'TestRepositorySQLMatchesMigrations|TestWriteSQLMatchesMigrations' -count=1` passes.
 
-- [ ] T173 [US5] Write the customer code service tests in `internal/modules/erp/customer_code_test.go`
+- [x] T173 [US5] Write the customer code service tests in `internal/modules/erp/customer_code_test.go`
   - Do: `SuppliersUsingERP` true only for an active integration with an active, unexpired key; `MissingCodes(buyerOrgID, buyerUserID, vendorOrgIDs)` returns only ERP suppliers with no code for this buyer; `GuardCustomerCode` returns `ERP_CODE_TAKEN` (409) when another customer holds the code (case-insensitive) among `pending`/`approved` links, accepts the same customer, honours `excludeLinkID`, and is a no-op for a supplier without ERP.
   - Done: `gofmt -l internal/modules/erp/customer_code_test.go` prints nothing; `go test ./internal/modules/erp/ -run CustomerCode -count=1` fails (RED).
 
-- [ ] T174 [US5] Add customer code logic in `internal/modules/erp/customer_code.go`
+- [x] T174 [US5] Add customer code logic in `internal/modules/erp/customer_code.go`
   - Do: `(*Service).SuppliersUsingERP(ctx, vendorOrgIDs []int64) (map[int64]bool, error)`, `MissingCodes(ctx, buyerOrgID, buyerUserID int64, vendorOrgIDs []int64) ([]int64, error)`, `GuardCustomerCode(ctx, vendorOrgID int64, customerOrgID *int64, userID int64, code string, excludeLinkID int64) error`; a `CodeRepository` interface declared in this file and embedded in `Repository`. Embed a code fake in `fakeRepo`: create `fake_code_test.go` with `type fakeCode struct` implementing the three methods in memory, and change `fakeRepo` to `type fakeRepo struct { ...; *fakeSync; *fakeOrders; *fakeCode }` so it still satisfies `erp.Repository`.
   - Traps: 1.
   - Done: `go test ./internal/modules/erp/ -run CustomerCode -count=1` and `go vet ./internal/modules/erp/`.
 
-- [ ] T175 [US5] Add guard SQL in `internal/modules/erp/postgres/customer_code.go`
+- [x] T175 [US5] Add guard SQL in `internal/modules/erp/postgres/customer_code.go`
   - Do: add `SuppliersUsingERP`, `MissingCodes`, `GuardCustomerCode` SQL: take `pg_advisory_xact_lock(hashtextextended('erp-code:'||$vendor,0))` then check other customers' `lower(organization_number)` among `pending`/`approved` links. `org.user_organizations` has no RLS (research D-20): read it under `WithTenant` like the other queries. Do not add an `AsSystem` function; if a query returns no rows because of the tenant context, stop and record it in `verify-notes.md`.
   - Traps: 1.
   - Done: `go build ./internal/modules/erp/postgres/` (must pass including the `var _ erp.Repository` line) `&& go test ./internal/modules/erp/postgres/ -count=1`.
 
-- [ ] T176 [US5] Add `erp.checkout.*` and `customer.userorg.number_taken` strings in `internal/shared/i18n/catalog_erp_ui.go`
+- [x] T176 [US5] Add `erp.checkout.*` and `customer.userorg.number_taken` strings in `internal/shared/i18n/catalog_erp_ui.go`
   - Do: bilingual strings for the modal title, explanation, input label, submit, cancel, and the notice `customer.userorg.number_taken`.
   - Traps: 12.
   - Done: `go test ./internal/shared/i18n/ -count=1 && make check-hardcoded-arabic`.
 
-- [ ] T177 [US5] Write the checkout code handler tests in `internal/ui/erp_customer_code_test.go`
+- [x] T177 [US5] Write the checkout code handler tests in `internal/ui/erp_customer_code_test.go`
   - Do: names start with `TestErpCustomerCode`: `CheckoutErpCodeSubmit` creates a `pending` link through `orgSvc.CreateUserOrgLink(sysCtx, userID, &buyerOrg, vendorOrgID, code, org.UserOrgStatusPending)` when none exists and calls `UpdateUserOrgLink` when one does; a taken code redirects with `customer.userorg.number_taken` and changes nothing; success redirects to `/checkout`; the cart is untouched; the helper `erpGuardCustomerCode` is a no-op when `erpSvc` is nil.
   - Done: `gofmt -l internal/ui/erp_customer_code_test.go` prints nothing; `go test ./internal/ui/ -run ErpCustomerCode -count=1` fails (RED).
 
-- [ ] T178 [US5] Add the checkout code handler in `internal/ui/erp_customer_code.go`
+- [x] T178 [US5] Add the checkout code handler in `internal/ui/erp_customer_code.go`
   - Do: `func (h *UIHandler) erpGuardCustomerCode(...) error` and `CheckoutErpCodeSubmit` (`POST /checkout/erp-customer-code`, reads `vendor_org_id` and `organization_number`).
   - Done: `go test ./internal/ui/ -run ErpCustomerCode -count=1`.
 
-- [ ] T179 [US5] Register the route in `internal/ui/buying_routes.go`
+- [x] T179 [US5] Register the route in `internal/ui/buying_routes.go`
   - Do: register `POST /checkout/erp-customer-code` beside `g.Post("/checkout", ...)` (about line 101), with the same gate as `/checkout`.
   - Traps: 29.
   - Done: `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`.
 
-- [ ] T180 [US5] Write tests for the four number writers in `internal/ui/erp_code_writers_test.go`
+- [x] T180 [US5] Write tests for the four number writers in `internal/ui/erp_code_writers_test.go`
   - Do: names start with `TestErpCodeWriter`: one test per writer (customer create at `customer_user_org_handlers.go` line 166, customer update at 201, vendor create at `vendor_user_org_handlers.go` line 168, vendor update at 268): taken code redirects with `customer.userorg.number_taken` and no write; free code writes; a supplier without ERP is unchanged.
   - Done: `gofmt -l internal/ui/erp_code_writers_test.go` prints nothing; `go test ./internal/ui/ -run ErpCodeWriter -count=1` fails (RED).
 
-- [ ] T181 [P] [US5] Guard the customer-side writers in `internal/ui/customer_user_org_handlers.go`
+- [x] T181 [P] [US5] Guard the customer-side writers in `internal/ui/customer_user_org_handlers.go`
   - Do: call `h.erpGuardCustomerCode` before `CreateUserOrgLink` (line 166) and `UpdateUserOrgLink` (line 201); on `ERP_CODE_TAKEN` redirect with notice key `customer.userorg.number_taken`.
   - Done: `go test ./internal/ui/ -run 'ErpCodeWriter' -count=1` (customer cases pass).
 
-- [ ] T182 [P] [US5] Guard the vendor-side writers in `internal/ui/vendor_user_org_handlers.go`
+- [x] T182 [P] [US5] Guard the vendor-side writers in `internal/ui/vendor_user_org_handlers.go`
   - Do: the same guard before the writes at lines 168 and 268.
   - Done: `go test ./internal/ui/ -run 'ErpCodeWriter' -count=1` (all four pass).
 
-- [ ] T183 [US5] Write the checkout plan test in `internal/ui/customer_checkout_core_erp_test.go`
+- [x] T183 [US5] Write the checkout plan test in `internal/ui/customer_checkout_core_erp_test.go`
   - Do: `TestErpPlanCheckout`: a supplier without integration leaves `planCheckout` unchanged; a supplier with an integration and no code returns `&checkoutFailure{Back: "/checkout?erp_code=1"}` with no message; a code present continues.
   - Done: `gofmt -l internal/ui/customer_checkout_core_erp_test.go` prints nothing; `go test ./internal/ui/ -run ErpPlanCheckout -count=1` fails (RED).
 
-- [ ] T184 [US5] Add the missing-code check in `internal/ui/customer_checkout_core.go`
+- [x] T184 [US5] Add the missing-code check in `internal/ui/customer_checkout_core.go`
   - Do: in `planCheckout` (about line 54), after `prepareCheckoutItems`, call `resolveCheckoutVendors` first, collect vendor ids from `CheckoutLineItem.VendorOrgID`, call `h.erpSvc.MissingCodes`; if any, return the failure above.
   - Done: `go test ./internal/ui/ -run 'ErpPlanCheckout|Checkout' -count=1`.
 
-- [ ] T185 [US5] Write the checkout page test in `internal/ui/customer_checkout_erp_page_test.go`
+- [x] T185 [US5] Write the checkout page test in `internal/ui/customer_checkout_erp_page_test.go`
   - Do: `TestErpCheckoutPageModal`: the page handler recomputes `MissingCodes` itself, never trusts `?erp_code=1`, and renders `erp-code-modal` with one input per missing supplier posting to `/checkout/erp-customer-code`; with nothing missing no modal renders even when the query string asks for it.
   - Done: `gofmt -l internal/ui/customer_checkout_erp_page_test.go` prints nothing; `go test ./internal/ui/ -run ErpCheckoutPage -count=1` fails (RED).
 
-- [ ] T186 [P] [US5] Add the modal component in `internal/ui/pages/checkout_erp_code_modal.templ`
+- [x] T186 [P] [US5] Add the modal component in `internal/ui/pages/checkout_erp_code_modal.templ`
   - Do: `ErpCodeModal(needs []ErpCodeNeed)` built with `components.Modal(ModalProps{ID:"erp-code-modal", Open:true, ...})`; `ErpCodeNeed{VendorOrgID int64; SupplierName string}`. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/pages/ && make check-modal-handwritten`.
 
-- [ ] T187 [US5] Extend the checkout page in `internal/ui/pages/customer_checkout.templ`
+- [x] T187 [US5] Extend the checkout page in `internal/ui/pages/customer_checkout.templ`
   - Do: keep the `CustomerCheckout(...)` signature; add `CustomerCheckoutWithExtras(...same args..., extras CheckoutExtras)` with `CheckoutExtras{MissingERPCodes []ErpCodeNeed}`; `CustomerCheckout` calls it with the zero value. Run templ generate.
   - Traps: 22.
   - Done: `go build ./internal/ui/...`.
 
-- [ ] T188 [US5] Pass the extras in `internal/ui/customer_checkout_handlers.go`
+- [x] T188 [US5] Pass the extras in `internal/ui/customer_checkout_handlers.go`
   - Do: at about line 141 call `MissingCodes` and `CustomerCheckoutWithExtras`.
   - Done: `go test ./internal/ui/ -run 'ErpCheckoutPage|Checkout' -count=1 && make check-modal-handwritten check-hardcoded-arabic`.
 
-- [ ] T189 [P] [US5] Note the guard in `docs/modules/org.md`
+- [x] T189 [P] [US5] Note the guard in `docs/modules/org.md`
   - Do: record: the `organization_number` on the link page is the ERP customer code, unique per ERP supplier through `GuardCustomerCode`, existing duplicates stay.
   - Done: `grep -n "GuardCustomerCode" docs/modules/org.md` prints a line.
 
-- [ ] T190 [US5] Run the S5 integration tests
+- [x] T190 [US5] Run the S5 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S5 task when a test fails.
   - Done: `SB go test -p 1 ./test/integration/ -run ERPCustomerCode -count=1` passes.
 
-- [ ] T191 [US5] S5 slice gate
+- [x] T191 [US5] S5 slice gate
   - Do: slice gate. Changed packages: `./internal/ui/... ./internal/modules/erp/... ./internal/shared/i18n/`. Focused tests: `go test ./internal/ui/ -run 'Erp|Checkout' -count=1`; `go test ./internal/modules/erp/... -run CustomerCode -count=1`; the SB command above; `go test ./test/ -run 'TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`; `make check-modal-handwritten check-hardcoded-arabic`.
   - Commit message: `feat(erp): S5 customer codes and checkout modal`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.

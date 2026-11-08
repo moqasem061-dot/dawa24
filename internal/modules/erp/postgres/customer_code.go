@@ -6,6 +6,9 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5"
+
+	"github.com/moqasem061-dot/dawa24/internal/modules/erp"
+	"github.com/moqasem061-dot/dawa24/internal/platform/database"
 )
 
 // customerCodeSQL is the only copy of the customer-code rule (research D-20).
@@ -27,14 +30,56 @@ LEFT JOIN LATERAL (
 ) l ON true`
 
 // customerConflictSQL returns the codes that more than one customer uses with
-// this supplier. Those codes cannot name a single buyer.
+// this supplier. Codes compare trimmed and case-insensitively (S5 D3), so C-1
+// and c-1 are one code. Those codes cannot name a single buyer.
 const customerConflictSQL = `
-SELECT trim(uo.organization_number)
+SELECT lower(trim(uo.organization_number))
 FROM org.user_organizations uo
 WHERE uo.vendor_org_id = $1 AND uo.deleted_at IS NULL AND uo.status IN ('pending', 'approved')
-  AND trim(uo.organization_number) = ANY($2::text[])
-GROUP BY trim(uo.organization_number)
+  AND lower(trim(uo.organization_number)) = ANY($2::text[])
+GROUP BY lower(trim(uo.organization_number))
 HAVING COUNT(DISTINCT COALESCE(uo.customer_org_id::text, 'user:' || uo.user_id::text)) > 1`
+
+// supplierERPSQL is the one copy of "this supplier uses ERP" (plan.md E8 and the
+// guard). It returns the supplier ids that have an active integration with an
+// active, unrevoked, unexpired key, the same predicates authenticate.go checks.
+const supplierERPSQL = `
+SELECT i.organization_id
+FROM erp.integrations i
+WHERE i.organization_id = ANY($1::bigint[]) AND i.status = 'active'
+  AND EXISTS (
+    SELECT 1 FROM erp.api_keys k
+    WHERE k.integration_id = i.id AND k.status = 'active' AND k.revoked_at IS NULL
+      AND (k.expires_at IS NULL OR k.expires_at > now())
+  )`
+
+// codedSuppliersSQL lists the suppliers for which this buyer has a pending or
+// approved link with a non-blank number. The buyer's organization link counts,
+// otherwise a user-only link for the buyer, as customerCodeSQL does.
+const codedSuppliersSQL = `
+SELECT DISTINCT uo.vendor_org_id
+FROM org.user_organizations uo
+WHERE uo.vendor_org_id = ANY($1::bigint[]) AND uo.deleted_at IS NULL AND uo.status IN ('pending', 'approved')
+  AND trim(uo.organization_number) <> ''
+  AND (uo.customer_org_id = NULLIF($2::bigint, 0) OR (uo.customer_org_id IS NULL AND uo.user_id = $3::bigint))`
+
+// codeLockSQL serialises every customer-code write for one supplier. The lock is
+// transaction-scoped, so it is held until the guard's transaction commits.
+const codeLockSQL = `SELECT pg_advisory_xact_lock(hashtextextended('erp-code:' || $1::bigint::text, 0))`
+
+// codeTakenSQL reports whether another customer holds the code with this
+// supplier among pending or approved links. The same customer (its organization,
+// or for a user-only link its user) may keep the code. excludeLinkID is the link
+// being edited, or 0.
+const codeTakenSQL = `
+SELECT EXISTS (
+  SELECT 1 FROM org.user_organizations uo
+  WHERE uo.vendor_org_id = $1 AND uo.deleted_at IS NULL AND uo.status IN ('pending', 'approved')
+    AND uo.id <> $2
+    AND lower(trim(uo.organization_number)) = lower(trim($3))
+    AND NOT (CASE WHEN $4::bigint > 0
+                  THEN COALESCE(uo.customer_org_id = $4::bigint, false)
+                  ELSE uo.customer_org_id IS NULL AND uo.user_id = $5::bigint END))`
 
 // orderRef identifies one order's buyer for the code lookup.
 type orderRef struct {
@@ -93,7 +138,7 @@ func resolveCustomerCodes(ctx context.Context, tx pgx.Tx, supplierOrgID int64, o
 		if l.code == nil {
 			continue
 		}
-		if c := strings.TrimSpace(*l.code); c != "" && !seen[c] {
+		if c := strings.ToLower(strings.TrimSpace(*l.code)); c != "" && !seen[c] {
 			seen[c] = true
 			codes = append(codes, c)
 		}
@@ -116,12 +161,13 @@ func classifyCode(code *string, conflicts map[string]bool) customerCode {
 	if c == "" {
 		return customerCode{UnmappedReason: "empty_code"}
 	}
-	if conflicts[c] {
+	if conflicts[strings.ToLower(c)] {
 		return customerCode{UnmappedReason: "code_conflict"}
 	}
 	return customerCode{ErpCode: c, Mapped: true}
 }
 
+// conflictingCodes returns the lower-cased codes that more than one customer uses.
 func conflictingCodes(ctx context.Context, tx pgx.Tx, supplierOrgID int64, codes []string) (map[string]bool, error) {
 	out := map[string]bool{}
 	if len(codes) == 0 {
@@ -142,6 +188,89 @@ func conflictingCodes(ctx context.Context, tx pgx.Tx, supplierOrgID int64, codes
 	return out, cursor.Err()
 }
 
+// SupplierERPStatusAsSystem is plan.md E8. It answers, for each supplier, only
+// whether it uses ERP: the rows read are the integration and key predicates in
+// supplierERPSQL, and no key data is returned. It is needed because a buyer's
+// tenant cannot see a supplier's erp rows.
+func (r *Repository) SupplierERPStatusAsSystem(ctx context.Context, vendorOrgIDs []int64) (map[int64]bool, error) {
+	if len(vendorOrgIDs) == 0 {
+		return map[int64]bool{}, nil
+	}
+	var out map[int64]bool
+	err := r.db.InReadTx(database.AsSystem(ctx), func(ctx context.Context, tx pgx.Tx) error {
+		var err error
+		out, err = scanIDSet(ctx, tx, supplierERPSQL, vendorOrgIDs)
+		return err
+	})
+	return out, err
+}
+
+// CodedSuppliers returns the suppliers for which the buyer has a customer code.
+// It runs under the buyer's tenant; org.user_organizations has no row policy.
+func (r *Repository) CodedSuppliers(ctx context.Context, buyerOrgID, buyerUserID int64, vendorOrgIDs []int64) (map[int64]bool, error) {
+	var out map[int64]bool
+	err := r.db.InReadTx(database.WithTenant(ctx, buyerOrgID), func(ctx context.Context, tx pgx.Tx) error {
+		var err error
+		out, err = scanIDSet(ctx, tx, codedSuppliersSQL, vendorOrgIDs, buyerOrgID, buyerUserID)
+		return err
+	})
+	return out, err
+}
+
+// GuardCustomerCode is the customer-code guard (S5 D2). In one transaction it
+// takes the supplier's advisory lock, checks whether another customer holds the
+// code (only for a supplier that uses ERP and a non-blank code), and when the
+// code is free runs write inside that same transaction through database.JoinTx.
+// The lock therefore covers both the check and the link write. The supplier's
+// rows are read under its own tenant, so no AsSystem is needed here.
+func (r *Repository) GuardCustomerCode(ctx context.Context, vendorOrgID int64, customerOrgID *int64, userID int64, code string, excludeLinkID int64, write func(context.Context) error) (bool, error) {
+	var customerOrg int64
+	if customerOrgID != nil {
+		customerOrg = *customerOrgID
+	}
+	code = strings.TrimSpace(code)
+	taken := false
+	err := r.db.InTx(database.WithTenant(ctx, vendorOrgID), func(ctx context.Context, tx pgx.Tx) error {
+		if _, err := tx.Exec(ctx, codeLockSQL, vendorOrgID); err != nil {
+			return err
+		}
+		if code != "" {
+			using, err := scanIDSet(ctx, tx, supplierERPSQL, []int64{vendorOrgID})
+			if err != nil {
+				return err
+			}
+			if using[vendorOrgID] {
+				if err := tx.QueryRow(ctx, codeTakenSQL, vendorOrgID, excludeLinkID, code, customerOrg, userID).Scan(&taken); err != nil {
+					return err
+				}
+			}
+		}
+		if taken {
+			return nil
+		}
+		return database.JoinTx(ctx, tx, write)
+	})
+	return taken, err
+}
+
+// scanIDSet runs a query that returns one bigint column and collects the ids.
+func scanIDSet(ctx context.Context, tx pgx.Tx, sql string, args ...any) (map[int64]bool, error) {
+	rows, err := tx.Query(ctx, sql, args...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[int64]bool{}
+	for rows.Next() {
+		var id int64
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}
+
 // decodeBilingual reads a bilingual JSONB object. An absent or malformed value
 // becomes an empty map, so a bad row shows blank names rather than failing.
 func decodeBilingual(raw []byte) map[string]string {
@@ -152,3 +281,6 @@ func decodeBilingual(raw []byte) map[string]string {
 	_ = json.Unmarshal(raw, &out)
 	return out
 }
+
+// The Postgres repository implements the customer-code port.
+var _ erp.CodeRepository = (*Repository)(nil)

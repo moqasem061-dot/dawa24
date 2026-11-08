@@ -1,0 +1,67 @@
+# ERP integration (module `erp`)
+
+The ERP module is the machine-to-machine API that lets a supplier's ERP (today
+the Orgasoft provider) push products and stock, read its orders, confirm or
+reject them, and receive acknowledgements. The partner-facing contract is
+`specs/002-erp-integration-api/contracts/openapi.yaml`; this page records the
+module's entities, invariants and the rules a reader of the code needs.
+
+## Entities
+
+Schema `erp` (tenant-owned tables carry `organization_id`, row-level security on):
+
+- `erp.integrations`: one per supplier; `status` is `active`, `paused` or `closed`.
+- `erp.api_keys`: a key belongs to an integration; only `key_prefix` and a hash
+  are stored. `status`, `expires_at`, `revoked_at` decide whether it authenticates.
+- `erp.product_links`, `erp.sync_batches`, `erp.sync_items`, `erp.review_items`:
+  product sync state (S2).
+- `erp.order_imports`, `erp.idempotency_records`: order acknowledgement and retries (S3).
+- `erp.api_calls`: call log, organization nullable for failed authentication.
+
+## Customer codes (S5)
+
+A buyer's customer code with a supplier is the organization number on its
+`org.user_organizations` link to that supplier. The rules:
+
+- A code is unique per ERP supplier. `GuardCustomerCode` refuses a code that
+  another customer holds among pending and approved links. The same customer
+  (its organization, or for a user-only link its user) may keep it.
+- The guard and the link write run in one transaction under the supplier's
+  advisory lock (`pg_advisory_xact_lock` keyed by the supplier). Two saves of the
+  same code cannot both pass. The write runs through `database.JoinTx`, which
+  makes nested `InTx` calls use the guard's transaction.
+- A supplier without an active ERP integration and key is never asked for a code
+  and never refused (SC-009).
+- Codes compare trimmed and case-insensitively everywhere (`lower(trim(...))`):
+  the guard, the order feed conflict check (`customerConflictSQL`) and the
+  migration 257 index. Behaviour change in S5: the order feed now reports
+  `code_conflict` for `C-1` against `c-1`, where it used to report two
+  mapped customers.
+- Existing duplicate codes stay as they are; the guard applies to new writes.
+
+## Named exceptions to tenant isolation
+
+Each is a function named `...AsSystem` or `...AsStaff` with a comment citing this
+table (`plan.md` "Named exceptions"). Nothing else reads across tenants.
+
+| ID | Function | Why |
+|---|---|---|
+| E1 | `FindKeyByPrefixAsSystem` | authentication happens before the tenant is known |
+| E2 | `ListSalesShipmentsAsSystem`, `GetSalesShipmentAsSystem` | the buyer's order header is not visible to the supplier |
+| E3 | `PurgeExpiredAsSystem` | retention job spans tenants |
+| E4 | `InsertCallsAsSystem` | failed-authentication rows have no organization |
+| E5 | `ListKeysAsStaff`, `RevokeKeyAsStaff` | staff oversight, behind the platform permissions |
+| E6 | `ListOffersAsSystem`, `VariantOfferAsSystem` | supplier variants belong to other tenants |
+| E7 | `ListPurchaseShipmentsAsSystem` | a buyer cannot see a supplier's shipments and lines |
+| E8 | `SupplierERPStatusAsSystem` | a buyer cannot see a supplier's integration or key rows; returns booleans only |
+
+## Platform helper added for S5
+
+`database.JoinTx(ctx, tx, fn)` (in `internal/platform/database/join_tx.go`) makes
+every `InTx` and `InReadTx` started inside `fn` run on `tx`. It is opt-in: only
+`GuardCustomerCode` uses it, so no other transaction changes behaviour.
+
+## Unverified assumptions
+
+The list of items Orgasoft or the owner must still confirm is recorded in
+`specs/002-erp-integration-api/verify-notes.md` under "V5 unverified".

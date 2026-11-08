@@ -8,6 +8,7 @@ import (
 type fakeRepo struct {
 	*fakeSync
 	*fakeOrders
+	*fakeCode
 	keys                                     map[int64]NewKey
 	integrations                             map[int64]Integration
 	audits                                   []AuditRecord
@@ -18,7 +19,7 @@ type fakeRepo struct {
 }
 
 func newFakeRepo() *fakeRepo {
-	return &fakeRepo{fakeSync: newFakeSync(), fakeOrders: newFakeOrders(), keys: map[int64]NewKey{}, integrations: map[int64]Integration{}, orgStatus: "approved", orgType: "vendor", validWarehouse: true, validBranch: true, validMember: true}
+	return &fakeRepo{fakeSync: newFakeSync(), fakeOrders: newFakeOrders(), fakeCode: newFakeCode(), keys: map[int64]NewKey{}, integrations: map[int64]Integration{}, orgStatus: "approved", orgType: "vendor", validWarehouse: true, validBranch: true, validMember: true}
 }
 func (f *fakeRepo) FindKeyByPrefixAsSystem(_ context.Context, prefix string) (KeyAuthRow, bool, error) {
 	for _, k := range f.keys {

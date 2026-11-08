@@ -16,7 +16,7 @@ func TestAsSystemOnlyInNamedFunctions(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	allowedComment := regexp.MustCompile(`plan\.md E[1-7]`)
+	allowedComment := regexp.MustCompile(`plan\.md E[1-8]`)
 	for _, pkg := range packages {
 		for _, file := range pkg.Files {
 			for _, decl := range file.Decls {

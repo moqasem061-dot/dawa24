@@ -99,6 +99,7 @@ func (h *UIHandler) registerBuyingCartRoutes(r chi.Router) {
 		g.Get("/checkout", h.CustomerCheckoutPage)
 		g.Get("/offers/{id}/checkout", h.CustomerOfferCheckoutPage)
 		g.Post("/checkout", h.CheckoutSubmit)
+		g.Post("/checkout/erp-customer-code", h.CheckoutErpCodeSubmit)
 	})
 }
 

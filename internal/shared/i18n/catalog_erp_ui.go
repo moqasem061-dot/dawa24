@@ -50,4 +50,11 @@ func loadErpUIKeys(e *engine) {
 	addKey(e, "erp.review.dismiss", "erp", "تجاهل", "Dismiss", "ERP review")
 	addKey(e, "erp.review.done", "erp", "تم تحديث حالة البند.", "The item was updated.", "ERP review")
 	addKey(e, "erp.keys.resumed", "erp", "تم استئناف الربط.", "The integration was resumed.", "ERP keys")
+	addKey(e, "erp.checkout.code_title", "erp", "رقم العميل لدى المورد", "Your customer number with the supplier", "ERP checkout")
+	addKey(e, "erp.checkout.code_explain", "erp", "هذا المورد يستخدم نظامه الخاص. أدخل رقم حسابك لديه ليرتبط طلبك بحسابك، ثم تابع الطلب. السلة لن تتغير.", "This supplier uses its own system. Enter your account number with them so your order links to your account, then continue. Your cart will not change.", "ERP checkout")
+	addKey(e, "erp.checkout.supplier", "erp", "المورد", "Supplier", "ERP checkout")
+	addKey(e, "erp.checkout.code_label", "erp", "رقم العميل", "Customer number", "ERP checkout")
+	addKey(e, "erp.checkout.code_submit", "erp", "حفظ والمتابعة", "Save and continue", "ERP checkout")
+	addKey(e, "erp.checkout.code_cancel", "erp", "إلغاء", "Cancel", "ERP checkout")
+	addKey(e, "customer.userorg.number_taken", "customer", "هذا الرقم مستخدم لعميل آخر لدى هذا المورد.", "This number is already used by another customer of this supplier.", "Customer number")
 }

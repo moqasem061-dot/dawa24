@@ -11,9 +11,22 @@ import (
 	"github.com/moqasem061-dot/dawa24/internal/ui/layouts"
 )
 
+// CheckoutExtras carries what the checkout page shows beyond the cart: the ERP
+// suppliers whose customer code the buyer still has to give (S5).
+type CheckoutExtras struct {
+	MissingERPCodes []ErpCodeNeed
+}
+
 templ CustomerCheckout(cart *commerce.Cart, branches []*CheckoutBranchItem, wallet *billing.Wallet, paymentMethods []*billing.PlatformPaymentMethod, userPaymentMethods []*billing.UserPaymentMethod, lang, dir string) {
+	@CustomerCheckoutWithExtras(cart, branches, wallet, paymentMethods, userPaymentMethods, lang, dir, CheckoutExtras{})
+}
+
+templ CustomerCheckoutWithExtras(cart *commerce.Cart, branches []*CheckoutBranchItem, wallet *billing.Wallet, paymentMethods []*billing.PlatformPaymentMethod, userPaymentMethods []*billing.UserPaymentMethod, lang, dir string, extras CheckoutExtras) {
 	@layouts.ShellFor(fmt.Sprintf("%s | B2B Checkout", i18n.T(lang, "checkout.title")), "checkout", lang, dir, authctx.FromContext(ctx)) {
 		<div class="page-container max-w-6xl">
+			if len(extras.MissingERPCodes) > 0 {
+				@ErpCodeModal(extras.MissingERPCodes, lang)
+			}
 			
 			<!-- Header -->
 			<div class="page-header-block mb-6 border-b pb-4">
