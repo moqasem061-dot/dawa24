@@ -735,7 +735,7 @@ Goal: the ERP sends batches, reads per-item results; suppliers resolve review it
   - Do: run SB-3, then `docker restart dawa24audit-pg` and SB-4 (a clean database), then the command below on its own. The SB timeout of 400 s is stricter than the 7-minute window: if the run is killed by it, write `V8a result: SC-002 not met, killed at 400 s` in `verify-notes.md` and stop the slice.
   - Done: `SB go test -p 1 ./test/integration/ -run TestERPSyncFlow_Scale50000 -count=1 -v` passes; copy the two logged durations into `verify-notes.md` as `V8a result: accept <seconds> s, process <seconds> s`.
 
-- [ ] T139 [US2] S2 slice gate
+- [x] T139 [US2] S2 slice gate
   - Do: slice gate. Changed packages: `./internal/platform/queue/ ./internal/modules/catalog/... ./internal/modules/erp/... ./internal/composition/... ./cmd/worker/ ./cmd/server/ ./internal/platform/rbac/ ./internal/ui/ ./internal/shared/i18n/`. Focused tests: `go test ./internal/platform/queue/ ./internal/modules/catalog/ ./internal/modules/erp/... ./internal/platform/rbac/ -run 'ERP|Quota|Item|Intake|Process|GatewayOff|Review|Cleanup|NoOrgasoft|NeverCallsEnhancement|Erp|Body|Sync|Orgasoft' -count=1`; `go test ./internal/ui/ -run ErpReview -count=1`; the SB flow command of T138 (with `-skip 'Scale50000'`); `go test ./test/ -run 'TestModulesDoNotImportEachOther|TestEveryRouteGateNamesADeclaredPermission|TestUIRoutesAreAudienceGated' -count=1`; `grep -n "^V8a result:" specs/002-erp-integration-api/verify-notes.md` prints a line.
   - Commit message: `feat(erp): S2 product sync`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.
@@ -744,76 +744,76 @@ Goal: the ERP sends batches, reads per-item results; suppliers resolve review it
 
 Goal: the ERP reads sales and purchase orders, sees what is new, and acknowledges imports. Depends on S1 (S2 only for `externalProductCode`). Independent test: place orders, fetch, ack some, and the next `state=new` fetch returns only the rest.
 
-- [ ] T140 [US3] Write the order visibility and state tests in `test/integration/erp_orders_test.go`
+- [x] T140 [US3] Write the order visibility and state tests in `test/integration/erp_orders_test.go`
   - Do: `TestERPOrders_SupplierSeesOnlyOwnShipment` (supplier A key never sees supplier B lines or prices in a two-supplier order, US3.1); `TestERPOrders_BuyerKeySeesOnlyOwnOrders` (each order carries its shipments and lines, read through plan.md E7); `TestERPOrders_NewAckImportedChanged` (new, then ack gives `imported`, a shipment status change gives `changed`, re-ack with the same reference clears it); `TestERPOrders_ExternalProductCodeInLines`; `TestTenantIsolation_ERPOrderImports`. Time-based ids.
   - Traps: 1, 2, 19, 26.
   - Done: `gofmt -l test/integration/erp_orders_test.go` prints nothing; compile fails (RED).
 
-- [ ] T141 [US3] Write the paging test in `test/integration/erp_orders_paging_test.go`
+- [x] T141 [US3] Write the paging test in `test/integration/erp_orders_paging_test.go`
   - Do: `TestERPOrders_Paging5000`: 5,000 orders paged 100 at a time with 20 more inserted between pages; no id repeats, none skipped from the original set (SC-007). `TestERPOrders_PagingWithNewState`: the cycle with `state=new` and ack between pages loses nothing.
   - Traps: 27.
   - Done: `gofmt -l test/integration/erp_orders_paging_test.go` prints nothing; compile fails (RED).
 
-- [ ] T142 [US3] Write the cursor tests in `internal/modules/erp/http/cursor_test.go`
+- [x] T142 [US3] Write the cursor tests in `internal/modules/erp/http/cursor_test.go`
   - Do: `EncodeCursor(id)` is base64url of `v1:<id>` without padding; `DecodeCursor` round trips; empty string means start; garbage, wrong version, negative and non-numeric ids give `ERP_CURSOR_INVALID` (400).
   - Done: `gofmt -l internal/modules/erp/http/cursor_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Cursor -count=1` fails (RED).
 
-- [ ] T143 [US3] Add the cursor in `internal/modules/erp/http/cursor.go`
+- [x] T143 [US3] Add the cursor in `internal/modules/erp/http/cursor.go`
   - Do: `EncodeCursor(id int64) string`, `DecodeCursor(s string) (int64, error)`.
   - Traps: 27.
   - Done: `go test ./internal/modules/erp/http/ -run Cursor -count=1`.
 
-- [ ] T144 [US3] Write the order service tests in `internal/modules/erp/orders_service_test.go`
+- [x] T144 [US3] Write the order service tests in `internal/modules/erp/orders_service_test.go`
   - Do: state mapping `new`/`imported`/`changed`/`all`; `Ack` results: a new reference gives `result=acknowledged`; the same reference again gives `result=already_acknowledged` and still refreshes `acked_status`, `acked_at` and `ack_count`; a different reference gives `result=conflict` with `code=ERP_ACK_REFERENCE_CONFLICT` and `existingReference`, and changes nothing; an unknown order gives `not_found`; more than `AckMax` (500) entries gives `ERP_VALIDATION`; sample 3: replace the literal `{{orderNumber}}` in the text of `orgasoft_order_ack_sample3.json` with a real seeded order number before decoding it through the provider, then assert the result is `acknowledged` with reference `ORG-9921`; also assert that the unreplaced fixture decodes to `OrderNumber == "{{orderNumber}}"` and yields `not_found`; the `from` and `to` filters return only orders created inside the range (FR-019); sales calls need `erp.orders.read` and vendor type (`ERP_CAPABILITY_REQUIRED`), purchase calls work for vendor and customer organizations; page size default 100, max 500; a missing order gives `ERP_ORDER_NOT_FOUND` identical for another organization's order.
   - Done: `gofmt -l internal/modules/erp/orders_service_test.go` prints nothing; `go test ./internal/modules/erp/ -run Orders -count=1` fails (RED).
 
-- [ ] T145 [US3] Add the order repository interface in `internal/modules/erp/repository_orders.go`
+- [x] T145 [US3] Add the order repository interface in `internal/modules/erp/repository_orders.go`
   - Do: `ListSalesShipmentsAsSystem(ctx, orgID, integrationID int64, f OrderFilter) ([]SalesRow, error)`, `GetSalesShipmentAsSystem(ctx, orgID int64, orderNumber string) (SalesRow, error)`, `ListPurchaseOrders(ctx, buyerOrgID, integrationID int64, f OrderFilter) ([]PurchaseRow, error)`, `GetPurchaseOrder(ctx, buyerOrgID int64, orderNumber string) (PurchaseRow, error)`, `ListPurchaseShipmentsAsSystem(ctx, buyerOrgID int64, orderIDs []int64) ([]PurchaseShipment, error)` (plan.md E7), `UpsertOrderImport(ctx, imp OrderImport, audit AuditRecord) (AckOutcome, error)`; types (field names mirror the openapi schemas and the table columns in camel-to-Pascal case): `OrderFilter{After int64; Limit int; State string; From, To *time.Time}`; `OrderLine{LineID int64; VariantPublicID, ExternalProductCode, Barcode string; Name map[string]string; Quantity int; UnitPrice, DiscountAmount, TotalPrice money.Amount}`; `CustomerInfo{ErpCode, UnmappedReason string; Mapped bool; Name, BranchName map[string]string; Address, Phone string}`; `SalesRow{OrderID, ShipmentID int64; OrderNumber, ShipmentNumber, Status, ImportState, PaymentMethod, PaymentStatus, Notes, ErpReference string; CreatedAt, UpdatedAt time.Time; AckedAt *time.Time; Subtotal, ShippingFee, Total money.Amount; Customer CustomerInfo; Lines []OrderLine}`; `PurchaseShipment{OrderID int64; ShipmentNumber, Status string; SupplierName map[string]string; Subtotal, ShippingFee money.Amount; Lines []OrderLine}`; `PurchaseRow{OrderID int64; OrderNumber, Status, ImportState, ExternalReference, ErpReference string; CreatedAt, UpdatedAt time.Time; AckedAt *time.Time; Total money.Amount; Shipments []PurchaseShipment}`; `OrderImport{IntegrationID, OrderID, APIKeyID int64; ShipmentID *int64; Direction, OrderNumber, ErpReference, AckedStatus string}`; `AckOutcome{Result, Code, ExistingReference string}` (`Result` is `acknowledged`, `already_acknowledged` or `conflict`). Embed in `Repository` (edit `repository.go`). Create `fake_orders_test.go` with `type fakeOrders struct` implementing these methods in memory and embed it in `fakeRepo` (`fake_keys_test.go`): `type fakeRepo struct { ...; *fakeSync; *fakeOrders }`, so `fakeRepo` still satisfies `erp.Repository`.
   - Done: `go build ./internal/modules/erp/` and `gofmt -l internal/modules/erp/fake_orders_test.go` prints nothing; `go vet ./internal/modules/erp/` passes once T150 exists (the T144 tests need it).
 
-- [ ] T146 [US3] Add the customer code SQL in `internal/modules/erp/postgres/customer_code.go`
+- [x] T146 [US3] Add the customer code SQL in `internal/modules/erp/postgres/customer_code.go`
   - Do: const `customerCodeSQL` (the only copy): `organization_number` of the `org.user_organizations` link where `vendor_org_id` is the supplier and (`customer_org_id = order.organization_id` or `customer_org_id IS NULL AND user_id = order.customer_id`); statuses `pending` and `approved`; prefer the row with `customer_org_id` set, then newest `updated_at`; several different customers sharing one code gives unmapped reason `code_conflict`; no link gives `no_link`; a link found but with an `organization_number` that is empty after trim gives `mapped=false`, `unmappedReason=empty_code` (checked before `code_conflict`). Function `resolveCustomerCodes(ctx, tx, supplierOrgID int64, orders []orderRef) (map[int64]CustomerCode, error)`.
   - Use: research D-20.
   - Done: `gofmt -l internal/modules/erp/postgres/customer_code.go` prints nothing (`go vet` is not required: the package compiles as a whole at T149).
 
-- [ ] T147 [P] [US3] Add sales order SQL in `internal/modules/erp/postgres/orders_sales.go`
+- [x] T147 [P] [US3] Add sales order SQL in `internal/modules/erp/postgres/orders_sales.go`
   - Do: `ListSalesShipmentsAsSystem` (comment `plan.md E2`): every statement has `s.organization_id = $1`, `s.id > $afterID`, join `commerce.orders` header, left join `erp.order_imports` for the state filter, `ORDER BY s.id LIMIT n+1`. Lines are loaded with a second statement under `WithTenant` on `commerce.order_lines WHERE shipment_id = ANY($1)` joined to `erp.product_links` for `externalProductCode`. `GetSalesShipmentAsSystem` with the same filter. Customer fields, read inside the same E2 statement with the guard `s.organization_id = $1`: `name` from `org.organizations` of `commerce.orders.organization_id` (unscoped table); `branchName`, `address` and `phone` from `org.branches` of `commerce.orders.branch_id` (the buyer's branch; `order_shipments.branch_id` is the supplier's own fulfilling branch and must not be used), with the join condition `b.organization_id = o.organization_id`; when the order has no branch use the buyer organization's own `address` and `phone` from `org.organizations`. Confirm the column names first with `grep -n 'CREATE TABLE org.branches' -A15 db/migrations/003_organizations.up.sql`. Mark the call `sensitive_read` (T152).
   - Traps: 1, 2, 26, 27.
   - Done: `gofmt -l internal/modules/erp/postgres/orders_sales.go` prints nothing (`go vet` is not required).
 
-- [ ] T148 [P] [US3] Add purchase order SQL in `internal/modules/erp/postgres/orders_purchase.go`
+- [x] T148 [P] [US3] Add purchase order SQL in `internal/modules/erp/postgres/orders_purchase.go`
   - Do: `ListPurchaseOrders`, `GetPurchaseOrder`: headers via `WithTenant(buyer)` on `commerce.orders WHERE organization_id = $1`, cursor over `orders.id`; shipments and lines via `ListPurchaseShipmentsAsSystem(ctx, buyerOrgID int64, orderIDs []int64)` (comment `plan.md E7`), grouped by supplier shipment, where every statement joins `commerce.orders o ON o.id = s.order_id` with `o.organization_id = $1`. No other `AsSystem`.
   - Traps: 1, 27.
   - Done: `gofmt -l internal/modules/erp/postgres/orders_purchase.go` prints nothing (`go vet` is not required).
 
-- [ ] T149 [P] [US3] Add import tracking SQL in `internal/modules/erp/postgres/imports.go`
+- [x] T149 [P] [US3] Add import tracking SQL in `internal/modules/erp/postgres/imports.go`
   - Do: `UpsertOrderImport`: first ack inserts and returns `Result=acknowledged`; same reference updates `acked_status`, `acked_at`, `ack_count` and returns `Result=already_acknowledged`; different reference returns `Result=conflict`, `Code=ERP_ACK_REFERENCE_CONFLICT` and `ExistingReference`, and changes nothing; audit row in the same `InTx`.
   - Traps: 1, 25.
   - Done: `go build ./internal/modules/erp/postgres/` must pass including the `var _ erp.Repository` line.
 
-- [ ] T150 [US3] Add the order service in `internal/modules/erp/orders_service.go`
+- [x] T150 [US3] Add the order service in `internal/modules/erp/orders_service.go`
   - Do: `ListSales`, `GetSales`, `ListPurchase`, `GetPurchase` (each `(ctx, p Principal, ...)`), `Ack(ctx, p Principal, direction string, entries []provider.AckEntry) ([]AckResult, error)`. Scope and capability checks first. A cursor is `after` id in `OrderFilter`. `AckResult{OrderNumber, Result, Code string; ExistingReference string}` is the per-order output of `Ack`.
   - Traps: 1, 2, 26, 27.
   - Done: `go test ./internal/modules/erp/ -run Orders -count=1` and `go vet ./internal/modules/erp/`.
 
-- [ ] T151 [US3] Write the order handler tests in `internal/modules/erp/http/orders_handlers_test.go`
+- [x] T151 [US3] Write the order handler tests in `internal/modules/erp/http/orders_handlers_test.go`
   - Do: routes `GET /orders/sales`, `GET /orders/sales/{orderNumber}`, `POST /orders/sales/ack`, `GET /orders/purchase`, `GET /orders/purchase/{orderNumber}`, `POST /orders/purchase/ack` per `openapi.yaml`; response carries `customer.erpCode`, or `customer.mapped=false` with `unmappedReason`; `importState`; `nextCursor`; bad cursor `ERP_CURSOR_INVALID`; a sales read marks the call record `SensitiveRead=true`; scope errors name `requiredScope`.
   - Done: `gofmt -l internal/modules/erp/http/orders_handlers_test.go` prints nothing; `go test ./internal/modules/erp/http/ -run Orders -count=1` fails (RED).
 
-- [ ] T152 [US3] Add the order handlers in `internal/modules/erp/http/orders_handlers.go` and mark sensitive reads in `auth.go`
+- [x] T152 [US3] Add the order handlers in `internal/modules/erp/http/orders_handlers.go` and mark sensitive reads in `auth.go`
   - Do: handlers for the six routes; query parameters `cursor`, `limit`, `state`, `from`, `to`. In `auth.go` put a `*callState` in the request context and add `markSensitiveRead(ctx)`; the post-handler recorder copies it into `CallRecord.SensitiveRead`.
   - Traps: 9, 24.
   - Done: `go test ./internal/modules/erp/http/ -run Orders -count=1`.
 
-- [ ] T153 [US3] Mount the order routes in `internal/modules/erp/http/handler.go`
+- [x] T153 [US3] Mount the order routes in `internal/modules/erp/http/handler.go`
   - Do: register the six routes in the auth-wrapped group.
   - Done: `go test ./internal/modules/erp/http/ -count=1 && go build ./cmd/server/`.
 
-- [ ] T154 [US3] Run the S3 integration tests
+- [x] T154 [US3] Run the S3 integration tests
   - Do: SB-3, SB-4, then run. Fix the owning S3 task when a test fails; do not edit a test unless it contradicts plan.md (record why in `verify-notes.md`).
   - Done: `SB-6 go test -p 1 ./test/integration/ -run 'ERPOrders|TestTenantIsolation_ERPOrderImports' -count=1` passes.
 
-- [ ] T155 [US3] S3 slice gate
+- [x] T155 [US3] S3 slice gate
   - Do: slice gate. Changed packages: `./internal/modules/erp/... ./cmd/server/`. Focused tests: `go test ./internal/modules/erp/... -run 'Orders|Cursor|Ack' -count=1`; the SB command above; `go test ./test/ -run TestModulesDoNotImportEachOther -count=1`.
   - Commit message: `feat(erp): S3 order feeds and acknowledgement`. No push, merge or deploy.
   - Done: `git log -1 --format=%s` prints the commit message.

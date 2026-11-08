@@ -103,3 +103,27 @@ V8a result: accept 1.08 s, process 33.4 s (TestERPSyncFlow_Scale50000, sandbox a
 Rule 11 (naming slip): T104's Done and Do name `internal/modules/erp/postgres/variants_lookup.go`, but the file is `internal/modules/erp/postgres/sync_variants_lookup.go` (the same prefix as the other S2 SQL files). Done was checked against the real path; the task text was not changed.
 
 T131 (S2 wiring): `cmd/server/erp_wiring.go` now fills `erp.Ports` with the existing catalog, inventory and matching services through `internal/composition/erpports` (catalog cache and matching wired as `routes.go` does). The `Enqueuer` is `erpEnqueuer`: it builds `queue.NewInsertOnly` on first use under a mutex and does not cache a failed build. Done: `go build ./cmd/server/` and `go test ./cmd/server/ -run Router -count=1` pass on the host.
+
+Checkpoint (S3 in progress, not committed): S2 committed as 896dc33. Done after it: T142 and T143 (cursor, `internal/modules/erp/http/cursor.go`, both host tests pass). Open S3 work: T140, T141, T144 to T155. Not started: S4 to S8 and the polish phase. The S2 gate tick (T139) is in the working tree.
+
+S3 design notes (order feeds, written before the S3 code):
+- Purchase lines carry `externalProductCode` only when a link exists for the key's integration; E7 takes no integration id, so purchase lines return null (plan allows null; variantId identifies the line).
+- `ListSalesShipmentsAsSystem` and `GetSalesShipmentAsSystem` run the header, customer and branch read in one E2 `AsSystem` statement guarded by `s.organization_id = $1`; the lines read is a second `WithTenant(supplier)` statement. The customer code read (`org.user_organizations`) has no RLS policy, so `resolveCustomerCodes` runs inside that transaction without AsSystem.
+- Orders list services receive `limit+1` from the repository and trim; the next cursor is the last returned id (`s.id` for sales, `o.id` for purchase).
+- `importState` is computed in SQL from `erp.order_imports` (no row = new, same acked status = imported, otherwise changed).
+
+T154 first sandbox run (S3), recorded per the rule to log before changing code:
+- `TestERPOrders_Paging5000`: `paged 5020 original orders, want 5000`. Test bug: the orders inserted mid-paging share the prefix (`<prefix>x<i>-`), so the prefix check counted them as originals. Fixed in the test: an original has only digits after the prefix. Product code unchanged.
+- `TestERPOrders_NewAckImportedChanged`: `after re-ack state = "changed", want imported`. Test bug: the re-ack reused the first call's `AckedStatus` ("pending"), while the service always acknowledges the shipment's current status. Fixed in the test: the re-ack carries the current status ("processing"). Product code unchanged.
+- Product bug found by the first run: `import_state` had no alias in the E2 and purchase header statements (`column q.import_state does not exist`, SQLSTATE 42703). Fixed with `AS import_state` in `postgres/orders_sales.go` and `postgres/orders_purchase.go`.
+
+S3 deviations and observations (slice gate T155):
+- DEVIATION (T145 field list): `OrderImport` gained `OrganizationID`. RLS needs the real tenant on every write, and the listed fields had none, so the repository could not write. The service fills it from the principal.
+- Purchase lines carry `externalProductCode` only when the repository finds a link (the purchase path has no integration link for a supplier's variant, so it is null). `variantId` identifies the line (research D-21).
+- `order_imports` joins: sales by `(organization, shipment)`, purchase by `(organization, order)`; the integration id filters product links on sales lines and the purchase list. Each organization has one integration per provider, so the lateral join returns one import row.
+- `org.user_organizations` has no RLS (migration 138 never enables it), so `resolveCustomerCodes` runs inside the E2 transaction without `AsSystem`.
+- `from`/`to` filter the order's `created_at`; `createdAt`/`updatedAt` on sales rows are the order's timestamps.
+- Test names: the HTTP order tests are named `TestOrders*` so that the T151 and T155 `-run Orders` checks execute them (a naming change only, no assertion changed).
+- Ratchet observation (not an S3 change): `TestDeadcodeRatchet` reports 14 against a ceiling of 12 on this branch. The extra entries are S2 code already in HEAD (`NewItemRow.messageJSON`, `anyKeys`, `gatewayOffMatcher.Prepare`, `prepareOnlyMatcher.Prepare`, `syncFixture.linkedVariantID`). Not fixed here; it needs an owner decision on the S2 helpers or the ceiling.
+- Observation for the owner (S2 behaviour, not changed): `GET /products/sync/{syncId}/items` returns a plain decimal id as `nextCursor` (`encodeItemCursor`), while the orders feeds use the `v1:` cursor from `contracts/openapi.yaml`. Aligning them would change an API response, so it is left for a decision.
+- Gate: `go build ./...` ok; `go vet` on `internal/modules/erp/...` and `test/integration` ok; `go test ./internal/modules/erp/... -count=1` ok; `gofmt -l` on changed files prints nothing; `go test ./test/ -run TestModulesDoNotImportEachOther` ok; SB-6 `TestERPOrders_*` (6) and `TestTenantIsolation_ERPOrderImports` PASS with -v and no skip (sandbox as dawa24_app). File-size check skipped by owner override.

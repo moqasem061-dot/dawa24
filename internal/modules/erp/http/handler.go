@@ -38,6 +38,14 @@ func (h *Handler) Routes() chi.Router {
 		r.Post("/products/sync", h.postSync)
 		r.Get("/products/sync/{syncId}", h.getSync)
 		r.Get("/products/sync/{syncId}/items", h.getSyncItems)
+		// The order feeds (S3). Sales is the supplier's own shipments; purchase is
+		// the buyer's own orders. Acknowledgements take the body through the provider.
+		r.Get("/orders/sales", h.listSales)
+		r.Get("/orders/sales/{orderNumber}", h.getSale)
+		r.Post("/orders/sales/ack", h.ackSales)
+		r.Get("/orders/purchase", h.listPurchase)
+		r.Get("/orders/purchase/{orderNumber}", h.getPurchase)
+		r.Post("/orders/purchase/ack", h.ackPurchase)
 	})
 	r.NotFound(func(w http.ResponseWriter, r *http.Request) {
 		writeError(w, r, erp.NewError("ERP_NOT_FOUND", 404, nil))

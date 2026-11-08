@@ -21,6 +21,24 @@ func principalFromContext(ctx context.Context) (erp.Principal, bool) {
 	return p, ok
 }
 
+// callState carries per-call flags from the handler to the call recorder. It
+// holds flags only, never request data (trap 24).
+type callState struct{ sensitiveRead bool }
+
+type callStateKey struct{}
+
+func withCallState(ctx context.Context, st *callState) context.Context {
+	return context.WithValue(ctx, callStateKey{}, st)
+}
+
+// markSensitiveRead flags the call as a read of sensitive data (customer names,
+// contacts, prices). The middleware copies the flag into erp.api_calls.
+func markSensitiveRead(ctx context.Context) {
+	if st, ok := ctx.Value(callStateKey{}).(*callState); ok {
+		st.sensitiveRead = true
+	}
+}
+
 type authenticateFunc func(context.Context, string, string) (erp.Principal, error)
 type authLayer struct {
 	authenticate authenticateFunc
@@ -55,6 +73,7 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 		start := time.Now()
 		ip := httpx.ClientIP(r, 1)
 		sw := &statusWriter{ResponseWriter: w}
+		state := &callState{}
 		var principal *erp.Principal
 		var code string
 		defer func() {
@@ -65,7 +84,7 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 			if rc := chi.RouteContext(r.Context()); rc != nil {
 				route = rc.RoutePattern()
 			}
-			record := erp.CallRecord{RequestID: observability.RequestIDFrom(r.Context()), Method: r.Method, Route: route, Status: sw.status, ErrorCode: code, DurationMS: int(time.Since(start).Milliseconds()), IP: &ip, CreatedAt: time.Now()}
+			record := erp.CallRecord{RequestID: observability.RequestIDFrom(r.Context()), Method: r.Method, Route: route, Status: sw.status, ErrorCode: code, DurationMS: int(time.Since(start).Milliseconds()), IP: &ip, SensitiveRead: state.sensitiveRead, CreatedAt: time.Now()}
 			if r.ContentLength > 0 {
 				record.BytesIn = int(r.ContentLength)
 			}
@@ -108,7 +127,7 @@ func (a *authLayer) middleware(next http.Handler) http.Handler {
 			writeError(sw, r, limitErr)
 			return
 		}
-		ctx := database.WithTenant(context.WithValue(r.Context(), principalContextKey{}, p), p.OrganizationID)
+		ctx := database.WithTenant(withCallState(context.WithValue(r.Context(), principalContextKey{}, p), state), p.OrganizationID)
 		next.ServeHTTP(sw, r.WithContext(ctx))
 	})
 }
