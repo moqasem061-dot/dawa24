@@ -302,18 +302,6 @@ func (f *syncFixture) stockQuantity(variantID int64) (int, bool) {
 	return qty, true
 }
 
-func (f *syncFixture) linkedVariantID(code string) int64 {
-	f.t.Helper()
-	var variant int64
-	err := f.db.InReadTx(database.AsSystem(f.ctx), func(ctx context.Context, tx pgx.Tx) error {
-		return tx.QueryRow(ctx, `SELECT l.variant_id FROM erp.product_links l WHERE l.organization_id = $1 AND l.external_code = $2`, f.org, code).Scan(&variant)
-	})
-	if err != nil {
-		f.t.Fatalf("link for %s: %v", code, err)
-	}
-	return variant
-}
-
 // TestERPSyncFlow_Basic is the slice's independent test: new, known, invalid;
 // stock 0; a duplicate code inside one batch; the absent product untouched.
 func TestERPSyncFlow_Basic(t *testing.T) {

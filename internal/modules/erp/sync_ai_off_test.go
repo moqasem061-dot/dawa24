@@ -15,16 +15,6 @@ var errMatcherDown = errors.New("matcher down")
 // method, so an ERP sync runs to completion with the Gateway down — items that
 // cannot be matched deterministically land in the supplier's review queue.
 
-var _ Matcher = gatewayOffMatcher{}
-
-// gatewayOffMatcher has exactly the Prepare method. Compile-time proof that
-// the Matcher port carries nothing else.
-type gatewayOffMatcher struct{}
-
-func (gatewayOffMatcher) Prepare(_ context.Context, _ productmatch.PrepareRequest) (productmatch.PrepareResult, error) {
-	return productmatch.PrepareResult{}, nil
-}
-
 func TestSyncWithGatewayOff(t *testing.T) {
 	f := newProcessFixture(t, matchflow.StateNeedsReview) // matcher "down" -> review
 	items := make([]map[string]any, 0, 20)
@@ -80,7 +70,10 @@ func TestSyncNeverCallsEnhancement(t *testing.T) {
 	// The Matcher interface must satisfy a struct that has only Prepare: the
 	// compile-time half of the enhancement ban. The textual half lives in
 	// seam_test.go's TestNeverCallsEnhancement.
-	var _ Matcher = prepareOnlyMatcher{}
+	var m Matcher = prepareOnlyMatcher{}
+	if _, err := m.Prepare(context.Background(), productmatch.PrepareRequest{}); err != nil {
+		t.Fatal(err)
+	}
 }
 
 type prepareOnlyMatcher struct{}

@@ -44,14 +44,6 @@ type NewItemRow struct {
 	Message      map[string]string
 }
 
-func (r NewItemRow) messageJSON() []byte {
-	if r.Message == nil {
-		return []byte("{}")
-	}
-	data, _ := json.Marshal(r.Message)
-	return data
-}
-
 // SyncBatch mirrors erp.sync_batches, plus the integration's provider.
 type SyncBatch struct {
 	ID               int64

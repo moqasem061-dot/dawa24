@@ -193,14 +193,6 @@ func nonZeroPtr(v int64) *int64 {
 	return &v
 }
 
-func anyKeys(m map[int64]*int) []int64 {
-	keys := make([]int64, 0, len(m))
-	for key := range m {
-		keys = append(keys, key)
-	}
-	return keys
-}
-
 // logItemWriteFailure records why a single row failed in the catalog or the
 // stock writer. The item itself only carries the stable code; the reason is
 // the adapter's own failure text (no key material reaches this path).
